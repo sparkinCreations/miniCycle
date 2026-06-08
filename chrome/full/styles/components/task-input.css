@@ -1,0 +1,136 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Task Input Component
+   Input field for adding new tasks
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* =============================================================================
+   TASK INPUT CONTAINER
+   ============================================================================= */
+
+.task-input {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2); /* Space between input and button */
+    align-self: center;
+    background: var(--theme-input-bg, rgb(255, 255, 255));
+    border-radius: var(--radius-md);
+    padding: var(--space-1-25) var(--space-1-25) var(--space-1-25) var(--space-2-5); /* Less right padding since button has its own */
+    box-shadow: var(--shadow-input);
+    margin-bottom: var(--space-4);
+    max-width: 450px;
+    width: 80%;
+    height: 40px;
+    flex-shrink: 0; /* Don't shrink - task list shrinks instead */
+    transition: box-shadow 0.15s ease;
+}
+
+/* Focus ring on the entire container when input is focused */
+.task-input:focus-within {
+    box-shadow: var(--shadow-input), var(--shadow-focus-ring);
+}
+
+/* Hidden state - use visibility to reserve space and prevent CLS */
+.task-input[hidden],
+.task-input.hidden {
+    visibility: hidden;
+    pointer-events: none;
+}
+
+/* =============================================================================
+   TEXT INPUT FIELD
+   ============================================================================= */
+
+input[type="text"] {
+    flex: 1;
+    min-width: 0; /* Allow flex shrinking below content size */
+    background: var(--theme-input-bg);
+    color: var(--theme-input-text);
+    padding: var(--space-1-75);
+    font-size: var(--font-size-base);
+    border: none;
+    border-radius: var(--radius-sm);
+    outline: none;
+}
+
+input[type="text"]::placeholder {
+    color: var(--theme-input-placeholder);
+}
+
+input[type="text"]:focus {
+    outline: none;
+}
+
+input[type="text"]:focus-visible {
+    outline: 2px solid var(--theme-input-focus-border, #4c79ff);
+    outline-offset: 2px;
+}
+
+/* Specific task input element */
+#taskInput {
+    flex: 1;
+    background: var(--theme-input-bg, rgb(255, 255, 255));
+    color: var(--theme-input-text, var(--theme-text-on-surface));
+    padding: var(--space-1-75) 0 var(--space-1-75) var(--space-1-75);
+    font-size: var(--font-size-base);
+    border: none;
+    border-radius: var(--radius-6);
+    outline: none;
+}
+
+#taskInput:focus {
+    outline: none;
+    box-shadow: none;
+}
+
+/* =============================================================================
+   ADD TASK BUTTON
+   ============================================================================= */
+
+#addTaskBtn {
+    padding: var(--space-2) var(--space-4);
+    font-size: var(--font-size-xs);
+    height: 30px;
+    flex-shrink: 0; /* Don't shrink the button */
+    background: rgba(0, 0, 0, 0.8);
+    color: var(--color-white);
+    border: none;
+    border-radius: var(--radius-6);
+    cursor: pointer;
+    transition: background var(--transition-normal), transform var(--transition-fast);
+}
+
+#addTaskBtn:hover {
+    background: var(--color-error);
+    transform: scale(1.02);
+}
+
+#addTaskBtn:active {
+    transform: scale(0.98);
+}
+
+/* =============================================================================
+   TASK INPUT BUTTONS (inside input container)
+   NOTE: Colors inherited from base button styles in buttons.css
+   ============================================================================= */
+
+/* =============================================================================
+   MOBILE/DESKTOP ADJUSTMENTS - Currently using unified styling above
+   ============================================================================= */
+
+/* Ensure proper viewport handling */
+.task-input button {
+    flex: 0 0 auto;
+    touch-action: manipulation;
+    transform: translateZ(0);
+}
+
+/* =============================================================================
+   MOBILE ADJUSTMENTS - iOS
+   ============================================================================= */
+
+@media (max-width: 480px) {
+    .task-input {
+        margin-top: var(--space-2);
+        width: 90%; /* Wider on mobile for more input space */
+    }
+}

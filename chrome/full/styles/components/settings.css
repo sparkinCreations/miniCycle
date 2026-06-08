@@ -1,0 +1,539 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Settings Component
+   Settings modal and configuration options
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* =============================================================================
+   SETTINGS MODAL OVERLAY
+   ============================================================================= */
+
+.settings-modal {
+    display: none;
+    position: fixed;
+    z-index: var(--z-modal);
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    justify-content: center;
+    align-items: center;
+    padding: var(--space-5);
+}
+
+.settings-modal.active,
+.settings-modal.show {
+    display: flex;
+}
+
+/* Dialog open/close + backdrop rules are centralized in modals.css */
+
+/* =============================================================================
+   SETTINGS MODAL CONTENT
+   ============================================================================= */
+
+.settings-modal-content {
+    background: var(--pref-modal-bg, var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white))));
+    color: var(--pref-modal-text, var(--theme-modal-text, var(--theme-text-on-surface)));
+    border-radius: var(--radius-xl);
+    padding: 0;
+    width: 420px;
+    max-width: 95%;
+    text-align: left;
+    box-shadow:
+        var(--shadow-modal-heavy),
+        inset 0 1px 1px rgba(255, 255, 255, 0.25);
+    font-family: var(--font-family);
+    position: relative;
+    max-height: 85vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    -webkit-backdrop-filter: blur(var(--theme-modal-blur));
+    backdrop-filter: blur(var(--theme-modal-blur));
+}
+
+.settings-scroll-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--space-6) var(--space-5);
+}
+
+.settings-modal-content h2 {
+    margin: 0;
+    padding: var(--space-6) var(--space-5) var(--space-4);
+    text-align: center;
+    font-size: var(--font-size-xl);
+    color: inherit;
+    flex-shrink: 0;
+}
+
+/* =============================================================================
+   COLLAPSIBLE SECTIONS
+   ============================================================================= */
+
+.settings-section.collapsible {
+    margin-bottom: var(--space-2);
+    padding: 0;
+    border: 1px solid var(--border-blue-subtle-hover);
+    border-radius: var(--radius-10);
+    overflow: hidden;
+    background: var(--color-blue-pale-light);
+}
+
+.settings-section.collapsible.collapsed {
+    border-color: transparent;
+    border-bottom: 1px solid var(--border-blue-subtle);
+    border-radius: 0;
+    background: transparent;
+}
+
+.settings-section-icon {
+    font-size: var(--font-size-sm);
+    flex-shrink: 0;
+}
+
+.settings-section-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-3) 14px;
+    background: var(--border-blue-subtle-hover);
+    color: var(--color-black);
+    cursor: pointer;
+    font-weight: 600;
+    font-size: var(--font-size-sm);
+    -webkit-user-select: none;
+    user-select: none;
+    transition: background var(--transition-fast) ease;
+}
+
+.settings-section.collapsed .settings-section-header {
+    background: transparent;
+}
+
+.settings-section.collapsed .settings-section-header:hover {
+    background: var(--overlay-light);
+}
+
+.settings-section:not(.collapsed) .settings-section-header:hover {
+    background: var(--border-blue-subtle);
+}
+
+.settings-section-header:focus-visible {
+    outline: 2px solid var(--accent-color, var(--color-primary));
+    outline-offset: -2px;
+    border-radius: var(--radius-6);
+}
+
+.settings-btn:focus-visible {
+    outline: 2px solid var(--accent-color, var(--color-primary));
+    outline-offset: 2px;
+}
+
+.settings-section-toggle {
+    font-size: var(--font-size-xs);
+    transition: transform var(--transition-fast) ease;
+    opacity: 0.6;
+    margin-left: auto;
+}
+
+.settings-section.collapsed .settings-section-toggle {
+    transform: rotate(-90deg);
+}
+
+.settings-section-content {
+    padding: var(--space-3) 14px;
+    transition: max-height var(--transition-normal) ease, padding var(--transition-normal) ease;
+}
+
+.settings-section.collapsed .settings-section-content {
+    display: none;
+}
+
+/* =============================================================================
+   TOGGLE SWITCHES
+   ============================================================================= */
+
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+    flex-shrink: 0;
+}
+
+/* WCAG 44px touch target via pseudo-element — keeps visual size unchanged */
+.toggle-switch::after {
+    content: '';
+    position: absolute;
+    inset: -10px -8px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--theme-input-border);
+    transition: var(--transition-normal);
+    border-radius: var(--radius-24);
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: var(--color-white);
+    transition: var(--transition-normal);
+    border-radius: 50%;
+    box-shadow: var(--shadow-xs);
+}
+
+.toggle-switch input:checked + .toggle-slider {
+    background-color: var(--color-primary);
+}
+
+.toggle-switch input:checked + .toggle-slider:before {
+    transform: translateX(20px);
+}
+
+.toggle-switch input:focus-visible + .toggle-slider {
+    box-shadow: 0 0 0 2px var(--accent-color, var(--color-primary));
+}
+
+/* =============================================================================
+   SETTINGS OPTIONS
+   ============================================================================= */
+
+.settings-option {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin: var(--space-2-5) 0;
+    font-size: var(--font-size-sm);
+    color: inherit;
+    cursor: pointer;
+}
+
+.settings-option > span:last-child {
+    flex: 1;
+}
+
+/* =============================================================================
+   SETTINGS BUTTONS
+   ============================================================================= */
+
+.settings-btn {
+    width: 100%;
+    padding: var(--space-2-5) var(--space-3-5);
+    margin: var(--space-1-5) 0;
+    font-weight: 500;
+    font-size: var(--font-size-sm);
+    border: none;
+    border-radius: var(--radius-md);
+    background: var(--color-primary);
+    color: var(--color-white);
+    cursor: pointer;
+    transition: background var(--transition-fast) ease, transform var(--transition-fast) ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+}
+
+.settings-btn:hover {
+    background: var(--color-primary-dark);
+    transform: scale(1.01);
+}
+
+.settings-btn i {
+    font-size: var(--font-size-sm);
+}
+
+/* Primary buttons (Backup/Restore) */
+.settings-btn.settings-btn-primary {
+    background: var(--color-success);
+    color: var(--color-white);
+}
+
+.settings-btn.settings-btn-primary:hover {
+    background: var(--color-success);
+}
+
+/* Ghost/Outline buttons (Reset options) */
+.settings-btn.settings-btn-ghost {
+    background: transparent;
+    color: var(--pref-modal-text, var(--theme-modal-text, var(--color-gray-600)));
+    border: 1px solid var(--pref-modal-border, var(--theme-modal-border, var(--theme-input-border)));
+}
+
+.settings-btn.settings-btn-ghost:hover {
+    background: var(--theme-input-bg, var(--color-gray-100));
+    border-color: var(--color-gray-500);
+}
+
+/* Factory reset button — combined selector wins over .settings-btn alone */
+.settings-btn.factory-reset-btn {
+    background: var(--color-error);
+    color: var(--color-white);
+    margin-top: var(--space-2);
+}
+
+.settings-btn.factory-reset-btn:hover {
+    background: var(--color-error);
+}
+
+/* Close button — matches #close-main-menu style */
+button.settings-btn.close-btn {
+    display: block;
+    background: var(--color-steel-blue);
+    color: var(--menu-close-text, var(--color-white));
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    padding: var(--space-3-5);
+    margin: 0;
+    width: 100%;
+    border: none;
+    border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+    text-align: center;
+    flex-shrink: 0;
+}
+
+button.settings-btn.close-btn:hover {
+    background: var(--menu-close-hover-bg, var(--menu-close-hover-bg));
+    transform: none;
+}
+
+/* =============================================================================
+   SETTINGS FOOTER
+   ============================================================================= */
+
+.settings-footer {
+    margin-top: var(--space-4);
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--pref-modal-border, var(--theme-modal-border, var(--overlay-medium)));
+}
+
+.settings-version {
+    text-align: center;
+    font-size: var(--font-size-xs);
+    color: var(--color-gray-500);
+    font-weight: 700;
+    margin-bottom: var(--space-2-5);
+}
+
+/* =============================================================================
+   MOBILE ADJUSTMENTS
+   ============================================================================= */
+
+@media (max-width: 768px) {
+    .settings-scroll-area {
+        padding: var(--space-4-5) var(--space-3-5);
+    }
+
+    .settings-modal-content h2 {
+        padding: var(--space-4-5) var(--space-3-5) var(--space-3);
+    }
+
+    .settings-btn {
+        padding: 10px var(--space-3);
+        font-size: var(--font-size-sm);
+    }
+
+    button.settings-btn.close-btn {
+        font-size: var(--font-size-base);
+        padding: var(--space-3);
+    }
+
+    .settings-section-header {
+        padding: 10px var(--space-3);
+        font-size: var(--font-size-sm);
+    }
+
+    .settings-section-content {
+        padding: 10px var(--space-3);
+    }
+
+    .settings-option {
+        font-size: var(--font-size-sm);
+    }
+
+    .toggle-switch {
+        width: 40px;
+        height: 22px;
+    }
+
+    .toggle-slider:before {
+        height: 16px;
+        width: 16px;
+    }
+
+    .toggle-switch input:checked + .toggle-slider:before {
+        transform: translateX(18px);
+    }
+}
+
+@media (max-width: 480px) {
+    .settings-modal-content {
+        max-height: 85vh;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SETTINGS OPTION (from modals.css)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* =============================================================================
+   SETTINGS OPTION
+   ============================================================================= */
+
+.settings-option {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: var(--space-2-5);
+    justify-content: flex-start;
+    text-align: left;
+    gap: var(--space-2-5);
+}
+
+.settings-option input[type="checkbox"] {
+    margin-right: var(--space-2-5);
+}
+
+.settings-btn {
+    background: var(--color-primary);
+    color: var(--color-white);
+    border: none;
+    padding: var(--space-2) var(--space-3);
+    margin-right: var(--space-2-5);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background var(--transition-normal);
+}
+
+.settings-btn:hover {
+    background: var(--color-primary-dark);
+}
+
+/* Reminders close button — matches #close-main-menu style */
+#close-reminders-btn {
+    background: var(--menu-close-bg, var(--color-steel-blue));
+    color: var(--menu-close-text, var(--color-white));
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    padding: var(--space-3-5);
+    border: none;
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+    margin: var(--space-3) -20px -20px;
+    width: calc(100% + 40px);
+    cursor: pointer;
+    transition: background var(--transition-fast) ease;
+    display: block;
+    text-align: center;
+}
+
+#close-reminders-btn:hover {
+    background: var(--menu-close-hover-bg, var(--menu-close-hover-bg));
+}
+
+/* =============================================================================
+   UNLOCKABLES
+   ============================================================================= */
+
+.unlockables {
+    display: flex;
+    justify-content: flex-start;
+    gap: var(--space-5);
+    margin-top: var(--space-2-5);
+    margin-bottom: var(--space-2-5);
+}
+
+#open-themes-panel,
+#open-games-panel {
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--theme-text-on-surface);
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-6);
+    cursor: pointer;
+    transition: background var(--transition-fast) ease;
+}
+
+#open-themes-panel:hover,
+#open-games-panel:hover {
+    background: var(--overlay-light);
+}
+
+/* Quick dark toggle */
+#quick-dark-toggle {
+    position: fixed;
+    bottom: 30px;
+    right: 10px;
+    z-index: var(--z-content);
+    background: none;
+    color: var(--color-white);
+    border: none;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    font-size: 32px;
+    cursor: pointer;
+}
+
+#quick-dark-toggle:hover {
+    transform: scale(1.15);
+}
+
+/* Personalization button (bottom left, mirrors dark toggle) */
+#personalization-btn {
+    position: fixed;
+    bottom: 30px;
+    left: 10px;
+    z-index: var(--z-content);
+    background: none;
+    color: var(--color-white);
+    border: none;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    font-size: 32px;
+    cursor: pointer;
+}
+
+#personalization-btn:hover {
+    transform: scale(1.15);
+}
+
+/* Mobile: Smaller buttons for better space usage */
+@media (max-width: 768px) {
+    #quick-dark-toggle,
+    #personalization-btn {
+        width: 50px;
+        height: 50px;
+        font-size: 26px;
+        bottom: 25px;
+    }
+}
+
+@media (max-width: 480px) {
+    #quick-dark-toggle,
+    #personalization-btn {
+        width: 45px;
+        height: 45px;
+        font-size: 24px;
+        bottom: 20px;
+    }
+}

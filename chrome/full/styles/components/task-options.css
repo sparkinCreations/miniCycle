@@ -1,0 +1,1158 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Task Options Component
+   Task action buttons and options customizer modal
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* =============================================================================
+   TASK OPTIONS BUTTONS
+   ============================================================================= */
+
+/* Show task options on hover ONLY when three-dots is disabled (desktop only) */
+@media (hover: hover) and (pointer: fine) {
+    body:not(.show-three-dots-enabled) .task:hover .task-options {
+        visibility: visible;
+        opacity: 1;
+        pointer-events: auto;
+    }
+}
+
+/* Force-hidden utility: replaces inline visibility/opacity/pointer-events triple-write */
+/* Specificity matches hover rule above so no !important needed */
+body:not(.show-three-dots-enabled) .task:hover .task-options.task-options-force-hidden,
+.task-options.task-options-force-hidden {
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Explicitly visible: set by TaskOptionsVisibilityController.show() */
+.task-options.task-options-visible {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.task-options {
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    -webkit-transform: translateX(-50%);
+    display: flex;
+    flex-wrap: nowrap;
+    gap: var(--space-1);
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity var(--transition-normal) ease-in-out, visibility var(--transition-normal) ease-in-out;
+    z-index: var(--z-elevated);
+    will-change: transform;
+    white-space: nowrap;
+}
+
+/* Show options on long press (touch devices) */
+.task.long-pressed .task-options {
+    display: flex;
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* =============================================================================
+   TASK BUTTONS (Half-circle style)
+   ============================================================================= */
+
+.task-btn,
+.move-btn {
+    background: var(--pref-task-options-bg, var(--color-blue-pale));
+    border: 1px solid var(--pref-task-options-border, var(--border-blue-subtle));
+    border-radius: 50% 50% 0 0;
+    width: 32px;
+    height: 24px;
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+    box-shadow: var(--shadow-xs);
+    transition: background var(--transition-fast), transform var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.task-btn {
+    color: var(--theme-text-on-surface);
+    font-size: var(--font-size-sm);
+}
+
+.task-options button.task-btn:hover {
+    background: var(--pref-task-options-hover-bg, var(--color-blue-pale-mid));
+    transform: scale(1.05);
+}
+
+/* Button color variants */
+.recurring-btn,
+.recurring-btn .icon {
+    color: var(--color-primary-dark);
+}
+
+.task-btn.recurring-btn.active {
+    background-color: var(--color-success);
+    color: var(--color-white);
+    font-weight: bold;
+}
+
+.task-btn.recurring-btn.active .icon {
+    color: var(--color-white);
+}
+
+.priority-btn,
+.priority-btn .icon {
+    color: var(--theme-text-on-surface);
+}
+
+.task-btn.priority-btn.priority-active {
+    background: var(--task-priority-color, var(--priority-color, #dc3545));
+    color: var(--color-white);
+}
+
+.task-btn.priority-btn.priority-active .icon {
+    color: var(--color-white);
+}
+
+.task-btn.priority-btn.priority-active:hover {
+    filter: brightness(0.85);
+}
+
+.edit-btn,
+.edit-btn .icon {
+    color: var(--theme-text-on-surface);
+}
+
+.delete-btn,
+.delete-btn .icon {
+    color: var(--theme-text-on-surface);
+}
+
+.set-due-date,
+.set-due-date .icon {
+    color: var(--theme-input-placeholder);
+}
+
+.task-btn.set-due-date.active {
+    background-color: var(--color-gray-600);
+    color: var(--color-white);
+    font-weight: bold;
+}
+
+.task-btn.set-due-date.active .icon {
+    color: var(--color-white);
+}
+
+/* Clear on Reset / Marked for Clearing button */
+.delete-when-complete-btn.active,
+.delete-when-complete-btn.delete-when-complete-active {
+    background-color: var(--color-blue-medium);
+    color: var(--color-white);
+}
+
+/* Reminder button */
+.enable-task-reminders,
+.enable-task-reminders .icon {
+    color: var(--theme-text-on-surface);
+}
+
+.task-btn.enable-task-reminders.reminder-active {
+    background: var(--color-primary);
+    color: var(--color-white);
+}
+
+.task-btn.enable-task-reminders.reminder-active .icon {
+    color: var(--color-white);
+}
+
+.task-btn.enable-task-reminders:hover {
+    background: var(--color-gray-300);
+}
+
+.task-btn.enable-task-reminders.reminder-active:hover {
+    background: var(--color-primary-dark);
+}
+
+.hidden-task-btn {
+    display: none;
+}
+
+/* =============================================================================
+   THREE DOTS BUTTON
+   ============================================================================= */
+
+.three-dots-btn {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    background: none;
+    border: none;
+    font-size: 25px;
+    color: var(--color-gray-500);
+    cursor: pointer;
+    padding: 0;
+    transition: background var(--transition-fast) ease;
+    width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+}
+
+.three-dots-btn:hover {
+    background: var(--overlay-light);
+}
+
+/* =============================================================================
+   TASK OPTIONS MODAL
+   ============================================================================= */
+
+.modal-content.task-options-modal {
+    max-width: 620px;
+    width: 90vw;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+.task-options-modal .modal-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    background: transparent;
+    padding: var(--space-4) var(--space-5) var(--space-4) var(--space-10);
+    border-bottom: 1px solid var(--overlay-light);
+}
+
+.task-options-modal .modal-header-text {
+    flex: 1;
+}
+
+.task-options-modal .modal-header h2 {
+    margin: 0;
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    color: var(--theme-text-on-surface);
+}
+
+.task-options-modal .modal-subtitle {
+    margin: var(--space-1) 0 0 0;
+    font-size: var(--font-size-sm);
+    color: var(--color-steel-blue);
+    line-height: 1.4;
+}
+
+.task-options-modal .modal-body {
+    background: transparent;
+    padding: var(--space-3-75);
+}
+
+/* =============================================================================
+   TWO-COLUMN CONTAINER
+   ============================================================================= */
+
+.task-options-container {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: var(--space-4);
+}
+
+/* =============================================================================
+   OPTIONS LIST (Left column)
+   ============================================================================= */
+
+.task-options-list-column {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.task-options-list-column > .modal-footer-note {
+    margin-top: var(--space-2);
+    text-align: center;
+}
+
+.task-options-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    max-height: 320px;
+    overflow-y: auto;
+    padding: var(--space-3-5);
+    background: var(--color-blue-pale-light);
+    border-radius: var(--radius-10);
+    border: 1px solid var(--border-blue-subtle-hover);
+    min-width: 220px;
+}
+
+.options-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1-5);
+}
+
+.section-header {
+    margin-bottom: var(--space-1-5);
+    padding-bottom: var(--space-1-5);
+    border-bottom: 1px solid var(--overlay-light);
+}
+
+.section-header h3 {
+    margin: 0;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--theme-input-placeholder);
+    display: flex;
+    align-items: center;
+    gap: var(--space-1-5);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.section-options {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+/* =============================================================================
+   PREVIEW PANEL (Right column)
+   ============================================================================= */
+
+.task-option-preview {
+    display: flex;
+    flex-direction: column;
+    padding: var(--space-3);
+    background: var(--color-blue-pale-light);
+    border-radius: var(--radius-10);
+    border: 1px solid var(--border-blue-subtle-hover);
+}
+
+.preview-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
+    padding-bottom: var(--space-2-5);
+    border-bottom: 1px solid var(--overlay-light);
+}
+
+.preview-header .preview-icon {
+    font-size: var(--font-size-sm);
+}
+
+.preview-header h3 {
+    margin: 0;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--theme-input-placeholder);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.preview-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: var(--space-4);
+}
+
+.preview-placeholder {
+    color: var(--color-gray-400);
+    font-style: italic;
+    font-size: var(--font-size-sm);
+}
+
+/* Show/hide text based on device */
+.preview-placeholder .mobile-text {
+    display: none;
+}
+
+@media (max-width: 768px), (hover: none) {
+    .preview-placeholder .desktop-text {
+        display: none;
+    }
+    .preview-placeholder .mobile-text {
+        display: block;
+    }
+}
+
+/* =============================================================================
+   OPTION ITEMS
+   ============================================================================= */
+
+.option-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2-5);
+    padding: var(--space-2) var(--space-2-5);
+    border-radius: var(--radius-6);
+    cursor: pointer;
+    transition: background var(--transition-fast) ease;
+}
+
+.option-item:hover {
+    background: var(--overlay-light);
+}
+
+.option-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.option-item label {
+    flex: 1;
+    cursor: pointer;
+    font-size: var(--font-size-sm);
+}
+
+/* =============================================================================
+   RESET BUTTON
+   ============================================================================= */
+
+#reset-task-options-btn {
+    margin-top: var(--space-2-5);
+    padding: var(--space-2) var(--space-4);
+    background: var(--theme-button-secondary-bg);
+    color: var(--theme-button-secondary-text);
+    border: 1px solid var(--overlay-medium);
+    border-radius: var(--radius-6);
+    cursor: pointer;
+    font-size: var(--font-size-sm);
+    transition: background var(--transition-fast) ease;
+}
+
+#reset-task-options-btn:hover {
+    background: var(--theme-button-secondary-hover-bg);
+}
+
+/* =============================================================================
+   MOBILE ADJUSTMENTS
+   ============================================================================= */
+
+@media (max-width: 768px) {
+    .task-options-modal {
+        max-width: 95%;
+    }
+
+    .task-options-modal .modal-body {
+        padding: var(--space-2-5);
+    }
+
+    .task-options-container {
+        grid-template-columns: 1fr;
+        min-height: auto;
+    }
+
+    .task-options-list {
+        max-height: 40vh;
+    }
+
+}
+
+@media (max-width: 480px) {
+    .task-options-modal {
+        width: 95%;
+    }
+
+    .task-options-modal .modal-header {
+        padding-left: var(--space-10);
+    }
+
+    .task-options-modal .modal-header h2 {
+        font-size: var(--font-size-base);
+    }
+
+    .task-options-modal .modal-subtitle {
+        font-size: var(--font-size-xs);
+    }
+
+    .task-options-container {
+        gap: var(--space-2);
+    }
+
+    .task-options-list {
+        padding: var(--space-2);
+    }
+
+    #reset-task-options-btn {
+        width: 100%;
+    }
+}
+
+/* =============================================================================
+   PREVIEW OPTION DETAILS
+   ============================================================================= */
+
+.preview-option-icon {
+    font-size: var(--font-size-3xl);
+    margin-bottom: var(--space-4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.preview-option-icon svg {
+    width: 48px;
+    height: 48px;
+}
+
+.preview-option-title {
+    margin: 0 0 var(--space-3) 0;
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    color: var(--theme-text-on-surface);
+}
+
+.preview-option-description {
+    margin: 0;
+    color: var(--theme-text-muted);
+    font-size: var(--font-size-sm);
+    line-height: 1.5;
+}
+
+.preview-option-note {
+    font-size: var(--font-size-xs);
+    color: var(--theme-text-muted);
+    margin: var(--space-2) 0 0;
+    font-style: italic;
+}
+
+/* =============================================================================
+   PREVIEW PANEL — MOBILE OVERRIDES
+   Must come AFTER base preview styles to win at equal specificity
+   ============================================================================= */
+
+@media (max-width: 768px) {
+    .task-option-preview {
+        min-height: 0;
+        padding: var(--space-1) var(--space-1-5);
+        border-radius: var(--radius-6);
+    }
+
+    .preview-header {
+        display: none;
+    }
+
+    .preview-content {
+        padding: var(--space-0-5) var(--space-1);
+        flex-direction: row;
+        align-items: center;
+        gap: var(--space-1-5);
+        text-align: left;
+    }
+
+    .preview-option-icon {
+        font-size: var(--font-size-lg);
+        margin-bottom: 0;
+        flex-shrink: 0;
+        min-width: 20px;
+    }
+
+    .preview-option-icon svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    .preview-option-title {
+        margin-bottom: 0;
+        font-size: var(--font-size-sm);
+        display: inline;
+    }
+
+    .preview-option-description {
+        font-size: var(--font-size-xs);
+        line-height: 1.2;
+        display: inline;
+    }
+
+    .preview-option-description::before {
+        content: ' — ';
+    }
+
+    .preview-placeholder {
+        font-size: var(--font-size-xs);
+        padding: var(--space-0-5) 0;
+    }
+}
+
+/* =============================================================================
+   TASK OPTION ITEMS
+   ============================================================================= */
+
+.task-option-item {
+    display: flex;
+    align-items: center;
+    padding: var(--space-2-5) var(--space-3);
+    background: var(--overlay-light);
+    border: 1px solid var(--overlay-medium);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast) ease;
+    gap: var(--space-2-5);
+}
+
+.task-option-item:hover:not(.disabled),
+.task-option-item:focus-within:not(.disabled) {
+    background: var(--color-success-pale);
+    border-color: var(--color-success);
+}
+
+.task-option-item:has(.option-checkbox:checked) {
+    background: var(--color-blue-pale);
+    border-color: var(--border-blue-subtle);
+}
+
+.task-option-item:has(.option-checkbox:checked):hover:not(.disabled) {
+    background: var(--color-success-pale);
+    border-color: var(--color-success);
+}
+
+.task-option-item.selected {
+    background: var(--color-success-pale);
+    border: 2px solid var(--color-success);
+    box-shadow: var(--shadow-sm);
+}
+
+.task-option-item.selected:has(.option-checkbox:checked) {
+    background: var(--color-success-pale);
+    border: 2px solid var(--color-success);
+    box-shadow: var(--shadow-sm);
+}
+
+.task-option-item.disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background: var(--overlay-faint);
+}
+
+.option-checkbox-container {
+    position: relative;
+    flex-shrink: 0;
+    cursor: pointer;
+}
+
+/* Hide default checkbox */
+.option-checkbox {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+/* Custom checkbox styling */
+.option-checkbox + .custom-checkbox {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--color-gray-400);
+    border-radius: var(--radius-sm);
+    background: var(--color-white);
+    transition: all var(--transition-fast) ease;
+}
+
+.option-checkbox:checked + .custom-checkbox {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+.option-checkbox:checked + .custom-checkbox::after {
+    content: '';
+    width: 6px;
+    height: 10px;
+    border: solid var(--color-white);
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+    margin-bottom: var(--space-0-5);
+}
+
+/* Show focus ring on custom checkbox when hidden input is keyboard-focused */
+.option-checkbox:focus-visible + .custom-checkbox {
+    outline: 2px solid var(--theme-input-focus-border, #4c79ff);
+    outline-offset: 2px;
+}
+
+.option-checkbox:disabled + .custom-checkbox {
+    background: var(--color-gray-200);
+    border-color: var(--color-gray-300);
+    cursor: not-allowed;
+}
+
+.option-checkbox:disabled:checked + .custom-checkbox {
+    background: var(--color-gray-500);
+    border-color: var(--color-gray-500);
+}
+
+.option-compact-content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2-5);
+    flex-wrap: wrap;
+    min-width: 0;
+}
+
+.option-icon {
+    font-size: var(--font-size-sm);
+    min-width: 22px;
+    text-align: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--theme-input-placeholder);
+}
+
+.option-icon svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* Colored icons for each option type */
+.task-option-item[data-option-key="highPriority"] .option-icon {
+    color: var(--task-priority-color, var(--priority-color, var(--color-orange-icon)));
+}
+
+.task-option-item[data-option-key="rename"] .option-icon {
+    color: var(--theme-input-placeholder);
+}
+
+.task-option-item[data-option-key="delete"] .option-icon {
+    color: var(--color-error);
+}
+
+.task-option-item[data-option-key="recurring"] .option-icon {
+    color: var(--color-blue-medium);
+}
+
+.task-option-item[data-option-key="dueDate"] .option-icon {
+    color: var(--theme-text-on-surface);
+}
+
+.task-option-item[data-option-key="reminders"] .option-icon {
+    color: var(--color-blue-medium);
+}
+
+.task-option-item[data-option-key="moveArrows"] .option-icon {
+    color: var(--theme-text-on-surface);
+}
+
+.task-option-item[data-option-key="threeDots"] .option-icon {
+    color: var(--color-gray-500);
+}
+
+.option-label {
+    font-weight: 500;
+    font-size: var(--font-size-sm);
+    color: var(--theme-text-on-surface);
+    flex: 1;
+    white-space: nowrap;
+}
+
+.always-visible-badge {
+    display: inline-block;
+    padding: var(--space-0-5) var(--space-1-5);
+    background: var(--color-warning);
+    color: var(--color-gray-800);
+    border-radius: var(--radius-xs);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    flex-shrink: 0;
+    white-space: nowrap;
+    margin: 0 auto;
+}
+
+/* Customize button */
+.task-btn.customize-btn {
+    font-weight: bold;
+    font-size: var(--font-size-sm);
+}
+
+/* =============================================================================
+   MODAL FOOTER STYLES
+   ============================================================================= */
+
+.task-options-modal .modal-footer {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2-5);
+    padding: var(--space-3) 0 0 0;
+    margin: 0 -20px -20px -20px;
+    background: transparent;
+}
+
+.task-options-modal .modal-footer-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-3);
+    padding: 0 var(--space-5);
+}
+
+.modal-footer-note {
+    font-size: var(--font-size-xs);
+    color: var(--color-steel-blue);
+    margin: 0;
+    font-style: italic;
+}
+
+#reset-task-options-btn {
+    padding: var(--space-2) var(--space-3-5);
+    background: var(--overlay-light);
+    color: var(--theme-input-placeholder);
+    border: 1px solid var(--overlay-medium);
+    border-radius: var(--radius-6);
+    cursor: pointer;
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    transition: all var(--transition-fast) ease;
+    white-space: nowrap;
+}
+
+#reset-task-options-btn:hover {
+    background: var(--overlay-medium);
+}
+
+.task-options-modal .close-button-fullwidth {
+    width: 100%;
+    margin-top: var(--space-3);
+    padding: var(--space-3-5);
+    background: var(--color-steel-blue);
+    color: var(--color-white);
+    border: none;
+    border-radius: 0;
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    cursor: pointer;
+    transition: filter var(--transition-fast) ease;
+}
+
+.task-options-modal .close-button-fullwidth:hover {
+    filter: brightness(0.85);
+}
+
+.task-options-modal .close-button-fullwidth:active {
+    filter: brightness(0.72);
+}
+
+/* =============================================================================
+   DARK MODE TASK BUTTONS (half-circle icons on task rows)
+   ============================================================================= */
+
+body.dark-mode .task-btn {
+    color: var(--color-slate-100);
+}
+
+body.dark-mode .task-btn .icon {
+    color: var(--color-slate-100);
+}
+
+body.dark-mode .edit-btn .icon,
+body.dark-mode .delete-btn .icon,
+body.dark-mode .priority-btn .icon,
+body.dark-mode .enable-task-reminders .icon,
+body.dark-mode .set-due-date .icon {
+    color: var(--color-slate-100);
+}
+
+body.dark-mode .recurring-btn .icon {
+    color: var(--color-slate-100);
+}
+
+/* Active states keep their distinctive colors in dark mode */
+body.dark-mode .task-btn.priority-btn.priority-active .icon,
+body.dark-mode .task-btn.recurring-btn.active .icon,
+body.dark-mode .task-btn.enable-task-reminders.reminder-active .icon,
+body.dark-mode .task-btn.set-due-date.active .icon {
+    color: var(--color-white);
+}
+
+/* =============================================================================
+   DARK MODE TASK OPTIONS MODAL
+   ============================================================================= */
+
+body.dark-mode .task-options-modal {
+    background: var(--theme-modal-glass-bg, var(--color-slate-800));
+    color: var(--color-slate-100);
+    border: 1px solid var(--color-slate-700);
+    box-shadow: var(--shadow-modal-compound);
+}
+
+body.dark-mode .task-options-modal .modal-header {
+    background: transparent;
+    color: var(--color-white);
+    border-bottom: 1px solid var(--color-slate-700);
+}
+
+body.dark-mode .task-options-modal .modal-header h2 {
+    color: var(--color-slate-100);
+}
+
+body.dark-mode .task-options-modal .modal-subtitle {
+    color: var(--dark-text-subdued);
+}
+
+body.dark-mode .task-options-modal .modal-body {
+    background: rgba(0, 0, 0, 0.15);
+}
+
+body.dark-mode .task-options-modal .modal-footer {
+    background: transparent;
+}
+
+body.dark-mode .task-options-list {
+    background: var(--color-slate-800);
+    border-color: var(--color-slate-700);
+}
+
+body.dark-mode .section-header {
+    border-bottom-color: var(--color-slate-700);
+}
+
+body.dark-mode .section-header h3 {
+    color: var(--color-slate-400);
+}
+
+body.dark-mode .modal-footer-note {
+    color: var(--color-slate-400);
+}
+
+body.dark-mode .task-option-preview {
+    background: var(--color-slate-800);
+    border-color: var(--color-slate-700);
+}
+
+body.dark-mode .preview-header {
+    border-bottom-color: var(--color-slate-700);
+}
+
+body.dark-mode .preview-header h3 {
+    color: var(--color-slate-400);
+}
+
+body.dark-mode .preview-placeholder {
+    color: var(--color-slate-500);
+}
+
+body.dark-mode .task-option-item {
+    background: var(--dark-overlay-faint);
+}
+
+body.dark-mode .task-option-item:has(.option-checkbox:checked) {
+    background: var(--dark-overlay-light);
+    border-color: var(--dark-overlay-medium);
+}
+
+body.dark-mode .task-option-item:has(.option-checkbox:checked):hover:not(.disabled) {
+    background: var(--dark-success-bg);
+    border-color: var(--dark-accent-green);
+}
+
+body.dark-mode .task-option-item:hover:not(.disabled),
+body.dark-mode .task-option-item:focus-within:not(.disabled) {
+    background: var(--dark-success-bg);
+    border-color: var(--dark-accent-green);
+}
+
+body.dark-mode .task-option-item.selected,
+body.dark-mode .task-option-item.selected:has(.option-checkbox:checked) {
+    background: var(--dark-success-bg);
+    border-color: var(--dark-accent-green);
+}
+
+
+body.dark-mode .preview-option-title {
+    color: var(--color-slate-100);
+}
+
+body.dark-mode .preview-option-description {
+    color: var(--color-slate-400);
+}
+
+body.dark-mode .task-option-item.disabled {
+    background: var(--overlay-medium);
+    opacity: 0.6;
+}
+
+body.dark-mode .option-label {
+    color: var(--color-slate-100);
+}
+
+body.dark-mode .preview-option-note {
+    color: var(--color-slate-400);
+}
+
+body.dark-mode .always-visible-badge {
+    background: var(--color-warning);
+    color: var(--color-slate-900);
+}
+
+body.dark-mode #reset-task-options-btn {
+    background: var(--dark-overlay-subtle);
+    color: var(--color-slate-400);
+    border: 1px solid var(--color-slate-600);
+}
+
+body.dark-mode #reset-task-options-btn:hover {
+    background: var(--dark-overlay-light);
+    border-color: var(--color-slate-500);
+}
+
+/* Dark mode custom checkbox */
+body.dark-mode .option-checkbox + .custom-checkbox {
+    background: var(--color-slate-800);
+    border-color: var(--color-slate-600);
+}
+
+body.dark-mode .option-checkbox:checked + .custom-checkbox {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+body.dark-mode .option-checkbox:disabled + .custom-checkbox {
+    background: var(--color-slate-900);
+    border-color: var(--color-slate-700);
+}
+
+body.dark-mode .option-icon {
+    color: var(--color-slate-400);
+}
+
+/* Dark mode colored icons - slightly brighter for visibility */
+body.dark-mode .task-option-item[data-option-key="highPriority"] .option-icon {
+    color: var(--color-amber);
+}
+
+body.dark-mode .task-option-item[data-option-key="delete"] .option-icon {
+    color: var(--color-error);
+}
+
+body.dark-mode .task-option-item[data-option-key="recurring"] .option-icon {
+    color: var(--color-blue-medium);
+}
+
+body.dark-mode .task-option-item[data-option-key="reminders"] .option-icon {
+    color: var(--color-blue-light);
+}
+
+body.dark-mode .task-option-item[data-option-key="dueDate"] .option-icon {
+    color: var(--color-slate-100);
+}
+
+body.dark-mode .task-option-item[data-option-key="moveArrows"] .option-icon {
+    color: var(--color-slate-100);
+}
+
+body.dark-mode .task-option-item[data-option-key="rename"] .option-icon {
+    color: var(--color-slate-100);
+}
+
+body.dark-mode .task-option-item[data-option-key="threeDots"] .option-icon {
+    color: var(--color-slate-100);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PREVIEW REVIEW MODAL (from modals.css)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Preview is now a native <dialog> — showModal() handles top-layer stacking */
+.preview-review-dialog {
+    position: fixed;
+    inset: 0;
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.preview-review-dialog::backdrop {
+    background-color: var(--overlay-backdrop);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+
+.preview-review-modal {
+    text-align: left;
+    max-width: 440px;
+    padding: var(--space-5) var(--space-6) var(--space-4);
+}
+
+.preview-review-title {
+    margin: 0 0 var(--space-1-5) 0;
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    color: var(--theme-modal-text, var(--theme-text-on-surface));
+    padding-right: var(--space-7); /* space for close button */
+}
+
+.preview-review-meta {
+    font-size: var(--font-size-xs);
+    color: var(--theme-text-muted, var(--theme-text-muted));
+    margin-bottom: var(--space-3-5);
+    padding-bottom: var(--space-2-5);
+    border-bottom: 1px solid var(--theme-modal-border, var(--overlay-medium));
+}
+
+.preview-review-body {
+    max-height: 50vh;
+    overflow-y: auto;
+}
+
+.preview-modal-task {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2);
+    padding: var(--space-1-75) 0;
+    font-size: var(--font-size-sm);
+    color: var(--theme-modal-text, var(--theme-text-on-surface));
+    border-bottom: 1px solid var(--theme-modal-border, var(--overlay-light));
+}
+
+.preview-modal-task:last-child {
+    border-bottom: none;
+}
+
+.preview-modal-task.completed {
+    opacity: 0.5;
+    text-decoration: line-through;
+}
+
+.preview-modal-check {
+    flex-shrink: 0;
+    width: 18px;
+    text-align: center;
+    font-size: var(--font-size-sm);
+}
+
+.preview-modal-task.completed .preview-modal-check {
+    color: var(--theme-success, var(--color-success));
+}
+
+@media (max-width: 480px) {
+    .preview-review-modal {
+        max-width: 95%;
+        padding: var(--space-4) var(--space-4-5) var(--space-3);
+    }
+
+    .preview-review-title {
+        font-size: var(--font-size-base);
+    }
+
+    .preview-review-body {
+        max-height: 45vh;
+    }
+}

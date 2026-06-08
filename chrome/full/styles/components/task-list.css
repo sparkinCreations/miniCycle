@@ -1,0 +1,1161 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Task List Component
+   Task items, checkboxes, and list containers
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* =============================================================================
+   TASK CARD CONTAINER
+   ============================================================================= */
+
+.task-card {
+    position: relative;
+    width: 100%;
+    max-width: 400px;
+    display: flex;
+    flex-direction: column;
+}
+
+/* =============================================================================
+   TASK LIST CONTAINER
+   ============================================================================= */
+
+.task-list-container {
+    position: relative;
+    width: 100%;
+    height: auto;
+    /* See dvh note on #task-view in app-container.css. */
+    max-height: calc(100vh - 385px); /* Accounts for header + 200px bottom padding */
+    max-height: calc(100dvh - 385px);
+    min-height: 200px; /* Reserve space to prevent CLS when tasks load from IndexedDB */
+    overflow-y: auto;
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-top: none;
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    padding: var(--space-2-5) var(--space-2-5) var(--space-20) var(--space-2-5);
+    box-shadow:
+        0 4px 20px rgba(0, 0, 0, 0.05),
+        inset 0 1px 1px rgba(255, 255, 255, 0.4);
+    flex: 1 1 auto;
+}
+
+/* Shorter task list when Complete/Clear button is visible — prevents button overlapping nav dots */
+#task-view.complete-btn-visible .task-list-container {
+    max-height: calc(100vh - var(--task-card-offset-with-btn) - var(--nav-area-height) - 30px);
+    max-height: calc(100dvh - var(--task-card-offset-with-btn) - var(--nav-area-height) - 30px);
+}
+
+/* Custom scrollbar - water themed */
+.task-list-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.task-list-container::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(150, 210, 255, 0.4));
+    border-radius: var(--radius-10);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.task-list-container::-webkit-scrollbar-track {
+    background: rgba(100, 180, 255, 0.1);
+    border-radius: var(--radius-10);
+}
+
+/* =============================================================================
+   TASK LIST
+   ============================================================================= */
+
+.task-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+#taskList {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+/* =============================================================================
+   EMPTY STATE
+   ============================================================================= */
+
+/* Show empty state when task list is empty */
+.task-list:empty + .empty-state {
+    display: flex;
+}
+
+.empty-state {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 15px var(--space-5);
+    text-align: center;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.empty-state-icon {
+    font-size: 48px;
+    margin-bottom: var(--space-3-75);
+    opacity: 0.7;
+}
+
+.empty-state-text {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    margin-bottom: var(--space-2-5);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.empty-state-hint {
+    font-size: var(--font-size-sm);
+    color: rgba(255, 255, 255, 0.7);
+    max-width: 250px;
+    line-height: 1.4;
+}
+
+.empty-state-hint strong {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 2px var(--space-2);
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+}
+
+/* =============================================================================
+   RECURRING INFO LINK
+   ============================================================================= */
+
+.recurring-info-link {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    text-align: center;
+    font-size: var(--font-size-sm);
+    color: rgba(255, 255, 255, 0.7);
+    cursor: pointer;
+    transition: color var(--transition-normal);
+}
+
+.recurring-info-link:hover {
+    color: rgba(255, 255, 255, 0.95);
+}
+
+.recurring-info-link.show {
+    display: flex;
+}
+
+/* =============================================================================
+   SAVING INDICATOR
+   ============================================================================= */
+
+.saving-indicator {
+    width: 100%;
+    text-align: center;
+    font-family: 'Inter', sans-serif;
+    font-size: var(--font-size-xs);
+    color: var(--theme-text-secondary, rgba(80, 80, 80, 0.85));
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity var(--transition-fast) ease-out, visibility var(--transition-fast) ease-out;
+    pointer-events: none;
+    padding: var(--space-0-5) 0;
+}
+
+.saving-indicator.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* =============================================================================
+   ONBOARDING STATE
+   ============================================================================= */
+
+/* Hide task content during onboarding */
+body.onboarding-active .title-row,
+body.onboarding-active .task-list,
+body.onboarding-active .empty-state,
+body.onboarding-active .recurring-info-link,
+body.onboarding-active .completed-tasks-section,
+body.onboarding-active .task-search-input-row,
+body.onboarding-active .progress-container,
+body.onboarding-active .complete-all-and-help-window-container {
+    display: none;
+}
+
+/* NOTE: .onboarding-placeholder styles are defined in onboarding.css */
+
+/* =============================================================================
+   COMPLETED TASKS SECTION
+   ============================================================================= */
+
+.completed-tasks-section {
+    width: 100%;
+    margin: var(--space-3-75) 0 0 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    padding-top: var(--space-2-5);
+    display: none; /* Hidden by default, shown when tasks are added */
+}
+
+/* Show completed section when it has tasks (JS adds this class) */
+.completed-tasks-section.show {
+    display: block;
+}
+
+.completed-tasks-header {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.8);
+    margin: 0;
+    padding: var(--space-2-5) var(--space-3-75);
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast) ease;
+    user-select: none;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: var(--space-1-25);
+}
+
+.completed-tasks-header:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    transform: scale(1.01);
+}
+
+.completed-tasks-header .toggle-icon {
+    margin-left: var(--space-1-25);
+    font-size: 0.9em;
+    transition: transform var(--transition-fast) ease;
+}
+
+#completed-count {
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.completed-task-list {
+    list-style: none;
+    padding: 0;
+    margin: var(--space-2-5) 0 0 0;
+    display: none; /* Hidden by default */
+}
+
+.completed-task-list.visible {
+    display: block;
+}
+
+/* Completed tasks have slightly reduced opacity */
+.completed-task-list .task {
+    opacity: 0.75;
+    transition: opacity var(--transition-fast) ease;
+}
+
+.completed-task-list .task:hover {
+    opacity: 0.9;
+}
+
+/* Hide certain buttons for completed tasks */
+.completed-task-list .task .recurring-settings-btn,
+.completed-task-list .task .due-date-btn,
+.completed-task-list .task .reminder-btn {
+    opacity: 0.5;
+}
+
+/* =============================================================================
+   TASK CONTENT LAYOUT
+   ============================================================================= */
+
+.task-content {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2-5);
+    width: 100%;
+}
+
+/* =============================================================================
+   DUE DATE
+   ============================================================================= */
+
+.due-date {
+    font-size: var(--font-size-sm);
+    border: 1px solid var(--theme-input-border, var(--theme-input-border));
+    border-radius: var(--radius-5);
+    margin-left: 15%;
+    width: 100%;
+    max-width: 180px;
+    background-color: var(--theme-input-bg, #c8c8c868);
+    color: var(--theme-input-text, var(--theme-text-on-surface));
+}
+
+.due-date.hidden {
+    display: none;
+}
+
+/* =============================================================================
+   HIGH PRIORITY
+   ============================================================================= */
+
+.high-priority {
+    border-left: 5px solid var(--task-priority-color, var(--priority-color, #dc3545));
+}
+
+/* =============================================================================
+   TASK INDICATORS
+   ============================================================================= */
+
+/* Task marked for clearing on reset (Cycle mode) */
+.task.show-delete-indicator::after {
+    content: "🧹";
+    position: absolute;
+    right: 40px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: var(--font-size-base);
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+/* Task marked to be kept in To-Do mode */
+.task.kept-task::after {
+    content: "📌";
+    position: absolute;
+    right: 40px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: var(--font-size-sm);
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+/* Adjust task padding for indicators */
+.task.show-delete-indicator,
+.task.kept-task {
+    padding-right: var(--space-7-5);
+}
+
+/* =============================================================================
+   TASK DRAGGING
+   ============================================================================= */
+
+.dragging {
+    opacity: 0.7;
+    background-color: var(--theme-bg-surface-elevated, #e0e0e0);
+    transform: scale(1.05);
+    transition: none;
+}
+
+/* Prevent scrolling past the last task */
+#taskList {
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+}
+
+/* NOTE: .hidden utility class is defined in helpers.css */
+
+/* =============================================================================
+   TITLE ROW
+   ============================================================================= */
+
+.title-row {
+    position: relative;
+    flex-shrink: 0;
+    width: 100%;
+}
+
+.mini-cycle-title {
+    position: sticky;
+    font-family: 'Inter', sans-serif;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: var(--font-size-lg);
+    text-align: center;
+    min-height: 32px; /* Reserve space to prevent CLS when title loads from IndexedDB */
+    letter-spacing: 0.5px;
+    color: rgba(43, 43, 43, 0.85); /* Dark text on light surface - dark mode overrides this */
+    background:
+        linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.5) 0%,
+            rgba(200, 235, 255, 0.35) 50%,
+            rgba(150, 215, 255, 0.25) 100%
+        ),
+        linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0.1) 0%,
+            rgba(255, 255, 255, 0.3) 50%,
+            rgba(255, 255, 255, 0.1) 100%
+        );
+    backdrop-filter: blur(12px) saturate(1.3);
+    -webkit-backdrop-filter: blur(12px) saturate(1.3);
+    padding: 5px var(--space-8) 5px var(--space-8); /* Symmetric L/R padding to clear search icon and keep text centered */
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-bottom: 1px solid rgba(150, 200, 255, 0.2);
+    outline: none;
+    cursor: text;
+    top: 0;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    transition: background var(--transition-fast) ease-in-out, color var(--transition-fast) ease-in-out;
+    box-shadow:
+        0 2px 8px rgba(0, 100, 180, 0.1),
+        inset 0 1px 2px rgba(255, 255, 255, 0.5),
+        inset 0 -1px 1px rgba(100, 180, 255, 0.1);
+    /* Allow long titles to wrap to a second line. -webkit-line-clamp caps
+       at 2 lines and adds an ellipsis if a title is even longer. Short
+       titles stay one line; the min-height above keeps the box stable
+       so single-line titles don't shift when long ones wrap. */
+    overflow: hidden;
+    white-space: normal;
+    word-break: break-word;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    line-height: 1.25;
+    text-overflow: ellipsis;
+    width: 100%;
+    z-index: var(--z-content);
+}
+
+#mini-cycle-title:focus-visible {
+    outline: 2px solid var(--theme-input-focus-border, #4c79ff);
+    outline-offset: 2px;
+}
+
+#mini-cycle-title:focus {
+    background: rgba(255, 255, 255, 0.2);
+    color: #f8f8f8;
+    border-bottom: 2px solid var(--color-white);
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow: visible;
+    text-overflow: unset;
+}
+
+/* =============================================================================
+   TASK SEARCH
+   ============================================================================= */
+
+.task-search-container {
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    padding: 0;
+    z-index: var(--z-elevated);
+}
+
+.task-search-btn {
+    background: transparent;
+    border: none;
+    color: var(--theme-text-secondary, rgba(40, 40, 40, 0.7));
+    cursor: pointer;
+    padding: var(--space-1);
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color var(--transition-fast) ease;
+}
+
+.task-search-btn:hover {
+    color: var(--theme-text-primary, rgba(60, 60, 60, 0.8));
+}
+
+.task-search-btn.active {
+    color: var(--theme-text-primary, rgba(60, 60, 60, 0.9));
+}
+
+.task-search-input-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    background: rgba(255, 255, 255, 0.7);
+    padding: var(--space-1-5) var(--space-2-5);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-2);
+}
+
+.task-search-input {
+    border: none;
+    background: transparent;
+    padding: var(--space-1) 0;
+    font-size: var(--font-size-sm);
+    color: var(--theme-input-text, var(--theme-text-on-surface));
+    width: 140px;
+    outline: none;
+}
+
+.task-search-input:focus-visible {
+    box-shadow: 0 0 0 2px var(--theme-input-focus-border, rgba(76, 121, 255, 0.5));
+}
+
+.task-search-input::placeholder {
+    color: var(--theme-input-placeholder, rgba(60, 60, 60, 0.5));
+}
+
+.task-search-clear {
+    background: transparent;
+    border: none;
+    color: var(--theme-text-muted, rgba(60, 60, 60, 0.4));
+    cursor: pointer;
+    padding: 2px var(--space-1);
+    font-size: var(--font-size-base);
+    line-height: 1;
+    border-radius: var(--radius-sm);
+    transition: color var(--transition-fast) ease;
+}
+
+.task-search-clear:hover {
+    color: var(--theme-text-primary, rgba(60, 60, 60, 0.8));
+}
+
+.task-search-clear:focus-visible {
+    outline: 2px solid var(--theme-input-focus-border, #4c79ff);
+    outline-offset: 2px;
+}
+
+/* Mobile search focus — near-black overlays so only the search bar is visible */
+@media (pointer: coarse) {
+    .task-search-input-row ~ .edit-focus-overlay.edit-focus-inner,
+    .task-search-input-row ~ .edit-focus-overlay.edit-focus-inner.active {
+        background: rgba(0, 0, 0, 0.78);
+    }
+}
+
+/* Page overlay darkened when search triggers it (sibling of task-list-container) */
+body > .edit-focus-overlay.search-page-overlay,
+body > .edit-focus-overlay.search-page-overlay.active {
+    background: rgba(0, 0, 0, 0.78);
+    pointer-events: auto;
+}
+
+/* Search bar highlighted above edit-focus overlays on mobile */
+.task-search-input-row.edit-focus-target {
+    background: var(--theme-task-bg, #fff);
+    box-shadow: 0 0 0 3px var(--theme-button-bg, #4c79ff), 0 0 12px rgba(255, 255, 255, 0.4);
+}
+
+/* Filter / Sort Row (shown when search is expanded) */
+.task-filter-sort-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1-5);
+    background: rgba(255, 255, 255, 0.7);
+    padding: var(--space-1-25) var(--space-2-5);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-2);
+    flex-wrap: wrap;
+    row-gap: var(--space-1-25);
+}
+
+.filter-chip-group,
+.sort-chip-group {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    flex-wrap: wrap;
+}
+
+/* Collapsed filter group: hide all non-active chips */
+.filter-chip-group.collapsed .filter-chip:not(.active) {
+    display: none;
+}
+
+/* Show a chevron hint on the active chip when collapsed */
+.filter-chip-group.collapsed .filter-chip.active::after {
+    content: ' ▾';
+    font-size: 9px;
+    opacity: 0.6;
+}
+
+/* Icon before each chip group */
+.chip-group-icon {
+    display: flex;
+    align-items: center;
+    color: var(--theme-text-primary, var(--theme-text-on-surface));
+    flex-shrink: 0;
+    margin-right: var(--space-px);
+}
+
+.filter-sort-divider {
+    width: 1px;
+    height: 16px;
+    background: rgba(0, 0, 0, 0.15);
+    flex-shrink: 0;
+    margin: 0 var(--space-0-5);
+}
+
+.filter-chip,
+.sort-chip {
+    background: rgba(0, 0, 0, 0.06);
+    border: none;
+    border-radius: var(--radius-lg);
+    padding: var(--space-0-75) var(--space-2-25);
+    font-size: var(--font-size-xs);
+    color: var(--theme-text-secondary, rgba(40, 40, 40, 0.7));
+    cursor: pointer;
+    transition: background var(--transition-fast), color var(--transition-fast);
+    white-space: nowrap;
+    line-height: 1.4;
+}
+
+.filter-chip:hover,
+.sort-chip:hover {
+    background: rgba(0, 0, 0, 0.12);
+    color: var(--theme-text-primary, var(--theme-text-on-surface));
+}
+
+.filter-chip.active,
+.sort-chip.active {
+    background: var(--theme-accent, var(--color-primary));
+    color: var(--color-white);
+}
+
+.filter-chip:focus-visible,
+.sort-chip:focus-visible {
+    outline: 2px solid var(--theme-input-focus-border, rgba(76, 121, 255, 0.5));
+    outline-offset: 2px;
+}
+
+/* =============================================================================
+   TASK ITEMS
+   ============================================================================= */
+
+.task {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+    padding: var(--space-2-5);
+    border-radius: var(--radius-md);
+    margin: var(--space-2-5);
+    background: var(--theme-task-bg, var(--color-white));
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+    color: var(--theme-task-text, var(--theme-text-on-surface));
+    position: relative;
+}
+
+.task:hover {
+    transform: scale(1.02);
+    background: var(--theme-bg-surface-elevated, #f8f9fa);
+}
+
+/* =============================================================================
+   OVERDUE TASK
+   Must come AFTER .task to win the cascade (same specificity, later source order).
+   Uses .task.overdue-task for higher specificity to beat themed/prefixed selectors.
+   ============================================================================= */
+
+.task.overdue-task {
+    background: var(--overdue-task-bg, rgba(244, 67, 54, 0.15));
+    color: var(--overdue-task-text, var(--color-red));
+    font-weight: bold;
+}
+
+.task.overdue-task:hover {
+    background: var(--overdue-task-bg, rgba(244, 67, 54, 0.15));
+    transform: scale(1.02);
+}
+
+.task input {
+    margin-right: var(--space-2-5);
+    cursor: pointer;
+}
+
+.task span.task-text {
+    flex: 1;
+    text-align: left;
+    font-size: var(--font-size-base);
+    max-width: calc(100% - 120px);
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    margin-right: var(--space-30);
+}
+
+/* =============================================================================
+   CIRCULAR CHECKBOX
+   ============================================================================= */
+
+.task input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 22px;
+    height: 22px;
+    aspect-ratio: 1/1;
+    border-radius: 50%;
+    border: 2px solid rgba(180, 180, 180, 0.6);
+    background-color: rgba(200, 200, 200, 0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    outline: none;
+    box-sizing: border-box;
+    transition: all var(--transition-normal) ease;
+}
+
+.task input[type="checkbox"]:focus-visible {
+    border-color: var(--theme-input-focus-border, var(--color-primary));
+    box-shadow: 0 0 0 2px var(--theme-input-focus-border, #4c79ff);
+}
+
+.task input[type="checkbox"]:hover {
+    border-color: #40af4d;
+}
+
+.task input[type="checkbox"]:checked {
+    background-color: #5db567;
+    border-color: #40af4d;
+}
+
+.task input[type="checkbox"]::after {
+    content: "\2714\FE0E";  /* ✔ + text variation selector — forces text rendering so CSS color works on iOS */
+    font-size: 28px;
+    color: rgb(18, 70, 9);
+    font-weight: bold;
+    display: none;
+    position: relative;
+    top: -4px;
+    left: 5px;
+}
+
+.task input[type="checkbox"]:checked::after {
+    display: block;
+}
+
+.task input[type="checkbox"]:focus-visible {
+    outline: 2px solid var(--accent-color, #007BFF);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+    border-radius: 50%;
+}
+
+/* =============================================================================
+   CHECKMARK STYLE VARIANTS
+   Applied via body class. Default "fitted" uses the checkmark-fitted class.
+   "standard" (Larger) uses base styles above (no class).
+   Color is NOT overridden here — --pref-checkmark handles that separately.
+   ============================================================================= */
+
+/* Fitted: same ✔ symbol but sized to fit inside the 22px circle */
+body.checkmark-fitted .task input[type="checkbox"]::after {
+    font-size: 15px;
+    position: static;
+    top: auto;
+    left: auto;
+}
+
+/* Minimal: thin ✓ (U+2713) inside the circle */
+body.checkmark-minimal .task input[type="checkbox"]::after {
+    content: "\2713";
+    font-size: 14px;
+    font-weight: normal;
+    position: static;
+    top: auto;
+    left: auto;
+}
+
+/* Circle: no symbol, just the filled circle */
+body.checkmark-circle .task input[type="checkbox"]::after {
+    content: none;
+}
+
+/* High priority task */
+.task.high-priority {
+    border-left: 4px solid var(--task-priority-color, var(--priority-color, #dc3545));
+}
+
+/* =============================================================================
+   CHECKBOX CONTAINER
+   ============================================================================= */
+
+.checkbox-container {
+    display: flex;
+    align-items: center;
+    gap: var(--space-7-5);
+    padding: var(--space-1-25) var(--space-2-5);
+    margin-left: var(--space-1-25);
+}
+
+/* =============================================================================
+   CUSTOM CHECKBOX
+   ============================================================================= */
+
+.custom-checkbox {
+    display: flex;
+    align-items: center;
+    font-size: 1rem;
+    font-weight: bold;
+    color: var(--theme-text-on-surface);
+    cursor: pointer;
+}
+
+/* Hide default checkbox */
+.custom-checkbox input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+}
+
+/* Custom checkmark box */
+.custom-checkbox .checkmark {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 1px solid var(--theme-task-border, #666);
+    border-radius: var(--radius-sm);
+    margin-right: var(--space-2);
+    transition: background var(--transition-fast) ease;
+}
+
+/* Checked state */
+.custom-checkbox input:checked + .checkmark {
+    background-color: var(--theme-task-checkmark);
+    border-color: var(--theme-task-checkmark);
+    position: relative;
+}
+
+/* Checkmark tick */
+.custom-checkbox input:checked + .checkmark::after {
+    content: "";
+    position: absolute;
+    left: 4px;
+    top: -1px;
+    width: 5px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+/* =============================================================================
+   TASK TEXT
+   ============================================================================= */
+
+.task-text {
+    flex: 1;
+    word-break: break-word;
+    text-align: left;
+    color: var(--theme-task-text, var(--theme-text-on-surface));
+}
+
+/* Ensure recurring indicator stays inline with task text, not below checkbox */
+.task-text .recurring-indicator {
+    display: inline-flex;
+    align-items: center;
+    vertical-align: middle;
+    flex: 0 0 auto;
+    max-width: none;
+    margin-left: var(--space-2);
+    margin-right: 0;
+    white-space: nowrap;
+}
+
+/* =============================================================================
+   INLINE TASK EDIT INPUT
+   ============================================================================= */
+
+.task-edit-input {
+    flex: 1;
+    font-size: var(--font-size-base);
+    font-family: inherit;
+    padding: var(--space-0-5) var(--space-1-5);
+    border: 1px solid var(--theme-input-focus-border, var(--color-primary));
+    border-radius: var(--radius-sm);
+    background: var(--theme-input-bg, var(--color-white));
+    color: var(--theme-task-text, var(--theme-text-on-surface));
+    outline: none;
+    min-width: 0;
+    max-width: calc(100% - 120px);
+    margin-right: var(--space-30);
+    box-shadow: 0 0 0 2px rgba(76, 121, 255, 0.25);
+    pointer-events: auto;
+}
+
+.mini-cycle-switch-item input[type="text"]:focus-visible {
+    outline: 2px solid var(--theme-input-focus-border, #4c79ff);
+    outline-offset: 2px;
+}
+
+/* =============================================================================
+   MOVE ARROWS (Accessibility)
+   ============================================================================= */
+
+#taskList:not([data-move-arrows="true"]) .move-up,
+#taskList:not([data-move-arrows="true"]) .move-down {
+    display: none;
+}
+
+#taskList[data-move-arrows="true"] .move-up,
+#taskList[data-move-arrows="true"] .move-down {
+    display: inline-flex;
+}
+
+/* Hide up arrow on first task */
+#taskList[data-move-arrows="true"] > .task.is-first-task .move-up {
+    visibility: hidden;
+}
+
+/* Hide down arrow on last task */
+#taskList[data-move-arrows="true"] > .task.is-last-task .move-down {
+    visibility: hidden;
+}
+
+/* Hide move arrows on completed tasks (order is irrelevant for completed tasks) */
+#taskList .task:has(input[type="checkbox"]:checked) .move-up,
+#taskList .task:has(input[type="checkbox"]:checked) .move-down,
+#completedTaskList .task .move-up,
+#completedTaskList .task .move-down {
+    display: none;
+}
+
+/* Disable drag on completed tasks in the completed dropdown */
+#completedTaskList .task {
+    -webkit-user-drag: none;
+}
+#completedTaskList .task[draggable] {
+    cursor: default;
+}
+
+/* =============================================================================
+   DESKTOP ADJUSTMENTS
+   ============================================================================= */
+/*
+@media (min-width: 769px) {
+    .task-card {
+        max-height: calc(100vh - 320px);
+    }
+
+
+    #task-view.complete-btn-visible .task-card {
+        max-height: calc(100vh - 380px);
+    }
+
+
+    #task-view.mode-description-visible .task-card {
+        max-height: calc(100vh - 380px);
+    }
+
+    #task-view.complete-btn-visible.mode-description-visible .task-card {
+        max-height: calc(100vh - 445px);
+    }
+}
+
+@media (min-width: 1024px) {
+    .task-card {
+        max-width: 50vw;
+    }
+
+    #task-view {
+        max-width: 50vw;
+    }
+}
+*/
+
+/* Desktop: 50% width for task card */
+@media (min-width: 1024px) {
+    .task-card {
+        max-width: 50vw;
+    }
+}
+
+/* =============================================================================
+   MOBILE ADJUSTMENTS
+   ============================================================================= */
+
+@media (max-width: 768px) {
+    .task {
+        padding: var(--space-1-5) var(--space-2-5);
+    }
+
+    .checkbox-container {
+        gap: var(--space-5);
+        padding: var(--space-1) var(--space-2);
+    }
+
+    /* More bottom padding on mobile for undo buttons and navigation dots */
+    /* Reduce min-height on mobile to allow shrinking when button/progress bar are tall */
+    .task-list-container {
+        padding-bottom: var(--space-10);
+        min-height: 100px; /* Smaller than desktop 200px to prevent overlap */
+        max-height: none; /* Remove desktop max-height — flex parent constrains height */
+    }
+
+    /* Override complete-btn-visible max-height too — flex handles it on mobile */
+    #task-view.complete-btn-visible .task-list-container {
+        max-height: none;
+    }
+
+    /* Mobile task card — flex shrink replaces brittle max-height calc() rules.
+       The task card fills remaining space in #task-view's flex column, shrinking
+       naturally on short viewports while button/progress bar stay fixed size.
+       Pattern: same as menu.css:98 (min-height: 0 + flex for scrollable content) */
+    .task-card {
+        flex: 1 1 auto;
+        min-height: 0; /* Critical: allows flex item to shrink below content size */
+        overflow: hidden; /* task-list-container handles scrolling */
+        margin-top: var(--space-4-5);
+    }
+
+    #task-view {
+        width: 90vw;
+        max-width: none;
+    }
+
+    /* Give task text more horizontal space on mobile — buttons are behind three-dots */
+    .task span.task-text {
+        max-width: calc(100% - 70px);
+        margin-right: 70px;
+    }
+
+    .task-edit-input {
+        max-width: calc(100% - 70px);
+        margin-right: 70px;
+    }
+
+    /* Recurring indicator - ensure it stays inline on mobile */
+    .task-text .recurring-indicator {
+        display: inline-flex;
+        align-items: center;
+        vertical-align: middle;
+        flex: 0 0 auto;
+        max-width: none;
+        margin-left: var(--space-1-5);
+        margin-right: 0;
+        min-width: 12px;
+        min-height: 12px;
+        white-space: nowrap;
+    }
+
+    .task-text .recurring-indicator .icon,
+    .task-text .recurring-indicator .icon svg {
+        width: 12px;
+        height: 12px;
+    }
+}
+
+/* Small screen adjustments — scales with safe-area for notch/Dynamic Island */
+@media (max-width: 480px) {
+    .task-card {
+        margin-top: calc(15px + env(safe-area-inset-top, 0px) / 2);
+    }
+
+    /* Even smaller min-height on very small screens */
+    .task-list-container {
+        min-height: 80px;
+    }
+}
+
+/* =============================================================================
+   CUSTOM PREFERENCE COLORS (Default Theme Only)
+   These colors are set via the Preferences modal and only apply when
+   not using a theme or dark mode.
+   ============================================================================= */
+
+/* Task list container - uses custom pref color when set, maintains transparency */
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task-list-container {
+    background: var(--pref-task-list-bg, rgba(255, 255, 255, 0.15));
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+}
+
+/* Task items - uses custom pref colors when set */
+html:not(.dark-mode) body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task,
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task {
+    background: var(--pref-task-bg, var(--theme-task-bg, rgba(255, 255, 255, 0.95)));
+    color: var(--pref-task-text, var(--theme-text-on-surface));
+}
+
+/* Task text element */
+html:not(.dark-mode) body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task-text,
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task-text {
+    color: var(--pref-task-text, var(--theme-text-on-surface));
+}
+
+/* Overdue tasks must override custom pref colors — match html:not() prefix for specificity */
+html:not(.dark-mode) body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task.overdue-task,
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task.overdue-task {
+    background: var(--overdue-task-bg, rgba(244, 67, 54, 0.15));
+    color: var(--overdue-task-text, var(--color-red));
+}
+
+/* Title bar - uses custom pref colors when set */
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .mini-cycle-title {
+    background-color: var(--pref-title-bg, rgba(255, 255, 255, 0.4));
+    color: var(--pref-title-text, rgba(43, 43, 43, 0.783));
+}
+
+/* Title bar - keep glassy background on mobile (same as desktop) */
+
+/* Checkbox incomplete background - uses custom pref color when set */
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task input[type="checkbox"]:not(:checked) {
+    background-color: var(--pref-checkbox-incomplete-bg, rgba(200, 200, 200, 0.25));
+    border-color: var(--pref-checkbox-incomplete-bg, rgba(180, 180, 180, 0.6));
+}
+
+/* Checkbox checked background - uses custom pref color when set */
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task input[type="checkbox"]:checked {
+    background-color: var(--pref-checkbox-bg, #5db567);
+    border-color: var(--pref-checkbox-bg, #40af4d);
+}
+
+/* Checkmark color - uses custom pref color when set */
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task input[type="checkbox"]:checked::after {
+    color: var(--pref-checkmark, rgb(18, 70, 9));
+}
+
+/* =============================================================================
+   AUTO-UNCHECK BANNER (per-routine status indicator above the task list)
+   Subtle, centered, low-opacity. Acts as a tap-to-edit shortcut.
+   ============================================================================= */
+.auto-uncheck-banner {
+    /* width: max-content + margin auto = centered, with hit-area limited to
+       the text + icon (no full-row clickable strip, no hover background). */
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    width: max-content;
+    max-width: 100%;
+    margin: var(--space-0-5) auto var(--space-1);
+    padding: var(--space-0-5) var(--space-1);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-normal);
+    font-style: italic;
+    color: var(--theme-text-on-surface);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    text-align: center;
+    font-family: inherit;
+}
+
+.auto-uncheck-banner:hover {
+    background: transparent;
+}
+
+.auto-uncheck-banner:focus-visible {
+    outline: 1px dotted var(--theme-accent, var(--color-primary));
+    outline-offset: 2px;
+}
+
+.auto-uncheck-banner.hidden {
+    display: none;
+}
+
+.auto-uncheck-banner-icon {
+    font-size: var(--font-size-xs);
+    line-height: 1;
+}
+
+.auto-uncheck-banner-text {
+    flex: 0 0 auto;
+}

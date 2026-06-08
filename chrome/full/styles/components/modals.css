@@ -1,0 +1,781 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Modal Components
+   Dialog overlays, panels, and modal containers
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* =============================================================================
+   NATIVE DIALOG RESET — showModal() handles centering, top layer, inertness
+   ============================================================================= */
+
+dialog {
+    border: none;
+    padding: 0;
+    background: transparent;
+    max-width: none;
+    max-height: none;
+    overflow: visible;
+}
+
+/* Open animation — backdrop fades in */
+dialog::backdrop {
+    background-color: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    animation: fadeIn var(--transition-normal) ease;
+}
+
+/* Close animation — dialog content scales + fades out (applied via .closing class) */
+dialog.closing > :first-child {
+    animation: fadeOutScale-modal var(--transition-fast) ease forwards;
+}
+
+dialog.closing::backdrop {
+    animation: fadeOut var(--transition-fast) ease forwards;
+}
+
+/* Override legacy overlay/backdrop styles for <dialog> — ::backdrop handles these */
+dialog.modal,
+dialog.modal-overlay,
+dialog.preferences-modal,
+dialog.themes-modal,
+dialog.games-modal,
+dialog.settings-modal,
+dialog.feedback-modal,
+dialog.quick-actions-picker-overlay {
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+/* Ensure all dialog modals respect open/closed state correctly.
+   Legacy classes may set display:flex or display:none which conflicts
+   with the UA dialog[open]/dialog:not([open]) rules. */
+dialog.modal:not([open]),
+dialog.modal-overlay:not([open]),
+dialog.preferences-modal:not([open]),
+dialog.themes-modal:not([open]),
+dialog.games-modal:not([open]),
+dialog.settings-modal:not([open]),
+dialog.feedback-modal:not([open]),
+dialog.quick-actions-picker-overlay:not([open]) {
+    display: none;
+}
+
+dialog.modal[open],
+dialog.modal-overlay[open],
+dialog.preferences-modal[open],
+dialog.themes-modal[open],
+dialog.games-modal[open],
+dialog.settings-modal[open],
+dialog.feedback-modal[open],
+dialog.quick-actions-picker-overlay[open] {
+    display: flex;
+}
+
+/* =============================================================================
+   MODAL BASE
+   ============================================================================= */
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: var(--z-modal);
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--theme-modal-overlay, rgba(0, 0, 0, 0.6));
+    justify-content: center;
+    align-items: center;
+    animation: fadeIn var(--transition-normal) ease;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+}
+
+.modal.active,
+.modal.show {
+    display: flex;
+}
+
+/* =============================================================================
+   MODAL OVERLAY
+   ============================================================================= */
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: var(--z-modal-backdrop);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+}
+
+.modal-overlay.hidden {
+    display: none;
+}
+
+/* =============================================================================
+   MODAL CONTENT
+   ============================================================================= */
+
+.modal-content {
+    background: var(--pref-modal-bg, var(--theme-modal-glass-bg));
+    color: var(--pref-modal-text, var(--theme-modal-text));
+    border: 1px solid var(--pref-modal-border, var(--theme-modal-border));
+    padding: var(--space-5);
+    border-radius: var(--radius-lg);
+    box-shadow:
+        var(--shadow-lg),
+        inset 0 1px 1px rgba(255, 255, 255, 0.25);
+    width: 420px;
+    max-width: 95%;
+    text-align: center;
+    position: relative;
+    animation: slideUp var(--transition-normal) ease;
+    -webkit-backdrop-filter: blur(var(--theme-modal-blur));
+    backdrop-filter: blur(var(--theme-modal-blur));
+}
+
+.modal-content a {
+    color: var(--theme-info, var(--color-primary));
+    text-decoration: underline;
+    font-weight: bold;
+}
+
+.modal-content a:hover,
+.modal-content a:focus-visible {
+    text-decoration: underline;
+}
+
+/* =============================================================================
+   ABOUT MODAL (glassmorphism style, matches stats panel)
+   ============================================================================= */
+
+.about-modal-content {
+    max-width: 340px;
+    padding: 28px var(--space-6);
+    background: var(--theme-stats-bg);
+    color: var(--theme-stats-text);
+    border: 1px solid var(--theme-stats-border, rgba(255, 255, 255, 0.25));
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.12),
+        0 2px 8px rgba(0, 0, 0, 0.08),
+        inset 0 1px 1px rgba(255, 255, 255, 0.4);
+    -webkit-backdrop-filter: blur(24px);
+    backdrop-filter: blur(24px);
+}
+
+/* Suppress corner logo — the centered about-logo serves as branding */
+.about-modal-content.has-corner-logo::before {
+    display: none;
+}
+
+.about-header {
+    margin-bottom: var(--space-3-5);
+}
+
+.about-logo {
+    width: 48px;
+    height: 48px;
+    margin-bottom: var(--space-2-5);
+    background: linear-gradient(135deg, #7ec8e3 0%, #4aa3df 100%);
+    border-radius: var(--radius-10);
+    padding: var(--space-1-5);
+    box-shadow: var(--shadow-glow-info);
+}
+
+.about-modal-content h2 {
+    margin: 0 0 var(--space-1) 0;
+    font-size: 19px;
+    font-weight: 700;
+    color: inherit;
+    text-align: center;
+}
+
+.about-trademark {
+    font-size: 9px;
+    font-weight: 400;
+    opacity: 0.5;
+    vertical-align: super;
+    margin-left: var(--space-px);
+}
+
+.about-tagline {
+    margin: 0;
+    font-size: 13px;
+    color: inherit;
+    opacity: 0.7;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+}
+
+.about-version-badge {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.5);
+    color: inherit;
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-lg);
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: var(--space-3-5);
+}
+
+.about-description {
+    font-size: 14px;
+    line-height: 1.6;
+    color: inherit;
+    opacity: 0.8;
+    margin: 0 0 var(--space-4) 0;
+}
+
+.about-links {
+    background: rgba(255, 255, 255, 0.45);
+    border-radius: var(--radius-lg);
+    padding: var(--space-3);
+    margin-bottom: var(--space-4);
+}
+
+.about-links a {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.about-links a:hover,
+.about-links a:focus-visible {
+    text-decoration: underline;
+}
+
+.about-link-divider {
+    margin: 0 var(--space-2-5);
+    opacity: 0.4;
+}
+
+.about-footer {
+    border-top: 1px solid rgba(255, 255, 255, 0.3);
+    padding-top: var(--space-3-5);
+}
+
+.about-footer p {
+    margin: 0 0 var(--space-2) 0;
+    font-size: 12px;
+    color: inherit;
+    opacity: 0.6;
+}
+
+.about-footer a {
+    font-weight: 600;
+    opacity: 1;
+}
+
+.about-footer a:hover,
+.about-footer a:focus-visible {
+    text-decoration: underline;
+}
+
+.about-modal-content .about-footer .about-copyright {
+    font-size: 12px;
+    opacity: 0.65;
+}
+
+.about-modal-content .about-footer .about-cache {
+    font-size: var(--font-size-xs);
+    opacity: 0.75;
+    margin-top: var(--space-1-5);
+}
+
+/* =============================================================================
+   MODAL PANEL (Shared style for panels)
+   ============================================================================= */
+
+.modal-panel {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    max-width: 420px;
+    max-height: 75vh;
+    overflow-y: auto;
+    background-color: var(--pref-modal-bg, var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-gray-100))));
+    color: var(--pref-modal-text, var(--theme-modal-text, var(--theme-text-on-surface)));
+    border-radius: var(--radius-15);
+    padding: var(--space-5) 25px;
+    z-index: var(--z-modal);
+    box-shadow:
+        var(--shadow-modal-heavy),
+        inset 0 1px 1px rgba(255, 255, 255, 0.25);
+    text-align: center;
+    font-family: var(--font-family);
+    animation: fadeInScale var(--transition-normal) ease;
+    -webkit-backdrop-filter: blur(var(--theme-modal-blur));
+    backdrop-filter: blur(var(--theme-modal-blur));
+}
+
+.modal-panel h2 {
+    font-size: 1.3rem;
+    font-weight: bold;
+    margin-bottom: var(--space-3-75);
+    color: inherit;
+}
+
+/* =============================================================================
+   MODAL CORNER LOGO (reusable across modals via pseudo-element)
+   Add .has-corner-logo to any positioned container to show the logo.
+   ============================================================================= */
+
+/* Note: Only adds position:relative to elements that aren't already positioned.
+   Elements with position:fixed (e.g. .modal-panel) or position:absolute are
+   already positioned ancestors, so ::before works without this override. */
+.has-corner-logo {
+    position: relative;
+}
+
+.modal-panel.has-corner-logo {
+    position: fixed;
+}
+
+.has-corner-logo::before {
+    content: '';
+    position: absolute;
+    top: 10px;
+    left: 12px;
+    width: 32px;
+    height: 32px;
+    background: url('../../assets/images/logo/minicycle_logo_icon.png') no-repeat center/contain;
+    border-radius: var(--radius-md);
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* =============================================================================
+   MODAL HEADER
+   ============================================================================= */
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: var(--space-3-75);
+    border-bottom: 1px solid var(--pref-modal-border, var(--theme-modal-border, rgba(0, 0, 0, 0.1)));
+    margin-bottom: var(--space-3-75);
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+/* =============================================================================
+   MODAL FOOTER
+   ============================================================================= */
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-2-5);
+    padding-top: var(--space-3-75);
+    border-top: 1px solid var(--pref-modal-border, var(--theme-modal-border, rgba(0, 0, 0, 0.1)));
+    margin-top: var(--space-3-75);
+}
+
+/* =============================================================================
+   CLOSE BUTTONS
+   ============================================================================= */
+
+.close-modal {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 24px;
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    color: inherit;
+    opacity: 0.7;
+    transition: opacity var(--transition-fast);
+    padding: 0;
+    line-height: 1;
+}
+
+.close-modal:hover {
+    opacity: 1;
+}
+
+.modal-close-button {
+    background-color: var(--theme-button-primary-bg, var(--color-primary));
+    border: none;
+    border-radius: var(--radius-6);
+    color: var(--theme-button-primary-text, var(--color-white));
+    font-size: 1rem;
+    padding: 10px var(--space-5);
+    margin-top: var(--space-4);
+    cursor: pointer;
+    transition: background-color var(--transition-fast) ease;
+}
+
+.modal-close-button:hover {
+    background-color: var(--theme-button-primary-hover-bg, var(--color-primary-dark));
+}
+
+/* =============================================================================
+   MINI MODAL (Small confirmation dialogs)
+   ============================================================================= */
+
+.mini-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: var(--z-modal-high);
+    animation: fadeIn var(--transition-fast) ease;
+}
+
+dialog.mini-modal-dialog::backdrop {
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.mini-modal-box {
+    background: var(--pref-modal-bg, var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white))));
+    color: var(--pref-modal-text, var(--theme-modal-text, var(--theme-text-on-surface)));
+    border-radius: var(--radius-xl);
+    padding: var(--space-7) var(--space-6-25);
+    max-width: 380px;
+    width: 90%;
+    text-align: center;
+    box-shadow:
+        var(--shadow-modal-compound),
+        inset 0 1px 1px rgba(255, 255, 255, 0.25);
+    animation: popIn var(--transition-normal) ease;
+    -webkit-backdrop-filter: blur(var(--theme-modal-blur));
+    backdrop-filter: blur(var(--theme-modal-blur));
+}
+
+.mini-modal-header {
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: var(--space-3);
+    padding-left: var(--space-7);
+    line-height: 1.3;
+}
+
+.mini-modal-body {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin-bottom: var(--space-6-25);
+    color: inherit;
+    opacity: 0.85;
+    white-space: pre-line;
+}
+
+.mini-modal-buttons {
+    display: flex;
+    gap: var(--space-3);
+    justify-content: center;
+}
+
+.mini-modal-buttons .btn-cancel {
+    background: var(--color-blue-pale);
+    color: var(--theme-button-secondary-text);
+    padding: var(--space-2-5) var(--space-5);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-blue-subtle);
+    cursor: pointer;
+    flex: 1;
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    transition: background var(--transition-fast) ease, transform var(--transition-fast) ease;
+}
+
+.mini-modal-buttons .btn-confirm {
+    background: var(--theme-color-success);
+    color: var(--color-white);
+    padding: var(--space-2-5) var(--space-5);
+    border-radius: var(--radius-md);
+    border: none;
+    cursor: pointer;
+    flex: 1;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    transition: background var(--transition-fast) ease, transform var(--transition-fast) ease;
+}
+
+.mini-modal-buttons .btn-confirm.btn-destructive {
+    background: var(--theme-color-error);
+}
+
+.mini-modal-buttons button:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+}
+
+.mini-modal-buttons button:active {
+    transform: translateY(0);
+}
+
+.mini-modal-buttons .btn-confirm:focus-visible,
+.mini-modal-buttons .btn-cancel:focus-visible {
+    outline: 2px solid var(--theme-color-success);
+    outline-offset: 2px;
+}
+
+.mini-modal-buttons .btn-confirm.btn-destructive:focus-visible {
+    outline-color: var(--theme-color-error);
+}
+
+/* Choice modal (multi-option) */
+.mini-modal-choices {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
+}
+
+.btn-choice {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: var(--space-3);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-gray-300);
+    background: var(--theme-task-bg);
+    cursor: pointer;
+    font-size: var(--font-size-md);
+    transition: background var(--transition-fast) ease, border-color var(--transition-fast) ease;
+}
+
+.btn-choice:hover {
+    background: var(--color-gray-100);
+    border-color: var(--color-blue-medium);
+}
+
+.btn-choice:focus-visible {
+    outline: 2px solid var(--color-blue-medium);
+    outline-offset: 2px;
+}
+
+.btn-choice .choice-label {
+    font-weight: 600;
+}
+
+.btn-choice .choice-description {
+    font-size: var(--font-size-sm);
+    opacity: 0.7;
+    margin-top: var(--space-1);
+}
+
+/* Dark mode mini-modal */
+body.dark-mode .mini-modal-box {
+    background: var(--pref-modal-bg, var(--theme-modal-glass-bg, var(--theme-modal-bg)));
+    color: var(--pref-modal-text, var(--color-gray-100));
+    box-shadow: var(--shadow-modal-compound);
+}
+
+body.dark-mode .mini-modal-header {
+    color: var(--pref-modal-text, var(--theme-modal-text));
+}
+
+body.dark-mode .mini-modal-body {
+    color: var(--pref-modal-text, var(--theme-modal-text));
+}
+
+body.dark-mode .mini-modal-buttons .btn-cancel {
+    background-color: var(--theme-button-secondary-bg);
+    color: var(--theme-modal-text);
+}
+
+body.dark-mode .btn-choice {
+    background: var(--theme-button-secondary-bg);
+    border-color: var(--color-gray-600);
+    color: var(--theme-modal-text);
+}
+
+body.dark-mode .btn-choice:hover {
+    background: var(--color-gray-700);
+    border-color: var(--color-blue-medium);
+}
+
+/* =============================================================================
+   FEEDBACK MODAL
+   ============================================================================= */
+
+.feedback-modal {
+    justify-content: center;
+    align-items: center;
+}
+
+.feedback-modal-content {
+    background: var(--pref-modal-bg, var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white))));
+    color: var(--pref-modal-text, var(--theme-modal-text, var(--theme-text-on-surface)));
+    padding: var(--space-6) var(--space-5) 0;
+    border-radius: var(--radius-lg);
+    box-shadow:
+        var(--shadow-lg),
+        inset 0 1px 1px rgba(255, 255, 255, 0.25);
+    border: 1px solid var(--pref-modal-border, var(--theme-modal-border, rgba(0, 0, 0, 0.1)));
+    width: 420px;
+    max-width: 95%;
+    text-align: center;
+    -webkit-backdrop-filter: blur(var(--theme-modal-blur));
+    backdrop-filter: blur(var(--theme-modal-blur));
+    position: relative;
+    animation: slideUp var(--transition-normal) ease;
+}
+
+.feedback-modal-content h2 {
+    margin: 0 0 var(--space-2) 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--pref-modal-text, var(--theme-modal-text, var(--theme-text-on-surface)));
+}
+
+.feedback-modal-content p {
+    font-size: 13px;
+    color: var(--pref-modal-text, var(--theme-modal-text, #666));
+    opacity: 0.7;
+    margin: 0 0 var(--space-4) 0;
+    line-height: 1.5;
+}
+
+.close-feedback-modal {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    font-size: 24px;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+    color: inherit;
+    line-height: 1;
+}
+
+.close-feedback-modal:hover {
+    opacity: 0.7;
+}
+
+#feedback-text {
+    width: 90%;
+    height: 100px;
+    border: 1px solid var(--theme-input-border, var(--theme-input-border));
+    border-radius: var(--radius-5);
+    padding: var(--space-2-5);
+    resize: none;
+    font-size: 16px;
+    margin-top: var(--space-2-5);
+    background: var(--theme-input-bg, var(--color-white));
+    color: var(--theme-input-text, var(--theme-text-on-surface));
+}
+
+#feedback-email {
+    width: 90%;
+    border: 1px solid var(--theme-input-border, var(--theme-input-border));
+    border-radius: var(--radius-5);
+    padding: var(--space-2-5);
+    font-size: 14px;
+    margin-top: var(--space-2);
+    background: var(--theme-input-bg, var(--color-white));
+    color: var(--theme-input-text, var(--theme-text-on-surface));
+}
+
+#submit-feedback {
+    display: block;
+    background: var(--menu-close-bg, var(--color-steel-blue));
+    color: var(--menu-close-text, var(--color-white));
+    font-size: 16px;
+    font-weight: 700;
+    padding: var(--space-3-5);
+    margin-top: var(--space-4);
+    margin-left: -20px;
+    margin-right: -20px;
+    margin-bottom: 0;
+    width: calc(100% + 40px);
+    border: none;
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    cursor: pointer;
+    transition: background var(--transition-fast) ease;
+    text-align: center;
+}
+
+#submit-feedback:hover {
+    background: var(--menu-close-hover-bg, var(--menu-close-hover-bg));
+}
+
+#submit-feedback:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+#thank-you-message {
+    color: var(--theme-success, green);
+    font-weight: bold;
+    padding: var(--space-4) 0;
+}
+
+/* NOTE: Reminders modal styles moved to recurring.css */
+
+/* NOTE: Onboarding modal styles are defined in onboarding.css */
+
+/* NOTE: MiniCycle prompt modal styles are defined in onboarding.css */
+
+/* NOTE: Themes/preferences modal styles moved to themes-modal.css */
+
+/* NOTE: Games modal styles are defined in games.css */
+
+/* NOTE: Settings option styles moved to settings.css */
+
+/* NOTE: Unlockables styles moved to settings.css */
+
+/* NOTE: Testing modal styles moved to testing.css */
+
+/* NOTE: Storage modal overlay styles moved to storage.css */
+
+/* =============================================================================
+   MOBILE ADJUSTMENTS
+   ============================================================================= */
+
+@media (max-width: 768px) {
+    .modal-content {
+        padding: var(--space-3-75);
+        width: 95%;
+    }
+
+    .modal-panel {
+        max-width: 95%;
+        padding: 15px var(--space-5);
+    }
+}
+
+@media (max-width: 480px) {
+    .modal-panel {
+        padding: var(--space-3-75);
+        border-radius: var(--radius-lg);
+    }
+
+    .mini-modal-box {
+        width: 95%;
+        padding: var(--space-3-75);
+    }
+}
+
+/* NOTE: Preview review modal styles moved to task-options.css */
+
+/* NOTE: Mini-cycle switch modal styles are defined in routine-switcher.css */
+
+/* NOTE: Recurring task styles are defined in recurring.css */
+
+/* NOTE: Games modal dark mode styles are defined in games.css */

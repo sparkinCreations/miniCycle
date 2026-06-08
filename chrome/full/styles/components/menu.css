@@ -1,0 +1,1248 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Menu Component
+   Hamburger menu container and menu items
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* =============================================================================
+   MENU CONTAINER
+   ============================================================================= */
+
+.menu-container {
+    font-size: var(--font-size-sm);
+    font-weight: bold;
+    background: var(--menu-bg, linear-gradient(180deg, #e3f2fd 0%, #4a90c2 100%));
+    position: fixed;
+    top: calc(env(safe-area-inset-top, 0px) + 50px);
+    right: 10px;
+    padding: var(--space-2-5);
+    border-radius: var(--radius-md);
+    box-shadow: var(--menu-shadow, 0 4px 6px rgba(0, 0, 0, 0.1));
+    display: none;
+    flex-direction: column;
+    gap: var(--space-2-5);
+    z-index: var(--z-menu);
+    min-width: 280px;
+    max-width: 380px;
+    max-height: calc(100vh - 80px);
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.menu-container.visible {
+    display: flex;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* =============================================================================
+   MAIN MENU BACKDROP
+   Subtle dim + blur behind the menu (and the +-button dropdown) when either
+   is open. Driven by body classes (.main-menu-open / .quick-actions-open) for
+   PWA reliability — see precedent in mode-selector.css for .tasks-empty.
+   Uses opacity/visibility so the transition fades cleanly both ways.
+   ============================================================================= */
+
+.main-menu-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.15);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+    /* Sit just below the menu (--z-menu = 500) so the menu remains on top */
+    z-index: calc(var(--z-menu) - 1);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+
+/* Body-class triggers — JS-managed for PWA reliability (matches the
+   existing precedent in mode-selector.css for .tasks-empty). uiBoot.js
+   toggles .main-menu-open; modeManager.js toggles .quick-actions-open. */
+body.main-menu-open .main-menu-backdrop,
+body.quick-actions-open .main-menu-backdrop {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Elevate the hamburger menu button above the backdrop when the menu
+   is open — this keeps it crisp (not blurred) and visually anchors the
+   close-affordance for the user. */
+body.main-menu-open .menu-button {
+    position: relative;
+    z-index: var(--z-menu);
+}
+
+/* The +-button and dropdown live inside .fixed-header-container, which has
+   its own stacking context (position: fixed; z-index: var(--z-header)).
+   Children can't escape a parent's stacking context, so lift the whole
+   header above the backdrop while the dropdown is open. This single rule
+   covers the +-button, the wrapper, and the dropdown in one shot — do NOT
+   add `position: relative` to the dropdown itself, because it's natively
+   `position: absolute` (top: 100%; left: 0) and overriding that pulls it
+   into normal flow, which expands the header row and shifts the task list. */
+body.quick-actions-open .fixed-header-container {
+    z-index: var(--z-menu);
+}
+
+/* The desktop side panel lives outside .fixed-header-container, so it needs
+   its own elevation. No `position: relative` here — the element already has
+   its own positioning rules in quick-actions.css. */
+body.quick-actions-open #quick-actions-window {
+    z-index: var(--z-menu);
+}
+
+/* =============================================================================
+   MENU HEADER
+   ============================================================================= */
+
+.main-menu-header-row {
+    display: flex;
+    align-items: center;
+    padding: var(--space-3) var(--space-2) var(--space-3) var(--space-10);
+    background: none;
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+    color: var(--color-white);
+    font-size: var(--font-size-md);
+    font-weight: bold;
+    margin-top: calc(-1 * var(--space-2-5));
+    margin-left: calc(-1 * var(--space-2-5));
+    margin-right: calc(-1 * var(--space-2-5));
+    border-bottom: 1px solid var(--menu-header-border, rgba(0, 0, 0, 0.08));
+    margin-bottom: var(--space-1);
+    flex-shrink: 0;
+}
+
+/* Legacy .main-menu-header-logo removed — now uses .has-corner-logo */
+
+/* Position logo to vertically center in menu header */
+.menu-container.has-corner-logo::before {
+    top: var(--space-3);
+    left: var(--space-2-5);
+}
+
+.main-menu-header {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    color: var(--menu-header-text, #081d3ace);
+    margin-left: var(--space-2);
+    gap: var(--space-1);
+}
+
+.main-menu-header-row::after {
+    content: "";
+    height: 0;
+    background: none;
+}
+
+/* =============================================================================
+   CURRENT DATE
+   ============================================================================= */
+
+#current-date {
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--menu-date-text, rgba(0, 0, 0, 0.5));
+    margin-left: 0;
+    padding-right: 0;
+}
+
+/* =============================================================================
+   MENU SECTIONS (New organized layout)
+   ============================================================================= */
+
+.menu-sections {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2-5);
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+    padding-right: var(--space-2);
+}
+
+.menu-section {
+    background: var(--menu-section-bg, rgba(255, 255, 255, 0.5));
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    border-radius: var(--radius-md);
+    padding: var(--space-2-5) var(--space-3);
+    border: 1px solid var(--menu-section-border, rgba(255, 255, 255, 0.3));
+}
+
+.menu-section-header {
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--menu-section-header, #555);
+    margin-bottom: var(--space-2);
+    padding-left: var(--space-1);
+}
+
+/* Collapsible menu section headers */
+.menu-section-header.collapsible {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    padding: var(--space-1-5) var(--space-2);
+    margin: calc(-1 * var(--space-2-5)) calc(-1 * var(--space-3)) var(--space-2) calc(-1 * var(--space-3));
+    border-radius: var(--radius-6) var(--radius-6) 0 0;
+    transition: background var(--transition-fast) ease;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.menu-section-header.collapsible:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.menu-section-header.collapsible:focus-visible {
+    outline: 2px solid var(--accent-color, #007bff);
+    outline-offset: -2px;
+    border-radius: var(--radius-6);
+}
+
+.menu-section-grid button:focus-visible,
+.menu-section-grid .menu-link-button:focus-visible {
+    outline: 2px solid var(--accent-color, #007bff);
+    outline-offset: 2px;
+    border-radius: var(--radius-6);
+}
+
+.menu-section-toggle {
+    font-size: 10px;
+    color: var(--menu-section-header, #555);
+    transition: transform var(--transition-fast) ease;
+    opacity: 0.7;
+}
+
+/* Section header label group — wraps the icon + title so the
+   parent's `justify-content: space-between` keeps them grouped on
+   the left while the toggle stays on the right. */
+.menu-section-label {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+/* Icon styling — covers both states:
+   1. Before initIcons() runs (or if FontAwesome's CSS loads first):
+      <i class="fas fa-x menu-section-icon">
+   2. After replaceFAIcon() swaps it (offline-safe SVG fallback):
+      <span class="icon"> (sibling of the title <span> inside .menu-section-label)
+   Both share the same sizing rules so the layout doesn't shift on swap. */
+.menu-section-label .menu-section-icon,
+.menu-section-label > .icon {
+    font-size: 0.95em;
+    line-height: 1;
+    width: 1em;
+    height: 1em;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.menu-section-label > .icon svg {
+    width: 100%;
+    height: 100%;
+}
+
+/* Collapsed state */
+.menu-section.collapsed .menu-section-header.collapsible {
+    margin-bottom: calc(-1 * var(--space-2-5));
+    border-radius: var(--radius-6);
+}
+
+.menu-section.collapsed .menu-section-toggle {
+    transform: rotate(-90deg);
+}
+
+.menu-section.collapsed .menu-section-grid {
+    display: none;
+}
+
+.menu-section-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-1);
+}
+
+.menu-section-grid button,
+.menu-section-grid .menu-link-button,
+.menu-section-grid .themes-menu-option button,
+.menu-section-grid .games-menu-option button {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1-5);
+    padding: 6px var(--space-3);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--menu-button-text, var(--theme-text-on-surface));
+    background: var(--menu-button-bg, rgba(0, 0, 0, 0.04));
+    border: none;
+    border-radius: var(--radius-2xl);
+    cursor: pointer;
+    transition: all var(--transition-fast) ease;
+    white-space: nowrap;
+    text-decoration: none;
+}
+
+.menu-section-grid button:hover,
+.menu-section-grid .menu-link-button:hover {
+    background: var(--menu-button-hover-bg, rgba(0, 0, 0, 0.1));
+    transform: translateY(-1px);
+}
+
+.menu-section-grid button i,
+.menu-section-grid button .icon,
+.menu-section-grid .menu-link-button i,
+.menu-section-grid .menu-link-button .icon {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+}
+
+/* Keep delete icon red */
+.menu-section-grid #delete-all-mini-cycle-tasks i,
+.menu-section-grid #delete-all-mini-cycle-tasks .icon {
+    color: var(--color-error);
+}
+
+/* Recurring button - blue icon */
+.menu-section-grid #open-recurring-panel i,
+.menu-section-grid #open-recurring-panel .icon {
+    color: #2980b9;
+}
+
+/* New button - gold/amber icon */
+.menu-section-grid #new-mini-cycle i,
+.menu-section-grid #new-mini-cycle .icon {
+    color: #b8860b;
+}
+
+/* User Manual button - purple icon */
+.menu-section-grid #open-user-manual i,
+.menu-section-grid #open-user-manual .icon {
+    color: #6a1b9a;
+}
+
+/* Check for Updates button - teal icon */
+.menu-section-grid #menu-check-updates i,
+.menu-section-grid #menu-check-updates .icon {
+    color: #00897b;
+}
+
+/* Themes button - pink/magenta icon (artistic) */
+.menu-section-grid #open-themes-panel i,
+.menu-section-grid #open-themes-panel .icon {
+    color: #d81b60;
+    margin-right: var(--space-1);
+}
+
+/* Games button - green icon (playful) */
+.menu-section-grid #open-games-panel i,
+.menu-section-grid #open-games-panel .icon {
+    color: #2e7d32;
+    font-size: 24px;
+    width: 24px;
+    height: 24px;
+}
+
+/* Task Options button - text icon style */
+.menu-section-grid #menu-task-options .icon-text {
+    font-size: 16px;
+    font-weight: 900;
+    color: #555;
+    min-width: 18px;
+}
+
+/* Legal section link icons */
+.menu-section-grid .menu-link-button i,
+.menu-section-grid .menu-link-button .icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+}
+
+/* =============================================================================
+   MAIN MENU ROW (Legacy - keeping for compatibility)
+   ============================================================================= */
+
+.main-menu-row {
+    display: flex;
+    justify-content: space-evenly;
+    border-top: 1px solid rgba(0, 0, 0, 0.374);
+}
+
+/* =============================================================================
+   MENU UL LIST
+   ============================================================================= */
+
+.menu-container ul {
+    list-style: none;
+    padding: 0;
+    margin-top: 0;
+}
+
+.menu-container ul li {
+    margin: var(--space-1-25) 0;
+}
+
+.menu-container ul li button {
+    padding: var(--space-1-25) var(--space-1-25);
+    font-size: 13px;
+    font-weight: 500;
+    text-align: left;
+    background: none;
+    color: var(--color-black);
+    border: none;
+    border-radius: var(--radius-5);
+    transition: background var(--transition-fast) ease-in-out, transform var(--transition-fast);
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    gap: var(--space-px);
+}
+
+.menu-container button i,
+.menu-container button .icon {
+    font-size: 22px;
+    width: 22px;
+    height: 22px;
+}
+
+/* Info icon (About button) - smaller */
+#open-about-modal .icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+}
+
+.menu-container ul li button:hover {
+    background: var(--menu-button-hover-bg);
+    transform: scale(1.02);
+}
+
+/* =============================================================================
+   MODE DESCRIPTION
+   ============================================================================= */
+
+.mode-description-wrapper {
+    margin-bottom: var(--space-1-75);
+}
+
+.mode-description-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: var(--space-1-5) var(--space-2-5);
+    background: rgba(0, 0, 0, 0.05);
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 12px; /* base — badge inherits from this so "Manual Cycle" stays readable */
+    font-weight: 600;
+    color: #555;
+    cursor: pointer;
+    transition: background var(--transition-fast) ease;
+}
+
+/* "Mode Info" label specifically — smaller than the badge to read
+   as a quiet section heading rather than primary content. */
+.mode-description-toggle .toggle-label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.mode-description-toggle:hover {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+/* Scoped under .menu-container to outrank the global
+   `.menu-container button .icon { width: 22px; height: 22px }` rule. */
+.menu-container .mode-description-toggle .toggle-icon {
+    font-size: 12px;
+    width: 12px;
+    height: 12px;
+    transition: transform var(--transition-fast) ease;
+}
+
+/* Mode Info leading icon (fa-book). Same dual-state pattern as the
+   section header icons: targets both the pre-replace <i> and the
+   post-replace <span class="icon"> sibling. */
+.menu-container .mode-description-toggle .mode-info-icon,
+.menu-container .mode-description-toggle > .icon {
+    font-size: 14px;
+    line-height: 1;
+    width: 14px;
+    height: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-right: var(--space-1);
+    opacity: 0.6;
+}
+
+.menu-container .mode-description-toggle > .icon svg {
+    width: 100%;
+    height: 100%;
+}
+
+.menu-container .mode-description-toggle[aria-expanded="false"] .toggle-icon {
+    transform: rotate(-90deg);
+}
+
+/* Mode badge: shows current mode name when collapsed */
+.mode-description-toggle .mode-badge {
+    font-size: 12px;
+    font-weight: 500;
+    opacity: 0;
+    margin-left: auto;
+    margin-right: var(--space-1-5);
+    color: inherit;
+    opacity: 0.5;
+    transition: opacity var(--transition-fast) ease;
+    pointer-events: none;
+    display: none;
+}
+
+.mode-description-toggle[aria-expanded="false"] .mode-badge {
+    display: inline;
+    opacity: 0.5;
+}
+
+.mode-description {
+    margin-top: var(--space-1-5);
+    padding: var(--space-2) var(--space-2-5);
+    background: var(--color-gray-100);
+    color: var(--theme-text-on-surface);
+    border-radius: var(--radius-md);
+    box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.08);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    line-height: 1.4;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    display: block;
+    white-space: normal;
+    overflow: hidden;
+    transition: max-height var(--transition-normal) ease, opacity var(--transition-normal) ease, padding var(--transition-normal) ease, margin var(--transition-normal) ease;
+}
+
+.mode-description.collapsed {
+    max-height: 0;
+    opacity: 0;
+    padding: 0 var(--space-2-5);
+    margin-top: 0;
+}
+
+/* =============================================================================
+   MODE RADIO ROW — horizontal mode switcher under the description
+   Visible only when Mode Info is expanded (mirrors .mode-description).
+   ============================================================================= */
+
+.mode-radio-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1-5);
+    justify-content: center;
+    margin-top: var(--space-1-5);
+    overflow: hidden;
+    transition: max-height var(--transition-normal) ease,
+                opacity var(--transition-normal) ease,
+                margin var(--transition-normal) ease;
+}
+
+/* Hide the radio row when the toggle is collapsed (sibling combinator
+   from the toggle button's aria-expanded state) */
+.mode-description-toggle[aria-expanded="false"] ~ .mode-radio-row {
+    max-height: 0;
+    opacity: 0;
+    margin-top: 0;
+    pointer-events: none;
+}
+
+.mode-radio-option {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1-5);
+    cursor: pointer;
+    padding: var(--space-1) var(--space-1-5);
+    border-radius: var(--radius-6);
+    transition: background var(--transition-fast) ease;
+}
+
+.mode-radio-option:hover {
+    background: rgba(255, 255, 255, 0.4);
+}
+
+/* Visible radio circle — matches the .theme-radio-option pattern in
+   themes-modal.css for visual consistency across radio surfaces. */
+.mode-radio-option input[type="radio"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: var(--space-3);
+    height: var(--space-3);
+    border: 1.5px solid var(--theme-border, var(--color-gray-400));
+    border-radius: 50%;
+    margin: 0;
+    cursor: pointer;
+    position: relative;
+    flex-shrink: 0;
+    background: transparent;
+}
+
+.mode-radio-option input[type="radio"]:checked {
+    border-color: var(--theme-accent, var(--color-primary, var(--color-blue-medium)));
+}
+
+/* Keyboard-only focus ring on the radio circle itself.
+   :focus-visible only fires from keyboard navigation, so mouse clicks
+   stay clean while Tab users keep a visible target. */
+.mode-radio-option input[type="radio"]:focus-visible {
+    outline: 2px solid var(--color-accent, var(--color-blue-medium));
+    outline-offset: 2px;
+}
+
+.mode-radio-option input[type="radio"]:checked::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: var(--space-1-5);
+    height: var(--space-1-5);
+    background: var(--theme-accent, var(--color-primary, var(--color-blue-medium)));
+    border-radius: 50%;
+}
+
+.mode-radio-label {
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--theme-text-on-surface);
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+/* =============================================================================
+   MENU BUTTONS
+   ============================================================================= */
+
+.menu-container button,
+.menu-container .menu-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: var(--space-2) var(--space-3);
+    text-align: left;
+    font-size: 14px;
+    border-radius: var(--radius-6);
+    transition: background var(--transition-fast) ease;
+}
+
+.menu-container button:hover,
+.menu-container .menu-button:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+/* =============================================================================
+   MENU GRID
+   ============================================================================= */
+
+.menu-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-2);
+}
+
+.menu-grid button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-3) var(--space-2);
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    transition: background var(--transition-fast) ease;
+}
+
+.menu-grid button:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+.menu-grid button i,
+.menu-grid button .icon {
+    font-size: 22px;
+    width: 22px;
+    height: 22px;
+    margin-bottom: var(--space-1);
+}
+
+/* =============================================================================
+   SLIDE ARROWS
+   ============================================================================= */
+
+.slide-arrow {
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 32px;
+    color: var(--color-black);
+    font-weight: bold;
+    padding: var(--space-2-5) var(--space-3-75);
+    border-radius: var(--radius-5);
+    cursor: pointer;
+    transition: background var(--transition-normal) ease-in-out, opacity var(--transition-normal);
+    z-index: var(--z-content);
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    outline: none;
+}
+
+.slide-arrow:focus-visible {
+    outline: 2px solid var(--theme-input-focus-border, rgba(76, 121, 255, 0.8));
+    outline-offset: 2px;
+    background-color: rgba(255, 255, 255, 0.9);
+}
+
+.slide-arrow:hover {
+    background-color: var(--color-white);
+}
+
+#slide-left {
+    right: 2%;
+}
+
+#slide-right {
+    left: 2%;
+}
+
+/* Desktop: Always visible */
+@media (min-width: 768px) {
+    .slide-arrow {
+        opacity: 1;
+        pointer-events: all;
+    }
+}
+
+/* Mobile: Hidden */
+@media (max-width: 768px) {
+    .slide-arrow {
+        opacity: 0;
+        pointer-events: none;
+    }
+}
+
+/* Hide left arrow when task view is visible */
+#slide-left.hide {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--transition-normal) ease;
+    transition-delay: 0s; /* Fade out immediately */
+}
+
+/* Hide right arrow when stats panel is visible */
+#slide-right.hide {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--transition-normal) ease;
+    transition-delay: 0s; /* Fade out immediately */
+}
+
+/* Show arrows with delay after view switch (desktop only) */
+@media (min-width: 769px) {
+    #slide-left.show {
+        opacity: 0.6;
+        pointer-events: auto;
+        transition: opacity var(--transition-normal) ease;
+        transition-delay: var(--transition-stagger); /* Wait before fading in */
+    }
+
+    #slide-right.show {
+        opacity: 0.6;
+        pointer-events: auto;
+        transition: opacity var(--transition-normal) ease;
+        transition-delay: var(--transition-stagger); /* Wait before fading in */
+    }
+}
+
+/* =============================================================================
+   CLOSE MAIN MENU BUTTON
+   ============================================================================= */
+
+/* Group dividers — two-tone hairlines between logical clusters of menu
+   sections. The light row + dark row stack guarantees ONE of the two
+   shows up against any backdrop color (light blue gradient on top of
+   the menu, darker blue toward the bottom, dark mode flat-gray, etc.).
+   Groups (top → bottom):
+     • Routine Actions + Task Actions
+     • Rewards & Extras (alone)
+     • Help & Support + Legal & Info
+     • Settings & Personalization (alone)
+   Positioned in the flex gap below each group-end section via ::after,
+   so the existing 10px section gap stays consistent. */
+.menu-sections > .menu-section[data-section="tasks"],
+.menu-sections > .menu-section[data-section="rewards"],
+.menu-sections > .menu-section[data-section="legal"] {
+    position: relative;
+    /* Extra spacing below dividered sections — pushes the next section
+       further down so the divider line gets visible breathing room above
+       AND below it (rather than crammed into the standard 10px flex gap). */
+    margin-bottom: var(--space-5);
+}
+.menu-sections > .menu-section[data-section="tasks"]::after,
+.menu-sections > .menu-section[data-section="rewards"]::after,
+.menu-sections > .menu-section[data-section="legal"]::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    /* Centered in the now-30px gap (10px flex-gap + 20px section margin). */
+    bottom: calc(-1 * var(--space-4) + 1px);
+    height: 1px;
+    background: color-mix(in srgb, currentColor 32%, transparent);
+    pointer-events: none;
+}
+
+/* Mobile: trim divider breathing room from the desktop 20px down to 6px.
+   Group breaks stay visible without eating as much vertical space — each
+   section block is already a distinct card on small screens, and the
+   menu is taller (Quick Actions panel adds height). */
+@media (max-width: 768px) {
+    .menu-sections > .menu-section[data-section="tasks"],
+    .menu-sections > .menu-section[data-section="rewards"],
+    .menu-sections > .menu-section[data-section="legal"] {
+        margin-bottom: var(--space-1-5);
+    }
+    .menu-sections > .menu-section[data-section="tasks"]::after,
+    .menu-sections > .menu-section[data-section="rewards"]::after,
+    .menu-sections > .menu-section[data-section="legal"]::after {
+        /* Recenter in the now-16px gap (10px flex-gap + 6px section margin). */
+        bottom: calc(-1 * var(--space-2) - 0px);
+    }
+}
+
+/* Primary-action row sits between the controls container (Mode Info / mode
+   radio group) and the bottom Close slab. Centers a single dedicated button
+   that elevates a high-priority view-state action (Enter Focus View) to a
+   glanceable spot, peer to Mode Info, distinct from the section grids.
+   A faint divider above signals the transition from "menu sections" to
+   "primary action." */
+.main-menu-primary-action-row {
+    display: flex;
+    justify-content: center;
+    /* Multi-color blue spectrum hairline — same texture as the section
+       group dividers above for visual consistency. Rendered via ::before
+       so the gradient fills the line cleanly (a single-color border-top
+       can't render a horizontal gradient). */
+    position: relative;
+    padding-top: var(--space-2);
+    /* Larger negative pull-up — cancels the 7px bottom margin on
+       .mode-description-wrapper above AND eats into the toggle button's
+       own bottom padding so the primary-action sits visually tucked
+       up against Mode Info. */
+    margin-top: calc(-1 * var(--space-3));
+}
+
+.main-menu-primary-action-row::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 1px;
+    background: color-mix(in srgb, currentColor 32%, transparent);
+    pointer-events: none;
+}
+
+.menu-primary-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-1-5);
+    min-width: 60%;
+    padding: var(--space-2) var(--space-4);
+    background: var(--theme-button-bg, var(--color-steel-blue));
+    color: var(--theme-button-text, var(--color-white));
+    /* Light border carries the "clickable" cue — no drop shadow. */
+    border: var(--space-px) solid color-mix(in srgb, var(--color-white) 35%, transparent);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    cursor: pointer;
+    transition: background var(--transition-fast) ease,
+                border-color var(--transition-fast) ease;
+}
+
+.menu-primary-action:hover,
+.menu-primary-action:focus-visible {
+    background: color-mix(in srgb, var(--theme-button-bg, var(--color-steel-blue)) 82%, var(--color-white));
+    border-color: color-mix(in srgb, var(--color-white) 50%, transparent);
+}
+
+.menu-primary-action:active {
+    background: color-mix(in srgb, var(--theme-button-bg, var(--color-steel-blue)) 92%, var(--color-black));
+}
+
+/* Inline SVG icon — fixed pixel dimensions render predictably without
+   Font Awesome's font-metric resistance. SVG attributes width/height set
+   the box; CSS reinforces them in case any global rule tries to override. */
+.menu-primary-action-icon {
+    width: 14px;
+    height: 14px;
+    flex: 0 0 auto;
+    opacity: 0.9;
+    display: inline-block;
+}
+
+/* Tighten the gap to the Close slab when the primary-action row is present
+   — pull Close upward so the primary action visually anchors to the slab. */
+.main-menu-primary-action-row + #close-main-menu {
+    margin-top: calc(-1 * var(--space-1-5));
+}
+
+/* Trim the row's own bottom padding too — the button sits flush against
+   the Close slab as the natural visual cap. */
+.main-menu-primary-action-row {
+    padding-bottom: 0;
+    margin-bottom: 0;
+}
+
+#close-main-menu {
+    width: calc(100% + 2 * var(--space-2-5));
+    margin-left: calc(-1 * var(--space-2-5));
+    margin-right: calc(-1 * var(--space-2-5));
+    margin-bottom: calc(-1 * var(--space-2-5));
+    margin-top: var(--space-2);
+    padding: var(--space-3-5);
+    background: var(--menu-close-bg, var(--color-steel-blue));
+    color: var(--menu-close-text, var(--color-white));
+    border: none;
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    cursor: pointer;
+    transition: background var(--transition-fast) ease;
+    flex-shrink: 0;
+    text-align: center;
+}
+
+#close-main-menu:hover {
+    background: var(--menu-close-hover-bg, var(--menu-close-hover-bg));
+}
+
+/* =============================================================================
+   DELETE ALL TASKS - RED ICON
+   ============================================================================= */
+
+#delete-all-mini-cycle-tasks i,
+#delete-all-mini-cycle-tasks .icon {
+    color: var(--color-error);
+}
+
+/* Hover states */
+#slide-left.show:hover,
+#slide-left:hover:not(.hide) {
+    background-color: var(--color-white);
+}
+
+#slide-right.show:hover,
+#slide-right:hover:not(.hide) {
+    background-color: var(--color-white);
+}
+
+.slide-arrow:active {
+    transform: translateY(-50%) scale(0.95);
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .slide-arrow {
+        border: 2px solid currentColor;
+    }
+
+    .slide-arrow:focus-visible {
+        outline: 3px solid #007BFF;
+    }
+}
+
+/* =============================================================================
+   MOBILE ADJUSTMENTS
+   ============================================================================= */
+
+@media (max-width: 768px) {
+    .menu-container {
+        top: calc(env(safe-area-inset-top, 0px) + 45px);
+        right: 5px;
+        min-width: 200px;
+        max-height: 80vh;
+    }
+
+    .complete-all-and-help-window-container {
+        gap: var(--space-2-5);
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+    }
+
+    .help-window {
+        width: 90%;
+        max-width: 400px;
+        font-size: 13px;
+    }
+
+    .title-row {
+        background: none;
+        background-color: transparent;
+        padding: 0;
+    }
+
+    .mini-cycle-title {
+        max-width: 100%;
+        width: 100%;
+        border-bottom: none;
+    }
+}
+
+/* =============================================================================
+   DARK MODE MENU
+   ============================================================================= */
+
+body.dark-mode {
+    --menu-bg: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+    --menu-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    --menu-header-text: #e2e8f0;
+    --menu-date-text: rgba(255, 255, 255, 0.5);
+    --menu-section-bg: rgba(255, 255, 255, 0.05);
+    --menu-section-border: rgba(255, 255, 255, 0.1);
+    --menu-section-header: #94a3b8;
+    --menu-button-bg: rgba(255, 255, 255, 0.08);
+    --menu-button-text: #e2e8f0;
+    --menu-button-hover-bg: rgba(255, 255, 255, 0.15);
+    --menu-close-bg: #3d7ab5;
+    --menu-close-text: white;
+    --menu-close-hover-bg: #326a9e;
+}
+
+/* Logo keeps its original colors in all modes — no dark-mode filter */
+
+body.dark-mode .menu-section-grid button i,
+body.dark-mode .menu-section-grid button .icon,
+body.dark-mode .menu-section-grid .menu-link-button i,
+body.dark-mode .menu-section-grid .menu-link-button .icon {
+    opacity: 0.9;
+}
+
+/* Keep colored icons visible in dark mode */
+body.dark-mode .menu-section-grid #delete-all-mini-cycle-tasks i,
+body.dark-mode .menu-section-grid #delete-all-mini-cycle-tasks .icon {
+    color: #ef5350;
+}
+
+body.dark-mode .menu-section-grid #open-recurring-panel i,
+body.dark-mode .menu-section-grid #open-recurring-panel .icon {
+    color: #42a5f5;
+}
+
+body.dark-mode .menu-section-grid #new-mini-cycle i,
+body.dark-mode .menu-section-grid #new-mini-cycle .icon {
+    color: #ffd54f;
+}
+
+body.dark-mode .menu-section-grid #open-user-manual i,
+body.dark-mode .menu-section-grid #open-user-manual .icon {
+    color: #ab47bc;
+}
+
+body.dark-mode .menu-section-grid #menu-check-updates i,
+body.dark-mode .menu-section-grid #menu-check-updates .icon {
+    color: #26a69a;
+}
+
+body.dark-mode .menu-section-grid #open-themes-panel i,
+body.dark-mode .menu-section-grid #open-themes-panel .icon {
+    color: #ec407a;
+}
+
+body.dark-mode .menu-section-grid #open-games-panel i,
+body.dark-mode .menu-section-grid #open-games-panel .icon {
+    color: #66bb6a;
+}
+
+body.dark-mode .menu-section-grid #menu-task-options .icon-text {
+    color: #e2e8f0;
+}
+
+/* =============================================================================
+   DARK OCEAN THEME MENU
+   ============================================================================= */
+
+body.theme-dark-ocean {
+    --menu-bg: linear-gradient(180deg, #1a3a4f 0%, #0c1724 100%);
+    --menu-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    --menu-header-text: #e0f7fa;
+    --menu-date-text: rgba(224, 247, 250, 0.6);
+    --menu-section-bg: rgba(36, 77, 106, 0.5);
+    --menu-section-border: rgba(78, 205, 196, 0.2);
+    --menu-section-header: #a2d9ff;
+    --menu-button-bg: rgba(78, 205, 196, 0.1);
+    --menu-button-text: #e0f7fa;
+    --menu-button-hover-bg: rgba(78, 205, 196, 0.25);
+    --menu-close-bg: #4ecdc4;
+    --menu-close-text: #18304a;
+    --menu-close-hover-bg: #36b1a8;
+}
+
+body.theme-dark-ocean .menu-container.has-corner-logo::before {
+    filter: brightness(1.3) contrast(1.1);
+}
+
+/* Dark Ocean colored icons */
+body.theme-dark-ocean .menu-section-grid #delete-all-mini-cycle-tasks i,
+body.theme-dark-ocean .menu-section-grid #delete-all-mini-cycle-tasks .icon {
+    color: #ff6b6b;
+}
+
+body.theme-dark-ocean .menu-section-grid #open-recurring-panel i,
+body.theme-dark-ocean .menu-section-grid #open-recurring-panel .icon {
+    color: #4ecdc4;
+}
+
+body.theme-dark-ocean .menu-section-grid #new-mini-cycle i,
+body.theme-dark-ocean .menu-section-grid #new-mini-cycle .icon {
+    color: var(--color-warning);
+}
+
+body.theme-dark-ocean .menu-section-grid #open-themes-panel i,
+body.theme-dark-ocean .menu-section-grid #open-themes-panel .icon {
+    color: #4ecdc4;
+}
+
+body.theme-dark-ocean .menu-section-grid #menu-task-options .icon-text {
+    color: #e0f7fa;
+}
+
+/* =============================================================================
+   GOLDEN GLOW THEME MENU
+   ============================================================================= */
+
+body.theme-golden-glow {
+    --menu-bg: linear-gradient(180deg, #fff9e0 0%, #ffd700 100%);
+    --menu-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+    --menu-header-text: #3d3200;
+    --menu-date-text: #5c4d00;
+    --menu-section-bg: rgba(255, 255, 255, 0.6);
+    --menu-section-border: rgba(180, 150, 0, 0.3);
+    --menu-section-header: #5c4d00;
+    --menu-button-bg: rgba(255, 215, 0, 0.2);
+    --menu-button-text: #3d3200;
+    --menu-button-hover-bg: rgba(255, 215, 0, 0.4);
+    --menu-close-bg: #b89000;
+    --menu-close-text: #fff;
+    --menu-close-hover-bg: #9a7800;
+}
+
+/* Golden Glow colored icons - darker for contrast on light background */
+body.theme-golden-glow .menu-section-grid #delete-all-mini-cycle-tasks i,
+body.theme-golden-glow .menu-section-grid #delete-all-mini-cycle-tasks .icon {
+    color: var(--color-error);
+}
+
+body.theme-golden-glow .menu-section-grid #open-recurring-panel i,
+body.theme-golden-glow .menu-section-grid #open-recurring-panel .icon {
+    color: #d4a700;
+}
+
+body.theme-golden-glow .menu-section-grid #new-mini-cycle i,
+body.theme-golden-glow .menu-section-grid #new-mini-cycle .icon {
+    color: #8b6914;
+}
+
+body.theme-golden-glow .menu-section-grid #open-themes-panel i,
+body.theme-golden-glow .menu-section-grid #open-themes-panel .icon {
+    color: #d4a700;
+}
+
+body.theme-golden-glow .menu-section-grid #menu-task-options .icon-text {
+    color: #3d3200;
+}
+
+/* =============================================================================
+   AUTO-UNCHECK DAILY ROW (per-routine soft-reset toggle, sits in tasks grid)
+   Spans both grid columns so the checkbox + time button don't get squeezed.
+   ============================================================================= */
+.menu-section-grid .auto-uncheck-row {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-1) var(--space-3);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--menu-button-text, var(--theme-text-on-surface));
+    background: var(--menu-button-bg, var(--overlay-faint));
+    border-radius: var(--radius-2xl);
+    cursor: pointer;
+    transition: background var(--transition-fast) ease;
+}
+
+.menu-section-grid .auto-uncheck-row:hover {
+    background: var(--menu-button-hover-bg, var(--overlay-medium));
+}
+
+.menu-section-grid .auto-uncheck-row input[type="checkbox"] {
+    margin: 0;
+    cursor: pointer;
+}
+
+.menu-section-grid .auto-uncheck-row-text {
+    flex: 1;
+}
+
+.menu-section-grid .auto-uncheck-row-time-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-0-5) var(--space-2);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--theme-accent, var(--color-primary));
+    background: transparent;
+    border: 1px solid currentColor;
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    transition: background var(--transition-fast) ease, color var(--transition-fast) ease;
+}
+
+.menu-section-grid .auto-uncheck-row-time-btn:hover {
+    background: var(--theme-accent, var(--color-primary));
+    color: var(--color-white);
+}
+
+.menu-section-grid .auto-uncheck-row-time-btn.hidden {
+    display: none;
+}
+
+/* =============================================================================
+   iOS PWA Safe Area Fix for Menu
+   The .ios-pwa class is added by JavaScript detection in miniCycle.html
+   ============================================================================= */
+
+.ios-pwa .menu-container {
+    /* Ensure menu clears Dynamic Island/notch on iOS PWA */
+    top: 104px;
+}

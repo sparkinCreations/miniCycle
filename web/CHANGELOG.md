@@ -1,3 +1,12 @@
+## [2.234] - 2026-06-08
+- feat(product-page): restructure secondary links for improved layout and responsiveness
+- feat(product-page): add Chrome Web Store badge and link for Lite version
+- fix(boot): guard AppState Proxy in theme/recurring reads + null on teardown
+- feat(product-page): add May 2026 highlights to What's New timeline
+- chore(scripts): commit release bump before tag and push branch on --push
+- chore(release): update version to 2.232
+
+
 ## [2.232] - 2026-06-03
 - fix(sw): serve fresh module on current-cache miss to avoid stale imports
 - fix(boot): prevent white-screen on boot retry from torn-down AppState

@@ -1,0 +1,129 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   App Container Layout
+   Main structural elements and view containers
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Root container */
+.app-root {
+    justify-content: flex-start;
+    font-family: var(--font-family);
+    text-align: center;
+    color: var(--theme-text-primary);
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    padding-bottom: 150px;
+}
+
+/* Main app container */
+#app-container {
+    position: relative;
+    width: 100vw;
+    overflow: hidden;
+    padding-top: calc(env(safe-area-inset-top) + 110px); /* Status bar + header + mode selector */
+}
+
+/* Task view container - vertically centered */
+#task-view {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90vw;
+    max-width: 400px;
+    /* The centering math (top: 50% + transform: -50%) puts the top edge of
+       #task-view at (100vh - max_height) / 2 — i.e., half the reduction
+       constant. With 320px the top edge sits ≥160px from the viewport top,
+       which clears the fixed header (~138px on iPad in Safari, taller in
+       PWA standalone where env(safe-area-inset-top) adds to header padding).
+       The `env() * 2` term adds extra clearance in PWA mode where the
+       header gains its full safe-area padding-top, doubled because the
+       centering reduction is split across top and bottom.
+
+       Also: 100dvh tracks the visible viewport on iPad Safari (vs 100vh
+       which includes the area behind the dynamic toolbar). Older browsers
+       fall through to the 100vh line. Same pattern as focus-mode.css. */
+    max-height: calc(100vh - 290px - (env(safe-area-inset-top, 0px) * 2));
+    max-height: calc(100dvh - 290px - (env(safe-area-inset-top, 0px) * 2));
+    min-height: auto;
+    transition: left var(--animation-pop) ease-in-out, transform var(--animation-pop) ease-in-out;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    z-index: var(--z-content); /* Above slide arrows so quick-actions panel renders on top */
+    pointer-events: none;
+}
+
+/* Re-enable clicks on task view content */
+#task-view * {
+    pointer-events: auto;
+}
+
+/* Hidden state - slide off left */
+#task-view.hide {
+    left: -50%;
+    transform: translate(-200%, -50%);
+}
+
+/* Visible state - centered */
+#task-view.show {
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+/* Stats panel container - layout only, visual styles in stats-panel.css */
+#stats-panel.show {
+    opacity: 1;
+    pointer-events: all;
+}
+
+/* View toggle animations */
+.view-toggle-active #task-view {
+    transform: translate(-50%, -50%);
+}
+
+.view-toggle-active #stats-panel {
+    transform: translate(-50%, -50%);
+}
+
+/* Mobile: Adjust task view max-height and offset for header clearance */
+@media (max-width: 768px) {
+    #task-view {
+        /* See dvh note on the base #task-view rule above. */
+        max-height: calc(100vh - 220px);
+        max-height: calc(100dvh - 220px);
+        top: calc(50% + 10px + env(safe-area-inset-top, 0px) / 2);
+        overflow: hidden; /* Contain flex children — task-card shrinks, button stays fixed */
+    }
+
+    #task-view.show {
+        transform: translate(-50%, -50%);
+    }
+}
+
+/* Desktop: wider task view, vertically centered - MUST come after base rules */
+@media (min-width: 1024px) {
+    #task-view {
+        max-width: 50vw;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+
+    #task-view.show {
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+
+    #task-view.hide {
+        left: -50%;
+        transform: translate(-200%, -50%);
+    }
+
+    .view-toggle-active #task-view {
+        transform: translate(-50%, -50%);
+    }
+}

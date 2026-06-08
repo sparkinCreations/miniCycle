@@ -1,0 +1,1011 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Onboarding Component
+   First-time user experience and tutorial overlays
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* =============================================================================
+   ONBOARDING STATE - HIDE TASK AREA
+   ============================================================================= */
+
+body.onboarding-active .title-row,
+body.onboarding-active .task-list,
+body.onboarding-active .empty-state,
+body.onboarding-active .completed-tasks-section,
+body.onboarding-active .task-search-input-row,
+body.onboarding-active .progress-container,
+body.onboarding-active .complete-all-and-help-window-container {
+    display: none;
+}
+
+/* =============================================================================
+   ONBOARDING PLACEHOLDER
+   ============================================================================= */
+
+.onboarding-placeholder {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-10) var(--space-5);
+    text-align: center;
+    color: rgba(255, 255, 255, 0.9);
+    min-height: 200px;
+}
+
+body.onboarding-active .onboarding-placeholder {
+    display: flex;
+}
+
+.onboarding-placeholder-icon {
+    font-size: 56px;
+    margin-bottom: var(--space-5);
+    opacity: 0.9;
+}
+
+.onboarding-placeholder-title {
+    font-size: var(--font-size-xl);
+    font-weight: 600;
+    margin-bottom: var(--space-3);
+    color: rgba(255, 255, 255, 0.95);
+}
+
+.onboarding-placeholder-text {
+    font-size: var(--font-size-sm);
+    color: rgba(255, 255, 255, 0.75);
+    max-width: 280px;
+    line-height: 1.5;
+}
+
+/* =============================================================================
+   ONBOARDING MODAL
+   ============================================================================= */
+
+/* Modal is dynamically created and removed - shown by default when in DOM */
+.onboarding-modal {
+    display: flex;
+    position: fixed;
+    z-index: var(--z-modal-high);
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    justify-content: center;
+    align-items: center;
+    pointer-events: none;
+    animation: fadeInUp var(--animation-pop) ease-out;
+}
+
+.onboarding-modal.active,
+.onboarding-modal.show {
+    pointer-events: auto;
+}
+
+/* =============================================================================
+   ONBOARDING CONTENT
+   ============================================================================= */
+
+.onboarding-content {
+    background: var(--pref-modal-bg, var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white))));
+    color: var(--pref-modal-text, var(--theme-modal-text, var(--theme-text-on-surface)));
+    padding: var(--space-12) var(--space-6) var(--space-5);
+    width: 420px;
+    max-width: 95%;
+    /* Cap height to viewport with a small margin so the modal can never
+       overflow off-screen on short viewports (landscape, browser-chrome
+       visible). overflow-y allows the user to scroll to the Skip button
+       and step indicator when content is taller than the viewport. */
+    max-height: calc(100dvh - var(--space-4));
+    overflow-y: auto;
+    border-radius: var(--radius-10);
+    text-align: center;
+    position: relative;
+    pointer-events: auto;
+    -webkit-backdrop-filter: blur(var(--theme-modal-blur));
+    backdrop-filter: blur(var(--theme-modal-blur));
+}
+
+.onboarding-content h2 {
+    color: var(--color-navy, #2c3270);
+    font-size: var(--font-size-3xl);
+    font-weight: 700;
+    margin-bottom: var(--space-3-75);
+    padding-left: var(--space-5);
+    padding-right: var(--space-5);
+    letter-spacing: -0.02em;
+    transform: scale(0.85);
+    opacity: 0;
+    transition: transform 4s ease-out, opacity 4s ease-out;
+}
+
+.onboarding-content h2.animate-in {
+    transform: scale(1);
+    opacity: 1;
+}
+
+/* Reduced motion: no expand animation, show immediately */
+@media (prefers-reduced-motion: reduce) {
+    .onboarding-content h2 {
+        transform: scale(1);
+        opacity: 1;
+        transition: none;
+    }
+}
+
+.onboarding-content ul {
+    text-align: left;
+    padding-left: var(--space-5);
+    margin: var(--space-3-75) 0;
+}
+
+.onboarding-content li {
+    margin-bottom: var(--space-2);
+    line-height: 1.5;
+    list-style: disc;
+}
+
+.onboarding-content p {
+    margin: var(--space-2-5) 0;
+    line-height: 1.6;
+}
+
+/* =============================================================================
+   ONBOARDING CONTROLS
+   ============================================================================= */
+
+.onboarding-controls {
+    display: flex;
+    justify-content: space-between;
+    margin-top: var(--space-4);
+    gap: var(--space-2-5);
+}
+
+.onboarding-controls button {
+    padding: var(--space-2-5) var(--space-4);
+    font-size: var(--font-size-md);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    border: none;
+    transition: background var(--transition-fast), opacity var(--transition-fast);
+}
+
+#onboarding-next {
+    margin-left: auto;
+    background: var(--color-blue-medium);
+    color: var(--color-white);
+}
+
+#onboarding-next:hover {
+    opacity: 0.85;
+}
+
+#onboarding-prev {
+    background: rgba(255, 255, 255, 0.5);
+    color: var(--color-blue-medium);
+    border: 1px solid var(--color-blue-medium);
+}
+
+#onboarding-prev:hover {
+    background: rgba(255, 255, 255, 0.7);
+}
+
+.onboarding-step-indicator {
+    display: block;
+    text-align: center;
+    margin-top: var(--space-3);
+    font-size: var(--font-size-sm);
+    color: var(--color-gray-600, #666);
+}
+
+/* =============================================================================
+   ONBOARDING SKIP BUTTON
+   ============================================================================= */
+
+.onboarding-skip {
+    position: absolute;
+    top: var(--space-3);
+    right: var(--space-3);
+    background: none;
+    border: none;
+    font-size: var(--font-size-sm);
+    color: var(--color-gray-600, #666);
+    cursor: pointer;
+    transition: color var(--transition-fast);
+}
+
+.onboarding-skip:hover {
+    color: var(--theme-text-on-surface);
+}
+
+/* =============================================================================
+   ONBOARDING NAVIGATION
+   ============================================================================= */
+
+.onboarding-nav {
+    display: flex;
+    justify-content: center;
+    gap: var(--space-2);
+    margin-top: var(--space-3-75);
+}
+
+.onboarding-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    transition: background var(--transition-fast);
+}
+
+.onboarding-dot.active {
+    background: var(--theme-button-primary-bg, var(--color-primary));
+}
+
+/* =============================================================================
+   ONBOARDING STEP INDICATOR
+   ============================================================================= */
+
+.onboarding-step-indicator {
+    font-size: var(--font-size-xs);
+    color: var(--theme-text-muted);
+    margin-top: var(--space-2-5);
+}
+
+/* =============================================================================
+   MOBILE ADJUSTMENTS
+   ============================================================================= */
+
+@media (max-width: 768px) {
+    /* Anchor the modal near the top instead of vertically centering. On
+       short viewports the modal can't slip above the top of the screen,
+       so the Skip × button and content remain reachable; internal
+       overflow-y scrolls anything that doesn't fit. */
+    .onboarding-modal {
+        align-items: flex-start;
+        padding-top: var(--space-2);
+    }
+
+    .onboarding-content {
+        padding: var(--space-10) var(--space-4) var(--space-4);
+    }
+
+    .onboarding-content h2 {
+        font-size: var(--font-size-xl);
+        padding-right: var(--space-10);
+    }
+
+    .onboarding-placeholder {
+        padding: var(--space-7-5) var(--space-3-75);
+    }
+
+    .onboarding-placeholder-icon {
+        font-size: 48px;
+    }
+
+    .onboarding-placeholder-title {
+        font-size: var(--font-size-lg);
+    }
+}
+
+/* =============================================================================
+   ONBOARDING TOUR ANIMATION (Step 3 — SVG + CSS)
+   ============================================================================= */
+
+.onboarding-tour-animation {
+    display: flex;
+    justify-content: center;
+    margin: var(--space-3-75) auto var(--space-2);
+    max-width: 280px;
+}
+
+.onboarding-tour-animation svg {
+    width: 100%;
+    height: auto;
+}
+
+/* Notification bar — matches .notification.info background */
+.tour-anim-bar {
+    fill: var(--theme-info, var(--color-accent, #007BFF));
+    stroke: none;
+}
+
+/* Notification text — white on blue, like real tour notifications */
+.tour-anim-text {
+    fill: var(--color-white, #fff);
+    font-family: inherit;
+}
+
+/* Start Tour button — semi-transparent white, matches .notification-action-btn */
+.tour-anim-btn {
+    fill: rgba(255, 255, 255, 0.25);
+    stroke: rgba(255, 255, 255, 0.45);
+    stroke-width: 1;
+}
+
+.tour-anim-btn-text {
+    fill: var(--color-white, #fff);
+    font-family: inherit;
+    font-weight: 600;
+}
+
+/* Button press effect — synced with cursor click */
+.tour-anim-btn-group {
+    transform-origin: 214px 50px;
+    animation: tourButtonPress 3.5s ease-in-out infinite;
+}
+
+/* Interactive variant — applied when the button is wired as a real action
+   (onboarding step 3). Adds pointer cursor + keyboard focus indicator. */
+.tour-anim-btn-interactive {
+    cursor: pointer;
+}
+
+.tour-anim-btn-interactive:focus-visible {
+    outline: 2px solid var(--theme-accent, var(--color-primary));
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+}
+
+/* Cursor slide + click — decorative, must NOT capture pointer events
+   (otherwise it sits on top of the interactive button for ~2s of the
+   animation cycle and intercepts user clicks). */
+.tour-anim-cursor {
+    animation: tourCursorMove 3.5s ease-in-out infinite;
+    pointer-events: none;
+}
+
+/* Decorative SVG elements in the tour animation — non-interactive so
+   they never block clicks on the interactive button group. */
+.tour-anim-bar,
+.tour-anim-text {
+    pointer-events: none;
+}
+
+/* Cursor: slide in from right, hover over button, click, hold, reset */
+@keyframes tourCursorMove {
+    0%   { transform: translate(270px, 70px); opacity: 0; }
+    10%  { opacity: 1; }
+    40%  { transform: translate(210px, 42px); opacity: 1; }
+    48%  { transform: translate(210px, 45px); }
+    55%  { transform: translate(210px, 42px); }
+    70%  { transform: translate(210px, 42px); opacity: 1; }
+    80%  { opacity: 0; }
+    100% { transform: translate(270px, 70px); opacity: 0; }
+}
+
+/* Button: scale down on "click" then bounce back */
+@keyframes tourButtonPress {
+    0%   { transform: scale(1); }
+    46%  { transform: scale(1); }
+    50%  { transform: scale(0.93); }
+    55%  { transform: scale(1.02); }
+    60%  { transform: scale(1); }
+    100% { transform: scale(1); }
+}
+
+/* Reduced motion: show static scene, no animation */
+@media (prefers-reduced-motion: reduce) {
+    .tour-anim-cursor {
+        animation: none;
+        transform: translate(210px, 42px);
+        opacity: 1;
+    }
+
+    .tour-anim-btn-group {
+        animation: none;
+    }
+}
+
+/* =============================================================================
+   ONBOARDING CYCLE ANIMATION (Step 2 — SVG + CSS)
+   ============================================================================= */
+
+.onboarding-cycle-animation {
+    display: flex;
+    justify-content: flex-start;
+    margin: var(--space-3) 0 var(--space-2);
+    max-width: 200px;
+    background: var(--color-white);
+    border: 1px solid var(--theme-border, var(--color-gray-200, #e2e2e2));
+    border-radius: var(--radius-12, 12px);
+    padding: var(--space-2);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.onboarding-cycle-animation svg {
+    width: 100%;
+    height: auto;
+}
+
+/* Divider lines between tasks */
+.cycle-anim-divider {
+    stroke: var(--theme-border, var(--color-gray-200, #e2e2e2));
+    stroke-width: 0.5;
+}
+
+/* Task text */
+.cycle-anim-task-text {
+    fill: var(--theme-modal-text, var(--theme-text-on-surface, #333));
+    font-family: inherit;
+}
+
+/* Checkbox circle — unchecked state */
+.cycle-anim-checkbox {
+    fill: none;
+    stroke: var(--color-gray-400, #aaa);
+    stroke-width: 1.5;
+}
+
+/* Checkbox fill when checked — staggered fade-in */
+.cycle-anim-checkbox-1 {
+    animation: cycleCheckboxFill1 8s ease-in-out infinite;
+}
+
+.cycle-anim-checkbox-2 {
+    animation: cycleCheckboxFill2 8s ease-in-out infinite;
+}
+
+.cycle-anim-checkbox-3 {
+    animation: cycleCheckboxFill3 8s ease-in-out infinite;
+}
+
+/* Checkmark stroke — white on green circle, draw-in animation */
+.cycle-anim-checkmark {
+    fill: none;
+    stroke: var(--color-white, #fff);
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 14;
+}
+
+.cycle-anim-checkmark-1 {
+    animation: cycleCheck1 8s ease-in-out infinite;
+}
+
+.cycle-anim-checkmark-2 {
+    animation: cycleCheck2 8s ease-in-out infinite;
+}
+
+.cycle-anim-checkmark-3 {
+    animation: cycleCheck3 8s ease-in-out infinite;
+}
+
+/* Cycle counter text */
+.cycle-anim-counter {
+    fill: var(--theme-modal-text, var(--theme-text-on-surface, #333));
+    font-family: inherit;
+    font-weight: 600;
+}
+
+/* Counter 0 visible initially, counter 1 hidden */
+.cycle-anim-counter-0 {
+    animation: cycleCounter0 8s ease-in-out infinite;
+}
+
+.cycle-anim-counter-1 {
+    animation: cycleCounter1 8s ease-in-out infinite;
+}
+
+/* "Cycle Complete!" flash */
+.cycle-anim-complete {
+    fill: var(--color-success, #28a745);
+    font-family: inherit;
+    animation: cycleCompleteFlash 8s ease-in-out infinite;
+}
+
+/* --- Checkmark draw-in keyframes (staggered) --- */
+
+@keyframes cycleCheck1 {
+    0%, 8%   { stroke-dashoffset: 14; }
+    14%      { stroke-dashoffset: 0; }
+    60%      { stroke-dashoffset: 0; }
+    66%      { stroke-dashoffset: 14; }
+    100%     { stroke-dashoffset: 14; }
+}
+
+@keyframes cycleCheck2 {
+    0%, 22%  { stroke-dashoffset: 14; }
+    28%      { stroke-dashoffset: 0; }
+    60%      { stroke-dashoffset: 0; }
+    66%      { stroke-dashoffset: 14; }
+    100%     { stroke-dashoffset: 14; }
+}
+
+@keyframes cycleCheck3 {
+    0%, 36%  { stroke-dashoffset: 14; }
+    42%      { stroke-dashoffset: 0; }
+    60%      { stroke-dashoffset: 0; }
+    66%      { stroke-dashoffset: 14; }
+    100%     { stroke-dashoffset: 14; }
+}
+
+/* --- Checkbox circle fill (green bg on check) --- */
+
+@keyframes cycleCheckboxFill1 {
+    0%, 8%   { fill: none; stroke: var(--color-gray-400, #aaa); }
+    14%      { fill: var(--color-success, #28a745); stroke: var(--color-success, #28a745); }
+    60%      { fill: var(--color-success, #28a745); stroke: var(--color-success, #28a745); }
+    66%      { fill: none; stroke: var(--color-gray-400, #aaa); }
+    100%     { fill: none; stroke: var(--color-gray-400, #aaa); }
+}
+
+@keyframes cycleCheckboxFill2 {
+    0%, 22%  { fill: none; stroke: var(--color-gray-400, #aaa); }
+    28%      { fill: var(--color-success, #28a745); stroke: var(--color-success, #28a745); }
+    60%      { fill: var(--color-success, #28a745); stroke: var(--color-success, #28a745); }
+    66%      { fill: none; stroke: var(--color-gray-400, #aaa); }
+    100%     { fill: none; stroke: var(--color-gray-400, #aaa); }
+}
+
+@keyframes cycleCheckboxFill3 {
+    0%, 36%  { fill: none; stroke: var(--color-gray-400, #aaa); }
+    42%      { fill: var(--color-success, #28a745); stroke: var(--color-success, #28a745); }
+    60%      { fill: var(--color-success, #28a745); stroke: var(--color-success, #28a745); }
+    66%      { fill: none; stroke: var(--color-gray-400, #aaa); }
+    100%     { fill: none; stroke: var(--color-gray-400, #aaa); }
+}
+
+/* --- Counter swap: 0 → 1 after completion --- */
+
+@keyframes cycleCounter0 {
+    0%       { opacity: 1; }
+    44%      { opacity: 1; }
+    46%      { opacity: 0; }
+    72%      { opacity: 0; }
+    75%      { opacity: 1; }
+    100%     { opacity: 1; }
+}
+
+@keyframes cycleCounter1 {
+    0%       { opacity: 0; }
+    62%      { opacity: 0; }
+    64%      { opacity: 1; }
+    72%      { opacity: 1; }
+    75%      { opacity: 0; }
+    100%     { opacity: 0; }
+}
+
+/* --- "Cycle Complete!" flash --- */
+
+@keyframes cycleCompleteFlash {
+    0%, 46%  { opacity: 0; }
+    48%      { opacity: 1; }
+    58%      { opacity: 1; }
+    62%      { opacity: 0; }
+    100%     { opacity: 0; }
+}
+
+/* Reduced motion: show static completed state */
+@media (prefers-reduced-motion: reduce) {
+    .cycle-anim-checkmark {
+        animation: none;
+        stroke-dashoffset: 0;
+    }
+
+    .cycle-anim-checkbox {
+        animation: none;
+        fill: var(--color-success, #28a745);
+        stroke: var(--color-success, #28a745);
+    }
+
+    .cycle-anim-counter-0 {
+        animation: none;
+        opacity: 0;
+    }
+
+    .cycle-anim-counter-1 {
+        animation: none;
+        opacity: 1;
+    }
+
+    .cycle-anim-complete {
+        animation: none;
+        opacity: 0;
+    }
+}
+
+/* =============================================================================
+   CHOICE HINT (step 2 helper text)
+   ============================================================================= */
+
+.onboarding-choice-hint {
+    font-size: var(--font-size-xs);
+    color: var(--color-gray-600, #666);
+    text-align: center;
+    margin-top: var(--space-3);
+    margin-bottom: 0;
+    font-style: italic;
+}
+
+/* =============================================================================
+   "TRY IT YOURSELF" BUTTON
+   ============================================================================= */
+
+.onboarding-try-btn {
+    display: block;
+    margin: var(--space-3) auto 0;
+    padding: var(--space-2) var(--space-5);
+    background: var(--theme-info, var(--color-accent, #007BFF));
+    color: var(--color-white, #fff);
+    border: none;
+    border-radius: var(--radius-8, 8px);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    cursor: pointer;
+    transition: background var(--transition-fast), transform var(--transition-fast);
+}
+
+.onboarding-try-btn:hover {
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+}
+
+.onboarding-try-btn:active {
+    transform: translateY(0);
+}
+
+/* =============================================================================
+   INTERACTIVE CYCLE DEMO
+   ============================================================================= */
+
+.cycle-demo {
+    position: relative;
+    max-width: 220px;
+    margin: var(--space-3) auto var(--space-2);
+    background: var(--color-white);
+    border: 1px solid var(--theme-border, var(--color-gray-200, #e2e2e2));
+    border-radius: var(--radius-12, 12px);
+    padding: var(--space-3);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Task row */
+.cycle-demo-task {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) 0;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    transition: opacity var(--transition-fast);
+}
+
+.cycle-demo-task:not(:last-of-type) {
+    border-bottom: 1px solid var(--theme-border, var(--color-gray-200, #e2e2e2));
+}
+
+/* Checkbox circle */
+.cycle-demo-checkbox {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid var(--color-gray-400, #aaa);
+    background: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.cycle-demo-task.checked .cycle-demo-checkbox {
+    background: var(--color-success, #28a745);
+    border-color: var(--color-success, #28a745);
+}
+
+/* Checkmark SVG */
+.cycle-demo-checkmark {
+    width: 16px;
+    height: 16px;
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+}
+
+.cycle-demo-checkmark path {
+    fill: none;
+    stroke: var(--color-white, #fff);
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.cycle-demo-task.checked .cycle-demo-checkmark {
+    opacity: 1;
+}
+
+/* Task text */
+.cycle-demo-task-text {
+    font-size: var(--font-size-sm);
+    color: var(--theme-modal-text, var(--theme-text-on-surface, #333));
+    transition: opacity var(--transition-fast);
+}
+
+.cycle-demo-task.checked .cycle-demo-task-text {
+    opacity: 0.4;
+}
+
+/* Cycle counter */
+.cycle-demo-counter {
+    text-align: center;
+    margin-top: var(--space-3);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--theme-modal-text, var(--theme-text-on-surface, #333));
+}
+
+/* "Cycle Complete!" flash */
+.cycle-demo-complete {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.8);
+    background: var(--color-success, #28a745);
+    color: var(--color-white, #fff);
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-8, 8px);
+    font-size: var(--font-size-md);
+    font-weight: 700;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--transition-normal), transform var(--transition-normal);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.cycle-demo-complete.visible {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+/* Reduced motion: instant state changes */
+@media (prefers-reduced-motion: reduce) {
+    .cycle-demo-checkbox,
+    .cycle-demo-checkmark,
+    .cycle-demo-task-text,
+    .cycle-demo-complete {
+        transition: none;
+    }
+}
+
+/* =============================================================================
+   START MINI-CYCLE BUTTON
+   ============================================================================= */
+
+#start-mini-cycle {
+    display: block;
+    width: 100%;
+    padding: var(--space-2-5);
+    background: var(--color-primary);
+    color: var(--color-white);
+    border: none;
+    font-size: var(--font-size-base);
+    margin-top: var(--space-2-5);
+    cursor: pointer;
+    border-radius: var(--radius-5);
+    transition: background var(--transition-fast) ease;
+}
+
+#start-mini-cycle:hover {
+    background: var(--color-primary-dark);
+}
+
+/* =============================================================================
+   MINICYCLE PROMPT MODAL (Routine Creation)
+   ============================================================================= */
+
+.miniCycle-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: var(--z-modal-high);
+}
+
+dialog.miniCycle-prompt-dialog::backdrop {
+    background: rgba(0, 0, 0, 0.4);
+}
+
+.miniCycle-prompt-box {
+    background: rgb(50, 50, 50);
+    padding: var(--space-6-25);
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--color-black);
+    text-align: center;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    max-width: 95%;
+    width: 420px;
+}
+
+.miniCycle-prompt-title {
+    font-size: 1.4rem;
+    font-weight: bold;
+    margin-bottom: var(--space-2-5);
+    color: var(--color-white);
+    padding-left: var(--space-7);
+}
+
+.miniCycle-prompt-message {
+    font-size: 1rem;
+    margin-bottom: var(--space-3-75);
+    color: var(--theme-input-border);
+}
+
+.miniCycle-prompt-input {
+    width: 90%;
+    padding: var(--space-2-5);
+    font-size: 1rem;
+    border: 1px solid var(--theme-input-border);
+    border-radius: var(--radius-md);
+    text-align: center;
+    background-color: var(--color-white);
+    color: var(--color-black);
+}
+
+.miniCycle-input-error {
+    border-color: red;
+}
+
+.miniCycle-prompt-buttons {
+    display: flex;
+    justify-content: space-around;
+    margin-top: var(--space-5);
+}
+
+.miniCycle-btn-cancel,
+.miniCycle-btn-confirm {
+    padding: 10px var(--space-5);
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background var(--transition-fast) ease;
+}
+
+.miniCycle-btn-cancel {
+    background-color: var(--theme-input-border);
+    color: var(--theme-text-on-surface);
+}
+
+.miniCycle-btn-cancel:hover {
+    background-color: #bbb;
+}
+
+.miniCycle-btn-confirm {
+    background-color: var(--color-success);
+    color: var(--color-white);
+}
+
+.miniCycle-btn-confirm:hover {
+    background-color: var(--color-success);
+}
+
+/* Sample tasks option styling */
+.miniCycle-sample-option {
+    margin-top: var(--space-3-75);
+    padding: var(--space-2-5);
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-md);
+}
+
+.miniCycle-sample-option label {
+    color: var(--theme-border);
+    font-size: 0.9rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.miniCycle-sample-option input[type="checkbox"] {
+    accent-color: #38a169;
+}
+
+/* =============================================================================
+   SAMPLE CREATION DIALOG — Two-View Layout (Name Input ↔ Sample List)
+   ============================================================================= */
+
+/* View container — holds both views, only one visible at a time */
+.creation-view {
+    display: none;
+}
+
+.creation-view.active {
+    display: block;
+}
+
+/* "Load Sample" button on the name-input view */
+.load-sample-btn {
+    display: block;
+    margin: var(--space-3) auto 0;
+    padding: 5px 20px;
+    border-radius: var(--radius-6);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.7);
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+    transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.load-sample-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* Sample list view — title + back button header */
+.sample-list-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-bottom: var(--space-3-75);
+}
+
+.sample-back-btn {
+    padding: 4px 10px;
+    border-radius: var(--radius-6);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.7);
+    font-size: var(--font-size-xs);
+    cursor: pointer;
+    transition: background var(--transition-fast);
+}
+
+.sample-back-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.sample-list-title {
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* Sample list items */
+.sample-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    max-height: 260px;
+    overflow-y: auto;
+}
+
+.sample-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: var(--radius-6);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.06);
+    cursor: pointer;
+    transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.sample-item:hover {
+    background: rgba(255, 255, 255, 0.14);
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
+.sample-item:focus-visible {
+    outline: 2px solid var(--theme-input-focus-border, rgba(76, 121, 255, 0.5));
+    outline-offset: 2px;
+}
+
+.sample-item-emoji {
+    font-size: 1.4em;
+}
+
+.sample-item-name {
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.85);
+}

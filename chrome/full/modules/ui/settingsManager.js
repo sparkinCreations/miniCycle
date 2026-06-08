@@ -1,0 +1,597 @@
+/**
+ * Settings Manager Facade (DI-Pure)
+ * Orchestrates settings sub-modules for import/export, backup/restore, and UI controls
+ *
+ * NO window.* globals - all dependencies must be injected
+ * NO legacy fallbacks - strict DI only
+ * Uses dynamic versioned imports to avoid duplicate module loading
+ *
+ * @module ui/settingsManager
+ * @pattern Facade
+ */
+
+import { createDIModule, required, optional } from '../core/diBase.js';
+import { getLabel } from '../labels/labelResolver.js';
+
+// ============================================================================
+// MODULE-LEVEL STORAGE (populated by dynamic imports)
+// ============================================================================
+
+let _subModules = null;
+let _initialized = false;
+
+// ============================================================================
+// DEPENDENCY INJECTION SETUP
+// ============================================================================
+
+const di = createDIModule('SettingsManager', {
+    appInit: optional(null),
+    loadMiniCycleData: required(),
+    AppState: required(),
+    showNotification: required(),
+    showConfirmationModal: required(),
+    hideMainMenu: optional(null),
+    closeAllModals: optional(null),
+    setupDarkModeToggle: optional(null),
+    setupQuickDarkToggle: optional(null),
+    updateMoveArrowsVisibility: optional(null),
+    toggleHoverTaskOptions: optional(null),
+    refreshTaskListUI: optional(null),
+    performSchema25Migration: optional(null),
+    resetDefaultRecurringSettings: optional(null),
+    organizeCompletedTasks: optional(null),
+    handleTaskListMovement: optional(null),
+    updateCompletedTasksCount: optional(null),
+    updateStatsPanel: optional(null),
+    DataValidator: optional(null),
+    calculateNextOccurrence: optional(null),
+    sanitizeInput: required(),
+    AppMeta: optional(null),
+    safeAddEventListener: required(),
+    BackupManager: optional(null),
+    enableDebug: optional(null),
+    disableDebug: optional(null),
+    isDebug: optional(null),
+    clearAllUndoHistory: optional(null),
+    startGuidedTour: optional(null),
+    updateHelpWindow: optional(null),
+    loadMiniCycle: optional(null),
+    showLoader: optional(null),
+    hideLoader: optional(null),
+    onCycleCreated: optional(null),
+    showPromptModal: optional(null)
+});
+
+/** @type {{appInit: Object|null, loadMiniCycleData: Function, AppState: Object, showNotification: Function, showConfirmationModal: Function, hideMainMenu: Function|null, setupDarkModeToggle: Function|null, setupQuickDarkToggle: Function|null, updateMoveArrowsVisibility: Function|null, toggleHoverTaskOptions: Function|null, refreshTaskListUI: Function|null, performSchema25Migration: Function|null, resetDefaultRecurringSettings: Function|null, organizeCompletedTasks: Function|null, DataValidator: Object|null, calculateNextOccurrence: Function|null, sanitizeInput: Function, AppMeta: Object|null, safeAddEventListener: Function, BackupManager: Object|null}} */
+const _deps = new Proxy({}, {
+    get(_, prop) {
+        return di.resolve()[prop];
+    }
+});
+
+/**
+ * Set dependencies for SettingsManager and all sub-modules.
+ * @param {Object} dependencies - All required dependencies
+ * @returns {void}
+ */
+export function setSettingsManagerDependencies(dependencies) {
+    di.setDependencies(dependencies);
+}
+
+// ============================================================================
+// DYNAMIC SUB-MODULE LOADING (versioned imports)
+// ============================================================================
+
+/**
+ * Load all sub-modules with versioned imports
+ * @param {string} version - Version string for cache busting
+ */
+async function loadSubModules(version) {
+    if (_subModules) return _subModules;
+
+    const [
+        settingsUIModule,
+        cycleExportModule,
+        cycleImportModule,
+        backupRestoreModule,
+        dataSanitizerModule,
+        shareModule
+    ] = await Promise.all([
+        import(`./settingsUIManager.js?v=${version}`),
+        import(`./cycleExportManager.js?v=${version}`),
+        import(`./cycleImportManager.js?v=${version}`),
+        import(`./backupRestoreManager.js?v=${version}`),
+        import(`../utils/dataSanitizer.js?v=${version}`),
+        import(`./shareManager.js?v=${version}`)
+    ]);
+
+    // Initialize modules that need dynamic utility imports
+    if (typeof cycleImportModule.initCycleImportManager === 'function') {
+        await cycleImportModule.initCycleImportManager();
+    }
+
+    // New settings toggles: add them ONLY in settingsUIManager.initAllToggles().
+    // init() below calls initAllToggles() as a single batch — no per-toggle
+    // registration needed here. Non-toggle sub-module functions (export,
+    // import, backup) still need individual registration below.
+    _subModules = {
+        // Settings UI
+        setSettingsUIManagerDependencies: settingsUIModule.setSettingsUIManagerDependencies,
+        _resetForTesting: settingsUIModule._resetForTesting,
+        setupSettingsMenu: settingsUIModule.setupSettingsMenu,
+        setupDarkModeToggle: settingsUIModule.setupDarkModeToggle,
+        setupMoveArrowsToggle: settingsUIModule.setupMoveArrowsToggle,
+        setupThreeDotsToggle: settingsUIModule.setupThreeDotsToggle,
+        setupCompletedDropdownToggle: settingsUIModule.setupCompletedDropdownToggle,
+        setupHelpWindowToggle: settingsUIModule.setupHelpWindowToggle,
+        setupQuickActionsToggle: settingsUIModule.setupQuickActionsToggle,
+        setupScrollToNewTaskToggle: settingsUIModule.setupScrollToNewTaskToggle,
+        setupScrollOnLoadToggle: settingsUIModule.setupScrollOnLoadToggle,
+        setupDebugModeToggle: settingsUIModule.setupDebugModeToggle,
+        setupResetRecurringButton: settingsUIModule.setupResetRecurringButton,
+        setupResetAchievementProgressButton: settingsUIModule.setupResetAchievementProgressButton,
+        setupClearUndoHistoryButton: settingsUIModule.setupClearUndoHistoryButton,
+        syncCurrentSettingsToStorage: settingsUIModule.syncCurrentSettingsToStorage,
+        initAllToggles: settingsUIModule.initAllToggles,
+
+        // Cycle Export
+        setCycleExportManagerDependencies: cycleExportModule.setCycleExportManagerDependencies,
+        setupExportButton: cycleExportModule.setupExportButton,
+        exportMiniCycleData: cycleExportModule.exportMiniCycleData,
+
+        // Cycle Import
+        setCycleImportManagerDependencies: cycleImportModule.setCycleImportManagerDependencies,
+        setupImportButtons: cycleImportModule.setupImportButtons,
+        setupDragDropImport: cycleImportModule.setupDragDropImport,
+
+        // Backup/Restore
+        setBackupRestoreManagerDependencies: backupRestoreModule.setBackupRestoreManagerDependencies,
+        setupBackupButton: backupRestoreModule.setupBackupButton,
+        setupRestoreButton: backupRestoreModule.setupRestoreButton,
+        setupFactoryResetButton: backupRestoreModule.setupFactoryResetButton,
+        neutralizeAppState: backupRestoreModule.neutralizeAppState,
+        downloadBackupFile: backupRestoreModule.downloadBackupFile,
+
+        // Data Sanitizer
+        setDataSanitizerDependencies: dataSanitizerModule.setDataSanitizerDependencies,
+        sanitizeImportedData: dataSanitizerModule.sanitizeImportedData,
+        sanitizeText: dataSanitizerModule.sanitizeText,
+
+        // Share
+        setShareManagerDependencies: shareModule.setShareManagerDependencies,
+        setupShareRoutineButton: shareModule.setupShareRoutineButton,
+        setupShareAppButton: shareModule.setupShareAppButton
+    };
+
+    return _subModules;
+}
+
+/**
+ * Wire dependencies to all sub-modules
+ * @param {Object} dependencies - Dependencies to propagate
+ */
+function wireSubModuleDependencies(dependencies) {
+    if (!_subModules) {
+        console.error('SettingsManager: Sub-modules not loaded yet');
+        return;
+    }
+
+    _subModules.setSettingsUIManagerDependencies({
+        AppState: dependencies.AppState,
+        loadMiniCycleData: dependencies.loadMiniCycleData,
+        showNotification: dependencies.showNotification,
+        safeAddEventListener: dependencies.safeAddEventListener,
+        showConfirmationModal: dependencies.showConfirmationModal,
+        hideMainMenu: dependencies.hideMainMenu,
+        setupDarkModeToggle: dependencies.setupDarkModeToggle,
+        setupQuickDarkToggle: dependencies.setupQuickDarkToggle,
+        updateMoveArrowsVisibility: dependencies.updateMoveArrowsVisibility,
+        toggleHoverTaskOptions: dependencies.toggleHoverTaskOptions,
+        refreshTaskListUI: dependencies.refreshTaskListUI,
+        organizeCompletedTasks: dependencies.organizeCompletedTasks,
+        handleTaskListMovement: dependencies.handleTaskListMovement,
+        updateCompletedTasksCount: dependencies.updateCompletedTasksCount,
+        resetDefaultRecurringSettings: dependencies.resetDefaultRecurringSettings,
+        updateStatsPanel: dependencies.updateStatsPanel,
+        enableDebug: dependencies.enableDebug,
+        disableDebug: dependencies.disableDebug,
+        isDebug: dependencies.isDebug,
+        clearAllUndoHistory: dependencies.clearAllUndoHistory,
+        startGuidedTour: dependencies.startGuidedTour,
+        updateHelpWindow: dependencies.updateHelpWindow,
+        showSettingsTourNotification: dependencies.showSettingsTourNotification,
+        hasActiveNotifications: dependencies.hasActiveNotifications
+    });
+
+    _subModules.setCycleExportManagerDependencies({
+        loadMiniCycleData: dependencies.loadMiniCycleData,
+        showNotification: dependencies.showNotification,
+        showConfirmationModal: dependencies.showConfirmationModal,
+        safeAddEventListener: dependencies.safeAddEventListener,
+        AppMeta: dependencies.AppMeta
+    });
+
+    _subModules.setCycleImportManagerDependencies({
+        loadMiniCycleData: dependencies.loadMiniCycleData,
+        AppState: dependencies.AppState,
+        showNotification: dependencies.showNotification,
+        showChoiceModal: dependencies.showChoiceModal,
+        safeAddEventListener: dependencies.safeAddEventListener,
+        DataValidator: dependencies.DataValidator,
+        calculateNextOccurrence: dependencies.calculateNextOccurrence,
+        AppMeta: dependencies.AppMeta,
+        vocabThemeManager: dependencies.vocabThemeManager,
+        loadMiniCycle: dependencies.loadMiniCycle,
+        showLoader: dependencies.showLoader,
+        hideLoader: dependencies.hideLoader,
+        onCycleCreated: dependencies.onCycleCreated
+    });
+
+    _subModules.setBackupRestoreManagerDependencies({
+        AppState: dependencies.AppState,
+        showNotification: dependencies.showNotification,
+        showConfirmationModal: dependencies.showConfirmationModal,
+        safeAddEventListener: dependencies.safeAddEventListener,
+        performSchema25Migration: dependencies.performSchema25Migration,
+        BackupManager: dependencies.BackupManager,
+        AppMeta: dependencies.AppMeta,
+        loadMiniCycle: dependencies.loadMiniCycle,
+        showLoader: dependencies.showLoader,
+        hideLoader: dependencies.hideLoader,
+        hideMainMenu: dependencies.hideMainMenu,
+        closeAllModals: dependencies.closeAllModals,
+        appInit: dependencies.appInit,
+        showPromptModal: dependencies.showPromptModal
+    });
+
+    _subModules.setDataSanitizerDependencies({
+        sanitizeInput: dependencies.sanitizeInput
+    });
+
+    _subModules.setShareManagerDependencies({
+        loadMiniCycleData: dependencies.loadMiniCycleData,
+        showNotification: dependencies.showNotification,
+        showConfirmationModal: dependencies.showConfirmationModal,
+        safeAddEventListener: dependencies.safeAddEventListener,
+        hideMainMenu: dependencies.hideMainMenu
+    });
+
+}
+
+// ============================================================================
+// SETTINGS MANAGER CLASS (Facade)
+// ============================================================================
+
+/**
+ * Facade class that orchestrates settings sub-modules for UI controls, import/export, and backup/restore.
+ */
+export class SettingsManager {
+    /**
+     * Create a SettingsManager instance.
+     * @param {Object} [dependencies={}] - Initial dependencies (typically AppMeta for version)
+     */
+    constructor(dependencies = {}) {
+        // Instance version - uses injected AppMeta (no hardcoded fallback)
+        this.version = dependencies.AppMeta?.version || _deps.AppMeta?.version;
+        this.initialized = false;
+    }
+
+    /**
+     * Initialize settings manager and all sub-modules.
+     * @returns {Promise<void>}
+     */
+    async init() {
+        if (this.initialized) return;
+
+        // Wait for core systems
+        await _deps.appInit?.waitForCore?.();
+
+        try {
+            // Load sub-modules with versioned imports
+            await loadSubModules(this.version);
+
+            // Wire dependencies to sub-modules
+            wireSubModuleDependencies(di.resolve());
+
+            // Initialize all settings UI toggles via batch function.
+            // New toggles only need to be added in settingsUIManager.initAllToggles().
+            _subModules.initAllToggles?.();
+
+            // Initialize non-toggle sub-modules (export, import, backup)
+            _subModules.setupExportButton?.();
+            _subModules.setupImportButtons?.();
+            _subModules.setupDragDropImport?.();
+            _subModules.setupBackupButton?.();
+            _subModules.setupRestoreButton?.();
+            _subModules.setupFactoryResetButton?.();
+            _subModules.setupShareRoutineButton?.();
+            _subModules.setupShareAppButton?.();
+
+            this.initialized = true;
+            _initialized = true;
+        } catch (error) {
+            console.warn('Settings Manager initialization failed:', error);
+            _deps.showNotification?.(getLabel('notify.settingsLimited'), 'warning');
+        }
+    }
+
+    /**
+     * Neutralize AppState to prevent saves during destructive operations.
+     * @returns {void}
+     */
+    neutralizeAppState() {
+        _subModules?.neutralizeAppState?.();
+    }
+
+    /**
+     * Initialize the settings menu UI and event listeners.
+     * @returns {void}
+     */
+    setupSettingsMenu() {
+        _subModules?.setupSettingsMenu?.();
+    }
+
+    /**
+     * Set up the export/download button for cycle data.
+     * @returns {void}
+     */
+    setupDownloadMiniCycle() {
+        _subModules?.setupExportButton?.();
+    }
+
+    /**
+     * Set up the import/upload buttons for cycle data.
+     * @returns {void}
+     */
+    setupUploadMiniCycle() {
+        _subModules?.setupImportButtons?.();
+    }
+
+    /**
+     * Sync current in-memory settings to persistent storage.
+     * @returns {Promise<void>}
+     */
+    async syncCurrentSettingsToStorage() {
+        await _subModules?.syncCurrentSettingsToStorage?.();
+    }
+
+    /**
+     * Export cycle data as a downloadable JSON file.
+     * @param {Object} data - The cycle data to export
+     * @param {string} name - The filename for the exported file
+     * @returns {void}
+     */
+    exportMiniCycleData(data, name) {
+        _subModules?.exportMiniCycleData?.(data, name);
+    }
+
+    /**
+     * Sanitize imported backup data to prevent XSS and invalid content.
+     * @param {Object} backupData - The parsed backup data object to sanitize
+     * @returns {Object} Sanitized backup data
+     */
+    sanitizeImportedData(backupData) {
+        return _subModules?.sanitizeImportedData?.(backupData);
+    }
+
+    /**
+     * Reset recurring task settings to factory defaults.
+     * @returns {Promise<void>}
+     */
+    async resetDefaultRecurringSettings() {
+
+        const defaultSettings = {
+            frequency: "daily",
+            indefinitely: true,
+            time: null
+        };
+
+        const AppState = _deps.AppState?.();
+        if (AppState?.isReady?.()) {
+            await AppState.update(state => {
+                if (!state.settings) state.settings = {};
+                state.settings.defaultRecurringSettings = defaultSettings;
+            }, true);
+            _deps.showNotification?.(getLabel('notify.recurringDefaultReset'), "success");
+        } else {
+            console.error('AppState not ready - settings not saved');
+            _deps.showNotification?.(getLabel('notify.resetDefaultsFailed'), "error");
+        }
+    }
+}
+
+// ============================================================================
+// MODULE EXPORTS
+// ============================================================================
+
+// Create singleton instance
+let settingsManager = null;
+
+/**
+ * Initialize settings manager
+ * @param {Object} dependencies - Dependencies for the manager
+ * @returns {Promise<SettingsManager>} Initialized manager instance
+ */
+export async function initSettingsManager(dependencies) {
+    settingsManager = new SettingsManager(dependencies);
+    await settingsManager.init();
+    return settingsManager;
+}
+
+// ============================================================================
+// RE-EXPORTS (async getters for sub-module functions)
+// ============================================================================
+
+/**
+ * Load and return all dynamically-imported sub-modules.
+ * @param {string} [version] - Version string for cache busting; defaults to AppMeta version
+ * @returns {Promise<Object>} Object containing all sub-module functions
+ */
+export async function getSubModules(version) {
+    return await loadSubModules(version || _deps.AppMeta?.version);
+}
+
+// Synchronous getters (only work after init)
+
+/**
+ * Initialize the settings menu UI and event listeners.
+ * @returns {void}
+ */
+export function setupSettingsMenu() { _subModules?.setupSettingsMenu?.(); }
+
+/**
+ * Initialize the dark mode toggle in settings.
+ * @returns {void}
+ */
+export function setupDarkModeToggle() { _subModules?.setupDarkModeToggle?.(); }
+
+/**
+ * Initialize the move arrows visibility toggle in settings.
+ * @returns {void}
+ */
+export function setupMoveArrowsToggle() { _subModules?.setupMoveArrowsToggle?.(); }
+
+/**
+ * Initialize the three-dots task options toggle in settings.
+ * @returns {void}
+ */
+export function setupThreeDotsToggle() { _subModules?.setupThreeDotsToggle?.(); }
+
+/**
+ * Initialize the completed tasks dropdown toggle in settings.
+ * @returns {void}
+ */
+export function setupCompletedDropdownToggle() { _subModules?.setupCompletedDropdownToggle?.(); }
+
+/**
+ * Initialize the scroll-to-new-task toggle in settings.
+ * @returns {void}
+ */
+export function setupScrollToNewTaskToggle() { _subModules?.setupScrollToNewTaskToggle?.(); }
+
+/**
+ * Initialize the scroll-on-load toggle in settings.
+ * @returns {void}
+ */
+export function setupScrollOnLoadToggle() { _subModules?.setupScrollOnLoadToggle?.(); }
+
+/**
+ * Initialize the debug mode toggle in settings.
+ * @returns {void}
+ */
+export function setupDebugModeToggle() { _subModules?.setupDebugModeToggle?.(); }
+
+/**
+ * Initialize the reset recurring settings button in settings.
+ * @returns {void}
+ */
+export function setupResetRecurringButton() { _subModules?.setupResetRecurringButton?.(); }
+
+/**
+ * Initialize the reset achievement progress button in settings.
+ * @returns {void}
+ */
+export function setupResetAchievementProgressButton() { _subModules?.setupResetAchievementProgressButton?.(); }
+
+/**
+ * Initialize the clear undo history button in settings.
+ * @returns {void}
+ */
+export function setupClearUndoHistoryButton() { _subModules?.setupClearUndoHistoryButton?.(); }
+
+/**
+ * Sync current in-memory settings to persistent storage.
+ * @returns {void}
+ */
+export function syncCurrentSettingsToStorage() { return _subModules?.syncCurrentSettingsToStorage?.(); }
+
+/**
+ * Initialize all settings toggle controls in a single batch.
+ * @returns {void}
+ */
+export function initAllToggles() { _subModules?.initAllToggles?.(); }
+
+/**
+ * Initialize the export button for downloading cycle data.
+ * @returns {void}
+ */
+export function setupExportButton() { _subModules?.setupExportButton?.(); }
+
+/**
+ * Export cycle data as a downloadable JSON file.
+ * @param {Object} data - The cycle data to export
+ * @param {string} name - The filename for the exported file
+ * @returns {void}
+ */
+export function exportMiniCycleData(data, name) { _subModules?.exportMiniCycleData?.(data, name); }
+
+/**
+ * Initialize the import buttons for uploading cycle data.
+ * @returns {void}
+ */
+export function setupImportButtons() { _subModules?.setupImportButtons?.(); }
+
+/**
+ * Initialize the backup button for creating data backups.
+ * @returns {void}
+ */
+export function setupBackupButton() { _subModules?.setupBackupButton?.(); }
+
+/**
+ * Initialize the restore button for loading data backups.
+ * @returns {void}
+ */
+export function setupRestoreButton() { _subModules?.setupRestoreButton?.(); }
+
+/**
+ * Initialize the factory reset button in settings.
+ * @returns {void}
+ */
+export function setupFactoryResetButton() { _subModules?.setupFactoryResetButton?.(); }
+
+/**
+ * Neutralize AppState to prevent saves during destructive operations.
+ * @returns {void}
+ */
+export function neutralizeAppState() { _subModules?.neutralizeAppState?.(); }
+
+/**
+ * Download a backup file of the current app data.
+ * @param {Object} [options] - Backup options
+ * @param {boolean} [options.skipNamePrompt=false] - Skip the name prompt dialog
+ * @returns {boolean} True if backup was initiated, false on error
+ */
+export function downloadBackupFile(options) { return _subModules?.downloadBackupFile?.(options); }
+
+/**
+ * Sanitize imported backup data to prevent XSS and invalid content.
+ * @param {Object} data - The parsed backup data object to sanitize
+ * @returns {Object} Sanitized backup data
+ */
+export function sanitizeImportedData(data) { return _subModules?.sanitizeImportedData?.(data); }
+
+/**
+ * Sanitize a text string by escaping dangerous characters and enforcing max length.
+ * @param {string} text - The text to sanitize
+ * @param {number} [maxLen=500] - Maximum allowed length
+ * @returns {string} Sanitized text
+ */
+export function sanitizeText(text, maxLen) { return _subModules?.sanitizeText?.(text, maxLen); }
+
+/**
+ * Reset sub-module initialization state for testing purposes.
+ * @returns {void}
+ */
+export function _resetForTesting() { _subModules?._resetForTesting?.(); }
+
+/**
+ * Initialize the share routine button for sharing routines via Web Share API.
+ * @returns {void}
+ */
+export function setupShareRoutineButton() { _subModules?.setupShareRoutineButton?.(); }
+
+/**
+ * Initialize the share app button for sharing the app link via Web Share API.
+ * @returns {void}
+ */
+export function setupShareAppButton() { _subModules?.setupShareAppButton?.(); }

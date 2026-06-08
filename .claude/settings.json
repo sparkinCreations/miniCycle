@@ -14,7 +14,8 @@
       "Bash(mv chrome/lite/assets/chrome.png chrome/lite/assets/chrome-small.png chrome/promo/)",
       "Bash(rm chrome/assets/lite.zip)",
       "Bash(zip -r ../lite.zip . -x \"*.DS_Store\" -x \"__MACOSX/*\")",
-      "Bash(unzip -l chrome/lite.zip)"
+      "Bash(unzip -l chrome/lite.zip)",
+      "Bash(npm run *)"
     ]
   }
 }

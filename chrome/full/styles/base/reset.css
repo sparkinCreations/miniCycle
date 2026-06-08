@@ -1,0 +1,134 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   CSS Reset & Normalization
+   Establishes consistent base styles across browsers
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Box-sizing reset */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+/* Remove default margins and paddings */
+html, body {
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background: var(--theme-bg-gradient);
+    background-color: var(--theme-bg-solid);
+}
+
+/* Font Awesome font-display override to prevent CLS from icon font loading */
+@font-face {
+    font-family: 'Font Awesome 6 Free';
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Font Awesome 6 Brands';
+    font-display: swap;
+}
+
+/* Remove default list styles */
+ul, ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+/* Remove default button styles */
+button {
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+/* Remove default anchor styles */
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+/* Remove default input styles */
+input, textarea, select {
+    font-family: inherit;
+    font-size: inherit;
+}
+
+/* Prevent text selection on interactive elements */
+button, label, .checkbox-container {
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+/* Smooth scrolling for all scrollable containers */
+.scrollable {
+    -webkit-overflow-scrolling: touch;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .scrollable {
+        scroll-behavior: smooth;
+    }
+}
+
+/* Hide scrollbars but keep functionality */
+.hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+/* Accessibility: Focus visible styles */
+:focus-visible {
+    outline: 2px solid var(--theme-input-focus-border, #4c79ff);
+    outline-offset: 2px;
+}
+
+/* Remove focus outline for mouse/touch users */
+:focus:not(:focus-visible) {
+    outline: none;
+}
+
+/* Dialogs don't need focus rings — focus moves inside them */
+dialog:focus-visible {
+    outline: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Skip-to-content link (Accessibility)
+   Visually hidden until focused, then appears centered at top of viewport.
+   First focusable element in the DOM for keyboard navigation.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.skip-to-content {
+    position: absolute;
+    left: -9999px;
+    top: auto;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    z-index: var(--z-critical);
+    background: var(--theme-bg-surface-elevated, #ffffff);
+    color: var(--theme-text-on-surface, #333333);
+    padding: 12px 24px;
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-semibold);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    text-decoration: none;
+}
+
+.skip-to-content:focus {
+    position: fixed;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: auto;
+    height: auto;
+    overflow: visible;
+}

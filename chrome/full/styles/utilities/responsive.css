@@ -1,0 +1,213 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Responsive Utilities
+   Media queries and responsive breakpoint utilities
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* =============================================================================
+   BREAKPOINTS REFERENCE
+
+   xs: 0px - 479px      (Small phones)
+   sm: 480px - 767px    (Large phones, small tablets)
+   md: 768px - 1023px   (Tablets)
+   lg: 1024px+          (Desktop)
+   ============================================================================= */
+
+/* =============================================================================
+   RESPONSIVE DISPLAY UTILITIES
+   ============================================================================= */
+
+/* Hide on mobile (show on desktop) */
+@media (max-width: 767px) {
+    .hide-mobile {
+        display: none !important;
+    }
+}
+
+/* Hide on desktop (show on mobile) */
+@media (min-width: 768px) {
+    .hide-desktop {
+        display: none !important;
+    }
+}
+
+/* Show only on mobile */
+.show-mobile {
+    display: none;
+}
+
+@media (max-width: 767px) {
+    .show-mobile {
+        display: block;
+    }
+}
+
+/* Show only on desktop */
+.show-desktop {
+    display: none;
+}
+
+@media (min-width: 768px) {
+    .show-desktop {
+        display: block;
+    }
+}
+
+/* =============================================================================
+   RESPONSIVE TEXT UTILITIES
+   ============================================================================= */
+
+@media (max-width: 480px) {
+    .text-xs-center {
+        text-align: center;
+    }
+
+    .text-xs-left {
+        text-align: left;
+    }
+}
+
+@media (max-width: 768px) {
+    .text-sm-center {
+        text-align: center;
+    }
+}
+
+/* =============================================================================
+   RESPONSIVE FLEX UTILITIES
+   ============================================================================= */
+
+@media (max-width: 768px) {
+    .flex-sm-column {
+        flex-direction: column;
+    }
+
+    .flex-sm-wrap {
+        flex-wrap: wrap;
+    }
+}
+
+@media (max-width: 480px) {
+    .flex-xs-column {
+        flex-direction: column;
+    }
+}
+
+/* =============================================================================
+   RESPONSIVE WIDTH UTILITIES
+   ============================================================================= */
+
+@media (max-width: 768px) {
+    .w-sm-full {
+        width: 100%;
+    }
+
+    .max-w-sm-full {
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .w-xs-full {
+        width: 100%;
+    }
+}
+
+/* =============================================================================
+   RESPONSIVE SPACING
+   ============================================================================= */
+
+@media (max-width: 768px) {
+    .gap-sm-small {
+        gap: var(--space-1);
+    }
+
+    .p-sm-small {
+        padding: var(--space-2);
+    }
+}
+
+@media (max-width: 480px) {
+    .gap-xs-small {
+        gap: var(--space-0-5);
+    }
+
+    .p-xs-small {
+        padding: var(--space-1-5);
+    }
+}
+
+/* =============================================================================
+   TOUCH DEVICE UTILITIES
+   ============================================================================= */
+
+/* Hide hover-dependent elements on touch devices */
+@media (hover: none) {
+    .hover-only {
+        display: none !important;
+    }
+}
+
+/* Show touch-specific elements */
+.touch-only {
+    display: none;
+}
+
+@media (hover: none) {
+    .touch-only {
+        display: block;
+    }
+}
+
+/* =============================================================================
+   LANDSCAPE/PORTRAIT UTILITIES
+   ============================================================================= */
+
+@media (orientation: landscape) and (max-height: 500px) {
+    .landscape-compact .modal-content {
+        max-height: 85vh;
+    }
+
+    .landscape-compact .task-list-container {
+        /* See dvh note on #task-view in app-container.css. */
+        max-height: calc(100vh - 200px);
+        max-height: calc(100dvh - 200px);
+    }
+}
+
+/* =============================================================================
+   SAFE AREA UTILITIES (iOS)
+   ============================================================================= */
+
+.safe-top {
+    padding-top: env(safe-area-inset-top);
+}
+
+.safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+}
+
+.safe-left {
+    padding-left: env(safe-area-inset-left);
+}
+
+.safe-right {
+    padding-right: env(safe-area-inset-right);
+}
+
+/* =============================================================================
+   PRINT UTILITIES
+   ============================================================================= */
+
+@media print {
+    .no-print {
+        display: none !important;
+    }
+
+    .print-only {
+        display: block !important;
+    }
+}
+
+.print-only {
+    display: none;
+}

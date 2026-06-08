@@ -1,0 +1,1669 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Accessibility — High Contrast Mode + Settings Controls
+   Applied via body.high-contrast toggle in settings.
+   Must coexist with dark mode (body.dark-mode) and custom themes.
+   Increases border visibility, text contrast, and element distinction.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* =============================================================================
+   LIGHT MODE HIGH CONTRAST — Variable Overrides
+   ============================================================================= */
+
+body.high-contrast:not(.dark-mode) {
+    /* Text — boost muted/secondary to WCAG AAA (7:1) */
+    --theme-text-muted: #444444;
+    --theme-text-secondary: #222222;
+    --theme-text-on-surface: #111111;
+    --theme-input-placeholder: #555555;
+
+    /* Borders — visible on all surfaces */
+    --theme-task-border: #333333;
+    --theme-card-border: #333333;
+    --theme-modal-border: #333333;
+    --theme-input-border: #333333;
+    --theme-header-border: rgba(0, 0, 0, 0.4);
+    --theme-stats-border: #555555;
+
+    /* Backgrounds — reduce transparency for readability */
+    --theme-task-bg: rgba(255, 255, 255, 1);
+    --theme-card-bg: rgba(255, 255, 255, 1);
+    --theme-stats-bg: rgba(255, 255, 255, 0.85);
+    --theme-bg-surface: rgba(255, 255, 255, 1);
+    --theme-modal-footer-bg: #e8e8e8;
+
+    /* Completed tasks — stronger text on green */
+    --theme-task-completed-text: #1a4d1a;
+    --theme-task-completed-bg: rgba(180, 240, 180, 1);
+
+    /* Progress bar — visible track */
+    --theme-progress-track-bg: rgba(0, 0, 0, 0.25);
+}
+
+/* =============================================================================
+   LIGHT MODE HIGH CONTRAST — Element Overrides
+   ============================================================================= */
+
+/* Tasks */
+body.high-contrast:not(.dark-mode) .task {
+    border: 2px solid #333333;
+}
+
+body.high-contrast:not(.dark-mode) .task.completed {
+    opacity: 1;
+}
+
+/* Checkboxes */
+body.high-contrast:not(.dark-mode) .task input[type="checkbox"] {
+    border: 2px solid #333333;
+}
+
+body.high-contrast:not(.dark-mode) .pref-checkbox-incomplete {
+    border-color: #555555;
+    background: rgba(200, 200, 200, 0.5);
+}
+
+/* Settings */
+body.high-contrast:not(.dark-mode) .settings-section.collapsible {
+    border: 2px solid #333333;
+}
+
+body.high-contrast:not(.dark-mode) .toggle-slider {
+    border: 2px solid #555555;
+}
+
+body.high-contrast:not(.dark-mode) .settings-btn {
+    border: 1px solid #333333;
+}
+
+/* Stats panel */
+body.high-contrast:not(.dark-mode) .stats-panel {
+    border: 2px solid #333333;
+    background: rgba(255, 255, 255, 0.9);
+}
+
+/* Task option buttons */
+body.high-contrast:not(.dark-mode) .task-btn {
+    border: 1px solid #999999;
+}
+
+/* Task options modal */
+body.high-contrast:not(.dark-mode) .task-option-item {
+    border: 1px solid #cccccc;
+    background: rgba(0, 0, 0, 0.04);
+}
+
+body.high-contrast:not(.dark-mode) .task-options-section-header {
+    border-bottom: 2px solid #cccccc;
+    color: #222222;
+}
+
+/* Overdue tasks */
+body.high-contrast:not(.dark-mode) .task.overdue-task {
+    background: var(--color-error-bg);
+    color: #b71c1c;
+    border: 2px solid var(--color-error);
+}
+
+/* Modal overlays */
+body.high-contrast:not(.dark-mode) dialog::backdrop,
+body.high-contrast:not(.dark-mode) .modal-overlay,
+body.high-contrast:not(.dark-mode) .storage-modal-overlay {
+    background-color: rgba(0, 0, 0, 0.55);
+}
+
+/* Generic modal content */
+body.high-contrast:not(.dark-mode) .modal-content {
+    border: 2px solid #333333;
+}
+
+/* --- About Modal --- */
+body.high-contrast:not(.dark-mode) .about-modal-content {
+    border: 2px solid #333333;
+    background: rgba(255, 255, 255, 0.9);
+}
+
+body.high-contrast:not(.dark-mode) .about-tagline {
+    opacity: 0.85;
+}
+
+body.high-contrast:not(.dark-mode) .about-version-badge {
+    background: rgba(255, 255, 255, 0.75);
+    border: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+body.high-contrast:not(.dark-mode) .about-description {
+    opacity: 1;
+}
+
+body.high-contrast:not(.dark-mode) .about-links {
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(0, 0, 0, 0.15);
+}
+
+body.high-contrast:not(.dark-mode) .about-link-divider {
+    opacity: 0.7;
+}
+
+body.high-contrast:not(.dark-mode) .about-footer {
+    border-top: 2px solid rgba(0, 0, 0, 0.25);
+}
+
+body.high-contrast:not(.dark-mode) .about-footer p {
+    opacity: 0.85;
+}
+
+body.high-contrast:not(.dark-mode) .about-modal-content .about-footer .about-copyright {
+    opacity: 0.75;
+}
+
+body.high-contrast:not(.dark-mode) .about-modal-content .about-footer .about-cache {
+    opacity: 0.65;
+}
+
+/* --- Routine Switcher Modal --- */
+body.high-contrast:not(.dark-mode) .mini-cycle-switch-modal-content {
+    border: 2px solid #333333;
+}
+
+body.high-contrast:not(.dark-mode) .mini-cycle-switch-title {
+    border-bottom: 2px solid rgba(0, 0, 0, 0.25);
+}
+
+body.high-contrast:not(.dark-mode) .mini-cycle-switch-list {
+    border: 2px solid #555555;
+}
+
+body.high-contrast:not(.dark-mode) .mini-cycle-switch-item {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+body.high-contrast:not(.dark-mode) .mini-cycle-switch-item:hover,
+body.high-contrast:not(.dark-mode) .mini-cycle-switch-item:focus-visible {
+    background: rgba(0, 0, 0, 0.15);
+}
+
+body.high-contrast:not(.dark-mode) .routine-search-input {
+    border: 2px solid #555555;
+}
+
+body.high-contrast:not(.dark-mode) .routine-search-input::placeholder {
+    color: #555555;
+}
+
+body.high-contrast:not(.dark-mode) .routine-search-input:focus {
+    box-shadow: var(--shadow-focus-ring);
+}
+
+body.high-contrast:not(.dark-mode) .routine-sort-btn {
+    border: 1px solid #999999;
+    color: #333333;
+}
+
+body.high-contrast:not(.dark-mode) .routine-sort-label {
+    color: #333333;
+}
+
+body.high-contrast:not(.dark-mode) .routine-filter-select {
+    border: 1px solid #999999;
+    color: #333333;
+}
+
+body.high-contrast:not(.dark-mode) .cycle-item-size {
+    color: #555555;
+    background: rgba(0, 0, 0, 0.1);
+}
+
+body.high-contrast:not(.dark-mode) .switch-preview-window {
+    border: 2px solid rgba(0, 0, 0, 0.3);
+}
+
+body.high-contrast:not(.dark-mode) .switch-preview-date {
+    color: #555555;
+}
+
+body.high-contrast:not(.dark-mode) .switch-buttons {
+    color: #333333;
+}
+
+body.high-contrast:not(.dark-mode) .mini-cycle-switch-btn {
+    border: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+body.high-contrast:not(.dark-mode) .routine-switcher-btn {
+    border: 2px solid rgba(0, 0, 0, 0.4);
+    background: rgba(255, 255, 255, 0.4);
+}
+
+/* --- Themes Modal --- */
+body.high-contrast:not(.dark-mode) .themes-modal-content {
+    border: 2px solid #333333;
+}
+
+body.high-contrast:not(.dark-mode) .themes-modal-content h2 {
+    border-bottom: 2px solid #cccccc;
+}
+
+body.high-contrast:not(.dark-mode) .theme-radio-option {
+    background: rgba(0, 0, 0, 0.04);
+    border: 2px solid #cccccc;
+}
+
+body.high-contrast:not(.dark-mode) .theme-radio-option:has(input:checked) {
+    border-color: #333333;
+    background: rgba(74, 144, 226, 0.15);
+}
+
+body.high-contrast:not(.dark-mode) .theme-radio-option input[type="radio"] {
+    border: 2px solid #555555;
+}
+
+body.high-contrast:not(.dark-mode) #dark-mode-section {
+    background: rgba(0, 0, 0, 0.06);
+    border-top: 2px solid #cccccc;
+}
+
+body.high-contrast:not(.dark-mode) #dark-mode-section .custom-checkbox {
+    background: rgba(0, 0, 0, 0.05);
+    border: 1px solid #cccccc;
+    border-radius: 8px;
+}
+
+body.high-contrast:not(.dark-mode) #dark-mode-section .custom-checkbox .checkmark {
+    border: 2px solid #555555;
+}
+
+/* --- Personalization (Preferences) Modal --- */
+body.high-contrast:not(.dark-mode) .preferences-modal-content {
+    border: 2px solid #333333;
+}
+
+body.high-contrast:not(.dark-mode) .preferences-modal-content h2 {
+    border-bottom: 2px solid #cccccc;
+}
+
+body.high-contrast:not(.dark-mode) .preferences-theme-notice {
+    background: rgba(74, 144, 226, 0.2);
+    border: 2px solid rgba(74, 144, 226, 0.4);
+}
+
+body.high-contrast:not(.dark-mode) .preferences-color-row {
+    border: 1px solid #cccccc;
+    border-radius: 8px;
+}
+
+body.high-contrast:not(.dark-mode) .preferences-color-row input[type="color"] {
+    border: 2px solid #555555;
+}
+
+body.high-contrast:not(.dark-mode) .preferences-color-row input[type="range"] {
+    background: #999999;
+}
+
+body.high-contrast:not(.dark-mode) .preferences-reset-btn {
+    border: 1px solid #999999;
+    color: #333333;
+}
+
+body.high-contrast:not(.dark-mode) .preferences-footer {
+    border-top: 2px solid #cccccc;
+}
+
+body.high-contrast:not(.dark-mode) .preferences-undo-btn {
+    border: 2px solid #999999;
+}
+
+body.high-contrast:not(.dark-mode) .preferences-undo-btn:disabled {
+    opacity: 0.6;
+}
+
+body.high-contrast:not(.dark-mode) .preferences-reset-all-btn {
+    border: 2px solid var(--theme-error, #dc3545);
+}
+
+body.high-contrast:not(.dark-mode) .preferences-preview-label {
+    color: rgba(255, 255, 255, 1);
+}
+
+/* --- Feedback Modal --- */
+body.high-contrast:not(.dark-mode) .feedback-modal-content {
+    border: 2px solid #333333;
+}
+
+body.high-contrast:not(.dark-mode) .feedback-modal-content p {
+    opacity: 1;
+}
+
+body.high-contrast:not(.dark-mode) #feedback-text,
+body.high-contrast:not(.dark-mode) #feedback-email {
+    border: 2px solid #555555;
+}
+
+/* --- Reminders Modal --- */
+body.high-contrast:not(.dark-mode) .reminders-modal-content {
+    border: 2px solid #333333;
+}
+
+body.high-contrast:not(.dark-mode) .reminders-modal-content .close-btn {
+    color: #333333;
+}
+
+body.high-contrast:not(.dark-mode) #frequency-section {
+    border-top: 2px solid #cccccc;
+}
+
+/* --- Games Modal --- */
+body.high-contrast:not(.dark-mode) .games-modal-content {
+    border: 2px solid #333333;
+}
+
+body.high-contrast:not(.dark-mode) .game-card {
+    border: 2px solid #999999;
+}
+
+body.high-contrast:not(.dark-mode) .game-card-description {
+    color: #333333;
+}
+
+body.high-contrast:not(.dark-mode) .game-card-btn {
+    border: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+body.high-contrast:not(.dark-mode) .game-card-btn:disabled {
+    opacity: 0.6;
+}
+
+/* --- Storage Modal --- */
+body.high-contrast:not(.dark-mode) .storage-modal-content {
+    border: 2px solid #333333;
+}
+
+body.high-contrast:not(.dark-mode) .storage-modal-box {
+    border: 2px solid #333333;
+}
+
+body.high-contrast:not(.dark-mode) .storage-modal-header {
+    border-bottom: 2px solid #999999;
+}
+
+body.high-contrast:not(.dark-mode) .storage-modal-buttons {
+    border-top: 2px solid #999999;
+}
+
+body.high-contrast:not(.dark-mode) .storage-modal-buttons .btn-confirm {
+    border: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+/* --- Settings Modal --- */
+body.high-contrast:not(.dark-mode) .settings-modal-content {
+    border: 2px solid #333333;
+}
+
+/* --- Recurring Panel --- */
+body.high-contrast:not(.dark-mode) .modal-panel {
+    border: 2px solid #333333;
+}
+
+/* --- Mini Modal Box (generic small modals) --- */
+body.high-contrast:not(.dark-mode) .mini-modal-box {
+    border: 2px solid #333333;
+}
+
+/* Progress bar */
+body.high-contrast:not(.dark-mode) .progress-container {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+/* Notifications */
+body.high-contrast:not(.dark-mode) .notification .close-btn {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* Quick option buttons in notifications */
+body.high-contrast:not(.dark-mode) .notification-quick-option {
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* Completed tasks header */
+body.high-contrast:not(.dark-mode) .completed-tasks-header {
+    color: rgba(255, 255, 255, 1);
+}
+
+/* Empty state */
+body.high-contrast:not(.dark-mode) .empty-state-hint {
+    color: rgba(255, 255, 255, 0.95);
+}
+
+body.high-contrast:not(.dark-mode) .empty-state-icon {
+    opacity: 1;
+}
+
+/* Scrollbar */
+body.high-contrast:not(.dark-mode) .task-list::-webkit-scrollbar-track {
+    background: rgba(100, 180, 255, 0.25);
+}
+
+/* Placeholders */
+body.high-contrast:not(.dark-mode) input::placeholder,
+body.high-contrast:not(.dark-mode) textarea::placeholder {
+    color: #555555;
+}
+
+/* Menu/mode selector */
+body.high-contrast:not(.dark-mode) .mode-selector {
+    border: 2px solid rgba(0, 0, 0, 0.4);
+}
+
+/* Footer note in task options modal */
+body.high-contrast:not(.dark-mode) .modal-footer-note {
+    color: #333333;
+}
+
+/* Reset/secondary buttons */
+body.high-contrast:not(.dark-mode) .reset-btn {
+    border: 1px solid #999999;
+    color: #222222;
+}
+
+/* Three dots menu button */
+body.high-contrast:not(.dark-mode) .three-dots-btn {
+    color: #333333;
+}
+
+/* Disabled buttons */
+body.high-contrast:not(.dark-mode) button:disabled {
+    opacity: 0.65;
+}
+
+/* Main menu — container */
+body.high-contrast:not(.dark-mode) .menu-container {
+    border: 2px solid #333333;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Main menu — sections */
+body.high-contrast:not(.dark-mode) .menu-section {
+    background: rgba(255, 255, 255, 0.75);
+    border: 2px solid rgba(0, 0, 0, 0.3);
+}
+
+/* Main menu — section headers */
+body.high-contrast:not(.dark-mode) .menu-section-header {
+    color: #222222;
+}
+
+body.high-contrast:not(.dark-mode) .menu-section-toggle {
+    opacity: 1;
+}
+
+/* Main menu — buttons */
+body.high-contrast:not(.dark-mode) .menu-section-grid button {
+    background: rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    color: #111111;
+}
+
+body.high-contrast:not(.dark-mode) .menu-section-grid button:hover {
+    background: rgba(0, 0, 0, 0.15);
+    border-color: rgba(0, 0, 0, 0.35);
+}
+
+/* Main menu — date text */
+body.high-contrast:not(.dark-mode) #current-date {
+    color: rgba(0, 0, 0, 0.75);
+}
+
+/* Main menu — header text */
+body.high-contrast:not(.dark-mode) .main-menu-header {
+    color: #111111;
+}
+
+/* Main menu — header separator */
+body.high-contrast:not(.dark-mode) .main-menu-header-row::after {
+    background: rgba(0, 0, 0, 0.25);
+    height: 2px;
+}
+
+/* Main menu — mode description toggle */
+body.high-contrast:not(.dark-mode) .mode-description-toggle {
+    background: rgba(0, 0, 0, 0.1);
+    color: #222222;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+body.high-contrast:not(.dark-mode) .mode-description-toggle .mode-badge {
+    opacity: 0.8;
+}
+
+/* Main menu — mode description box */
+body.high-contrast:not(.dark-mode) .mode-description {
+    border: 1px solid #cccccc;
+    color: #111111;
+}
+
+/* Main menu — close button */
+body.high-contrast:not(.dark-mode) #close-main-menu {
+    border-top: 2px solid rgba(0, 0, 0, 0.2);
+}
+
+/* Main menu — legacy list buttons */
+body.high-contrast:not(.dark-mode) .menu-container ul li button {
+    color: #111111;
+}
+
+/* Main menu — grid buttons */
+body.high-contrast:not(.dark-mode) .menu-grid button {
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+/* Main menu — icon text (three dots icon-text) */
+body.high-contrast:not(.dark-mode) .menu-section-grid #menu-task-options .icon-text {
+    color: #222222;
+}
+
+/* Main menu — collapsible header hover */
+body.high-contrast:not(.dark-mode) .menu-section-header.collapsible:hover {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+/* =============================================================================
+   DARK MODE HIGH CONTRAST — Variable Overrides
+   ============================================================================= */
+
+body.high-contrast.dark-mode {
+    /* Text — boost muted/secondary for dark backgrounds */
+    --theme-text-muted: #cccccc;
+    --theme-text-secondary: #e0e0e0;
+    --theme-text-on-surface: #f0f0f0;
+    --theme-input-placeholder: #aaaaaa;
+
+    /* Borders — visible on dark surfaces */
+    --theme-task-border: #aaaaaa;
+    --theme-card-border: #aaaaaa;
+    --theme-modal-border: #aaaaaa;
+    --theme-input-border: #999999;
+    --theme-header-border: rgba(255, 255, 255, 0.4);
+    --theme-stats-border: #888888;
+
+    /* Backgrounds — reduce transparency */
+    --theme-task-bg: #2e2e2e;
+    --theme-card-bg: #2e2e2e;
+    --theme-stats-bg: rgba(42, 42, 42, 0.95);
+    --theme-bg-surface: #2a2a2a;
+
+    /* Completed tasks — readable on dark green */
+    --theme-task-completed-text: #c8f0c8;
+    --theme-task-completed-bg: #1a3d1a;
+
+    /* Progress bar */
+    --theme-progress-track-bg: rgba(255, 255, 255, 0.2);
+
+    /* Semantic backgrounds — stronger */
+    --dark-success-bg: #1a5028;
+    --dark-error-bg: #6b1a1a;
+    --dark-border-subtle: #888888;
+    --dark-button-border: rgba(255, 255, 255, 0.3);
+    --dark-chip-bg: rgba(255, 255, 255, 0.15);
+}
+
+/* =============================================================================
+   DARK MODE HIGH CONTRAST — Element Overrides
+   ============================================================================= */
+
+/* Tasks */
+body.high-contrast.dark-mode .task {
+    border: 2px solid #aaaaaa;
+}
+
+body.high-contrast.dark-mode .task.completed {
+    opacity: 1;
+}
+
+/* Checkboxes */
+body.high-contrast.dark-mode .task input[type="checkbox"] {
+    border: 2px solid #aaaaaa;
+}
+
+body.high-contrast.dark-mode .pref-checkbox-incomplete {
+    border-color: #888888;
+    background: rgba(100, 100, 100, 0.5);
+}
+
+/* Settings */
+body.high-contrast.dark-mode .settings-section.collapsible {
+    border: 2px solid #aaaaaa;
+}
+
+body.high-contrast.dark-mode .toggle-slider {
+    border: 2px solid #888888;
+}
+
+body.high-contrast.dark-mode .settings-btn {
+    border: 1px solid #888888;
+}
+
+/* Stats panel */
+body.high-contrast.dark-mode .stats-panel {
+    border: 2px solid #aaaaaa;
+    background: rgba(42, 42, 42, 0.95);
+}
+
+/* Task option buttons */
+body.high-contrast.dark-mode .task-btn {
+    border: 1px solid #777777;
+}
+
+/* Task options modal */
+body.high-contrast.dark-mode .task-option-item {
+    border: 1px solid #666666;
+    background: rgba(255, 255, 255, 0.06);
+}
+
+body.high-contrast.dark-mode .task-options-section-header {
+    border-bottom: 2px solid #666666;
+    color: #e0e0e0;
+}
+
+/* Overdue tasks */
+body.high-contrast.dark-mode .task.overdue-task {
+    background: var(--color-error-bg-dark);
+    color: #ff5252;
+    border: 2px solid var(--color-error);
+}
+
+/* Modal overlays */
+body.high-contrast.dark-mode dialog::backdrop,
+body.high-contrast.dark-mode .modal-overlay,
+body.high-contrast.dark-mode .storage-modal-overlay {
+    background-color: rgba(0, 0, 0, 0.7);
+}
+
+/* Generic modal content */
+body.high-contrast.dark-mode .modal-content {
+    border: 2px solid #aaaaaa;
+}
+
+/* --- About Modal --- */
+body.high-contrast.dark-mode .about-modal-content {
+    border: 2px solid #aaaaaa;
+    background: rgba(42, 42, 42, 0.95);
+}
+
+body.high-contrast.dark-mode .about-tagline {
+    opacity: 0.85;
+}
+
+body.high-contrast.dark-mode .about-version-badge {
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+body.high-contrast.dark-mode .about-description {
+    opacity: 1;
+}
+
+body.high-contrast.dark-mode .about-links {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+body.high-contrast.dark-mode .about-link-divider {
+    opacity: 0.7;
+}
+
+body.high-contrast.dark-mode .about-footer {
+    border-top: 2px solid rgba(255, 255, 255, 0.25);
+}
+
+body.high-contrast.dark-mode .about-footer p {
+    opacity: 0.85;
+}
+
+body.high-contrast.dark-mode .about-modal-content .about-footer .about-copyright {
+    opacity: 0.75;
+}
+
+body.high-contrast.dark-mode .about-modal-content .about-footer .about-cache {
+    opacity: 0.65;
+}
+
+/* --- Routine Switcher Modal --- */
+body.high-contrast.dark-mode .mini-cycle-switch-modal-content {
+    border: 2px solid #aaaaaa;
+}
+
+body.high-contrast.dark-mode .mini-cycle-switch-title {
+    border-bottom: 2px solid rgba(255, 255, 255, 0.25);
+}
+
+body.high-contrast.dark-mode .mini-cycle-switch-list {
+    border: 2px solid #888888;
+}
+
+body.high-contrast.dark-mode .mini-cycle-switch-item {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    color: #e0e0e0;
+}
+
+body.high-contrast.dark-mode .mini-cycle-switch-item:hover,
+body.high-contrast.dark-mode .mini-cycle-switch-item:focus-visible {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+body.high-contrast.dark-mode .routine-search-input {
+    border: 2px solid #888888;
+    background: #2a2a2a;
+    color: #e0e0e0;
+}
+
+body.high-contrast.dark-mode .routine-search-input::placeholder {
+    color: #aaaaaa;
+}
+
+body.high-contrast.dark-mode .routine-search-input:focus {
+    box-shadow: var(--shadow-focus-ring);
+}
+
+body.high-contrast.dark-mode .routine-sort-btn {
+    border: 1px solid #777777;
+    color: #cccccc;
+    background: #333333;
+}
+
+body.high-contrast.dark-mode .routine-sort-label {
+    color: #cccccc;
+}
+
+body.high-contrast.dark-mode .routine-filter-select {
+    border: 1px solid #777777;
+    color: #cccccc;
+    background: #333333;
+}
+
+body.high-contrast.dark-mode .cycle-item-size {
+    color: #aaaaaa;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+body.high-contrast.dark-mode .switch-preview-window {
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    background: #1a1a1a;
+    color: #e0e0e0;
+}
+
+body.high-contrast.dark-mode .switch-preview-date {
+    color: #aaaaaa;
+}
+
+body.high-contrast.dark-mode .switch-buttons {
+    color: #cccccc;
+}
+
+body.high-contrast.dark-mode .mini-cycle-switch-btn {
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+body.high-contrast.dark-mode .routine-switcher-btn {
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.15);
+    color: #e0e0e0;
+}
+
+/* --- Themes Modal --- */
+body.high-contrast.dark-mode .themes-modal-content {
+    border: 2px solid #aaaaaa;
+}
+
+body.high-contrast.dark-mode .themes-modal-content h2 {
+    border-bottom: 2px solid #666666;
+}
+
+body.high-contrast.dark-mode .theme-radio-option {
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid #666666;
+}
+
+body.high-contrast.dark-mode .theme-radio-option:has(input:checked) {
+    border-color: #aaaaaa;
+    background: rgba(74, 144, 226, 0.15);
+}
+
+body.high-contrast.dark-mode .theme-radio-option input[type="radio"] {
+    border: 2px solid #888888;
+}
+
+body.high-contrast.dark-mode #dark-mode-section {
+    background: rgba(255, 255, 255, 0.05);
+    border-top: 2px solid #666666;
+}
+
+body.high-contrast.dark-mode #dark-mode-section .custom-checkbox {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid #666666;
+    border-radius: 8px;
+}
+
+body.high-contrast.dark-mode #dark-mode-section .custom-checkbox .checkmark {
+    border: 2px solid #888888;
+}
+
+/* --- Personalization (Preferences) Modal --- */
+body.high-contrast.dark-mode .preferences-modal-content {
+    border: 2px solid #aaaaaa;
+}
+
+body.high-contrast.dark-mode .preferences-modal-content h2 {
+    border-bottom: 2px solid #666666;
+}
+
+body.high-contrast.dark-mode .preferences-theme-notice {
+    background: rgba(74, 144, 226, 0.2);
+    border: 2px solid rgba(74, 144, 226, 0.4);
+}
+
+body.high-contrast.dark-mode .preferences-color-row {
+    border: 1px solid #666666;
+    border-radius: 8px;
+}
+
+body.high-contrast.dark-mode .preferences-color-row input[type="color"] {
+    border: 2px solid #888888;
+}
+
+body.high-contrast.dark-mode .preferences-color-row input[type="range"] {
+    background: #666666;
+}
+
+body.high-contrast.dark-mode .preferences-reset-btn {
+    border: 1px solid #777777;
+    color: #cccccc;
+}
+
+body.high-contrast.dark-mode .preferences-footer {
+    border-top: 2px solid #666666;
+}
+
+body.high-contrast.dark-mode .preferences-undo-btn {
+    border: 2px solid #777777;
+}
+
+body.high-contrast.dark-mode .preferences-undo-btn:disabled {
+    opacity: 0.6;
+}
+
+body.high-contrast.dark-mode .preferences-reset-all-btn {
+    border: 2px solid var(--theme-error, #dc3545);
+}
+
+body.high-contrast.dark-mode .preferences-preview-label {
+    color: rgba(255, 255, 255, 1);
+}
+
+/* --- Feedback Modal --- */
+body.high-contrast.dark-mode .feedback-modal-content {
+    border: 2px solid #aaaaaa;
+}
+
+body.high-contrast.dark-mode .feedback-modal-content p {
+    opacity: 1;
+}
+
+body.high-contrast.dark-mode #feedback-text,
+body.high-contrast.dark-mode #feedback-email {
+    border: 2px solid #888888;
+}
+
+/* --- Reminders Modal --- */
+body.high-contrast.dark-mode .reminders-modal-content {
+    border: 2px solid #aaaaaa;
+}
+
+body.high-contrast.dark-mode .reminders-modal-content .close-btn {
+    color: #cccccc;
+}
+
+body.high-contrast.dark-mode #frequency-section {
+    border-top: 2px solid #666666;
+}
+
+/* --- Games Modal --- */
+body.high-contrast.dark-mode .games-modal-content {
+    border: 2px solid #aaaaaa;
+}
+
+body.high-contrast.dark-mode .game-card {
+    border: 2px solid #777777;
+}
+
+body.high-contrast.dark-mode .game-card-description {
+    color: #cccccc;
+}
+
+body.high-contrast.dark-mode .game-card-btn {
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+body.high-contrast.dark-mode .game-card-btn:disabled {
+    opacity: 0.6;
+}
+
+/* --- Storage Modal --- */
+body.high-contrast.dark-mode .storage-modal-content {
+    border: 2px solid #aaaaaa;
+}
+
+body.high-contrast.dark-mode .storage-modal-box {
+    border: 2px solid #aaaaaa;
+}
+
+body.high-contrast.dark-mode .storage-modal-header {
+    border-bottom: 2px solid #777777;
+}
+
+body.high-contrast.dark-mode .storage-modal-buttons {
+    border-top: 2px solid #777777;
+}
+
+body.high-contrast.dark-mode .storage-modal-buttons .btn-confirm {
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* --- Settings Modal --- */
+body.high-contrast.dark-mode .settings-modal-content {
+    border: 2px solid #aaaaaa;
+}
+
+/* --- Recurring Panel --- */
+body.high-contrast.dark-mode .modal-panel {
+    border: 2px solid #aaaaaa;
+}
+
+/* --- Mini Modal Box (generic small modals) --- */
+body.high-contrast.dark-mode .mini-modal-box {
+    border: 2px solid #aaaaaa;
+}
+
+/* Progress bar */
+body.high-contrast.dark-mode .progress-container {
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Notifications */
+body.high-contrast.dark-mode .notification .close-btn {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+body.high-contrast.dark-mode .notification-quick-option {
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Completed tasks header */
+body.high-contrast.dark-mode .completed-tasks-header {
+    color: rgba(255, 255, 255, 1);
+}
+
+/* Empty state */
+body.high-contrast.dark-mode .empty-state-hint {
+    color: rgba(255, 255, 255, 0.95);
+}
+
+body.high-contrast.dark-mode .empty-state-icon {
+    opacity: 1;
+}
+
+/* Scrollbar */
+body.high-contrast.dark-mode .task-list::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+/* Placeholders */
+body.high-contrast.dark-mode input::placeholder,
+body.high-contrast.dark-mode textarea::placeholder {
+    color: #aaaaaa;
+}
+
+/* Menu/mode selector */
+body.high-contrast.dark-mode .mode-selector {
+    border: 2px solid rgba(255, 255, 255, 0.4);
+}
+
+/* Footer note in task options modal */
+body.high-contrast.dark-mode .modal-footer-note {
+    color: #cccccc;
+}
+
+/* Reset/secondary buttons */
+body.high-contrast.dark-mode .reset-btn {
+    border: 1px solid #777777;
+    color: #e0e0e0;
+}
+
+/* Three dots menu button */
+body.high-contrast.dark-mode .three-dots-btn {
+    color: #cccccc;
+}
+
+/* Disabled buttons */
+body.high-contrast.dark-mode button:disabled {
+    opacity: 0.65;
+}
+
+/* Main menu — container */
+body.high-contrast.dark-mode .menu-container {
+    border: 2px solid #888888;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+}
+
+/* Main menu — sections */
+body.high-contrast.dark-mode .menu-section {
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.25);
+}
+
+/* Main menu — section headers */
+body.high-contrast.dark-mode .menu-section-header {
+    color: #e0e0e0;
+}
+
+body.high-contrast.dark-mode .menu-section-toggle {
+    opacity: 1;
+}
+
+/* Main menu — buttons */
+body.high-contrast.dark-mode .menu-section-grid button {
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: #f0f0f0;
+}
+
+body.high-contrast.dark-mode .menu-section-grid button:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* Main menu — date text */
+body.high-contrast.dark-mode #current-date {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* Main menu — header text */
+body.high-contrast.dark-mode .main-menu-header {
+    color: #f0f0f0;
+}
+
+/* Main menu — header separator */
+body.high-contrast.dark-mode .main-menu-header-row::after {
+    background: rgba(255, 255, 255, 0.25);
+    height: 2px;
+}
+
+/* Main menu — mode description toggle */
+body.high-contrast.dark-mode .mode-description-toggle {
+    background: rgba(255, 255, 255, 0.1);
+    color: #e0e0e0;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+body.high-contrast.dark-mode .mode-description-toggle .mode-badge {
+    opacity: 0.8;
+}
+
+/* Main menu — mode description box */
+body.high-contrast.dark-mode .mode-description {
+    background: #1a1a2e;
+    border: 1px solid #666666;
+    color: #e0e0e0;
+}
+
+/* Main menu — close button */
+body.high-contrast.dark-mode #close-main-menu {
+    border-top: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Main menu — legacy list buttons */
+body.high-contrast.dark-mode .menu-container ul li button {
+    color: #e0e0e0;
+}
+
+/* Main menu — grid buttons */
+body.high-contrast.dark-mode .menu-grid button {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Main menu — collapsible header hover */
+body.high-contrast.dark-mode .menu-section-header.collapsible:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* =============================================================================
+   ENHANCED FOCUS INDICATORS (both modes)
+   ============================================================================= */
+
+body.high-contrast *:focus-visible {
+    outline: 3px solid currentColor;
+    outline-offset: 2px;
+}
+
+/* =============================================================================
+   FONT SIZE SELECT (settings control styles)
+   ============================================================================= */
+
+.settings-option.settings-option-vertical {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.settings-select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--theme-input-border, #cccccc);
+    border-radius: var(--radius-md, 8px);
+    background: var(--theme-input-bg, #ffffff);
+    color: var(--theme-input-text, #333333);
+    font-size: var(--font-size-sm);
+    font-family: var(--font-family);
+    cursor: pointer;
+}
+
+.settings-select:focus-visible {
+    outline: 2px solid var(--accent-color, #007bff);
+    outline-offset: 2px;
+}
+
+/* =============================================================================
+   HIGH CONTRAST — RECURRING PANEL (Light Mode)
+   ============================================================================= */
+
+body.high-contrast:not(.dark-mode) #recurring-settings-panel {
+    background: #e8e8e8;
+    border: 2px solid #333;
+}
+
+body.high-contrast:not(.dark-mode) .recurring-settings-title {
+    color: #000;
+}
+
+body.high-contrast:not(.dark-mode) #recur-frequency {
+    border: 2px solid #333;
+}
+
+body.high-contrast:not(.dark-mode) .recurring-task-item {
+    border: 2px solid #333;
+    box-shadow: none;
+}
+
+body.high-contrast:not(.dark-mode) .monthly-days,
+body.high-contrast:not(.dark-mode) .yearly-months,
+body.high-contrast:not(.dark-mode) .yearly-days {
+    background: #c8c8c8;
+    border: 2px solid #333;
+}
+
+body.high-contrast:not(.dark-mode) .monthly-day-box,
+body.high-contrast:not(.dark-mode) .weekly-day-box,
+body.high-contrast:not(.dark-mode) .biweekly-day-box,
+body.high-contrast:not(.dark-mode) .yearly-month-box,
+body.high-contrast:not(.dark-mode) .yearly-day-box {
+    border: 2px solid #333;
+}
+
+body.high-contrast:not(.dark-mode) .time-picker-wrapper {
+    border: 2px solid #333;
+}
+
+body.high-contrast:not(.dark-mode) .time-picker-group input[type="number"],
+body.high-contrast:not(.dark-mode) .time-picker-group select {
+    border: 2px solid #333;
+}
+
+body.high-contrast:not(.dark-mode) #specific-dates-panel {
+    border: 2px solid #333;
+}
+
+body.high-contrast:not(.dark-mode) .specific-date-entry input[type="date"] {
+    border: 2px solid #333;
+}
+
+body.high-contrast:not(.dark-mode) #non-recurring-tasks li {
+    border: 2px solid #333;
+}
+
+body.high-contrast:not(.dark-mode) .available-tasks-list {
+    border: 2px solid #333;
+}
+
+body.high-contrast:not(.dark-mode) .available-tasks-header {
+    color: #333;
+}
+
+body.high-contrast:not(.dark-mode) .no-available-tasks {
+    color: #333;
+}
+
+body.high-contrast:not(.dark-mode) .recurring-empty-state {
+    color: #333;
+}
+
+body.high-contrast:not(.dark-mode) .confirm-add-recurring-btn:disabled {
+    background: #999;
+    color: #333;
+}
+
+body.high-contrast:not(.dark-mode) .change-recurring-btn {
+    border: 2px solid #333;
+    background: #e0e0e0;
+    color: #000;
+}
+
+body.high-contrast:not(.dark-mode) #apply-recurring-settings {
+    border: 2px solid #006600;
+    color: #fff;
+}
+
+body.high-contrast:not(.dark-mode) #cancel-recurring-settings {
+    border: 2px solid #333;
+    color: #fff;
+}
+
+body.high-contrast:not(.dark-mode) .close-recurring-panel {
+    border-top: 2px solid #333;
+}
+
+body.high-contrast:not(.dark-mode) .add-recurring-task-btn {
+    border: 2px dashed #333;
+    color: #000;
+}
+
+body.high-contrast:not(.dark-mode) .select-all-add-recurring-btn {
+    color: #000;
+    text-decoration: underline;
+}
+
+body.high-contrast:not(.dark-mode) .confirm-add-recurring-btn {
+    border: 2px solid #006600;
+}
+
+body.high-contrast:not(.dark-mode) .recurring-remove-btn {
+    color: #cc0000;
+}
+
+body.high-contrast:not(.dark-mode) .toggle-advanced-btn {
+    border: 1px solid #333;
+}
+
+body.high-contrast:not(.dark-mode) #toggle-check-all {
+    border: 1px solid #333;
+}
+
+/* =============================================================================
+   HIGH CONTRAST — RECURRING PANEL (Dark Mode)
+   ============================================================================= */
+
+body.high-contrast.dark-mode #recurring-settings-panel {
+    background: #2a2a2a;
+    border: 2px solid #aaa;
+}
+
+body.high-contrast.dark-mode .recurring-settings-title {
+    color: #fff;
+}
+
+body.high-contrast.dark-mode #recur-frequency {
+    border: 2px solid #aaa;
+}
+
+body.high-contrast.dark-mode .recurring-task-item {
+    border: 2px solid #aaa;
+    box-shadow: none;
+}
+
+body.high-contrast.dark-mode .monthly-days,
+body.high-contrast.dark-mode .yearly-months,
+body.high-contrast.dark-mode .yearly-days {
+    background: #3a3a3a;
+    border: 2px solid #aaa;
+}
+
+body.high-contrast.dark-mode .monthly-day-box,
+body.high-contrast.dark-mode .weekly-day-box,
+body.high-contrast.dark-mode .biweekly-day-box,
+body.high-contrast.dark-mode .yearly-month-box,
+body.high-contrast.dark-mode .yearly-day-box {
+    border: 2px solid #aaa;
+}
+
+body.high-contrast.dark-mode .time-picker-wrapper {
+    border: 2px solid #aaa;
+}
+
+body.high-contrast.dark-mode .time-picker-group input[type="number"],
+body.high-contrast.dark-mode .time-picker-group select {
+    border: 2px solid #aaa;
+}
+
+body.high-contrast.dark-mode #specific-dates-panel {
+    border: 2px solid #aaa;
+}
+
+body.high-contrast.dark-mode .specific-date-entry input[type="date"] {
+    border: 2px solid #aaa;
+}
+
+body.high-contrast.dark-mode #non-recurring-tasks li {
+    border: 2px solid #aaa;
+}
+
+body.high-contrast.dark-mode .available-tasks-list {
+    border: 2px solid #aaa;
+}
+
+body.high-contrast.dark-mode .available-tasks-header {
+    color: #ccc;
+}
+
+body.high-contrast.dark-mode .no-available-tasks {
+    color: #ccc;
+}
+
+body.high-contrast.dark-mode .recurring-empty-state {
+    color: #ccc;
+}
+
+body.high-contrast.dark-mode .confirm-add-recurring-btn:disabled {
+    background: #555;
+    color: #ccc;
+}
+
+body.high-contrast.dark-mode .change-recurring-btn {
+    border: 2px solid #aaa;
+    background: #3a3a3a;
+    color: #fff;
+}
+
+body.high-contrast.dark-mode #apply-recurring-settings {
+    border: 2px solid #00aa00;
+    color: #fff;
+}
+
+body.high-contrast.dark-mode #cancel-recurring-settings {
+    border: 2px solid #aaa;
+    color: #fff;
+}
+
+body.high-contrast.dark-mode .close-recurring-panel {
+    border-top: 2px solid #aaa;
+}
+
+body.high-contrast.dark-mode .add-recurring-task-btn {
+    border: 2px dashed #aaa;
+    color: #fff;
+}
+
+body.high-contrast.dark-mode .select-all-add-recurring-btn {
+    color: #6cf;
+    text-decoration: underline;
+}
+
+body.high-contrast.dark-mode .confirm-add-recurring-btn {
+    border: 2px solid #00aa00;
+}
+
+body.high-contrast.dark-mode .recurring-remove-btn {
+    color: #ff4444;
+}
+
+body.high-contrast.dark-mode .toggle-advanced-btn {
+    border: 1px solid #aaa;
+}
+
+body.high-contrast.dark-mode #toggle-check-all {
+    border: 1px solid #aaa;
+}
+
+/* =============================================================================
+   HIGH CONTRAST — STATS PANEL (Light Mode)
+   ============================================================================= */
+
+body.high-contrast:not(.dark-mode) .stats-panel {
+    border: 2px solid #333;
+}
+
+body.high-contrast:not(.dark-mode) .stats-feature-btn {
+    border: 2px solid #333;
+}
+
+body.high-contrast:not(.dark-mode) .history-btn {
+    border: 2px solid #333;
+}
+
+body.high-contrast:not(.dark-mode) .achievement-badges-btn {
+    border: 2px solid #333;
+}
+
+body.high-contrast:not(.dark-mode) #all-routines-count {
+    color: #333;
+    opacity: 1;
+}
+
+body.high-contrast:not(.dark-mode) #milestone-progress-text {
+    color: #333;
+    opacity: 1;
+}
+
+body.high-contrast:not(.dark-mode) .badge {
+    border: 2px solid #333;
+}
+
+/* =============================================================================
+   HIGH CONTRAST — STATS PANEL (Dark Mode)
+   ============================================================================= */
+
+body.high-contrast.dark-mode .stats-panel {
+    border: 2px solid #aaa;
+}
+
+body.high-contrast.dark-mode .stats-feature-btn {
+    border: 2px solid #aaa;
+}
+
+body.high-contrast.dark-mode .history-btn {
+    border: 2px solid #aaa;
+}
+
+body.high-contrast.dark-mode .achievement-badges-btn {
+    border: 2px solid #aaa;
+}
+
+body.high-contrast.dark-mode #all-routines-count {
+    color: #ccc;
+    opacity: 1;
+}
+
+body.high-contrast.dark-mode #milestone-progress-text {
+    color: #ccc;
+    opacity: 1;
+}
+
+body.high-contrast.dark-mode .badge {
+    border: 2px solid #aaa;
+}
+
+/* =============================================================================
+   HIGH CONTRAST — QUICK ACTIONS (Light Mode)
+   ============================================================================= */
+
+body.high-contrast:not(.dark-mode) .quick-actions-picker {
+    border: 2px solid #333;
+}
+
+body.high-contrast:not(.dark-mode) .quick-actions-picker-item {
+    border: 2px solid #333;
+}
+
+body.high-contrast:not(.dark-mode) .quick-actions-slot.empty {
+    border: 2px dashed #333;
+    opacity: 0.7;
+}
+
+body.high-contrast:not(.dark-mode) .quick-actions-picker-section-title {
+    color: #333;
+    opacity: 1;
+}
+
+/* =============================================================================
+   HIGH CONTRAST — QUICK ACTIONS (Dark Mode)
+   ============================================================================= */
+
+body.high-contrast.dark-mode .quick-actions-picker {
+    border: 2px solid #aaa;
+}
+
+body.high-contrast.dark-mode .quick-actions-picker-item {
+    border: 2px solid #aaa;
+}
+
+body.high-contrast.dark-mode .quick-actions-slot.empty {
+    border: 2px dashed #aaa;
+    opacity: 0.7;
+}
+
+body.high-contrast.dark-mode .quick-actions-picker-section-title {
+    color: #ccc;
+    opacity: 1;
+}
+
+/* =============================================================================
+   HIGH CONTRAST — ONBOARDING (Light Mode)
+   ============================================================================= */
+
+body.high-contrast:not(.dark-mode) .onboarding-content {
+    border: 2px solid #333;
+}
+
+body.high-contrast:not(.dark-mode) .onboarding-skip {
+    color: #333;
+}
+
+body.high-contrast:not(.dark-mode) .onboarding-step-indicator {
+    color: #333;
+}
+
+body.high-contrast:not(.dark-mode) .onboarding-dot {
+    background: #999;
+    border: 2px solid #333;
+}
+
+body.high-contrast:not(.dark-mode) .onboarding-dot.active {
+    background: var(--theme-button-primary-bg, #4c79ff);
+}
+
+body.high-contrast:not(.dark-mode) .miniCycle-prompt-input {
+    border: 2px solid #333;
+}
+
+/* =============================================================================
+   HIGH CONTRAST — ONBOARDING (Dark Mode)
+   ============================================================================= */
+
+body.high-contrast.dark-mode .onboarding-content {
+    border: 2px solid #aaa;
+}
+
+body.high-contrast.dark-mode .onboarding-skip {
+    color: #ccc;
+}
+
+body.high-contrast.dark-mode .onboarding-step-indicator {
+    color: #ccc;
+}
+
+body.high-contrast.dark-mode .onboarding-dot {
+    background: #555;
+    border: 2px solid #aaa;
+}
+
+body.high-contrast.dark-mode .onboarding-dot.active {
+    background: var(--theme-button-primary-bg, #4c79ff);
+}
+
+body.high-contrast.dark-mode .miniCycle-prompt-input {
+    border: 2px solid #aaa;
+}
+
+/* =============================================================================
+   HIGH CONTRAST — NOTIFICATIONS (Light + Dark Mode)
+   ============================================================================= */
+
+body.high-contrast .notification.recurring {
+    border: 3px solid #333;
+}
+
+body.high-contrast.dark-mode .notification.recurring {
+    border: 3px solid #aaa;
+}
+
+/* =============================================================================
+   HIGH CONTRAST — TASK SEARCH & FILTER/SORT
+   ============================================================================= */
+
+/* Light high contrast */
+body.high-contrast:not(.dark-mode) .task-search-input-row,
+body.high-contrast:not(.dark-mode) .task-filter-sort-row {
+    background: var(--theme-bg-surface);
+    border: 1px solid var(--theme-input-border);
+}
+
+body.high-contrast:not(.dark-mode) .task-search-btn,
+body.high-contrast:not(.dark-mode) .task-search-clear,
+body.high-contrast:not(.dark-mode) .chip-group-icon {
+    color: var(--theme-text-on-surface);
+}
+
+body.high-contrast:not(.dark-mode) .filter-chip,
+body.high-contrast:not(.dark-mode) .sort-chip {
+    border: 1px solid var(--theme-text-muted);
+    color: var(--theme-text-on-surface);
+}
+
+body.high-contrast:not(.dark-mode) .filter-chip.active,
+body.high-contrast:not(.dark-mode) .sort-chip.active {
+    border: 2px solid var(--theme-text-on-surface);
+}
+
+body.high-contrast:not(.dark-mode) .filter-sort-divider {
+    background: var(--theme-text-muted);
+}
+
+/* Dark high contrast */
+body.high-contrast.dark-mode .task-search-input-row,
+body.high-contrast.dark-mode .task-filter-sort-row {
+    border: 1px solid var(--theme-task-border);
+}
+
+body.high-contrast.dark-mode .task-search-btn,
+body.high-contrast.dark-mode .task-search-clear,
+body.high-contrast.dark-mode .chip-group-icon {
+    color: var(--theme-text-secondary);
+}
+
+body.high-contrast.dark-mode .filter-chip,
+body.high-contrast.dark-mode .sort-chip {
+    border: 1px solid var(--theme-task-border);
+    background: var(--dark-chip-bg);
+    color: var(--theme-text-secondary);
+}
+
+body.high-contrast.dark-mode .filter-chip.active,
+body.high-contrast.dark-mode .sort-chip.active {
+    border: 2px solid var(--theme-text-primary);
+}
+
+body.high-contrast.dark-mode .filter-sort-divider {
+    background: var(--dark-border-subtle);
+}

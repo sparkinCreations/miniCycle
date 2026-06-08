@@ -1,0 +1,155 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Forms Component
+   Form inputs, selects, checkboxes, and form-related elements
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* =============================================================================
+   BASE FORM INPUTS
+   ============================================================================= */
+
+input,
+select,
+textarea {
+    font-family: var(--font-family);
+    font-size: var(--font-size-base);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--theme-input-focus-border, rgba(76, 121, 255, 0.5));
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+    outline: 2px solid var(--theme-input-focus-border, #4c79ff);
+    outline-offset: 2px;
+}
+
+/* =============================================================================
+   SELECT INPUTS
+   ============================================================================= */
+
+select {
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--theme-input-border, var(--theme-input-border));
+    border-radius: var(--radius-sm);
+    background: var(--theme-input-bg);
+    color: var(--theme-input-text);
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+select.hidden {
+    display: none;
+}
+
+/* =============================================================================
+   NUMBER INPUTS
+   ============================================================================= */
+
+input[type="number"] {
+    padding: var(--space-1-5) var(--space-2-5);
+    border: 1px solid var(--theme-input-border, var(--theme-input-border));
+    border-radius: var(--radius-sm);
+    background: var(--theme-input-bg);
+    color: var(--theme-input-text);
+    width: auto;
+}
+
+input[type="number"]:focus {
+    border-color: var(--theme-button-primary-bg, var(--color-primary));
+}
+
+/* =============================================================================
+   DATE INPUTS
+   ============================================================================= */
+
+input[type="date"] {
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--theme-input-border, var(--theme-input-border));
+    border-radius: var(--radius-sm);
+    background: var(--theme-input-bg);
+    color: var(--theme-input-text);
+    cursor: pointer;
+}
+
+/* =============================================================================
+   TIME PICKER GROUP
+   ============================================================================= */
+
+.time-picker-group {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.time-picker-group input[type="number"],
+.time-picker-group select {
+    padding: var(--space-1-5) var(--space-2-5);
+    border: 1px solid var(--theme-input-border);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-sm);
+}
+
+.time-picker-group input[type="number"]:focus,
+.time-picker-group select:focus {
+    border-color: var(--theme-button-primary-bg, var(--color-primary));
+    box-shadow: var(--shadow-focus-ring-subtle);
+}
+
+/* =============================================================================
+   CHECKBOX INPUTS
+   ============================================================================= */
+
+input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: var(--theme-success, #4CAF50);
+}
+
+/* =============================================================================
+   EMPTY STATE & COMPLETED TASKS
+   NOTE: These styles are in task-list.css (removed duplicate from here)
+   ============================================================================= */
+
+/* =============================================================================
+   INPUT GROUPS
+   ============================================================================= */
+
+.input-group {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.input-group label {
+    font-size: var(--font-size-sm);
+    color: var(--theme-text-secondary, #666);
+}
+
+.input-group input,
+.input-group select {
+    flex: 1;
+}
+
+/* =============================================================================
+   SPECIFIC DATE ENTRY
+   ============================================================================= */
+
+.specific-date-entry {
+    margin-top: var(--space-2-5);
+}
+
+.specific-date-entry input[type="date"] {
+    width: 100%;
+    padding: var(--space-2-5);
+    border: 1px solid var(--theme-input-border);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-sm);
+}
+

@@ -1,0 +1,365 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Storage Component
+   Storage usage bar and related UI elements
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* =============================================================================
+   STORAGE BAR CONTAINER
+   ============================================================================= */
+
+.storage-bar-container {
+    margin-top: var(--space-3-75);
+    padding: var(--space-2-5);
+    background: transparent;
+    border: none;
+    border-top: 1px solid var(--border-blue-subtle);
+    border-radius: 0;
+}
+
+.storage-bar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-1-5);
+}
+
+.storage-bar-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.storage-bar-hint {
+    font-size: var(--font-size-xs);
+    color: var(--color-gray-600);
+    font-weight: 400;
+}
+
+/* =============================================================================
+   STORAGE REFRESH BUTTON
+   ============================================================================= */
+
+.storage-refresh-btn {
+    background: none;
+    border: none;
+    color: var(--theme-text-muted);
+    cursor: pointer;
+    padding: var(--space-1) 6px;
+    font-size: 0.7rem;
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-fast) ease;
+}
+
+.storage-refresh-btn:hover {
+    background: rgba(0, 0, 0, 0.1);
+    color: var(--theme-button-primary-bg, #4c79ff);
+}
+
+.storage-refresh-btn.refreshing {
+    animation: spin var(--animation-spin) linear infinite;
+}
+
+/* =============================================================================
+   STORAGE BAR TRACK
+   ============================================================================= */
+
+.storage-bar-track {
+    width: 100%;
+    height: 8px;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+}
+
+.storage-bar-fill {
+    height: 100%;
+    border-radius: var(--radius-sm);
+    transition: width var(--transition-normal) ease, background-color var(--transition-normal) ease;
+    min-width: 2px;
+}
+
+/* =============================================================================
+   STORAGE STATUS COLORS
+   ============================================================================= */
+
+.storage-normal {
+    background: linear-gradient(90deg, var(--color-success), var(--color-success-light));
+}
+
+.storage-caution {
+    background: linear-gradient(90deg, var(--color-warning), var(--color-yellow-light));
+}
+
+.storage-warning {
+    background: linear-gradient(90deg, var(--color-orange), var(--color-orange-light));
+}
+
+.storage-critical {
+    background: linear-gradient(90deg, var(--color-red), var(--color-red-light));
+}
+
+/* =============================================================================
+   STORAGE BAR TEXT
+   ============================================================================= */
+
+.storage-bar-text {
+    font-size: 0.7rem;
+    color: var(--color-gray-600);
+    margin-top: var(--space-1-5);
+    text-align: right;
+}
+
+/* =============================================================================
+   STORAGE MODAL
+   ============================================================================= */
+
+.storage-modal-overlay {
+    position: fixed;
+    inset: 0;
+    margin: 0;
+    border: none;
+    padding: 0;
+    max-width: none;
+    max-height: none;
+    width: 100%;
+    height: 100%;
+    background: var(--theme-modal-overlay);
+    align-items: center;
+    justify-content: center;
+}
+
+.storage-modal-overlay[open] {
+    display: flex;
+}
+
+.storage-modal-overlay::backdrop {
+    display: none;
+}
+
+.storage-modal-content {
+    background: var(--pref-modal-bg, var(--theme-modal-glass-bg, var(--theme-modal-bg, #ffffff)));
+    color: var(--pref-modal-text, var(--theme-modal-text, #333));
+    border-radius: var(--radius-lg);
+    padding: var(--space-5);
+    width: 420px;
+    max-width: 95%;
+    box-shadow:
+        0 8px 30px rgba(0, 0, 0, 0.2),
+        inset 0 1px 1px rgba(255, 255, 255, 0.25);
+    -webkit-backdrop-filter: blur(var(--theme-modal-blur));
+    backdrop-filter: blur(var(--theme-modal-blur));
+}
+
+.storage-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-3-75);
+}
+
+.storage-modal-header h2 {
+    margin: 0;
+    font-size: 1.2rem;
+}
+
+/* =============================================================================
+   STORAGE DETAILS
+   ============================================================================= */
+
+.storage-details {
+    margin-top: var(--space-3-75);
+}
+
+.storage-detail-row {
+    display: flex;
+    justify-content: space-between;
+    padding: var(--space-2) 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.storage-detail-row:last-child {
+    border-bottom: none;
+}
+
+.storage-detail-label {
+    color: var(--theme-text-secondary, #666);
+    font-size: var(--font-size-sm);
+}
+
+.storage-detail-value {
+    font-weight: 600;
+    font-size: var(--font-size-sm);
+}
+
+/* =============================================================================
+   MOBILE ADJUSTMENTS
+   ============================================================================= */
+
+@media (max-width: 768px) {
+    .storage-bar-container {
+        padding: var(--space-2);
+    }
+
+    .storage-bar-label {
+        font-size: 0.7rem;
+    }
+
+    .storage-modal-content {
+        width: 95%;
+        padding: var(--space-3-75);
+    }
+}
+
+/* =============================================================================
+   STORAGE VIEWER MODAL
+   ============================================================================= */
+
+.storage-modal-box {
+    pointer-events: auto;
+    width: 90%;
+    max-width: 700px;
+    max-height: 90vh;
+    background-color: var(--modal-bg, #fff);
+    color: var(--modal-text, #333);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.25);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    font-size: 1rem;
+    border: 2px solid var(--modal-border, #ccc);
+}
+
+.storage-modal-header {
+    font-weight: bold;
+    font-size: 1.2rem;
+    padding: var(--space-4);
+    background-color: var(--modal-header-bg, #f5f5f5);
+    border-bottom: 1px solid var(--modal-border, #ccc);
+}
+
+.storage-modal-body {
+    padding: var(--space-4);
+    overflow-y: auto;
+    flex: 1;
+    font-family: monospace;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.storage-modal-buttons {
+    padding: var(--space-3) var(--space-4);
+    text-align: right;
+    border-top: 1px solid var(--modal-border, #ccc);
+    background-color: var(--modal-footer-bg, #f5f5f5);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--space-2);
+}
+
+.storage-modal-buttons .btn-confirm {
+    padding: var(--space-2) var(--space-4);
+    background-color: var(--btn-bg, #007bff);
+    color: var(--btn-text, white);
+    border: none;
+    border-radius: var(--radius-6);
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.storage-modal-buttons .btn-confirm:hover {
+    background-color: var(--btn-hover-bg, #0056b3);
+}
+
+/* Storage Viewer Overlay */
+#storage-viewer-overlay {
+    position: absolute;
+    top: 60px;
+    left: 60px;
+    z-index: var(--z-modal-high);
+    pointer-events: none;
+}
+
+#storage-viewer-overlay.hidden {
+    display: none;
+}
+
+#storage-viewer-overlay .mini-modal-box.wide {
+    width: 90%;
+    max-width: 700px;
+    max-height: 90vh;
+    background-color: var(--modal-bg, #fff);
+    color: var(--modal-text, #333);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.25);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    font-size: 1rem;
+    border: 2px solid var(--modal-border, #ccc);
+    pointer-events: auto;
+}
+
+#storage-viewer-overlay .mini-modal-header {
+    font-weight: bold;
+    font-size: 1.2rem;
+    padding: var(--space-4);
+    background-color: var(--modal-header-bg, #f5f5f5);
+    border-bottom: 1px solid var(--modal-border, #ccc);
+}
+
+#storage-content {
+    padding: var(--space-4);
+    overflow-y: auto;
+    flex: 1;
+    font-family: monospace;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+#storage-content.scrollable {
+    max-height: 60vh;
+    overflow-y: auto;
+    font-family: monospace;
+    font-size: 0.9em;
+    background: var(--color-code-bg);
+    padding: var(--space-2-5);
+    border: 1px solid var(--theme-input-border);
+    text-align: left;
+}
+
+.storage-key {
+    margin-bottom: var(--space-3);
+    padding-bottom: var(--space-1-5);
+    color: var(--color-gray-400);
+}
+
+.storage-key-title {
+    font-weight: bold;
+    margin-bottom: var(--space-0-5);
+    color: var(--color-gray-300);
+}
+
+/* JSON Entry Styling */
+.json-entry {
+    margin-bottom: var(--space-2);
+    padding: var(--space-1-5);
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: var(--radius-sm);
+}
+
+.json-toggle {
+    cursor: pointer;
+    color: var(--theme-info, #007bff);
+    font-weight: bold;
+}
+
+.json-toggle:hover {
+    text-decoration: underline;
+}
+
+/* NOTE: Storage modal overlay styles already defined above (lines 110-132) —
+   originally also in modals.css, now consolidated here */

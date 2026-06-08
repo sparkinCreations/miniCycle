@@ -1,0 +1,653 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Buttons Component
+   Generic button styles and variants
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* =============================================================================
+   BASE BUTTON STYLES
+   ============================================================================= */
+
+button {
+    background: var(--theme-button-secondary-bg);
+    color: var(--theme-button-secondary-text);
+    border: none;
+    padding: var(--space-2-5) var(--space-3-25);
+    font-size: var(--font-size-base);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background var(--transition-normal), transform var(--transition-fast);
+    font-family: inherit;
+}
+
+button:not(.dot):hover {
+    background: var(--theme-button-secondary-hover-bg);
+}
+
+button:active {
+    transform: scale(0.98);
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    border-style: dashed;
+}
+
+/* =============================================================================
+   PRIMARY BUTTONS
+   ============================================================================= */
+
+.btn-primary,
+button.primary {
+    background: var(--theme-button-primary-bg, var(--color-primary));
+    color: var(--theme-button-primary-text, var(--color-white));
+}
+
+.btn-primary:hover,
+button.primary:hover {
+    background: var(--theme-button-primary-hover-bg, #5a87ff);
+}
+
+/* =============================================================================
+   SECONDARY BUTTONS
+   ============================================================================= */
+
+.btn-secondary,
+button.secondary {
+    background: var(--theme-button-secondary-bg);
+    color: var(--theme-button-secondary-text);
+}
+
+.btn-secondary:hover,
+button.secondary:hover {
+    background: var(--theme-button-secondary-hover-bg);
+}
+
+/* =============================================================================
+   DANGER BUTTONS
+   ============================================================================= */
+
+.btn-danger,
+button.danger {
+    background: var(--theme-error, var(--color-error));
+    color: var(--color-white);
+}
+
+.btn-danger:hover,
+button.danger:hover {
+    background: var(--theme-error-light, #e55353);
+}
+
+/* =============================================================================
+   SUCCESS BUTTONS
+   ============================================================================= */
+
+.btn-success,
+button.success {
+    background: var(--theme-success, var(--color-success));
+    color: var(--color-white);
+}
+
+.btn-success:hover,
+button.success:hover {
+    background: var(--theme-success-light, var(--color-success-light));
+}
+
+/* =============================================================================
+   GHOST/OUTLINE BUTTONS
+   ============================================================================= */
+
+.btn-ghost,
+button.ghost {
+    background: transparent;
+    border: 1px solid currentColor;
+}
+
+.btn-ghost:hover,
+button.ghost:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+/* =============================================================================
+   ICON BUTTONS
+   ============================================================================= */
+
+.btn-icon,
+button.icon-only {
+    padding: var(--space-2);
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-full);
+}
+
+.btn-icon i,
+button.icon-only i {
+    font-size: var(--font-size-base);
+}
+
+/* =============================================================================
+   COMPLETE ALL BUTTON
+   ============================================================================= */
+
+.complete-all-btn {
+    background: var(--color-complete-btn);
+    border: 2px solid rgba(0, 0, 0, 0.15);
+    border-bottom: 3px solid rgba(0, 0, 0, 0.25);
+    margin-top: var(--space-2-5);
+    padding: 14px var(--space-8);
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: all var(--transition-fast) ease;
+    color: var(--color-white);
+    position: relative;
+    z-index: var(--z-content);
+    margin-bottom: 0;
+    box-shadow: var(--shadow-button);
+    text-shadow: var(--text-shadow-sm);
+}
+
+.complete-all-btn:hover {
+    background: var(--color-complete-btn-hover);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-button-hover);
+}
+
+.complete-all-btn:active {
+    transform: translateY(1px);
+    border-bottom-width: 2px;
+    box-shadow: var(--shadow-sm);
+}
+
+/* To-Do Mode button style - blue color */
+.complete-all-btn.todo-mode-btn {
+    background: var(--color-todo-btn);
+    box-shadow: var(--shadow-button);
+}
+
+.complete-all-btn.todo-mode-btn:hover {
+    background: var(--color-todo-btn-hover);
+    box-shadow: var(--shadow-button-hover);
+}
+
+/* Custom preference colors (Default theme only) */
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-all-btn:not(.todo-mode-btn) {
+    background: var(--pref-complete-btn, var(--color-complete-btn));
+    box-shadow: var(--shadow-button);
+}
+
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-all-btn.todo-mode-btn {
+    background: var(--pref-clear-btn, var(--color-todo-btn));
+    box-shadow: var(--shadow-button);
+}
+
+/* Complete All and Help Window Container */
+.complete-all-and-help-window-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2-5);
+    margin-top: 0;
+    margin-bottom: var(--space-5);
+    flex-shrink: 0; /* Never compress — task card shrinks instead */
+}
+
+/* =============================================================================
+   HELP WINDOW
+   Inside #task-view - positioned below content on mobile, to the right on desktop
+   ============================================================================= */
+
+.help-window {
+    background: var(--pref-panel-bg);
+    border-radius: var(--radius-2xl);
+    border: 1px solid var(--pref-panel-border);
+    box-shadow:
+        0 4px 15px rgba(0, 0, 0, 0.08),
+        inset 0 1px 1px rgba(255, 255, 255, 0.3);
+    max-width: 450px;
+    width: 100%;
+    padding: var(--space-2-5) var(--space-2-5);
+    z-index: var(--z-content);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-size: var(--font-size-base);
+    color: var(--pref-panel-text);
+    backdrop-filter: blur(var(--pref-panel-blur));
+    -webkit-backdrop-filter: blur(var(--pref-panel-blur));
+    transition: opacity var(--transition-normal) ease;
+    opacity: 1;
+    margin-top: var(--space-2-5);
+    margin-bottom: var(--space-7-5);
+}
+
+.help-window.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.help-window.hide {
+    opacity: 0;
+    visibility: hidden;
+}
+
+/* Hide help window when user preference is off */
+body.hide-help-window .help-window {
+    display: none;
+}
+
+.help-window h4 {
+    margin: 0 0 var(--space-2) 0;
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    color: var(--pref-panel-accent, var(--accent-color, #007bff));
+}
+
+.help-window p {
+    margin: 0;
+    line-height: 1.4;
+    /* Constrain the paragraph to the help-window's content width so the
+       nowrap preamble + CTA spans actually break between each other
+       instead of overflowing the box. Without this, the flex parent
+       (align-items: center) lets the p grow to its content width. */
+    max-width: 100%;
+}
+
+/* Preamble + CTA tail both kept on single lines so when the help-window
+   wraps, the only valid break point is the gap between them — giving a
+   clean preamble-on-line-1 / CTA-on-line-2 split rather than tearing
+   either phrase mid-word. The leading " • " is inside the .cta span so
+   it drops to the second line with the rest of the CTA. */
+.help-window-body,
+.help-window-cta {
+    white-space: nowrap;
+}
+
+/* =============================================================================
+   HELP WINDOW - MOBILE ADJUSTMENTS
+   Ensure clearance from footer
+   ============================================================================= */
+
+@media (max-width: 768px) {
+    .help-window {
+        margin-top: var(--space-2);
+        margin-bottom: var(--help-window-clearance);
+        font-size: var(--font-size-sm);
+        padding: var(--space-1-5) var(--space-2-5);
+    }
+}
+
+@media (max-width: 480px) {
+    .help-window {
+        margin-bottom: calc(var(--help-window-clearance) + 10px);
+        padding: 5px var(--space-2);
+        font-size: var(--font-size-xs);
+    }
+}
+
+/* Tablet range - reduce task list to make room for help window */
+@media (min-width: 769px) and (max-width: 1023px) {
+    .task-list-container {
+        max-height: calc(100vh - var(--task-card-offset-with-btn) - var(--help-window-clearance) - 15px);
+    }
+
+    .help-window {
+        margin-bottom: calc(var(--help-window-clearance) + 25px);
+        font-size: var(--font-size-sm);
+        padding: var(--space-2-5);
+    }
+}
+
+/* =============================================================================
+   HELP WINDOW SIDE POSITION (Desktop only)
+   Positioned to the right of task list, vertically centered
+   ============================================================================= */
+
+@media (min-width: 1024px) {
+    /* Position to the right of task-view, vertically centered */
+    .help-window {
+        position: absolute;
+        left: calc(100% + 25px);
+        top: 50%;
+        transform: translateY(-50%);
+        /* Explicit dimensions with centered content */
+        min-height: 100px;
+        min-width: 200px;
+        max-width: 230px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: var(--font-size-sm);
+        padding: var(--space-1-25) var(--space-3-75);
+        margin: 0;
+    }
+
+    /* Reduce task list height to clear footer */
+    .task-list-container {
+        max-height: calc(100vh - 400px);
+    }
+}
+
+/* Wider screens */
+@media (min-width: 1280px) {
+    .help-window {
+        left: calc(100% + 30px);
+        min-height: 125px;
+        min-width: 250px;
+        max-width: 295px;
+        font-size: var(--font-size-sm);
+        padding: var(--space-1-25) var(--space-3-75);
+    }
+}
+
+/* Ultra-wide screens */
+@media (min-width: 1800px) {
+    .help-window {
+        left: calc(100% + 40px);
+        min-height: 125px;
+        min-width: 300px;
+        max-width: 400px;
+        font-size: var(--font-size-sm);
+        padding: 5px var(--space-5);
+    }
+}
+
+
+/* =============================================================================
+   RECURRING BUTTON
+   ============================================================================= */
+
+.recurring-btn {
+    color: var(--color-primary-dark);
+}
+
+.task-btn.recurring-btn.active {
+    background-color: var(--color-success);
+    color: var(--color-white);
+}
+
+/* =============================================================================
+   UNDO/REDO BUTTONS
+   ============================================================================= */
+
+.undo-container {
+    display: flex;
+    justify-content: flex-start;
+    position: absolute;
+    bottom: 50px;
+    width: 100%;
+    z-index: var(--z-content);
+    pointer-events: grab;
+}
+
+.undo-redo-btn {
+    font-size: 0.85em;
+    font-weight: 600;
+    color: var(--color-white);
+    background: rgba(0, 0, 0, 0.4);
+    border: none;
+    border-radius: var(--radius-6);
+    cursor: pointer;
+    padding: var(--space-1) var(--space-2);
+    opacity: .8;
+    transition: background var(--transition-fast) ease, color var(--transition-fast) ease;
+    min-width: 50px;
+    position: absolute;
+}
+
+.undo-redo-btn#undo-btn {
+    left: 38%;
+}
+
+.undo-redo-btn#redo-btn {
+    right: 38%;
+}
+
+.undo-redo-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: var(--color-white);
+}
+
+.undo-redo-btn[hidden] {
+    display: none;
+}
+
+/* =============================================================================
+   CLOSE BUTTONS
+   ============================================================================= */
+
+.close-btn,
+.close-modal {
+    background: transparent;
+    color: inherit;
+    padding: var(--space-1) var(--space-2);
+    font-size: var(--font-size-xl);
+    line-height: 1;
+    opacity: 0.7;
+    transition: opacity var(--transition-fast);
+}
+
+.close-btn:hover,
+.close-modal:hover {
+    opacity: 1;
+    background: transparent;
+}
+
+/* Full-width close button */
+.close-button-fullwidth {
+    width: 100%;
+    padding: var(--space-3);
+    background: var(--theme-button-secondary-bg);
+    color: var(--theme-button-secondary-text);
+    border: 1px solid var(--theme-button-secondary-border, rgba(0, 0, 0, 0.1));
+    border-radius: var(--radius-md);
+    font-weight: 500;
+    transition: background var(--transition-normal);
+}
+
+.close-button-fullwidth:hover {
+    background: var(--theme-button-secondary-hover-bg);
+}
+
+/* =============================================================================
+   BUTTON GROUPS
+   ============================================================================= */
+
+.btn-group {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.btn-group-vertical {
+    flex-direction: column;
+}
+
+.btn-group-center {
+    justify-content: center;
+}
+
+.btn-group-spread {
+    justify-content: space-between;
+}
+
+/* =============================================================================
+   BUTTON SIZES
+   ============================================================================= */
+
+.btn-sm {
+    padding: 6px var(--space-3);
+    font-size: var(--font-size-xs);
+}
+
+.btn-lg {
+    padding: var(--space-3-5) var(--space-7);
+    font-size: var(--font-size-lg);
+}
+
+/* =============================================================================
+   MOBILE ADJUSTMENTS
+   ============================================================================= */
+
+@media (max-width: 768px) {
+    button {
+        padding: var(--space-2) var(--space-3);
+        font-size: var(--font-size-sm);
+    }
+
+    .complete-all-btn {
+        padding: 10px var(--space-5);
+        font-size: var(--font-size-sm);
+    }
+
+    .title-header-inner {
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+    }
+
+    .undo-container {
+        position: absolute;
+        bottom: 58px;
+        width: 100%;
+    }
+
+    /* Mobile positioning */
+    .undo-redo-btn#undo-btn {
+        left: 25%;
+    }
+
+    .undo-redo-btn#redo-btn {
+        right: 25%;
+    }
+}
+
+/* =============================================================================
+   CYCLE COMPLETE ANIMATION (Green Checkmark)
+   ============================================================================= */
+
+.mini-cycle-complete-animation {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    /* --cycle-complete-y-offset is set by JS in cycleCompletion.js when the
+       first-run welcome banner is showing, so the green checkmark lands on
+       the task list's actual rendered center instead of viewport center
+       (which can sit above the task list while the banner is active).
+       Defaults to 0px → unchanged viewport-centered behavior. */
+    transform: translate(-50%, calc(-50% + var(--cycle-complete-y-offset, 0px)));
+    background: var(--pref-celebration-bg, rgba(76, 175, 79, 0.97));
+    color: var(--color-black);
+    width: 120px;
+    height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 56px;
+    font-weight: bold;
+    border-radius: 50%;
+    box-shadow: 0 6px 24px var(--pref-celebration-shadow, var(--shadow-celebration));
+    animation: completionBounce 1.5s ease-out;
+    z-index: var(--z-modal);
+}
+
+.mini-cycle-complete-animation span {
+    display: block;
+    line-height: 1;
+    font-size: 60px;
+}
+
+/* Safari renders ✔ (U+2714) smaller than other browsers — compensate */
+@supports (-webkit-hyphens: none) {
+    .mini-cycle-complete-animation span {
+        font-size: 76px;
+    }
+}
+
+/* =============================================================================
+   CYCLE CLEAR ANIMATION (Blue Broom)
+   ============================================================================= */
+
+.mini-cycle-clear-animation {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(59, 130, 246, 0.909);
+    color: var(--color-white);
+    padding: var(--space-3-75) var(--space-6-25);
+    font-size: 60px;
+    font-weight: bold;
+    border-radius: var(--radius-md);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    animation: fadeOutScale var(--animation-exit) ease-in-out;
+    z-index: var(--z-modal);
+}
+
+/* =============================================================================
+   FIRST CYCLE CELEBRATION OVERLAY — darkened screen with floating text
+   ============================================================================= */
+
+.first-cycle-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.75);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-3);
+    z-index: var(--z-modal-high);
+    animation: fadeIn var(--transition-normal) ease-out;
+    cursor: pointer;
+}
+
+@keyframes firstCycleBounce {
+    0%   { opacity: 0; transform: scale(0.3); }
+    20%  { opacity: 1; transform: scale(1.15); }
+    35%  { opacity: 1; transform: scale(0.95); }
+    50%  { opacity: 1; transform: scale(1); }
+    75%  { opacity: 1; transform: scale(1); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+.first-cycle-icon {
+    font-size: 64px;
+    line-height: 1;
+    animation: firstCycleBounce 1.5s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .first-cycle-icon {
+        animation: none;
+    }
+}
+
+.first-cycle-heading {
+    color: var(--color-white);
+    font-size: var(--font-size-xl);
+    font-weight: 600;
+    text-align: center;
+    padding: 0 var(--space-4);
+    margin: 0;
+    line-height: 1.3;
+}
+
+.first-cycle-subtitle {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: var(--font-size-md);
+    font-weight: 400;
+    text-align: center;
+    padding: 0 var(--space-4);
+    margin: 0;
+    line-height: 1.4;
+}

@@ -1,0 +1,342 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Mode Selector Component
+   Dropdown for selecting task modes and quick actions
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* =============================================================================
+   MODE SELECTOR WRAPPER
+   ============================================================================= */
+
+/* NOTE: Main .mode-selector-wrapper styles are in header.css
+   since it's now part of the fixed-header-container */
+
+/* =============================================================================
+   MODE SELECTOR (in wrapper)
+   ============================================================================= */
+
+.mode-selector-wrapper .mode-selector {
+    position: relative;
+    background: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 2px 4px rgba(226, 226, 226, 0.2);
+    border: 1px solid #0c20913f;
+    color: rgb(44, 50, 112);
+    border-radius: var(--radius-5);
+    padding: 3px var(--space-5) 4px var(--space-2);
+    font-size: var(--font-size-xs);
+    font-weight: 500;
+    max-width: 200px;
+    height: 25px;
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    transition: all var(--transition-normal) ease;
+    /* Dropdown arrow */
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='%232c3270' viewBox='0 0 16 16'%3e%3cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 6px center;
+    background-size: 10px;
+}
+
+/* =============================================================================
+   MODE SELECTOR (standalone)
+   ============================================================================= */
+
+.mode-selector {
+    position: relative;
+    background: rgba(0, 0, 0, 0.691);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.72);
+    border-radius: var(--radius-10);
+    margin: 0;
+    padding: 5px var(--space-3);
+    height: 28px;
+    cursor: pointer;
+    transition: all var(--transition-normal) ease;
+    z-index: var(--z-content);
+    font-size: var(--font-size-xs);
+    font-weight: bold;
+    appearance: none;
+    -webkit-appearance: none;
+    min-width: 110px;
+    outline: none;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* Dropdown arrow */
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='white' viewBox='0 0 16 16'%3e%3cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 12px;
+}
+
+.mode-selector:focus-visible {
+    box-shadow: 0 0 0 2px var(--theme-input-focus-border, rgba(76, 121, 255, 0.5));
+}
+
+.mode-selector::after {
+    content: '';
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0;
+    height: 0;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 6px solid white;
+    pointer-events: none;
+}
+
+.mode-selector:hover {
+    background: rgba(255, 255, 255, 0.4);
+    border-color: var(--color-primary-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.mode-selector:focus-visible {
+    background: rgba(255, 255, 255, 0.5);
+    border-color: var(--color-primary-dark);
+    box-shadow: 0 0 0 2px rgba(12, 32, 145, 0.2);
+}
+
+/* =============================================================================
+   MODE SELECTOR OPTIONS
+   ============================================================================= */
+
+.mode-selector option {
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: var(--space-2) var(--space-3);
+    font-weight: bold;
+    border: none;
+}
+
+.mode-selector option:hover {
+    background: rgba(50, 50, 50, 1);
+}
+
+.mode-selector option:checked {
+    background: rgba(100, 100, 255, 0.8);
+    color: white;
+    font-weight: bold;
+}
+
+/* =============================================================================
+   MODE INDICATOR ACCENT
+   Colored bottom border on the mode selector dropdown — always visible so
+   users can tell at a glance which mode they're in.
+   Colors: blue (Auto), amber (Manual), green (To-Do)
+   ============================================================================= */
+
+body.auto-cycle-mode .mode-selector-wrapper .mode-selector {
+    border-bottom: 2.5px solid var(--color-gray-700);
+}
+
+body.manual-cycle-mode .mode-selector-wrapper .mode-selector {
+    border-bottom: 2.5px solid var(--color-green-dark);
+}
+
+body.todo-mode-mode .mode-selector-wrapper .mode-selector {
+    border-bottom: 2.5px solid var(--color-todo-btn);
+}
+
+/* Dark mode: re-assert accent color (4-class specificity beats dark-mode.css's
+   3-class border-color override) */
+body.dark-mode.auto-cycle-mode .mode-selector-wrapper .mode-selector {
+    border-bottom-color: var(--color-gray-700);
+}
+
+body.dark-mode.manual-cycle-mode .mode-selector-wrapper .mode-selector {
+    border-bottom-color: var(--color-green-dark);
+}
+
+body.dark-mode.todo-mode-mode .mode-selector-wrapper .mode-selector {
+    border-bottom-color: var(--color-todo-btn);
+}
+
+/* =============================================================================
+   QUICK ACTIONS
+   ============================================================================= */
+
+.quick-actions-container {
+    position: absolute;
+    left: 15px;
+}
+
+.quick-actions-btn {
+    background: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 2px 4px rgba(226, 226, 226, 0.2);
+    border: 1px solid #0c20913f;
+    color: rgb(44, 50, 112);
+    border-radius: var(--radius-5);
+    width: 88px;
+    height: 22px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-normal) ease;
+}
+
+.quick-actions-btn:hover {
+    background: rgba(255, 255, 255, 0.4);
+    border-color: var(--color-primary-dark);
+}
+
+.quick-actions-btn:active {
+    transform: scale(0.95);
+}
+
+.quick-actions-btn svg {
+    fill: rgb(44, 50, 112);
+    width: 20px;
+    height: 20px;
+    stroke: rgb(44, 50, 112);
+    stroke-width: 1px;
+}
+
+/* Shimmer effect on "+" button when task list is empty — draws attention to add action */
+/* Uses JS-managed .tasks-empty class instead of :has(.task-list:empty) for PWA reliability */
+body.tasks-empty .quick-actions-btn {
+    background: linear-gradient(
+        110deg,
+        rgba(255, 255, 255, 0.2) 0%,
+        rgba(255, 255, 255, 0.2) 40%,
+        rgba(255, 255, 255, 0.8) 50%,
+        rgba(255, 255, 255, 0.2) 60%,
+        rgba(255, 255, 255, 0.2) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s ease-in-out infinite;
+}
+
+/* Disable shimmer under reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    body.tasks-empty .quick-actions-btn {
+        animation: none;
+    }
+}
+body.reduced-motion.tasks-empty .quick-actions-btn {
+    animation: none;
+}
+
+/* Shimmer for first-time users — persists until they press the + button */
+.quick-actions-btn.first-time-shimmer {
+    background: linear-gradient(
+        110deg,
+        rgba(255, 255, 255, 0.2) 0%,
+        rgba(255, 255, 255, 0.2) 40%,
+        rgba(255, 255, 255, 0.8) 50%,
+        rgba(255, 255, 255, 0.2) 60%,
+        rgba(255, 255, 255, 0.2) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s ease-in-out infinite;
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .quick-actions-btn.first-time-shimmer {
+        animation: none;
+    }
+}
+body.reduced-motion .quick-actions-btn.first-time-shimmer {
+    animation: none;
+}
+
+/* =============================================================================
+   QUICK ACTIONS MENU
+   ============================================================================= */
+
+.quick-actions-menu {
+    /* Hidden by default; class-only visibility (no inline style.display).
+       JS toggles .visible to show. Pairs with body.quick-actions-open
+       (set by modeManager) which drives the page-level backdrop blur. */
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: var(--space-1-25);
+    background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
+    border: 1px solid rgba(12, 32, 145, 0.3);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-dropdown);
+    min-width: 180px;
+    z-index: var(--z-notification); /* High z-index to appear above task list */
+    overflow: visible;
+}
+
+.quick-actions-menu.visible {
+    display: block;
+}
+
+/* Legacy .hidden class kept for any third-party code that might toggle it;
+   default state is already display: none, so .hidden is now redundant. */
+.quick-actions-menu.hidden {
+    display: none;
+}
+
+.quick-action-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2-5);
+    width: 100%;
+    padding: var(--space-2-5) var(--space-3-5);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    font-size: var(--font-size-sm);
+    color: rgb(44, 50, 112);
+    transition: background var(--transition-fast) ease;
+}
+
+.quick-action-item:hover {
+    background: rgba(12, 32, 145, 0.1);
+}
+
+.quick-action-item svg {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
+}
+
+/* =============================================================================
+   MOBILE ADJUSTMENTS
+   ============================================================================= */
+
+@media (max-width: 768px) {
+    .mode-selector-wrapper {
+        min-height: 32px;
+    }
+
+    .mode-selector-wrapper .mode-selector {
+        font-size: var(--font-size-xs);
+        height: 25px;
+        padding: 3px var(--space-5) 4px var(--space-2);
+        max-width: 200px;
+    }
+
+    .quick-actions-btn {
+        width: 70px;
+        height: 24px;
+    }
+}
+
+@media (max-width: 480px) {
+    .quick-actions-container {
+        left: 10px;
+    }
+
+    .quick-actions-btn {
+        width: 60px;
+        font-size: var(--font-size-xs);
+    }
+}

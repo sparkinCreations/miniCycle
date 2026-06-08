@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+<!-- ✅ iOS status bar - uses body background-color with black-translucent -->
+<meta name="theme-color" content="#4c79ff" id="theme-color-meta">
+
+<!-- ✅ Translucent status bar shows body background-color on iOS -->
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" id="status-bar-style-meta">
+
+<meta name="app-version" content="2.233">
+
+<!-- Content Security Policy -->
+<!-- CSP is served via HTTP header in netlify.toml (production) -->
+<!-- No <meta> CSP tag needed — Netlify headers handle it, and omitting it here allows local HTTP dev servers -->
+
+<title>miniCycle&trade; - ROUTINE MANAGER</title>
+<meta name="description" content="miniCycle is a routine workflow companion that turns repeatable tasks into effortless cycles. Track progress, build momentum, and manage daily routines with auto-cycling task lists.">
+<link rel="canonical" href="https://minicycle.app/minicycle">
+
+<!-- Self-hosted fonts (no external requests) -->
+<link rel="stylesheet" href="assets/fonts/fonts.css">
+
+<link rel="icon" type="image/png" href="assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" />
+<link rel="apple-touch-icon" sizes="180x180" href="assets/images/logo/pwa-icons/icon-192.png" />
+<!-- Font Awesome removed - using inline SVG icons instead (see modules/utils/icons.js) -->
+<!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"> -->
+<!-- Add cache busting version parameter -->
+<!-- Original CSS (for reference) -->
+<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=2.233"> -->
+
+<!-- Preload critical CSS files (they load in parallel, not blocking) -->
+<link rel="preload" href="styles/main.css?v=2.233" as="style">
+<link rel="preload" href="styles/base/variables.css?v=2.233" as="style">
+<link rel="preload" href="styles/base/reset.css?v=2.233" as="style">
+<link rel="preload" href="styles/layout/app-container.css?v=2.233" as="style">
+<link rel="preload" href="styles/layout/header.css?v=2.233" as="style">
+<link rel="preload" href="styles/components/task-list.css?v=2.233" as="style">
+
+<!-- Async CSS loading - doesn't block render, app starts with inline critical CSS -->
+<link rel="stylesheet" href="styles/main.css?v=2.233" media="print" id="async-main-css">
+<script src="ext-boot/01.js"></script>
+<noscript><link rel="stylesheet" href="styles/main.css?v=2.233"></noscript>
+<!-- [chrome-ext build] removed PWA manifest link -->
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     CRITICAL: Version check MUST run BEFORE modulepreload hints!
+     Modulepreloads start fetching immediately when parsed. If we detect a
+     version mismatch, we need to clear caches and reload BEFORE those fetches
+     complete and populate the browser's module map with stale content.
+     ═══════════════════════════════════════════════════════════════════════════ -->
+
+<!-- version.js MUST load synchronously BEFORE modulepreloads to set globalThis.APP_VERSION -->
+<script src="./version.js?v=2.233"></script>
+
+<!-- iOS PWA Detection - adds .ios-pwa class for safe area fixes -->
+<script src="ext-boot/02.js"></script>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     BOOT FAILURE FAILSAFE: Auto-clear caches after repeated boot failures
+     If boot fails 2+ times in a row, nuke all caches and reload fresh.
+     This catches users stuck with corrupted/stale cached modules.
+     Counter is cleared on successful boot (in orchestrator.js).
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- [chrome-ext build] removed inline script: boot-failure failsafe (PWA cache clear) -->
+
+<!-- Automatic cache clear on version change - BLOCKS further parsing if reload needed -->
+<!-- [chrome-ext build] removed inline script: version-change cache clear (PWA, document.write reload) -->
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     MODULEPRELOAD: Dynamic injection using APP_VERSION from version.js
+     Only preloads modules loaded exclusively via versioned dynamic imports.
+     Modules with unversioned static imports (constants.js, diBase.js,
+     labelResolver.js) are excluded to avoid duplicate module instances.
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<script src="ext-boot/03.js"></script>
+
+<!-- Critical CSS - extracted to external file for CSP compliance (no 'unsafe-inline' needed) -->
+<link rel="stylesheet" href="./styles/base/critical.css">
+
+<!-- Early dark mode application - prevents flash of light mode -->
+<script src="ext-boot/04.js"></script>
+
+<!-- Early accessibility settings - prevents animation/contrast flash -->
+<script src="ext-boot/05.js"></script>
+
+<!-- Early app background color - only set if user has custom color saved -->
+<script src="ext-boot/06.js"></script>
+
+<!-- NOTE: version.js and cache clearing script moved BEFORE modulepreload hints (line ~71) -->
+<!-- This ensures version check runs before browser starts prefetching modules -->
+
+<script src="ext-boot/07.js"></script>
+
+
+
+
+
+
+</head>
+
+<body class="app-loading">
+  <a href="#app-container" class="skip-to-content">Skip to main content</a>
+  <!-- Initial App Loader -->
+  <div id="app-loader" role="status" aria-label="Application loading" aria-live="polite">
+    <div id="loader-tip" class="loader-tip" aria-live="polite">
+      <div class="loader-tip-header">💡 Tip:</div>
+      <div class="loader-tip-text"></div>
+    </div>
+    <img src="assets/images/logo/minicycle_logo_icon.png" alt="Loading..." class="loader-logo" width="120" height="96" fetchpriority="high">
+    <div class="loader-text">Loading miniCycle...</div>
+    <div class="loader-bar-container">
+      <div class="loader-bar"></div>
+    </div>
+  </div>
+
+  <!-- Loading tips rotation -->
+  <script src="ext-boot/08.js"></script>
+
+  <!-- Loading Overlay for Operations -->
+  <div id="loading-overlay" class="loading-overlay" role="status" aria-label="Operation in progress">
+    <div class="loading-spinner">
+      <img src="assets/images/logo/minicycle_logo_icon.png" alt="Loading..." width="60" height="48" style="object-fit: contain;">
+      <div class="loading-spinner-text">Processing...</div>
+    </div>
+  </div>
+
+  <div id="notification-container" popover="manual" aria-live="polite" aria-atomic="true" role="status"></div> <!-- Notification container --> 
+
+
+  
+
+<!-- Fixed Header Container - wraps header and mode selector -->
+<div class="fixed-header-container">
+  <header class="mini-cycle-header-row">
+    <h1 class="visually-hidden">miniCycle Routine Manager</h1>
+    <!-- Logo and App Name -->
+    <div class="header-branding">
+      <img src="assets/images/logo/logo.png" alt="miniCycle" class="header-logo" width="40" height="36">
+      <div class="app-name-group">
+        <img src="assets/images/logo/App_Name_miniCycle.png" alt="miniCycle App Name" class="app-name" width="100" height="21">
+        <span id="app-subtitle" class="app-subtitle">ROUTINE MANAGER</span>
+      </div>
+    </div>
+
+    <!-- Menu Button -->
+    <button class="menu-button" aria-label="Menu" aria-expanded="false" aria-controls="main-menu" title="Open menu">☰</button>
+  </header>
+
+  <!-- Mode Selector (centered below header) -->
+  <div class="mode-selector-wrapper">
+  <!-- Quick Actions Button (left side) -->
+  <div class="quick-actions-container">
+    <button id="quick-actions-btn" class="quick-actions-btn" aria-label="Quick actions" title="Quick actions">
+      <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"></path>
+      </svg>
+    </button>
+    <div id="quick-actions-menu" class="quick-actions-menu">
+      <button id="toggle-task-input-btn" class="quick-action-item">
+        <span class="quick-action-icon">📝</span>
+        <span id="toggle-task-input-text" class="quick-action-text"></span>
+      </button>
+      <button id="create-routine-btn" class="quick-action-item">
+        <span class="quick-action-icon">✨</span>
+        <span class="quick-action-text">Create New Routine</span>
+      </button>
+    </div>
+  </div>
+  <select id="mode-selector" class="mode-selector" aria-label="Select mode" title="Switch mode: Auto Cycle, Manual Cycle, or To-Do">
+    <option value="auto-cycle" title="Tasks reset automatically when all are completed — great for daily routines">Auto Cycle ↻</option>
+    <option value="manual-cycle" title="Tasks stay checked until you manually reset them — complete at your own pace">Manual Cycle ✋↻</option>
+    <option value="todo-mode" title="Completed tasks are removed — use as a traditional checklist">To-Do Mode 📋</option>
+  </select>
+  <button id="routine-switcher-btn" class="routine-switcher-btn" aria-label="Switch routine" title="Switch routine">
+    <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+    </svg>
+  </button>
+  </div>
+
+  <!-- Saving indicator (shown briefly when autosave runs) -->
+  <div id="saving-indicator" class="saving-indicator">Saving...</div>
+</div><!-- /fixed-header-container -->
+
+
+    <!-- Main Menu Backdrop — fades in via CSS when .menu-container.visible -->
+    <div id="main-menu-backdrop" class="main-menu-backdrop" aria-hidden="true"></div>
+
+    <!-- Main Menu -->
+    <nav id="main-menu" class="menu-container has-corner-logo" data-modal data-menu>
+        <div id="main-menu-header-row" class="main-menu-header-row">
+            <div id="main-menu-header" class="main-menu-header">
+                <span id="main-menu-mini-cycle-title"></span>  <!-- miniCycle Title -->
+                <span id="current-date"></span>  <!-- Date will be inserted here -->
+            </div>
+             <!-- About Section Trigger -->
+      <button id="open-about-modal" class="open-about-modal" aria-label="About Task Cycle Mini" title="About miniCycle">
+        <i class="fas fa-info-circle" aria-hidden="true"></i>
+        </button>
+
+
+                
+        </div>
+
+       
+
+            <!-- About Modal -->
+            <dialog id="about-modal" class="modal" data-modal aria-labelledby="about-modal-title" aria-modal="true">
+                <div class="modal-content about-modal-content has-corner-logo">
+                    <button class="close-modal" aria-label="Close about modal">&times;</button>
+
+                    <div class="about-header">
+                        <img src="assets/images/logo/minicycle_logo_icon.png" alt="miniCycle Logo" class="about-logo">
+                        <h2 id="about-modal-title">miniCycle<sup class="about-trademark">&trade;</sup></h2>
+                        <p class="about-tagline">Routine Manager</p>
+                    </div>
+
+                    <div class="about-version-badge">
+                        v<span id="about-version">—</span>
+                    </div>
+
+                    <p class="about-description">Your routine workflow companion — turn repeatable tasks into effortless cycles, stay focused, and build momentum.</p>
+
+                    <div class="about-links">
+                        <a href="https://minicycle.app/pages/product.html#changelog" target="_blank" rel="noopener noreferrer">Changelog</a>
+                        <span class="about-link-divider">•</span>
+                        <a href="https://minicycle.app/pages/product.html" target="_blank" rel="noopener noreferrer">About miniCycle</a>
+                    </div>
+
+                    <div class="about-footer">
+                        <p>Developed by <a href="https://sparkincreations.com" target="_blank" rel="noopener noreferrer">sparkinCreations</a></p>
+                        <p class="about-copyright">&copy; 2026 miniCycle&trade;</p>
+                        <p class="about-cache">Cache: <span id="about-sw-version">—</span></p>
+                    </div>
+                </div>
+            </dialog>
+
+
+            <!--Main Menu-->
+        <div class="menu-sections">
+            <!-- Quick Actions Menu Row (mobile) -->
+            <div class="menu-section quick-actions-menu-row" data-section="quick-actions">
+                <div class="quick-actions-header">
+                    <button class="quick-actions-nav quick-actions-prev" aria-label="Previous view">&#x25C0;</button>
+                    <span class="quick-actions-title">Quick Actions</span>
+                    <button class="quick-actions-nav quick-actions-next" aria-label="Next view">&#x25B6;</button>
+                </div>
+                <div class="quick-actions-slots" id="quick-actions-menu-slots"></div>
+            </div>
+            <!-- Routines Section -->
+            <div class="menu-section collapsed" data-section="routines">
+                <div class="menu-section-header collapsible" role="button" tabindex="0" data-toggle="routines" aria-expanded="false" aria-label="Toggle Routine Actions section" aria-controls="menu-section-routines" title="Create, open, import, export, and share routines">
+                    <span class="menu-section-label">
+                        <i class="fas fa-list menu-section-icon" aria-hidden="true"></i>
+                        <span>Routine Actions</span>
+                    </span>
+                    <span class="menu-section-toggle">&#x25BC;</span>
+                </div>
+                <div class="menu-section-grid" id="menu-section-routines">
+                    <button id="new-mini-cycle" title="Create a new routine"><i class="fas fa-sparkles"></i>New</button>
+                    <button id="export-mini-cycle" title="Download the current routine as a file"><i class="fas fa-file-download"></i>Download</button>
+                    <button id="open-mini-cycle" title="Open an existing routine"><i class="fas fa-folder-open"></i>Open</button>
+                    <button id="import-mini-cycle" title="Import a routine from a file"><i class="fas fa-file-upload"></i>Import</button>
+                    <button id="save-as-mini-cycle" title="Duplicate the current routine"><i class="fas fa-copy"></i>Duplicate</button>
+                    <button id="share-routine" title="Share the current routine as a file" aria-label="Share the current routine as a file"><i class="fas fa-share-nodes"></i>Share</button>
+                </div>
+            </div>
+
+            <!-- Tasks Section (collapsed by default) -->
+            <div class="menu-section collapsed" data-section="tasks">
+                <div class="menu-section-header collapsible" role="button" tabindex="0" data-toggle="tasks" aria-expanded="false" aria-label="Toggle Task Actions section" aria-controls="menu-section-tasks" title="Manage tasks, reminders, recurring schedules, and task options">
+                    <span class="menu-section-label">
+                        <i class="fas fa-check-circle menu-section-icon" aria-hidden="true"></i>
+                        <span>Task Actions & Features</span>
+                    </span>
+                    <span class="menu-section-toggle">&#x25BC;</span>
+                </div>
+                <div class="menu-section-grid" id="menu-section-tasks">
+                    <label class="auto-uncheck-row" for="auto-uncheck-daily-toggle" title="Automatically uncheck all tasks in this routine at a set time each day">
+                        <input type="checkbox" id="auto-uncheck-daily-toggle">
+                        <span class="auto-uncheck-row-text">Auto-uncheck daily</span>
+                        <button type="button" id="auto-uncheck-daily-time-btn" class="auto-uncheck-row-time-btn hidden" title="Change auto-uncheck time">
+                            <span id="auto-uncheck-daily-time-label">12:00 AM</span>
+                            <i class="fas fa-clock" aria-hidden="true"></i>
+                        </button>
+                    </label>
+                    <button id="clear-mini-cycle-tasks" title="Uncheck all tasks in this routine"><i class="fas fa-eraser"></i>Uncheck All</button>
+                    <button id="delete-all-mini-cycle-tasks" title="Delete all tasks in this routine"><i class="fas fa-trash"></i>Delete All</button>
+                    <button id="open-reminders-modal" title="Configure reminders and notifications"><i class="fas fa-bell"></i>Reminders</button>
+                    <button id="menu-toggle-input-bar" title="Show or hide the task input bar"><i class="fas fa-edit"></i>Input Bar</button>
+                    <button id="menu-task-options" title="Customize task option buttons"><span class="icon-text">-/+</span>Task Options</button>
+                    <button id="open-recurring-panel" title="Manage recurring tasks"><i class="fas fa-repeat"></i>Recurring</button>
+                </div>
+            </div>
+
+
+
+            <!-- Rewards Section (collapsed by default) -->
+            <div class="menu-section collapsed" data-section="rewards">
+                <div class="menu-section-header collapsible" role="button" tabindex="0" data-toggle="rewards" aria-expanded="false" aria-label="Toggle Rewards section" aria-controls="menu-section-rewards" title="Unlock themes and mini-games as you complete cycles">
+                    <span class="menu-section-label">
+                        <i class="fas fa-trophy menu-section-icon" aria-hidden="true"></i>
+                        <span>Rewards & Extras</span>
+                    </span>
+                    <span class="menu-section-toggle">&#x25BC;</span>
+                </div>
+                <div class="menu-section-grid" id="menu-section-rewards">
+                    <div id="themes-menu-option" class="themes-menu-option">
+                        <button id="open-themes-panel" class="open-themes-panel" title="Open Themes Panel"><i class="fas fa-palette"></i>Themes</button>
+                    </div>
+                    <div id="games-menu-option" style="display: none;">
+                        <button id="open-games-panel"><i class="fas fa-gamepad"></i>Games</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Help Section (collapsed by default) -->
+            <div class="menu-section collapsed" data-section="help">
+                <div class="menu-section-header collapsible" role="button" tabindex="0" data-toggle="help" aria-expanded="false" aria-label="Toggle Help section" aria-controls="menu-section-help" title="User manual, feedback, updates, and sharing">
+                    <span class="menu-section-label">
+                        <i class="fas fa-question-circle menu-section-icon" aria-hidden="true"></i>
+                        <span>Help & Support</span>
+                    </span>
+                    <span class="menu-section-toggle">&#x25BC;</span>
+                </div>
+                <div class="menu-section-grid" id="menu-section-help">
+                    <button id="open-user-manual" class="open-user-manual" title="Open the user manual"><i class="fas fa-book"></i>User Manual</button>
+                    <button id="open-feedback-modal" class="open-feedback-modal"><i class="fas fa-comment"></i>Feedback</button>
+                    <button id="menu-lite-version" title="Switch to the lightweight version"><i class="fas fa-mobile-alt"></i>Lite Version</button>
+                    <button id="share-app" title="Share miniCycle with someone" aria-label="Share miniCycle with someone"><i class="fas fa-share-nodes"></i>Share App</button>
+                    <button id="menu-check-updates" title="Check for app updates"><i class="fas fa-sync-alt"></i>Check for Updates</button>
+                    <button id="menu-retake-tours" title="Reset and retake guided tours"><i class="fas fa-route"></i>Reset Tours</button>
+                </div>
+            </div>
+      
+
+            <!-- Legal Section (collapsed by default) -->
+            <div class="menu-section collapsed" data-section="legal">
+                <div class="menu-section-header collapsible" role="button" tabindex="0" data-toggle="legal" aria-expanded="false" aria-label="Toggle Legal section" aria-controls="menu-section-legal" title="Privacy policy, terms of service, accessibility, and security">
+                    <span class="menu-section-label">
+                        <i class="fas fa-balance-scale menu-section-icon" aria-hidden="true"></i>
+                        <span>Legal & Info</span>
+                    </span>
+                    <span class="menu-section-toggle">&#x25BC;</span>
+                </div>
+                <div class="menu-section-grid" id="menu-section-legal">
+                    <a href="https://minicycle.app/legal/privacy.html" target="_blank" rel="noopener noreferrer" class="menu-link-button" title="Read the Privacy Policy"><i class="fas fa-shield-alt"></i>Privacy Policy</a>
+                    <a href="https://minicycle.app/legal/terms.html" target="_blank" rel="noopener noreferrer" class="menu-link-button" title="Read the Terms of Service"><i class="fas fa-file-alt"></i>Terms of Service</a>
+                    <a href="https://minicycle.app/legal/accessibility.html" target="_blank" rel="noopener noreferrer" class="menu-link-button" title="Read the Accessibility Statement"><i class="fas fa-universal-access"></i>Accessibility</a>
+                    <a href="https://minicycle.app/legal/security.html" target="_blank" rel="noopener noreferrer" class="menu-link-button" title="Read the Security Policy"><i class="fas fa-lock"></i>Security</a>
+                </div>
+            </div>
+
+                    <!-- App Section (collapsed by default) -->
+            <div class="menu-section collapsed" data-section="app">
+                <div class="menu-section-header collapsible" role="button" tabindex="0" data-toggle="app" aria-expanded="false" aria-label="Toggle Settings section" aria-controls="menu-section-app" title="Customize colors, accessibility, and app preferences">
+                    <span class="menu-section-label">
+                        <i class="fas fa-cog menu-section-icon" aria-hidden="true"></i>
+                        <span>Settings & Personalization</span>
+                    </span>
+                    <span class="menu-section-toggle">&#x25BC;</span>
+                </div>
+                <div class="menu-section-grid" id="menu-section-app">
+                    <button id="open-preferences" title="Customize task list colors"><i class="fas fa-paint-brush"></i>Personalization</button>
+                    <button id="open-settings" class="open-settings" title="Open settings"><i class="fas fa-cog"></i>Settings</button>
+                </div>
+            </div>
+              </div>
+
+        <div class="main-menu-controls-container">
+            <div class="mode-description-wrapper">
+                <button id="mode-description-toggle" class="mode-description-toggle" aria-expanded="true" aria-controls="mode-description">
+                    <i class="fas fa-scroll mode-info-icon" aria-hidden="true"></i>
+                    <span class="toggle-label">Mode Info</span>
+                    <span class="mode-badge" aria-hidden="true"></span>
+                    <i class="fas fa-chevron-down toggle-icon"></i>
+                </button>
+                <div id="mode-description" class="mode-description" aria-live="polite"></div>
+                <div id="mode-radio-group" class="mode-radio-row" role="radiogroup" aria-label="Switch routine mode">
+                    <label class="mode-radio-option">
+                        <input type="radio" name="mode-radio" value="auto-cycle">
+                        <span class="mode-radio-label">Auto Cycle</span>
+                    </label>
+                    <label class="mode-radio-option">
+                        <input type="radio" name="mode-radio" value="manual-cycle">
+                        <span class="mode-radio-label">Manual Cycle</span>
+                    </label>
+                    <label class="mode-radio-option">
+                        <input type="radio" name="mode-radio" value="todo-mode">
+                        <span class="mode-radio-label">To-Do</span>
+                    </label>
+                </div>
+            </div>
+           <div class="toggle-container" id="autoResetContainer" style="display: none;">
+            <label class="switch">
+                <input type="checkbox" id="toggleAutoReset" name="toggleAutoReset" aria-label="Toggle auto reset" checked>
+                <span class="slider round"></span>
+              </label>              
+            <span class="label-text">Auto Reset</span>
+        </div>
+        
+        <div class="checkbox-container" id="deleteCheckedTasksContainer" style="display: none;">
+            <label class="custom-checkbox" for="deleteCheckedTasks">
+              <input
+                type="checkbox"
+                id="deleteCheckedTasks"
+                name="deleteCheckedTasks"
+                aria-labelledby="delete-label"
+              />
+              <span class="checkmark" aria-hidden="true"></span>
+              <span id="delete-label">Delete Checked Tasks after Complete</span>
+            </label>
+          </div>
+    </div>
+
+    <div class="main-menu-primary-action-row">
+        <button id="menu-enter-focus-view" class="menu-primary-action" type="button" title="Enter Focus View" aria-label="Enter Focus View">
+            <svg class="menu-primary-action-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+                <!-- Four corner brackets — universal "expand to fill" affordance -->
+                <path d="M2 6V2h4M14 6V2h-4M2 10v4h4M14 10v4h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"/>
+            </svg>
+            <span>Enter Focus View</span>
+        </button>
+    </div>
+
+    <button id="close-main-menu" aria-label="Close Main Menu">Close</button>
+    <!--<button id="exit-mini-cycle"><i class="fas fa-sign-out-alt"></i> Exit to Main Menu </button>-->
+        
+</nav>
+
+
+
+<!-- recurring-panel-overlay injected at boot via modalTemplates.js -->
+
+
+    <dialog id="games-panel" class="games-modal" data-modal aria-labelledby="games-panel-title" aria-modal="true">
+        <div class="games-modal-content has-corner-logo">
+          <h2 id="games-panel-title">🎮 Games</h2>
+          <p>Try to complete tasks in the correct order as fast as you can!</p>
+          <button id="open-task-order-game">Play Whack-a-Order</button>
+          <button id="close-games-panel" class="close-btn">Close</button>
+        </div>
+      </dialog>
+
+        <!-- Reminders Modal -->
+        <dialog id="reminders-modal" class="reminders-modal" data-modal aria-labelledby="reminders-modal-title" aria-modal="true">
+            <div class="reminders-modal-content has-corner-logo">
+                <h2 id="reminders-modal-title">Reminders & Notifications</h2>
+        
+                <!-- Toggle On/Off -->
+                <label class="settings-option">
+                    <input type="checkbox" id="enableReminders" name="enableReminders" />
+                    Enable Reminders
+                </label>
+                <div>
+                    <label class="settings-option">
+                        <input type="checkbox" id="dueDatesReminders" name="dueDatesReminders" />
+                        Enable Due Date Notifications
+                    </label>
+                </div>
+                <div>
+                    <label class="settings-option">
+                        <input type="checkbox" id="browserNotifications" name="browserNotifications" />
+                        Browser Notifications
+                    </label>
+                    <details id="privacyNoticeDetails" class="settings-warning-details">
+                        <summary class="settings-warning-summary">Privacy Notice</summary>
+                        <p class="settings-warning">Task names will appear in your device&#39;s notification center and may be visible to others. Ensure notifications are enabled for your browser in your OS settings.</p>
+                    </details>
+                </div>
+        
+                <!-- Frequency Section (only show if enabled) -->
+                <div id="frequency-section">
+                    <label>
+                        <input type="checkbox" id="indefiniteCheckbox" name="indefiniteCheckbox" />
+                        Remind Indefinitely?
+                    </label>
+                    <div id="repeat-count-row">
+                        <label for="repeatCount">Number of Times:</label>
+                        <input type="number" id="repeatCount" name="repeatCount" min="1" value="1" />
+                    </div>
+                    <div id="every-row">
+                        <label for="frequencyValue">Every:</label>
+                        <input type="number" id="frequencyValue" name="frequencyValue" min="1" value="1" />
+                        <select id="frequencyUnit" aria-label="Frequency unit">
+                            <option value="minutes">Minutes</option>
+                            <option value="hours">Hours</option>
+                            <option value="days">Days</option>
+                        </select>
+                    </div>
+                </div>
+        
+                <!-- Close Button -->
+                <button id="close-reminders-btn" class="settings-btn">Close</button>
+            </div>
+        </dialog>
+
+
+
+<!-- settings-modal injected at boot via modalTemplates.js -->
+
+        <!-- Testing Modal -->
+<dialog id="testing-modal" class="testing-modal" data-modal aria-labelledby="testing-modal-title" aria-modal="true">
+    <div class="testing-modal-content">
+        <div class="testing-modal-header">
+            <h2 id="testing-modal-title">🔬 App Diagnostics & Testing</h2>
+            <button class="close-testing-modal" aria-label="Close testing modal">&times;</button>
+        </div>
+
+        <div class="testing-modal-body">
+            <!-- Tabs for different testing categories -->
+            <div class="testing-tabs" role="tablist" aria-label="Testing categories">
+                <button class="testing-tab active" data-tab="diagnostics" role="tab" aria-selected="true" aria-controls="diagnostics-tab">📊 Diagnostics</button>
+                <button class="testing-tab" data-tab="debug" role="tab" aria-selected="false" aria-controls="debug-tab">🐛 Debug Info</button>
+                <button class="testing-tab" data-tab="automated-tests" role="tab" aria-selected="false" aria-controls="automated-tests-tab">🧪 Automated Tests</button>
+            </div>
+
+            <!-- Diagnostics Tab -->
+            <div id="diagnostics-tab" class="testing-tab-content active" role="tabpanel">
+                <div class="testing-section">
+                    <h3>📋 Quick Health Check</h3>
+                    <button id="run-health-check" class="test-btn test-primary">Run Full Diagnostic</button>
+                    <button id="check-data-integrity" class="test-btn test-info">Check Data Integrity</button>
+                    <button id="validate-schema" class="test-btn test-info">Validate Schema</button>
+                </div>
+
+                <div class="testing-section">
+                    <h3>📱 App Information</h3>
+                    <button id="show-app-info" class="test-btn test-secondary">Show App Details</button>
+                    <button id="show-storage-info" class="test-btn test-secondary">Storage Analysis</button>
+                    <button id="show-performance-info" class="test-btn test-secondary">Performance Info</button>
+                    <button id="show-boot-timing" class="test-btn test-secondary">Boot Timing</button>
+                </div>
+
+                <div class="testing-section">
+                    <h3>🛠️ Data Tools</h3>
+                    <button id="run-full-analysis" class="test-btn test-primary">Run Full Analysis</button>
+                    <button id="export-debug-data" class="test-btn test-success">Export Debug Package</button>
+                    <button id="repair-data" class="test-btn test-danger">Repair Corrupted Data</button>
+                </div>
+
+                <div class="testing-section">
+                    <h3>💾 Backup Management</h3>
+                    <button id="list-available-backups" class="test-btn test-info">List Available Backups</button>
+                    <button id="create-manual-backup" class="test-btn test-success">Create Manual Backup</button>
+                    <button id="restore-from-backup" class="test-btn test-warning">Restore from Backup</button>
+                    <button id="clean-old-backups" class="test-btn test-secondary">Clean Old Backups</button>
+                </div>
+            </div>
+
+            <!-- Debug Info Tab -->
+            <div id="debug-tab" class="testing-tab-content" role="tabpanel">
+                <div class="testing-section">
+                    <h3>🐛 Debug Information</h3>
+                    <button id="generate-debug-report" class="test-btn test-primary">Generate Debug Report</button>
+                    <button id="view-local-storage-btn" class="test-btn test-secondary">View Local Storage</button>
+                    <button id="show-service-worker-info" class="test-btn test-secondary">📡 Service Worker Info</button>
+                    <button id="test-service-worker-update" class="test-btn test-secondary">🔄 Test SW Update</button>
+                </div>
+
+                <div class="testing-section">
+                    <h3>📋 System Info</h3>
+                    <button id="show-browser-info" class="test-btn test-secondary">Browser Capabilities</button>
+                </div>
+
+                <div class="button-group">
+                    <h4>🎯 Auto Console Capture</h4>
+                    <button id="enable-auto-capture" class="test-btn test-info">🔄 Enable Auto-Capture Mode</button>
+                    <button id="show-all-console-logs" class="test-btn test-secondary">📊 Show All Captured Logs</button>
+                    <button id="show-migration-errors" class="test-btn test-warning">🚨 Show Migration Issues</button>
+                    <button id="clear-all-console-logs" class="test-btn test-secondary">🧹 Clear All Captured Logs</button>
+                    <button id="stop-console-capture" class="test-btn test-danger">⏹️ Stop Auto Capture</button>
+                </div>
+
+            </div>
+
+            <!-- Automated Tests Tab -->
+            <div id="automated-tests-tab" class="testing-tab-content" role="tabpanel">
+                <div class="testing-section">
+                    <h3>🧪 Quick Test</h3>
+                    <button id="run-all-automated-tests" class="test-btn test-primary">
+                        🏁 Run All Tests
+                    </button>
+                    <p class="testing-hint-text">
+                        Runs all 1600+ tests and shows pass/fail summary.
+                    </p>
+                </div>
+
+                <div class="testing-section">
+                    <h3>🔬 Full Test Suite</h3>
+                    <p class="testing-hint-text">
+                        For detailed testing with individual module controls:
+                    </p>
+                    <a href="https://minicycle.app/tests/module-test-suite.html" target="_blank" class="test-btn test-info">
+                        Open Test Suite Browser →
+                    </a>
+                    <p class="testing-hint-text">
+                        The test suite browser lets you run individual modules, see detailed results, and debug specific failures.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+
+        <!-- Results Area -->
+        <div class="testing-results-area">
+            <div class="testing-results-header">
+                <h3>📝 Test Results</h3>
+                <div class="testing-results-controls">
+                    <button id="clear-test-results" class="test-btn test-clear">Clear</button>
+                    <button id="export-test-results" class="test-btn test-export">Export Results</button>
+                    <button id="copy-test-results" class="test-btn test-copy">Copy to Clipboard</button>
+                </div>
+            </div>
+            <div id="testing-results" class="testing-results">
+                <div id="testing-output" class="testing-output">
+                    <div class="welcome-message">
+                        <p>👋 Welcome to App Diagnostics!</p>
+                        <p>Use the tabs above to run tests and diagnostics.</p>
+                        <p>Results will appear here.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer removed — X button in header handles close -->
+    </div>
+</dialog>
+
+
+
+<!-- Local Storage Viewer Modal -->
+<dialog id="storage-viewer-overlay" class="storage-modal-overlay" aria-labelledby="storage-viewer-title" aria-modal="true">
+  <div class="storage-modal-box">
+    <div class="storage-modal-header" id="storage-viewer-title">📦 Local Storage Viewer</div>
+    <div class="storage-modal-body scrollable" id="storage-content">
+      <!-- Content injected here -->
+    </div>
+    <div class="storage-modal-buttons">
+      <label style="margin-right: auto; display: flex; align-items: center; gap: 6px;">
+        <input type="checkbox" id="stay-open-toggle" name="stay-open-toggle" />
+        Stay open when clicking outside
+      </label>
+      <button class="btn-confirm" id="close-storage-viewer-btn">Close</button>
+    </div>
+  </div>
+</dialog>
+
+<!-- 🎨 Themes Panel Modal -->
+<dialog class="themes-modal" data-modal id="themes-modal" aria-labelledby="themes-modal-title" aria-modal="true">
+    <div class="themes-modal-content has-corner-logo">
+      <h2 id="themes-modal-title">🎨 Theme Settings</h2>
+  
+      <!-- 🗣️ VOCABULARY THEMES -->
+      <div id="vocab-theme-section">
+        <!-- Vocabulary theme options injected by JS -->
+      </div>
+
+      <!-- Divider Line -->
+      <hr class="theme-divider" />
+
+      <!-- 🌙 Dark Mode Section -->
+      <div id="dark-mode-section">
+        <label class="custom-checkbox">
+          <input type="checkbox" id="darkModeToggleThemes" name="darkModeToggleThemes">
+          <span class="checkmark"></span>
+          Dark Mode 🌙
+        </label>
+      </div>
+  
+      <button id="close-themes-btn" class="close-btn">Close</button>
+    </div>
+  </dialog>
+
+<!-- preferences-modal injected at boot via modalTemplates.js -->
+
+
+<!-- miniCycle Switch Modal -->
+<dialog id="routine-switcher-modal" class="mini-cycle-switch-modal" data-modal aria-labelledby="routine-switcher-title" aria-modal="true">
+    <div class="mini-cycle-switch-modal-content has-corner-logo" autofocus tabindex="-1">
+        <div class="mini-cycle-switch-title" id="routine-switcher-title">Open Routine</div>
+
+        <!-- Full-width controls above the two-panel area -->
+        <input type="text" id="routine-search-input" class="routine-search-input" placeholder="Search routines..." autocomplete="off" aria-label="Search routines">
+        <div class="routine-sort-filter-row">
+            <div class="routine-filter-controls">
+                <select id="routine-filter-select" class="routine-filter-select" aria-label="Filter routines by mode">
+                    <option value="all">All Modes</option>
+                    <option value="auto">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🔄 Auto Cycle</option>
+                    <option value="manual">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;✋ Manual Cycle</option>
+                    <option value="todo">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;📋 To-Do</option>
+                </select>
+            </div>
+            <div class="routine-sort-controls">
+                <span class="routine-sort-label">Sort:</span>
+                <button id="sort-alpha" class="routine-sort-btn active" title="Sort alphabetically">A-Z</button>
+                <button id="sort-recent" class="routine-sort-btn" title="Sort by recently modified">Recent</button>
+                <button id="sort-size" class="routine-sort-btn" title="Sort by file size">Size</button>
+            </div>
+        </div>
+
+        <!-- Two-panel body: left (list + actions) | right (desktop preview) -->
+        <div class="routine-switcher-body">
+            <!-- Left panel — routine list -->
+            <div class="routine-switcher-left">
+                <div class="routine-panel-title">Routines</div>
+                <div class="mini-cycle-switch-list" id="miniCycleList" role="listbox" aria-label="Routines"></div>
+                <div id="routine-list-hint" class="routine-list-hint"></div>
+            </div>
+
+            <!-- Right panel — desktop task preview (hidden on mobile) -->
+            <div class="routine-switcher-right">
+                <div id="desktop-preview-title" class="routine-panel-title">Preview</div>
+                <div id="desktop-preview-window" class="desktop-preview-window">
+                    Select a routine to preview
+                </div>
+                <div id="desktop-preview-hint" class="desktop-preview-hint"></div>
+            </div>
+        </div>
+
+        <!-- All buttons centered below the two-panel area -->
+        <div id="switch-items-row" class="switch-items-row">
+            <div class="switch-items-row-title">Routine Actions</div>
+            <button id="switch-duplicate" class="switch-duplicate switch-buttons" title="Duplicate routine"><i class="fas fa-copy"></i><span class="switch-btn-label">Duplicate</span></button>
+            <button id="switch-rename" class="switch-rename switch-buttons" title="Rename routine"><i class="fas fa-edit"></i><span class="switch-btn-label">Rename</span></button>
+            <button id="switch-delete" class="switch-delete switch-buttons" title="Delete routine"><i class="fas fa-trash"></i><span class="switch-btn-label">Delete</span></button>
+            <button id="switch-download" class="switch-download switch-buttons" title="Download routine"><i class="fas fa-file-download"></i><span class="switch-btn-label">Download</span></button>
+            <button id="switch-theme" class="switch-theme switch-buttons" title="Change routine theme" aria-label="Change theme" aria-expanded="false" aria-controls="theme-picker-row">🎨<span class="switch-btn-label">Theme</span></button>
+            <div id="switch-preview-window" class="switch-preview-window"><br>Preview</div>
+        </div>
+        <div id="theme-picker-row" class="theme-picker-row hidden" role="radiogroup" aria-label="Select theme for this routine"></div>
+        <div class="switch-action-row">
+            <button id="miniCycleUpload" class="mini-cycle-upload-btn" title="Import a routine from a file" aria-label="Import a routine from a file"><i class="fas fa-file-upload"></i> Import Routine</button>
+            <button id="miniCycleSwitchConfirm" class="mini-cycle-switch-btn open-btn">Open</button>
+        </div>
+
+        <!-- Storage Bar -->
+        <div class="storage-bar-container">
+            <div class="storage-bar-header">
+                <div class="storage-bar-label-group">
+                    <div class="storage-bar-label" title="Space used by your saved routines on this device">Routine Storage</div>
+                    <div class="storage-bar-hint">Saved locally on this device</div>
+                </div>
+                <button id="storage-refresh-btn" class="storage-refresh-btn" title="Refresh storage quota">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+            </div>
+            <div class="storage-bar-track">
+                <div id="storage-bar-fill" class="storage-bar-fill storage-normal"></div>
+            </div>
+            <div id="storage-bar-text" class="storage-bar-text">Calculating...</div>
+        </div>
+        <button id="miniCycleSwitchClose" class="close-routine-switcher">Close</button>
+    </div>
+</dialog>
+
+
+
+
+<!-- Feedback Modal -->
+<dialog id="feedback-modal" class="feedback-modal" aria-labelledby="feedback-modal-title" data-modal aria-modal="true">
+    <div class="feedback-modal-content has-corner-logo">
+        <button class="close-feedback-modal" aria-label="Close feedback modal">&times;</button>
+        <h2 id="feedback-modal-title">Provide Feedback</h2>
+        <p>We appreciate your feedback! Let us know how we can improve miniCycle.</p>
+
+        <!-- Web3Forms API -->
+        <form id="feedback-form" action="https://api.web3forms.com/submit" method="POST" novalidate>
+            <!-- Your Web3Forms Access Key -->
+            <input type="hidden" name="access_key" value="691907ec-ad04-4447-9d45-861ee622a091">
+
+            <!-- Subject line for email identification -->
+            <input type="hidden" name="subject" value="miniCycle Feedback">
+
+            <!-- Web3Forms Honeypot Spam Protection -->
+            <input type="checkbox" name="botcheck" style="display: none;" tabindex="-1" autocomplete="off">
+
+            <!-- Feedback Text -->
+            <label for="feedback-text" class="visually-hidden">Your feedback</label>
+            <textarea id="feedback-text" name="message" placeholder="Write your feedback here..." required minlength="10"></textarea>
+
+            <!-- Email (Optional, if you want users to provide their email) -->
+            <label for="feedback-email" class="visually-hidden">Your email (optional)</label>
+            <input type="email" id="feedback-email" name="email" placeholder="Your Email (optional)" autocomplete="email">
+
+            <!-- Show a success message instead of redirecting -->
+            <button type="submit" id="submit-feedback">Submit</button>
+        </form>
+
+        <!-- Thank You Message (Initially Hidden) -->
+        <p id="thank-you-message" style="display: none; color: green; font-weight: bold;">
+            ✅ Thank you for your feedback!
+        </p>
+    </div>
+</dialog>
+
+
+
+
+
+    
+    
+<div id="app-root" class="app-root">
+
+
+
+
+<!-- Task List & Stats Wrapper -->
+<main id="app-container" role="main">
+  <!-- Personalization Button (bottom left) -->
+  <button id="personalization-btn" aria-label="Personalization" title="Personalize colors">
+    🖌️
+  </button>
+  <!-- Dark Mode Toggle (bottom right) -->
+  <button id="quick-dark-toggle" aria-label="Toggle dark mode" title="Toggle dark mode">
+    🌓
+  </button>
+    <!-- Left Arrow — visible in stats view, navigates to task view -->
+<div id="slide-left" class="slide-arrow" tabindex="0" role="button" aria-label="Show Routine View" title="Show Routine View">❯</div>
+
+<!-- Right Arrow — visible in task view, navigates to stats panel -->
+<div id="slide-right" class="slide-arrow" tabindex="0" role="button" aria-label="Show Statistics" title="Show Statistics">❮</div>
+
+
+<div id="task-view">
+    <!-- Add task input bar — sibling of #task-card-group so it can be
+         independently dragged with #task-view as its positioned ancestor.
+         Default flex order keeps it visually above the routine card. -->
+    <div id="task-input-row" class="task-input hidden">
+        <label for="taskInput" class="visually-hidden">Add a new task</label>
+        <input type="text" id="taskInput" name="taskInput" class="taskInput" placeholder="Enter a task..." title="Type a task and press Add or Enter" tabindex="-1">
+        <button id="addTaskBtn" title="Add task" tabindex="-1">Add</button>
+    </div>
+    <div id="task-card-group" class="task-card-group">
+    <div class="task-card">
+        <div class="title-row">
+            <div id="mini-cycle-title" class="mini-cycle-title" contenteditable="true" role="textbox" aria-label="Routine name"></div>
+            <!-- Task Search Icon (hidden until 3+ tasks) -->
+            <div id="task-search-container" class="task-search-container" style="display: none;">
+                <button id="task-search-btn" class="task-search-btn" aria-label="Search tasks" title="Search tasks">
+                    <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <div class="task-list-container">
+        <!-- Search Input Row (appears below title when search is expanded) -->
+        <div id="task-filter-sort-row" class="task-filter-sort-row hidden">
+            <div class="filter-chip-group collapsed" role="group" aria-label="Filter tasks" aria-expanded="false">
+                <span class="chip-group-icon" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                </span>
+                <button class="filter-chip active" data-filter="all" aria-pressed="true">All</button>
+                <button class="filter-chip" data-filter="incomplete" aria-pressed="false">Incomplete</button>
+                <button class="filter-chip" data-filter="completed" aria-pressed="false">Completed</button>
+                <button class="filter-chip" data-filter="priority" aria-pressed="false">Priority</button>
+                <button class="filter-chip" data-filter="due-date" aria-pressed="false">Due Date</button>
+                <button class="filter-chip" data-filter="recurring" aria-pressed="false">Recurring</button>
+            </div>
+            <div class="filter-sort-divider" aria-hidden="true"></div>
+            <div class="sort-chip-group" role="group" aria-label="Sort tasks">
+                <span class="chip-group-icon" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/><line x1="6" y1="5" x2="18" y2="5"/></svg>
+                </span>
+                <button class="sort-chip active" data-sort="default" aria-pressed="true">Default</button>
+                <button class="sort-chip" data-sort="az" aria-pressed="false">A–Z</button>
+                <button class="sort-chip" data-sort="priority" aria-pressed="false">Priority</button>
+                <button class="sort-chip" data-sort="due-date" aria-pressed="false">Due Date</button>
+            </div>
+        </div>
+        <div id="task-search-input-row" class="task-search-input-row hidden">
+            <input type="text" id="task-search-input" class="task-search-input" placeholder="Search tasks..." aria-label="Search tasks">
+            <button id="task-search-clear" class="task-search-clear" aria-label="Clear search" title="Clear search">×</button>
+        </div>
+        <!-- Auto-uncheck status banner (per-routine; populated by dailyResetManager) -->
+        <button type="button" id="auto-uncheck-banner" class="auto-uncheck-banner hidden" aria-hidden="true" tabindex="-1">
+            <span class="auto-uncheck-banner-icon" aria-hidden="true">🕛</span>
+            <span id="auto-uncheck-banner-text" class="auto-uncheck-banner-text">All tasks auto-uncheck daily at 12:00 AM</span>
+        </button>
+        <!--Tasks will go here-->
+        <ul id="taskList" class="task-list" aria-label="Task list" aria-live="polite" aria-relevant="additions removals"></ul>
+
+        <!-- Empty State Message -->
+        <div id="empty-state" class="empty-state">
+            <div class="empty-state-icon">📋</div>
+            <div class="empty-state-text">No tasks yet</div>
+            <div class="empty-state-hint">Press the <strong>+</strong> button to show the task bar to add a task or create a new routine</div>
+        </div>
+
+        <!-- Recurring Info Link - shown when recurring templates exist -->
+        <div id="recurring-info-link" class="recurring-info-link" role="button" tabindex="0" aria-label="View recurring settings"></div>
+
+        <!-- Onboarding Placeholder - shown before user creates/loads a routine -->
+        <div id="onboarding-placeholder" class="onboarding-placeholder">
+            <div class="onboarding-placeholder-icon">🚀</div>
+            <div class="onboarding-placeholder-title">Create your first routine</div>
+            <div class="onboarding-placeholder-text">or try a sample</div>
+        </div>
+
+        <!-- Completed Tasks Collapsible Section -->
+        <div class="completed-tasks-section" id="completed-tasks-section">
+            <h3 class="completed-tasks-header clickable" id="completed-tasks-header" tabindex="0" aria-expanded="false" aria-label="Toggle completed tasks">
+                ✓ Completed (<span id="completed-count">0</span>) <span class="toggle-icon">▼</span>
+            </h3>
+            <ul id="completedTaskList" class="completed-task-list"></ul>
+        </div>
+    </div>
+    </div><!-- end task-card -->
+    <div class="progress-container">
+        <div id="progressBar" class="progress-bar"></div>
+    </div>
+    </div><!-- end task-card-group -->
+    <div id="complete-all-and-help-window-container" class="complete-all-and-help-window-container">
+        <!-- Complete All Button -->
+  <button id="completeAll" class="complete-all-btn" title="Complete all checked tasks">Complete</button>
+    </div>
+    <!-- Quick Actions Panel - Inside task-view, positioned to left on desktop -->
+    <div id="quick-actions-window" class="quick-actions-window">
+        <div class="quick-actions-header">
+            <button class="quick-actions-nav quick-actions-prev" title="Previous view" aria-label="Previous view">&#x25C0;</button>
+            <span class="quick-actions-title">Quick Actions</span>
+            <button class="quick-actions-nav quick-actions-next" title="Next view" aria-label="Next view">&#x25B6;</button>
+        </div>
+        <div class="quick-actions-slots" id="quick-actions-slots"></div>
+    </div>
+    <!-- Help Window - Inside task-view, positioned to right on desktop -->
+    <div id="help-window" class="help-window" role="status" aria-label="Help information">
+        <p></p>
+    </div>
+</div>
+
+    <!-- Stats Panel (Initially Hidden) -->
+    <section id="stats-panel" class="stats-panel" role="region" aria-labelledby="stats-header" inert>
+        <h2 id="stats-header">📊 Stats</h2>
+        <div class="current-routine-status" id="current-routine-status">
+            <h3 class="clickable" tabindex="0" aria-expanded="true" aria-label="Toggle current routine details">
+                📋 Current Routine <span class="toggle-icon">▼</span>
+            </h3>
+            <!-- Collapsible Details -->
+            <p id="current-routine-name" class="current-routine-name"></p>
+            <div id="current-cycle-doughnut-container" class="current-cycle-doughnut-container">
+                <svg class="current-cycle-doughnut" viewBox="0 0 100 100" role="img" aria-label="Current cycle task completion">
+                    <!-- Background circle (gray) -->
+                    <circle class="doughnut-bg" cx="50" cy="50" r="40" fill="none" stroke="#e0e0e0" stroke-width="12"/>
+                    <!-- Progress circle (green) -->
+                    <circle id="current-cycle-doughnut-progress" class="doughnut-progress" cx="50" cy="50" r="40" fill="none" stroke="url(#gradient)" stroke-width="12" stroke-linecap="round" transform="rotate(-90 50 50)"/>
+                    <!-- Gradient definition -->
+                    <defs>
+                        <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" style="stop-color:#4caf50;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#66bb6a;stop-opacity:1" />
+                        </linearGradient>
+                    </defs>
+                    <!-- Center text (percentage) -->
+                    <text id="current-cycle-doughnut-text" x="50" y="55" text-anchor="middle" class="doughnut-text">0%</text>
+                </svg>
+            </div>
+            <p id="current-cycle-progress-text">0 of 0 Tasks Completed</p>
+            <p id="current-routine-cycle-count"><span id="per-cycle-count">0 Cycles Completed</span></p>
+            <p id="current-routine-cleared-count"><span id="per-routine-cleared">0 Cleared Tasks</span></p>
+        </div>
+                  <div class="theme-unlock-status" id="theme-unlock-status">
+            <h3 class="clickable" tabindex="0" aria-expanded="false" aria-label="Toggle milestone rewards">
+                🎯 Milestone Rewards <span class="toggle-icon">▼</span>
+              </h3>
+            <p id="theme-unlock-message">Loading...</p>
+            <p id="golden-unlock-message">Loading...</p>
+            <p id="game-unlock-message">Loading game unlock info...</p>
+          </div>
+        <div class="badge-container">
+            <button id="achievement-badges-btn" class="stats-feature-btn achievement-badges-btn">
+                🏅 Achievement Badges <span id="achievement-count-badge" class="achievement-count-badge">0</span>
+            </button>
+            <!-- Badge tooltips set dynamically from MILESTONES constant in statsPanel.js -->
+            <div class="badges">
+                <div class="badge" data-milestone="5" tabindex="0" role="button" aria-haspopup="dialog" aria-expanded="false" aria-label="5 cycles milestone">🔥</div>
+                <div class="badge" data-milestone="25" tabindex="-1" role="button" aria-haspopup="dialog" aria-expanded="false" aria-label="25 cycles milestone">💪</div>
+                <div class="badge" data-milestone="50" tabindex="-1" role="button" aria-haspopup="dialog" aria-expanded="false" aria-label="50 cycles milestone">📚</div>
+                <div class="badge" data-milestone="75" tabindex="-1" role="button" aria-haspopup="dialog" aria-expanded="false" aria-label="75 cycles milestone">🧹</div>
+                <div class="badge" data-milestone="100" tabindex="-1" role="button" aria-haspopup="dialog" aria-expanded="false" aria-label="100 cycles milestone">👑</div>
+            </div>
+          </div>
+
+        <div class="global-stats-container">
+            <p id="all-routines-count">All Routines: <span id="mini-cycle-count">0 Cycles</span></p>
+            <p id="milestone-progress-text">Loading...</p>
+            <div class="progress-container">
+                <div id="stats-progress-bar" class="progress-bar" role="progressbar" aria-label="Progress to next milestone" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
+            </div>
+        </div>
+    </section>
+
+    
+</main>
+
+    
+</div>
+
+
+
+<div>
+<footer id="footer-container" role="contentinfo">
+<!-- ✅ Undo buttons here will group them logically with header -->
+<div id="undo-redo-buttons" class="undo-container">
+<button id="undo-btn" class="undo-redo-btn" hidden title="Undo last action">Undo</button>
+<button id="redo-btn" class="undo-redo-btn" hidden title="Redo last undone action">Redo</button>
+</div>
+
+<nav id="nav-dots" class="navigation-dots" role="tablist" aria-label="Page navigation">
+<button class="dot active" role="tab" aria-selected="true" aria-controls="task-view" aria-label="Tasks view" title="Tasks view">
+<span class="visually-hidden">Tasks</span>
+</button>
+<button class="dot" role="tab" aria-selected="false" aria-controls="stats-panel" aria-label="Statistics view" title="Statistics view">
+<span class="visually-hidden">Stats</span>
+</button>
+</nav>
+<ul class="footer-links" style="list-style: none; padding: 0; margin: 0 auto; display: flex; justify-content: center; align-items: center; width: fit-content;">
+<li id="copyright">
+  &copy; 2026 <a href="https://sparkincreations.com" target="_blank" rel="noopener noreferrer" title="Visit sparkinCreations website">sparkinCreations</a>
+  &bull;
+  <a href="https://minicycle.app/pages/product.html" target="_blank" rel="noopener noreferrer" aria-label="miniCycle product page" title="Open the miniCycle product page">miniCycle<sup>™</sup></a>
+</li>
+<li class="footer-item"><a href="https://minicycle.app/legal/privacy.html" target="_blank" rel="noopener noreferrer" title="Read the Privacy Policy">Privacy Policy</a></li>
+<li class="footer-item"><a href="https://minicycle.app/legal/terms.html" target="_blank" rel="noopener noreferrer" title="Read the Terms of Service">Terms of Service</a></li>
+<li class="footer-item"><a href="https://minicycle.app/legal/accessibility.html" target="_blank" rel="noopener noreferrer" title="Read the Accessibility Statement">Accessibility</a></li>
+<li class="footer-item"><a href="https://minicycle.app/legal/security.html" target="_blank" rel="noopener noreferrer" title="Read the Security Policy">Security</a></li>
+<li class="footer-item"><button id="open-feedback-modal-footer" class="open-feedback-modal-footer" aria-label="Open feedback modal" title="Send us feedback">Feedback</button></li>
+</ul>
+</footer>
+      
+</div>
+
+
+
+
+<!-- 🔊 ARIA Live Region for announcing view changes -->
+<div id="live-region" aria-live="polite" style="position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden;"></div>
+
+<!-- Boot File Split (Dec 2025): Load via entrypoint which orchestrates all boot files -->
+ <script type="module" src="miniCycle-main.js?v=2.233"></script>
+
+<script src="ext-boot/09.js"></script>
+   <!-- [chrome-ext build] removed inline script: late lite-version fallback redirect -->
+
+
+</body>
+
+</html>
+
+
+
+
+
+
+
+
+
+
+
+

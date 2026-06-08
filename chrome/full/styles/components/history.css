@@ -1,0 +1,418 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   History Modal
+   History events, cleared tasks, and recreate functionality
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* =============================================================================
+   DIALOG OVERLAY
+   ============================================================================= */
+
+#history-modal-dialog[open] {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* =============================================================================
+   MODAL CONTAINER
+   ============================================================================= */
+
+.history-modal {
+    background: var(--pref-modal-bg, var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white))));
+    border-radius: var(--radius-lg);
+    width: 90%;
+    max-width: 500px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow:
+        var(--shadow-modal),
+        inset 0 1px 1px rgba(255, 255, 255, 0.25);
+    transform: translateY(20px);
+    transition: transform var(--transition-fast) ease;
+    -webkit-backdrop-filter: blur(var(--theme-modal-blur));
+    backdrop-filter: blur(var(--theme-modal-blur));
+}
+
+/* =============================================================================
+   HEADER
+   ============================================================================= */
+
+.history-header {
+    display: flex;
+    align-items: center;
+    padding: var(--space-4);
+    border-bottom: 1px solid var(--theme-modal-border, var(--overlay-medium));
+    gap: var(--space-3);
+}
+
+.history-back-btn {
+    background: none;
+    border: none;
+    font-size: var(--font-size-xl);
+    cursor: pointer;
+    padding: var(--space-1) var(--space-2);
+    color: var(--theme-modal-text, var(--color-gray-700));
+}
+
+.history-title {
+    flex: 1;
+    margin: 0;
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    color: var(--theme-modal-text, var(--color-gray-700));
+}
+
+.history-action-btn {
+    background: none;
+    border: none;
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+    padding: var(--space-1) var(--space-3);
+}
+
+.history-action-btn--danger {
+    color: var(--color-error);
+}
+
+.history-action-btn--primary {
+    color: var(--color-primary);
+}
+
+/* =============================================================================
+   TABS
+   ============================================================================= */
+
+.history-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--theme-modal-border, var(--overlay-medium));
+}
+
+.history-tab {
+    flex: 1;
+    padding: var(--space-3);
+    border: none;
+    background: none;
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+    color: var(--theme-modal-text, var(--color-gray-700));
+    border-bottom: 2px solid transparent;
+    transition: all var(--transition-fast) ease;
+}
+
+.history-tabs button.history-tab:hover {
+    background: var(--color-blue-pale-mid);
+    color: var(--color-primary);
+}
+
+.history-tab.active {
+    font-weight: 600;
+    border-bottom-color: var(--color-primary);
+    color: var(--color-primary);
+    background: var(--color-blue-pale-light);
+}
+
+.history-tab-badge {
+    display: inline-block;
+    background: var(--color-primary);
+    color: var(--color-white);
+    border-radius: var(--radius-xl);
+    padding: var(--space-0-25) var(--space-2);
+    font-size: 11px;
+    font-weight: 600;
+    margin-left: var(--space-1);
+    vertical-align: middle;
+    line-height: 1.2;
+    min-width: var(--space-5);
+    text-align: center;
+}
+
+/* =============================================================================
+   CONTENT AREA
+   ============================================================================= */
+
+.history-modal-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--space-4);
+}
+
+/* =============================================================================
+   EMPTY STATES
+   ============================================================================= */
+
+.history-empty-state {
+    text-align: center;
+    padding: var(--space-10) var(--space-5);
+    color: var(--color-gray-600);
+}
+
+.history-empty-emoji {
+    font-size: 48px;
+    margin-bottom: var(--space-4);
+}
+
+.history-empty-text {
+    margin: 0;
+}
+
+.history-empty-hint {
+    margin: var(--space-2) 0 0;
+    font-size: var(--font-size-sm);
+}
+
+/* =============================================================================
+   EVENT GROUPS
+   ============================================================================= */
+
+.history-group {
+    margin-bottom: var(--space-6);
+}
+
+.history-group-heading {
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    color: var(--color-gray-600);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0 0 var(--space-3);
+    padding-bottom: var(--space-2);
+    border-bottom: 1px solid var(--theme-modal-border, var(--overlay-medium));
+}
+
+/* =============================================================================
+   EVENT ITEMS
+   ============================================================================= */
+
+.history-event {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    background: var(--color-blue-pale-light);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-2);
+}
+
+.history-event-icon {
+    font-size: var(--font-size-xl);
+}
+
+.history-event-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.history-event-title {
+    font-weight: 500;
+    color: var(--theme-modal-text, var(--color-gray-700));
+}
+
+.history-event-details {
+    font-size: var(--font-size-sm);
+    color: var(--color-gray-600);
+    margin-top: var(--space-0-5);
+}
+
+.history-event-timestamp {
+    font-size: var(--font-size-xs);
+    color: var(--color-gray-600);
+    white-space: nowrap;
+}
+
+.history-priority-dot {
+    display: inline-block;
+    width: var(--space-2-5);
+    height: var(--space-2-5);
+    border-radius: 50%;
+    vertical-align: middle;
+    margin-left: var(--space-1);
+}
+
+/* =============================================================================
+   CLEARED TASK ENTRIES
+   ============================================================================= */
+
+.cleared-entry {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    background: var(--color-blue-pale-light);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-2);
+    border: 2px solid transparent;
+    transition: all var(--transition-fast) ease;
+}
+
+.cleared-entry.selectable {
+    cursor: pointer;
+}
+
+.cleared-entry.selected {
+    background: var(--color-blue-pale-mid);
+    border-color: var(--border-blue-subtle-hover);
+}
+
+.cleared-entry-checkbox {
+    width: var(--space-5);
+    height: var(--space-5);
+    border: 2px solid var(--overlay-strong);
+    border-radius: var(--radius-sm);
+    background: var(--color-white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: var(--color-white);
+    font-size: var(--font-size-xs);
+}
+
+.cleared-entry.selected .cleared-entry-checkbox {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+.cleared-entry-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.cleared-entry-text {
+    color: var(--theme-modal-text, var(--color-gray-700));
+    word-break: break-word;
+}
+
+.cleared-entry-metadata {
+    font-size: var(--font-size-xs);
+    color: var(--color-gray-600);
+    margin-top: var(--space-1);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+.cleared-entry-priority {
+    color: var(--color-error);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-0-75);
+}
+
+.cleared-entry-due-date {
+    color: var(--color-blue-medium);
+}
+
+.cleared-entry-reminders {
+    color: var(--color-orange);
+}
+
+.cleared-entry-recurring {
+    color: var(--color-success);
+}
+
+.cleared-entry-mode {
+    color: var(--color-gray-500);
+}
+
+/* =============================================================================
+   RECURRING NOTE
+   ============================================================================= */
+
+.history-recurring-note {
+    padding: var(--space-3);
+    margin-top: var(--space-2);
+    background: var(--color-blue-pale-light);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    color: var(--color-gray-600);
+    line-height: 1.4;
+}
+
+.history-recurring-note-icon {
+    margin-right: var(--space-1);
+}
+
+.cleared-view-recurring {
+    color: var(--color-primary);
+    text-decoration: none;
+    font-weight: 500;
+    margin-top: var(--space-1);
+    display: inline-block;
+}
+
+.history-achievement-note {
+    font-size: var(--font-size-xs);
+    color: var(--color-gray-600);
+    text-align: center;
+    margin: var(--space-4) 0 0;
+    font-style: italic;
+}
+
+.history-recurring-disclaimer {
+    font-size: var(--font-size-xs);
+    color: var(--color-gray-600);
+    text-align: center;
+    padding: 0 var(--space-4);
+}
+
+/* =============================================================================
+   RESET SECTION
+   ============================================================================= */
+
+.history-reset-section {
+    padding: var(--space-3) var(--space-4);
+    border-top: 1px solid var(--theme-modal-border, var(--overlay-medium));
+    text-align: center;
+}
+
+.history-reset-progress-btn {
+    background: none;
+    border: none;
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+    padding: var(--space-2) var(--space-4);
+    color: var(--color-gray-600);
+    text-decoration: underline;
+}
+
+/* =============================================================================
+   FOOTER (CONFIRM/CANCEL)
+   ============================================================================= */
+
+.history-footer {
+    display: none;
+    padding: var(--space-3) var(--space-4);
+    border-top: 1px solid var(--theme-modal-border, var(--overlay-medium));
+    gap: var(--space-3);
+}
+
+.history-footer.visible {
+    display: flex;
+}
+
+.history-cancel-btn {
+    flex: 1;
+    padding: var(--space-2-5);
+    border: 1px solid var(--theme-modal-border, var(--overlay-medium));
+    border-radius: var(--radius-md);
+    background: none;
+    cursor: pointer;
+    color: var(--theme-modal-text, var(--color-gray-700));
+}
+
+.history-confirm-btn {
+    flex: 1;
+    padding: var(--space-2-5);
+    border: none;
+    border-radius: var(--radius-md);
+    background: var(--color-primary);
+    cursor: pointer;
+    color: var(--color-white);
+    font-weight: 500;
+}
+
+.history-confirm-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}

@@ -1,0 +1,587 @@
+/**
+ * CSS Variables Foundation
+ *
+ * Single source of truth for all design tokens.
+ * Theme variables (--theme-*) are overridden by theme-manager.js at runtime.
+ *
+ * @see docs/guides/THEME_CREATION_GUIDE.md
+ * @see docs/future-work/THEME_ARCHITECTURE.md
+ */
+
+:root {
+  /* ═══════════════════════════════════════════════════════════════════════════
+     BRAND COLORS (Static - don't change per theme)
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --color-primary: #4c79ff;
+  --color-primary-light: #74c0fc;
+  --color-primary-dark: #3a5fc7;
+  --color-accent: #007BFF;
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     SEMANTIC COLORS (Static defaults, can be themed)
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --color-success: #28a745;
+  --color-success-light: #5ecf72;
+  --color-success-pale: #dfffdf;            /* recurring selected bg */
+  --color-warning: #ffc107;
+  --color-warning-light: #ffda6a;
+  --color-error: #dc3545;
+  --color-error-light: #f1737e;
+  --color-error-bg: rgba(220, 53, 69, 0.25);
+  --color-error-bg-dark: rgba(220, 53, 69, 0.35);
+  --color-info: #17a2b8;
+  /* App-specific action colors */
+  --color-complete-btn: #08c352;
+  --color-complete-btn-hover: #0ad65a;
+  --color-todo-btn: #3b82f6;
+  --color-todo-btn-hover: #4b8ef7;
+  /* High-priority indicator color — overridden at runtime by user preference */
+  --priority-color: #dc3545;
+  /* Game/achievement teal color */
+  --color-game-primary: #4ecdc4;
+  --color-game-primary-dark: #36b1a8;
+  /* Extended status palette */
+  --color-yellow-light: #ffd54f;      /* caution gradient secondary */
+  --color-orange: #ff9800;            /* mid-severity / orange accent */
+  --color-orange-light: #ffb74d;      /* orange gradient secondary */
+  --color-orange-icon: #e67e22;       /* high-priority task option icon */
+  --color-amber: #f39c12;             /* high-priority icon on dark bg */
+  --color-green-dark: #388E3C;         /* manual cycle mode indicator */
+  --color-purple: #7B1FA2;            /* to-do mode indicator */
+  --color-red: #f44336;               /* storage critical / pure red */
+  --color-red-light: #ef5350;         /* storage critical gradient secondary */
+  /* Badge tap-animation accent glows (contextual micro-interactions) */
+  --color-flame: #ff8c00;                       /* 🔥 badge flicker accent */
+  --color-flame-glow: rgba(255, 140, 0, 0.6);   /* 🔥 drop-shadow glow */
+  --color-gold: #ffd700;                        /* 👑 badge shine accent */
+  --color-gold-glow: rgba(255, 215, 0, 0.6);    /* 👑 drop-shadow glow */
+  /* Extended blue palette */
+  --color-blue-medium: #3498db;       /* recurring / reminder option icons */
+  --color-blue-light: #5dade2;        /* reminder icons on dark bg */
+  --color-steel-blue: #3d7ab5;        /* modal close button */
+  --color-blue-pale: #d6e4f7;         /* modal background */
+  --color-blue-pale-mid: #c0d4ed;     /* summary/detail panels on blue modals */
+  --color-blue-pale-light: #f5f8ff;   /* inner panel bg on pale blue modals */
+  --border-blue-subtle: rgba(61, 122, 181, 0.25);   /* subtle blue border/hover for inner panels */
+  --border-blue-subtle-hover: rgba(61, 122, 181, 0.4); /* border state for blue sections */
+  /* Generic overlays (black translucent, used for borders/hovers/backdrops) */
+  --overlay-faint: rgba(0, 0, 0, 0.03);        /* barely-visible tint */
+  --overlay-light: rgba(0, 0, 0, 0.06);        /* subtle tint for badges/chips */
+  --overlay-medium: rgba(0, 0, 0, 0.1);        /* borders, dividers, hover bg */
+  --overlay-strong: rgba(0, 0, 0, 0.15);       /* stronger borders, chip hover */
+  --overlay-backdrop: rgba(0, 0, 0, 0.3);      /* lighter modal backdrops */
+  --overlay-heavy: rgba(0, 0, 0, 0.5);         /* full modal backdrops */
+  /* Blue highlight overlays (interactive element hover/focus) */
+  --highlight-blue-bg: rgba(74, 144, 226, 0.08);     /* hover bg */
+  --highlight-blue-border: rgba(74, 144, 226, 0.3);  /* hover border */
+  /* White overlays (for dark-bg contexts) */
+  --overlay-white-light: rgba(255, 255, 255, 0.2);  /* subtle white tint */
+  --overlay-white-medium: rgba(255, 255, 255, 0.4); /* hover state white tint */
+  --overlay-white-strong: rgba(255, 255, 255, 0.8); /* text on dark bg */
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     NEUTRAL COLORS (Static palette)
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --color-white: #ffffff;
+  --color-black: #000000;
+  --color-gray-50: #fafafa;
+  --color-gray-100: #f5f5f5;
+  --color-gray-200: #e5e5e5;
+  --color-gray-300: #d4d4d4;
+  --color-gray-400: #a3a3a3;
+  --color-gray-500: #737373;
+  --color-gray-600: #525252;
+  --color-gray-700: #404040;
+  --color-gray-800: #262626;
+  --color-gray-900: #171717;
+  /* Slate neutrals (blue-tinted dark palette, used in dark components) */
+  --color-slate-900: #0f172a;
+  --color-slate-800: #1e293b;
+  --color-slate-700: #334155;
+  --color-slate-600: #4a5568;
+  --color-slate-500: #64748b;
+  --color-slate-400: #94a3b8;
+  --color-slate-100: #f1f5f9;
+  /* Navigation dot colors */
+  --color-nav-dot: #1a2650;           /* inactive dot */
+  --color-nav-dot-active: #dce7fc;    /* active dot */
+  --color-nav-dot-press: #004494;     /* active dot on press */
+  /* Navy palette (header/overlay context) */
+  --color-navy: #2c3270;              /* dark navy text on header buttons */
+  --color-navy-dark: #0c2091;         /* darker navy border/hover */
+  /* Monospace / code viewer background */
+  --color-code-bg: #282828;
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     THEME VARIABLES - Backgrounds
+     These are overridden by theme-manager.js when a theme is applied
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --theme-bg-gradient: linear-gradient(135deg, #4c79ff, #74c0fc);
+  --theme-bg-solid: #4c79ff;
+  --theme-bg-surface: rgba(255, 255, 255, 0.95);
+  --theme-bg-surface-elevated: #ffffff;
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     THEME VARIABLES - Text
+     Note: Original CSS referenced these but never defined them, so they defaulted
+     to inherit. Themes can override these via theme-manager.js.
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --theme-text-primary: inherit;
+  --theme-text-secondary: inherit;
+  --theme-text-on-surface: #333333;
+  --theme-text-muted: #717171;
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     THEME VARIABLES - Semantic (themeable)
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --theme-color-success: var(--color-success);
+  --theme-color-success-light: var(--color-success-light);
+  --theme-color-warning: var(--color-warning);
+  --theme-color-warning-light: var(--color-warning-light);
+  --theme-color-error: var(--color-error);
+  --theme-color-error-light: var(--color-error-light);
+  --theme-color-info: var(--color-info);
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     THEME VARIABLES - Header
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --theme-header-bg: transparent;
+  --theme-header-text: #ffffff;
+  --theme-header-border: rgba(255, 255, 255, 0.2);
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     THEME VARIABLES - Card/Surface
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --theme-card-bg: rgba(255, 255, 255, 0.95);
+  --theme-card-border: transparent;
+  --theme-card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     THEME VARIABLES - Input
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --theme-input-bg: #ffffff;
+  --theme-input-text: #333333;
+  --theme-input-border: #cccccc;
+  --theme-input-focus-border: var(--color-primary);
+  --theme-input-placeholder: #767676;
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     THEME VARIABLES - Button
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --theme-button-primary-bg: var(--color-primary);
+  --theme-button-primary-text: #ffffff;
+  --theme-button-primary-hover-bg: var(--color-primary-dark);
+  --theme-button-secondary-bg: #e0e0e0;
+  --theme-button-secondary-text: #333333;
+  --theme-button-secondary-hover-bg: #d0d0d0;
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     THEME VARIABLES - Modal
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --theme-modal-bg: var(--color-blue-pale);
+  --theme-modal-glass-bg: rgba(214, 228, 247, 0.82);
+  /* Whiter, more transparent glass tint — used by surfaces that want a
+     glossy frosted-glass read rather than the bluish modal glass (e.g. the
+     first-run welcome banner). */
+  --theme-modal-glass-bg-soft: rgba(255, 255, 255, 0.28);
+  --theme-modal-blur: 20px;
+  --theme-modal-text: #333333;
+  --theme-modal-border: transparent;
+  --theme-modal-overlay: rgba(0, 0, 0, 0.5);
+  --theme-modal-header-bg: transparent;
+  --theme-modal-footer-bg: #f5f5f5;
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     THEME VARIABLES - Notification
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --theme-notification-bg: #333333;
+  --theme-notification-text: #ffffff;
+  --tip-border-color: rgba(255, 255, 255, 0.3);
+  --tip-bg-color: rgba(255, 255, 255, 0.1);
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     THEME VARIABLES - Task
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --theme-task-bg: var(--color-blue-pale-light);
+  --theme-task-text: #333333;
+  --theme-task-completed-bg: rgba(200, 255, 200, 0.9);
+  --theme-task-completed-text: #666666;
+  --theme-task-border: transparent;
+  --theme-task-checkmark: var(--color-success);
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     THEME VARIABLES - Progress
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --theme-progress-track-bg: rgba(0, 0, 0, 0.1);
+  --theme-progress-fill-bg: var(--color-primary);
+  --theme-progress-text: #333333;
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     THEME VARIABLES - Stats Panel
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --theme-stats-bg: rgba(255, 255, 255, 0.45);
+  --theme-stats-text: #333333;
+  --theme-stats-border: rgba(255, 255, 255, 0.3);
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     THEME VARIABLES - UI Interaction (used by personalization modal)
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --theme-hover-bg:       rgba(0, 0, 0, 0.06);
+  --theme-selected-bg:    rgba(74, 144, 226, 0.1);
+  --theme-accent:         var(--color-primary);
+  --theme-accent-hover:   var(--color-primary-dark);
+  --theme-border:         #dddddd;
+  --theme-section-bg:     rgba(0, 0, 0, 0.02);
+
+  /* Button aliases for shorter shorthand in component CSS */
+  --theme-button-bg:      var(--theme-button-primary-bg);
+  --theme-button-text:    var(--theme-button-primary-text);
+  --theme-button-hover:   var(--theme-button-primary-hover-bg);
+  --theme-btn-primary-bg: var(--theme-button-primary-bg);
+
+  /* Semantic state aliases */
+  --theme-success:        var(--color-success);
+  --theme-success-hover:  #218838;
+  --theme-info:           var(--color-info);
+  --theme-error:          var(--color-error);
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     COMPONENT VARIABLES - Menu (default / light theme values)
+     Per-theme overrides live in body.dark-mode / body.theme-* blocks in menu.css
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --menu-bg:              linear-gradient(180deg, #e3f2fd 0%, #4a90c2 100%);
+  --menu-shadow:          0 4px 6px rgba(0, 0, 0, 0.1);
+  --menu-header-text:     rgba(8, 29, 58, 0.81);
+  --menu-date-text:       rgba(0, 0, 0, 0.5);
+  --menu-section-bg:      rgba(255, 255, 255, 0.5);
+  --menu-section-border:  rgba(255, 255, 255, 0.3);
+  --menu-section-header:  #555555;
+  --menu-button-bg:       rgba(0, 0, 0, 0.04);
+  --menu-button-text:     #333333;
+  --menu-button-hover-bg: rgba(0, 0, 0, 0.1);
+  --menu-close-bg:        var(--color-steel-blue);
+  --menu-close-text:      var(--color-white);
+  --menu-close-hover-bg:  #326a9e;
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     COMPONENT VARIABLES - Utilities
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --pref-panel-text:  rgba(255, 255, 255, 0.9);
+  --pref-panel-bg:    rgba(255, 255, 255, 0.12);
+  --pref-panel-border: rgba(255, 255, 255, 0.25);
+  --pref-panel-blur:  8px;
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     LEGACY VARIABLES (for backward compatibility)
+     These map to theme variables - will be deprecated
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --header-bg: var(--theme-header-bg);
+  --header-text: var(--theme-header-text);
+  --header-border: var(--theme-header-border);
+  --modal-bg: var(--theme-modal-bg);
+  --modal-text: var(--theme-modal-text);
+  --modal-border: var(--theme-modal-border);
+  --modal-header-bg: var(--theme-modal-header-bg);
+  --modal-footer-bg: var(--theme-modal-footer-bg);
+  --background-color: var(--theme-bg-surface);
+  --text-color: var(--theme-text-on-surface);
+  --primary-color: var(--color-primary);
+  --accent-color: var(--color-accent);
+  --success-color: var(--color-success);
+  --focus-color: var(--color-primary);
+  --btn-bg: var(--theme-button-primary-bg);
+  --btn-text: var(--theme-button-primary-text);
+  --btn-hover-bg: var(--theme-button-primary-hover-bg);
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     SPACING SCALE
+     ═══════════════════════════════════════════════════════════════════════════ */
+  /* Base scale (multiples of 4px) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  /* Extended scale (sub-unit and fractional values) */
+  --space-px: 1px;      /* 1 pixel */
+  --space-0-5: 2px;     /* 0.5 units */
+  --space-0-75: 3px;    /* 0.75 units */
+  --space-1-25: 5px;    /* 1.25 units */
+  --space-1-5: 6px;     /* 1.5 units */
+  --space-1-75: 7px;    /* 1.75 units */
+  --space-2-25: 9px;    /* 2.25 units */
+  --space-2-5: 10px;    /* 2.5 units */
+  --space-3-25: 13px;   /* 3.25 units */
+  --space-3-5: 14px;    /* 3.5 units */
+  --space-3-75: 15px;   /* 3.75 units */
+  --space-4-5: 18px;    /* 4.5 units */
+  --space-6-25: 25px;   /* 6.25 units */
+  --space-7: 28px;      /* 7 units */
+  --space-7-5: 30px;    /* 7.5 units */
+  --space-8-5: 34px;    /* 8.5 units */
+  --space-8-75: 35px;   /* 8.75 units */
+  --space-12-5: 50px;   /* 12.5 units */
+  --space-20: 80px;     /* 20 units */
+  --space-30: 120px;    /* 30 units */
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     TYPOGRAPHY
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-family-mono: 'SF Mono', 'Monaco', 'Consolas', monospace;
+
+  --font-size-base: 16px;
+  --font-size-xs: calc(var(--font-size-base) - 4px);
+  --font-size-sm: calc(var(--font-size-base) - 2px);
+  --font-size-lg: calc(var(--font-size-base) + 2px);
+  --font-size-xl: calc(var(--font-size-base) + 4px);
+  --font-size-2xl: calc(var(--font-size-base) + 8px);
+  --font-size-3xl: calc(var(--font-size-base) + 14px);
+
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     TIMING & EASING
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --transition-fast: 150ms;
+  --transition-normal: 300ms;
+  --transition-slow: 500ms;
+  --ease-default: ease-in-out;
+  --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Animation-specific timing (longer durations for deliberate visual effects) */
+  --animation-pop: 400ms;        /* popIn, taskResetFlash, fadeInUp, taskClearOut */
+  --animation-slow: 600ms;       /* header coin-flip, SVG stroke transitions */
+  --animation-exit: 1500ms;      /* cycle completion fadeOutScale */
+  --animation-spin: 1s;          /* infinite spin animations */
+  --animation-pulse: 2s;         /* infinite pulse animations */
+  --transition-stagger: 800ms;   /* sequential reveal delays */
+
+  /* Badge tap-animation durations (contextual per emoji) */
+  --anim-badge-flicker: 600ms;   /* 🔥 flame flicker */
+  --anim-badge-flex: 500ms;      /* 💪 muscle flex */
+  --anim-badge-bob: 600ms;       /* 📚 book bob */
+  --anim-badge-sweep: 700ms;     /* 🧹 broom sweep */
+  --anim-badge-shine: 800ms;     /* 👑 crown shine */
+
+  /* Badge loop-animation durations (slower, used while hovering / tap-holding) */
+  --anim-badge-flicker-loop: 1200ms;
+  --anim-badge-flex-loop: 1000ms;
+  --anim-badge-bob-loop: 1400ms;
+  --anim-badge-sweep-loop: 1400ms;
+  --anim-badge-shine-loop: 1600ms;
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     BORDERS & RADIUS
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+  --radius-full: 9999px;
+  /* Extended radius scale */
+  --radius-2xs: 2px;    /* hairline radius */
+  --radius-xs: 3px;     /* extra-small */
+  --radius-5: 5px;      /* between sm and md */
+  --radius-6: 6px;      /* between sm and md */
+  --radius-10: 10px;    /* between md and lg */
+  --radius-14: 14px;    /* between lg and xl */
+  --radius-15: 15px;    /* between lg and xl */
+  --radius-24: 24px;    /* between 2xl and full */
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     SHADOWS
+     ═══════════════════════════════════════════════════════════════════════════ */
+  /* Elevation scale */
+  --shadow-xs: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.15);
+  --shadow-2xl: 0 20px 40px rgba(0, 0, 0, 0.15);
+
+  /* Buttons */
+  --shadow-button: 0 2px 4px rgba(0, 0, 0, 0.15);
+  --shadow-button-hover: 0 3px 6px rgba(0, 0, 0, 0.18);
+
+  /* Focus rings */
+  --shadow-focus-ring: 0 0 0 2px rgba(76, 121, 255, 0.5);
+  --shadow-focus-ring-subtle: 0 0 0 2px rgba(76, 121, 255, 0.2);
+
+  /* Modal / overlay */
+  --shadow-modal: 0 20px 40px rgba(0, 0, 0, 0.15);
+  --shadow-modal-heavy: 0 8px 30px rgba(0, 0, 0, 0.25);
+  --shadow-modal-compound: 0 20px 60px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
+
+  /* Component-specific */
+  --shadow-toast: 0 8px 20px rgba(0, 0, 0, 0.3);
+  --shadow-dropdown: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --shadow-input: 0 4px 6px rgba(0, 0, 0, 0.2);
+
+  /* Colored glows */
+  --shadow-glow-blue-sm: 0 0 5px rgba(76, 121, 255, 0.3);
+  --shadow-glow-blue-lg: 0 0 20px rgba(76, 121, 255, 0.6);
+  --shadow-glow-green: 0 0 12px rgba(76, 175, 80, 0.4);
+  --shadow-glow-white: 0 0 8px rgba(255, 255, 255, 0.3);
+  --shadow-glow-info: 0 2px 8px rgba(74, 163, 223, 0.3);
+  --shadow-glow-purple: 0 4px 12px rgba(79, 70, 229, 0.2);
+
+  /* Milestone theme shadows */
+  --shadow-milestone-classic: 0 4px 10px rgba(212, 160, 23, 0.45);
+  --shadow-milestone-habit: 0 4px 10px rgba(200, 113, 50, 0.45);
+  --shadow-milestone-fitness: 0 4px 10px rgba(34, 160, 94, 0.45);
+  --shadow-milestone-scholar: 0 4px 10px rgba(68, 64, 192, 0.45);
+  --shadow-milestone-cleaning: 0 4px 10px rgba(10, 141, 181, 0.45);
+  --shadow-celebration: 0 6px 24px rgba(76, 175, 79, 0.4);
+
+  /* Inset shadows */
+  --shadow-inner: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+  --shadow-inner-subtle: inset 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-inner-medium: inset 0 0 5px rgba(0, 0, 0, 0.15);
+  --shadow-inner-border: inset 0 0 0 1px #989898;
+
+  /* Text shadows */
+  --text-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.15);
+  --text-shadow-md: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --text-shadow-lg: 0 1px 4px rgba(0, 0, 0, 0.5), 0 0 12px rgba(0, 0, 0, 0.25);
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     Z-INDEX LAYERS — Single source of truth for stacking order
+     Values mirror Z_INDEX in modules/core/constants.js for JS usage
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --z-background: -2;                /* Background patterns */
+  --z-base: 0;                       /* Normal document flow */
+  --z-content: 1;                    /* Minor elevation within components */
+  --z-elevated: 5;                   /* Progress bars, internal stacking */
+  --z-task-view-handle: 10;          /* Task View Layout: drag handle (above task content) */
+  --z-task-view-dragging: 20;        /* Task View Layout: element being dragged (above handles) */
+  --z-edit-focus: 50;                /* Edit focus overlay (below header) */
+  --z-onboarding-scrim: 50;          /* Fade strip under welcome banner during onboarding scroll */
+  --z-header: 100;                   /* Fixed header */
+  --z-menu: 500;                     /* Main menu overlay */
+  --z-modal-backdrop: 999;           /* Modal backdrops */
+  --z-modal: 1000;                   /* Standard modals */
+  --z-modal-high: 2000;              /* High-priority modals (storage, onboarding) */
+  --z-overlay-critical: 10000;       /* Import/migration error overlays */
+  --z-tour-overlay: 10500;           /* Guided tour overlay */
+  --z-tour-tooltip: 10501;           /* Guided tour tooltip */
+  --z-debug: 99999;                  /* Debug utilities */
+  --z-notification: 100000;          /* Notification container (above all overlays) */
+  --z-notification-active: 100001;   /* Dragging notification */
+  --z-notification-btn: 100002;      /* Notification interactive buttons */
+  --z-critical: 999999;              /* Boot critical errors only */
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     LAYOUT
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --header-height: 110px;
+  --max-content-width: 400px;
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-left: env(safe-area-inset-left, 0px);
+  --safe-area-right: env(safe-area-inset-right, 0px);
+
+  /* Task card vertical budget — space reserved above & below the scrollable task list.
+     Components: header + mode selector + progress bar + help window + nav dots + margins.
+     Increase to shrink the task card; decrease to give it more room. */
+  --task-card-offset: 320px;
+  --task-card-offset-with-btn: 380px;     /* When Complete/Clear button is visible */
+  --nav-area-height: 55px;                /* Nav dots bottom position on mobile */
+  --help-window-clearance: 55px;          /* Help window margin-bottom to clear nav dots */
+
+  /* ─── Focus Mode Geometry ──────────────────────────────────────────────
+     These tokens centralize the focus-mode layout values that were tuned
+     iteratively against real device heights. Bump these instead of
+     hand-editing calc() values inside focus-mode.css when re-tuning.
+
+     Help-window clearance — focus mode reparents #nav-dots to position:
+     fixed; bottom: 80px with ~44px height, occupying ~80–124px from
+     viewport bottom. The normal-mode --help-window-clearance (above) is
+     calibrated against the original #footer-container layout and isn't
+     enough to clear the focus-mode band. Mobile/tablet only — desktop
+     pins .help-window absolutely beside #task-view. */
+  --focus-help-window-clearance: 150px;
+
+  /* Task-view upward shift on desktop (used as `top: calc(50% - var(--*))`).
+     Higher values move the centered task-view further up the viewport,
+     freeing space for the title row to sit above the centerline. Capped
+     by the three-dots / exit buttons at top: 16px (height: 30px). */
+  --focus-mode-top-offset: 35px;
+
+  /* Task-list-container max-height reduction in focus mode — controls how
+     much the scrollable list shrinks below 100dvh so its bottom edge
+     clears the bottom controls band (action button / nav-dots / undo).
+     Desktop and mobile are separate because their bottom-control layouts
+     differ. Larger value → shorter list, more clearance. */
+  --focus-task-list-reduction-desktop: 340px;
+  --focus-task-list-reduction-mobile:  310px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   REDUCED MOTION SUPPORT
+   Respects user's OS-level motion preferences (WCAG 2.1 SC 2.3.3)
+   Overrides all timing variables to 0ms so all components using them
+   will have instant transitions/animations.
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --transition-fast: 0ms;
+    --transition-normal: 0ms;
+    --transition-slow: 0ms;
+    --animation-pop: 0ms;
+    --animation-slow: 0ms;
+    --animation-exit: 0ms;
+    --animation-spin: 0ms;
+    --animation-pulse: 0ms;
+    --transition-stagger: 0ms;
+    --anim-badge-flicker: 0ms;
+    --anim-badge-flex: 0ms;
+    --anim-badge-bob: 0ms;
+    --anim-badge-sweep: 0ms;
+    --anim-badge-shine: 0ms;
+    --anim-badge-flicker-loop: 0ms;
+    --anim-badge-flex-loop: 0ms;
+    --anim-badge-bob-loop: 0ms;
+    --anim-badge-sweep-loop: 0ms;
+    --anim-badge-shine-loop: 0ms;
+  }
+}
+
+/* Manual reduced motion override (settings toggle).
+   Stacks with OS preference — either one active = motion disabled. */
+body.reduced-motion,
+html.reduced-motion {
+    --transition-fast: 0ms;
+    --transition-normal: 0ms;
+    --transition-slow: 0ms;
+    --animation-pop: 0ms;
+    --animation-slow: 0ms;
+    --animation-exit: 0ms;
+    --animation-spin: 0ms;
+    --animation-pulse: 0ms;
+    --transition-stagger: 0ms;
+    --anim-badge-flicker: 0ms;
+    --anim-badge-flex: 0ms;
+    --anim-badge-bob: 0ms;
+    --anim-badge-sweep: 0ms;
+    --anim-badge-shine: 0ms;
+    --anim-badge-flicker-loop: 0ms;
+    --anim-badge-flex-loop: 0ms;
+    --anim-badge-bob-loop: 0ms;
+    --anim-badge-sweep-loop: 0ms;
+    --anim-badge-shine-loop: 0ms;
+}
+

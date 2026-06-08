@@ -1,0 +1,1130 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Recurring Tasks Component
+   Recurring task selection, scheduling, and configuration
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* =============================================================================
+   RECURRING TASK LIST
+   ============================================================================= */
+
+#recurring-task-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    text-align: left;
+}
+
+/* =============================================================================
+   RECURRING TASK ITEM
+   ============================================================================= */
+
+.recurring-task-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--color-blue-pale-light);
+    border: 1px solid var(--theme-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-0-5) var(--space-1);
+    margin-bottom: var(--space-1);
+    user-select: none;
+    gap: var(--space-2);
+    box-shadow: var(--shadow-inner-border);
+    transition: background-color var(--transition-normal) ease, box-shadow var(--transition-fast) ease;
+}
+
+.recurring-task-item:hover {
+    background: var(--color-blue-pale);
+    border-color: var(--color-steel-blue);
+    box-shadow: var(--shadow-sm);
+}
+
+.recurring-task-item:focus-visible {
+    outline: 2px solid var(--theme-input-focus-border, #4c79ff);
+    outline-offset: -2px;
+}
+
+.recurring-task-item.checked {
+    background: var(--color-steel-blue);
+    border-color: var(--color-blue-medium);
+    box-shadow: var(--shadow-sm);
+}
+
+.recurring-task-item.checked .recurring-remove-btn {
+    color: var(--color-white);
+}
+
+.recurring-task-item.checked .recurring-task-text {
+    color: var(--color-white);
+}
+
+.recurring-task-item.selected {
+    border: 1px solid var(--theme-success, var(--color-success));
+    background-color: var(--color-success-pale);
+}
+
+.recurring-task-item.selected .recurring-task-text {
+    color: var(--color-black);
+}
+
+.recurring-task-item input[type="checkbox"] {
+    accent-color: var(--theme-success, #4CAF50);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.recurring-task-item input[type="checkbox"]:hover {
+    filter: brightness(1.2);
+}
+
+.recurring-task-item .recurring-task-text {
+    flex-grow: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    overflow-wrap: break-word;
+}
+
+/* =============================================================================
+   RECURRING REMOVE BUTTON
+   ============================================================================= */
+
+.recurring-remove-btn {
+    background: none;
+    border: none;
+    color: var(--color-black);
+    font-weight: bold;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.recurring-task-item button:hover {
+    color: var(--color-error);
+}
+
+/* =============================================================================
+   RECURRING SETTINGS PANEL
+   ============================================================================= */
+
+#recurring-settings-panel {
+    margin-top: 0;
+    padding: var(--space-2-5);
+    background: var(--color-blue-pale-light);
+    border: 1px solid var(--color-gray-400);
+    border-radius: var(--radius-md);
+    text-align: center;
+}
+
+#recurring-settings-panel.hidden {
+    display: none;
+}
+
+.recurring-settings-title {
+    font-size: var(--font-size-md);
+    font-weight: 600;
+    margin: var(--space-3) 0 var(--space-2) 0;
+    text-align: center;
+}
+
+.recurring-settings-title.hidden {
+    display: none;
+}
+
+#recurring-settings-panel label {
+    display: block;
+    margin-bottom: var(--space-2);
+    font-size: var(--font-size-sm);
+}
+
+#recur-count-input {
+    width: 60px;
+    margin-left: var(--space-1-5);
+}
+
+#recur-count-container.hidden {
+    display: none;
+}
+
+/* =============================================================================
+   RECURRING FREQUENCY
+   ============================================================================= */
+
+#recur-frequency-container {
+    margin-top: var(--space-2-5);
+}
+
+#recur-frequency-container label {
+    display: block;
+    margin-bottom: var(--space-1);
+    font-size: var(--font-size-sm);
+}
+
+#recur-frequency {
+    width: 50%;
+    padding: var(--space-1-5);
+    border-radius: var(--radius-6);
+    border: 1px solid var(--theme-input-border);
+    font-size: var(--font-size-sm);
+}
+
+/* =============================================================================
+   TIME PICKER SECTION (surfaced outside advanced options)
+   ============================================================================= */
+
+#time-picker-section {
+    margin-top: var(--space-2);
+}
+
+.frequency-time-section.hidden {
+    display: none;
+}
+
+.toggle-advanced-btn {
+    margin-top: var(--space-3);
+    background: var(--color-gray-600);
+    color: var(--color-white);
+    border: 1px solid var(--color-gray-600);
+    border-radius: var(--radius-md);
+    padding: var(--space-1-5) var(--space-3);
+    font-size: var(--font-size-xs);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-fast) ease;
+}
+
+.toggle-advanced-btn:hover {
+    background: var(--color-steel-blue);
+    color: var(--color-white);
+    border-color: var(--color-steel-blue);
+}
+
+/* =============================================================================
+   RECURRING SETTINGS ACTION BUTTONS (Cancel + Apply)
+   ============================================================================= */
+
+.recur-settings-actions {
+    display: flex;
+    gap: var(--space-2);
+    margin-top: var(--space-3);
+}
+
+.recur-settings-actions button {
+    flex: 1;
+    padding: var(--space-2) var(--space-4);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    border: none;
+    border-radius: var(--radius-6);
+    cursor: pointer;
+    transition: background-color var(--transition-fast) ease, transform var(--transition-fast) ease;
+}
+
+#apply-recurring-settings {
+    background-color: var(--theme-success, var(--color-success));
+    color: var(--color-white);
+}
+
+#apply-recurring-settings:hover {
+    background-color: var(--color-success);
+    transform: scale(1.02);
+}
+
+#apply-recurring-settings:active {
+    background-color: var(--color-success);
+    transform: scale(0.98);
+}
+
+#cancel-recurring-settings {
+    background-color: transparent;
+    color: var(--color-gray-600);
+    border: 1px solid var(--color-gray-400);
+}
+
+#cancel-recurring-settings:hover {
+    background-color: var(--color-gray-100);
+    border-color: var(--color-gray-600);
+    transform: scale(1.02);
+}
+
+#cancel-recurring-settings:active {
+    transform: scale(0.98);
+}
+
+/* =============================================================================
+   OPEN RECURRING PANEL BUTTON (standalone — outside menu grid)
+   ============================================================================= */
+
+#open-recurring-panel:not(.menu-section-grid *) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2-5);
+    padding: var(--space-2-5) var(--space-5);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    border: none;
+    border-radius: var(--radius-2xl);
+    background-color: var(--color-gray-300);
+    color: var(--theme-text-on-surface);
+    box-shadow: none;
+    cursor: pointer;
+    transition: background-color var(--transition-normal) ease;
+    width: auto;
+    margin: var(--space-2-5) auto;
+}
+
+#open-recurring-panel:not(.menu-section-grid *):hover:not(:disabled) {
+    background-color: var(--color-gray-400);
+}
+
+#open-recurring-panel:not(.menu-section-grid *):disabled {
+    background-color: var(--color-gray-200);
+    color: var(--color-gray-500);
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+#open-recurring-panel:not(.menu-section-grid *) i {
+    font-size: var(--font-size-lg);
+}
+
+/* =============================================================================
+   RECURRING SCROLL AREA
+   ============================================================================= */
+
+.recurring-scroll-area {
+    max-height: 200px;
+    overflow-y: auto;
+    padding-right: var(--space-1);
+    margin-top: var(--space-2-5);
+    padding-bottom: var(--space-2-5);
+    border-bottom: 1px solid var(--color-gray-400);
+    margin-bottom: var(--space-2-5);
+}
+
+.recurring-scroll-area::-webkit-scrollbar {
+    width: var(--space-1-5);
+}
+
+.recurring-scroll-area::-webkit-scrollbar-thumb {
+    background-color: rgba(100, 100, 100, 0.3);
+    border-radius: var(--radius-sm);
+}
+
+.recurring-scroll-area::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(100, 100, 100, 0.5);
+}
+
+/* Panel hint — instructs users to tap tasks */
+.recurring-panel-hint {
+    margin: 0 0 var(--space-2);
+    padding: 0;
+    font-size: var(--font-size-xs);
+    color: var(--color-gray-500);
+    text-align: center;
+    font-style: italic;
+}
+
+/* Close button — matches #close-main-menu style */
+.close-recurring-panel {
+    background: var(--menu-close-bg, var(--color-steel-blue));
+    color: var(--menu-close-text, var(--color-white));
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    padding: var(--space-3-5);
+    border: none;
+    border-radius: 0 0 var(--radius-15) var(--radius-15);
+    margin: var(--space-2-5) -25px -20px;
+    width: calc(100% + 50px);
+    cursor: pointer;
+    transition: background var(--transition-fast) ease;
+    display: block;
+    text-align: center;
+}
+
+.close-recurring-panel:hover {
+    background: var(--menu-close-hover-bg, var(--menu-close-hover-bg));
+}
+
+/* =============================================================================
+   RADIO CIRCLE (FREQUENCY SELECTION)
+   ============================================================================= */
+
+.radio-circle {
+    width: 8px;
+    height: 8px;
+    border: 2px solid rgba(255, 255, 255, 0.7);
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all var(--transition-normal) ease;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.radio-circle:hover {
+    border-color: var(--color-white);
+    box-shadow: var(--shadow-glow-white);
+}
+
+.radio-circle.selected {
+    background: var(--theme-success, var(--color-success));
+    border-color: var(--theme-success, var(--color-success));
+    box-shadow: var(--shadow-glow-green);
+}
+
+.radio-circle.selected::after {
+    content: '';
+    color: var(--color-white);
+    font-size: 10px;
+    font-weight: bold;
+    position: absolute;
+}
+
+.option-label {
+    color: var(--theme-text-primary);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    user-select: none;
+    flex: 1;
+}
+
+/* =============================================================================
+   MONTHLY DAYS SELECTOR
+   ============================================================================= */
+
+.monthly-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: var(--space-2);
+    margin-top: var(--space-2-5);
+    padding: var(--space-2);
+    background: var(--color-gray-300);
+    border-radius: var(--radius-10);
+}
+
+.monthly-day-box {
+    text-align: center;
+    padding: var(--space-3) 0;
+    background: var(--theme-input-bg, var(--color-white));
+    border: 2px solid var(--theme-input-border);
+    border-radius: var(--radius-md);
+    font-weight: bold;
+    cursor: pointer;
+    position: relative;
+    transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.monthly-day-box.selected {
+    background: var(--theme-success, var(--color-success));
+    border-color: var(--theme-success, var(--color-success));
+    color: var(--color-white);
+}
+
+.monthly-day-box.selected::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 10px;
+    height: 10px;
+    background: var(--color-white);
+    border-radius: 50%;
+}
+
+/* =============================================================================
+   WEEKLY DAYS SELECTOR
+   ============================================================================= */
+
+.weekly-day-box {
+    text-align: center;
+    padding: var(--space-2-5);
+    background: var(--theme-input-bg, var(--color-white));
+    border: 2px solid var(--theme-input-border);
+    border-radius: var(--radius-md);
+    font-weight: bold;
+    cursor: pointer;
+    transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.weekly-day-box.selected {
+    background: var(--theme-success, var(--color-success));
+    border-color: var(--theme-success, var(--color-success));
+    color: var(--color-white);
+}
+
+.weekly-day-box.selected::after {
+    content: '';
+}
+
+/* =============================================================================
+   RECURRING SUMMARY
+   ============================================================================= */
+
+.recurring-summary {
+    margin-top: var(--space-3-75);
+    padding: var(--space-2-5);
+    background: var(--theme-hover-bg);
+    border-radius: var(--radius-md);
+}
+
+.summary-box {
+    padding-bottom: var(--space-3);
+}
+
+#recurring-summary-preview {
+    font-size: var(--font-size-sm);
+    color: var(--theme-text-secondary, var(--color-gray-600));
+}
+
+#recurring-preview-text {
+    font-weight: 500;
+}
+
+.change-recurring-btn {
+    margin-top: var(--space-2);
+    padding: var(--space-2) var(--space-4);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--color-white);
+    background: var(--color-steel-blue);
+    border: none;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    cursor: pointer;
+    transition: background var(--transition-fast) ease, box-shadow var(--transition-fast) ease;
+}
+
+.change-recurring-btn:hover {
+    background: var(--color-blue-medium);
+    box-shadow: var(--shadow-md);
+}
+
+/* =============================================================================
+   RECURRING TOGGLE ACTIONS
+   ============================================================================= */
+
+.toggle-check-btn {
+    background: var(--color-blue-pale-mid);
+    color: var(--color-steel-blue);
+    border: 1px solid var(--color-steel-blue);
+    border-radius: var(--radius-md);
+    padding: var(--space-1) var(--space-2-5);
+    font-size: var(--font-size-xs);
+    font-weight: 500;
+    cursor: pointer;
+    transition: background var(--transition-fast) ease;
+}
+
+.toggle-check-btn:hover {
+    background: var(--color-blue-pale);
+}
+
+#recurring-toggle-actions {
+    display: flex;
+    gap: var(--space-2);
+    margin-top: var(--space-2-5);
+}
+
+.recurring-check.hidden {
+    display: none;
+}
+
+/* =============================================================================
+   RECURRING ICONS
+   ============================================================================= */
+
+.recurring-date-trash-icon,
+.recurring-trash-icon {
+    color: var(--theme-text-muted, var(--color-gray-500));
+    transition: color var(--transition-fast) ease;
+}
+
+.trash-btn:hover .recurring-date-trash-icon,
+.trash-btn:hover .recurring-trash-icon {
+    color: var(--theme-error, #e74c3c);
+}
+
+.recurring-indicator {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0; /* Prevent shrinking on narrow screens */
+    flex: 0 0 auto; /* Override .task span flex:1 rule */
+    min-width: 14px;
+    min-height: 14px;
+    max-width: none; /* Override .task span max-width rule */
+    font-size: var(--font-size-sm);
+    color: var(--color-blue-medium);
+    margin-left: var(--space-2);
+    margin-right: 0; /* Override .task span margin-right rule */
+    vertical-align: middle;
+}
+
+.recurring-indicator .icon {
+    display: inline-flex;
+    flex-shrink: 0;
+    width: 14px;
+    height: 14px;
+}
+
+.recurring-indicator .icon svg {
+    width: 14px;
+    height: 14px;
+    min-width: 14px;
+    min-height: 14px;
+}
+
+/* =============================================================================
+   MOBILE ADJUSTMENTS
+   ============================================================================= */
+
+@media (max-width: 768px) {
+    .monthly-days {
+        grid-template-columns: repeat(5, 1fr);
+        gap: var(--space-1-5);
+    }
+
+    .monthly-day-box {
+        padding: var(--space-2) 0;
+        font-size: var(--font-size-xs);
+    }
+
+    #open-recurring-panel:not(.menu-section-grid *) {
+        width: 80%;
+    }
+}
+
+@media (max-width: 480px) {
+    .quick-recurring-options {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* =============================================================================
+   TIME PICKER STYLES
+   ============================================================================= */
+
+/* Shared styles for all time containers */
+#daily-time-container,
+#weekly-time-container,
+#biweekly-time-container,
+#monthly-time-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    padding: var(--space-2-5) 0;
+    align-items: center;
+    font-size: var(--font-size-base);
+}
+
+.time-picker-wrapper {
+    margin: var(--space-5) auto 0 auto;
+    max-width: 350px;
+    padding: var(--space-2-5);
+    border: 1px solid var(--theme-input-border);
+    border-radius: var(--radius-5);
+}
+
+.time-picker-group {
+    display: flex;
+    gap: var(--space-2-5);
+    align-items: center;
+}
+
+.time-picker-group input[type="number"],
+.time-picker-group select {
+    padding: var(--space-1) var(--space-1);
+    font-size: var(--font-size-base);
+    border-radius: var(--radius-md);
+    border: 2px solid var(--theme-input-border);
+    width: 95px;
+    text-align: center;
+    transition: border-color var(--transition-fast);
+}
+
+.time-picker-group input[type="number"]:focus,
+.time-picker-group select:focus {
+    outline: none;
+    border-color: var(--color-success);
+}
+
+.time-picker-group input[type="number"]:focus-visible,
+.time-picker-group select:focus-visible {
+    outline: 2px solid var(--theme-input-focus-border, #4c79ff);
+    outline-offset: 2px;
+}
+
+select.hidden {
+    display: none;
+}
+
+.time-format-toggle {
+    font-size: var(--font-size-sm);
+    display: flex;
+    align-items: center;
+    gap: var(--space-1-5);
+}
+
+.time-picker-stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2-5);
+    align-items: flex-start;
+}
+
+.section-label {
+    font-weight: bold;
+    margin-bottom: var(--space-1);
+}
+
+.time-picker-group input::placeholder {
+    color: var(--color-gray-400);
+    font-style: italic;
+    font-size: var(--font-size-sm);
+}
+
+/* Mobile: prevent time picker from overflowing its container */
+@media (max-width: 480px) {
+    .time-picker-wrapper {
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+
+    .time-picker-group {
+        gap: var(--space-1-5);
+    }
+
+    .time-picker-group input[type="number"],
+    .time-picker-group select {
+        width: 75px;
+        flex: 0 1 75px;
+        min-width: 0;
+    }
+}
+
+/* =============================================================================
+   YEARLY SELECTORS
+   ============================================================================= */
+
+.yearly-months,
+.yearly-days {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+    gap: var(--space-2-5);
+    padding: var(--space-2-5);
+    background: var(--color-gray-300);
+    border-radius: var(--radius-10);
+}
+
+.yearly-month-box,
+.yearly-day-box {
+    text-align: center;
+    padding: var(--space-3) 0;
+    background: var(--color-white);
+    border: 2px solid var(--theme-input-border);
+    border-radius: var(--radius-md);
+    font-weight: bold;
+    cursor: pointer;
+    position: relative;
+    transition: background var(--transition-fast), border-color var(--transition-fast);
+    width: 60px;
+}
+
+.yearly-month-box.selected,
+.yearly-day-box.selected {
+    background: var(--color-success-pale);
+    border-color: var(--color-success);
+    color: var(--color-black);
+}
+
+.yearly-month-box.selected::after,
+.yearly-day-box.selected::after {
+    content: "✔";
+    font-size: var(--font-size-sm);
+    position: absolute;
+    top: 4px;
+    left: 6px;
+    color: var(--color-black);
+}
+
+/* =============================================================================
+   BIWEEKLY DAYS SELECTOR
+   ============================================================================= */
+
+.biweekly-day-box {
+    text-align: center;
+    padding: var(--space-2-5);
+    background: var(--theme-input-bg, var(--color-white));
+    border: 2px solid var(--theme-input-border);
+    border-radius: var(--radius-md);
+    font-weight: bold;
+    cursor: pointer;
+    transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.biweekly-day-box.selected {
+    background: var(--theme-success, var(--color-success));
+    border-color: var(--theme-success, var(--color-success));
+    color: var(--color-white);
+}
+
+/* =============================================================================
+   SPECIFIC DATES PANEL
+   ============================================================================= */
+
+#specific-dates-panel {
+    margin-top: var(--space-3);
+    padding: var(--space-3);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: var(--radius-10);
+    background-color: var(--color-white);
+}
+
+#specific-date-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2-5);
+}
+
+.specific-date-entry {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.specific-date-entry input[type="date"] {
+    flex: 1;
+    padding: var(--space-1-5);
+    border: 1px solid var(--theme-input-border);
+    border-radius: var(--radius-6);
+}
+
+/* =============================================================================
+   ADD RECURRING TASK SECTION
+   ============================================================================= */
+
+#add-recurring-task-section {
+    margin-top: var(--space-3);
+    padding-top: var(--space-3);
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.add-recurring-task-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    width: 100%;
+    padding: var(--space-2-5) var(--space-4);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--color-steel-blue);
+    background: var(--color-blue-pale);
+    border: 1px dashed var(--color-steel-blue);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast) ease;
+}
+
+button.add-recurring-task-btn:hover {
+    background: var(--color-blue-pale-mid);
+    border: 1px dashed var(--color-steel-blue);
+    color: var(--color-steel-blue);
+}
+
+.add-recurring-task-btn i,
+.add-recurring-task-btn .icon {
+    font-size: var(--font-size-sm);
+}
+
+/* Available tasks list */
+.available-tasks-list {
+    margin-top: var(--space-2-5);
+    padding: var(--space-2-5);
+    background: var(--color-blue-pale-light);
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.available-tasks-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    color: var(--color-gray-600);
+    margin-bottom: var(--space-2);
+}
+
+.select-all-add-recurring-btn {
+    font-size: var(--font-size-xs);
+    color: var(--color-blue-medium);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    transition: background var(--transition-fast);
+}
+.select-all-add-recurring-btn:hover {
+    background: var(--theme-hover-bg);
+}
+
+#non-recurring-tasks {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+#non-recurring-tasks li {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-2-5);
+    margin-bottom: var(--space-1);
+    background: var(--color-blue-pale-light);
+    border: 1px solid var(--theme-border);
+    border-radius: var(--radius-6);
+    box-shadow: var(--shadow-inner-border);
+    cursor: pointer;
+    font-size: var(--font-size-sm);
+    transition: all var(--transition-fast) ease;
+}
+
+#non-recurring-tasks li:hover {
+    background: var(--color-gray-100);
+}
+
+#non-recurring-tasks li.selected {
+    background: var(--color-success-pale);
+    border-color: var(--theme-success, var(--color-success));
+}
+
+#non-recurring-tasks li:last-child {
+    margin-bottom: 0;
+}
+
+#non-recurring-tasks li input[type="checkbox"] {
+    accent-color: var(--theme-success, #4CAF50);
+    cursor: pointer;
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+}
+
+#non-recurring-tasks li .task-text {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Confirm add button */
+.confirm-add-recurring-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    margin-top: var(--space-2-5);
+    padding: var(--space-2-5) var(--space-4);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-white);
+    background: var(--theme-success, var(--color-success));
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast) ease;
+}
+
+.confirm-add-recurring-btn:hover {
+    background: var(--color-success);
+}
+
+.confirm-add-recurring-btn:disabled {
+    background: var(--theme-input-border);
+    cursor: not-allowed;
+}
+
+.no-available-tasks {
+    font-size: var(--font-size-sm);
+    color: var(--theme-text-muted, var(--color-gray-600));
+    font-style: italic;
+    text-align: center;
+    padding: var(--space-2-5);
+}
+
+/* Empty state */
+.recurring-empty-state {
+    text-align: center;
+    padding: var(--space-5);
+    color: var(--theme-text-muted, var(--color-gray-600));
+    font-style: italic;
+}
+
+.recurring-empty-state p {
+    margin: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   REMINDERS MODAL (from modals.css)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.reminders-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: var(--theme-modal-overlay);
+    z-index: var(--z-modal);
+    justify-content: center;
+    align-items: center;
+    overflow: auto;
+}
+
+/* Uses show() instead of showModal() so notifications (z-notification) layer above */
+dialog.reminders-modal {
+    background-color: var(--theme-modal-overlay);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+
+dialog.reminders-modal[open] {
+    display: flex;
+}
+
+.reminders-modal-content {
+    background: var(--pref-modal-bg, var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white))));
+    color: var(--pref-modal-text, var(--theme-modal-text, var(--theme-text-on-surface)));
+    padding: var(--space-5);
+    border-radius: var(--radius-md);
+    width: 380px;
+    max-width: 90%;
+    box-shadow:
+        var(--shadow-lg, 0 4px 10px rgba(0, 0, 0, 0.3)),
+        inset 0 1px 1px rgba(255, 255, 255, 0.25);
+    position: relative;
+    -webkit-backdrop-filter: blur(var(--theme-modal-blur));
+    backdrop-filter: blur(var(--theme-modal-blur));
+}
+
+.reminders-modal-content h2 {
+    margin-top: 0;
+    padding-left: var(--space-7);
+}
+
+.reminders-modal-content .close-btn {
+    position: absolute;
+    top: var(--space-2);
+    right: var(--space-2);
+    background: transparent;
+    color: var(--theme-text-muted, #999);
+    font-size: var(--font-size-xl);
+    border: none;
+    cursor: pointer;
+}
+
+.reminders-modal-content .close-btn:hover {
+    color: var(--theme-text-secondary, #666);
+}
+
+/* Frequency Section */
+#frequency-section {
+    margin-top: var(--space-2-5);
+    border-top: 1px solid var(--pref-modal-border, var(--theme-modal-border, var(--theme-border)));
+    padding-top: var(--space-2-5);
+}
+
+#repeat-count-row,
+#every-row {
+    display: flex;
+    align-items: center;
+    margin: var(--space-2-5) 0;
+}
+
+#repeat-count-row label,
+#every-row label {
+    margin-right: var(--space-1-5);
+    min-width: 100px;
+}
+
+#repeatCount,
+#frequencyValue {
+    width: 60px;
+    margin-right: var(--space-1-5);
+}
+
+/* Collapsible privacy notice */
+.settings-warning-details {
+    margin: -2px 0 var(--space-2-5) 0;
+    padding-left: var(--space-8-5);
+}
+
+.settings-warning-summary {
+    font-size: var(--font-size-xs);
+    opacity: 0.6;
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+}
+
+.settings-warning-summary::-webkit-details-marker {
+    display: none;
+}
+
+.settings-warning-summary::before {
+    content: '▸ ';
+}
+
+.settings-warning-details[open] .settings-warning-summary::before {
+    content: '▾ ';
+}
+
+/* Privacy/info warning text below settings toggles */
+.settings-warning {
+    font-size: var(--font-size-xs);
+    opacity: 0.6;
+    margin: var(--space-1) 0 0 0;
+    padding: 0;
+    line-height: 1.4;
+}
+
+/* =============================================================================
+   TWO-COLUMN DESKTOP LAYOUT
+   ============================================================================= */
+
+.recurring-panel-body {
+    display: block;
+}
+
+@media (min-width: 768px) {
+    #recurring-panel.two-col-active {
+        max-width: 780px;
+        transition: max-width var(--transition-normal) ease;
+    }
+
+    #recurring-panel.two-col-active .recurring-panel-body {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--space-4);
+        align-items: center;
+    }
+
+    #recurring-panel.two-col-active .recurring-panel-left,
+    #recurring-panel.two-col-active .recurring-panel-right {
+        min-width: 0;
+    }
+
+    #recurring-panel.two-col-active #recurring-settings-panel {
+        margin-top: 0;
+    }
+
+    #recurring-panel.two-col-active .recurring-scroll-area {
+        max-height: 300px;
+    }
+}

@@ -1,0 +1,201 @@
+<!-- Add this new tab to your existing testing modal HTML -->
+<!-- Insert this after your existing tabs in the testing modal -->
+
+<div class="testing-tab" data-tab="automated-tests">
+    🧪 Automated Tests
+</div>
+
+<!-- And add this tab content section -->
+<div class="testing-tab-content" id="automated-tests-content" style="display: none;">
+    <h3>🔬 Comprehensive Module Testing</h3>
+    <p>Run your complete test suite with 253 tests across 11 modules</p>
+    
+    <!-- Quick Actions -->
+    <div class="test-group">
+        <h4>🚀 Quick Actions</h4>
+        <button id="run-all-automated-tests" class="btn-primary">
+            🏁 Run All Tests (253 tests)
+        </button>
+        <button id="clear-test-results" class="btn-secondary">
+            🧹 Clear Results
+        </button>
+        <button id="export-test-results" class="btn-secondary">
+            📄 Export Results
+        </button>
+    </div>
+
+    <!-- Individual Module Tests -->
+    <div class="test-group">
+        <h4>🔬 Individual Module Tests</h4>
+        <div class="module-tests-grid">
+            <button id="test-thememanager" class="btn-module">
+                🎨 ThemeManager (18 tests)
+            </button>
+            <button id="test-devicedetection" class="btn-module">
+                📱 DeviceDetection (17 tests)
+            </button>
+            <button id="test-cycleloader" class="btn-module">
+                🔄 CycleLoader (11 tests)
+            </button>
+            <button id="test-state" class="btn-module">
+                💾 State Management (41 tests)
+            </button>
+            <button id="test-recurringcore" class="btn-module">
+                🔁 Recurring Core (37 tests)
+            </button>
+            <button id="test-recurringintegration" class="btn-module">
+                🔗 Recurring Integration (35 tests)
+            </button>
+            <button id="test-recurringpanel" class="btn-module">
+                🎛️ Recurring Panel (31 tests)
+            </button>
+            <button id="test-statspanel" class="btn-module">
+                📊 Stats Panel (25 tests)
+            </button>
+            <button id="test-consolecapture" class="btn-module">
+                🔍 Console Capture (17 tests)
+            </button>
+            <button id="test-globalutils" class="btn-module">
+                🛠️ Global Utils (11 tests)
+            </button>
+            <button id="test-notifications" class="btn-module">
+                🔔 Notifications (10 tests)
+            </button>
+        </div>
+    </div>
+
+    <!-- Test Results Area -->
+    <div class="test-group">
+        <h4>📋 Test Results</h4>
+        <div class="test-results-container">
+            <div id="automated-test-output" class="test-output" style="
+                background: #1a1a1a;
+                color: #fff;
+                padding: 15px;
+                border-radius: 6px;
+                font-family: 'Consolas', 'Monaco', monospace;
+                font-size: 13px;
+                line-height: 1.4;
+                white-space: pre-wrap;
+                overflow-y: auto;
+                max-height: 400px;
+                border: 1px solid #333;
+                min-height: 200px;
+            ">Ready to run tests...</div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Add these styles to your existing testing modal CSS */
+
+.module-tests-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px;
+    margin: 15px 0;
+}
+
+.btn-module {
+    background: linear-gradient(135deg, #4c79ff, #74c0fc);
+    color: white;
+    border: none;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+    box-shadow: 0 2px 8px rgba(76, 121, 255, 0.3);
+}
+
+.btn-module:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(76, 121, 255, 0.4);
+    background: linear-gradient(135deg, #5a85ff, #82c7fd);
+}
+
+.btn-module:active {
+    transform: translateY(0);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+    border: none;
+    padding: 14px 20px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    margin: 5px;
+    transition: all 0.2s ease;
+    box-shadow: 0 3px 10px rgba(40, 167, 69, 0.3);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
+}
+
+.btn-secondary {
+    background: linear-gradient(135deg, #6c757d, #868e96);
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    margin: 5px;
+    transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+    transform: translateY(-1px);
+    background: linear-gradient(135deg, #5a6268, #6c757d);
+}
+
+.test-group {
+    margin: 25px 0;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.test-group h4 {
+    margin: 0 0 15px 0;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.test-results-container {
+    position: relative;
+}
+
+.test-output {
+    scrollbar-width: thin;
+    scrollbar-color: #555 #1a1a1a;
+}
+
+.test-output::-webkit-scrollbar {
+    width: 8px;
+}
+
+.test-output::-webkit-scrollbar-track {
+    background: #2a2a2a;
+    border-radius: 4px;
+}
+
+.test-output::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 4px;
+}
+
+.test-output::-webkit-scrollbar-thumb:hover {
+    background: #777;
+}
+</style>

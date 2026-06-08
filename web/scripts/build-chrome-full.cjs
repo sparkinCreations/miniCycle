@@ -1,0 +1,361 @@
+#!/usr/bin/env node
+/**
+ * build-chrome-full.js — Port the full miniCycle web app (web/) into an MV3
+ * Chrome extension at chrome/full/.
+ *
+ * Form factor: full-tab launcher. The toolbar icon opens the bundled app in a
+ * normal browser tab (chrome-extension://<id>/index.html). No popup.
+ *
+ * Why a build script instead of a hand-port (like chrome/lite/): the full app
+ * is 120+ ES modules under active development. A re-runnable transform keeps the
+ * extension from drifting. Run on every release:  npm run build:chrome-full
+ *
+ * The transform is mechanical and idempotent. It does four things:
+ *   1. Rewrites miniCycle.html -> index.html, satisfying MV3's hard rule that
+ *      extension pages allow NO inline <script> (script-src 'self', no hashes):
+ *        - DROP service-worker / PWA cache-versioning inline blocks (irrelevant
+ *          in an extension; assets ship bundled locally).
+ *        - EXTERNALIZE every remaining inline block to ext-boot/NN.js, replaced
+ *          in-place so execution order and DOM position are preserved exactly.
+ *        - NEUTRALIZE lite-version fallback redirects (lite/ is not bundled).
+ *   2. Copies the app verbatim: version.js, miniCycle-main.js, modules/, styles/.
+ *   3. Prunes assets: web/assets is ~1.1 GB but the running app references
+ *      ~0.4 MB. Only referenced files (+ the tiny fonts dir) are copied.
+ *   4. Generates the MV3 manifest.json + background.js + copies icons.
+ *
+ * Inline-block classification is content-based (stable substrings), NOT line
+ * numbers, so it survives edits to miniCycle.html. If the HTML's inline scripts
+ * are ever restructured, revisit the RULES table below.
+ *
+ * No third-party deps — Node stdlib only (fs/path).
+ */
+
+'use strict';
+
+const fs = require('fs');
+const path = require('path');
+
+const WEB_ROOT = path.resolve(__dirname, '..');              // .../web
+const REPO_ROOT = path.resolve(WEB_ROOT, '..');              // repo root
+const OUT = path.join(REPO_ROOT, 'chrome', 'full');          // build output
+const EXT_BOOT_DIR = path.join(OUT, 'ext-boot');
+const LITE_ICONS = path.join(REPO_ROOT, 'chrome', 'lite', 'icons');
+const LIVE_SITE = 'https://minicycle.app';                   // canonical host for unbundled info pages
+
+const log = (...a) => console.log('[build-chrome-full]', ...a);
+
+// ── helpers ────────────────────────────────────────────────────────────────
+function rmrf(p) {
+  fs.rmSync(p, { recursive: true, force: true });
+}
+function ensureDir(p) {
+  fs.mkdirSync(p, { recursive: true });
+}
+function copyFileEnsured(src, dest) {
+  ensureDir(path.dirname(dest));
+  fs.copyFileSync(src, dest);
+}
+function dirSize(p) {
+  let total = 0;
+  for (const entry of fs.readdirSync(p, { withFileTypes: true })) {
+    const full = path.join(p, entry.name);
+    if (entry.isDirectory()) total += dirSize(full);
+    else total += fs.statSync(full).size;
+  }
+  return total;
+}
+function human(bytes) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+function readVersion() {
+  const src = fs.readFileSync(path.join(WEB_ROOT, 'version.js'), 'utf8');
+  const m = src.match(/APP_VERSION\s*=\s*['"]([^'"]+)['"]/);
+  if (!m) throw new Error('Could not parse APP_VERSION from version.js');
+  return m[1];
+}
+
+// Replace lite-version fallback redirects with a no-op (lite/ is not bundled).
+function neutralizeLiteRedirects(js) {
+  return js.replace(
+    /location\.replace\([^;]*lite\/miniCycle-lite\.html[^;]*\);/g,
+    "console.warn('[miniCycle-ext] lite fallback suppressed (full extension build)');"
+  );
+}
+
+// ── inline-script classification ────────────────────────────────────────────
+// Each rule is tested against an inline block's JS body. First match wins.
+// action: 'drop'  -> remove the block (leave an HTML comment marker)
+//         'split' -> keep only the body before `marker`, externalize that part
+//         (default, no rule match) -> externalize the whole block
+const RULES = [
+  { test: /__miniCycle_bootFails/,                         action: 'drop',  why: 'boot-failure failsafe (PWA cache clear)' },
+  { test: /document\.write/,                               action: 'drop',  why: 'version-change cache clear (PWA, document.write reload)' },
+  { test: /Late fallback: only redirect if feature gate/, action: 'drop',  why: 'late lite-version fallback redirect' },
+  { test: /Enhanced Service Worker Registration/,          action: 'split', why: 'feature gate kept; SW registration dropped',
+    marker: '// ✅ Enhanced Service Worker Registration' },
+];
+
+function classify(body) {
+  for (const rule of RULES) if (rule.test.test(body)) return rule;
+  return { action: 'externalize' };
+}
+
+// ── 1. transform miniCycle.html -> index.html ───────────────────────────────
+function transformHtml() {
+  let html = fs.readFileSync(path.join(WEB_ROOT, 'miniCycle.html'), 'utf8');
+
+  // PWA manifest is irrelevant in an extension (and the name collides with the
+  // extension manifest). Drop the link.
+  html = html.replace(
+    /<link\s+rel="manifest"[^>]*>/i,
+    '<!-- [chrome-ext build] removed PWA manifest link -->'
+  );
+
+  // Info/nav links to pages NOT bundled in the extension (legal/, pages/,
+  // tests/) would 404 from a chrome-extension:// origin. They all open in a new
+  // tab (target="_blank"), so point them at the canonical live site instead —
+  // single-sourced content, and the Web Store wants a hosted privacy policy URL.
+  html = html.replace(
+    /href="((?:legal|pages|tests)\/[^"]*)"/g,
+    `href="${LIVE_SITE}/$1"`
+  );
+
+  // Match ONLY inline blocks: `<script>` with no attributes. `<script src=...>`
+  // and `<script type="module" ...>` are left untouched (version.js + the main
+  // module entry stay as external refs).
+  let externalIndex = 0;
+  const dropped = [];
+  const externalized = [];
+
+  html = html.replace(/<script>([\s\S]*?)<\/script>/g, (_match, body) => {
+    const rule = classify(body);
+
+    if (rule.action === 'drop') {
+      dropped.push(rule.why);
+      return `<!-- [chrome-ext build] removed inline script: ${rule.why} -->`;
+    }
+
+    let js = body;
+    if (rule.action === 'split') {
+      const idx = js.indexOf(rule.marker);
+      if (idx === -1) throw new Error(`Split marker not found: ${rule.marker}`);
+      js = js.slice(0, idx);
+      dropped.push('service-worker registration (tail of feature-gate block)');
+    }
+
+    js = neutralizeLiteRedirects(js);
+
+    externalIndex += 1;
+    const name = `${String(externalIndex).padStart(2, '0')}.js`;
+    fs.writeFileSync(path.join(EXT_BOOT_DIR, name), js.trim() + '\n', 'utf8');
+    externalized.push(name);
+    return `<script src="ext-boot/${name}"></script>`;
+  });
+
+  fs.writeFileSync(path.join(OUT, 'index.html'), html, 'utf8');
+
+  // Safety assertion: no inline <script> may survive (MV3 would block them).
+  if (/<script>[\s\S]*?<\/script>/.test(html)) {
+    throw new Error('An inline <script> block survived the transform — MV3 will block it.');
+  }
+
+  log(`index.html: externalized ${externalized.length} inline blocks -> ext-boot/, dropped ${dropped.length}`);
+  dropped.forEach((d) => log(`   dropped: ${d}`));
+  return { externalized };
+}
+
+// ── 2. copy app code verbatim ───────────────────────────────────────────────
+function copyAppCode() {
+  copyFileEnsured(path.join(WEB_ROOT, 'version.js'), path.join(OUT, 'version.js'));
+  copyFileEnsured(path.join(WEB_ROOT, 'miniCycle-main.js'), path.join(OUT, 'miniCycle-main.js'));
+  fs.cpSync(path.join(WEB_ROOT, 'modules'), path.join(OUT, 'modules'), { recursive: true });
+  fs.cpSync(path.join(WEB_ROOT, 'styles'), path.join(OUT, 'styles'), { recursive: true });
+  log(`copied version.js, miniCycle-main.js, modules/, styles/`);
+}
+
+// ── 3. prune + copy referenced assets ───────────────────────────────────────
+function copyAssets() {
+  // Always copy the (tiny) fonts dir — fonts.css uses relative url() refs.
+  const fontsSrc = path.join(WEB_ROOT, 'assets', 'fonts');
+  if (fs.existsSync(fontsSrc)) {
+    fs.cpSync(fontsSrc, path.join(OUT, 'assets', 'fonts'), { recursive: true });
+  }
+
+  // Scan output HTML/CSS/JS for `assets/...` references (any leading ../ stripped
+  // by anchoring the match at `assets/`). data: URIs contain no `assets/`.
+  const scanFiles = [path.join(OUT, 'index.html')];
+  const walk = (dir) => {
+    if (!fs.existsSync(dir)) return;
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, e.name);
+      if (e.isDirectory()) walk(full);
+      else if (/\.(css|js)$/.test(e.name)) scanFiles.push(full);
+    }
+  };
+  walk(path.join(OUT, 'styles'));
+  walk(path.join(OUT, 'modules'));
+  walk(EXT_BOOT_DIR);
+
+  const refs = new Set();
+  const re = /assets\/[A-Za-z0-9_./-]+\.[A-Za-z0-9]+/g;
+  for (const f of scanFiles) {
+    const txt = fs.readFileSync(f, 'utf8');
+    let m;
+    while ((m = re.exec(txt)) !== null) refs.add(m[0]);
+  }
+
+  let copied = 0;
+  let missing = 0;
+  for (const rel of refs) {
+    const src = path.join(WEB_ROOT, rel);
+    if (fs.existsSync(src) && fs.statSync(src).isFile()) {
+      copyFileEnsured(src, path.join(OUT, rel));
+      copied += 1;
+    } else {
+      missing += 1;
+      log(`   WARN referenced asset not found: ${rel}`);
+    }
+  }
+  log(`assets: copied fonts/ + ${copied} referenced files (${missing} missing refs ignored)`);
+}
+
+// ── 3b. copy runtime-fetched sample routines ────────────────────────────────
+// The app fetch()es these at runtime (onboarding first-run + "load sample"):
+//   /examples/sample-routines/manifest.json  (+ the .mcyc files it lists)
+//   examples/initial-run/Your_First_Routine.mcyc
+// The leading-slash path resolves to the extension root, so they live at
+// chrome/full/examples/. Other examples/ subdirs (pwa-reference/, routines/)
+// are dev scratch — pwa-reference even ships its own sw.js — so exclude them.
+// Defensive check below warns if a new examples/<dir> reference appears.
+const EXAMPLE_DIRS = ['sample-routines', 'initial-run'];
+
+function copyExamples() {
+  for (const dir of EXAMPLE_DIRS) {
+    const src = path.join(WEB_ROOT, 'examples', dir);
+    if (fs.existsSync(src)) {
+      fs.cpSync(src, path.join(OUT, 'examples', dir), { recursive: true });
+    } else {
+      log(`   WARN example dir not found: examples/${dir}`);
+    }
+  }
+
+  // Surface any examples/<dir> referenced by modules that we did NOT bundle.
+  const referenced = new Set();
+  const re = /examples\/([A-Za-z0-9_-]+)\//g;
+  const scan = (dir) => {
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, e.name);
+      if (e.isDirectory()) scan(full);
+      else if (/\.js$/.test(e.name)) {
+        let m;
+        const txt = fs.readFileSync(full, 'utf8');
+        while ((m = re.exec(txt)) !== null) referenced.add(m[1]);
+      }
+    }
+  };
+  scan(path.join(OUT, 'modules'));
+  for (const d of referenced) {
+    if (!EXAMPLE_DIRS.includes(d)) {
+      log(`   WARN modules fetch examples/${d}/ but it is not in EXAMPLE_DIRS — add it`);
+    }
+  }
+  log(`examples: copied ${EXAMPLE_DIRS.join(', ')}`);
+}
+
+// ── 4. manifest + background + icons ────────────────────────────────────────
+function writeManifestAndBackground(version) {
+  const manifest = {
+    manifest_version: 3,
+    name: 'miniCycle',
+    version,
+    version_name: `Chrome Edition v${version}`,
+    description: 'A routine manager. Tasks persist and reset on cycle completion. Build streaks, unlock themes, share routines.',
+    author: 'sparkinCreations',
+    homepage_url: 'https://minicycleapp.com',
+    action: {
+      default_title: 'Open miniCycle',
+      default_icon: {
+        16: 'icons/icon-16.png',
+        32: 'icons/icon-32.png',
+        48: 'icons/icon-48.png',
+        128: 'icons/minicycle_logo_icon.png',
+      },
+    },
+    background: { service_worker: 'background.js' },
+    icons: {
+      16: 'icons/icon-16.png',
+      32: 'icons/icon-32.png',
+      48: 'icons/icon-48.png',
+      128: 'icons/minicycle_logo_icon.png',
+      192: 'icons/icon-192.png',
+      512: 'icons/icon-512.png',
+    },
+    // Feedback form (Web3Forms) is the only runtime external host. Default MV3
+    // page CSP (script-src 'self'; object-src 'self') is sufficient otherwise.
+    host_permissions: ['https://api.web3forms.com/*'],
+  };
+  fs.writeFileSync(path.join(OUT, 'manifest.json'), JSON.stringify(manifest, null, 2) + '\n', 'utf8');
+
+  const background = `// Full-tab launcher: open (or focus) the bundled app in a normal tab.
+// Generated by web/scripts/build-chrome-full.js — do not edit by hand.
+chrome.action.onClicked.addListener(async () => {
+  const url = chrome.runtime.getURL('index.html');
+  const [open] = await chrome.tabs.query({ url });
+  if (open) {
+    chrome.tabs.update(open.id, { active: true });
+    if (open.windowId != null) chrome.windows.update(open.windowId, { focused: true });
+  } else {
+    chrome.tabs.create({ url });
+  }
+});
+`;
+  fs.writeFileSync(path.join(OUT, 'background.js'), background, 'utf8');
+
+  if (fs.existsSync(LITE_ICONS)) {
+    fs.cpSync(LITE_ICONS, path.join(OUT, 'icons'), { recursive: true });
+    log('icons: copied from chrome/lite/icons/');
+  } else {
+    log('WARN chrome/lite/icons not found — add icons/ manually before loading');
+  }
+  log(`manifest.json (v${version}) + background.js written`);
+}
+
+// ── 5. prune OS junk (keeps the Web Store zip clean) ────────────────────────
+function pruneJunk() {
+  let removed = 0;
+  const walk = (dir) => {
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, e.name);
+      if (e.isDirectory()) walk(full);
+      else if (e.name === '.DS_Store' || e.name === 'Thumbs.db') {
+        fs.rmSync(full);
+        removed += 1;
+      }
+    }
+  };
+  walk(OUT);
+  if (removed) log(`pruned ${removed} OS junk file(s) (.DS_Store / Thumbs.db)`);
+}
+
+// ── run ──────────────────────────────────────────────────────────────────────
+function main() {
+  log(`source: ${WEB_ROOT}`);
+  log(`output: ${OUT}`);
+  rmrf(OUT);
+  ensureDir(EXT_BOOT_DIR);
+
+  const version = readVersion();
+  transformHtml();
+  copyAppCode();
+  copyAssets();
+  copyExamples();
+  writeManifestAndBackground(version);
+  pruneJunk();
+
+  log(`done — ${human(dirSize(OUT))} total`);
+  log('load unpacked: chrome://extensions -> Developer mode -> Load unpacked -> chrome/full/');
+}
+
+main();

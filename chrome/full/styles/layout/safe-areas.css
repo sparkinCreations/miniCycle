@@ -1,0 +1,141 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Safe Areas & iOS Notch Handling
+   Support for devices with notches, home indicators, and safe areas
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* =============================================================================
+   VIEWPORT META SUPPORT
+   Requires: <meta name="viewport" content="viewport-fit=cover">
+   ============================================================================= */
+
+/* Body safe area padding - header handles top safe area, so only set bottom */
+body {
+    padding-top: 0; /* Header handles safe area */
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+}
+
+/* =============================================================================
+   FIXED ELEMENTS - TOP
+   ============================================================================= */
+
+/* Headers and top navigation */
+.safe-area-top {
+    padding-top: env(safe-area-inset-top);
+}
+
+.safe-area-top-fixed {
+    top: env(safe-area-inset-top);
+}
+
+/* Header with safe area included */
+.header-safe-area {
+    padding-top: calc(env(safe-area-inset-top) + 8px);
+}
+
+/* =============================================================================
+   FIXED ELEMENTS - BOTTOM
+   ============================================================================= */
+
+/* Bottom navigation and action bars */
+.safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+}
+
+.safe-area-bottom-fixed {
+    bottom: env(safe-area-inset-bottom);
+}
+
+/* Bottom action bar with safe area */
+.bottom-action-bar {
+    padding-bottom: calc(env(safe-area-inset-bottom) + 16px);
+}
+
+/* =============================================================================
+   MODAL SAFE AREAS
+   ============================================================================= */
+
+/* Modal content with safe area awareness */
+.modal-safe-area {
+    /* See dvh note on #task-view in app-container.css. */
+    max-height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 40px);
+    max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 40px);
+    margin-top: env(safe-area-inset-top);
+    margin-bottom: env(safe-area-inset-bottom);
+}
+
+/* Full-screen modal */
+.modal-fullscreen-safe {
+    top: env(safe-area-inset-top);
+    bottom: env(safe-area-inset-bottom);
+    left: env(safe-area-inset-left);
+    right: env(safe-area-inset-right);
+}
+
+/* =============================================================================
+   SCROLLABLE CONTENT AREAS
+   ============================================================================= */
+
+/* Scrollable content with bottom safe area */
+.scroll-content-safe {
+    padding-bottom: calc(env(safe-area-inset-bottom) + 20px);
+}
+
+/* Task list with safe area */
+.task-list-safe-area {
+    padding-bottom: calc(env(safe-area-inset-bottom) + 80px);
+}
+
+/* =============================================================================
+   PWA STANDALONE MODE
+   ============================================================================= */
+
+/* When running as installed PWA */
+@media all and (display-mode: standalone) {
+    /* Extra padding for home indicator on iOS */
+    .pwa-bottom-padding {
+        padding-bottom: calc(env(safe-area-inset-bottom) + 20px);
+    }
+
+    /* Adjust fixed bottom elements */
+    .fixed-bottom-pwa {
+        bottom: calc(env(safe-area-inset-bottom) + 10px);
+    }
+}
+
+/* =============================================================================
+   LANDSCAPE MODE ADJUSTMENTS
+   ============================================================================= */
+
+@media (orientation: landscape) {
+    /* Account for side notches */
+    .landscape-safe {
+        padding-left: env(safe-area-inset-left);
+        padding-right: env(safe-area-inset-right);
+    }
+
+    /* Landscape modal positioning */
+    .modal-landscape-safe {
+        max-width: calc(100vw - env(safe-area-inset-left) - env(safe-area-inset-right) - 40px);
+    }
+}
+
+/* =============================================================================
+   FALLBACK FOR BROWSERS WITHOUT env() SUPPORT
+   ============================================================================= */
+
+@supports not (padding-top: env(safe-area-inset-top)) {
+    body {
+        padding-top: var(--space-5);
+        padding-bottom: var(--space-5);
+    }
+
+    .safe-area-top {
+        padding-top: var(--space-5);
+    }
+
+    .safe-area-bottom {
+        padding-bottom: var(--space-5);
+    }
+}

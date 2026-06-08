@@ -7,9 +7,29 @@ This folder contains miniCycle's Chrome (and Chromium-based: Edge, Brave, Arc) b
 | Folder            | Status        | What it is                                                                                |
 | ----------------- | ------------- | ----------------------------------------------------------------------------------------- |
 | [`lite/`](./lite) | ✅ Working v1 | MV3 popup wrapping the lite version of miniCycle (ES5, self-contained, no service worker) |
-| `full/`           | ⏳ Future     | A full-featured extension built fresh against the current data model (not started)        |
+| `full/`           | ✅ Generated  | Complete app, built from `web/` by the build script — full-tab launcher                   |
 
-The lite-based extension ships the lightweight tier of miniCycle inside a 400×600 popup. It's a coherent product on its own — "lightweight version, right in your toolbar" — not a degraded fallback. The full version stays at miniCycle.app and is linked from the popup.
+The lite-based extension ships the lightweight tier of miniCycle inside a 400×600 popup. It's a coherent product on its own — "lightweight version, right in your toolbar" — not a degraded fallback.
+
+The **full** extension is the entire miniCycle app, opened in a normal browser tab from the toolbar icon (the full-screen UI doesn't fit a popup). Unlike `lite/` (a hand-maintained port), `full/` is **generated** by `web/scripts/build-chrome-full.cjs` so it never drifts from the actively-developed app. Regenerate on every release:
+
+```bash
+cd web
+npm run build:chrome-full      # web/ → chrome/full/
+```
+
+### What the build does
+
+MV3 extension pages forbid all inline `<script>` (`script-src 'self'`, no hashes) and don't use page service workers. The transform (content-based, not line-numbers, so it survives HTML edits):
+
+- **Drops** the PWA-only inline blocks: boot-failure cache-clear failsafe, version-change `document.write` reload, and the ~558-line service-worker registration/update machinery.
+- **Externalizes** every remaining inline block to `full/ext-boot/NN.js`, replaced in-place so execution order and DOM position are preserved exactly. `version.js` and the `miniCycle-main.js` module entry stay as external refs.
+- **Neutralizes** the lite-version fallback redirects (`lite/` isn't bundled; modern Chrome always passes the feature gate anyway).
+- **Rewrites** unbundled info links (`legal/`, `pages/`, `tests/`) to absolute `https://minicycle.app/…` URLs so they open the live pages instead of 404ing.
+- **Copies** `version.js`, `miniCycle-main.js`, `modules/`, `styles/` verbatim, plus only the **referenced** assets (~0.4 MB of the 1.1 GB `web/assets/`).
+- **Generates** the MV3 `manifest.json` + `background.js` (the launcher) and copies icons from `lite/icons/`.
+
+Only runtime external host is `api.web3forms.com` (feedback form) — covered by `host_permissions`. The default MV3 page CSP suffices otherwise.
 
 ## Technology
 

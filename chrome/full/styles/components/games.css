@@ -1,0 +1,193 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Games Component
+   Mini-games modal and game-related unlock badges
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* =============================================================================
+   GAMES MODAL
+   ============================================================================= */
+
+.games-modal {
+    display: none;
+    position: fixed;
+    z-index: var(--z-modal);
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    justify-content: center;
+    align-items: center;
+    animation: fadeIn var(--transition-normal) ease-in-out;
+}
+
+.games-modal.active,
+.games-modal.show {
+    display: flex;
+}
+
+/* Dialog open/close + backdrop rules are centralized in modals.css */
+
+/* =============================================================================
+   GAMES MODAL CONTENT
+   ============================================================================= */
+
+.games-modal-content {
+    background: var(--pref-modal-bg, var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white))));
+    color: var(--pref-modal-text, var(--theme-modal-text, var(--theme-text-on-surface)));
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    width: 420px;
+    max-width: 95%;
+    text-align: center;
+    box-shadow:
+        0 6px 20px rgba(0, 0, 0, 0.3),
+        inset 0 1px 1px rgba(255, 255, 255, 0.25);
+    -webkit-backdrop-filter: blur(var(--theme-modal-blur));
+    backdrop-filter: blur(var(--theme-modal-blur));
+}
+
+.games-modal-content h2 {
+    margin-bottom: var(--space-3);
+    font-size: var(--font-size-2xl);
+    color: inherit;
+}
+
+.games-modal-content p {
+    margin-bottom: var(--space-5);
+    color: var(--theme-text-secondary, #444);
+    font-size: var(--font-size-base);
+}
+
+/* =============================================================================
+   PLAY GAME BUTTON
+   ============================================================================= */
+
+#open-task-order-game {
+    background: var(--color-game-primary);
+    color: var(--color-white);
+    font-weight: bold;
+    border: none;
+    padding: 10px var(--space-4);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-base);
+    margin-bottom: var(--space-4);
+    cursor: pointer;
+    transition: background var(--transition-normal) ease;
+}
+
+#open-task-order-game:hover {
+    background: var(--color-game-primary-dark);
+}
+
+/* =============================================================================
+   GAME UNLOCK BADGES
+   ============================================================================= */
+
+.badge.unlocked.game-unlocked {
+    background: linear-gradient(135deg, var(--color-game-primary) 0%, var(--color-game-primary-dark) 100%);
+    color: var(--color-white);
+    animation: pulse var(--animation-pulse) ease-in-out infinite;
+}
+
+/* =============================================================================
+   GAME UNLOCK MESSAGE (in stats panel - inline text, not popup)
+   ============================================================================= */
+
+/* Note: #game-unlock-message styling is handled in stats-panel.css
+   This section previously had popup styling which conflicted with the
+   inline display in the milestone rewards section. */
+
+/* =============================================================================
+   GAME CARD
+   ============================================================================= */
+
+.game-card {
+    background: var(--theme-card-bg, #f8f9fa);
+    border: 1px solid var(--theme-card-border, #dee2e6);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4);
+    margin-bottom: var(--space-3);
+    transition: transform var(--transition-fast) ease, box-shadow var(--transition-fast) ease;
+}
+
+.game-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.game-card-title {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    margin-bottom: var(--space-2);
+    color: inherit;
+}
+
+.game-card-description {
+    font-size: var(--font-size-sm);
+    color: var(--theme-text-secondary, #666);
+    margin-bottom: var(--space-3);
+}
+
+.game-card-btn {
+    background: var(--theme-button-primary-bg, var(--color-primary));
+    color: var(--theme-button-primary-text, var(--color-white));
+    border: none;
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-6);
+    font-weight: 500;
+    cursor: pointer;
+    transition: background var(--transition-fast) ease;
+}
+
+.game-card-btn:hover {
+    background: var(--theme-button-primary-hover-bg, #5a87ff);
+}
+
+.game-card-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* =============================================================================
+   GAME SCORE DISPLAY
+   ============================================================================= */
+
+.game-score {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    font-size: var(--font-size-sm);
+    color: var(--theme-text-secondary, #666);
+    margin-top: var(--space-2);
+}
+
+.game-score-icon {
+    font-size: var(--font-size-base);
+}
+
+.game-high-score {
+    color: var(--theme-warning, var(--color-warning));
+    font-weight: 600;
+}
+
+/* =============================================================================
+   MOBILE ADJUSTMENTS
+   ============================================================================= */
+
+@media (max-width: 768px) {
+    .games-modal-content {
+        width: 95%;
+        padding: var(--space-5);
+    }
+
+    .games-modal-content h2 {
+        font-size: var(--font-size-xl);
+    }
+
+    #open-task-order-game {
+        padding: var(--space-2) 14px;
+        font-size: var(--font-size-sm);
+    }
+}

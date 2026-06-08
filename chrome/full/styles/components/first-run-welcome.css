@@ -1,0 +1,976 @@
+/* ============================================================================
+   First-Run Welcome Banner
+
+   Floating, non-blocking notice shown above the input bar on the very first
+   launch (focus-first onboarding). Distinct from the legacy 3-step welcome
+   modal — this one is dismissable inline and intentionally minimal so the
+   content can iterate rapidly.
+
+   Position: fixed, near top of viewport, centered horizontally.
+   Pointer-events: enabled on the banner itself, but it does NOT cover the
+   page — surrounding UI stays interactive.
+   ============================================================================ */
+
+/* ----------------------------------------------------------------------------
+   COMPONENT TUNABLES
+   Centralized so layout values live in one place. The clearance values
+   reference focus-mode chrome positions defined in focus-mode.css; if those
+   change, update here too.
+   ---------------------------------------------------------------------------- */
+:root {
+    /* Top offset clears focus-mode chrome (× and ⋯ buttons): on desktop they
+       sit at top: 16px / height: 30px (bottom ~46px); on mobile/PWA they use
+       top: calc(env(safe-area-inset-top) + 12px) / height: 38px. 64px gives
+       a visual gap on both layouts. */
+    --first-run-welcome-top: 64px;
+
+    /* First-run splash (typewriter intro before banner appears).
+       Per-char stagger × 19 chars = total typewriter duration.
+
+       --start-scale controls the "big and bold" entry — each char starts
+       at this scale and animates back to 1× while fading in. The banner
+       title font-size resolves to ~17px (--font-size-md), so a scale of 6
+       produces a ~102px peak size, comfortably at-or-above the requested
+       72pt (~96px) feel. Letters will visually overlap their neighbors at
+       peak, but only one letter is at peak at a time thanks to the stagger,
+       so the cascade still reads as separate characters. */
+    /* Two-phase cascade:
+       PHASE 1 — letters fade in left-to-right at peak (huge) size
+       PHASE 2 — each letter shrinks one-at-a-time into its banner-title spot
+       Same stagger + duration in both phases so the rhythm reads as one
+       continuous left-to-right sweep that pivots from "appearing" to
+       "shrinking" once the line is fully visible. */
+    --first-run-splash-char-duration: 280ms;
+    --first-run-splash-char-stagger: 90ms;
+    /* Lower start-scale = sharper peak (less anti-aliasing softness) and
+       a more readable hero — 1.8 still feels dramatic without making the
+       letters feel ballooned/blurry on a phone screen. */
+    --first-run-splash-char-start-scale: 1.8;
+    /* Each letter is pushed outward from its line's center by
+       letter-pos × spread at peak scale, so big letters don't crowd each
+       other during the fade-in. Tuned so adjacent-pair gaps (e.g. W-e,
+       o-m-e) read as deliberate spacing rather than the letters touching. */
+    --first-run-splash-letter-spread: 14px;
+    /* Vertical gap between the two lines ("Welcome to" / "miniCycle"). */
+    --first-run-splash-line-gap: var(--space-8);
+    /* Horizontal gap between words on the same splash line ("Welcome" / "to"). */
+    --first-run-splash-word-gap: 0.7em;
+    /* Phase 3: after each word has shrunk to scale 1, the entire word
+       group translates from its 2-line centered splash position up to its
+       exact spot in the welcome banner's single-line title. */
+    --first-run-splash-land-duration: 900ms;
+    --first-run-splash-hold: 400ms;
+    --first-run-splash-fade-duration: 600ms;
+    /* Banner max width — wide enough to read, narrow enough not to fight
+       with the centered routine card behind it. */
+    --first-run-welcome-max-width: 420px;
+    /* Min-height for the message body. Sized to the cycle-demo SVG's
+       natural render height (max-width 280px × 2:1 viewBox aspect = 140px)
+       so SVG slides fit exactly with no extra padding, and text-mode
+       slides vertically center inside the same height. Slide 2's two-
+       paragraph message fits in ~96–138px on common viewports (single
+       paragraph ~2 lines × 21px + 12px gap), so 140px keeps the banner
+       at a consistent height across all rotations on most viewports. */
+    --first-run-welcome-body-min-height: 110px;
+    /* Banner padding-bottom adds a 32px reserved strip below the body so
+       the prev/next nav arrows (28px tall, anchored at bottom) don't
+       overlap the SVG's counter row. Top padding stays at the standard
+       --space-3-5 so the title sits at its usual offset. */
+    --first-run-welcome-padding-bottom: calc(var(--space-3-5) + var(--space-8));
+    /* How far the bottom-row controls sit above the banner's bottom edge. */
+    --first-run-welcome-nav-bottom-inset: var(--space-1);
+    /* Distance from banner center to the INNER edge of the prev/next
+       chevrons. = (toggle half-width) + (gap between toggle and chevron),
+       so the three bottom-row controls (‹ ❚❚ ›) read as a single tight
+       cluster. Adapts automatically if dismiss-size changes. */
+    --first-run-welcome-nav-center-gap: calc(var(--first-run-welcome-dismiss-size) / 2 + var(--space-2));
+    /* Dismiss button is a circular tap target — matches the 32px space token. */
+    --first-run-welcome-dismiss-size: var(--space-8);
+    /* Pre-visible offset for the slide-down entry animation. */
+    --first-run-welcome-entry-shift: var(--space-2);
+
+    /* Layout-shift bookkeeping. JS publishes the banner's measured height
+       to --first-run-welcome-height (consumed by min-height calcs); the
+       80px fallback covers the very first paint before JS measures. The
+       --first-run-welcome-shift JS variable (managed by
+       _measureFirstRunWelcomeOverlap) carries the conditional task-view
+       shift only when the banner actually overlaps the input bar. The
+       bottom focus-view controls (#nav-dots, #undo-redo-buttons) are
+       hidden entirely while the banner is up — see the .first-run-welcome-active
+       hide rule below — so they don't need offset variables anymore. */
+    --first-run-welcome-height-fallback: 80px;
+    --first-run-welcome-gap: var(--space-4); /* 16px desktop — comfortable gap between banner bottom and input bar / task-view top, applied only when the banner would overlap */
+    /* Used by the small-screen onboarding scrim (main.css EXPERIMENT block):
+       length of the fade-out region directly below the banner's bottom edge. */
+    --first-run-welcome-scrim-fade: var(--space-8-75); /* 35px ≈ space-9 */
+}
+
+/* Mobile: tighter gap so the welcome banner + content don't crowd the
+   shorter viewport. */
+@media (max-width: 768px) {
+    body {
+        --first-run-welcome-gap: var(--space-2); /* 8px on mobile */
+    }
+}
+
+
+/* ============================================================================
+   Layout offsets — task-view shifts DOWN, bottom controls shift UP
+   ============================================================================ */
+
+/* The three layout-shift variables (--first-run-welcome-shift,
+   --first-run-welcome-bottom-offset, --first-run-welcome-undo-up) are now
+   set by JS in _measureFirstRunWelcomeOverlap(). All three are written or
+   cleared together based on whether the banner actually overlaps the
+   input bar — so on tall viewports where the banner fits naturally above
+   the task-view, none of the focus-view chrome shifts at all. The CSS
+   below just consumes the variables; the math lives in JS. */
+
+/* Conditional shift: task-view sits at its natural focus-mode position
+   when --first-run-welcome-shift is unset/0; when JS detects the banner
+   would overlap the input bar it computes the exact pixel delta needed
+   to push the input bar below the banner with --first-run-welcome-gap
+   of breathing room, and writes that into --first-run-welcome-shift on
+   <body>. CSS-only max() couldn't be used here because task-view has
+   `transform: translateY(-50%)` (vertical centering) — top: refers to
+   the center, not the top edge, so we need the actual rendered height
+   from JS to compute overlap correctly. See _measureFirstRunWelcomeOverlap
+   in onboardingManager.js. */
+body.focus-mode.first-run-welcome-active #task-view {
+    top: calc(50% - var(--focus-mode-top-offset) + var(--first-run-welcome-shift, 0px));
+}
+
+/* Hide the bottom focus-view controls (Routine|Stats nav-dots + undo/redo)
+   while the welcome banner is showing. Trying to keep them visible AND
+   reposition them across desktop/mobile/tablet breakpoints proved fiddly —
+   this is simpler. They reappear automatically when:
+     - The user dismisses the welcome banner (× button) → .first-run-welcome-active removed
+     - The user exits focus mode → .focus-mode removed (gate falls through)
+   `pointer-events: none` keeps them keyboard-unreachable while hidden too. */
+body.focus-mode.first-run-welcome-active #nav-dots,
+body.focus-mode.first-run-welcome-active #undo-redo-buttons {
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+}
+
+
+/* ============================================================================
+   Banner element
+   ============================================================================ */
+
+.first-run-welcome {
+    position: fixed;
+    top: calc(env(safe-area-inset-top, 0px) + var(--first-run-welcome-top));
+    left: 50%;
+    transform: translateX(-50%) translateY(calc(-1 * var(--first-run-welcome-entry-shift)));
+    z-index: var(--z-menu);
+
+    /* Centered text layout — dismiss button overlays absolutely on the
+       top-right, so the title + message use the FULL banner width and
+       can be true-centered horizontally. */
+    display: block;
+
+    width: min(var(--first-run-welcome-max-width), calc(100vw - var(--space-8)));
+    /* Bottom padding is bumped to reserve a strip for the prev/next nav
+       arrows that sit at bottom: --first-run-welcome-nav-bottom-inset. */
+    padding: var(--space-3-5) var(--space-4) var(--first-run-welcome-padding-bottom);
+    border-radius: var(--radius-xl);
+
+    /* Glossy frosted-glass look:
+         1. Top-to-mid white sheen layer fakes a reflection highlight.
+         2. Whiter, lower-alpha glass-bg-soft underneath lets the backdrop
+            read through strongly. */
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.32) 0%, rgba(255, 255, 255, 0) 55%),
+        var(--pref-modal-bg, var(--theme-modal-glass-bg-soft, var(--theme-modal-glass-bg, var(--theme-modal-bg))));
+    /* White text + dark halo — the previous "dark text + white halo" strategy
+       lost contrast on slides where the backdrop's blue gradient brightened
+       behind the text. White-on-dark-shadow stays legible across the full
+       gradient range and matches the splash's hero treatment. */
+    color: var(--color-white);
+    /* Bumped from default 400 — heavier glyph weight reads more crisply
+       against the translucent glass surface. The title already sets its
+       own --font-weight-bold (700), so this only affects body copy + SVG. */
+    font-weight: var(--font-weight-semibold);
+    /* Soft dark halo behind text — anchors the white glyphs against the
+       lighter regions of the glass gradient without sacrificing transparency. */
+    text-shadow:
+        0 var(--space-px) var(--space-px) rgba(0, 0, 0, 0.45),
+        0 0 var(--space-2) rgba(0, 0, 0, 0.35);
+    border: var(--space-px) solid color-mix(in srgb, var(--color-white) 22%, transparent);
+    /* Two-stop inset highlight along the top edge sells the glossy curvature. */
+    box-shadow:
+        0 var(--space-4) var(--space-8) rgba(15, 23, 42, 0.22),
+        inset 0 var(--space-px) 0 rgba(255, 255, 255, 0.55),
+        inset 0 var(--space-2) var(--space-3) rgba(255, 255, 255, 0.18);
+    /* Stronger blur sells the glass effect now that the surface is more transparent. */
+    -webkit-backdrop-filter: blur(calc(var(--theme-modal-blur) * 1.4));
+    backdrop-filter: blur(calc(var(--theme-modal-blur) * 1.4));
+
+    opacity: 0;
+    pointer-events: none;
+    transition:
+        opacity var(--transition-normal) ease,
+        transform var(--transition-normal) ease;
+}
+
+.first-run-welcome.first-run-welcome--visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+    pointer-events: auto;
+}
+
+.first-run-welcome__content {
+    /* Now uses the full banner width — dismiss button is absolutely
+       positioned on top of this in the top-right corner. */
+    width: 100%;
+    text-align: center;
+}
+
+.first-run-welcome__title {
+    margin: 0 0 var(--space-1) 0;
+    /* Reserve horizontal space for the absolutely-positioned logo (left)
+       and dismiss × (right) so a wrapping title's first line cannot
+       collide with them on narrow viewports (≤330px — iPhone SE 1st gen,
+       very narrow Androids, split-screen). */
+    padding: 0 calc(var(--first-run-welcome-dismiss-size) + var(--space-2));
+    /* Same size as the slide-0 hero title so banner total height stays
+       consistent across all slides — prevents layout jitter when the
+       carousel rotates. (Without this, typography.css's <h2> default of
+       --font-size-xl would create a 5px banner-height delta per rotation.) */
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-bold);
+    line-height: var(--line-height-tight);
+    text-align: center;
+    /* `pre-line` honors the `\n` that the title renderer inserts when a
+       label contains `|` as a line-break marker (e.g. slide 4's
+       "Complete your first|cycle"). Whitespace still collapses normally. */
+    white-space: pre-line;
+    /* Crossfade in lockstep with the message during slide transitions. */
+    transition: opacity var(--transition-fast) ease;
+}
+
+.first-run-welcome__title.first-run-welcome__title--fading {
+    opacity: 0;
+}
+
+/* Slide 0 ("Welcome to miniCycle") gets a hero treatment — the title is
+   noticeably larger and shifted down toward the banner's vertical center
+   so it feels like a greeting rather than a heading above explanatory
+   text. To keep the banner's total height matching other slides, the
+   extra top padding is offset by a matching reduction in the body's
+   min-height. The slide 0 message ("Manage routines …") is short enough
+   that the reduced body still fits its text comfortably. */
+.first-run-welcome[data-slide-index="0"] {
+    /* Hero treatment — extra top padding pushes the larger title down
+       toward the banner's vertical center. */
+    padding-top: calc(var(--space-3-5) + var(--space-8) + var(--space-1));
+    /* = 14 + 32 + 4 = 50px (was 70px) */
+}
+
+.first-run-welcome[data-slide-index="0"] .first-run-welcome__title {
+    font-size: var(--font-size-2xl);
+    margin-top: 0;
+    /* Small, deliberate gap between hero title and the message below — */
+    /* tighter than the standard --space-3 to keep them visually grouped. */
+    margin-bottom: var(--space-1);
+}
+
+.first-run-welcome[data-slide-index="0"] .first-run-welcome__message {
+    /* Compensate for the extra top padding + larger title so the total
+       banner height stays the same as other slides. The slide-0 message
+       is short enough that the reduced body still wraps cleanly with
+       breathing room. Reduction = --space-8 + --space-1 (32 + 4 = 36px),
+       matching the slide-0 hero padding boost above the standard top. */
+    min-height: calc(var(--first-run-welcome-body-min-height) - var(--space-8) - var(--space-1));
+}
+
+/* Slides 4 and 6 each have 2-line titles ("Complete your first|cycle" and
+   "You're in|Focus View") that add ~30px of vertical height vs. the
+   1-line titles on the other slides. Compensate by trimming the body
+   min-height by the same amount so the banner total stays consistent
+   (~234px) across all slides. Slide 6 (index 5) only exists after the
+   user completes their first cycle and the celebration slides are
+   appended — until then the rule simply doesn't match anything. */
+.first-run-welcome[data-slide-index="3"] .first-run-welcome__message,
+.first-run-welcome[data-slide-index="5"] .first-run-welcome__message {
+    min-height: calc(var(--first-run-welcome-body-min-height) - var(--space-7-5));
+}
+
+.first-run-welcome__message {
+    margin: 0;
+    font-size: var(--font-size-sm);
+    line-height: var(--line-height-normal);
+    opacity: 0.85;
+    text-align: center;
+    /* Smooth crossfade between slides — JS adds .--fading, swaps text
+       after this transition completes, then removes the class. */
+    transition: opacity var(--transition-fast) ease;
+    /* Stable height across slides — sized to the cycle-demo SVG so the
+       banner doesn't reflow as the carousel rotates between text and
+       SVG content. Flex centers the body content (text or SVG) vertically
+       within this min-height. The gap separates multi-paragraph text-mode
+       messages (split on `|` by JS into one <p> per segment) — single-
+       paragraph messages naturally have no gap to apply. */
+    min-height: var(--first-run-welcome-body-min-height);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-3);
+}
+
+/* Reset default browser <p> margin — paragraph spacing is provided by the
+   parent's flex `gap` instead, so margin would just stack with it. */
+.first-run-welcome__message > p {
+    margin: 0;
+}
+
+/* Trailing directional arrow on a text-mode CTA paragraph (slide 4's
+   "watch them reset ↓"). The renderer splits the arrow into its own
+   <span> so we can animate it without disturbing the surrounding text.
+   Bounces gently downward to nudge the eye toward the routine below
+   the banner. */
+.first-run-welcome__arrow {
+    display: inline-block;
+    margin-left: 0.25em;
+    /* Black for high contrast against the glass gradient. The banner's
+       inherited dark text-shadow is low-alpha (0.45/0.35) so it doesn't
+       muddy a solid-black glyph. */
+    color: var(--color-black);
+    font-weight: var(--font-weight-bold);
+    /* Size up well past the body text — the arrow is the directional cue,
+       not just punctuation. Em-relative so it scales with any future
+       message font-size changes. */
+    font-size: 1.8em;
+    line-height: 1;
+    /* Nudge the larger glyph back into vertical alignment with the
+       surrounding text baseline. */
+    vertical-align: -0.2em;
+    transform-origin: center;
+    animation: first-run-welcome-arrow-bounce 1.4s ease-in-out infinite;
+}
+
+@keyframes first-run-welcome-arrow-bounce {
+    0%, 100% { translate: 0 0; }
+    50%      { translate: 0 3px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .first-run-welcome__arrow {
+        animation: none;
+    }
+}
+
+/* SVG (or any custom render content) renders at full strength —
+   the 0.85 dim is meant for plain prose, not for the cycle-demo's
+   theme-colored accents. Stays overridable by --fading below. */
+.first-run-welcome__message:has(.cycle-demo) {
+    opacity: 1;
+}
+
+.first-run-welcome__message.first-run-welcome__message--fading {
+    opacity: 0;
+}
+
+.first-run-welcome__toggle {
+    /* Bottom-CENTER, sitting between the prev (‹) and next (›) chevrons
+       so the three controls read as a single media-style transport row.
+       Same shape/size as the dismiss button. */
+    position: absolute;
+    bottom: var(--first-run-welcome-nav-bottom-inset);
+    left: 50%;
+    transform: translateX(-50%);
+    width: var(--first-run-welcome-dismiss-size);
+    height: var(--first-run-welcome-dismiss-size);
+    border-radius: var(--radius-full);
+    /* Stronger border + faint fill so the button reads against the glassier
+       surface — the ❚❚ pause glyph alone is thin and gets lost otherwise. */
+    border: var(--space-px) solid color-mix(in srgb, currentColor 32%, transparent);
+    background: color-mix(in srgb, currentColor 6%, transparent);
+    color: inherit;
+    font: inherit;
+    line-height: 1;
+    /* Bumped from --font-size-xs so the pause/play/replay glyphs read as
+       cleanly as the × dismiss icon at the same tap-target size. */
+    font-size: var(--font-size-sm);
+    /* Override the banner-level semibold weight — the ❚❚ pause glyph
+       reads cleaner at normal weight (semibold collapses the two bars). */
+    font-weight: var(--font-weight-normal);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition:
+        transform var(--transition-fast) ease,
+        background-color var(--transition-fast) ease,
+        border-color var(--transition-fast) ease;
+}
+
+.first-run-welcome__toggle:hover {
+    /* Combine the centering translateX with the hover lift so we don't
+       lose horizontal center-alignment on hover. */
+    transform: translateX(-50%) translateY(calc(-1 * var(--space-px)));
+    background: color-mix(in srgb, currentColor 6%, transparent);
+}
+
+.first-run-welcome__toggle:focus-visible {
+    outline: var(--space-0-5) solid var(--theme-button-bg);
+    outline-offset: var(--space-0-5);
+}
+
+/* Slide-6 CTA button — sits below the message paragraph in the flex column.
+   Glassy surface matching .first-run-welcome__toggle aesthetic, with a
+   pill shape so it reads as an action distinct from the icon-button row. */
+.first-run-welcome__cta {
+    margin: 0;
+    padding: var(--space-1-5) var(--space-4);
+    border-radius: var(--radius-full);
+    border: var(--space-px) solid color-mix(in srgb, currentColor 32%, transparent);
+    background: color-mix(in srgb, currentColor 8%, transparent);
+    color: inherit;
+    font: inherit;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    line-height: 1.2;
+    cursor: pointer;
+    transition:
+        transform var(--transition-fast) ease,
+        background-color var(--transition-fast) ease,
+        border-color var(--transition-fast) ease;
+}
+
+.first-run-welcome__cta:hover {
+    transform: translateY(calc(-1 * var(--space-px)));
+    background: color-mix(in srgb, currentColor 14%, transparent);
+    border-color: color-mix(in srgb, currentColor 48%, transparent);
+}
+
+.first-run-welcome__cta:focus-visible {
+    outline: var(--space-0-5) solid var(--theme-button-bg);
+    outline-offset: var(--space-0-5);
+}
+
+.first-run-welcome__dismiss {
+    /* Absolutely positioned so it doesn't push the title off-center. Top
+       offset is slightly tighter than the banner's vertical padding so the
+       button hugs the top-right corner; matches .first-run-welcome__toggle.
+       Renders text ("Skip") rather than an icon — auto width with padding,
+       min-width preserves the original tap-target footprint. */
+    position: absolute;
+    top: var(--space-2-5);
+    right: var(--space-4);
+    min-width: var(--first-run-welcome-dismiss-size);
+    height: var(--first-run-welcome-dismiss-size);
+    padding: 0 var(--space-3);
+    border-radius: var(--radius-full);
+    border: var(--space-px) solid color-mix(in srgb, currentColor 18%, transparent);
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    line-height: 1;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition:
+        transform var(--transition-fast) ease,
+        background-color var(--transition-fast) ease,
+        border-color var(--transition-fast) ease;
+}
+
+.first-run-welcome__dismiss:hover {
+    transform: translateY(calc(-1 * var(--space-px)));
+    background: color-mix(in srgb, currentColor 6%, transparent);
+}
+
+.first-run-welcome__dismiss:focus-visible {
+    outline: var(--space-0-5) solid var(--theme-button-bg);
+    outline-offset: var(--space-0-5);
+}
+
+/* Brand logo at the upper-LEFT of the banner — mirrors the dismiss × at
+   the upper-right for symmetric corner placement. Same top inset + size
+   as the dismiss button so the two corners read as a balanced pair.
+   Decorative — aria-hidden so it doesn't clutter screen-reader output. */
+.first-run-welcome__logo {
+    position: absolute;
+    top: var(--space-2-5);
+    left: var(--space-4);
+    width: var(--first-run-welcome-dismiss-size);
+    height: var(--first-run-welcome-dismiss-size);
+    object-fit: contain;
+    /* Logo is decorative — no pointer interaction. */
+    pointer-events: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+/* --- Prev/next slide nav (low-key chevrons on the banner edges) --- */
+.first-run-welcome__nav {
+    /* Positioned at the bottom of the banner, flanking the pause/play
+       toggle so the three controls (‹ ❚❚ ›) read as a single transport
+       row. Same 32px size as the toggle and dismiss buttons so they
+       align cleanly by both top and bottom edges. */
+    position: absolute;
+    bottom: var(--first-run-welcome-nav-bottom-inset);
+    width: var(--first-run-welcome-dismiss-size);
+    height: var(--first-run-welcome-dismiss-size);
+    border: var(--space-px) solid color-mix(in srgb, currentColor 14%, transparent);
+    border-radius: var(--radius-full);
+    background: color-mix(in srgb, currentColor 4%, transparent);
+    color: inherit;
+    /* Chevrons render at this size with bold weight so the arrow shape
+       reads cleanly at the small button footprint. */
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-bold);
+    font-family: inherit;
+    line-height: 1;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.75;
+    transition:
+        opacity var(--transition-fast) ease,
+        background-color var(--transition-fast) ease,
+        border-color var(--transition-fast) ease,
+        transform var(--transition-fast) ease;
+}
+
+/* Side-by-side at center bottom — prev sits to the LEFT of center,
+   next sits to the RIGHT of center, with --first-run-welcome-nav-center-gap
+   of empty space on each side of the vertical center axis (so the gap
+   between the two buttons is 2× that value). */
+.first-run-welcome__nav--prev { right: calc(50% + var(--first-run-welcome-nav-center-gap)); }
+.first-run-welcome__nav--next { left:  calc(50% + var(--first-run-welcome-nav-center-gap)); }
+
+.first-run-welcome__nav:hover {
+    opacity: 1;
+    background: color-mix(in srgb, currentColor 10%, transparent);
+    border-color: color-mix(in srgb, currentColor 25%, transparent);
+}
+
+.first-run-welcome__nav:focus-visible {
+    outline: var(--space-0-5) solid var(--theme-button-bg);
+    outline-offset: var(--space-0-5);
+    opacity: 1;
+}
+
+/* Hidden state — used at the carousel edges (prev on slide 0, next on the
+   last slide). Keeps the layout stable (still occupies space) while
+   removing visual + interactive presence. */
+.first-run-welcome__nav--hidden {
+    visibility: hidden;
+    pointer-events: none;
+    opacity: 0;
+}
+
+
+/* ============================================================================
+   Responsive + reduced motion
+   ============================================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+    .first-run-welcome,
+    .first-run-welcome__dismiss,
+    .first-run-welcome__toggle,
+    .first-run-welcome__nav,
+    .first-run-welcome__title,
+    .first-run-welcome__message {
+        transition: none;
+    }
+}
+
+@media (max-width: 640px) {
+    .first-run-welcome {
+        /* Top offset is already safe-area-aware in the base rule; only the
+           width needs adjusting for narrow viewports. */
+        width: calc(100vw - var(--space-6));
+    }
+}
+
+
+/* ============================================================================
+   Cycle Demo SVG (slide 3 — animated routine demonstration)
+
+   Renders inside .first-run-welcome__message when slide 3 is active. Three
+   task rows tick off in sequence, "Cycle Complete!" overlay fades in, then
+   the counter pulses and advances 0 → 1. All choreography is driven by
+   classList toggles fired from setTimeout in onboardingManager._buildCycleDemo
+   — no SMIL — so leaving the slide cleanly cancels everything.
+   ============================================================================ */
+:root {
+    /* Stroke + text sizing — kept here so future variants can tweak without
+       digging through the SVG markup. */
+    --cycle-demo-stroke-width: 1.5;
+    --cycle-demo-check-length: 12;         /* path length used for draw-in */
+    --cycle-demo-counter-pulse-duration: 600ms;
+    --cycle-demo-task-transition: 320ms;
+}
+
+.cycle-demo {
+    display: block;
+    width: 100%;
+    max-width: 280px;
+    height: auto;
+    /* Centered within the banner body — the SVG itself is internally
+       balanced (tasks left of divider, caption right of divider, counter
+       below), so centering reads cleanly without leaning the whole demo. */
+    margin: 0 auto;
+    /* Inherit white from the banner so the demo's <text> elements match the
+       new contrast strategy. (Was theme-modal-text — dark — which lost
+       contrast on the brighter regions of the glass gradient.) */
+    color: var(--color-white);
+    font-family: inherit;
+    /* Parent .first-run-welcome__message dims to 0.85 for text mode; the
+       SVG should render at full strength so the green check + accent pop. */
+    opacity: 1;
+    /* Reset the legacy `.cycle-demo` styling from onboarding.css (the class
+       name is shared with the older onboarding modal's cycle widget). Without
+       these overrides the new SVG inherits a white box, border, radius, and
+       padding — which appears as a card-inside-the-card visual bug. */
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 0;
+    box-shadow: none;
+}
+
+.cycle-demo text {
+    fill: currentColor;
+    font-size: 9px;
+    font-family: inherit;
+    font-weight: var(--font-weight-semibold);
+    /* SVG <text> doesn't honor text-shadow — use drop-shadow to mirror the
+       banner's dark halo for parity on the glass surface. */
+    filter: drop-shadow(0 var(--space-px) var(--space-px) rgba(0, 0, 0, 0.5));
+}
+
+.cycle-demo__counter {
+    font-weight: var(--font-weight-bold);
+    font-size: 10px;
+    opacity: 0.95;
+    /* Counter and "Cycle Complete!" overlay sit at the same SVG coordinates
+       (bottom-center). They crossfade via opacity so the swap reads as a
+       morph rather than two separate text blocks. */
+    transition: opacity 220ms ease;
+}
+
+.cycle-demo--complete .cycle-demo__counter {
+    opacity: 0;
+}
+
+.cycle-demo__count {
+    transform-box: fill-box;
+    transform-origin: center;
+    /* Inherit white from the demo. Was --theme-button-bg (theme purple/blue),
+       which lost contrast against the glass gradient. The parent .cycle-demo__counter
+       already provides bold weight + slight size bump for focal emphasis. */
+    fill: currentColor;
+}
+
+/* --- Task row --- */
+.cycle-demo__circle {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: var(--cycle-demo-stroke-width);
+    opacity: 0.8;
+    transition:
+        fill var(--cycle-demo-task-transition) ease,
+        opacity var(--cycle-demo-task-transition) ease,
+        stroke var(--cycle-demo-task-transition) ease;
+}
+
+.cycle-demo__task--done .cycle-demo__circle {
+    fill: var(--theme-button-bg, currentColor);
+    stroke: var(--theme-button-bg, currentColor);
+    opacity: 1;
+}
+
+.cycle-demo__check {
+    fill: none;
+    stroke: var(--pref-modal-bg, var(--theme-modal-bg, var(--color-white)));
+    stroke-width: var(--cycle-demo-stroke-width);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    /* Hidden by default — drawn in via stroke-dashoffset when --done lands. */
+    stroke-dasharray: var(--cycle-demo-check-length);
+    stroke-dashoffset: var(--cycle-demo-check-length);
+    transition: stroke-dashoffset var(--cycle-demo-task-transition) ease 80ms;
+}
+
+.cycle-demo__task--done .cycle-demo__check {
+    stroke-dashoffset: 0;
+}
+
+.cycle-demo__label {
+    transition: opacity var(--cycle-demo-task-transition) ease;
+}
+
+.cycle-demo__task--done .cycle-demo__label {
+    /* Bumped from 0.45 — with the new white-on-glass text, 0.45 dimmed
+       the labels into the gradient. The check icon still carries the
+       primary "done" signal; this just keeps the label readable. */
+    opacity: 0.7;
+}
+
+.cycle-demo__strike {
+    display: none;
+}
+
+/* --- Right-side caption + divider --- */
+/* Vertical line separating the task column from the explanatory caption.
+   Visible enough to read as a deliberate separator without competing with
+   the task ticks. */
+.cycle-demo__divider {
+    stroke: currentColor;
+    stroke-width: 0.7;
+    opacity: 0.45;
+}
+
+.cycle-demo__subtitle {
+    font-size: 7px;
+    fill: currentColor;
+    opacity: 0.95;
+    /* Slight letter spacing so the small text breathes at SVG render scale. */
+    letter-spacing: 0.1px;
+}
+
+/* Subtle bounce on the trailing directional arrow (e.g. `↓` in slide 4's
+   "below ↓" caption) so the eye is gently nudged toward the routine
+   visible underneath the banner. The animation runs as long as the SVG
+   is mounted; cleanup happens automatically when the slide changes. */
+.cycle-demo__arrow {
+    fill: var(--theme-button-bg, currentColor);
+    font-weight: var(--font-weight-bold);
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: cycle-demo-arrow-bounce 1.4s ease-in-out infinite;
+}
+
+@keyframes cycle-demo-arrow-bounce {
+    0%, 100% { translate: 0 0; }
+    50%      { translate: 0 3px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cycle-demo__arrow {
+        animation: none;
+    }
+}
+
+/* --- "Cycle Complete!" overlay --- */
+/* Positioned at the SAME (x, y) as the counter so toggling --complete
+   reads as the counter morphing into the celebratory text and back. */
+.cycle-demo__complete {
+    font-size: 10px;
+    font-weight: var(--font-weight-bold);
+    fill: var(--theme-button-bg, currentColor);
+    opacity: 0;
+    transition: opacity 220ms ease;
+}
+
+.cycle-demo--complete .cycle-demo__complete {
+    opacity: 1;
+}
+
+/* --- Counter pulse on 0 → 1 update --- */
+.cycle-demo--counter-pulse .cycle-demo__count {
+    animation: cycle-demo-count-pulse var(--cycle-demo-counter-pulse-duration) ease;
+}
+
+@keyframes cycle-demo-count-pulse {
+    0%   { transform: scale(1); }
+    45%  { transform: scale(1.55); fill: var(--theme-button-bg, currentColor); }
+    100% { transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cycle-demo *,
+    .cycle-demo__count {
+        animation: none !important;
+        transition: none !important;
+    }
+    .cycle-demo__check {
+        stroke-dashoffset: 0;
+    }
+    .cycle-demo__complete {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+
+/* ============================================================================
+   First-Run Splash (typewriter intro)
+
+   Full-viewport black overlay shown for first-time users only. The title
+   "Welcome to miniCycle" types in character-by-character, then the splash
+   fades out, revealing the focus-mode UI (with the welcome banner) behind.
+
+   The title is positioned to match the welcome banner's title location so
+   the text appears continuous as the splash fades.
+   ============================================================================ */
+
+.first-run-splash {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-overlay-critical);
+    background: var(--color-black);
+    color: var(--color-white);
+    pointer-events: auto;
+    cursor: pointer;
+    /* Center the title (two-line layout) in the middle of the entire
+       viewport — vertically AND horizontally — so "Welcome to / miniCycle"
+       reads as a centered hero before the splash fades to reveal the
+       banner at the top. */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: env(safe-area-inset-top, 0px) var(--space-4) env(safe-area-inset-bottom, 0px);
+    box-sizing: border-box;
+    /* Default opacity 1 — splash is opaque while letters animate. */
+    opacity: 1;
+    transition: opacity var(--first-run-splash-fade-duration) ease;
+
+    /* Total time for phase 1 (fade-in cascade) — derived from the last
+       letter's index (set by JS via --last-char-index). Phase 2 (shrink)
+       starts at exactly this offset, so the moment the last letter
+       finishes fading in, the first letter starts shrinking. */
+    --first-run-splash-phase1-total: calc(
+        var(--last-char-index, 19) * var(--first-run-splash-char-stagger)
+        + var(--first-run-splash-char-duration)
+    );
+}
+
+.first-run-splash--fading {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.first-run-splash__title {
+    /* Title is a flex column — child .first-run-splash__line blocks stack
+       vertically with `gap` controlling the space between them. The whole
+       title is centered in the parent splash by its flex centering. */
+    display: flex;
+    flex-direction: column;
+    gap: var(--first-run-splash-line-gap);
+    align-items: center;
+    margin: 0;
+    padding: 0;
+    /* Must match the slide-0 banner title's font-size so phase 2 (shrink)
+       lands the splash letters at the EXACT size of the banner title they
+       fade into. Phase 3 (word-landing) translates them to the banner's
+       title position via Range API — combined, the handoff is seamless. */
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-bold);
+    line-height: var(--line-height-tight);
+    text-align: center;
+    letter-spacing: 0;
+}
+
+/* Each whitespace-separated word in the splash sits on its own line, so the
+   title reads as three vertical centered lines: "Welcome" / "to" / "miniCycle". */
+.first-run-splash__line {
+    display: block;
+    text-align: center;
+    white-space: nowrap;
+}
+
+/* Space characters within a line ("Welcome to") get an explicit width so
+   there's a visible gap between words at the final scale-1 state. The
+   transform/scale animations still apply (the span has its own --char-index
+   and animates with its neighbors), but visually only the width matters. */
+.first-run-splash__char--space {
+    width: var(--first-run-splash-word-gap, 0.7em);
+}
+
+/* Word groups wrap consecutive non-space chars so phase 3 can translate
+   each word as a unit to its exact banner position. The translation
+   targets are computed by JS at phase-3 start (banner word rect minus
+   splash word rect), set as --phase3-dx / --phase3-dy on each word. */
+.first-run-splash__word {
+    display: inline-block;
+}
+
+.first-run-splash__word--landing {
+    animation: first-run-splash-word-land
+        var(--first-run-splash-land-duration, 900ms)
+        cubic-bezier(0.65, 0, 0.35, 1)
+        forwards;
+}
+
+@keyframes first-run-splash-word-land {
+    from {
+        translate: 0 0;
+    }
+    to {
+        translate: var(--phase3-dx, 0) var(--phase3-dy, 0);
+    }
+}
+
+.first-run-splash__char {
+    display: inline-block;
+    transform-origin: center;
+    /* Default state: invisible at peak size, pushed outward from line
+       center so big letters don't crowd each other during phase 1.
+       Phase 1 fades the letter in at this size + spread; phase 2 shrinks
+       AND collapses translate back to 0 in lockstep. animation-fill-mode
+       "forwards" lets each animation hold its end state. */
+    opacity: 0;
+    scale: var(--first-run-splash-char-start-scale, 12);
+    translate: calc(var(--letter-pos, 0) * var(--first-run-splash-letter-spread, 0px)) 0;
+
+    animation:
+        first-run-splash-fade-in
+            var(--first-run-splash-char-duration)
+            ease-out
+            forwards,
+        first-run-splash-shrink
+            var(--first-run-splash-char-duration)
+            cubic-bezier(0.33, 1, 0.68, 1)
+            forwards;
+    animation-delay:
+        calc(var(--char-index, 0) * var(--first-run-splash-char-stagger)),
+        calc(var(--first-run-splash-phase1-total) + var(--char-index, 0) * var(--first-run-splash-char-stagger));
+}
+
+/* Whitespace chars need to render width even with opacity 0; otherwise the
+   non-breaking-space approach lets layout reflow as chars fade in. */
+.first-run-splash__char--space {
+    width: 0.32em;
+}
+
+/* Phase 1 — fade letter in at peak size (left to right). */
+@keyframes first-run-splash-fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+/* Phase 2 — shrink letter down into its banner-title spot. Both scale and
+   translate animate together so big-and-spread letters return to natural
+   inline-block positions at scale 1. */
+@keyframes first-run-splash-shrink {
+    from {
+        scale: var(--first-run-splash-char-start-scale, 12);
+        translate: calc(var(--letter-pos, 0) * var(--first-run-splash-letter-spread, 0px)) 0;
+    }
+    to {
+        scale: 1;
+        translate: 0 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .first-run-splash {
+        transition: opacity var(--transition-fast) ease;
+    }
+    .first-run-splash__char {
+        animation: none;
+        opacity: 1;
+    }
+}

@@ -1,0 +1,166 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Background & Theming
+   SVG pattern, custom backgrounds, image display modes, and theme overlays
+   Pattern SVG source: assets/images/pattern.svg
+
+   The SVG pattern lives on body::before (position:fixed) so it stays locked
+   in place on mobile touch-drag. The gradient/color/image backgrounds stay
+   on body itself.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Gradient background on body ── */
+body {
+    background: var(--theme-bg-gradient);
+    position: relative;
+    z-index: 0; /* Creates stacking context so ::before renders above gradient */
+    padding-top: 0; /* Header handles safe area */
+    padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* ── SVG pattern overlay (fixed, doesn't move on mobile touch) ── */
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1; /* Above body's gradient background, below body's content */
+    background-image: url("../../assets/images/pattern.svg");
+    background-repeat: repeat;
+    background-size: 400px 400px;
+    pointer-events: none;
+}
+
+/* Per-theme SVG patterns — keyed off html[data-vocab-theme] set by themeManager.
+   Only background-image is overridden; repeat and size inherit from the base rule. */
+html[data-vocab-theme="habit-tracker"] body::before {
+    background-image: url("../../assets/images/pattern-habit-tracker.svg");
+}
+html[data-vocab-theme="fitness"] body::before {
+    background-image: url("../../assets/images/pattern-fitness.svg");
+}
+html[data-vocab-theme="scholar"] body::before {
+    background-image: url("../../assets/images/pattern-scholar.svg");
+}
+html[data-vocab-theme="cleaning"] body::before {
+    background-image: url("../../assets/images/pattern-cleaning.svg");
+}
+
+/* Custom app background color (Preferences - Default theme only) */
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) {
+    background: var(--pref-app-bg, var(--theme-bg-gradient));
+    background-size: cover;
+}
+
+/* Vocab theme background — belt-and-suspenders selector for vocab themes.
+   themeManager sets --pref-app-bg on body.style directly (not html), so the
+   body always has a tracked dependency on the var and repaints immediately.
+   This rule provides an extra specificity layer as a fallback. */
+html[data-vocab-theme] body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) {
+    background: var(--pref-app-bg, var(--theme-bg-gradient));
+    background-size: cover;
+}
+
+/* Custom pattern color (Preferences - Default and dark mode) */
+body.custom-pattern:not(.theme-dark-ocean):not(.theme-golden-glow):not(.no-bg-pattern)::before {
+    background: var(--custom-pattern-bg) repeat;
+    background-size: 400px 400px;
+}
+
+/* Dark mode pattern — reduce intensity so it's subtler against dark backgrounds */
+body.dark-mode::before {
+    opacity: 0.45;
+}
+
+/* Hide background pattern when toggle is off */
+body.no-bg-pattern::before {
+    display: none;
+}
+
+body.no-bg-pattern {
+    background: var(--theme-bg-gradient);
+    background-color: var(--theme-bg-solid);
+}
+
+/* Match specificity of the pattern rule above (0,3,1) + .no-bg-pattern = (0,4,1) */
+body.no-bg-pattern:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) {
+    background: var(--pref-app-bg, var(--theme-bg-gradient));
+    background-size: cover;
+}
+
+/* Custom background image (from personalization) */
+/* Use high specificity to override pattern rules */
+body.has-bg-image,
+body.has-bg-image:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) {
+    background: var(--custom-bg-image);
+    background-color: var(--theme-bg-solid);
+}
+
+/* Hide pattern over custom background images */
+body.has-bg-image::before {
+    display: none;
+}
+
+/* Background image display modes - specificity (0,4,1) to override pattern rules */
+body.has-bg-image.bg-mode-cover,
+body.has-bg-image.bg-mode-cover:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) {
+    background: var(--custom-bg-image) center/cover no-repeat;
+    background-color: var(--theme-bg-solid);
+}
+
+body.has-bg-image.bg-mode-center,
+body.has-bg-image.bg-mode-center:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) {
+    background: var(--custom-bg-image) center/auto no-repeat;
+    background-color: var(--theme-bg-solid);
+}
+
+body.has-bg-image.bg-mode-tile,
+body.has-bg-image.bg-mode-tile:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) {
+    background: var(--custom-bg-image) top left/auto repeat;
+    background-color: var(--theme-bg-solid);
+}
+
+/* Dark mode overlay for custom background images */
+body.dark-mode.has-bg-image.bg-mode-cover,
+body.theme-dark-ocean.has-bg-image.bg-mode-cover {
+    background:
+        linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)),
+        var(--custom-bg-image) center/cover no-repeat;
+    background-color: var(--theme-bg-solid);
+}
+
+body.dark-mode.has-bg-image.bg-mode-center,
+body.theme-dark-ocean.has-bg-image.bg-mode-center {
+    background:
+        linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)),
+        var(--custom-bg-image) center/auto no-repeat;
+    background-color: var(--theme-bg-solid);
+}
+
+body.dark-mode.has-bg-image.bg-mode-tile,
+body.theme-dark-ocean.has-bg-image.bg-mode-tile {
+    background:
+        linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)),
+        var(--custom-bg-image) top left/auto repeat;
+    background-color: var(--theme-bg-solid);
+}
+
+/* Golden Glow theme - lighter overlay to preserve warm tones */
+body.theme-golden-glow.has-bg-image.bg-mode-cover {
+    background:
+        linear-gradient(rgba(30, 20, 0, 0.4), rgba(30, 20, 0, 0.4)),
+        var(--custom-bg-image) center/cover no-repeat;
+    background-color: var(--theme-bg-solid);
+}
+
+body.theme-golden-glow.has-bg-image.bg-mode-center {
+    background:
+        linear-gradient(rgba(30, 20, 0, 0.4), rgba(30, 20, 0, 0.4)),
+        var(--custom-bg-image) center/auto no-repeat;
+    background-color: var(--theme-bg-solid);
+}
+
+body.theme-golden-glow.has-bg-image.bg-mode-tile {
+    background:
+        linear-gradient(rgba(30, 20, 0, 0.4), rgba(30, 20, 0, 0.4)),
+        var(--custom-bg-image) top left/auto repeat;
+    background-color: var(--theme-bg-solid);
+}

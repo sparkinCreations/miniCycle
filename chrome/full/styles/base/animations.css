@@ -1,0 +1,434 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Animations
+   Centralized @keyframes definitions (deduplicated)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* =============================================================================
+   FADE ANIMATIONS
+   ============================================================================= */
+
+/* Simple fade in */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Simple fade out */
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+/* Fade in and out (for temporary elements) */
+@keyframes fadeInOut {
+    0% { opacity: 0; }
+    20% { opacity: 1; }
+    80% { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+/* Fade out with scale (for modal close transitions) */
+@keyframes fadeOutScale-modal {
+    from { opacity: 1; transform: scale(1); }
+    to { opacity: 0; transform: scale(0.95); }
+}
+
+/* Fade out with scale (for cycle completion — legacy, kept for clear animation) */
+@keyframes fadeOutScale {
+    0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+}
+
+/* Bounce in then fade out (cycle completion checkmark).
+   Each frame's `transform` includes --cycle-complete-y-offset (default 0px)
+   so the JS-set offset for welcome-banner mode persists through the
+   animation. Without this, the animation would clobber the centered-on-
+   task-list translate and the checkmark would snap back to viewport center. */
+@keyframes completionBounce {
+    0%   { opacity: 0; transform: translate(-50%, calc(-50% + var(--cycle-complete-y-offset, 0px))) scale(0.3); }
+    20%  { opacity: 1; transform: translate(-50%, calc(-50% + var(--cycle-complete-y-offset, 0px))) scale(1.15); }
+    35%  { opacity: 1; transform: translate(-50%, calc(-50% + var(--cycle-complete-y-offset, 0px))) scale(0.95); }
+    50%  { opacity: 1; transform: translate(-50%, calc(-50% + var(--cycle-complete-y-offset, 0px))) scale(1); }
+    75%  { opacity: 1; transform: translate(-50%, calc(-50% + var(--cycle-complete-y-offset, 0px))) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, calc(-50% + var(--cycle-complete-y-offset, 0px))) scale(0.9); }
+}
+
+
+/* =============================================================================
+   SLIDE ANIMATIONS
+   ============================================================================= */
+
+/* Slide up with fade */
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Slide down with fade */
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-30px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Notification slide in (from top) */
+@keyframes notificationSlideIn {
+    0% {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Notification slide out (to top) */
+@keyframes notificationSlideOut {
+    0% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+    }
+}
+
+
+/* =============================================================================
+   SCALE ANIMATIONS
+   ============================================================================= */
+
+/* Fade in with scale */
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Fade in up (for modals and overlays) */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Pop in (for achievements, badges) */
+@keyframes popIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.5);
+    }
+    70% {
+        transform: scale(1.1);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Bounce (for attention) */
+@keyframes bounce {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+
+/* =============================================================================
+   ROTATION ANIMATIONS
+   ============================================================================= */
+
+/* Continuous spin (for loading indicators) */
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Pull-to-refresh spin */
+@keyframes pull-refresh-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+
+/* =============================================================================
+   BADGE TAP ANIMATIONS (contextual micro-interactions per milestone emoji)
+   ============================================================================= */
+
+/* 🔥 Habit Tracker — flame flicker */
+@keyframes badge-flicker {
+    0%, 100% {
+        filter: brightness(1);
+        transform: scale(1);
+    }
+    40% {
+        filter: brightness(1.6) drop-shadow(0 0 6px var(--color-flame-glow));
+        transform: scale(1.15);
+    }
+    70% {
+        filter: brightness(1.2);
+        transform: scale(0.95);
+    }
+}
+
+/* 💪 Fitness — muscle flex */
+@keyframes badge-flex {
+    0%, 100% {
+        transform: scaleY(1);
+    }
+    30% {
+        transform: scaleY(1.25) translateY(-2px);
+    }
+    60% {
+        transform: scaleY(0.9);
+    }
+}
+
+/* 📚 Scholar — book bob */
+@keyframes badge-bob {
+    0%, 100% {
+        transform: translateY(0) rotateZ(0);
+    }
+    40% {
+        transform: translateY(-5px) rotateZ(-4deg);
+    }
+    70% {
+        transform: translateY(-2px) rotateZ(3deg);
+    }
+}
+
+/* 🧹 Cleaning — broom sweep */
+@keyframes badge-sweep {
+    0%, 100% {
+        transform: rotate(0);
+    }
+    30% {
+        transform: rotate(-18deg);
+    }
+    60% {
+        transform: rotate(12deg);
+    }
+}
+
+/* 👑 Crowned — crown shine */
+@keyframes badge-shine {
+    0%, 100% {
+        transform: translateY(0);
+        filter: brightness(1);
+    }
+    50% {
+        transform: translateY(-3px);
+        filter: brightness(1.4) drop-shadow(0 0 6px var(--color-gold-glow));
+    }
+}
+
+
+/* =============================================================================
+   PULSE ANIMATIONS
+   ============================================================================= */
+
+/* Subtle pulse (for active states) */
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+/* Glow pulse (for highlights) */
+@keyframes glowPulse {
+    0%, 100% {
+        box-shadow: var(--shadow-glow-blue-sm);
+    }
+    50% {
+        box-shadow: var(--shadow-glow-blue-lg);
+    }
+}
+
+
+/* Shimmer sweep (attention-drawing shine effect) */
+@keyframes shimmer {
+    0% {
+        background-position: -200% center;
+    }
+    100% {
+        background-position: 200% center;
+    }
+}
+
+/* =============================================================================
+   SHAKE ANIMATIONS
+   ============================================================================= */
+
+/* Error shake (for validation) */
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+
+/* =============================================================================
+   UTILITY CLASSES FOR ANIMATIONS
+   ============================================================================= */
+
+/* Animation timing utilities */
+.animate-fade-in {
+    animation: fadeIn var(--transition-normal) ease-out;
+}
+
+.animate-fade-out {
+    animation: fadeOut var(--transition-normal) ease-out;
+}
+
+.animate-slide-up {
+    animation: slideUp var(--transition-normal) ease-out;
+}
+
+.animate-slide-down {
+    animation: slideDown var(--transition-normal) ease-out;
+}
+
+.animate-pop-in {
+    animation: popIn var(--animation-pop) cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.animate-spin {
+    animation: spin var(--animation-spin) linear infinite;
+}
+
+.animate-pulse {
+    animation: pulse var(--animation-pulse) ease-in-out infinite;
+}
+
+.animate-bounce {
+    animation: bounce var(--transition-slow) ease-in-out;
+}
+
+.animate-shake {
+    animation: shake var(--transition-slow) ease-in-out;
+}
+
+/* Animation delay utilities */
+.animation-delay-100 { animation-delay: 100ms; }
+.animation-delay-200 { animation-delay: 200ms; }
+.animation-delay-300 { animation-delay: 300ms; }
+.animation-delay-500 { animation-delay: 500ms; }
+
+/* Animation fill mode utilities */
+.animation-fill-forwards { animation-fill-mode: forwards; }
+.animation-fill-backwards { animation-fill-mode: backwards; }
+.animation-fill-both { animation-fill-mode: both; }
+
+
+/* =============================================================================
+   TASK RESET ANIMATION
+   ============================================================================= */
+
+/* Task reset flash - brief highlight when task is unchecked during cycle reset */
+@keyframes taskResetFlash {
+    0% {
+        background-color: inherit;
+        transform: scale(1);
+    }
+    30% {
+        background-color: var(--pref-reset-flash, rgba(76, 175, 80, 0.3));
+        transform: scale(1.04);
+    }
+    100% {
+        background-color: inherit;
+        transform: scale(1);
+    }
+}
+
+/* Class applied to tasks during reset */
+.task-resetting {
+    animation: taskResetFlash var(--animation-pop) ease-out;
+}
+
+/* Task clear/delete - fade out and shrink when task is removed */
+@keyframes taskClearOut {
+    0% {
+        opacity: 1;
+        transform: scale(1) translateX(0);
+        max-height: 100px;
+    }
+    50% {
+        opacity: 0.5;
+        transform: scale(0.95) translateX(10px);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(0.9) translateX(20px);
+        max-height: 0;
+        padding: 0;
+        margin: 0;
+    }
+}
+
+/* Class applied to tasks being cleared/deleted */
+.task-clearing {
+    animation: taskClearOut var(--transition-normal) ease-in forwards;
+    overflow: hidden;
+}
+
+
+/* =============================================================================
+   REDUCED MOTION
+   Note: variables.css already sets --transition-* and --animation-* to 0ms,
+   which handles most cases. This block catches animation shorthand classes
+   and ensures final states are applied instantly without motion.
+   ============================================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+    .animate-fade-in,
+    .animate-fade-out,
+    .animate-slide-up,
+    .animate-slide-down,
+    .animate-pop-in,
+    .animate-spin,
+    .animate-pulse,
+    .animate-bounce,
+    .animate-shake,
+    .task-resetting,
+    .task-clearing {
+        animation: none;
+    }
+
+    .task-clearing {
+        opacity: 0;
+        max-height: 0;
+        padding: 0;
+        margin: 0;
+    }
+}

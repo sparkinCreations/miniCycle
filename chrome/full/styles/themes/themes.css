@@ -1,0 +1,280 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Theme Definitions
+   CSS-native theme overrides using [data-theme] attribute on <html>.
+
+   Usage: document.documentElement.dataset.theme = 'dark-ocean'
+          delete document.documentElement.dataset.theme  (reset to default)
+
+   The default theme values live in styles/base/variables.css (:root).
+   Only non-default themes need overrides here.
+
+   See styles/themes/definitions/*.json for the source-of-truth token values
+   (used for documentation and custom theme import/export).
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* =============================================================================
+   DARK THEME
+   ============================================================================= */
+
+:root[data-theme="dark"] {
+    /* Backgrounds */
+    --theme-bg-gradient:            linear-gradient(135deg, #1a1a2e, #16213e);
+    --theme-bg-solid:               #2a2a2a;
+    --theme-bg-surface:             rgba(45, 45, 55, 0.95);
+    --theme-bg-surface-elevated:    #3a3a4a;
+
+    /* Text */
+    --theme-text-primary:           #ffffff;
+    --theme-text-secondary:         rgba(255, 255, 255, 0.8);
+    --theme-text-on-surface:        #e0e0e0;
+    --theme-text-muted:             #a0a0a0;
+
+    /* Header */
+    --theme-header-bg:              #2a2a2a;
+    --theme-header-text:            #ffffff;
+    --theme-header-border:          rgba(255, 255, 255, 0.1);
+
+    /* Card */
+    --theme-card-bg:                rgba(45, 45, 55, 0.95);
+    --theme-card-border:            rgba(255, 255, 255, 0.1);
+    --theme-card-shadow:            0 4px 6px rgba(0, 0, 0, 0.3);
+
+    /* Input */
+    --theme-input-bg:               #3a3a4a;
+    --theme-input-text:             #e0e0e0;
+    --theme-input-border:           #555555;
+    --theme-input-focus-border:     #74c0fc;
+    --theme-input-placeholder:      #888888;
+
+    /* Button */
+    --theme-button-primary-bg:          #4c79ff;
+    --theme-button-primary-text:        #ffffff;
+    --theme-button-primary-hover-bg:    #5a87ff;
+    --theme-button-secondary-bg:        #4a4a5a;
+    --theme-button-secondary-text:      #e0e0e0;
+    --theme-button-secondary-hover-bg:  #5a5a6a;
+
+    /* Modal */
+    --theme-modal-bg:           #2d2d3d;
+    --theme-modal-text:         #e0e0e0;
+    --theme-modal-border:       rgba(255, 255, 255, 0.1);
+    --theme-modal-overlay:      rgba(0, 0, 0, 0.7);
+    --theme-modal-header-bg:    #3a3a4a;
+    --theme-modal-footer-bg:    #252535;
+
+    /* Notification */
+    --theme-notification-bg:    #3a3a4a;
+    --theme-notification-text:  #ffffff;
+
+    /* Task */
+    --theme-task-bg:            rgba(45, 45, 55, 0.95);
+    --theme-task-text:          #e0e0e0;
+    --theme-task-completed-bg:  rgba(40, 100, 60, 0.8);
+    --theme-task-completed-text:#a0d0a0;
+    --theme-task-border:        rgba(255, 255, 255, 0.1);
+    --theme-task-checkmark:     #48c764;
+
+    /* Progress */
+    --theme-progress-track-bg:  rgba(255, 255, 255, 0.1);
+    --theme-progress-fill-bg:   #74c0fc;
+    --theme-progress-text:      #e0e0e0;
+
+    /* Stats panel */
+    --theme-stats-bg:           rgba(45, 45, 55, 0.95);
+    --theme-stats-text:         #e0e0e0;
+    --theme-stats-border:       rgba(255, 255, 255, 0.1);
+
+    /* UI interaction */
+    --theme-hover-bg:           rgba(255, 255, 255, 0.08);
+    --theme-selected-bg:        rgba(74, 121, 255, 0.25);
+    --theme-accent:             #74c0fc;
+    --theme-accent-hover:       #a0d4ff;
+    --theme-border:             rgba(255, 255, 255, 0.15);
+    --theme-section-bg:         rgba(255, 255, 255, 0.03);
+    --theme-success-hover:      #36a35a;
+    --theme-error:              #ff6b6b;
+}
+
+/* =============================================================================
+   DARK OCEAN THEME
+   ============================================================================= */
+
+:root[data-theme="dark-ocean"] {
+    /* Backgrounds */
+    --theme-bg-gradient:            linear-gradient(135deg, #1a3a4f, #0c1724);
+    --theme-bg-solid:               #0e1d2f;
+    --theme-bg-surface:             rgba(16, 36, 57, 0.95);
+    --theme-bg-surface-elevated:    #244d6a;
+
+    /* Text */
+    --theme-text-primary:           #e0f7fa;
+    --theme-text-secondary:         rgba(224, 247, 250, 0.8);
+    --theme-text-on-surface:        #f0faff;
+    --theme-text-muted:             #a2d9ff;
+
+    /* Semantic overrides */
+    --theme-color-success:          #4ecdc4;
+    --theme-color-success-light:    #81d4c4;
+    --theme-color-warning:          #ffc107;
+    --theme-color-warning-light:    #ffda6a;
+    --theme-color-error:            #ff6b6b;
+    --theme-color-error-light:      #ff9999;
+    --theme-color-info:             #4ecdc4;
+
+    /* Header */
+    --theme-header-bg:              #1a3a4f;
+    --theme-header-text:            #e0f7fa;
+    --theme-header-border:          rgba(78, 205, 196, 0.3);
+
+    /* Card */
+    --theme-card-bg:                rgba(16, 36, 57, 0.95);
+    --theme-card-border:            rgba(78, 205, 196, 0.2);
+    --theme-card-shadow:            0 4px 6px rgba(0, 0, 0, 0.3);
+
+    /* Input */
+    --theme-input-bg:               #244d6a;
+    --theme-input-text:             #f0faff;
+    --theme-input-border:           rgba(78, 205, 196, 0.3);
+    --theme-input-focus-border:     #4ecdc4;
+    --theme-input-placeholder:      #7ab8d4;
+
+    /* Button */
+    --theme-button-primary-bg:          #4ecdc4;
+    --theme-button-primary-text:        #18304a;
+    --theme-button-primary-hover-bg:    #36b1a8;
+    --theme-button-secondary-bg:        #244d6a;
+    --theme-button-secondary-text:      #e0f7fa;
+    --theme-button-secondary-hover-bg:  #2e5e80;
+
+    /* Modal */
+    --theme-modal-bg:           #18304a;
+    --theme-modal-text:         #e0f7fa;
+    --theme-modal-border:       rgba(78, 205, 196, 0.2);
+    --theme-modal-overlay:      rgba(0, 0, 0, 0.7);
+    --theme-modal-header-bg:    #1e3a4f;
+    --theme-modal-footer-bg:    #142535;
+
+    /* Notification */
+    --theme-notification-bg:    #244d6a;
+    --theme-notification-text:  #e0f7fa;
+
+    /* Task */
+    --theme-task-bg:            rgba(36, 77, 106, 0.9);
+    --theme-task-text:          #f0faff;
+    --theme-task-completed-bg:  #3a7ca5;
+    --theme-task-completed-text:#e0f7fa;
+    --theme-task-border:        rgba(78, 205, 196, 0.2);
+    --theme-task-checkmark:     #4ecdc4;
+
+    /* Progress */
+    --theme-progress-track-bg:  rgba(78, 205, 196, 0.2);
+    --theme-progress-fill-bg:   #4ecdc4;
+    --theme-progress-text:      #e0f7fa;
+
+    /* Stats panel */
+    --theme-stats-bg:           rgba(16, 36, 57, 0.95);
+    --theme-stats-text:         #e0f7fa;
+    --theme-stats-border:       rgba(78, 205, 196, 0.2);
+
+    /* UI interaction */
+    --theme-hover-bg:           rgba(78, 205, 196, 0.1);
+    --theme-selected-bg:        rgba(78, 205, 196, 0.2);
+    --theme-accent:             #4ecdc4;
+    --theme-accent-hover:       #36b1a8;
+    --theme-border:             rgba(78, 205, 196, 0.3);
+    --theme-section-bg:         rgba(78, 205, 196, 0.05);
+    --theme-success-hover:      #3ab0a8;
+    --theme-error:              #ff6b6b;
+}
+
+/* =============================================================================
+   GOLDEN GLOW THEME
+   ============================================================================= */
+
+:root[data-theme="golden-glow"] {
+    /* Backgrounds */
+    --theme-bg-gradient:            linear-gradient(135deg, #fff9e0, #ffe066);
+    --theme-bg-solid:               #ffd700;
+    --theme-bg-surface:             rgba(255, 251, 230, 0.95);
+    --theme-bg-surface-elevated:    #fffbe6;
+
+    /* Text */
+    --theme-text-primary:           #4a3d00;
+    --theme-text-secondary:         rgba(74, 61, 0, 0.8);
+    --theme-text-on-surface:        #333333;
+    --theme-text-muted:             #6f5400;
+
+    /* Semantic overrides */
+    --theme-color-success:          #28a745;
+    --theme-color-success-light:    #48c764;
+    --theme-color-warning:          #e6ac00;
+    --theme-color-warning-light:    #ffcc33;
+    --theme-color-error:            #dc3545;
+    --theme-color-error-light:      #f1737e;
+    --theme-color-info:             #d4a700;
+
+    /* Header */
+    --theme-header-bg:              #ffd700;
+    --theme-header-text:            #4a3d00;
+    --theme-header-border:          rgba(255, 215, 0, 0.3);
+
+    /* Card */
+    --theme-card-bg:                #fffbe6;
+    --theme-card-border:            rgba(255, 215, 0, 0.3);
+    --theme-card-shadow:            0 4px 6px rgba(255, 215, 0, 0.2);
+
+    /* Input */
+    --theme-input-bg:               #ffffff;
+    --theme-input-text:             #333333;
+    --theme-input-border:           rgba(255, 215, 0, 0.4);
+    --theme-input-focus-border:     #d4a700;
+    --theme-input-placeholder:      #a08500;
+
+    /* Button */
+    --theme-button-primary-bg:          #ffd700;
+    --theme-button-primary-text:        #4a3d00;
+    --theme-button-primary-hover-bg:    #e6be00;
+    --theme-button-secondary-bg:        #ffe477;
+    --theme-button-secondary-text:      #4a3d00;
+    --theme-button-secondary-hover-bg:  #ffed4e;
+
+    /* Modal */
+    --theme-modal-bg:           #fffbe6;
+    --theme-modal-text:         #4a3d00;
+    --theme-modal-border:       rgba(255, 215, 0, 0.3);
+    --theme-modal-overlay:      rgba(0, 0, 0, 0.4);
+    --theme-modal-header-bg:    #fff9e0;
+    --theme-modal-footer-bg:    #fff2b8;
+
+    /* Notification */
+    --theme-notification-bg:    #ffd700;
+    --theme-notification-text:  #4a3d00;
+
+    /* Task */
+    --theme-task-bg:            #fffbe6;
+    --theme-task-text:          #4a3d00;
+    --theme-task-completed-bg:  #fff2b8;
+    --theme-task-completed-text:#6f5400;
+    --theme-task-border:        rgba(255, 215, 0, 0.3);
+    --theme-task-checkmark:     #28a745;
+
+    /* Progress */
+    --theme-progress-track-bg:  rgba(255, 215, 0, 0.2);
+    --theme-progress-fill-bg:   #d4a700;
+    --theme-progress-text:      #4a3d00;
+
+    /* Stats panel */
+    --theme-stats-bg:           #fffbe6;
+    --theme-stats-text:         #4a3d00;
+    --theme-stats-border:       rgba(255, 215, 0, 0.3);
+
+    /* UI interaction */
+    --theme-hover-bg:           rgba(255, 215, 0, 0.12);
+    --theme-selected-bg:        rgba(212, 167, 0, 0.2);
+    --theme-accent:             #d4a700;
+    --theme-accent-hover:       #b89000;
+    --theme-border:             rgba(255, 215, 0, 0.4);
+    --theme-section-bg:         rgba(255, 215, 0, 0.05);
+    --theme-success-hover:      #218838;
+    --theme-error:              #dc3545;
+}

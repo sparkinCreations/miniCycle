@@ -1,0 +1,1764 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Dark Mode Utilities
+   Dark mode specific overrides and adjustments.
+   All colors reference CSS variables — no hardcoded hex values in selectors.
+   Note: Most theming is handled by CSS variables in variables.css.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* =============================================================================
+   DARK MODE BASE
+   Note: html.dark-mode is set early by inline script before body exists
+         body.dark-mode is set later by JavaScript
+   ============================================================================= */
+
+html.dark-mode,
+body.dark-mode {
+    background: linear-gradient(135deg, var(--dark-bg-start), var(--dark-surface-primary));
+    color: var(--theme-text-primary);
+
+    /* Shadow overrides — darker shadows for dark backgrounds */
+    --shadow-xs: 0 1px 3px rgba(0, 0, 0, 0.3);
+    --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.5);
+    --shadow-md: 0 1px 4px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 2px 4px rgba(0, 0, 0, 0.3);
+    --shadow-button: 0 1px 3px rgba(0, 0, 0, 0.3);
+    --shadow-button-hover: 0 2px 4px rgba(0, 0, 0, 0.4);
+    --shadow-input: 0 4px 6px rgba(0, 0, 0, 0.4);
+    --shadow-dropdown: 0 4px 12px rgba(0, 0, 0, 0.4);
+    --shadow-toast: 0 8px 20px rgba(0, 0, 0, 0.5);
+    --shadow-modal-heavy: 0 0 24px rgba(0, 0, 0, 0.7);
+    --shadow-modal-compound: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.08);
+    --shadow-inner-border: inset 0 0 0 1px rgba(255, 255, 255, 0.15);
+    --text-shadow-md: 0 1px 2px rgba(0, 0, 0, 0.5);
+
+    /* Panel overrides (help window + quick actions) */
+    --pref-panel-bg: rgba(61, 61, 64, 0.85);
+    --pref-panel-border: rgba(255, 255, 255, 0.2);
+}
+
+/* =============================================================================
+   DARK MODE VARIABLE OVERRIDES (Only when no custom theme is active)
+   When a CSS theme is applied via [data-theme] on <html>, the theme variables
+   in themes.css take precedence. Dark-mode overrides only apply when no theme
+   is selected (default blue theme + dark mode toggle).
+   ============================================================================= */
+
+html.dark-mode:not([data-theme]),
+body.dark-mode:not([data-theme]) {
+
+    /* ─── Dark mode palette ─── */
+    --dark-bg-start: #1c1c1c;
+    --dark-surface-primary: #2a2a2a;
+    --dark-surface-secondary: #333333;
+    --dark-surface-deep: #222222;
+    --dark-surface-muted: #5a5a5a;
+    --dark-surface-recurrence: #656565;
+    --dark-button-bg: #444444;
+    --dark-button-hover-bg: #555555;
+    --dark-button-border: rgba(255, 255, 255, 0.15);
+    --dark-button-border-bottom: rgba(0, 0, 0, 0.3);
+    --dark-border-subtle: #666666;
+    --dark-border-hover: #777777;
+    /* White overlays for dark backgrounds */
+    --dark-overlay-subtle: rgba(255, 255, 255, 0.08);
+    --dark-overlay-light: rgba(255, 255, 255, 0.1);
+    --dark-overlay-medium: rgba(255, 255, 255, 0.15);
+    --dark-overlay-strong: rgba(255, 255, 255, 0.2);
+    --dark-overlay-heavy: rgba(30, 30, 30, 0.8);
+    --dark-overlay-faint: rgba(255, 255, 255, 0.03);
+    /* Blue highlight overrides (stronger for dark bg visibility) */
+    --highlight-blue-bg: rgba(74, 144, 226, 0.15);
+    --highlight-blue-border: rgba(74, 144, 226, 0.4);
+    --dark-text-dim: #aaaaaa;
+    --dark-text-subdued: #dddddd;
+    --dark-text-light: #eaeaea;
+    --dark-text-menu: #b1b1b1;
+    --dark-text-date: #e3e3e3;
+    --dark-success-bg: #225f2f;
+    --dark-error-bg: #8c1c1c;
+    --dark-notification-bg: #919191;
+    --dark-checkbox-checked: #5db567;
+    --dark-checkbox-border: #40af4d;
+    --dark-priority-border: #ff6b6b;
+    --dark-priority-bg: #1e1e1e;
+    --dark-selected-bg: #70c570;
+    --dark-accent-green: #90ee90;
+    --dark-link-color: #7cff9e;
+    --dark-link-hover: #aaffaa;
+    --dark-menu-title: #4b56a7;
+    --dark-todo-bg: #1e3a5f;
+    --dark-todo-hover: #1a3352;
+    --dark-mini-modal-bg: #23272e;
+    --dark-mini-modal-cancel: #444950;
+    --dark-mini-modal-text: #e2e8f0;
+    --dark-next-occurrence-bg: rgba(76, 175, 80, 0.2);
+    --dark-next-occurrence-text: #81c784;
+    --dark-onboarding-heading: #cecece;
+    --dark-cycle-edit-border: #5a9fd4;
+    --dark-title-focus: #f8f8f8;
+
+    /* ─── Testing modal palette (Tailwind-like slate/indigo) ─── */
+    --dark-test-scrollbar-hover: #64748b;
+    --dark-test-surface: #1e293b;
+    --dark-test-surface-deep: #0f172a;
+    --dark-test-border: #334155;
+    --dark-test-border-hover: #475569;
+    --dark-test-text: #f1f5f9;
+    --dark-test-text-dim: #94a3b8;
+    --dark-test-text-secondary: #e2e8f0;
+    --dark-test-accent: #a5b4fc;
+    --dark-test-accent-hover: #4f46e5;
+    --dark-test-header-gradient: linear-gradient(135deg, #4338ca 0%, #6d28d9 100%);
+
+    /* ─── Header variables ─── */
+    --header-bg: var(--dark-surface-primary);
+    --header-border: rgba(255, 255, 255, 0.1);
+    --header-text: var(--theme-text-primary);
+
+    /* ─── Modal variables ─── */
+    --modal-bg: #1f1f1f;
+    --modal-text: var(--theme-text-primary);
+    --modal-border: var(--dark-button-bg);
+    --modal-header-bg: #2b2b2b;
+    --modal-footer-bg: #2b2b2b;
+    --btn-bg: #48bb78;
+    --btn-hover-bg: #2f855a;
+    --btn-text: var(--color-white);
+
+    /* ─── Theme variables for dark mode fallback ─── */
+    --theme-task-text: var(--theme-text-primary);
+    --theme-task-bg: #3d3d40;
+    --theme-task-completed-bg: rgba(40, 167, 69, 0.15);
+    --theme-task-completed-text: var(--dark-text-dim);
+    --theme-task-border: var(--dark-button-bg);
+    --theme-progress-text: #e0e0e0;
+    --theme-stats-text: var(--theme-text-primary);
+    --theme-stats-bg: var(--dark-surface-primary);
+    --theme-modal-bg: var(--dark-surface-primary);
+    --theme-modal-glass-bg: rgba(42, 42, 42, 0.82);
+    --theme-modal-glass-bg-soft: rgba(255, 255, 255, 0.10);
+    --theme-modal-text: var(--theme-text-primary);
+    --theme-modal-border: var(--dark-button-hover-bg);
+    --theme-card-bg: #2e2e2e;
+    --theme-card-border: var(--dark-button-hover-bg);
+    --theme-input-bg: #3a3a3a;
+    --theme-input-text: var(--theme-text-primary);
+    --theme-input-border: var(--dark-button-hover-bg);
+    --theme-input-placeholder: #888;
+    --theme-text-primary: #f0f0f0;
+    --theme-text-secondary: #cccccc;
+    --theme-text-muted: #999999;
+    --theme-bg-surface: #3a3a3a;
+    --theme-bg-surface-elevated: #4a4a4a;
+    --theme-color-success: #4caf50;
+
+    /* ─── Stats panel and inline style overrides ─── */
+    --bg-primary: var(--dark-surface-primary);
+    --bg-secondary: var(--theme-bg-surface);
+    --text-primary: var(--theme-text-primary);
+    --text-secondary: var(--theme-text-secondary);
+    --border-color: var(--dark-button-hover-bg);
+    --theme-button-secondary-bg: var(--dark-surface-primary);
+    --theme-button-secondary-text: var(--theme-text-primary);
+    --theme-button-secondary-hover-bg: var(--theme-bg-surface);
+    --theme-stats-border: var(--dark-button-hover-bg);
+}
+
+/* =============================================================================
+   DARK MODE TASKS
+   ============================================================================= */
+
+body.dark-mode .task {
+    background: var(--theme-task-bg);
+    color: var(--theme-task-text);
+    border: 1px solid var(--theme-task-border);
+    box-shadow: var(--shadow-sm);
+}
+
+body.dark-mode .task:hover {
+    background: var(--theme-bg-surface-elevated);
+}
+
+/* Circular checkbox - solid white when unchecked in dark mode */
+body.dark-mode .task input[type="checkbox"]:not(:checked) {
+    border-color: var(--color-white);
+    background-color: var(--color-white);
+}
+
+body.dark-mode .task input[type="checkbox"]:not(:checked):hover {
+    border-color: var(--dark-checkbox-border);
+}
+
+/* Keep green when checked */
+body.dark-mode .task input[type="checkbox"]:checked {
+    background-color: var(--dark-checkbox-checked);
+    border-color: var(--dark-checkbox-border);
+}
+
+/* High Priority in Dark Mode */
+body.dark-mode .high-priority {
+    border-left: 5px solid var(--task-priority-color, var(--priority-color, var(--dark-priority-border)));
+    background: var(--dark-priority-bg);
+}
+
+/* Overdue Tasks in Dark Mode */
+body.dark-mode .task.overdue-task {
+    background: rgba(220, 53, 69, 0.25);
+    color: var(--color-red-light);
+}
+
+body.dark-mode .task.overdue-task:hover {
+    background: rgba(220, 53, 69, 0.3);
+}
+
+/* =============================================================================
+   DARK MODE PANELS & MODALS
+   ============================================================================= */
+
+body.dark-mode .menu-container {
+    background-color: var(--dark-surface-primary);
+    color: var(--theme-text-primary);
+    border: 1px solid var(--dark-button-hover-bg);
+}
+
+body.dark-mode .modal-panel {
+    background-color: var(--theme-modal-glass-bg, var(--dark-surface-primary));
+    color: var(--theme-text-primary);
+    border: 1px solid var(--dark-button-hover-bg);
+}
+
+body.dark-mode .reminders-modal-content,
+body.dark-mode .settings-modal-content,
+body.dark-mode .themes-modal-content,
+body.dark-mode .feedback-modal-content,
+body.dark-mode .mini-cycle-switch-modal-content {
+    background-color: var(--theme-modal-glass-bg, var(--dark-surface-primary));
+    color: var(--theme-text-primary);
+    border: 1px solid var(--dark-button-hover-bg);
+}
+
+body.dark-mode .stats-panel {
+    background-color: rgba(42, 42, 42, 0.92);
+    color: var(--theme-text-primary);
+    border: 1px solid var(--dark-button-hover-bg);
+}
+
+/* =============================================================================
+   DARK MODE ROUTINE SWITCHER MODAL
+   ============================================================================= */
+
+body.dark-mode .mini-cycle-switch-title {
+    border-bottom-color: var(--dark-overlay-medium);
+}
+
+/* --- Search --- */
+body.dark-mode .routine-search-input {
+    background: var(--theme-input-bg);
+    color: var(--theme-text-primary);
+    border-color: var(--dark-button-hover-bg);
+}
+
+body.dark-mode .routine-search-input::placeholder {
+    color: var(--theme-text-muted);
+}
+
+/* --- List container --- */
+body.dark-mode .mini-cycle-switch-list {
+    background: var(--theme-input-bg);
+    border-color: var(--dark-button-hover-bg);
+}
+
+/* --- List items --- */
+body.dark-mode .mini-cycle-switch-item {
+    color: var(--theme-text-primary);
+    border-bottom-color: var(--dark-overlay-light);
+}
+
+body.dark-mode .mini-cycle-switch-item:hover,
+body.dark-mode .mini-cycle-switch-item:focus-visible {
+    background: var(--dark-overlay-light);
+}
+
+/* --- Sort / filter controls --- */
+body.dark-mode .routine-sort-btn {
+    background: var(--dark-surface-secondary);
+    color: var(--theme-text-secondary);
+    border-color: var(--dark-button-hover-bg);
+}
+
+body.dark-mode .routine-sort-btn:hover {
+    background: var(--dark-button-bg);
+    border-color: var(--dark-border-subtle);
+}
+
+body.dark-mode .routine-sort-btn.active {
+    border-color: transparent;
+}
+
+body.dark-mode .routine-sort-label {
+    color: var(--theme-text-muted);
+}
+
+body.dark-mode .routine-filter-select {
+    background: var(--dark-surface-secondary);
+    color: var(--theme-text-secondary);
+    border-color: var(--dark-button-hover-bg);
+}
+
+body.dark-mode .routine-filter-select:hover {
+    border-color: var(--dark-border-subtle);
+}
+
+/* --- Preview panels (mobile + desktop) --- */
+body.dark-mode .switch-preview-window,
+body.dark-mode .desktop-preview-window {
+    background: var(--dark-surface-secondary);
+    border-color: var(--dark-button-hover-bg);
+    color: var(--theme-text-secondary);
+}
+
+body.dark-mode .switch-preview-window .preview-task,
+body.dark-mode .desktop-preview-window .preview-task {
+    background: var(--dark-surface-deep);
+    border-bottom-color: var(--dark-overlay-light);
+    color: var(--theme-text-secondary);
+}
+
+body.dark-mode .desktop-preview-hint,
+body.dark-mode .desktop-preview-date,
+body.dark-mode .switch-preview-date,
+body.dark-mode .switch-preview-hint {
+    color: var(--dark-text-dim);
+}
+
+body.dark-mode .routine-panel-title {
+    background: var(--dark-surface-secondary);
+    color: var(--dark-text-light);
+    border-bottom: 1px solid var(--dark-overlay-light);
+}
+
+body.dark-mode .routine-list-hint {
+    color: var(--dark-text-dim);
+}
+
+/* --- Action buttons (duplicate, edit, delete, theme) --- */
+body.dark-mode .switch-buttons,
+body.dark-mode .switch-btn-label {
+    color: var(--theme-text-secondary);
+}
+
+body.dark-mode .switch-buttons:hover {
+    color: var(--theme-text-primary);
+    background: var(--dark-overlay-light);
+}
+
+body.dark-mode .switch-theme[aria-expanded="true"] {
+    background: var(--dark-overlay-light);
+    color: var(--color-primary-light);
+}
+
+/* --- Theme picker chips --- */
+body.dark-mode .theme-picker-row {
+    background: var(--dark-surface-secondary);
+    border-color: var(--dark-overlay-light);
+}
+
+body.dark-mode .theme-chip {
+    background: var(--dark-overlay-subtle);
+    color: var(--theme-text-secondary);
+}
+
+body.dark-mode .theme-chip:hover:not([aria-disabled="true"]) {
+    background: var(--dark-overlay-medium);
+    color: var(--theme-text-primary);
+}
+
+/* --- Cancel + Import buttons --- */
+body.dark-mode .mini-cycle-switch-btn.cancel-btn {
+    background: var(--dark-button-bg);
+}
+
+body.dark-mode .mini-cycle-switch-btn.cancel-btn:hover {
+    background: var(--dark-button-hover-bg);
+}
+
+body.dark-mode .mini-cycle-upload-btn {
+    background: transparent;
+    border-color: var(--dark-border-hover);
+    color: var(--dark-text-light);
+}
+
+body.dark-mode .mini-cycle-upload-btn:hover {
+    background: var(--dark-surface-secondary);
+}
+
+body.dark-mode .cycle-item-title mark {
+    background: var(--border-blue-subtle-hover);
+}
+
+/* =============================================================================
+   DARK MODE BUTTONS
+   ============================================================================= */
+
+body.dark-mode .task-options button,
+body.dark-mode .complete-all-btn {
+    background: var(--dark-button-bg);
+    color: var(--color-white);
+    border: 2px solid var(--dark-button-border);
+    border-bottom: 3px solid var(--dark-button-border-bottom);
+    transition: background var(--transition-normal) ease;
+}
+
+/* Task option half-circle buttons need extra contrast against dark task cards */
+body.dark-mode .task-options .task-btn,
+body.dark-mode .task-options .move-btn {
+    background: var(--dark-button-hover-bg);
+    border: 1px solid var(--dark-border-subtle);
+    box-shadow: var(--shadow-md);
+}
+
+body.dark-mode .complete-all-btn.todo-mode-btn {
+    background: var(--dark-todo-bg);
+    border: 2px solid var(--dark-button-border);
+    border-bottom: 3px solid var(--dark-button-border-bottom);
+}
+
+body.dark-mode .complete-all-btn.todo-mode-btn:hover {
+    background: var(--dark-todo-hover);
+}
+
+body.dark-mode .task-options button:hover,
+body.dark-mode .complete-all-btn:hover {
+    background: var(--dark-button-hover-bg);
+}
+
+body.dark-mode .task-options .task-btn:hover,
+body.dark-mode .task-options .move-btn:hover {
+    background: var(--dark-border-subtle);
+    border-color: var(--dark-border-hover);
+}
+
+/* Active/toggled task button states must keep their colors in dark mode */
+body.dark-mode .task-options .task-btn.priority-btn.priority-active {
+    background: var(--task-priority-color, var(--priority-color, #dc3545));
+    border-color: transparent;
+}
+
+body.dark-mode .task-options .task-btn.recurring-btn.active {
+    background-color: var(--color-success);
+    border-color: transparent;
+}
+
+body.dark-mode .task-options .task-btn.enable-task-reminders.reminder-active {
+    background: var(--color-primary);
+    border-color: transparent;
+}
+
+body.dark-mode .task-options .task-btn.set-due-date.active {
+    background-color: var(--color-slate-500);
+    border-color: transparent;
+}
+
+body.dark-mode .task-options .delete-when-complete-btn.active,
+body.dark-mode .task-options .delete-when-complete-btn.delete-when-complete-active {
+    background-color: var(--color-blue-medium);
+    border-color: transparent;
+}
+
+/* =============================================================================
+   DARK MODE NOTIFICATIONS
+   ============================================================================= */
+
+body.dark-mode .notification {
+    background-color: var(--dark-notification-bg);
+    color: var(--color-white);
+}
+
+body.dark-mode .notification.success {
+    background-color: var(--dark-success-bg);
+}
+
+body.dark-mode .notification.error {
+    background-color: var(--dark-error-bg);
+}
+
+/* =============================================================================
+   DARK MODE CHECKBOX
+   ============================================================================= */
+
+body.dark-mode .custom-checkbox input:checked + .checkmark {
+    background-color: var(--theme-color-success);
+    border-color: var(--dark-success-bg);
+}
+
+/* =============================================================================
+   DARK MODE STATS PANEL
+   Note: Most stats panel styling now handled by CSS variable overrides above
+   ============================================================================= */
+
+body.dark-mode .badge-container {
+    background-color: var(--bg-secondary);
+    border-color: var(--border-color);
+}
+
+body.dark-mode .global-stats-container p,
+body.dark-mode .global-stats-container strong {
+    color: var(--theme-text-primary);
+}
+
+body.dark-mode .stats-feature-btn,
+body.dark-mode #achievement-badges-btn {
+    box-shadow: var(--shadow-lg);
+}
+
+body.dark-mode .stats-feature-btn:hover,
+body.dark-mode #achievement-badges-btn:hover {
+    border-color: var(--dark-border-subtle);
+}
+
+/* =============================================================================
+   DARK MODE ROUTINE STATUS
+   ============================================================================= */
+
+body.dark-mode .current-routine-status .clickable {
+    background-color: var(--theme-bg-surface);
+    color: var(--theme-text-primary);
+    border: 1px solid var(--dark-button-hover-bg);
+}
+
+body.dark-mode .current-routine-status .clickable:hover,
+body.dark-mode .current-routine-status .clickable:focus-visible {
+    background-color: var(--theme-bg-surface-elevated);
+    transform: scale(1.02);
+    color: var(--dark-accent-green);
+}
+
+body.dark-mode #current-cycle-progress-text,
+body.dark-mode #current-routine-cycle-count,
+body.dark-mode #current-routine-cleared-count {
+    color: var(--dark-text-subdued);
+}
+
+body.dark-mode .doughnut-text {
+    fill: var(--theme-text-primary);
+}
+
+body.dark-mode .doughnut-bg {
+    stroke: var(--dark-button-bg);
+}
+
+/* =============================================================================
+   DARK MODE THEME UNLOCK
+   ============================================================================= */
+
+body.dark-mode .theme-unlock-status .clickable {
+    background-color: var(--theme-bg-surface);
+    color: var(--theme-text-primary);
+    border: 1px solid var(--dark-button-hover-bg);
+}
+
+body.dark-mode .theme-unlock-status .clickable:hover,
+body.dark-mode .theme-unlock-status .clickable:focus-visible {
+    background-color: var(--theme-bg-surface-elevated);
+    transform: scale(1.02);
+    color: var(--dark-accent-green);
+}
+
+body.dark-mode #theme-unlock-message,
+body.dark-mode #golden-unlock-message {
+    color: var(--dark-text-subdued);
+}
+
+body.dark-mode #theme-unlock-message.unlocked-message,
+body.dark-mode #golden-unlock-message.unlocked-message {
+    color: var(--dark-link-color);
+}
+
+body.dark-mode .theme-divider {
+    border-top: 1px solid var(--dark-border-subtle);
+    opacity: 0.4;
+}
+
+/* =============================================================================
+   DARK MODE MENU
+   ============================================================================= */
+
+body.dark-mode .menu-container button,
+body.dark-mode .menu-container .menu-button,
+body.dark-mode .menu-container .menu-grid button,
+body.dark-mode #open-themes-panel {
+    background-color: transparent;
+    color: var(--dark-text-menu);
+}
+
+body.dark-mode #current-date {
+    background-color: transparent;
+    color: var(--dark-text-date);
+}
+
+body.dark-mode #open-themes-panel,
+body.dark-mode #open-games-panel {
+    background-color: transparent;
+    color: var(--theme-text-primary);
+}
+
+body.dark-mode #main-menu-mini-cycle-title {
+    background-color: transparent;
+    color: var(--dark-menu-title);
+}
+
+body.dark-mode .menu-container button:hover,
+body.dark-mode .menu-container .menu-button:hover,
+body.dark-mode .menu-container .menu-grid button:hover {
+    background-color: var(--dark-button-bg);
+    color: var(--color-white);
+    border-color: var(--dark-border-hover);
+}
+
+/* Quick Actions title in menu */
+body.dark-mode .quick-actions-menu-row .quick-actions-title {
+    color: var(--dark-text-dim);
+}
+
+/* Menu section headers (ROUTINE ACTIONS, TASK ACTIONS & FEATURES) */
+body.dark-mode .menu-section-header {
+    color: var(--dark-text-dim);
+}
+
+/* =============================================================================
+   DARK MODE ABOUT MODAL
+   (background/color/border handled by --theme-stats-* variables)
+   ============================================================================= */
+
+body.dark-mode #about-modal .about-links {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+body.dark-mode #about-modal .about-version-badge {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode #about-modal a {
+    color: var(--dark-link-color);
+}
+
+body.dark-mode #about-modal a:hover {
+    color: var(--dark-link-hover);
+}
+
+body.dark-mode #about-modal .close-modal {
+    color: var(--theme-text-secondary);
+}
+
+body.dark-mode #about-modal .close-modal:hover {
+    color: var(--color-white);
+    cursor: pointer;
+}
+
+/* =============================================================================
+   DARK MODE STORAGE
+   ============================================================================= */
+
+body.dark-mode .storage-bar-container {
+    background: transparent;
+    border-top-color: var(--dark-border-subtle);
+}
+
+body.dark-mode .storage-bar-label {
+    color: var(--dark-text-dim);
+}
+
+body.dark-mode .storage-bar-hint {
+    color: var(--dark-text-dim);
+}
+
+body.dark-mode .storage-bar-track {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+body.dark-mode .storage-bar-text {
+    color: var(--dark-text-dim);
+}
+
+body.dark-mode .storage-refresh-btn {
+    color: var(--dark-text-dim);
+}
+
+body.dark-mode .storage-refresh-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--color-primary);
+}
+
+/* =============================================================================
+   DARK MODE CYCLE ITEM
+   ============================================================================= */
+
+body.dark-mode .cycle-item-edit-input {
+    background: var(--dark-surface-secondary);
+    color: var(--dark-text-light);
+    border-color: var(--dark-cycle-edit-border);
+}
+
+body.dark-mode .cycle-item-size {
+    color: var(--dark-text-dim);
+    background: var(--dark-overlay-light);
+}
+
+/* =============================================================================
+   DARK MODE ONBOARDING
+   ============================================================================= */
+
+body.dark-mode .onboarding-content {
+    background-color: var(--dark-surface-primary);
+    color: var(--theme-text-primary);
+    border: 1px solid var(--dark-button-bg);
+}
+
+body.dark-mode .onboarding-content h2 {
+    color: var(--dark-onboarding-heading);
+}
+
+/* =============================================================================
+   DARK MODE RECURRING
+   ============================================================================= */
+
+body.dark-mode .recurring-task-item,
+body.dark-mode #recurring-summary-preview {
+    background: var(--theme-bg-surface);
+    border-color: var(--dark-button-hover-bg);
+    color: var(--theme-text-primary);
+}
+
+body.dark-mode .recurring-scroll-area {
+    border-bottom-color: var(--dark-border-subtle);
+}
+
+/* =============================================================================
+   DARK MODE GAMES
+   ============================================================================= */
+
+body.dark-mode .games-modal-content {
+    background: var(--theme-modal-glass-bg, var(--dark-surface-primary));
+    color: var(--theme-text-primary);
+}
+
+body.dark-mode .games-modal-content h2,
+body.dark-mode .games-modal-content p {
+    color: var(--theme-text-primary);
+}
+
+/* =============================================================================
+   DARK MODE TASK OPTIONS
+   ============================================================================= */
+
+body.dark-mode .task-options-modal {
+    background: var(--dark-surface-primary);
+}
+
+body.dark-mode .task-options-modal .modal-header {
+    background: var(--dark-surface-secondary);
+}
+
+body.dark-mode .task-options-modal .modal-header h2 {
+    color: var(--theme-text-primary);
+}
+
+body.dark-mode .task-options-modal .modal-subtitle {
+    color: var(--dark-text-dim);
+}
+
+body.dark-mode .task-options-modal .modal-body {
+    background: var(--dark-surface-deep);
+}
+
+body.dark-mode .task-options-modal .modal-footer {
+    background: var(--dark-surface-secondary);
+}
+
+body.dark-mode .task-options-list {
+    background: var(--dark-surface-secondary);
+    border-color: var(--dark-button-hover-bg);
+}
+
+/* =============================================================================
+   DARK MODE UNDO/REDO BUTTONS
+   ============================================================================= */
+
+body.dark-mode .undo-redo-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--theme-progress-text);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+body.dark-mode .undo-redo-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* =============================================================================
+   DARK MODE RECURRING UI
+   ============================================================================= */
+
+body.dark-mode .recurring-task-item,
+body.dark-mode #recurring-summary-preview,
+body.dark-mode .summary-label,
+body.dark-mode #recurring-settings-panel,
+body.dark-mode .weekly-day-box,
+body.dark-mode .biweekly-day-box,
+body.dark-mode .monthly-day-box,
+body.dark-mode .yearly-day-box,
+body.dark-mode .yearly-month-box {
+    background-color: var(--dark-surface-recurrence);
+    color: var(--dark-text-light);
+    border: 1px solid var(--dark-button-hover-bg);
+}
+
+body.dark-mode .weekly-day-box:hover,
+body.dark-mode .biweekly-day-box:hover,
+body.dark-mode .monthly-day-box:hover,
+body.dark-mode .yearly-day-box:hover,
+body.dark-mode .yearly-month-box:hover {
+    background-color: var(--theme-bg-surface);
+    cursor: pointer;
+}
+
+body.dark-mode .selected {
+    background-color: var(--dark-selected-bg);
+    color: var(--color-white);
+    border-color: var(--color-black);
+}
+
+body.dark-mode .summary-label {
+    font-weight: bold;
+    color: var(--color-white);
+}
+
+body.dark-mode .next-occurrence-text {
+    background-color: var(--dark-next-occurrence-bg);
+    color: var(--dark-next-occurrence-text);
+}
+
+/* Add Task to Recurring button + panel section */
+body.dark-mode .add-recurring-task-btn {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: var(--dark-text-light);
+}
+
+body.dark-mode .add-recurring-task-btn:hover {
+    background: rgba(255, 255, 255, 0.14);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+body.dark-mode .available-tasks-list {
+    background: var(--dark-surface-secondary);
+    border-color: var(--dark-button-hover-bg);
+}
+
+body.dark-mode #cancel-recurring-settings {
+    color: var(--dark-text-light);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+body.dark-mode #cancel-recurring-settings:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+body.dark-mode .recurring-remove-btn {
+    color: var(--dark-text-light);
+}
+
+body.dark-mode .recurring-task-item.selected .recurring-task-text {
+    color: var(--color-white);
+}
+
+body.dark-mode .toggle-check-btn {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--dark-text-light);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+body.dark-mode .toggle-check-btn:hover {
+    background: rgba(255, 255, 255, 0.14);
+}
+
+body.dark-mode .available-tasks-header {
+    color: var(--dark-text-light);
+}
+
+body.dark-mode .select-all-add-recurring-btn {
+    color: var(--color-blue-light);
+}
+
+body.dark-mode .select-all-add-recurring-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode #non-recurring-tasks li {
+    background: var(--dark-surface-deep);
+    border-color: var(--dark-button-hover-bg);
+    color: var(--dark-text-light);
+}
+
+body.dark-mode #non-recurring-tasks li:hover {
+    background: var(--dark-button-bg);
+}
+
+body.dark-mode #non-recurring-tasks li.selected {
+    background: rgba(76, 175, 80, 0.15);
+    border-color: var(--color-success);
+}
+
+body.dark-mode .no-available-tasks,
+body.dark-mode .recurring-empty-state {
+    color: var(--dark-text-dim);
+}
+
+body.dark-mode .confirm-add-recurring-btn:disabled {
+    background: var(--dark-button-bg);
+    color: var(--dark-text-dim);
+}
+
+/* =============================================================================
+   DARK MODE MINI-MODAL
+   ============================================================================= */
+
+body.dark-mode .mini-modal-box {
+    background: var(--dark-mini-modal-bg);
+    color: var(--theme-text-primary);
+    box-shadow: var(--shadow-modal-heavy);
+}
+
+body.dark-mode .mini-modal-header {
+    color: var(--dark-mini-modal-text);
+}
+
+body.dark-mode .mini-modal-body {
+    color: var(--dark-mini-modal-text);
+}
+
+body.dark-mode .mini-modal-buttons .btn-cancel {
+    background-color: var(--dark-mini-modal-cancel);
+    color: var(--dark-mini-modal-text);
+}
+
+/* =============================================================================
+   DARK MODE TESTING MODAL
+   ============================================================================= */
+
+body.dark-mode .testing-modal {
+    background: rgba(0, 0, 0, 0.6);
+}
+
+body.dark-mode .testing-modal-content {
+    background: var(--dark-test-surface);
+    color: var(--dark-test-text);
+    border: 1px solid var(--dark-test-border);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+}
+
+body.dark-mode .testing-modal-header {
+    background: var(--dark-test-header-gradient);
+}
+
+body.dark-mode .close-testing-modal {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+body.dark-mode .close-testing-modal:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+body.dark-mode .testing-tabs {
+    background: var(--dark-test-surface-deep);
+    border-bottom-color: var(--dark-test-border);
+}
+
+body.dark-mode .testing-tab {
+    color: var(--dark-test-text-dim);
+    background: transparent;
+}
+
+body.dark-mode .testing-tab:hover {
+    background: rgba(99, 102, 241, 0.15);
+    color: var(--dark-test-accent);
+}
+
+body.dark-mode .testing-tab.active {
+    background: var(--dark-test-surface);
+    color: var(--dark-test-text);
+    box-shadow: var(--shadow-button);
+}
+
+body.dark-mode .testing-tab-content {
+    background: var(--dark-test-surface);
+}
+
+body.dark-mode .testing-section {
+    background: linear-gradient(135deg, var(--dark-test-surface) 0%, var(--dark-test-surface-deep) 100%);
+    border-color: var(--dark-test-border);
+}
+
+body.dark-mode .testing-section:hover {
+    border-color: var(--dark-test-accent-hover);
+    box-shadow: var(--shadow-glow-purple);
+}
+
+body.dark-mode .testing-section h3 {
+    color: var(--dark-test-text);
+}
+
+body.dark-mode .testing-results-area {
+    background: var(--dark-test-surface-deep);
+    border-top-color: var(--dark-test-border);
+    border-top-width: 2px;
+}
+
+body.dark-mode .testing-results-header {
+    background: var(--dark-test-surface);
+    border-bottom-color: var(--dark-test-border);
+}
+
+body.dark-mode .testing-results-header h3 {
+    color: var(--dark-test-text-dim);
+}
+
+body.dark-mode .testing-results {
+    background: #13141a;
+    color: #c8ccd4;
+}
+
+body.dark-mode .testing-output {
+    color: #c8ccd4;
+}
+
+body.dark-mode .testing-results::-webkit-scrollbar-track {
+    background: var(--dark-test-surface);
+}
+
+body.dark-mode .testing-results::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, var(--dark-test-border-hover), var(--dark-test-border));
+    border-color: var(--dark-test-surface);
+}
+
+body.dark-mode .testing-results::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, var(--dark-test-scrollbar-hover), var(--dark-test-border-hover));
+}
+
+body.dark-mode .testing-modal-footer {
+    background: linear-gradient(135deg, var(--dark-test-surface-deep) 0%, var(--dark-test-surface) 100%);
+    border-top-color: var(--dark-test-border);
+}
+
+body.dark-mode .testing-modal-info {
+    color: var(--dark-test-text-dim);
+}
+
+body.dark-mode .welcome-message {
+    color: #6b7280;
+    background: transparent;
+}
+
+body.dark-mode .test-clear,
+body.dark-mode .test-export,
+body.dark-mode .test-copy {
+    background: transparent;
+    color: var(--dark-test-text-secondary);
+    border-color: var(--dark-test-border-hover);
+}
+
+body.dark-mode .test-clear:hover,
+body.dark-mode .test-export:hover,
+body.dark-mode .test-copy:hover {
+    background: var(--dark-test-border);
+    color: var(--dark-test-text);
+}
+
+/* Button group card */
+body.dark-mode .testing-tab-content > .button-group {
+    background: var(--dark-test-surface-deep);
+    border-color: var(--dark-test-border);
+}
+
+/* Expanded Test Results Modal */
+body.dark-mode .test-results-content {
+    background: var(--dark-test-surface);
+    color: var(--dark-test-text);
+    border-color: var(--dark-test-border);
+}
+
+body.dark-mode .test-results-header {
+    background: var(--dark-test-surface-deep);
+    border-bottom-color: var(--dark-test-border);
+}
+
+body.dark-mode .test-results-timestamp {
+    color: var(--dark-test-text-dim);
+}
+
+body.dark-mode .test-results-controls {
+    background: var(--dark-test-surface-deep);
+    border-bottom-color: var(--dark-test-border);
+}
+
+body.dark-mode .test-results-search-bar {
+    background: var(--dark-test-surface-deep);
+    border-bottom-color: var(--dark-test-border);
+}
+
+body.dark-mode .test-results-search-input {
+    background: var(--dark-test-surface);
+    color: var(--dark-test-text);
+    border-color: var(--dark-test-border);
+}
+
+body.dark-mode .test-results-body {
+    background: #13141a;
+    color: #c8ccd4;
+    border-color: var(--dark-test-border);
+}
+
+body.dark-mode .test-results-btn.secondary {
+    background: transparent;
+    color: var(--dark-test-text-secondary);
+    border: 1px solid var(--dark-test-border-hover);
+}
+
+/* JSON Syntax Highlighting */
+body.dark-mode .json-key {
+    color: #7dd3fc;
+}
+
+body.dark-mode .json-value-string {
+    color: #86efac;
+}
+
+body.dark-mode .json-value-number {
+    color: #93c5fd;
+}
+
+body.dark-mode .json-value-boolean {
+    color: #fdba74;
+}
+
+body.dark-mode .json-array-info {
+    color: var(--dark-test-text-dim);
+}
+
+body.dark-mode .json-render-error {
+    background: rgba(220, 53, 69, 0.2);
+}
+
+/* Storage Viewer */
+body.dark-mode .storage-empty-state {
+    color: var(--dark-test-text-dim);
+}
+
+body.dark-mode .storage-key-header {
+    border-bottom-color: var(--dark-test-border);
+}
+
+body.dark-mode .storage-value-parsed {
+    background: var(--dark-test-surface-deep);
+    color: var(--dark-test-text-secondary);
+}
+
+body.dark-mode .storage-value-raw {
+    background: rgba(23, 162, 184, 0.1);
+    color: var(--color-info);
+    border-left-color: var(--color-info);
+}
+
+/* =============================================================================
+   DARK MODE MODE SELECTOR
+   ============================================================================= */
+
+body.dark-mode .mode-selector-wrapper .mode-selector {
+    background: rgba(30, 30, 30, 0.8);
+    color: var(--theme-text-primary);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+body.dark-mode .routine-switcher-btn,
+body.dark-mode .quick-actions-btn {
+    background: var(--dark-overlay-heavy);
+    color: var(--theme-text-primary);
+    border-color: var(--dark-overlay-strong);
+}
+
+body.dark-mode .quick-actions-btn svg,
+body.dark-mode .routine-switcher-btn svg {
+    fill: var(--color-white);
+    stroke: var(--color-white);
+}
+
+body.dark-mode .quick-actions-menu {
+    background: linear-gradient(135deg, var(--dark-surface-primary) 0%, var(--dark-surface-secondary) 100%);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode .quick-action-item {
+    color: var(--theme-text-primary);
+}
+
+body.dark-mode .quick-action-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode .quick-action-item:not(:last-child) {
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+/* =============================================================================
+   DARK MODE HELP WINDOW
+   ============================================================================= */
+
+body.dark-mode .help-window {
+    color: var(--pref-panel-text);
+}
+
+/* =============================================================================
+   DARK MODE SETTINGS & REMINDERS MODALS
+   ============================================================================= */
+
+body.dark-mode .settings-modal-content h2,
+body.dark-mode .settings-modal-content h3,
+body.dark-mode .settings-modal-content label,
+body.dark-mode .reminders-modal-content h2,
+body.dark-mode .reminders-modal-content h3,
+body.dark-mode .reminders-modal-content label {
+    color: var(--theme-text-primary);
+}
+
+body.dark-mode .settings-modal-content input,
+body.dark-mode .settings-modal-content select,
+body.dark-mode .reminders-modal-content input,
+body.dark-mode .reminders-modal-content select {
+    background: var(--theme-input-bg);
+    color: var(--theme-text-primary);
+    border-color: var(--dark-button-hover-bg);
+}
+
+body.dark-mode .settings-section.collapsible {
+    background: var(--dark-surface-secondary);
+    border-color: var(--dark-button-hover-bg);
+}
+
+body.dark-mode .settings-section.collapsible.collapsed {
+    background: transparent;
+    border-color: transparent;
+    border-bottom-color: var(--dark-border-subtle);
+}
+
+body.dark-mode .settings-section-header {
+    background: var(--dark-border-subtle);
+    color: var(--dark-text-light);
+}
+
+body.dark-mode .settings-section.collapsed .settings-section-header {
+    background: transparent;
+}
+
+body.dark-mode .settings-section.collapsed .settings-section-header:hover {
+    background: var(--overlay-light);
+}
+
+body.dark-mode .settings-section:not(.collapsed) .settings-section-header:hover {
+    background: var(--dark-button-hover-bg);
+}
+
+/* =============================================================================
+   DARK MODE PERSONALIZATION MODAL
+   ============================================================================= */
+
+/* Collapsible section headers */
+body.dark-mode .preferences-section-header.collapsible {
+    background: var(--dark-surface-secondary);
+    color: var(--dark-text-light);
+}
+
+body.dark-mode .preferences-section.collapsed {
+    border-bottom-color: var(--dark-border-subtle);
+}
+
+body.dark-mode .preferences-section.collapsed .preferences-section-header.collapsible {
+    background: transparent;
+}
+
+body.dark-mode .preferences-section:not(.collapsed) .preferences-section-header.collapsible {
+    background: var(--dark-border-subtle);
+}
+
+body.dark-mode .preferences-section.collapsed .preferences-section-header.collapsible:hover {
+    background: var(--overlay-light);
+}
+
+body.dark-mode .preferences-section-header.collapsible:hover {
+    background: var(--dark-surface-muted);
+}
+
+/* Preview label — transparent on the gradient, not overridden */
+body.dark-mode .preferences-preview-label.preferences-section-header.collapsible {
+    background: transparent;
+}
+
+/* Expanded section content area */
+body.dark-mode .preferences-section:not(.collapsed) {
+    background: var(--dark-surface-secondary);
+}
+
+/* Quick Colors & Saved Presets top-level sections */
+body.dark-mode .preferences-quick-presets {
+    background: var(--dark-surface-secondary);
+}
+
+/* Color rows and preset items */
+body.dark-mode .preferences-color-row {
+    background: var(--dark-overlay-subtle);
+}
+
+body.dark-mode .quick-preset-btn {
+    background: var(--dark-surface-primary);
+    border-color: var(--dark-border-subtle);
+    color: var(--dark-text-light);
+}
+
+body.dark-mode .quick-preset-btn:hover {
+    border-color: var(--color-primary);
+}
+
+body.dark-mode .preferences-preset-item {
+    background: var(--dark-surface-primary);
+    border-color: var(--dark-border-subtle);
+}
+
+/* Muted text */
+body.dark-mode .preferences-no-presets {
+    color: var(--dark-text-dim);
+}
+
+body.dark-mode .preferences-bg-image-hint {
+    color: var(--dark-text-dim);
+}
+
+/* Section toggle arrow */
+body.dark-mode .preferences-section-toggle {
+    color: var(--dark-text-dim);
+}
+
+/* Reset All button */
+body.dark-mode .preferences-reset-all-btn {
+    background: color-mix(in srgb, var(--color-error) 15%, transparent);
+    color: var(--dark-text-light);
+    border-color: var(--color-error);
+}
+
+body.dark-mode .preferences-footer button.preferences-reset-all-btn:hover {
+    background: var(--color-error);
+    color: var(--color-white);
+}
+
+/* =============================================================================
+   DARK MODE ACHIEVEMENTS MODAL
+   ============================================================================= */
+
+body.dark-mode .achievements-modal {
+    background: var(--theme-modal-glass-bg, var(--dark-surface-primary));
+}
+
+body.dark-mode .achievements-header {
+    border-bottom-color: var(--dark-overlay-light);
+}
+
+body.dark-mode .achievements-back-btn,
+body.dark-mode .achievements-title {
+    color: var(--dark-text-light);
+}
+
+body.dark-mode .achievements-summary {
+    background: var(--dark-surface-secondary);
+}
+
+body.dark-mode .achievements-stat-value--count,
+body.dark-mode .achievements-stat-label {
+    color: var(--dark-text-dim);
+}
+
+body.dark-mode .achievements-section-heading {
+    color: var(--dark-text-dim);
+}
+
+body.dark-mode .achievement-card {
+    background: var(--dark-surface-secondary);
+}
+
+body.dark-mode .achievement-card-name {
+    color: var(--dark-text-light);
+}
+
+body.dark-mode .achievement-card-description,
+body.dark-mode .achievement-card-date {
+    color: var(--dark-text-dim);
+}
+
+body.dark-mode .achievement-progress-bar {
+    background: var(--dark-overlay-light);
+}
+
+body.dark-mode .achievement-legend-reward {
+    color: var(--dark-text-dim);
+}
+
+body.dark-mode .achievements-empty-state,
+body.dark-mode .achievements-progress-note {
+    color: var(--dark-text-dim);
+}
+
+/* =============================================================================
+   DARK MODE HISTORY MODAL
+   ============================================================================= */
+
+body.dark-mode .history-modal {
+    background: var(--theme-modal-glass-bg, var(--dark-surface-primary));
+    box-shadow: var(--shadow-modal-heavy);
+}
+
+body.dark-mode .history-header {
+    border-bottom-color: var(--dark-overlay-light);
+}
+
+body.dark-mode .history-back-btn,
+body.dark-mode .history-title {
+    color: var(--dark-text-light);
+}
+
+body.dark-mode .history-tabs {
+    border-bottom-color: var(--dark-overlay-light);
+}
+
+body.dark-mode .history-tab {
+    color: var(--dark-text-dim);
+}
+
+body.dark-mode .history-tab.active {
+    color: var(--color-primary);
+}
+
+body.dark-mode .history-event,
+body.dark-mode .cleared-entry {
+    background: var(--dark-surface-secondary);
+}
+
+body.dark-mode .cleared-entry.selected {
+    background: var(--dark-overlay-medium);
+    border-color: var(--color-primary);
+}
+
+body.dark-mode .cleared-entry-checkbox {
+    background: var(--dark-surface-primary);
+    border-color: var(--dark-border-subtle);
+}
+
+body.dark-mode .cleared-entry.selected .cleared-entry-checkbox {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+body.dark-mode .history-event-title,
+body.dark-mode .cleared-entry-text {
+    color: var(--dark-text-light);
+}
+
+body.dark-mode .history-event-details,
+body.dark-mode .history-event-timestamp,
+body.dark-mode .cleared-entry-metadata,
+body.dark-mode .history-group-heading {
+    color: var(--dark-text-dim);
+}
+
+body.dark-mode .history-empty-state {
+    color: var(--dark-text-dim);
+}
+
+body.dark-mode .history-recurring-note {
+    background: var(--dark-surface-secondary);
+    color: var(--dark-text-dim);
+}
+
+body.dark-mode .history-achievement-note,
+body.dark-mode .history-recurring-disclaimer {
+    color: var(--dark-text-dim);
+}
+
+body.dark-mode .history-reset-section {
+    border-top-color: var(--dark-overlay-light);
+}
+
+body.dark-mode .history-reset-progress-btn {
+    color: var(--dark-text-dim);
+}
+
+body.dark-mode .history-footer {
+    border-top-color: var(--dark-overlay-light);
+}
+
+body.dark-mode .history-cancel-btn {
+    color: var(--dark-text-light);
+    border-color: var(--dark-border-subtle);
+}
+
+body.dark-mode .history-confirm-btn {
+    background: var(--color-primary);
+}
+
+/* =============================================================================
+   DARK MODE THEMES MODAL
+   ============================================================================= */
+
+body.dark-mode .themes-modal-content h2,
+body.dark-mode .themes-modal-content p,
+body.dark-mode .themes-modal-content label {
+    color: var(--theme-text-primary);
+}
+
+body.dark-mode .themes-modal .close-btn {
+    background: var(--dark-button-hover-bg);
+    color: var(--theme-text-primary);
+}
+
+body.dark-mode .themes-modal .close-btn:hover {
+    background: var(--dark-border-subtle);
+}
+
+body.dark-mode .themes-modal-content input[type="checkbox"] {
+    accent-color: var(--theme-color-success);
+}
+
+body.dark-mode #theme-options-section,
+body.dark-mode #dark-mode-section {
+    color: var(--theme-text-primary);
+}
+
+/* Theme radio options */
+body.dark-mode .theme-radio-option {
+    background: var(--dark-overlay-subtle);
+}
+
+body.dark-mode .theme-radio-option:hover {
+    background: var(--dark-overlay-light);
+}
+
+body.dark-mode .theme-radio-option:has(input:checked) {
+    background: var(--dark-overlay-medium);
+    border-color: var(--dark-border-hover);
+}
+
+body.dark-mode .theme-radio-option input[type="radio"] {
+    border-color: var(--dark-border-subtle);
+}
+
+/* Dark mode checkbox */
+body.dark-mode #dark-mode-section .custom-checkbox .checkmark {
+    background: var(--dark-surface-primary);
+    border-color: var(--dark-border-subtle);
+}
+
+/* Vocab theme heading and unlock hint */
+body.dark-mode .vocab-theme-heading {
+    color: var(--dark-text-dim);
+}
+
+body.dark-mode .vocab-theme-unlock-hint {
+    color: var(--dark-text-dim);
+}
+
+/* =============================================================================
+   DARK MODE FOOTER
+   ============================================================================= */
+
+body.dark-mode #footer-container,
+body.dark-mode #copyright,
+body.dark-mode .footer-item {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+body.dark-mode #copyright a,
+body.dark-mode .footer-item a {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* =============================================================================
+   DARK MODE MINICYCLE PROMPT MODAL
+   ============================================================================= */
+
+body.dark-mode .miniCycle-prompt-box {
+    background: var(--dark-surface-primary);
+    border-color: var(--dark-button-hover-bg);
+}
+
+body.dark-mode .miniCycle-prompt-title {
+    color: var(--theme-text-primary);
+}
+
+body.dark-mode .miniCycle-prompt-message {
+    color: var(--theme-text-secondary);
+}
+
+body.dark-mode .miniCycle-prompt-input {
+    background: var(--theme-input-bg);
+    color: var(--theme-text-primary);
+    border-color: var(--dark-button-hover-bg);
+}
+
+/* =============================================================================
+   DARK MODE TASK INPUT
+   ============================================================================= */
+
+body.dark-mode .task-input {
+    background: var(--color-slate-800);
+    border: 1px solid var(--color-slate-700);
+    box-shadow: var(--shadow-input);
+}
+
+body.dark-mode #taskInput {
+    background: transparent;
+    color: var(--theme-text-primary);
+}
+
+body.dark-mode #taskInput::placeholder {
+    color: var(--color-slate-400);
+}
+
+body.dark-mode .task-input:focus-within {
+    box-shadow: var(--shadow-input), var(--shadow-focus-ring);
+}
+
+body.dark-mode #addTaskBtn {
+    background: var(--color-slate-600);
+    color: var(--color-slate-100);
+}
+
+body.dark-mode #addTaskBtn:hover {
+    background: var(--color-slate-500);
+}
+
+/* =============================================================================
+   DARK MODE TITLE ROW
+   ============================================================================= */
+
+body.dark-mode .title-row {
+    background-color: var(--dark-surface-muted);
+    border-radius: var(--radius-10) var(--radius-10) 0 0;
+}
+
+/* =============================================================================
+   DARK MODE MINI-CYCLE TITLE
+   ============================================================================= */
+
+body.dark-mode .mini-cycle-title {
+    background-color: transparent;
+    color: #1a1a1a;
+}
+
+body.dark-mode #mini-cycle-title:focus {
+    background: rgba(80, 80, 80, 0.8);
+    color: var(--dark-title-focus);
+}
+
+/* =============================================================================
+   DARK MODE TASK LIST CONTAINER
+   ============================================================================= */
+
+body.dark-mode .task-list-container {
+    background: rgba(40, 40, 45, 0.6);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow:
+        0 4px 20px rgba(0, 0, 0, 0.2),
+        inset 0 1px 1px rgba(255, 255, 255, 0.06);
+}
+
+body.dark-mode .task-list-container::-webkit-scrollbar-thumb {
+    background-color: rgba(150, 150, 150, 0.5);
+}
+
+/* =============================================================================
+   DARK MODE NAVIGATION DOTS
+   ============================================================================= */
+
+body.dark-mode .navigation-dots::before {
+    background-color: rgba(60, 70, 90, 0.6);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode .dot::after {
+    background-color: rgba(180, 180, 200, 0.8);
+}
+
+body.dark-mode .dot.active::after {
+    background-color: rgba(100, 150, 255, 1);
+}
+
+/* =============================================================================
+   DARK MODE TASK SEARCH & FILTER/SORT
+   ============================================================================= */
+
+body.dark-mode .task-search-input-row,
+body.dark-mode .task-filter-sort-row {
+    background: var(--theme-bg-surface-elevated);
+}
+
+body.dark-mode .task-search-btn,
+body.dark-mode .task-search-clear {
+    color: var(--theme-text-secondary);
+}
+
+body.dark-mode .task-search-btn:hover,
+body.dark-mode .task-search-clear:hover {
+    color: var(--theme-text-primary);
+}
+
+body.dark-mode .task-search-input {
+    color: var(--theme-text-primary);
+}
+
+body.dark-mode .filter-chip,
+body.dark-mode .sort-chip {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--theme-text-secondary);
+}
+
+body.dark-mode .filter-chip:hover,
+body.dark-mode .sort-chip:hover {
+    background: rgba(255, 255, 255, 0.18);
+    color: var(--theme-text-primary);
+}
+
+body.dark-mode .filter-sort-divider {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+body.dark-mode .chip-group-icon {
+    color: var(--theme-text-primary);
+}
+
+/* =============================================================================
+   PREFERS-COLOR-SCHEME FALLBACK
+   Provides basic dark styling before JS loads. Once JS sets body.dark-mode,
+   the class-based rules above take precedence (higher specificity).
+   This prevents a flash of bright white for users with dark OS preferences.
+   ============================================================================= */
+
+@media (prefers-color-scheme: dark) {
+    html:not(.dark-mode):not([data-theme]) {
+        background: #1c1c1c;
+        color: #e0e0e0;
+    }
+
+    html:not(.dark-mode):not([data-theme]) body {
+        background: linear-gradient(135deg, #1c1c1c, #2a2a2a);
+        color: #e0e0e0;
+    }
+}
