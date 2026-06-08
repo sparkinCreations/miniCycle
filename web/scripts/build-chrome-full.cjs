@@ -39,7 +39,10 @@ const WEB_ROOT = path.resolve(__dirname, '..');              // .../web
 const REPO_ROOT = path.resolve(WEB_ROOT, '..');              // repo root
 const OUT = path.join(REPO_ROOT, 'chrome', 'full');          // build output
 const EXT_BOOT_DIR = path.join(OUT, 'ext-boot');
-const LITE_ICONS = path.join(REPO_ROOT, 'chrome', 'lite', 'icons');
+// Full extension uses its OWN blue-background icon set (chrome/full-icons/),
+// NOT lite's black-on-transparent icons. Committed source; regenerate from the
+// blue PWA master (web/assets/images/logo/pwa-icons/icon-512.png) with sips.
+const FULL_ICONS = path.join(REPO_ROOT, 'chrome', 'full-icons');
 const LIVE_SITE = 'https://minicycle.app';                   // canonical host for unbundled info pages
 
 const log = (...a) => console.log('[build-chrome-full]', ...a);
@@ -280,7 +283,7 @@ function writeManifestAndBackground(version) {
         16: 'icons/icon-16.png',
         32: 'icons/icon-32.png',
         48: 'icons/icon-48.png',
-        128: 'icons/minicycle_logo_icon.png',
+        128: 'icons/icon-128.png',
       },
     },
     background: { service_worker: 'background.js' },
@@ -288,7 +291,7 @@ function writeManifestAndBackground(version) {
       16: 'icons/icon-16.png',
       32: 'icons/icon-32.png',
       48: 'icons/icon-48.png',
-      128: 'icons/minicycle_logo_icon.png',
+      128: 'icons/icon-128.png',
       192: 'icons/icon-192.png',
       512: 'icons/icon-512.png',
     },
@@ -313,11 +316,11 @@ chrome.action.onClicked.addListener(async () => {
 `;
   fs.writeFileSync(path.join(OUT, 'background.js'), background, 'utf8');
 
-  if (fs.existsSync(LITE_ICONS)) {
-    fs.cpSync(LITE_ICONS, path.join(OUT, 'icons'), { recursive: true });
-    log('icons: copied from chrome/lite/icons/');
+  if (fs.existsSync(FULL_ICONS)) {
+    fs.cpSync(FULL_ICONS, path.join(OUT, 'icons'), { recursive: true });
+    log('icons: copied blue-background set from chrome/full-icons/');
   } else {
-    log('WARN chrome/lite/icons not found — add icons/ manually before loading');
+    log('WARN chrome/full-icons not found — add icons/ manually before loading');
   }
   log(`manifest.json (v${version}) + background.js written`);
 }

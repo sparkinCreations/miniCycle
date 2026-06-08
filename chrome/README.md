@@ -11,11 +11,18 @@ This folder contains miniCycle's Chrome (and Chromium-based: Edge, Brave, Arc) b
 
 The lite-based extension ships the lightweight tier of miniCycle inside a 400×600 popup. It's a coherent product on its own — "lightweight version, right in your toolbar" — not a degraded fallback.
 
-The **full** extension is the entire miniCycle app, opened in a normal browser tab from the toolbar icon (the full-screen UI doesn't fit a popup). Unlike `lite/` (a hand-maintained port), `full/` is **generated** by `web/scripts/build-chrome-full.cjs` so it never drifts from the actively-developed app. Regenerate on every release:
+The **full** extension is the entire miniCycle app, opened in a normal browser tab from the toolbar icon (the full-screen UI doesn't fit a popup). Unlike `lite/` (a hand-maintained port), `full/` is **generated** by `web/scripts/build-chrome-full.cjs` so it never drifts from the actively-developed app. Regenerate it directly:
 
 ```bash
 cd web
-npm run build:chrome-full      # web/ → chrome/full/
+npm run build:chrome-full      # web/ → chrome/full/ (always reflects current web/)
+```
+
+Or fold it into a version bump — `update-version.sh` runs the same build behind an opt-in `--chrome` flag (interactive mode prompts for it), **after** the version files are written and **before** the git-tag commit, so the rebuilt extension is included in the release:
+
+```bash
+./scripts/update-version.sh --auto --chrome          # bump + rebuild chrome/full
+./scripts/update-version.sh --auto --chrome --tag    # bump + rebuild + tag the release
 ```
 
 ### What the build does

@@ -918,6 +918,39 @@ export async function finalizeUI(options) {
  *     appContextMod: await import('../core/appContext.js')
  * });
  */
+/**
+ * Wire boot-time stub listeners for DEFERRED feature modules.
+ *
+ * A deferred module's own init() — which normally attaches its open-button
+ * listener — does NOT run at boot, so the entry-point button would be dead.
+ * Each stub: on first click, loads the module on-demand (its init then attaches
+ * the real listener), removes itself, and re-dispatches the click so the real
+ * handler runs. Loads are cached/idempotent, so this only happens once.
+ *
+ * @param {Object} deps - Dependencies container (uses deps.core.ensureModuleLoaded)
+ */
+function setupDeferredFeatureTriggers(deps) {
+  const ensure = deps.core?.ensureModuleLoaded;
+  if (typeof ensure !== 'function') {
+    console.warn('⚠️ ensureModuleLoaded unavailable — deferred feature triggers skipped');
+    return;
+  }
+
+  // Testing modal (#open-testing-modal) — loads testingModal + its integration.
+  // Plain add/removeEventListener (not safeAddEventListener) so we can remove
+  // THIS exact stub; testingModal.init attaches the real open handler separately.
+  const openTestingBtn = document.getElementById(DOM_IDS.OPEN_TESTING_MODAL);
+  if (openTestingBtn) {
+    const loadAndOpenTesting = async () => {
+      openTestingBtn.removeEventListener('click', loadAndOpenTesting);
+      await ensure('testingModal');             // attaches the real #open-testing-modal handler
+      await ensure('testingModalIntegration');
+      openTestingBtn.click();                   // real handler (now attached) opens the modal
+    };
+    openTestingBtn.addEventListener('click', loadAndOpenTesting);
+  }
+}
+
 export async function initUIBoot({ GlobalUtils, deps, appContextMod }) {
   // Store appContextMod for use by module-level getters
   _appContextMod = appContextMod;
@@ -955,6 +988,7 @@ export async function initUIBoot({ GlobalUtils, deps, appContextMod }) {
   attachTaskInputListeners(GlobalUtils, taskInput, addTaskButton, appContextMod);
   attachMenuButtonListener(GlobalUtils, menuButton, menu);
   attachGlobalEventListeners(GlobalUtils);
+  setupDeferredFeatureTriggers(deps);
 
   // Hide loader and focus input
   hideAppLoader();

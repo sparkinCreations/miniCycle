@@ -641,7 +641,10 @@ export const MODULE_MANIFESTS = {
         provides: ['openStorageViewer', 'closeStorageViewer'],
         api: 'testing',
         optional: true,
-        after: ['backupManager']  // backupManager must load first (same phase)
+        // Deferred: loaded on-demand when #open-testing-modal is clicked (stub in
+        // uiBoot.setupDeferredFeatureTriggers). Dev/diagnostic UI most users never open.
+        deferred: true,
+        after: ['backupManager']  // backupManager (eager) loads first
     },
 
     testingModalIntegration: {
@@ -651,7 +654,9 @@ export const MODULE_MANIFESTS = {
         provides: ['runAllAutomatedTests'],
         api: 'testing',
         optional: true,
-        after: ['backupManager']  // backupManager must load first (same phase)
+        // Deferred: loaded alongside testingModal via the #open-testing-modal stub.
+        deferred: true,
+        after: ['backupManager']  // backupManager (eager) loads first
     },
 
     basicPluginSystem: {
@@ -661,7 +666,11 @@ export const MODULE_MANIFESTS = {
         optionalDeps: ['getCurrentCycle'],
         provides: ['pluginManager'],
         api: 'plugins',
-        optional: true
+        optional: true,
+        // Deferred: inert plugin substrate — no plugins are registered at boot and
+        // every pluginManager consumer guards with ?. (taskCycleReset triggerHook).
+        // No UI entry point, so it simply stays unloaded (zero behavior change today).
+        deferred: true
     }
 };
 

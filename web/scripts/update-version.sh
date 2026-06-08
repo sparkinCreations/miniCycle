@@ -16,6 +16,7 @@
 #  - --lite-only flag for updating ONLY the lite version (independent of main app)
 #  - --dry-run flag to preview changes without writing
 #  - --samples flag to regenerate sample routine manifest from .mcyc files
+#  - --chrome flag to rebuild the Chrome (full) extension into chrome/full/
 #  - Automatic CSP hash verification — detects new/changed inline scripts and updates netlify.toml
 
 # ============================================
@@ -169,6 +170,7 @@ INCLUDE_LITE=false
 LITE_ONLY=false
 AUTO_CHANGELOG=false
 AUTO_SAMPLES=false
+BUILD_CHROME=false
 DRY_RUN=false
 
 # ============================================
@@ -207,6 +209,10 @@ while [[ $# -gt 0 ]]; do
             AUTO_SAMPLES=true
             shift
             ;;
+        --chrome|-C)
+            BUILD_CHROME=true
+            shift
+            ;;
         --dry-run|-n)
             DRY_RUN=true
             shift
@@ -220,6 +226,7 @@ while [[ $# -gt 0 ]]; do
             echo "  --auto, -a      Auto-bump versions and update all files (no prompts)"
             echo "  --changelog, -c Auto-generate changelog from git commits"
             echo "  --samples, -s   Regenerate sample routine manifest from .mcyc files"
+            echo "  --chrome, -C    Rebuild the Chrome (full) extension to chrome/full/"
             echo "  --lite, -l      Include lite version files (normally static)"
             echo "  --lite-only     Update ONLY lite version files (independent of main app)"
             echo "  --tag, -t       Auto-create git tag (use with --auto)"
@@ -1697,6 +1704,57 @@ print(f'✅ Generated manifest.json ({len(manifest)} samples)')
     fi
 else
     echo "⏭️  Skipping samples"
+fi
+
+echo ""
+
+# ============================================
+# OPTIONAL: REBUILD CHROME (FULL) EXTENSION
+# ============================================
+# Regenerates chrome/full/ from web/ (externalizes inline scripts, strips the
+# service worker, prunes assets, writes the MV3 manifest with $NEW_VERSION).
+# Runs BEFORE the git-tag stage so the rebuilt extension is included in the
+# release commit/tag. See web/scripts/build-chrome-full.cjs.
+
+echo "🧩 Optional: Chrome (full) Extension"
+echo "------------------------------------"
+
+REBUILD_CHROME=false
+if [ "$LITE_ONLY" = true ]; then
+    echo "⏭️  Skipping Chrome extension (LITE ONLY mode)"
+elif [ "$AUTO_MODE" = true ]; then
+    if [ "$BUILD_CHROME" = true ]; then
+        REBUILD_CHROME=true
+        echo "🤖 Auto mode: Rebuilding Chrome (full) extension..."
+    else
+        echo "⏭️  Skipping Chrome extension (use --chrome to rebuild)"
+    fi
+else
+    if [ "$BUILD_CHROME" = true ]; then
+        REBUILD_CHROME=true
+    else
+        read -p "Rebuild Chrome (full) extension to chrome/full/? (y/N): " -n 1 -r
+        echo ""
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            REBUILD_CHROME=true
+        fi
+    fi
+fi
+
+if [ "$REBUILD_CHROME" = true ]; then
+    if [ -f "scripts/build-chrome-full.cjs" ]; then
+        # Don't let a build failure abort the whole run (set -e) — the version
+        # files are already updated; just warn that chrome/full/ may be stale.
+        if node scripts/build-chrome-full.cjs; then
+            echo "✅ Rebuilt chrome/full/ (v$NEW_VERSION) — load unpacked or zip for the Web Store"
+        else
+            echo "⚠️  Chrome extension build failed — chrome/full/ may be stale (version files already updated)"
+        fi
+    else
+        echo "⚠️  scripts/build-chrome-full.cjs not found - skipping"
+    fi
+else
+    echo "⏭️  Skipping Chrome extension"
 fi
 
 echo ""
