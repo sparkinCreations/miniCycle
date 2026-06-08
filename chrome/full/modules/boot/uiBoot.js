@@ -936,19 +936,32 @@ function setupDeferredFeatureTriggers(deps) {
     return;
   }
 
-  // Testing modal (#open-testing-modal) — loads testingModal + its integration.
-  // Plain add/removeEventListener (not safeAddEventListener) so we can remove
-  // THIS exact stub; testingModal.init attaches the real open handler separately.
-  const openTestingBtn = document.getElementById(DOM_IDS.OPEN_TESTING_MODAL);
-  if (openTestingBtn) {
-    const loadAndOpenTesting = async () => {
-      openTestingBtn.removeEventListener('click', loadAndOpenTesting);
-      await ensure('testingModal');             // attaches the real #open-testing-modal handler
-      await ensure('testingModalIntegration');
-      openTestingBtn.click();                   // real handler (now attached) opens the modal
-    };
-    openTestingBtn.addEventListener('click', loadAndOpenTesting);
-  }
+  // Testing modal (#open-testing-modal) — loads testingModal + its integration
+  // on first click. Uses DOCUMENT-LEVEL DELEGATION (capture phase) because the
+  // settings modal that contains this button is re-rendered after boot, so a
+  // listener bound to the specific node would end up on a stale/detached element.
+  // The handler removes itself on first match; testingModal.init() then attaches
+  // the real open handler, which the re-dispatched click triggers.
+  const onTestingOpenClick = async (e) => {
+    const openBtn = e.target.closest?.('#' + DOM_IDS.OPEN_TESTING_MODAL);
+    if (!openBtn) return;
+    document.removeEventListener('click', onTestingOpenClick, true);
+    await ensure('testingModal');             // attaches the real #open-testing-modal handler
+    await ensure('testingModalIntegration');
+    openBtn.click();                          // real handler (now attached) opens the modal
+  };
+  document.addEventListener('click', onTestingOpenClick, true);
+
+  // gamesManager — games are reachable only through the main menu, so load it on
+  // the first menu-button click. Its init() runs checkGamesUnlock(), revealing
+  // #games-menu-option (default display:none) if the game is unlocked, and wires
+  // the games-panel listeners. Self-removing after the first load.
+  const onMenuOpenForGames = (e) => {
+    if (!e.target.closest?.(DOM_SELECTORS.MENU_BUTTON)) return;
+    document.removeEventListener('click', onMenuOpenForGames, true);
+    ensure('gamesManager');  // fire-and-forget; init reveals the menu item if unlocked
+  };
+  document.addEventListener('click', onMenuOpenForGames, true);
 }
 
 export async function initUIBoot({ GlobalUtils, deps, appContextMod }) {

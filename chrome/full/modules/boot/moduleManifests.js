@@ -161,6 +161,11 @@ export const MODULE_MANIFESTS = {
         provides: [],
         provideInstance: 'gamesManager',
         api: 'ui',
+        // Deferred: games are menu-gated. Loaded on first main-menu open (stub in
+        // uiBoot.setupDeferredFeatureTriggers), whose init() runs checkGamesUnlock
+        // to reveal #games-menu-option (default display:none) if unlocked. The
+        // unlockMiniGame depMapping auto-loads it when a cycle milestone fires.
+        deferred: true,
         after: ['notifications']
     },
 

@@ -1,3 +1,8 @@
+## [2.235] - 2026-06-08
+- feat(chrome): generate full-version MV3 extension from web/ via build script
+- perf(boot): defer non-critical modules, load on-demand via ensureModuleLoaded
+
+
 ## [2.234] - 2026-06-08
 - feat(product-page): restructure secondary links for improved layout and responsiveness
 - feat(product-page): add Chrome Web Store badge and link for Lite version

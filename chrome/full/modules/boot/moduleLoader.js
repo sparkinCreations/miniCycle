@@ -627,6 +627,29 @@ function findDeferredProvider(apiName) {
     return null;
 }
 
+/**
+ * Invoke a provide from a DEFERRED module, loading the module first if needed.
+ * Used inside depMappings for entry points triggered purely via DI (e.g.
+ * gamesManager.unlockMiniGame from a cycle milestone). If the provide already
+ * resolves it's called synchronously (return value preserved). Otherwise the
+ * module loads on-demand and the call runs after — fire-and-forget friendly
+ * (returns a Promise callers may ignore).
+ *
+ * Only use this for entry points that represent genuine user-intent moments —
+ * NOT for hot-path or boot-time calls, or the module would load eagerly anyway.
+ * @param {string} moduleName - Deferred module to ensure
+ * @param {Function} resolve - Returns the resolved provide fn (or undefined)
+ * @param {Array} args - Arguments to pass to the provide
+ */
+function deferredInvoke(moduleName, resolve, args) {
+    const fn = resolve();
+    if (typeof fn === 'function') return fn(...args);
+    return ensureModuleLoaded(moduleName).then(() => {
+        const f = resolve();
+        return typeof f === 'function' ? f(...args) : undefined;
+    });
+}
+
 // ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================
@@ -857,8 +880,16 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         renderVocabThemes: (...args) => deps.features?.renderVocabThemes?.(...args),
         refreshThemeLabels: (...args) => deps.features?.themeManager?.refreshThemeLabels?.(...args),
 
-        // Games functions (from gamesManager instance in deps.ui)
-        unlockMiniGame: (...args) => deps.ui?.gamesManager?.unlockMiniGame?.(...args),
+        // Games functions (from gamesManager instance in deps.ui).
+        // gamesManager is DEFERRED — unlockMiniGame (fired by a cycle milestone)
+        // auto-loads it so the unlock persists. checkGamesUnlock stays a plain
+        // lazy no-op: menuManager calls it once at boot setup, and forcing a load
+        // there would defeat deferral. Menu-open loads gamesManager via the stub
+        // in uiBoot.setupDeferredFeatureTriggers, whose init runs checkGamesUnlock.
+        unlockMiniGame: (...args) => deferredInvoke('gamesManager', () => {
+            const g = deps.ui?.gamesManager;
+            return g?.unlockMiniGame ? g.unlockMiniGame.bind(g) : undefined;
+        }, args),
         checkGamesUnlock: (...args) => deps.ui?.gamesManager?.checkGamesUnlock?.(...args),
 
         // Task functions (from task modules in deps.task) - lazy resolution for cross-phase deps
