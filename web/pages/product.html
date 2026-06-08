@@ -204,7 +204,10 @@
         .demos-section { background: #fff; }
         .cycle-demo { max-width: 260px; margin: 0 auto; }
         .cycle-demo-svg { width: 100%; height: auto; display: block; }
-        .secondary-links { display: flex; flex-direction: column; align-items: center; gap: 0.6rem; margin-top: var(--space-lg); }
+        .secondary-links { display: flex; flex-direction: column; align-items: center; gap: var(--space-sm); margin-top: var(--space-lg); }
+        /* Each row groups related links (e.g. the Lite-version entry points).
+           Stacks on mobile, becomes a centered horizontal row at >=768px. */
+        .secondary-links-row { display: flex; flex-direction: column; align-items: center; gap: 0.6rem; }
         .secondary-links a { color: var(--color-primary); text-decoration: none; font-size: 0.9rem; font-weight: 500; }
         .secondary-links a:hover { text-decoration: underline; }
         /* Chrome Web Store badge — official borderless medium PNG, self-hosted
@@ -440,7 +443,7 @@
             .why-line-bold { font-size: 1.4rem; }
 
             .cycle-demo { max-width: 300px; }
-            .secondary-links { flex-direction: row; gap: var(--space-md); justify-content: center; }
+            .secondary-links-row { flex-direction: row; gap: var(--space-md); justify-content: center; }
 
             .theme-item { flex: 0 0 200px; }
 
@@ -653,13 +656,17 @@
             <p class="section-subtitle" style="margin-top: var(--space-md);">Also used for workout routines, opening procedures, study sessions, and more.</p>
 
             <div class="secondary-links">
-                <a href="learn_more.html">Learn more about features &#8594;</a>
-                <a href="../lite/miniCycle-lite.html">Try Lite Version &#8594;</a>
-                <a href="https://github.com/sparkinCreations/miniCycle" target="_blank" rel="noopener noreferrer">View on GitHub &#8594;</a>
-                <a href="https://chromewebstore.google.com/detail/minicycle-lite/mfbedmndcmhileaofjfmepcgofdipeeo" class="cws-link" target="_blank" rel="noopener">
-                    <img class="cws-badge" src="../assets/images/external/chrome-web-store-badge.png" alt="Available in the Chrome Web Store" width="340" height="96">
-                    <span class="cws-caption">Lite version</span>
-                </a>
+                <div class="secondary-links-row">
+                    <a href="learn_more.html">Learn more about features &#8594;</a>
+                    <a href="https://github.com/sparkinCreations/miniCycle" target="_blank" rel="noopener noreferrer">View on GitHub &#8594;</a>
+                </div>
+                <div class="secondary-links-row">
+                    <a href="../lite/miniCycle-lite.html">Try Lite Version &#8594;</a>
+                    <a href="https://chromewebstore.google.com/detail/minicycle-lite/mfbedmndcmhileaofjfmepcgofdipeeo" class="cws-link" target="_blank" rel="noopener">
+                        <img class="cws-badge" src="../assets/images/external/chrome-web-store-badge.png" alt="Available in the Chrome Web Store" width="340" height="96">
+                        <span class="cws-caption">Lite version</span>
+                    </a>
+                </div>
             </div>
         </div>
     </section>
