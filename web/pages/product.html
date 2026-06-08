@@ -207,6 +207,17 @@
         .secondary-links { display: flex; flex-direction: column; align-items: center; gap: 0.6rem; margin-top: var(--space-lg); }
         .secondary-links a { color: var(--color-primary); text-decoration: none; font-size: 0.9rem; font-weight: 500; }
         .secondary-links a:hover { text-decoration: underline; }
+        /* Chrome Web Store badge — official borderless medium PNG, self-hosted
+           under assets/images/external/ (Google branding: self-host, don't modify
+           beyond resizing, click links to the listing). Height-constrained to sit
+           in the links row; width auto preserves the 340x96 aspect ratio. The
+           caption clarifies the extension is the Lite build (the listing is
+           "miniCycle Lite"), since the badge image itself can't be edited. */
+        .secondary-links .cws-link { display: inline-flex; flex-direction: column; align-items: center; gap: 0.2rem; }
+        .secondary-links .cws-badge { height: 44px; width: auto; display: block; }
+        .secondary-links .cws-caption { font-size: 0.72rem; font-weight: 500; color: var(--color-text-muted); }
+        .secondary-links .cws-link:hover { text-decoration: none; }
+        .secondary-links .cws-link:hover .cws-badge { opacity: 0.88; }
 
         /* ============================
            Theme Showcase
@@ -645,6 +656,10 @@
                 <a href="learn_more.html">Learn more about features &#8594;</a>
                 <a href="../lite/miniCycle-lite.html">Try Lite Version &#8594;</a>
                 <a href="https://github.com/sparkinCreations/miniCycle" target="_blank" rel="noopener noreferrer">View on GitHub &#8594;</a>
+                <a href="https://chromewebstore.google.com/detail/minicycle-lite/mfbedmndcmhileaofjfmepcgofdipeeo" class="cws-link" target="_blank" rel="noopener">
+                    <img class="cws-badge" src="../assets/images/external/chrome-web-store-badge.png" alt="Available in the Chrome Web Store" width="340" height="96">
+                    <span class="cws-caption">Lite version</span>
+                </a>
             </div>
         </div>
     </section>
@@ -895,7 +910,7 @@
     </main>
 
     <footer role="contentinfo">
-        <p>&copy; <span id="year"></span> <a href="https://sparkincreations.com" target="_blank" rel="noopener noreferrer">sparkinCreations</a> &middot; <a href="../lite/miniCycle-lite.html">Lite Version</a> &middot; <a href="../legal/user-manual.html">User Manual</a> &middot; <a href="../legal/terms.html">Terms</a> &middot; <a href="../legal/privacy.html">Privacy</a> &middot; <a href="../legal/accessibility.html">Accessibility</a></p>
+        <p>&copy; <span id="year"></span> <a href="https://sparkincreations.com" target="_blank" rel="noopener noreferrer">sparkinCreations</a> &middot; <a href="../lite/miniCycle-lite.html">Lite Version</a> &middot; <a href="https://chromewebstore.google.com/detail/minicycle-lite/mfbedmndcmhileaofjfmepcgofdipeeo" target="_blank" rel="noopener">Chrome Extension (Lite)</a> &middot; <a href="../legal/user-manual.html">User Manual</a> &middot; <a href="../legal/terms.html">Terms</a> &middot; <a href="../legal/privacy.html">Privacy</a> &middot; <a href="../legal/accessibility.html">Accessibility</a></p>
     </footer>
 
     <script src="product.js"></script>

@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>miniCycle — Claude's mental picture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter+Tight:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f4efe6;
+    --bg-2: #ebe4d6;
+    --ink: #1c1a17;
+    --ink-soft: #5a544a;
+    --line: #d8cfbd;
+    --accent: #c45a3a;
+    --accent-soft: #e8b9a8;
+    --ring-empty: #e4dccb;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter Tight', system-ui, sans-serif;
+    background: radial-gradient(120% 80% at 50% 0%, var(--bg-2) 0%, var(--bg) 60%);
+    color: var(--ink);
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding: 28px 22px 40px;
+    display: flex;
+    justify-content: center;
+    overflow-x: hidden;
+  }
+  .wrap { width: 100%; max-width: 440px; }
+
+  /* header */
+  .top {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 28px;
+  }
+  .brand {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-style: italic;
+    font-size: 20px;
+    letter-spacing: -0.01em;
+  }
+  .brand .dot {
+    display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+    background: var(--accent); margin-right: 8px; vertical-align: 3px;
+  }
+  .menu {
+    width: 36px; height: 36px; border-radius: 50%;
+    border: 1px solid var(--line);
+    display: grid; place-items: center;
+    background: transparent; cursor: pointer;
+  }
+  .menu span {
+    width: 14px; height: 1.5px; background: var(--ink); position: relative;
+  }
+  .menu span::before, .menu span::after {
+    content: ''; position: absolute; left: 0; width: 14px; height: 1.5px; background: var(--ink);
+  }
+  .menu span::before { top: -5px; }
+  .menu span::after { top: 5px; }
+
+  /* routine title */
+  .routine-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--ink-soft);
+    margin-bottom: 6px;
+  }
+  .routine-name {
+    font-family: 'Fraunces', serif;
+    font-size: 34px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+    margin: 0 0 24px;
+  }
+  .routine-name em { font-style: italic; color: var(--accent); }
+
+  /* ring */
+  .ring-wrap {
+    position: relative;
+    display: grid;
+    place-items: center;
+    margin: 4px 0 32px;
+  }
+  .ring { transform: rotate(-90deg); }
+  .ring circle {
+    fill: none;
+    stroke-width: 6;
+    stroke-linecap: round;
+  }
+  .ring .track { stroke: var(--ring-empty); }
+  .ring .progress {
+    stroke: var(--accent);
+    stroke-dasharray: 0 1000;
+    transition: stroke-dasharray .6s cubic-bezier(.7,.1,.2,1);
+  }
+  .ring-center {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center;
+  }
+  .cycle-num {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 64px;
+    line-height: 1;
+    letter-spacing: -0.04em;
+  }
+  .cycle-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.22em;
+    color: var(--ink-soft);
+    margin-top: 8px;
+  }
+  .cycle-num.pulse { animation: pulse .7s cubic-bezier(.3,.7,.2,1.3); }
+  @keyframes pulse {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.18); color: var(--accent); }
+    100% { transform: scale(1); }
+  }
+
+  /* steps */
+  .steps {
+    list-style: none; padding: 0; margin: 0;
+    border-top: 1px solid var(--line);
+  }
+  .step {
+    display: flex; align-items: center; gap: 14px;
+    padding: 16px 4px;
+    border-bottom: 1px solid var(--line);
+    cursor: pointer;
+    transition: opacity .3s;
+  }
+  .check {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    border: 1.5px solid var(--ink);
+    flex-shrink: 0;
+    position: relative;
+    transition: background .25s, border-color .25s, transform .2s;
+  }
+  .check::after {
+    content: '';
+    position: absolute;
+    left: 6px; top: 3px;
+    width: 5px; height: 10px;
+    border: solid var(--bg);
+    border-width: 0 1.5px 1.5px 0;
+    transform: rotate(45deg) scale(0);
+    transition: transform .25s cubic-bezier(.3,.7,.2,1.3);
+  }
+  .step.done .check {
+    background: var(--ink);
+    border-color: var(--ink);
+  }
+  .step.done .check::after { transform: rotate(45deg) scale(1); }
+  .step-text {
+    font-size: 16px;
+    letter-spacing: -0.005em;
+    transition: color .25s, text-decoration-color .25s;
+    text-decoration: line-through transparent;
+  }
+  .step.done .step-text {
+    color: var(--ink-soft);
+    text-decoration-color: var(--ink-soft);
+  }
+  .step-time {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--ink-soft);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* footer */
+  .footer {
+    margin-top: 22px;
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 12px; color: var(--ink-soft);
+  }
+  .footer .total { font-variant-numeric: tabular-nums; }
+
+  /* completion flash */
+  .flash {
+    position: fixed; inset: 0;
+    background: var(--accent);
+    opacity: 0; pointer-events: none;
+    transition: opacity .25s;
+    z-index: 50;
+  }
+  .flash.on { opacity: 0.08; }
+
+  /* note */
+  .note {
+    margin-top: 28px;
+    padding: 14px 16px;
+    border: 1px dashed var(--line);
+    border-radius: 8px;
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--ink-soft);
+    font-style: italic;
+  }
+  .note b { color: var(--ink); font-style: normal; font-weight: 600; }
+</style>
+</head>
+<body>
+  <div class="flash" id="flash"></div>
+  <div class="wrap">
+    <div class="top">
+      <div class="brand"><span class="dot"></span>miniCycle</div>
+      <button class="menu" aria-label="menu"><span></span></button>
+    </div>
+
+    <div class="routine-label">Routine</div>
+    <h1 class="routine-name">Morning <em>cycle</em></h1>
+
+    <div class="ring-wrap">
+      <svg class="ring" width="220" height="220" viewBox="0 0 220 220">
+        <circle class="track"    cx="110" cy="110" r="100"></circle>
+        <circle class="progress" cx="110" cy="110" r="100" id="progress"></circle>
+      </svg>
+      <div class="ring-center">
+        <div class="cycle-num" id="cycleNum">14</div>
+        <div class="cycle-label">cycles complete</div>
+      </div>
+    </div>
+
+    <ul class="steps" id="steps">
+      <li class="step"><span class="check"></span><span class="step-text">Make the bed</span><span class="step-time">1 min</span></li>
+      <li class="step"><span class="check"></span><span class="step-text">Drink a glass of water</span><span class="step-time">1 min</span></li>
+      <li class="step"><span class="check"></span><span class="step-text">Stretch</span><span class="step-time">5 min</span></li>
+      <li class="step"><span class="check"></span><span class="step-text">Journal one line</span><span class="step-time">2 min</span></li>
+      <li class="step"><span class="check"></span><span class="step-text">Brew coffee</span><span class="step-time">4 min</span></li>
+    </ul>
+
+    <div class="footer">
+      <span>Tap a step to complete</span>
+      <span class="total" id="total">0 / 5</span>
+    </div>
+
+    <div class="note">
+      <b>Claude's mockup.</b> Tap the steps to see how I imagined it: ring fills, the last tap auto-resets and bumps the cycle count.
+    </div>
+  </div>
+
+<script>
+  const steps = document.querySelectorAll('.step');
+  const progress = document.getElementById('progress');
+  const cycleNum = document.getElementById('cycleNum');
+  const total = document.getElementById('total');
+  const flash = document.getElementById('flash');
+
+  const C = 2 * Math.PI * 100; // circumference
+  progress.style.strokeDasharray = `0 ${C}`;
+
+  function update() {
+    const done = document.querySelectorAll('.step.done').length;
+    const n = steps.length;
+    const frac = done / n;
+    progress.style.strokeDasharray = `${frac * C} ${C}`;
+    total.textContent = `${done} / ${n}`;
+
+    if (done === n) {
+      // auto-reset
+      setTimeout(() => {
+        flash.classList.add('on');
+        setTimeout(() => flash.classList.remove('on'), 250);
+
+        steps.forEach(s => s.classList.remove('done'));
+        progress.style.strokeDasharray = `0 ${C}`;
+        total.textContent = `0 / ${n}`;
+
+        cycleNum.textContent = parseInt(cycleNum.textContent, 10) + 1;
+        cycleNum.classList.remove('pulse');
+        // force reflow to restart animation
+        void cycleNum.offsetWidth;
+        cycleNum.classList.add('pulse');
+      }, 450);
+    }
+  }
+
+  steps.forEach(step => {
+    step.addEventListener('click', () => {
+      step.classList.toggle('done');
+      update();
+    });
+  });
+</script>
+</body>
+</html>
