@@ -102,6 +102,16 @@ const loadedModules = new Map();
 const moduleInstances = new Map();
 
 // ============================================================================
+// DEFERRED (ON-DEMAND) MODULE LOADING
+// ============================================================================
+// Modules with `deferred: true` in their manifest are SKIPPED at boot and
+// loaded lazily on first use via ensureModuleLoaded(). This keeps their parse +
+// init() off the critical boot path. loadAllModules() captures the boot context
+// (deps + coreResult) here so on-demand loads after boot can reuse it.
+let _bootDeps = null;
+let _bootCoreResult = null;
+
+// ============================================================================
 // SHARED CONSTANTS (loaded from versioned moduleManifests.js)
 // ============================================================================
 // These are populated by loadManifests() to avoid versioned/unversioned cache mismatches.
@@ -456,6 +466,8 @@ export async function loadPhase(deps, coreResult, phase) {
     const results = new Map();
 
     for (const [name, manifest] of modules) {
+        // Skip deferred modules — they load on-demand via ensureModuleLoaded().
+        if (manifest.deferred) continue;
         const mod = await loadModule(name, deps, coreResult, withV);
         if (mod) {
             const instance = await initializeModule(name, mod, deps, coreResult);
@@ -474,6 +486,10 @@ export async function loadPhase(deps, coreResult, phase) {
  */
 export async function loadAllModules(deps, coreResult) {
     const { appInit, withV } = coreResult;
+
+    // Capture boot context so deferred modules can be loaded on-demand after boot.
+    _bootDeps = deps;
+    _bootCoreResult = coreResult;
 
     // ✅ FIX: Load manifests with version cache-busting BEFORE using any manifest data
     // This prevents stale cached manifests from causing 404s on moved/renamed modules
@@ -508,11 +524,20 @@ export async function loadAllModules(deps, coreResult) {
     // Build grouped APIs
     results.apis = buildGroupedApis(deps);
 
-    // =========================================================================
-    // POST-INIT CROSS-MODULE INJECTIONS
-    // Some modules need to be injected into other modules after all are loaded
-    // =========================================================================
+    // Cross-module injections (run at boot; re-run after each on-demand load).
+    runPostInitInjections(deps);
 
+    return results;
+}
+
+/**
+ * Cross-module injections that must run after the relevant modules exist.
+ * Called once at the end of boot, and again after each on-demand (deferred)
+ * module load, so a late-arriving provider gets wired into already-loaded
+ * consumers. Every injection is guarded — a safe no-op until both sides exist.
+ * @param {Object} deps - Dependencies container
+ */
+function runPostInitInjections(deps) {
     // Inject taskOptionsCustomizer into taskDOMManager (required for three-dots menu)
     if (deps.task?.taskDOMManager && deps.ui?.taskOptionsCustomizer) {
         if (typeof deps.task.taskDOMManager.injectDependency === 'function') {
@@ -542,8 +567,87 @@ export async function loadAllModules(deps, coreResult) {
             );
         }
     }
+}
 
-    return results;
+/**
+ * Load a DEFERRED module on-demand (after boot) and register its provides.
+ * Idempotent — a module loaded once is cached and never re-fetched. Any deferred
+ * prerequisites (manifest `after` + deferred `requires` providers) are loaded
+ * first so this module's setDependencies sees them populated. Consumers reach
+ * the new provides through the existing lazy depMappings wrappers, so nothing
+ * needs rewiring.
+ * @param {string} name - Module name from manifests
+ * @returns {Promise<Object|null>} The module instance (or raw module), or null.
+ */
+export async function ensureModuleLoaded(name) {
+    if (moduleInstances.has(name)) return moduleInstances.get(name);
+    if (!_bootDeps || !_bootCoreResult) {
+        console.warn(`⚠️ ensureModuleLoaded('${name}') called before boot captured context`);
+        return null;
+    }
+    const manifest = MODULE_MANIFESTS[name];
+    if (!manifest) {
+        console.warn(`⚠️ ensureModuleLoaded: unknown module '${name}'`);
+        return null;
+    }
+
+    // Resolve deferred prerequisites first (explicit `after` + providers of `requires`).
+    const prereqs = new Set(manifest.after || []);
+    for (const req of manifest.requires || []) {
+        const provider = findDeferredProvider(req);
+        if (provider) prereqs.add(provider);
+    }
+    for (const dep of prereqs) {
+        if (dep !== name && MODULE_MANIFESTS[dep]?.deferred && !moduleInstances.has(dep)) {
+            await ensureModuleLoaded(dep);
+        }
+    }
+
+    const { withV } = _bootCoreResult;
+    const mod = await loadModule(name, _bootDeps, _bootCoreResult, withV);
+    if (!mod) return null;
+    const instance = await initializeModule(name, mod, _bootDeps, _bootCoreResult);
+    // Wire the new provider into already-loaded consumers.
+    runPostInitInjections(_bootDeps);
+    return instance ?? mod;
+}
+
+/**
+ * Find which module provides a given API name (provides[] or provideInstance).
+ * Used by ensureModuleLoaded to resolve deferred prerequisites.
+ * @param {string} apiName
+ * @returns {string|null} Module name, or null if no manifest provides it.
+ */
+function findDeferredProvider(apiName) {
+    const canonical = resolveAlias(apiName);
+    for (const [mName, m] of Object.entries(MODULE_MANIFESTS)) {
+        if (m.provideInstance === canonical) return mName;
+        if (m.provides?.includes(canonical)) return mName;
+    }
+    return null;
+}
+
+/**
+ * Invoke a provide from a DEFERRED module, loading the module first if needed.
+ * Used inside depMappings for entry points triggered purely via DI (e.g.
+ * gamesManager.unlockMiniGame from a cycle milestone). If the provide already
+ * resolves it's called synchronously (return value preserved). Otherwise the
+ * module loads on-demand and the call runs after — fire-and-forget friendly
+ * (returns a Promise callers may ignore).
+ *
+ * Only use this for entry points that represent genuine user-intent moments —
+ * NOT for hot-path or boot-time calls, or the module would load eagerly anyway.
+ * @param {string} moduleName - Deferred module to ensure
+ * @param {Function} resolve - Returns the resolved provide fn (or undefined)
+ * @param {Array} args - Arguments to pass to the provide
+ */
+function deferredInvoke(moduleName, resolve, args) {
+    const fn = resolve();
+    if (typeof fn === 'function') return fn(...args);
+    return ensureModuleLoaded(moduleName).then(() => {
+        const f = resolve();
+        return typeof f === 'function' ? f(...args) : undefined;
+    });
 }
 
 // ============================================================================
@@ -776,8 +880,16 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         renderVocabThemes: (...args) => deps.features?.renderVocabThemes?.(...args),
         refreshThemeLabels: (...args) => deps.features?.themeManager?.refreshThemeLabels?.(...args),
 
-        // Games functions (from gamesManager instance in deps.ui)
-        unlockMiniGame: (...args) => deps.ui?.gamesManager?.unlockMiniGame?.(...args),
+        // Games functions (from gamesManager instance in deps.ui).
+        // gamesManager is DEFERRED — unlockMiniGame (fired by a cycle milestone)
+        // auto-loads it so the unlock persists. checkGamesUnlock stays a plain
+        // lazy no-op: menuManager calls it once at boot setup, and forcing a load
+        // there would defeat deferral. Menu-open loads gamesManager via the stub
+        // in uiBoot.setupDeferredFeatureTriggers, whose init runs checkGamesUnlock.
+        unlockMiniGame: (...args) => deferredInvoke('gamesManager', () => {
+            const g = deps.ui?.gamesManager;
+            return g?.unlockMiniGame ? g.unlockMiniGame.bind(g) : undefined;
+        }, args),
         checkGamesUnlock: (...args) => deps.ui?.gamesManager?.checkGamesUnlock?.(...args),
 
         // Task functions (from task modules in deps.task) - lazy resolution for cross-phase deps

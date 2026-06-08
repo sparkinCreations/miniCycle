@@ -113,28 +113,18 @@ class GamesManager {
     }
 
     /**
-     * Check games unlock after AppState is ready (deferred)
+     * Check games unlock once the app (and cycle data) is ready.
+     *
+     * Phase 3 creates/loads cycle data AFTER this module's init() runs (Phase 2),
+     * so unlock state isn't readable synchronously here. Wait for the app-ready
+     * signal instead of polling AppState every 100ms — the old poll ran a timer
+     * up to 150× (15s) on every boot, a needless CPU drain on slow devices.
+     * When this module is loaded on-demand (deferred) after boot, waitForApp()
+     * resolves immediately, so the check runs right away.
      */
     async deferredCheckGamesUnlock() {
-        // Wait for AppState to be ready
-        // Note: For new users, data is created in Phase 3 which may take longer
-        const maxAttempts = 150;  // 15 seconds max (150 × 100ms)
-        let attempts = 0;
-
-        this._deferredCheckInterval = setInterval(() => {
-            attempts++;
-
-            const AppState = this._getAppState();
-            if (AppState?.isReady?.()) {
-                clearInterval(this._deferredCheckInterval);
-                this._deferredCheckInterval = null;
-                this.checkGamesUnlock();
-            } else if (attempts >= maxAttempts) {
-                clearInterval(this._deferredCheckInterval);
-                this._deferredCheckInterval = null;
-                console.warn('⚠️ AppState never became ready for checkGamesUnlock (this is normal for new users until cycle is created)');
-            }
-        }, 100); // Check every 100ms
+        await _deps.appInit?.waitForApp?.();
+        this.checkGamesUnlock();  // guards internally on AppState readiness
     }
 
     /**

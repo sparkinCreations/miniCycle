@@ -1,15 +1,39 @@
 # Module Deferral Audit — Moving Modules Off the Critical Boot Path
 
-**Status:** Audit / planning. Not started.
-**Created:** June 2026
+**Status:** Mechanism BUILT + 2 batches shipped & verified. Paused for real-device measurement. (Continuation point below.)
+**Created:** June 2026 · **Last updated:** June 2026
 **Goal:** Reduce time-to-interactive on slow (CPU-bound) devices by not parsing + `init()`-ing modules the user doesn't need at first paint.
-**Trigger to act:** Slow-device reading from the testing modal's **Boot Timing** button showing `features_ms` dominates `bootSequence_ms`. (On a fast dev machine, features ≈ 409 of 519 ms — see [[project_load_perf_investigation]].)
+**Trigger to continue:** Slow-device reading from the testing modal's **Boot Timing** button showing `features_ms` dominates `bootSequence_ms`. (On a fast dev machine, features is too noisy — 264–634 ms across runs — to show the win; the deterministic signal is boot JS file count, ~131 → ~116.)
 
 ---
 
-## The mechanism reality (read this first)
+## ⏸️ CONTINUATION POINT (read this first when resuming)
 
-There is currently **no on-demand module loader**. `loadAllModules()` ([moduleLoader.js](../../modules/boot/moduleLoader.js)) loads **every** module in `MODULE_MANIFESTS` eagerly, phase-by-phase, **serially**, and runs each module's `init()` at load time. Therefore:
+### What's DONE and verified
+- **Mechanism built** (`moduleLoader.js`): `deferred: true` manifest flag (skipped in `loadPhase`), `ensureModuleLoaded(name)` on-demand loader (idempotent; resolves deferred prerequisites first; re-runs `runPostInitInjections`), `findDeferredProvider()`, `deferredInvoke(moduleName, resolve, args)` (loads-then-calls for DI-triggered entry points). Boot context captured in module-level `_bootDeps`/`_bootCoreResult` at the top of `loadAllModules`.
+- **Wiring**: `featureBoot.js` exposes `deps.core.ensureModuleLoaded` from the **versioned** moduleLoader instance (a static import would be a separate instance with null boot context). `uiBoot.js` has `setupDeferredFeatureTriggers(deps)` for DOM-button triggers.
+- **Deferred & verified**: `testingModal` + `testingModalIntegration` (+ ~7 statically-imported sub-modules) via `#open-testing-modal` delegation stub; `basicPluginSystem` (no trigger — inert, no plugins registered at boot); `gamesManager` via `.menu-button` delegation + `unlockMiniGame` deferredInvoke.
+- **Free win**: `gamesManager` 15s boot poll → `appInit.waitForApp()`.
+- **Boot JS files**: ~131 → ~116. Lint 0 errors. `version.js` at baseline 2.234.
+
+### Hard-won gotchas (don't relearn these)
+1. **DOM stubs MUST use document-level event delegation (capture phase), not node-bound listeners.** The settings modal (`#open-testing-modal`) is re-rendered after boot, so a node-bound listener ends up detached. See `setupDeferredFeatureTriggers`.
+2. **Keep `backupManager` eager** — used by `settingsManager` export AND the uiBoot session backup (uiBoot ~line 968).
+3. **`deferredInvoke` only for genuine user-intent moments**, never boot-time/hot-path calls (e.g. `checkGamesUnlock` is called once at boot by `menuManager.setupMainMenu` — making it deferredInvoke would force an eager load; leave it a plain no-op).
+4. **Verifying in the dev preview**: cache-clear + SW-unregister is enough for fresh modules — do NOT bump `version.js`. Use real `element.click()` in `preview_eval` (not `preview_click`) for buttons inside closed dialogs (they're invisible; preview_click can't dispatch a propagating event).
+
+### What's LEFT (next sessions) — see corrected tiers below
+- **Refactor-tier** (need init-split, NOT plain defer): `taskSearch` (render-path wired at boot via `featureBoot.js` ~line 291), `guidedTourManager` (1,962 lines — boot-scheduled new-user tour), `helpWindowManager` (always-on ambient help: MutationObserver + 6 listeners + boot welcome), `focusMode` (creates its own button + restores persisted focus state at boot).
+- **Big parse wins still on the table**: `guidedTourManager` (1,962), `preferencesManager` (1,957), `settingsManager` — all need the boot-essential-vs-lazy init split.
+- **Before more work**: measure this batch on a real slow device (testing modal → Boot Timing).
+
+---
+
+## The mechanism reality (original analysis — now implemented)
+
+> **UPDATE:** the on-demand loader described as "to build" below has since been **built** (`ensureModuleLoaded` + `deferred: true` — see the Continuation Point above). This section is kept for the original reasoning about why `lazyRequires`/`optional` weren't enough.
+
+Originally there was **no on-demand module loader**. `loadAllModules()` ([moduleLoader.js](../../modules/boot/moduleLoader.js)) loaded **every** module in `MODULE_MANIFESTS` eagerly, phase-by-phase, **serially**, running each module's `init()` at load time. Therefore:
 
 - **`lazyRequires` does NOT defer a module.** It only defers *dependency wiring* (lets a module declare a dep from a later phase). The module itself still loads eagerly at boot.
 - **`optional: true` does NOT defer a module.** It only means "a load failure doesn't abort boot." The module is still fetched + parsed + initialized.

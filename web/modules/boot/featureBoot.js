@@ -215,7 +215,7 @@ export async function bootFeatures(deps, coreResult) {
 
   // Import moduleLoader (which re-exports moduleManifests to avoid duplicate loading)
   const [
-    { loadAllModules, loadPhase, PHASES, MODULE_MANIFESTS, getLoadOrder },
+    { loadAllModules, loadPhase, PHASES, MODULE_MANIFESTS, getLoadOrder, ensureModuleLoaded },
     appContextMod,
     { DOM_IDS }
   ] = await Promise.all([
@@ -237,6 +237,12 @@ export async function bootFeatures(deps, coreResult) {
 
     // Load all modules using moduleLoader
     const result = await loadAllModules(deps, coreResult);
+
+    // Expose the on-demand loader (from THIS versioned moduleLoader instance) so
+    // later phases (uiBoot) can lazy-load deferred modules. Must come from the
+    // versioned import — a static import would be a separate instance with no
+    // captured boot context.
+    deps.core.ensureModuleLoaded = ensureModuleLoaded;
 
     // Copy loaded modules to features container
     for (const [name, mod] of result.modules) {
