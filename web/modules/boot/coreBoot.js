@@ -306,6 +306,13 @@ async function clearTestModeFlags() {
  * @returns {Promise<boolean>} True if recovery was performed
  */
 async function recoverFromInterruptedTests() {
+    // The in-browser test runner isn't shipped in the Chrome extension build
+    // (tests/ is dev-only and unbundled), so test mode can never activate on the
+    // chrome-extension:// origin. Skip the IndexedDB probe there to avoid a
+    // needless multi-second boot delay. No effect on the web app or local dev.
+    if (location.protocol === 'chrome-extension:') {
+        return false;
+    }
     try {
         const testModeActive = await checkTestModeActive();
         if (!testModeActive) {
