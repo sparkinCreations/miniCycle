@@ -1,9 +1,9 @@
 // ES5-compatible (no const/let, no arrow funcs, no async/await, no optional chaining)
 // ✅ Version constants inlined directly (updated by update-version.sh)
 // This ensures the SW always has correct version info without HTTP cache issues
-var APP_VERSION = '2.235';
-var CACHE_VERSION = 'v1078';
-var CACHE_VERSION_NUMBER = 1078; // Numeric version matching version.js (for synthetic fallback)
+var APP_VERSION = '2.236';
+var CACHE_VERSION = 'v1079';
+var CACHE_VERSION_NUMBER = 1079; // Numeric version matching version.js (for synthetic fallback)
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -897,13 +897,24 @@ self.addEventListener('fetch', function (event) {
       // `EVENTS` to constants.js → "Importing binding name 'EVENTS' is not
       // found" because consumers got the stale copy).
       //
-      // Fix: for unversioned module/CSS requests, look in the CURRENT
-      // STATIC_CACHE / DYNAMIC_CACHE first; fall back to the broad search only
-      // if neither has the file (e.g. a brand-new module the precache missed).
-      // Versioned (?v=) requests skip this — their URL already includes the
-      // version, so the broad search safely returns the matching entry.
+      // Fix: for module/CSS requests, look in the CURRENT STATIC_CACHE /
+      // DYNAMIC_CACHE first; fall back to the broad search only if neither has
+      // the file (e.g. a brand-new module the precache missed).
+      // NOTE: this now covers VERSIONED (?v=) requests too. The earlier
+      // assumption that "?v= requests are safe to broad-search because the URL
+      // carries the version" was WRONG — the ?v= is stripped from the cache key
+      // (see ~line 730), so a versioned request can still match a stale entry in
+      // a kept old cache. That was the themeManager/recurringPanel stale-serve bug.
       // ═══════════════════════════════════════════════════════════════════
-      var preferCurrentCaches = !requestVersion && (isModuleFile || url.pathname.endsWith('.css'));
+      // Prefer the CURRENT version's cache for ALL app-code files — versioned
+      // (?v=) imports included. The cache key has the ?v= stripped (see ~line 730),
+      // so the broad "search all caches" path below can return a STALE copy from a
+      // kept old cache even for a versioned request. That is exactly what served the
+      // old themeManager.js / recurringPanel.js to stale machines (Frankenstein
+      // cache). Looking in the current STATIC_CACHE / DYNAMIC_CACHE first prevents
+      // it; on a current-cache miss while online, isModuleFile returns null below so
+      // the file is fetched fresh from the network instead of an old-version copy.
+      var preferCurrentCaches = (isModuleFile || url.pathname.endsWith('.css'));
       var matchPromise = preferCurrentCaches
         ? caches.open(STATIC_CACHE).then(function (sc) {
             return sc.match(cacheRequest);

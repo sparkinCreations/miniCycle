@@ -10,7 +10,7 @@
 <!-- ✅ Translucent status bar shows body background-color on iOS -->
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" id="status-bar-style-meta">
 
-<meta name="app-version" content="2.235">
+<meta name="app-version" content="2.236">
 
 <!-- Content Security Policy -->
 <!-- CSP is served via HTTP header in netlify.toml (production) -->
@@ -29,20 +29,20 @@
 <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"> -->
 <!-- Add cache busting version parameter -->
 <!-- Original CSS (for reference) -->
-<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=2.235"> -->
+<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=2.236"> -->
 
 <!-- Preload critical CSS files (they load in parallel, not blocking) -->
-<link rel="preload" href="styles/main.css?v=2.235" as="style">
-<link rel="preload" href="styles/base/variables.css?v=2.235" as="style">
-<link rel="preload" href="styles/base/reset.css?v=2.235" as="style">
-<link rel="preload" href="styles/layout/app-container.css?v=2.235" as="style">
-<link rel="preload" href="styles/layout/header.css?v=2.235" as="style">
-<link rel="preload" href="styles/components/task-list.css?v=2.235" as="style">
+<link rel="preload" href="styles/main.css?v=2.236" as="style">
+<link rel="preload" href="styles/base/variables.css?v=2.236" as="style">
+<link rel="preload" href="styles/base/reset.css?v=2.236" as="style">
+<link rel="preload" href="styles/layout/app-container.css?v=2.236" as="style">
+<link rel="preload" href="styles/layout/header.css?v=2.236" as="style">
+<link rel="preload" href="styles/components/task-list.css?v=2.236" as="style">
 
 <!-- Async CSS loading - doesn't block render, app starts with inline critical CSS -->
-<link rel="stylesheet" href="styles/main.css?v=2.235" media="print" id="async-main-css">
+<link rel="stylesheet" href="styles/main.css?v=2.236" media="print" id="async-main-css">
 <script>document.getElementById('async-main-css').onload=function(){this.media='all'};</script>
-<noscript><link rel="stylesheet" href="styles/main.css?v=2.235"></noscript>
+<noscript><link rel="stylesheet" href="styles/main.css?v=2.236"></noscript>
 <link rel="manifest" href="manifest.json">
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -53,7 +53,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- version.js MUST load synchronously BEFORE modulepreloads to set globalThis.APP_VERSION -->
-<script src="./version.js?v=2.235"></script>
+<script src="./version.js?v=2.236"></script>
 
 <!-- iOS PWA Detection - adds .ios-pwa class for safe area fixes -->
 <script>
@@ -573,6 +573,12 @@ if ('serviceWorker' in navigator) {
     registration.update().catch(err => {
       console.warn('Immediate update check failed:', err);
     });
+
+    // After registering, verify the worker actually controlling us is current.
+    // If an old worker is still in charge (serving stale module files), this
+    // clears caches and reloads once — the automated version of the manual
+    // "unregister + clear site data" step. No-op when online versions match.
+    await ensureControllingWorkerFresh(registration);
   }
 
   window.addEventListener('load', async () => {
@@ -791,6 +797,52 @@ window.getServiceWorkerInfo = async function() {
     };
   }
 };
+
+// ✅ Detect a STALE controlling service worker (Fix 3 self-heal).
+// version.js can load fresh (so verifyVersionFresh sees nothing wrong) while the
+// worker actually serving our module files is an OLD version handing back stale
+// cached code (the themeManager/recurringPanel "Frankenstein cache" boot failure).
+// Ask the controlling worker its version; if it doesn't match the page, clear
+// caches and reload ONCE for this version so we come back clean.
+async function ensureControllingWorkerFresh(registration) {
+  try {
+    if (!navigator.serviceWorker.controller || !registration.active) return;
+
+    // NEVER clear caches when offline — they're the only source of files, so
+    // clearing offline would brick the app until the user is back online.
+    // Mirrors coreBoot.attemptCacheRecovery()'s offline guard.
+    if (!navigator.onLine) return;
+
+    const swInfo = await new Promise((resolve) => {
+      const ch = new MessageChannel();
+      ch.port1.onmessage = (e) => resolve(e.data || null);
+      registration.active.postMessage({ type: 'GET_VERSION' }, [ch.port2]);
+      setTimeout(() => resolve(null), 2000);
+    });
+
+    if (!swInfo || !swInfo.appVersion) return;        // couldn't tell — do nothing
+    if (swInfo.appVersion === APP_VERSION) return;    // worker matches page — all good
+
+    // Worker is stale. Only heal once per version, to avoid reload loops.
+    const healedKey = '__miniCycle_swHealed';
+    if (sessionStorage.getItem(healedKey) === APP_VERSION) return;
+    sessionStorage.setItem(healedKey, APP_VERSION);
+
+    console.warn('🔄 Stale service worker (' + swInfo.appVersion +
+                 ') controlling page (' + APP_VERSION + ') — clearing caches and reloading');
+
+    await registration.update().catch(() => {});
+    if (registration.waiting) registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((k) => caches.delete(k)));
+    }
+    window.location.replace(window.location.pathname + '?_cc=' + Date.now());
+  } catch (e) {
+    console.warn('Stale-worker check failed:', e);
+  }
+}
 
 // ✅ Helper function to get SW version
 async function getServiceWorkerVersion(registration) {
@@ -1918,7 +1970,7 @@ window.installApp = () => {
 <div id="live-region" aria-live="polite" style="position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden;"></div>
 
 <!-- Boot File Split (Dec 2025): Load via entrypoint which orchestrates all boot files -->
- <script type="module" src="miniCycle-main.js?v=2.235"></script>
+ <script type="module" src="miniCycle-main.js?v=2.236"></script>
 
 <script>
 // Sync About modal version with meta app-version
