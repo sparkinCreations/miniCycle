@@ -21,7 +21,9 @@
       "Bash(bash scripts/update-version.sh --auto --chrome --dry-run)",
       "Bash(cd web *)",
       "Read(//Users/mjaynumberone/Documents/Programs/Code/chrome/full/**)",
-      "Bash(GIT_TERMINAL_PROMPT=0 ./scripts/update-version.sh -a -p -c -s -C)"
+      "Bash(GIT_TERMINAL_PROMPT=0 ./scripts/update-version.sh -a -p -c -s -C)",
+      "Bash(git rm *)",
+      "Bash(git ls-files *)"
     ]
   }
 }
