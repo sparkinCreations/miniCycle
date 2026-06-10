@@ -10,7 +10,7 @@
 <!-- ✅ Translucent status bar shows body background-color on iOS -->
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" id="status-bar-style-meta">
 
-<meta name="app-version" content="2.236">
+<meta name="app-version" content="2.237">
 
 <!-- Content Security Policy -->
 <!-- CSP is served via HTTP header in netlify.toml (production) -->
@@ -29,20 +29,20 @@
 <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"> -->
 <!-- Add cache busting version parameter -->
 <!-- Original CSS (for reference) -->
-<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=2.236"> -->
+<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=2.237"> -->
 
 <!-- Preload critical CSS files (they load in parallel, not blocking) -->
-<link rel="preload" href="styles/main.css?v=2.236" as="style">
-<link rel="preload" href="styles/base/variables.css?v=2.236" as="style">
-<link rel="preload" href="styles/base/reset.css?v=2.236" as="style">
-<link rel="preload" href="styles/layout/app-container.css?v=2.236" as="style">
-<link rel="preload" href="styles/layout/header.css?v=2.236" as="style">
-<link rel="preload" href="styles/components/task-list.css?v=2.236" as="style">
+<link rel="preload" href="styles/main.css?v=2.237" as="style">
+<link rel="preload" href="styles/base/variables.css?v=2.237" as="style">
+<link rel="preload" href="styles/base/reset.css?v=2.237" as="style">
+<link rel="preload" href="styles/layout/app-container.css?v=2.237" as="style">
+<link rel="preload" href="styles/layout/header.css?v=2.237" as="style">
+<link rel="preload" href="styles/components/task-list.css?v=2.237" as="style">
 
 <!-- Async CSS loading - doesn't block render, app starts with inline critical CSS -->
-<link rel="stylesheet" href="styles/main.css?v=2.236" media="print" id="async-main-css">
+<link rel="stylesheet" href="styles/main.css?v=2.237" media="print" id="async-main-css">
 <script>document.getElementById('async-main-css').onload=function(){this.media='all'};</script>
-<noscript><link rel="stylesheet" href="styles/main.css?v=2.236"></noscript>
+<noscript><link rel="stylesheet" href="styles/main.css?v=2.237"></noscript>
 <link rel="manifest" href="manifest.json">
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -53,7 +53,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- version.js MUST load synchronously BEFORE modulepreloads to set globalThis.APP_VERSION -->
-<script src="./version.js?v=2.236"></script>
+<script src="./version.js?v=2.237"></script>
 
 <!-- iOS PWA Detection - adds .ios-pwa class for safe area fixes -->
 <script>
@@ -802,15 +802,23 @@ window.getServiceWorkerInfo = async function() {
 // version.js can load fresh (so verifyVersionFresh sees nothing wrong) while the
 // worker actually serving our module files is an OLD version handing back stale
 // cached code (the themeManager/recurringPanel "Frankenstein cache" boot failure).
-// Ask the controlling worker its version; if it doesn't match the page, clear
-// caches and reload ONCE for this version so we come back clean.
+// Ask the controlling worker its version; if it doesn't match the page, evict the
+// stale worker and reload ONCE for this version so we come back clean.
+//
+// IMPORTANT (hardening): clearing caches alone is NOT enough on a wedged machine.
+// The OLD worker stays registered and controlling, so after a cache clear it just
+// re-serves stale content and the once-per-version guard then blocks a retry —
+// the page can't fix the worker from inside the page. We therefore UNREGISTER the
+// stale worker too; the next load has no controller, fetches everything fresh from
+// the network, and the new worker (with the cache fix) installs and takes over.
+// This is the automated equivalent of the manual DevTools "Unregister" step.
 async function ensureControllingWorkerFresh(registration) {
   try {
     if (!navigator.serviceWorker.controller || !registration.active) return;
 
-    // NEVER clear caches when offline — they're the only source of files, so
-    // clearing offline would brick the app until the user is back online.
-    // Mirrors coreBoot.attemptCacheRecovery()'s offline guard.
+    // NEVER clear caches / unregister when offline — caches are the only source of
+    // files, so doing this offline would brick the app until the user is back
+    // online. Mirrors coreBoot.attemptCacheRecovery()'s offline guard.
     if (!navigator.onLine) return;
 
     const swInfo = await new Promise((resolve) => {
@@ -829,15 +837,24 @@ async function ensureControllingWorkerFresh(registration) {
     sessionStorage.setItem(healedKey, APP_VERSION);
 
     console.warn('🔄 Stale service worker (' + swInfo.appVersion +
-                 ') controlling page (' + APP_VERSION + ') — clearing caches and reloading');
+                 ') controlling page (' + APP_VERSION + ') — evicting worker, clearing caches, reloading');
 
+    // 1. Nudge any already-downloaded new worker to activate.
     await registration.update().catch(() => {});
     if (registration.waiting) registration.waiting.postMessage({ type: 'SKIP_WAITING' });
 
+    // 2. Drop all caches (the stale module files live here).
     if ('caches' in window) {
       const keys = await caches.keys();
       await Promise.all(keys.map((k) => caches.delete(k)));
     }
+
+    // 3. Evict the stale worker itself — the step that was missing. Without this,
+    //    the old worker keeps controlling the page and re-serving stale files.
+    await registration.unregister().catch(() => {});
+
+    // 4. Reload once (cache-busted). No controller now → fresh network fetch →
+    //    the new worker registers clean on the way back up.
     window.location.replace(window.location.pathname + '?_cc=' + Date.now());
   } catch (e) {
     console.warn('Stale-worker check failed:', e);
@@ -1970,7 +1987,7 @@ window.installApp = () => {
 <div id="live-region" aria-live="polite" style="position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden;"></div>
 
 <!-- Boot File Split (Dec 2025): Load via entrypoint which orchestrates all boot files -->
- <script type="module" src="miniCycle-main.js?v=2.236"></script>
+ <script type="module" src="miniCycle-main.js?v=2.237"></script>
 
 <script>
 // Sync About modal version with meta app-version
