@@ -331,7 +331,7 @@ export function detectCircularDeps(manifests) {
  * @param {Function} withV - Version-appending function for cache busting
  * @returns {Promise<Object|null>} Loaded module or null if failed
  */
-export async function loadModule(name, deps, coreResult, withV) {
+export async function loadModule(name, deps, coreResult, withV, wire = true) {
     // ✅ Ensure manifests are loaded (idempotent - only loads once)
     if (!_manifestsLoaded) {
         await loadManifests(withV);
@@ -353,11 +353,16 @@ export async function loadModule(name, deps, coreResult, withV) {
         const mod = await import(withV(manifest.path));
         loadedModules.set(name, mod);
 
-        // Find and call setDependencies if it exists
-        const setDepsFn = findSetDependenciesFunction(mod, name);
-        if (setDepsFn) {
-            const moduleDeps = buildModuleDependencies(manifest, deps, coreResult);
-            setDepsFn(moduleDeps);
+        // Wire dependencies (setDependencies). Skipped when wire=false: loadPhase defers
+        // wiring to its sequential init stage, because setDependencies EAGERLY captures
+        // getter-style deps (e.g. TaskOptionsVisibilityController) — so a module must wire
+        // AFTER same-phase providers' init() has registered them, not during parallel load.
+        if (wire) {
+            const setDepsFn = findSetDependenciesFunction(mod, name);
+            if (setDepsFn) {
+                const moduleDeps = buildModuleDependencies(manifest, deps, coreResult);
+                setDepsFn(moduleDeps);
+            }
         }
 
         return mod;
@@ -469,27 +474,31 @@ export async function loadPhase(deps, coreResult, phase) {
     // load on-demand via ensureModuleLoaded().
     const active = modules.filter(([, manifest]) => !manifest.deferred);
 
-    // ⚡ Stage 1 — FETCH + WIRE in parallel. loadModule() does the dynamic import()
-    // plus setDependencies(). import() is order-independent/idempotent and
-    // setDependencies() only wires lazy getters (resolved later at init/runtime),
-    // so running these concurrently is safe and collapses N sequential fetch/parse
-    // round-trips into one batch — the primary boot-time win on slow devices.
-    // A non-optional import failure rejects here, aborting boot exactly as the old
-    // sequential loop did (optional modules resolve to null inside loadModule).
-    const loaded = await Promise.all(
-        active.map(([name]) => loadModule(name, deps, coreResult, withV))
+    // ⚡ Stage 1 — FETCH (import + parse) in parallel. This is the boot-time win: it
+    // collapses N sequential fetch/parse round-trips into one batch. NO wiring here —
+    // import() is order-independent/idempotent, but setDependencies is NOT (it eagerly
+    // captures getter-style cross-module deps), so wiring is deferred to Stage 2.
+    // A non-optional import failure rejects here, aborting boot exactly as before
+    // (optional modules resolve to null inside loadModule).
+    await Promise.all(
+        active.map(([name]) => loadModule(name, deps, coreResult, withV, /* wire */ false))
     );
 
-    // ⚡ Stage 2 — INITIALIZE sequentially, in dependency order (semantics UNCHANGED).
-    // init() can register provides and run side effects that later modules in this
-    // phase depend on, so ordering is preserved exactly as before.
-    for (let i = 0; i < active.length; i++) {
-        const [name] = active[i];
-        const mod = loaded[i];
-        if (mod) {
-            const instance = await initializeModule(name, mod, deps, coreResult);
-            results.set(name, instance || mod);
+    // ⚡ Stage 2 — WIRE + INITIALIZE sequentially, in dependency order. setDependencies
+    // runs HERE (after each earlier module's init() has registered its provides), so a
+    // module captures same-phase providers correctly — identical semantics to the
+    // original per-module sequential loop, with ONLY the import parallelized.
+    for (const [name, manifest] of active) {
+        const mod = loadedModules.get(name);
+        if (!mod) continue; // optional import failed → skip
+
+        const setDepsFn = findSetDependenciesFunction(mod, name);
+        if (setDepsFn) {
+            setDepsFn(buildModuleDependencies(manifest, deps, coreResult));
         }
+
+        const instance = await initializeModule(name, mod, deps, coreResult);
+        results.set(name, instance || mod);
     }
 
     return results;
