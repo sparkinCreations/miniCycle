@@ -564,6 +564,12 @@ export class TaskOptionsCustomizer {
         // Touch guard suppresses simulated mouse events after a tap to avoid double-fire.
         let hidePreviewTimer = null;
         let recentTouch = false;
+        // Double-tap/click on the label (info) zone also applies the option — handled
+        // manually in the click handler so it works on BOTH mouse and touch (native
+        // dblclick is unreliable on touch and triggers pinch-zoom).
+        let lastTapTime = 0;
+        let lastTapItem = null;
+        const DOUBLE_TAP_MS = 300;
 
         const showPreview = (item) => {
             // Cancel any pending hide — user moved to another item
@@ -638,7 +644,21 @@ export class TaskOptionsCustomizer {
                     return; // Don't select/preview
                 }
 
-                // Right zone (label text): show preview and mark selected
+                // Right zone (label text): double-tap/click APPLIES (toggles); single shows preview.
+                const now = Date.now();
+                if (lastTapItem === item && (now - lastTapTime) < DOUBLE_TAP_MS) {
+                    lastTapItem = null;
+                    lastTapTime = 0;
+                    if (checkbox && !checkbox.disabled) {
+                        checkbox.checked = !checkbox.checked;
+                        checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                    return;
+                }
+                lastTapItem = item;
+                lastTapTime = now;
+
+                // Single tap: show preview and mark selected
                 showPreview(item);
                 optionItems.forEach(i => i.classList.remove(DOM_CLASSES.SELECTED));
                 item.classList.add(DOM_CLASSES.SELECTED);
