@@ -10,21 +10,22 @@
 ## Table of Contents
 
 1. [File Structure](#file-structure)
-2. [Design Tokens (variables.css)](#design-tokens-variablescss)
-3. [Color System](#color-system)
-4. [Spacing Scale](#spacing-scale)
-5. [Typography](#typography)
-6. [Timing and Transitions](#timing-and-transitions)
-7. [Borders and Radius](#borders-and-radius)
-8. [Shadows](#shadows)
-9. [Z-Index Layers](#z-index-layers)
-10. [Layout Variables](#layout-variables)
-11. [Theming System](#theming-system)
-12. [Dark Mode](#dark-mode)
-13. [Vocab Theme Color Presets](#vocab-theme-color-presets)
-14. [Accessibility](#accessibility)
-15. [Responsive Design](#responsive-design)
-16. [Conventions and Rules](#conventions-and-rules)
+2. [CSS Loading Strategy](#css-loading-strategy)
+3. [Design Tokens (variables.css)](#design-tokens-variablescss)
+4. [Color System](#color-system)
+5. [Spacing Scale](#spacing-scale)
+6. [Typography](#typography)
+7. [Timing and Transitions](#timing-and-transitions)
+8. [Borders and Radius](#borders-and-radius)
+9. [Shadows](#shadows)
+10. [Z-Index Layers](#z-index-layers)
+11. [Layout Variables](#layout-variables)
+12. [Theming System](#theming-system)
+13. [Dark Mode](#dark-mode)
+14. [Vocab Theme Color Presets](#vocab-theme-color-presets)
+15. [Accessibility](#accessibility)
+16. [Responsive Design](#responsive-design)
+17. [Conventions and Rules](#conventions-and-rules)
 
 ---
 
@@ -78,6 +79,101 @@ styles/
 ```
 
 **38 CSS files** organized by layer: base → components → layout → themes → utilities.
+
+---
+
+## CSS Loading Strategy
+
+CSS loads in **two tiers** so the boot splash + above-the-fold paint fast, while the
+full stylesheet loads without blocking render. This lives in the `<head>` of
+`miniCycle.html`.
+
+### Tier 1 — render-blocking critical CSS
+
+```html
+<link rel="stylesheet" href="./styles/base/critical.css">
+```
+
+`critical.css` is a small, self-contained, render-blocking stylesheet covering the boot
+splash and above-the-fold shell. It is intentionally **not** part of `main.css` and has
+no `@import`s — it must paint immediately.
+
+### Tier 2 — async main stylesheet (`main.css`)
+
+`main.css` is the master aggregator: a chain of ~38 `@import`s pulling in every other
+stylesheet (variables, reset, layout, components, accessibility, …). Because `@import`s
+are fetched as a **sequential waterfall**, making `main.css` render-blocking would
+noticeably delay first paint — so it loads **asynchronously**:
+
+```html
+<!-- preload so the bytes arrive early... -->
+<link rel="preload" href="styles/main.css?v=APP_VERSION" as="style">
+<!-- ...but apply via media="print" so it does NOT block render... -->
+<link rel="stylesheet" href="styles/main.css?v=APP_VERSION" media="print" id="async-main-css">
+<!-- ...then flip media to "all" once it has loaded, applying the styles. -->
+<script>(function(){var l=document.getElementById('async-main-css');if(!l)return;function apply(){l.media='all';}if(l.sheet){apply();}else{l.addEventListener('load',apply);}})();</script>
+<noscript><link rel="stylesheet" href="styles/main.css?v=APP_VERSION"></noscript>
+```
+
+`media="print"` is the standard async-CSS trick: the browser fetches the sheet at low
+priority and parses it into CSSOM, but does **not** apply it (it doesn't match `screen`).
+The inline script then flips `media` to `"all"`, applying all the styles at once.
+
+### The race this guards against (v2.241 fix)
+
+> ⚠️ **Do not revert the flip script to `getElementById('async-main-css').onload = …`.**
+
+The naive version attaches `onload` in a *separate* statement, *after* the `<link>` is
+already in the DOM:
+
+```js
+// WRONG — races against fast cache hits
+document.getElementById('async-main-css').onload = function(){ this.media = 'all'; };
+```
+
+When the service worker serves `main.css` instantly from cache (common with cache-first
+navigation), its `load` event fires **before** that line runs — the handler is attached
+too late, never fires, `media` stays `"print"`, and **the entire app renders unstyled**
+(big plain heading, no layout, skeleton blocks). Slow load → handler attached in time →
+styled. Net effect: the page toggled between styled and unstyled on refresh.
+
+The robust version eliminates the window instead of racing to beat it:
+
+```js
+// CORRECT — handles "already loaded" and "not yet loaded", no gap
+if (l.sheet) { apply(); }                      // already parsed → apply now
+else { l.addEventListener('load', apply); }    // not yet → catch the future load
+```
+
+These two lines run synchronously; a `load` event (a queued task) cannot fire *between*
+them. So at script time there are exactly two states and both are handled — no remaining
+race. (The only unhandled case is `main.css` failing to load entirely, which is a deploy
+failure, not a timing bug.)
+
+### Why it must stay a hashed `<script>` (not an inline `onload=""`)
+
+The obvious "fix it at the source" is an inline attribute:
+
+```html
+<!-- DON'T — blocked by CSP -->
+<link ... media="print" onload="this.media='all'">
+```
+
+The app's CSP (`netlify.toml`, `.htaccess`, `nginx-security.conf`) uses **SHA-256 hashes
+with no `'unsafe-hashes'`**, so inline event-handler attributes are blocked in production.
+The flip logic must live in a hashed `<script>` block. **Any edit to that script changes
+its hash** — recompute and update the CSP in all three configs (see
+[CSP_AND_HTACCESS_GUIDE.md](../security/CSP_AND_HTACCESS_GUIDE.md)) or it will be silently
+blocked.
+
+### Rules
+
+- ✅ `critical.css` paints the shell — keep it small, render-blocking, no `@import`s.
+- ✅ Everything else goes through `main.css`'s `@import` chain and loads async.
+- ❌ Don't make `main.css` render-blocking — the `@import` waterfall hurts first paint.
+- ❌ Don't use the naive `.onload =` flip — use the `if (l.sheet)` guard.
+- ❌ Don't use an inline `onload=""` attribute — CSP blocks it.
+- ⚠️ Editing the flip `<script>` requires a CSP hash update across all three configs.
 
 ---
 
