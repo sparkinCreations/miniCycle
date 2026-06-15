@@ -13,15 +13,15 @@
 
 | Metric | Value |
 |--------|-------|
-| **App Version** | 2.238 |
+| **App Version** | 2.239 |
 | **Lite Version** | 2.091 (frozen) |
 | **Schema Version** | 2.5 |
-| **Total Modules** | 122 |
-| **Total Tests** | 2450 |
+| **Total Modules** | 123 |
+| **Total Tests** | 2451 |
 | **Test Pass Rate** | 100% |
 | **CSS Files** | 43 |
-| **JSDoc Blocks** | 1257 |
-| **Documentation Files** | 210 |
+| **JSDoc Blocks** | 1261 |
+| **Documentation Files** | 211 |
 | **DI Completion** | 100% |
 | **Custom window.* Globals (modules)** | 0 |
 
@@ -37,7 +37,7 @@
 | `core/` | 9 | AppState, appInit, appContext, DI base, constants |
 | `task/` | 13 | Task CRUD, DOM, events, drag-drop, validation |
 | `routine/` | 5 | Routine management, switching, migration |
-| `recurring/` | 15 | Recurring task scheduling, panel, activation |
+| `recurring/` | 16 | Recurring task scheduling, panel, activation |
 | `ui/` | 33 | Modals, menus, settings, onboarding, gestures |
 | `features/` | 8 | Themes, stats, achievements, history, reminders |
 | `utils/` | 15 | Notifications, device detection, utilities |
@@ -45,7 +45,7 @@
 | `progress/` | 1 | Cycle completion tracking |
 | `testing/` | 9 | Test infrastructure |
 | `other/` | 3 | Plugins, experimental |
-| **Total** | **122** | |
+| **Total** | **123** | |
 
 ---
 
@@ -66,7 +66,7 @@
 
 | Category | Tests |
 |----------|-------|
-| Total Tests | 2450 |
+| Total Tests | 2451 |
 | Test Files | 116 |
 | Pass Rate | 100% |
 | Platforms Tested | Mac, iPad, iPhone |

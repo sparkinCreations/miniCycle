@@ -81,11 +81,21 @@ function measureBoot(name, startMark, endMark) {
   // Throws if either mark is missing (e.g. boot aborted mid-phase) — swallow it.
   try { performance.measure(name, startMark, endMark); } catch (_) { /* marks missing */ }
 }
+// Per-phase module-load measures emitted by loadAllModules() in moduleLoader.js,
+// named `mc:subphase:<PHASE_NAME>` (+ `:start` marks). Read here by prefix so the
+// two files stay decoupled — orchestrator never imports the PHASES enum.
+const SUBPHASE_PREFIX = 'mc:subphase:';
+
 function clearBootTiming() {
   // Wipe prior-attempt entries so a retry's timing isn't read as the first attempt's.
   try {
     Object.values(BOOT_MARKS).forEach(m => performance.clearMarks(m));
     Object.values(BOOT_MEASURES).forEach(m => performance.clearMeasures(m));
+    // Sub-phase marks/measures use dynamic names — clear them by prefix.
+    performance.getEntriesByType('mark')
+      .forEach(e => { if (e.name.startsWith(SUBPHASE_PREFIX)) performance.clearMarks(e.name); });
+    performance.getEntriesByType('measure')
+      .forEach(e => { if (e.name.startsWith(SUBPHASE_PREFIX)) performance.clearMeasures(e.name); });
   } catch (_) { /* perf API unavailable */ }
 }
 
@@ -104,6 +114,19 @@ function getBootTiming() {
     const e = performance.getEntriesByName(name, 'mark').pop();
     return e ? Math.round(e.startTime) : null;
   };
+  // Per-phase module-load breakdown of the dominant `features` window. Prefix-scan
+  // the measures (last entry per name wins, so a boot retry reads the latest attempt)
+  // and key the result by the short phase name (e.g. UI_MANAGERS_ms).
+  const subPhases = {};
+  try {
+    const byName = new Map();
+    performance.getEntriesByType('measure').forEach(e => {
+      if (e.name.startsWith(SUBPHASE_PREFIX)) byName.set(e.name, e); // last wins
+    });
+    byName.forEach((e, name) => {
+      subPhases[name.slice(SUBPHASE_PREFIX.length) + '_ms'] = Math.round(e.duration);
+    });
+  } catch (_) { /* perf API unavailable */ }
   return {
     // ms from navigation start (timeOrigin) until app interactive — includes the
     // pre-orchestrator cold-cache/precache window, which dominates first loads.
@@ -116,6 +139,8 @@ function getBootTiming() {
       features_ms: dur(BOOT_MEASURES.FEATURES),
       ui_ms: dur(BOOT_MEASURES.UI)
     },
+    // Breakdown of features_ms by module-load phase (CORE_UTILS … TESTING).
+    featuresByPhase: subPhases,
     // total time spent inside runBootSequence() (start → interactive).
     bootSequence_ms: dur(BOOT_MEASURES.TOTAL)
   };
@@ -499,6 +524,77 @@ function showBootError(phase, error, willRetry = false) {
 }
 
 /**
+ * Bounded pre-boot version gate (resilience for stale clients).
+ *
+ * A user on a cached old build can request a module path that was renamed or
+ * removed in a newer deploy. If the NEW service worker has already claimed, that
+ * request 404s and the dynamic import HARD-FAILS — landing on the boot-error
+ * screen instead of gracefully updating. verifyVersionFresh() in miniCycle.html
+ * catches server-ahead mismatches, but it runs in PARALLEL with boot and can lose
+ * the race against the feature-module imports.
+ *
+ * This GATES the feature-load phase: if the server is ahead, clear caches and
+ * reload to the fresh build BEFORE importing any (possibly-renamed) feature module.
+ *
+ * - Fail-open: offline / timeout / malformed version.js → resolve and boot from
+ *   cache (a working stale app beats a blocked one).
+ * - ≈Free on the happy path: the caller kicks this off early so the tiny no-store
+ *   fetch overlaps the boot-module imports + Phase 1, then awaits it before Phase 2.
+ * - Loop-safe: mirrors the __miniCycle_lastVersion / __miniCycle_justCleared guards
+ *   used by the inline early-version check and verifyVersionFresh().
+ *
+ * @param {number} timeoutMs - Max wait for the version fetch before failing open.
+ * @returns {Promise<void>} Resolves when boot may proceed; never resolves if it reloads.
+ */
+async function gateOnServerVersion(timeoutMs) {
+  try {
+    const timeout = new Promise((resolve) => setTimeout(() => resolve(null), timeoutMs));
+    const fetchText = fetch(`./version.js?_cb=${Date.now()}`, {
+      cache: 'no-store',
+      headers: { 'Cache-Control': 'no-cache' }
+    }).then((r) => r.text()).catch(() => null);
+
+    const text = await Promise.race([fetchText, timeout]);
+    if (!text) return; // timeout or fetch error → fail open, boot from cache
+
+    const match = text.match(/APP_VERSION\s*=\s*['"]([^'"]+)['"]/);
+    const serverVersion = match ? match[1] : null;
+    if (!serverVersion || serverVersion === APP_VERSION) return; // fresh (or unknown) → proceed
+
+    // Server is ahead — the loaded build is stale. Loop guard: if we already
+    // cleared for this exact server version this session, the reload didn't take
+    // (e.g. CDN still serving old) — proceed rather than spin on reloads.
+    try {
+      if (sessionStorage.getItem('__miniCycle_justCleared') === serverVersion) {
+        console.warn(`⚠️ Version gate: already cleared for v${serverVersion} this session — proceeding to avoid a reload loop`);
+        return;
+      }
+      localStorage.setItem('__miniCycle_lastVersion', serverVersion);
+      sessionStorage.setItem('__miniCycle_justCleared', serverVersion);
+    } catch (_) { /* storage unavailable — still attempt the reload */ }
+
+    console.warn(`🔄 Pre-boot version gate: loaded=${APP_VERSION}, server=${serverVersion} — clearing caches and reloading to the fresh build`);
+    // Swap the boot splash for the friendly "Updating to latest version…" overlay so
+    // the gate-triggered reload reads as a deliberate update, not a glitchy flash —
+    // consistent with the isCacheError recovery path which shows the same overlay.
+    try { showUpdatingOverlay(); } catch (_) { /* loader missing — proceed to reload */ }
+    try {
+      if ('caches' in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((k) => caches.delete(k)));
+      }
+    } catch (_) { /* cache clear is best-effort */ }
+
+    window.location.href = window.location.pathname + '?_cb=' + Date.now();
+    // Block here — the page is navigating. Never let boot continue on stale code
+    // and hit a renamed-module 404 before the reload takes effect.
+    await new Promise(() => {});
+  } catch (err) {
+    console.warn('Pre-boot version gate failed (proceeding):', err);
+  }
+}
+
+/**
  * Execute the core boot sequence with timeout protection.
  * Separated from initApp() to enable retry on failure.
  *
@@ -530,6 +626,15 @@ async function runBootSequence() {
     versionSuffix = APP_VERSION;
   }
   const vParam = versionSuffix ? `?v=${versionSuffix}` : '';
+
+  // ⛔ Kick off the pre-boot version gate NOW (non-blocking) so its tiny no-store
+  // fetch overlaps the boot-module imports + Phase 1 — ≈free on a healthy network.
+  // Awaited just before Phase 2, below. Skipped on retry: the retry path already
+  // does its own cache-busting (.r suffix) + teardown, and a gate reload mid-retry
+  // would fight it. Offline fails open fast (fetch rejects → null), so no special-case.
+  const versionGate = isRetry
+    ? Promise.resolve()
+    : gateOnServerVersion(BOOT_TIMEOUTS.VERSION_GATE);
 
   // ========== CHECK FOR UPDATES ==========
   updateLoaderProgress(getLabel('boot.checkingUpdates'), 5);
@@ -663,6 +768,11 @@ async function runBootSequence() {
     DOM_IDS.SETTINGS_MODAL,
     SETTINGS_MODAL_HTML
   );
+
+  // ⛔ Gate before loading feature modules: if the server is ahead, this reloads
+  // to the fresh build and never returns — so we never import a possibly-renamed
+  // feature module on stale code. Resolves instantly when fresh/offline/timed-out.
+  await versionGate;
 
   // ========== PHASE 2: FEATURES (with timeout) ==========
   updateLoaderProgress(getLabel('boot.loadingFeatures'), 55);

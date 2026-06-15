@@ -304,6 +304,21 @@ export function showBootTiming() {
     appendToTestResults(`   • Module import: ${fmt(p.moduleImport_ms)}\n`);
     appendToTestResults(`   • Core (AppState): ${fmt(p.core_ms)}\n`);
     appendToTestResults(`   • Features (all modules): ${fmt(p.features_ms)}\n`);
+
+    // Per-phase breakdown of the Features window, ranked descending — the dominant
+    // phase is the first defer/parallelization target on slow devices. Keyed like
+    // { UI_MANAGERS_ms: 120, THEME_VISUAL_ms: 80, ... } by getMiniCycleBootTiming().
+    const byPhase = timing.featuresByPhase || {};
+    const rankedPhases = Object.entries(byPhase)
+        .map(([k, v]) => [k.replace(/_ms$/, ''), v])
+        .sort((a, b) => (b[1] ?? 0) - (a[1] ?? 0));
+    if (rankedPhases.length) {
+        appendToTestResults(`     ↳ by module phase (ranked):\n`);
+        rankedPhases.forEach(([name, ms]) => {
+            appendToTestResults(`        - ${name}: ${fmt(ms)}\n`);
+        });
+    }
+
     appendToTestResults(`   • UI finalize: ${fmt(p.ui_ms)}\n\n`);
 
     showNotification(getLabel('notify.diagBootTiming'), "info", UI_TIMEOUTS.NOTIFICATION_SHORT);

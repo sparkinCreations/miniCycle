@@ -1,3 +1,9 @@
+## [2.239] - 2026-06-14
+- feat(boot): defer recurring panel UI to first open (lazy-load ~3.6k lines off boot)
+- feat(promo): add chrome store promotional images
+- docs(perf): add recurring panel deferral plan
+
+
 ## [2.238] - 2026-06-14
 - feat(boot): parallel phase imports + pre-boot version gate + per-phase timing
 - feat(promo): add promotional image for enhanced user engagement

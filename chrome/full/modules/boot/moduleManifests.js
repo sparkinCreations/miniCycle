@@ -166,6 +166,12 @@ export const MODULE_MANIFESTS = {
         // to reveal #games-menu-option (default display:none) if unlocked. The
         // unlockMiniGame depMapping auto-loads it when a cycle milestone fires.
         deferred: true,
+        // Resilience: a stale client whose deploy renamed/removed this module would
+        // 404 on the post-boot on-demand load. optional=true makes loadModule return
+        // null (graceful no-op) instead of throwing an uncaught rejection in the
+        // menu-trigger handler — matching the other deferred modules (testing group).
+        // The games feature simply stays hidden until verifyVersionFresh() reloads.
+        optional: true,
         after: ['notifications']
     },
 
