@@ -1,3 +1,16 @@
+## [2.240] - 2026-06-15
+- fix(boot): wire module deps in the sequential init stage (fixes eager-capture of getter deps)
+- fix(quick-actions): live-refresh recently/frequently used without a manual refresh
+- docs(architecture): document quick actions + usage tracking
+- feat(quick-actions): track action usage uniformly via a delegated listener
+- feat(task-options): double-tap an option to apply it + discoverability hint
+- docs(perf): add central action-dispatch / uniform usage-tracking plan
+- docs(perf): add minification (deploy-time) plan
+- docs(perf): roadmap verification passes — re-tier candidates, steer toward minification
+- docs(perf): mark recurring panel deferral done + verified
+- docs(perf): add boot performance roadmap (next targets + structural levers)
+
+
 ## [2.239] - 2026-06-14
 - feat(boot): defer recurring panel UI to first open (lazy-load ~3.6k lines off boot)
 - feat(promo): add chrome store promotional images

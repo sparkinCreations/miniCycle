@@ -160,7 +160,7 @@ export const DEFAULT_LABELS = deepFreeze({
         recurringTask:            'Recurring Task',
         setDueDate:               'Set Due Date',
         taskReminders:            'Task Reminders',
-        changesApply:             'Changes apply immediately when checked',
+        changesApply:             'Changes apply immediately when checked or double-tapped',
         resetDefault:             'Reset to Default',
         customizeLabel:           'Add/Remove Buttons',
         customizeDescription:     'Always visible — opens this panel',

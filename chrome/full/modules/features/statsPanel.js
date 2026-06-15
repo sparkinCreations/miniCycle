@@ -25,6 +25,7 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { GESTURE, UI_TIMEOUTS, CHART, INTERVALS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION } from '../core/constants.js';
 import { getLabel, getIcon } from '../labels/labelResolver.js';
+import { recordActionUsage } from '../ui/actionUsage.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -377,7 +378,8 @@ export class StatsPanelManager {
             // UI event handlers
             handleSlideLeftClick: () => this.showTaskView(),
             handleSlideRightClick: () => {
-                _deps.trackAction?.('stats');
+                // Slide gesture isn't a mapped button — record stats usage directly.
+                recordActionUsage(_deps.AppState, 'stats');
                 this.showStatsPanel();
             },
             handleSlideArrowKeydown: (e) => {

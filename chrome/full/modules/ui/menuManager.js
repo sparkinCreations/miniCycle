@@ -198,7 +198,7 @@ export class MenuManager {
         replaceStoredEventListener(saveBtn, "click", "__miniCycleMenuManagerClickHandler", () => this.saveMiniCycleAsNew());
 
         replaceStoredEventListener(openBtn, "click", "__miniCycleMenuManagerClickHandler", () => {
-            this.deps.trackAction?.('open-routine');
+            // Usage tracked by the delegated listener (actionUsage.js, OPEN_MINI_CYCLE).
             this.deps.switchMiniCycle();
         });
 

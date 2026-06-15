@@ -16,6 +16,9 @@ import { createDIModule, required, optional } from '../core/diBase.js';
 import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { handleHorizontalArrowNav } from '../utils/keyboardNav.js';
+// Uniform usage tracking — one delegated listener records every action-button click
+// (direct + the panel's synthetic clicks). See docs/future-work/ACTION_DISPATCH_PLAN.md
+import { recordActionUsage, setupActionUsageTracking } from './actionUsage.js';
 
 // ============================================================================
 // CONSTANTS
@@ -296,6 +299,15 @@ export class QuickActionsManager {
 
         // Create tooltip element (shared)
         this._createTooltip();
+
+        // Uniform usage tracking: one delegated listener over the action buttons, so
+        // accessing a feature from ANYWHERE (not just the panel) counts toward
+        // recently/frequently used. Idempotent + app-lifetime. The onRecord callback
+        // live-refreshes the panel so recent/frequent update without a manual refresh.
+        setupActionUsageTracking(this.deps.AppState, () => {
+            const view = this._getActiveView();
+            if (view === 'recent' || view === 'frequent') this._renderAllPanels();
+        });
 
         this._initialized = true;
         if (this.deps.isDebug?.()) console.log('⚡ QuickActionsManager initialized');
@@ -593,14 +605,17 @@ export class QuickActionsManager {
         if (!action) return;
 
         try {
-            this.trackAction(actionId);
-
+            // Usage is recorded by the delegated listener (actionUsage.js) for
+            // button-dispatched actions — their btn.click() below bubbles to it. The 3
+            // function-dispatched cases (stats/recurring/reminders) record explicitly,
+            // since they don't click a button for the listener to catch.
             switch (action.handler) {
                 case 'showStatsPanel':
                     if (!this.deps.showStatsPanel) {
                         this._warnMissingDep('showStatsPanel', actionId);
                         break;
                     }
+                    recordActionUsage(this.deps.AppState, actionId);
                     this.deps.showStatsPanel();
                     this.deps.hideMainMenu?.();
                     break;
@@ -626,6 +641,7 @@ export class QuickActionsManager {
                         this._warnMissingDep('recurringPanel.openPanel', actionId);
                         break;
                     }
+                    recordActionUsage(this.deps.AppState, actionId);
                     setTimeout(() => {
                         try {
                             this.deps.recurringPanel.openPanel();
@@ -637,6 +653,7 @@ export class QuickActionsManager {
                     }, 0);
                     break;
                 case 'openRemindersModal': {
+                    recordActionUsage(this.deps.AppState, actionId);
                     setTimeout(() => {
                         try {
                             const modal = this.deps.getModal?.('reminders') || this.deps.getElementById(DOM_IDS.REMINDERS_MODAL);
@@ -994,32 +1011,8 @@ export class QuickActionsManager {
     // ========================================================================
 
     trackAction(actionId) {
-        if (!ACTION_REGISTRY[actionId]) return;
-
-        this.deps.AppState?.update(s => {
-            if (!s.settings) s.settings = {};
-            if (!s.settings.quickActions) {
-                s.settings.quickActions = {
-                    pinned: ['stats', null, null, null, null],
-                    counts: {},
-                    recent: [],
-                    activeView: 'recent'
-                };
-            }
-            const qa = s.settings.quickActions;
-
-            // Increment count
-            if (!qa.counts) qa.counts = {};
-            qa.counts[actionId] = (qa.counts[actionId] || 0) + 1;
-
-            // Add to recent (front), deduplicate, cap
-            if (!qa.recent) qa.recent = [];
-            qa.recent = qa.recent.filter(id => id !== actionId);
-            qa.recent.unshift(actionId);
-            if (qa.recent.length > MAX_RECENT) {
-                qa.recent = qa.recent.slice(0, MAX_RECENT);
-            }
-        });
+        // Delegate persistence to the single source of truth (actionUsage.js).
+        recordActionUsage(this.deps.AppState, actionId);
 
         // Re-render if showing recent or frequent view
         const view = this._getActiveView();
