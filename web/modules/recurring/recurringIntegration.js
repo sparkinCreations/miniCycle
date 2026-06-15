@@ -15,6 +15,12 @@ import { createDIModule, optional } from '../core/diBase.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 import { APP_VERSION, UI_TIMEOUTS } from '../core/constants.js';
+// Lightweight boot-time recurring UI (no heavy panel) — see RECURRING_PANEL_DEFERRAL_PLAN.md
+import {
+    updateRecurringButtonVisibility,
+    updateRecurringInfoLink,
+    wireRecurringOpenTriggers
+} from './recurringBoot.js';
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
 // ============================================================================
@@ -73,8 +79,15 @@ export async function initRecurringModules(options = {}) {
     await deps.appInit?.waitForCore();
 
     try {
+        // Fail fast: recurring needs AppState for everything (logic + UI). Previously the
+        // panel's required() DI validated this at construction; with the panel deferred we
+        // guard explicitly so a missing AppState still fails clearly at init (not later on open).
+        if (!deps.AppState) {
+            throw new Error('Recurring init: AppState is required (missing required deps)');
+        }
+
         // ============================================
-        // STEP 1: Import both modules (with version for cache-busting)
+        // STEP 1: Import recurring LOGIC modules (panel UI is deferred — see below)
         // ============================================
 
         const version = options.AppMeta?.version || APP_VERSION;
@@ -82,11 +95,80 @@ export async function initRecurringModules(options = {}) {
             console.warn('⚠️ recurringIntegration: AppMeta.version not provided, using globalThis fallback');
         }
         const recurringCore = await import(`./recurringCore.js?v=${version}`);
-        const { RecurringPanelManager, setRecurringPanelDependencies, buildRecurringSummaryFromSettings, loadPanelSubModules } = await import(`./recurringPanel.js?v=${version}`);
         const settingsApplicator = await import(`./recurringSettingsApplicator.js?v=${version}`);
 
-        // Load panel sub-modules with version cache-busting
-        await loadPanelSubModules(version);
+        // ============================================================================
+        // DEFERRED PANEL (perf): recurringPanel.js + sub-modules (~3.6k lines) are the
+        // #2 boot-phase cost on slow devices and are NOT needed until the user opens the
+        // recurring panel. They load on first open via ensureRecurringPanelLoaded().
+        // Boot-time button-visibility / info-link / open-triggers run via recurringBoot
+        // WITHOUT the heavy panel. See docs/future-work/RECURRING_PANEL_DEFERRAL_PLAN.md
+        // ============================================================================
+
+        // DI-pure DOM accessors for the lightweight boot helpers.
+        const bootUiDeps = {
+            AppState: deps.AppState,
+            getElementById: (id) => document.getElementById(id),
+            querySelector: (selector) => document.querySelector(selector),
+            safeAddEventListener: deps.GlobalUtils?.safeAddEventListener
+        };
+
+        // Idempotent lazy loader for the full panel. Captures coreFunctions /
+        // settingsApplicator by closure (resolved at call time — this runs post-init).
+        let _panel = null;
+        let _panelLoadPromise = null;
+        const ensureRecurringPanelLoaded = async () => {
+            if (_panel) return _panel;
+            if (_panelLoadPromise) return _panelLoadPromise;
+            _panelLoadPromise = (async () => {
+                const { RecurringPanelManager, setRecurringPanelDependencies, buildRecurringSummaryFromSettings, loadPanelSubModules } =
+                    await import(`./recurringPanel.js?v=${version}`);
+                await loadPanelSubModules(version);
+
+                // Wire module-level dependencies BEFORE creating instance (was STEP 3)
+                setRecurringPanelDependencies({
+                    // Required (panel throws if any are missing)
+                    AppState: deps.AppState,
+                    showNotification: deps.showNotification,
+                    applyRecurringSettings: settingsApplicator.applyRecurringSettings,
+                    normalizeRecurringSettings: coreFunctions.normalizeRecurringSettings,
+                    calculateNextOccurrence: coreFunctions.calculateNextOccurrence,
+                    deleteTemplate: coreFunctions.deleteRecurringTemplate,
+                    buildRecurringSummary: buildRecurringSummaryFromSettings,
+                    formatNextOccurrence: coreFunctions.formatNextOccurrence,
+                    updateAppState: (updateFn, immediate) => deps.AppState?.update(updateFn, immediate),
+                    showConfirmationModal: (options) => deps.notifications?.showConfirmationModal(options),
+                    getElementById: (id) => document.getElementById(id),
+                    querySelector: (selector) => document.querySelector(selector),
+                    querySelectorAll: (selector) => document.querySelectorAll(selector),
+
+                    // Optional (nullable — panel checks before use)
+                    appInit: deps.appInit,
+                    loadData: () => deps.loadMiniCycleData?.(),
+                    safeAddEventListener: deps.GlobalUtils?.safeAddEventListener,
+                    escapeHtml: deps.escapeHtml,
+                    syncRecurringStateToDOM: deps.syncRecurringStateToDOM,
+                    refreshTaskButtonsForModeChange: deps.refreshTaskButtonsForModeChange,
+                    refreshUIFromState: () => deps.refreshUIFromState?.(),
+                    activateTaskRecurringState: coreFunctions.activateTaskRecurringState,
+                    deactivateTaskRecurringState: coreFunctions.deactivateTaskRecurringState,
+                    getModal: deps.getModal,
+                    showRecurringListTourNotification: deps.showRecurringListTourNotification,
+                    showRecurringSettingsTourNotification: deps.showRecurringSettingsTourNotification
+                });
+
+                const panel = new RecurringPanelManager();
+                panel.setup();
+                _panel = panel;
+                console.log('🔁 Recurring panel loaded on demand');
+                return panel;
+            })();
+            return _panelLoadPromise;
+        };
+
+        // Open paths route through the lazy loader (both methods are async in the panel today).
+        const lazyOpenPanel = async () => (await ensureRecurringPanelLoaded()).openPanel();
+        const lazyOpenForTask = async (taskId) => (await ensureRecurringPanelLoaded()).openRecurringSettingsPanelForTask(taskId);
 
         // ============================================
         // STEP 2: Configure recurringCore dependencies (Strict DI)
@@ -125,11 +207,13 @@ export async function initRecurringModules(options = {}) {
             // DOM operations (required)
             querySelector: (selector) => document.querySelector(selector),
 
-            // UI callbacks (optional - will be set after panel initialization)
-            updateRecurringPanel: null,        // Set later
-            updateRecurringSummary: null,      // Set later
-            updatePanelButtonVisibility: null, // Set later
-            updateInfoLink: null,             // Set later
+            // UI callbacks — standalone for button/info-link (no panel load), lazy for panel-only.
+            // _panel is null until ensureRecurringPanelLoaded() runs, so the panel-only callbacks
+            // are no-ops until the user opens the panel (nothing to refresh while it's closed).
+            updateRecurringPanel: () => _panel?.updateRecurringPanel(),
+            updateRecurringSummary: () => _panel?.updateRecurringSummary(),
+            updatePanelButtonVisibility: () => updateRecurringButtonVisibility(bootUiDeps),
+            updateInfoLink: () => updateRecurringInfoLink(bootUiDeps, { openPanel: lazyOpenPanel }),
             refreshUIFromState: () => {
                 if (typeof deps.refreshUIFromState === 'function') {
                     return deps.refreshUIFromState();
@@ -180,77 +264,40 @@ export async function initRecurringModules(options = {}) {
         });
 
         // ============================================
-        // STEP 3: Initialize RecurringPanelManager (Strict DI)
-        // ============================================
-
-        // Wire module-level dependencies BEFORE creating instance
-        setRecurringPanelDependencies({
-            // Required (panel throws at boot if any are missing)
-            AppState: deps.AppState,
-            showNotification: deps.showNotification,
-            applyRecurringSettings: settingsApplicator.applyRecurringSettings,
-            normalizeRecurringSettings: coreFunctions.normalizeRecurringSettings,
-            calculateNextOccurrence: coreFunctions.calculateNextOccurrence,
-            deleteTemplate: coreFunctions.deleteRecurringTemplate,
-            buildRecurringSummary: buildRecurringSummaryFromSettings,
-            formatNextOccurrence: coreFunctions.formatNextOccurrence,
-            updateAppState: (updateFn, immediate) => deps.AppState?.update(updateFn, immediate),
-            showConfirmationModal: (options) => deps.notifications?.showConfirmationModal(options),
-            getElementById: (id) => document.getElementById(id),
-            querySelector: (selector) => document.querySelector(selector),
-            querySelectorAll: (selector) => document.querySelectorAll(selector),
-
-            // Optional (nullable — panel checks before use)
-            appInit: deps.appInit,
-            loadData: () => deps.loadMiniCycleData?.(),
-            safeAddEventListener: deps.GlobalUtils?.safeAddEventListener,
-            escapeHtml: deps.escapeHtml,
-            syncRecurringStateToDOM: deps.syncRecurringStateToDOM,
-            refreshTaskButtonsForModeChange: deps.refreshTaskButtonsForModeChange,
-            refreshUIFromState: () => deps.refreshUIFromState?.(),
-            activateTaskRecurringState: coreFunctions.activateTaskRecurringState,
-            deactivateTaskRecurringState: coreFunctions.deactivateTaskRecurringState,
-            getModal: deps.getModal,
-            showRecurringListTourNotification: deps.showRecurringListTourNotification,
-            showRecurringSettingsTourNotification: deps.showRecurringSettingsTourNotification
-        });
-
-        // Create instance - will validate required deps via DI
-        const recurringPanel = new RecurringPanelManager();
-
-        // ============================================
-        // STEP 4: Wire up UI callbacks in recurringCore
-        // ============================================
-
-        // Update core dependencies with panel methods
-        await recurringCore.setRecurringCoreDependencies({
-            updateRecurringPanel: () => recurringPanel.updateRecurringPanel(),
-            updateRecurringSummary: () => recurringPanel.updateRecurringSummary(),
-            updatePanelButtonVisibility: () => recurringPanel.updateRecurringPanelButtonVisibility(),
-            updateInfoLink: () => recurringPanel.updateRecurringInfoLink()
-        });
-
-        // ============================================
-        // STEP 5: Setup panel UI
-        // ============================================
-
-        recurringPanel.setup();
-
-        // ============================================
-        // STEP 6: Setup recurring watcher (30-second interval)
+        // STEP 3: Setup recurring watcher (30-second interval) — panel UI deferred
         // ============================================
 
         // Initialize the watcher - will start checking every 30 seconds
         await coreFunctions.setupRecurringWatcher();
 
         // ============================================
-        // STEP 6.5: Wire recurring event listeners
+        // STEP 4: Boot-time recurring UI (no panel load) — button + info link + open triggers
         // ============================================
 
-        recurringPanel.wireRecurringSettingsClickListener();
+        updateRecurringButtonVisibility(bootUiDeps);
+        wireRecurringOpenTriggers(bootUiDeps, { openPanel: lazyOpenPanel, openForTask: lazyOpenForTask });
+
+        // Lazy hybrid panel object exposed as deps.recurring.panel. Consumers reach it via the
+        // moduleLoader Proxy + depMappings, so this is the SINGLE lazy boundary — no other
+        // module needs editing. Method contract (see plan): standalone | load-then-call | no-op-until-loaded.
+        const lazyPanel = {
+            // Standalone (no load) — safe to call at boot / on every task render
+            updateRecurringPanelButtonVisibility: () => updateRecurringButtonVisibility(bootUiDeps),
+            updateRecurringInfoLink: () => updateRecurringInfoLink(bootUiDeps, { openPanel: lazyOpenPanel }),
+            // Load-then-call (user-initiated open)
+            openPanel: lazyOpenPanel,
+            openRecurringSettingsPanelForTask: lazyOpenForTask,
+            // No-op until loaded (only meaningful while the panel is open)
+            updateRecurringPanel: () => _panel?.updateRecurringPanel(),
+            updateRecurringSummary: () => _panel?.updateRecurringSummary(),
+            closePanel: () => _panel?.closePanel(),
+            // Escape hatches (tests / advanced)
+            ensureLoaded: ensureRecurringPanelLoaded,
+            get instance() { return _panel; }
+        };
 
         // ============================================
-        // STEP 7: Build return object (Phase 3 - no window.* exports)
+        // STEP 5: Build return APIs (Phase 3 - no window.* exports)
         // ============================================
 
         // Build convenience objects for direct access (use coreFunctions for loaded values)
@@ -266,25 +313,23 @@ export async function initRecurringModules(options = {}) {
             // Utility functions
             calculateNextOccurrence: coreFunctions.calculateNextOccurrence,
             calculateNextOccurrences: coreFunctions.calculateNextOccurrences,
-            // Backward compatibility - redirect button visibility to panel
-            updateRecurringButtonVisibility: () => recurringPanel.updateRecurringPanelButtonVisibility()
+            // Backward compatibility - redirect button visibility to the standalone helper
+            updateRecurringButtonVisibility: () => updateRecurringButtonVisibility(bootUiDeps)
         };
 
-        // Panel functions
+        // Panel functions (route through the lazy object)
         const recurringPanelAPI = {
-            updatePanel: () => recurringPanel.updateRecurringPanel(),
-            updateSummary: () => recurringPanel.updateRecurringSummary(),
-            updateButtonVisibility: () => recurringPanel.updateRecurringPanelButtonVisibility(),
-            updateInfoLink: () => recurringPanel.updateRecurringInfoLink(),
-            openPanel: () => recurringPanel.openPanel(),
-            closePanel: () => recurringPanel.closePanel(),
-            openForTask: (taskId) => recurringPanel.openRecurringSettingsPanelForTask(taskId),
+            updatePanel: () => lazyPanel.updateRecurringPanel(),
+            updateSummary: () => lazyPanel.updateRecurringSummary(),
+            updateButtonVisibility: () => updateRecurringButtonVisibility(bootUiDeps),
+            updateInfoLink: () => lazyPanel.updateRecurringInfoLink(),
+            openPanel: lazyOpenPanel,
+            closePanel: () => lazyPanel.closePanel(),
+            openForTask: lazyOpenForTask,
         };
-
-        // Phase 3 - No window.* exports (main script handles exposure)
 
         // ============================================
-        // STEP 8: Process deferred setups
+        // STEP 6: Process deferred setups
         // ============================================
 
         // If there were any deferred recurring setups, run them now (DI-pure)
@@ -294,16 +339,16 @@ export async function initRecurringModules(options = {}) {
             deps.clearDeferredRecurringSetup?.();
         }
 
-        // ✅ Update recurring button visibility and info link on init (shows button if templates exist)
+        // ✅ Refresh recurring button + info link shortly after boot (DI-pure, no panel load)
         setTimeout(() => {
-            recurringPanel.updateRecurringPanelButtonVisibility();
-            recurringPanel.updateRecurringInfoLink();
+            updateRecurringButtonVisibility(bootUiDeps);
+            updateRecurringInfoLink(bootUiDeps, { openPanel: lazyOpenPanel });
         }, 150);
 
         return {
             core: recurringCore,
-            panel: recurringPanel,
-            manager: recurringPanel,
+            panel: lazyPanel,
+            manager: lazyPanel,
             // API wrappers for window exposure
             coreAPI: recurringCoreAPI,
             panelAPI: recurringPanelAPI

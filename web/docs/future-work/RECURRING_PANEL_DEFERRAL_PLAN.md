@@ -1,6 +1,11 @@
 # Recurring Panel Deferral Plan
 
-**Status:** PLAN — not yet implemented (design for review)
+**Status:** IMPLEMENTED (June 14 2026) — pending on-device boot-timing + open-path verification.
+Code: `recurringBoot.js` (new), `recurringPanel.js` (2 delegations + open-button moved to boot),
+`recurringIntegration.js` (lazy loader + lazy hybrid panel), `service-worker.js` (precache
+recurringBoot), `recurringIntegration.tests.js` (+1 deferral test). Verified: lint clean +
+260/260 recurring tests pass (incl. new deferral test). The Proxy/depMapping indirection meant
+NO consumer-side edits were needed (featureBoot/quickActions/notifications/appContext untouched).
 **Date:** 2026-06-14
 **Goal:** Move the recurring *panel UI* off the boot path to cut slow-device boot time.
 
@@ -81,29 +86,68 @@ STEP 1(panel)→STEP 6.5 on demand:
 open-trigger stub. It returns a `panel`/`panelAPI` whose methods route through
 `ensureRecurringPanelLoaded()`.
 
-## All five open paths must route through the lazy loader
+## Verification findings (pre-impl) — the consumer surface is already indirected
 
-| Path | Where | Change |
+Re-checking the wiring before coding revealed that **every external consumer reaches the
+panel through `deps.recurring.panel`, resolved lazily at call time** — so the lazy boundary
+is a SINGLE object and most of the "five open paths" need no edits:
+
+- `moduleLoader.js:1171` — `recurringPanel: new Proxy({}, { get: (t,p) => deps.recurring?.panel?.[p] })`. Consumers (quickActionsManager `required()` at :213) get this Proxy; property access forwards to `deps.recurring.panel.*` at access time.
+- `moduleLoader.js:1016/1181-1183` — `openRecurringSettingsPanelForTask`, `updateRecurringPanel`, `updateRecurringPanelButtonVisibility`, `updateRecurringInfoLink` are all `(...args) => deps.recurring?.panel?.X?.(...args)` — resolved at INVOCATION.
+- `featureBoot.js:270` — notifications wiring is **guarded on `deps.recurring?.panel` being truthy**, then injects `openRecurringSettingsPanelForTask` as `() => deps.recurring?.panel?.X?.()`.
+- `featureBoot.js:514` — `appContext.setContextValue('recurringPanel', deps.recurring?.panel)` **snapshots the reference at boot**.
+
+**Implication — simpler than the original plan:** make `deps.recurring.panel` (the object
+`initRecurringModules()` returns as `panel`) a **lazy hybrid object** and the Proxy +
+depMappings + featureBoot guard + appContext snapshot all work transparently. **No edits
+to featureBoot routing / quickActionsManager / notifications / appContext are needed.**
+
+### Two hard constraints this imposes
+1. **`deps.recurring.panel` must be a truthy object from boot** (not null) — or the
+   `featureBoot:270` guard skips notification wiring, the appContext snapshot is null, and
+   `quickActionsManager`'s `required()` fails.
+2. **TRAP:** `updateRecurringPanelButtonVisibility` is a depMapping consumed by **task
+   modules** (`taskCore` optionalDeps, moduleManifests.js:539) and fired on every task
+   render/change. If the lazy object's `updateRecurringPanelButtonVisibility` triggered a
+   panel load, tasks rendering at boot would load the panel immediately and **defeat the
+   deferral.** So button-visibility + info-link must be the **standalone, no-load**
+   implementations on the lazy object.
+
+### Lazy-object method contract (three categories)
+| Category | Methods | Behavior |
 |---|---|---|
-| `.open-recurring-settings` task buttons | delegation (recurringPanel.js:1817) | lazy stub in boot |
-| OPEN_RECURRING_PANEL button | panel `setup()` (recurringPanel.js:150-161) | lazy open-button handler in boot stub |
-| Recurring info link | recurringPanel.js:1467 | lazy (item 2) |
-| Quick actions | `quickActionsManager.js:625` `deps.recurringPanel?.openPanel` | `openPanel` returned by integration becomes lazy-loading |
-| Notifications action | `notifications.js:1386` via injected `openRecurringSettingsPanelForTask` | `featureBoot.js:272` injection → route through `ensureRecurringPanelLoaded()` |
+| **Standalone (no load)** | `updateRecurringPanelButtonVisibility`, `updateRecurringInfoLink` | run the extracted standalone helper directly |
+| **Load-then-call** (user-initiated open) | `openPanel`, `openRecurringSettingsPanelForTask`, `openForTask` | `await ensureRecurringPanelLoaded()` → delegate (already async today) |
+| **No-op until loaded** (refresh while open) | `updateRecurringPanel`, `updateRecurringSummary`, `closePanel` | if panel already loaded → delegate; else no-op (nothing to refresh when closed — must NOT trigger a load) |
 
-All consumers already use optional chaining, so a not-yet-loaded panel degrades to no-op
-(no crash) — the risk is a *missed* open, which the lazy routing fixes.
+`ensureRecurringPanelLoaded()` stays idempotent (returns cached instance); the lazy object
+routes through it every call — no reference-swapping (which would miss the appContext
+snapshot).
 
-## Files touched
+### Remaining open path that DOES need a boot stub
+- `.open-recurring-settings` task-button delegation — currently wired by
+  `panel.setup()` → `wireRecurringSettingsClickListener()` (recurringPanel.js:1817). Since
+  `setup()` is deferred, wire an equivalent `document` delegation stub at boot that calls
+  the lazy object's `openRecurringSettingsPanelForTask(taskId)`.
+- OPEN_RECURRING_PANEL button + info-link click — also wired in `setup()` today; the
+  standalone info-link helper rebinds its own click, and the open-button needs a lazy
+  boot handler (or fold into the same boot stub).
 
-- `modules/recurring/recurringIntegration.js` — main refactor (split boot vs lazy; add
-  `ensureRecurringPanelLoaded`; standalone button-visibility + info-link; lazy trigger).
+## Files touched (revised after verification — fewer than first thought)
+
+- `modules/recurring/recurringIntegration.js` — **main refactor**: split boot vs lazy;
+  build the lazy hybrid `panel` object; add `ensureRecurringPanelLoaded()`; run standalone
+  button-visibility + info-link at boot; wire the `.open-recurring-settings` (+ open-button)
+  boot delegation stub.
 - `modules/recurring/recurringPanel.js` — extract `updateRecurringPanelButtonVisibility`
-  + `updateRecurringInfoLink` as exported standalone helpers (or new `recurringInfoLink.js`).
-- `modules/boot/featureBoot.js` — `openRecurringSettingsPanelForTask` (line 272) and
-  `openSettingsForTask` (459) injections route through the lazy loader.
-- (Verify) `modules/boot/moduleLoader.js` depMappings (1016, 1554) and
-  `appContext.js` (203) still resolve via `deps.recurring.panel.*`.
+  (trivial) + `updateRecurringInfoLink` (~50 lines) as exported standalone helpers (or a
+  new tiny `recurringInfoLink.js`) that the lazy object and boot stub call.
+- `tests/recurringIntegration.tests.js` — update the synchronous-load assertions; add the
+  lazy-load test (see Test impact).
+- **NOT needed** (verification showed the Proxy/depMapping indirection handles routing):
+  `featureBoot.js`, `quickActionsManager.js`, `notifications.js`, `appContext.js`,
+  `moduleLoader.js` depMappings — all already route through `deps.recurring.panel`, which
+  the lazy object satisfies. (Still re-verify each at impl time, but no edits expected.)
 
 ## Risk + test checklist
 

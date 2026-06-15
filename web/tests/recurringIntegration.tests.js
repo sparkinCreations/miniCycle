@@ -576,6 +576,44 @@ export async function runRecurringIntegrationTests(resultsDiv) {
         });
     });
 
+    // === DEFERRAL CONTRACT (perf): panel UI must NOT load until first open ===
+    await test('defers panel load until first open', async () => {
+        const mockAppState = {
+            get: () => ({
+                schemaVersion: "2.5",
+                data: { cycles: {} },
+                appState: { activeCycleId: null }
+            }),
+            update: (fn) => {},
+            isReady: () => true
+        };
+        const mockShowNotification = (msg) => msg;
+        const mockFeatureFlags = { recurringEnabled: true };
+
+        window.AppState = mockAppState;
+        window.showNotification = mockShowNotification;
+        window.FeatureFlags = mockFeatureFlags;
+        setupDIDeps(mockAppState, mockShowNotification, mockFeatureFlags);
+
+        const result = await initRecurringModules({ AppMeta: { version: 'test' } });
+
+        // Lazy panel object present, but the heavy RecurringPanelManager is NOT built at init
+        if (!result.panel) throw new Error('lazy panel object missing');
+        if (result.panel.instance !== null) {
+            throw new Error('panel should NOT be loaded at init (deferral broken)');
+        }
+        if (typeof result.panel.ensureLoaded !== 'function') {
+            throw new Error('ensureLoaded escape hatch missing');
+        }
+
+        // Standalone + no-op-until-loaded methods must NOT trigger a panel load
+        result.panel.updateRecurringPanelButtonVisibility(); // standalone (no load)
+        result.panel.updateRecurringPanel();                 // no-op until loaded
+        if (result.panel.instance !== null) {
+            throw new Error('standalone / no-op methods must not load the panel');
+        }
+    });
+
     // === RESULTS SUMMARY ===
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;

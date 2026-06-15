@@ -28,6 +28,12 @@ import { ICONS } from '../utils/icons.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { handleHorizontalArrowNav } from '../utils/keyboardNav.js';
 import { animateDialogClose } from '../utils/dialogClose.js';
+// Boot-time helpers — single source of truth for button-visibility + info-link so
+// recurringIntegration can run them at boot WITHOUT loading this 2k-line panel.
+import {
+    updateRecurringButtonVisibility as bootUpdateButtonVisibility,
+    updateRecurringInfoLink as bootUpdateInfoLink
+} from './recurringBoot.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -155,11 +161,10 @@ export class RecurringPanelManager {
                 return;
             }
 
-            // Open panel button
-            this.deps.safeAddEventListener(openBtn, "click", () => {
-                this.deps.trackAction?.('recurring');
-                this.openPanel();
-            });
+            // NOTE: the open-panel button is wired at BOOT by
+            // recurringBoot.wireRecurringOpenTriggers() — it must work before this panel
+            // lazily loads, so it is intentionally NOT wired here (would double-fire).
+            // openBtn is still required above as a DOM-readiness guard.
 
             // Close panel button
             this.deps.safeAddEventListener(closeBtn, "click", () => this.closePanel());
@@ -1409,19 +1414,8 @@ export class RecurringPanelManager {
      * Button is now always visible (no longer hidden when no recurring tasks)
      */
     updateRecurringPanelButtonVisibility() {
-        try {
-            const panelButton = this.deps.getElementById(DOM_IDS.OPEN_RECURRING_PANEL);
-            if (!panelButton) {
-                console.warn('⚠️ Recurring panel button not found in DOM');
-                return;
-            }
-
-            // Always show the recurring button - users can now add tasks from the panel
-            panelButton.classList.remove(DOM_CLASSES.HIDDEN);
-
-        } catch (error) {
-            console.error('❌ Error updating panel button visibility:', error);
-        }
+        // Delegate to the boot helper (single source of truth — runs at boot without the panel)
+        bootUpdateButtonVisibility(this.deps);
     }
 
     /**
@@ -1430,65 +1424,9 @@ export class RecurringPanelManager {
      * Also enhances the empty state hint when task list is empty.
      */
     updateRecurringInfoLink() {
-        try {
-            if (!this.deps.AppState?.isReady?.()) return;
-            const state = this.deps.AppState.get();
-            const cid = state.appState?.activeCycleId;
-            if (!cid) return;
-            const cycle = state.data.cycles[cid];
-            if (!cycle) return;
-
-            const templateCount = Object.keys(cycle.recurringTemplates || {}).length;
-            const taskCount = (cycle.tasks || []).length;
-            const linkEl = this.deps.getElementById(DOM_IDS.RECURRING_INFO_LINK);
-            if (!linkEl) return;
-
-            const hint = this.deps.querySelector?.(DOM_SELECTORS.EMPTY_STATE_HINT);
-
-            if (templateCount === 0) {
-                linkEl.classList.remove(DOM_CLASSES.SHOW);
-                // Restore default empty state hint
-                if (hint) {
-                    hint.innerHTML = getLabel('empty.noTasksHint').replace('+', '<strong>+</strong>');
-                }
-                return;
-            }
-
-            const countText = templateCount === 1
-                ? getLabel('empty.recurringScheduledOne')
-                : getLabel('empty.recurringScheduled', { vars: { count: templateCount } });
-
-            // Show the link
-            linkEl.classList.add(DOM_CLASSES.SHOW);
-            linkEl.textContent = '\u21BB ' + countText;
-
-            // Bind handlers once (stable references for safeAddEventListener dedup)
-            if (!this._onInfoLinkClick) {
-                this._onInfoLinkClick = () => this.openPanel();
-            }
-            if (!this._onInfoLinkKeydown) {
-                this._onInfoLinkKeydown = (e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        this.openPanel();
-                    }
-                };
-            }
-
-            this.deps.safeAddEventListener(linkEl, 'click', this._onInfoLinkClick);
-            this.deps.safeAddEventListener(linkEl, 'keydown', this._onInfoLinkKeydown);
-
-            // If task list is empty, enhance the empty state hint
-            if (hint) {
-                if (taskCount === 0) {
-                    hint.innerHTML = '\u21BB ' + countText + ' \u00B7 ' + getLabel('empty.viewRecurring');
-                } else {
-                    hint.innerHTML = getLabel('empty.noTasksHint').replace('+', '<strong>+</strong>');
-                }
-            }
-        } catch (error) {
-            console.error('\u274C Error updating recurring info link:', error);
-        }
+        // Delegate to the boot helper (single source of truth). Pass openPanel so the
+        // info link's click/keydown handlers route through the panel.
+        bootUpdateInfoLink(this.deps, { openPanel: () => this.openPanel() });
     }
 
     // ============================================

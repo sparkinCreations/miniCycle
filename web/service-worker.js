@@ -153,6 +153,7 @@ var BOOT_CRITICAL = [
   // Progress
   './modules/progress/cycleCompletion.js',
   // Recurring - ALL modules (required for offline)
+  './modules/recurring/recurringBoot.js',
   './modules/recurring/recurringCore.js',
   './modules/recurring/recurringActivation.js',
   './modules/recurring/recurringCalculators.js',
