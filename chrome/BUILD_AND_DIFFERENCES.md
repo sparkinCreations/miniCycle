@@ -48,6 +48,7 @@ build is the set of mechanical transforms that bridge those two worlds:
 | **`pages/` + `tests/` links** | Relative | Rewritten to absolute `https://minicycle.app/…` | Not bundled; would 404 from `chrome-extension://` |
 | **Automated-test tab** | Visible in the testing modal | Hidden via `ext-overrides.css` | `tests/` isn't bundled; the iframe would 404 |
 | **Assets** | Full `web/assets/` (~1.1 GB) | Only **referenced** assets (~0.4 MB) + `fonts/` | Keep the package small |
+| **Sample-routines listing** | `examples/sample-routines/manifest.json` | Renamed to `index.json` (fetch patched in the copied `routineManager.js`) | The Web Store rejects any package containing **more than one** `manifest.json` |
 | **Icons** | Favicon / PWA icons | Blue-background set from `chrome/full-icons/` | Distinct store/toolbar identity |
 | **External hosts** | `api.web3forms.com` (feedback) | Same — declared in `host_permissions` | Feedback form only |
 | **Permissions** | n/a (web) | `storage` (launcher tab memory) + `host_permissions` for web3forms | See §5 launcher |
@@ -87,6 +88,12 @@ Order of operations (`main()`):
 8. **`writeManifestAndBackground()`** — generate the MV3 `manifest.json`, the launcher
    `background.js`, and copy icons from `chrome/full-icons/`.
 9. **`pruneJunk()`** — delete `.DS_Store` / `Thumbs.db` so the Web Store zip stays clean.
+
+Two extension-only safeguards also run: **`dedupeSampleManifest()`** renames the bundled
+sample-routines `manifest.json` → `index.json` and patches its one fetch in the copied
+`routineManager.js` (the Web Store rejects packages with more than one `manifest.json`), and
+**`assertSingleManifest()`** fails the build if more than one `manifest.json` remains in the
+output.
 
 ### Running it
 
@@ -174,6 +181,16 @@ chrome/full/
   (`full-<version>.zip`). Build artifacts can pick up iCloud `… 2/` / `… 2.zip` duplicates
   on this machine (the repo lives under `~/Documents`); exclude them when zipping
   (`-x "* 2/*" -x "* 2"`) and don't commit them.
+- **Always zip fresh.** `zip` *updates* an existing archive (it doesn't remove entries for
+  files that no longer exist), so re-zipping over an old `full-<version>.zip` can leave stale
+  files inside — e.g. a renamed `manifest.json`. **`rm` the old zip first**, then create it:
+  ```bash
+  rm -f chrome/full-<version>.zip
+  cd chrome/full && zip -rq ../full-<version>.zip . -x "*.DS_Store" -x "__MACOSX*" -x "* 2/*" -x "* 2"
+  ```
+- **One manifest only.** The build's `assertSingleManifest()` guards this, but the *zip* is
+  assembled separately — after zipping, sanity-check with
+  `unzip -Z1 chrome/full-<version>.zip | grep 'manifest.json$'` (should print exactly one line).
 
 ---
 

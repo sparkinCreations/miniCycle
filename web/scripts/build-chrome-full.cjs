@@ -317,6 +317,46 @@ function copyLegal() {
   log(`legal: bundled legal/ (${patched} page(s) re-linked to the extension)`);
 }
 
+// ── 3d. avoid the Chrome Web Store "more than one manifest.json" rejection ───
+// The bundled sample-routines listing file is named manifest.json (app data that
+// lists the .mcyc samples, fetched at runtime). The Web Store rejects any package
+// containing more than one manifest.json, so in the EXTENSION we rename it to
+// index.json and patch its single fetch in the copied routineManager.js. The web
+// app keeps manifest.json — this collision is an extension-packaging concern only.
+function dedupeSampleManifest() {
+  const from = path.join(OUT, 'examples', 'sample-routines', 'manifest.json');
+  const to = path.join(OUT, 'examples', 'sample-routines', 'index.json');
+  if (!fs.existsSync(from)) { log('   note: no sample-routines/manifest.json — skipping dedupe'); return; }
+  fs.renameSync(from, to);
+
+  const mod = path.join(OUT, 'modules', 'routine', 'routineManager.js');
+  const ref = '/examples/sample-routines/manifest.json';
+  if (fs.existsSync(mod)) {
+    const before = fs.readFileSync(mod, 'utf8');
+    const after = before.split(ref).join('/examples/sample-routines/index.json');
+    if (after !== before) fs.writeFileSync(mod, after, 'utf8');
+    else log(`   WARN expected fetch '${ref}' not found in routineManager.js — verify the rename`);
+  }
+  log('sample routines: renamed manifest.json -> index.json (single manifest in package)');
+}
+
+// Hard guard: a Web Store package must contain exactly ONE manifest.json (the
+// extension manifest at the root). Throw if a stray one slips back in.
+function assertSingleManifest() {
+  const count = (function walk(dir) {
+    let n = 0;
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, e.name);
+      if (e.isDirectory()) n += walk(full);
+      else if (e.name === 'manifest.json') n += 1;
+    }
+    return n;
+  })(OUT);
+  if (count !== 1) {
+    throw new Error(`Expected exactly 1 manifest.json in the package, found ${count} — the Web Store will reject this upload.`);
+  }
+}
+
 // ── 4. manifest + background + icons ────────────────────────────────────────
 function writeManifestAndBackground(version) {
   const manifest = {
@@ -435,9 +475,11 @@ function main() {
   copyAppCode();
   copyAssets();
   copyExamples();
+  dedupeSampleManifest();
   copyLegal();
   writeManifestAndBackground(version);
   pruneJunk();
+  assertSingleManifest();
 
   log(`done — ${human(dirSize(OUT))} total`);
   log('load unpacked: chrome://extensions -> Developer mode -> Load unpacked -> chrome/full/');

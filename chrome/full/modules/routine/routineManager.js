@@ -617,7 +617,7 @@ export class RoutineManager {
         }
 
         try {
-            const response = await fetch('/examples/sample-routines/manifest.json');
+            const response = await fetch('/examples/sample-routines/index.json');
             if (!response.ok) {
                 console.warn('⚠️ Failed to load sample manifest:', response.status);
                 return [];
