@@ -1,3 +1,14 @@
+## [2.238] - 2026-06-14
+- feat(boot): parallel phase imports + pre-boot version gate + per-phase timing
+- feat(promo): add promotional image for enhanced user engagement
+- Fix 3 hardening: unregister stale SW in self-heal so wedged machines auto-recover
+- feat(settings): add git commands to settings for version management
+- chrome-ext: remove obsolete full-2.235.zip (superseded by 2.236)
+- chrome-ext: skip IndexedDB probe on extension origin; rebuild full bundle (2.236)
+- Fix 3: serve current-version cache for versioned imports; auto-heal stale SW
+- feat(chrome): add full-version MV3 extension zip file
+
+
 ## [2.235] - 2026-06-08
 - feat(chrome): generate full-version MV3 extension from web/ via build script
 - perf(boot): defer non-critical modules, load on-demand via ensureModuleLoaded
