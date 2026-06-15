@@ -465,10 +465,27 @@ export async function loadPhase(deps, coreResult, phase) {
     const modules = getModulesByPhase(phase);
     const results = new Map();
 
-    for (const [name, manifest] of modules) {
-        // Skip deferred modules — they load on-demand via ensureModuleLoaded().
-        if (manifest.deferred) continue;
-        const mod = await loadModule(name, deps, coreResult, withV);
+    // Non-deferred modules, in the manifest's dependency order. Deferred modules
+    // load on-demand via ensureModuleLoaded().
+    const active = modules.filter(([, manifest]) => !manifest.deferred);
+
+    // ⚡ Stage 1 — FETCH + WIRE in parallel. loadModule() does the dynamic import()
+    // plus setDependencies(). import() is order-independent/idempotent and
+    // setDependencies() only wires lazy getters (resolved later at init/runtime),
+    // so running these concurrently is safe and collapses N sequential fetch/parse
+    // round-trips into one batch — the primary boot-time win on slow devices.
+    // A non-optional import failure rejects here, aborting boot exactly as the old
+    // sequential loop did (optional modules resolve to null inside loadModule).
+    const loaded = await Promise.all(
+        active.map(([name]) => loadModule(name, deps, coreResult, withV))
+    );
+
+    // ⚡ Stage 2 — INITIALIZE sequentially, in dependency order (semantics UNCHANGED).
+    // init() can register provides and run side effects that later modules in this
+    // phase depend on, so ordering is preserved exactly as before.
+    for (let i = 0; i < active.length; i++) {
+        const [name] = active[i];
+        const mod = loaded[i];
         if (mod) {
             const instance = await initializeModule(name, mod, deps, coreResult);
             results.set(name, instance || mod);
@@ -512,9 +529,17 @@ export async function loadAllModules(deps, coreResult) {
         apis: {}
     };
 
-    // Load each phase in order
-    for (const phase of Object.values(PHASES)) {
+    // Load each phase in order.
+    // ⏱️ Per-phase timing: emit a `mc:subphase:<NAME>` performance measure for each
+    // phase so getBootTiming() can rank which phase dominates the features window
+    // (the proven 74–78% of boot). Measures are read by name in orchestrator.js —
+    // see clearBootTiming()/getBootTiming() for the matching prefix scan.
+    for (const [phaseName, phase] of Object.entries(PHASES)) {
+        const startMark = `mc:subphase:${phaseName}:start`;
+        try { performance.mark(startMark); } catch (_) { /* perf API unavailable */ }
         const phaseResults = await loadPhase(deps, coreResult, phase);
+        // 2-arg measure: startMark → now. Swallows if the mark is missing.
+        try { performance.measure(`mc:subphase:${phaseName}`, startMark); } catch (_) { /* mark missing */ }
         for (const [name, result] of phaseResults) {
             results.modules.set(name, loadedModules.get(name));
             results.instances.set(name, result);

@@ -63,8 +63,12 @@ export const BOOT_TIMEOUTS = Object.freeze({
     TOTAL: 60000,          // 60s — documentation-only (not enforced); matches the sum of
                            // raised phase budgets and the HTML load-timeout lite fallback
     RETRY_DELAY: 2000,     // 2s delay before boot retry (iOS needs time to restart killed SW)
-    IDB_OPERATION: 3000    // 3s timeout for IndexedDB ops during boot recovery; raised from
+    IDB_OPERATION: 3000,   // 3s timeout for IndexedDB ops during boot recovery; raised from
                            // 1s — old/slow devices were timing out test-mode/backup checks
+    VERSION_GATE: 1500     // 1.5s cap on the pre-boot server-version check (orchestrator
+                           // gateOnServerVersion). Kicked off early so it overlaps Phase 1
+                           // (≈free on a healthy network); fails open on timeout/offline so a
+                           // slow/absent network never blocks boot.
 });
 
 /**
