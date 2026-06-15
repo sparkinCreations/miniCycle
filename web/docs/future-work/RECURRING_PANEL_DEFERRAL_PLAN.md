@@ -1,6 +1,8 @@
 # Recurring Panel Deferral Plan
 
-**Status:** IMPLEMENTED (June 14 2026) — pending on-device boot-timing + open-path verification.
+**Status:** ✅ DONE & VERIFIED (June 14 2026), shipped v2.239. Device-confirmed on old Android:
+RECURRING phase ~400ms → 251ms (dropped #2 → #3), and the panel opens/edits correctly via the
+open paths (functional test passed). Lint clean + 260/260 recurring tests.
 Code: `recurringBoot.js` (new), `recurringPanel.js` (2 delegations + open-button moved to boot),
 `recurringIntegration.js` (lazy loader + lazy hybrid panel), `service-worker.js` (precache
 recurringBoot), `recurringIntegration.tests.js` (+1 deferral test). Verified: lint clean +
