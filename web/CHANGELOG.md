@@ -1,3 +1,15 @@
+## [2.242] - 2026-06-15
+- Implement code changes to enhance functionality and improve performance
+- chore(promo): add Chrome Web Store screenshot (1280x800) + small promo tile (440x280)
+- docs(legal): broaden security policy scope to web/PWA/extension/lite + MV3 CSP + Web3Forms note
+- docs(legal): broaden Terms 'Service' definition to cover web/PWA/extension/lite versions
+- docs(legal): privacy policy covers all versions (web/extension/lite) + Web3Forms feedback disclosure
+- fix(chrome): focus existing launcher tab via storage.session instead of broken tabs.query url filter
+- fix(chrome): correct .cjs self-references + rebuild clean zip (drop iCloud cruft dirs)
+- docs(css): document the two-tier CSS loading strategy + async main.css race fix
+- chore(chrome): add packaged extension zip for v2.241
+
+
 ## [2.241] - 2026-06-15
 - fix(boot): apply async main.css when already cached — fixes intermittent unstyled render on refresh
 
