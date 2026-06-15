@@ -32,11 +32,14 @@ MV3 extension pages forbid all inline `<script>` (`script-src 'self'`, no hashes
 - **Drops** the PWA-only inline blocks: boot-failure cache-clear failsafe, version-change `document.write` reload, and the ~558-line service-worker registration/update machinery.
 - **Externalizes** every remaining inline block to `full/ext-boot/NN.js`, replaced in-place so execution order and DOM position are preserved exactly. `version.js` and the `miniCycle-main.js` module entry stay as external refs.
 - **Neutralizes** the lite-version fallback redirects (`lite/` isn't bundled; modern Chrome always passes the feature gate anyway).
-- **Rewrites** unbundled info links (`legal/`, `pages/`, `tests/`) to absolute `https://minicycle.app/…` URLs so they open the live pages instead of 404ing.
+- **Bundles** the `legal/` pages (privacy/terms/security/accessibility/user-manual) into the extension and rewrites their back-links (`../miniCycle.html` → `../index.html`) so they open in-app instead of bouncing the user out to minicycle.app. Only `pages/` + `tests/` links (not bundled) are rewritten to absolute `https://minicycle.app/…` URLs.
 - **Copies** `version.js`, `miniCycle-main.js`, `modules/`, `styles/` verbatim, plus only the **referenced** assets (~0.4 MB of the 1.1 GB `web/assets/`).
-- **Generates** the MV3 `manifest.json` + `background.js` (the launcher) and copies icons from `lite/icons/`.
+- **Generates** the MV3 `manifest.json` + `background.js` (the launcher) and copies icons from `chrome/full-icons/` (the blue-background set).
 
 Only runtime external host is `api.web3forms.com` (feedback form) — covered by `host_permissions`. The default MV3 page CSP suffices otherwise.
+
+> **Full reference:** for the complete web-app-vs-extension differences, the build pipeline,
+> and the update/release workflow, see [`BUILD_AND_DIFFERENCES.md`](./BUILD_AND_DIFFERENCES.md).
 
 ## Technology
 
