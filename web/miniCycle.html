@@ -41,7 +41,7 @@
 
 <!-- Async CSS loading - doesn't block render, app starts with inline critical CSS -->
 <link rel="stylesheet" href="styles/main.css?v=2.240" media="print" id="async-main-css">
-<script>document.getElementById('async-main-css').onload=function(){this.media='all'};</script>
+<script>(function(){var l=document.getElementById('async-main-css');if(!l)return;function apply(){l.media='all';}if(l.sheet){apply();}else{l.addEventListener('load',apply);}})();</script>
 <noscript><link rel="stylesheet" href="styles/main.css?v=2.240"></noscript>
 <link rel="manifest" href="manifest.json">
 

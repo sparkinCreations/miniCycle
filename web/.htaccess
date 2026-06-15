@@ -23,7 +23,7 @@
     Header set Content-Security-Policy "\
         default-src 'self'; \
         script-src 'self' \
-            'sha256-3Xbv1x8IO7a2BA/oYED4OTrf+44CPz5dLfxVpEswDOg=' \
+            'sha256-598+MlUQwZnsi4Bl2TqCLwtrDbSviEHUuCw5e2zjclo=' \
             'sha256-PtjTViCuOjuj2D2cao71d7bjI5Rdyc2IJz+Vf3u5IxM=' \
             'sha256-is3p4zpxwXm44dMheYjF5v+H/4wW+gUYr74vcqyiV3w=' \
             'sha256-9oUJeQk/LnW7VxfSmRqGw4lXWmtMuImBkFhmgZ7Ba24=' \

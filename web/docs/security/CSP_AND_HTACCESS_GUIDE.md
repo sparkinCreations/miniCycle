@@ -202,7 +202,7 @@ The main app (`miniCycle.html`) uses inline scripts for critical boot-time opera
 echo -n 'SCRIPT_CONTENT_HERE' | openssl dgst -sha256 -binary | openssl base64
 ```
 
-The result looks like: `sha256-3Xbv1x8IO7a2BA/oYED4OTrf+44CPz5dLfxVpEswDOg=`
+The result looks like: `sha256-598+MlUQwZnsi4Bl2TqCLwtrDbSviEHUuCw5e2zjclo=`
 
 ### When you need to update hashes
 
