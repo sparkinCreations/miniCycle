@@ -364,7 +364,7 @@ function writeManifestAndBackground(version) {
     name: 'miniCycle',
     version,
     version_name: `Chrome Edition v${version}`,
-    description: 'A routine manager. Tasks persist and reset on cycle completion. Build streaks, unlock themes, share routines.',
+    description: 'A routine manager. Tasks persist and reset on cycle completion. Stay consistent, unlock themes, and share routines.',
     author: 'sparkinCreations',
     homepage_url: 'https://minicycleapp.com',
     action: {
