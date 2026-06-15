@@ -19,6 +19,7 @@
     "lint:fix": "eslint modules/ --fix",
     "samples": "./scripts/generate-sample-manifest.sh",
     "build:chrome-full": "node scripts/build-chrome-full.cjs",
+    "capture:screenshots": "node scripts/capture-store-screenshots.cjs",
     "lighthouse": "lhci autorun",
     "lighthouse:install": "npm install -g @lhci/cli"
   },
