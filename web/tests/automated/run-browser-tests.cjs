@@ -39,7 +39,7 @@ const ALL_MODULES = [
     'recurringDateUtils', 'clearedTasksManager', 'taskCompletion', 'taskCRUD',
     'recurringMatcher', 'recurringCalculators', 'recurringActivation',
     'preferencesManager', 'settingsUIManager', 'focusMode', 'taskSearch',
-    'quickActionsManager', 'backupRestoreManager', 'cycleExportManager',
+    'quickActionsManager', 'actionUsage', 'backupRestoreManager', 'cycleExportManager',
     'cycleImportManager', 'shareManager', 'taskButtons', 'taskCycleReset', 'backupReminder',
     'orchestrator', 'moduleLoader', 'moduleManifests', 'modalTemplates',
     'appContext', 'dataAccess', 'appGlobalState', 'migrationFacade', 'types',

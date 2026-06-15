@@ -422,6 +422,7 @@
             <option value="focusMode">🎯 Focus Mode</option>
             <option value="taskSearch">🔍 Task Search</option>
             <option value="quickActionsManager">⚡ Quick Actions</option>
+            <option value="actionUsage">⚡ Action Usage</option>
             <option value="backupRestoreManager">💾 Backup Restore</option>
             <option value="cycleExportManager">📤 Cycle Export</option>
             <option value="cycleImportManager">📥 Cycle Import</option>
@@ -573,6 +574,7 @@
         const { runFocusModeTests } = await import(`./focusMode.tests.js?v=${cacheBuster}`);
         const { runTaskSearchTests } = await import(`./taskSearch.tests.js?v=${cacheBuster}`);
         const { runQuickActionsManagerTests } = await import(`./quickActionsManager.tests.js?v=${cacheBuster}`);
+        const { runActionUsageTests } = await import(`./actionUsage.tests.js?v=${cacheBuster}`);
         const { runBackupRestoreManagerTests } = await import(`./backupRestoreManager.tests.js?v=${cacheBuster}`);
         const { runCycleExportManagerTests } = await import(`./cycleExportManager.tests.js?v=${cacheBuster}`);
         const { runCycleImportManagerTests } = await import(`./cycleImportManager.tests.js?v=${cacheBuster}`);
@@ -1758,6 +1760,10 @@
                     await import(`../modules/ui/quickActionsManager.js?v=${cacheBuster}`);
                     currentModule = 'quickActionsManager';
                     resultsDiv.innerHTML = '<p>✅ QuickActionsManager loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'actionUsage') {
+                    await import(`../modules/ui/actionUsage.js?v=${cacheBuster}`);
+                    currentModule = 'actionUsage';
+                    resultsDiv.innerHTML = '<p>✅ ActionUsage loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'backupRestoreManager') {
                     await import(`../modules/ui/backupRestoreManager.js?v=${cacheBuster}`);
                     currentModule = 'backupRestoreManager';
@@ -2028,6 +2034,8 @@
                 await runTaskSearchTests(resultsDiv);
             } else if (currentModule === 'quickActionsManager') {
                 await runQuickActionsManagerTests(resultsDiv);
+            } else if (currentModule === 'actionUsage') {
+                await runActionUsageTests(resultsDiv);
             } else if (currentModule === 'backupRestoreManager') {
                 await runBackupRestoreManagerTests(resultsDiv);
             } else if (currentModule === 'cycleExportManager') {

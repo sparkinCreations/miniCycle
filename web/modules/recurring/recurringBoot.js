@@ -123,7 +123,7 @@ export function wireRecurringOpenTriggers(deps, { openPanel, openForTask } = {})
     const openBtn = deps.getElementById?.(DOM_IDS.OPEN_RECURRING_PANEL);
     if (openBtn) {
         deps.safeAddEventListener(openBtn, 'click', () => {
-            deps.trackAction?.('recurring');
+            // Usage tracked by the delegated listener (actionUsage.js, OPEN_RECURRING_PANEL).
             openPanel?.();
         });
     }

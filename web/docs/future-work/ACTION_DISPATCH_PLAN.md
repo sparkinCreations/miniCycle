@@ -1,7 +1,19 @@
 # Central Action Dispatch — Uniform Usage Tracking Plan
 
-**Status:** PLAN (June 15 2026). Fixes the confirmed inconsistency where Quick Actions'
-"Recently/Frequently used" only reflects panel usage + 5 special-cased features.
+**Status:** ✅ IMPLEMENTED (June 15 2026). Fixes the confirmed inconsistency where Quick
+Actions' "Recently/Frequently used" only reflected panel usage + 5 special-cased features.
+
+**What shipped (the implementation discovery refined the approach again):** while building, we
+found `executeAction` dispatches ~19/22 actions by `btn.click()`-ing the feature's real DOM
+button (only stats/recurring/reminders are function calls). So the implementation is a **single
+capture-phase delegated click listener** over a `button-id → action-id` map
+(`modules/ui/actionUsage.js`) — it catches BOTH direct user clicks and the panel's synthetic
+clicks, uniformly. The 3 function-dispatch cases record explicitly in `executeAction`; the stats
+slide-gesture records directly. The blanket `trackAction` + all 5 scattered calls were removed
+(no double-count). `actionUsage.js` is the single writer of `counts`/`recent`. Verified: lint
+clean, 13/13 new `actionUsage` tests, + quickActionsManager/menuManager/statsPanel/reminders/
+recurring suites all green (no regressions). Capture phase chosen so a button handler's
+`stopPropagation()` (e.g. settings) can't suppress tracking.
 
 ## Confirmed problem
 

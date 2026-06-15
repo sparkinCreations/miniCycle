@@ -1089,8 +1089,7 @@ export class MiniCycleReminders {
         }
 
         replaceStoredEventListener(openBtn, "click", "__miniCycleRemindersOpenClickHandler", async () => {
-            this.deps.trackAction?.('reminders');
-
+            // Usage tracked by the delegated listener (actionUsage.js, OPEN_REMINDERS_MODAL).
             const opened = await this.openRemindersModal();
             if (opened && typeof this.deps.hideMainMenu === 'function') {
                 this.deps.hideMainMenu();

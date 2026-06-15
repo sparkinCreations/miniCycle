@@ -170,7 +170,7 @@ export function setupSettingsMenu() {
 
     const openSettings = (event) => {
         event.stopPropagation();
-        _deps.trackAction?.('settings');
+        // Usage tracked by the delegated listener (actionUsage.js, OPEN_SETTINGS).
         if (isNativeDialog && !settingsModal.open) {
             settingsModal._previousFocus = document.activeElement;
             settingsModal.showModal();
