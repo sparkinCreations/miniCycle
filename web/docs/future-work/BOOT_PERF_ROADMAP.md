@@ -39,25 +39,62 @@ Weights = source line counts. Keep-eager set documented at the end.
 
 | # | Module | Lines | Trigger | Notes / caveat |
 |---|---|---|---|---|
-| A1 | **preferencesManager** (+ `preferencesBgImage`, `preferencesPresets` subs) | 1,957 + subs | personalization modal opens | **Biggest single win.** Inline boot script already applies saved `--pref-app-bg` + font-size ([miniCycle.html:319](../../miniCycle.html)), so app-bg won't flash. CAVEAT: audit the full `--pref-*` set the module applies at boot for returning users (background image, element tints); replicate any other first-paint visuals in the inline path or accept a brief flash. |
-| A2 | **settingsManager** (+ facade subs) | 597 + subs | settings modal opens | Facade wires several sub-modules in `init()` — deferral moves real work off boot. Provides `exportMiniCycleData`/`downloadBackupFile` (optional in consumers). |
+| A1 | **preferencesManager** (+ `preferencesBgImage`, `preferencesPresets` subs) | 1,957 + subs | personalization modal opens | **⚠️ NOT clean — see corrections.** `themeManager.js:188` calls `applyCustomColors()` at boot, so this is an **init-split** (extract a lightweight boot color-apply), not a pure facade defer. Biggest module, but more work than first thought. |
+| A2 | **settingsManager** (+ facade subs) | 597 + subs | settings modal opens | Facade wires several sub-modules in `init()` — deferral moves real work off boot. Provides `exportMiniCycleData`/`downloadBackupFile` (optional in consumers, not hard-required ✓). **Verify** its boot job is minimal first. |
 
 These are facades that dynamically import sub-modules, so deferring the facade defers the
 whole sub-tree — high payoff per unit effort.
 
-### Tier B — Init-split refactors (recurring-style; higher effort, real payoff)
+### ⚠️ Verification pass corrections (June 15 2026 — checked against actual call sites)
 
-Apply the **recurring recipe** (boot stub for first-paint bits + lazy hybrid + `ensureLoaded`):
+Re-checking the candidates before building (the recurring-Proxy lesson) re-tiered several:
 
-| # | Module | Lines | Boot-essential bit to keep | Defer |
+- **guidedTourManager — NOT a clean gate (2nd-pass correction).** `init()` early-returns on
+  `settings.onboardingCompleted`, BUT the module also provides 14 `show*TourNotification` tips
+  that feature modules (stats/settings/history/achievements/…) call on first use — and these
+  **serve RETURNING users**, gated per-feature on their own `stateKey`
+  ([guidedTourManager.js:1052-1057](../../modules/ui/guidedTourManager.js): *"Returning users see
+  it on first stats open"*). So an `onboardingCompleted` gate is **too coarse** — it would
+  suppress feature-discovery tips for returning users (a subtle regression that only surfaces when
+  a returning user first opens a feature). Real defer needs an **"all tours seen" gate** (cheap
+  boot check of every tour `stateKey`) OR lazy-routing of the 14 entry points + the boot
+  `uiBoot.js:279` `showMenuTourNotification` call. Medium effort — NOT the easy win.
+  None of the 14 provides are hard-required (verified), so no manifest blocker.
+
+- **settingsManager — cleanest remaining module win.** `init()` only runs `initAllToggles()`
+  (wires settings-modal toggles); the modal opens on demand. Defer to settings-open. Provides
+  (`syncCurrentSettingsToStorage`/`exportMiniCycleData`/`downloadBackupFile`) are optional in
+  consumers, not hard-required (verified). VERIFY each toggle's setup has no boot side-effect
+  (settings like dark-mode/theme are applied elsewhere — inline script + themeManager — so likely
+  clean).
+- **preferencesManager — NOT a clean facade defer (re-tiered to init-split).** `themeManager.js:188`
+  calls `applyCustomColors?.()` at boot (the vocab-theme / custom-color apply). The inline script
+  only handles `--pref-app-bg`; the rest of the custom-color set is applied via this module. Defer
+  requires extracting a **lightweight boot color-apply** (like the recurring button-visibility
+  extraction) so returning users with custom colors / vocab themes don't flash defaults.
+- **dragDropManager — NOT deferrable to "first drag".** Its `enableDragAndDropOnTask` /
+  `updateArrowsInDOM` run during task render ([taskRenderer.js:236](../../modules/task/taskRenderer.js),
+  optional-chained). The move-arrows + drag are first-paint UI; you can't "drag to load drag".
+  Best it can do is a **post-`INTERACTIVE` idle load** (off the critical path, ready shortly after) —
+  or keep eager. Move out of clean-defer.
+- **reminders — has a scheduler boot job + a hard consumer.** Its init starts the reminder
+  scheduler, and `taskOptionsCustomizer` HARD-requires `startReminders`/`stopReminders`. Init-split
+  (keep scheduler eager, defer the settings UI), not a clean defer.
+- **taskOptionsCustomizer** provides nothing (deferrable on its own), but HARD-requires
+  `updateMoveArrowsVisibility` (dragDrop) + `startReminders`/`stopReminders` (reminders) — when it
+  loads, those must already be loaded (prerequisite cascade via `ensureModuleLoaded`).
+
+### Tier B — corrected
+
+| # | Module | Lines | Mechanism | Notes |
 |---|---|---|---|---|
-| B1 | **guidedTourManager** | 1,962 | for NEW users only: schedule the welcome tour | **Returning users (the common case) need NOTHING at boot** — gate the whole module on "hasn't seen tour". Likely the easiest big win in Tier B. |
-| B2 | **reminders** | 1,151 | nothing at first paint? (verify no reminder fires on load) | defer to post-`INTERACTIVE` idle, or first reminder-settings open |
-| B3 | **dragDropManager** | 1,094 | nothing | load on **first drag** (first `touchstart`/`pointerdown` on a task) |
-| B4 | **focusMode** | 1,069 | show `#focus-mode-btn` + a lightweight "restore persisted focus state" check | defer the panel/logic to first activation |
-| B5 | **taskOptionsCustomizer** | 973 | nothing | defer to first task-options open |
-| B6 | **helpWindowManager** | 772 | minimal boot welcome (if any) | defer the heavy help-window UI + MutationObserver to first help-open |
-| B7 | **taskSearch** | 537 | — | **Blocked on a refactor first:** `featureBoot.js` (~line 291) special-cases it to inject `updateSearchVisibility` into the render path. Untangle that before deferring. |
+| **B1** | **guidedTourManager** | 1,962 | **conditional pre-load gate** on `settings.onboardingCompleted` | Cleanest big win — returning users skip the parse entirely. Do this FIRST. |
+| B2 | **focusMode** | 1,069 | init-split (keep `#focus-mode-btn` + restore-state; defer panel) | recurring-style |
+| B3 | **helpWindowManager** | 772 | init-split (minimal boot welcome; defer help UI + MutationObserver) | recurring-style |
+| B4 | **taskOptionsCustomizer** | 973 | defer to first open | but cascades dragDrop+reminders prereqs |
+| B5 | **reminders** | 1,151 | init-split (keep scheduler; defer settings UI) | not a clean defer |
+| B6 | **dragDropManager** | 1,094 | **post-INTERACTIVE idle load** (or keep eager) | arrows/drag are first-paint; NOT "first drag" |
+| B7 | **taskSearch** | 537 | blocked: `featureBoot.js` (~291) special-cases render-path injection — untangle first | |
 
 ### Tier C — Unblock-then-defer (break a hard `requires` first)
 
@@ -111,14 +148,24 @@ Apply the **recurring recipe** (boot stub for first-paint bits + lazy hybrid + `
 
 ---
 
-## Suggested execution order (ROI-first)
+## Suggested execution order (ROI-first — revised after TWO verification passes)
 
-1. **backupReminder → idle** (tiny, pure win).
-2. **Tier A: preferencesManager + settingsManager** (biggest payoff/effort, proven facade pattern). Re-measure on device.
-3. **Lever 2: precache trim** — cheap, and the deferrals already make more modules non-critical.
-4. **Tier B init-splits**, easiest-first: **guidedTourManager** (returning-user gate), then dragDropManager / reminders / focusMode / taskOptionsCustomizer / helpWindowManager.
-5. **Lever 1: minification** — the high-ceiling structural play; own plan, careful rollout.
-6. **Tier C: statsPanel unblock** — only if measurements still justify it after the above.
+**Reality after deep verification:** the easy module deferrals are already done (recurring, games,
+testing). Every *remaining* big module has boot coupling — there is **no trivial next deferral**.
+They're all medium-effort facade-defers or init-splits, each worth ~100–250ms with real
+per-feature regression risk. That shifts the ROI calculus toward the **structural levers**, which
+help every phase at once with no per-feature regression surface.
+
+1. **backupReminder → idle** (tiny, pure, zero-risk win). Warm-up.
+2. **settingsManager facade defer** (A2) — cleanest remaining module win; verify toggle side-effects.
+3. **Lever 2: precache trim** — cheap, complements the deferrals already shipped. Re-measure.
+4. **Lever 1: minification** (terser release step) — **promote this.** Biggest ceiling (~30–50% of
+   ALL parse), no per-feature regression risk, helps every phase. Own plan + staged rollout. This
+   is likely better ROI than chasing more individual module deferrals.
+5. **Init-splits, if still justified by measurement:** guidedTourManager (all-tours-seen gate),
+   preferencesManager (boot color-apply extraction), focusMode, helpWindowManager, reminders.
+6. **dragDropManager → post-INTERACTIVE idle**; **statsPanel unblock**; **taskSearch untangle** —
+   tail-end, measurement-gated.
 
 Per deferral, the proven gate: device-test the open/trigger paths, and confirm the module
 **drops out of the boot Network trace** + its phase time falls in the Boot Timing modal.
