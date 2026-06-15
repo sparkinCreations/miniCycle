@@ -1,0 +1,124 @@
+/* User Manual Specific Styles */
+body {
+    font-family: 'Inter', sans-serif;
+    padding: 20px;
+    max-width: 800px;
+    margin: auto;
+    line-height: 1.6;
+    color: #333;
+    background-color: #6a97e4;
+}
+
+
+
+h1, h2, h3 {
+    color: #222;
+}
+
+h1 {
+    text-align: center;
+    font-size: 28px;
+    margin-bottom: 20px;
+}
+
+.section {
+    margin-bottom: 30px;
+    padding: 15px;
+    background: rgb(191, 204, 237);
+    border-radius: 8px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.back-button {
+    display: inline-block;
+    margin-bottom: 20px;
+    padding: 10px 15px;
+    background: #007bff;
+    color: white;
+    border: solid 1px rgba(0, 0, 0, 0.418);
+    text-decoration: none;
+    border-radius: 5px;
+}
+
+.back-button:hover {
+    background: #0056b3;
+}
+
+/* Table of Contents */
+.table-of-contents {
+    background: rgba(255, 255, 255, 0.7);
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+}
+
+.table-of-contents h2 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.1rem;
+}
+
+.table-of-contents ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.25rem 1rem;
+}
+
+.table-of-contents li {
+    margin-bottom: 0;
+}
+
+ul {
+    padding-left: 20px;
+}
+
+ul li {
+    margin-bottom: 10px;
+}
+
+p {
+    margin-bottom: 10px;
+}
+
+/* Last Updated */
+.last-updated {
+    font-size: 13px;
+    color: #666;
+    text-align: center;
+    margin-top: 1.5rem;
+    font-style: italic;
+}
+
+/* Responsive Design */
+@media (max-width: 600px) {
+    body {
+        padding: 10px;
+    }
+    .section {
+        padding: 10px;
+    }
+    h1 {
+        font-size: 24px;
+    }
+    .table-of-contents ul {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Privacy policy callouts */
+.section-summary {
+    border: 2px solid #000000;
+    background: rgba(0, 136, 255, 0.12);
+}
+
+.section-bottom-line {
+    border: 2px solid #000000;
+    background: rgba(11, 164, 6, 0.233);
+}
+
+.copyright-text {
+    margin-top: 20px;
+    text-align: center;
+}

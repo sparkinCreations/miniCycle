@@ -10,7 +10,7 @@
 <!-- ✅ Translucent status bar shows body background-color on iOS -->
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" id="status-bar-style-meta">
 
-<meta name="app-version" content="2.241">
+<meta name="app-version" content="2.242">
 
 <!-- Content Security Policy -->
 <!-- CSP is served via HTTP header in netlify.toml (production) -->
@@ -29,20 +29,20 @@
 <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"> -->
 <!-- Add cache busting version parameter -->
 <!-- Original CSS (for reference) -->
-<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=2.241"> -->
+<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=2.242"> -->
 
 <!-- Preload critical CSS files (they load in parallel, not blocking) -->
-<link rel="preload" href="styles/main.css?v=2.241" as="style">
-<link rel="preload" href="styles/base/variables.css?v=2.241" as="style">
-<link rel="preload" href="styles/base/reset.css?v=2.241" as="style">
-<link rel="preload" href="styles/layout/app-container.css?v=2.241" as="style">
-<link rel="preload" href="styles/layout/header.css?v=2.241" as="style">
-<link rel="preload" href="styles/components/task-list.css?v=2.241" as="style">
+<link rel="preload" href="styles/main.css?v=2.242" as="style">
+<link rel="preload" href="styles/base/variables.css?v=2.242" as="style">
+<link rel="preload" href="styles/base/reset.css?v=2.242" as="style">
+<link rel="preload" href="styles/layout/app-container.css?v=2.242" as="style">
+<link rel="preload" href="styles/layout/header.css?v=2.242" as="style">
+<link rel="preload" href="styles/components/task-list.css?v=2.242" as="style">
 
 <!-- Async CSS loading - doesn't block render, app starts with inline critical CSS -->
-<link rel="stylesheet" href="styles/main.css?v=2.241" media="print" id="async-main-css">
+<link rel="stylesheet" href="styles/main.css?v=2.242" media="print" id="async-main-css">
 <script src="ext-boot/01.js"></script>
-<noscript><link rel="stylesheet" href="styles/main.css?v=2.241"></noscript>
+<noscript><link rel="stylesheet" href="styles/main.css?v=2.242"></noscript>
 <!-- [chrome-ext build] removed PWA manifest link -->
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -53,7 +53,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- version.js MUST load synchronously BEFORE modulepreloads to set globalThis.APP_VERSION -->
-<script src="./version.js?v=2.241"></script>
+<script src="./version.js?v=2.242"></script>
 
 <!-- iOS PWA Detection - adds .ios-pwa class for safe area fixes -->
 <script src="ext-boot/02.js"></script>
@@ -348,10 +348,10 @@
                     <span class="menu-section-toggle">&#x25BC;</span>
                 </div>
                 <div class="menu-section-grid" id="menu-section-legal">
-                    <a href="https://minicycle.app/legal/privacy.html" target="_blank" rel="noopener noreferrer" class="menu-link-button" title="Read the Privacy Policy"><i class="fas fa-shield-alt"></i>Privacy Policy</a>
-                    <a href="https://minicycle.app/legal/terms.html" target="_blank" rel="noopener noreferrer" class="menu-link-button" title="Read the Terms of Service"><i class="fas fa-file-alt"></i>Terms of Service</a>
-                    <a href="https://minicycle.app/legal/accessibility.html" target="_blank" rel="noopener noreferrer" class="menu-link-button" title="Read the Accessibility Statement"><i class="fas fa-universal-access"></i>Accessibility</a>
-                    <a href="https://minicycle.app/legal/security.html" target="_blank" rel="noopener noreferrer" class="menu-link-button" title="Read the Security Policy"><i class="fas fa-lock"></i>Security</a>
+                    <a href="legal/privacy.html" target="_blank" rel="noopener noreferrer" class="menu-link-button" title="Read the Privacy Policy"><i class="fas fa-shield-alt"></i>Privacy Policy</a>
+                    <a href="legal/terms.html" target="_blank" rel="noopener noreferrer" class="menu-link-button" title="Read the Terms of Service"><i class="fas fa-file-alt"></i>Terms of Service</a>
+                    <a href="legal/accessibility.html" target="_blank" rel="noopener noreferrer" class="menu-link-button" title="Read the Accessibility Statement"><i class="fas fa-universal-access"></i>Accessibility</a>
+                    <a href="legal/security.html" target="_blank" rel="noopener noreferrer" class="menu-link-button" title="Read the Security Policy"><i class="fas fa-lock"></i>Security</a>
                 </div>
             </div>
 
@@ -1026,10 +1026,10 @@
   &bull;
   <a href="https://minicycle.app/pages/product.html" target="_blank" rel="noopener noreferrer" aria-label="miniCycle product page" title="Open the miniCycle product page">miniCycle<sup>™</sup></a>
 </li>
-<li class="footer-item"><a href="https://minicycle.app/legal/privacy.html" target="_blank" rel="noopener noreferrer" title="Read the Privacy Policy">Privacy Policy</a></li>
-<li class="footer-item"><a href="https://minicycle.app/legal/terms.html" target="_blank" rel="noopener noreferrer" title="Read the Terms of Service">Terms of Service</a></li>
-<li class="footer-item"><a href="https://minicycle.app/legal/accessibility.html" target="_blank" rel="noopener noreferrer" title="Read the Accessibility Statement">Accessibility</a></li>
-<li class="footer-item"><a href="https://minicycle.app/legal/security.html" target="_blank" rel="noopener noreferrer" title="Read the Security Policy">Security</a></li>
+<li class="footer-item"><a href="legal/privacy.html" target="_blank" rel="noopener noreferrer" title="Read the Privacy Policy">Privacy Policy</a></li>
+<li class="footer-item"><a href="legal/terms.html" target="_blank" rel="noopener noreferrer" title="Read the Terms of Service">Terms of Service</a></li>
+<li class="footer-item"><a href="legal/accessibility.html" target="_blank" rel="noopener noreferrer" title="Read the Accessibility Statement">Accessibility</a></li>
+<li class="footer-item"><a href="legal/security.html" target="_blank" rel="noopener noreferrer" title="Read the Security Policy">Security</a></li>
 <li class="footer-item"><button id="open-feedback-modal-footer" class="open-feedback-modal-footer" aria-label="Open feedback modal" title="Send us feedback">Feedback</button></li>
 </ul>
 </footer>
@@ -1043,7 +1043,7 @@
 <div id="live-region" aria-live="polite" style="position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden;"></div>
 
 <!-- Boot File Split (Dec 2025): Load via entrypoint which orchestrates all boot files -->
- <script type="module" src="miniCycle-main.js?v=2.241"></script>
+ <script type="module" src="miniCycle-main.js?v=2.242"></script>
 
 <script src="ext-boot/09.js"></script>
    <!-- [chrome-ext build] removed inline script: late lite-version fallback redirect -->

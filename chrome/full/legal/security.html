@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Security Policy • miniCycle</title>
+
+  <!-- Reuse the user's manual stylesheet for consistent look -->
+  <link rel="stylesheet" href="user-manual-styles.css" />
+</head>
+<body>
+  <a href="../index.html" class="back-button" aria-label="Go back to miniCycle">⬅ Back to miniCycle</a>
+
+  <main role="main">
+    <h1>🔐 Security Policy for miniCycle</h1>
+
+    <div class="section">
+      <p><strong>Last Updated:</strong> June 15, 2026</p>
+      <p><strong>Version:</strong> 1.2</p>
+    </div>
+
+    <div class="section">
+      <h2>Reporting a Vulnerability</h2>
+      <p>If you discover a security vulnerability in miniCycle, please report it responsibly:</p>
+      <ul>
+        <li><strong>Email:</strong> <a href="mailto:admin@sparkinCreations.com">admin@sparkinCreations.com</a></li>
+        <li><strong>Subject line:</strong> <code>[SECURITY] miniCycle vulnerability report</code></li>
+      </ul>
+      <p><strong>Please do not</strong> open a public GitHub issue for security vulnerabilities. Use email for responsible disclosure.</p>
+    </div>
+
+    <div class="section">
+      <h2>What to Include</h2>
+      <p>When reporting a vulnerability, please include:</p>
+      <ul>
+        <li>Description of the vulnerability and its potential impact</li>
+        <li>Steps to reproduce the issue</li>
+        <li>Affected version(s) of miniCycle</li>
+        <li>Any suggested fixes (optional but appreciated)</li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <h2>Response Timeline</h2>
+      <ul>
+        <li><strong>Acknowledgment:</strong> Within 3 business days</li>
+        <li><strong>Assessment:</strong> Within 7 business days</li>
+        <li><strong>Fix (if confirmed):</strong> As soon as reasonably possible, depending on severity</li>
+        <li><strong>Disclosure:</strong> Coordinated with the reporter after a fix is deployed</li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <h2>Security Measures</h2>
+      <p>miniCycle employs the following security measures:</p>
+      <ul>
+        <li><strong>Content Security Policy (CSP)</strong> — Strict script and resource loading rules with SHA-256 hashes for inline scripts on the web app; the Chrome extension uses Manifest V3's <code>script-src 'self'</code> policy with all inline scripts externalized</li>
+        <li><strong>XSS Protection</strong> — Input sanitization and HTML escaping across all user-facing outputs</li>
+        <li><strong>Security Headers</strong> — X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy, and HSTS</li>
+        <li><strong>No External Dependencies</strong> — Self-hosted fonts, assets, and scripts; no third-party analytics, advertising, or tracking libraries. The only outbound third-party request the app makes is to the feedback form provider (Web3Forms), and only when you choose to submit feedback. Marketing pages post anonymous click and page-view events to a self-hosted Netlify Function on our own infrastructure</li>
+        <li><strong>Import Validation</strong> — Imported .mcyc files are validated, sanitized, and rejected when they do not match miniCycle's expected structure. As a general best practice, only import routine files from people you trust</li>
+        <li><strong>Local-Only Data</strong> — All user data stored in browser localStorage; no server-side storage or transmission</li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <h2>Scope</h2>
+      <p>This security policy covers:</p>
+      <ul>
+        <li>The miniCycle web app and installable PWA at <a href="https://minicycle.app">minicycle.app</a></li>
+        <li>The miniCycle Chrome Web Store browser extensions (both the full and Lite editions)</li>
+        <li>The standalone Lite version</li>
+        <li>The miniCycle source code at <a href="https://github.com/sparkinCreations/miniCycle">GitHub</a></li>
+      </ul>
+      <p>Third-party dependencies (listed in package.json) are maintained by their respective owners.</p>
+    </div>
+
+    <div class="section">
+      <p style="margin-top: 20px; text-align: center;"><strong>&copy; <span id="year"></span> sparkinCreations &bull; miniCycle&trade;</strong><br>
+      <em>Security is a core principle.</em></p>
+    </div>
+  </main>
+  <script src="legal-footer.js"></script>
+</body>
+</html>

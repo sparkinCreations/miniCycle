@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Accessibility Statement • miniCycle</title>
+
+  <!-- Reuse the user's manual stylesheet for consistent look -->
+  <link rel="stylesheet" href="user-manual-styles.css" />
+</head>
+<body>
+  <a href="../index.html" class="back-button" aria-label="Go back to miniCycle">⬅ Back to miniCycle</a>
+
+  <main role="main">
+    <h1>♿ Accessibility Statement for miniCycle</h1>
+
+    <div class="section">
+      <p><strong>Last Updated:</strong> May 2, 2026</p>
+      <p><strong>Version:</strong> 2.1</p>
+    </div>
+
+    <div class="section">
+      <h2>Our Commitment</h2>
+      <p>sparkinCreations is committed to making miniCycle accessible to everyone, including people with disabilities. We strive to meet <strong>WCAG 2.1 Level AA</strong> standards and continuously improve the accessibility of our application.</p>
+    </div>
+
+    <div class="section">
+      <h2>Accessibility Features</h2>
+      <p>miniCycle includes the following accessibility features, available in <strong>Settings > Accessibility</strong>:</p>
+      <ul>
+        <li><strong>Reduced Motion</strong> — Disables animations and transitions for users sensitive to motion</li>
+        <li><strong>High Contrast</strong> — Increases border visibility, text contrast, and element distinction in both light and dark modes (1,669 lines of dedicated high-contrast CSS)</li>
+        <li><strong>Font Size Control</strong> — Four size presets (Small, Default, Large, Extra Large) for comfortable reading</li>
+        <li><strong>Show Move Arrows</strong> — Provides button-based task reordering as an alternative to drag-and-drop</li>
+        <li><strong>Show Three Dots Menu</strong> — Exposes task options via a visible menu button instead of requiring gestures</li>
+        <li><strong>Dark Mode</strong> — Reduces eye strain in low-light environments, with a CSS fallback that respects your system's dark mode preference before JavaScript loads</li>
+        <li><strong>Guided Tour</strong> — Optional interactive walkthrough that highlights key UI elements, with keyboard navigation and focus trapping</li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <h2>Technical Accessibility</h2>
+      <ul>
+        <li><strong>Semantic HTML</strong> — Native <code>&lt;dialog&gt;</code> elements for modals with automatic focus management, trapping, and restoration</li>
+        <li><strong>ARIA Labels</strong> — 68+ interactive elements include descriptive labels for screen readers, with <code>aria-live</code> regions for dynamic content updates (notifications, task list filtering)</li>
+        <li><strong>Keyboard Navigation</strong> — All core features are accessible via keyboard, including roving tabindex patterns for lists, toolbars, and grids (arrow keys, Home/End, Enter/Space)</li>
+        <li><strong>Skip Navigation</strong> — Skip-to-content link allows keyboard users to bypass the header and jump directly to the main content</li>
+        <li><strong>Focus Indicators</strong> — Visible <code>:focus-visible</code> outlines throughout, with enhanced 3px outlines in high contrast mode</li>
+        <li><strong>Respects System Preferences</strong> — Honors <code>prefers-reduced-motion</code> (all animations gated) and <code>prefers-color-scheme</code> (CSS dark mode fallback before JavaScript loads)</li>
+        <li><strong>No Flash Prevention</strong> — Accessibility settings load before CSS renders to prevent animation or contrast flash on page load</li>
+        <li><strong>Color Contrast</strong> — Text and interactive elements meet WCAG AA contrast ratios (4.5:1 for normal text, 3:1 for large text). Disabled states use visual cues beyond color alone</li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <h2>Known Limitations</h2>
+      <p>We are aware of the following areas where accessibility can be improved:</p>
+      <ul>
+        <li>Drag-and-drop task reordering requires the "Show Move Arrows" setting for keyboard and switch users — this alternative is always available via Settings</li>
+        <li>Custom vocabulary theme and personalization color combinations may not meet WCAG contrast ratios in all configurations — use High Contrast mode for guaranteed visibility</li>
+        <li>Automated accessibility testing (axe, Lighthouse) is not yet integrated into our CI/CD pipeline</li>
+        <li>Screen reader testing has been performed with VoiceOver — broader testing with NVDA and JAWS is planned</li>
+      </ul>
+      <p>We are actively working to address these limitations.</p>
+    </div>
+
+    <div class="section">
+      <h2>Feedback</h2>
+      <p>If you encounter any accessibility barriers while using miniCycle, we want to hear from you:</p>
+      <ul>
+        <li><strong>Email:</strong> <a href="mailto:admin@sparkinCreations.com">admin@sparkinCreations.com</a></li>
+        <li><strong>GitHub:</strong> <a href="https://github.com/sparkinCreations/miniCycle/issues">Report an accessibility issue</a></li>
+      </ul>
+      <p>We aim to respond to accessibility feedback within 5 business days.</p>
+    </div>
+
+    <div class="section">
+      <p style="margin-top: 20px; text-align: center;"><strong>&copy; <span id="year"></span> sparkinCreations &bull; miniCycle&trade;</strong><br>
+      <em>Built with accessibility as a priority.</em></p>
+    </div>
+  </main>
+  <script src="legal-footer.js"></script>
+</body>
+</html>

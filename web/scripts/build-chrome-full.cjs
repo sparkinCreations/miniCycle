@@ -126,12 +126,14 @@ function transformHtml() {
     '<!-- [chrome-ext build] removed PWA manifest link -->'
   );
 
-  // Info/nav links to pages NOT bundled in the extension (legal/, pages/,
-  // tests/) would 404 from a chrome-extension:// origin. They all open in a new
-  // tab (target="_blank"), so point them at the canonical live site instead —
-  // single-sourced content, and the Web Store wants a hosted privacy policy URL.
+  // Info/nav links to pages NOT bundled in the extension (pages/, tests/) would
+  // 404 from a chrome-extension:// origin. They open in a new tab, so point them
+  // at the canonical live site instead. NOTE: legal/ is deliberately NOT rewritten
+  // here — those pages ARE bundled (see copyLegal) so they open inside the
+  // extension; rewriting them to the live site would strand an extension user on
+  // minicycle.app (its "Back to miniCycle" returns to the WEB app, not the ext).
   html = html.replace(
-    /href="((?:legal|pages|tests)\/[^"]*)"/g,
+    /href="((?:pages|tests)\/[^"]*)"/g,
     `href="${LIVE_SITE}/$1"`
   );
 
@@ -286,6 +288,35 @@ function copyExamples() {
   log(`examples: copied ${EXAMPLE_DIRS.join(', ')}`);
 }
 
+// ── 3c. bundle legal pages (privacy / terms / security / accessibility …) ────
+// The app's menu links to legal/*.html with target="_blank". If we left them
+// rewritten to the live site (like pages/), an extension user who opened the
+// Privacy Policy would land on minicycle.app and its "Back to miniCycle" button
+// (and legal-footer.js, which is referrer-driven) would return them to the WEB
+// app — bouncing them out of the extension. So bundle legal/ and keep its links
+// internal. Two rewrites per bundled page:
+//   ../miniCycle.html  -> ../index.html   (the extension's entry is index.html)
+//   ../pages/<x>       -> live site       (pages/ is not bundled)
+// Sibling legal links (privacy<->terms) and absolute https links stay as-is.
+function copyLegal() {
+  const src = path.join(WEB_ROOT, 'legal');
+  if (!fs.existsSync(src)) { log('   WARN legal/ not found — skipping'); return; }
+  const dest = path.join(OUT, 'legal');
+  fs.cpSync(src, dest, { recursive: true });
+
+  let patched = 0;
+  for (const e of fs.readdirSync(dest, { withFileTypes: true })) {
+    if (!e.isFile() || !e.name.endsWith('.html')) continue;
+    const p = path.join(dest, e.name);
+    const before = fs.readFileSync(p, 'utf8');
+    const after = before
+      .replace(/href="\.\.\/miniCycle\.html"/g, 'href="../index.html"')
+      .replace(/href="\.\.\/pages\/([^"]*)"/g, `href="${LIVE_SITE}/pages/$1"`);
+    if (after !== before) { fs.writeFileSync(p, after, 'utf8'); patched += 1; }
+  }
+  log(`legal: bundled legal/ (${patched} page(s) re-linked to the extension)`);
+}
+
 // ── 4. manifest + background + icons ────────────────────────────────────────
 function writeManifestAndBackground(version) {
   const manifest = {
@@ -404,6 +435,7 @@ function main() {
   copyAppCode();
   copyAssets();
   copyExamples();
+  copyLegal();
   writeManifestAndBackground(version);
   pruneJunk();
 
