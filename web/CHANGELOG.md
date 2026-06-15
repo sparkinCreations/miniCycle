@@ -1,3 +1,7 @@
+## [2.241] - 2026-06-15
+- fix(boot): apply async main.css when already cached — fixes intermittent unstyled render on refresh
+
+
 ## [2.240] - 2026-06-15
 - fix(boot): wire module deps in the sequential init stage (fixes eager-capture of getter deps)
 - fix(quick-actions): live-refresh recently/frequently used without a manual refresh
