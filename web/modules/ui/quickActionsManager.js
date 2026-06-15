@@ -302,8 +302,12 @@ export class QuickActionsManager {
 
         // Uniform usage tracking: one delegated listener over the action buttons, so
         // accessing a feature from ANYWHERE (not just the panel) counts toward
-        // recently/frequently used. Idempotent + app-lifetime.
-        setupActionUsageTracking(this.deps.AppState);
+        // recently/frequently used. Idempotent + app-lifetime. The onRecord callback
+        // live-refreshes the panel so recent/frequent update without a manual refresh.
+        setupActionUsageTracking(this.deps.AppState, () => {
+            const view = this._getActiveView();
+            if (view === 'recent' || view === 'frequent') this._renderAllPanels();
+        });
 
         this._initialized = true;
         if (this.deps.isDebug?.()) console.log('⚡ QuickActionsManager initialized');

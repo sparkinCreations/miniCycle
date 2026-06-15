@@ -115,6 +115,7 @@ export function actionIdForClick(e) {
 // AND the quick-actions panel's synthetic `btn.click()`). Module-level so it's a true
 // singleton regardless of how many QuickActionsManager instances init.
 let _appState = null;
+let _onRecord = null;
 let _trackingHandler = null;
 
 /**
@@ -122,13 +123,19 @@ let _trackingHandler = null;
  * button handler's stopPropagation() can't suppress tracking. Re-call updates the
  * AppState reference (handles boot-retry creating a fresh AppState).
  * @param {Object} AppState
+ * @param {Function} [onRecord] - called with the action id after recording (e.g. to
+ *   re-render an open Recently/Frequently-used view live, no refresh needed)
  */
-export function setupActionUsageTracking(AppState) {
+export function setupActionUsageTracking(AppState, onRecord) {
     _appState = AppState; // always refresh (boot retry → new AppState instance)
+    if (onRecord) _onRecord = onRecord;
     if (_trackingHandler) return; // listener already attached — keep the single one
     _trackingHandler = (e) => {
         const id = actionIdForClick(e);
-        if (id && _appState) recordActionUsage(_appState, id);
+        if (id && _appState) {
+            recordActionUsage(_appState, id);
+            _onRecord?.(id); // live-refresh the panel if it's showing recent/frequent
+        }
     };
     document.addEventListener('click', _trackingHandler, true);
 }
@@ -140,4 +147,5 @@ export function teardownActionUsageTracking() {
         _trackingHandler = null;
     }
     _appState = null;
+    _onRecord = null;
 }
