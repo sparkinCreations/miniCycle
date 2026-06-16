@@ -1392,9 +1392,9 @@ fi
 # ============================================
 # CSP HASH AUTO-UPDATE
 # ============================================
-# Scans inline <script> blocks in HTML files,
-# computes SHA-256 hashes, and updates netlify.toml
-# if any hashes are new or missing.
+# Scans inline <script> blocks in the HTML source files, computes SHA-256
+# hashes, and syncs the script-src directive in ALL deployment configs
+# (netlify.toml, .htaccess, nginx-security.conf) when hashes are new or stale.
 
 echo "🔒 CSP Hash Verification"
 echo "------------------------"
@@ -1404,114 +1404,79 @@ if [ "$DRY_RUN" = true ]; then
 elif [ "$LITE_ONLY" = true ]; then
     echo "⏭️  Skipping CSP hashes (LITE ONLY mode)"
 else
-    NETLIFY_TOML="netlify.toml"
-    if [ -f "$NETLIFY_TOML" ]; then
-        # Compute hashes from all HTML files with inline scripts
-        CSP_HASHES=$(python3 -c "
-import hashlib, base64, re, sys
+    # Canonical CSP hash set comes from the inline <script> blocks in the three
+    # source files below, then is applied to ALL deployment configs in their
+    # native script-src format (netlify.toml + nginx = single line; .htaccess =
+    # Apache multi-line "\" continuation). Only the script-src hash list is
+    # touched — every other directive is preserved, and configs may legitimately
+    # differ in those other directives.
+    python3 - <<'CSP_PY'
+import hashlib, base64, re, os
 
-files = [
-    'miniCycle.html',
-    'lite/miniCycle-lite.html',
-    'tests/module-test-suite.html',
-]
+SRC_FILES = ['miniCycle.html', 'lite/miniCycle-lite.html', 'tests/module-test-suite.html']
+CONFIGS = ['netlify.toml', '.htaccess', 'nginx-security.conf']
 
+# 1) Canonical, de-duplicated hash set (insertion order preserved).
 hashes = []
-for f in files:
+for f in SRC_FILES:
     try:
         html = open(f).read()
-        # Match inline scripts (not src=, not type='module' for main HTML; include type='module' for test suite)
-        # We hash ALL inline script blocks regardless of type
-        scripts = re.findall(r'<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>', html, re.DOTALL)
-        for s in scripts:
-            if s.strip():  # skip empty scripts
-                h = base64.b64encode(hashlib.sha256(s.encode()).digest()).decode()
-                hashes.append(f\"'sha256-{h}'\")
     except FileNotFoundError:
-        pass
-
-# Deduplicate while preserving order
+        continue
+    for s in re.findall(r'<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>', html, re.DOTALL):
+        if s.strip():
+            h = base64.b64encode(hashlib.sha256(s.encode()).digest()).decode()
+            hashes.append("'sha256-%s'" % h)
 seen = set()
-unique = []
-for h in hashes:
-    if h not in seen:
-        seen.add(h)
-        unique.append(h)
+canon = [h for h in hashes if not (h in seen or seen.add(h))]
+if not canon:
+    print("ℹ️  No inline scripts found to hash")
+    raise SystemExit(0)
+canon_set = set(canon)
 
-for h in unique:
-    print(h)
-" 2>/dev/null)
+def render_single(c):
+    return "script-src 'self' " + " ".join(c) + ";"
 
-        if [ -n "$CSP_HASHES" ]; then
-            # Read current CSP line from netlify.toml
-            CURRENT_CSP=$(grep "Content-Security-Policy" "$NETLIFY_TOML" || true)
-            MISSING_HASHES=""
-            MISSING_COUNT=0
-            STALE_HASHES=""
-            STALE_COUNT=0
+def render_htaccess(c):
+    # 8-space directive, 12-space hash lines, trailing " \" continuations; the
+    # final hash closes the directive with ";".
+    lines = ["script-src 'self' \\"]
+    lines += ["            %s \\" % h for h in c[:-1]]
+    lines.append("            %s;" % c[-1])
+    return "\n".join(lines)
 
-            # Check for new hashes not yet in CSP
-            while IFS= read -r hash; do
-                if ! echo "$CURRENT_CSP" | grep -qF "$hash"; then
-                    MISSING_HASHES="$MISSING_HASHES $hash"
-                    MISSING_COUNT=$((MISSING_COUNT + 1))
-                fi
-            done <<< "$CSP_HASHES"
+PATTERN = r"script-src 'self'.*?;"
+changed = 0
+for cfg in CONFIGS:
+    if not os.path.exists(cfg):
+        print("⏭️  %s not found — skipping" % cfg)
+        continue
+    content = open(cfg).read()
+    m = re.search(PATTERN, content, re.DOTALL)
+    if not m:
+        print("⚠️  %s has no script-src 'self' directive — skipping" % cfg)
+        continue
+    current = re.findall(r"'sha256-[^']+'", m.group(0))
+    cur = set(current)
+    missing = [h for h in canon if h not in cur]
+    stale = [h for h in current if h not in canon_set]
+    if not missing and not stale:
+        print("✅ %s — already canonical (%d hashes)" % (cfg, len(canon)))
+        continue
+    repl = render_htaccess(canon) if cfg.endswith('.htaccess') else render_single(canon)
+    # lambda => replacement string is treated literally (no backslash/group escapes).
+    content = re.sub(PATTERN, lambda _m: repl, content, count=1, flags=re.DOTALL)
+    open(cfg, 'w').write(content)
+    changed += 1
+    for h in missing:
+        print("   + %s  (%s)" % (h, cfg))
+    for h in stale:
+        print("   - %s  (%s)" % (h, cfg))
+    print("✅ %s — updated script-src (+%d new, -%d stale → %d total)" % (cfg, len(missing), len(stale), len(canon)))
 
-            # Check for stale hashes in CSP that no longer match any inline script
-            CURRENT_HASH_LIST=$(echo "$CURRENT_CSP" | grep -o "'sha256-[^']*'" || true)
-            if [ -n "$CURRENT_HASH_LIST" ]; then
-                while IFS= read -r old_hash; do
-                    if ! echo "$CSP_HASHES" | grep -qF "$old_hash"; then
-                        STALE_HASHES="$STALE_HASHES $old_hash"
-                        STALE_COUNT=$((STALE_COUNT + 1))
-                    fi
-                done <<< "$CURRENT_HASH_LIST"
-            fi
-
-            if [ $MISSING_COUNT -gt 0 ] || [ $STALE_COUNT -gt 0 ]; then
-                if [ $MISSING_COUNT -gt 0 ]; then
-                    echo "⚠️  Found $MISSING_COUNT new inline script hash(es) not in CSP:"
-                    for hash in $MISSING_HASHES; do
-                        echo "   + $hash"
-                    done
-                fi
-                if [ $STALE_COUNT -gt 0 ]; then
-                    echo "🧹 Found $STALE_COUNT stale hash(es) no longer matching any inline script:"
-                    for hash in $STALE_HASHES; do
-                        echo "   - $hash"
-                    done
-                fi
-
-                # Build the new script-src with only current hashes
-                ALL_HASHES=$(echo "$CSP_HASHES" | tr '\n' ' ' | sed 's/ $//')
-                NEW_SCRIPT_SRC="script-src 'self' $ALL_HASHES"
-
-                # Replace the script-src directive in netlify.toml
-                python3 -c "
-import re
-
-with open('$NETLIFY_TOML') as f:
-    content = f.read()
-
-# Replace script-src directive (everything between 'script-src' and the next ';')
-new_src = \"\"\"$NEW_SCRIPT_SRC\"\"\"
-content = re.sub(r\"script-src [^;]+\", new_src, content)
-
-with open('$NETLIFY_TOML', 'w') as f:
-    f.write(content)
-"
-                TOTAL_CHANGES=$((MISSING_COUNT + STALE_COUNT))
-                echo "✅ Updated CSP script-src in $NETLIFY_TOML ($MISSING_COUNT added, $STALE_COUNT removed)"
-            else
-                echo "✅ All inline script hashes match CSP — no changes needed"
-            fi
-        else
-            echo "ℹ️  No inline scripts found to hash"
-        fi
-    else
-        echo "⚠️  $NETLIFY_TOML not found - skipping CSP update"
-    fi
+if changed == 0:
+    print("✅ All CSP configs already match the canonical hash set (%d hashes)" % len(canon))
+CSP_PY
 fi
 
 echo ""
