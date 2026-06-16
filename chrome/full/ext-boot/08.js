@@ -10,7 +10,14 @@
         var i = Math.floor(Math.random() * tips.length);
         text.textContent = tips[i];
         el.classList.add('visible');
-        setInterval(function() {
+        var rotation = setInterval(function() {
+          // Stop rotating once the app has booted (loader is gone) — otherwise this
+          // timer runs forever, mutating a hidden/detached element. uiBoot.js sets
+          // dataset.appLoaded='true' on a successful boot.
+          if (document.documentElement.dataset.appLoaded === 'true') {
+            clearInterval(rotation);
+            return;
+          }
           el.classList.remove('visible');
           setTimeout(function() {
             i = (i + 1) % tips.length;
