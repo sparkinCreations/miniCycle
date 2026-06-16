@@ -204,17 +204,42 @@ echo -n 'SCRIPT_CONTENT_HERE' | openssl dgst -sha256 -binary | openssl base64
 
 The result looks like: `sha256-598+MlUQwZnsi4Bl2TqCLwtrDbSviEHUuCw5e2zjclo=`
 
+### Where the hashes live (three config files)
+
+The **same** CSP — and therefore the same `script-src` hash list — is served by **three** config files, one per deployment target. They must stay in sync:
+
+| File | Server / target |
+|------|-----------------|
+| `web/netlify.toml` | **Production** (Netlify HTTP headers) |
+| `web/.htaccess` | Apache (multi-line `\` continuation format) |
+| `web/nginx-security.conf` | nginx (single-line `add_header`) |
+
+> The non-`script-src` directives may legitimately differ between these files (e.g. Netlify allows `formspree`/`blob:`, nginx is a leaner policy). It's specifically the **`script-src` hash list** that must be identical across all three.
+
 ### When you need to update hashes
 
-**Only** if you change an inline script in `miniCycle.html`, `miniCycle-lite.html`, or `tests/module-test-suite.html`:
+**Only** if you change an inline script in `miniCycle.html`, `lite/miniCycle-lite.html`, or `tests/module-test-suite.html`.
+
+**The easy way (recommended) — let the tooling do it:**
+
+```bash
+cd web
+./scripts/update-version.sh --auto      # bumps version AND re-syncs CSP hashes in all 3 files
+```
+
+The `CSP HASH AUTO-UPDATE` step in that script recomputes every inline-script hash and rewrites the `script-src` directive in **all three** config files (each in its native format), adding new hashes and removing stale ones. It's idempotent — if nothing changed, it leaves the files untouched. This step runs on every release, so in practice you rarely touch hashes by hand.
+
+**The manual way** (only if you can't run the script):
 
 1. Make your change to the inline script
 2. Copy the exact content between `<script>` and `</script>` (not including the tags)
 3. Run the hash command above on that content
-4. Replace the old hash with the new one in `.htaccess`
-5. Deploy both files together
+4. Replace the old hash with the new one in **all three** files — `netlify.toml`, `.htaccess`, **and** `nginx-security.conf`
+5. Deploy
 
-**If you change even one space or newline, the hash changes.** Always recompute after any edit.
+**If you change even one space or newline, the hash changes.** Always recompute after any edit. (Editing an inline script in the extension build is different — see note below.)
+
+> **Chrome extension:** the `chrome/full/` build externalizes every inline script into `ext-boot/*.js`, so it runs under MV3's default `script-src 'self'` with **no hashes at all**. Inline-script edits there need a rebuild (`npm run build:chrome-full`), not a hash update.
 
 ### When you do NOT need to update hashes
 
@@ -246,7 +271,7 @@ document.getElementById('myBtn').addEventListener('click', doSomething);
 
 **Problem:** The app's inline script runs fine on localhost but gets blocked in production. Users see a broken page.
 
-**Fix:** Always recompute the hash after editing any inline script in `miniCycle.html` or `miniCycle-lite.html`. Update `.htaccess` and deploy both together.
+**Fix:** Run `./scripts/update-version.sh --auto` after editing any inline script — it recomputes the hash and syncs all three config files. (Doing it by hand? Update `netlify.toml`, `.htaccess`, **and** `nginx-security.conf` — not just one.)
 
 ### Mistake 4: "I need to load a script from a CDN"
 
@@ -258,7 +283,7 @@ document.getElementById('myBtn').addEventListener('click', doSomething);
 
 **Problem:** Your local Python dev server (`npm start`) doesn't send CSP headers. Everything works locally, then breaks when deployed to Apache.
 
-**Fix:** Remember that `.htaccess` only applies on the production Apache server. If something works locally but fails in production, check the browser console for CSP errors first.
+**Fix:** Remember that CSP is only sent by the deployed server — `netlify.toml` in production (Netlify), or `.htaccess`/`nginx-security.conf` on Apache/nginx deploys. The local Python dev server sends none. If something works locally but fails in production, check the browser console for CSP errors first.
 
 ---
 
@@ -268,10 +293,10 @@ document.getElementById('myBtn').addEventListener('click', doSomething);
 |--------------|---------|
 | Add JS to a new page | Create an external `.js` file, reference with `<script src="...">` |
 | Add a click handler | Use `addEventListener` in your `.js` file — never use `onclick=""` |
-| Change a miniCycle.html inline script | Edit the script, recompute the SHA-256 hash, update `.htaccess` |
+| Change a miniCycle.html inline script | Run `./scripts/update-version.sh --auto` — it re-syncs hashes in all 3 configs |
 | Load an external library | Self-host it. Put the file in your project and reference locally |
 | Debug a CSP error | Open browser DevTools > Console. Look for "Content Security Policy" errors |
-| Add a new external service | Add its domain to the relevant CSP directive in `.htaccess` |
+| Add a new external service | Add its domain to the relevant CSP directive in **all three** config files |
 
 ---
 
@@ -279,8 +304,11 @@ document.getElementById('myBtn').addEventListener('click', doSomething);
 
 | File | Path | Purpose |
 |------|------|---------|
-| CSP rules | `web/.htaccess` | Security headers for all pages |
-| Main app | `web/miniCycle.html` | Only file with hashed inline scripts |
+| CSP rules (production) | `web/netlify.toml` | Security headers served by Netlify |
+| CSP rules (Apache) | `web/.htaccess` | Same CSP for Apache deploys |
+| CSP rules (nginx) | `web/nginx-security.conf` | Same CSP for nginx deploys |
+| Hash sync tool | `web/scripts/update-version.sh` | Recomputes + syncs `script-src` hashes across all 3 configs |
+| Main app | `web/miniCycle.html` | Has hashed inline scripts |
 | Lite app | `web/lite/miniCycle-lite.html` | Also has hashed inline scripts |
 | Test runner | `web/tests/module-test-suite.html` | Also has hashed inline scripts |
 | This guide | `web/docs/security/CSP_AND_HTACCESS_GUIDE.md` | You're reading it |
