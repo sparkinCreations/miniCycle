@@ -157,6 +157,10 @@
         .hero-headline { font-family: var(--font-heading); font-size: 2.2rem; font-weight: 600; color: var(--color-navy); margin-bottom: var(--space-sm); line-height: 1.15; }
         .hero-sub { font-size: 1.15rem; color: #3d4f62; margin-bottom: var(--space-lg); line-height: 1.7; }
         .hero-ctas { display: flex; flex-direction: column; gap: var(--space-sm); align-items: center; margin-bottom: var(--space-sm); }
+        .hero-chrome { margin-bottom: var(--space-md); }
+        .hero-chrome .cws-link { display: inline-block; transition: opacity 0.2s; }
+        .hero-chrome .cws-link:hover { opacity: 0.85; }
+        .hero-chrome .cws-badge { height: 62px; width: auto; display: block; }
         .trust-text { font-size: 0.95rem; color: #4a5a6a; font-weight: 500; }
         .hero-learn-more { display: inline-block; margin-top: 0.6rem; font-size: 0.9rem; color: #4a5a6a; text-decoration: none; transition: color 0.2s; }
         .hero-learn-more:hover { color: var(--color-primary); }
@@ -221,6 +225,17 @@
         .secondary-links .cws-caption { font-size: 0.72rem; font-weight: 500; color: var(--color-text-muted); }
         .secondary-links .cws-link:hover { text-decoration: none; }
         .secondary-links .cws-link:hover .cws-badge { opacity: 0.88; }
+        /* Two store badges side by side: full version (primary) + lite (secondary). */
+        .secondary-links .cws-badges { display: flex; gap: var(--space-lg); flex-wrap: wrap; justify-content: center; align-items: flex-start; }
+        .secondary-links .cws-caption-primary { color: var(--color-primary); font-weight: 600; }
+
+        /* "Add to Chrome" in the bottom CTA: white text link with the colored
+           Chrome mark, sized to read directly on the solid blue background
+           (no card needed). */
+        .cta-chrome-row { margin-top: var(--space-md); }
+        .cta-chrome-link { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--color-white); font-size: 1.05rem; font-weight: 600; text-decoration: none; transition: opacity 0.2s; }
+        .cta-chrome-link:hover { opacity: 0.85; text-decoration: underline; text-underline-offset: 3px; }
+        .cta-chrome-link .chrome-logo { width: 22px; height: 22px; flex-shrink: 0; }
 
         /* ============================
            Theme Showcase
@@ -332,6 +347,11 @@
         .timeline-date { font-size: 0.75rem; color: var(--color-text-light); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.15rem; }
         .timeline-title { font-family: var(--font-heading); font-size: 0.95rem; font-weight: 600; color: var(--color-text-dark); margin-bottom: 0.15rem; }
         .timeline-desc { font-size: 0.85rem; color: var(--color-text-muted); line-height: 1.5; }
+        /* Collapsed extra timeline items — revealed by the "Show more" toggle. */
+        .timeline-extra { max-height: 0; overflow: hidden; transition: max-height 0.45s ease; }
+        .timeline-extra.open { max-height: 800px; }
+        .timeline-more-btn { display: block; margin: 0 auto var(--space-sm); background: transparent; border: none; color: var(--color-primary-dark); font-size: 0.88rem; font-weight: 600; cursor: pointer; font-family: inherit; padding: 0.3rem 0.6rem; transition: color 0.2s; }
+        .timeline-more-btn:hover { color: var(--color-primary); text-decoration: underline; text-underline-offset: 3px; }
 
         /* Changelog toggle */
         .changelog-toggle-btn { display: block; margin: 0 auto var(--space-md); background: transparent; border: 1px solid var(--color-primary); color: var(--color-primary); padding: 0.5rem 1.4rem; border-radius: var(--radius-pill); font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: background 0.2s, color 0.2s; font-family: inherit; }
@@ -433,7 +453,7 @@
             .section-title { font-size: 2rem; }
             .hero-headline { font-size: 2.6rem; }
             .hero-sub { font-size: 1.2rem; }
-            .hero-ctas { flex-direction: row; justify-content: center; }
+            .hero-ctas { flex-direction: row; justify-content: center; flex-wrap: wrap; }
             .themes-scroll-wrapper { display: none; }
             .themes-image { display: block; }
 
@@ -456,7 +476,7 @@
             .story-stat-number { font-size: 2.8rem; }
 
             .cta-section h2 { font-size: 2rem; }
-            .cta-section .cta-row { flex-direction: row; justify-content: center; }
+            .cta-section .cta-row { flex-direction: row; justify-content: center; flex-wrap: wrap; }
         }
 
         @media (min-width: 1024px) {
@@ -507,8 +527,13 @@
                     <h1 class="hero-headline">Routine checklists that reset automatically.</h1>
                     <p class="hero-sub">Built by an inspector. Works for any routine that repeats. Build it once and miniCycle resets it every time you finish.</p>
                     <div class="hero-ctas">
-                        <a href="../miniCycle.html" class="cta-primary" data-track="app-launch">Try miniCycle</a>
+                        <a href="../miniCycle.html" class="cta-primary" data-track="app-launch">Try miniCycle Web</a>
                         <a href="#demos" class="cta-secondary">See It In Action</a>
+                    </div>
+                    <div class="hero-chrome">
+                        <a href="https://chromewebstore.google.com/detail/minicycle/ncfhifaoplaakjpbjokpnblkplcceegi" class="cws-link" data-track="chrome-install-full" target="_blank" rel="noopener">
+                            <img class="cws-badge" src="../assets/images/external/chrome-web-store-badge.png" alt="Get miniCycle on the Chrome Web Store" width="340" height="96">
+                        </a>
                     </div>
                     <p class="trust-text">Free forever &middot; No account needed &middot; Your data stays on your device &middot; <a href="learn_more.html" class="hero-learn-more">Learn more &#8594;</a></p>
                 </div>
@@ -659,11 +684,15 @@
                 <div class="secondary-links-row">
                     <a href="learn_more.html">Learn more about features &#8594;</a>
                     <a href="https://github.com/sparkinCreations/miniCycle" target="_blank" rel="noopener noreferrer">View on GitHub &#8594;</a>
-                </div>
-                <div class="secondary-links-row">
                     <a href="../lite/miniCycle-lite.html">Try Lite Version &#8594;</a>
-                    <a href="https://chromewebstore.google.com/detail/minicycle-lite/mfbedmndcmhileaofjfmepcgofdipeeo" class="cws-link" target="_blank" rel="noopener">
-                        <img class="cws-badge" src="../assets/images/external/chrome-web-store-badge.png" alt="Available in the Chrome Web Store" width="340" height="96">
+                </div>
+                <div class="secondary-links-row cws-badges">
+                    <a href="https://chromewebstore.google.com/detail/minicycle/ncfhifaoplaakjpbjokpnblkplcceegi" class="cws-link" data-track="chrome-install-full" target="_blank" rel="noopener">
+                        <img class="cws-badge" src="../assets/images/external/chrome-web-store-badge.png" alt="Get miniCycle on the Chrome Web Store" width="340" height="96">
+                        <span class="cws-caption cws-caption-primary">Full version</span>
+                    </a>
+                    <a href="https://chromewebstore.google.com/detail/minicycle-lite/mfbedmndcmhileaofjfmepcgofdipeeo" class="cws-link" data-track="chrome-install-lite" target="_blank" rel="noopener">
+                        <img class="cws-badge" src="../assets/images/external/chrome-web-store-badge.png" alt="Get miniCycle Lite on the Chrome Web Store" width="340" height="96">
                         <span class="cws-caption">Lite version</span>
                     </a>
                 </div>
@@ -871,28 +900,31 @@
                     <div class="timeline-title">Completed Tasks Dropdown</div>
                     <div class="timeline-desc">Collapse finished tasks to focus on what's left. Keeps your routine clean without losing progress.</div>
                 </div>
-                <div class="timeline-item">
-                    <div class="timeline-date">Mar 2026</div>
-                    <div class="timeline-title">Vocabulary Theme System</div>
-                    <div class="timeline-desc">Unlock themed language and colors as you complete cycles. Your fitness routine becomes a workout tracker.</div>
-                </div>
-                <div class="timeline-item">
-                    <div class="timeline-date">Mar 2026</div>
-                    <div class="timeline-title">Accessibility Settings</div>
-                    <div class="timeline-desc">Reduced motion, high contrast mode, and adjustable font sizes. Built for everyone.</div>
-                </div>
-                <div class="timeline-item">
-                    <div class="timeline-date">Feb 2026</div>
-                    <div class="timeline-title">Undo/Redo History</div>
-                    <div class="timeline-desc">Full state snapshots with one-tap undo. Never lose progress to an accidental tap.</div>
-                </div>
-                <div class="timeline-item">
-                    <div class="timeline-date">Jan 2026</div>
-                    <div class="timeline-title">Achievement System</div>
-                    <div class="timeline-desc">Milestones, unlock tracking, and gamification rewards that grow with your consistency.</div>
+                <div class="timeline-extra" id="timelineExtra">
+                    <div class="timeline-item">
+                        <div class="timeline-date">Mar 2026</div>
+                        <div class="timeline-title">Vocabulary Theme System</div>
+                        <div class="timeline-desc">Unlock themed language and colors as you complete cycles. Your fitness routine becomes a workout tracker.</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">Mar 2026</div>
+                        <div class="timeline-title">Accessibility Settings</div>
+                        <div class="timeline-desc">Reduced motion, high contrast mode, and adjustable font sizes. Built for everyone.</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">Feb 2026</div>
+                        <div class="timeline-title">Undo/Redo History</div>
+                        <div class="timeline-desc">Full state snapshots with one-tap undo. Never lose progress to an accidental tap.</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">Jan 2026</div>
+                        <div class="timeline-title">Achievement System</div>
+                        <div class="timeline-desc">Milestones, unlock tracking, and gamification rewards that grow with your consistency.</div>
+                    </div>
                 </div>
             </div>
 
+            <button type="button" class="timeline-more-btn" id="timelineMoreBtn" aria-expanded="false" aria-controls="timelineExtra">Show more</button>
             <button type="button" class="changelog-toggle-btn" id="changelogToggleBtn">View full changelog</button>
             <div class="changelog-container" id="changelogContainer">
                 <div class="changelog-list" id="changelogList">
@@ -909,15 +941,27 @@
         <h2>Your routine is waiting.</h2>
         <p>Start your first cycle in under a minute.</p>
         <div class="cta-row">
-            <a href="../miniCycle.html" class="cta-primary" data-track="app-launch">Try miniCycle</a>
+            <a href="../miniCycle.html" class="cta-primary" data-track="app-launch">Try miniCycle Web</a>
             <a href="learn_more.html" class="cta-secondary">Learn More</a>
+        </div>
+        <div class="cta-chrome-row">
+            <a href="https://chromewebstore.google.com/detail/minicycle/ncfhifaoplaakjpbjokpnblkplcceegi" class="cta-chrome-link" data-track="chrome-install-full" target="_blank" rel="noopener">
+                <svg class="chrome-logo" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <path fill="#EA4335" d="M24 24 4.95 13A22 22 0 0 1 43.05 13Z"/>
+                    <path fill="#FBBC05" d="M24 24 43.05 13A22 22 0 0 1 24 46Z"/>
+                    <path fill="#34A853" d="M24 24 24 46A22 22 0 0 1 4.95 13Z"/>
+                    <circle cx="24" cy="24" r="10" fill="#fff"/>
+                    <circle cx="24" cy="24" r="8" fill="#4285F4"/>
+                </svg>
+                Add to Chrome
+            </a>
         </div>
     </section>
 
     </main>
 
     <footer role="contentinfo">
-        <p>&copy; <span id="year"></span> <a href="https://sparkincreations.com" target="_blank" rel="noopener noreferrer">sparkinCreations</a> &middot; <a href="../lite/miniCycle-lite.html">Lite Version</a> &middot; <a href="https://chromewebstore.google.com/detail/minicycle-lite/mfbedmndcmhileaofjfmepcgofdipeeo" target="_blank" rel="noopener">Chrome Extension (Lite)</a> &middot; <a href="../legal/user-manual.html">User Manual</a> &middot; <a href="../legal/terms.html">Terms</a> &middot; <a href="../legal/privacy.html">Privacy</a> &middot; <a href="../legal/accessibility.html">Accessibility</a></p>
+        <p>&copy; <span id="year"></span> <a href="https://sparkincreations.com" target="_blank" rel="noopener noreferrer">sparkinCreations</a> &middot; <a href="../lite/miniCycle-lite.html">Lite Version</a> &middot; <a href="https://chromewebstore.google.com/detail/minicycle/ncfhifaoplaakjpbjokpnblkplcceegi" target="_blank" rel="noopener">Chrome Extension</a> &middot; <a href="https://chromewebstore.google.com/detail/minicycle-lite/mfbedmndcmhileaofjfmepcgofdipeeo" target="_blank" rel="noopener">Chrome Extension (Lite)</a> &middot; <a href="../legal/user-manual.html">User Manual</a> &middot; <a href="../legal/terms.html">Terms</a> &middot; <a href="../legal/privacy.html">Privacy</a> &middot; <a href="../legal/accessibility.html">Accessibility</a></p>
     </footer>
 
     <script src="product.js"></script>

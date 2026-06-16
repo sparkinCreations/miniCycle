@@ -553,6 +553,17 @@
         });
     }
 
+    // Expand/collapse the extra "What's New" timeline items
+    var timelineMoreBtn = document.getElementById('timelineMoreBtn');
+    var timelineExtra = document.getElementById('timelineExtra');
+    if (timelineMoreBtn && timelineExtra) {
+        timelineMoreBtn.addEventListener('click', function () {
+            var open = timelineExtra.classList.toggle('open');
+            timelineMoreBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+            timelineMoreBtn.textContent = open ? 'Show less' : 'Show more';
+        });
+    }
+
     // Auto-open changelog if linked via hash
     if (window.location.hash === '#changelog') {
         setTimeout(function () {
