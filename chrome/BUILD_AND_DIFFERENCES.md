@@ -39,7 +39,9 @@ build is the set of mechanical transforms that bridge those two worlds:
 | **Boot-failure cache-clear failsafe** | Present (PWA self-heal) | **Dropped** | No SW cache to clear in an extension |
 | **Version-change `document.write` reload** | Present (PWA cache bust) | **Dropped** | No SW cache versioning |
 | **Service-worker registration** (~558 lines) | Present (`service-worker.js`) | **Dropped**; the feature-gate block before it is kept | Extensions don't use page SWs |
-| **`background.js`** | n/a | MV3 service worker, used **only** as a toolbar launcher (open/focus the app tab) | Extension UX |
+| **`background.js`** | n/a | MV3 service worker that enables the side panel (`sidePanel.setPanelBehavior`) | Extension UX |
+| **Open mode** | Browser tab (served page) | **Side panel** (toolbar click) + in-app "Open in full tab" escape hatch | Mobile-first UI fits the panel; persists alongside the user's work; popups cap at 600px tall |
+| **Name** | "miniCycle" (PWA title) | "miniCycle: Routine Checklist Manager" (manifest name) | Keyword-rich Web Store listing |
 | **Lite fallback redirect** | 8-second fallback to `lite/miniCycle-lite.html` | **Neutralized** (no-op) | `lite/` isn't bundled; modern Chrome passes the feature gate |
 | **PWA manifest** | `manifest.json` (PWA) + `<link rel="manifest">` | MV3 `manifest.json`; PWA link **dropped** | Different manifest schemas; names collide |
 | **CSP** | `netlify.toml` / `.htaccess` with per-inline-script hashes | MV3 default page CSP (`script-src 'self'`) — no hashes needed | Inline scripts externalized |
@@ -47,11 +49,12 @@ build is the set of mechanical transforms that bridge those two worlds:
 | **`legal/` pages** (privacy/terms/security/accessibility/user-manual) | Linked relatively, served live | **Bundled** into `chrome/full/legal/`; back-links rewritten `../miniCycle.html` → `../index.html` | Keep legal nav inside the extension instead of bouncing users to minicycle.app |
 | **`pages/` + `tests/` links** | Relative | Rewritten to absolute `https://minicycle.app/…` | Not bundled; would 404 from `chrome-extension://` |
 | **Automated-test tab** | Visible in the testing modal | Hidden via `ext-overrides.css` | `tests/` isn't bundled; the iframe would 404 |
+| **"Open in full tab" button** | n/a | Injected via `ext-boot/open-fulltab.js` (styled in `ext-overrides.css`) | Side-panel escape hatch to the wide layout |
 | **Assets** | Full `web/assets/` (~1.1 GB) | Only **referenced** assets (~0.4 MB) + `fonts/` | Keep the package small |
 | **Sample-routines listing** | `examples/sample-routines/manifest.json` | Renamed to `index.json` (fetch patched in the copied `routineManager.js`) | The Web Store rejects any package containing **more than one** `manifest.json` |
 | **Icons** | Favicon / PWA icons | Blue-background set from `chrome/full-icons/` | Distinct store/toolbar identity |
 | **External hosts** | `api.web3forms.com` (feedback) | Same — declared in `host_permissions` | Feedback form only |
-| **Permissions** | n/a (web) | `storage` (launcher tab memory) + `host_permissions` for web3forms | See §5 launcher |
+| **Permissions** | n/a (web) | `sidePanel` + `host_permissions` for web3forms (no `storage`/`tabs`) | See §5 launcher |
 | **Distribution** | Netlify deploy → minicycle.app | `chrome/full-<version>.zip` → Chrome Web Store, or load-unpacked | — |
 
 **Unchanged / shared verbatim:** `version.js`, `miniCycle-main.js`, the entire `modules/`
@@ -131,14 +134,23 @@ are never touched.
 
 ---
 
-## 5. The launcher (`background.js`)
+## 5. The launcher (`background.js`) + side panel
 
-The toolbar icon opens the app in a normal tab. It can't use `chrome.tabs.query({ url })`
-to find an already-open instance, because filtering tabs by URL requires the `tabs`
-permission (which would add a "Read your browsing history" install warning). Instead the
-launcher remembers the tab id in `chrome.storage.session` (the benign `storage` permission,
-no warning) and focuses it if it's still open; otherwise it opens a fresh tab. `tabs.get`,
-`tabs.update`, `tabs.create`, and `windows.update` need no permission.
+The toolbar icon opens miniCycle in the browser **side panel**. The manifest declares the
+global panel (`side_panel.default_path: "index.html"`) and the background service worker calls
+`chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })` on install/update so the
+action click opens it (the setting persists, so that's all the background does). This needs the
+benign `sidePanel` permission — **no `storage` or `tabs`** (the previous full-tab launcher used
+`storage` to remember a tab id; that's gone).
+
+**Why a side panel, not a tab/popup:** miniCycle's full UI is mobile-first, so it fits the
+panel's narrow width; the panel gives full browser height (a popup is capped at 600px) and
+persists alongside the user's work — a checklist they can keep in view while doing the tasks.
+
+**Escape hatch:** `ext-boot/open-fulltab.js` injects a small "Open in full tab" button (styled
+in `ext-overrides.css`) that calls `chrome.tabs.create({ url: runtime.getURL('index.html') })`
+— creating a tab needs no permission. It guards on `chrome.tabs`, so it no-ops outside the
+extension.
 
 ---
 
@@ -147,10 +159,11 @@ no warning) and focuses it if it's still open; otherwise it opens a fresh tab. `
 ```text
 chrome/full/
 ├── manifest.json        # MV3 manifest (version = APP_VERSION)
-├── background.js        # toolbar launcher (storage.session tab memory)
+├── background.js        # enables the side panel (sidePanel.setPanelBehavior)
 ├── index.html           # transformed miniCycle.html
 ├── ext-boot/NN.js       # externalized inline scripts (original order)
-├── ext-overrides.css    # extension-only UI overrides (hides automated-test tab)
+├── ext-boot/open-fulltab.js  # "Open in full tab" escape hatch (side panel → wide tab)
+├── ext-overrides.css    # extension-only UI overrides (hides automated-test tab; full-tab button)
 ├── version.js           # verbatim from web/
 ├── miniCycle-main.js    # verbatim module entry
 ├── modules/             # verbatim — byte-identical to web/modules/

@@ -7,11 +7,11 @@ This folder contains miniCycle's Chrome (and Chromium-based: Edge, Brave, Arc) b
 | Folder            | Status        | What it is                                                                                |
 | ----------------- | ------------- | ----------------------------------------------------------------------------------------- |
 | [`lite/`](./lite) | ✅ Working v1 | MV3 popup wrapping the lite version of miniCycle (ES5, self-contained, no service worker) |
-| `full/`           | ✅ Generated  | Complete app, built from `web/` by the build script — full-tab launcher                   |
+| `full/`           | ✅ Generated  | Complete app, built from `web/` by the build script — opens in the side panel             |
 
 The lite-based extension ships the lightweight tier of miniCycle inside a 400×600 popup. It's a coherent product on its own — "lightweight version, right in your toolbar" — not a degraded fallback.
 
-The **full** extension is the entire miniCycle app, opened in a normal browser tab from the toolbar icon (the full-screen UI doesn't fit a popup). Unlike `lite/` (a hand-maintained port), `full/` is **generated** by `web/scripts/build-chrome-full.cjs` so it never drifts from the actively-developed app. Regenerate it directly:
+The **full** extension is the entire miniCycle app, opened in the browser **side panel** from the toolbar icon — its mobile-first UI fits the panel's narrow width, and a checklist stays in view alongside the user's work (an in-app "Open in full tab" button is the wide-layout escape hatch). Unlike `lite/` (a hand-maintained port), `full/` is **generated** by `web/scripts/build-chrome-full.cjs` so it never drifts from the actively-developed app. Regenerate it directly:
 
 ```bash
 cd web
@@ -34,7 +34,7 @@ MV3 extension pages forbid all inline `<script>` (`script-src 'self'`, no hashes
 - **Neutralizes** the lite-version fallback redirects (`lite/` isn't bundled; modern Chrome always passes the feature gate anyway).
 - **Bundles** the `legal/` pages (privacy/terms/security/accessibility/user-manual) into the extension and rewrites their back-links (`../miniCycle.html` → `../index.html`) so they open in-app instead of bouncing the user out to minicycle.app. Only `pages/` + `tests/` links (not bundled) are rewritten to absolute `https://minicycle.app/…` URLs.
 - **Copies** `version.js`, `miniCycle-main.js`, `modules/`, `styles/` verbatim, plus only the **referenced** assets (~0.4 MB of the 1.1 GB `web/assets/`).
-- **Generates** the MV3 `manifest.json` + `background.js` (the launcher) and copies icons from `chrome/full-icons/` (the blue-background set).
+- **Generates** the MV3 `manifest.json` (side-panel config, `sidePanel` permission, name "miniCycle: Routine Checklist Manager") + `background.js` (enables the side panel) + `ext-boot/open-fulltab.js` (the escape hatch), and copies icons from `chrome/full-icons/` (the blue-background set).
 
 Only runtime external host is `api.web3forms.com` (feedback form) — covered by `host_permissions`. The default MV3 page CSP suffices otherwise.
 
