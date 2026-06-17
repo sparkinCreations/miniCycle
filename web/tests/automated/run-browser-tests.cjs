@@ -10,6 +10,8 @@
  */
 
 const { chromium } = require('playwright');
+const fs = require('fs');
+const path = require('path');
 
 // Color codes for terminal output
 const colors = {
@@ -26,7 +28,7 @@ const colors = {
 const ALL_MODULES = [
     'integration', 'themeManager', 'deviceDetection', 'routineLoader', 'statsPanel',
     'consoleCapture', 'state', 'recurringCore', 'recurringIntegration', 'recurringPanel',
-    'globalUtils', 'notifications', 'dragDropManager', 'migrationManager', 'dueDates',
+    'globalUtils', 'notifications', 'notificationDialogHost', 'dragDropManager', 'migrationManager', 'dueDates',
     'reminders', 'modeManager', 'routineSwitcher', 'routineManager', 'undoRedoManager',
     'gamesManager', 'onboardingManager', 'guidedTourManager', 'modalManager', 'menuManager', 'settingsManager',
     'completedTasksManager', 'pullToRefresh', 'taskCore', 'taskValidation', 'taskUtils', 'taskRenderer',
@@ -36,12 +38,12 @@ const ALL_MODULES = [
     'accessibility', 'stress', 'coreBoot', 'uiBoot', 'featureBoot',
     'labelResolver', 'defaultLabels', 'diBase', 'themes',
     'dataSanitizer', 'storageUtils', 'achievementsManager', 'historyManager',
-    'recurringDateUtils', 'clearedTasksManager', 'taskCompletion', 'taskCRUD',
+    'recurringDateUtils', 'clearedTasksManager', 'taskCompletion', 'taskCRUD', 'dailyResetManager',
     'recurringMatcher', 'recurringCalculators', 'recurringActivation',
     'preferencesManager', 'settingsUIManager', 'focusMode', 'taskSearch',
     'quickActionsManager', 'actionUsage', 'backupRestoreManager', 'cycleExportManager',
     'cycleImportManager', 'shareManager', 'taskButtons', 'taskCycleReset', 'backupReminder',
-    'orchestrator', 'moduleLoader', 'moduleManifests', 'modalTemplates',
+    'orchestrator', 'diWiring', 'moduleLoader', 'moduleManifests', 'modalTemplates',
     'appContext', 'dataAccess', 'appGlobalState', 'migrationFacade', 'types',
     'modalRegistry', 'modalUtils', 'panelVisibilityHelpers', 'gesturePanelManager',
     'titleManager', 'uiOrchestrator', 'preferencesBgImage', 'preferencesPresets',
@@ -50,6 +52,30 @@ const ALL_MODULES = [
     'recurringPanelSetup', 'recurringPanelSummary', 'recurringSettings',
     'recurringSettingsApplicator', 'recurringWatcher'
 ];
+
+// Test files that intentionally have no registered module in ALL_MODULES.
+// MODULE_TEMPLATE is the copy-me template, not a real module.
+const UNREGISTERED_EXEMPT = new Set(['MODULE_TEMPLATE']);
+
+// Drift guard: every tests/*.tests.js file must be registered in ALL_MODULES,
+// or it silently never runs in CI. Fail loudly before launching the browser.
+// (xss-vulnerability lives in tests/security/, not the root, so it's not scanned here.)
+function assertNoUnregisteredTests() {
+    const testDir = path.join(__dirname, '..');
+    const files = fs.readdirSync(testDir)
+        .filter(f => f.endsWith('.tests.js'))
+        .map(f => f.replace(/\.tests\.js$/, ''))
+        .filter(name => !UNREGISTERED_EXEMPT.has(name));
+
+    const unregistered = files.filter(name => !ALL_MODULES.includes(name));
+    if (unregistered.length > 0) {
+        console.error(`\n${colors.red}❌ ${unregistered.length} test file(s) exist but are NOT registered in ALL_MODULES — they would never run in CI:${colors.reset}`);
+        unregistered.forEach(name => console.error(`   ${colors.red}• ${name}.tests.js${colors.reset}`));
+        console.error(`\n${colors.yellow}Add each to ALL_MODULES in run-browser-tests.cjs AND wire it into module-test-suite.html,${colors.reset}`);
+        console.error(`${colors.yellow}or add it to UNREGISTERED_EXEMPT if it is intentionally not a runnable module.${colors.reset}\n`);
+        process.exit(1);
+    }
+}
 
 // Parse command line arguments
 function parseArgs() {
@@ -126,11 +152,18 @@ async function runModuleTests(page, moduleName) {
         // Extract summary (h3 with "Results:" text)
         const summary = await page.textContent('h3:has-text("Results:")');
 
-        // Parse passed/total from summary text (e.g., "Results: 27/27 tests passed (100%)")
-        const match = summary.match(/(\d+)\/(\d+)/);
+        // Parse passed/total from summary text (e.g., "Results: 27/27 tests passed (100%)").
+        // Tolerate spacing variants like "24 / 24" that some test files emit.
+        const match = summary.match(/(\d+)\s*\/\s*(\d+)/);
         const passedTests = match ? parseInt(match[1]) : 0;
         const totalTests = match ? parseInt(match[2]) : 0;
         const failedTests = totalTests - passedTests;
+
+        // A module that reports 0 tests either self-skipped or its Results line failed to
+        // parse — surface it instead of silently counting it as a green pass.
+        if (totalTests === 0) {
+            console.log(`   ${colors.yellow}⚠️  ${summary} — 0 tests detected (skipped or unparsed result line)${colors.reset}`);
+        }
 
         // Get failed test details if any
         let failedDetails = [];
@@ -177,6 +210,9 @@ async function runModuleTests(page, moduleName) {
 }
 
 async function runAllTests() {
+    // Catch test files that were added but never registered (would silently skip in CI).
+    assertNoUnregisteredTests();
+
     const isFiltered = modules.length < ALL_MODULES.length;
     const headerText = isFiltered
         ? `🧪 Testing ${modules.length} module${modules.length > 1 ? 's' : ''}: ${modules.join(', ')}`

@@ -314,7 +314,8 @@ export async function runDailyResetManagerTests(resultsDiv) {
     // =========================================================
     // RESULTS
     // =========================================================
-    const summary = `<h3>Results: ${passed.count} / ${total.count} passed</h3>`;
+    const percentage = total.count ? Math.round((passed.count / total.count) * 100) : 0;
+    const summary = `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;
     resultsDiv.innerHTML = resultsDiv.innerHTML.replace(/<h3>Running tests\.\.\.<\/h3>/, summary);
     return { passed: passed.count, total: total.count };
 }

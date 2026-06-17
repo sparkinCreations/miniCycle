@@ -359,6 +359,7 @@
             <option value="recurringPanel">RecurringPanel</option>
             <option value="globalUtils">GlobalUtils</option>
             <option value="notifications">Notifications</option>
+            <option value="notificationDialogHost">NotificationDialogHost</option>
             <option value="dragDropManager">DragDropManager</option>
             <option value="migrationManager">MigrationManager</option>
             <option value="dueDates">Due Dates</option>
@@ -566,6 +567,7 @@
         const { runTaskCompletionTests } = await import(`./taskCompletion.tests.js?v=${cacheBuster}`);
         const { runTaskCRUDTests } = await import(`./taskCRUD.tests.js?v=${cacheBuster}`);
         const { runDailyResetManagerTests } = await import(`./dailyResetManager.tests.js?v=${cacheBuster}`);
+        const { runNotificationDialogHostTests } = await import(`./notificationDialogHost.tests.js?v=${cacheBuster}`);
         const { runRecurringMatcherTests } = await import(`./recurringMatcher.tests.js?v=${cacheBuster}`);
         const { runRecurringCalculatorsTests } = await import(`./recurringCalculators.tests.js?v=${cacheBuster}`);
         const { runRecurringActivationTests } = await import(`./recurringActivation.tests.js?v=${cacheBuster}`);
@@ -1728,6 +1730,10 @@
                     await import(`../modules/task/dailyResetManager.js?v=${cacheBuster}`);
                     currentModule = 'dailyResetManager';
                     resultsDiv.innerHTML = '<p>✅ DailyResetManager loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'notificationDialogHost') {
+                    await import(`../modules/ui/notificationDialogHost.js?v=${cacheBuster}`);
+                    currentModule = 'notificationDialogHost';
+                    resultsDiv.innerHTML = '<p>✅ NotificationDialogHost loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'recurringMatcher') {
                     await import(`../modules/recurring/recurringMatcher.js?v=${cacheBuster}`);
                     currentModule = 'recurringMatcher';
@@ -2018,6 +2024,8 @@
                 await runTaskCRUDTests(resultsDiv);
             } else if (currentModule === 'dailyResetManager') {
                 await runDailyResetManagerTests(resultsDiv);
+            } else if (currentModule === 'notificationDialogHost') {
+                await runNotificationDialogHostTests(resultsDiv);
             } else if (currentModule === 'recurringMatcher') {
                 await runRecurringMatcherTests(resultsDiv);
             } else if (currentModule === 'recurringCalculators') {
@@ -2586,6 +2594,7 @@
                 { name: 'TaskCompletion', key: 'taskCompletion', runFn: runTaskCompletionTests, importPath: '../modules/task/taskCompletion.js' },
                 { name: 'TaskCRUD', key: 'taskCRUD', runFn: runTaskCRUDTests, importPath: '../modules/task/taskCRUD.js' },
                 { name: 'DailyResetManager', key: 'dailyResetManager', runFn: runDailyResetManagerTests, importPath: '../modules/task/dailyResetManager.js' },
+                { name: 'NotificationDialogHost', key: 'notificationDialogHost', runFn: runNotificationDialogHostTests, importPath: '../modules/ui/notificationDialogHost.js' },
                 { name: 'RecurringMatcher', key: 'recurringMatcher', runFn: runRecurringMatcherTests, importPath: '../modules/recurring/recurringMatcher.js' },
                 { name: 'RecurringCalculators', key: 'recurringCalculators', runFn: runRecurringCalculatorsTests, importPath: '../modules/recurring/recurringCalculators.js' },
                 { name: 'RecurringActivation', key: 'recurringActivation', runFn: runRecurringActivationTests, importPath: '../modules/recurring/recurringActivation.js' },
