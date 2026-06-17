@@ -1,3 +1,23 @@
+## [2.244] - 2026-06-17
+- test: flesh out 26 load-only stub suites with behavioral tests (~+450 tests)
+- test(harness): register 3 orphaned suites + drift guard; fix notificationDialogHost async assertions
+- docs(security): document 3-file CSP sync + update-version.sh automation
+- chore(tooling): update-version.sh syncs CSP hashes across netlify.toml, .htaccess, nginx
+- fix(csp): reconcile .htaccess + nginx script-src hashes with canonical set
+- fix(boot): clear loader-tip interval once app loads (timer leak); resync CSP hash + chrome ext
+- chore(release): update version to 2.243
+- feat(chrome-ext): open full extension in side panel; rename to "miniCycle: Routine Checklist Manager"
+- feat(product): add Chrome extension links + collapsible What's New timeline
+- chore(promo): add new promotional images for in-app store
+- chore(tooling): add capture-store-screenshots.cjs + npm run capture:screenshots
+- chore(promo): add 5 in-app store screenshots (main, stats, themes, fitness, dark) at 1280x800
+- chore(chrome): reword extension description — 'Stay consistent' instead of 'Build streaks' (theme-specific vocab)
+- fix(chrome): rename bundled sample-routines manifest.json -> index.json (Web Store rejects >1 manifest)
+- chore(chrome): repackage extension as full-2.242.zip (matches live version); drop misnamed 2.241 zip + iCloud dup
+- docs(chrome): add full extension build & web-vs-extension differences guide
+- fix(chrome): bundle legal pages into extension so links stay in-app (was bouncing users to minicycle.app)
+
+
 ## [2.242] - 2026-06-15
 - Implement code changes to enhance functionality and improve performance
 - chore(promo): add Chrome Web Store screenshot (1280x800) + small promo tile (440x280)
