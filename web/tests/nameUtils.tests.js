@@ -7,6 +7,7 @@ import { setupTestEnvironment, createProtectedTest } from './testHelpers.js';
 export async function runNameUtilsTests(resultsDiv) {
     const cacheBuster = window.testCacheBuster || Date.now();
     const mod = await import(`../modules/utils/nameUtils.js?v=${cacheBuster}`);
+    const { getUniqueCycleName, cycleNameExists } = mod;
 
     resultsDiv.innerHTML = '<h2>NameUtils Tests</h2><h3>Running tests...</h3>';
     let passed = { count: 0 }, total = { count: 0 };
@@ -19,34 +20,158 @@ export async function runNameUtilsTests(resultsDiv) {
     });
 
     await test('getUniqueCycleName is an exported function', () => {
-        if (typeof mod.getUniqueCycleName !== 'function') {
-            throw new Error(`Expected function, got ${typeof mod.getUniqueCycleName}`);
+        if (typeof getUniqueCycleName !== 'function') {
+            throw new Error(`Expected function, got ${typeof getUniqueCycleName}`);
         }
     });
 
     await test('cycleNameExists is an exported function', () => {
-        if (typeof mod.cycleNameExists !== 'function') {
-            throw new Error(`Expected function, got ${typeof mod.cycleNameExists}`);
+        if (typeof cycleNameExists !== 'function') {
+            throw new Error(`Expected function, got ${typeof cycleNameExists}`);
         }
     });
 
-    await test('cycleNameExists returns false for empty cycles', () => {
-        const result = mod.cycleNameExists('Test', {});
-        if (result !== false) {
-            throw new Error(`Expected false, got ${result}`);
-        }
+    // ── cycleNameExists ──────────────────────────────────────────────────────
+    resultsDiv.innerHTML += '<h4 class="test-section">🔍 cycleNameExists</h4>';
+
+    await test('returns false for empty cycles', () => {
+        if (cycleNameExists('Test', {}) !== false) throw new Error('expected false');
     });
 
-    await test('getUniqueCycleName returns object with name and wasModified', () => {
-        const result = mod.getUniqueCycleName('My Routine', {});
-        if (typeof result !== 'object' || !result) throw new Error('Should return object');
-        if (typeof result.name !== 'string') throw new Error('name should be string');
-        if (typeof result.wasModified !== 'boolean') throw new Error('wasModified should be boolean');
-        if (result.name !== 'My Routine') throw new Error(`Expected "My Routine", got "${result.name}"`);
-        if (result.wasModified !== false) throw new Error('Should not be modified for new name');
+    await test('returns false when default arg (no cycles passed)', () => {
+        if (cycleNameExists('Test') !== false) throw new Error('expected false');
     });
 
-    const percentage = Math.round((passed.count / total.count) * 100);
+    await test('returns true when name is a key', () => {
+        if (cycleNameExists('Morning', { 'Morning': {} }) !== true) throw new Error('expected true');
+    });
+
+    await test('returns false when name is not a key', () => {
+        if (cycleNameExists('Evening', { 'Morning': {} }) !== false) throw new Error('expected false');
+    });
+
+    await test('always returns a boolean (coerces truthy value via !!)', () => {
+        const r = cycleNameExists('Morning', { 'Morning': { id: 'x' } });
+        if (typeof r !== 'boolean') throw new Error('expected boolean, got ' + typeof r);
+        if (r !== true) throw new Error('expected true');
+    });
+
+    await test('falsy stored value (0) still counts as not-existing', () => {
+        // existingCycles['X'] === 0 is falsy → !!0 === false
+        if (cycleNameExists('X', { 'X': 0 }) !== false) throw new Error('expected false for falsy value');
+    });
+
+    await test('is case-sensitive', () => {
+        if (cycleNameExists('morning', { 'Morning': {} }) !== false) throw new Error('should be case-sensitive');
+    });
+
+    // ── getUniqueCycleName: unmodified path ──────────────────────────────────
+    resultsDiv.innerHTML += '<h4 class="test-section">✨ getUniqueCycleName — new name</h4>';
+
+    await test('returns name unchanged when it does not exist', () => {
+        const r = getUniqueCycleName('My Routine', {});
+        if (r.name !== 'My Routine') throw new Error(`got "${r.name}"`);
+        if (r.wasModified !== false) throw new Error('wasModified should be false');
+    });
+
+    await test('shape: returns { name: string, wasModified: boolean }', () => {
+        const r = getUniqueCycleName('Solo', {});
+        if (typeof r !== 'object' || !r) throw new Error('not an object');
+        if (typeof r.name !== 'string') throw new Error('name not string');
+        if (typeof r.wasModified !== 'boolean') throw new Error('wasModified not boolean');
+    });
+
+    await test('works with default existingCycles arg', () => {
+        const r = getUniqueCycleName('Alone');
+        if (r.name !== 'Alone' || r.wasModified !== false) throw new Error('default arg failed');
+    });
+
+    // ── getUniqueCycleName: numbered variations ──────────────────────────────
+    resultsDiv.innerHTML += '<h4 class="test-section">🔢 getUniqueCycleName — collisions</h4>';
+
+    await test('appends (2) on first collision', () => {
+        const r = getUniqueCycleName('Routine', { 'Routine': {} });
+        if (r.name !== 'Routine (2)') throw new Error(`got "${r.name}"`);
+        if (r.wasModified !== true) throw new Error('wasModified should be true');
+    });
+
+    await test('skips to (3) when (2) is also taken', () => {
+        const r = getUniqueCycleName('Routine', { 'Routine': {}, 'Routine (2)': {} });
+        if (r.name !== 'Routine (3)') throw new Error(`got "${r.name}"`);
+        if (r.wasModified !== true) throw new Error('wasModified should be true');
+    });
+
+    await test('finds first available gap in the sequence', () => {
+        // (2) is free even though base and (3) are taken
+        const r = getUniqueCycleName('Routine', { 'Routine': {}, 'Routine (3)': {} });
+        if (r.name !== 'Routine (2)') throw new Error(`got "${r.name}"`);
+    });
+
+    await test('counter starts at 2, never (1)', () => {
+        const r = getUniqueCycleName('X', { 'X': {} });
+        if (r.name === 'X (1)') throw new Error('should never produce (1)');
+        if (r.name !== 'X (2)') throw new Error(`got "${r.name}"`);
+    });
+
+    // ── getUniqueCycleName: maxAttempts boundary + timestamp fallback ─────────
+    resultsDiv.innerHTML += '<h4 class="test-section">⏱️ getUniqueCycleName — exhaustion fallback</h4>';
+
+    await test('respects maxAttempts: tries up to (maxAttempts+1) before fallback', () => {
+        // maxAttempts=2 → tries (2) and (3); both free → uses (2)
+        const r = getUniqueCycleName('R', { 'R': {} }, 2);
+        if (r.name !== 'R (2)') throw new Error(`got "${r.name}"`);
+    });
+
+    await test('falls back to timestamp when all numbered slots taken', () => {
+        // maxAttempts=2 → only checks (2),(3). Fill base,(2),(3) → fallback to timestamp.
+        const existing = { 'R': {}, 'R (2)': {}, 'R (3)': {} };
+        const before = Date.now();
+        const r = getUniqueCycleName('R', existing, 2);
+        const after = Date.now();
+        if (r.wasModified !== true) throw new Error('wasModified should be true');
+        const m = r.name.match(/^R \((\d+)\)$/);
+        if (!m) throw new Error(`expected timestamp form, got "${r.name}"`);
+        const ts = Number(m[1]);
+        // Timestamp must be a large epoch value, not a small counter like 2/3/4
+        if (ts < before || ts > after) throw new Error(`timestamp ${ts} outside [${before},${after}]`);
+    });
+
+    await test('timestamp fallback name is genuinely unique (not in existing)', () => {
+        const existing = { 'R': {}, 'R (2)': {}, 'R (3)': {} };
+        const r = getUniqueCycleName('R', existing, 2);
+        if (existing[r.name]) throw new Error('fallback name collided with existing');
+    });
+
+    await test('default maxAttempts (10) checks (2) through (11)', () => {
+        // Fill base + (2)..(11), leave (12) — with default 10, should hit timestamp fallback
+        const existing = { 'R': {} };
+        for (let i = 2; i <= 11; i++) existing[`R (${i})`] = {};
+        const r = getUniqueCycleName('R', existing); // default maxAttempts = 10
+        const m = r.name.match(/^R \((\d+)\)$/);
+        if (!m || Number(m[1]) <= 11) throw new Error(`expected timestamp fallback, got "${r.name}"`);
+    });
+
+    await test('default maxAttempts uses (11) when only (2)..(10) taken', () => {
+        const existing = { 'R': {} };
+        for (let i = 2; i <= 10; i++) existing[`R (${i})`] = {};
+        const r = getUniqueCycleName('R', existing); // default 10 → checks up to (11)
+        if (r.name !== 'R (11)') throw new Error(`got "${r.name}"`);
+    });
+
+    // ── edge cases ───────────────────────────────────────────────────────────
+    resultsDiv.innerHTML += '<h4 class="test-section">🧪 getUniqueCycleName — edge cases</h4>';
+
+    await test('empty-string base name with no collision returns "" unmodified', () => {
+        const r = getUniqueCycleName('', {});
+        if (r.name !== '' || r.wasModified !== false) throw new Error(`got "${r.name}" / ${r.wasModified}`);
+    });
+
+    await test('preserves special characters in base name', () => {
+        const r = getUniqueCycleName('Work & Play (daily)', { 'Work & Play (daily)': {} });
+        if (r.name !== 'Work & Play (daily) (2)') throw new Error(`got "${r.name}"`);
+    });
+
+    const percentage = total.count ? Math.round((passed.count / total.count) * 100) : 0;
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;
     if (passed.count === total.count) {
         resultsDiv.innerHTML += '<div class="result pass">✅ All tests passed!</div>';

@@ -7,11 +7,79 @@ import { setupTestEnvironment, createProtectedTest } from './testHelpers.js';
 export async function runTitleManagerTests(resultsDiv) {
     const cacheBuster = window.testCacheBuster || Date.now();
     const mod = await import(`../modules/ui/titleManager.js?v=${cacheBuster}`);
+    const constants = await import(`../modules/core/constants.js?v=${cacheBuster}`);
+    const { DOM_IDS, LIMITS } = constants;
+
+    // appInit.waitForCore() is awaited by nothing here, but initTitleManager
+    // dynamically imports nameUtils — set up the environment to be safe.
+    await setupTestEnvironment({ setupGlobals: false });
 
     resultsDiv.innerHTML = '<h2>TitleManager Tests</h2><h3>Running tests...</h3>';
     let passed = { count: 0 }, total = { count: 0 };
     const test = createProtectedTest(resultsDiv, passed, total);
 
+    // ── Fixtures ─────────────────────────────────────────────────────────────
+    function makeTitleEl(text = '') {
+        let el = document.getElementById(DOM_IDS.MINI_CYCLE_TITLE);
+        if (!el) {
+            el = document.createElement('h1');
+            el.id = DOM_IDS.MINI_CYCLE_TITLE;
+            document.body.appendChild(el);
+        }
+        el.textContent = text;
+        return el;
+    }
+    function removeTitleEl() {
+        const el = document.getElementById(DOM_IDS.MINI_CYCLE_TITLE);
+        if (el) el.remove();
+    }
+
+    // Notification spy
+    function makeNotifSpy() {
+        const calls = [];
+        const fn = (message, type = 'info', duration) => calls.push({ message, type, duration });
+        fn.calls = calls;
+        return fn;
+    }
+
+    // Build an in-memory AppState + matching loadMiniCycleData over the SAME object,
+    // so the handler's load + update operate on consistent data.
+    function makeEnv(cycles, activeCycleId) {
+        const state = {
+            data: { cycles },
+            appState: { activeCycleId },
+            metadata: { lastModified: 0 }
+        };
+        const AppState = {
+            isReady: () => true,
+            get: () => state,
+            update: async (fn) => { fn(state); return state; },
+            forceSave: () => {}
+        };
+        const loadMiniCycleData = () => ({
+            cycles: state.data.cycles,
+            activeCycle: state.appState.activeCycleId
+        });
+        return { state, AppState, loadMiniCycleData };
+    }
+
+    async function wire(overrides = {}) {
+        // initTitleManager loads nameUtils (sets internal getUniqueCycleName) AND sets deps.
+        // It also calls setupMiniCycleTitleListener() — ensure a title element exists.
+        makeTitleEl(overrides.__titleText ?? 'Seed');
+        const deps = {
+            GlobalUtils: { sanitizeInput: (s) => String(s).replace(/<[^>]*>/g, '').trim() },
+            updateMainMenuHeader: () => {},
+            updateUndoRedoButtons: () => {},
+            captureStateSnapshot: () => {},
+            enableUndoSystemOnFirstInteraction: () => {},
+            ...overrides
+        };
+        await mod.initTitleManager(deps);
+        return deps;
+    }
+
+    // ── Module Loading (keep original smoke checks) ──────────────────────────
     resultsDiv.innerHTML += '<h4 class="test-section">📦 Module Loading</h4>';
 
     await test('Module loads without error', () => {
@@ -36,7 +104,184 @@ export async function runTitleManagerTests(resultsDiv) {
         }
     });
 
-    const percentage = Math.round((passed.count / total.count) * 100);
+    await test('handleMiniCycleTitleBlur is an exported function', () => {
+        if (typeof mod.handleMiniCycleTitleBlur !== 'function') {
+            throw new Error(`Expected function, got ${typeof mod.handleMiniCycleTitleBlur}`);
+        }
+    });
+
+    // ── initTitleManager / setup ─────────────────────────────────────────────
+    resultsDiv.innerHTML += '<h4 class="test-section">⚙️ init & setup</h4>';
+
+    // NOTE: setupMiniCycleTitleListener() has a one-time idempotency guard
+    // (_titleListenerInitialized), so the live "blur" listener only attaches to
+    // the FIRST title element wired in this run. This test must therefore run
+    // before any other wire() call. The deps used here (env.AppState) are picked
+    // up by the handler at fire-time via DI late-binding, so later tests that
+    // re-wire deps still work through the direct handler call.
+    let firstWireEl = null;
+    await test('init makes element contentEditable + blur listener renames the cycle', async () => {
+        removeTitleEl();
+        const env = makeEnv({ Old: { title: 'Old', tasks: [] } }, 'Old');
+        const notify = makeNotifSpy();
+        // This is the FIRST wire() — guard not yet set, so listener attaches here.
+        await wire({
+            AppState: env.AppState,
+            loadMiniCycleData: env.loadMiniCycleData,
+            showNotification: notify,
+            __titleText: 'Old'
+        });
+        const el = document.getElementById(DOM_IDS.MINI_CYCLE_TITLE);
+        firstWireEl = el;
+        // a11y wiring
+        if (el.getAttribute('contenteditable') !== 'true') throw new Error('not contentEditable');
+        if (el.getAttribute('role') !== 'textbox') throw new Error('missing role=textbox');
+        if (el.getAttribute('aria-multiline') !== 'false') throw new Error('missing aria-multiline');
+        if (!el.getAttribute('aria-label')) throw new Error('missing aria-label');
+        // blur listener actually wired
+        el.textContent = 'Brand New';
+        el.dispatchEvent(new Event('blur'));
+        await new Promise(r => setTimeout(r, 30));
+        if (!env.state.data.cycles['Brand New']) throw new Error('new key not created via blur listener');
+        if (env.state.data.cycles['Old']) throw new Error('old key not removed');
+        if (env.state.appState.activeCycleId !== 'Brand New') throw new Error('activeCycleId not updated');
+        removeTitleEl();
+    });
+
+    // ── handleMiniCycleTitleBlur: direct behavioral coverage ─────────────────
+    resultsDiv.innerHTML += '<h4 class="test-section">✏️ rename behavior</h4>';
+
+    await test('renames cycle: new title becomes the key + activeCycleId', async () => {
+        removeTitleEl();
+        const env = makeEnv({ Morning: { title: 'Morning', tasks: [{ id: 't1' }] } }, 'Morning');
+        const notify = makeNotifSpy();
+        await wire({ AppState: env.AppState, loadMiniCycleData: env.loadMiniCycleData, showNotification: notify });
+        const el = makeTitleEl('Evening Routine');
+        try {
+            await mod.handleMiniCycleTitleBlur();
+            if (!env.state.data.cycles['Evening Routine']) throw new Error('renamed cycle key missing');
+            if (env.state.data.cycles['Morning']) throw new Error('old key should be deleted');
+            if (env.state.appState.activeCycleId !== 'Evening Routine') throw new Error('activeCycleId not updated');
+            // task data preserved
+            if (env.state.data.cycles['Evening Routine'].tasks.length !== 1) throw new Error('tasks lost on rename');
+            const successCall = notify.calls.find(c => c.type === 'success');
+            if (!successCall) throw new Error('expected a success notification on rename');
+        } finally { removeTitleEl(); }
+    });
+
+    await test('empty title reverts to old title and notifies (no state change)', async () => {
+        removeTitleEl();
+        const env = makeEnv({ Keep: { title: 'Keep', tasks: [] } }, 'Keep');
+        const notify = makeNotifSpy();
+        await wire({ AppState: env.AppState, loadMiniCycleData: env.loadMiniCycleData, showNotification: notify });
+        const el = makeTitleEl('   '); // whitespace → empty after trim
+        try {
+            await mod.handleMiniCycleTitleBlur();
+            if (el.textContent !== 'Keep') throw new Error('did not revert to old title, got: ' + el.textContent);
+            if (!env.state.data.cycles['Keep']) throw new Error('cycle should be untouched');
+            if (notify.calls.length === 0) throw new Error('expected an empty-title notification');
+        } finally { removeTitleEl(); }
+    });
+
+    await test('no-op when title unchanged (no rename, no notification)', async () => {
+        removeTitleEl();
+        const env = makeEnv({ Same: { title: 'Same', tasks: [] } }, 'Same');
+        const notify = makeNotifSpy();
+        await wire({ AppState: env.AppState, loadMiniCycleData: env.loadMiniCycleData, showNotification: notify });
+        makeTitleEl('Same');
+        try {
+            await mod.handleMiniCycleTitleBlur();
+            if (!env.state.data.cycles['Same']) throw new Error('cycle disappeared on no-op');
+            if (notify.calls.length !== 0) throw new Error('no notification expected for unchanged title');
+        } finally { removeTitleEl(); }
+    });
+
+    await test('duplicate name auto-increments and warns', async () => {
+        removeTitleEl();
+        const env = makeEnv({
+            A: { title: 'A', tasks: [] },
+            B: { title: 'B', tasks: [] }
+        }, 'A');
+        const notify = makeNotifSpy();
+        await wire({ AppState: env.AppState, loadMiniCycleData: env.loadMiniCycleData, showNotification: notify });
+        const el = makeTitleEl('B'); // rename A -> B, but B exists
+        try {
+            await mod.handleMiniCycleTitleBlur();
+            if (!env.state.data.cycles['B (2)']) throw new Error('expected auto-increment to "B (2)"');
+            if (el.textContent !== 'B (2)') throw new Error('UI not updated to deduped name');
+            const warn = notify.calls.find(c => c.type === 'warning');
+            if (!warn) throw new Error('expected a warning about existing name');
+        } finally { removeTitleEl(); }
+    });
+
+    await test('over-limit title is truncated to LIMITS.CYCLE_NAME_CHARACTER', async () => {
+        removeTitleEl();
+        const limit = LIMITS.CYCLE_NAME_CHARACTER || 100;
+        const env = makeEnv({ Short: { title: 'Short', tasks: [] } }, 'Short');
+        const notify = makeNotifSpy();
+        await wire({ AppState: env.AppState, loadMiniCycleData: env.loadMiniCycleData, showNotification: notify });
+        const longName = 'X'.repeat(limit + 25);
+        const el = makeTitleEl(longName);
+        try {
+            await mod.handleMiniCycleTitleBlur();
+            if (el.textContent.length !== limit) {
+                throw new Error(`title not truncated to ${limit}, got ${el.textContent.length}`);
+            }
+            const truncatedKey = 'X'.repeat(limit);
+            if (!env.state.data.cycles[truncatedKey]) throw new Error('truncated key not used for cycle');
+        } finally { removeTitleEl(); }
+    });
+
+    await test('aborts (no throw, no state change) when no title element exists', async () => {
+        removeTitleEl();
+        const env = makeEnv({ Z: { title: 'Z', tasks: [] } }, 'Z');
+        await wire({ AppState: env.AppState, loadMiniCycleData: env.loadMiniCycleData, showNotification: makeNotifSpy() });
+        removeTitleEl(); // remove again — handler should bail early
+        // no element → returns immediately; state intact
+        await mod.handleMiniCycleTitleBlur();
+        if (!env.state.data.cycles['Z']) throw new Error('state should be untouched with no title element');
+    });
+
+    await test('aborts when loadMiniCycleData returns null (no throw)', async () => {
+        removeTitleEl();
+        const env = makeEnv({ Q: { title: 'Q', tasks: [] } }, 'Q');
+        await wire({ AppState: env.AppState, loadMiniCycleData: () => null, showNotification: makeNotifSpy() });
+        const el = makeTitleEl('Renamed Q');
+        try {
+            await mod.handleMiniCycleTitleBlur(); // schemaData null → early return
+            if (env.state.data.cycles['Renamed Q']) throw new Error('should not rename when schema data missing');
+        } finally { removeTitleEl(); }
+    });
+
+    await test('sanitizes input (strips HTML) before using as title', async () => {
+        removeTitleEl();
+        const env = makeEnv({ Plain: { title: 'Plain', tasks: [] } }, 'Plain');
+        await wire({ AppState: env.AppState, loadMiniCycleData: env.loadMiniCycleData, showNotification: makeNotifSpy() });
+        const el = makeTitleEl('<b>Bold</b>Name');
+        try {
+            await mod.handleMiniCycleTitleBlur();
+            if (!env.state.data.cycles['BoldName']) {
+                throw new Error('HTML not stripped; keys: ' + Object.keys(env.state.data.cycles).join(','));
+            }
+        } finally { removeTitleEl(); }
+    });
+
+    await test('AppState not ready → reverts title and notifies error', async () => {
+        removeTitleEl();
+        const env = makeEnv({ NR: { title: 'NR', tasks: [] } }, 'NR');
+        env.AppState.isReady = () => false; // becomes not-ready after load
+        const notify = makeNotifSpy();
+        await wire({ AppState: env.AppState, loadMiniCycleData: env.loadMiniCycleData, showNotification: notify });
+        const el = makeTitleEl('Attempted');
+        try {
+            await mod.handleMiniCycleTitleBlur();
+            if (el.textContent !== 'NR') throw new Error('should revert to old title when AppState not ready');
+            const err = notify.calls.find(c => c.type === 'error');
+            if (!err) throw new Error('expected an error notification');
+        } finally { removeTitleEl(); }
+    });
+
+    const percentage = total.count ? Math.round((passed.count / total.count) * 100) : 0;
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;
     if (passed.count === total.count) {
         resultsDiv.innerHTML += '<div class="result pass">✅ All tests passed!</div>';
