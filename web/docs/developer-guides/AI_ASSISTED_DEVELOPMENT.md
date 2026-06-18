@@ -134,7 +134,7 @@ The developer's instrumentation logs — which previous AI audits had flagged as
 
 ### 6. The Human Defines What "Correct" Means
 
-miniCycle has 1,610 tests. Each test represents a decision about expected behavior:
+miniCycle has thousands of tests (see [PROJECT_STATS.md](../PROJECT_STATS.md) for the current count). Each test represents a decision about expected behavior:
 
 - What should happen when a recurring task is deleted?
 - How should DST transitions be handled?
@@ -243,7 +243,7 @@ miniCycle is AI-assisted software built by a human developer who:
 3. Proposes better solutions than AI offers
 4. Maintains pattern consistency across all modules
 5. Can debug and maintain the code without AI
-6. Defines what "correct" means through 1,610 tests
+6. Defines what "correct" means through its full test suite
 
 The AI accelerates implementation. The human does everything else.
 

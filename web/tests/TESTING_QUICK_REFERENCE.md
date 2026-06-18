@@ -1,7 +1,7 @@
 # miniCycle Testing - Quick Reference
 
 **Last Updated**: December 2025
-**Test Coverage**: 1458+ tests across 50 modules (100%)
+**Test Coverage**: 100% (see [PROJECT_STATS.md](../docs/PROJECT_STATS.md) for current test and module counts)
 
 ---
 
@@ -330,7 +330,9 @@ Some tests don't work in Playwright's automated environment:
 
 ---
 
-## 📊 Current Test Coverage (32 modules, 980 tests)
+## 📊 Current Test Coverage
+
+> See [PROJECT_STATS.md](../docs/PROJECT_STATS.md) for current counts.
 
 | Module | Tests | Module | Tests |
 |--------|-------|--------|-------|

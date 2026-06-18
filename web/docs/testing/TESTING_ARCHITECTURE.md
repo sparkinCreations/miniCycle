@@ -15,7 +15,7 @@
 │  ┌────────────┐  ┌────────────┐  ┌────────────┐  ┌───────────┐ │
 │  │ Functional │  │Performance │  │ Lighthouse │  │  Manual   │ │
 │  │   Tests    │  │ Benchmarks │  │     CI     │  │ Profiling │ │
-│  │ 2,195+ tests│  │  12 tests  │  │  5 metrics │  │ DevTools  │ │
+│  │ all modules │  │  12 tests  │  │  5 metrics │  │ DevTools  │ │
 │  └────────────┘  └────────────┘  └────────────┘  └───────────┘ │
 │                                                                   │
 └─────────────────────────────────────────────────────────────────┘
@@ -88,7 +88,7 @@ Push to GitHub
 └────────────┘      └──────────────────┘
       ↓                    ↓
 ┌────────────┐      ┌──────────────────┐
-│ Run 2,195+ │      │ Run Benchmarks   │
+│ Run all    │      │ Run Benchmarks   │
 │ Tests      │      │ (12 tests)       │
 └────────────┘      └──────────────────┘
       ↓                    ↓
@@ -143,31 +143,31 @@ Push to GitHub
 
 ```
 ┌───────────────────────────────────────────────────┐
-│ Layer 1: Core (152 tests)                         │
+│ Layer 1: Core                                     │
 │ ✅ AppState, AppInit, CycleLoader, Migration      │
 └───────────────────────────────────────────────────┘
                     ↓
 ┌───────────────────────────────────────────────────┐
-│ Layer 2: Business Logic (346 tests)               │
+│ Layer 2: Business Logic                           │
 │ ✅ TaskCore, RecurringCore, UndoRedo, ModeManager│
 └───────────────────────────────────────────────────┘
                     ↓
 ┌───────────────────────────────────────────────────┐
-│ Layer 3: UI Components (315 tests)                │
+│ Layer 3: UI Components                            │
 │ ✅ TaskDOM, Modal, Menu, Settings, Onboarding    │
 └───────────────────────────────────────────────────┘
                     ↓
 ┌───────────────────────────────────────────────────┐
-│ Layer 4: Features (198 tests)                     │
+│ Layer 4: Features                                 │
 │ ✅ Notifications, Stats, Themes, DragDrop        │
 └───────────────────────────────────────────────────┘
                     ↓
 ┌───────────────────────────────────────────────────┐
-│ Layer 5: Integration (11 tests)                   │
+│ Layer 5: Integration                              │
 │ ✅ End-to-end workflows                           │
 └───────────────────────────────────────────────────┘
 
-Total: 2,195+ tests across all layers (see [PROJECT_STATS.md](../PROJECT_STATS.md) for current counts)
+Total: see [PROJECT_STATS.md](../PROJECT_STATS.md) for current test counts (all layers)
 ```
 
 ---
@@ -456,23 +456,7 @@ setRecurringCoreDependencies({
 
 ## Test Coverage Matrix
 
-```
-┌──────────────────┬───────┬────────┬──────────┬─────────┐
-│ Module           │ Tests │ Lines  │ Branches │ Status  │
-├──────────────────┼───────┼────────┼──────────┼─────────┤
-│ AppState         │  41   │  100%  │   95%    │ ✅      │
-│ CycleLoader      │  11   │  100%  │   92%    │ ✅      │
-│ TaskCore         │  34   │  100%  │   97%    │ ✅      │
-│ RecurringCore    │  99   │  100%  │   98%    │ ✅      │
-│ UndoRedoManager  │  73   │  100%  │   96%    │ ✅      │
-│ TaskDOM          │  46   │  100%  │   94%    │ ✅      │
-│ ModalManager     │  50   │  100%  │   95%    │ ✅      │
-│ Notifications    │  39   │  100%  │   93%    │ ✅      │
-│ ... (22 more)    │ 618   │  100%  │   95%    │ ✅      │
-├──────────────────┼───────┼────────┼──────────┼─────────┤
-│ TOTAL            │ 2,195+│  100%  │   95%    │ ✅ 100% │
-└──────────────────┴───────┴────────┴──────────┴─────────┘
-```
+Per-module test counts go stale on every test change — see [PROJECT_STATS.md](../PROJECT_STATS.md) for current per-module and total test counts. All production modules pass at 100%.
 
 ---
 
@@ -536,19 +520,19 @@ Results posted to PR as status check
 
 ```
                   ┌───────────┐
-                  │Integration│ 11 tests
+                  │Integration│
                   │  (E2E)    │ Slow, High Value
                   └───────────┘
                ┌─────────────────┐
-               │   UI Component  │ 315 tests
+               │   UI Component  │
                │      Tests      │ Medium Speed
                └─────────────────┘
           ┌───────────────────────────┐
-          │   Business Logic Tests    │ 346 tests
+          │   Business Logic Tests    │
           │  (TaskCore, Recurring)    │ Fast
           └───────────────────────────┘
      ┌────────────────────────────────────┐
-     │        Unit Tests (Core)           │ 152 tests
+     │        Unit Tests (Core)           │
      │    (AppState, CycleLoader)         │ Very Fast
      └────────────────────────────────────┘
 ┌───────────────────────────────────────────────┐
@@ -557,9 +541,9 @@ Results posted to PR as status check
 └───────────────────────────────────────────────┘
 
 Ideal Distribution (achieved!):
-- 70% Unit/Logic Tests (498 tests)
-- 20% Component Tests (315 tests)
-- 10% Integration Tests (198 tests)
+- 70% Unit/Logic Tests
+- 20% Component Tests
+- 10% Integration Tests
 ```
 
 ---
@@ -571,31 +555,16 @@ Ideal Distribution (achieved!):
 ```
 Test Type          | Count  | Total Time | Avg Time
 -------------------|--------|------------|----------
-Functional Tests   | 2,195+ | ~65s       | ~44ms
+Functional Tests   | (full) | ~65s       | ~44ms
 Performance Tests  | 12     | 21.40ms    | 1.78ms
 Lighthouse (full)  | 10     | 180s       | 18s
 -------------------|--------|------------|----------
-Total              | 1480+  | ~245s      | ~165ms
+Total              | (all)  | ~245s      | ~165ms
 ```
 
 ### Coverage Breakdown
 
-```
-Category           | Tests | Percentage
--------------------|-------|------------
-Core Systems       | 169   | 11.6%
-Task Management    | 189   | 13.0%
-UI Components      | 390   | 26.7%
-Business Logic     | 362   | 24.8%
-Features           | 181   | 12.4%
-Security & Testing | 86    | 5.9%
-Plugins & A11y     | 83    | 5.7%
-Stress Testing     | 50    | 3.4%
-Integration        | 11    | 0.8%
-Performance        | 12    | 0.8%
--------------------|-------|------------
-Total              | 2,195+| 100%
-```
+See [PROJECT_STATS.md](../PROJECT_STATS.md) for the current per-category and total test counts.
 
 ### Performance Status
 
@@ -616,7 +585,7 @@ Storage Speed      | <100ms  | 0.80ms  | ✅ 125x
 ### Run Tests
 
 ```bash
-npm test           # Functional (2,195+ tests, ~65s)
+npm test           # Functional tests (~65s)
 npm run perf       # Performance (12 tests, 20ms)
 npm run lighthouse # Lighthouse (full audit, 3min)
 npm start          # Manual testing (browser)

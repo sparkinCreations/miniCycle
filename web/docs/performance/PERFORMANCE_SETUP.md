@@ -222,7 +222,7 @@ GitHub Actions will automatically:
 ✅ **All 12 benchmarks passed**
 ✅ **Total execution time: 21.40ms**
 ✅ **Memory usage: 0.3%**
-✅ **100% test coverage: 2,195+ automated tests** (see [PROJECT_STATS.md](../PROJECT_STATS.md))
+✅ **100% test coverage** (see [PROJECT_STATS.md](../PROJECT_STATS.md) for current test counts)
 
 ### Recommended Limits
 

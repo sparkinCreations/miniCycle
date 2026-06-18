@@ -223,7 +223,7 @@ lhci autorun --config=lighthouserc.json
 ## 🚀 Performance Best Practices
 
 ### Current Architecture Strengths
-✅ **Modular design** (50 modules) - Code splitting ready
+✅ **Modular design** - Code splitting ready
 ✅ **Lazy loading** with dynamic imports
 ✅ **Throttled operations** (undo snapshots, recurring checks)
 ✅ **IndexedDB for undo/redo** - Keeps memory low
@@ -265,6 +265,6 @@ lhci autorun --config=lighthouserc.json
 
 ---
 
-**Current Status**: miniCycle passes 1458+/1458+ tests (100%) ✅
+**Current Status**: miniCycle passes 100% of tests ✅ (see [PROJECT_STATS.md](../docs/PROJECT_STATS.md) for current counts)
 
 *Last updated: 2025-12-11*

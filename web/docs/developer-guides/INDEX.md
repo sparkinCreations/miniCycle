@@ -117,7 +117,7 @@
 - GitHub Actions CI/CD
 - Creating new tests
 - Test patterns and best practices
-- 2,195+ automated tests, 100% passing ✅
+- Full automated test suite, 100% passing ✅ (see [PROJECT_STATS.md](../PROJECT_STATS.md))
 
 #### [SECURITY_GUIDE.md](./SECURITY_GUIDE.md)
 **What it is**: Security patterns and best practices
@@ -236,7 +236,7 @@
 **Time**: 10 minutes
 
 **Topics:**
-- Functional testing (2,195+ automated tests)
+- Functional testing (see [PROJECT_STATS.md](../PROJECT_STATS.md) for test counts)
 - Performance testing (12 benchmarks)
 - CI/CD integration
 - Test results
@@ -471,7 +471,7 @@
 ### Test Results
 
 ```
-✅ Functional Tests: 2,195+ (100%)
+✅ Functional Tests: 100% pass (see ../PROJECT_STATS.md)
 ✅ Performance Tests: 12/12 (100%)
 ✅ Execution Time: ~65s
 ✅ Memory Usage: 9.54MB (0.3%)
@@ -504,7 +504,7 @@
 
 ```bash
 # Testing
-npm test                # Run all functional tests (2,195+)
+npm test                # Run all functional tests
 npm run perf            # Run performance benchmarks (12)
 npm run lighthouse      # Run Lighthouse CI audit
 

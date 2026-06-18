@@ -81,7 +81,7 @@ tests/
 ├── routineLoader.tests.js          # RoutineLoader tests
 ├── notifications.tests.js          # Notifications tests
 ├── taskOptionsCustomizer.tests.js  # TaskOptionsCustomizer tests
-└── ... (113 test files total, 85 automated)
+└── ... (see ../PROJECT_STATS.md for current test file count)
 ```
 
 ---
@@ -407,10 +407,10 @@ function test(name, testFn) {
 | TaskRenderer | 16 | ✅ |
 | TaskEvents | 22 | ✅ |
 | TaskDOM | 43 | ✅ |
-| **Total** | **2,195+** | **100%** ✅ |
+| **Total** | _see [PROJECT_STATS.md](../PROJECT_STATS.md)_ | **100%** ✅ |
 
 **Recent Improvements (October 2025):**
-- ✅ **100% Test Coverage Achieved** - All 2,195+ tests passing
+- ✅ **100% Test Coverage Achieved** - All tests passing (see [PROJECT_STATS.md](../PROJECT_STATS.md) for current counts)
 - ✅ **ConsoleCapture** - Fixed 3 auto-start edge case tests
 - ✅ **GitHub Actions** - CI/CD integrated for automated testing
 - ✅ **Multi-version Testing** - Node.js 18.x and 20.x compatibility
@@ -908,7 +908,7 @@ jobs:
 - **Bug Fixes**: DeviceDetection (2), Reminders (6), ConsoleCapture (1)
 
 ### October 31, 2025 - v2.2
-- **100% Test Coverage** - All 2,195+ tests passing
+- **100% Test Coverage** - All tests passing (see [PROJECT_STATS.md](../PROJECT_STATS.md) for current counts)
 - **GitHub Actions** - CI/CD integration complete
 - **ConsoleCapture Fixes** - Resolved 3 auto-start edge case tests
 - **Multi-version Testing** - Node.js 18.x and 20.x support

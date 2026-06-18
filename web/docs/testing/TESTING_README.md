@@ -31,7 +31,7 @@
 ### Run All Tests
 
 ```bash
-# 1. Functional tests (2,195+ tests, ~115s)
+# 1. Functional tests (~115s — see ../PROJECT_STATS.md for count)
 npm test
 
 # 2. Performance benchmarks (12 tests, ~20s)
@@ -51,7 +51,7 @@ npm start
 **Available test suites:**
 - ⚡ Performance Benchmarks (this page)
 - 🔗 Integration Tests (E2E)
-- 85 automated test modules (see [PROJECT_STATS.md](../PROJECT_STATS.md))
+- All test modules automated (see [PROJECT_STATS.md](../PROJECT_STATS.md))
 
 ---
 
@@ -64,12 +64,12 @@ tests/
 ├── automated/
 │   ├── run-browser-tests.js         # Main test runner (Playwright)
 │   └── run-performance-benchmarks.js # Performance runner
-├── *.tests.js                        # 113 test files
+├── *.tests.js                        # all test files (see ../PROJECT_STATS.md)
 ├── module-test-suite.html            # Browser test UI
 └── integration.tests.js              # E2E tests
 ```
 
-### Test Modules (85 Automated, 113 Total Files)
+### Test Modules by Category
 
 | Category | Modules | Tests |
 |----------|---------|-------|
@@ -206,7 +206,7 @@ npm run lighthouse  # Terminal 2
 **Runs:**
 - Installs dependencies
 - Starts dev server
-- Runs 2,195+ automated tests
+- Runs the full automated test suite
 - Tests on Node.js 18.x and 20.x
 
 **Status:**
@@ -269,55 +269,7 @@ npm run lighthouse  # Terminal 2
 **Platform**: Mac (Darwin 24.6.0), Node.js 20.x
 **Duration**: ~65 seconds
 
-```
-✅ integration          11/11 tests
-✅ themeManager         15/15 tests
-✅ deviceDetection      13/13 tests
-✅ routineLoader        10/10 tests
-✅ statsPanel           24/24 tests
-✅ consoleCapture       32/32 tests
-✅ state                40/40 tests
-✅ recurringCore        99/99 tests
-✅ recurringIntegration 17/17 tests
-✅ recurringPanel       57/57 tests
-✅ globalUtils          36/36 tests
-✅ notifications        35/35 tests
-✅ dragDropManager      55/55 tests
-✅ migrationManager     38/38 tests
-✅ dueDates             16/16 tests
-✅ reminders            4/4 tests
-✅ modeManager          27/27 tests
-✅ routineSwitcher      20/20 tests
-✅ routineManager       35/35 tests
-✅ undoRedoManager      73/73 tests
-✅ gamesManager         21/21 tests
-✅ onboardingManager    32/32 tests
-✅ modalManager         49/49 tests
-✅ menuManager          25/25 tests
-✅ settingsManager      24/24 tests
-✅ pullToRefresh        18/18 tests
-✅ taskCore             33/33 tests
-✅ taskValidation       25/25 tests
-✅ taskUtils            22/22 tests
-✅ taskRenderer         16/16 tests
-✅ taskEvents           13/13 tests
-✅ taskDOM              45/45 tests
-✅ taskOptionsCustomizer 27/27 tests
-✅ xss-vulnerability    25/25 tests
-✅ errorHandler         34/34 tests
-✅ testingModal         27/27 tests
-✅ backupManager        31/31 tests
-✅ cycleCompletion      25/25 tests
-✅ dataValidator        54/54 tests
-✅ appInit              37/37 tests
-✅ appState             60/60 tests
-✅ helpWindowManager    54/54 tests
-✅ constants            21/21 tests
-✅ basicPluginSystem    42/42 tests
-✅ accessibility        41/41 tests
-
-🎉 All tests passed! (2,195+ - 100%)
-```
+> Per-module test counts are no longer tracked inline here (they go stale on every test change). All modules pass (100%). See [PROJECT_STATS.md](../PROJECT_STATS.md) for current per-module and total test counts.
 
 ### Performance Benchmark Results
 
@@ -580,7 +532,7 @@ web/
 │   ├── automated/
 │   │   ├── run-browser-tests.js         # Main test runner
 │   │   └── run-performance-benchmarks.js # Performance runner
-│   ├── *.tests.js                        # 113 test files
+│   ├── *.tests.js                        # all test files (see ../PROJECT_STATS.md)
 │   ├── performance.benchmark.js          # Performance suite
 │   ├── module-test-suite.html            # Browser UI
 │   ├── PERFORMANCE_TESTING.md            # Testing guide
@@ -637,9 +589,9 @@ Before releasing:
 
 ```
 📊 Test Statistics
-├── Functional Tests: 2,195+ (100%) ✅
+├── Functional Tests: 100% pass — see ../PROJECT_STATS.md ✅
 ├── Performance Tests: 12/12 (100%) ✅
-├── Module Coverage: 107/117 (91%) ✅
+├── Module Coverage: 100% of production — see ../PROJECT_STATS.md ✅
 ├── Line Coverage: ~15,000 lines ✅
 └── Platform Coverage: Mac, iPad, iPhone ✅
 

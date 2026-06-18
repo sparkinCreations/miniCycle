@@ -1,6 +1,6 @@
 # Automated Browser Test Suite
 
-**Playwright-powered automation for 1458+ browser tests with Strict Dependency Injection.**
+**Playwright-powered automation for the full browser test suite with Strict Dependency Injection.**
 
 ---
 
@@ -57,7 +57,7 @@ npm run test:manual
 
 ## 📊 Current Test Coverage
 
-The automated runner tests **50 modules** with **1458+ tests total**:
+The automated runner tests every registered module (see [PROJECT_STATS.md](../../docs/PROJECT_STATS.md) for current test and module counts):
 
 | Module | Tests | Module | Tests |
 |--------|-------|--------|-------|
@@ -87,7 +87,7 @@ The automated runner tests **50 modules** with **1458+ tests total**:
 | constants | 21 | basicPluginSystem | 42 |
 | accessibility | 41 | stress | 50 |
 
-**Total: 1458+ tests across 50 modules**
+**Total: see [PROJECT_STATS.md](../../docs/PROJECT_STATS.md) for current test and module counts**
 
 ---
 
@@ -448,7 +448,7 @@ await test('modifies localStorage', () => {
 │  Automated Test     │
 │  (Headless CLI)     │
 │  - Verify all pass  │
-│  - 980/980 tests    │
+│  - all tests        │
 └──────┬──────────────┘
        │
        ▼
@@ -517,8 +517,8 @@ console.log(`⏱️  ${moduleName} took ${duration}ms`);
 ✅ **Strict DI** - All modules use dependency injection
 ✅ **testHelpers.js** - Shared mocks for consistency
 ✅ **Clean repository** - No dependency bloat
-✅ **1458+ tests** - Comprehensive coverage
-✅ **50 modules** - All core functionality tested
+✅ **Comprehensive coverage** (see [PROJECT_STATS.md](../../docs/PROJECT_STATS.md) for current test counts)
+✅ **All modules** - Core functionality tested
 ✅ **CLI filtering** - Test single modules or patterns
 
 **No build step. No configuration. Just works.** 🚀
@@ -535,4 +535,4 @@ console.log(`⏱️  ${moduleName} took ${duration}ms`);
 ---
 
 **Last Updated**: December 2025
-**Test Coverage**: 1458+ tests across 50 modules (100%)
+**Test Coverage**: 100% (see [PROJECT_STATS.md](../../docs/PROJECT_STATS.md) for current test and module counts)

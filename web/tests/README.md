@@ -4,7 +4,7 @@
 
 ## Current Status
 
-**1458+ tests | 50 modules | 100% pass rate**
+**100% pass rate** — see [PROJECT_STATS.md](../docs/PROJECT_STATS.md) for current test and module counts
 
 ## Quick Start
 
@@ -161,7 +161,7 @@ Some tests are skipped in automated testing due to Playwright environment limita
 
 See comments in test files marked with `// NOTE:` for specific exclusions.
 
-## Module Coverage (50 modules, 1458+ tests)
+## Module Coverage
 
 | Module | Tests | Module | Tests |
 |--------|-------|--------|-------|
@@ -223,4 +223,4 @@ All test files protect your real app data:
 
 **Version:** 3.1 (Strict DI + testContext)
 **Last Updated:** December 2025
-**Test Coverage:** 1458+ tests across 50 modules (100%)
+**Test Coverage:** 100% (see [PROJECT_STATS.md](../docs/PROJECT_STATS.md) for current test and module counts)

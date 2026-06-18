@@ -244,7 +244,7 @@ miniCycle is a **routine manager** built as a PWA with 108 ES6 modules, strict d
 - 4 modules still have event listener leaks (gamesManager, onboardingManager, statsPanel, helpWindowManager)
 - 2 modules use non-standard DI patterns (gamesManager: Proxy-based, taskSearch: default fallbacks)
 - `migrationManager.js` is 1,722 lines (though working and stable)
-- ~54% test module coverage — 50 modules still untested
+- ~54% test module coverage at review time — 50 modules were then untested (since resolved: 100% of production modules are now tested; see [PROJECT_STATS.md](../PROJECT_STATS.md) for current coverage)
 - No build step means 36 CSS `@import` statements and manual version string updates
 
 ---
@@ -436,7 +436,7 @@ miniCycle is a **routine manager** built as a PWA with 108 ES6 modules, strict d
 - Automated test runner in the testing modal (runs 1,600+ checks)
 
 **Weaknesses:**
-- ~54% module coverage — 50 modules still untested
+- ~54% module coverage at review time — 50 modules were then untested (since resolved: 100% of production modules are now tested; see [PROJECT_STATS.md](../PROJECT_STATS.md) for current coverage)
 - Tests require a running local server (`npm start`)
 - No CI/CD integration mentioned
 - No unit tests (all integration/browser tests)

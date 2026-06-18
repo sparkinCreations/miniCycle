@@ -36,7 +36,7 @@ User clicks "Run All Tests"
 │ with ?autorun=true&embedded=true│
 └─────────────────────────────────┘
         ↓
-    Tests run (2,195+)
+    Tests run (full suite)
         ↓
 ┌─────────────────────────────────┐
 │ iframe sends TEST_RESULTS       │

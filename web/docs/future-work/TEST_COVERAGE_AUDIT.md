@@ -2,13 +2,13 @@
 
 **Date:** March 27, 2026
 **Status:** COMPLETE
-**Coverage:** 107/117 modules tested (91%) — 100% of production modules
+**Coverage:** 100% of production modules tested (see [PROJECT_STATS.md](../PROJECT_STATS.md) for current module counts)
 
 ---
 
 ## Summary
 
-2,195 tests across 85 test files, all passing (100%). Automated via Playwright headless Chromium against localhost:8080. Every production module has direct test coverage. The 10 untested modules are testing infrastructure (`testing-modal-*.js` sub-modules) and non-production example code (`exampleTimeTrackerPlugin.js`, `pluginIntegrationGuide.js`) — intentionally excluded.
+All tests passing (100%); see [PROJECT_STATS.md](../PROJECT_STATS.md) for current test and test-file counts. Automated via Playwright headless Chromium against localhost:8080. Every production module has direct test coverage. The 10 untested modules are testing infrastructure (`testing-modal-*.js` sub-modules) and non-production example code (`exampleTimeTrackerPlugin.js`, `pluginIntegrationGuide.js`) — intentionally excluded.
 
 ### Implementation Timeline (March 27, 2026)
 
@@ -166,7 +166,7 @@ All 68 previously untested production modules received test coverage on March 27
 
 ## Goal: 100% Production Module Coverage — ACHIEVED
 
-**Result:** 107/117 modules tested. All production modules covered. 10 intentionally excluded (testing infrastructure + non-production examples).
+**Result:** All production modules covered (see [PROJECT_STATS.md](../PROJECT_STATS.md) for current module counts). 10 intentionally excluded (testing infrastructure + non-production examples).
 
 ### Excluded Modules (intentional — not worth testing)
 
@@ -211,6 +211,8 @@ tests/myModule.tests.js          ← single source of truth
 ```
 
 The in-app testing modal's **"Run All Tests"** button automatically picks up any test registered in `module-test-suite.html`. The individual module buttons in `testing-modal-tab-html.html` are a legacy subset (11 modules) and do **not** need updating — "Run All" is sufficient.
+
+As of June 2026, `run-browser-tests.cjs` runs `assertNoUnregisteredTests()` at startup: any `tests/*.tests.js` file not registered in `ALL_MODULES` (and not in `UNREGISTERED_EXEMPT`) fails the run before the browser launches — so a newly added suite can no longer silently skip CI.
 
 ### How DI Enables Testing
 
