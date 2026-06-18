@@ -24,32 +24,19 @@ export async function runDIWiringTests(resultsDiv, isPartOfSuite = false) {
     const loaderMod = await import(`../modules/boot/moduleLoader.js?v=${cacheBuster}`);
 
     const { MODULE_MANIFESTS, CORE_DEPS } = manifestMod;
-    const { getDepMappingKeys } = loaderMod;
+    const { ensureDepMappingKeys } = loaderMod;
 
     resultsDiv.innerHTML = '<h2>DI Wiring Verification Tests</h2><h3>Running tests...</h3>';
     let passed = { count: 0 }, total = { count: 0 };
     const test = createProtectedTest(resultsDiv, passed, total);
 
-    // Get depMappings keys (populated after boot)
-    const depMappingKeys = getDepMappingKeys();
-
-    // CLI/Playwright mode runs tests in isolation (module-test-suite.html
-    // imports test files but does NOT boot the app), so depMappings is empty
-    // and the wiring battery has nothing to verify against. Skip cleanly with
-    // an informational result — these tests are meaningful only after a real
-    // boot has populated depMappings, which is what the in-browser testing
-    // modal on the live app provides.
-    if (!depMappingKeys || depMappingKeys.size === 0) {
-        resultsDiv.innerHTML +=
-            '<div class="result info">⏭ DI wiring verification skipped — ' +
-            'depMappings populates only during full app boot. ' +
-            'Run via the in-browser testing modal on the live app to verify wiring.</div>';
-        // Reporting 0/0 keeps the CLI runner from flagging this as a failure
-        // (it parses `\d+/\d+` from the Results line and computes pass/fail
-        // from the .result.fail count).
-        resultsDiv.innerHTML += '<h3>Results: 0/0 tests passed (skipped — requires live app boot)</h3>';
-        return { passed: 0, total: 0, skipped: true };
-    }
+    // Populate depMappings keys WITHOUT a full app boot. Previously this battery
+    // self-skipped in the CLI/Playwright runner (which imports test files but
+    // never boots the app), so the silent-missing-wiring bug class it guards
+    // had ZERO automated coverage. ensureDepMappingKeys() builds the real
+    // depMappings object once with stub deps to capture its keys — see
+    // moduleLoader.js. This now runs in CI like every other suite.
+    const depMappingKeys = ensureDepMappingKeys();
 
     // Build a set of all deps provided by any module
     const allProvided = new Set();

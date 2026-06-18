@@ -1600,6 +1600,33 @@ export function getDepMappingKeys() {
     return _depMappingKeys;
 }
 
+/**
+ * Populate and return the depMappings key set WITHOUT a full app boot.
+ *
+ * The DI wiring tests (diWiring.tests.js) need the real depMappings keys, but
+ * `_depMappingKeys` is only captured the first time `buildModuleDependencies()`
+ * runs during `loadAllModules()`. The CLI/Playwright harness never boots the app,
+ * so the keys stay null and the wiring battery self-skips.
+ *
+ * depMappings values are closures over `deps` that are NOT invoked at build time
+ * (they only deref `deps.x?.y?.()` when later called), so building it once with
+ * empty stubs is side-effect-free and yields the exact same keys the real boot
+ * would. This keeps the test honest: keys come from the real object literal, so
+ * adding/removing a depMappings entry is reflected automatically.
+ *
+ * @returns {Set<string>} The depMappings key set (never null).
+ */
+export function ensureDepMappingKeys() {
+    if (!_depMappingKeys) {
+        buildModuleDependencies(
+            { path: 'di-wiring-test', requires: [], optionalDeps: [], lazyRequires: [] },
+            {},
+            {}
+        );
+    }
+    return _depMappingKeys || new Set();
+}
+
 export function getLoadedModule(name) {
     return loadedModules.get(name) || null;
 }
