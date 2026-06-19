@@ -9,5 +9,6 @@
 // The setting persists, so we only need to (re)assert it on install/update.
 // An in-app "Open in full tab" button (ext-boot) is the wide-layout escape hatch.
 chrome.runtime.onInstalled.addListener(() => {
-  chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {});
+  chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })
+    .catch((e) => console.warn('[miniCycle-ext] setPanelBehavior failed:', e));
 });

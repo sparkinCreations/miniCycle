@@ -3,11 +3,13 @@
 #automated-tests-tab { display: none !important; }
 
 /* "Open in full tab" escape hatch — floating button injected by ext-boot when
-   the app runs in the side panel. Low-opacity corner control; brightens on hover. */
+   the app runs in the side panel. Low-opacity corner control; brightens on hover.
+   Sits ABOVE the app's bottom-right #quick-dark-toggle (up to 60px @ bottom:30px)
+   so the two don't overlap; right:23px aligns it to the toggle's optical center. */
 #ext-fulltab-btn {
   position: fixed;
-  bottom: 14px;
-  right: 14px;
+  bottom: 94px;
+  right: 23px;
   z-index: 2147483000;
   width: 34px;
   height: 34px;
