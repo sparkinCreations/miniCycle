@@ -1345,7 +1345,17 @@ if [ "$DRY_RUN" = false ]; then
 # Auto-generated restore script
 set -euo pipefail
 
+# Resolve paths from THIS script's own location, not the caller's cwd. This
+# backup folder lives at <web>/backup/version_update_*/, so the web root (where
+# the files belong) is two levels up. Earlier versions used "../$file", which
+# is only ONE level up — it wrongly wrote restores into <web>/backup/ and the
+# real files were never recovered. Deriving WEB_ROOT here also lets the script
+# be run from any cwd.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+WEB_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
 echo "🔄 Restoring files from backup..."
+echo "   → restoring into: $WEB_ROOT"
 echo ""
 
 RESTORED=0
@@ -1353,9 +1363,9 @@ FAILED=0
 
 restore_file() {
     local file=$1
-    if [ -f "$file" ]; then
-        mkdir -p "../$(dirname "$file")" 2>/dev/null || true
-        if cp "$file" "../$file" 2>/dev/null; then
+    if [ -f "$SCRIPT_DIR/$file" ]; then
+        mkdir -p "$WEB_ROOT/$(dirname "$file")" 2>/dev/null || true
+        if cp "$SCRIPT_DIR/$file" "$WEB_ROOT/$file" 2>/dev/null; then
             echo "✅ Restored $file"
             RESTORED=$((RESTORED + 1))
         else
