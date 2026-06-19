@@ -41,6 +41,7 @@
 | `ui/` | 34 | Modals, menus, settings, onboarding, gestures |
 | `features/` | 8 | Themes, stats, achievements, history, reminders |
 | `utils/` | 15 | Notifications, device detection, utilities |
+| `labels/` | 3 | Default labels + label resolver |
 | `storage/` | 1 | Backup manager |
 | `progress/` | 1 | Cycle completion tracking |
 | `testing/` | 9 | Test infrastructure |

@@ -107,7 +107,8 @@
 # • manifest-lite.json            - version field
 #
 # Other pages:
-# • pages/product.html            - ?v= params, meta tags, JSON-LD softwareVersion
+# • pages/product.html            - ?v= params, meta tags, JSON-LD softwareVersion,
+#                                   "Built Different" module-count stat (data-stat="modules")
 #
 # Manifests & package:
 # • manifest.json                 - version field
@@ -119,6 +120,12 @@
 #
 # Security (auto-detected):
 # • netlify.toml                  - CSP script-src hashes (auto-updated when inline scripts change)
+#
+# Cross-repo stats sync (auto-detected sibling repo, Stage 5C):
+# • ../../SparkinCreations/assets/data/stats.json - live metrics the homepage fetches
+# • ../../SparkinCreations/STATS.md               - human-readable mirror
+#   (override path with SPARKIN_STATS_DIR; skipped if the repo isn't present;
+#    NOT auto-committed — commit & deploy SparkinCreations separately)
 #
 # ============================================
 # 📦 MODULE VERSIONING (DI-PURE)
@@ -162,6 +169,10 @@ set -euo pipefail
 # ============================================
 # FLAG VARIABLES
 # ============================================
+
+# Single source of truth for this script's own version (keep in sync with the
+# `# Version:` header comment above). Used in --help and the runtime banners.
+SCRIPT_VERSION="5.5"
 
 AUTO_MODE=false
 AUTO_GIT_TAG=false
@@ -218,7 +229,7 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         --help|-h)
-            echo "🎯 miniCycle Version Updater v5.4"
+            echo "🎯 miniCycle Version Updater v$SCRIPT_VERSION"
             echo ""
             echo "Usage: ./update-version.sh [options]"
             echo ""
@@ -264,18 +275,18 @@ done
 # ============================================
 
 if [ "$DRY_RUN" = true ]; then
-    echo "🔍 miniCycle Version Updater v5.3 (DRY RUN MODE)"
+    echo "🔍 miniCycle Version Updater v$SCRIPT_VERSION (DRY RUN MODE)"
     echo "================================================="
     echo "⚠️  No files will be modified - preview only"
 elif [ "$LITE_ONLY" = true ]; then
-    echo "📱 miniCycle Version Updater v5.3 (LITE ONLY MODE)"
+    echo "📱 miniCycle Version Updater v$SCRIPT_VERSION (LITE ONLY MODE)"
     echo "=================================================="
     echo "⚠️  Only lite version files will be updated"
 elif [ "$AUTO_MODE" = true ]; then
-    echo "🤖 miniCycle Version Updater v5.3 (AUTO MODE)"
+    echo "🤖 miniCycle Version Updater v$SCRIPT_VERSION (AUTO MODE)"
     echo "=============================================="
 else
-    echo "🎯 miniCycle Version Updater v5.3"
+    echo "🎯 miniCycle Version Updater v$SCRIPT_VERSION"
     echo "================================="
 fi
 echo ""
@@ -914,6 +925,8 @@ STAGE2_SUCCESS=true
 if [ "$LITE_ONLY" = false ] && should_update "miniCycle.html"; then
     if [ "$DRY_RUN" = true ]; then
         echo "   Would update: miniCycle.html"
+    elif [ ! -f "miniCycle.html" ]; then
+        echo "⏭️  Skipping miniCycle.html (not found)"
     elif backup_file "miniCycle.html"; then
         # Use [0-9.]+ (one or more) to avoid matching ?v=${APP_VERSION} which has no digits after =
         do_sed "miniCycle.html" 's/?v=[0-9.]\{1,\}/?v='"$NEW_VERSION"'/g'
@@ -932,6 +945,8 @@ LITE_VER="${NEW_LITE_VERSION:-$NEW_VERSION}"
 if should_update "lite/miniCycle-lite.html"; then
     if [ "$DRY_RUN" = true ]; then
         echo "   Would update: lite/miniCycle-lite.html (lite version: $LITE_VER)"
+    elif [ ! -f "lite/miniCycle-lite.html" ]; then
+        echo "⏭️  Skipping lite/miniCycle-lite.html (not found)"
     elif backup_file "lite/miniCycle-lite.html"; then
         do_sed "lite/miniCycle-lite.html" 's/?v=[0-9.]\{1,\}/?v='"$LITE_VER"'/g'
         do_sed "lite/miniCycle-lite.html" "s/miniCycle-lite-styles\.css\"/miniCycle-lite-styles.css?v=$LITE_VER\"/g"
@@ -950,11 +965,18 @@ fi
 if [ "$LITE_ONLY" = false ] && should_update "pages/product.html"; then
     if [ "$DRY_RUN" = true ]; then
         echo "   Would update: pages/product.html"
+    elif [ ! -f "pages/product.html" ]; then
+        echo "⏭️  Skipping pages/product.html (not found)"
     elif backup_file "pages/product.html"; then
         do_sed "pages/product.html" "s|<meta name=\"app-version\" content=\"[^\"]*\">|<meta name=\"app-version\" content=\"$NEW_VERSION\">|g"
         do_sed "pages/product.html" 's/?v=[0-9.]\{1,\}/?v='"$NEW_VERSION"'/g'
         do_sed "pages/product.html" 's/"softwareVersion": "[^"]*"/"softwareVersion": "'"$NEW_VERSION"'"/g'
-        echo "✅ Updated pages/product.html"
+        # "Built Different" module-count stat — round DOWN to nearest 10 so the
+        # "+" figure (e.g. 120+) never overstates. Anchored on data-stat="modules".
+        PROD_MODULES=$(find modules -name "*.js" -type f 2>/dev/null | wc -l | xargs)
+        PROD_MODULES_ROUNDED=$(( PROD_MODULES / 10 * 10 ))
+        do_sed "pages/product.html" 's#\(data-stat="modules">\)[0-9][0-9]*+\{0,1\}<#\1'"$PROD_MODULES_ROUNDED"'+<#g'
+        echo "✅ Updated pages/product.html (modules stat: ${PROD_MODULES_ROUNDED}+)"
     else
         echo "⚠️  Failed to update pages/product.html"
         STAGE2_SUCCESS=false
@@ -1053,6 +1075,8 @@ STAGE5_SUCCESS=true
 if [ "$LITE_ONLY" = false ] && should_update "manifest.json"; then
     if [ "$DRY_RUN" = true ]; then
         echo "   Would update: manifest.json"
+    elif [ ! -f "manifest.json" ]; then
+        echo "⏭️  Skipping manifest.json (not found)"
     elif backup_file "manifest.json"; then
         do_sed "manifest.json" "s/\"version\": \"[0-9.]*\"/\"version\": \"$NEW_VERSION\"/g"
         echo "✅ Updated manifest.json"
@@ -1066,6 +1090,8 @@ if should_update "manifest-lite.json"; then
     LITE_VER="${NEW_LITE_VERSION:-$NEW_VERSION}"
     if [ "$DRY_RUN" = true ]; then
         echo "   Would update: manifest-lite.json (lite version: $LITE_VER)"
+    elif [ ! -f "manifest-lite.json" ]; then
+        echo "⏭️  Skipping manifest-lite.json (not found)"
     elif backup_file "manifest-lite.json"; then
         do_sed "manifest-lite.json" "s/\"version\": \"[0-9.]*\"/\"version\": \"$LITE_VER\"/g"
         echo "✅ Updated manifest-lite.json (v$LITE_VER)"
@@ -1078,6 +1104,8 @@ fi
 if [ "$LITE_ONLY" = false ] && should_update "package.json"; then
     if [ "$DRY_RUN" = true ]; then
         echo "   Would update: package.json"
+    elif [ ! -f "package.json" ]; then
+        echo "⏭️  Skipping package.json (not found)"
     elif backup_file "package.json"; then
         do_sed "package.json" "s/\"version\": \"[0-9.]*\"/\"version\": \"$NEW_VERSION\"/g"
         echo "✅ Updated package.json"
@@ -1147,6 +1175,7 @@ else
             UI_MOD=$(find modules/ui -name "*.js" -type f 2>/dev/null | wc -l | xargs)
             FEATURES_MOD=$(find modules/features -name "*.js" -type f 2>/dev/null | wc -l | xargs)
             UTILS_MOD=$(find modules/utils -name "*.js" -type f 2>/dev/null | wc -l | xargs)
+            LABELS_MOD=$(find modules/labels -name "*.js" -type f 2>/dev/null | wc -l | xargs)
             STORAGE_MOD=$(find modules/storage -name "*.js" -type f 2>/dev/null | wc -l | xargs)
             PROGRESS_MOD=$(find modules/progress -name "*.js" -type f 2>/dev/null | wc -l | xargs)
             TESTING_MOD=$(find modules/testing -name "*.js" -type f 2>/dev/null | wc -l | xargs)
@@ -1187,6 +1216,7 @@ else
             do_sed "$PROJECT_STATS_FILE" 's#| `ui/` | [0-9]* |#| `ui/` | '"$UI_MOD"' |#g'
             do_sed "$PROJECT_STATS_FILE" 's#| `features/` | [0-9]* |#| `features/` | '"$FEATURES_MOD"' |#g'
             do_sed "$PROJECT_STATS_FILE" 's#| `utils/` | [0-9]* |#| `utils/` | '"$UTILS_MOD"' |#g'
+            do_sed "$PROJECT_STATS_FILE" 's#| `labels/` | [0-9]* |#| `labels/` | '"$LABELS_MOD"' |#g'
             do_sed "$PROJECT_STATS_FILE" 's#| `storage/` | [0-9]* |#| `storage/` | '"$STORAGE_MOD"' |#g'
             do_sed "$PROJECT_STATS_FILE" 's#| `progress/` | [0-9]* |#| `progress/` | '"$PROGRESS_MOD"' |#g'
             do_sed "$PROJECT_STATS_FILE" 's#| `testing/` | [0-9]* |#| `testing/` | '"$TESTING_MOD"' |#g'
@@ -1226,6 +1256,80 @@ else
 
     echo "ℹ️  Debug markers (APPCONTEXT_VERSION, CONSTANTS_VERSION, DIBASE_VERSION)"
     echo "   now derive from globalThis.APP_VERSION at runtime - no script updates needed"
+    echo ""
+fi
+
+# ============================================
+# STAGE 5C: SYNC STATS TO SPARKINCREATIONS SITE
+# ============================================
+# Writes the live metrics into the SparkinCreations marketing repo so its
+# homepage never drifts from reality. The site fetches assets/data/stats.json
+# at runtime (STATS.md is the human-readable mirror). This is a CROSS-REPO write:
+#  • Sibling repo is auto-detected at ../../SparkinCreations (side-by-side
+#    checkout); override with SPARKIN_STATS_DIR=/path/to/SparkinCreations.
+#  • If the repo isn't present, we skip gracefully — never fail the version bump.
+#  • We do NOT git-commit the other repo; commit & deploy SparkinCreations
+#    separately to publish the new numbers.
+
+if [ "$LITE_ONLY" = true ]; then
+    echo "📝 Stage 5C: Skipping SparkinCreations stats sync (LITE ONLY mode)"
+    echo ""
+else
+    echo "📝 Stage 5C: Syncing stats to SparkinCreations site..."
+
+    SPARKIN_DIR="${SPARKIN_STATS_DIR:-../../SparkinCreations}"
+    SPARKIN_DATA="$SPARKIN_DIR/assets/data"
+
+    if [ -d "$SPARKIN_DIR" ]; then
+        # Count independently of Stage 5B (those vars are local to its branch).
+        SC_MODULES=$(find modules -name "*.js" -type f 2>/dev/null | wc -l | xargs)
+        SC_TESTS=$(grep -r "test(" tests --include="*.js" 2>/dev/null | wc -l | xargs || true)
+        SC_TEST_FILES=$(find tests -name "*.tests.js" -type f 2>/dev/null | wc -l | xargs)
+        SC_LINES=$(find modules -name "*.js" -type f -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1}')
+        SC_DATE=$(date +"%Y-%m-%d")
+
+        if [ "$DRY_RUN" = true ]; then
+            echo "   Would write: $SPARKIN_DATA/stats.json + $SPARKIN_DIR/STATS.md"
+            echo "   - version $NEW_VERSION, modules $SC_MODULES, tests $SC_TESTS, testFiles $SC_TEST_FILES, lines $SC_LINES"
+        else
+            mkdir -p "$SPARKIN_DATA"
+            cat > "$SPARKIN_DATA/stats.json" << EOF
+{
+  "version": "$NEW_VERSION",
+  "modules": $SC_MODULES,
+  "tests": $SC_TESTS,
+  "testFiles": $SC_TEST_FILES,
+  "lines": $SC_LINES,
+  "generated": "$SC_DATE"
+}
+EOF
+            cat > "$SPARKIN_DIR/STATS.md" << EOF
+# miniCycle Stats (auto-generated)
+
+> Generated by miniCycle's \`web/scripts/update-version.sh\` (Stage 5C).
+> **Do not edit by hand** — changes are overwritten on the next version bump.
+> The homepage reads \`assets/data/stats.json\`; this file is the human-readable mirror.
+
+| Metric | Value |
+|--------|-------|
+| App Version | $NEW_VERSION |
+| Modules | $SC_MODULES |
+| Tests | $SC_TESTS |
+| Test Files | $SC_TEST_FILES |
+| Module JS Lines | $SC_LINES |
+| Generated | $SC_DATE |
+
+After a miniCycle version bump regenerates these files, **commit and deploy the
+SparkinCreations repo separately** to publish the new numbers.
+EOF
+            echo "✅ Wrote $SPARKIN_DATA/stats.json and $SPARKIN_DIR/STATS.md"
+            echo "   (v$NEW_VERSION · $SC_MODULES modules · $SC_TESTS tests · $SC_LINES lines)"
+            echo "   ℹ️  Commit & deploy the SparkinCreations repo separately to publish."
+        fi
+    else
+        echo "⏭️  SparkinCreations repo not found at '$SPARKIN_DIR' — skipping"
+        echo "   (set SPARKIN_STATS_DIR=/path/to/SparkinCreations to enable this sync)"
+    fi
     echo ""
 fi
 
@@ -1285,6 +1389,18 @@ EOF
 
     # Add PROJECT_STATS.md to restore script
     echo "restore_file \"docs/PROJECT_STATS.md\"" >> "$BACKUP_FOLDER/restore.sh"
+
+    # Add lite version files (backed up during --lite / --lite-only runs).
+    # Without these, a --lite-only run produced a restore.sh that restored
+    # none of the files it actually changed.
+    for file in "${LITE_HTML_FILES[@]}" "${LITE_JS_FILES[@]}" "${LITE_CSS_FILES[@]}" "${LITE_MANIFEST_FILES[@]}"; do
+        echo "restore_file \"$file\"" >> "$BACKUP_FOLDER/restore.sh"
+    done
+
+    # Add deployment configs (rewritten in place by the CSP hash stage).
+    for file in netlify.toml .htaccess nginx-security.conf; do
+        echo "restore_file \"$file\"" >> "$BACKUP_FOLDER/restore.sh"
+    done
 
     cat >> "$BACKUP_FOLDER/restore.sh" << 'EOF'
 
@@ -1410,6 +1526,14 @@ else
     # Apache multi-line "\" continuation). Only the script-src hash list is
     # touched — every other directive is preserved, and configs may legitimately
     # differ in those other directives.
+
+    # Back up the deploy configs BEFORE the Python rewrites them in place — the
+    # Python writes without backing up, so without this restore.sh couldn't
+    # recover a botched CSP edit. Missing files are skipped (|| true).
+    for cfg in netlify.toml .htaccess nginx-security.conf; do
+        [ -f "$cfg" ] && backup_file "$cfg" || true
+    done
+
     python3 - <<'CSP_PY'
 import hashlib, base64, re, os
 
