@@ -345,8 +345,15 @@ export class CompletedTasksManager {
     }
 
     /**
-     * Organize all completed tasks when loading a cycle
-     * Scans the main task list and moves completed tasks to the completed section
+     * Reconcile the active list and the completed dropdown against checkbox state.
+     * Runs on cycle load and after undo/redo. Bidirectional: completed tasks in the
+     * active list move DOWN to the completed section, and un-completed tasks in the
+     * completed section move back UP to the active list.
+     *
+     * The up-direction is essential for undo/redo: un-completing a task is a *patch*
+     * render, which updates the checkbox in place but does NOT relocate the DOM node.
+     * Without moving it back, the task is left stranded — unchecked yet still sitting
+     * in the completed dropdown (the UI fails to reflect the undo).
      */
     organize() {
         // Check if feature is enabled first
@@ -357,17 +364,25 @@ export class CompletedTasksManager {
         const taskList = this.deps.getElementById(DOM_IDS.TASK_LIST);
         if (!taskList) return;
 
-        // Get all tasks in the main list
-        const tasks = Array.from(taskList.querySelectorAll(DOM_SELECTORS.TASK));
-
-        // Move each completed task to the completed section
-        tasks.forEach(taskElement => {
+        // DOWN: move each completed task in the active list to the completed section.
+        Array.from(taskList.querySelectorAll(DOM_SELECTORS.TASK)).forEach(taskElement => {
             const checkbox = taskElement.querySelector('input[type="checkbox"]');
             if (checkbox && checkbox.checked) {
                 this.moveToCompleted(taskElement);
             }
         });
 
+        // UP: move any now-uncompleted task in the completed section back to the
+        // active list (restores its original position via moveToActive()).
+        const completedList = this.deps.getElementById(DOM_IDS.COMPLETED_TASK_LIST);
+        if (completedList) {
+            Array.from(completedList.querySelectorAll(DOM_SELECTORS.TASK)).forEach(taskElement => {
+                const checkbox = taskElement.querySelector('input[type="checkbox"]');
+                if (checkbox && !checkbox.checked) {
+                    this.moveToActive(taskElement);
+                }
+            });
+        }
     }
 }
 
