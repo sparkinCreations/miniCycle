@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Generate a styled PDF of miniCycle feature testing directions."""
 
+import os
+
 from fpdf import FPDF
 
 class TestingPDF(FPDF):
@@ -185,7 +187,7 @@ def create_pdf():
     pdf.body_text('-  Anything that surprised you or felt out of place?')
     pdf.body_text('-  Any features you wish worked differently?')
 
-    output_path = '/Users/mjaynumberone/Documents/Programs/Code/miniCycle/docs/future-work/miniCycle_Testing_Directions.pdf'
+    output_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'miniCycle_Testing_Directions.pdf')
     pdf.output(output_path)
     return output_path
 
