@@ -14,10 +14,13 @@
 
 let initHeaderLayout = null;
 let measureHeaderHeight = null;
+let measureNavDotsClearance = null;
 let destroyHeaderLayout = null;
 let HEADER_HEIGHT_VAR = null;
+let NAV_DOTS_CLEARANCE_VAR = null;
 
 const HEADER_CLASS = 'fixed-header-container';
+const NAV_DOTS_ID = 'nav-dots';
 
 export async function runHeaderLayoutManagerTests(resultsDiv) {
     resultsDiv.innerHTML = '<h2>📐 HeaderLayoutManager Tests (DI-Pure)</h2><h3>Loading module...</h3>';
@@ -27,8 +30,10 @@ export async function runHeaderLayoutManagerTests(resultsDiv) {
         const module = await import(`../modules/ui/headerLayoutManager.js?v=${cacheBuster}`);
         initHeaderLayout = module.initHeaderLayout;
         measureHeaderHeight = module.measureHeaderHeight;
+        measureNavDotsClearance = module.measureNavDotsClearance;
         destroyHeaderLayout = module.destroyHeaderLayout;
         HEADER_HEIGHT_VAR = module.HEADER_HEIGHT_VAR;
+        NAV_DOTS_CLEARANCE_VAR = module.NAV_DOTS_CLEARANCE_VAR;
         resultsDiv.innerHTML = '<h2>📐 HeaderLayoutManager Tests (DI-Pure)</h2><h3>Running tests...</h3>';
     } catch (e) {
         resultsDiv.innerHTML = `<h2>📐 HeaderLayoutManager Tests</h2><div class="result fail">❌ Failed to import module: ${e.message}</div>`;
@@ -59,6 +64,27 @@ export async function runHeaderLayoutManagerTests(resultsDiv) {
         document.querySelectorAll(`.${HEADER_CLASS}`).forEach(el => el.remove());
     }
 
+    function readNavVar() {
+        return document.documentElement.style.getPropertyValue(NAV_DOTS_CLEARANCE_VAR).trim();
+    }
+    function clearNavVar() {
+        document.documentElement.style.removeProperty(NAV_DOTS_CLEARANCE_VAR);
+    }
+    // Fixed to the viewport bottom like the real nav dots; clearance the module
+    // computes = innerHeight - rect.top = heightPx + bottomPx, independent of
+    // the viewport height — so assertions are deterministic.
+    function makeNavDots(heightPx, bottomPx) {
+        const el = document.createElement('nav');
+        el.id = NAV_DOTS_ID;
+        el.style.cssText = `position:fixed;bottom:${bottomPx}px;left:0;width:100px;height:${heightPx}px;box-sizing:border-box;`;
+        document.body.appendChild(el);
+        return el;
+    }
+    function removeNavDots() {
+        const el = document.getElementById(NAV_DOTS_ID);
+        if (el) el.remove();
+    }
+
     async function test(name, testFn) {
         total.count++;
         try {
@@ -70,10 +96,12 @@ export async function runHeaderLayoutManagerTests(resultsDiv) {
             resultsDiv.innerHTML += `<div class="result fail">❌ ${name}: ${error.message}</div>`;
             console.error(`Test failed: ${name}`, error);
         } finally {
-            // Isolate every test: stop observers/listeners, drop fixtures + var.
+            // Isolate every test: stop observers/listeners, drop fixtures + vars.
             try { destroyHeaderLayout(); } catch (_e) { /* ignore */ }
             removeHeaders();
+            removeNavDots();
             clearVar();
+            clearNavVar();
         }
     }
 
@@ -171,6 +199,59 @@ export async function runHeaderLayoutManagerTests(resultsDiv) {
         window.dispatchEvent(new Event('resize'));
         await new Promise(r => setTimeout(r, 60));
         assert(readVar() === '100px', `expected var to stay 100px after destroy, got "${readVar()}"`);
+    });
+
+    // ---- measureNavDotsClearance ------------------------------------------
+
+    resultsDiv.innerHTML += '<h4 class="test-section">⚓ measureNavDotsClearance</h4>';
+
+    await test('exports measureNavDotsClearance and NAV_DOTS_CLEARANCE_VAR', () => {
+        assert(typeof measureNavDotsClearance === 'function', 'measureNavDotsClearance missing');
+        assert(NAV_DOTS_CLEARANCE_VAR === '--nav-dots-clearance', `expected --nav-dots-clearance, got ${NAV_DOTS_CLEARANCE_VAR}`);
+    });
+
+    await test('returns 0 and sets no variable when nav dots are absent', () => {
+        removeNavDots();
+        clearNavVar();
+        const c = measureNavDotsClearance();
+        assert(c === 0, `expected 0, got ${c}`);
+        assert(readNavVar() === '', `expected unset var, got "${readNavVar()}"`);
+    });
+
+    await test('publishes the bottom-band clearance (height + bottom offset)', () => {
+        makeNavDots(48, 35); // 48px tall, 35px off the bottom → clearance 83
+        const c = measureNavDotsClearance();
+        assert(c === 83, `expected 83, got ${c}`);
+        assert(readNavVar() === '83px', `expected 83px, got "${readNavVar()}"`);
+    });
+
+    await test('re-measure reflects a moved/resized nav-dots band', () => {
+        const el = makeNavDots(40, 20); // clearance 60
+        assert(measureNavDotsClearance() === 60, 'initial clearance should be 60');
+        el.style.height = '50px';
+        el.style.bottom = '30px'; // clearance 80
+        assert(measureNavDotsClearance() === 80, `expected 80 after move, got ${readNavVar()}`);
+    });
+
+    await test('initHeaderLayout publishes BOTH header and nav-dots variables', () => {
+        makeHeader(120);
+        makeNavDots(48, 35);
+        const ok = initHeaderLayout();
+        assert(ok === true, `expected true, got ${ok}`);
+        assert(readVar() === '120px', `expected header 120px, got "${readVar()}"`);
+        assert(readNavVar() === '83px', `expected nav clearance 83px, got "${readNavVar()}"`);
+    });
+
+    await test('destroy stops nav-dots updates too', async () => {
+        const el = makeNavDots(48, 35);
+        makeHeader(100);
+        initHeaderLayout();
+        assert(readNavVar() === '83px', 'pre-destroy nav var should be 83px');
+        destroyHeaderLayout();
+        el.style.height = '120px'; // would be clearance 155 if still observed
+        window.dispatchEvent(new Event('resize'));
+        await new Promise(r => setTimeout(r, 60));
+        assert(readNavVar() === '83px', `expected nav var to stay 83px after destroy, got "${readNavVar()}"`);
     });
 
     // ---- summary -----------------------------------------------------------
