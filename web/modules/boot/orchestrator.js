@@ -26,6 +26,7 @@
 
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { isNativeApp } from '../platform/capacitorBridge.js';
 
 // ✅ Single source of truth: Read version from globalThis (set by version.js)
 // Falls back to 'dev-local' for local development without version.js
@@ -956,6 +957,12 @@ async function initApp() {
 
 // Wait for service worker to be ready (prevents first-load import failures)
 async function waitForServiceWorker(timeoutMs = 3000) {
+  // Native (Capacitor) ships every asset bundled locally and registers NO service
+  // worker — build-android-www.cjs strips the SW registration from index.html. The
+  // Android WebView still exposes navigator.serviceWorker, so `.ready` never resolves
+  // and this would burn the full timeout (~8s) on every cold start. Skip it on native;
+  // there is nothing to wait for. No effect on the web/PWA build (isNativeApp() is false).
+  if (isNativeApp()) return;
   if (!('serviceWorker' in navigator)) return;
 
   // iOS kills SW when PWA is backgrounded. It needs more time to restart.
