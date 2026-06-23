@@ -639,6 +639,7 @@ export const DEFAULT_LABELS = deepFreeze({
         recurringInitFailed:     'Recurring feature initialization failed',
 
         // Reminder notifications
+        reminderNotificationTitle: 'miniCycle Reminder',
         reminderTasksToComplete: 'You have tasks to complete:',
         reminderEnabled:         'Reminder enabled: {settings}',
         reminderCustomSettings:  'Custom settings',

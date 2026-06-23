@@ -182,6 +182,7 @@ LITE_ONLY=false
 AUTO_CHANGELOG=false
 AUTO_SAMPLES=false
 BUILD_CHROME=false
+BUILD_ANDROID=false
 DRY_RUN=false
 
 # ============================================
@@ -224,6 +225,10 @@ while [[ $# -gt 0 ]]; do
             BUILD_CHROME=true
             shift
             ;;
+        --android|-A)
+            BUILD_ANDROID=true
+            shift
+            ;;
         --dry-run|-n)
             DRY_RUN=true
             shift
@@ -238,6 +243,7 @@ while [[ $# -gt 0 ]]; do
             echo "  --changelog, -c Auto-generate changelog from git commits"
             echo "  --samples, -s   Regenerate sample routine manifest from .mcyc files"
             echo "  --chrome, -C    Rebuild the Chrome (full) extension to chrome/full/"
+            echo "  --android, -A   Rebuild the Android (Capacitor) web payload + sync versionName"
             echo "  --lite, -l      Include lite version files (normally static)"
             echo "  --lite-only     Update ONLY lite version files (independent of main app)"
             echo "  --tag, -t       Auto-create git tag (use with --auto)"
@@ -1854,6 +1860,86 @@ if [ "$REBUILD_CHROME" = true ]; then
     fi
 else
     echo "⏭️  Skipping Chrome extension"
+fi
+
+echo ""
+
+# ============================================
+# OPTIONAL: REBUILD ANDROID (CAPACITOR) PAYLOAD
+# ============================================
+# Regenerates mobile/android/www/ from web/ (drops the PWA/SW blocks, prunes
+# assets), syncs the native versionName to $NEW_VERSION, and bumps versionCode
+# (Play requires a strictly-increasing integer). Runs BEFORE the git-tag stage so
+# the rebuilt payload + version bump are part of the release commit/tag.
+# See web/scripts/build-android-www.cjs and mobile/ANDROID_BUILD_AND_DIFFERENCES.md.
+
+echo "🤖 Optional: Android (Capacitor) App"
+echo "------------------------------------"
+
+REBUILD_ANDROID=false
+if [ "$LITE_ONLY" = true ]; then
+    echo "⏭️  Skipping Android app (LITE ONLY mode)"
+elif [ "$AUTO_MODE" = true ]; then
+    if [ "$BUILD_ANDROID" = true ]; then
+        REBUILD_ANDROID=true
+        echo "🤖 Auto mode: Rebuilding Android web payload..."
+    else
+        echo "⏭️  Skipping Android app (use --android to rebuild)"
+    fi
+else
+    if [ "$BUILD_ANDROID" = true ]; then
+        REBUILD_ANDROID=true
+    else
+        read -p "Rebuild Android (Capacitor) web payload to mobile/android/www/? (y/N): " -n 1 -r
+        echo ""
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            REBUILD_ANDROID=true
+        fi
+    fi
+fi
+
+if [ "$REBUILD_ANDROID" = true ]; then
+    if [ -f "scripts/build-android-www.cjs" ]; then
+        # Don't let a build failure abort the whole run (set -e) — the version
+        # files are already updated; just warn that the payload may be stale.
+        if node scripts/build-android-www.cjs; then
+            echo "✅ Rebuilt mobile/android/www/ (v$NEW_VERSION)"
+        else
+            echo "⚠️  Android web payload build failed — mobile/android/www/ may be stale"
+        fi
+
+        # Sync the native versionName to NEW_VERSION and bump versionCode. The
+        # native build.gradle is committed (not generated), so patch it in place.
+        ANDROID_GRADLE="../mobile/android/android/app/build.gradle"
+        if [ "$DRY_RUN" = true ]; then
+            echo "🔍 [dry-run] would set versionName \"$NEW_VERSION\" and bump versionCode in $ANDROID_GRADLE"
+        elif [ -f "$ANDROID_GRADLE" ]; then
+            "${SED_INPLACE[@]}" "s/versionName \"[^\"]*\"/versionName \"$NEW_VERSION\"/" "$ANDROID_GRADLE"
+            CURRENT_CODE=$(grep -oE 'versionCode[[:space:]]+[0-9]+' "$ANDROID_GRADLE" | grep -oE '[0-9]+' | head -1)
+            if [ -n "$CURRENT_CODE" ]; then
+                NEW_CODE=$((CURRENT_CODE + 1))
+                "${SED_INPLACE[@]}" "s/versionCode [0-9][0-9]*/versionCode $NEW_CODE/" "$ANDROID_GRADLE"
+                echo "✅ Android version: versionName $NEW_VERSION, versionCode $CURRENT_CODE → $NEW_CODE"
+            else
+                echo "⚠️  Could not read versionCode from build.gradle — bump it manually"
+            fi
+
+            # Copy the rebuilt payload into the native project if Capacitor is installed.
+            if [ -d "../mobile/android/node_modules/@capacitor/cli" ]; then
+                ( cd ../mobile/android && npx cap sync android ) \
+                    && echo "✅ cap sync complete" \
+                    || echo "⚠️  cap sync failed — run 'npm run sync' in mobile/android before building"
+            else
+                echo "ℹ️  Capacitor not installed in mobile/android — run 'npm install && npm run sync' there before building the APK"
+            fi
+        else
+            echo "⚠️  $ANDROID_GRADLE not found — skipping native version sync"
+        fi
+    else
+        echo "⚠️  scripts/build-android-www.cjs not found - skipping"
+    fi
+else
+    echo "⏭️  Skipping Android app"
 fi
 
 echo ""

@@ -46,15 +46,19 @@ npm run assemble:release   # → release AAB (then sign for Play)
 
 - **Application id:** `com.sparkincreations.minicycle`
 - **App name:** miniCycle
-- **Permissions:** `INTERNET` only (feedback form → `api.web3forms.com`)
+- **Permissions:** `INTERNET` (feedback form → `api.web3forms.com`) + `POST_NOTIFICATIONS`
+  (auto-merged from the local-notifications plugin).
 - **Version:** `versionName` in `android/app/build.gradle` tracks `APP_VERSION` (`web/version.js`);
-  bump `versionCode` for every Play upload.
+  bump `versionCode` for every Play upload. `update-version.sh --android` does both automatically.
 
-## What's NOT here yet
+## Native features
 
-Native bridges (local notifications for reminders, filesystem/share for `.mcyc`, status bar,
-splash, hardware back button) are the next phase — see the Roadmap in
-[`../ANDROID_BUILD_AND_DIFFERENCES.md`](../ANDROID_BUILD_AND_DIFFERENCES.md#9-roadmap--native-feature-bridges-next-phase).
+Native behavior is bridged through `web/modules/platform/capacitorBridge.js` (feature-gated, so
+the web app is unaffected). Already wired: **reminder notifications** (local-notifications),
+**routine export/share** of `.mcyc` (filesystem + share sheet), **status-bar theming**, **splash
+hide**, and **hardware back button** (closes the open modal/menu first). See
+[`../ANDROID_BUILD_AND_DIFFERENCES.md` §9](../ANDROID_BUILD_AND_DIFFERENCES.md#9-native-feature-bridges)
+for how it works and what's still open (`.mcyc` import, branded notification icon).
 
 ## Don't
 

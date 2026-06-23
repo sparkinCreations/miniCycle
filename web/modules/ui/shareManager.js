@@ -11,6 +11,7 @@
 import { createDIModule, required, optional } from '../core/diBase.js';
 import { DOM_IDS, APP_URL, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { isNativeApp, shareRoutineFileNative, shareTextNative } from '../platform/capacitorBridge.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -159,6 +160,25 @@ export function setupShareRoutineButton() {
         const dataBlob = new Blob([dataStr], { type: 'application/json' });
         const file = new File([dataBlob], fileName, { type: 'application/json' });
 
+        // Native (Capacitor) path — route through the Android share sheet (which
+        // includes "Save to Files"). The web download fallback doesn't work in the
+        // WebView, so if native takes over we never fall through.
+        if (isNativeApp()) {
+            _deps.hideMainMenu?.();
+            const result = await shareRoutineFileNative({
+                data: dataStr,
+                fileName,
+                title: cycleName,
+                text: `Check out my "${cycleName}" routine on miniCycle!\n${APP_URL}`
+            });
+            if (result.handled) {
+                if (!result.cancelled) {
+                    _deps.showNotification?.('✅ ' + getLabel('notify.shareRoutineSuccess'), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
+                }
+                return;
+            }
+        }
+
         // Try Web Share API with file
         // NOTE: navigator.share() must be called BEFORE hideMainMenu() —
         // the menu close consumes the user activation gesture, causing NotAllowedError.
@@ -232,6 +252,22 @@ export function setupShareAppButton() {
 
     shareAppBtn._clickHandler = async () => {
         const appUrl = APP_URL;
+
+        // Native (Capacitor) path — use the Android share sheet.
+        if (isNativeApp()) {
+            _deps.hideMainMenu?.();
+            const result = await shareTextNative({
+                title: getLabel('share.appShareTitle'),
+                text: getLabel('share.appShareText'),
+                url: appUrl
+            });
+            if (result.handled) {
+                if (!result.cancelled) {
+                    _deps.showNotification?.('✅ ' + getLabel('notify.shareAppSuccess'), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
+                }
+                return;
+            }
+        }
 
         // Try Web Share API
         // NOTE: navigator.share() must be called BEFORE hideMainMenu() —

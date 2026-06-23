@@ -58,6 +58,7 @@
 
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { initNativeShell } from '../platform/capacitorBridge.js';
 
 let _appContextMod = null;
 
@@ -1006,6 +1007,10 @@ export async function initUIBoot({ GlobalUtils, deps, appContextMod }) {
   // Hide loader and focus input
   hideAppLoader();
   requestAnimationFrame(() => taskInput?.focus({ focusVisible: false }));
+
+  // Native shell setup (Android/Capacitor): status bar theming, splash hide,
+  // hardware back button. No-op on the web — self-gated by isNativeApp().
+  initNativeShell();
 
   // ========== SESSION BACKUP (non-blocking) ==========
   // Create a session backup on every app open (keeps last 5)

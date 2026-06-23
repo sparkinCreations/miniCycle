@@ -77,6 +77,9 @@ but there are **fewer** of them than for the Chrome extension:
 | **`pages/` + `tests/` links** | Relative | Rewritten to absolute `https://minicycle.app/…` | Not bundled; would 404 from the local origin |
 | **Automated-test tab** | Visible in the testing modal | Hidden via `android-overrides.css` | `tests/` isn't bundled; the iframe would 404 |
 | **"Check for Updates" button** | Triggers SW update | **No-op** (no SW); updates come via Play Store | Distribution model differs — see §7 |
+| **Reminder notifications** | web `Notification` / SW `showNotification` | **Native** via `@capacitor/local-notifications` | WebView lacks the web Notification API — see §9 |
+| **Routine export / share** (`.mcyc`) | File System Access / `navigator.share` / download | **Native** share sheet via `@capacitor/share` (+ filesystem) | WebView can't anchor-download or use File System Access — see §9 |
+| **Status bar / splash / back button** | n/a (browser chrome) | **Native** via status-bar/splash/app plugins (`initNativeShell()`) | Native shell UX — see §9 |
 | **Assets** | Full `web/assets/` (~1.2 GB) | Only **referenced** assets (~0.4 MB) + `fonts/` | Keep the package small |
 | **App identity** | PWA title | `appId com.sparkincreations.minicycle`, name "miniCycle" (native) | Play Store identity |
 | **External hosts** | `api.web3forms.com` (feedback) | Same (allowed by the WebView; `INTERNET` permission) | Feedback form |
@@ -157,8 +160,10 @@ Generated once by `npx cap add android`; committed and customized thereafter.
 
 - **App identity:** `applicationId` / `namespace` = `com.sparkincreations.minicycle`, app name
   "miniCycle" (`res/values/strings.xml`). Set in `android/app/build.gradle`.
-- **Permissions:** only `INTERNET` (for the feedback form's request to `api.web3forms.com`).
-  Adding local notifications or file share in a future phase will add their permissions here.
+- **Permissions:** `INTERNET` (feedback form → `api.web3forms.com`) plus `POST_NOTIFICATIONS`
+  (+ `RECEIVE_BOOT_COMPLETED`, `WAKE_LOCK`), merged automatically from the
+  `@capacitor/local-notifications` plugin's manifest — they are not declared by hand.
+  Filesystem/Share need no extra permission (cache dir + system share sheet).
 - **Version:** `versionName` in `android/app/build.gradle` tracks `APP_VERSION`; `versionCode`
   is a separate integer that must increase for every Play upload (see §7).
 - **Config:** `mobile/android/capacitor.config.json` (`appId`, `appName`, `webDir: "www"`,
@@ -201,6 +206,16 @@ mobile/android/
 - **`versionCode`** is Android-specific: it is **not** a semver string but a monotonically
   increasing integer. Google Play rejects an upload whose `versionCode` is not greater than the
   last. Bump it by 1 every release (independent of `versionName`).
+- **Version bump from the release script:** `update-version.sh --android` regenerates the web
+  payload, syncs `versionName` to `APP_VERSION`, and **bumps `versionCode` by 1** in
+  `build.gradle` (then `cap sync` if Capacitor is installed) — the Android counterpart to
+  `--chrome`. It runs before the git-tag stage so the bump is part of the release:
+
+  ```bash
+  cd web && ./scripts/update-version.sh --auto --android        # bump + rebuild Android payload
+  cd web && ./scripts/update-version.sh --auto --android --chrome --tag   # both platforms + tag
+  ```
+
 - **Release build:** `npm run sync`, then build a **signed AAB** (`./gradlew bundleRelease` or
   Android Studio → Build → Generate Signed Bundle) and upload to the Play Console. Use a debug
   APK (`npm run assemble:debug`) for sideload testing.
@@ -224,23 +239,49 @@ mobile/android/
 
 ---
 
-## 9. Roadmap — native feature bridges (next phase)
+## 9. Native feature bridges
 
-The app currently runs the web app as-is in a WebView. The web app has no bundler (it loads ES
-modules directly), so native plugins are best reached through the runtime bridge
-(`window.Capacitor?.Plugins?.<Name>`) with a graceful web fallback, rather than `import`ed.
-Planned, each behind a capability check so the same module keeps working on the web:
+The web app has no bundler (it loads ES modules directly), so the `@capacitor/*` JS packages
+**cannot be `import`ed** in the browser. Instead, all native access goes through a single leaf
+module, **`web/modules/platform/capacitorBridge.js`**, which reaches plugins via the runtime
+proxy (`Capacitor.registerPlugin(name)`) — guarded by `Capacitor.isPluginAvailable(name)`.
 
-- **Local notifications** (`@capacitor/local-notifications`) — fire recurring-task reminders
-  natively (wire into the reminders module). Adds the notifications permission.
-- **Filesystem + Share** (`@capacitor/filesystem`, `@capacitor/share`) — native `.mcyc`
-  import/export and "share routine" instead of browser download/upload.
-- **Status bar + Splash** (`@capacitor/status-bar`, `@capacitor/splash-screen`) — themed status
-  bar (match dark/light mode) and a branded splash.
-- **Hardware back button** (`@capacitor/app`) — close the open modal/menu on back instead of
-  exiting the app.
-- **"Check for Updates"** — currently a no-op in the app; hide it or repoint it to the Play
-  listing.
+**The safety contract:** on the web there is no global `Capacitor`, so `isNativeApp()` is false
+and every bridge export is a no-op returning a "not handled" result. Callers keep their existing
+web behavior unchanged and only gain native behavior inside the Android app. The bridge is a
+pure leaf (no DI, imports nothing from other modules) — imported directly like `constants.js`,
+**not** registered in `moduleManifests.js`.
+
+The native side is wired by `npm install @capacitor/<plugin>` + `npx cap sync` in
+`mobile/android` (the plugins are committed in `package.json`); `cap sync` registers them in the
+Gradle project, and `LocalNotifications` merges the `POST_NOTIFICATIONS` permission automatically
+via Android manifest merging.
+
+Implemented bridges and where they hook in:
+
+| Bridge | Plugin(s) | Web-app integration point | Web fallback (unchanged) |
+|---|---|---|---|
+| **Status bar / Splash / Back button** | `@capacitor/status-bar`, `@capacitor/splash-screen`, `@capacitor/app` | `initNativeShell()` called from `uiBoot.js` | n/a (native-only) |
+| **Local notifications** | `@capacitor/local-notifications` | `modules/features/reminders.js` — native send path + permission flow | web `Notification` / SW `showNotification` |
+| **Routine export** (`.mcyc`) | `@capacitor/filesystem`, `@capacitor/share` | `modules/ui/cycleExportManager.js` | File System Access API → anchor download |
+| **Routine / app share** | `@capacitor/share` (+ filesystem for files) | `modules/ui/shareManager.js` | `navigator.share` → download / clipboard |
+
+- **Status bar** tracks the app's `dark-mode` class via a `MutationObserver`, so it re-themes
+  when the user toggles dark mode.
+- **Back button** dispatches `Escape` to close the top-most open modal/menu; only navigates
+  back / exits when nothing is open.
+- **Export/share** write the `.mcyc` to the cache dir then open the Android share sheet (which
+  includes "Save to Files"), since the WebView can't do an anchor download or the File System
+  Access API.
+
+Still open (not yet wired):
+
+- **`.mcyc` import** — the file-open path (deep links / `chrome.intent` for `.mcyc` files) is
+  not yet handled; import still uses the web file picker.
+- **Notification small icon** — currently the launcher icon; add a monochrome
+  `res/drawable/ic_stat_*` and set `smallIcon` in the bridge to brand the status-bar icon.
+- **"Check for Updates"** — a no-op in the app (updates ship via Play); hide it or repoint it to
+  the Play listing.
 
 ---
 

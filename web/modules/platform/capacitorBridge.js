@@ -1,0 +1,250 @@
+/**
+ * capacitorBridge.js — the single point of contact with the Capacitor native runtime.
+ *
+ * Pure leaf module: it imports nothing from other app modules and is injected
+ * nowhere via DI. Import it directly, the same way constants.js / labelResolver
+ * helpers are imported. It ships verbatim in BOTH the web app and the Android
+ * (Capacitor) build — the Android www/ payload is generated from web/, so this
+ * file is identical in both.
+ *
+ * The contract that keeps the web app safe: on the web there is no global
+ * `Capacitor`, so `isNativeApp()` is false and every export is a no-op that
+ * returns a "not handled" result. Callers therefore keep their existing web
+ * behavior unchanged and only gain native behavior inside the Android app.
+ *
+ * Native plugins are reached through the runtime proxy (Capacitor.registerPlugin)
+ * — NOT through `import`. miniCycle has no bundler (it loads ES modules directly),
+ * so the @capacitor/* JS packages cannot be imported in the browser; the proxy
+ * forwards method calls to the natively-registered plugin instead. The native
+ * side is wired by `npm install @capacitor/<plugin>` + `npx cap sync` in
+ * mobile/android. See mobile/ANDROID_BUILD_AND_DIFFERENCES.md §9.
+ */
+
+'use strict';
+
+// ── platform detection ───────────────────────────────────────────────────────
+
+function cap() {
+    // globalThis avoids a hard window.* reference (also works in workers).
+    return typeof globalThis !== 'undefined' ? globalThis.Capacitor : undefined;
+}
+
+/** True only inside a Capacitor native shell (the Android app). False on the web. */
+export function isNativeApp() {
+    const c = cap();
+    return !!(c && typeof c.isNativePlatform === 'function' && c.isNativePlatform());
+}
+
+/**
+ * Resolve a native plugin proxy by name, or null if unavailable.
+ * Guards on isPluginAvailable so calling a method on a not-installed plugin
+ * can't throw "not implemented".
+ */
+function getPlugin(name) {
+    const c = cap();
+    if (!c || !isNativeApp()) return null;
+    if (typeof c.isPluginAvailable === 'function' && !c.isPluginAvailable(name)) return null;
+    if (typeof c.registerPlugin === 'function') return c.registerPlugin(name);
+    return (c.Plugins && c.Plugins[name]) || null;
+}
+
+// ── 1. native shell init (status bar, splash, hardware back) ──────────────────
+
+let _shellInitialized = false;
+
+/**
+ * One-time native-shell setup. No-op on the web (and safe to call there).
+ * Idempotent — guarded so repeated boots don't stack listeners.
+ *
+ *  - StatusBar: match the app's dark/light mode and keep it in sync via a
+ *    MutationObserver on the `dark-mode` class (set by routineLoader/appInit).
+ *  - SplashScreen: hide it once the app UI is up.
+ *  - App (back button): close the top-most open modal/menu instead of exiting;
+ *    only exit when nothing is open.
+ */
+export function initNativeShell() {
+    if (_shellInitialized || !isNativeApp()) return;
+    _shellInitialized = true;
+
+    syncStatusBarToTheme();
+    observeThemeForStatusBar();
+    hideSplash();
+    wireHardwareBackButton();
+}
+
+function isDarkMode() {
+    return document.documentElement.classList.contains('dark-mode') ||
+        document.body.classList.contains('dark-mode');
+}
+
+function syncStatusBarToTheme() {
+    const StatusBar = getPlugin('StatusBar');
+    if (!StatusBar) return;
+    const dark = isDarkMode();
+    // Style.Dark = light text (for dark backgrounds); Style.Light = dark text.
+    StatusBar.setStyle?.({ style: dark ? 'DARK' : 'LIGHT' }).catch(() => {});
+    StatusBar.setBackgroundColor?.({ color: dark ? '#1a1a2e' : '#4c79ff' }).catch(() => {});
+}
+
+function observeThemeForStatusBar() {
+    if (typeof MutationObserver === 'undefined') return;
+    const obs = new MutationObserver(() => syncStatusBarToTheme());
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    obs.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+}
+
+function hideSplash() {
+    const SplashScreen = getPlugin('SplashScreen');
+    SplashScreen?.hide?.().catch(() => {});
+}
+
+function wireHardwareBackButton() {
+    const App = getPlugin('App');
+    if (!App?.addListener) return;
+    App.addListener('backButton', ({ canGoBack } = {}) => {
+        // If anything dismissable is open, close it and swallow the back press.
+        if (dismissTopOverlay()) return;
+        // Otherwise let the WebView navigate back, or exit at the root.
+        if (canGoBack) {
+            window.history.back();
+        } else {
+            App.exitApp?.();
+        }
+    });
+}
+
+/**
+ * Close the top-most open overlay (modal/menu) if there is one.
+ * Returns true if something was closed (back press handled).
+ * Pure DOM-based so it needs no DI: it dispatches Escape, which the app's
+ * modals/menus already listen for, then falls back to clicking a visible
+ * close/overlay element.
+ */
+function dismissTopOverlay() {
+    // The app's modals and main menu close on Escape — reuse that path.
+    const openOverlay = document.querySelector(
+        '.mini-modal-overlay:not([hidden]), .modal-overlay:not([hidden]), ' +
+        '#menu.visible, .menu-container.visible, [data-modal-open="true"]'
+    );
+    if (!openOverlay) return false;
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    return true;
+}
+
+// ── 2. notifications ──────────────────────────────────────────────────────────
+
+let _notifyId = 1;
+
+/**
+ * Request the native notification permission.
+ * @returns {Promise<'granted'|'denied'|null>} null when not on native.
+ */
+export async function requestNotificationPermission() {
+    const LocalNotifications = getPlugin('LocalNotifications');
+    if (!LocalNotifications) return null;
+    try {
+        const res = await LocalNotifications.requestPermissions();
+        return res?.display === 'granted' ? 'granted' : 'denied';
+    } catch {
+        return 'denied';
+    }
+}
+
+/** @returns {Promise<'granted'|'denied'|null>} current permission; null off-native. */
+export async function checkNotificationPermission() {
+    const LocalNotifications = getPlugin('LocalNotifications');
+    if (!LocalNotifications) return null;
+    try {
+        const res = await LocalNotifications.checkPermissions();
+        return res?.display === 'granted' ? 'granted' : 'denied';
+    } catch {
+        return null;
+    }
+}
+
+/**
+ * Fire an immediate local notification on native.
+ * @returns {Promise<boolean>} true if scheduled natively; false otherwise (caller
+ *          should use its web fallback).
+ */
+export async function sendNativeNotification({ title, body }) {
+    const LocalNotifications = getPlugin('LocalNotifications');
+    if (!LocalNotifications) return false;
+    try {
+        const perm = await checkNotificationPermission();
+        if (perm !== 'granted') return false;
+        await LocalNotifications.schedule({
+            notifications: [{
+                id: _notifyId++,
+                title,
+                body,
+                // No `schedule` object = deliver immediately. The small status-bar
+                // icon falls back to the app's launcher icon; to brand it, add a
+                // monochrome res/drawable/ic_stat_* and set `smallIcon` here.
+            }],
+        });
+        return true;
+    } catch (e) {
+        console.warn('[capacitorBridge] native notification failed:', e);
+        return false;
+    }
+}
+
+// ── 3. file share / export (.mcyc) ────────────────────────────────────────────
+
+/**
+ * Share a routine file natively (via the Android share sheet, which includes
+ * "Save to Files"). Writes the payload to the app cache, then shares its URI.
+ *
+ * @param {Object} opts
+ * @param {string} opts.data      File contents (JSON string).
+ * @param {string} opts.fileName  e.g. "Morning_Routine.mcyc".
+ * @param {string} [opts.title]   Share-sheet title.
+ * @param {string} [opts.text]    Accompanying text.
+ * @returns {Promise<{handled: boolean, cancelled?: boolean}>}
+ *          handled:false  → not native / unavailable; caller should fall back.
+ *          handled:true   → native took over (success or user cancel).
+ */
+export async function shareRoutineFileNative({ data, fileName, title, text }) {
+    const Filesystem = getPlugin('Filesystem');
+    const Share = getPlugin('Share');
+    if (!Filesystem || !Share) return { handled: false };
+
+    try {
+        // Write to the cache directory (transient; the share target copies it out).
+        const write = await Filesystem.writeFile({
+            path: fileName,
+            data,
+            directory: 'CACHE',
+            encoding: 'utf8',
+        });
+        const uri = write?.uri || (await Filesystem.getUri({ path: fileName, directory: 'CACHE' }))?.uri;
+        if (!uri) return { handled: false };
+
+        await Share.share({ title, text, files: [uri] });
+        return { handled: true };
+    } catch (e) {
+        // The share plugin throws on user-cancel; treat that as handled (don't
+        // double-prompt with a web download that wouldn't work in the WebView).
+        if (e && /cancel/i.test(e.message || '')) return { handled: true, cancelled: true };
+        console.warn('[capacitorBridge] native share failed:', e);
+        return { handled: true, cancelled: true };
+    }
+}
+
+/**
+ * Share plain text / a URL natively (e.g. "share the app").
+ * @returns {Promise<{handled: boolean, cancelled?: boolean}>} (see above)
+ */
+export async function shareTextNative({ title, text, url }) {
+    const Share = getPlugin('Share');
+    if (!Share) return { handled: false };
+    try {
+        await Share.share({ title, text, url });
+        return { handled: true };
+    } catch (e) {
+        if (e && /cancel/i.test(e.message || '')) return { handled: true, cancelled: true };
+        console.warn('[capacitorBridge] native text share failed:', e);
+        return { handled: true, cancelled: true };
+    }
+}
