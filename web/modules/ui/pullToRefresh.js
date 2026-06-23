@@ -409,6 +409,21 @@ export class PullToRefresh {
             recurringChecked: false
         };
 
+        // 0. Build-freshness check. A pull-to-refresh should get the LATEST
+        // build, not just re-render cached data. The boot layer's
+        // verifyVersionFresh() compares the HTML's baked meta app-version
+        // against the deployed version.js and hard-reloads with a cache clear
+        // if the running build is stale — catching "stale cached HTML/CSS while
+        // the SW is already current", which the registration.waiting check
+        // below misses. Dispatched as an app:* CustomEvent (same decoupling
+        // pattern as app:showNotification) so this module stays window.*-free.
+        // No-op when the build is already current.
+        try {
+            document.dispatchEvent(new CustomEvent('app:verifyVersion'));
+        } catch (err) {
+            console.warn('Version freshness dispatch failed:', err);
+        }
+
         // 1. Check for service worker updates
         if ('serviceWorker' in navigator) {
             try {

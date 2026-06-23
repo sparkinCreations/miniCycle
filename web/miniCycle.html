@@ -55,6 +55,21 @@
 <!-- version.js MUST load synchronously BEFORE modulepreloads to set globalThis.APP_VERSION -->
 <script src="./version.js?v=2.248"></script>
 
+<!-- Build version = the version baked into THIS HTML document (the meta tag
+     above). It is the honest "what am I actually running" signal. By contrast,
+     globalThis.APP_VERSION comes from version.js, which the service worker
+     serves NETWORK-FIRST on a version mismatch — so APP_VERSION can read NEWER
+     than the stale HTML/CSS that's actually rendered. The About dialog and the
+     update checks use getBuildVersion(), never APP_VERSION, so they reflect the
+     real build instead of the network. -->
+<script>
+  window.getBuildVersion = function () {
+    var m = document.querySelector('meta[name="app-version"]');
+    return (m && m.getAttribute('content')) ||
+           (typeof globalThis !== 'undefined' && globalThis.APP_VERSION) || 'unknown';
+  };
+</script>
+
 <!-- iOS PWA Detection - adds .ios-pwa class for safe area fixes -->
 <script>
 (function() {
@@ -451,27 +466,62 @@ if ('serviceWorker' in navigator) {
       const cacheMatch = text.match(/CACHE_VERSION\s*=\s*['"]?([^'"\s;]+)/);
       const serverVersion = match ? match[1] : null;
       const serverCacheVersion = cacheMatch ? cacheMatch[1] : null;
-      if (serverVersion && (serverVersion !== APP_VERSION ||
-          (serverCacheVersion && typeof CACHE_VERSION !== 'undefined' && serverCacheVersion !== String(CACHE_VERSION)))) {
-        const reason = serverVersion !== APP_VERSION
-          ? `APP_VERSION: loaded=${APP_VERSION}, server=${serverVersion}`
-          : `CACHE_VERSION: loaded=${CACHE_VERSION}, server=${serverCacheVersion}`;
+
+      // The ACTUAL running build = the version baked into THIS HTML (meta tag).
+      // version.js (→ APP_VERSION) is served network-first on a mismatch, so it
+      // can read fresh while the HTML/CSS are stale. Comparing the BUILD against
+      // the server catches the "stuck on cached HTML but version.js says latest"
+      // state the old APP_VERSION-only check was blind to.
+      const buildVersion = (typeof window.getBuildVersion === 'function')
+        ? window.getBuildVersion() : APP_VERSION;
+      const buildStale = !!(serverVersion && buildVersion && buildVersion !== serverVersion);
+      const versionJsStale = !!(serverVersion && (serverVersion !== APP_VERSION ||
+          (serverCacheVersion && typeof CACHE_VERSION !== 'undefined' && serverCacheVersion !== String(CACHE_VERSION))));
+
+      if (buildStale || versionJsStale) {
+        const reason = buildStale
+          ? `BUILD (HTML) stale: loaded=${buildVersion}, server=${serverVersion}`
+          : (serverVersion !== APP_VERSION
+              ? `APP_VERSION: loaded=${APP_VERSION}, server=${serverVersion}`
+              : `CACHE_VERSION: loaded=${CACHE_VERSION}, server=${serverCacheVersion}`);
         console.warn(`🔄 VERSION MISMATCH: ${reason}`);
-        // Sync localStorage so the early boot check on the reloaded page
-        // sees a matching version and doesn't trigger a second reload.
+
+        // Loop guard: if we already healed for this server version THIS session
+        // and the build is STILL stale, stop reloading (the cache can't refresh
+        // right now — e.g. flaky network). sessionStorage clears on a full app
+        // close, so a fresh launch retries. Keyed on server version so a newer
+        // deploy still triggers a heal.
         try {
+          if (buildStale && sessionStorage.getItem('__miniCycle_buildHeal') === serverVersion) {
+            console.warn('⚠️ Build still stale after a heal attempt this session — not reloading again');
+            return;
+          }
+          sessionStorage.setItem('__miniCycle_buildHeal', serverVersion);
+          // Sync localStorage so the early boot check on the reloaded page
+          // sees a matching version and doesn't trigger a second reload.
           localStorage.setItem('__miniCycle_lastVersion', serverVersion);
           sessionStorage.setItem('__miniCycle_justCleared', serverVersion);
         } catch (e) { /* storage unavailable */ }
-        // Clear caches and reload
+
+        // Clear caches AND unregister the SW so the reload fetches HTML straight
+        // from the network — a cache-first navigation handler could otherwise
+        // re-serve the same stale HTML even after the caches are cleared.
         if ('caches' in window) {
-          const keys = await caches.keys();
-          await Promise.all(keys.map(k => caches.delete(k)));
+          try {
+            const keys = await caches.keys();
+            await Promise.all(keys.map(k => caches.delete(k)));
+          } catch (e) { /* ignore */ }
+        }
+        if ('serviceWorker' in navigator) {
+          try {
+            const regs = await navigator.serviceWorker.getRegistrations();
+            await Promise.all(regs.map(r => r.unregister()));
+          } catch (e) { /* ignore */ }
         }
         window.location.href = window.location.pathname + '?_cb=' + Date.now();
         return;
       }
-      console.log(`✅ Version verified: ${APP_VERSION} (cache ${CACHE_VERSION})`);
+      console.log(`✅ Version verified: build ${buildVersion} (app ${APP_VERSION}, cache ${CACHE_VERSION})`);
     } catch (err) {
       console.warn('Version check failed (offline?):', err);
     } finally {
@@ -481,6 +531,9 @@ if ('serviceWorker' in navigator) {
 
   // Run version check on focus (iOS PWA) and visibility change
   window.addEventListener('focus', verifyVersionFresh);
+  // Pull-to-refresh dispatches this so an explicit refresh gesture gets the
+  // latest BUILD (heals a stale cached HTML/CSS), not just a data re-render.
+  document.addEventListener('app:verifyVersion', verifyVersionFresh);
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) verifyVersionFresh();
   });
@@ -711,7 +764,47 @@ function _confirm(options) {
   }));
 }
 
-// ✅ Expose update function globally for manual updates
+// ✅ Fetch the authoritative DEPLOYED version (bypasses every cache).
+async function fetchServerVersion() {
+  try {
+    const res = await fetch(`./version.js?_cb=${Date.now()}`, {
+      cache: 'no-store',
+      headers: { 'Cache-Control': 'no-cache' }
+    });
+    const txt = await res.text();
+    const m = txt.match(/APP_VERSION\s*=\s*['"]([^'"]+)['"]/);
+    return m ? m[1] : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+// ✅ Apply a pending update by evicting caches + the SW so the next load is a
+// clean, current build. Used when the RUNNING BUILD is older than what's
+// deployed — covers both a waiting SW and the "stale cached HTML while the SW
+// is already current" case that an SW-skipWaiting alone can't fix.
+async function applyUpdateAndReload() {
+  _notify('🔄 Updating…', 'info', 3000);
+  try {
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+    }
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r => r.unregister()));
+    }
+  } catch (e) {
+    console.warn('applyUpdateAndReload cleanup failed:', e);
+  }
+  window.location.href = window.location.pathname + '?_cb=' + Date.now();
+}
+
+// ✅ Expose update function globally for manual updates.
+// Compares the RUNNING BUILD (the HTML's baked meta version) against the
+// deployed version — NOT active-SW vs waiting-SW. The old SW-vs-SW check
+// reported "up to date" whenever the SW was current, even if the rendered
+// HTML/CSS were a stale cached build. Build-vs-server tells the truth.
 window.checkForUpdates = async function() {
   if (!('serviceWorker' in navigator)) {
     console.warn('Service Workers not supported');
@@ -720,49 +813,41 @@ window.checkForUpdates = async function() {
   }
 
   try {
-    const registration = await navigator.serviceWorker.getRegistration();
-    if (!registration) {
-      _notify('❌ No service worker registered', 'error', 3000);
-      return;
-    }
-
-    // Get current version info
-    const currentVersion = await getServiceWorkerVersion(registration);
-
     _notify('🔍 Checking for app updates...', 'info', 2000);
 
-    // Force check for updates
-    await registration.update();
+    const buildVersion = (typeof window.getBuildVersion === 'function')
+      ? window.getBuildVersion() : (window.APP_VERSION || 'unknown');
+    const serverVersion = await fetchServerVersion();
 
-    // Wait a moment for the update check to process
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Also nudge the SW to look for a newer worker (normal update path).
+    const registration = await navigator.serviceWorker.getRegistration();
+    try { await registration?.update?.(); } catch (e) { /* ignore */ }
 
-    // Check if there's a waiting worker (new version available)
-    if (registration.waiting) {
-      // Get new version info from the waiting worker
-      const newVersion = await getWaitingWorkerVersion(registration.waiting);
-
-      // Show detailed update modal
+    if (serverVersion && serverVersion !== buildVersion) {
       _confirm({
         title: "🆕 Update Available!",
-        message: `A new version of miniCycle is available!\n\n📦 Current: ${currentVersion}\n🚀 New: ${newVersion}\n\n✨ New features and improvements\n🐛 Bug fixes and performance enhancements\n🔒 Latest security updates\n\nYou can update now or continue using the current version.`,
+        message: `A newer version of miniCycle is available!\n\n📦 You're running: ${buildVersion}\n🚀 Latest: ${serverVersion}\n\n✨ Tap "Update Now" to clear the cache and load the latest build.`,
         confirmText: "🔄 Update Now",
         cancelText: "Later",
         callback: (confirmed) => {
           if (confirmed) {
-            updateServiceWorker(registration);
-            _notify('🔄 Installing update...', 'info', 3000);
+            applyUpdateAndReload();
           } else {
             _notify('ℹ️ Update postponed - you can install it anytime', 'info', 4000);
           }
         }
       });
-    } else if (registration.installing) {
-      // Update is currently installing
-      _notify('⏳ Update is currently installing...', 'info', 3000);
+    } else if (!serverVersion && registration && registration.waiting) {
+      // Couldn't read the server version (offline?), but a worker is waiting.
+      _confirm({
+        title: "🆕 Update Available!",
+        message: `A new version of miniCycle is ready to install.\n\nApply it now?`,
+        confirmText: "🔄 Update Now",
+        cancelText: "Later",
+        callback: (confirmed) => { if (confirmed) applyUpdateAndReload(); }
+      });
     } else {
-      // No update available
-      _notify(`✅ App is up to date! (${currentVersion})`, 'success', 3000);
+      _notify(`✅ App is up to date! (v${buildVersion})`, 'success', 3000);
     }
 
   } catch (error) {
@@ -884,75 +969,13 @@ async function getServiceWorkerVersion(registration) {
   });
 }
 
-// ✅ Helper function to get version from waiting worker
-async function getWaitingWorkerVersion(waitingWorker) {
-  if (!waitingWorker) return 'Unknown';
-  
-  return new Promise((resolve) => {
-    const messageChannel = new MessageChannel();
-    messageChannel.port1.onmessage = (event) => {
-      // Enhanced version info with both cache and app version
-      const versionData = event.data;
-      if (versionData && versionData.version && versionData.appVersion) {
-        resolve(`SW: ${versionData.version}, App: ${versionData.appVersion}`);
-      } else {
-        resolve(event.data?.version || 'Unknown');
-      }
-    };
-    
-    waitingWorker.postMessage({ type: 'GET_VERSION' }, [messageChannel.port2]);
-    
-    // Timeout after 2 seconds
-    setTimeout(() => resolve('Unknown (New)'), 2000);
-  });
-}
 
-// ✅ Add manual update check to your testing modal
+// ✅ Manual update check (settings + main-menu "Check for Updates" button).
+// Delegates to the build-accurate checkForUpdates so it compares the RUNNING
+// BUILD against the deployed version, instead of the old SW-vs-SW check that
+// falsely reported "up to date" while the rendered HTML/CSS were a stale build.
 window.forceServiceWorkerUpdate = async function() {
-  if (!('serviceWorker' in navigator)) {
-    _notify('❌ Service Workers not supported', 'error', 3000);
-    return;
-  }
-
-  try {
-    const registration = await navigator.serviceWorker.getRegistration();
-    if (registration) {
-      // Get current version before forcing update
-      const currentVersion = await getServiceWorkerVersion(registration);
-
-      _notify('🔄 Force checking for updates...', 'info', 2000);
-
-      await registration.update();
-
-      // Wait a moment for the update check to process
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Check if there's a waiting worker
-      if (registration.waiting) {
-        const newVersion = await getWaitingWorkerVersion(registration.waiting);
-
-        _confirm({
-          title: "🔄 Update Ready!",
-          message: `An update is ready to install!\n\n📊 Current: ${currentVersion}\n🚀 New: ${newVersion}\n\nWould you like to apply it now?`,
-          confirmText: "Apply Update",
-          cancelText: "Cancel",
-          callback: (confirmed) => {
-            if (confirmed) {
-              updateServiceWorker(registration);
-              _notify('🔄 Installing update...', 'info', 3000);
-            }
-          }
-        });
-      } else {
-        _notify(`✅ App is up to date! (${currentVersion})`, 'success', 2000);
-      }
-    } else {
-      _notify('❌ No service worker registered', 'error', 2000);
-    }
-  } catch (error) {
-    console.error('Failed to force update:', error);
-    _notify('❌ Failed to check for updates', 'error', 3000);
-  }
+  return window.checkForUpdates();
 };
 
 // ✅ ADD: Handle PWA shortcuts (add after service worker registration)
