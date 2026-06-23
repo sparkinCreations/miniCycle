@@ -11,6 +11,7 @@
 import { createDIModule, required, optional } from '../core/diBase.js';
 import { DOM_IDS, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { isNativeApp, shareRoutineFileNative } from '../platform/capacitorBridge.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -63,6 +64,23 @@ export async function exportMiniCycleData(miniCycleData, cycleName) {
         const dataStr = JSON.stringify(miniCycleData, null, 2);
         const dataBlob = new Blob([dataStr], { type: "application/json" });
         const sanitizedName = cycleName.replace(/[^a-z0-9]/gi, '_');
+
+        // Native (Capacitor) path — route through the Android share sheet, which
+        // lets the user save to Files/Drive or send the .mcyc elsewhere. The web
+        // download/file-picker fallbacks don't work in the WebView.
+        if (isNativeApp()) {
+            const result = await shareRoutineFileNative({
+                data: dataStr,
+                fileName: `${sanitizedName}.mcyc`,
+                title: cycleName
+            });
+            if (result.handled) {
+                if (!result.cancelled) {
+                    _deps.showNotification?.("✅ " + getLabel('notify.exportSuccess', { vars: { name: cycleName } }), "success", 3000);
+                }
+                return;
+            }
+        }
 
         // Try File System Access API (lets user name file and choose save location)
         if (typeof window.showSaveFilePicker === 'function') {

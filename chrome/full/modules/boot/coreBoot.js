@@ -42,6 +42,7 @@
  */
 
 import { STORAGE_KEYS, Z_INDEX, BOOT_TIMEOUTS } from '../core/constants.js';
+import { isNativeApp } from '../platform/capacitorBridge.js';
 
 // ============================================================================
 // POLYFILLS: Must run before any other code
@@ -306,11 +307,13 @@ async function clearTestModeFlags() {
  * @returns {Promise<boolean>} True if recovery was performed
  */
 async function recoverFromInterruptedTests() {
-    // The in-browser test runner isn't shipped in the Chrome extension build
-    // (tests/ is dev-only and unbundled), so test mode can never activate on the
-    // chrome-extension:// origin. Skip the IndexedDB probe there to avoid a
-    // needless multi-second boot delay. No effect on the web app or local dev.
-    if (location.protocol === 'chrome-extension:') {
+    // The in-browser test runner isn't shipped in the Chrome extension build or the
+    // native (Capacitor/Android) build — tests/ is dev-only and unbundled, so test
+    // mode can never activate on the chrome-extension:// origin or inside the native
+    // shell. Skip the IndexedDB probe there to avoid a needless multi-second boot
+    // delay (the WebView's IndexedDB open hangs to the timeout). No effect on the
+    // web app or local dev.
+    if (location.protocol === 'chrome-extension:' || isNativeApp()) {
         return false;
     }
     try {

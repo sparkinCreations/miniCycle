@@ -58,6 +58,8 @@
 
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { initNativeShell, isNativeApp } from '../platform/capacitorBridge.js';
+import { goToLiteVersion } from '../utils/liteVersion.js';
 
 let _appContextMod = null;
 
@@ -710,9 +712,9 @@ export function handleTryLiteVersionClick(deps) {
     confirmText: getLabel('modal.liteVersionConfirm'),
     cancelText: getLabel('modal.liteVersionCancel'),
     callback: (confirmed) => {
-      if (confirmed) {
-        window.location.href = 'lite/miniCycle-lite.html';
-      }
+      // goToLiteVersion() no-ops on native; the menu button is also hidden there
+      // (see setupTryLiteVersionButton) so this path isn't normally reachable.
+      if (confirmed) goToLiteVersion({ reason: 'menu button' });
     }
   });
 }
@@ -806,6 +808,17 @@ export function setupMenuRetakeTours() {
  * @param {Object} deps - Dependencies containing showConfirmationModal
  */
 export function setupTryLiteVersionButton(_GlobalUtils, deps) {
+  // The lite version is a web-only fallback (old browsers / slow connections).
+  // It isn't bundled in the native (Capacitor) build, so don't offer it there —
+  // hide the menu entries and skip wiring. No effect on web (isNativeApp() false).
+  if (isNativeApp()) {
+    for (const id of ['try-lite-version', 'menu-lite-version']) {
+      const el = document.getElementById(id);
+      if (el) el.style.display = 'none';
+    }
+    return;
+  }
+
   replaceStoredEventListener(
     document.getElementById('try-lite-version'),
     'click',
@@ -1006,6 +1019,10 @@ export async function initUIBoot({ GlobalUtils, deps, appContextMod }) {
   // Hide loader and focus input
   hideAppLoader();
   requestAnimationFrame(() => taskInput?.focus({ focusVisible: false }));
+
+  // Native shell setup (Android/Capacitor): status bar theming, splash hide,
+  // hardware back button. No-op on the web — self-gated by isNativeApp().
+  initNativeShell();
 
   // ========== SESSION BACKUP (non-blocking) ==========
   // Create a session backup on every app open (keeps last 5)

@@ -10,7 +10,7 @@
 <!-- ✅ Translucent status bar shows body background-color on iOS -->
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" id="status-bar-style-meta">
 
-<meta name="app-version" content="2.247">
+<meta name="app-version" content="2.249">
 
 <!-- Content Security Policy -->
 <!-- CSP is served via HTTP header in netlify.toml (production) -->
@@ -29,20 +29,20 @@
 <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"> -->
 <!-- Add cache busting version parameter -->
 <!-- Original CSS (for reference) -->
-<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=2.247"> -->
+<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=2.249"> -->
 
 <!-- Preload critical CSS files (they load in parallel, not blocking) -->
-<link rel="preload" href="styles/main.css?v=2.247" as="style">
-<link rel="preload" href="styles/base/variables.css?v=2.247" as="style">
-<link rel="preload" href="styles/base/reset.css?v=2.247" as="style">
-<link rel="preload" href="styles/layout/app-container.css?v=2.247" as="style">
-<link rel="preload" href="styles/layout/header.css?v=2.247" as="style">
-<link rel="preload" href="styles/components/task-list.css?v=2.247" as="style">
+<link rel="preload" href="styles/main.css?v=2.249" as="style">
+<link rel="preload" href="styles/base/variables.css?v=2.249" as="style">
+<link rel="preload" href="styles/base/reset.css?v=2.249" as="style">
+<link rel="preload" href="styles/layout/app-container.css?v=2.249" as="style">
+<link rel="preload" href="styles/layout/header.css?v=2.249" as="style">
+<link rel="preload" href="styles/components/task-list.css?v=2.249" as="style">
 
 <!-- Async CSS loading - doesn't block render, app starts with inline critical CSS -->
-<link rel="stylesheet" href="styles/main.css?v=2.247" media="print" id="async-main-css">
+<link rel="stylesheet" href="styles/main.css?v=2.249" media="print" id="async-main-css">
 <script src="ext-boot/01.js"></script>
-<noscript><link rel="stylesheet" href="styles/main.css?v=2.247"></noscript>
+<noscript><link rel="stylesheet" href="styles/main.css?v=2.249"></noscript>
 <!-- [chrome-ext build] removed PWA manifest link -->
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -53,10 +53,19 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- version.js MUST load synchronously BEFORE modulepreloads to set globalThis.APP_VERSION -->
-<script src="./version.js?v=2.247"></script>
+<script src="./version.js?v=2.249"></script>
+
+<!-- Build version = the version baked into THIS HTML document (the meta tag
+     above). It is the honest "what am I actually running" signal. By contrast,
+     globalThis.APP_VERSION comes from version.js, which the service worker
+     serves NETWORK-FIRST on a version mismatch — so APP_VERSION can read NEWER
+     than the stale HTML/CSS that's actually rendered. The About dialog and the
+     update checks use getBuildVersion(), never APP_VERSION, so they reflect the
+     real build instead of the network. -->
+<script src="ext-boot/02.js"></script>
 
 <!-- iOS PWA Detection - adds .ios-pwa class for safe area fixes -->
-<script src="ext-boot/02.js"></script>
+<script src="ext-boot/03.js"></script>
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
      BOOT FAILURE FAILSAFE: Auto-clear caches after repeated boot failures
@@ -75,24 +84,24 @@
      Modules with unversioned static imports (constants.js, diBase.js,
      labelResolver.js) are excluded to avoid duplicate module instances.
      ═══════════════════════════════════════════════════════════════════════════ -->
-<script src="ext-boot/03.js"></script>
+<script src="ext-boot/04.js"></script>
 
 <!-- Critical CSS - extracted to external file for CSP compliance (no 'unsafe-inline' needed) -->
 <link rel="stylesheet" href="./styles/base/critical.css">
 
 <!-- Early dark mode application - prevents flash of light mode -->
-<script src="ext-boot/04.js"></script>
-
-<!-- Early accessibility settings - prevents animation/contrast flash -->
 <script src="ext-boot/05.js"></script>
 
-<!-- Early app background color - only set if user has custom color saved -->
+<!-- Early accessibility settings - prevents animation/contrast flash -->
 <script src="ext-boot/06.js"></script>
+
+<!-- Early app background color - only set if user has custom color saved -->
+<script src="ext-boot/07.js"></script>
 
 <!-- NOTE: version.js and cache clearing script moved BEFORE modulepreload hints (line ~71) -->
 <!-- This ensures version check runs before browser starts prefetching modules -->
 
-<script src="ext-boot/07.js"></script>
+<script src="ext-boot/08.js"></script>
 
 
 
@@ -118,7 +127,7 @@
   </div>
 
   <!-- Loading tips rotation -->
-  <script src="ext-boot/08.js"></script>
+  <script src="ext-boot/09.js"></script>
 
   <!-- Loading Overlay for Operations -->
   <div id="loading-overlay" class="loading-overlay" role="status" aria-label="Operation in progress">
@@ -1043,9 +1052,9 @@
 <div id="live-region" aria-live="polite" style="position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden;"></div>
 
 <!-- Boot File Split (Dec 2025): Load via entrypoint which orchestrates all boot files -->
- <script type="module" src="miniCycle-main.js?v=2.247"></script>
+ <script type="module" src="miniCycle-main.js?v=2.249"></script>
 
-<script src="ext-boot/09.js"></script>
+<script src="ext-boot/10.js"></script>
    <!-- [chrome-ext build] removed inline script: late lite-version fallback redirect -->
 
 

@@ -2,6 +2,14 @@
 .testing-tab[data-tab="automated-tests"],
 #automated-tests-tab { display: none !important; }
 
+/* The "Lite Version" entry points (main menu, settings modal, boot-error screen)
+   are web-only — lite/ is not bundled in the extension. goToLiteVersion() already
+   no-ops on the chrome-extension:// origin, so these buttons would do nothing;
+   hide them so users never see a dead control. */
+#menu-lite-version,
+#try-lite-version,
+#lite-version-btn { display: none !important; }
+
 /* "Open in full tab" escape hatch — floating button injected by ext-boot when
    the app runs in the side panel. Low-opacity corner control; brightens on hover.
    Sits ABOVE the app's bottom-right #quick-dark-toggle (up to 60px @ bottom:30px)

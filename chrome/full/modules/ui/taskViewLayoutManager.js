@@ -177,6 +177,9 @@ export class TaskViewLayoutManager {
         this._resizeHandler = null;
         this._resizeTimer = null;
         this._wasDesktop = false;
+        /** @type {(() => void) | null} Abort fn for the currently-active drag. */
+        this._activeDrag = null;
+        this._dragInterruptHandler = null;
     }
 
     get deps() {
@@ -216,6 +219,10 @@ export class TaskViewLayoutManager {
         this._resizeHandler = () => {
             clearTimeout(this._resizeTimer);
             this._resizeTimer = setTimeout(() => {
+                // A resize mid-drag (e.g. Stage Manager / Split View) invalidates
+                // the drag geometry and iOS may not deliver pointerup — end any
+                // active drag first so its chrome can't orphan.
+                this._abortActiveDrag();
                 const desktop = this._isDesktop();
                 if (desktop && !this._wasDesktop) {
                     this._loadAndApplyPositions();
@@ -239,6 +246,16 @@ export class TaskViewLayoutManager {
         };
         document.addEventListener(EVENTS.FOCUS_MODE_ACTIVATED, this._focusModeActivated);
         document.addEventListener(EVENTS.FOCUS_MODE_DEACTIVATED, this._focusModeDeactivated);
+
+        // iOS drops pointer capture when a PWA window is backgrounded,
+        // switched, or resized via Stage Manager / Split View — WITHOUT
+        // firing pointerup or pointercancel. That orphans an in-progress
+        // drag's chrome (the dragging handle + the "Drop to dock" snap
+        // indicator), leaving it stuck visible across orientations. Abort
+        // any active drag on these signals so the chrome can't orphan.
+        this._dragInterruptHandler = () => this._abortActiveDrag();
+        document.addEventListener('visibilitychange', this._dragInterruptHandler);
+        window.addEventListener('pagehide', this._dragInterruptHandler);
 
         // Initial load: apply saved positions on desktop home view, or
         // skip on tablet/mobile/focus-mode. Async so we wait for AppState
@@ -277,6 +294,14 @@ export class TaskViewLayoutManager {
             el.classList.remove(DOM_CLASSES.TVL_DRAGGING);
             el.classList.remove(DOM_CLASSES.TVL_SNAP_HOVER);
             entry.customized = false;
+        }
+        // Hide any visible snap-target indicators too — the per-element loop
+        // above clears element classes but not the indicator overlays, so a
+        // resize that crosses out of desktop during/after a drag would
+        // otherwise leave the "Drop to dock" indicator stuck visible.
+        for (const indicator of this._snapIndicators.values()) {
+            indicator.classList.remove(DOM_CLASSES.TVL_SNAP_TARGET_VISIBLE);
+            indicator.classList.remove(DOM_CLASSES.TVL_SNAP_TARGET_ACTIVE);
         }
     }
 
@@ -601,6 +626,11 @@ export class TaskViewLayoutManager {
             // Primary mouse button only
             if (e.pointerType === 'mouse' && e.button !== 0) return;
 
+            // Only start drags when the layout feature is actually active
+            // (desktop input + home view). Guards against starting a drag as
+            // the viewport crosses the desktop boundary mid-resize.
+            if (!this._shouldApplyLayout()) return;
+
             // Stop the pointerdown from bubbling — we don't want the host
             // element (e.g., the task card itself) to interpret this as a
             // tap/click. preventDefault avoids text selection.
@@ -651,6 +681,11 @@ export class TaskViewLayoutManager {
                 /* pointer capture failures are non-fatal — drag still works
                    when pointer stays within the handle */
             }
+
+            // Track this drag instance-wide so a global interruption handler
+            // (visibilitychange / pagehide / resize) can force-end it if iOS
+            // never delivers pointerup/pointercancel.
+            this._activeDrag = abortDrag;
         };
 
         const onPointerMove = (ev) => {
@@ -763,6 +798,23 @@ export class TaskViewLayoutManager {
             }
 
             dragState = null;
+            if (this._activeDrag === abortDrag) this._activeDrag = null;
+        };
+
+        // Force-terminate this drag without a pointerup/pointercancel — used
+        // when iOS drops pointer capture (window switch / Stage Manager
+        // resize / backgrounding) and the normal teardown never fires.
+        // Only clears transient drag state; the element keeps its current
+        // inline position for the session but isn't persisted as customized.
+        const abortDrag = () => {
+            if (!dragState) return;
+            try { handle.releasePointerCapture(dragState.pointerId); } catch { /* ignore */ }
+            if (dragState.started) {
+                if (config.dock) this._hideSnapTarget(config);
+                this._endDrag(element);
+            }
+            dragState = null;
+            if (this._activeDrag === abortDrag) this._activeDrag = null;
         };
 
         handle.addEventListener('pointerdown', onPointerDown);
@@ -850,6 +902,33 @@ export class TaskViewLayoutManager {
         if (!indicator) return;
         indicator.classList.remove(DOM_CLASSES.TVL_SNAP_TARGET_VISIBLE);
         indicator.classList.remove(DOM_CLASSES.TVL_SNAP_TARGET_ACTIVE);
+    }
+
+    /**
+     * Force-terminate any in-progress drag and clear all transient drag
+     * chrome. Called on iOS interruption signals (visibilitychange / pagehide
+     * / Stage Manager resize) where pointerup/pointercancel never fire, and as
+     * a safety sweep so a previously-orphaned drag can't leave the dragging
+     * handle or "Drop to dock" snap indicator stuck visible across
+     * orientations. Only transient state is cleared — saved custom positions
+     * (`.tvl-customized` + persisted coords) are untouched.
+     */
+    _abortActiveDrag() {
+        if (this._activeDrag) {
+            try { this._activeDrag(); } catch { /* ignore */ }
+        }
+        // Belt-and-suspenders sweep: a drag interrupted before this handler
+        // ran (or in another draggable) may have orphaned chrome.
+        for (const entry of this._registry.values()) {
+            entry.element.classList.remove(DOM_CLASSES.TVL_DRAGGING);
+            entry.element.classList.remove(DOM_CLASSES.TVL_SNAP_HOVER);
+            entry.element.classList.remove(DOM_CLASSES.TVL_HOVERED);
+        }
+        for (const indicator of this._snapIndicators.values()) {
+            indicator.classList.remove(DOM_CLASSES.TVL_SNAP_TARGET_VISIBLE);
+            indicator.classList.remove(DOM_CLASSES.TVL_SNAP_TARGET_ACTIVE);
+        }
+        try { this.deps.getBody().style.userSelect = ''; } catch { /* ignore */ }
     }
 
     /**
@@ -1035,6 +1114,12 @@ export class TaskViewLayoutManager {
         if (this._focusModeDeactivated) {
             document.removeEventListener(EVENTS.FOCUS_MODE_DEACTIVATED, this._focusModeDeactivated);
             this._focusModeDeactivated = null;
+        }
+
+        if (this._dragInterruptHandler) {
+            document.removeEventListener('visibilitychange', this._dragInterruptHandler);
+            window.removeEventListener('pagehide', this._dragInterruptHandler);
+            this._dragInterruptHandler = null;
         }
 
         for (const cleanup of this._cleanupFns.values()) {

@@ -1,35 +1,30 @@
-// Sync About modal version with meta app-version
-document.addEventListener('DOMContentLoaded', function () {
-  var meta = document.querySelector('meta[name="app-version"]');
-  var aboutSpan = document.getElementById('about-version');
-  if (meta && aboutSpan) {
-    aboutSpan.textContent = meta.getAttribute('content') || '—';
-  }
-  // Populate SW version in About modal
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistration().then(function (reg) {
-      if (!reg || !reg.active) return;
-      var ch = new MessageChannel();
-      ch.port1.onmessage = function (evt) {
-        var swSpan = document.getElementById('about-sw-version');
-        if (swSpan && evt.data) {
-          swSpan.textContent = evt.data.version || 'Unknown';
-        }
-      };
-      try { reg.active.postMessage({ type: 'GET_VERSION' }, [ch.port2]); } catch (e) {}
-    }).catch(function(){});
-  }
-
-  // Wire "Check for Updates" buttons (settings + main menu).
-  // Uses event delegation because #check-for-updates lives in the settings modal
-  // which is injected by modalTemplates.js AFTER DOMContentLoaded.
-  document.addEventListener('click', function (e) {
-    var btn = e.target.closest('#check-for-updates, #menu-check-updates');
-    if (!btn) return;
-    if (typeof window.forceServiceWorkerUpdate === 'function') {
-      window.forceServiceWorkerUpdate();
-    } else if (typeof window.checkForUpdates === 'function') {
-      window.checkForUpdates();
-    }
-  });
-});
+(function() {
+    var el = document.getElementById('loader-tip');
+    if (!el) return;
+    var text = el.querySelector('.loader-tip-text');
+    if (!text) return;
+    fetch('./modules/labels/loading-tips.json')
+      .then(function(r) { return r.json(); })
+      .then(function(tips) {
+        if (!tips || !tips.length) return;
+        var i = Math.floor(Math.random() * tips.length);
+        text.textContent = tips[i];
+        el.classList.add('visible');
+        var rotation = setInterval(function() {
+          // Stop rotating once the app has booted (loader is gone) — otherwise this
+          // timer runs forever, mutating a hidden/detached element. uiBoot.js sets
+          // dataset.appLoaded='true' on a successful boot.
+          if (document.documentElement.dataset.appLoaded === 'true') {
+            clearInterval(rotation);
+            return;
+          }
+          el.classList.remove('visible');
+          setTimeout(function() {
+            i = (i + 1) % tips.length;
+            text.textContent = tips[i];
+            el.classList.add('visible');
+          }, 400);
+        }, 4000);
+      })
+      .catch(function() {});
+  })();

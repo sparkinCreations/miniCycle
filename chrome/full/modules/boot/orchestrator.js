@@ -26,6 +26,8 @@
 
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { isNativeApp } from '../platform/capacitorBridge.js';
+import { goToLiteVersion } from '../utils/liteVersion.js';
 
 // ✅ Single source of truth: Read version from globalThis (set by version.js)
 // Falls back to 'dev-local' for local development without version.js
@@ -218,7 +220,6 @@ async function loadDependencies() {
 
 // Retry configuration
 const MAX_BOOT_RETRIES = 1;
-const LITE_VERSION_PATH = './lite/miniCycle-lite.html';
 let bootAttempt = 0;
 
 // If set, overrides all boot progress messages (e.g., during routine import reload)
@@ -280,16 +281,6 @@ function withTimeout(promise, ms, phaseName) {
   return Promise.race([promise, timeoutPromise]).finally(() => {
     clearTimeout(timeoutId);
   });
-}
-
-/**
- * Redirect to lite version as fallback
- */
-function redirectToLite() {
-  // Preserve any query params except mode
-  const url = new URL(LITE_VERSION_PATH, window.location.origin);
-  url.searchParams.set('fallback', 'true');
-  window.location.href = url.href;
 }
 
 /**
@@ -499,7 +490,7 @@ function showBootError(phase, error, willRetry = false) {
     tryAgainBtn?.addEventListener('click', () => location.reload());
 
     const liteBtn = document.getElementById('lite-version-btn');
-    liteBtn?.addEventListener('click', () => { window.location.href = LITE_VERSION_PATH; });
+    liteBtn?.addEventListener('click', () => goToLiteVersion({ params: { fallback: 'true' }, reason: 'boot-failure UI' }));
 
     // Add clear cache handler (uses shared utility)
     const clearCacheBtn = document.getElementById(DOM_IDS.CLEAR_CACHE_BTN);
@@ -956,6 +947,12 @@ async function initApp() {
 
 // Wait for service worker to be ready (prevents first-load import failures)
 async function waitForServiceWorker(timeoutMs = 3000) {
+  // Native (Capacitor) ships every asset bundled locally and registers NO service
+  // worker — build-android-www.cjs strips the SW registration from index.html. The
+  // Android WebView still exposes navigator.serviceWorker, so `.ready` never resolves
+  // and this would burn the full timeout (~8s) on every cold start. Skip it on native;
+  // there is nothing to wait for. No effect on the web/PWA build (isNativeApp() is false).
+  if (isNativeApp()) return;
   if (!('serviceWorker' in navigator)) return;
 
   // iOS kills SW when PWA is backgrounded. It needs more time to restart.

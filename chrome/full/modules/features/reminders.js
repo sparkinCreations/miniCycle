@@ -20,6 +20,7 @@ import { createDIModule, optional } from '../core/diBase.js';
 import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, FREQUENCY_MS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { isClickOnNotification } from '../ui/modalUtils.js';
+import { isNativeApp, sendNativeNotification, requestNotificationPermission } from '../platform/capacitorBridge.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -613,27 +614,37 @@ export class MiniCycleReminders {
         // Use \n instead of <br> - CSS white-space: pre-line renders newlines (XSS-safe)
         this._activeReminderNotification = this.deps.showNotification(`🔔 ${getLabel('notify.reminderTasksToComplete')}\n~ ${incompleteTasks.join("\n~ ")}`, "info", 0);
 
-        // Send browser notification if enabled and permission granted
-        if (remindersSettings.browserNotifications && typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+        // Send a system notification if enabled.
+        if (remindersSettings.browserNotifications) {
             const notificationBody = incompleteTasks.map(t => `~ ${t}`).join('\n');
-            try {
-                // Try ServiceWorker notification first (more reliable, works when tab is in background)
-                const registration = await navigator.serviceWorker?.getRegistration();
-                if (registration) {
-                    await registration.showNotification('miniCycle Reminder', {
-                        body: notificationBody,
-                        icon: './assets/images/logo/taskcycle_logo_blackandwhite_transparent.png',
-                        tag: 'minicycle-reminder'
-                    });
-                } else {
-                    // Fallback to basic Notification API
-                    new Notification('miniCycle Reminder', {
-                        body: notificationBody,
-                        icon: './assets/images/logo/taskcycle_logo_blackandwhite_transparent.png'
-                    });
+
+            // Native (Capacitor) path first — the Android WebView lacks the web
+            // Notification API, so route through LocalNotifications instead.
+            if (isNativeApp()) {
+                await sendNativeNotification({
+                    title: getLabel('notify.reminderNotificationTitle'),
+                    body: notificationBody
+                });
+            } else if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+                try {
+                    // Try ServiceWorker notification first (more reliable, works when tab is in background)
+                    const registration = await navigator.serviceWorker?.getRegistration();
+                    if (registration) {
+                        await registration.showNotification('miniCycle Reminder', {
+                            body: notificationBody,
+                            icon: './assets/images/logo/taskcycle_logo_blackandwhite_transparent.png',
+                            tag: 'minicycle-reminder'
+                        });
+                    } else {
+                        // Fallback to basic Notification API
+                        new Notification('miniCycle Reminder', {
+                            body: notificationBody,
+                            icon: './assets/images/logo/taskcycle_logo_blackandwhite_transparent.png'
+                        });
+                    }
+                } catch (e) {
+                    console.warn('⚠️ Browser notification failed:', e);
                 }
-            } catch (e) {
-                console.warn('⚠️ Browser notification failed:', e);
             }
         }
 
@@ -964,6 +975,34 @@ export class MiniCycleReminders {
                 if (browserNotificationsCheckbox.checked) {
                     // Uncheck immediately — only re-check after confirmation + permission
                     browserNotificationsCheckbox.checked = false;
+
+                    // Native (Capacitor) path — the Android WebView lacks the web
+                    // Notification API, so request the LocalNotifications permission.
+                    if (isNativeApp()) {
+                        const enableNative = async () => {
+                            const permission = await requestNotificationPermission();
+                            if (permission === 'granted') {
+                                browserNotificationsCheckbox.checked = true;
+                                this.autoSaveReminders();
+                                this.deps.showNotification(getLabel('reminders.permissionGranted'), 'success', UI_TIMEOUTS.NOTIFICATION_MEDIUM);
+                            } else {
+                                this.deps.showNotification(getLabel('reminders.permissionDenied'), 'info', UI_TIMEOUTS.NOTIFICATION_EXTENDED);
+                            }
+                        };
+                        const showConfirmNative = this.deps.showConfirmationModal;
+                        if (showConfirmNative) {
+                            showConfirmNative({
+                                title: getLabel('reminders.browserNotifications'),
+                                message: getLabel('reminders.browserNotificationsWarning'),
+                                confirmText: getLabel('button.enable'),
+                                cancelText: getLabel('button.cancel'),
+                                callback: (confirmed) => { if (confirmed) enableNative(); }
+                            });
+                        } else {
+                            enableNative();
+                        }
+                        return;
+                    }
 
                     // Case 1: Browser doesn't support Notification API
                     if (typeof Notification === 'undefined') {

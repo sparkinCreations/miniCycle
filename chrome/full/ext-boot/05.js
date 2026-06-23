@@ -2,26 +2,24 @@
     try {
       var data = localStorage.getItem('miniCycleData');
       if (data) {
-        var s = JSON.parse(data).settings;
-        if (s) {
-          if (s.reducedMotion) {
-            document.documentElement.classList.add('reduced-motion');
-            document.addEventListener('DOMContentLoaded', function() {
-              document.body.classList.add('reduced-motion');
-            });
-          }
-          if (s.highContrast) {
-            document.documentElement.classList.add('high-contrast');
-            document.addEventListener('DOMContentLoaded', function() {
-              document.body.classList.add('high-contrast');
-            });
-          }
-          if (s.fontSize && s.fontSize !== '16') {
-            document.documentElement.style.setProperty('--font-size-base', s.fontSize + 'px');
-          }
+        var parsed = JSON.parse(data);
+        var isDarkMode = parsed && parsed.settings && parsed.settings.darkMode;
+        if (isDarkMode) {
+          // Apply to html immediately (body doesn't exist yet)
+          document.documentElement.classList.add('dark-mode');
+          // Also apply to body once it's ready
+          document.addEventListener('DOMContentLoaded', function() {
+            document.body.classList.add('dark-mode');
+          });
+        } else {
+          // Ensure dark mode is removed (in case of stale state)
+          document.documentElement.classList.remove('dark-mode');
+          document.addEventListener('DOMContentLoaded', function() {
+            document.body.classList.remove('dark-mode');
+          });
         }
       }
     } catch (e) {
-      // Silently fail - accessibility settings will be applied later by JS
+      // Silently fail - dark mode will be applied later by JS
     }
   })();

@@ -387,10 +387,17 @@ export class ModalManager {
         openAboutBtn._clickHandler = () => {
             aboutModal._previousFocus = document.activeElement;
 
-            // Refresh app version from live globalThis (set by version.js)
+            // Show the ACTUAL running build (the HTML's baked meta app-version),
+            // NOT globalThis.APP_VERSION. version.js is served network-first on a
+            // version mismatch, so APP_VERSION can read NEWER than the stale HTML
+            // actually rendered. The meta tag is the honest "what am I running".
             const aboutSpan = document.getElementById(DOM_IDS.ABOUT_VERSION);
-            if (aboutSpan && globalThis.APP_VERSION) {
-                aboutSpan.textContent = globalThis.APP_VERSION;
+            if (aboutSpan) {
+                const metaEl = document.querySelector('meta[name="app-version"]');
+                const buildVersion = (typeof window.getBuildVersion === 'function')
+                    ? window.getBuildVersion()
+                    : ((metaEl && metaEl.getAttribute('content')) || globalThis.APP_VERSION || 'unknown');
+                aboutSpan.textContent = buildVersion;
             }
 
             // Re-query SW for latest cache version

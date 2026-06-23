@@ -2,14 +2,26 @@
     try {
       var data = localStorage.getItem('miniCycleData');
       if (data) {
-        var parsed = JSON.parse(data);
-        var customAppBg = parsed && parsed.settings && parsed.settings.customColors && parsed.settings.customColors.appBg;
-        if (customAppBg) {
-          // Only set CSS variable if there's a custom color (preserves gradient for default)
-          document.documentElement.style.setProperty('--pref-app-bg', customAppBg);
+        var s = JSON.parse(data).settings;
+        if (s) {
+          if (s.reducedMotion) {
+            document.documentElement.classList.add('reduced-motion');
+            document.addEventListener('DOMContentLoaded', function() {
+              document.body.classList.add('reduced-motion');
+            });
+          }
+          if (s.highContrast) {
+            document.documentElement.classList.add('high-contrast');
+            document.addEventListener('DOMContentLoaded', function() {
+              document.body.classList.add('high-contrast');
+            });
+          }
+          if (s.fontSize && s.fontSize !== '16') {
+            document.documentElement.style.setProperty('--font-size-base', s.fontSize + 'px');
+          }
         }
       }
     } catch (e) {
-      // Silently fail - gradient will be used as default
+      // Silently fail - accessibility settings will be applied later by JS
     }
   })();
