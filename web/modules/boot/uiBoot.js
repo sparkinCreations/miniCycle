@@ -58,7 +58,7 @@
 
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
-import { initNativeShell } from '../platform/capacitorBridge.js';
+import { initNativeShell, isNativeApp } from '../platform/capacitorBridge.js';
 
 let _appContextMod = null;
 
@@ -712,6 +712,13 @@ export function handleTryLiteVersionClick(deps) {
     cancelText: getLabel('modal.liteVersionCancel'),
     callback: (confirmed) => {
       if (confirmed) {
+        // lite/ is not bundled in the native (Capacitor) build — never navigate
+        // there from the app shell. The button is hidden on native (see
+        // setupTryLiteVersionButton); this is a defensive backstop.
+        if (isNativeApp()) {
+          console.warn('[miniCycle] lite version not available in native build');
+          return;
+        }
         window.location.href = 'lite/miniCycle-lite.html';
       }
     }
@@ -807,6 +814,17 @@ export function setupMenuRetakeTours() {
  * @param {Object} deps - Dependencies containing showConfirmationModal
  */
 export function setupTryLiteVersionButton(_GlobalUtils, deps) {
+  // The lite version is a web-only fallback (old browsers / slow connections).
+  // It isn't bundled in the native (Capacitor) build, so don't offer it there —
+  // hide the menu entries and skip wiring. No effect on web (isNativeApp() false).
+  if (isNativeApp()) {
+    for (const id of ['try-lite-version', 'menu-lite-version']) {
+      const el = document.getElementById(id);
+      if (el) el.style.display = 'none';
+    }
+    return;
+  }
+
   replaceStoredEventListener(
     document.getElementById('try-lite-version'),
     'click',

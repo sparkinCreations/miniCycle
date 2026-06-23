@@ -287,6 +287,14 @@ function withTimeout(promise, ms, phaseName) {
  * Redirect to lite version as fallback
  */
 function redirectToLite() {
+  // The lite fallback exists for old browsers / slow connections on the web.
+  // The native (Capacitor) build does NOT bundle lite/, and its WebView is a
+  // modern Chromium that always runs the full app — so a redirect here would
+  // 404. No-op on native. (isNativeApp() is false on the web/PWA build.)
+  if (isNativeApp()) {
+    console.warn('[miniCycle] lite fallback suppressed (native build)');
+    return;
+  }
   // Preserve any query params except mode
   const url = new URL(LITE_VERSION_PATH, window.location.origin);
   url.searchParams.set('fallback', 'true');
@@ -500,7 +508,7 @@ function showBootError(phase, error, willRetry = false) {
     tryAgainBtn?.addEventListener('click', () => location.reload());
 
     const liteBtn = document.getElementById('lite-version-btn');
-    liteBtn?.addEventListener('click', () => { window.location.href = LITE_VERSION_PATH; });
+    liteBtn?.addEventListener('click', () => redirectToLite());
 
     // Add clear cache handler (uses shared utility)
     const clearCacheBtn = document.getElementById(DOM_IDS.CLEAR_CACHE_BTN);
