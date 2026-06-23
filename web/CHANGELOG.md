@@ -1,3 +1,8 @@
+## [2.251] - 2026-06-23
+- feat(layout): keep the stats panel clear of the nav dots (and header)
+- feat(release): add --android-run to build + install the debug APK on a device
+
+
 ## [2.250] - 2026-06-23
 - feat(lite): guard lite-version navigation in the packaged Chrome extension + rebuild chrome/full
 - feat(layout): measure header height so the routine title always clears the mode selector
