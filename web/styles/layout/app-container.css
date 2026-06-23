@@ -31,15 +31,15 @@
 /* Task view container - vertically centered */
 #task-view {
     position: fixed;
-    /* Centre the card in the space BELOW the fixed header, not the whole
-       viewport. --header-total-height is published by headerLayoutManager
-       (measured from .fixed-header-container, which includes the safe-area and
-       the mode-selector row); shifting the centre down by half of it keeps the
-       card's top edge clear of the header at any window size / orientation —
-       replacing the old fixed top:50% that let the title creep under the mode
-       selector on short/narrow windows. Falls back to the prior ~110px estimate
-       before JS measures (and if JS is unavailable). */
-    top: calc(50% + var(--header-total-height, 110px) / 2);
+    /* Centre the card in the BAND between the fixed header and the Routine|Stats
+       nav dots, so its top clears the header AND its bottom (the Complete button
+       + help window, which live at the bottom of #task-view) clears the nav
+       dots. --header-total-height and --nav-dots-clearance are published by
+       headerLayoutManager. The `(header - navClearance)/2` shift biases the
+       centre toward whichever edge has more chrome; paired with the band-capped
+       max-height below, the whole card always sits clear of both. Falls back to
+       fixed estimates before JS measures (and if JS is unavailable). */
+    top: calc(50% + (var(--header-total-height, 110px) - var(--nav-dots-clearance, 90px)) / 2);
     left: 50%;
     transform: translate(-50%, -50%);
     width: 90vw;
@@ -57,7 +57,12 @@
        which includes the area behind the dynamic toolbar). Older browsers
        fall through to the 100vh line. Same pattern as focus-mode.css. */
     max-height: calc(100vh - 290px - (env(safe-area-inset-top, 0px) * 2));
-    max-height: calc(100dvh - 290px - (env(safe-area-inset-top, 0px) * 2));
+    /* min(): keep the tuned cap on tall viewports; on short ones, cap to the
+       header→nav-dots band so the bottom (help window) never reaches the dots. */
+    max-height: min(
+        calc(100dvh - 290px - (env(safe-area-inset-top, 0px) * 2)),
+        calc(100dvh - var(--header-total-height, 110px) - var(--nav-dots-clearance, 90px) - var(--space-2))
+    );
     min-height: auto;
     transition: left var(--animation-pop) ease-in-out, transform var(--animation-pop) ease-in-out;
     display: flex;
@@ -105,10 +110,13 @@
     #task-view {
         /* See dvh note on the base #task-view rule above. */
         max-height: calc(100vh - 220px);
-        max-height: calc(100dvh - 220px);
-        /* top inherits from the base rule (centred below --header-total-height);
-           the old manual `+ 10px + env/2` nudge is now covered by the measured
-           header height. */
+        max-height: min(
+            calc(100dvh - 220px),
+            calc(100dvh - var(--header-total-height, 110px) - var(--nav-dots-clearance, 90px) - var(--space-2))
+        );
+        /* top inherits from the base rule (band-centred between header and nav
+           dots); the old manual `+ 10px + env/2` nudge is now covered by the
+           measured chrome. */
         overflow: hidden; /* Contain flex children — task-card shrinks, button stays fixed */
     }
 
