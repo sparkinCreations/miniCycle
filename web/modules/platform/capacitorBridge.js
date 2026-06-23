@@ -102,33 +102,127 @@ function wireHardwareBackButton() {
     const App = getPlugin('App');
     if (!App?.addListener) return;
     App.addListener('backButton', ({ canGoBack } = {}) => {
-        // If anything dismissable is open, close it and swallow the back press.
-        if (dismissTopOverlay()) return;
-        // Otherwise let the WebView navigate back, or exit at the root.
-        if (canGoBack) {
-            window.history.back();
-        } else {
-            App.exitApp?.();
-        }
+        // 1) If any in-app layer is open (dialog, menu, focus mode, …), close the
+        //    top-most one and swallow the press — never let it exit the app.
+        if (dismissTopLayer()) return;
+        // 2) Real in-app history (e.g. a legal page opened via navigation): go back.
+        if (canGoBack) { window.history.back(); return; }
+        // 3) At the root with nothing open: require a second press to exit, so an
+        //    accidental back can't drop the user out mid-routine.
+        confirmRootExit(App);
     });
 }
 
 /**
- * Close the top-most open overlay (modal/menu) if there is one.
- * Returns true if something was closed (back press handled).
- * Pure DOM-based so it needs no DI: it dispatches Escape, which the app's
- * modals/menus already listen for, then falls back to clicking a visible
- * close/overlay element.
+ * Close the top-most open UI layer, if any. Returns true when something was
+ * closed (so the back press is consumed). DOM-only by design — capacitorBridge
+ * is a leaf module and can't call the UI modules' close methods, so it uses each
+ * layer's real open-state signal and close path (verified against the source),
+ * which fires the same events the app's own Escape/close handlers do.
+ *
+ * Priority mirrors the visual stacking (top closes first):
+ *   native <dialog>  →  focus mode  →  main menu  →  quick actions
+ *     →  task-options menu  →  notifications
  */
-function dismissTopOverlay() {
-    // The app's modals and main menu close on Escape — reuse that path.
-    const openOverlay = document.querySelector(
-        '.mini-modal-overlay:not([hidden]), .modal-overlay:not([hidden]), ' +
-        '#menu.visible, .menu-container.visible, [data-modal-open="true"]'
-    );
-    if (!openOverlay) return false;
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-    return true;
+function dismissTopLayer() {
+    // 1) Native <dialog> modals: settings, preferences, about, reminders, themes,
+    //    games, the recurring panel, routine switcher, prompts, etc. The help
+    //    window is a <div> (not a <dialog>), so it's correctly left open.
+    //    A synthetic Escape would NOT close a native dialog (untrusted events
+    //    don't fire the browser's default cancel), so close it explicitly —
+    //    .close() still fires the 'close' event the app uses to restore focus.
+    const openDialogs = document.querySelectorAll('dialog[open]');
+    if (openDialogs.length) {
+        openDialogs[openDialogs.length - 1].close();
+        return true;
+    }
+
+    // 2) Focus mode: its own document keydown handler steps through
+    //    mode-modal → menu → exit (and self-gates to defer to any open dialog).
+    //    It's a real JS listener, so a synthetic Escape drives it.
+    if (document.body.classList.contains('focus-mode')) {
+        document.dispatchEvent(new KeyboardEvent('keydown', {
+            key: 'Escape', code: 'Escape', bubbles: true, cancelable: true,
+        }));
+        return true;
+    }
+
+    // 3) Main menu (hamburger).
+    if (document.body.classList.contains('main-menu-open')) {
+        document.querySelector('.menu-container')?.classList.remove('visible');
+        document.body.classList.remove('main-menu-open');
+        return true;
+    }
+
+    // 4) Quick-actions menu.
+    if (document.body.classList.contains('quick-actions-open')) {
+        const qa = document.getElementById('quick-actions-menu');
+        if (qa) qa.style.display = 'none';
+        document.body.classList.remove('quick-actions-open');
+        return true;
+    }
+
+    // 5) Per-task options menu (only one is ever visible at a time).
+    const taskOptions = document.querySelector('.task-options.task-options-visible');
+    if (taskOptions) {
+        document.querySelectorAll('.task-options.task-options-visible')
+            .forEach((el) => el.classList.remove('task-options-visible'));
+        return true;
+    }
+
+    // 6) Toast notifications: dismiss via their close button (runs the app's own
+    //    dismiss path). Lowest priority — they also auto-expire on their own.
+    const notifications = document.querySelectorAll('#notification-container .notification');
+    if (notifications.length) {
+        let closedAny = false;
+        notifications.forEach((n) => {
+            const closeBtn = n.querySelector('.close-btn');
+            if (closeBtn) { closeBtn.click(); closedAny = true; }
+        });
+        if (closedAny) return true;
+    }
+
+    return false;
+}
+
+// ── root-exit guard (double-press to exit) ────────────────────────────────────
+
+let _lastRootBackAt = 0;
+
+function confirmRootExit(App) {
+    const now = Date.now();
+    if (now - _lastRootBackAt < 2000) {
+        App.exitApp?.();
+        return;
+    }
+    _lastRootBackAt = now;
+    showExitHint();
+}
+
+/**
+ * Minimal self-contained "press back again to exit" toast. Dependency-free (the
+ * bridge imports no app modules) and auto-removes after the second-press window.
+ */
+function showExitHint() {
+    if (document.getElementById('__mc_exit_hint')) return;
+    const hint = document.createElement('div');
+    hint.id = '__mc_exit_hint';
+    hint.textContent = 'Press back again to exit';
+    hint.setAttribute('role', 'status');
+    hint.style.cssText = [
+        'position:fixed', 'left:50%', 'bottom:calc(24px + env(safe-area-inset-bottom))',
+        'transform:translateX(-50%)', 'z-index:2147483647', 'pointer-events:none',
+        'background:rgba(0,0,0,0.85)', 'color:#fff', 'padding:10px 18px',
+        'border-radius:999px', 'font-size:14px', 'font-family:system-ui,sans-serif',
+        'box-shadow:0 2px 10px rgba(0,0,0,0.35)', 'opacity:0',
+        'transition:opacity 150ms ease',
+    ].join(';');
+    document.body.appendChild(hint);
+    requestAnimationFrame(() => { hint.style.opacity = '1'; });
+    setTimeout(() => {
+        hint.style.opacity = '0';
+        setTimeout(() => hint.remove(), 200);
+    }, 1800);
 }
 
 // ── 2. notifications ──────────────────────────────────────────────────────────
