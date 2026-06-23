@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">miniCycle</string>
+    <string name="title_activity_main">miniCycle</string>
+    <string name="package_name">com.sparkincreations.minicycle</string>
+    <string name="custom_url_scheme">com.sparkincreations.minicycle</string>
+</resources>

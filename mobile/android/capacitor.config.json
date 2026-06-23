@@ -1,0 +1,8 @@
+{
+  "appId": "com.sparkincreations.minicycle",
+  "appName": "miniCycle",
+  "webDir": "www",
+  "android": {
+    "backgroundColor": "#4c79ff"
+  }
+}

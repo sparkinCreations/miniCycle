@@ -233,9 +233,14 @@ miniCycle/
 │   │   └── other/                  # Plugin system
 │   ├── styles/                     # Token-based CSS (variables.css foundation)
 │   ├── tests/                      # Playwright browser tests (55 files)
+│   ├── scripts/                    # build-chrome-full.cjs, build-android-www.cjs, tooling
 │   └── docs/                       # Developer guides & architecture docs
+├── chrome/                         # Chrome extension (MV3) — generated from web/ + hand-built lite popup
+├── mobile/                         # Native mobile builds
+│   └── android/                    # Capacitor app — WebView shell over the byte-identical web app
+├── desktop/                        # Reserved for a future desktop build
+├── shared/                         # Reserved for platform-agnostic logic (empty by design)
 ├── .github/workflows/              # CI pipelines (tests + Lighthouse + perf)
-├── lite/                           # Static ES5 fallback (frozen, not maintained)
 └── CLAUDE.md                       # Implementation rules & patterns
 ```
 

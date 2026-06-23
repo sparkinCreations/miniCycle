@@ -1,0 +1,11 @@
+# Dependencies
+node_modules/
+
+# Generated web payload — produced from web/ by web/scripts/build-android-www.cjs.
+# Never committed: `npm run sync` regenerates it and `npx cap sync` copies it into
+# android/app/src/main/assets/public (which Capacitor's android/.gitignore ignores).
+www/
+
+# OS files
+.DS_Store
+Thumbs.db

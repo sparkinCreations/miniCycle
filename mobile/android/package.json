@@ -1,0 +1,23 @@
+{
+  "name": "minicycle-android",
+  "version": "2.247",
+  "description": "miniCycle Android app — Capacitor shell wrapping the byte-identical web app (web/).",
+  "private": true,
+  "//": "The web payload (www/) is GENERATED from web/ by web/scripts/build-android-www.cjs. Never hand-edit www/. See mobile/ANDROID_BUILD_AND_DIFFERENCES.md.",
+  "scripts": {
+    "build:www": "node ../../web/scripts/build-android-www.cjs",
+    "sync": "npm run build:www && npx cap sync android",
+    "open": "npx cap open android",
+    "assemble:debug": "npm run sync && cd android && ./gradlew assembleDebug",
+    "assemble:release": "npm run sync && cd android && ./gradlew bundleRelease"
+  },
+  "author": "sparkinCreations",
+  "license": "SEE LICENSE IN ../../LICENSE",
+  "dependencies": {
+    "@capacitor/android": "^8.4.1",
+    "@capacitor/core": "^8.4.1"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.4.1"
+  }
+}

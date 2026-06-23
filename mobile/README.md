@@ -1,36 +1,42 @@
 # Mobile Applications
 
-⚠️ **This folder is currently empty - reserved for future mobile apps.**
+Native mobile builds of miniCycle.
 
-## Purpose
+## Editions
 
-This will contain native mobile applications:
-- `ios/` - iOS app (Swift/SwiftUI or React Native)
-- `android/` - Android app (Kotlin or React Native)
-- `shared/` - Shared mobile code (if using React Native)
+| Folder | Status | What it is |
+| --- | --- | --- |
+| [`android/`](./android) | ✅ Working | [Capacitor](https://capacitorjs.com/) app — a WebView shell wrapping the byte-identical web app (`web/`), bundled for offline. Opens like any native app. |
+| `ios/` | ⬜ Not started | Reserved for a future iOS build (Capacitor would share the same `www/` payload). |
 
-## Technology Options
+## Android
 
-### Option 1: React Native
-- ✅ Code sharing between iOS/Android
-- ✅ Faster development
-- ✅ Web developer friendly
+The Android app loads the **byte-identical** miniCycle web code (`web/modules`, `web/styles`,
+…) inside a Capacitor WebView, bundled into the APK so it runs fully offline. The web payload
+(`mobile/android/www/`) is **generated** from `web/` by `web/scripts/build-android-www.cjs` —
+the same "generate the platform shell from `web/`" pattern as the Chrome `full/` extension — so
+it never drifts from the actively-developed app.
 
-### Option 2: Native (Swift + Kotlin)
-- ✅ Best performance
-- ✅ Full platform capabilities
-- ✅ Native UI/UX
+```bash
+cd mobile/android
+npm install        # first time only
+npm run sync       # generate www/ from web/ + cap sync
+npm run open       # open in Android Studio to build & run
+```
 
-## When to Start
+- **Quick start:** [`android/README.md`](./android/README.md)
+- **Full reference** (web-vs-Android differences, build pipeline, releases):
+  [`ANDROID_BUILD_AND_DIFFERENCES.md`](./ANDROID_BUILD_AND_DIFFERENCES.md)
 
-Start mobile development when:
-1. Web app is feature-complete
-2. User demand for mobile apps exists
-3. Mobile-specific features are needed (widgets, shortcuts)
+## Why Capacitor (not React Native / native)
 
-## Integration with Existing Code
+miniCycle is a mature web app. Capacitor reuses that codebase verbatim and adds native APIs
+(notifications, filesystem, share) via plugins — no rewrite, no second source of truth. This
+matches the existing multi-platform strategy: one web app, thin generated shells per platform
+(`chrome/`, `mobile/android/`).
 
-Mobile apps will:
-1. Reuse business logic from `shared/`
-2. Use web API patterns as reference
-3. Add mobile-specific features (widgets, watch app, etc.)
+## `shared/`
+
+The repo-root [`shared/`](../shared) folder is reserved for platform-agnostic logic extracted
+once real duplication appears across platforms. The Android app doesn't need it yet — it runs
+the web modules directly.
