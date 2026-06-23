@@ -1,3 +1,8 @@
+## [2.249] - 2026-06-23
+- fix(version): detect stale build (not just version.js) so the app self-heals and reports the truth
+- fix(boot): skip service-worker + test-recovery waits on native (Capacitor)
+
+
 ## [2.248] - 2026-06-23
 - fix(taskViewLayout): clear stuck drag chrome when iOS interrupts a drag
 - chore(web): add SessionStart hook to install deps for web sessions
