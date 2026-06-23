@@ -1,3 +1,11 @@
+## [2.248] - 2026-06-23
+- fix(taskViewLayout): clear stuck drag chrome when iOS interrupts a drag
+- chore(web): add SessionStart hook to install deps for web sessions
+- feat(android): native bridges + update-version.sh --android flag
+- feat(android): scaffold Capacitor Android app generated from web/
+- fix(pdf): update output path for generated PDF to be relative
+
+
 ## [2.244] - 2026-06-17
 - test: flesh out 26 load-only stub suites with behavioral tests (~+450 tests)
 - test(harness): register 3 orphaned suites + drift guard; fix notificationDialogHost async assertions
