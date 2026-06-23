@@ -44,6 +44,7 @@ export default [
                 FileReader: 'readonly',
                 Event: 'readonly',
                 CustomEvent: 'readonly',
+                KeyboardEvent: 'readonly',
                 MutationObserver: 'readonly',
                 IntersectionObserver: 'readonly',
                 ResizeObserver: 'readonly',
