@@ -59,6 +59,7 @@
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { initNativeShell, isNativeApp } from '../platform/capacitorBridge.js';
+import { goToLiteVersion } from '../utils/liteVersion.js';
 
 let _appContextMod = null;
 
@@ -711,16 +712,9 @@ export function handleTryLiteVersionClick(deps) {
     confirmText: getLabel('modal.liteVersionConfirm'),
     cancelText: getLabel('modal.liteVersionCancel'),
     callback: (confirmed) => {
-      if (confirmed) {
-        // lite/ is not bundled in the native (Capacitor) build — never navigate
-        // there from the app shell. The button is hidden on native (see
-        // setupTryLiteVersionButton); this is a defensive backstop.
-        if (isNativeApp()) {
-          console.warn('[miniCycle] lite version not available in native build');
-          return;
-        }
-        window.location.href = 'lite/miniCycle-lite.html';
-      }
+      // goToLiteVersion() no-ops on native; the menu button is also hidden there
+      // (see setupTryLiteVersionButton) so this path isn't normally reachable.
+      if (confirmed) goToLiteVersion({ reason: 'menu button' });
     }
   });
 }

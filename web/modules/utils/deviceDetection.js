@@ -16,9 +16,10 @@
  * @module deviceDetection
  */
 
-import { STORAGE_KEYS, LITE_VERSION_PATH, UI_TIMEOUTS } from '../core/constants.js';
+import { STORAGE_KEYS, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { isNativeApp } from '../platform/capacitorBridge.js';
+import { goToLiteVersion } from './liteVersion.js';
 import { createDIModule, required, optional } from '../core/diBase.js';
 
 // ✅ appInit now injected via DI (no static import - enables versioning)
@@ -178,18 +179,19 @@ export class DeviceDetectionManager {
   }
 
   redirectToLite() {
-    // lite/ is not bundled in the native (Capacitor) build, and the WebView is
-    // a modern Chromium that always runs the full app — never send it to lite.
-    // No-op on native; unchanged on the web/PWA build (isNativeApp() is false).
+    // Suppress the whole flow on native — no "redirecting" notification, no nav.
+    // The WebView always runs the full app; goToLiteVersion() is the nav backstop.
     if (isNativeApp()) {
       console.warn('[miniCycle] lite auto-redirect suppressed (native build)');
       return;
     }
-    const cacheBuster = `?redirect=auto&v=${this.currentVersion}&t=${Date.now()}`;
 
     this.deps.showNotification('📱 ' + getLabel('notify.redirectingToLite'), 'info', UI_TIMEOUTS.NOTIFICATION_SHORT);
     setTimeout(() => {
-      window.location.href = LITE_VERSION_PATH + cacheBuster;
+      goToLiteVersion({
+        params: { redirect: 'auto', v: this.currentVersion, t: Date.now() },
+        reason: 'device auto-redirect'
+      });
     }, 1000);
   }
 

@@ -27,6 +27,7 @@
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { isNativeApp } from '../platform/capacitorBridge.js';
+import { goToLiteVersion } from '../utils/liteVersion.js';
 
 // ✅ Single source of truth: Read version from globalThis (set by version.js)
 // Falls back to 'dev-local' for local development without version.js
@@ -219,7 +220,6 @@ async function loadDependencies() {
 
 // Retry configuration
 const MAX_BOOT_RETRIES = 1;
-const LITE_VERSION_PATH = './lite/miniCycle-lite.html';
 let bootAttempt = 0;
 
 // If set, overrides all boot progress messages (e.g., during routine import reload)
@@ -281,24 +281,6 @@ function withTimeout(promise, ms, phaseName) {
   return Promise.race([promise, timeoutPromise]).finally(() => {
     clearTimeout(timeoutId);
   });
-}
-
-/**
- * Redirect to lite version as fallback
- */
-function redirectToLite() {
-  // The lite fallback exists for old browsers / slow connections on the web.
-  // The native (Capacitor) build does NOT bundle lite/, and its WebView is a
-  // modern Chromium that always runs the full app — so a redirect here would
-  // 404. No-op on native. (isNativeApp() is false on the web/PWA build.)
-  if (isNativeApp()) {
-    console.warn('[miniCycle] lite fallback suppressed (native build)');
-    return;
-  }
-  // Preserve any query params except mode
-  const url = new URL(LITE_VERSION_PATH, window.location.origin);
-  url.searchParams.set('fallback', 'true');
-  window.location.href = url.href;
 }
 
 /**
@@ -508,7 +490,7 @@ function showBootError(phase, error, willRetry = false) {
     tryAgainBtn?.addEventListener('click', () => location.reload());
 
     const liteBtn = document.getElementById('lite-version-btn');
-    liteBtn?.addEventListener('click', () => redirectToLite());
+    liteBtn?.addEventListener('click', () => goToLiteVersion({ params: { fallback: 'true' }, reason: 'boot-failure UI' }));
 
     // Add clear cache handler (uses shared utility)
     const clearCacheBtn = document.getElementById(DOM_IDS.CLEAR_CACHE_BTN);
