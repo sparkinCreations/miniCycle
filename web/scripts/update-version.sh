@@ -17,6 +17,8 @@
 #  - --dry-run flag to preview changes without writing
 #  - --samples flag to regenerate sample routine manifest from .mcyc files
 #  - --chrome flag to rebuild the Chrome (full) extension into chrome/full/
+#  - --android flag to rebuild the Capacitor web payload + sync the native version
+#  - --android-run flag to also build the debug APK and install/launch it on a device
 #  - Automatic CSP hash verification — detects new/changed inline scripts and updates netlify.toml
 
 # ============================================
@@ -183,6 +185,7 @@ AUTO_CHANGELOG=false
 AUTO_SAMPLES=false
 BUILD_CHROME=false
 BUILD_ANDROID=false
+DEPLOY_ANDROID=false
 DRY_RUN=false
 
 # ============================================
@@ -229,6 +232,11 @@ while [[ $# -gt 0 ]]; do
             BUILD_ANDROID=true
             shift
             ;;
+        --android-run|-R)
+            DEPLOY_ANDROID=true
+            BUILD_ANDROID=true  # deploy implies rebuild the payload first
+            shift
+            ;;
         --dry-run|-n)
             DRY_RUN=true
             shift
@@ -244,6 +252,7 @@ while [[ $# -gt 0 ]]; do
             echo "  --samples, -s   Regenerate sample routine manifest from .mcyc files"
             echo "  --chrome, -C    Rebuild the Chrome (full) extension to chrome/full/"
             echo "  --android, -A   Rebuild the Android (Capacitor) web payload + sync versionName"
+            echo "  --android-run, -R  Also build the debug APK + install/launch on a connected device"
             echo "  --lite, -l      Include lite version files (normally static)"
             echo "  --lite-only     Update ONLY lite version files (independent of main app)"
             echo "  --tag, -t       Auto-create git tag (use with --auto)"
@@ -1931,6 +1940,73 @@ if [ "$REBUILD_ANDROID" = true ]; then
                     || echo "⚠️  cap sync failed — run 'npm run sync' in mobile/android before building"
             else
                 echo "ℹ️  Capacitor not installed in mobile/android — run 'npm install && npm run sync' there before building the APK"
+            fi
+
+            # ── Optional dev-loop deploy: build the debug APK and install/launch
+            #    it on a connected device so the just-rebuilt payload goes live.
+            #    Opt in with --android-run; or answer the prompt in interactive
+            #    mode. Skipped in dry-run, and in --auto unless --android-run.
+            DO_DEPLOY=false
+            if [ "$DRY_RUN" = true ]; then
+                :
+            elif [ "$DEPLOY_ANDROID" = true ]; then
+                DO_DEPLOY=true
+            elif [ "$AUTO_MODE" = false ]; then
+                read -p "Build & install the debug APK on a connected device now? (y/N): " -n 1 -r
+                echo ""
+                if [[ $REPLY =~ ^[Yy]$ ]]; then DO_DEPLOY=true; fi
+            fi
+
+            if [ "$DO_DEPLOY" = true ]; then
+                # Resolve adb / ANDROID_HOME / a JDK 17+ (Gradle needs it; the
+                # Capacitor plugins compile at language level 21) without relying
+                # on the caller having exported them.
+                _java_ok() { [ -n "${1:-}" ] && [ -x "$1/bin/java" ] && "$1/bin/java" -version 2>&1 | grep -qE '"(1[7-9]|2[0-9])'; }
+                DEPLOY_ADB="$(command -v adb || true)"
+                if [ -z "$DEPLOY_ADB" ]; then
+                    for cand in "${ANDROID_HOME:-}" "$HOME/Library/Android/sdk" "/opt/homebrew/share/android-commandlinetools" "/usr/local/share/android-commandlinetools"; do
+                        if [ -n "$cand" ] && [ -x "$cand/platform-tools/adb" ]; then
+                            DEPLOY_ADB="$cand/platform-tools/adb"
+                            export ANDROID_HOME="${ANDROID_HOME:-$cand}"
+                            break
+                        fi
+                    done
+                fi
+                if ! _java_ok "${JAVA_HOME:-}"; then
+                    for jh in "/opt/homebrew/opt/openjdk@21" "/opt/homebrew/opt/openjdk@17" "$(/usr/libexec/java_home -v 21 2>/dev/null || true)" "$(/usr/libexec/java_home -v 17 2>/dev/null || true)"; do
+                        if _java_ok "$jh"; then export JAVA_HOME="$jh"; break; fi
+                    done
+                fi
+
+                if [ -z "$DEPLOY_ADB" ]; then
+                    echo "⚠️  adb not found — set ANDROID_HOME or add platform-tools to PATH; skipping APK install"
+                elif ! _java_ok "${JAVA_HOME:-}"; then
+                    echo "⚠️  No JDK 17+ found (Gradle requirement) — set JAVA_HOME; skipping APK build"
+                elif ! "$DEPLOY_ADB" devices | grep -qE "[[:space:]]device$"; then
+                    echo "⚠️  No connected device/emulator — start one (check 'adb devices') before --android-run; skipping APK build/install"
+                else
+                    echo "📦 Building debug APK (JDK: $JAVA_HOME)…"
+                    if ( cd ../mobile/android/android && ./gradlew assembleDebug -q ); then
+                        APK="../mobile/android/android/app/build/outputs/apk/debug/app-debug.apk"
+                        if "$DEPLOY_ADB" install -r "$APK"; then
+                            PKG="$(grep -oE 'applicationId "[^"]*"' "$ANDROID_GRADLE" | head -1 | sed -E 's/.*"([^"]*)".*/\1/')"
+                            if [ -n "$PKG" ]; then
+                                "$DEPLOY_ADB" shell am force-stop "$PKG" >/dev/null 2>&1 || true
+                                if "$DEPLOY_ADB" shell am start -n "$PKG/.MainActivity" >/dev/null 2>&1; then
+                                    echo "✅ Installed & launched $PKG (v$NEW_VERSION) on device"
+                                else
+                                    echo "✅ Installed $PKG (v$NEW_VERSION) — could not auto-launch; open it manually"
+                                fi
+                            else
+                                echo "✅ Installed APK (could not parse applicationId to auto-launch)"
+                            fi
+                        else
+                            echo "⚠️  adb install failed — is the device authorized?"
+                        fi
+                    else
+                        echo "⚠️  Gradle assembleDebug failed — APK not installed (version files already updated)"
+                    fi
+                fi
             fi
         else
             echo "⚠️  $ANDROID_GRADLE not found — skipping native version sync"
