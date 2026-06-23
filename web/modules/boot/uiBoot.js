@@ -60,6 +60,7 @@ import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS } from '../core/consta
 import { getLabel } from '../labels/labelResolver.js';
 import { initNativeShell, isNativeApp } from '../platform/capacitorBridge.js';
 import { goToLiteVersion } from '../utils/liteVersion.js';
+import { initHeaderLayout } from '../ui/headerLayoutManager.js';
 
 let _appContextMod = null;
 
@@ -888,6 +889,13 @@ export async function finalizeUI(options) {
 
   if (typeof initCompleted === 'function') initCompleted();
   else console.warn('⚠️ finalizeUI: initCompletedTasksSection not available');
+
+  // Publish --header-total-height and keep it in sync with the live header
+  // (runs after the mode-selector row is initialized so the measured box is
+  // complete). Layout rules centre #task-view below the measured header so the
+  // routine title never creeps under the mode selector. The ResizeObserver
+  // catches any later layout changes.
+  initHeaderLayout();
 
   recurringPanel?.updateRecurringPanelButtonVisibility?.();
 

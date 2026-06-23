@@ -22,13 +22,24 @@
     position: relative;
     width: 100vw;
     overflow: hidden;
-    padding-top: calc(env(safe-area-inset-top) + 110px); /* Status bar + header + mode selector */
+    /* Reserve the measured header+mode-selector height (--header-total-height,
+       published by headerLayoutManager). Falls back to the prior fixed estimate
+       before JS measures / if JS is unavailable. */
+    padding-top: var(--header-total-height, calc(env(safe-area-inset-top, 0px) + 110px));
 }
 
 /* Task view container - vertically centered */
 #task-view {
     position: fixed;
-    top: 50%;
+    /* Centre the card in the space BELOW the fixed header, not the whole
+       viewport. --header-total-height is published by headerLayoutManager
+       (measured from .fixed-header-container, which includes the safe-area and
+       the mode-selector row); shifting the centre down by half of it keeps the
+       card's top edge clear of the header at any window size / orientation —
+       replacing the old fixed top:50% that let the title creep under the mode
+       selector on short/narrow windows. Falls back to the prior ~110px estimate
+       before JS measures (and if JS is unavailable). */
+    top: calc(50% + var(--header-total-height, 110px) / 2);
     left: 50%;
     transform: translate(-50%, -50%);
     width: 90vw;
@@ -95,7 +106,9 @@
         /* See dvh note on the base #task-view rule above. */
         max-height: calc(100vh - 220px);
         max-height: calc(100dvh - 220px);
-        top: calc(50% + 10px + env(safe-area-inset-top, 0px) / 2);
+        /* top inherits from the base rule (centred below --header-total-height);
+           the old manual `+ 10px + env/2` nudge is now covered by the measured
+           header height. */
         overflow: hidden; /* Contain flex children — task-card shrinks, button stays fixed */
     }
 
@@ -108,7 +121,8 @@
 @media (min-width: 1024px) {
     #task-view {
         max-width: 50vw;
-        top: 50%;
+        /* top inherits from the base rule (centred below --header-total-height)
+           — do NOT reset to 50% here or the card would ignore the header again. */
         left: 50%;
         transform: translate(-50%, -50%);
     }

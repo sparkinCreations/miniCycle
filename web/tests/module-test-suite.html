@@ -522,6 +522,7 @@
         const { runUndoRedoManagerTests } = await import(`./undoRedoManager.tests.js?v=${cacheBuster}`);
         const { runGamesManagerTests } = await import(`./gamesManager.tests.js?v=${cacheBuster}`);
         const { runOnboardingManagerTests } = await import(`./onboardingManager.tests.js?v=${cacheBuster}`);
+        const { runHeaderLayoutManagerTests } = await import(`./headerLayoutManager.tests.js?v=${cacheBuster}`);
         const { runGuidedTourManagerTests } = await import(`./guidedTourManager.tests.js?v=${cacheBuster}`);
         const { runModalManagerTests } = await import(`./modalManager.tests.js?v=${cacheBuster}`);
         const { runMenuManagerTests } = await import(`./menuManager.tests.js?v=${cacheBuster}`);
@@ -2574,6 +2575,7 @@
                 { name: 'AppInit', key: 'appInit', runFn: runAppInitTests, importPath: '../modules/core/appInit.js' },
                 { name: 'AppState', key: 'appState', runFn: runAppStateTests, importPath: '../modules/core/appState.js' },
                 { name: 'HelpWindowManager', key: 'helpWindowManager', runFn: runHelpWindowManagerTests, importPath: '../modules/ui/helpWindowManager.js' },
+                { name: 'HeaderLayoutManager', key: 'headerLayoutManager', runFn: runHeaderLayoutManagerTests, importPath: '../modules/ui/headerLayoutManager.js' },
                 { name: 'Constants', key: 'constants', runFn: runConstantsTests, importPath: '../modules/core/constants.js' },
                 { name: 'BasicPluginSystem', key: 'basicPluginSystem', runFn: runBasicPluginSystemTests, importPath: '../modules/other/basicPluginSystem.js' },
                 { name: 'Accessibility', key: 'accessibility', runFn: runAccessibilityTests, importPath: null },

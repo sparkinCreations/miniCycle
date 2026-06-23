@@ -1214,6 +1214,9 @@ export const DOM_SELECTORS = Object.freeze({
     TASK_LIST_CONTAINER: '.task-list-container',
     TASK_CARD: '.task-card',
     TITLE_ROW: '.title-row',
+    // Fixed header + mode-selector wrapper — measured by headerLayoutManager to
+    // publish --header-total-height (note: this is a CLASS, not an id).
+    FIXED_HEADER_CONTAINER: '.fixed-header-container',
     COMPLETE_ALL_BTN: '.complete-all-btn',
     EMPTY_STATE_TEXT: '.empty-state-text',
     EMPTY_STATE_HINT: '.empty-state-hint',
