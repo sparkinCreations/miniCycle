@@ -1,3 +1,7 @@
+## [2.252] - 2026-06-23
+- fix(layout): band-centre #task-view so the help window clears the nav dots
+
+
 ## [2.251] - 2026-06-23
 - feat(layout): keep the stats panel clear of the nav dots (and header)
 - feat(release): add --android-run to build + install the debug APK on a device
