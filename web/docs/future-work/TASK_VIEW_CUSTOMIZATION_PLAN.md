@@ -77,6 +77,20 @@ Read-side defaults to `{ positions: {} }` if missing. Migration is purely additi
 - Swallow synthesized post-drag click (same pattern as notifications)
 - New CSS file `styles/components/task-view-layout.css` — handle styles, `.tvl-dragging` state, transitions guarded by `prefers-reduced-motion`
 
+#### Fix (v2.249) — interrupted-drag teardown
+
+The feature is *not* exclusively desktop-mouse: `_isDesktop()` returns `true` on touch devices that report a fine pointer (e.g., iPad + Magic Keyboard/trackpad in landscape ≥1024px, since `isTouchDevice()` returns false when `(pointer: fine)` matches). Drag-customize is therefore live on those devices.
+
+**Bug:** when a drag was interrupted by an iOS window event — Stage Manager / Split View resize, switching windows, or backgrounding — iOS drops pointer capture *without* firing `pointerup` or `pointercancel`. Teardown only ran on those events, so `.tvl-dragging` (the handle) and `.tvl-snap-target--visible` (the "Drop to dock" snap indicator) got orphaned and stuck visible across all orientations — these CSS classes have no breakpoint/orientation gate. Symptom: a gray "Drop to dock" rectangle plus stray drag handles stuck on screen even after rotating.
+
+**Fix:**
+
+- `onPointerDown` bails early if `!_shouldApplyLayout()` — don't start a drag when the feature isn't active (guards against starting one mid-resize as the viewport crosses the desktop boundary).
+- Instance-level active-drag tracking: `this._activeDrag` holds the `abortDrag` closure (set on pointerdown, cleared on pointerup/abort).
+- New `_abortActiveDrag()` force-ends the active drag and sweeps orphaned chrome: removes `.tvl-dragging` / `.tvl-snap-hover` / `.tvl-hovered` from all registered elements, hides all snap-target indicators, and resets `body.style.userSelect`.
+- `_abortActiveDrag()` is wired to `visibilitychange` + `pagehide` (window switch / background) and to the resize handler (Stage Manager resize); these listeners are removed in `destroy()`.
+- `_clearAllCustomPositions()` now also hides snap-target indicators (it previously cleared element classes but left the "Drop to dock" overlay visible).
+
 ### Phase 3 — Persistence
 
 - On drag-end: single `AppState.update(state => { state.settings.taskViewLayout.positions[key] = {x, y}; }, true)`

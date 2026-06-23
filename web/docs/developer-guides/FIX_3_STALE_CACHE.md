@@ -16,6 +16,12 @@
 - The fix is small: one condition in the service worker, a page-side "is the
   controlling worker stale?" self-heal, and one manual cache-clear for machines
   already wedged.
+- **v2.249 follow-up:** a *new class* of stale-cache bug where the page reported
+  "up to date" while actually rendering an **old cached HTML/CSS build**. Root
+  cause: health checks trusted `APP_VERSION` (from `version.js`, which the SW
+  serves *network-first* on a `?v=` mismatch — so it reads the latest deployed
+  version even on a stale build). The fix reads the **build version** (the loaded
+  HTML's `<meta app-version>`) instead, and self-heals when it lags the server.
 
 ## The symptoms
 
@@ -97,6 +103,70 @@ Change 1 prevents *future* stale-serves — but only takes effect once the **fix
 worker is activated and controlling the page, which a stale worker is exactly what
 blocks. Change 2 forces that transition from the page side for most users. Change 3
 is the unavoidable bootstrap for machines already broken when the fix ships.
+
+## v2.249 — the stale *build* (not just stale `version.js`)
+
+After the original fix shipped, a different failure mode surfaced: a device booted
+fine but ran an **old cached HTML/CSS build**, yet "Check for Updates" and About
+reported it was current. Observed: loaded HTML `<meta app-version>`=`2.247` plus
+duplicate `variables.css`/`reset.css` (the preload at `?v=2.247` vs `main.css`'s
+`@import` at a different `?v=`), while About claimed a newer version.
+
+### Why the old check was blind
+
+`globalThis.APP_VERSION` is loaded from `version.js`, and the service worker serves
+`version.js` **network-first on any `?v=` version mismatch** (`versionMismatch` at
+`~line 741` of `service-worker.js`). So `APP_VERSION` reads the *latest deployed*
+version even when the rendered HTML/CSS are an old cached build. Any health check
+that trusted `APP_VERSION` therefore reported "up to date" while the device was
+actually stuck on stale HTML.
+
+### The "build version" signal
+
+The honest "what am I actually running" value is the loaded HTML's
+`<meta name="app-version">` content — the true running build, baked into *that*
+document. `window.getBuildVersion()` (`miniCycle.html` ~line 66) reads it, falling
+back to `globalThis.APP_VERSION` only if the meta tag is missing.
+
+### Change 4 — `verifyVersionFresh()` compares BUILD vs server (`miniCycle.html`)
+
+`verifyVersionFresh()` now fetches `version.js` fresh (`cache: 'no-store'`) and
+computes a `buildStale` flag (`~line 477`): `buildVersion` (from
+`getBuildVersion()`) vs the freshly-fetched `serverVersion`. If they differ it
+self-heals — clear **all** caches, **unregister** the service worker, then reload
+to `?_cb=<ts>` (the SW must go too: a cache-first navigation handler could
+otherwise re-serve the same stale HTML even after caches are cleared).
+
+A loop guard keyed on the server version, `sessionStorage['__miniCycle_buildHeal']`
+(`~line 495`), prevents repeated reloads: if a heal already ran this session and
+the build is *still* stale (e.g. flaky network), it stops. `sessionStorage` clears
+on a full app close, so a fresh launch retries; a newer deploy re-keys the guard
+and heals again.
+
+> **Note:** this is distinct from Change 2's `ensureControllingWorkerFresh()`,
+> which compares the *controlling worker's* version against the page via the
+> `GET_VERSION` message. Change 4 compares the *loaded HTML build* against the
+> *server* — it catches the case where `version.js` loads fresh (so the worker
+> looks current) but the HTML/CSS are stale.
+
+### Change 5 — "Check for Updates" / About read the build (`miniCycle.html`)
+
+`window.checkForUpdates()` now compares the **running build**
+(`getBuildVersion()`, `~line 818`) against the deployed version from
+`fetchServerVersion()` — not active-SW vs waiting-SW. The old SW-vs-SW check
+reported "up to date" whenever the worker was current, even when the rendered
+HTML/CSS were a stale build. On a mismatch it calls `applyUpdateAndReload()`,
+which evicts caches + the SW and reloads cache-busted. `forceServiceWorkerUpdate()`
+(settings + main-menu button) delegates to `checkForUpdates()`.
+
+> Cross-reference: [SERVICE_WORKER_UPDATE_STRATEGY.md](../deployment/SERVICE_WORKER_UPDATE_STRATEGY.md).
+
+### Caveat — only heals 2.249+ devices
+
+The build-vs-server self-heal only runs on devices already on **2.249 or later**
+(the version that ships the fixed `verifyVersionFresh`). A device stuck on an
+*older* build still needs the one-time manual cache clear / reinstall from
+Change 3 before it can pick up the fix.
 
 ## Shipping notes
 

@@ -1,6 +1,6 @@
 # PWA Offline Architecture
 
-**Version:** 2.056 (March 2026)
+**Version:** 2.249 (June 2026)
 **Status:** Fully implemented and tested on iOS Safari
 **Related docs:** [SERVICE_WORKER_UPDATE_STRATEGY.md](./SERVICE_WORKER_UPDATE_STRATEGY.md), [DEPLOYMENT.md](./DEPLOYMENT.md), [UPDATE-VERSION-GUIDE.md](./UPDATE-VERSION-GUIDE.md)
 
@@ -79,15 +79,48 @@ When the SW intercepts a request, it picks one of four strategies:
 - **Offline fast-path**: When `needsNetworkFirst` is true but `navigator.onLine` is false, skip the network entirely and serve from cache.
 - **Stale-while-revalidate**: For all other requests. Return cached copy immediately, then fetch fresh copy in the background (online only — background fetch is skipped when offline).
 
+### Build Version vs `APP_VERSION` (v2.249)
+
+There are **two** version signals, and they can disagree:
+
+| Signal | Source | Meaning |
+|--------|--------|---------|
+| **Build version** | `<meta name="app-version">` in the loaded HTML, read via `window.getBuildVersion()` | The version actually **rendered** — the honest "what am I running" signal. |
+| **`globalThis.APP_VERSION`** | `version.js` (loaded synchronously before modulepreloads) | Can read **newer** than the build, because the SW serves `version.js` network-first on a `?v=` mismatch. |
+
+Before v2.249, the freshness and update checks trusted `APP_VERSION`. Because the SW could serve a fresh `version.js` while still rendering a **stale cached HTML/CSS build**, a device could report "up to date" while actually running an old build. As of v2.249, all build-freshness and update-detection logic compares the **build version** against the server's `version.js` — only the build version tells the truth about what's rendered.
+
+`window.getBuildVersion()` (an inline script in `miniCycle.html`) reads the meta tag, falling back to `globalThis.APP_VERSION` only if the tag is missing.
+
 ### Version Freshness Verification (`verifyVersionFresh()`)
 
-After every page load, an inline script in `miniCycle.html` fetches `version.js?_cb=<timestamp>` directly from the server (bypasses all caches) and compares **both** `APP_VERSION` and `CACHE_VERSION` against what's currently loaded.
+After every page load, an inline script in `miniCycle.html` fetches `version.js?_cb=<timestamp>` directly from the server (bypasses all caches, `cache: 'no-store'`) and compares the loaded versions against the server's.
 
-- If either mismatches → clears all caches, syncs localStorage, and reloads
-- Runs immediately at boot (while app-loader is visible), on focus, on visibility change, and on `pageshow` (iOS bfcache restoration)
+- Computes `buildStale` = server `APP_VERSION` ≠ `window.getBuildVersion()` (the rendered build), and `versionJsStale` = server `APP_VERSION` ≠ loaded `APP_VERSION` **or** server `CACHE_VERSION` ≠ loaded `CACHE_VERSION`
+- If `buildStale` **or** `versionJsStale` → **self-heals**: clears ALL caches, **unregisters the SW**, and hard-reloads to `?_cb=<timestamp>`. Unregistering the SW is required because a cache-first navigation handler could otherwise re-serve the same stale HTML even after caches are cleared.
+- **Per-session loop guard** (`sessionStorage['__miniCycle_buildHeal']`, keyed on the server version): if the build is still stale after a heal attempt this session (e.g. flaky network can't refresh the cache), it stops reloading to avoid a loop. `sessionStorage` clears on a full app close, so a fresh launch retries; a newer deploy (different server version) still triggers a heal.
+- Runs immediately at boot (while app-loader is visible, so any reload is hidden behind the splash), on focus, on visibility change, on `pageshow` (iOS bfcache restoration), and on the `app:verifyVersion` event (dispatched by pull-to-refresh — see below)
 - The `_cb=` parameter signals the SW to let the request pass through to the network
 
-**Why both versions are compared:** After deployment, the new SW may precache the new `version.js` (updating `APP_VERSION`), but old modules are still served from the old SW's dynamic cache. Comparing `CACHE_VERSION` catches this case — the loaded modules have the old cache version, but the server's `version.js` has the new one.
+**Why `CACHE_VERSION` is also compared:** After deployment, the new SW may precache the new `version.js` (updating `APP_VERSION`), but old modules are still served from the old SW's dynamic cache. Comparing `CACHE_VERSION` catches this case — the loaded modules have the old cache version, but the server's `version.js` has the new one.
+
+> **Caveat:** the self-heal only protects devices already running **2.249+**. A device stuck on a pre-2.249 build won't run this logic and needs a one-time manual cache clear / reinstall to get onto 2.249.
+
+### Manual Update Checks (`checkForUpdates` / `forceServiceWorkerUpdate`)
+
+The "Check for Updates" buttons call `window.checkForUpdates()` (and `forceServiceWorkerUpdate()` delegates to it). It compares the **running build** (`window.getBuildVersion()`) against the deployed version (`fetchServerVersion()`, which fetches `version.js?_cb=` with `cache: 'no-store'`):
+
+- If server ≠ build → prompts the user, then `applyUpdateAndReload()`: clears all caches, **unregisters the SW**, and hard-reloads to `?_cb=`
+- Only reports **"App is up to date"** when build === server (the old SW-vs-SW check falsely reported up-to-date whenever the SW was current, even if the rendered build was stale)
+- If the server version can't be read (offline) but a worker is waiting, still offers to apply the update
+
+### Pull-to-Refresh Triggers a Build Check (v2.249)
+
+Pull-to-refresh in `modules/ui/pullToRefresh.js` dispatches an `app:verifyVersion` CustomEvent, which `verifyVersionFresh()` listens for. So an explicit refresh gesture fetches the latest **build** (and self-heals stale HTML/CSS), not just a data re-render. The event-based decoupling keeps `pullToRefresh.js` free of `window.*` access. It's a no-op when the build is already current.
+
+### The About Dialog Shows the Build Version (v2.249)
+
+The About modal (`modules/ui/modalManager.js`) displays `window.getBuildVersion()` — the rendered build — not `globalThis.APP_VERSION`, so the version shown to the user matches what's actually running rather than the network-fresh `version.js`.
 
 ### Safari `cleanResponse()` Helper
 
@@ -489,6 +522,10 @@ Retry exists to re-fetch fresh files from the network. Offline, there's nothing 
 
 Connect to Safari Develop menu. If the "Service Workers" submenu exists under your device, the SW is running. If the entire submenu is absent, iOS killed the SW process. The diagnostic panel on the error screen also shows `SW:active` vs `SW:none` based on `navigator.serviceWorker.controller` (though this can be a stale reference on iOS).
 
+### Q: The app says "up to date" but I'm clearly on an old build. Why? (pre-v2.249)
+
+Before v2.249, the freshness and update checks trusted `globalThis.APP_VERSION`. The SW serves `version.js` network-first on a `?v=` mismatch, so `APP_VERSION` could read the latest while the HTML/CSS actually rendered were a stale cached build — making the device report "up to date" while running old code. As of v2.249, all checks compare the **build version** (`window.getBuildVersion()`, read from the `<meta name="app-version">` tag) against the server, and `verifyVersionFresh()` self-heals (clear caches + unregister SW + reload) when the build is stale. The self-heal only applies once a device is on 2.249+; a device stuck on an older build needs a one-time manual cache clear / reinstall.
+
 ### Q: Why are there version mismatch warnings on every offline boot?
 
 ```
@@ -569,6 +606,8 @@ This happens when the HTML was cached at version 2.055 but the SW was updated to
 | `modules/boot/coreBoot.js` | `dropVersionParam` / `vSuffix` / `withV()` chain, offline guard on `attemptCacheRecovery()` |
 | `modules/boot/featureBoot.js` | Inherits `withV` from coreBoot for all feature module imports |
 | `modules/boot/moduleLoader.js` | Uses `withV` for all 114+ module `import()` calls |
-| `miniCycle.html` | Boot failsafe (offline guard), version-change auto-clear (`document.write`) |
+| `miniCycle.html` | Boot failsafe (offline guard), version-change auto-clear (`document.write`), `getBuildVersion()`, build-vs-server freshness/self-heal (`verifyVersionFresh`), manual update checks (`checkForUpdates` / `fetchServerVersion` / `applyUpdateAndReload`) |
+| `modules/ui/modalManager.js` | About dialog displays the build version (`getBuildVersion()`), not `APP_VERSION` |
+| `modules/ui/pullToRefresh.js` | Dispatches `app:verifyVersion` so a refresh gesture triggers `verifyVersionFresh()` |
 | `netlify.toml` | Cache-Control headers (critical for iOS), CSP hashes, Safari memory cache workaround |
 | `version.js` | Single source of truth for version numbers (APP_VERSION + CACHE_VERSION) |
