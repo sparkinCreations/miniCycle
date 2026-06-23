@@ -168,6 +168,31 @@ The build-vs-server self-heal only runs on devices already on **2.249 or later**
 *older* build still needs the one-time manual cache clear / reinstall from
 Change 3 before it can pick up the fix.
 
+### Manual recovery — force-clear a stuck device
+
+For a device stuck on a pre-2.249 build (or any time you need to force a clean
+reload), paste this into the browser console. It clears **all** caches,
+unregisters the service worker, and reloads. It does **not** touch IndexedDB, so
+saved routines survive:
+
+```js
+(async () => {
+  for (const k of await caches.keys()) await caches.delete(k);
+  for (const r of await navigator.serviceWorker.getRegistrations()) await r.unregister();
+  location.reload(true);
+})();
+```
+
+After it reloads, **fully close and reopen the PWA once** so a clean worker
+re-registers and precaches the current build. Verify in Web Inspector → Sources
+that `<meta name="app-version">` matches the deployed version and that there are
+no duplicate `variables.css` / `reset.css` entries.
+
+> **Guaranteed fallback (iOS):** if the console clear still lands on an old build,
+> delete the PWA from the home screen and re-add it from Safari — that wipes the
+> PWA's storage entirely. ⚠️ This **also erases IndexedDB**, so export routines
+> first (menu → backup) before deleting.
+
 ## Shipping notes
 
 - `./scripts/update-version.sh` is **required** — it bumps the version so a fresh
