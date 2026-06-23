@@ -1,3 +1,14 @@
+## [2.250] - 2026-06-23
+- feat(lite): guard lite-version navigation in the packaged Chrome extension + rebuild chrome/full
+- feat(layout): measure header height so the routine title always clears the mode selector
+- feat(android): make the hardware back button close layers in priority order
+- refactor: route all lite-version navigation through one guarded helper
+- fix(android): don't route to the unbundled lite version in the native build
+- docs(stale-cache): add copy-paste console recovery snippet + cross-ref
+- docs: document v2.249 build-version truth/self-heal + drag-customize interrupted-drag teardown
+- feat(android): use miniCycle blue logo for launcher icon
+
+
 ## [2.249] - 2026-06-23
 - fix(version): detect stale build (not just version.js) so the app self-heals and reports the truth
 - fix(boot): skip service-worker + test-recovery waits on native (Capacitor)

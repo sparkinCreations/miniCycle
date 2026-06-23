@@ -13,14 +13,14 @@
 
 | Metric | Value |
 |--------|-------|
-| **App Version** | 2.249 |
+| **App Version** | 2.250 |
 | **Lite Version** | 2.091 (frozen) |
 | **Schema Version** | 2.5 |
-| **Total Modules** | 125 |
-| **Total Tests** | 2915 |
+| **Total Modules** | 127 |
+| **Total Tests** | 2927 |
 | **Test Pass Rate** | 100% |
 | **CSS Files** | 43 |
-| **JSDoc Blocks** | 1280 |
+| **JSDoc Blocks** | 1288 |
 | **Documentation Files** | 215 |
 | **DI Completion** | 100% |
 | **Custom window.* Globals (modules)** | 0 |
@@ -38,15 +38,15 @@
 | `task/` | 13 | Task CRUD, DOM, events, drag-drop, validation |
 | `routine/` | 5 | Routine management, switching, migration |
 | `recurring/` | 16 | Recurring task scheduling, panel, activation |
-| `ui/` | 34 | Modals, menus, settings, onboarding, gestures |
+| `ui/` | 35 | Modals, menus, settings, onboarding, gestures |
 | `features/` | 8 | Themes, stats, achievements, history, reminders |
-| `utils/` | 15 | Notifications, device detection, utilities |
+| `utils/` | 16 | Notifications, device detection, utilities |
 | `labels/` | 3 | Default labels + label resolver |
 | `storage/` | 1 | Backup manager |
 | `progress/` | 1 | Cycle completion tracking |
 | `testing/` | 9 | Test infrastructure |
 | `other/` | 3 | Plugins, experimental |
-| **Total** | **125** | |
+| **Total** | **127** | |
 
 ---
 
@@ -55,11 +55,11 @@
 | File | Lines | Purpose |
 |------|-------|---------|
 | `miniCycle-main.js` | ~49 | Entrypoint |
-| `modules/boot/orchestrator.js` | ~1037 | Sequence control + boot UI + early coordination |
+| `modules/boot/orchestrator.js` | ~1027 | Sequence control + boot UI + early coordination |
 | `modules/boot/coreBoot.js` | ~1041 | Core state & init |
 | `modules/boot/featureBoot.js` | ~598 | DI wiring hub |
-| `modules/boot/uiBoot.js` | ~1041 | UI handlers |
-| **Total** | **~3766** | |
+| `modules/boot/uiBoot.js` | ~1061 | UI handlers |
+| **Total** | **~3776** | |
 
 ---
 
@@ -67,8 +67,8 @@
 
 | Category | Tests |
 |----------|-------|
-| Total Tests | 2915 |
-| Test Files | 117 |
+| Total Tests | 2927 |
+| Test Files | 118 |
 | Pass Rate | 100% |
 | Platforms Tested | Mac, iPad, iPhone |
 
