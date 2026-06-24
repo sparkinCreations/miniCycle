@@ -59,6 +59,13 @@ jobs:
       working-directory: ./web
       run: npm run test:sw
 
+    # End-to-end user journey on the REAL app: add tasks → reload (persistence) →
+    # complete a cycle (count++ + reset) → offline reload (boot + data intact).
+    # Spawns its own server (port 8079) + uses the chromium installed above.
+    - name: Run end-to-end journey tests
+      working-directory: ./web
+      run: npm run test:journey
+
     # Note: Jest tests are currently experimental/incomplete
     # Main test suite (958 browser tests) runs above
 

@@ -1,9 +1,14 @@
 name: Performance
 
 # Migrated from the inert web/.github/workflows/performance.yml (GitHub only runs
-# workflows in the repo-root .github/workflows/). Both jobs are INFORMATIONAL —
-# the perf benchmark and Lighthouse steps are continue-on-error so a shared-runner
-# score blip never blocks a merge; check the uploaded artifacts for results.
+# workflows in the repo-root .github/workflows/).
+#
+# performance-benchmarks job: INFORMATIONAL — continue-on-error, never gates.
+# lighthouse job: PARTIALLY GATING. lighthouserc.json marks only deterministic,
+#   non-flaky audits as `error` (service-worker registered, viewport, CLS); every
+#   score/timing metric is `warn` and never blocks. Because the only `error`s are
+#   noise-free, this step does NOT use continue-on-error — a real regression (e.g.
+#   a broken SW registration) now fails the build instead of hiding in the logs.
 
 on:
   push:
@@ -77,10 +82,12 @@ jobs:
           npm start &
           sleep 3
 
+      # NOT continue-on-error: lighthouserc.json gates only deterministic audits
+      # (service-worker, viewport, CLS) as `error`; all score/timing metrics are
+      # `warn`. So a failure here is a real regression, not shared-runner noise.
       - name: Run Lighthouse CI
         working-directory: ./web
         run: lhci autorun
-        continue-on-error: true # perf scores vary on shared runners; informational
 
       - name: Upload Lighthouse results
         if: always()

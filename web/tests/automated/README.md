@@ -43,6 +43,28 @@ npm test -- recurring           # Runs recurringCore, recurringIntegration, recu
 npm test -- --list
 ```
 
+### Run the real-app regression + E2E suites
+
+These drive the actual `miniCycle.html` (not the module harness). Each spawns its
+**own** static server on a dedicated port, so they need no running server and don't
+clash with `npm test`'s :8080:
+
+```bash
+npm run test:layout     # geometric invariants across a viewport matrix (port 8077)
+npm run test:sw         # online/offline/lying-network boot + precache drift guard (8078)
+npm run test:journey    # full user journey: add → reload-persist → complete cycle → offline (8079)
+```
+
+`test:journey` is the end-to-end walk a user takes: it adds tasks through the real
+input, reloads to prove persistence, completes the cycle (asserting `cycleCount++`
+and that tasks reset), then reloads **offline** and checks the data is still there —
+the bug class that green module tests miss and only a device usually catches.
+
+> **0-test = failure.** `npm test` now treats a registered module that reports
+> `0/0` as a hard failure (its import almost certainly threw before rendering) —
+> add it to `ZERO_TEST_EXEMPT` in `run-browser-tests.cjs` only if it legitimately
+> self-skips.
+
 ### Run Manual Tests (Visual)
 
 ```bash
@@ -309,49 +331,20 @@ python3 -m http.server 8081
 
 ### GitHub Actions
 
-Create `.github/workflows/test.yml`:
+The live pipeline is the repo-root **`.github/workflows/test.yml`** (don't recreate
+it — GitHub only runs workflows from the repo root, not `web/`). It runs on every
+push/PR to `main`/`develop` and **gates** the merge on, in order:
 
-```yaml
-name: Run Browser Tests
+1. `npm test` — the module browser suite (now fails on any 0-test module)
+2. `npm run test:layout` — layout overlap invariants
+3. `npm run test:sw` — offline boot + precache drift
+4. `npm run test:journey` — the end-to-end user journey
 
-on:
-  push:
-    branches: [main, develop]
-  pull_request:
-    branches: [main, develop]
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-
-      - name: Install dependencies
-        run: |
-          cd web
-          npm install playwright
-
-      - name: Install Playwright browsers
-        run: npx playwright install chromium
-
-      - name: Start HTTP server
-        run: |
-          cd web
-          python3 -m http.server 8080 &
-          sleep 3
-
-      - name: Run tests
-        run: |
-          cd web
-          node tests/automated/run-browser-tests.js
-```
+A separate **`.github/workflows/performance.yml`** runs perf benchmarks
+(informational) and Lighthouse. Lighthouse is **partially gating**: only the
+deterministic, non-flaky audits (`service-worker`, `viewport`,
+`cumulative-layout-shift`) are `error` and block the build — every score/timing
+metric is `warn` so shared-runner noise never gates. See `web/lighthouserc.json`.
 
 ### GitLab CI
 

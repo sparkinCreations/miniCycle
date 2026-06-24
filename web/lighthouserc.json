@@ -13,18 +13,21 @@
     },
     "assert": {
       "assertions": {
-        "categories:performance": ["error", {"minScore": 0.85}],
+        "service-worker": ["error", {"minScore": 1}],
+        "viewport": ["error", {"minScore": 1}],
+        "cumulative-layout-shift": ["error", {"maxNumericValue": 0.1}],
+
+        "categories:performance": ["warn", {"minScore": 0.85}],
         "categories:accessibility": ["warn", {"minScore": 0.90}],
         "categories:best-practices": ["warn", {"minScore": 0.90}],
         "categories:seo": ["warn", {"minScore": 0.85}],
         "categories:pwa": ["warn", {"minScore": 0.90}],
+        "installable-manifest": ["warn", {"minScore": 1}],
 
-        "first-contentful-paint": ["error", {"maxNumericValue": 2000}],
-        "largest-contentful-paint": ["error", {"maxNumericValue": 2500}],
-        "cumulative-layout-shift": ["error", {"maxNumericValue": 0.1}],
+        "first-contentful-paint": ["warn", {"maxNumericValue": 2000}],
+        "largest-contentful-paint": ["warn", {"maxNumericValue": 2500}],
         "total-blocking-time": ["warn", {"maxNumericValue": 300}],
         "speed-index": ["warn", {"maxNumericValue": 3400}],
-
         "interactive": ["warn", {"maxNumericValue": 3800}],
         "max-potential-fid": ["warn", {"maxNumericValue": 130}],
 
