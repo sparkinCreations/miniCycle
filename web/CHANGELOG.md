@@ -1,3 +1,7 @@
+## [2.257] - 2026-06-23
+- fix(layout): make header measurement resilient so --header-total-height always publishes
+
+
 ## [2.256] - 2026-06-23
 - fix(sw): precache the drifted stylesheets so offline doesn't flash unstyled
 
