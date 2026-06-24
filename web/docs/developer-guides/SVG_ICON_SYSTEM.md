@@ -1,182 +1,95 @@
 # SVG Icon System
 
-> **Inline SVG icons for task buttons - replacing Font Awesome CDN**
+> **Inline SVG icons — Font Awesome fully removed (no CDN, no font files, offline).**
 
-**Date**: January 2026
-**Status**: Implemented
+**Status**: Migration complete (June 2026)
+**Supersedes**: [`../archive/SVG_ICON_SYSTEM_v1_ARCHIVED.md`](../archive/SVG_ICON_SYSTEM_v1_ARCHIVED.md) (the original v1.0, kept as a historical snapshot)
 
 ---
 
 ## Overview
 
-miniCycle uses inline SVG icons instead of Font Awesome CDN to eliminate ~2 second critical path latency from external font loading. This document explains the implementation and key technical decisions.
+miniCycle renders all icons as **inline SVG** — there is no Font Awesome dependency: no CDN `<link>`, no webfont files, nothing loaded over the network. This eliminates the ~2s critical-path latency and FOUC that the CDN font caused, and it keeps every edition (web, PWA, Android, Chrome extensions) fully offline.
+
+`fa-*` class names are kept in the markup as the **semantic source** (e.g. `<i class="fas fa-trash">`); they are swapped for inline `<svg>` at runtime. The class is just a key into an SVG registry — Font Awesome itself is never loaded.
+
+As of June 2026 the migration is **complete**: 0 `fa-*` icons render unconverted at runtime (verified on-device), and the commented-out CDN link has been removed from `miniCycle.html`.
 
 ---
 
-## The Problem
+## ⚠️ Two systems exist today (known tech debt)
 
-Font Awesome loaded from CDN caused:
-- ~2 second blocking time on initial page load
-- Flash of invisible/unstyled icons (FOUC)
-- Dependency on external CDN availability
-- Unnecessary network requests for icons we don't use
+There are currently **two parallel icon implementations**. New work should use **System A**. System B is a legacy duplicate slated for consolidation — see [Tech debt](#tech-debt-consolidation-pending).
 
----
+### System A — the primary registry (use this)
 
-## The Solution
+| Piece | Role |
+|------|------|
+| `modules/utils/icons.js` | `ICONS` registry (SVG strings, keyed by name) + `FA_MAP` (`fa-name` → name) + helpers (`getIcon`, `iconHTML`, `createIconElement`) |
+| `modules/utils/iconInit.js` | On load, `initIcons()` → `replaceAllFAIcons()` swaps every `<i class="fas fa-X">` for `<span class="icon"><svg></span>` using `ICONS['X']`. Also exports `createIcon(faClass)`, `iconHTML(name)`, `replaceFAIcon(el)` for dynamic creation. |
+| `styles/components/icons.css` | `.icon` sizing/layout |
 
-Inline SVG icons embedded directly in JavaScript:
+**SVG parsing:** `iconInit.js` uses **`DOMParser`** (`parseSVG()`), and it works — appending a parsed cross-document node via `appendChild` auto-adopts it in modern browsers. Crucially, it also **detects malformed SVG** (`tagName === 'parsererror'`) and warns, so a bad icon string fails loudly instead of silently rendering blank.
 
-```javascript
-// modules/task/taskButtons.js
-const TASK_ICONS = {
-    'exclamation-triangle': '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 512 512"><path fill="#bf0303" d="..."/></svg>',
-    'edit': '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 512 512"><path fill="#4d4dff" d="..."/></svg>',
-    // ... more icons
-};
-```
+> The archived v1 doc claimed DOMParser "fails" and recommended a `<template>` element instead. That claim is **false** against this code — the entire menu/settings/section-header icon set (51 icons) renders through DOMParser.
+
+### System B — `taskButtons.js` (legacy, do not extend)
+
+`modules/task/taskButtons.js` has its **own** `TASK_ICONS` registry (6 icons: `bell`, `calendar-alt`, `edit`, `flag`, `repeat`, `trash`) for the task-option buttons (priority, edit, delete, recurring, due-date, reminders), inserted via a **`<template>` element** with no parse-error detection. **All 6 of these icons also exist in `ICONS`** — System B is a duplicate.
 
 ---
 
-## Key Technical Decisions
+## Coloring: `fill="currentColor"` + CSS
 
-### 1. Using `<template>` Element for SVG Parsing
-
-**Problem**: Setting `innerHTML` directly on a span doesn't properly handle SVG namespace.
-
-```javascript
-// WRONG - SVG renders blank
-iconSpan.innerHTML = '<svg>...</svg>';
-```
-
-**Solution**: Use `<template>` element which properly parses HTML5 including SVG:
-
-```javascript
-// CORRECT - SVG renders properly
-const template = document.createElement('template');
-template.innerHTML = svgString.trim();
-const svgNode = template.content.firstChild;
-iconSpan.appendChild(svgNode);
-```
-
-**Why this works**: The `<template>` element's `content` property is a DocumentFragment that properly parses HTML5 content, including SVG elements with their correct XML namespaces.
-
-### 2. CSS Controls Colors via `fill="currentColor"`
-
-SVGs use `fill="currentColor"` on the `<svg>` element, allowing CSS to control icon colors:
-
-```html
-<svg xmlns="..." fill="currentColor"><path d="..."/></svg>
-```
-
-CSS sets the color on button classes:
+SVGs use `fill="currentColor"`, so CSS controls color per context:
 
 ```css
-.priority-btn .icon { color: #bf0303; }  /* Red */
-.edit-btn .icon { color: #333333; }      /* Black */
-.delete-btn .icon { color: #333333; }    /* Black */
+.priority-btn .icon { color: #bf0303; }   /* task-options.css */
+.edit-btn .icon     { color: #333333; }
+.delete-btn .icon   { color: #333333; }
 ```
 
-This is the proper approach because:
-- Single source of truth (CSS)
-- Easy to theme
-- Active states can override (e.g., white icon when button is active)
-
-### 3. Explicit Width/Height Attributes
-
-SVG elements include explicit dimensions for reliable rendering:
-
-```html
-<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 512 512">
-```
+Sizing comes from `.icon` (System A, CSS-driven) or explicit `width`/`height` on the SVG (System B). When consolidating, prefer CSS sizing.
 
 ---
 
-## File Locations
+## Adding / changing an icon
 
-| File | Purpose |
-|------|---------|
-| `modules/task/taskButtons.js` | SVG icon definitions and button creation |
-| `modules/utils/icons.js` | General icon utilities (menu icons, etc.) |
-| `modules/utils/iconInit.js` | Font Awesome replacement on page load |
-| `styles/components/icons.css` | Icon styling and sizing |
+**Use System A.** To add an icon named `foo` (so `<i class="fas fa-foo">` renders it):
 
----
+1. Add the SVG to `ICONS` in `modules/utils/icons.js` (FA 6 Free Solid paths, `viewBox` + `fill="currentColor"`, no hardcoded width/height — let CSS size it):
+   ```javascript
+   'foo': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor"><path d="…"/></svg>',
+   ```
+2. Add the matching `FA_MAP` entry: `'fa-foo': 'foo',`
+3. Use it in markup as `<i class="fas fa-foo" aria-hidden="true"></i>` — `iconInit` converts it on load. For **dynamically created** DOM, call `createIcon('fas fa-foo')` or `iconHTML('foo')` (and `replaceAllFAIcons(container)` if you inject raw `<i>` markup after load).
 
-## Icon Colors by Button Type
-
-Colors are defined in `styles/components/task-options.css`:
-
-| Button | Color | Hex | CSS Selector |
-|--------|-------|-----|--------------|
-| Priority | Dark red | `#bf0303` | `.priority-btn .icon` |
-| Edit | Black | `#333333` | `.edit-btn .icon` |
-| Delete | Black | `#333333` | `.delete-btn .icon` |
-| Recurring | Dark blue | `#0056b3` | `.recurring-btn .icon` |
-| Due Date | Gray | `#555` | `.set-due-date .icon` |
-| Reminders | Black | `#333333` | `.enable-task-reminders .icon` |
+> Static markup is converted once at `DOMContentLoaded`. If you build HTML *after* load and insert `<i class="fas …">`, either use `iconHTML()`/`createIcon()` or call `replaceAllFAIcons(yourContainer)` on the new subtree.
 
 ---
 
-## Adding New Icons
+## Tech debt: consolidation pending
 
-1. Find the SVG path data (e.g., from Font Awesome or other icon set)
-2. Add to `TASK_ICONS` object in `taskButtons.js`:
+`taskButtons.js`'s `TASK_ICONS` (System B) duplicates 6 icons already in `ICONS` and uses the weaker `<template>` insertion (no error detection). The clean end-state is **one** registry and **one** insertion path:
 
-```javascript
-'new-icon': '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 512 512"><path fill="#COLOR" d="PATH_DATA"/></svg>'
-```
+- Route `taskButtons.js` through `icons.js` (`createIcon()` / `iconHTML()`), delete `TASK_ICONS` and the `<template>` code.
+- Verify the 6 task-option buttons look identical on-device first — `TASK_ICONS` SVGs use explicit `14×14` sizing and (historically) some hardcoded fills, so confirm the central `currentColor` + CSS sizing matches before deleting.
 
-3. Reference in button config:
-
-```javascript
-{ class: "new-btn", iconClass: "fas fa-new-icon", show: true }
-```
+Tracked in [`future-work/CODE_CONSISTENCY_AUDIT.md`](../future-work/CODE_CONSISTENCY_AUDIT.md). Because task buttons render on every task (via both render paths), this is a focused, separately-tested change — not a drive-by.
 
 ---
 
-## What Doesn't Work
+## File reference
 
-These approaches were tried and **failed**:
-
-### 1. Direct innerHTML Assignment
-```javascript
-// FAILS - SVG namespace not properly set
-iconSpan.innerHTML = svgString;
-```
-
-### 2. DOMParser with 'image/svg+xml'
-```javascript
-// FAILS - Document context issues when appending
-const parser = new DOMParser();
-const doc = parser.parseFromString(svg, 'image/svg+xml');
-iconSpan.appendChild(doc.documentElement);
-```
-
-### 3. Inline fill on `<path>` element
-```html
-<!-- FAILS to pick up CSS colors, gets overridden -->
-<path fill="#333" d="..."/>
-```
-
-**Note**: `fill="currentColor"` on the `<svg>` element DOES work and is the correct approach.
+| File | Role |
+|------|------|
+| `modules/utils/icons.js` | **Primary** `ICONS` + `FA_MAP` registry + helpers |
+| `modules/utils/iconInit.js` | `fa-*` → SVG conversion on load (DOMParser, with error detection) |
+| `modules/task/taskButtons.js` | Legacy `TASK_ICONS` for task-option buttons (to be consolidated) |
+| `styles/components/icons.css` | `.icon` sizing/layout |
+| `styles/components/task-options.css` | Per-button icon colors |
 
 ---
 
-## Performance Benefits
-
-- **Before**: ~2000ms Font Awesome CDN load time
-- **After**: 0ms (icons bundled with JS)
-- **Bundle size increase**: ~2KB (negligible)
-
----
-
-## Related Files
-
-- `styles/components/task-options.css` - Button container styling
-- `miniCycle.html` - Removed Font Awesome CDN link
-
----
-
-**Document Version**: 1.0
-**Last Updated**: January 2026
+**Document Version**: 2.0
+**Last Updated**: June 2026
