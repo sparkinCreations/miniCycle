@@ -25,7 +25,7 @@
     /* Reserve the measured header+mode-selector height (--header-total-height,
        published by headerLayoutManager). Falls back to the prior fixed estimate
        before JS measures / if JS is unavailable. */
-    padding-top: var(--header-total-height, calc(env(safe-area-inset-top, 0px) + 110px));
+    padding-top: var(--header-total-height, calc(env(safe-area-inset-top, 0px) + var(--header-height-fallback)));
 }
 
 /* Task view container - vertically centered */
@@ -39,7 +39,7 @@
        centre toward whichever edge has more chrome; paired with the band-capped
        max-height below, the whole card always sits clear of both. Falls back to
        fixed estimates before JS measures (and if JS is unavailable). */
-    top: calc(50% + (var(--header-total-height, 110px) - var(--nav-dots-clearance, 90px)) / 2);
+    top: calc(50% + (var(--header-total-height, var(--header-height-fallback)) - var(--nav-dots-clearance, var(--nav-dots-clearance-fallback))) / 2);
     left: 50%;
     transform: translate(-50%, -50%);
     width: 90vw;
@@ -56,12 +56,12 @@
        Also: 100dvh tracks the visible viewport on iPad Safari (vs 100vh
        which includes the area behind the dynamic toolbar). Older browsers
        fall through to the 100vh line. Same pattern as focus-mode.css. */
-    max-height: calc(100vh - 290px - (env(safe-area-inset-top, 0px) * 2));
+    max-height: calc(100vh - var(--task-view-max-reduction) - (env(safe-area-inset-top, 0px) * 2));
     /* min(): keep the tuned cap on tall viewports; on short ones, cap to the
        header→nav-dots band so the bottom (help window) never reaches the dots. */
     max-height: min(
-        calc(100dvh - 290px - (env(safe-area-inset-top, 0px) * 2)),
-        calc(100dvh - var(--header-total-height, 110px) - var(--nav-dots-clearance, 90px) - var(--space-2))
+        calc(100dvh - var(--task-view-max-reduction) - (env(safe-area-inset-top, 0px) * 2)),
+        calc(100dvh - var(--header-total-height, var(--header-height-fallback)) - var(--nav-dots-clearance, var(--nav-dots-clearance-fallback)) - var(--space-2))
     );
     min-height: auto;
     transition: left var(--animation-pop) ease-in-out, transform var(--animation-pop) ease-in-out;
@@ -109,10 +109,10 @@
 @media (max-width: 768px) {
     #task-view {
         /* See dvh note on the base #task-view rule above. */
-        max-height: calc(100vh - 220px);
+        max-height: calc(100vh - var(--task-view-max-reduction-mobile));
         max-height: min(
-            calc(100dvh - 220px),
-            calc(100dvh - var(--header-total-height, 110px) - var(--nav-dots-clearance, 90px) - var(--space-2))
+            calc(100dvh - var(--task-view-max-reduction-mobile)),
+            calc(100dvh - var(--header-total-height, var(--header-height-fallback)) - var(--nav-dots-clearance, var(--nav-dots-clearance-fallback)) - var(--space-2))
         );
         /* top inherits from the base rule (band-centred between header and nav
            dots); the old manual `+ 10px + env/2` nudge is now covered by the

@@ -502,6 +502,21 @@
   --nav-area-height: 55px;                /* Nav dots bottom position on mobile */
   --help-window-clearance: 55px;          /* Help window margin-bottom to clear nav dots */
 
+  /* ─── Centred-Panel Geometry ───────────────────────────────────────────
+     Consumed by #task-view / #stats-panel positioning (app-container.css,
+     stats-panel.css). headerLayoutManager publishes the LIVE measurements
+     (--header-total-height, --nav-dots-clearance); the *-fallback tokens below
+     are the estimates used until it does (and if JS is unavailable). The
+     *-reduction tokens are the legacy fixed max-height budgets, kept as the
+     tall-viewport cap via min(). Tune these here instead of editing calc()s
+     inline — hardcoding these values is what made the header/help-window
+     overlaps fragile. */
+  --header-height-fallback: 110px;          /* fallback for --header-total-height */
+  --nav-dots-clearance-fallback: 90px;      /* fallback for --nav-dots-clearance */
+  --task-view-max-reduction: 290px;         /* base #task-view max-height budget */
+  --task-view-max-reduction-mobile: 220px;  /* mobile (≤768px) budget */
+  --stats-panel-max-vh: 63vh;               /* stats panel cap on tall viewports */
+
   /* ─── Focus Mode Geometry ──────────────────────────────────────────────
      These tokens centralize the focus-mode layout values that were tuned
      iteratively against real device heights. Bump these instead of

@@ -16,7 +16,7 @@
     width: 80vw;
     max-width: 400px;
     height: auto;
-    max-height: 63vh;
+    max-height: var(--stats-panel-max-vh);
     overflow-y: auto;
     color: var(--theme-stats-text);
     background: var(--theme-stats-bg);
@@ -48,8 +48,8 @@
    non-focus mode — focus view hides the header and has its own deliberate top
    overrides below. Falls back to the prior fixed values before JS measures. */
 body:not(.focus-mode) #stats-panel {
-    top: calc(50% + (var(--header-total-height, 110px) - var(--nav-dots-clearance, 90px)) / 2);
-    max-height: min(63vh, calc(100dvh - var(--header-total-height, 110px) - var(--nav-dots-clearance, 90px) - var(--space-6)));
+    top: calc(50% + (var(--header-total-height, var(--header-height-fallback)) - var(--nav-dots-clearance, var(--nav-dots-clearance-fallback))) / 2);
+    max-height: min(var(--stats-panel-max-vh), calc(100dvh - var(--header-total-height, var(--header-height-fallback)) - var(--nav-dots-clearance, var(--nav-dots-clearance-fallback)) - var(--space-6)));
 }
 
 /* =============================================================================

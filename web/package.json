@@ -13,6 +13,7 @@
     "blog:build": "cd blog && npm run build",
     "test": "node tests/automated/run-browser-tests.cjs",
     "test:browser": "node tests/automated/run-browser-tests.cjs",
+    "test:layout": "node tests/automated/run-layout-overlap-tests.cjs",
     "test:manual": "python3 -m http.server 8080",
     "perf": "node tests/automated/run-performance-benchmarks.cjs",
     "lint": "eslint modules/",
