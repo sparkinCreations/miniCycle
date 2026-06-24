@@ -185,6 +185,13 @@ async function run() {
             await page.waitForTimeout(150);
             const r = await page.evaluate(measureRoutine);
 
+            // headerLayoutManager MUST publish the measured chrome — if the vars
+            // are empty the band-centering silently falls back to the wrong
+            // hardcoded guess (the real iPad bug: title creeps under the mode
+            // selector). parseFloat('') → NaN → 0, so 0 means "not published".
+            record(vp, 'header/nav-dots vars published', r.headVar > 0 && r.navClear > 0,
+                `--header-total-height=${r.headVar} --nav-dots-clearance=${r.navClear} (0 = empty/unpublished)`);
+
             if (r.titleTop !== null && r.headerBottom !== null) {
                 record(vp, 'title clears header', r.titleTop >= r.headerBottom - TOL,
                     `title.top ${r.titleTop} < header.bottom ${r.headerBottom}`);
