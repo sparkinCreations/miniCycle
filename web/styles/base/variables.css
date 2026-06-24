@@ -499,7 +499,7 @@
      Increase to shrink the task card; decrease to give it more room. */
   --task-card-offset: 320px;
   --task-card-offset-with-btn: 380px;     /* When Complete/Clear button is visible */
-  --nav-area-height: 55px;                /* Nav dots bottom position on mobile */
+  --nav-area-height: 55px;                /* Nav dots bottom offset (desktop/base). Mobile reduces it — see RESPONSIVE TOKEN OVERRIDES below. */
   --help-window-clearance: 55px;          /* Help window margin-bottom to clear nav dots */
 
   /* ─── Centred-Panel Geometry ───────────────────────────────────────────
@@ -543,6 +543,22 @@
      differ. Larger value → shorter list, more clearance. */
   --focus-task-list-reduction-desktop: 340px;
   --focus-task-list-reduction-mobile:  310px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RESPONSIVE TOKEN OVERRIDES
+   Tune token VALUES per breakpoint here (keep usage sites referencing the
+   semantic token). Small phones have the least vertical room, so the help
+   window needs the LEAST clearance — the base 55px over-clears at this size and
+   left a ~41px dead gap above the nav dots. --space-8 (32px) leaves ~8px.
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 480px) {
+  :root {
+    --help-window-clearance: var(--space-8);
+    /* Drop the nav dots / undo / redo row lower so it sits tighter to the footer,
+       giving the task list ~31px more height. (Desktop keeps the 55px base.) */
+    --nav-area-height: var(--space-6);
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════

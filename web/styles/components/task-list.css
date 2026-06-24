@@ -172,6 +172,22 @@
     visibility: visible;
 }
 
+@media (max-width: 480px) {
+    /* On phones the indicator's reserved ~22px at the bottom of the fixed header
+       inflated --header-total-height and shrank the task list. Take it OUT of
+       flow (so the header measures ~22px shorter and the list grows) and tuck
+       "Saving…" into the thin band below the mode-selector row, above the title,
+       with ~1px clearance each side. */
+    .saving-indicator {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: calc(100% + 1px);
+        padding: 0;
+        line-height: 1;
+    }
+}
+
 /* =============================================================================
    ONBOARDING STATE
    ============================================================================= */
