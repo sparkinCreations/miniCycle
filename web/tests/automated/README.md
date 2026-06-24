@@ -52,13 +52,18 @@ clash with `npm test`'s :8080:
 ```bash
 npm run test:layout     # geometric invariants across a viewport matrix (port 8077)
 npm run test:sw         # online/offline/lying-network boot + precache drift guard (8078)
-npm run test:journey    # full user journey: add → reload-persist → complete cycle → offline (8079)
+npm run test:journey    # five real-app user journeys (port 8079)
 ```
 
-`test:journey` is the end-to-end walk a user takes: it adds tasks through the real
-input, reloads to prove persistence, completes the cycle (asserting `cycleCount++`
-and that tasks reset), then reloads **offline** and checks the data is still there —
-the bug class that green module tests miss and only a device usually catches.
+`test:journey` walks the paths a real user takes against the live app — the bug
+class that green module tests miss and only a device usually catches. Each journey
+runs in its own clean browser context and asserts on persisted state + live DOM:
+
+1. **core** — add tasks → reload (persistence) → complete cycle (`cycleCount++` + reset) → offline reload (boot + data intact)
+2. **routine switching** — create a 2nd routine, switch between them, active cycle + tasks + title track and persist
+3. **undo / redo** — add tasks, `Ctrl+Z` / `Ctrl+Y`, DOM restores the right state
+4. **theme & settings persistence** — toggle dark mode in settings, reload, it persists
+5. **recurring tasks** — enable the recurring button, mark a task recurring, the template persists across reload
 
 > **0-test = failure.** `npm test` now treats a registered module that reports
 > `0/0` as a hard failure (its import almost certainly threw before rendering) —

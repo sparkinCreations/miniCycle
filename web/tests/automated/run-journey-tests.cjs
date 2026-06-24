@@ -6,19 +6,18 @@
  * does — against the REAL app (miniCycle.html), with the real service worker,
  * driving real DOM and asserting on persisted state (localStorage `miniCycleData`
  * + the live task list). It guards the bug CLASS that keeps slipping past 900+
- * green module tests and only shows up on a device: add → reload → it's gone,
- * complete a cycle → count doesn't move, reopen offline → boot dies.
+ * green module tests and only shows up on a device.
  *
- * Journey:
- *   1. boot the real app
- *   2. add two tasks through the actual input + Add button
- *   3. reload online — the tasks must still be there  (PERSISTENCE)
- *   4. complete the cycle (check every task) — cycleCount must increment AND the
- *      tasks must reset to unchecked                   (CORE ROUTINE BEHAVIOUR)
- *   5. prime the SW, go offline, reload — the app must still boot and the data
- *      must still be there                             (OFFLINE + PERSISTENCE)
+ * Each journey runs in its OWN browser context (clean storage), so a failure in
+ * one can't corrupt another, and the harness reports per-journey results:
  *
- * Every wait is on a real signal (appLoaded flag, DOM count, persisted count) —
+ *   1. core        — add → reload-persist → complete cycle (count++/reset) → offline
+ *   2. routine      — create a 2nd routine, switch between them, state + persist
+ *   3. undo/redo   — add tasks, Ctrl+Z / Ctrl+Y, DOM restores correctly
+ *   4. theme       — toggle dark mode in settings, reload, it persists
+ *   5. recurring   — enable the recurring button, mark a task recurring, persist
+ *
+ * Every wait is on a real signal (appLoaded flag, DOM count, persisted state) —
  * no fixed sleeps standing in for "probably done".
  *
  * Usage:  npm run test:journey      (spawns its own server; exits non-zero on failure)
@@ -38,13 +37,11 @@ const WEB_ROOT = path.join(__dirname, '..', '..');
 // ── In-page helpers (serialized into the browser) ───────────────────────────
 
 // Force the normal (post-onboarding) layout so the task input is usable: drop the
-// first-run / focus classes and un-hide the task-input row (it ships `hidden`).
-// Mirrors how run-layout-overlap-tests.cjs reaches the normal layout.
+// first-run / focus classes and un-hide the task-input row (it ships `hidden`),
+// and dismiss the first-run welcome carousel (a full-bleed overlay that
+// intercepts pointer events). Clicking its dismiss button persists
+// firstRunWelcomeDismissed so it won't reappear after a reload.
 function normalizeLayoutInPage() {
-    // Dismiss the first-run welcome carousel (a full-bleed overlay that intercepts
-    // pointer events). Clicking its dismiss button persists firstRunWelcomeDismissed
-    // so it won't reappear after a reload; then hard-remove the node + splash so
-    // nothing intercepts the very next interaction.
     const dismiss = document.querySelector('.first-run-welcome__dismiss');
     if (dismiss) dismiss.click();
     const welcome = document.getElementById('first-run-welcome');
@@ -64,8 +61,7 @@ function normalizeLayoutInPage() {
 }
 
 // Read the persisted active cycle defensively (schema 2.5 stores the whole state
-// under `miniCycleData`; tolerate minor shape drift). Returns
-// { cycleCount, taskCount } or null if no active cycle is resolvable yet.
+// under `miniCycleData`; tolerate minor shape drift).
 function readActiveCycleInPage() {
     let parsed;
     try { parsed = JSON.parse(localStorage.getItem('miniCycleData') || 'null'); }
@@ -78,131 +74,152 @@ function readActiveCycleInPage() {
     const cycle = (activeId && cycles[activeId]) || Object.values(cycles)[0];
     if (!cycle) return null;
     return {
+        activeId: activeId || Object.keys(cycles)[0],
         cycleCount: cycle.cycleCount || 0,
-        taskCount: Array.isArray(cycle.tasks) ? cycle.tasks.length : 0
+        taskCount: Array.isArray(cycle.tasks) ? cycle.tasks.length : 0,
+        recurringCount: cycle.recurringTemplates
+            ? (Array.isArray(cycle.recurringTemplates)
+                ? cycle.recurringTemplates.length
+                : Object.keys(cycle.recurringTemplates).length)
+            : 0,
+        cycleKeys: Object.keys(cycles)
     };
 }
 
-async function run() {
-    console.log(`${colors.blue}${'='.repeat(64)}${colors.reset}`);
-    console.log(`${colors.blue}🚶 miniCycle End-to-End User-Journey Tests${colors.reset}`);
-    console.log(`${colors.blue}${'='.repeat(64)}${colors.reset}`);
+// ── Page-level helpers (take a Playwright `page`) ────────────────────────────
 
+async function bootApp(page, timeout = 20000) {
+    await page.waitForFunction(() => document.documentElement.dataset.appLoaded === 'true', { timeout });
+    await page.evaluate(normalizeLayoutInPage);
+    // The welcome overlay can mount a beat after appLoaded — keep dismissing it
+    // until it's truly gone so it can't intercept the first interaction.
+    await page.waitForFunction(() => {
+        const w = document.getElementById('first-run-welcome');
+        if (w) {
+            const d = document.querySelector('.first-run-welcome__dismiss');
+            if (d) d.click();
+            w.remove();
+        }
+        const row = document.getElementById('task-input-row');
+        if (row) row.classList.remove('hidden');
+        return !document.getElementById('first-run-welcome');
+    }, { timeout: 8000 }).catch(() => {});
+}
+
+// Open a fresh, isolated app instance. Returns { context, page }.
+async function openFresh(browser, baseURL) {
+    const context = await browser.newContext();
+    await context.grantPermissions(['notifications'], { origin: baseURL });
+    const page = await context.newPage();
+    page.on('pageerror', err => console.log(`   ${colors.yellow}page error: ${err.message}${colors.reset}`));
+    await page.goto(`${baseURL}/miniCycle.html`, { waitUntil: 'domcontentloaded', timeout: 20000 });
+    await bootApp(page);
+    // First-run seeds a sample routine — wait until a cycle actually exists.
+    await page.waitForFunction(() => {
+        try {
+            const p = JSON.parse(localStorage.getItem('miniCycleData') || 'null');
+            const cycles = p && ((p.data && p.data.cycles) || p.cycles);
+            return cycles && Object.keys(cycles).length > 0;
+        } catch { return false; }
+    }, { timeout: 20000 });
+    return { context, page };
+}
+
+const taskCount = (page) => page.evaluate(() => document.querySelectorAll('#taskList li').length);
+const checkedCount = (page) => page.evaluate(() =>
+    document.querySelectorAll('#taskList li input[type="checkbox"]:checked').length);
+const persisted = (page) => page.evaluate(readActiveCycleInPage);
+const titleText = (page) => page.evaluate(() => {
+    const t = document.getElementById('mini-cycle-title');
+    return t ? t.textContent.trim() : '';
+});
+
+async function addTask(page, text) {
+    await page.evaluate(() => {
+        const row = document.getElementById('task-input-row');
+        if (row) row.classList.remove('hidden');
+    });
+    await page.waitForSelector('#taskInput', { state: 'visible', timeout: 10000 });
+    await page.fill('#taskInput', text);
+    await page.click('#addTaskBtn');
+}
+
+// Fire a click straight at the element's own handler. The header/menu chrome can
+// sit under #app-container in the band-centred layout, so Playwright's hit-test
+// reports the click as "intercepted" even though it works for a real user. A DOM
+// .click() dispatches to the element's listeners regardless of stacking.
+async function clickEl(page, selector, timeout = 10000) {
+    await page.waitForSelector(selector, { state: 'attached', timeout });
+    await page.evaluate((sel) => {
+        const el = document.querySelector(sel);
+        if (!el) throw new Error('element not found for click: ' + sel);
+        el.click();
+    }, selector);
+}
+
+// Open the main menu and expand every collapsible section. The menu ships with
+// its sections `.collapsed` (items render at 0×0, so Playwright sees them as not
+// visible); a real user clicks a section header to expand — we just un-collapse
+// all of them so any item is reachable.
+async function openMenu(page) {
+    await clickEl(page, '.menu-button');
+    await page.waitForFunction(() =>
+        document.getElementById('main-menu')?.classList.contains('visible'), { timeout: 8000 });
+    await page.evaluate(() =>
+        document.querySelectorAll('.menu-section.collapsed').forEach(s => s.classList.remove('collapsed')));
+}
+
+// Per-journey result collector.
+function makeRecorder() {
     const failures = [];
     const record = (name, ok, detail) => {
         if (ok) console.log(`   ${colors.green}✅${colors.reset} ${name} ${colors.gray}${detail || ''}${colors.reset}`);
         else { console.log(`   ${colors.red}❌ ${name} — ${detail}${colors.reset}`); failures.push(`${name}: ${detail}`); }
     };
+    return { failures, record };
+}
 
-    let srv;
+// ── Journey 1: core (add → persist → complete cycle → offline) ──────────────
+async function journeyCore(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const { context, page } = await openFresh(browser, baseURL);
     try {
-        srv = await startStaticServer(WEB_ROOT, PORT);
-    } catch (e) {
-        console.error(`${colors.red}❌ Could not start test server: ${e.message}${colors.reset}`);
-        process.exit(1);
-    }
-    const baseURL = srv.url;
-    let serverKilled = false;
-    console.log(`${colors.gray}   server on ${baseURL} (web/, real service worker enabled)${colors.reset}`);
+        const startCount = await taskCount(page);
 
-    const browser = await chromium.launch({ headless: true });
-    const context = await browser.newContext();
-    // Notifications can fire on task actions; pre-grant so nothing blocks.
-    await context.grantPermissions(['notifications'], { origin: baseURL });
-    const page = await context.newPage();
-    page.on('pageerror', err => console.log(`   ${colors.yellow}page error: ${err.message}${colors.reset}`));
-
-    const bootApp = async (timeout = 20000) => {
-        await page.waitForFunction(() => document.documentElement.dataset.appLoaded === 'true', { timeout });
-        await page.evaluate(normalizeLayoutInPage);
-        // The welcome overlay can mount a beat after appLoaded — keep dismissing it
-        // until it's truly gone so it can't intercept the first interaction.
-        await page.waitForFunction(() => {
-            const w = document.getElementById('first-run-welcome');
-            if (w) {
-                const d = document.querySelector('.first-run-welcome__dismiss');
-                if (d) d.click();
-                w.remove();
-            }
-            const row = document.getElementById('task-input-row');
-            if (row) row.classList.remove('hidden');
-            return !document.getElementById('first-run-welcome');
-        }, { timeout: 8000 }).catch(() => {});
-    };
-    const taskCount = () => page.evaluate(() => document.querySelectorAll('#taskList li').length);
-    const checkedCount = () => page.evaluate(() =>
-        document.querySelectorAll('#taskList li input[type="checkbox"]:checked').length);
-    const persisted = () => page.evaluate(readActiveCycleInPage);
-
-    try {
-        // ── Phase 1: boot ───────────────────────────────────────────────────
-        console.log(`\n${colors.cyan}▸ boot the real app${colors.reset}`);
-        await page.goto(`${baseURL}/miniCycle.html`, { waitUntil: 'domcontentloaded', timeout: 20000 });
-        await bootApp();
-        // An active cycle must exist (first-run seeds the sample routine).
-        await page.waitForFunction(() => {
-            try {
-                const p = JSON.parse(localStorage.getItem('miniCycleData') || 'null');
-                const cycles = p && ((p.data && p.data.cycles) || p.cycles);
-                return cycles && Object.keys(cycles).length > 0;
-            } catch { return false; }
-        }, { timeout: 20000 });
-        const startCount = await taskCount();
-        record('app booted with an active routine', true, `(${startCount} task(s) present)`);
-
-        // ── Phase 2: add two tasks through the real UI ──────────────────────
-        console.log(`\n${colors.cyan}▸ add two tasks via the input + Add button${colors.reset}`);
-        const addTask = async (text) => {
-            await page.fill('#taskInput', text);
-            await page.click('#addTaskBtn');
-        };
-        await page.waitForSelector('#taskInput', { state: 'visible', timeout: 10000 });
-        await addTask('E2E journey task one');
+        // add two tasks
+        await addTask(page, 'E2E journey task one');
         await page.waitForFunction((n) => document.querySelectorAll('#taskList li').length === n,
             startCount + 1, { timeout: 10000 });
-        await addTask('E2E journey task two');
+        await addTask(page, 'E2E journey task two');
         await page.waitForFunction((n) => document.querySelectorAll('#taskList li').length === n,
             startCount + 2, { timeout: 10000 });
-        const afterAdd = await taskCount();
-        record('two tasks added to the list', afterAdd === startCount + 2, `count=${afterAdd}, expected ${startCount + 2}`);
-        // The add must have reached persisted state, not just the DOM.
+        record('two tasks added', (await taskCount(page)) === startCount + 2, `expected ${startCount + 2}`);
+
         await page.waitForFunction((n) => {
             try {
                 const p = JSON.parse(localStorage.getItem('miniCycleData') || 'null');
                 const cycles = p && ((p.data && p.data.cycles) || p.cycles);
-                const c = cycles && Object.values(cycles).find(c => Array.isArray(c.tasks) && c.tasks.length >= n);
-                return !!c;
+                return cycles && Object.values(cycles).some(c => Array.isArray(c.tasks) && c.tasks.length >= n);
             } catch { return false; }
         }, startCount + 2, { timeout: 10000 }).catch(() => {});
-        const persistedAfterAdd = await persisted();
-        record('added tasks reached persisted state',
-            persistedAfterAdd && persistedAfterAdd.taskCount >= startCount + 2,
-            `persisted taskCount=${persistedAfterAdd && persistedAfterAdd.taskCount}`);
+        const pAdd = await persisted(page);
+        record('added tasks persisted', pAdd && pAdd.taskCount >= startCount + 2, `persisted=${pAdd && pAdd.taskCount}`);
 
-        // ── Phase 3: reload online — persistence ────────────────────────────
-        console.log(`\n${colors.cyan}▸ reload (online) — tasks must persist${colors.reset}`);
+        // reload (persistence)
         await page.reload({ waitUntil: 'domcontentloaded', timeout: 20000 });
-        await bootApp();
-        const afterReload = await taskCount();
-        record('tasks survive an online reload', afterReload === startCount + 2,
-            `count after reload=${afterReload}, expected ${startCount + 2}`);
+        await bootApp(page);
+        record('tasks survive online reload', (await taskCount(page)) === startCount + 2,
+            `count=${await taskCount(page)}, expected ${startCount + 2}`);
 
-        // ── Phase 4: complete the cycle ─────────────────────────────────────
-        console.log(`\n${colors.cyan}▸ complete the cycle (check every task)${colors.reset}`);
-        const before = await persisted();
-        const startCycleCount = before ? before.cycleCount : 0;
-        // Ensure auto-reset is on so completing the cycle increments the count and
-        // resets the tasks (the defining routine-manager behaviour).
+        // complete cycle
+        const startCycleCount = (await persisted(page)).cycleCount;
         await page.evaluate(() => {
             const t = document.getElementById('toggleAutoReset');
             if (t && !t.checked) { t.checked = true; t.dispatchEvent(new Event('change', { bubbles: true })); }
         });
-        // Check every task checkbox to drive checkMiniCycle → cycle complete.
-        const boxes = await page.$$('#taskList li input[type="checkbox"]');
-        for (const b of boxes) {
+        for (const b of await page.$$('#taskList li input[type="checkbox"]')) {
             if (!(await b.isChecked())) await b.check();
         }
-        // cycleCount must increment...
         let cycleIncremented = false;
         try {
             await page.waitForFunction((prev) => {
@@ -214,23 +231,18 @@ async function run() {
             }, startCycleCount, { timeout: 15000 });
             cycleIncremented = true;
         } catch { /* recorded below */ }
-        const after = await persisted();
-        record('completing all tasks increments cycleCount', cycleIncremented,
-            `cycleCount ${startCycleCount} → ${after && after.cycleCount}`);
-        // ...and the tasks must reset to unchecked (auto-reset), still present.
+        record('completing tasks increments cycleCount', cycleIncremented,
+            `cycleCount ${startCycleCount} → ${(await persisted(page)).cycleCount}`);
         if (cycleIncremented) {
             await page.waitForFunction(() =>
                 document.querySelectorAll('#taskList li input[type="checkbox"]:checked').length === 0,
                 { timeout: 10000 }).catch(() => {});
-            const stillChecked = await checkedCount();
-            const stillPresent = await taskCount();
-            record('tasks reset to unchecked after the cycle', stillChecked === 0, `${stillChecked} still checked`);
-            record('tasks remain in the routine after reset', stillPresent === startCount + 2,
-                `count=${stillPresent}, expected ${startCount + 2}`);
+            record('tasks reset to unchecked', (await checkedCount(page)) === 0, `${await checkedCount(page)} checked`);
+            record('tasks remain after reset', (await taskCount(page)) === startCount + 2,
+                `count=${await taskCount(page)}`);
         }
 
-        // ── Phase 5: prime SW, go offline, reload ───────────────────────────
-        console.log(`\n${colors.cyan}▸ go offline and reload — must boot from cache with data intact${colors.reset}`);
+        // offline reload
         await page.evaluate(() => navigator.serviceWorker.ready);
         await page.waitForFunction(async () => {
             const names = await caches.keys();
@@ -244,33 +256,309 @@ async function run() {
         let offlineBooted = false;
         try {
             await page.reload({ waitUntil: 'domcontentloaded', timeout: 25000 });
-            await bootApp(25000);
+            await bootApp(page, 25000);
             offlineBooted = true;
         } catch { /* recorded below */ }
-        record('app boots offline', offlineBooted, offlineBooted ? '' : 'did not reach appLoaded offline');
+        record('app boots offline', offlineBooted, offlineBooted ? '' : 'no appLoaded offline');
         if (offlineBooted) {
-            const offlineCount = await taskCount();
-            record('data intact after offline reload', offlineCount === startCount + 2,
-                `count offline=${offlineCount}, expected ${startCount + 2}`);
+            record('data intact offline', (await taskCount(page)) === startCount + 2, `count=${await taskCount(page)}`);
         }
         await context.setOffline(false);
     } catch (e) {
-        console.error(`\n${colors.red}❌ Journey errored: ${e.message}${colors.reset}`);
         failures.push(`run error: ${e.message}`);
+        console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);
     } finally {
         await context.close();
+    }
+    return { name: 'core (add → persist → cycle → offline)', failures };
+}
+
+// ── Journey 2: routine switching ────────────────────────────────────────────
+async function journeyRoutineSwitch(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const { context, page } = await openFresh(browser, baseURL);
+    try {
+        const origId = (await persisted(page)).activeId;
+        const origTitle = await titleText(page);
+        const origTaskCount = await taskCount(page);
+
+        // Create a second routine via the menu → "New routine" dialog.
+        await openMenu(page);
+        await page.waitForSelector('#new-mini-cycle', { state: 'visible', timeout: 10000 });
+        await clickEl(page, '#new-mini-cycle');
+        await page.waitForSelector('#sample-creation-input', { state: 'visible', timeout: 10000 });
+        await page.fill('#sample-creation-input', 'E2E Routine Two');
+        await clickEl(page, '.miniCycle-btn-confirm');
+
+        // Creating auto-switches to the new (empty) routine.
+        await page.waitForFunction((prev) => {
+            try {
+                const p = JSON.parse(localStorage.getItem('miniCycleData') || 'null');
+                return p && p.appState && p.appState.activeCycleId && p.appState.activeCycleId !== prev;
+            } catch { return false; }
+        }, origId, { timeout: 15000 });
+        await bootApp(page);
+        const afterCreate = await persisted(page);
+        record('new routine created + auto-activated',
+            afterCreate.cycleKeys.length >= 2 && afterCreate.activeId !== origId,
+            `cycles=${afterCreate.cycleKeys.length}, active=${afterCreate.activeId}`);
+        record('new routine starts empty', (await taskCount(page)) === 0, `count=${await taskCount(page)}`);
+        const newTitle = await titleText(page);
+        record('title reflects new routine', newTitle !== origTitle && newTitle.length > 0, `title="${newTitle}"`);
+
+        // Switch back to the original routine.
+        await clickEl(page, '#routine-switcher-btn');
+        const origItem = `.mini-cycle-switch-item[data-cycle-key="${origId}"]`;
+        await page.waitForSelector(origItem, { state: 'visible', timeout: 10000 });
+        await clickEl(page, origItem);
+        // Wait for the selection to actually register before confirming — clicking
+        // confirm too soon means confirmMiniCycle sees no selection and no-ops.
+        await page.waitForFunction((key) => {
+            const el = document.querySelector('.mini-cycle-switch-item.selected');
+            return el && el.getAttribute('data-cycle-key') === key;
+        }, origId, { timeout: 8000 });
+        await clickEl(page, '#miniCycleSwitchConfirm');
+        await page.waitForFunction((target) => {
+            try {
+                const p = JSON.parse(localStorage.getItem('miniCycleData') || 'null');
+                return p && p.appState && p.appState.activeCycleId === target;
+            } catch { return false; }
+        }, origId, { timeout: 15000 });
+        await bootApp(page);
+        // Let the task list re-render for the switched-in routine before asserting.
+        await page.waitForFunction((n) => document.querySelectorAll('#taskList li').length === n,
+            origTaskCount, { timeout: 10000 }).catch(() => {});
+        record('switched back to original routine', (await persisted(page)).activeId === origId,
+            `active=${(await persisted(page)).activeId}`);
+        record('original routine tasks restored', (await taskCount(page)) === origTaskCount,
+            `count=${await taskCount(page)}, expected ${origTaskCount}`);
+        record('title restored to original', (await titleText(page)) === origTitle, `title="${await titleText(page)}"`);
+    } catch (e) {
+        failures.push(`run error: ${e.message}`);
+        console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);
+    } finally {
+        await context.close();
+    }
+    return { name: 'routine switching', failures };
+}
+
+// ── Journey 3: undo / redo ──────────────────────────────────────────────────
+async function journeyUndoRedo(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const { context, page } = await openFresh(browser, baseURL);
+    try {
+        const startCount = await taskCount(page);
+
+        // Add A, then B (300ms+ apart so the snapshot throttle doesn't dedupe).
+        await addTask(page, 'UNDO task A');
+        await page.waitForFunction((n) => document.querySelectorAll('#taskList li').length === n,
+            startCount + 1, { timeout: 10000 });
+        await page.waitForTimeout(400); // UNDO_MIN_INTERVAL is 300ms
+        await addTask(page, 'UNDO task B');
+        await page.waitForFunction((n) => document.querySelectorAll('#taskList li').length === n,
+            startCount + 2, { timeout: 10000 });
+
+        // Blur the input so Ctrl+Z hits the app's document handler, not the field.
+        await page.evaluate(() => document.activeElement && document.activeElement.blur());
+
+        // Undo — task B should disappear.
+        await page.keyboard.press('Control+z');
+        let undone = false;
+        try {
+            await page.waitForFunction((n) => document.querySelectorAll('#taskList li').length === n,
+                startCount + 1, { timeout: 8000 });
+            undone = true;
+        } catch { /* recorded */ }
+        record('undo removes the last task', undone, `count=${await taskCount(page)}, expected ${startCount + 1}`);
+
+        // Redo — task B should return.
+        await page.keyboard.press('Control+y');
+        let redone = false;
+        try {
+            await page.waitForFunction((n) => document.querySelectorAll('#taskList li').length === n,
+                startCount + 2, { timeout: 8000 });
+            redone = true;
+        } catch { /* recorded */ }
+        record('redo restores the task', redone, `count=${await taskCount(page)}, expected ${startCount + 2}`);
+        if (redone) {
+            const hasB = await page.evaluate(() =>
+                [...document.querySelectorAll('#taskList li')].some(li => li.textContent.includes('UNDO task B')));
+            record('restored task is the right one', hasB, 'UNDO task B present after redo');
+        }
+    } catch (e) {
+        failures.push(`run error: ${e.message}`);
+        console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);
+    } finally {
+        await context.close();
+    }
+    return { name: 'undo / redo', failures };
+}
+
+// ── Journey 4: theme & settings persistence ─────────────────────────────────
+async function journeyTheme(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const { context, page } = await openFresh(browser, baseURL);
+    try {
+        const isDark = () => page.evaluate(() => document.documentElement.classList.contains('dark-mode'));
+        const before = await isDark();
+        const target = !before;
+
+        // Open menu → settings → toggle dark mode.
+        await openMenu(page);
+        await page.waitForSelector('#open-settings', { state: 'visible', timeout: 10000 });
+        await clickEl(page, '#open-settings');
+        // The dark-mode control is a styled checkbox whose real <input> renders at
+        // 0×0, so wait for it to be ATTACHED (not "visible") and fire a DOM click.
+        await page.waitForSelector('#darkModeToggle', { state: 'attached', timeout: 10000 });
+        await clickEl(page, '#darkModeToggle');
+
+        // DOM flips immediately.
+        await page.waitForFunction((want) => document.documentElement.classList.contains('dark-mode') === want,
+            target, { timeout: 8000 }).catch(() => {});
+        record('dark mode toggles the documentElement class', (await isDark()) === target, `dark=${await isDark()}, want ${target}`);
+
+        // It persists to storage.
+        await page.waitForFunction((want) => {
+            try {
+                const p = JSON.parse(localStorage.getItem('miniCycleData') || 'null');
+                return p && p.settings && p.settings.darkMode === want;
+            } catch { return false; }
+        }, target, { timeout: 8000 }).catch(() => {});
+        const persistedDark = await page.evaluate(() => {
+            try { return JSON.parse(localStorage.getItem('miniCycleData')).settings.darkMode; } catch { return null; }
+        });
+        record('dark mode persisted to settings', persistedDark === target, `settings.darkMode=${persistedDark}`);
+
+        // It survives a reload (the boot script re-applies it).
+        await page.reload({ waitUntil: 'domcontentloaded', timeout: 20000 });
+        await bootApp(page);
+        record('dark mode survives reload', (await isDark()) === target, `dark=${await isDark()} after reload`);
+    } catch (e) {
+        failures.push(`run error: ${e.message}`);
+        console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);
+    } finally {
+        await context.close();
+    }
+    return { name: 'theme & settings persistence', failures };
+}
+
+// ── Journey 5: recurring tasks ──────────────────────────────────────────────
+async function journeyRecurring(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const { context, page } = await openFresh(browser, baseURL);
+    try {
+        // Add the task we'll make recurring.
+        const startCount = await taskCount(page);
+        await addTask(page, 'RECUR me daily');
+        await page.waitForFunction((n) => document.querySelectorAll('#taskList li').length === n,
+            startCount + 1, { timeout: 10000 });
+
+        // The recurring button is OFF by default — enable it in the task-options
+        // customizer (menu → settings → "+/-" add/remove buttons → recurring).
+        await openMenu(page);
+        await page.waitForSelector('#open-settings', { state: 'visible', timeout: 10000 });
+        await clickEl(page, '#open-settings');
+        await page.waitForSelector('#open-task-options-customizer', { state: 'attached', timeout: 10000 });
+        await clickEl(page, '#open-task-options-customizer');
+        // Styled checkbox → real <input> is 0×0; wait ATTACHED, click via DOM.
+        const recurringOpt = 'input[type="checkbox"][data-option="recurring"]';
+        await page.waitForSelector(recurringOpt, { state: 'attached', timeout: 10000 });
+        if (!(await page.locator(recurringOpt).isChecked())) {
+            await clickEl(page, recurringOpt); // real-time save → tasks re-render with the button
+        }
+        // Close any open modals/menus and return to the normal layout.
+        await page.keyboard.press('Escape').catch(() => {});
+        await page.evaluate(normalizeLayoutInPage);
+
+        // Reveal the task's options row and click its recurring button (the inline
+        // option buttons live in a hidden .task-options until revealed).
+        const taskSel = '#taskList li';
+        await page.waitForSelector(`${taskSel} .recurring-btn`, { state: 'attached', timeout: 10000 });
+        await page.evaluate(() => {
+            document.querySelectorAll('#taskList li .task-options').forEach(o => o.classList.add('task-options-visible'));
+        });
+        await clickEl(page, `${taskSel} .recurring-btn`);
+
+        // A recurring template should now exist for the active cycle.
+        await page.waitForFunction(() => {
+            try {
+                const p = JSON.parse(localStorage.getItem('miniCycleData') || 'null');
+                const cycles = p && ((p.data && p.data.cycles) || p.cycles);
+                return cycles && Object.values(cycles).some(c => {
+                    const rt = c.recurringTemplates;
+                    return rt && (Array.isArray(rt) ? rt.length : Object.keys(rt).length) > 0;
+                });
+            } catch { return false; }
+        }, { timeout: 10000 });
+        record('task marked recurring (template created)', (await persisted(page)).recurringCount > 0,
+            `recurringTemplates=${(await persisted(page)).recurringCount}`);
+
+        // It persists across a reload.
+        await page.reload({ waitUntil: 'domcontentloaded', timeout: 20000 });
+        await bootApp(page);
+        record('recurring template survives reload', (await persisted(page)).recurringCount > 0,
+            `recurringTemplates=${(await persisted(page)).recurringCount}`);
+    } catch (e) {
+        failures.push(`run error: ${e.message}`);
+        console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);
+    } finally {
+        await context.close();
+    }
+    return { name: 'recurring tasks', failures };
+}
+
+// ── Harness ─────────────────────────────────────────────────────────────────
+const JOURNEYS = [
+    { name: 'core (add → persist → cycle → offline)', fn: journeyCore },
+    { name: 'routine switching', fn: journeyRoutineSwitch },
+    { name: 'undo / redo', fn: journeyUndoRedo },
+    { name: 'theme & settings persistence', fn: journeyTheme },
+    { name: 'recurring tasks', fn: journeyRecurring },
+];
+
+async function run() {
+    console.log(`${colors.blue}${'='.repeat(64)}${colors.reset}`);
+    console.log(`${colors.blue}🚶 miniCycle End-to-End User-Journey Tests${colors.reset}`);
+    console.log(`${colors.blue}${'='.repeat(64)}${colors.reset}`);
+
+    let srv;
+    try {
+        srv = await startStaticServer(WEB_ROOT, PORT);
+    } catch (e) {
+        console.error(`${colors.red}❌ Could not start test server: ${e.message}${colors.reset}`);
+        process.exit(1);
+    }
+    console.log(`${colors.gray}   server on ${srv.url} (web/, real service worker enabled)${colors.reset}`);
+
+    const browser = await chromium.launch({ headless: true });
+    const allFailures = [];
+    try {
+        for (const journey of JOURNEYS) {
+            console.log(`\n${colors.cyan}▸ journey: ${journey.name}${colors.reset}`);
+            let failures;
+            try {
+                ({ failures } = await journey.fn(browser, srv.url));
+            } catch (e) {
+                failures = [`harness error: ${e.message}`];
+            }
+            const tag = failures.length === 0
+                ? `${colors.green}PASS${colors.reset}` : `${colors.red}FAIL${colors.reset}`;
+            console.log(`   ${tag}`);
+            failures.forEach(f => allFailures.push(`[${journey.name}] ${f}`));
+        }
+    } finally {
         await browser.close();
-        if (!serverKilled && srv) await srv.close();
+        await srv.close();
     }
 
     console.log(`\n${colors.blue}${'='.repeat(64)}${colors.reset}`);
-    if (failures.length === 0) {
-        console.log(`${colors.green}🎉 Full user journey holds: add → persist → complete cycle → offline.${colors.reset}`);
+    if (allFailures.length === 0) {
+        console.log(`${colors.green}🎉 All ${JOURNEYS.length} user journeys hold.${colors.reset}`);
         console.log(`${colors.blue}${'='.repeat(64)}${colors.reset}\n`);
         process.exit(0);
     } else {
-        console.log(`${colors.red}⚠️  ${failures.length} journey check(s) failed:${colors.reset}`);
-        failures.forEach(f => console.log(`   ${colors.red}• ${f}${colors.reset}`));
+        console.log(`${colors.red}⚠️  ${allFailures.length} journey check(s) failed:${colors.reset}`);
+        allFailures.forEach(f => console.log(`   ${colors.red}• ${f}${colors.reset}`));
         console.log(`${colors.blue}${'='.repeat(64)}${colors.reset}\n`);
         process.exit(1);
     }
