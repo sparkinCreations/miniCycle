@@ -98,6 +98,8 @@ export const UI_TIMEOUTS = Object.freeze({
     STATS_UPDATE_DELAY: 100,       // 100ms - Stats panel update delay
     WHEEL_RESET_DELAY: 15,         // 15ms - Mouse wheel reset delay
     FOCUS_DELAY: 100,              // 100ms - Focus input after action
+    FOCUS_DELAY_SHORT: 50,         // 50ms - Focus an element shortly after it appears (inputs/edit fields)
+    SAVE_DEFER: 50,                // 50ms - Defer a state save to the next tick so DOM/state settles first
     RESIZE_DEBOUNCE: 150,          // 150ms - Window resize debounce
     ANIMATION_SHORT: 200,          // 200ms - Short animation / transition delay
     NOTIFICATION_FADE: 300,        // 300ms - Notification removal animation

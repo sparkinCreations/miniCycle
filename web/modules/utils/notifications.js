@@ -1861,7 +1861,7 @@ async setDefaultPosition(notificationContainer) {
     const cancelBtn = overlay.querySelector(DOM_SELECTORS.MINI_CYCLE_BTN_CANCEL);
     const confirmBtn = overlay.querySelector(DOM_SELECTORS.MINI_CYCLE_BTN_CONFIRM);
 
-    setTimeout(() => input.focus({ focusVisible: false }), 50);
+    setTimeout(() => input.focus({ focusVisible: false }), UI_TIMEOUTS.FOCUS_DELAY_SHORT);
 
     cancelBtn._clickHandler = () => {
       overlay.close();

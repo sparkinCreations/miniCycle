@@ -276,7 +276,7 @@ export function attachMenuButtonListener(_GlobalUtils, menuButton, menu) {
         menu._previousFocus = document.activeElement;
         // Focus first focusable element in menu
         const firstFocusable = menu.querySelector('button, [tabindex="0"]');
-        if (firstFocusable) setTimeout(() => firstFocusable.focus({ focusVisible: false }), 50);
+        if (firstFocusable) setTimeout(() => firstFocusable.focus({ focusVisible: false }), UI_TIMEOUTS.FOCUS_DELAY_SHORT);
 
         // Show menu guided tour prompt (first open only)
         getUiApi()?.showMenuTourNotification?.();

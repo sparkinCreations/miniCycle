@@ -2411,7 +2411,7 @@ export class RoutineSwitcher {
         if (typeof requestIdleCallback === 'function') {
             requestIdleCallback(doSave, { timeout: 500 });
         } else {
-            setTimeout(doSave, 50);
+            setTimeout(doSave, UI_TIMEOUTS.SAVE_DEFER);
         }
     }
 

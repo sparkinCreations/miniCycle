@@ -360,7 +360,7 @@ export class DailyResetManager {
         const cancelBtn = overlay.querySelector('.miniCycle-btn-cancel');
         const confirmBtn = overlay.querySelector('.miniCycle-btn-confirm');
 
-        setTimeout(() => input.focus({ focusVisible: false }), 50);
+        setTimeout(() => input.focus({ focusVisible: false }), UI_TIMEOUTS.FOCUS_DELAY_SHORT);
 
         const cleanup = () => {
             cancelBtn.removeEventListener('click', onCancel);

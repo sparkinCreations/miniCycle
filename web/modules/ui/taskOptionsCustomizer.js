@@ -413,7 +413,7 @@ export class TaskOptionsCustomizer {
         });
         // Focus first interactive element
         const firstFocusable = modal.querySelector('input:not([disabled]), button');
-        if (firstFocusable) setTimeout(() => firstFocusable.focus({ focusVisible: false }), 100);
+        if (firstFocusable) setTimeout(() => firstFocusable.focus({ focusVisible: false }), UI_TIMEOUTS.FOCUS_DELAY);
 
         // Show tour prompt after modal is open
         this.deps.showTaskOptionsTourNotification?.();
