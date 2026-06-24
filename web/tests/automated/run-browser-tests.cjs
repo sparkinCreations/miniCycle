@@ -57,6 +57,12 @@ const ALL_MODULES = [
 // MODULE_TEMPLATE is the copy-me template, not a real module.
 const UNREGISTERED_EXEMPT = new Set(['MODULE_TEMPLATE']);
 
+// Modules allowed to legitimately report 0 tests (e.g. a platform-gated suite that
+// self-skips in headless CI). Empty by default: a 0-test result is normally a
+// BROKEN module (its import threw before the Results line rendered), NOT a pass —
+// see runModuleTests. Add a name here only with a comment explaining why it skips.
+const ZERO_TEST_EXEMPT = new Set([]);
+
 // Drift guard: every tests/*.tests.js file must be registered in ALL_MODULES,
 // or it silently never runs in CI. Fail loudly before launching the browser.
 // (xss-vulnerability lives in tests/security/, not the root, so it's not scanned here.)
@@ -157,13 +163,31 @@ async function runModuleTests(page, moduleName) {
         const match = summary.match(/(\d+)\s*\/\s*(\d+)/);
         const passedTests = match ? parseInt(match[1]) : 0;
         const totalTests = match ? parseInt(match[2]) : 0;
-        const failedTests = totalTests - passedTests;
 
-        // A module that reports 0 tests either self-skipped or its Results line failed to
-        // parse — surface it instead of silently counting it as a green pass.
-        if (totalTests === 0) {
-            console.log(`   ${colors.yellow}⚠️  ${summary} — 0 tests detected (skipped or unparsed result line)${colors.reset}`);
+        // A module that reports 0 tests is NOT a pass — its import almost certainly
+        // threw before the Results line rendered, or its Run handler silently bailed.
+        // Counting that as green is exactly the silent-skip failure mode the drift
+        // guards exist to kill, so make it a hard FAILURE unless explicitly exempt.
+        const zeroTests = totalTests === 0;
+        if (zeroTests && !ZERO_TEST_EXEMPT.has(moduleName)) {
+            console.log(`   ${colors.red}❌ ${summary} — 0 tests ran (module broke before reporting, or result line unparsed)${colors.reset}`);
+            console.log(`   ${colors.yellow}  → a registered module that runs no tests is treated as a failure; check console errors above. Add to ZERO_TEST_EXEMPT only if it legitimately self-skips.${colors.reset}`);
+            return {
+                module: moduleName,
+                passed: false,
+                passedCount: 0,
+                failedCount: 1,
+                summary: `${summary} (0 tests ran)`,
+                failedDetails: ['Module reported 0 tests — likely a load/import error before the Results line.']
+            };
         }
+        if (zeroTests) {
+            // Exempt: report as a visible skip, neither pass-with-tests nor failure.
+            console.log(`   ${colors.yellow}⏭  ${summary} — 0 tests (exempt: legitimately self-skipped)${colors.reset}`);
+            return { module: moduleName, passed: true, passedCount: 0, failedCount: 0, summary, failedDetails: [] };
+        }
+
+        const failedTests = totalTests - passedTests;
 
         // Get failed test details if any
         let failedDetails = [];

@@ -1,3 +1,19 @@
+## [2.260] - 2026-06-24
+- feat(icons): complete the Font Awesome → inline-SVG migration (add last 8 icons)
+- ci: migrate the Performance/Lighthouse workflow to the repo root (and delete inert copies)
+- test(ui): guard undo/redo completed-dropdown reconciliation
+- ci: bump checkout + setup-node to v5 (clears the Node 20 deprecation warning)
+- fix(lite): drop Cloudflare Font Awesome CDN so all editions match the privacy policy
+- test(ci): serve the layout/sw test fixtures from a Node server, not spawned python3
+- test(ci): finish wiring headerLayoutManager into the suite so the drift guard passes
+- chore(chrome): add full-2.259.zip for the Chrome Web Store
+- docs(android): add Play Store release checklist; move Android docs to android/docs/
+- ci: run the layout overlap + service-worker offline guards on every push
+- docs: fix remaining stale run-browser-tests.js references (renamed to .cjs)
+- docs(testing): fix stale runner command (run-browser-tests.cjs via npm test)
+- docs: document the layout/SW regression tests and the measured-chrome layout system
+
+
 ## [2.259] - 2026-06-24
 - feat(css): tighten mobile layout to give the task list more room
 - fix(css): keep the header logo clear of the status bar
