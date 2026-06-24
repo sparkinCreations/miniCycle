@@ -5,7 +5,7 @@ The Android app: a [Capacitor](https://capacitorjs.com/) shell whose WebView loa
 
 > **Full reference:** packaging rationale, every web-vs-Android difference, the build pipeline,
 > and the release workflow live in
-> [`../ANDROID_BUILD_AND_DIFFERENCES.md`](../ANDROID_BUILD_AND_DIFFERENCES.md).
+> [`docs/ANDROID_BUILD_AND_DIFFERENCES.md`](./docs/ANDROID_BUILD_AND_DIFFERENCES.md).
 
 ## Layout
 
@@ -57,7 +57,7 @@ Native behavior is bridged through `web/modules/platform/capacitorBridge.js` (fe
 the web app is unaffected). Already wired: **reminder notifications** (local-notifications),
 **routine export/share** of `.mcyc` (filesystem + share sheet), **status-bar theming**, **splash
 hide**, and **hardware back button** (closes the open modal/menu first). See
-[`../ANDROID_BUILD_AND_DIFFERENCES.md` §9](../ANDROID_BUILD_AND_DIFFERENCES.md#9-native-feature-bridges)
+[`docs/ANDROID_BUILD_AND_DIFFERENCES.md` §9](./docs/ANDROID_BUILD_AND_DIFFERENCES.md#9-native-feature-bridges)
 for how it works and what's still open (`.mcyc` import, branded notification icon).
 
 ## Don't

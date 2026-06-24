@@ -17,7 +17,7 @@
  * so the @capacitor/* JS packages cannot be imported in the browser; the proxy
  * forwards method calls to the natively-registered plugin instead. The native
  * side is wired by `npm install @capacitor/<plugin>` + `npx cap sync` in
- * mobile/android. See mobile/ANDROID_BUILD_AND_DIFFERENCES.md §9.
+ * mobile/android. See mobile/android/docs/ANDROID_BUILD_AND_DIFFERENCES.md §9.
  */
 
 'use strict';

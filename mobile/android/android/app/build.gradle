@@ -9,7 +9,7 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         // versionName tracks APP_VERSION (web/version.js). versionCode must
         // increase monotonically for every Play Store upload — bump it per release.
-        // See mobile/ANDROID_BUILD_AND_DIFFERENCES.md §Releases.
+        // See mobile/android/docs/ANDROID_BUILD_AND_DIFFERENCES.md §Releases.
         versionCode 4
         versionName "2.259"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"

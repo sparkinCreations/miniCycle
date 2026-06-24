@@ -1880,7 +1880,7 @@ echo ""
 # assets), syncs the native versionName to $NEW_VERSION, and bumps versionCode
 # (Play requires a strictly-increasing integer). Runs BEFORE the git-tag stage so
 # the rebuilt payload + version bump are part of the release commit/tag.
-# See web/scripts/build-android-www.cjs and mobile/ANDROID_BUILD_AND_DIFFERENCES.md.
+# See web/scripts/build-android-www.cjs and mobile/android/docs/ANDROID_BUILD_AND_DIFFERENCES.md.
 
 echo "🤖 Optional: Android (Capacitor) App"
 echo "------------------------------------"

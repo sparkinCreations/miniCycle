@@ -26,7 +26,7 @@ npm run open       # open in Android Studio to build & run
 
 - **Quick start:** [`android/README.md`](./android/README.md)
 - **Full reference** (web-vs-Android differences, build pipeline, releases):
-  [`ANDROID_BUILD_AND_DIFFERENCES.md`](./ANDROID_BUILD_AND_DIFFERENCES.md)
+  [`android/docs/ANDROID_BUILD_AND_DIFFERENCES.md`](./android/docs/ANDROID_BUILD_AND_DIFFERENCES.md)
 
 ## Why Capacitor (not React Native / native)
 
