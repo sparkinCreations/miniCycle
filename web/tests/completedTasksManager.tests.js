@@ -626,6 +626,71 @@ export async function runCompletedTasksManagerTests(resultsDiv, isPartOfSuite = 
         }
     });
 
+    // Regression: undo/redo un-completes a task via a *patch* render, which updates
+    // the checkbox in place but does NOT relocate the DOM node. organize() must move
+    // that now-unchecked task OUT of the completed section back to the active list
+    // (the down-only version left it stranded — unchecked but stuck in the dropdown).
+    await test('organize moves an un-completed task from completed back to active (undo regression)', async () => {
+        createTestDOM();
+        setCompletedTasksManagerDependencies(createMockDeps({
+            AppState: {
+                isReady: () => true,
+                get: () => ({ settings: { showCompletedDropdown: true } })
+            }
+        }));
+        const manager = new CompletedTasksManager();
+
+        const taskList = document.getElementById('taskList');
+        const completedList = document.getElementById('completedTaskList');
+
+        // Simulate post-undo state: an unchecked task still sitting in the completed
+        // section (#1), alongside a genuinely-completed one (#2); plus a normal active task (#3).
+        completedList.appendChild(createMockTask('1', false)); // un-completed, stranded in completed
+        completedList.appendChild(createMockTask('2', true));  // still completed, should stay
+        taskList.appendChild(createMockTask('3', false));
+
+        manager.organize();
+
+        if (!taskList.querySelector('#task-1')) {
+            throw new Error('Un-completed task should be moved back to the active list');
+        }
+        if (!completedList.querySelector('#task-2')) {
+            throw new Error('Still-completed task should remain in the completed section');
+        }
+        if (completedList.children.length !== 1) {
+            throw new Error(`Expected 1 task left in completed, got ${completedList.children.length}`);
+        }
+        if (taskList.querySelectorAll('.task').length !== 2) {
+            throw new Error(`Expected 2 active tasks, got ${taskList.querySelectorAll('.task').length}`);
+        }
+    });
+
+    await test('organize hides the completed section when its last task is un-completed', async () => {
+        createTestDOM();
+        setCompletedTasksManagerDependencies(createMockDeps({
+            AppState: {
+                isReady: () => true,
+                get: () => ({ settings: { showCompletedDropdown: true } })
+            }
+        }));
+        const manager = new CompletedTasksManager();
+
+        const completedList = document.getElementById('completedTaskList');
+        const completedSection = document.getElementById('completed-tasks-section');
+
+        completedList.appendChild(createMockTask('1', false)); // the only completed-list task, now unchecked
+        completedSection.classList.add('show');
+
+        manager.organize();
+
+        if (completedList.children.length !== 0) {
+            throw new Error('Completed section should be empty after the last task is un-completed');
+        }
+        if (completedSection.classList.contains('show')) {
+            throw new Error('Completed section should be hidden once it is empty');
+        }
+    });
+
     // === SUMMARY ===
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;
