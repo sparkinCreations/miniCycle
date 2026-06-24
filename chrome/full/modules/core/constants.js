@@ -98,6 +98,8 @@ export const UI_TIMEOUTS = Object.freeze({
     STATS_UPDATE_DELAY: 100,       // 100ms - Stats panel update delay
     WHEEL_RESET_DELAY: 15,         // 15ms - Mouse wheel reset delay
     FOCUS_DELAY: 100,              // 100ms - Focus input after action
+    FOCUS_DELAY_SHORT: 50,         // 50ms - Focus an element shortly after it appears (inputs/edit fields)
+    SAVE_DEFER: 50,                // 50ms - Defer a state save to the next tick so DOM/state settles first
     RESIZE_DEBOUNCE: 150,          // 150ms - Window resize debounce
     ANIMATION_SHORT: 200,          // 200ms - Short animation / transition delay
     NOTIFICATION_FADE: 300,        // 300ms - Notification removal animation
@@ -1214,6 +1216,9 @@ export const DOM_SELECTORS = Object.freeze({
     TASK_LIST_CONTAINER: '.task-list-container',
     TASK_CARD: '.task-card',
     TITLE_ROW: '.title-row',
+    // Fixed header + mode-selector wrapper — measured by headerLayoutManager to
+    // publish --header-total-height (note: this is a CLASS, not an id).
+    FIXED_HEADER_CONTAINER: '.fixed-header-container',
     COMPLETE_ALL_BTN: '.complete-all-btn',
     EMPTY_STATE_TEXT: '.empty-state-text',
     EMPTY_STATE_HINT: '.empty-state-hint',

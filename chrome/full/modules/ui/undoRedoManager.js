@@ -247,7 +247,7 @@ function scheduleIdleSave() {
     requestIdleCallback(doSave, { timeout: 500 });
   } else {
     // Fallback for Safari/older browsers
-    setTimeout(doSave, 50);
+    setTimeout(doSave, UI_TIMEOUTS.SAVE_DEFER);
   }
 }
 

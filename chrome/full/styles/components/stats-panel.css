@@ -16,7 +16,7 @@
     width: 80vw;
     max-width: 400px;
     height: auto;
-    max-height: 63vh;
+    max-height: var(--stats-panel-max-vh);
     overflow-y: auto;
     color: var(--theme-stats-text);
     background: var(--theme-stats-bg);
@@ -36,6 +36,20 @@
     z-index: var(--z-content);
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
+}
+
+/* Fit the stats panel cleanly in the band BETWEEN the measured fixed header and
+   the Routine|Stats nav dots, so it never overlaps either — the bottom-edge
+   analogue of #task-view's header clearance. --header-total-height and
+   --nav-dots-clearance are published by headerLayoutManager. Centring at
+   `50% + (header - navClearance)/2` puts the panel's middle at the centre of the
+   band; min() keeps the prior 63vh cap on tall viewports while the band calc
+   shrinks the panel on short ones so its bottom stays above the dots. Scoped to
+   non-focus mode — focus view hides the header and has its own deliberate top
+   overrides below. Falls back to the prior fixed values before JS measures. */
+body:not(.focus-mode) #stats-panel {
+    top: calc(50% + (var(--header-total-height, var(--header-height-fallback)) - var(--nav-dots-clearance, var(--nav-dots-clearance-fallback))) / 2);
+    max-height: min(var(--stats-panel-max-vh), calc(100dvh - var(--header-total-height, var(--header-height-fallback)) - var(--nav-dots-clearance, var(--nav-dots-clearance-fallback)) - var(--space-6)));
 }
 
 /* =============================================================================
