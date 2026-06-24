@@ -13,11 +13,14 @@
  * Layout rules consume them so the centred panels always clear the chrome at any
  * window size / orientation / safe-area, instead of hardcoded guesses:
  *   - #app-container padding-top reserves --header-total-height
- *   - #task-view centres BELOW the header:
- *       top: calc(50% + var(--header-total-height) / 2)
- *   - #stats-panel centres in the band BETWEEN the header and the nav dots, and
- *     caps its height to fit, so it never overlaps the nav dots:
+ *   - #task-view and #stats-panel both centre in the BAND between the header and
+ *     the nav dots, and cap their height to fit, so the routine title clears the
+ *     mode-selector row AND the bottom (help window / dots) never collide:
  *       top: calc(50% + (var(--header-total-height) - var(--nav-dots-clearance)) / 2)
+ *
+ * If these variables are ever EMPTY (e.g. the measure never ran), the layout
+ * falls back to hardcoded guesses (--header-height-fallback) that are too small
+ * for a real iOS header — so initHeaderLayout retries until they're published.
  *
  * Why measure instead of pure CSS: these heights are variable — the header
  * depends on `env(safe-area-inset-top)`, the breakpoint padding, the `.ios-pwa`
@@ -42,6 +45,8 @@ let _navObserver = null;
 let _resizeHandler = null;
 let _headerEl = null;
 let _navEl = null;
+let _retryRaf = null;
+let _loadHandler = null;
 
 /**
  * Measure the fixed header and publish its height to `:root`.
@@ -52,7 +57,12 @@ let _navEl = null;
  * @returns {number} measured height in px (0 if the header is missing or not yet laid out)
  */
 export function measureHeaderHeight() {
-    const el = _headerEl || document.querySelector(DOM_SELECTORS.FIXED_HEADER_CONTAINER);
+    // Query fresh every call. A cached reference can go stale if the header
+    // subtree is re-rendered during boot — the stale node then measures 0 and
+    // the variable is never published, which is the "--header-total-height is
+    // empty on device → layout falls back to the 110px guess → title creeps
+    // under the mode selector" bug.
+    const el = document.querySelector(DOM_SELECTORS.FIXED_HEADER_CONTAINER);
     if (!el) return 0;
     const height = Math.round(el.getBoundingClientRect().height);
     if (height > 0) {
@@ -70,7 +80,7 @@ export function measureHeaderHeight() {
  * @returns {number} clearance in px (0 if the nav dots are missing or not laid out)
  */
 export function measureNavDotsClearance() {
-    const el = _navEl || document.getElementById(DOM_IDS.NAV_DOTS);
+    const el = document.getElementById(DOM_IDS.NAV_DOTS); // fresh — see measureHeaderHeight
     if (!el) return 0;
     const height = el.offsetHeight;
     if (height <= 0) return 0;
@@ -103,24 +113,37 @@ export function initHeaderLayout() {
     _navEl = document.getElementById(DOM_IDS.NAV_DOTS);
 
     if (!_headerEl) {
-        console.warn(`⚠️ headerLayoutManager: ${DOM_SELECTORS.FIXED_HEADER_CONTAINER} not found — skipping (layout falls back to the CSS defaults)`);
-        return false;
+        console.warn(`⚠️ headerLayoutManager: ${DOM_SELECTORS.FIXED_HEADER_CONTAINER} not found yet — the retry below will publish once it appears`);
     }
 
     // Initial measure so the variables are correct before the first interaction.
     _measureAll();
+    _attachObservers();
 
-    // Re-measure whenever a tracked box changes — breakpoint padding, branding
-    // wrap, accessibility font-size, theme swaps, nav-dots reflow, etc.
-    if (typeof ResizeObserver !== 'undefined') {
-        if (!_headerObserver) {
-            _headerObserver = new ResizeObserver(() => measureHeaderHeight());
-            _headerObserver.observe(_headerEl);
-        }
-        if (_navEl && !_navObserver) {
-            _navObserver = new ResizeObserver(() => measureNavDotsClearance());
-            _navObserver.observe(_navEl);
-        }
+    // RESILIENT PUBLISH: boot can call this BEFORE the header has its final
+    // laid-out height — on degraded / iOS boots especially — and a single measure
+    // plus the observer can miss it, leaving --header-total-height /
+    // --nav-dots-clearance EMPTY. The layout then uses the wrong hardcoded
+    // fallback (110px) for the real header (~178px on iPad) and the routine title
+    // creeps under the mode selector. Re-measure over the next frames until BOTH
+    // variables are actually published.
+    if (_retryRaf) cancelAnimationFrame(_retryRaf);
+    let frames = 0;
+    const isSet = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim() !== '';
+    const retry = () => {
+        _retryRaf = null;
+        _measureAll();
+        _attachObservers();
+        if ((isSet(HEADER_HEIGHT_VAR) && isSet(NAV_DOTS_CLEARANCE_VAR)) || frames++ > 30) return;
+        _retryRaf = requestAnimationFrame(retry);
+    };
+    _retryRaf = requestAnimationFrame(retry);
+
+    // Re-measure once fonts / async CSS have fully settled (belt-and-suspenders
+    // for the empty-var case above).
+    if (!_loadHandler) {
+        _loadHandler = () => _measureAll();
+        window.addEventListener('load', _loadHandler);
     }
 
     // Orientation / viewport changes alter `env(safe-area-inset-*)` and the
@@ -132,7 +155,26 @@ export function initHeaderLayout() {
         window.addEventListener('orientationchange', _resizeHandler);
     }
 
-    return true;
+    return !!_headerEl;
+}
+
+/**
+ * Attach ResizeObservers to the live header / nav elements. Idempotent, and
+ * split out so the retry loop can attach them once the elements actually exist
+ * (the header may not be in the DOM at the first init call on a degraded boot).
+ */
+function _attachObservers() {
+    if (typeof ResizeObserver === 'undefined') return;
+    const headerEl = document.querySelector(DOM_SELECTORS.FIXED_HEADER_CONTAINER);
+    const navEl = document.getElementById(DOM_IDS.NAV_DOTS);
+    if (headerEl && !_headerObserver) {
+        _headerObserver = new ResizeObserver(() => measureHeaderHeight());
+        _headerObserver.observe(headerEl);
+    }
+    if (navEl && !_navObserver) {
+        _navObserver = new ResizeObserver(() => measureNavDotsClearance());
+        _navObserver.observe(navEl);
+    }
 }
 
 /**
@@ -152,6 +194,14 @@ export function destroyHeaderLayout() {
         window.removeEventListener('resize', _resizeHandler);
         window.removeEventListener('orientationchange', _resizeHandler);
         _resizeHandler = null;
+    }
+    if (_loadHandler) {
+        window.removeEventListener('load', _loadHandler);
+        _loadHandler = null;
+    }
+    if (_retryRaf) {
+        cancelAnimationFrame(_retryRaf);
+        _retryRaf = null;
     }
     _headerEl = null;
     _navEl = null;
