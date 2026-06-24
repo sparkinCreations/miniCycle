@@ -342,9 +342,11 @@ push/PR to `main`/`develop` and **gates** the merge on, in order:
 
 A separate **`.github/workflows/performance.yml`** runs perf benchmarks
 (informational) and Lighthouse. Lighthouse is **partially gating**: only the
-deterministic, non-flaky audits (`service-worker`, `viewport`,
-`cumulative-layout-shift`) are `error` and block the build — every score/timing
-metric is `warn` so shared-runner noise never gates. See `web/lighthouserc.json`.
+deterministic, non-flaky audits (`viewport`, `cumulative-layout-shift`) are
+`error` and block the build — every score/timing metric is `warn` so
+shared-runner noise never gates. (Service-worker behaviour is gated by
+`npm run test:sw`; Lighthouse 12 dropped its PWA audits.) See
+`web/lighthouserc.json`.
 
 ### GitLab CI
 

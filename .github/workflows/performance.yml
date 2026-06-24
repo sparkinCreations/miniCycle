@@ -5,10 +5,12 @@ name: Performance
 #
 # performance-benchmarks job: INFORMATIONAL — continue-on-error, never gates.
 # lighthouse job: PARTIALLY GATING. lighthouserc.json marks only deterministic,
-#   non-flaky audits as `error` (service-worker registered, viewport, CLS); every
+#   non-flaky audits as `error` (viewport, cumulative-layout-shift); every
 #   score/timing metric is `warn` and never blocks. Because the only `error`s are
-#   noise-free, this step does NOT use continue-on-error — a real regression (e.g.
-#   a broken SW registration) now fails the build instead of hiding in the logs.
+#   noise-free, this step does NOT use continue-on-error — a real layout-shift
+#   regression now fails the build instead of hiding in the logs. (Service-worker
+#   behaviour is gated far more rigorously by `npm run test:sw`; Lighthouse 12
+#   removed its PWA audits, so we don't rely on them here.)
 
 on:
   push:
@@ -83,8 +85,8 @@ jobs:
           sleep 3
 
       # NOT continue-on-error: lighthouserc.json gates only deterministic audits
-      # (service-worker, viewport, CLS) as `error`; all score/timing metrics are
-      # `warn`. So a failure here is a real regression, not shared-runner noise.
+      # (viewport, cumulative-layout-shift) as `error`; all score/timing metrics
+      # are `warn`. So a failure here is a real regression, not shared-runner noise.
       - name: Run Lighthouse CI
         working-directory: ./web
         run: lhci autorun
