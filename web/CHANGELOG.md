@@ -1,3 +1,8 @@
+## [2.255] - 2026-06-23
+- fix(sw): precache the drifted boot-graph modules so offline boot stops dying
+- docs(sw): correct the network-first strategy comments to match the circuit-breaker behavior
+
+
 ## [2.254] - 2026-06-23
 - fix(sw): serve app code network-first (not stale-while-revalidate), guarded by a circuit breaker
 
