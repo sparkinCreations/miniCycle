@@ -196,7 +196,24 @@ var BOOT_CRITICAL = [
   // Labels - statically imported by boot modules, required for offline
   './modules/labels/labelResolver.js',
   './modules/labels/defaultLabels.js',
-  './modules/labels/themes.js'
+  './modules/labels/themes.js',
+  // Boot-graph modules that were drifting out of precache — they are statically
+  // imported during boot, so without precache they only live in the DYNAMIC
+  // cache, which iOS evicts; once evicted, offline boot dies with "Importing
+  // binding name '…' is not found" (e.g. goToLiteVersion). Keep these here.
+  './modules/utils/liteVersion.js',
+  './modules/utils/dialogClose.js',
+  './modules/utils/popoverUtils.js',
+  './modules/platform/capacitorBridge.js',
+  './modules/ui/headerLayoutManager.js',
+  './modules/ui/taskViewLayoutManager.js',
+  './modules/ui/shareManager.js',
+  './modules/ui/modalUtils.js',
+  './modules/ui/actionUsage.js',
+  './modules/ui/guidedTourManager.js',
+  './modules/task/dailyResetManager.js',
+  './modules/features/backupReminder.js',
+  './modules/other/basicPluginSystem.js'
 ];
 
 // CSS files - all @imports from main.css (required for offline styling)

@@ -21,6 +21,7 @@ const { chromium } = require('playwright');
 const { spawn, execSync } = require('child_process');
 const http = require('http');
 const path = require('path');
+const fs = require('fs');
 
 const colors = {
     reset: '\x1b[0m', green: '\x1b[32m', red: '\x1b[31m',
@@ -29,6 +30,34 @@ const colors = {
 const PORT = 8078;
 const WEB_ROOT = path.join(__dirname, '..', '..');
 const baseURL = `http://localhost:${PORT}`;
+
+// Modules that are intentionally NOT precached — genuinely lazy / dev-only, never
+// on the boot path, so they can't break offline boot. Everything else under
+// modules/ must be in the SW precache (see assertPrecacheCoversModules).
+const PRECACHE_EXEMPT = [
+    /^modules\/testing\//,                            // dev testing modal (lazy)
+    /^modules\/other\/example/,                       // example plugin(s)
+    /^modules\/other\/pluginIntegrationGuide\.js$/,   // docs plugin
+];
+
+// Deterministic drift guard. A boot-graph module missing from the SW precache
+// works until iOS evicts the dynamic cache, then offline boot dies with
+// "Importing binding name '…' is not found" (the goToLiteVersion failure). The
+// runtime offline test can't reliably reproduce that eviction, so this static
+// check is the real guard: every module file must be precached or exempt.
+function assertPrecacheCoversModules() {
+    const sw = fs.readFileSync(path.join(WEB_ROOT, 'service-worker.js'), 'utf8');
+    const precached = new Set((sw.match(/\.\/modules\/[^'"]+\.js/g) || []).map(s => s.replace(/^\.\//, '')));
+    const all = [];
+    (function walk(dir) {
+        for (const e of fs.readdirSync(path.join(WEB_ROOT, dir), { withFileTypes: true })) {
+            const rel = `${dir}/${e.name}`;
+            if (e.isDirectory()) { if (!rel.includes('/archive')) walk(rel); }
+            else if (e.name.endsWith('.js')) all.push(rel);
+        }
+    })('modules');
+    return all.filter(f => !precached.has(f) && !PRECACHE_EXEMPT.some(re => re.test(f)));
+}
 
 function waitForServer(url, timeoutMs = 8000) {
     const start = Date.now();
@@ -64,6 +93,19 @@ async function run() {
     console.log(`${colors.blue}🛰  miniCycle Service-Worker Offline-Boot Tests${colors.reset}`);
     console.log(`${colors.blue}${'='.repeat(64)}${colors.reset}`);
 
+    const failures = [];
+
+    // ── Static drift guard (deterministic; runs before the browser) ─────────
+    console.log(`\n${colors.cyan}▸ precache drift guard${colors.reset}`);
+    const driftMissing = assertPrecacheCoversModules();
+    if (driftMissing.length === 0) {
+        console.log(`   ${colors.green}✅${colors.reset} ${colors.gray}precache covers every boot-eligible module${colors.reset}`);
+    } else {
+        console.log(`   ${colors.red}❌ ${driftMissing.length} boot-eligible module(s) NOT in the SW precache (offline boot breaks once iOS evicts the dynamic cache):${colors.reset}`);
+        driftMissing.forEach(m => { console.log(`      ${colors.red}• ${m}${colors.reset}`); failures.push(`precache missing: ${m}`); });
+        console.log(`      ${colors.yellow}→ add to BOOT_CRITICAL in service-worker.js, or to PRECACHE_EXEMPT here if genuinely lazy/dev-only${colors.reset}`);
+    }
+
     try { execSync(`lsof -ti:${PORT} | xargs kill -9`, { stdio: 'ignore' }); } catch { /* nothing */ }
     const server = spawn('python3', ['-m', 'http.server', String(PORT)], { cwd: WEB_ROOT, stdio: 'ignore' });
     let serverKilled = false;
@@ -80,7 +122,6 @@ async function run() {
     const context = await browser.newContext();
     const page = await context.newPage();
 
-    const failures = [];
     const record = (name, ok, detail) => {
         if (ok) console.log(`   ${colors.green}✅${colors.reset} ${name} ${colors.gray}${detail || ''}${colors.reset}`);
         else { console.log(`   ${colors.red}❌ ${name} — ${detail}${colors.reset}`); failures.push(`${name}: ${detail}`); }
