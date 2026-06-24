@@ -1,92 +1,92 @@
-name: Performance Testing
+name: Performance
+
+# Migrated from the inert web/.github/workflows/performance.yml (GitHub only runs
+# workflows in the repo-root .github/workflows/). Both jobs are INFORMATIONAL —
+# the perf benchmark and Lighthouse steps are continue-on-error so a shared-runner
+# score blip never blocks a merge; check the uploaded artifacts for results.
 
 on:
   push:
     branches: [ main, develop ]
   pull_request:
     branches: [ main, develop ]
-  workflow_dispatch:  # Allow manual triggering
+  workflow_dispatch:
 
 jobs:
   performance-benchmarks:
     name: Performance Benchmarks
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '20.x'
+          cache: 'npm'
+          cache-dependency-path: web/package-lock.json
 
       - name: Install dependencies
+        working-directory: ./web
         run: npm ci
 
       - name: Start dev server
+        working-directory: ./web
         run: |
           npm start &
           sleep 3
 
       - name: Run performance benchmarks
+        working-directory: ./web
         run: npm run perf
+        continue-on-error: true # informational, never a merge gate
 
       - name: Upload benchmark results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: performance-results
-          path: |
-            tests/results/
+          path: web/tests/results/
+          if-no-files-found: ignore
           retention-days: 30
 
   lighthouse:
     name: Lighthouse CI
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '20.x'
+          cache: 'npm'
+          cache-dependency-path: web/package-lock.json
 
       - name: Install dependencies
+        working-directory: ./web
         run: |
           npm ci
           npm install -g @lhci/cli@0.13.x
 
       - name: Start dev server
+        working-directory: ./web
         run: |
           npm start &
           sleep 3
 
       - name: Run Lighthouse CI
+        working-directory: ./web
         run: lhci autorun
-        continue-on-error: true
+        continue-on-error: true # perf scores vary on shared runners; informational
 
       - name: Upload Lighthouse results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: lighthouse-results
-          path: .lighthouseci/
+          path: web/.lighthouseci/
+          if-no-files-found: ignore
           retention-days: 30
-
-      - name: Comment PR with Lighthouse scores
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            // Read lighthouse results and post to PR
-            // This is a placeholder - customize based on your needs
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: '⚡ Lighthouse CI results will be available in the artifacts'
-            });
