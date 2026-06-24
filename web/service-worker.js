@@ -458,6 +458,16 @@ function fetchWithTimeout(request, timeoutMs) {
 var _trimCacheTimeout = null;
 var _trimCachePending = false;
 
+// ✅ Network circuit breaker for app-code (un-versioned /modules/ JS).
+// Those requests are network-first (so app code is never served stale), but iOS
+// can reopen a backgrounded PWA OFFLINE while navigator.onLine still returns true
+// ("the lie"). Without protection, every module would then wait out the network
+// timeout — the documented boot death spiral. Instead, the FIRST failed app-code
+// fetch trips this flag and every subsequent un-versioned module serves straight
+// from cache. So at most one file pays the timeout, not 100+. Reset on any
+// successful network response and at the start of each navigation (page load).
+var _appCodeNetworkDown = false;
+
 function trimCache(cacheName, maxEntries) {
   // Debounce: schedule trim for later if not already pending
   if (_trimCachePending) return;
@@ -600,6 +610,11 @@ self.addEventListener('fetch', function (event) {
                    (request.destination === '' && accept.indexOf('text/html') !== -1);
 
   if (isNavigate) {
+    // A fresh page load is a fresh chance to reach the network — re-arm the
+    // app-code circuit breaker so this load isn't biased to cache by a prior
+    // offline session.
+    _appCodeNetworkDown = false;
+
     // ═══════════════════════════════════════════════════════════════════════
     // NAVIGATION: Cache-first with background revalidation
     // ═══════════════════════════════════════════════════════════════════════
@@ -749,22 +764,21 @@ self.addEventListener('fetch', function (event) {
       console.log('📦 Static import (no version):', url.pathname);
     }
 
-    // ✅ HYBRID STRATEGY: Network-first ONLY for actual version mismatches
-    // Static imports (no ?v=) and version-matching imports use stale-while-revalidate
-    // for instant cache serving. This is CRITICAL for offline boot on iOS:
+    // ✅ NETWORK-FIRST for app code: genuine version mismatches AND un-versioned
+    // /modules/ JS (static imports like constants.js, diBase.js). App code is
+    // served fresh-first so a deploy is picked up immediately, instead of the old
+    // stale-while-revalidate that served the cached copy first and only updated
+    // in the background — the stale-build class of bug.
     //
-    // Problem: moduleLoader loads 40+ modules SEQUENTIALLY. Each module's static
-    // imports (constants.js, diBase.js, etc.) have no ?v= param. If these go through
-    // network-first, and iOS navigator.onLine lies (returns true when offline),
-    // each file waits 3s for network timeout before falling back to cache.
-    // Even with browser module deduplication, the cumulative timeout exceeds
-    // the Phase 2 boot timeout (20s) and the app fails to boot offline.
-    //
-    // Fix: Only use network-first when there's an ACTUAL version mismatch (?v=X
-    // where X ≠ APP_VERSION). All other files use stale-while-revalidate:
-    // - Cache hit → instant serve + background update
-    // - Cache miss → wait for network (same as before)
-    var needsNetworkFirst = versionMismatch;
+    // Why this used to be mismatch-only: moduleLoader pulls many modules whose
+    // static imports carry no ?v=, and iOS can reopen a backgrounded PWA OFFLINE
+    // while navigator.onLine lies (returns true) — every file would then wait out
+    // the 3s network timeout and blow the boot budget. That is now handled by the
+    // _appCodeNetworkDown circuit breaker in the offline fast-path below: the
+    // first failed app-code fetch trips it and the rest serve straight from cache,
+    // so at most one file pays the timeout. CSS keeps its existing handling — its
+    // @imports already carry ?v=, so a deploy bumps them into the mismatch path.
+    var needsNetworkFirst = versionMismatch || staticImportWithoutVersion;
 
     if (needsNetworkFirst) {
       // ═══════════════════════════════════════════════════════════════════
@@ -777,7 +791,11 @@ self.addEventListener('fetch', function (event) {
       // (runs on focus/visibility change). This is an accepted tradeoff to
       // prevent the iOS "navigator.onLine lies" death spiral.
       // ═══════════════════════════════════════════════════════════════════
-      if (!self.navigator.onLine) {
+      // Serve from cache with no network attempt when the device is honestly
+      // offline, OR when the app-code circuit breaker has tripped (network is
+      // down even though navigator.onLine may be lying) — either way the network
+      // would only burn the timeout.
+      if (!self.navigator.onLine || (_appCodeNetworkDown && staticImportWithoutVersion)) {
         event.respondWith(
           caches.match(cacheRequest).then(function(cached) {
             if (cached) {
@@ -839,6 +857,7 @@ self.addEventListener('fetch', function (event) {
       event.respondWith(
         fetchWithTimeout(freshRequest, NETWORK_FIRST_TIMEOUT)
           .then(function (res) {
+            _appCodeNetworkDown = false; // network reachable — re-arm the breaker
             if (res && res.status === 200) {
               return caches.open(DYNAMIC_CACHE).then(function (cache) {
                 return safeCachePut(cache, cacheRequest, res.clone()).then(function() {
@@ -850,6 +869,10 @@ self.addEventListener('fetch', function (event) {
             return res;
           })
           .catch(function (error) {
+            // Trip the breaker so the remaining un-versioned modules skip the
+            // network attempt and serve straight from cache (one file pays the
+            // timeout, not all of them).
+            _appCodeNetworkDown = true;
             console.warn('❌ Network failed for boot-critical file, trying cache:', request.url);
             return caches.match(cacheRequest).then(function (cached) {
               if (cached) return cached;
