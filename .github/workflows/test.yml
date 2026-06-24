@@ -46,6 +46,19 @@ jobs:
       run: npm test
       continue-on-error: false # Set to true if you want workflow to pass even with failing tests
 
+    # Layout + service-worker regression guards. Each spawns its OWN server (its
+    # own port) and uses the chromium installed above — no extra setup needed.
+    # test:layout = centred-panel overlap + measured-var (--header-total-height)
+    # publish guard. test:sw = offline boot + precache drift (every boot-graph
+    # module AND every @imported stylesheet must be precached).
+    - name: Run layout regression tests
+      working-directory: ./web
+      run: npm run test:layout
+
+    - name: Run service-worker offline tests
+      working-directory: ./web
+      run: npm run test:sw
+
     # Note: Jest tests are currently experimental/incomplete
     # Main test suite (958 browser tests) runs above
 
