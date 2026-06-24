@@ -290,7 +290,7 @@ web/
 ├── tests/
 │   ├── performance.benchmark.js # Benchmark suite
 │   └── automated/
-│       ├── run-browser-tests.js
+│       ├── run-browser-tests.cjs
 │       └── run-performance-benchmarks.js
 └── package.json                # Test scripts
 ```

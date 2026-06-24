@@ -696,7 +696,7 @@ npm install playwright
 
 # Run
 python3 -m http.server 8080  # Terminal 1
-node tests/automated/run-browser-tests.js  # Terminal 2
+node tests/automated/run-browser-tests.cjs  # Terminal 2
 ```
 
 ### Create New Test
@@ -707,7 +707,7 @@ cp tests/MODULE_TEMPLATE.tests.js tests/myModule.tests.js
 
 # 2. Edit test file
 # 3. Add to module-test-suite.html
-# 4. Add to automated/run-browser-tests.js
+# 4. Add to automated/run-browser-tests.cjs
 ```
 
 ### Test Pattern

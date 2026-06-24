@@ -62,7 +62,7 @@ npm start
 ```
 tests/
 ├── automated/
-│   ├── run-browser-tests.js         # Main test runner (Playwright)
+│   ├── run-browser-tests.cjs         # Main test runner (Playwright)
 │   └── run-performance-benchmarks.js # Performance runner
 ├── *.tests.js                        # all test files (see ../PROJECT_STATS.md)
 ├── module-test-suite.html            # Browser test UI
@@ -530,7 +530,7 @@ diff performance-baselines/v1.352.txt performance-baselines/v1.353.txt
 web/
 ├── tests/
 │   ├── automated/
-│   │   ├── run-browser-tests.js         # Main test runner
+│   │   ├── run-browser-tests.cjs         # Main test runner
 │   │   └── run-performance-benchmarks.js # Performance runner
 │   ├── *.tests.js                        # all test files (see ../PROJECT_STATS.md)
 │   ├── performance.benchmark.js          # Performance suite

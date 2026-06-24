@@ -533,7 +533,7 @@ web/
 ├── tests/
 │   ├── performance.benchmark.js          # Benchmark suite
 │   ├── automated/
-│   │   ├── run-browser-tests.js         # Test runner
+│   │   ├── run-browser-tests.cjs         # Test runner
 │   │   └── run-performance-benchmarks.js # Perf runner
 │   └── *.tests.js (113 files)            # Test suites
 ├── .github/workflows/

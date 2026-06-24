@@ -291,7 +291,7 @@ miniCycle/web/
 │
 ├── tests/
 │   ├── automated/
-│   │   ├── run-browser-tests.js ────────┐
+│   │   ├── run-browser-tests.cjs ────────┐
 │   │   └── run-performance-benchmarks.js ├─► Test Runners
 │   │                                      │
 │   ├── *.tests.js (113 files) ───────────┼─► Test Suites
@@ -607,7 +607,7 @@ npm start          # Manual testing (browser)
 ### Key Files
 
 ```
-tests/automated/run-browser-tests.js     # Main runner
+tests/automated/run-browser-tests.cjs     # Main runner
 tests/performance.benchmark.js           # Benchmarks
 .github/workflows/test.yml               # CI config
 .github/workflows/performance.yml        # Perf CI

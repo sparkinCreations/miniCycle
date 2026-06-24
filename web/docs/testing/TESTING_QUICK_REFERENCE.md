@@ -73,7 +73,7 @@ npm run test:coverage
 ```
 tests/
 ├── module-test-suite.html          # Main test UI
-├── automated/run-browser-tests.js  # Automation runner
+├── automated/run-browser-tests.cjs  # Automation runner
 ├── MODULE_TEMPLATE.tests.js        # Copy this for new tests
 ├── globalUtils.tests.js            # GlobalUtils tests
 ├── themeManager.tests.js           # ThemeManager tests
@@ -175,7 +175,7 @@ if (currentModule === 'myModule') {
 }
 ```
 
-### 4. Add to `automated/run-browser-tests.js`
+### 4. Add to `automated/run-browser-tests.cjs`
 
 ```javascript
 const modules = [

@@ -301,7 +301,7 @@ This document summarizes the error handling improvements and testing implementat
 4. `modules/testing/testing-modal.js` - Added error handling to 14 locations
 5. `modules/boot/orchestrator.js` - Integrated errorHandler module
 6. `tests/module-test-suite.html` - Added 2 new test modules
-7. `tests/automated/run-browser-tests.js` - Added 2 modules to runner
+7. `tests/automated/run-browser-tests.cjs` - Added 2 modules to runner
 8. `docs/TESTING_ARCHITECTURE.md` - Updated test counts
 9. `docs/TESTING_README.md` - Updated statistics
 10. `docs/CLAUDE.md` - Updated all references

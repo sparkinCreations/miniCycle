@@ -1831,7 +1831,7 @@ Results: 76/45 tests passed (100%)
 python3 -m http.server 8080
 
 # Terminal 2: Run tests
-node tests/automated/run-browser-tests.js
+node tests/automated/run-browser-tests.cjs
 ```
 
 **Result:**
