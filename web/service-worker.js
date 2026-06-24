@@ -24,23 +24,26 @@ var MAX_CACHE_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
 // that should always use network-first fetching. An isNetworkFirstFile() helper
 // checked URLs against those patterns.
 //
-// This was replaced by the HYBRID STRATEGY in the fetch handler (see line ~660):
-//   var needsNetworkFirst = versionMismatch;
+// The current strategy lives in the fetch handler:
+//   var needsNetworkFirst = versionMismatch || staticImportWithoutVersion;
 //
-// Now, network-first is triggered ONLY when a request's ?v= param doesn't match
-// APP_VERSION — an actual version mismatch. All other requests (including CSS,
-// boot files, and static imports with no ?v=) use stale-while-revalidate for
-// instant cache serving. This change was critical for offline boot on iOS:
+// Network-first applies to (a) genuine version mismatches (?v=X ≠ APP_VERSION)
+// AND (b) un-versioned /modules/ JS — your app code — so a deploy is picked up
+// immediately instead of being served stale-while-revalidate (cached copy first,
+// background update), which was the stale-build class of bug. CSS keeps
+// stale-while-revalidate; its @imports already carry ?v=, so a deploy bumps them
+// into the mismatch path. This interacts with offline boot on iOS:
 //
 // - iOS kills the PWA's service worker when backgrounded. When the user reopens
-//   offline, navigator.onLine can lie (return true). Pattern-based network-first
-//   would send 100+ files through 3-10s network timeouts before falling back to
-//   cache, exceeding the 20s boot timeout.
+//   offline, navigator.onLine can lie (return true). Naive network-first would
+//   then send 100+ files through 3-10s network timeouts before falling back to
+//   cache, exceeding the boot budget.
 //
-// - With the hybrid approach, files only hit the network when there's a genuine
-//   version mismatch. Same-version and unversioned requests serve instantly from
-//   cache. Precaching ensures all files are current after each SW activation,
-//   so stale content during normal operation is not a concern.
+// - That's bounded by the _appCodeNetworkDown circuit breaker: the first failed
+//   app-code fetch trips it and every subsequent un-versioned module serves
+//   straight from cache (re-armed on a successful fetch and at each navigation).
+//   So at most one file pays the timeout. Precaching keeps the cache current
+//   after each SW activation, so the cache fallback is fresh.
 //
 // The old pattern-based approach and isNetworkFirstFile() were removed in v2.057
 // because they were dead code — never called by the fetch handler.
@@ -444,8 +447,9 @@ function fetchWithTimeout(request, timeoutMs) {
 }
 
 // isNetworkFirstFile() was removed in v2.057 — see comment block at top of file.
-// Network-first is now determined solely by version mismatch detection in the
-// fetch handler: var needsNetworkFirst = versionMismatch;
+// Network-first is determined in the fetch handler by version mismatch OR an
+// un-versioned /modules/ request: needsNetworkFirst = versionMismatch ||
+// staticImportWithoutVersion (circuit-breaker protected).
 
 /**
  * Trim cache to prevent unbounded growth (LRU-style)
