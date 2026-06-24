@@ -255,7 +255,16 @@ var CSS_FILES = [
   './styles/components/quick-actions.css?v=' + APP_VERSION,
   './styles/utilities/helpers.css?v=' + APP_VERSION,
   './styles/utilities/responsive.css?v=' + APP_VERSION,
-  './styles/utilities/dark-mode.css?v=' + APP_VERSION
+  './styles/utilities/dark-mode.css?v=' + APP_VERSION,
+  // Stylesheets that drifted out of precache — main.css @imports them, so when
+  // iOS evicts the dynamic cache they vanish offline and the @import resolves to
+  // an empty stub → flash of unstyled content (task-view-layout.css is STRUCTURAL
+  // — it makes #task-card-group a flex column — so losing it collapses the layout).
+  './styles/components/task-view-layout.css?v=' + APP_VERSION,
+  './styles/components/first-run-welcome.css?v=' + APP_VERSION,
+  './styles/components/guided-tour.css?v=' + APP_VERSION,
+  './styles/components/history.css?v=' + APP_VERSION,
+  './styles/components/achievements.css?v=' + APP_VERSION
 ];
 
 // Lite version shell (smaller precache)

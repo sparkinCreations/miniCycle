@@ -59,6 +59,18 @@ function assertPrecacheCoversModules() {
     return all.filter(f => !precached.has(f) && !PRECACHE_EXEMPT.some(re => re.test(f)));
 }
 
+// Same guard for CSS: every stylesheet main.css @imports must be in the SW's
+// CSS_FILES precache, or it vanishes offline once the dynamic cache is evicted →
+// the @import resolves to an empty stub → flash of unstyled content.
+function assertPrecacheCoversCss() {
+    const css = fs.readFileSync(path.join(WEB_ROOT, 'styles', 'main.css'), 'utf8');
+    const imported = (css.match(/@import\s+url\(['"]\.\/[^'")?]+\.css/g) || [])
+        .map(s => 'styles/' + s.replace(/^@import\s+url\(['"]\.\//, ''));
+    const sw = fs.readFileSync(path.join(WEB_ROOT, 'service-worker.js'), 'utf8');
+    const precached = new Set((sw.match(/\.\/styles\/[^'"?]+\.css/g) || []).map(s => s.replace(/^\.\//, '')));
+    return imported.filter(f => !precached.has(f));
+}
+
 function waitForServer(url, timeoutMs = 8000) {
     const start = Date.now();
     return new Promise((resolve, reject) => {
@@ -95,15 +107,16 @@ async function run() {
 
     const failures = [];
 
-    // ── Static drift guard (deterministic; runs before the browser) ─────────
+    // ── Static drift guards (deterministic; run before the browser) ─────────
     console.log(`\n${colors.cyan}▸ precache drift guard${colors.reset}`);
-    const driftMissing = assertPrecacheCoversModules();
-    if (driftMissing.length === 0) {
-        console.log(`   ${colors.green}✅${colors.reset} ${colors.gray}precache covers every boot-eligible module${colors.reset}`);
+    const moduleDrift = assertPrecacheCoversModules();
+    const cssDrift = assertPrecacheCoversCss();
+    if (moduleDrift.length === 0 && cssDrift.length === 0) {
+        console.log(`   ${colors.green}✅${colors.reset} ${colors.gray}precache covers every boot-graph module and @imported stylesheet${colors.reset}`);
     } else {
-        console.log(`   ${colors.red}❌ ${driftMissing.length} boot-eligible module(s) NOT in the SW precache (offline boot breaks once iOS evicts the dynamic cache):${colors.reset}`);
-        driftMissing.forEach(m => { console.log(`      ${colors.red}• ${m}${colors.reset}`); failures.push(`precache missing: ${m}`); });
-        console.log(`      ${colors.yellow}→ add to BOOT_CRITICAL in service-worker.js, or to PRECACHE_EXEMPT here if genuinely lazy/dev-only${colors.reset}`);
+        moduleDrift.forEach(m => { console.log(`   ${colors.red}❌ module not precached: ${m}${colors.reset}`); failures.push(`precache missing module: ${m}`); });
+        cssDrift.forEach(c => { console.log(`   ${colors.red}❌ CSS not precached: ${c}${colors.reset}`); failures.push(`precache missing CSS: ${c}`); });
+        console.log(`      ${colors.yellow}→ add modules to BOOT_CRITICAL / CSS to CSS_FILES in service-worker.js (or PRECACHE_EXEMPT if genuinely lazy/dev-only)${colors.reset}`);
     }
 
     try { execSync(`lsof -ti:${PORT} | xargs kill -9`, { stdio: 'ignore' }); } catch { /* nothing */ }
