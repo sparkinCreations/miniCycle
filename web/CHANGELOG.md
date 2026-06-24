@@ -1,3 +1,7 @@
+## [2.254] - 2026-06-23
+- fix(sw): serve app code network-first (not stale-while-revalidate), guarded by a circuit breaker
+
+
 ## [2.252] - 2026-06-23
 - fix(layout): band-centre #task-view so the help window clears the nav dots
 
