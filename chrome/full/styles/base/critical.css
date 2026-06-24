@@ -195,7 +195,11 @@ html, body {
 .header-branding {
   position: absolute;
   left: 50%;
-  top: 50%;
+  /* Center within the visible area BELOW the status-bar safe area, not the full
+     padded box. env(safe-area-inset-top) is 0 on desktop (→ plain 50%) and the
+     status-bar height on native/notched devices, where plain 50% would pull the
+     logo up under the status bar and clip it. Mirrors layout/header.css. */
+  top: calc(50% + env(safe-area-inset-top, 0px) / 2);
   transform: translate(-50%, -50%);
   display: flex;
   flex-direction: column;

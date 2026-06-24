@@ -1,3 +1,10 @@
+## [2.259] - 2026-06-24
+- feat(css): tighten mobile layout to give the task list more room
+- fix(css): keep the header logo clear of the status bar
+- chore: add full-2.258.zip to the chrome directory
+- chore: remove outdated Chrome zip files
+
+
 ## [2.257] - 2026-06-23
 - fix(layout): make header measurement resilient so --header-total-height always publishes
 

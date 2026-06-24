@@ -286,7 +286,10 @@ body.hide-help-window .help-window {
 
 @media (max-width: 480px) {
     .help-window {
-        margin-bottom: calc(var(--help-window-clearance) + 10px);
+        /* --help-window-clearance is reduced for this breakpoint in variables.css
+           (the old calc(... + 10px) over-cleared, leaving a ~41px dead gap above
+           the nav dots). Reference the semantic token, not a raw value. */
+        margin-bottom: var(--help-window-clearance);
         padding: 5px var(--space-2);
         font-size: var(--font-size-xs);
     }
@@ -514,11 +517,26 @@ body.hide-help-window .help-window {
 
     .undo-container {
         position: absolute;
-        bottom: 58px;
+        /* Put undo/redo on the SAME row as the nav dots. Place this container's
+           bottom edge at the dots' vertical center: the dots are bottom-anchored
+           with a 48px touch box, so their center is half that box (--space-6 =
+           24px) above --nav-area-height. The buttons then translateY(-50%) onto
+           this edge (below), so they center on the dots regardless of each
+           button's own height. */
+        bottom: calc(var(--nav-area-height) + var(--space-6));
         width: 100%;
     }
 
-    /* Mobile positioning */
+    /* Mobile positioning. Center each button on the container edge (= dots
+       center) via translateY so undo and redo align even if their heights differ
+       (e.g. redo rendering a border). Scoped out of focus mode, which positions
+       these buttons itself. */
+    body:not(.focus-mode) .undo-redo-btn#undo-btn,
+    body:not(.focus-mode) .undo-redo-btn#redo-btn {
+        top: 0;
+        transform: translateY(-50%);
+    }
+
     .undo-redo-btn#undo-btn {
         left: 25%;
     }
