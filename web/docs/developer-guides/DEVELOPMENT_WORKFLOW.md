@@ -158,7 +158,9 @@ console.log(cycle.recurringTemplates);
 ./scripts/update-version.sh
 
 # 2. Run tests
-npm test  # Ensure all tests pass (see ../PROJECT_STATS.md for counts)
+npm test          # Module suite (see ../PROJECT_STATS.md for counts)
+npm run test:layout   # Centred-panel overlap + measured-var guard (after layout/header changes)
+npm run test:sw       # Offline boot + precache drift guard (after module/CSS/service-worker changes)
 
 # 3. Commit changes
 git add .

@@ -380,6 +380,44 @@ Defined in both CSS (`--z-*` variables) and JS (`Z_INDEX` constants). See the [C
 | `--help-window-clearance` | 55px | Help window margin to clear nav dots |
 | `--safe-area-*` | `env(safe-area-inset-*)` | PWA safe area insets |
 
+### Measured chrome → CSS variables (band-centering)
+
+The fixed "chrome" — the header + mode-selector row at the top, and the
+Routine\|Stats nav dots at the bottom — is **variable height**: it depends on
+`env(safe-area-inset-*)`, the `.ios-pwa` class, the accessibility font-size, and
+branding wrap. There's no CSS primitive to read one element's rendered height
+into another's `calc()`, so `modules/ui/headerLayoutManager.js` measures the
+chrome with `ResizeObserver`s and publishes two **live** variables on `:root`:
+
+| Variable | Set by | Meaning |
+|----------|--------|---------|
+| `--header-total-height` | `headerLayoutManager` (measured) | full `.fixed-header-container` height, incl. safe area |
+| `--nav-dots-clearance` | `headerLayoutManager` (measured) | distance from the nav-dots' top edge to the viewport bottom |
+| `--header-height-fallback` | `variables.css` (static, 110px) | estimate used **until** the measure runs (and if JS is unavailable) |
+| `--nav-dots-clearance-fallback` | `variables.css` (static, 90px) | same, for the nav dots |
+
+`#task-view` and `#stats-panel` then **band-centre** between the two measured
+edges and cap their height to fit — so the routine title clears the header AND
+the bottom (help window / Complete button) clears the nav dots, at any size /
+orientation / safe-area:
+
+```css
+#task-view {
+  top: calc(50% + (var(--header-total-height, var(--header-height-fallback))
+                 - var(--nav-dots-clearance, var(--nav-dots-clearance-fallback))) / 2);
+  max-height: min( <tuned cap>,
+    calc(100dvh - var(--header-total-height, …) - var(--nav-dots-clearance, …) - <gap>) );
+}
+```
+
+> ⚠️ **The fallback is a trap.** `var(--header-total-height, var(--header-height-fallback))`
+> resolves to `110px` whenever the measured variable is **empty** — but the real
+> iOS header is ~178px. If `headerLayoutManager` fails to publish (it can be
+> called before the header has its laid-out height on a degraded boot), the card
+> sits ~68px too high and the title slides under the mode selector. The manager is
+> hardened to **query fresh + retry over a few frames until both vars are set**;
+> `npm run test:layout` asserts they're non-empty so this can't silently regress.
+
 ---
 
 ## Theming System

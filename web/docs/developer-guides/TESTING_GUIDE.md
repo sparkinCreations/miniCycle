@@ -108,6 +108,35 @@ Running 53 test modules across all systems...
 
 ---
 
+## Layout & Service-Worker Regression Tests
+
+Two standalone Playwright harnesses guard cross-cutting behaviour the module
+suite can't reach. Each **spawns its own server** (no `npm start` needed) and
+exits non-zero on failure — wire them into CI alongside `npm test`.
+
+### `npm run test:layout` — centred-panel overlap
+
+Drives the real app across a matrix of viewport sizes and asserts the geometry
+invariants:
+
+- the routine **title clears the fixed header** (never creeps under the mode-selector row)
+- `#task-view` / `#stats-panel` **clear the nav dots** (help window + Complete button never overlap them)
+- the measured layout variables are **actually published** — `--header-total-height` / `--nav-dots-clearance` are non-empty (0 = the measurement silently failed and the layout fell back to the wrong hardcoded guess; see [CSS_ARCHITECTURE_GUIDE.md](./CSS_ARCHITECTURE_GUIDE.md) → *Measured chrome → CSS variables*)
+
+**Run it after any change to the header, task-view, stats-panel, or `headerLayoutManager`.**
+
+### `npm run test:sw` — offline boot + precache drift
+
+Uses the **real service worker** (the layout test disables it) and verifies:
+
+- online, offline (`navigator.onLine = false`), and "navigator lies" (online flag + dead network) boots all succeed
+- the `_appCodeNetworkDown` circuit breaker bounds boot time when the network is unreachable
+- **precache drift guards** — every boot-graph module *and* every stylesheet `main.css` `@import`s must be in the SW precache (`BOOT_CRITICAL` / `CSS_FILES`), or it's flagged. A drifted file boots fine until iOS evicts the dynamic cache, then dies offline with `Importing binding name '…' is not found` (JS) or a flash of unstyled content (CSS)
+
+**Run it after adding a module or stylesheet, or touching `service-worker.js`.** Genuinely-lazy dev-only files (the testing modal, example plugins) are listed in `PRECACHE_EXEMPT` in the test.
+
+---
+
 ## GitHub Actions CI/CD
 
 miniCycle has **automated testing** that runs on every push and pull request via GitHub Actions.
