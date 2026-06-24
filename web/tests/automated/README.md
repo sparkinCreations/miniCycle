@@ -225,7 +225,7 @@ The automated runner uses **Playwright** to:
 
 ### Add New Module to Tests
 
-Edit `tests/automated/run-browser-tests.js`:
+Edit `tests/automated/run-browser-tests.cjs`:
 
 ```javascript
 // Add your new module to this array
@@ -242,7 +242,7 @@ Then create your test file following the pattern in `tests/MODULE_TEMPLATE.tests
 
 ### Debug Mode (Watch Browser)
 
-Edit `tests/automated/run-browser-tests.js`:
+Edit `tests/automated/run-browser-tests.cjs`:
 
 ```javascript
 const browser = await chromium.launch({
@@ -252,7 +252,7 @@ const browser = await chromium.launch({
 
 ### Adjust Timeouts
 
-If tests are slow, increase timeouts in `run-browser-tests.js`:
+If tests are slow, increase timeouts in `run-browser-tests.cjs`:
 
 ```javascript
 await page.waitForSelector('h3:has-text("Results:")', {
@@ -274,7 +274,7 @@ await page.waitForSelector('h3:has-text("Results:")', {
 python3 -m http.server 8080
 
 # Then run tests in another terminal
-node tests/automated/run-browser-tests.js
+node tests/automated/run-browser-tests.cjs
 ```
 
 ### "Playwright not found"
@@ -307,13 +307,13 @@ lsof -ti:8080 | xargs kill
 
 # Option 2: Use a different port
 python3 -m http.server 8081
-# Update URL in run-browser-tests.js accordingly
+# Update URL in run-browser-tests.cjs accordingly
 ```
 
 ### Tests timeout or hang
 
 **Solutions**:
-1. **Increase timeout** in `run-browser-tests.js`
+1. **Increase timeout** in `run-browser-tests.cjs`
 2. **Run with `headless: false`** to debug visually
 3. **Check for console errors** in the browser
 4. **Verify server is responding** - Open test page manually
@@ -361,7 +361,7 @@ test:
     - npm install playwright
     - python3 -m http.server 8080 &
     - sleep 3
-    - node tests/automated/run-browser-tests.js
+    - node tests/automated/run-browser-tests.cjs
 ```
 
 ---
@@ -371,7 +371,7 @@ test:
 ### What Goes to GitHub
 
 **Committed to repository** (tracked in git):
-- ✅ `tests/automated/run-browser-tests.js` - Test runner script
+- ✅ `tests/automated/run-browser-tests.cjs` - Test runner script
 - ✅ `tests/automated/README.md` - This documentation
 - ✅ `tests/testHelpers.js` - Shared mocks and DI setup
 - ✅ `tests/*.tests.js` - All test files (32 files)
@@ -462,7 +462,7 @@ await test('modifies localStorage', () => {
 ### 1. Debug Failed Tests Visually
 
 ```javascript
-// In run-browser-tests.js
+// In run-browser-tests.cjs
 const browser = await chromium.launch({
     headless: false,      // See the browser
     slowMo: 1000         // Slow down by 1 second per action
@@ -472,7 +472,7 @@ const browser = await chromium.launch({
 ### 2. Screenshot on Failure
 
 ```javascript
-// In run-browser-tests.js, inside the catch block
+// In run-browser-tests.cjs, inside the catch block
 if (failedTests > 0) {
     await page.screenshot({
         path: `test-failure-${moduleName}.png`,

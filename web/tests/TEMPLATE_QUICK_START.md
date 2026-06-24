@@ -54,7 +54,7 @@ import { runYourModuleTests } from './yourModule.tests.js';
 
 ### Step 5: Add to Automation
 
-Edit `automated/run-browser-tests.js`:
+Edit `automated/run-browser-tests.cjs`:
 
 ```javascript
 const modules = [
@@ -124,7 +124,7 @@ GLOBAL_FUNCTION        → handleTaskButtonClick
 |-------|----------|
 | "Class not found" | Check module import path |
 | "Tests timeout" | Ensure Summary format is correct |
-| "Tests skip" | Add to modules array in run-browser-tests.js |
+| "Tests skip" | Add to modules array in run-browser-tests.cjs |
 | "Syntax errors" | Verify all CAPS placeholders replaced |
 
 ## Playwright Limitations
@@ -160,7 +160,7 @@ Add comment when skipping:
 - [ ] Added testContext.js import with needed helpers
 - [ ] Updated window.* checks to use hasGlobal() or getTestX()
 - [ ] Added to module-test-suite.html (4 locations)
-- [ ] Added to automated/run-browser-tests.js
+- [ ] Added to automated/run-browser-tests.cjs
 - [ ] Tests pass in browser
 - [ ] Tests pass with `npm test`
 

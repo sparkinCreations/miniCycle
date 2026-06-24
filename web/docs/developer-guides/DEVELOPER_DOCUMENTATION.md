@@ -155,9 +155,10 @@ await appInit.waitForApp();
 npm start                    # Start dev server (port 8080)
 
 # Testing
-npm test                     # Run all tests
-npm run test:watch           # Watch mode
-npm run test:coverage        # Coverage report
+npm test                     # Module suite (Playwright)
+npm run test:layout          # Real-app layout-overlap regression gate
+npm run test:sw              # Real-app offline boot + precache-drift gate
+npm run test:journey         # Real-app end-to-end user journey gate
 
 # Version Management
 ./update-version.sh          # Update version numbers

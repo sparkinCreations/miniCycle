@@ -93,7 +93,7 @@ tests/
 ├── MODULE_TEMPLATE.tests.js    # Template for new modules
 ├── module-test-suite.html      # Browser test runner UI
 ├── automated/
-│   ├── run-browser-tests.js    # Playwright automation
+│   ├── run-browser-tests.cjs    # Playwright automation
 │   └── README.md               # CI/CD documentation
 └── *.tests.js                  # Individual module tests (50 files)
 ```
@@ -200,7 +200,7 @@ See comments in test files marked with `// NOTE:` for specific exclusions.
 2. Use `testHelpers.js` for DI setup
 3. Use `testContext.js` for checking global exports
 4. Add to `module-test-suite.html`
-5. Add to `automated/run-browser-tests.js` modules array
+5. Add to `automated/run-browser-tests.cjs` modules array
 
 See [TEMPLATE_QUICK_START.md](./TEMPLATE_QUICK_START.md) for detailed steps.
 

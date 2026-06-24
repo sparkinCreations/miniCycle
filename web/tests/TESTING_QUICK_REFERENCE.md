@@ -37,7 +37,7 @@ tests/
 ├── module-test-suite.html      # Browser test runner UI
 ├── MODULE_TEMPLATE.tests.js    # Template for new tests
 ├── automated/
-│   ├── run-browser-tests.js    # Playwright automation
+│   ├── run-browser-tests.cjs    # Playwright automation
 │   └── README.md               # CI/CD documentation
 └── *.tests.js                  # Individual module tests (50 files)
 ```
@@ -123,7 +123,7 @@ if (currentModule === 'myModule') {
 }
 ```
 
-### 4. Add to `automated/run-browser-tests.js`
+### 4. Add to `automated/run-browser-tests.cjs`
 
 ```javascript
 const modules = [
@@ -382,7 +382,7 @@ await runGlobalUtilsTests(resultsDiv);
 
 ### Debug in Headless Mode
 
-Edit `tests/automated/run-browser-tests.js`:
+Edit `tests/automated/run-browser-tests.cjs`:
 ```javascript
 const browser = await chromium.launch({
     headless: false  // ← Watch the browser
