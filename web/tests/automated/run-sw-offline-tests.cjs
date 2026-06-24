@@ -18,10 +18,9 @@
  */
 
 const { chromium } = require('playwright');
-const { spawn, execSync } = require('child_process');
-const http = require('http');
 const path = require('path');
 const fs = require('fs');
+const { startStaticServer } = require('./_static-server.cjs');
 
 const colors = {
     reset: '\x1b[0m', green: '\x1b[32m', red: '\x1b[31m',
@@ -29,7 +28,6 @@ const colors = {
 };
 const PORT = 8078;
 const WEB_ROOT = path.join(__dirname, '..', '..');
-const baseURL = `http://localhost:${PORT}`;
 
 // Modules that are intentionally NOT precached — genuinely lazy / dev-only, never
 // on the boot path, so they can't break offline boot. Everything else under
@@ -71,20 +69,6 @@ function assertPrecacheCoversCss() {
     return imported.filter(f => !precached.has(f));
 }
 
-function waitForServer(url, timeoutMs = 8000) {
-    const start = Date.now();
-    return new Promise((resolve, reject) => {
-        const tick = () => {
-            const req = http.get(url, (res) => { res.destroy(); resolve(); });
-            req.on('error', () => {
-                if (Date.now() - start > timeoutMs) return reject(new Error('server did not start'));
-                setTimeout(tick, 150);
-            });
-        };
-        tick();
-    });
-}
-
 // Reload and wait for the app to report booted; returns { ok, ms }.
 async function reloadAndBoot(page, timeoutMs) {
     const start = Date.now();
@@ -119,16 +103,15 @@ async function run() {
         console.log(`      ${colors.yellow}→ add modules to BOOT_CRITICAL / CSS to CSS_FILES in service-worker.js (or PRECACHE_EXEMPT if genuinely lazy/dev-only)${colors.reset}`);
     }
 
-    try { execSync(`lsof -ti:${PORT} | xargs kill -9`, { stdio: 'ignore' }); } catch { /* nothing */ }
-    const server = spawn('python3', ['-m', 'http.server', String(PORT)], { cwd: WEB_ROOT, stdio: 'ignore' });
-    let serverKilled = false;
+    let srv;
     try {
-        await waitForServer(`${baseURL}/miniCycle.html`);
+        srv = await startStaticServer(WEB_ROOT, PORT);
     } catch (e) {
         console.error(`${colors.red}❌ Could not start test server: ${e.message}${colors.reset}`);
-        server.kill('SIGKILL');
         process.exit(1);
     }
+    const baseURL = srv.url;
+    let serverKilled = false;
     console.log(`${colors.gray}   server on ${baseURL} (web/, real service worker enabled)${colors.reset}`);
 
     const browser = await chromium.launch({ headless: true });
@@ -184,9 +167,9 @@ async function run() {
         // fire here — so the app only boots if the circuit breaker routes the
         // un-versioned modules to cache after the first failure.
         console.log(`\n${colors.cyan}▸ navigator.onLine lies (online flag true, server unreachable) — circuit breaker${colors.reset}`);
-        server.kill('SIGKILL');
+        await srv.close();
         serverKilled = true;
-        await new Promise(r => setTimeout(r, 600)); // let the port close
+        await new Promise(r => setTimeout(r, 600)); // let connections drain
         const lies = await reloadAndBoot(page, 25000);
         record('boots from cache when navigator lies', lies.ok, lies.ok ? `(${lies.ms}ms)` : lies.err);
         // The breaker should bound this well under the boot budget.
@@ -197,7 +180,7 @@ async function run() {
     } finally {
         await context.close();
         await browser.close();
-        if (!serverKilled) server.kill('SIGKILL');
+        if (!serverKilled && srv) await srv.close();
     }
 
     console.log(`\n${colors.blue}${'='.repeat(64)}${colors.reset}`);
