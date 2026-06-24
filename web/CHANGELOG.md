@@ -1,3 +1,7 @@
+## [2.256] - 2026-06-23
+- fix(sw): precache the drifted stylesheets so offline doesn't flash unstyled
+
+
 ## [2.255] - 2026-06-23
 - fix(sw): precache the drifted boot-graph modules so offline boot stops dying
 - docs(sw): correct the network-first strategy comments to match the circuit-breaker behavior
