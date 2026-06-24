@@ -77,8 +77,8 @@ npm install playwright
 # Make sure server is running on port 8080
 python3 -m http.server 8080
 
-# In another terminal, run automated tests
-node tests/automated/run-browser-tests.js
+# In another terminal, run the module test suite
+npm test   # → node tests/automated/run-browser-tests.cjs
 ```
 
 **Output:**
