@@ -154,11 +154,11 @@ Only 9.54MB memory footprint:
 │ ✅ Undo/redo with IndexedDB                        │
 │ ✅ Recurring task scheduling                       │
 │ ✅ Data migration (v2.0 → v2.5)                    │
-│ ✅ PWA service worker                              │
+│ ✅ Offline boot + service worker (npm run test:sw) │
 │ ✅ Cross-platform (Mac/iPad/iPhone)                │
 │ ✅ Memory leaks                                    │
 │ ✅ Performance regressions                         │
-│ ✅ Lighthouse CI (5 metrics)                       │
+│ ✅ Lighthouse CI (viewport + CLS gate)            │
 │ ✅ Bundle size tracking                            │
 └────────────────────────────────────────────────────┘
 ```
@@ -174,8 +174,8 @@ Layer 3: Component Tests (~20s)
    ↓     UI component behavior
 Layer 4: Integration Tests (~12s)
    ↓     End-to-end workflows
-Layer 5: Lighthouse CI (5 metrics, 3min)
-         Overall quality score
+Layer 5: Lighthouse CI (viewport + CLS gate, 3min)
+         Scores/timings reported as warnings (informational)
 ```
 
 ### When We Test

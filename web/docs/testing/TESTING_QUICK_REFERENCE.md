@@ -47,14 +47,13 @@ ifconfig | grep "inet " | grep -v 127.0.0.1
 # Install (one-time)
 npm install
 
-# Run all tests
+# Run module suite
 npm test
 
-# Run Jest tests in watch mode
-npm run test:watch
-
-# Generate coverage report
-npm run test:coverage
+# Real-app gating runners
+npm run test:layout    # layout-overlap regression (port 8077)
+npm run test:sw        # offline boot + precache-drift guard (port 8078)
+npm run test:journey   # end-to-end user journey (port 8079)
 ```
 
 ### Run Tests via GitHub Actions (CI/CD)
@@ -862,20 +861,21 @@ jobs:
       working-directory: ./web
       run: npm ci
 
-    - name: Run automated browser tests
+    - name: Run module suite
       working-directory: ./web
       run: npm test
 
-    - name: Run Jest tests with coverage
+    - name: Run layout-overlap regression
       working-directory: ./web
-      run: npm run test:coverage
+      run: npm run test:layout
 
-    - name: Upload coverage reports
-      uses: codecov/codecov-action@v4
-      if: matrix.node-version == '20.x'
-      with:
-        working-directory: ./web
-        files: ./coverage/lcov.info
+    - name: Run offline boot + precache-drift guard
+      working-directory: ./web
+      run: npm run test:sw
+
+    - name: Run end-to-end user journey
+      working-directory: ./web
+      run: npm run test:journey
 ```
 
 ### Features:

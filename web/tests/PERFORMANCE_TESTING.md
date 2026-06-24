@@ -37,18 +37,19 @@ npm start
 2. **Open app**: http://localhost:8080/miniCycle.html
 3. **Open DevTools**: Press `F12` or `Cmd+Option+I` (Mac)
 4. **Go to Lighthouse tab**
-5. **Select categories**: Performance + Progressive Web App
+5. **Select categories**: Performance (the PWA category was removed in Lighthouse 12)
 6. **Click "Analyze page load"**
 
 **Target Scores:**
 - **Performance**: 90+ (Excellent), 50-89 (Good), <50 (Needs work)
-- **PWA**: 100 (All PWA requirements met)
 
-**Key Metrics to Watch:**
+> In Lighthouse CI (`npm run lighthouse`), only `viewport` and `cumulative-layout-shift` (≤0.1) are **error gates** that fail the build. The metrics below are **informational** (warn) — they don't block CI. PWA/offline behaviour moved to `npm run test:sw`.
+
+**Key Metrics to Watch (informational):**
 - **First Contentful Paint (FCP)**: < 1.8s (Good)
 - **Largest Contentful Paint (LCP)**: < 2.5s (Good)
 - **Total Blocking Time (TBT)**: < 200ms (Good)
-- **Cumulative Layout Shift (CLS)**: < 0.1 (Good)
+- **Cumulative Layout Shift (CLS)**: < 0.1 (Good — this one is an error gate in CI)
 - **Speed Index**: < 3.4s (Good)
 
 ### Method 2: Performance Profiler (Detailed Analysis)

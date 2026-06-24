@@ -494,8 +494,13 @@ jobs:
           python3 -m http.server 8080 &
           sleep 3
 
-      - name: Run Tests
-        run: node web/tests/automated/run-browser-tests.js
+      - name: Run Tests (four gating runners)
+        run: |
+          cd web
+          npm test            # module suite
+          npm run test:layout # layout-overlap regression (port 8077)
+          npm run test:sw     # offline boot + precache-drift guard (port 8078)
+          npm run test:journey # end-to-end user journey (port 8079)
 ```
 
 ---

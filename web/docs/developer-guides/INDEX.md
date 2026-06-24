@@ -399,9 +399,10 @@
 ### "I want to run tests"
 
 1. **Quick functional tests**: `npm test`
-2. **Quick performance**: `npm run perf`
-3. **Full audit**: `npm run lighthouse`
-4. **Read**: [PERFORMANCE_SETUP.md](../performance/PERFORMANCE_SETUP.md)
+2. **Real-app gates**: `npm run test:layout`, `npm run test:sw`, `npm run test:journey`
+3. **Quick performance**: `npm run perf`
+4. **Full audit**: `npm run lighthouse`
+5. **Read**: [PERFORMANCE_SETUP.md](../performance/PERFORMANCE_SETUP.md)
 
 ### "I want to understand performance"
 
@@ -504,7 +505,10 @@
 
 ```bash
 # Testing
-npm test                # Run all functional tests
+npm test                # Run module functional tests
+npm run test:layout     # Real-app layout-overlap regression gate
+npm run test:sw         # Real-app offline boot + precache-drift gate
+npm run test:journey    # Real-app end-to-end user journey gate
 npm run perf            # Run performance benchmarks (12)
 npm run lighthouse      # Run Lighthouse CI audit
 

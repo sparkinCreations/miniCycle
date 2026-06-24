@@ -13,9 +13,9 @@
 │                     miniCycle Testing System                     │
 │                                                                   │
 │  ┌────────────┐  ┌────────────┐  ┌────────────┐  ┌───────────┐ │
-│  │ Functional │  │Performance │  │ Lighthouse │  │  Manual   │ │
-│  │   Tests    │  │ Benchmarks │  │     CI     │  │ Profiling │ │
-│  │ all modules │  │  12 tests  │  │  5 metrics │  │ DevTools  │ │
+│  │ Gating Runs│  │Performance │  │ Lighthouse │  │  Manual   │ │
+│  │ test/layout│  │ Benchmarks │  │     CI     │  │ Profiling │ │
+│  │ /sw/journey│  │  12 tests  │  │ viewport+CLS│  │ DevTools  │ │
 │  └────────────┘  └────────────┘  └────────────┘  └───────────┘ │
 │                                                                   │
 └─────────────────────────────────────────────────────────────────┘
@@ -88,14 +88,18 @@ Push to GitHub
 └────────────┘      └──────────────────┘
       ↓                    ↓
 ┌────────────┐      ┌──────────────────┐
-│ Run all    │      │ Run Benchmarks   │
-│ Tests      │      │ (12 tests)       │
-└────────────┘      └──────────────────┘
-      ↓                    ↓
-┌────────────┐      ┌──────────────────┐
-│ Test on    │      │ Run Lighthouse   │
-│ Node 18+20 │      │ CI (5 metrics)   │
-└────────────┘      └──────────────────┘
+│ 4 gating   │      │ Run Benchmarks   │
+│ runners:   │      │ (12 tests,       │
+│ test,      │      │ informational)   │
+│ test:layout│      └──────────────────┘
+│ test:sw,   │             ↓
+│ test:journey│     ┌──────────────────┐
+└────────────┘      │ Run Lighthouse   │
+      ↓             │ CI (viewport+CLS │
+┌────────────┐      │ gate; scores warn)│
+│ Test on    │      └──────────────────┘
+│ Node 18+20 │
+└────────────┘
       ↓                    ↓
 ┌────────────┐      ┌──────────────────┐
 │ Upload     │      │ Upload           │

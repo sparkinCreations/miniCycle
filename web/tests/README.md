@@ -36,6 +36,9 @@ npm run test:manual
 # Then open: http://localhost:8080/tests/module-test-suite.html
 ```
 
+> **CI gating:** the full pipeline gates on four runners — `npm test` (module suite),
+> `npm run test:layout`, `npm run test:sw`, and `npm run test:journey`.
+
 ## Documentation
 
 | Document | Purpose |

@@ -158,9 +158,14 @@ miniCycle has **automated testing** that runs on every push and pull request via
 1. Checkout code
 2. Setup Node.js environment
 3. Install dependencies (Playwright)
-4. Start HTTP server on port 8080
-5. Run all tests via Playwright (see [PROJECT_STATS.md](../PROJECT_STATS.md) for counts)
-6. Report results (pass/fail)
+4. Run the four gating steps in order (each manages its own server):
+   1. `npm test` — module suite via Playwright (see [PROJECT_STATS.md](../PROJECT_STATS.md) for counts)
+   2. `npm run test:layout` — real-app layout-overlap regression (port 8077)
+   3. `npm run test:sw` — real-app offline boot + precache-drift guard (port 8078)
+   4. `npm run test:journey` — real-app end-to-end user journey (port 8079)
+5. Report results (pass/fail)
+
+> **Note:** `npm test` now hard-fails if a registered module reports 0/0 tests (a `ZERO_TEST_EXEMPT` allowlist covers legitimate self-skips).
 
 **Current Status:** 100% passing ✅
 

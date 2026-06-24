@@ -241,10 +241,11 @@ Located in `lighthouserc.json`:
     },
     "assert": {
       "assertions": {
-        "categories:performance": ["error", {"minScore": 0.85}],
-        "categories:pwa": ["warn", {"minScore": 0.90}],
-        "first-contentful-paint": ["error", {"maxNumericValue": 2000}],
-        "largest-contentful-paint": ["error", {"maxNumericValue": 2500}]
+        "viewport": ["error"],
+        "cumulative-layout-shift": ["error", {"maxNumericValue": 0.1}],
+        "categories:performance": ["warn", {"minScore": 0.85}],
+        "first-contentful-paint": ["warn", {"maxNumericValue": 2000}],
+        "largest-contentful-paint": ["warn", {"maxNumericValue": 2500}]
       }
     }
   }
@@ -254,7 +255,7 @@ Located in `lighthouserc.json`:
 **Key Settings:**
 - **numberOfRuns**: 3 (averages results for consistency)
 - **minScore**: 0.85 (85% minimum for performance)
-- **assertions**: Fails CI if thresholds exceeded
+- **assertions**: Only `viewport` and `cumulative-layout-shift` (≤0.1) are `error` gates that fail CI; scores and timings are `warn` (informational)
 
 ### Running Lighthouse
 
@@ -324,11 +325,7 @@ lhci upload --target=temporary-public-storage
 
 **PWA Metrics:**
 
-- ✅ Installable (manifest.json present)
-- ✅ Works offline (service worker)
-- ✅ HTTPS (required for PWA)
-- ✅ Viewport meta tag
-- ✅ Themed address bar
+> PWA audits (installable, works-offline, service-worker, themed address bar) were **removed in Lighthouse 12** (bundled with `@lhci/cli@0.13.x`). Service-worker and offline behaviour are now tested via `npm run test:sw`, not Lighthouse. The `viewport` audit remains and is one of the two Lighthouse error gates.
 
 ### Lighthouse Reports
 

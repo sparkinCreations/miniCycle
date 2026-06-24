@@ -32,6 +32,7 @@
 
 ```bash
 # 1. Functional tests (~115s — see ../PROJECT_STATS.md for count)
+# This is one of four real-app gating runners (see below)
 npm test
 
 # 2. Performance benchmarks (12 tests, ~20s)
@@ -40,6 +41,10 @@ npm run perf
 # 3. Run both
 npm test && npm run perf
 ```
+
+> **The four CI gating runners** (each starts its own server):
+> `npm test`, `npm run test:layout` (port 8077), `npm run test:sw` (port 8078),
+> and `npm run test:journey` (port 8079).
 
 ### Test in Browser
 

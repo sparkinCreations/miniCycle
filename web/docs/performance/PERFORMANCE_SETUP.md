@@ -73,11 +73,14 @@ lhci autorun  # Run lighthouse in terminal 2
 ```
 
 **What it tests:**
-- ✅ Performance Score (target: 85+)
-- ✅ Accessibility (target: 90+)
-- ✅ Best Practices (target: 90+)
-- ✅ SEO (target: 85+)
-- ✅ PWA Score (target: 90+)
+
+Only `viewport` and `cumulative-layout-shift` (≤0.1) are **error gates** that fail the build (deterministic, non-flaky). Everything else is a **warn** (informational, never blocks):
+- ⚠️ Performance Score (target: 85+, warn)
+- ⚠️ Accessibility (target: 90+, warn)
+- ⚠️ Best Practices (target: 90+, warn)
+- ⚠️ SEO (target: 85+, warn)
+
+> PWA audits were removed in Lighthouse 12 (bundled with `@lhci/cli@0.13.x`); service-worker/offline behaviour is gated by `npm run test:sw`, not Lighthouse.
 
 **Tests both versions:**
 - Full app: `miniCycle.html`
@@ -169,7 +172,9 @@ Lighthouse CI configuration:
     },
     "assert": {
       "assertions": {
-        "categories:performance": ["error", {"minScore": 0.85}]
+        "viewport": ["error"],
+        "cumulative-layout-shift": ["error", {"maxNumericValue": 0.1}],
+        "categories:performance": ["warn", {"minScore": 0.85}]
       }
     }
   }
