@@ -21,6 +21,16 @@ export async function runModalRegistryTests(resultsDiv) {
     const resetRegistry = () => {
         mod.clearModalCache();
         mod.setModalRegistryDependencies(realDeps);
+        // Defensive DOM hygiene: in a full-suite run — especially on the live site, where
+        // module-load timing differs and some modules inject real modal templates into
+        // document.body — a stray element carrying a modal's id can linger. These lookup
+        // tests assert against their OWN fixtures (or against absence), so a leftover element
+        // with a modal id would collide (e.g. getModal('themes') returning it instead of
+        // null). Clear any such element so each test starts from a known-clean DOM.
+        mod.MODAL_NAMES.forEach((name) => {
+            const key = mod.MODAL_DEFS[name]?.key;
+            if (key) document.getElementById(key)?.remove();
+        });
     };
     resetRegistry();
 
