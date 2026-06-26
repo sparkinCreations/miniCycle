@@ -1,3 +1,14 @@
+## [2.261] - 2026-06-26
+- fix: dedupe completed-task DOM nodes duplicated after full re-render
+- test(e2e): expand journey runner to five real-app user journeys
+- docs: fix pre-existing rot — run-browser-tests .js->.cjs + ghost npm scripts
+- docs: sync test/CI docs with journey gate, 0-test-fail, Lighthouse gating
+- docs(icons): rewrite SVG_ICON_SYSTEM, archive v1
+- fix(ci): drop Lighthouse PWA audits removed in LH12
+- test: add E2E journey suite, fix 0-test pass-through, honest Lighthouse gating
+- chore(lite): bump Lite version 2.091 → 2.092
+
+
 ## [2.260] - 2026-06-24
 - feat(icons): complete the Font Awesome → inline-SVG migration (add last 8 icons)
 - ci: migrate the Performance/Lighthouse workflow to the repo root (and delete inert copies)
