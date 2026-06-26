@@ -614,27 +614,49 @@ class MiniCycleState {
      * @param {boolean} [immediate=false] - If true, save synchronously
      * @private
      */
-    async scheduleSave(immediate = false) {
-        // 🧪 SKIP saves during test runs to prevent overwriting user data
-        // The testModeActive flag in IndexedDB means "tests are running in the iframe"
-        // - Main app window: should skip saves (tests might modify localStorage)
-        // - Test iframe: should save normally (tests need state persistence to work)
-        // We detect the test iframe via URL parameters set by testing-modal-integration.js
+    scheduleSave(immediate = false) {
+        // 🧪 SKIP saves during test runs to prevent overwriting user data.
+        // The in-browser test runner shares this origin's localStorage — the production
+        // testing modal runs the suite in a SAME-ORIGIN iframe while THIS parent app stays
+        // live — so the parent must not write to storage while tests run.
+        //
+        // - Test iframe: saves normally (tests need state persistence to work).
+        // - Parent app: suppress. The authoritative signal is the SYNCHRONOUS, always-fresh
+        //   STORAGE_KEYS.TEST_RUNNING flag the runner sets at start / clears on finish.
+        //   The IndexedDB testModeActive cache below is a stale-prone secondary gate (a
+        //   parent whose session began BEFORE tests started caches `false` once and never
+        //   re-checks), so it cannot be the only line of defense — and it must not be
+        //   awaited before an immediate save (an async hop loses data on a quick refresh).
         const isTestIframe = window.location.search.includes('embedded=true') ||
                              window.location.pathname.includes('module-test-suite');
         if (!isTestIframe) {
-            const testMode = await getCachedTestMode();
-            if (testMode) {
+            try {
+                if (this.deps.storage?.getItem?.(STORAGE_KEYS.TEST_RUNNING) === 'true') {
+                    return;
+                }
+            } catch (e) {
+                // storage access can throw in locked-down sandboxes — fall through
+            }
+
+            // Secondary gate: cached IndexedDB flag. Read it synchronously when already
+            // resolved; if still unresolved, kick off a one-time background resolve but do
+            // NOT await it (keeps immediate saves synchronous).
+            if (_testModeCached === true) {
                 return;
+            }
+            if (_testModeCached === null) {
+                getCachedTestMode();
             }
         }
 
         if (this.saveTimeout) {
             clearTimeout(this.saveTimeout);
+            this.saveTimeout = null;
         }
 
         if (immediate) {
-            // ✅ For immediate saves, call save() synchronously to prevent data loss on quick refresh
+            // ✅ Synchronous save() — a quick refresh right after an immediate update
+            //    still flushes (no async hop before the write).
             this.save();
         } else {
             // ✅ For normal saves, use debounce delay

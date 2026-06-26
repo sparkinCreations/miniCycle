@@ -86,6 +86,9 @@ document.documentElement.dataset.bootStartTime = Date.now().toString();
 
 const TEST_MODE_DB = 'miniCycleTestResultsDB';
 const TEST_MODE_STORE = 'results';
+// Returned by checkTestModeActive() when the IndexedDB read times out (slow device) — i.e.
+// "we don't know", which must NOT be treated the same as a definitive "not in test mode".
+const TEST_MODE_UNKNOWN = Symbol('test-mode-unknown');
 // IndexedDB operation timeout — see BOOT_TIMEOUTS.IDB_OPERATION (fail fast, minimal boot delay).
 
 /**
@@ -177,7 +180,9 @@ async function checkTestModeActive() {
         }
     });
 
-    return withTimeout(operation, BOOT_TIMEOUTS.IDB_OPERATION, false);
+    // On timeout, return UNKNOWN (not false) so recovery can fall back to the backup probe
+    // instead of silently assuming the user is not mid-interrupted-test on a slow device.
+    return withTimeout(operation, BOOT_TIMEOUTS.IDB_OPERATION, TEST_MODE_UNKNOWN);
 }
 
 /**
@@ -318,11 +323,21 @@ async function recoverFromInterruptedTests() {
     }
     try {
         const testModeActive = await checkTestModeActive();
-        if (!testModeActive) {
+
+        // Definitive "not in test mode" → nothing to recover.
+        if (testModeActive === false) {
             return false;
         }
 
-        console.warn('⚠️ Test mode flag detected - tests may have been interrupted');
+        // Either the flag is set, OR the flag read timed out on a slow device
+        // (TEST_MODE_UNKNOWN). In the uncertain case we must not trust "current data is
+        // fine" — so let the backup decide. A preTestBackup only lingers when a run failed
+        // to complete its cleanup, so its presence is itself sufficient grounds to recover.
+        if (testModeActive === TEST_MODE_UNKNOWN) {
+            console.warn('⚠️ Test-mode flag read timed out — probing for a leftover backup before trusting current data');
+        } else {
+            console.warn('⚠️ Test mode flag detected - tests may have been interrupted');
+        }
 
         const backup = await getPreTestBackup();
         if (backup) {
@@ -350,15 +365,17 @@ async function recoverFromInterruptedTests() {
             sessionStorage.setItem('__miniCycle_recoveredFromInterruptedTests__', 'true');
             return true;
         } else {
-            // Fix #71: Don't delete user data without backup - this could delete valid data
-            // If testModeActive flag is set but no backup exists, the flag may be stale
-            // Log warning but preserve any existing data
-            console.warn('⚠️ No backup found - test mode flag may be stale, preserving existing data');
-            const existingData = localStorage.getItem(STORAGE_KEYS.DATA);
-            if (existingData) {
+            // No recoverable backup. Never delete user data without one (Fix #71).
+            if (testModeActive === true) {
+                // Flag was definitively set but no backup exists → stale flag. Clear it so
+                // it doesn't suppress saves forever; preserve whatever data is present.
+                console.warn('⚠️ No backup found - test mode flag may be stale, preserving existing data');
+                await clearTestModeFlags();
+                return true;
             }
-            await clearTestModeFlags();
-            return true;
+            // Only timed out (UNKNOWN) and no backup readable → nothing actionable. Preserve
+            // existing data and don't touch flags we couldn't confirm.
+            return false;
         }
     } catch (e) {
         console.error('❌ Failed to recover from interrupted tests:', e);
