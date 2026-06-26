@@ -364,6 +364,28 @@ export class CompletedTasksManager {
         const taskList = this.deps.getElementById(DOM_IDS.TASK_LIST);
         if (!taskList) return;
 
+        const completedList = this.deps.getElementById(DOM_IDS.COMPLETED_TASK_LIST);
+
+        // DEDUPE: a full re-render (renderTasks → replaceChildren) regenerates every
+        // task as a fresh node in the active list but leaves the completed list
+        // untouched. Any completed-list node whose task now also has a fresh node in
+        // the active list is a stale duplicate — drop it before the DOWN pass below
+        // re-appends the fresh copy (otherwise the completed dropdown shows two of each).
+        // No-op in steady state and for undo/redo callers, where a completed task lives
+        // only in the completed list and has no active-list counterpart.
+        if (completedList) {
+            const activeIds = new Set(
+                Array.from(taskList.querySelectorAll(DOM_SELECTORS.TASK))
+                    .map(el => el.dataset.taskId)
+                    .filter(Boolean)  // a missing id must never count as a match
+            );
+            Array.from(completedList.querySelectorAll(DOM_SELECTORS.TASK)).forEach(el => {
+                if (el.dataset.taskId && activeIds.has(el.dataset.taskId)) {
+                    el.remove();
+                }
+            });
+        }
+
         // DOWN: move each completed task in the active list to the completed section.
         Array.from(taskList.querySelectorAll(DOM_SELECTORS.TASK)).forEach(taskElement => {
             const checkbox = taskElement.querySelector('input[type="checkbox"]');
@@ -374,7 +396,6 @@ export class CompletedTasksManager {
 
         // UP: move any now-uncompleted task in the completed section back to the
         // active list (restores its original position via moveToActive()).
-        const completedList = this.deps.getElementById(DOM_IDS.COMPLETED_TASK_LIST);
         if (completedList) {
             Array.from(completedList.querySelectorAll(DOM_SELECTORS.TASK)).forEach(taskElement => {
                 const checkbox = taskElement.querySelector('input[type="checkbox"]');
@@ -383,6 +404,10 @@ export class CompletedTasksManager {
                 }
             });
         }
+
+        // Refresh count/visibility — the dedupe pass above may have removed the last
+        // completed node without any subsequent move() to update the count.
+        this.updateCount();
     }
 }
 

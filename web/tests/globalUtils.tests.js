@@ -442,6 +442,68 @@ export function runGlobalUtilsTests(resultsDiv) {
         }
     });
 
+    // ===== syncAllTasksWithMode: DOM invariant healing =====
+    resultsDiv.innerHTML += '<h4 class="test-section">🩹 syncAllTasksWithMode DOM Healing</h4>';
+
+    function buildSyncDOM() {
+        document.getElementById('test-sync-dom')?.remove();
+        const container = document.createElement('div');
+        container.id = 'test-sync-dom';
+        container.innerHTML = `<ul id="taskList"></ul><ul id="completedTaskList"></ul>`;
+        document.body.appendChild(container);
+        return container;
+    }
+    function makeTaskEl(taskId) {
+        const li = document.createElement('li');
+        li.className = 'task';
+        li.dataset.taskId = taskId;
+        return li;
+    }
+    const SYNC_CONSTANTS = { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS: { todo: true, cycle: false } };
+
+    test('syncAllTasksWithMode removes orphaned DOM nodes (DOM without data)', () => {
+        const container = buildSyncDOM();
+        try {
+            const taskList = container.querySelector('#taskList');
+            taskList.appendChild(makeTaskEl('real'));
+            taskList.appendChild(makeTaskEl('ghost')); // no matching data
+            GlobalUtils.syncAllTasksWithMode('cycle', { real: { id: 'real' } }, SYNC_CONSTANTS);
+            if (taskList.querySelectorAll('.task').length !== 1) {
+                throw new Error(`Expected 1 task after orphan removal, got ${taskList.querySelectorAll('.task').length}`);
+            }
+            if (taskList.querySelector('[data-task-id="ghost"]')) {
+                throw new Error('Orphaned node should have been removed');
+            }
+        } finally {
+            container.remove();
+        }
+    });
+
+    test('syncAllTasksWithMode removes duplicate-id nodes across lists (data with two nodes)', () => {
+        const container = buildSyncDOM();
+        try {
+            const taskList = container.querySelector('#taskList');
+            const completedList = container.querySelector('#completedTaskList');
+            // Canonical fresh node in active list, stale duplicate sitting in completed list.
+            taskList.appendChild(makeTaskEl('dup'));
+            completedList.appendChild(makeTaskEl('dup'));
+            GlobalUtils.syncAllTasksWithMode('cycle', { dup: { id: 'dup' } }, SYNC_CONSTANTS);
+            const total = container.querySelectorAll('[data-task-id="dup"]').length;
+            if (total !== 1) {
+                throw new Error(`Expected exactly 1 node for id "dup", got ${total}`);
+            }
+            // Active list is canonical (iterated first) — its node is the one kept.
+            if (!taskList.querySelector('[data-task-id="dup"]')) {
+                throw new Error('The active-list (canonical) node should be the one kept');
+            }
+            if (completedList.querySelector('[data-task-id="dup"]')) {
+                throw new Error('The stale completed-list duplicate should have been removed');
+            }
+        } finally {
+            container.remove();
+        }
+    });
+
     // Summary
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;

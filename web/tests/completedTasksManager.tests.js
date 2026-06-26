@@ -691,6 +691,64 @@ export async function runCompletedTasksManagerTests(resultsDiv, isPartOfSuite = 
         }
     });
 
+    // Regression: a full re-render (renderTasks → replaceChildren) regenerates every
+    // task as a fresh node in the ACTIVE list but leaves the completed list untouched.
+    // organize() then re-appends the fresh completed nodes — if it doesn't first drop
+    // the stale completed-list nodes (matched by data-task-id), the dropdown shows two
+    // copies of each completed task. This bit imported/old lists that load pre-populated
+    // with completed tasks. organize() must de-dupe by task id.
+    await test('organize de-dupes stale completed nodes after a full re-render (duplicate-in-completed regression)', async () => {
+        createTestDOM();
+        setCompletedTasksManagerDependencies(createMockDeps({
+            AppState: {
+                isReady: () => true,
+                get: () => ({ settings: { showCompletedDropdown: true } })
+            }
+        }));
+        const manager = new CompletedTasksManager();
+
+        const taskList = document.getElementById('taskList');
+        const completedList = document.getElementById('completedTaskList');
+
+        // Stale nodes left in the completed dropdown from the PREVIOUS render.
+        const stale1 = createMockTask('A', true); stale1.dataset.taskId = 'A';
+        const stale2 = createMockTask('B', true); stale2.dataset.taskId = 'B';
+        completedList.appendChild(stale1);
+        completedList.appendChild(stale2);
+
+        // Fresh nodes that renderTasks just rebuilt into the ACTIVE list (same ids).
+        const freshA = createMockTask('A', true); freshA.dataset.taskId = 'A';
+        const freshB = createMockTask('B', true); freshB.dataset.taskId = 'B';
+        const freshC = createMockTask('C', false); freshC.dataset.taskId = 'C';
+        taskList.appendChild(freshA);
+        taskList.appendChild(freshB);
+        taskList.appendChild(freshC);
+
+        manager.organize();
+
+        // Exactly one node per completed task — no duplicates.
+        if (completedList.children.length !== 2) {
+            throw new Error(`Expected 2 completed tasks (no dups), got ${completedList.children.length}`);
+        }
+        if (completedList.querySelectorAll('[data-task-id="A"]').length !== 1) {
+            throw new Error('Completed task A should appear exactly once');
+        }
+        if (completedList.querySelectorAll('[data-task-id="B"]').length !== 1) {
+            throw new Error('Completed task B should appear exactly once');
+        }
+        // The completed nodes in the dropdown should be the FRESH ones (stale removed).
+        if (!completedList.contains(freshA) || !completedList.contains(freshB)) {
+            throw new Error('Dropdown should hold the freshly-rendered nodes, not the stale ones');
+        }
+        if (completedList.contains(stale1) || completedList.contains(stale2)) {
+            throw new Error('Stale completed nodes should have been removed');
+        }
+        // The single uncompleted task stays active.
+        if (taskList.querySelectorAll('.task').length !== 1) {
+            throw new Error(`Expected 1 active task, got ${taskList.querySelectorAll('.task').length}`);
+        }
+    });
+
     // === SUMMARY ===
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;

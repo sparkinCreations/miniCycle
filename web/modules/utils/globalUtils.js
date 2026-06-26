@@ -669,20 +669,36 @@ export class GlobalUtils {
         let syncedCount = 0;
         let removedCount = 0;
 
+        // A given taskId must map to exactly one DOM node. The active list is iterated
+        // first (it is canonical after a full re-render), so the first node seen for an id
+        // is kept and any later node with the same id is a stale duplicate.
+        const seenIds = new Set();
+
         const syncTask = (taskEl) => {
             const taskId = taskEl.dataset.taskId;
-            const taskData = tasksData[taskId];
+            const taskData = taskId ? tasksData[taskId] : undefined;
 
-            if (taskData) {
-                GlobalUtils.syncTaskDeleteWhenCompleteDOM(taskEl, taskData, currentMode, constants);
-                syncedCount++;
-            } else {
-                // Orphaned DOM element - task data doesn't exist
+            if (!taskData) {
+                // Orphaned DOM element - task data doesn't exist (DOM-without-data)
                 // Remove it to prevent data inconsistency
                 console.warn(`⚠️ Removing orphaned task element: ${taskId} (no matching data)`);
                 taskEl.remove();
                 removedCount++;
+                return;
             }
+
+            if (seenIds.has(taskId)) {
+                // Duplicate DOM element - valid data, but already rendered elsewhere
+                // (data-with-two-nodes). Drop the later copy to restore the one-node invariant.
+                console.warn(`⚠️ Removing duplicate task element: ${taskId} (already rendered)`);
+                taskEl.remove();
+                removedCount++;
+                return;
+            }
+
+            seenIds.add(taskId);
+            GlobalUtils.syncTaskDeleteWhenCompleteDOM(taskEl, taskData, currentMode, constants);
+            syncedCount++;
         };
 
         allTasks.forEach(syncTask);
