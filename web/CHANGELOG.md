@@ -1,3 +1,7 @@
+## [2.262] - 2026-06-26
+- fix: harden in-browser test data protection (parent save suppression + slow-boot recovery)
+
+
 ## [2.261] - 2026-06-26
 - fix: dedupe completed-task DOM nodes duplicated after full re-render
 - test(e2e): expand journey runner to five real-app user journeys
