@@ -244,6 +244,118 @@ function buildTemplateUpdate(template, nowMs, calculateNextOccurrence) {
 }
 
 // ============================================================================
+// SHARED RECREATION ENGINE (used by both catch-up and the 30s watch)
+// ============================================================================
+
+/**
+ * Build a recreated recurring-task INSTANCE from its template.
+ *
+ * RECREATION SAFETY POLICY — deleteWhenComplete override:
+ * Templates may store deleteWhenComplete=false (persistent tasks the user wants to keep),
+ * but a recreated instance is ALWAYS forced to deleteWhenComplete=true so it auto-cleans on
+ * completion and can't accumulate duplicates. The template's stored preference is never
+ * mutated — only the spawned instance is overridden.
+ *
+ * This is the single source of truth for the recreated-instance shape, shared by both the
+ * wake-time catch-up and the 30s watcher (the only two paths that recreate a due task).
+ * NOTE: activation (recurringActivation.js) and template-build (recurringSettingsApplicator.js)
+ * intentionally build DIFFERENT shapes (different source object / preference-derived
+ * deleteWhenComplete) and must NOT be folded in here.
+ *
+ * @param {Object} template - The recurring template
+ * @returns {Object} A fresh task instance ready to push into the cycle
+ */
+function buildRecurringInstance(template) {
+    if (template.deleteWhenComplete === false) {
+        console.debug(`⚠️ Template "${template.text}" has deleteWhenComplete=false; recreated instance forced to true`);
+    }
+    return {
+        text: template.text,
+        completed: false,
+        dueDate: template.dueDate,
+        highPriority: template.highPriority,
+        priorityColor: template.priorityColor || null,
+        remindersEnabled: template.remindersEnabled,
+        recurring: true,
+        id: template.id,
+        recurringSettings: template.recurringSettings,
+        deleteWhenComplete: true, // Always true for recreated instances (safety override)
+        deleteWhenCompleteSettings: template.deleteWhenCompleteSettings ?? { ...DEFAULT_RECURRING_DELETE_SETTINGS }
+    };
+}
+
+/**
+ * Recreate every currently-due recurring task and advance its template.
+ *
+ * Shared engine for the two watcher entry points. Given the cycle's templates, it selects
+ * the due ones, builds recreated instances, enforces the task limit, commits them as a
+ * SYSTEM mutation (kept out of undo history — see §1.2 / commitSystemUpdate), refreshes the
+ * UI, and fires the limit / count-exhaustion notifications. Returns stats so the caller can
+ * report them (catch-up) or ignore them (watch).
+ *
+ * Eligibility shared by both callers: task not already present, has a next occurrence, count
+ * not exhausted, and the occurrence is due (now ≥ nextScheduledOccurrence). The 30s watch
+ * adds one extra gate via `extraEligibility` (re-validates the recurrence pattern); catch-up
+ * passes none — a missed-while-closed occurrence is trusted without re-matching the pattern.
+ *
+ * @param {string} activeCycleId
+ * @param {Object} templates - cycle.recurringTemplates
+ * @param {Array} taskList - current cycle.tasks
+ * @param {Date} now
+ * @param {(template: Object) => boolean} [extraEligibility] - optional extra per-template gate
+ * @returns {Promise<{added:number, updated:number, blocked:number}>}
+ */
+async function recreateDueTasks(activeCycleId, templates, taskList, now, extraEligibility) {
+    const nowMs = now.getTime();
+    const tasksToAdd = [];
+    const templateUpdates = {};
+
+    Object.values(templates).forEach(template => {
+        if (taskList.some(t => t.id === template.id)) return;        // already exists
+        if (template.nextScheduledOccurrence == null) return;        // finished / exhausted
+        if (isCountExhausted(template)) return;                      // count limit reached
+        if (nowMs < template.nextScheduledOccurrence) return;        // not due yet
+        if (extraEligibility && !extraEligibility(template)) return; // watch: pattern re-validation
+
+        tasksToAdd.push(buildRecurringInstance(template));
+        templateUpdates[template.id] = buildTemplateUpdate(template, nowMs, Deps.calculateNextOccurrence);
+    });
+
+    // Only add tasks up to the limit (templates are NOT deleted — they just won't spawn)
+    const limitCheck = checkTaskLimit(taskList.length, tasksToAdd.length);
+    const tasksToActuallyAdd = tasksToAdd.slice(0, limitCheck.allowed);
+
+    if (tasksToActuallyAdd.length > 0 || Object.keys(templateUpdates).length > 0) {
+        assertInjected('updateAppState', Deps.updateAppState);
+
+        await commitSystemUpdate(draft => {
+            const cycle = draft.data.cycles[activeCycleId];
+            tasksToActuallyAdd.forEach(taskData => {
+                cycle.tasks.push({ ...taskData, dateCreated: now.toISOString() });
+            });
+            Object.entries(templateUpdates).forEach(([templateId, updatedTemplate]) => {
+                cycle.recurringTemplates[templateId] = updatedTemplate;
+            });
+        }, true); // Immediate save
+
+        if (tasksToActuallyAdd.length > 0) {
+            // Refresh DOM on the next tick
+            setTimeout(() => { Deps.refreshUIFromState?.(); }, 0);
+        }
+        if (limitCheck.blocked > 0) {
+            showTaskLimitNotification(limitCheck.blocked);
+        }
+        notifyExhaustedTemplates(templateUpdates);
+    }
+
+    return {
+        added: tasksToActuallyAdd.length,
+        updated: Object.keys(templateUpdates).length,
+        blocked: limitCheck.blocked
+    };
+}
+
+// ============================================================================
 // CATCH-UP LOGIC
 // ============================================================================
 
@@ -303,120 +415,22 @@ export async function catchUpMissedRecurringTasks() {
 
     assertInjected('now', Deps.now);
     const now = new Date(Deps.now());
-    const tasksToAdd = [];
-    const templateUpdates = {};
 
-    // Check each template for missed occurrences
-    Object.values(templates).forEach(template => {
+    // Catch-up trusts a missed-while-closed occurrence — it recreates WITHOUT re-validating
+    // the recurrence pattern (no extraEligibility gate) and reports how many it added.
+    const stats = await recreateDueTasks(activeCycleId, templates, taskList, now);
 
-        // Skip if task already exists
-        if (taskList.some(t => t.id === template.id)) {
-            return;
-        }
-
-        // FAST PATH: Skip if nextScheduledOccurrence is not set (template finished or exhausted)
-        if (template.nextScheduledOccurrence == null) {
-            return;
-        }
-
-        // FAST PATH: Skip if count limit already reached
-        if (isCountExhausted(template)) {
-            return;
-        }
-
-        if (template.nextScheduledOccurrence > now.getTime()) {
-            return;
-        }
-
-        // MISSED OCCURRENCE - Add task once
-
-        // RECREATION SAFETY POLICY:
-        // Template stores user's deleteWhenComplete preference (may be false for persistent tasks).
-        // However, when recreating a missing task, we force deleteWhenComplete=true on the INSTANCE
-        // to ensure the recreated task gets cleaned up on completion, preventing duplicate accumulation.
-        // The template's stored preference is NOT mutated - only the recreated instance is overridden.
-        const templateDeleteWhenComplete = template.deleteWhenComplete ?? true;
-        if (templateDeleteWhenComplete === false) {
-            console.debug(`  ⚠️ Template "${template.text}" has deleteWhenComplete=false but task was missing; recreated instance forced to true`);
-        }
-
-        tasksToAdd.push({
-            text: template.text,
-            completed: false,
-            dueDate: template.dueDate,
-            highPriority: template.highPriority,
-            priorityColor: template.priorityColor || null,
-            remindersEnabled: template.remindersEnabled,
-            recurring: true,
-            id: template.id,
-            recurringSettings: template.recurringSettings,
-            deleteWhenComplete: true, // Always true for recreated instances (safety override)
-            deleteWhenCompleteSettings: template.deleteWhenCompleteSettings ?? { ...DEFAULT_RECURRING_DELETE_SETTINGS }
-        });
-
-        // Build template update with count enforcement
-        templateUpdates[template.id] = buildTemplateUpdate(template, now.getTime(), Deps.calculateNextOccurrence);
-    });
-
-    // Check task limit before adding
-    const limitCheck = checkTaskLimit(taskList.length, tasksToAdd.length);
-
-    // Add summary log
-
-    // Only add tasks up to the limit (templates are NOT deleted - they just won't spawn)
-    const tasksToActuallyAdd = tasksToAdd.slice(0, limitCheck.allowed);
-
-    // Batch all changes in one AppState update
-    if (tasksToActuallyAdd.length > 0 || Object.keys(templateUpdates).length > 0) {
-        assertInjected('updateAppState', Deps.updateAppState);
-
-        await commitSystemUpdate(draft => {
-            const cycle = draft.data.cycles[activeCycleId];
-
-            // Add missed recurring tasks (only up to limit)
-            tasksToActuallyAdd.forEach(taskData => {
-                cycle.tasks.push({
-                    ...taskData,
-                    dateCreated: now.toISOString()
-                });
-            });
-
-            // Update template timestamps and next occurrences (always update, even if task wasn't added)
-            Object.entries(templateUpdates).forEach(([templateId, updatedTemplate]) => {
-                cycle.recurringTemplates[templateId] = updatedTemplate;
-            });
-        }, true); // Immediate save
-
-        if (tasksToActuallyAdd.length > 0) {
-
-            // Refresh DOM
-            setTimeout(() => {
-                if (Deps.refreshUIFromState && typeof Deps.refreshUIFromState === 'function') {
-                    Deps.refreshUIFromState();
-                }
-            }, 0);
-
-            // Show notification
-            assertInjected('showNotification', Deps.showNotification);
-            const missedTaskWord = getLabel('noun.task', { count: tasksToActuallyAdd.length });
-            Deps.showNotification(
-                `⏰ ${getLabel('notify.recurringMissedAdded', { vars: { count: tasksToActuallyAdd.length, taskWord: missedTaskWord } })}`,
-                'info',
-                UI_TIMEOUTS.NOTIFICATION_LONG
-            );
-        }
-
-        // Show limit notification if any tasks were blocked
-        if (limitCheck.blocked > 0) {
-            showTaskLimitNotification(limitCheck.blocked);
-        }
-
-        // Notify for any templates that just exhausted their count
-        notifyExhaustedTemplates(templateUpdates);
-    } else {
+    if (stats.added > 0) {
+        assertInjected('showNotification', Deps.showNotification);
+        const missedTaskWord = getLabel('noun.task', { count: stats.added });
+        Deps.showNotification(
+            `⏰ ${getLabel('notify.recurringMissedAdded', { vars: { count: stats.added, taskWord: missedTaskWord } })}`,
+            'info',
+            UI_TIMEOUTS.NOTIFICATION_LONG
+        );
     }
 
-    return { added: tasksToActuallyAdd.length, updated: Object.keys(templateUpdates).length, blocked: limitCheck.blocked };
+    return stats;
 }
 
 // ============================================================================
@@ -472,96 +486,14 @@ export async function watchRecurringTasks() {
 
     assertInjected('now', Deps.now);
     const now = new Date(Deps.now());
-    const tasksToAdd = [];
-    const templateUpdates = {};
 
-    // Collect changes without mutating state directly
-    Object.values(templates).forEach(template => {
-        // Prevent re-adding if task already exists by ID
-        if (taskList.some(task => task.id === template.id)) return;
-
-        // FAST PATH: Skip if there are no more occurrences (template finished or exhausted)
-        if (template.nextScheduledOccurrence == null) return;
-
-        // FAST PATH: Skip if count limit already reached
-        if (isCountExhausted(template)) return;
-
-        // FAST PATH: Skip if not due yet
-        if (now.getTime() < template.nextScheduledOccurrence) return;
-
-        // SLOW PATH: Pattern matching validation
-        if (!Deps.shouldRecreateRecurringTask(template, taskList, now)) return;
-
-        // RECREATION SAFETY POLICY: (see catchUpMissedRecurringTasks for full explanation)
-        // Force deleteWhenComplete=true on recreated instances to prevent duplicate accumulation.
-        const templateDeleteWhenComplete = template.deleteWhenComplete ?? true;
-        if (templateDeleteWhenComplete === false) {
-            console.debug(`⚠️ Template "${template.text}" has deleteWhenComplete=false; recreated instance forced to true`);
-        }
-
-        tasksToAdd.push({
-            text: template.text,
-            completed: false,
-            dueDate: template.dueDate,
-            highPriority: template.highPriority,
-            priorityColor: template.priorityColor || null,
-            remindersEnabled: template.remindersEnabled,
-            recurring: true,
-            id: template.id,
-            recurringSettings: template.recurringSettings,
-            deleteWhenComplete: true, // Always true for recreated instances (safety override)
-            deleteWhenCompleteSettings: template.deleteWhenCompleteSettings ?? { ...DEFAULT_RECURRING_DELETE_SETTINGS }
-        });
-
-        // Build template update with count enforcement
-        templateUpdates[template.id] = buildTemplateUpdate(template, now.getTime(), Deps.calculateNextOccurrence);
-    });
-
-    // Check task limit before adding
-    const limitCheck = checkTaskLimit(taskList.length, tasksToAdd.length);
-    const tasksToActuallyAdd = tasksToAdd.slice(0, limitCheck.allowed);
-
-    // Batch all changes
-    if (tasksToActuallyAdd.length > 0 || Object.keys(templateUpdates).length > 0) {
-        assertInjected('updateAppState', Deps.updateAppState);
-
-        await commitSystemUpdate(draft => {
-            const cycle = draft.data.cycles[activeCycleId];
-
-            // Add new recurring tasks (only up to limit)
-            tasksToActuallyAdd.forEach(taskData => {
-                cycle.tasks.push({
-                    ...taskData,
-                    dateCreated: now.toISOString()
-                });
-            });
-
-            // Update template timestamps (always update, even if task wasn't added)
-            Object.entries(templateUpdates).forEach(([templateId, updatedTemplate]) => {
-                cycle.recurringTemplates[templateId] = updatedTemplate;
-            });
-        }, true); // Immediate save — consistent with catchUpMissedRecurringTasks
-
-        if (tasksToActuallyAdd.length > 0) {
-
-            // Refresh DOM
-            setTimeout(() => {
-                if (Deps.refreshUIFromState && typeof Deps.refreshUIFromState === 'function') {
-                    Deps.refreshUIFromState();
-                } else {
-                    console.warn('⚠️ refreshUIFromState not available');
-                }
-            }, 0);
-        }
-
-        // Show limit notification if any tasks were blocked
-        if (limitCheck.blocked > 0) {
-            showTaskLimitNotification(limitCheck.blocked);
-        }
-
-        // Notify for any templates that just exhausted their count
-        notifyExhaustedTemplates(templateUpdates);
-    }
+    // The 30s watch re-validates the recurrence pattern (slow path) before recreating, so a
+    // task only spawns when it genuinely matches now. Recreation is silent (no notification).
+    assertInjected('shouldRecreateRecurringTask', Deps.shouldRecreateRecurringTask);
+    await recreateDueTasks(
+        activeCycleId, templates, taskList, now,
+        (template) => Deps.shouldRecreateRecurringTask(template, taskList, now)
+    );
 }
 
 // ============================================================================
