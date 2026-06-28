@@ -1,3 +1,12 @@
+## [2.263] - 2026-06-28
+- fix(clear): drive To-Do Clear Completed from state, not DOM checkbox (review §1.1)
+- fix(undo): keep recurring-watcher recreations out of undo history (review §1.2)
+- chore: gitignore chrome/full-*.zip build artifacts
+- docs: add Schema 2.5 reference + architecture review findings
+- test(di): add provider-name collision guard to diWiring (baseline known dupes)
+- test: make Stress memory + ModalRegistry lookup tests robust in production env
+
+
 ## [2.262] - 2026-06-26
 - fix: harden in-browser test data protection (parent save suppression + slow-boot recovery)
 
