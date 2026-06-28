@@ -28,147 +28,11 @@ import {
     STORAGE_KEYS, UI_TIMEOUTS, DOM_CLASSES } from './constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
-// ============================================================================
-// TEST MODE DETECTION - Detect interrupted tests and restore real data
-// ============================================================================
-
-const TEST_MODE_DB = 'miniCycleTestResultsDB';
-const TEST_MODE_STORE = 'results';
-
-// New separate backup database (app-side backup)
-const TEST_BACKUP_DB = 'miniCycleTestBackupDB';
-const TEST_BACKUP_STORE = 'backup';
-
-// localStorage keys for backup (more reliable than IndexedDB)
-// IndexedDB is the single source of truth for test mode state
-// No localStorage fallbacks - IndexedDB persists and is reliable
-
-/**
- * Check if test mode is active (tests running or were interrupted)
- * Checks IndexedDB for testModeActive flag - single source of truth
- * Exported for use by coreBoot.js for interrupted test recovery
- * @returns {Promise<boolean>} True if test mode flag is set in IndexedDB
- */
-export async function isTestModeActive() {
-    return new Promise((resolve) => {
-        try {
-            const request = indexedDB.open(TEST_MODE_DB, 1);
-            request.onerror = () => resolve(false);
-            request.onupgradeneeded = (e) => {
-                const db = e.target.result;
-                if (!db.objectStoreNames.contains(TEST_MODE_STORE)) {
-                    db.createObjectStore(TEST_MODE_STORE, { keyPath: 'id' });
-                }
-            };
-            request.onsuccess = () => {
-                const db = request.result;
-                try {
-                    const tx = db.transaction(TEST_MODE_STORE, 'readonly');
-                    const store = tx.objectStore(TEST_MODE_STORE);
-                    const getRequest = store.get('testModeActive');
-                    getRequest.onsuccess = () => {
-                        const isActive = getRequest.result?.active === true;
-                        db.close();
-                        if (isActive) {
-                        }
-                        resolve(isActive);
-                    };
-                    getRequest.onerror = () => { db.close(); resolve(false); };
-                } catch (e) {
-                    db.close();
-                    resolve(false);
-                }
-            };
-        } catch (e) {
-            resolve(false);
-        }
-    });
-}
-
-/**
- * Cached wrapper for isTestModeActive() — avoids opening IndexedDB on every save.
- * Test mode is set before tests start and cleared after, so caching once per session is safe.
- * @returns {Promise<boolean>}
- */
-let _testModeCached = null;
-async function getCachedTestMode() {
-    if (_testModeCached !== null) return _testModeCached;
-    _testModeCached = await isTestModeActive();
-    return _testModeCached;
-}
-
-/**
- * Get backed up real data (stored before tests ran)
- * Retrieves backup from IndexedDB - single source of truth
- * Exported for use by coreBoot.js for interrupted test recovery
- * @returns {Promise<Object|null>} Backed up data or null if none exists
- */
-export async function getBackedUpRealData() {
-    return new Promise((resolve) => {
-        try {
-            const request = indexedDB.open(TEST_MODE_DB, 1);
-            request.onerror = () => resolve(null);
-            request.onsuccess = () => {
-                const db = request.result;
-                try {
-                    const tx = db.transaction(TEST_MODE_STORE, 'readonly');
-                    const store = tx.objectStore(TEST_MODE_STORE);
-                    const getRequest = store.get('preTestBackup');
-                    getRequest.onsuccess = () => {
-                        const data = getRequest.result;
-                        db.close();
-                        if (data?.localStorageBackup) {
-                            resolve(data.localStorageBackup);
-                        } else {
-                            resolve(null);
-                        }
-                    };
-                    getRequest.onerror = () => { db.close(); resolve(null); };
-                } catch (e) {
-                    db.close();
-                    resolve(null);
-                }
-            };
-        } catch (e) {
-            resolve(null);
-        }
-    });
-}
-
-/**
- * Clear test mode flags and backup after successful restoration
- * Clears IndexedDB records - single source of truth
- * Exported for use by coreBoot.js for interrupted test recovery
- * @returns {Promise<void>}
- */
-export async function clearTestModeAndBackup() {
-    // Clear from IndexedDB
-    const clearResultsDB = () => new Promise((resolve) => {
-        try {
-            const request = indexedDB.open(TEST_MODE_DB, 1);
-            request.onerror = () => resolve();
-            request.onsuccess = () => {
-                const db = request.result;
-                try {
-                    const tx = db.transaction(TEST_MODE_STORE, 'readwrite');
-                    const store = tx.objectStore(TEST_MODE_STORE);
-                    store.delete('testModeActive');
-                    store.delete('appInitiatedTests');
-                    store.delete('preTestBackup');
-                    tx.oncomplete = () => { db.close(); resolve(); };
-                    tx.onerror = () => { db.close(); resolve(); };
-                } catch (e) {
-                    db.close();
-                    resolve();
-                }
-            };
-        } catch (e) {
-            resolve();
-        }
-    });
-
-    await clearResultsDB();
-}
+// NOTE: The in-app test runner now executes on a SEPARATE ORIGIN (test.minicycle.app),
+// so its storage is physically isolated from real user data. The former test-mode
+// detection / save-gate / IndexedDB-backup machinery here has been removed — isolation
+// is by construction, not by runtime cleanup. See docs/developer-guides and the
+// separate-origin test runner (tests/module-test-suite.html).
 
 // NOTE: Uses plain _deps instead of createDIModule() because AppState is Phase 1 core
 // infrastructure loaded in coreBoot before the manifest/moduleLoader system runs.
@@ -457,11 +321,6 @@ class MiniCycleState {
                 if (event.key !== STORAGE_KEYS.DATA) return;
                 if (!event.newValue) return;
 
-                // Skip sync if tests are running in another tab — test data is mock/temporary
-                if (localStorage.getItem(STORAGE_KEYS.TEST_RUNNING) === 'true') {
-                    return;
-                }
-
                 try {
                     const externalData = JSON.parse(event.newValue);
                     const externalTimestamp = externalData?.metadata?.lastModified || 0;
@@ -615,40 +474,9 @@ class MiniCycleState {
      * @private
      */
     scheduleSave(immediate = false) {
-        // 🧪 SKIP saves during test runs to prevent overwriting user data.
-        // The in-browser test runner shares this origin's localStorage — the production
-        // testing modal runs the suite in a SAME-ORIGIN iframe while THIS parent app stays
-        // live — so the parent must not write to storage while tests run.
-        //
-        // - Test iframe: saves normally (tests need state persistence to work).
-        // - Parent app: suppress. The authoritative signal is the SYNCHRONOUS, always-fresh
-        //   STORAGE_KEYS.TEST_RUNNING flag the runner sets at start / clears on finish.
-        //   The IndexedDB testModeActive cache below is a stale-prone secondary gate (a
-        //   parent whose session began BEFORE tests started caches `false` once and never
-        //   re-checks), so it cannot be the only line of defense — and it must not be
-        //   awaited before an immediate save (an async hop loses data on a quick refresh).
-        const isTestIframe = window.location.search.includes('embedded=true') ||
-                             window.location.pathname.includes('module-test-suite');
-        if (!isTestIframe) {
-            try {
-                if (this.deps.storage?.getItem?.(STORAGE_KEYS.TEST_RUNNING) === 'true') {
-                    return;
-                }
-            } catch (e) {
-                // storage access can throw in locked-down sandboxes — fall through
-            }
-
-            // Secondary gate: cached IndexedDB flag. Read it synchronously when already
-            // resolved; if still unresolved, kick off a one-time background resolve but do
-            // NOT await it (keeps immediate saves synchronous).
-            if (_testModeCached === true) {
-                return;
-            }
-            if (_testModeCached === null) {
-                getCachedTestMode();
-            }
-        }
-
+        // NOTE: No test-mode save-gate. The in-app test runner runs on a separate origin
+        // (test.minicycle.app), so it cannot write to this origin's storage — there is
+        // nothing to gate against.
         if (this.saveTimeout) {
             clearTimeout(this.saveTimeout);
             this.saveTimeout = null;

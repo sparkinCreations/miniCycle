@@ -2269,270 +2269,22 @@
             copyResultsBtn.style.display = 'none';
             copyFailedBtn.style.display = 'none';
 
-            // 🔍 PRE-CHECK: Verify IndexedDB backup exists BEFORE any test operations
-            console.log('%c🔍 PRE-CHECK: Checking IndexedDB for existing backup...', 'background: #333; color: #fff; padding: 2px 6px;');
-
-            // Check IndexedDB for backup (async)
-            const preCheckIndexedDB = await new Promise((resolve) => {
-                try {
-                    const request = indexedDB.open(TEST_MODE_DB, 1);
-                    request.onerror = () => resolve({ hasBackup: false, error: 'Could not open DB' });
-                    request.onsuccess = () => {
-                        const db = request.result;
-                        const tx = db.transaction(TEST_MODE_STORE, 'readonly');
-                        const store = tx.objectStore(TEST_MODE_STORE);
-                        const getBackup = store.get('preTestBackup');
-
-                        getBackup.onsuccess = () => {
-                            const result = getBackup.result;
-                            db.close();
-                            if (result && result.localStorageBackup) {
-                                resolve({
-                                    hasBackup: true,
-                                    keyCount: Object.keys(result.localStorageBackup).length,
-                                    timestamp: result.timestamp
-                                });
-                            } else {
-                                resolve({ hasBackup: false });
-                            }
-                        };
-                        getBackup.onerror = () => {
-                            db.close();
-                            resolve({ hasBackup: false, error: 'Query failed' });
-                        };
-                    };
-                } catch (e) {
-                    resolve({ hasBackup: false, error: e.message });
-                }
-            });
-
-            if (preCheckIndexedDB.hasBackup) {
-                console.log(`%c   ✓ IndexedDB backup exists`, 'color: green;');
-                console.log(`     - Contains ${preCheckIndexedDB.keyCount} localStorage keys`);
-                console.log(`     - Created: ${new Date(preCheckIndexedDB.timestamp).toISOString()}`);
-            } else {
-                console.log(`%c   ○ No existing IndexedDB backup (will create one)`, 'color: orange;');
-                if (preCheckIndexedDB.error) {
-                    console.log(`     - Reason: ${preCheckIndexedDB.error}`);
-                }
-            }
-
-            // Also log current localStorage state for context
-            const preCheckAllKeys = [];
-            for (let i = 0; i < localStorage.length; i++) {
-                preCheckAllKeys.push(localStorage.key(i));
-            }
-            console.log(`   - Current localStorage keys: [${preCheckAllKeys.join(', ')}]`);
-
-            // 🛡️ PREVENT PAGE RELOADS during tests
-            const originalBeforeUnload = window.onbeforeunload;
-
-            // Note: Test mode localStorage flag is set by setTestModeFlag() called earlier
-
-            // Monkey-patch setTimeout to intercept delayed reloads
-            const originalSetTimeout = window.setTimeout;
-            window.setTimeout = function(fn, delay, ...args) {
-                // Check if the function contains reload code
-                const fnStr = fn.toString();
-                if (fnStr.includes('location.reload') || fnStr.includes('window.location.reload')) {
-                    console.warn('⚠️ Blocked setTimeout with location.reload() during tests');
-                    return -1; // Return fake timer ID
-                }
-                return originalSetTimeout(fn, delay, ...args);
-            };
-
-            // 🔒 Monkey-patch localStorage.clear() to preserve backup keys
-            const originalLocalStorageClear = localStorage.clear.bind(localStorage);
-            localStorage.clear = function() {
-                // Save backup keys before clearing
-                const backupKeysToPreserve = {};
-                for (let i = 0; i < localStorage.length; i++) {
-                    const key = localStorage.key(i);
-                    if (key && key.startsWith('__miniCycle_')) {
-                        backupKeysToPreserve[key] = localStorage.getItem(key);
-                    }
-                }
-                // Clear localStorage
-                originalLocalStorageClear();
-                // Restore backup keys
-                Object.entries(backupKeysToPreserve).forEach(([key, value]) => {
-                    localStorage.setItem(key, value);
-                });
-                if (Object.keys(backupKeysToPreserve).length > 0) {
-                    console.log(`🔒 localStorage.clear() preserved ${Object.keys(backupKeysToPreserve).length} backup key(s)`);
-                }
-            };
-
-            // 🔍 INDEXEDDB BACKUP VALIDATION SYSTEM
-            // Using IndexedDB for backup validation because localStorage gets cleared by tests
-            let backupValidationFailures = 0;
-
-            /**
-             * Validates that backup exists in IndexedDB (not localStorage)
-             * This is immune to localStorage.clear() calls from tests
-             */
-            async function validateBackupIntegrity(context = 'unknown') {
-                return new Promise((resolve) => {
-                    try {
-                        const request = indexedDB.open(TEST_MODE_DB, 1);
-                        request.onerror = () => {
-                            backupValidationFailures++;
-                            console.error('%c🚨🚨🚨 INDEXEDDB BACKUP VALIDATION FAILED! 🚨🚨🚨', 'background: red; color: white; font-size: 16px; padding: 4px;');
-                            console.error(`%c Context: ${context} - Could not open IndexedDB`, 'background: red; color: white; font-size: 14px;');
-                            resolve(false);
-                        };
-                        request.onsuccess = () => {
-                            const db = request.result;
-                            const tx = db.transaction(TEST_MODE_STORE, 'readonly');
-                            const store = tx.objectStore(TEST_MODE_STORE);
-
-                            const getBackup = store.get('preTestBackup');
-                            const getTestMode = store.get('testModeActive');
-
-                            let hasBackup = false;
-                            let hasTestMode = false;
-                            let backupKeyCount = 0;
-
-                            getBackup.onsuccess = () => {
-                                hasBackup = !!(getBackup.result && getBackup.result.localStorageBackup);
-                                if (hasBackup) {
-                                    backupKeyCount = Object.keys(getBackup.result.localStorageBackup).length;
-                                }
-                            };
-                            getTestMode.onsuccess = () => {
-                                hasTestMode = !!(getTestMode.result && getTestMode.result.active);
-                            };
-
-                            tx.oncomplete = () => {
-                                db.close();
-
-                                if (!hasBackup) {
-                                    backupValidationFailures++;
-
-                                    // VERY PROMINENT ERROR - hard to miss
-                                    console.error('%c🚨🚨🚨 INDEXEDDB BACKUP MISSING! 🚨🚨🚨', 'background: red; color: white; font-size: 16px; padding: 4px;');
-                                    console.error(`%c Context: ${context}`, 'background: red; color: white; font-size: 14px;');
-                                    console.error(`   - preTestBackup in IndexedDB: ${hasBackup ? `✓ exists (${backupKeyCount} keys)` : '✗ MISSING'}`);
-                                    console.error(`   - testModeActive in IndexedDB: ${hasTestMode ? '✓ exists' : '✗ MISSING'}`);
-                                    console.error(`   - This is failure #${backupValidationFailures}`);
-
-                                    // Log current localStorage state for context
-                                    const allKeys = [];
-                                    for (let i = 0; i < localStorage.length; i++) {
-                                        allKeys.push(localStorage.key(i));
-                                    }
-                                    console.error(`   - Current localStorage keys: [${allKeys.join(', ')}]`);
-
-                                    console.trace('Stack trace when IndexedDB backup was found missing:');
-                                    resolve(false);
-                                } else {
-                                    // Only log success for first validation to reduce noise
-                                    if (backupValidationFailures === 0 && context === 'after initial setup') {
-                                        console.log(`%c✅ IndexedDB Backup Validated [${context}]`, 'background: green; color: white; padding: 2px 6px;');
-                                        console.log(`   - preTestBackup: ✓ exists (${backupKeyCount} localStorage keys backed up)`);
-                                        console.log(`   - testModeActive: ${hasTestMode ? '✓ active' : '○ not set'}`);
-                                    }
-                                    resolve(true);
-                                }
-                            };
-
-                            tx.onerror = () => {
-                                db.close();
-                                backupValidationFailures++;
-                                console.error('%c🚨 IndexedDB transaction error during validation', 'background: red; color: white;');
-                                resolve(false);
-                            };
-                        };
-                    } catch (e) {
-                        backupValidationFailures++;
-                        console.error('%c🚨 Exception during IndexedDB validation:', 'background: red; color: white;', e);
-                        resolve(false);
-                    }
-                });
-            }
-
-            // Note: We no longer need to patch localStorage.removeItem for backup key protection
-            // since our backup is now in IndexedDB, which is immune to localStorage operations
-
-            // Block beforeunload
-            window.onbeforeunload = (e) => {
-                console.warn('⚠️ Blocked beforeunload during tests');
-                e.preventDefault();
-                e.returnValue = '';
-                return '';
-            };
-
-            // 💾 BACKUP localStorage to IndexedDB (survives browser close/crash)
-            // 🛡️ If a backup already exists from a PREVIOUS interrupted run, KEEP IT.
-            // Overwriting it would capture corrupted/test data from the failed run.
-            // Only create a fresh backup if no backup exists (clean start).
-            let backupCheckResult;
-            if (preCheckIndexedDB.hasBackup) {
-                console.log('%c🛡️ Preserving existing IndexedDB backup from previous run (not overwriting)', 'background: #856404; color: #fff3cd; padding: 2px 6px;');
-                console.log(`   - Backup has ${preCheckIndexedDB.keyCount} keys, created ${new Date(preCheckIndexedDB.timestamp).toISOString()}`);
-                backupCheckResult = { preserved: true, keyCount: preCheckIndexedDB.keyCount };
-            } else {
-                backupCheckResult = await backupLocalStorageToIndexedDB();
-                console.log('%c🔵 Creating fresh IndexedDB backup: ' + (backupCheckResult.keyCount || '?') + ' localStorage keys', 'background: #004085; color: #cce5ff; padding: 2px 6px;');
-            }
-            console.log('💾 [TestSuite] Backup check result:', backupCheckResult);
-
-            // 🔒 SAVE APP-SIDE BACKUP KEYS (these must survive localStorage.clear())
-            const backupKeys = {};
-            const backupKeyPrefixes = ['__miniCycle_'];
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (key && backupKeyPrefixes.some(prefix => key.startsWith(prefix))) {
-                    backupKeys[key] = localStorage.getItem(key);
-                }
-            }
-            const backupKeyCount = Object.keys(backupKeys).length;
-            if (backupKeyCount > 0) {
-                console.log(`🔒 Preserving ${backupKeyCount} app-side backup keys`);
-            }
-
-            // 🧹 CLEAR localStorage so tests run with clean state
+            // Hermetic runner: this is a dedicated test origin (test.minicycle.app),
+            // isolated from real user data, so we can freely clear storage for a clean
+            // slate — no backup/restore/flags needed.
             localStorage.clear();
 
-            // 🔒 RESTORE APP-SIDE BACKUP KEYS (so they survive test run)
-            Object.entries(backupKeys).forEach(([key, value]) => {
-                localStorage.setItem(key, value);
-            });
-            if (backupKeyCount > 0) {
-                console.log(`🔒 Restored ${backupKeyCount} app-side backup keys after clear`);
-            }
-            console.log('🧹 Cleared localStorage for clean test environment (backup keys preserved)');
-
-            // 🔍 VALIDATE: Backup should exist in IndexedDB after initial setup
-            await validateBackupIntegrity('after initial setup');
-
-            // 🧹 CLEAR IndexedDB databases so tests run with clean state
-            // Note: We don't delete miniCycleTestResultsDB or miniCycleTestBackupDB - they contain backups
-            // Note: We don't delete miniCycle_backups — if a stale connection exists from a previous run,
-            //   deleteDatabase gets blocked and the pending delete blocks all subsequent open() calls,
-            //   causing backupManager tests to time out. The backupManager tests handle this by resetting
-            //   the singleton and use relative assertions that work with existing data.
+            // Clear the undo-history DB so tests start from a clean slate.
             try {
-                const dbNames = ['miniCycleUndoHistory'];
-                for (const dbName of dbNames) {
-                    await new Promise((resolve) => {
-                        const req = indexedDB.deleteDatabase(dbName);
-                        req.onsuccess = () => { console.log(`🧹 Deleted IndexedDB: ${dbName}`); resolve(); };
-                        req.onerror = () => { console.warn(`⚠️ Could not delete IndexedDB: ${dbName}`); resolve(); };
-                        req.onblocked = () => { console.warn(`⚠️ IndexedDB blocked: ${dbName}`); resolve(); };
-                    });
-                }
-                console.log('🧹 Cleared IndexedDB for clean test environment');
+                await new Promise((resolve) => {
+                    const req = indexedDB.deleteDatabase('miniCycleUndoHistory');
+                    req.onsuccess = () => resolve();
+                    req.onerror = () => resolve();
+                    req.onblocked = () => resolve();
+                });
             } catch (e) {
-                console.warn('⚠️ Could not clear IndexedDB:', e);
+                console.warn('⚠️ Could not clear undo IndexedDB:', e);
             }
-
-            // 🚦 SET TEST MODE FLAG - tells app to skip IndexedDB restoration on reload
-            await setTestModeFlag(true);
-            console.log('🚦 Test mode flag SET - app will skip IndexedDB restore on reload');
-
-            // 🔒 Signal other tabs to ignore storage events during tests
-            localStorage.setItem('__miniCycle_testRunning', 'true');
 
             // Define all modules and their test functions
             const allModules = [
@@ -2692,9 +2444,6 @@
                     }
 
                     try {
-                        // 🔍 VALIDATE: IndexedDB backup before each module
-                        await validateBackupIntegrity(`before ${module.name}`);
-
                         // Load and expose the module using shared helper
                         // This ensures consistent window.* exposure for all modules
                         await loadAndExposeModule(module.key);
@@ -2739,9 +2488,6 @@
 
                     totalPassed += (result?.passed || 0);
                     totalTests += (result?.total || 0);
-
-                    // 🔍 VALIDATE: IndexedDB backup after each module
-                    await validateBackupIntegrity(`after ${module.name}`);
 
                 } catch (error) {
                     allResults.push({
@@ -2906,132 +2652,8 @@
                 console.error('❌ Fatal error during test execution:', error);
                 resultsDiv.innerHTML += `<div class="result fail">❌ Fatal error: ${error.message}</div>`;
             } finally {
-                // 🛡️ RESTORE ORIGINAL handlers FIRST to stop test interference
-                // NOTE: __miniCycle_testRunning is deliberately NOT cleared here. It must stay
-                // set through the ENTIRE restore so the live parent app's synchronous save-gate
-                // (appState.scheduleSave) keeps suppressing writes until real user data is back
-                // on disk. It is cleared only after restoration is verified (see below), or left
-                // set on failure so next-load coreBoot recovery stays gated.
-                window.onbeforeunload = originalBeforeUnload;
-                window.setTimeout = originalSetTimeout;
-                localStorage.clear = originalLocalStorageClear;
-
-                // ⏱️ WAIT for any debounced saves to complete (always runs, even after errors)
-                console.log('%c⏱️ Waiting for debounced saves to settle...', 'background: #333; color: #fff; padding: 2px 6px;');
-                await new Promise(resolve => setTimeout(resolve, 700));
-
-                // 🔒 RESTORE REAL APP DATA from IndexedDB backup after all tests complete
-                console.log('%c🔄 Restoring localStorage from IndexedDB backup...', 'background: #333; color: #fff; padding: 2px 6px;');
-                const restoreResult = await restoreLocalStorageFromBackup();
-
-                let restorationVerified = false;
-
-                if (restoreResult.success) {
-                    console.log(`%c✅ localStorage restored: ${restoreResult.keysRestored} keys from IndexedDB`, 'background: green; color: white; padding: 2px 6px;');
-
-                    // 🔍 VERIFY restoration by checking keys were restored
-                    if (restoreResult.keysRestored > 0) {
-                        restorationVerified = true;
-                    } else {
-                        // Backup had 0 keys - user had empty localStorage before tests
-                        restorationVerified = true;
-                    }
-                } else {
-                    // IndexedDB restore failed - do NOT clear flags, keep backup for next refresh
-                    console.error(`%c❌ IndexedDB restore FAILED: ${restoreResult.error}`, 'background: red; color: white; padding: 2px 6px;');
-                    console.error('   Backup will be preserved - appState.js will restore on next page load');
-                }
-
-                // 🛡️ POST-RESTORE VERIFICATION: Wait and check that nothing overwrote the data
-                if (restorationVerified && restoreResult.keysRestored > 0) {
-                    // Capture what we just restored for comparison
-                    const expectedData = localStorage.getItem('miniCycleData');
-
-                    // Wait for any stale async operations to fire
-                    await new Promise(resolve => setTimeout(resolve, 500));
-
-                    // Check if data was overwritten by a stale write
-                    const currentData = localStorage.getItem('miniCycleData');
-                    if (expectedData && currentData !== expectedData) {
-                        console.warn('%c⚠️ POST-RESTORE: Data was overwritten by stale async operation! Re-restoring...', 'background: orange; color: black; padding: 2px 6px;');
-                        const reRestoreResult = await restoreLocalStorageFromBackup();
-                        if (reRestoreResult.success) {
-                            console.log(`%c✅ Re-restored ${reRestoreResult.keysRestored} keys successfully`, 'background: green; color: white; padding: 2px 6px;');
-                        } else {
-                            console.error('%c❌ Re-restore FAILED', 'background: red; color: white; padding: 2px 6px;');
-                            restorationVerified = false;
-                        }
-                    } else {
-                        console.log('%c✅ Post-restore verification passed - data intact', 'background: green; color: white; padding: 2px 6px;');
-                    }
-                }
-
-                // 🚦 ONLY clear flags and backup if restoration was verified successful
-                if (restorationVerified) {
-                    // Clear test mode flag
-                    await setTestModeFlag(false);
-                    console.log('🚦 Test mode flag CLEARED');
-
-                    // Clear backup - no longer needed since restoration verified
-                    await clearLocalStorageBackup();
-                    console.log('💾 IndexedDB backup cleared - restoration verified successful');
-
-                    // 🔒 Real data is back on disk — NOW release the cross-window save-gate so
-                    // the parent app and other tabs resume normal persistence. Deferred to here
-                    // (not the top of finally) so the parent stayed gated through the whole restore.
-                    localStorage.removeItem('__miniCycle_testRunning');
-                } else {
-                    console.warn('%c⚠️ KEEPING BACKUP - restoration not verified, backup preserved for next refresh', 'background: orange; color: black; padding: 2px 6px;');
-                    console.warn('   On next page load, appState.js will attempt to restore from this backup');
-                    // ⚠️ Intentionally leave __miniCycle_testRunning SET so the parent's save-gate
-                    // stays up until next-load coreBoot recovery restores the real data.
-                }
-
-                // 🔍 INDEXEDDB BACKUP VALIDATION SUMMARY
-                console.log('%c📊 INDEXEDDB BACKUP VALIDATION SUMMARY', 'background: #333; color: #fff; font-size: 14px; padding: 4px 8px;');
-                if (backupValidationFailures > 0) {
-                    console.error(`%c❌ ${backupValidationFailures} validation failures during test run`, 'background: red; color: white; padding: 2px 6px;');
-                    console.error('   ⚠️ IndexedDB backup was lost at some point during testing');
-                    console.error('   ⚠️ This should NOT happen - IndexedDB is separate from localStorage');
-                    console.error('   ⚠️ Check if any test deletes the miniCycleTestResultsDB database');
-                } else {
-                    console.log('%c✅ All IndexedDB backup checks passed!', 'background: green; color: white; padding: 2px 6px;');
-                    console.log('   - Backup remained intact throughout all test modules');
-                    console.log('   - User data was safely preserved in IndexedDB during tests');
-                }
-
-                // 🔄 If opened via autorun (popup mode only), reload the opener to pick up restored data
-                // Skip reload if embedded - parent will handle closing the iframe
-                const urlParams = new URLSearchParams(window.location.search);
-                const isAutorun = urlParams.get('autorun') === 'true';
-                const isEmbedded = urlParams.get('embedded') === 'true';
-
-                // 📤 EMBEDDED: tell the parent that cleanup (restore + verify + flag clear) is
-                // fully done. Only now is it safe for the parent to remove this iframe and
-                // reload AppState from the restored localStorage. Sent AFTER the restore — unlike
-                // TEST_RESULTS, which is posted earlier for immediate UI feedback. restorationVerified
-                // tells the parent whether reloading from localStorage is safe.
-                if (isEmbedded && window.parent !== window) {
-                    try {
-                        window.parent.postMessage({
-                            type: 'TEST_CLEANUP_DONE',
-                            restorationVerified,
-                            timestamp: Date.now()
-                        }, PARENT_ORIGIN);
-                        console.log('📤 Sent TEST_CLEANUP_DONE to parent (restore complete, verified=' + restorationVerified + ')');
-                    } catch (e) {
-                        console.warn('Could not post TEST_CLEANUP_DONE:', e);
-                    }
-                }
-
-                if (isAutorun && !isEmbedded && window.opener) {
-                    console.log('🔄 Reloading opener to ensure clean state...');
-                    try {
-                        window.opener.location.reload();
-                    } catch (e) {
-                        console.warn('Could not reload opener:', e);
-                    }
-                }
+                // Hermetic runner on an isolated origin — no real user data to
+                // restore, so no cleanup is required here.
             }
         });
 

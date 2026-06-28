@@ -449,7 +449,6 @@ export const STORAGE_KEYS = Object.freeze({
     FORCE_FULL_VERSION: 'miniCycleForceFullVersion',
     CONSOLE_CAPTURE_ENABLED: 'miniCycle_enableAutoConsoleCapture',
     CONSOLE_CAPTURE_BUFFER: 'miniCycle_capturedConsoleBuffer',
-    TEST_RUNNING: '__miniCycle_testRunning',
     TIME_TRACKER: 'timeTrackerData'
 });
 

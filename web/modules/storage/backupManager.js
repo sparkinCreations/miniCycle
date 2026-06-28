@@ -52,7 +52,6 @@ const SESSION_BACKUP_STORE = 'session_backups'; // Backups on every app open
 const TEST_BACKUP_STORE = 'test_backups'; // Backups before running tests
 const MAX_AUTO_BACKUPS = 10; // Keep last 10 auto-backups
 const MAX_SESSION_BACKUPS = 5; // Keep last 5 session backups
-const MAX_TEST_BACKUPS = 5; // Keep last 5 test backups
 const MAX_MANUAL_BACKUPS = 50; // Keep last 50 manual backups
 // Backup scheduling thresholds live in INTERVALS (BACKUP_DAILY, BACKUP_SESSION_MIN, BACKUP_TEST_MIN).
 
@@ -353,82 +352,6 @@ class BackupManager {
 
         } catch (error) {
             console.error('❌ BackupManager: Session retention policy enforcement failed', error);
-        }
-    }
-
-    /**
-     * Create a test backup (runs before test execution)
-     * Skips if last test backup was less than 5 minutes ago.
-     * Keeps only the last 5 backups for test recovery.
-     * @returns {Promise<boolean>}
-     */
-    async createTestBackup() {
-        try {
-            await this.init();
-
-            // Skip if last test backup was recent (avoid duplicates on rapid test runs)
-            const lastTestBackup = await this.getLastBackupFromStore(TEST_BACKUP_STORE);
-            if (lastTestBackup) {
-                const timeSinceLastBackup = Date.now() - lastTestBackup.timestamp;
-                if (timeSinceLastBackup < INTERVALS.BACKUP_TEST_MIN) {
-                    return false;
-                }
-            }
-
-            // Get current app state (DI-pure)
-            const AppState = this._getAppState();
-            if (!AppState?.isReady?.()) {
-                console.warn('⚠️ BackupManager: AppState not ready, skipping test backup');
-                return false;
-            }
-
-            const currentState = AppState.get();
-            if (!currentState) {
-                console.warn('⚠️ BackupManager: No state data available for test backup');
-                return false;
-            }
-
-            // Check if data is meaningful (has at least one cycle)
-            const cycleCount = Object.keys(currentState?.data?.cycles || {}).length;
-            const liteStorage = collectLiteStorageSnapshot();
-            if (cycleCount === 0 && !liteStorage) {
-                return false;
-            }
-
-            const backup = this._buildBackupRecord(currentState, 'test', { cycleCount, liteStorage });
-
-            // Save to IndexedDB
-            await this.saveBackup(TEST_BACKUP_STORE, backup);
-
-            // Clean up old test backups (keep only last 5)
-            await this.enforceTestRetentionPolicy();
-
-            return true;
-
-        } catch (error) {
-            console.error('❌ BackupManager: Test backup failed', error);
-            return false;
-        }
-    }
-
-    /**
-     * Enforce test backup retention: keep only last N test backups
-     * @private
-     */
-    async enforceTestRetentionPolicy() {
-        try {
-            const testBackups = await this.getBackupsFromStore(TEST_BACKUP_STORE);
-
-            if (testBackups.length > MAX_TEST_BACKUPS) {
-                // Delete oldest backups
-                const toDelete = testBackups.slice(MAX_TEST_BACKUPS);
-
-                await Promise.all(toDelete.map(backup => this.deleteBackup(backup.timestamp, 'test')));
-
-            }
-
-        } catch (error) {
-            console.error('❌ BackupManager: Test retention policy enforcement failed', error);
         }
     }
 

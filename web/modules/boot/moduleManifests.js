@@ -661,13 +661,13 @@ export const MODULE_MANIFESTS = {
     testingModalIntegration: {
         path: '../testing/testing-modal-integration.js',
         phase: PHASES.TESTING,
-        requires: ['safeAddEventListenerById', 'showNotification', 'AppState', 'backupManager'],
+        // Hermetic runner: embeds the suite from a separate origin, so no AppState/backup deps.
+        requires: ['safeAddEventListenerById', 'showNotification'],
         provides: ['runAllAutomatedTests'],
         api: 'testing',
         optional: true,
         // Deferred: loaded alongside testingModal via the #open-testing-modal stub.
-        deferred: true,
-        after: ['backupManager']  // backupManager (eager) loads first
+        deferred: true
     },
 
     basicPluginSystem: {

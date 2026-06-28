@@ -1,12 +1,15 @@
 // ==========================================
 // 🧪 AUTOMATED TESTING INTEGRATION (DI-Pure)
 // ==========================================
-// Opens Test Suite Browser with autorun and displays results in testing modal
+// Embeds the test runner from a SEPARATE ORIGIN (test.minicycle.app) as a cross-origin
+// iframe and displays its results in the testing modal.
+//
+// The runner's storage is physically isolated from real user data by the browser
+// (different origin = different localStorage/IndexedDB), so there is NO backup/restore,
+// no save-gate, and no cleanup handshake — results arrive purely via postMessage.
 
 /**
  * Automated Testing Integration for Testing Modal (DI-Pure)
- * Opens Test Suite Browser popup with autorun, receives results via postMessage
- *
  * @module testing-modal-integration
  */
 
@@ -15,9 +18,7 @@ import { createDIModule, required, optional } from '../core/diBase.js';
 
 const di = createDIModule('TestingModalIntegration', {
     safeAddEventListenerById: required(),
-    showNotification: optional(fallbackShowNotification),
-    AppState: optional(null),
-    backupManager: optional(null)
+    showNotification: optional(fallbackShowNotification)
 });
 
 export const setTestingModalDependencies = di.setDependencies;
@@ -33,14 +34,6 @@ function getShowNotification() {
     return di.resolve().showNotification;
 }
 
-function getAppState() {
-    return di.resolve().AppState;
-}
-
-function getBackupManager() {
-    return di.resolve().backupManager;
-}
-
 // Setup automated testing event listeners
 function setupAutomatedTestingFunctions() {
 
@@ -51,97 +44,6 @@ function setupAutomatedTestingFunctions() {
         await runAllAutomatedTests();
     });
 
-}
-
-// IndexedDB helpers for test results
-const TEST_RESULTS_DB = 'miniCycleTestResultsDB';
-const TEST_RESULTS_STORE = 'results';
-// Note: Test mode flag is managed in IndexedDB by module-test-suite.html
-// appState.js checks IndexedDB directly for testModeActive flag
-
-// How long the parent waits for the iframe's post-restore TEST_CLEANUP_DONE handshake
-// before tearing the iframe down regardless. The iframe's finally-block restore takes
-// ~1.3s; this is a generous backstop. coreBoot recovery is the ultimate net on next load.
-const CLEANUP_HANDSHAKE_TIMEOUT_MS = 8000;
-
-function openTestResultsDB() {
-    return new Promise((resolve, reject) => {
-        const request = indexedDB.open(TEST_RESULTS_DB, 1);
-        request.onerror = () => reject(request.error);
-        request.onsuccess = () => resolve(request.result);
-        request.onupgradeneeded = (event) => {
-            const db = event.target.result;
-            if (!db.objectStoreNames.contains(TEST_RESULTS_STORE)) {
-                db.createObjectStore(TEST_RESULTS_STORE, { keyPath: 'id' });
-            }
-        };
-    });
-}
-
-async function storeTestResults(resultData) {
-    try {
-        const db = await openTestResultsDB();
-        const tx = db.transaction(TEST_RESULTS_STORE, 'readwrite');
-        const store = tx.objectStore(TEST_RESULTS_STORE);
-        store.put({ id: 'latest', ...resultData });
-        await new Promise((resolve, reject) => {
-            tx.oncomplete = resolve;
-            tx.onerror = () => reject(tx.error);
-        });
-        db.close();
-    } catch (e) {
-        console.warn('Failed to store test results:', e);
-    }
-}
-
-async function getStoredTestResults() {
-    try {
-        const db = await openTestResultsDB();
-        const tx = db.transaction(TEST_RESULTS_STORE, 'readonly');
-        const store = tx.objectStore(TEST_RESULTS_STORE);
-        const request = store.get('latest');
-        const result = await new Promise((resolve, reject) => {
-            request.onsuccess = () => resolve(request.result);
-            request.onerror = () => reject(request.error);
-        });
-        db.close();
-        return result;
-    } catch (e) {
-        console.warn('Failed to get test results:', e);
-        return null;
-    }
-}
-
-async function clearStoredTestResults() {
-    try {
-        const db = await openTestResultsDB();
-        const tx = db.transaction(TEST_RESULTS_STORE, 'readwrite');
-        const store = tx.objectStore(TEST_RESULTS_STORE);
-        store.delete('latest');
-        await new Promise((resolve, reject) => {
-            tx.oncomplete = resolve;
-            tx.onerror = () => reject(tx.error);
-        });
-        db.close();
-    } catch (e) {
-        console.warn('Failed to clear test results:', e);
-    }
-}
-
-// Check for saved test results from autorun and display them
-async function checkAndDisplayStoredResults() {
-    const resultData = await getStoredTestResults();
-    if (!resultData) return false;
-
-    // Only use results from last 5 minutes
-    if (Date.now() - resultData.timestamp > 300000) {
-        await clearStoredTestResults();
-        return false;
-    }
-
-    displayTestResults(resultData);
-    await clearStoredTestResults();
-    return true;
 }
 
 // Display test results in the output area
@@ -237,9 +139,9 @@ function createTestRunnerModal() {
         </div>
     `;
 
-    // Hidden iframe - runs tests in background, on a SEPARATE ORIGIN so its
-    // localStorage/IndexedDB is physically isolated from this app's real user data.
-    // parentOrigin tells the runner where to postMessage results back to.
+    // Hidden iframe - runs tests on a SEPARATE ORIGIN so its localStorage/IndexedDB is
+    // physically isolated from this app's real user data. parentOrigin tells the runner
+    // where to postMessage results back to.
     const iframe = document.createElement('iframe');
     iframe.id = 'test-runner-iframe';
     iframe.className = 'test-runner-iframe';
@@ -276,111 +178,42 @@ function createTestRunnerModal() {
 }
 
 // Close the test runner modal
-async function closeTestRunnerModal() {
+function closeTestRunnerModal() {
     if (testRunnerModal) {
         if (testRunnerModal.open) {
             testRunnerModal.close();
         }
         testRunnerModal.remove();
         testRunnerModal = null;
-        // Clear any stored results to prevent modal from reopening on page refresh
-        await clearStoredTestResults();
     }
 }
 
-// Run all automated tests via embedded iframe modal
-async function runAllAutomatedTests() {
-    // First check if there are recent stored results (user came back to modal)
-    if (await checkAndDisplayStoredResults()) {
-        return;
-    }
-
-    // Clear any old results
-    await clearStoredTestResults();
-
+// Run all automated tests via embedded cross-origin iframe modal
+function runAllAutomatedTests() {
     const output = getAutomatedTestOutput();
     if (output) {
         output.textContent = '';
     }
 
-    appendToAutomatedTestResults("🧪 Saving app state before tests...\n");
+    appendToAutomatedTestResults("🧪 Opening Test Runner (separate origin)...\n\n");
 
-    // Force save AppState to localStorage before running tests
-    const AppState = getAppState();
-    if (AppState && AppState.isReady && AppState.isReady()) {
-        try {
-            await AppState.forceSave();
-        } catch (e) {
-            console.warn('Could not force save AppState:', e);
-        }
-    }
-
-    // Create a test backup before running tests (for recovery if needed)
-    const backupManager = getBackupManager();
-    if (backupManager) {
-        try {
-            const created = await backupManager.createTestBackup();
-            if (created) {
-                appendToAutomatedTestResults("💾 Test backup created (recoverable from Restore Backups)\n");
-            } else {
-                appendToAutomatedTestResults("💾 Using recent test backup (< 5 min old)\n");
-            }
-        } catch (e) {
-            console.warn('Could not create test backup:', e);
-        }
-    }
-
-    appendToAutomatedTestResults("🧪 Opening Test Runner...\n\n");
-
-    // Note: Test mode flag (IndexedDB) is set by module-test-suite.html when it starts
-    // appState.js checks IndexedDB directly for testModeActive flag to skip saves
-
-    // Create and show the iframe modal
-    const { modal, iframe } = createTestRunnerModal();
+    // Create and show the iframe modal (loads the runner from the test origin)
+    createTestRunnerModal();
 
     appendToAutomatedTestResults("⏳ Tests running...\n");
     appendToAutomatedTestResults("Modal will close automatically when complete.\n\n");
 
-    // Listen for progress and results via postMessage from iframe
+    // Listen for progress and results via postMessage from the cross-origin iframe.
     let resultsReceived = false;
-    let cleanupReceived = false;
-    let cleanupFallbackTimer = null;
-    let lastResultData = null;
     let testStartTime = Date.now();
 
-    // Tear down the iframe and (optionally) re-sync the live app from the restored
-    // localStorage. Called ONLY after cleanup is confirmed — see TEST_CLEANUP_DONE below.
-    // reloadSafe must be true only when the iframe confirmed restore succeeded; otherwise
-    // we leave the parent's in-memory AppState alone (it still holds the user's real,
-    // pre-test data — saves were gated throughout — so reloading from a possibly-corrupt
-    // localStorage would be strictly worse than doing nothing).
-    const finalizeTeardown = (data, reloadSafe) => {
+    // Tear down the iframe and show results. No AppState reload: the runner is on a
+    // separate origin and never touched this origin's storage.
+    const finalizeTeardown = (data) => {
         window.removeEventListener('message', handleTestMessages);
-        if (cleanupFallbackTimer) {
-            clearTimeout(cleanupFallbackTimer);
-            cleanupFallbackTimer = null;
-        }
         try {
-            closeTestRunnerModal(); // Removes the iframe + clears stored results
+            closeTestRunnerModal();
             displayTestResults(data);
-
-            if (reloadSafe) {
-                // 🔄 Restore confirmed — sync in-memory state with the restored localStorage.
-                const AppState = getAppState();
-                if (AppState?.reload) {
-                    AppState.reload();
-                }
-            } else {
-                console.warn('⚠️ Skipping AppState.reload — restore not confirmed; leaving in-memory user data intact');
-            }
-
-            getShowNotification()(
-                data.allPassed
-                    ? `✅ All ${data.totalTests} tests passed!`
-                    : `⚠️ ${data.totalTests - data.totalPassed} test(s) failed`,
-                data.allPassed ? 'success' : 'warning',
-                5000
-            );
         } catch (error) {
             console.warn('⚠️ Post-test processing failed:', error);
         }
@@ -394,10 +227,9 @@ async function runAllAutomatedTests() {
 
         // Handle progress updates
         if (event.data.type === 'TEST_PROGRESS') {
-            const { currentModule, currentIndex, totalModules, moduleName } = event.data;
+            const { currentIndex, totalModules, moduleName } = event.data;
             const progressPercent = Math.round((currentIndex / totalModules) * 100);
 
-            // Update progress bar
             const progressBar = document.getElementById(DOM_IDS.TEST_PROGRESS_BAR);
             const statusText = document.getElementById(DOM_IDS.TEST_STATUS_TEXT);
             const timeEstimate = document.getElementById(DOM_IDS.TEST_TIME_ESTIMATE);
@@ -433,58 +265,36 @@ async function runAllAutomatedTests() {
             return;
         }
 
-        // Handle final results — update the UI immediately, but do NOT tear down the iframe
-        // yet. The iframe still has to restore the user's real localStorage in its finally
-        // block (a ~1.3s async restore + verify pass); removing the iframe now would abort
-        // that restore. Wait for the explicit TEST_CLEANUP_DONE handshake instead, with a
-        // fallback backstop in case the iframe dies mid-restore.
+        // Final results — show 100% / completion state, then tear down after a brief pause.
         if (event.data.type === 'TEST_RESULTS') {
             resultsReceived = true;
-            lastResultData = event.data;
+            const data = event.data;
 
-            // Update progress to 100%
             const progressBar = document.getElementById(DOM_IDS.TEST_PROGRESS_BAR);
             const statusText = document.getElementById(DOM_IDS.TEST_STATUS_TEXT);
             const timeEstimate = document.getElementById(DOM_IDS.TEST_TIME_ESTIMATE);
             const title = document.getElementById(DOM_IDS.TEST_RUNNER_TITLE);
 
             if (progressBar) progressBar.style.width = '100%';
-            if (statusText) statusText.textContent = event.data.allPassed
+            if (statusText) statusText.textContent = data.allPassed
                 ? '✅ All tests passed!'
-                : `⚠️ ${event.data.totalTests - event.data.totalPassed} test(s) failed`;
+                : `⚠️ ${data.totalTests - data.totalPassed} test(s) failed`;
             if (timeEstimate) {
                 const totalTime = ((Date.now() - testStartTime) / 1000).toFixed(1);
                 timeEstimate.textContent = `Completed in ${totalTime}s`;
             }
-            if (title) title.textContent = event.data.allPassed
+            if (title) title.textContent = data.allPassed
                 ? '✅ Tests Complete'
                 : '⚠️ Tests Complete (with failures)';
 
-            // Backstop: if the cleanup handshake never arrives (e.g. iframe died mid-restore),
-            // tear down anyway after a grace period — without reloading AppState, since restore
-            // wasn't confirmed. Next-load coreBoot recovery is the final safety net.
-            cleanupFallbackTimer = setTimeout(() => {
-                if (!cleanupReceived) {
-                    console.warn('⚠️ TEST_CLEANUP_DONE not received within grace period — tearing down without AppState reload');
-                    finalizeTeardown(lastResultData, false);
-                }
-            }, CLEANUP_HANDSHAKE_TIMEOUT_MS);
-            return;
-        }
-
-        // Cleanup handshake — the iframe has finished restoring real user data, verified it,
-        // and cleared the test-mode flags. NOW it's safe to remove the iframe and (only if
-        // restore was verified) reload state from the restored localStorage.
-        if (event.data.type === 'TEST_CLEANUP_DONE') {
-            cleanupReceived = true;
-            // Brief pause so the ✅ completion state stays visible, then tear down.
-            setTimeout(() => finalizeTeardown(lastResultData, event.data.restorationVerified === true), 600);
+            // Brief pause so the ✅ completion state is visible, then tear down.
+            setTimeout(() => finalizeTeardown(data), 1200);
             return;
         }
     };
     window.addEventListener('message', handleTestMessages);
 
-    // Timeout after 20 minutes (production runs 112 modules through SW, takes longer than local)
+    // Timeout after 20 minutes (production runs 100+ modules through SW, takes a while)
     setTimeout(() => {
         if (!resultsReceived) {
             window.removeEventListener('message', handleTestMessages);
@@ -498,7 +308,7 @@ async function runAllAutomatedTests() {
 
 /**
  * Initialize testing modal integration (called by moduleLoader)
- * @param {Object} dependencies - { safeAddEventListenerById, showNotification, consoleCapture }
+ * @param {Object} dependencies - { safeAddEventListenerById, showNotification }
  */
 export function initTestingModalIntegration(dependencies = {}) {
     // Set dependencies
@@ -507,61 +317,10 @@ export function initTestingModalIntegration(dependencies = {}) {
     // Setup event listeners
     setupAutomatedTestingFunctions();
 
-    // Check for pending test results and auto-open modal if found
-    checkForPendingResultsOnLoad();
-
     return {
         runAllAutomatedTests,
-        setupAutomatedTestingFunctions,
-        checkAndDisplayStoredResults
+        setupAutomatedTestingFunctions
     };
-}
-
-// Check for pending results on page load and auto-open modal
-async function checkForPendingResultsOnLoad() {
-    const resultData = await getStoredTestResults();
-    if (!resultData) return;
-
-    // Only use results from last 5 minutes
-    if (Date.now() - resultData.timestamp > 300000) {
-        await clearStoredTestResults();
-        return;
-    }
-
-    // Wait a moment for page to settle, then open modal and show results
-    setTimeout(async () => {
-        try {
-            // Open testing modal
-            const testingModalBtn = document.getElementById(DOM_IDS.OPEN_TESTING_MODAL);
-            if (testingModalBtn) {
-                testingModalBtn.click();
-
-                // Switch to automated tests tab and display results
-                setTimeout(async () => {
-                    try {
-                        const automatedTab = document.querySelector('[data-tab="automated-tests"]');
-                        if (automatedTab) {
-                            automatedTab.click();
-
-                            setTimeout(async () => {
-                                try {
-                                    displayTestResults(resultData);
-                                    await clearStoredTestResults();
-                                    getShowNotification()('📊 Test results restored', 'success', 3000);
-                                } catch (error) {
-                                    console.warn('⚠️ Failed to display stored test results:', error);
-                                }
-                            }, 200);
-                        }
-                    } catch (error) {
-                        console.warn('⚠️ Failed to open automated tests tab:', error);
-                    }
-                }, 200);
-            }
-        } catch (error) {
-            console.warn('⚠️ Failed to auto-open testing modal:', error);
-        }
-    }, 500);
 }
 
 // Export functions for module use
