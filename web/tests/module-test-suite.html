@@ -619,6 +619,11 @@
         const { runRecurringWatcherTests } = await import(`./recurringWatcher.tests.js?v=${cacheBuster}`);
         const { runDIWiringTests } = await import(`./diWiring.tests.js?v=${cacheBuster}`);
 
+        // 🎯 Cross-origin target: the app embeds this runner from a different origin and
+        // passes its own origin as ?parentOrigin=. All postMessage replies target it
+        // explicitly (never '*'). Falls back to '*' only when opened standalone (no parent).
+        const PARENT_ORIGIN = new URLSearchParams(window.location.search).get('parentOrigin') || '*';
+
         // 🚦 TEST MODE FLAG - Tells app to skip IndexedDB restoration after tests
         // Uses same DB as test results for simplicity
         const TEST_MODE_DB = 'miniCycleTestResultsDB';
@@ -2683,7 +2688,7 @@
                             moduleName: module.name,
                             currentIndex: moduleIndex,
                             totalModules: totalModuleCount
-                        }, '*');
+                        }, PARENT_ORIGIN);
                     }
 
                     try {
@@ -2887,11 +2892,11 @@
                     const isEmbedded = new URLSearchParams(window.location.search).get('embedded') === 'true';
                     if (isEmbedded && window.parent !== window) {
                         // Embedded in iframe - send to parent
-                        window.parent.postMessage(resultData, '*');
+                        window.parent.postMessage(resultData, PARENT_ORIGIN);
                         console.log('📤 Sent test results to parent (embedded mode)');
                     } else if (window.opener) {
                         // Popup window - send to opener
-                        window.opener.postMessage(resultData, '*');
+                        window.opener.postMessage(resultData, PARENT_ORIGIN);
                         window.opener.focus();
                         console.log('📤 Sent test results to opener and focused');
                     }
@@ -3012,7 +3017,7 @@
                             type: 'TEST_CLEANUP_DONE',
                             restorationVerified,
                             timestamp: Date.now()
-                        }, '*');
+                        }, PARENT_ORIGIN);
                         console.log('📤 Sent TEST_CLEANUP_DONE to parent (restore complete, verified=' + restorationVerified + ')');
                     } catch (e) {
                         console.warn('Could not post TEST_CLEANUP_DONE:', e);

@@ -9,6 +9,7 @@
   "scripts": {
     "start": "python3 scripts/serve.py",
     "start:simple": "python3 -m http.server 8080",
+    "start:test-origin": "python3 scripts/serve.py 8081",
     "blog:install": "cd blog && npm install",
     "blog:build": "cd blog && npm run build",
     "test": "node tests/automated/run-browser-tests.cjs",

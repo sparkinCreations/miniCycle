@@ -10,7 +10,7 @@
  * @module testing-modal-integration
  */
 
-import { DOM_IDS } from '../core/constants.js';
+import { DOM_IDS, getTestOrigin } from '../core/constants.js';
 import { createDIModule, required, optional } from '../core/diBase.js';
 
 const di = createDIModule('TestingModalIntegration', {
@@ -237,12 +237,14 @@ function createTestRunnerModal() {
         </div>
     `;
 
-    // Hidden iframe - runs tests in background
-    // Use reasonable dimensions to avoid test failures due to element sizing
+    // Hidden iframe - runs tests in background, on a SEPARATE ORIGIN so its
+    // localStorage/IndexedDB is physically isolated from this app's real user data.
+    // parentOrigin tells the runner where to postMessage results back to.
     const iframe = document.createElement('iframe');
     iframe.id = 'test-runner-iframe';
     iframe.className = 'test-runner-iframe';
-    iframe.src = 'tests/module-test-suite.html?autorun=true&embedded=true';
+    iframe.src = `${getTestOrigin()}/tests/module-test-suite.html`
+        + `?autorun=true&embedded=true&parentOrigin=${encodeURIComponent(window.location.origin)}`;
 
     container.appendChild(header);
     container.appendChild(progressSection);
@@ -384,7 +386,10 @@ async function runAllAutomatedTests() {
         }
     };
 
+    const expectedTestOrigin = getTestOrigin();
     const handleTestMessages = (event) => {
+        // Only trust messages from the test-runner origin (cross-origin hardening).
+        if (event.origin !== expectedTestOrigin) return;
         if (!event.data || !event.data.type) return;
 
         // Handle progress updates

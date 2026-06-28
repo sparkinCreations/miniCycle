@@ -1581,6 +1581,31 @@ export const LITE_VERSION_PATH = './lite/miniCycle-lite.html';
 export const APP_URL = 'https://minicycle.app';
 
 /**
+ * Resolve the ORIGIN that serves the in-app test runner.
+ *
+ * The runner must live on a *separate* origin from the live app so the browser
+ * keeps its localStorage/IndexedDB physically isolated from real user data —
+ * isolation by construction, no backup/restore needed.
+ *
+ *  - Production (minicycle.app)      → https://test.minicycle.app
+ *  - Local dev / LAN (localhost, IP) → same host on port 8081 (run a 2nd server there)
+ *  - Anything else                   → same origin (fallback; no isolation, but no breakage)
+ *
+ * @returns {string} absolute origin, e.g. "https://test.minicycle.app"
+ */
+export function getTestOrigin() {
+    const { protocol, hostname, origin } = window.location;
+    if (hostname.includes('minicycle.app')) {
+        return 'https://test.minicycle.app';
+    }
+    // localhost, 127.0.0.1, or a LAN IP (e.g. 192.168.x for phone testing)
+    if (hostname === 'localhost' || /^\d{1,3}(\.\d{1,3}){3}$/.test(hostname)) {
+        return `${protocol}//${hostname}:8081`;
+    }
+    return origin;
+}
+
+/**
  * Version marker for cache debugging, derived from the single source of truth in version.js.
  * @type {string}
  */
