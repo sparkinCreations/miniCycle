@@ -1,3 +1,10 @@
+## [2.266] - 2026-06-28
+- docs(testing): document hermetic separate-origin test runner; remove stale protection-stack docs
+- refactor(testing): remove now-dead test-data protection stack (hermetic, phase B)
+- feat(testing): serve in-app test runner from a separate origin (hermetic, phase A)
+- fix(testing): gate teardown on post-restore cleanup handshake instead of fixed timer
+
+
 ## [2.265] - 2026-06-28
 - refactor(render): project completed dropdown from state in renderTasks (render-path unification)
 
