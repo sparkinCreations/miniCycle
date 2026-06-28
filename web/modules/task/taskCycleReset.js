@@ -349,20 +349,10 @@ function resetTasksData(context, deps) {
 
     // Record deleteWhenComplete tasks to cleared tasks before deletion
     if (tasksToDelete.length > 0) {
-        const tasksToRecord = tasksToDelete.map(taskId => {
-            const task = freshCycleData?.tasks?.find(t => t.id === taskId);
-            return task ? {
-                text: task.text,
-                highPriority: task.highPriority || false,
-                dueDate: task.dueDate,
-                priorityColor: task.priorityColor || null,
-                remindersEnabled: task.remindersEnabled || false,
-                deleteWhenComplete: task.deleteWhenComplete || false,
-                deleteWhenCompleteSettings: task.deleteWhenCompleteSettings || null,
-                recurring: task.recurring || false,
-                recurringSettings: task.recurringSettings || null
-            } : null;
-        }).filter(Boolean);
+        const tasksToRecord = tasksToDelete
+            .map(taskId => freshCycleData?.tasks?.find(t => t.id === taskId))
+            .filter(Boolean)
+            .map(buildClearedRecord);
 
         const recordFn = deps.recordMultipleClearedTasks || _deps.recordMultipleClearedTasks;
         if (tasksToRecord.length > 0 && typeof recordFn === 'function') {
@@ -612,6 +602,29 @@ export async function resetTasksImpl(deps = {}) {
 }
 
 /**
+ * Build the cleared-task record handed to recordMultipleClearedTasks before deletion.
+ * Both delete paths — the cycle-reset path and the To-Do "Clear Completed" path — record
+ * the same shape; keep it in one place so adding or changing a field can't silently diverge
+ * between them. See ARCH REVIEW FINDINGS §2.3. (clearedTasksManager builds a different,
+ * richer storage entry from this — not this shape.)
+ * @param {Object} task - The live task being cleared
+ * @returns {Object} Cleared-task record
+ */
+function buildClearedRecord(task) {
+    return {
+        text: task.text,
+        highPriority: task.highPriority || false,
+        dueDate: task.dueDate,
+        priorityColor: task.priorityColor || null,
+        remindersEnabled: task.remindersEnabled || false,
+        deleteWhenComplete: task.deleteWhenComplete || false,
+        deleteWhenCompleteSettings: task.deleteWhenCompleteSettings || null,
+        recurring: task.recurring || false,
+        recurringSettings: task.recurringSettings || null
+    };
+}
+
+/**
  * Delete completed tasks that have deleteWhenComplete enabled (To-Do mode).
  * @param {string} activeCycleId - The active cycle ID
  * @param {Object} cycleData - The cycle data object
@@ -668,20 +681,10 @@ export async function deleteCompletedTasksImpl(activeCycleId, cycleData, taskLis
     }
 
     // Record cleared tasks before deleting (for history tracking)
-    const tasksToRecord = tasksToDelete.map(({ taskId }) => {
-        const task = cycleData.tasks?.find(t => t.id === taskId);
-        return task ? {
-            text: task.text,
-            highPriority: task.highPriority || false,
-            dueDate: task.dueDate,
-            priorityColor: task.priorityColor || null,
-            remindersEnabled: task.remindersEnabled || false,
-            deleteWhenComplete: task.deleteWhenComplete || false,
-            deleteWhenCompleteSettings: task.deleteWhenCompleteSettings || null,
-            recurring: task.recurring || false,
-            recurringSettings: task.recurringSettings || null
-        } : null;
-    }).filter(Boolean);
+    const tasksToRecord = tasksToDelete
+        .map(({ taskId }) => cycleData.tasks?.find(t => t.id === taskId))
+        .filter(Boolean)
+        .map(buildClearedRecord);
 
     if (tasksToRecord.length > 0 && typeof _deps.recordMultipleClearedTasks === 'function') {
         _deps.recordMultipleClearedTasks(tasksToRecord);
