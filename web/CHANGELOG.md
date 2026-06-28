@@ -1,3 +1,7 @@
+## [2.265] - 2026-06-28
+- refactor(render): project completed dropdown from state in renderTasks (render-path unification)
+
+
 ## [2.264] - 2026-06-28
 - fix(routine): repair non-boolean deleteWhenComplete mode value on load (review §2.4)
 - refactor(clear): extract buildClearedRecord + _buildClearedEntry helpers (review §2.3)
