@@ -546,6 +546,15 @@ export function captureStateSnapshot(state) {
     return;
   }
 
+  // Don't capture snapshots during system-driven mutations (recurring watcher
+  // recreations / wake-time catch-up). These aren't user actions — capturing them
+  // puts a system-created task at the top of the undo stack, so the user's next Undo
+  // removes the recurring task (which then silently reappears on the next tick).
+  // See docs/future-work/ARCHITECTURE REVIEW FINDINGS.md §1.2.
+  if (_deps.AppGlobalState.isSystemMutation) {
+    return;
+  }
+
   if (!state?.data?.cycles || !state?.appState?.activeCycleId) {
     console.warn('⚠️ Invalid state for snapshot');
     return;

@@ -33,6 +33,7 @@ import { getIcon, getLabel } from '../labels/labelResolver.js';
 const di = createDIModule('RecurringWatcher', {
     appInit: optional(null),
     AppState: optional(null),
+    AppGlobalState: optional(null),  // For undo suppression during system recreations (§1.2)
     updateAppState: optional(null),
     showNotification: optional(null),
     refreshUIFromState: optional(null),
@@ -67,6 +68,34 @@ export function setRecurringWatcherDependencies(overrides = {}) {
 function assertInjected(name, value) {
     if (value == null) {
         throw new Error(`recurringWatcher: missing required dependency '${name}'. Call setRecurringWatcherDependencies() first.`);
+    }
+}
+
+/**
+ * Commit a watcher-driven state mutation WITHOUT it entering undo history.
+ *
+ * Recurring recreations (and wake-time catch-up) are SYSTEM actions, not user
+ * actions. The undo wrapper snapshots every AppState.update during normal operation;
+ * to keep these out of the undo stack we raise AppGlobalState.isSystemMutation for the
+ * duration of the commit — captureStateSnapshot() skips capture while it is set.
+ * Without it, a user's next Undo removes the system-created task, which then silently
+ * reappears on the next tick. See docs/future-work/ARCHITECTURE REVIEW FINDINGS.md §1.2.
+ *
+ * Falls back to a plain update if AppGlobalState wasn't injected (no suppression, but
+ * never breaks the commit) — preserves the prior flag value for safe re-entrancy.
+ *
+ * @param {Function} producer - AppState update producer
+ * @param {boolean} immediate - Immediate-save flag passed through to updateAppState
+ * @returns {Promise<*>}
+ */
+async function commitSystemUpdate(producer, immediate) {
+    const gs = Deps.AppGlobalState;
+    const prev = gs ? gs.isSystemMutation : undefined;
+    if (gs) gs.isSystemMutation = true;
+    try {
+        return await Deps.updateAppState(producer, immediate);
+    } finally {
+        if (gs) gs.isSystemMutation = prev === true;
     }
 }
 
@@ -341,7 +370,7 @@ export async function catchUpMissedRecurringTasks() {
     if (tasksToActuallyAdd.length > 0 || Object.keys(templateUpdates).length > 0) {
         assertInjected('updateAppState', Deps.updateAppState);
 
-        await Deps.updateAppState(draft => {
+        await commitSystemUpdate(draft => {
             const cycle = draft.data.cycles[activeCycleId];
 
             // Add missed recurring tasks (only up to limit)
@@ -496,7 +525,7 @@ export async function watchRecurringTasks() {
     if (tasksToActuallyAdd.length > 0 || Object.keys(templateUpdates).length > 0) {
         assertInjected('updateAppState', Deps.updateAppState);
 
-        await Deps.updateAppState(draft => {
+        await commitSystemUpdate(draft => {
             const cycle = draft.data.cycles[activeCycleId];
 
             // Add new recurring tasks (only up to limit)

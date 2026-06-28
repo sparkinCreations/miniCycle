@@ -357,6 +357,23 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         }
     });
 
+    // Regression — ARCH REVIEW FINDINGS §1.2: recurring-watcher recreations are system
+    // mutations, not user actions, and must NOT enter undo history. The watcher raises
+    // AppGlobalState.isSystemMutation around its commit; captureStateSnapshot must honor it.
+    await test('captureStateSnapshot skips during system mutation (review 1.2)', async () => {
+        const mockDeps = createMockDependencies();
+        mockDeps.AppGlobalState.isInitializing = false;   // normal operation
+        mockDeps.AppGlobalState.isSystemMutation = true;  // watcher recreation in progress
+        setUndoRedoManagerDependencies(mockDeps);
+
+        const state = mockDeps.AppState.get();
+        await captureStateSnapshot(state);
+
+        if (mockDeps.AppGlobalState.activeUndoStack.length !== 0) {
+            throw new Error('System mutation must not be captured into undo history');
+        }
+    });
+
     await test('captureStateSnapshot throttles identical snapshots', async () => {
         const mockDeps = createMockDependencies();
         mockDeps.AppGlobalState.isInitializing = false;

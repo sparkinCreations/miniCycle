@@ -168,6 +168,33 @@ export async function runRecurringWatcherTests(resultsDiv) {
         eq(r.added, 1, 'exactly one task for many misses');
     });
 
+    // Regression — ARCH REVIEW FINDINGS §1.2: the watcher must commit recreations as a
+    // SYSTEM mutation so they never land in undo history. Verify it raises
+    // AppGlobalState.isSystemMutation during the commit and clears it afterward (the undo
+    // wrapper's captureStateSnapshot skips capture while that flag is set).
+    await test('catchUp raises/clears isSystemMutation around its commit (review 1.2)', async () => {
+        const AppGlobalState = { isSystemMutation: false };
+        let flagDuringUpdate = null;
+        let updateCalled = false;
+        const as = cycleState({ t1: dueTemplate('t1') }, []);
+        mod.setRecurringWatcherDependencies(makeDeps({
+            AppState: as,
+            AppGlobalState,
+            updateAppState: async (producer) => {
+                updateCalled = true;
+                flagDuringUpdate = AppGlobalState.isSystemMutation; // must be TRUE mid-commit
+                return as.update(producer, true);
+            }
+        }));
+
+        const r = await mod.catchUpMissedRecurringTasks();
+
+        eq(r.added, 1, 'a recreation occurred');
+        if (!updateCalled) throw new Error('expected the watcher to commit via updateAppState');
+        if (flagDuringUpdate !== true) throw new Error('isSystemMutation must be TRUE during the watcher commit');
+        if (AppGlobalState.isSystemMutation !== false) throw new Error('isSystemMutation must be cleared after the commit');
+    });
+
     // ── Count enforcement ─────────────────────────────────────────────────────
     resultsDiv.innerHTML += '<h4 class="test-section">🔢 Count Enforcement</h4>';
 
