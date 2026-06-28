@@ -359,26 +359,22 @@ npm test                    # All tests (see PROJECT_STATS.md for counts)
 ```
 
 ### Browser Tests
-Open http://localhost:8080/tests/module-test-suite.html
+Open the runner on the test origin:
+- Local: `http://localhost:8081/tests/module-test-suite.html` (`npm run start:test-origin`)
+- Production: `https://test.minicycle.app/tests/module-test-suite.html`
 
-### Test Mode Coordination
+### Hermetic Test Runner (separate origin)
 
-The test suite uses an IndexedDB flag to coordinate with AppState:
+The in-app test runner runs on a **separate origin** (`test.minicycle.app`, or `:8081`
+locally), so its `localStorage`/IndexedDB is **physically isolated** from real user data
+by the browser. There is **no** test-mode flag, save-gate, backup, or boot recovery — that
+machinery was removed when the runner moved off-origin. Tests post results to the app via
+`postMessage(parentOrigin)`, and the app validates `event.origin`.
 
-```javascript
-// Flag checked by appState.js to skip saves during tests
-// Stored in IndexedDB (single source of truth), not localStorage
-// See isTestModeActive() in appState.js
-
-// After tests complete, flag is cleared and AppState reloads
-AppState.reload();  // Critical! Syncs in-memory state with restored localStorage
-```
-
-**Why `AppState.reload()` is critical:**
-- Test suite backs up and restores localStorage before/after tests
-- But MiniCycleState.data (in-memory) still has test data
-- Debounced saves would overwrite the restored backup
-- `reload()` syncs in-memory state with the restored localStorage
+- `getTestOrigin()` (`core/constants.js`) resolves the test origin.
+- Do **not** reintroduce `isTestModeActive` / `preTestBackup` / `recoverFromInterruptedTests`
+  / a `scheduleSave` test-gate — isolation is structural now.
+- See **[TESTING_MODAL.md](../testing/TESTING_MODAL.md)** for the full flow.
 
 ### Before Committing
 - Run full test suite

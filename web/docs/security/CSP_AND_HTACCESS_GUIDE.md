@@ -50,7 +50,12 @@ Here's the CSP from `.htaccess`, broken down rule by rule:
 
 **In plain English:** "Run our own script files freely. For inline scripts (code written directly in HTML), only run them if they match a known fingerprint."
 
-The hashes listed in `.htaccess` are fingerprints of the inline scripts in `miniCycle.html`, `miniCycle-lite.html`, and `tests/module-test-suite.html`. If even one character of those scripts changes, the fingerprint changes and the browser will block them until the hash is updated.
+The hashes are fingerprints of the inline scripts in `miniCycle.html` and `miniCycle-lite.html`. If even one character of those scripts changes, the fingerprint changes and the browser will block them until the hash is updated.
+
+> **Exception — `tests/module-test-suite.html`:** the test runner is served on the separate
+> test origin under a path-scoped `/tests/*` CSP that uses `script-src 'unsafe-inline'`
+> (see `netlify.toml`). Its inline script therefore needs **no** hash, and editing it does
+> **not** require recomputing CSP hashes. This is safe because that origin holds no user data.
 
 **This is why new pages must never use inline scripts** — their fingerprints aren't in the list, so the browser will block them.
 
@@ -78,11 +83,22 @@ The hashes listed in `.htaccess` are fingerprints of the inline scripts in `mini
 
 **In plain English:** "The only external service we talk to is Web3Forms — that's the feedback form. Nothing else."
 
-### `frame-ancestors 'none'`
+### `frame-ancestors 'self'`  (app)  /  `frame-ancestors 'self' https://minicycle.app`  (test origin)
 
-**What it means:** No other website can embed miniCycle inside an iframe.
+**What it means:** The app (`minicycle.app`) can only be embedded by itself — no third
+party can frame it (clickjacking protection). The separate **test origin**
+(`test.minicycle.app`, which serves `/tests/*`) additionally allows `https://minicycle.app`
+to frame it, so the in-app testing modal can embed the hermetic test runner.
 
-**In plain English:** "Nobody can put our app inside their website to trick users" (this prevents clickjacking attacks).
+**In plain English:** "Nobody can put our app inside their website to trick users — but our
+own app is allowed to embed the test runner that lives on the test subdomain."
+
+The app side also sets `frame-src 'self' https://test.minicycle.app` (and `child-src`) so it
+is *permitted* to load that cross-origin iframe. See
+[TESTING_MODAL.md](../testing/TESTING_MODAL.md) for why the runner is on a separate origin.
+
+> **Note:** The authoritative production headers live in `netlify.toml` (the live host is
+> Netlify). `.htaccess` is a legacy Apache fallback.
 
 ### `base-uri 'self'`
 
@@ -110,7 +126,7 @@ Beyond CSP, `.htaccess` sets several other protective headers:
 
 | Header | What It Does | Plain English |
 |--------|-------------|---------------|
-| `X-Frame-Options: SAMEORIGIN` | Allows same-origin iframes (needed for the in-app test runner) while blocking third-party embedding | Like `frame-ancestors 'none'` but permits our own domain's iframes; covers older browsers that don't support CSP |
+| `X-Frame-Options` — **not set on Netlify** | Framing is controlled by CSP `frame-ancestors` instead. `X-Frame-Options` can only say `SAMEORIGIN`/`DENY`, which **cannot** allow the app to frame the separate test-runner origin (`test.minicycle.app`). `frame-ancestors` can name a specific allowed origin, so it replaces it. | "We let CSP decide who can frame what, because the old header couldn't say 'allow our test subdomain'." (`.htaccess` may still send `SAMEORIGIN` for the legacy Apache path.) |
 | `X-Content-Type-Options: nosniff` | Prevents browsers from guessing file types | "If we say it's CSS, treat it as CSS — don't try to run it as JavaScript" |
 | `X-XSS-Protection: 1; mode=block` | Legacy XSS filter for older browsers | Extra protection for browsers that don't support CSP |
 | `Referrer-Policy: strict-origin-when-cross-origin` | Controls what URL info is sent when clicking links | "When leaving our site, only share the domain name, not the full page URL" |
@@ -158,7 +174,7 @@ Inline scripts need a SHA-256 hash in `.htaccess` to work. Inline event handlers
 |------|------------|-------|
 | `miniCycle.html` | Inline (hashed in CSP) | Main app — uses inline scripts with registered hashes |
 | `miniCycle-lite.html` | Inline (hashed in CSP) | Lite version — also has registered hashes |
-| `tests/module-test-suite.html` | Inline (hashed in CSP) | In-app test runner — also has registered hashes |
+| `tests/module-test-suite.html` | Inline under relaxed `/tests/*` CSP | Test runner on the separate origin — `script-src 'unsafe-inline'`, **no hash needed** |
 | `pages/product.html` | `pages/product.js` | Carousel, changelog, hover effects |
 | `pages/learn_more.html` | `pages/learn_more.js` | FAQ accordion, smooth scroll |
 | `legal/privacy.html` | `legal/legal-footer.js` | Shared year footer |
@@ -218,7 +234,7 @@ The **same** CSP — and therefore the same `script-src` hash list — is served
 
 ### When you need to update hashes
 
-**Only** if you change an inline script in `miniCycle.html`, `lite/miniCycle-lite.html`, or `tests/module-test-suite.html`.
+**Only** if you change an inline script in `miniCycle.html` or `lite/miniCycle-lite.html`. (The `tests/module-test-suite.html` runner is **exempt** — it loads under the relaxed `/tests/*` CSP with `'unsafe-inline'`, so it needs no hash.)
 
 **The easy way (recommended) — let the tooling do it:**
 
@@ -310,7 +326,7 @@ document.getElementById('myBtn').addEventListener('click', doSomething);
 | Hash sync tool | `web/scripts/update-version.sh` | Recomputes + syncs `script-src` hashes across all 3 configs |
 | Main app | `web/miniCycle.html` | Has hashed inline scripts |
 | Lite app | `web/lite/miniCycle-lite.html` | Also has hashed inline scripts |
-| Test runner | `web/tests/module-test-suite.html` | Also has hashed inline scripts |
+| Test runner | `web/tests/module-test-suite.html` | Separate origin; relaxed `/tests/*` CSP — **no** hash |
 | This guide | `web/docs/security/CSP_AND_HTACCESS_GUIDE.md` | You're reading it |
 
 ---

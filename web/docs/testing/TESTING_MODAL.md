@@ -1,265 +1,115 @@
 # Testing Modal
 
-> **In-app test runner with automatic data protection**
+> **In-app test runner — hermetic by construction (separate origin)**
 
-The testing modal allows running the full test suite from within the miniCycle app itself, with built-in protection for user data during test execution.
+The testing modal runs the full test suite from within the miniCycle app. The runner
+loads from a **separate origin** (`test.minicycle.app`), so the browser keeps its
+`localStorage`/IndexedDB **physically isolated** from your real user data. There is no
+backup, no restore, and no save-gate — tests simply cannot reach the app's storage.
+
+> **History:** Before June 2026 the runner ran in a *same-origin* iframe and shared
+> storage with the live app. That required an elaborate "protect user data from tests"
+> stack (IndexedDB pre-test backup, a `testModeActive` flag, an `AppState` save-gate, a
+> boot-time `recoverFromInterruptedTests()`, and `localStorage.clear` monkey-patches).
+> All of that was **deleted** when the runner moved to a separate origin — isolation is
+> now structural, not procedural.
 
 ---
 
 ## Quick Start
 
 1. Open **Settings** (gear icon)
-2. Scroll to **Developer Options** section
+2. Scroll to **Developer Options**
 3. Click **"Open Testing Modal"**
 4. Click **"Run All Tests"**
 
-Tests run in an embedded iframe while a progress modal shows status.
+Tests run in an embedded cross-origin iframe while a progress modal shows status.
 
 ---
 
 ## How It Works
 
-### Test Execution Flow
-
 ```
 User clicks "Run All Tests"
         ↓
-┌─────────────────────────────────┐
-│ 1. Force save AppState          │ ← Ensures all pending changes are saved
-│ 2. Create test backup           │ ← BackupManager saves recoverable copy
-│ 3. Backup localStorage          │ ← Protected keys (__miniCycle_*)
-│ 4. Set test mode flag           │ ← Pauses AppState saves
-└─────────────────────────────────┘
+┌────────────────────────────────────────────────────────┐
+│ Open iframe on the TEST ORIGIN:                        │
+│   {testOrigin}/tests/module-test-suite.html            │
+│   ?autorun=true&embedded=true&parentOrigin={appOrigin} │
+└────────────────────────────────────────────────────────┘
         ↓
-┌─────────────────────────────────┐
-│ Open iframe: module-test-suite  │
-│ with ?autorun=true&embedded=true│
-└─────────────────────────────────┘
+   Runner runs the full suite against its OWN origin's
+   storage (isolated from the app — different origin)
         ↓
-    Tests run (full suite)
+┌────────────────────────────────────────────────────────┐
+│ Runner posts TEST_PROGRESS / TEST_RESULTS              │
+│ via postMessage(parentOrigin)                          │
+└────────────────────────────────────────────────────────┘
         ↓
-┌─────────────────────────────────┐
-│ iframe sends TEST_RESULTS       │
-│ via postMessage                 │
-└─────────────────────────────────┘
-        ↓
-┌─────────────────────────────────┐
-│ 1. Clear test mode flag         │ ← Resume AppState saves
-│ 2. AppState.reload()            │ ← Sync in-memory with localStorage
-│ 3. Clear backup flags           │
-│ 4. Display results              │
-└─────────────────────────────────┘
+┌────────────────────────────────────────────────────────┐
+│ App validates event.origin === testOrigin,             │
+│ shows progress, then displays results and closes        │
+│ the modal. No AppState reload — app storage was         │
+│ never touched.                                          │
+└────────────────────────────────────────────────────────┘
 ```
 
-### Data Protection System
+### Why this is safe
 
-The testing modal protects user data through multiple layers that work together.
+`localStorage` and IndexedDB are partitioned **per origin** by the browser.
+`minicycle.app` and `test.minicycle.app` are different origins, so the runner reads and
+writes a completely separate storage bucket. Even though both serve the *same files*,
+nothing the suite does can affect the user's real data. That is the entire safety model.
 
 ---
 
-## BackupManager: The Full Backup System
+## The test origin
 
-miniCycle has a comprehensive backup system managed by `BackupManager` that stores backups in IndexedDB. The testing modal integrates with this system.
+`getTestOrigin()` in `modules/core/constants.js` resolves where the runner lives:
 
-### Backup Types
+| Environment | Test origin |
+|-------------|-------------|
+| Production (`minicycle.app`) | `https://test.minicycle.app` |
+| Local dev / LAN | same host on **port 8081** (`npm run start:test-origin`) |
+| Anything else | same origin (fallback; no isolation, but no breakage) |
 
-| Type | When Created | Max Kept | Min Interval | Purpose |
-|------|--------------|----------|--------------|---------|
-| **Session** | Every app open | 5 | 5 minutes | Quick recovery from recent sessions |
-| **Auto** | Background | 10 | 24 hours | Daily snapshots |
-| **Test** | Before "Run All Tests" | 5 | 5 minutes | Recovery if tests corrupt data |
-| **Manual** | User-initiated | 50 | None | User-controlled checkpoints |
+`test.minicycle.app` is a Netlify **domain alias** of the same site (no forced redirect),
+so it serves an identical deploy as its own origin. See
+[CSP_AND_HTACCESS_GUIDE.md](../security/CSP_AND_HTACCESS_GUIDE.md) for the framing headers.
 
-### Session Backups (On App Open)
+### Local development
 
-Every time the app opens, a session backup is created (if > 5 min since last):
+Run two servers — the app and the test origin:
 
-```javascript
-// Called during boot in coreBoot.js
-await backupManager.createSessionBackup();
+```bash
+npm start              # app on :8080
+npm run start:test-origin   # runner origin on :8081 (same web/ dir)
 ```
 
-This captures your data state before any changes in the current session.
-
-### Auto Backups (Every 24 Hours)
-
-Automatic daily backups run in the background:
-
-```javascript
-// Called during boot
-await backupManager.createAutoBackup();
-// Skips if last backup was < 24 hours ago
-```
-
-### Test Backups (Before Running Tests)
-
-When you click "Run All Tests", a test backup is created:
-
-```javascript
-// In testing-modal-integration.js
-const backupManager = getBackupManager();
-await backupManager.createTestBackup();
-```
-
-These appear in **Settings > Restore Backups** for manual recovery.
+The app on `:8080` then frames the runner on `:8081` (a distinct origin → isolated).
 
 ---
 
-## Flag System: Coordinating Test Mode
+## Cross-origin messaging
 
-The flag system coordinates between the testing modal, test suite, and AppState to prevent data corruption.
-
-### The Test Mode Flag (`__miniCycle_testModeActive__`)
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    FLAG LIFECYCLE                                │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│  1. User clicks "Run All Tests"                                 │
-│     ↓                                                           │
-│  2. SET FLAG: localStorage.setItem('__miniCycle_testModeActive__', 'true')
-│     ↓                                                           │
-│  3. Tests run in iframe (can modify localStorage freely)        │
-│     ↓                                                           │
-│  4. During tests: AppState.scheduleSave() checks flag           │
-│     → if (flag === 'true') skip save                            │
-│     ↓                                                           │
-│  5. Tests complete, localStorage restored by test suite         │
-│     ↓                                                           │
-│  6. CLEAR FLAG: localStorage.removeItem('__miniCycle_testModeActive__')
-│     ↓                                                           │
-│  7. AppState.reload() syncs in-memory state with localStorage   │
-│     ↓                                                           │
-│  8. Normal saves resume                                         │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### How AppState Uses the Flag
-
-In `appState.js`, the `scheduleSave()` method checks the flag:
+The runner and app communicate only via `postMessage`, with origins validated on both ends:
 
 ```javascript
-scheduleSave(immediate = false) {
-    // Skip saves during test runs to prevent overwriting restored data
-    if (localStorage.getItem('__miniCycle_testModeActive__') === 'true') {
-        console.log('Save skipped - tests running');
-        return;
-    }
-    // ... normal save logic
-}
+// Runner → app  (tests/module-test-suite.html)
+const PARENT_ORIGIN = new URLSearchParams(location.search).get('parentOrigin') || '*';
+window.parent.postMessage({ type: 'TEST_PROGRESS', currentIndex, totalModules, moduleName }, PARENT_ORIGIN);
+window.parent.postMessage({ type: 'TEST_RESULTS', totalPassed, totalTests, duration, allPassed, failedModules }, PARENT_ORIGIN);
+
+// App ← runner  (modules/testing/testing-modal-integration.js)
+const expectedTestOrigin = getTestOrigin();
+const handleTestMessages = (event) => {
+    if (event.origin !== expectedTestOrigin) return;  // cross-origin hardening
+    // ...handle TEST_PROGRESS / TEST_RESULTS
+};
 ```
 
-This prevents the debounced save system from writing test data to localStorage.
-
-### IndexedDB Backup (in module-test-suite.html)
-
-The test suite backs up localStorage to IndexedDB before tests run:
-
-```javascript
-// In module-test-suite.html - backupLocalStorageToIndexedDB()
-const backup = {};
-for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (key) {
-        backup[key] = localStorage.getItem(key);
-    }
-}
-// Stored in IndexedDB 'miniCycleTestResultsDB', record id: 'preTestBackup'
-store.put({
-    id: 'preTestBackup',
-    localStorageBackup: backup,
-    timestamp: Date.now()
-});
-```
-
-**Why IndexedDB?** Tests can call `localStorage.clear()` freely - it doesn't affect IndexedDB. They're completely separate storage APIs.
-
-### AppState.reload() - The Critical Final Step
-
-After tests complete and localStorage is restored:
-
-```javascript
-// Clear test mode flag
-localStorage.removeItem('__miniCycle_testModeActive__');
-
-// CRITICAL: Sync in-memory state with restored localStorage
-const AppState = getAppState();
-if (AppState?.reload) {
-    AppState.reload();
-}
-```
-
-**Why is this critical?**
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    THE DEBOUNCE PROBLEM                          │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│  WITHOUT reload():                                               │
-│                                                                  │
-│  localStorage: { activeCycleId: "user-real-cycle" }  ← restored │
-│  MiniCycleState.data: { activeCycleId: "cycle-main" } ← test!   │
-│                                                                  │
-│  → Next debounced save (600ms) overwrites localStorage          │
-│  → User's real data is LOST                                     │
-│                                                                  │
-│  WITH reload():                                                  │
-│                                                                  │
-│  localStorage: { activeCycleId: "user-real-cycle" }  ← restored │
-│  MiniCycleState.data: { activeCycleId: "user-real-cycle" } ← synced!
-│                                                                  │
-│  → Debounced saves write correct data                           │
-│  → User's data is PRESERVED                                     │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
-```
-
----
-
-## Complete Data Protection Flow
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                 FULL TEST DATA PROTECTION                        │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│  BEFORE TESTS (testing-modal-integration.js):                    │
-│  ├─ 1. AppState.forceSave()     → Flush pending changes         │
-│  ├─ 2. backupManager.createTestBackup() → IndexedDB backup      │
-│  └─ 3. Set test mode flag       → __miniCycle_testModeActive__  │
-│                                                                  │
-│  TEST SUITE STARTS (module-test-suite.html):                     │
-│  └─ 4. Backup localStorage to IndexedDB → 'preTestBackup'       │
-│                                                                  │
-│  DURING TESTS:                                                   │
-│  ├─ AppState.scheduleSave() sees flag → skips all saves         │
-│  └─ Tests can modify localStorage freely (IndexedDB is safe)    │
-│                                                                  │
-│  AFTER TESTS (module-test-suite.html):                           │
-│  └─ 1. Restore localStorage from IndexedDB backup               │
-│                                                                  │
-│  AFTER TESTS (testing-modal-integration.js):                     │
-│  ├─ 2. Clear test mode flag                                     │
-│  └─ 3. AppState.reload()        → Sync in-memory with restored  │
-│                                                                  │
-│  IF INTERRUPTED (automatic recovery on next app load):           │
-│  ├─ coreBoot.js runs FIRST, before any modules load             │
-│  ├─ Checks IndexedDB for testModeActive flag                    │
-│  ├─ If found: restores localStorage from preTestBackup          │
-│  ├─ Clears all flags                                            │
-│  └─ AppState then loads normally from restored localStorage     │
-│                                                                  │
-│  SAVE SKIPPING (during active tests):                            │
-│  ├─ Main app window: scheduleSave() checks testModeActive       │
-│  ├─ If active: skips saves (prevents overwriting test data)     │
-│  ├─ Test iframe: detected via ?embedded=true in URL             │
-│  └─ Test iframe saves normally (tests need persistence)         │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
-```
+There is no `TEST_CLEANUP_DONE` handshake anymore (it existed only to coordinate the old
+post-run restore). The app tears down the modal a moment after `TEST_RESULTS`.
 
 ---
 
@@ -267,128 +117,75 @@ if (AppState?.reload) {
 
 | File | Purpose |
 |------|---------|
-| `modules/boot/coreBoot.js` | Handles interrupted test recovery FIRST, before any modules load |
-| `modules/core/appState.js` | Checks test mode flag in scheduleSave(), provides `reload()` |
-| `modules/testing/testing-modal-integration.js` | Main testing modal logic, orchestrates test runs |
-| `modules/storage/backupManager.js` | IndexedDB backup system (session, auto, test, manual) |
-| `tests/module-test-suite.html` | Test suite runner, IndexedDB backup/restore, sets test mode flag |
-| `tests/testHelpers.js` | Test utilities with localStorage protection |
+| `modules/core/constants.js` | `getTestOrigin()` — resolves the test origin |
+| `modules/testing/testing-modal-integration.js` | Builds the cross-origin iframe, validates `event.origin`, renders results |
+| `tests/module-test-suite.html` | The runner (loads on the test origin); clears its own storage, runs modules, posts results |
+| `netlify.toml` | CSP `frame-ancestors`/`frame-src` for the test origin + relaxed `/tests/*` CSP |
+
+> Note: `modules/boot/coreBoot.js`, `modules/core/appState.js`, `modules/storage/backupManager.js`,
+> and `modules/ui/undoRedoManager.js` **no longer** contain any test-mode code — that machinery
+> was removed with the separate-origin migration.
 
 ---
 
-## Protected localStorage Keys
+## BackupManager (unrelated to tests now)
 
-The test mode flag uses a protected key prefix:
+`BackupManager` still provides the user-facing backup system (Settings → Restore Backups),
+but it no longer creates a "test" backup — there is nothing to protect against.
 
-| Key | Purpose |
-|-----|---------|
-| `__miniCycle_testModeActive__` | Flag to pause AppState saves |
-
-Note: The actual data backup is stored in **IndexedDB** (not localStorage), which makes it immune to any `localStorage.clear()` calls during tests.
+| Type | When Created | Max Kept | Purpose |
+|------|--------------|----------|---------|
+| **Session** | Every app open (>5 min) | 5 | Recovery from recent sessions |
+| **Auto** | Background (>24 h) | 10 | Daily snapshots |
+| **Manual** | User-initiated | 50 | User checkpoints |
 
 ---
 
-## Progress Updates
-
-The iframe sends progress via `postMessage`:
+## Progress & Results payloads
 
 ```javascript
-// Progress update (sent for each module)
-window.parent.postMessage({
-    type: 'TEST_PROGRESS',
-    currentModule: 'recurringCore',
-    currentIndex: 15,
-    totalModules: 85,
-    moduleName: 'RecurringCore'
-}, '*');
+// Progress (per module)
+{ type: 'TEST_PROGRESS', currentModule: 'recurringCore', currentIndex: 15, totalModules: 116, moduleName: 'RecurringCore' }
 
 // Final results
-window.parent.postMessage({
-    type: 'TEST_RESULTS',
-    totalPassed: 2195,
-    totalTests: 2195,
-    duration: 65.2,
-    allPassed: true,
-    failedModules: []
-}, '*');
+{ type: 'TEST_RESULTS', totalPassed: 2635, totalTests: 2640, duration: 240.0, allPassed: false, failedModules: [...] }
 ```
-
----
-
-## Interrupted Tests
-
-If tests are interrupted (browser closed, page refresh):
-
-### Automatic Data Recovery (appState.js)
-
-On next app load, `AppState._initializeInternal()` automatically handles recovery:
-
-1. Checks if `__miniCycle_testModeActive__` localStorage flag is set (tests actively running)
-2. If not running, checks IndexedDB for `testModeActive` record via `isTestModeActive()`
-3. If test mode was active, calls `getBackedUpRealData()`:
-   - Retrieves backup from `preTestBackup` record in IndexedDB
-   - Clears localStorage and restores all keys from backup
-4. Calls `clearTestModeAndBackup()` to clean up all flags and backups
-5. AppState then loads the restored data normally
-
-This happens during AppState initialization, so the user's data is seamlessly restored.
-
-### Test Results Recovery
-
-For displaying interrupted test results:
-
-1. `checkForPendingResultsOnLoad()` runs after UI loads
-2. Checks for results stored in IndexedDB (valid for 5 minutes)
-3. If found, auto-opens testing modal and displays results
-
-### Manual Recovery
-
-User can also manually restore via **Settings > Restore Backups** (uses BackupManager test backups)
 
 ---
 
 ## Timeout
 
-Tests timeout after 10 minutes (600,000ms). If no results received:
+If no `TEST_RESULTS` arrives within 20 minutes, the app closes the modal. (Production runs
+100+ modules through the service worker and can take several minutes.)
 
-```javascript
-setTimeout(() => {
-    if (!resultsReceived) {
-        appendToAutomatedTestResults("Test timeout - closing modal.");
-        closeTestRunnerModal();
-    }
-}, 600000);
-```
+---
+
+## Interrupted runs
+
+There is nothing to recover. If a run is interrupted, the test origin's storage may be left
+in a test state — but that is a *separate, disposable origin*, never the user's data. The app
+origin is untouched, so the next app load is clean with no recovery step.
 
 ---
 
 ## Debugging
 
-### View Test Logs
-
-Open browser DevTools console while tests run. Key log prefixes:
-- `🧪` - Testing modal operations
-- `💾` - Backup/save operations
-- `🔄` - State reload operations
-
-### Manual Testing
-
-Open the test suite directly:
-```
-http://localhost:8080/tests/module-test-suite.html
-```
-
-Select individual modules from dropdown for targeted testing.
+- Open the runner directly on the test origin for targeted/manual runs and full console access:
+  - Production: `https://test.minicycle.app/tests/module-test-suite.html`
+  - Local: `http://localhost:8081/tests/module-test-suite.html`
+  - Select individual modules from the dropdown.
+- The runner's inline script runs under a relaxed `/tests/*` CSP (`script-src 'unsafe-inline'`),
+  so it needs **no** SHA-256 hash maintenance (unlike `miniCycle.html`).
 
 ---
 
 ## Related Documentation
 
-- **[TESTING_GUIDE.md](../developer-guides/TESTING_GUIDE.md)** - Writing and running tests
-- **[TESTING_README.md](./TESTING_README.md)** - Testing overview
-- **[DEBUG_MODE.md](../developer-guides/DEBUG_MODE.md)** - Debug mode and AppState inspection
+- **[TESTING_GUIDE.md](../developer-guides/TESTING_GUIDE.md)** — Writing and running tests
+- **[TESTING_README.md](./TESTING_README.md)** — Testing overview
+- **[CSP_AND_HTACCESS_GUIDE.md](../security/CSP_AND_HTACCESS_GUIDE.md)** — Framing headers for the test origin
 
 ---
 
-**Last Updated**: January 4, 2026
-**Version**: 1.0
+**Last Updated**: June 28, 2026
+**Version**: 2.0 (separate-origin hermetic runner)

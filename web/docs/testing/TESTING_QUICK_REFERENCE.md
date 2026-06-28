@@ -464,15 +464,18 @@ function createTestDOM() {
 
 ---
 
-### 🔒 localStorage Protection Pattern (CRITICAL!)
+### 🔒 localStorage Protection Pattern (defensive)
 
-**All test files MUST protect user data when running individually!**
+> **Primary protection is now the separate test origin.** The in-app runner executes on
+> `test.minicycle.app` (or `:8081` locally), whose `localStorage`/IndexedDB the browser
+> isolates from real user data — so tests **cannot** touch your data regardless of this
+> pattern. See [TESTING_MODAL.md](./TESTING_MODAL.md).
+>
+> The `isPartOfSuite` pattern below remains as **defense-in-depth**: it only matters if you
+> run a test file directly on an origin that *does* hold real data (e.g. against the live app
+> origin). On the isolated test origin it is a harmless no-op.
 
-#### The Problem
-
-Tests use `localStorage.clear()` to reset state. If you run tests while using the app, your data gets wiped out! 😱
-
-#### The Solution: `isPartOfSuite` Pattern
+#### The Pattern: `isPartOfSuite`
 
 **Every test file should include this pattern:**
 
@@ -521,10 +524,9 @@ export async function runYourModuleTests(resultsDiv, isPartOfSuite = false) {
    - Restores it after tests complete
    - User data is safe! ✅
 
-2. **When running as part of suite** (`isPartOfSuite = true`):
-   - Skips backup/restore (suite handles it globally)
-   - Faster execution
-   - No redundant saves
+2. **When running as part of the suite** (`isPartOfSuite = true`):
+   - Skips per-file backup/restore — the suite runs on the isolated test origin, so there is no real data to protect
+   - Faster execution, no redundant saves
 
 **Benefits:**
 
