@@ -59,6 +59,11 @@ const TEST_RESULTS_STORE = 'results';
 // Note: Test mode flag is managed in IndexedDB by module-test-suite.html
 // appState.js checks IndexedDB directly for testModeActive flag
 
+// How long the parent waits for the iframe's post-restore TEST_CLEANUP_DONE handshake
+// before tearing the iframe down regardless. The iframe's finally-block restore takes
+// ~1.3s; this is a generous backstop. coreBoot recovery is the ultimate net on next load.
+const CLEANUP_HANDSHAKE_TIMEOUT_MS = 8000;
+
 function openTestResultsDB() {
     return new Promise((resolve, reject) => {
         const request = indexedDB.open(TEST_RESULTS_DB, 1);
@@ -336,7 +341,48 @@ async function runAllAutomatedTests() {
 
     // Listen for progress and results via postMessage from iframe
     let resultsReceived = false;
+    let cleanupReceived = false;
+    let cleanupFallbackTimer = null;
+    let lastResultData = null;
     let testStartTime = Date.now();
+
+    // Tear down the iframe and (optionally) re-sync the live app from the restored
+    // localStorage. Called ONLY after cleanup is confirmed — see TEST_CLEANUP_DONE below.
+    // reloadSafe must be true only when the iframe confirmed restore succeeded; otherwise
+    // we leave the parent's in-memory AppState alone (it still holds the user's real,
+    // pre-test data — saves were gated throughout — so reloading from a possibly-corrupt
+    // localStorage would be strictly worse than doing nothing).
+    const finalizeTeardown = (data, reloadSafe) => {
+        window.removeEventListener('message', handleTestMessages);
+        if (cleanupFallbackTimer) {
+            clearTimeout(cleanupFallbackTimer);
+            cleanupFallbackTimer = null;
+        }
+        try {
+            closeTestRunnerModal(); // Removes the iframe + clears stored results
+            displayTestResults(data);
+
+            if (reloadSafe) {
+                // 🔄 Restore confirmed — sync in-memory state with the restored localStorage.
+                const AppState = getAppState();
+                if (AppState?.reload) {
+                    AppState.reload();
+                }
+            } else {
+                console.warn('⚠️ Skipping AppState.reload — restore not confirmed; leaving in-memory user data intact');
+            }
+
+            getShowNotification()(
+                data.allPassed
+                    ? `✅ All ${data.totalTests} tests passed!`
+                    : `⚠️ ${data.totalTests - data.totalPassed} test(s) failed`,
+                data.allPassed ? 'success' : 'warning',
+                5000
+            );
+        } catch (error) {
+            console.warn('⚠️ Post-test processing failed:', error);
+        }
+    };
 
     const handleTestMessages = (event) => {
         if (!event.data || !event.data.type) return;
@@ -382,10 +428,14 @@ async function runAllAutomatedTests() {
             return;
         }
 
-        // Handle final results
+        // Handle final results — update the UI immediately, but do NOT tear down the iframe
+        // yet. The iframe still has to restore the user's real localStorage in its finally
+        // block (a ~1.3s async restore + verify pass); removing the iframe now would abort
+        // that restore. Wait for the explicit TEST_CLEANUP_DONE handshake instead, with a
+        // fallback backstop in case the iframe dies mid-restore.
         if (event.data.type === 'TEST_RESULTS') {
             resultsReceived = true;
-            window.removeEventListener('message', handleTestMessages);
+            lastResultData = event.data;
 
             // Update progress to 100%
             const progressBar = document.getElementById(DOM_IDS.TEST_PROGRESS_BAR);
@@ -405,33 +455,26 @@ async function runAllAutomatedTests() {
                 ? '✅ Tests Complete'
                 : '⚠️ Tests Complete (with failures)';
 
-            // Wait a moment to show completion, then close
-            setTimeout(async () => {
-                try {
-                    closeTestRunnerModal(); // Also clears stored results
-                    displayTestResults(event.data);
-
-                    // Note: Test mode flag (IndexedDB) is cleared by module-test-suite.html
-                    // which also restores localStorage from backup before sending TEST_RESULTS
-
-                    // 🔄 RELOAD AppState from restored localStorage
-                    // This syncs the in-memory state with the restored backup data
-                    const AppState = getAppState();
-                    if (AppState?.reload) {
-                        AppState.reload();
-                    }
-
-                    getShowNotification()(
-                        event.data.allPassed
-                            ? `✅ All ${event.data.totalTests} tests passed!`
-                            : `⚠️ ${event.data.totalTests - event.data.totalPassed} test(s) failed`,
-                        event.data.allPassed ? 'success' : 'warning',
-                        5000
-                    );
-                } catch (error) {
-                    console.warn('⚠️ Post-test processing failed:', error);
+            // Backstop: if the cleanup handshake never arrives (e.g. iframe died mid-restore),
+            // tear down anyway after a grace period — without reloading AppState, since restore
+            // wasn't confirmed. Next-load coreBoot recovery is the final safety net.
+            cleanupFallbackTimer = setTimeout(() => {
+                if (!cleanupReceived) {
+                    console.warn('⚠️ TEST_CLEANUP_DONE not received within grace period — tearing down without AppState reload');
+                    finalizeTeardown(lastResultData, false);
                 }
-            }, 1500);
+            }, CLEANUP_HANDSHAKE_TIMEOUT_MS);
+            return;
+        }
+
+        // Cleanup handshake — the iframe has finished restoring real user data, verified it,
+        // and cleared the test-mode flags. NOW it's safe to remove the iframe and (only if
+        // restore was verified) reload state from the restored localStorage.
+        if (event.data.type === 'TEST_CLEANUP_DONE') {
+            cleanupReceived = true;
+            // Brief pause so the ✅ completion state stays visible, then tear down.
+            setTimeout(() => finalizeTeardown(lastResultData, event.data.restorationVerified === true), 600);
+            return;
         }
     };
     window.addEventListener('message', handleTestMessages);

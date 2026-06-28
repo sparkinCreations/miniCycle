@@ -2901,10 +2901,12 @@
                 console.error('❌ Fatal error during test execution:', error);
                 resultsDiv.innerHTML += `<div class="result fail">❌ Fatal error: ${error.message}</div>`;
             } finally {
-                // 🔒 Clear cross-window test flag so other tabs resume sync
-                localStorage.removeItem('__miniCycle_testRunning');
-
                 // 🛡️ RESTORE ORIGINAL handlers FIRST to stop test interference
+                // NOTE: __miniCycle_testRunning is deliberately NOT cleared here. It must stay
+                // set through the ENTIRE restore so the live parent app's synchronous save-gate
+                // (appState.scheduleSave) keeps suppressing writes until real user data is back
+                // on disk. It is cleared only after restoration is verified (see below), or left
+                // set on failure so next-load coreBoot recovery stays gated.
                 window.onbeforeunload = originalBeforeUnload;
                 window.setTimeout = originalSetTimeout;
                 localStorage.clear = originalLocalStorageClear;
@@ -2968,9 +2970,16 @@
                     // Clear backup - no longer needed since restoration verified
                     await clearLocalStorageBackup();
                     console.log('💾 IndexedDB backup cleared - restoration verified successful');
+
+                    // 🔒 Real data is back on disk — NOW release the cross-window save-gate so
+                    // the parent app and other tabs resume normal persistence. Deferred to here
+                    // (not the top of finally) so the parent stayed gated through the whole restore.
+                    localStorage.removeItem('__miniCycle_testRunning');
                 } else {
                     console.warn('%c⚠️ KEEPING BACKUP - restoration not verified, backup preserved for next refresh', 'background: orange; color: black; padding: 2px 6px;');
                     console.warn('   On next page load, appState.js will attempt to restore from this backup');
+                    // ⚠️ Intentionally leave __miniCycle_testRunning SET so the parent's save-gate
+                    // stays up until next-load coreBoot recovery restores the real data.
                 }
 
                 // 🔍 INDEXEDDB BACKUP VALIDATION SUMMARY
@@ -2991,6 +3000,24 @@
                 const urlParams = new URLSearchParams(window.location.search);
                 const isAutorun = urlParams.get('autorun') === 'true';
                 const isEmbedded = urlParams.get('embedded') === 'true';
+
+                // 📤 EMBEDDED: tell the parent that cleanup (restore + verify + flag clear) is
+                // fully done. Only now is it safe for the parent to remove this iframe and
+                // reload AppState from the restored localStorage. Sent AFTER the restore — unlike
+                // TEST_RESULTS, which is posted earlier for immediate UI feedback. restorationVerified
+                // tells the parent whether reloading from localStorage is safe.
+                if (isEmbedded && window.parent !== window) {
+                    try {
+                        window.parent.postMessage({
+                            type: 'TEST_CLEANUP_DONE',
+                            restorationVerified,
+                            timestamp: Date.now()
+                        }, '*');
+                        console.log('📤 Sent TEST_CLEANUP_DONE to parent (restore complete, verified=' + restorationVerified + ')');
+                    } catch (e) {
+                        console.warn('Could not post TEST_CLEANUP_DONE:', e);
+                    }
+                }
 
                 if (isAutorun && !isEmbedded && window.opener) {
                     console.log('🔄 Reloading opener to ensure clean state...');
