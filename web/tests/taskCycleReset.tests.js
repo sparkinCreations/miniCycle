@@ -84,6 +84,62 @@ export async function runTaskCycleResetTests(resultsDiv) {
     });
 
     // ============================================
+    resultsDiv.innerHTML += '<h4 class="test-section">🗑️ Clear Completed — state-driven (§1.1)</h4>';
+
+    // Regression — ARCH REVIEW FINDINGS §1.1: To-Do "Clear Completed" must decide which
+    // tasks to delete from STATE (task.completed), not the DOM checkbox. Build a deliberate
+    // divergence so the two sources disagree:
+    //   A: completed in STATE, checkbox UNCHECKED   → must be DELETED
+    //   B: NOT completed in STATE, checkbox CHECKED → must be KEPT
+    // (Both have deleteWhenComplete=true.) Reading the checkbox would invert the outcome.
+    await test('deleteCompletedTasksImpl reads completion from state, not the DOM checkbox (§1.1)', async () => {
+        const container = document.createElement('div');
+        container.id = 'test-clear-completed-state';
+        const taskList = document.createElement('ul');
+        const mkRow = (id, checked) => {
+            const li = document.createElement('li');
+            li.className = 'task';
+            li.dataset.taskId = id;
+            const cb = document.createElement('input');
+            cb.type = 'checkbox';
+            cb.checked = checked;
+            li.appendChild(cb);
+            return li;
+        };
+        taskList.appendChild(mkRow('A', false)); // completed in state, but checkbox unchecked
+        taskList.appendChild(mkRow('B', true));  // incomplete in state, but checkbox checked
+        container.appendChild(taskList);
+        document.body.appendChild(container);
+
+        const stateObj = {
+            appState: { activeCycleId: 'c1' },
+            data: { cycles: { c1: { tasks: [
+                { id: 'A', text: 'A', completed: true,  deleteWhenComplete: true },
+                { id: 'B', text: 'B', completed: false, deleteWhenComplete: true }
+            ] } } },
+            userProgress: {}
+        };
+        let updatedTasks = null;
+        const AppState = {
+            isReady: () => true,
+            get: () => stateObj,
+            update: async (producer) => { producer(stateObj); updatedTasks = stateObj.data.cycles.c1.tasks; return stateObj; }
+        };
+
+        try {
+            await mod.deleteCompletedTasksImpl('c1', stateObj.data.cycles.c1, taskList, { AppState });
+
+            const ids = (updatedTasks || []).map(t => t.id);
+            if (ids.includes('A')) throw new Error('Task A (completed in STATE) should have been deleted');
+            if (!ids.includes('B')) throw new Error('Task B (incomplete in STATE) should have been kept');
+            if (ids.length !== 1) throw new Error(`Expected exactly 1 task remaining, got ${ids.length}: [${ids}]`);
+        } finally {
+            mod.clearAllTimeouts(); // cancel pending clear-animation timeouts
+            container.remove();
+        }
+    });
+
+    // ============================================
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;
     if (passed.count === total.count) {

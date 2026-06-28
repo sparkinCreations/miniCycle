@@ -633,8 +633,12 @@ export async function deleteCompletedTasksImpl(activeCycleId, cycleData, taskLis
     const processTaskElement = (taskElement) => {
         const taskId = taskElement.dataset.taskId;
         const task = cycleData.tasks?.find(t => t.id === taskId);
-        const checkbox = taskElement.querySelector(DOM_SELECTORS.TASK_CHECKBOX);
-        const isCompleted = checkbox?.checked || false;
+        // §1.1: read completion from STATE, not the DOM checkbox. The cycle-reset path
+        // reads task.completed; this To-Do "Clear Completed" path must match it. Reading the
+        // checkbox is a second source of truth — any path that sets completed in state
+        // without touching the checkbox (bulk action, async re-render, undo restore) would
+        // make Clear Completed delete or skip the wrong tasks. See ARCH REVIEW FINDINGS §1.1.
+        const isCompleted = task?.completed === true;
 
         if (isCompleted && task?.deleteWhenComplete === true) {
             tasksToDelete.push({ taskId, taskElement });
