@@ -206,9 +206,42 @@ export class TaskRenderer {
 
         // Only replace DOM if all tasks rendered successfully
         if (renderSuccess) {
-            // ✅ Atomic DOM update: replaceChildren swaps all children in one reflow
-            // This is more efficient than innerHTML = "" followed by appendChild
-            taskList.replaceChildren(...fragment.childNodes);
+            // ✅ Atomic DOM update. When the completed dropdown is enabled, project BOTH lists
+            // from state in one pass: partition the freshly-built nodes by task.completed and
+            // replaceChildren each list. This makes the dropdown a projection of state rather
+            // than a re-sort of the active list AFTER the fact (the seam that produced the
+            // duplicate-in-completed bug). See docs/future-work/RENDER_PATH_UNIFICATION.md.
+            const ctm = this.deps.completedTasksManager;
+            const completedList = this.deps.getElementById(DOM_IDS.COMPLETED_TASK_LIST);
+            const dropdownEnabled = !!(completedList && ctm?.isEnabled?.());
+
+            if (dropdownEnabled) {
+                const completedById = new Map(tasksArray.map(t => [t.id, t?.completed === true]));
+                const activeFrag = document.createDocumentFragment();
+                const completedFrag = document.createDocumentFragment();
+
+                Array.from(fragment.childNodes).forEach(node => {
+                    const id = node.dataset?.taskId;
+                    if (id && completedById.get(id)) {
+                        ctm.prepareCompletedNode?.(node);
+                        completedFrag.appendChild(node);
+                    } else {
+                        activeFrag.appendChild(node);
+                    }
+                });
+
+                taskList.replaceChildren(...activeFrag.childNodes);
+                completedList.replaceChildren(...completedFrag.childNodes);
+                ctm.updateCount?.(); // count badge + section show/hide
+            } else {
+                // ✅ Atomic DOM update: replaceChildren swaps all children in one reflow
+                taskList.replaceChildren(...fragment.childNodes);
+                // Feature off: clear any completed nodes left over from a prior enabled render.
+                if (completedList && completedList.childElementCount > 0) {
+                    completedList.replaceChildren();
+                    ctm?.updateCount?.();
+                }
+            }
 
             // Toggle tasks-empty class on body for shimmer effect
             // Uses managed class instead of :has(.task-list:empty) for PWA reliability
@@ -243,8 +276,10 @@ export class TaskRenderer {
         // Restore active task options from state (state-driven UI)
         this._restoreActiveTaskOptions();
 
-        // Re-organize completed tasks into dropdown (if feature enabled)
-        this.deps.organizeCompletedTasks?.();
+        // Note: the completed-tasks dropdown is now projected from state during the atomic
+        // swap above (render-path unification). organize() is no longer needed here — it
+        // remains only for PATCH renders (undo/redo un-complete updates a checkbox in place
+        // without re-rendering), where its dedup/up-direction logic is still load-bearing.
 
         // Update task search visibility based on count
         this.deps.updateSearchVisibility?.(tasksArray.length);

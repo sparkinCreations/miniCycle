@@ -593,9 +593,15 @@ function runPostInitInjections(deps) {
         }
     }
 
-    // Inject organizeCompletedTasks into TaskRenderer (re-sort after full re-render)
+    // Inject completed-tasks wiring into TaskRenderer.
+    // - completedTasksManager instance: lets renderTasks project BOTH lists from state during
+    //   the atomic swap (isEnabled / prepareCompletedNode / updateCount) — render-path unification.
+    // - organizeCompletedTasks: retained for patch renders (undo/redo) that move nodes in place.
     if (deps.task?.taskDOMManager?.renderer && deps.ui?.completedTasksManager) {
         if (typeof deps.task.taskDOMManager.renderer.injectDependency === 'function') {
+            deps.task.taskDOMManager.renderer.injectDependency('completedTasksManager',
+                deps.ui.completedTasksManager
+            );
             deps.task.taskDOMManager.renderer.injectDependency('organizeCompletedTasks',
                 () => deps.ui.completedTasksManager.organize?.()
             );

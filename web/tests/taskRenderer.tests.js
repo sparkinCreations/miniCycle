@@ -244,6 +244,115 @@ export async function runTaskRendererTests(resultsDiv) {
     });
 
     // ============================================
+    // 🪺 Render-path unification (completed dropdown projected from state)
+    // ============================================
+
+    // When the dropdown is enabled, renderTasks must partition the freshly-built nodes by
+    // STATE (task.completed) into the active list vs the completed list in one atomic swap —
+    // not render everything into the active list and re-sort afterward. This is the
+    // structural fix for the duplicate-in-completed seam.
+    await test('renderTasks projects completed tasks into the dropdown from state', async () => {
+        const taskList = document.createElement('ul');
+        const completedList = document.createElement('ul');
+        document.body.append(taskList, completedList);
+
+        const prepped = [];
+        let countUpdated = false;
+        const ctm = {
+            isEnabled: () => true,
+            prepareCompletedNode: (node) => { node.setAttribute('draggable', 'false'); prepped.push(node.dataset.taskId); },
+            updateCount: () => { countUpdated = true; }
+        };
+
+        const renderer = new TaskRenderer(createMockDependencies({
+            getElementById: (id) => id === 'taskList' ? taskList : (id === 'completedTaskList' ? completedList : null),
+            taskToAddTaskOptions: (task) => ({ __id: task.id }),
+            addTask: async (text, options) => {
+                const li = document.createElement('li');
+                li.className = 'task';
+                li.dataset.taskId = options.__id;
+                li.setAttribute('draggable', 'true');
+                (options.targetContainer || document.body).appendChild(li);
+            }
+        }));
+        // completedTasksManager is late-injected in the real app (not a constructor dep)
+        renderer.injectDependency('completedTasksManager', ctm);
+
+        try {
+            await renderer.renderTasks([
+                { id: 'A', text: 'A', completed: true },
+                { id: 'B', text: 'B', completed: false },
+                { id: 'C', text: 'C', completed: true }
+            ]);
+
+            const activeIds = [...taskList.querySelectorAll('.task')].map(n => n.dataset.taskId);
+            const completedIds = [...completedList.querySelectorAll('.task')].map(n => n.dataset.taskId).sort();
+
+            if (activeIds.join(',') !== 'B') {
+                throw new Error(`Active list should hold only the incomplete task [B], got [${activeIds}]`);
+            }
+            if (completedIds.join(',') !== 'A,C') {
+                throw new Error(`Completed dropdown should hold [A,C], got [${completedIds}]`);
+            }
+            if (prepped.sort().join(',') !== 'A,C') {
+                throw new Error(`prepareCompletedNode should run on A,C, got [${prepped}]`);
+            }
+            if (completedList.querySelector('[data-task-id="A"]').getAttribute('draggable') !== 'false') {
+                throw new Error('Completed node should be non-draggable');
+            }
+            if (!countUpdated) throw new Error('updateCount should be called after the swap');
+        } finally {
+            taskList.remove();
+            completedList.remove();
+        }
+    });
+
+    // Re-rendering the SAME state must never duplicate: each full render rebuilds both lists
+    // atomically, so a completed task can't accumulate copies in the dropdown.
+    await test('repeated renderTasks does not duplicate completed nodes (dup regression)', async () => {
+        const taskList = document.createElement('ul');
+        const completedList = document.createElement('ul');
+        document.body.append(taskList, completedList);
+
+        const ctm = {
+            isEnabled: () => true,
+            prepareCompletedNode: (node) => node.setAttribute('draggable', 'false'),
+            updateCount: () => {}
+        };
+        const renderer = new TaskRenderer(createMockDependencies({
+            getElementById: (id) => id === 'taskList' ? taskList : (id === 'completedTaskList' ? completedList : null),
+            taskToAddTaskOptions: (task) => ({ __id: task.id }),
+            addTask: async (text, options) => {
+                const li = document.createElement('li');
+                li.className = 'task';
+                li.dataset.taskId = options.__id;
+                (options.targetContainer || document.body).appendChild(li);
+            }
+        }));
+        renderer.injectDependency('completedTasksManager', ctm);
+
+        const state = [
+            { id: 'A', text: 'A', completed: true },
+            { id: 'B', text: 'B', completed: false }
+        ];
+        try {
+            await renderer.renderTasks(state);
+            await renderer.renderTasks(state); // full re-render of the same state
+            await renderer.renderTasks(state);
+
+            if (completedList.querySelectorAll('[data-task-id="A"]').length !== 1) {
+                throw new Error('Completed task A duplicated across re-renders');
+            }
+            if (taskList.querySelectorAll('.task').length !== 1) {
+                throw new Error(`Active list should hold exactly 1 task, got ${taskList.querySelectorAll('.task').length}`);
+            }
+        } finally {
+            taskList.remove();
+            completedList.remove();
+        }
+    });
+
+    // ============================================
     // 📊 RESULTS
     // ============================================
     const percentage = Math.round((passed.count / total.count) * 100);
