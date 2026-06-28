@@ -1,3 +1,9 @@
+## [2.264] - 2026-06-28
+- fix(routine): repair non-boolean deleteWhenComplete mode value on load (review §2.4)
+- refactor(clear): extract buildClearedRecord + _buildClearedEntry helpers (review §2.3)
+- refactor(recurring): extract shared recreateDueTasks + buildRecurringInstance (review §2.1/§2.2)
+
+
 ## [2.263] - 2026-06-28
 - fix(clear): drive To-Do Clear Completed from state, not DOM checkbox (review §1.1)
 - fix(undo): keep recurring-watcher recreations out of undo history (review §1.2)
