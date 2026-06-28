@@ -185,6 +185,64 @@ export async function runDIWiringTests(resultsDiv, isPartOfSuite = false) {
     });
 
     // =====================================================
+    // TEST 6: No two modules provide the same API name
+    // =====================================================
+    // Provider-side gap the consumer checks above can't see: if two modules each
+    // declare the same name in provides/provideInstance, the loader registers both
+    // into deps[group][name] and the LAST one silently wins — the earlier provider
+    // is shadowed with no error. Consumers then get whichever module happened to load
+    // last. This catches that collision class.
+    resultsDiv.innerHTML += '<h4 class="test-section">🔀 Provider Name Collisions</h4>';
+
+    const providerOwners = new Map(); // name -> Set<moduleName>
+    for (const [moduleName, manifest] of Object.entries(MODULE_MANIFESTS)) {
+        const names = [
+            ...(manifest.provides || []),
+            ...(manifest.provideInstance ? [manifest.provideInstance] : [])
+        ];
+        for (const name of names) {
+            if (!providerOwners.has(name)) providerOwners.set(name, new Set());
+            providerOwners.get(name).add(moduleName); // Set → a module declaring a name in
+                                                      // both provides[] and provideInstance
+                                                      // counts once, not as a self-collision.
+        }
+    }
+
+    // Baseline of KNOWN duplicate-provides as of this guard's introduction. Each is a
+    // manifest-hygiene smell (a name declared in two modules' provides) that is NOT an
+    // active runtime bug — the canonical depMappings route disambiguates every one:
+    //   - statsPanel redundantly re-declares the three modal openers, but depMappings
+    //     routes each to the dedicated manager (deps.features.<manager>.openModal).
+    //   - taskDOM (deps.task) and taskUI (deps.ui) both export refreshTaskListUI in
+    //     DIFFERENT groups; the canonical route deps.task.refreshTaskListUI gets taskDOM's.
+    // Documented debt to clean up (remove the redundant provides); the guard's job is to
+    // stop NEW collisions slipping in. Burn this list down — don't add to it.
+    const KNOWN_COLLISIONS = new Set([
+        'openHistoryModal',
+        'openClearedTasksModal',
+        'openAchievementsModal',
+        'refreshTaskListUI'
+    ]);
+
+    const collisions = [...providerOwners.entries()]
+        .filter(([name, owners]) => owners.size > 1 && !KNOWN_COLLISIONS.has(name))
+        .map(([name, owners]) => [name, [...owners]]);
+
+    await test('No NEW provider name is declared by more than one module', () => {
+        if (collisions.length > 0) {
+            const details = collisions
+                .map(([name, owners]) => `"${name}" provided by: ${owners.join(', ')}`)
+                .join('\n');
+            throw new Error(
+                `${collisions.length} new provider name collision(s) — two modules register the same ` +
+                `name; if they share a deps group the last to load silently shadows the other. ` +
+                `Rename, consolidate, or (if intentional & disambiguated by depMappings) add to ` +
+                `KNOWN_COLLISIONS with a note:\n${details}`
+            );
+        }
+    });
+
+    // =====================================================
     // SUMMARY
     // =====================================================
     const percentage = Math.round((passed.count / total.count) * 100);
