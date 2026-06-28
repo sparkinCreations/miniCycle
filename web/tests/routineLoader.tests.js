@@ -258,6 +258,40 @@ export async function runRoutineLoaderTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
+    // Regression — ARCH REVIEW FINDINGS §2.4 (hardening): when a task's
+    // deleteWhenCompleteSettings exists but lacks a boolean value for the CURRENT mode,
+    // the load-time sync must repair to defaults rather than derive `undefined` and write
+    // it to deleteWhenComplete. Cycle mode (deleteCheckedTasks=false → currentMode='cycle')
+    // with settings carrying only a 'todo' key reproduces the edge case.
+    await test('repairs deleteWhenComplete when the current mode value is missing/non-boolean (§2.4)', () => {
+        const cycle = {
+            title: 'T', cycleCount: 0, autoReset: true, deleteCheckedTasks: false,
+            tasks: [
+                {
+                    id: 'task1', text: 'Task 1', completed: false,
+                    deleteWhenComplete: true,
+                    deleteWhenCompleteSettings: { todo: true } // no boolean 'cycle' key
+                }
+            ]
+        };
+
+        const result = repairAndCleanTasks(cycle);
+        const task = cycle.tasks[0];
+
+        if (typeof task.deleteWhenCompleteSettings.cycle !== 'boolean') {
+            throw new Error('Missing/non-boolean current-mode setting should be repaired to a boolean');
+        }
+        if (typeof task.deleteWhenComplete !== 'boolean') {
+            throw new Error(`deleteWhenComplete must stay a boolean, got ${task.deleteWhenComplete}`);
+        }
+        if (task.deleteWhenComplete !== task.deleteWhenCompleteSettings.cycle) {
+            throw new Error('deleteWhenComplete must equal the repaired current-mode setting');
+        }
+        if (!result.wasModified) {
+            throw new Error('Repair should flag wasModified');
+        }
+    });
+
     // === DOM RENDERING TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">🎨 DOM Rendering</h4>';
 
