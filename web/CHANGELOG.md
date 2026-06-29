@@ -1,3 +1,7 @@
+## [2.267] - 2026-06-28
+- fix(testing): drop dead IndexedDB result-store in runner that hung completion before TEST_RESULTS (modal never closed)
+
+
 ## [2.266] - 2026-06-28
 - docs(testing): document hermetic separate-origin test runner; remove stale protection-stack docs
 - refactor(testing): remove now-dead test-data protection stack (hermetic, phase B)
