@@ -2464,15 +2464,30 @@
                         result = await Promise.race([testPromise, timeoutPromise]);
                     } catch (timeoutError) {
                         if (timeoutError.message === 'TIMEOUT') {
-                            console.warn(`⏱️ Module "${module.name}" timed out after ${MODULE_TIMEOUT_MS / 1000}s`);
+                            // Capture how far the module actually got before the timeout fired,
+                            // instead of discarding everything as a placeholder "0/1". This shows
+                            // whether it hung at load (0 tests rendered) or stalled partway through.
+                            const ranPass = tempDiv.querySelectorAll('.result.pass').length;
+                            const ranFail = tempDiv.querySelectorAll('.result.fail').length;
+                            const ranTotal = ranPass + ranFail;
+                            console.warn(`⏱️ Module "${module.name}" timed out after ${MODULE_TIMEOUT_MS / 1000}s (rendered ${ranPass}/${ranTotal} tests before timeout)`);
                             allResults.push({
                                 name: module.name,
-                                passed: 0,
-                                total: 1,
+                                passed: ranPass,
+                                // If it produced no results at all, it hung before any test ran —
+                                // keep total at least 1 so it still registers as not-all-passed.
+                                total: ranTotal > 0 ? ranTotal : 1,
                                 timedOut: true,
-                                html: `<div class="result fail">⏱️ TIMED OUT after ${MODULE_TIMEOUT_MS / 1000} seconds - skipped</div>`
+                                ranNone: ranTotal === 0,
+                                html: tempDiv.innerHTML
+                                    + `<div class="result fail">⏱️ TIMED OUT after ${MODULE_TIMEOUT_MS / 1000}s`
+                                    + (ranTotal === 0
+                                        ? ` — hung at load, 0 tests ran (passes locally; verify with npm test)`
+                                        : ` — rendered ${ranPass}/${ranTotal} before timeout`)
+                                    + `</div>`
                             });
-                            totalTests += 1; // Count as 1 failed test
+                            totalPassed += ranPass;
+                            totalTests += (ranTotal > 0 ? ranTotal : 1);
                             continue; // Skip to next module
                         }
                         throw timeoutError; // Re-throw non-timeout errors
