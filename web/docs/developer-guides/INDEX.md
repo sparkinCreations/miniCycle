@@ -131,6 +131,16 @@
 - Security checklist
 - Event flow & UI state patterns
 
+#### [ERROR_RECOVERY.md](./ERROR_RECOVERY.md)
+**What it is**: How the app survives optional-feature load failures and corrupted localStorage
+**Read if**: You're touching boot, AppState data loading, or `moduleLoader` error paths
+**Time**: 10 minutes
+
+**Topics:**
+- Degraded mode + `<html data-degraded-mode>` hook (`featureAvailability`)
+- Corrupted-data salvage + `miniCycleData_corrupted_*` backups (`dataRecovery`)
+- Why both modules stay pure/sync and outside DI (boot-path, pre-wiring)
+
 #### [API_REFERENCE.md](./API_REFERENCE.md)
 **What it is**: Complete API documentation
 **Read if**: You need to know what functions are available

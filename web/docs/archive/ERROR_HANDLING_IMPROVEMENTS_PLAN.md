@@ -1,5 +1,10 @@
 # Error Handling Improvements Plan
 
+> 📦 **ARCHIVED (Jun 2026).** Full original 5-phase plan, kept for the detailed Phase 3–5
+> implementation specs. Phases 1–2 are implemented — see
+> [`../developer-guides/ERROR_RECOVERY.md`](../developer-guides/ERROR_RECOVERY.md). The open
+> Phase 3–5 remainder lives in [`../future-work/ERROR_HANDLING_PHASES_3_5.md`](../future-work/ERROR_HANDLING_PHASES_3_5.md).
+
 **Date:** December 23, 2025
 **Status:** Phases 1–2 ✅ IMPLEMENTED (Jun 2026) · Phases 3–5 deferred
 **Priority:** High

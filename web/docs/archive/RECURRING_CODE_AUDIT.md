@@ -1,5 +1,9 @@
 # Recurring Tasks — Code Audit
 
+> 📦 **ARCHIVED (Jun 2026).** P1 + all 12 P2 items resolved. The remaining 12 P3 Low items were
+> carved out into the active doc [`../future-work/RECURRING_TASKS_P3_FOLLOWUP.md`](../future-work/RECURRING_TASKS_P3_FOLLOWUP.md).
+> This file is kept as the full audit record.
+
 > Audit date: Feb 28, 2026
 > Last updated: Jun 29, 2026
 > Scope: All 15 files in `modules/recurring/` + `styles/components/recurring.css` + boot wiring

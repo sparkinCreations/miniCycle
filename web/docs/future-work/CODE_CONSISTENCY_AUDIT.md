@@ -113,7 +113,9 @@ Three strategies with no documented policy:
 
 Modules with `console.log` in catch blocks (`recurringIntegration.js:383-432`) should be updated to use `console.warn` with the `⚠️` prefix for consistency.
 
-See `ERROR_HANDLING_IMPROVEMENTS_PLAN.md` for the full 5-phase improvement roadmap.
+See [`../archive/ERROR_HANDLING_IMPROVEMENTS_PLAN.md`](../archive/ERROR_HANDLING_IMPROVEMENTS_PLAN.md)
+for the full 5-phase roadmap (Phases 1–2 shipped Jun 2026; the open Phase 3–5 remainder is in
+[`ERROR_HANDLING_PHASES_3_5.md`](ERROR_HANDLING_PHASES_3_5.md)).
 
 ---
 
