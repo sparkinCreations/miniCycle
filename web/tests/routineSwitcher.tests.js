@@ -530,6 +530,10 @@ export async function runRoutineSwitcherTests(resultsDiv, isPartOfSuite = false)
         // Mock hideSwitchMiniCycleModal
         instance.hideSwitchMiniCycleModal = () => {};
 
+        // Selection is now driven by the tracked source of truth, not the `.selected` DOM
+        // class (which is only a projection). Establish it the way production does.
+        instance._selectedCycleKey = 'Evening Routine';
+
         instance.confirmMiniCycle();
 
         // Wait for setTimeout
