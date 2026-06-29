@@ -2451,13 +2451,62 @@
                     // Create a temporary div for results
                     const tempDiv = document.createElement('div');
 
-                    // Run the tests with a 30-second timeout per module
-                    const MODULE_TIMEOUT_MS = 30000;
+                    // Run the tests with a 30-second budget per module — but a budget
+                    // measured in VISIBLE time, not wall-clock.
+                    //
+                    // ⚠️ Background-tab caveat (the cause of false "0/1" timeouts): when
+                    // this tab is hidden, the browser PAUSES requestAnimationFrame and
+                    // throttles setTimeout to multi-second intervals. Tests that await rAF
+                    // (e.g. HeaderLayoutManager) then hang forever, and timer-heavy tests
+                    // (e.g. RoutineManager) balloon past any fixed wall-clock timeout — so a
+                    // suite run the user tabbed away from reports modules as timed-out even
+                    // though they pass with the tab focused. To stop punishing the tests for
+                    // the browser pausing them, the budget below only advances while
+                    // document.visibilityState === 'visible'; it pauses while hidden (so a
+                    // tab-away-then-back run resumes and completes normally). A hard
+                    // wall-clock cap is the safety net so an abandoned hidden run can't hang
+                    // the whole suite forever, and a run that DID go hidden is labelled as
+                    // such instead of as a confusing timeout.
+                    const MODULE_TIMEOUT_MS = 30000;          // budget of VISIBLE time
+                    const MODULE_WALLCLOCK_CAP_MS = 300000;   // 5 min hard cap (abandoned-hidden-run safety net)
                     let result;
 
+                    // Visible-time accumulator, driven by visibilitychange so paused
+                    // (hidden) time never counts toward the budget. In an iframe the Page
+                    // Visibility state mirrors the top-level tab, so this tracks the real
+                    // browser pause/throttle that breaks the timing-sensitive tests.
+                    let visibleAccum = 0;
+                    let segStart = document.hidden ? null : performance.now();
+                    let wasHiddenDuringRun = document.hidden;
+                    const onVisibility = () => {
+                        const now = performance.now();
+                        if (document.hidden) {
+                            wasHiddenDuringRun = true;
+                            if (segStart !== null) { visibleAccum += now - segStart; segStart = null; }
+                        } else if (segStart === null) {
+                            segStart = now;
+                        }
+                    };
+                    document.addEventListener('visibilitychange', onVisibility);
+                    const visibleElapsed = () => visibleAccum + (segStart !== null ? performance.now() - segStart : 0);
+
+                    const wallStart = performance.now();
                     const testPromise = module.runFn(tempDiv, true);
+                    let settled = false;
                     const timeoutPromise = new Promise((_, reject) => {
-                        setTimeout(() => reject(new Error('TIMEOUT')), MODULE_TIMEOUT_MS);
+                        // Poll (instead of one fixed setTimeout) so the budget can pause
+                        // while hidden. The poll timer is itself throttled while hidden —
+                        // which is fine, we don't want to count that time anyway.
+                        const poll = () => {
+                            if (settled) return;
+                            if (visibleElapsed() >= MODULE_TIMEOUT_MS ||
+                                (performance.now() - wallStart) >= MODULE_WALLCLOCK_CAP_MS) {
+                                reject(new Error('TIMEOUT'));
+                                return;
+                            }
+                            setTimeout(poll, 500);
+                        };
+                        setTimeout(poll, 500);
                     });
 
                     try {
@@ -2470,7 +2519,14 @@
                             const ranPass = tempDiv.querySelectorAll('.result.pass').length;
                             const ranFail = tempDiv.querySelectorAll('.result.fail').length;
                             const ranTotal = ranPass + ranFail;
-                            console.warn(`⏱️ Module "${module.name}" timed out after ${MODULE_TIMEOUT_MS / 1000}s (rendered ${ranPass}/${ranTotal} tests before timeout)`);
+                            // A run that went hidden almost certainly produced a FALSE timeout
+                            // (rAF paused / timers throttled) — surface it as actionable, not a hang.
+                            const backgrounded = wasHiddenDuringRun || document.hidden;
+                            if (backgrounded) {
+                                console.warn(`⏸️ Module "${module.name}" timed out while this tab was BACKGROUNDED (rendered ${ranPass}/${ranTotal}). Re-run with the tab focused — backgrounding pauses requestAnimationFrame and throttles timers; this is not a real failure.`);
+                            } else {
+                                console.warn(`⏱️ Module "${module.name}" timed out after ${MODULE_TIMEOUT_MS / 1000}s of visible time (rendered ${ranPass}/${ranTotal} tests before timeout)`);
+                            }
                             allResults.push({
                                 name: module.name,
                                 passed: ranPass,
@@ -2478,12 +2534,16 @@
                                 // keep total at least 1 so it still registers as not-all-passed.
                                 total: ranTotal > 0 ? ranTotal : 1,
                                 timedOut: true,
+                                backgrounded,
                                 ranNone: ranTotal === 0,
                                 html: tempDiv.innerHTML
-                                    + `<div class="result fail">⏱️ TIMED OUT after ${MODULE_TIMEOUT_MS / 1000}s`
-                                    + (ranTotal === 0
-                                        ? ` — hung at load, 0 tests ran (passes locally; verify with npm test)`
-                                        : ` — rendered ${ranPass}/${ranTotal} before timeout`)
+                                    + `<div class="result fail">${backgrounded ? '⏸️' : '⏱️'} `
+                                    + (backgrounded
+                                        ? `Timed out while this tab was in the BACKGROUND — re-run with the tab focused. Backgrounding pauses requestAnimationFrame and throttles timers, so timing-sensitive modules stall; this is not a real failure (rendered ${ranPass}/${ranTotal}).`
+                                        : `TIMED OUT after ${MODULE_TIMEOUT_MS / 1000}s`
+                                          + (ranTotal === 0
+                                              ? ` — hung at load, 0 tests ran (passes locally; verify with npm test)`
+                                              : ` — rendered ${ranPass}/${ranTotal} before timeout`))
                                     + `</div>`
                             });
                             totalPassed += ranPass;
@@ -2491,6 +2551,9 @@
                             continue; // Skip to next module
                         }
                         throw timeoutError; // Re-throw non-timeout errors
+                    } finally {
+                        settled = true;
+                        document.removeEventListener('visibilitychange', onVisibility);
                     }
 
                     // Store results
@@ -2549,6 +2612,11 @@
                     statusText = 'SKIPPED';
                     rowBg = isDarkMode ? '#3a3a5a' : '#f0f0f0';
                     rowText = isDarkMode ? '#aaaaaa' : '#888888';
+                } else if (result.backgrounded) {
+                    statusEmoji = '⏸️';
+                    statusText = 'BACKGROUNDED';
+                    rowBg = isDarkMode ? '#312e81' : '#e0e7ff'; // Indigo — distinct from a real timeout
+                    rowText = isDarkMode ? '#c7d2fe' : '#3730a3';
                 } else if (result.timedOut) {
                     statusEmoji = '⏱️';
                     statusText = 'TIMEOUT';
@@ -2612,8 +2680,13 @@
                             name: m.name,
                             passed: m.passed,
                             total: m.total,
-                            error: m.error
+                            error: m.error,
+                            timedOut: m.timedOut,
+                            backgrounded: m.backgrounded
                         })),
+                        // True if ANY module timed out while the tab was hidden — the parent
+                        // shows a "re-run focused" hint instead of treating these as real bugs.
+                        anyBackgrounded: failedModules.some(m => m.backgrounded),
                         timestamp: Date.now()
                     };
 

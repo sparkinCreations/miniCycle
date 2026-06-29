@@ -48,7 +48,7 @@ function setupAutomatedTestingFunctions() {
 
 // Display test results in the output area
 function displayTestResults(resultData) {
-    const { totalPassed, totalTests, duration, allPassed, failedModules } = resultData;
+    const { totalPassed, totalTests, duration, allPassed, failedModules, anyBackgrounded } = resultData;
 
     // Clear any waiting message
     const output = getAutomatedTestOutput();
@@ -68,11 +68,25 @@ function displayTestResults(resultData) {
         appendToAutomatedTestResults(`Failed modules:\n`);
         failedModules.forEach(m => {
             const errorMsg = m.error ? ` - ${m.error}` : '';
-            appendToAutomatedTestResults(`  ❌ ${m.name}: ${m.passed}/${m.total}${errorMsg}\n`);
+            if (m.backgrounded) {
+                // Not a real failure — the tab was hidden, so the browser paused
+                // requestAnimationFrame / throttled timers and the module stalled.
+                appendToAutomatedTestResults(`  ⏸️ ${m.name}: ${m.passed}/${m.total} — stalled while tab was backgrounded (not a real failure)\n`);
+            } else {
+                appendToAutomatedTestResults(`  ❌ ${m.name}: ${m.passed}/${m.total}${errorMsg}\n`);
+            }
         });
+        if (anyBackgrounded) {
+            appendToAutomatedTestResults(`\n⏸️ One or more modules stalled because this tab was in the background. Browsers pause animation frames and throttle timers for hidden tabs — re-run with this tab kept in the foreground (don't switch tabs/apps during the run) and they should pass.\n`);
+        }
         appendToAutomatedTestResults(`\nCompleted in ${duration}s\n`);
         appendToAutomatedTestResults(`\nSee Test Suite Browser for detailed debugging.\n`);
-        getShowNotification()(`⚠️ ${failedModules.length} module(s) have failures`, "warning", 5000);
+        const realFailures = failedModules.filter(m => !m.backgrounded).length;
+        if (anyBackgrounded && realFailures === 0) {
+            getShowNotification()(`⏸️ ${failedModules.length} module(s) stalled (tab backgrounded) — re-run focused`, "warning", 6000);
+        } else {
+            getShowNotification()(`⚠️ ${failedModules.length} module(s) have failures`, "warning", 5000);
+        }
     }
 
 }
