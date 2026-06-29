@@ -2690,12 +2690,19 @@
                 // 📤 Send results back to opener if this was an autorun request
                 if (new URLSearchParams(window.location.search).get('autorun') === 'true') {
                     const failedModules = allResults.filter(r => r.passed !== r.total);
+                    // A module that TIMED OUT is INCOMPLETE even when every rendered test
+                    // passed — later tests may simply never have run (this is how a hung
+                    // module could masquerade as a clean "N/N" pass). Surface these
+                    // separately so they can't be mistaken for a real pass.
+                    const incompleteModules = allResults.filter(r => r.timedOut);
                     const resultData = {
                         type: 'TEST_RESULTS',
                         totalPassed,
                         totalTests,
                         duration,
-                        allPassed: totalPassed === totalTests,
+                        // Not a clean pass if anything timed out, even if passed===total for
+                        // the rendered subset.
+                        allPassed: totalPassed === totalTests && incompleteModules.length === 0,
                         failedModules: failedModules.map(m => ({
                             name: m.name,
                             passed: m.passed,
@@ -2703,6 +2710,11 @@
                             error: m.error,
                             timedOut: m.timedOut,
                             backgrounded: m.backgrounded
+                        })),
+                        // Timed-out modules (may have skipped tests), surfaced even if their
+                        // rendered tests all passed.
+                        incompleteModules: incompleteModules.map(m => ({
+                            name: m.name, passed: m.passed, total: m.total, backgrounded: m.backgrounded
                         })),
                         // True if ANY module timed out while the tab was hidden — the parent
                         // shows a "re-run focused" hint instead of treating these as real bugs.

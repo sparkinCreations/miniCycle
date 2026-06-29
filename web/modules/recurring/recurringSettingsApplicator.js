@@ -187,9 +187,15 @@ export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
 
         await panel.updateRecurringPanel();
 
-        // Post-apply UI updates with delay for DOM to settle
+        // Post-apply UI updates with delay for DOM to settle. Guard the
+        // fire-and-forget callback: a cosmetic refresh must never surface as an
+        // uncaught window.onerror if the DOM/panel is in an unexpected shape.
         setTimeout(() => {
-            updateUIAfterApply(panel);
+            try {
+                updateUIAfterApply(panel);
+            } catch (uiError) {
+                console.warn('⚠️ recurring: post-apply UI refresh failed (non-fatal):', uiError);
+            }
         }, 10);
 
         // Uncheck all checkboxes (data reset — mode already hides them)
@@ -239,7 +245,7 @@ function updateUIAfterApply(panel) {
         });
 
         // Select the first checked task and show its preview
-        const taskId = firstCheckedTask.dataset.taskId;
+        const taskId = firstCheckedTask?.dataset?.taskId;
         panel.state.selectedTaskId = taskId;
         firstCheckedTask.classList.add(DOM_CLASSES.SELECTED);
         firstCheckedTask.setAttribute("aria-selected", "true");
