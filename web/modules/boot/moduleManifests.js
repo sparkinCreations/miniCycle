@@ -74,6 +74,7 @@ export const MODULE_MANIFESTS = {
         path: '../utils/errorHandler.js',
         phase: PHASES.CORE_UTILS,
         requires: [],
+        optionalDeps: ['showNotification'],  // guarded, opportunistic — errorHandler must work before notifications exists
         provides: ['errorHandler'],
         api: 'utils',
         optional: false,
@@ -316,6 +317,7 @@ export const MODULE_MANIFESTS = {
         path: '../features/dueDates.js',
         phase: PHASES.RECURRING,
         requires: ['appInit', 'AppState', 'showNotification'],
+        optionalDeps: ['checkCompleteAllButton', 'saveTaskToSchema25', 'updateProgressBar', 'updateStatsPanel'],  // UI refresh after a due-date edit
         provides: ['checkOverdueTasks', 'createDueDateInput'],
         api: 'features',
         after: ['taskDOM']
@@ -339,7 +341,7 @@ export const MODULE_MANIFESTS = {
         path: '../routine/modeManager.js',
         phase: PHASES.CYCLE,
         requires: ['appInit', 'AppState', 'showNotification', 'switchMiniCycle', 'createNewMiniCycle'],
-        optionalDeps: ['checkCompleteAllButton', 'checkMiniCycle', 'createTaskButtonContainer', 'helpWindowManager', 'recurringCore', 'setupDueDateButtonInteraction', 'showTaskView', 'statsPanelManager'],
+        optionalDeps: ['checkCompleteAllButton', 'checkMiniCycle', 'createTaskButtonContainer', 'helpWindowManager', 'recurringCore', 'setupDueDateButtonInteraction', 'showTaskView', 'statsPanelManager', 'syncAllTasksWithMode'],
         provides: ['setupModeSelector', 'refreshTaskButtonsForModeChange', 'updateCycleModeDescription', 'syncModeFromToggles'],
         api: 'cycle',
         provideInstance: 'modeManager',
@@ -350,7 +352,7 @@ export const MODULE_MANIFESTS = {
         path: '../routine/routineSwitcher.js',
         phase: PHASES.CYCLE,
         requires: ['appInit', 'AppState', 'showNotification', 'showPromptModal', 'showCycleCreationModal', 'getOnboardingManager', 'getModal'],
-        optionalDeps: ['onCycleRenamed', 'onCycleDeleted', 'onCycleSwitched', 'vocabThemeManager', 'checkCompleteAllButton', 'updateStatsPanel', 'updateMainMenuHeader', 'refreshThemeLabels', 'logHistoryEvent', 'exportMiniCycleData', 'hideMainMenu', 'showRoutineSwitcherTourNotification', 'hasActiveNotifications', 'isTouchDevice'],
+        optionalDeps: ['onCycleRenamed', 'onCycleDeleted', 'onCycleSwitched', 'vocabThemeManager', 'checkCompleteAllButton', 'updateStatsPanel', 'updateMainMenuHeader', 'refreshThemeLabels', 'logHistoryEvent', 'exportMiniCycleData', 'hideMainMenu', 'showRoutineSwitcherTourNotification', 'hasActiveNotifications', 'isTouchDevice', 'loadMiniCycle', 'showConfirmationModal', 'updateReminderButtons'],
         provides: ['switchMiniCycle', 'renameMiniCycle', 'deleteMiniCycle'],
         api: 'cycle',
         after: ['routineManager', 'onboardingManager']
@@ -393,7 +395,7 @@ export const MODULE_MANIFESTS = {
         path: '../ui/menuManager.js',
         phase: PHASES.CYCLE,  // Phase 5 (not Phase 6 UI_MANAGERS) because routineManager needs it in same phase
         requires: ['appInit', 'AppState', 'showNotification'],
-        optionalDeps: ['activateFocusMode', 'checkCompleteAllButton', 'checkGamesUnlock', 'createNewMiniCycle', 'recurringPanel', 'showConfirmationModal', 'showPromptModal', 'switchMiniCycle', 'trackAction', 'updateCycleData', 'updateCycleModeDescription', 'updateProgressBar', 'updateStatsPanel', 'updateUndoRedoButtons'],
+        optionalDeps: ['activateFocusMode', 'checkCompleteAllButton', 'checkGamesUnlock', 'createNewMiniCycle', 'loadMiniCycle', 'recurringPanel', 'showConfirmationModal', 'showPromptModal', 'switchMiniCycle', 'trackAction', 'updateCycleData', 'updateCycleModeDescription', 'updateProgressBar', 'updateStatsPanel', 'updateUndoRedoButtons'],
         provides: ['hideMainMenu', 'updateMainMenuHeader', 'clearAllTasks', 'deleteAllTasks'],
         api: 'ui',            // Exports to deps.ui — api category != phase
         singleton: true
