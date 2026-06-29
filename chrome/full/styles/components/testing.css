@@ -343,12 +343,24 @@
 }
 
 .test-runner-iframe {
+    /* MUST stay ON-SCREEN (intersecting the viewport). Chrome throttles
+       requestAnimationFrame (pauses it) and timers for CROSS-ORIGIN iframes that
+       are offscreen — even when the parent tab is foreground. The runner is a
+       cross-origin iframe (test.minicycle.app), so an offscreen position
+       (e.g. left:-9999px) made timing-sensitive tests hang/fail spuriously:
+       headerLayoutManager's rAF wait never resolved, and routineManager's
+       fixed-delay dialog waits fired before the (throttled) setTimeout built the
+       dialog. opacity:0 + pointer-events:none keep it invisible and
+       non-interactive; z-index:-1 tucks it behind the progress UI. Do NOT move it
+       offscreen. */
     position: absolute;
+    top: 0;
+    left: 0;
     width: 800px;
     height: 600px;
     opacity: 0;
     pointer-events: none;
-    left: -9999px;
+    z-index: -1;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════

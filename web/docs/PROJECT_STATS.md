@@ -13,15 +13,15 @@
 
 | Metric | Value |
 |--------|-------|
-| **App Version** | 2.272 |
+| **App Version** | 2.273 |
 | **Lite Version** | 2.092 (frozen) |
 | **Schema Version** | 2.5 |
-| **Total Modules** | 127 |
-| **Total Tests** | 2945 |
+| **Total Modules** | 129 |
+| **Total Tests** | 2968 |
 | **Test Pass Rate** | 100% |
 | **CSS Files** | 43 |
-| **JSDoc Blocks** | 1285 |
-| **Documentation Files** | 219 |
+| **JSDoc Blocks** | 1292 |
+| **Documentation Files** | 222 |
 | **DI Completion** | 100% |
 | **Custom window.* Globals (modules)** | 0 |
 
@@ -40,13 +40,13 @@
 | `recurring/` | 16 | Recurring task scheduling, panel, activation |
 | `ui/` | 35 | Modals, menus, settings, onboarding, gestures |
 | `features/` | 8 | Themes, stats, achievements, history, reminders |
-| `utils/` | 16 | Notifications, device detection, utilities |
+| `utils/` | 18 | Notifications, device detection, utilities |
 | `labels/` | 3 | Default labels + label resolver |
 | `storage/` | 1 | Backup manager |
 | `progress/` | 1 | Cycle completion tracking |
 | `testing/` | 9 | Test infrastructure |
 | `other/` | 3 | Plugins, experimental |
-| **Total** | **127** | |
+| **Total** | **129** | |
 
 ---
 
@@ -58,8 +58,8 @@
 | `modules/boot/orchestrator.js` | ~1027 | Sequence control + boot UI + early coordination |
 | `modules/boot/coreBoot.js` | ~752 | Core state & init |
 | `modules/boot/featureBoot.js` | ~592 | DI wiring hub |
-| `modules/boot/uiBoot.js` | ~1061 | UI handlers |
-| **Total** | **~3481** | |
+| `modules/boot/uiBoot.js` | ~1066 | UI handlers |
+| **Total** | **~3486** | |
 
 ---
 
@@ -67,8 +67,8 @@
 
 | Category | Tests |
 |----------|-------|
-| Total Tests | 2945 |
-| Test Files | 118 |
+| Total Tests | 2968 |
+| Test Files | 120 |
 | Pass Rate | 100% |
 | Platforms Tested | Mac, iPad, iPhone |
 

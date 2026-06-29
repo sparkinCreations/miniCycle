@@ -237,6 +237,7 @@ export const LIMITS = Object.freeze({
     STORAGE_WARNING_PERCENTAGE: 75,  // Show storage warning notification when localStorage usage exceeds this percentage
     BACKUP_REMINDER_EVERY_N_CYCLES: 25,  // Trigger backup reminder every N completed cycles
     BACKUP_REMINDER_EVERY_N_TASKS: 100,  // Trigger backup reminder every N cleared tasks (To-Do mode)
+    MAX_CORRUPT_BACKUPS: 3,              // Max raw-corrupted-data snapshots kept in localStorage for manual recovery
     LAYOUT_DRAG_THRESHOLD: 5,             // px - Task View Layout: pointer travel before drag starts (forgive hover jitter)
     LAYOUT_DOCK_GAP: 20                   // px - Task View Layout: vertical gap between an anchor element and its docked dependent
 });
@@ -449,7 +450,6 @@ export const STORAGE_KEYS = Object.freeze({
     FORCE_FULL_VERSION: 'miniCycleForceFullVersion',
     CONSOLE_CAPTURE_ENABLED: 'miniCycle_enableAutoConsoleCapture',
     CONSOLE_CAPTURE_BUFFER: 'miniCycle_capturedConsoleBuffer',
-    TEST_RUNNING: '__miniCycle_testRunning',
     TIME_TRACKER: 'timeTrackerData'
 });
 
@@ -1579,6 +1579,31 @@ export const LITE_VERSION_PATH = './lite/miniCycle-lite.html';
  * @type {string}
  */
 export const APP_URL = 'https://minicycle.app';
+
+/**
+ * Resolve the ORIGIN that serves the in-app test runner.
+ *
+ * The runner must live on a *separate* origin from the live app so the browser
+ * keeps its localStorage/IndexedDB physically isolated from real user data —
+ * isolation by construction, no backup/restore needed.
+ *
+ *  - Production (minicycle.app)      → https://test.minicycle.app
+ *  - Local dev / LAN (localhost, IP) → same host on port 8081 (run a 2nd server there)
+ *  - Anything else                   → same origin (fallback; no isolation, but no breakage)
+ *
+ * @returns {string} absolute origin, e.g. "https://test.minicycle.app"
+ */
+export function getTestOrigin() {
+    const { protocol, hostname, origin } = window.location;
+    if (hostname.includes('minicycle.app')) {
+        return 'https://test.minicycle.app';
+    }
+    // localhost, 127.0.0.1, or a LAN IP (e.g. 192.168.x for phone testing)
+    if (hostname === 'localhost' || /^\d{1,3}(\.\d{1,3}){3}$/.test(hostname)) {
+        return `${protocol}//${hostname}:8081`;
+    }
+    return origin;
+}
 
 /**
  * Version marker for cache debugging, derived from the single source of truth in version.js.

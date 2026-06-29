@@ -546,6 +546,15 @@ export function captureStateSnapshot(state) {
     return;
   }
 
+  // Don't capture snapshots during system-driven mutations (recurring watcher
+  // recreations / wake-time catch-up). These aren't user actions — capturing them
+  // puts a system-created task at the top of the undo stack, so the user's next Undo
+  // removes the recurring task (which then silently reappears on the next tick).
+  // See docs/future-work/ARCHITECTURE REVIEW FINDINGS.md §1.2.
+  if (_deps.AppGlobalState.isSystemMutation) {
+    return;
+  }
+
   if (!state?.data?.cycles || !state?.appState?.activeCycleId) {
     console.warn('⚠️ Invalid state for snapshot');
     return;
@@ -1696,70 +1705,6 @@ let undoDB = null;  // Database connection
 let dbWriteTimeout = null;  // Debounce timer
 
 /**
- * Check if test mode flag is active (tests are running)
- * If active, skip IndexedDB restoration to avoid loading test data
- * @returns {Promise<boolean>} True if test mode is active
- */
-async function isTestModeActive() {
-  try {
-    return new Promise((resolve) => {
-      // Timeout to prevent indefinite hangs
-      const timeout = setTimeout(() => {
-        console.warn('⚠️ isTestModeActive timed out');
-        resolve(false);
-      }, 3000);
-
-      const request = indexedDB.open('miniCycleTestResultsDB', 1);
-      request.onupgradeneeded = (e) => {
-        const db = e.target.result;
-        if (!db.objectStoreNames.contains('results')) {
-          db.createObjectStore('results', { keyPath: 'id' });
-        }
-      };
-      request.onsuccess = () => {
-        clearTimeout(timeout);
-        const db = request.result;
-        try {
-          const tx = db.transaction('results', 'readonly');
-          const store = tx.objectStore('results');
-          const getRequest = store.get('testModeActive');
-          getRequest.onsuccess = () => {
-            const data = getRequest.result;
-            db.close();
-            if (data && data.active) {
-              // Only consider active if set within UNDO_SESSION_LIFETIME (10 minutes)
-              if (Date.now() - data.timestamp < UI_TIMEOUTS.UNDO_SESSION_LIFETIME) {
-                resolve(true);
-                return;
-              }
-            }
-            resolve(false);
-          };
-          getRequest.onerror = () => {
-            db.close();
-            resolve(false);
-          };
-        } catch (e) {
-          db.close();
-          resolve(false);
-        }
-      };
-      request.onerror = () => {
-        clearTimeout(timeout);
-        resolve(false);
-      };
-      request.onblocked = () => {
-        clearTimeout(timeout);
-        console.warn('⚠️ isTestModeActive IndexedDB blocked');
-        resolve(false);
-      };
-    });
-  } catch (e) {
-    return false;
-  }
-}
-
-/**
  * Initialize IndexedDB for undo history persistence
  * Gracefully degrades if IndexedDB unavailable (private browsing)
  */
@@ -1874,14 +1819,8 @@ export function saveUndoStackToIndexedDB(cycleId, undoStack, redoStack, options 
 
 /**
  * Load undo/redo stacks from IndexedDB
- * Skips restoration if test mode is active to prevent loading test data
  */
 export async function loadUndoStackFromIndexedDB(cycleId) {
-  // 🚦 Skip IndexedDB restore if tests are running
-  if (await isTestModeActive()) {
-    return { undoStack: [], redoStack: [] };
-  }
-
   if (!undoDB) {
     return { undoStack: [], redoStack: [] };  // Graceful degradation
   }

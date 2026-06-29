@@ -1,3 +1,13 @@
+## [2.273] - 2026-06-29
+- docs: archive completed error-handling/recurring plans, split out remaining work, add ERROR_RECOVERY guide
+- docs(recurring-audit): mark all P1+P2 resolved, P3 deferred
+- docs(error-handling): mark Phases 1-2 implemented, note sync-recovery adaptations
+- feat(error-handling): salvage corrupted localStorage data before falling back to a reset
+- feat(error-handling): track optional-module load failures and surface a one-time degraded-mode notice
+- fix(routineSwitcher): track selected routine in a field, not the DOM .selected class (stops delete/rename/etc. targeting the wrong routine after a re-render)
+- docs(testing): note runner must stay foregrounded (backgrounded tabs throttle rAF/timers → spurious timeouts)
+
+
 ## [2.267] - 2026-06-28
 - fix(testing): drop dead IndexedDB result-store in runner that hung completion before TEST_RESULTS (modal never closed)
 

@@ -305,11 +305,16 @@ function repairAndCleanTasks(currentCycle, cycleKey = 'unknown') {
       console.warn('⚠️ Repaired task with missing schemaVersion:', task.id);
     }
 
-    // ✅ Repair missing deleteWhenCompleteSettings
-    if (!task.deleteWhenCompleteSettings || typeof task.deleteWhenCompleteSettings !== 'object') {
+    // ✅ Repair missing/invalid deleteWhenCompleteSettings.
+    // Also repair when the CURRENT mode's value isn't a boolean — otherwise the sync below
+    // derives `undefined` and writes it to task.deleteWhenComplete. Matches modeManager's
+    // stricter guard. See ARCH REVIEW FINDINGS §2.4 (hardening).
+    if (!task.deleteWhenCompleteSettings ||
+        typeof task.deleteWhenCompleteSettings !== 'object' ||
+        typeof task.deleteWhenCompleteSettings[currentMode] !== 'boolean') {
       task.deleteWhenCompleteSettings = { ...DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS };
       tasksModified = true;
-      console.warn('⚠️ Repaired task with missing deleteWhenCompleteSettings:', task.id);
+      console.warn('⚠️ Repaired task with missing/invalid deleteWhenCompleteSettings:', task.id);
     }
 
     // ✅ ALWAYS sync deleteWhenComplete with current mode's setting

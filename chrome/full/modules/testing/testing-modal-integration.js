@@ -1,23 +1,24 @@
 // ==========================================
 // 🧪 AUTOMATED TESTING INTEGRATION (DI-Pure)
 // ==========================================
-// Opens Test Suite Browser with autorun and displays results in testing modal
+// Embeds the test runner from a SEPARATE ORIGIN (test.minicycle.app) as a cross-origin
+// iframe and displays its results in the testing modal.
+//
+// The runner's storage is physically isolated from real user data by the browser
+// (different origin = different localStorage/IndexedDB), so there is NO backup/restore,
+// no save-gate, and no cleanup handshake — results arrive purely via postMessage.
 
 /**
  * Automated Testing Integration for Testing Modal (DI-Pure)
- * Opens Test Suite Browser popup with autorun, receives results via postMessage
- *
  * @module testing-modal-integration
  */
 
-import { DOM_IDS } from '../core/constants.js';
+import { DOM_IDS, getTestOrigin } from '../core/constants.js';
 import { createDIModule, required, optional } from '../core/diBase.js';
 
 const di = createDIModule('TestingModalIntegration', {
     safeAddEventListenerById: required(),
-    showNotification: optional(fallbackShowNotification),
-    AppState: optional(null),
-    backupManager: optional(null)
+    showNotification: optional(fallbackShowNotification)
 });
 
 export const setTestingModalDependencies = di.setDependencies;
@@ -33,14 +34,6 @@ function getShowNotification() {
     return di.resolve().showNotification;
 }
 
-function getAppState() {
-    return di.resolve().AppState;
-}
-
-function getBackupManager() {
-    return di.resolve().backupManager;
-}
-
 // Setup automated testing event listeners
 function setupAutomatedTestingFunctions() {
 
@@ -53,95 +46,9 @@ function setupAutomatedTestingFunctions() {
 
 }
 
-// IndexedDB helpers for test results
-const TEST_RESULTS_DB = 'miniCycleTestResultsDB';
-const TEST_RESULTS_STORE = 'results';
-// Note: Test mode flag is managed in IndexedDB by module-test-suite.html
-// appState.js checks IndexedDB directly for testModeActive flag
-
-function openTestResultsDB() {
-    return new Promise((resolve, reject) => {
-        const request = indexedDB.open(TEST_RESULTS_DB, 1);
-        request.onerror = () => reject(request.error);
-        request.onsuccess = () => resolve(request.result);
-        request.onupgradeneeded = (event) => {
-            const db = event.target.result;
-            if (!db.objectStoreNames.contains(TEST_RESULTS_STORE)) {
-                db.createObjectStore(TEST_RESULTS_STORE, { keyPath: 'id' });
-            }
-        };
-    });
-}
-
-async function storeTestResults(resultData) {
-    try {
-        const db = await openTestResultsDB();
-        const tx = db.transaction(TEST_RESULTS_STORE, 'readwrite');
-        const store = tx.objectStore(TEST_RESULTS_STORE);
-        store.put({ id: 'latest', ...resultData });
-        await new Promise((resolve, reject) => {
-            tx.oncomplete = resolve;
-            tx.onerror = () => reject(tx.error);
-        });
-        db.close();
-    } catch (e) {
-        console.warn('Failed to store test results:', e);
-    }
-}
-
-async function getStoredTestResults() {
-    try {
-        const db = await openTestResultsDB();
-        const tx = db.transaction(TEST_RESULTS_STORE, 'readonly');
-        const store = tx.objectStore(TEST_RESULTS_STORE);
-        const request = store.get('latest');
-        const result = await new Promise((resolve, reject) => {
-            request.onsuccess = () => resolve(request.result);
-            request.onerror = () => reject(request.error);
-        });
-        db.close();
-        return result;
-    } catch (e) {
-        console.warn('Failed to get test results:', e);
-        return null;
-    }
-}
-
-async function clearStoredTestResults() {
-    try {
-        const db = await openTestResultsDB();
-        const tx = db.transaction(TEST_RESULTS_STORE, 'readwrite');
-        const store = tx.objectStore(TEST_RESULTS_STORE);
-        store.delete('latest');
-        await new Promise((resolve, reject) => {
-            tx.oncomplete = resolve;
-            tx.onerror = () => reject(tx.error);
-        });
-        db.close();
-    } catch (e) {
-        console.warn('Failed to clear test results:', e);
-    }
-}
-
-// Check for saved test results from autorun and display them
-async function checkAndDisplayStoredResults() {
-    const resultData = await getStoredTestResults();
-    if (!resultData) return false;
-
-    // Only use results from last 5 minutes
-    if (Date.now() - resultData.timestamp > 300000) {
-        await clearStoredTestResults();
-        return false;
-    }
-
-    displayTestResults(resultData);
-    await clearStoredTestResults();
-    return true;
-}
-
 // Display test results in the output area
 function displayTestResults(resultData) {
-    const { totalPassed, totalTests, duration, allPassed, failedModules } = resultData;
+    const { totalPassed, totalTests, duration, allPassed, failedModules, suiteWentHidden, incompleteModules = [] } = resultData;
 
     // Clear any waiting message
     const output = getAutomatedTestOutput();
@@ -149,23 +56,59 @@ function displayTestResults(resultData) {
         output.textContent = '';
     }
 
-    // Display results
+    // Clean pass (no failures, no timeouts).
     if (allPassed) {
         appendToAutomatedTestResults(`✅ ALL TESTS PASSED\n\n`);
         appendToAutomatedTestResults(`${totalPassed}/${totalTests} tests passed (100%)\n`);
         appendToAutomatedTestResults(`Completed in ${duration}s\n`);
         getShowNotification()(`✅ All ${totalTests} tests passed!`, "success", 5000);
-    } else {
-        appendToAutomatedTestResults(`⚠️ SOME TESTS FAILED\n\n`);
-        appendToAutomatedTestResults(`${totalPassed}/${totalTests} tests passed\n\n`);
+        return;
+    }
+
+    // Backgrounded-run banner: throttled timers / paused requestAnimationFrame make
+    // timing-sensitive tests fail OR time out spuriously, so anything below may be
+    // false. (Foreground runs are 100%.)
+    if (suiteWentHidden) {
+        appendToAutomatedTestResults(`⏸️ THIS RUN WAS BACKGROUNDED — results below may be FALSE.\n`);
+        appendToAutomatedTestResults(`Hidden tabs pause animation frames and throttle timers, so timing-sensitive tests stall. Re-run with this tab kept in the foreground (don't switch tabs/apps) before treating anything below as a real bug.\n\n`);
+    }
+
+    // Real failures = failed assertions in modules that did NOT time out. Timed-out
+    // modules are reported as "incomplete" separately (their rendered subset may have
+    // all passed, but later tests may never have run — don't call those "failures").
+    const realFailures = failedModules.filter(m => !m.timedOut);
+
+    appendToAutomatedTestResults(realFailures.length > 0
+        ? `⚠️ SOME TESTS FAILED\n\n`
+        : `⏱️ TESTS INCOMPLETE (timeouts, no real failures)\n\n`);
+    appendToAutomatedTestResults(`${totalPassed}/${totalTests} tests passed\n\n`);
+
+    if (realFailures.length > 0) {
         appendToAutomatedTestResults(`Failed modules:\n`);
-        failedModules.forEach(m => {
+        realFailures.forEach(m => {
             const errorMsg = m.error ? ` - ${m.error}` : '';
             appendToAutomatedTestResults(`  ❌ ${m.name}: ${m.passed}/${m.total}${errorMsg}\n`);
         });
-        appendToAutomatedTestResults(`\nCompleted in ${duration}s\n`);
-        appendToAutomatedTestResults(`\nSee Test Suite Browser for detailed debugging.\n`);
-        getShowNotification()(`⚠️ ${failedModules.length} module(s) have failures`, "warning", 5000);
+    }
+
+    if (incompleteModules.length > 0) {
+        appendToAutomatedTestResults(`\n⏱️ Timed out — may be incomplete (count is the rendered subset; later tests may not have run):\n`);
+        incompleteModules.forEach(m => {
+            const tag = m.backgrounded ? ' — while tab was backgrounded' : '';
+            appendToAutomatedTestResults(`  ⏱️ ${m.name}: ${m.passed}/${m.total} rendered${tag}\n`);
+        });
+        appendToAutomatedTestResults(`Re-run (tab focused) to confirm these.\n`);
+    }
+
+    appendToAutomatedTestResults(`\nCompleted in ${duration}s\n`);
+    appendToAutomatedTestResults(`\nSee Test Suite Browser for detailed debugging.\n`);
+
+    if (suiteWentHidden) {
+        getShowNotification()(`⏸️ Run was backgrounded — re-run with the tab focused`, "warning", 6000);
+    } else if (realFailures.length > 0) {
+        getShowNotification()(`⚠️ ${realFailures.length} module(s) have failures`, "warning", 5000);
+    } else {
+        getShowNotification()(`⏱️ ${incompleteModules.length} module(s) timed out (incomplete) — re-run`, "warning", 6000);
     }
 
 }
@@ -232,12 +175,14 @@ function createTestRunnerModal() {
         </div>
     `;
 
-    // Hidden iframe - runs tests in background
-    // Use reasonable dimensions to avoid test failures due to element sizing
+    // Hidden iframe - runs tests on a SEPARATE ORIGIN so its localStorage/IndexedDB is
+    // physically isolated from this app's real user data. parentOrigin tells the runner
+    // where to postMessage results back to.
     const iframe = document.createElement('iframe');
     iframe.id = 'test-runner-iframe';
     iframe.className = 'test-runner-iframe';
-    iframe.src = 'tests/module-test-suite.html?autorun=true&embedded=true';
+    iframe.src = `${getTestOrigin()}/tests/module-test-suite.html`
+        + `?autorun=true&embedded=true&parentOrigin=${encodeURIComponent(window.location.origin)}`;
 
     container.appendChild(header);
     container.appendChild(progressSection);
@@ -269,84 +214,58 @@ function createTestRunnerModal() {
 }
 
 // Close the test runner modal
-async function closeTestRunnerModal() {
+function closeTestRunnerModal() {
     if (testRunnerModal) {
         if (testRunnerModal.open) {
             testRunnerModal.close();
         }
         testRunnerModal.remove();
         testRunnerModal = null;
-        // Clear any stored results to prevent modal from reopening on page refresh
-        await clearStoredTestResults();
     }
 }
 
-// Run all automated tests via embedded iframe modal
-async function runAllAutomatedTests() {
-    // First check if there are recent stored results (user came back to modal)
-    if (await checkAndDisplayStoredResults()) {
-        return;
-    }
-
-    // Clear any old results
-    await clearStoredTestResults();
-
+// Run all automated tests via embedded cross-origin iframe modal
+function runAllAutomatedTests() {
     const output = getAutomatedTestOutput();
     if (output) {
         output.textContent = '';
     }
 
-    appendToAutomatedTestResults("🧪 Saving app state before tests...\n");
+    appendToAutomatedTestResults("🧪 Opening Test Runner (separate origin)...\n\n");
 
-    // Force save AppState to localStorage before running tests
-    const AppState = getAppState();
-    if (AppState && AppState.isReady && AppState.isReady()) {
-        try {
-            await AppState.forceSave();
-        } catch (e) {
-            console.warn('Could not force save AppState:', e);
-        }
-    }
-
-    // Create a test backup before running tests (for recovery if needed)
-    const backupManager = getBackupManager();
-    if (backupManager) {
-        try {
-            const created = await backupManager.createTestBackup();
-            if (created) {
-                appendToAutomatedTestResults("💾 Test backup created (recoverable from Restore Backups)\n");
-            } else {
-                appendToAutomatedTestResults("💾 Using recent test backup (< 5 min old)\n");
-            }
-        } catch (e) {
-            console.warn('Could not create test backup:', e);
-        }
-    }
-
-    appendToAutomatedTestResults("🧪 Opening Test Runner...\n\n");
-
-    // Note: Test mode flag (IndexedDB) is set by module-test-suite.html when it starts
-    // appState.js checks IndexedDB directly for testModeActive flag to skip saves
-
-    // Create and show the iframe modal
-    const { modal, iframe } = createTestRunnerModal();
+    // Create and show the iframe modal (loads the runner from the test origin)
+    createTestRunnerModal();
 
     appendToAutomatedTestResults("⏳ Tests running...\n");
     appendToAutomatedTestResults("Modal will close automatically when complete.\n\n");
 
-    // Listen for progress and results via postMessage from iframe
+    // Listen for progress and results via postMessage from the cross-origin iframe.
     let resultsReceived = false;
     let testStartTime = Date.now();
 
+    // Tear down the iframe and show results. No AppState reload: the runner is on a
+    // separate origin and never touched this origin's storage.
+    const finalizeTeardown = (data) => {
+        window.removeEventListener('message', handleTestMessages);
+        try {
+            closeTestRunnerModal();
+            displayTestResults(data);
+        } catch (error) {
+            console.warn('⚠️ Post-test processing failed:', error);
+        }
+    };
+
+    const expectedTestOrigin = getTestOrigin();
     const handleTestMessages = (event) => {
+        // Only trust messages from the test-runner origin (cross-origin hardening).
+        if (event.origin !== expectedTestOrigin) return;
         if (!event.data || !event.data.type) return;
 
         // Handle progress updates
         if (event.data.type === 'TEST_PROGRESS') {
-            const { currentModule, currentIndex, totalModules, moduleName } = event.data;
+            const { currentIndex, totalModules, moduleName } = event.data;
             const progressPercent = Math.round((currentIndex / totalModules) * 100);
 
-            // Update progress bar
             const progressBar = document.getElementById(DOM_IDS.TEST_PROGRESS_BAR);
             const statusText = document.getElementById(DOM_IDS.TEST_STATUS_TEXT);
             const timeEstimate = document.getElementById(DOM_IDS.TEST_TIME_ESTIMATE);
@@ -382,61 +301,36 @@ async function runAllAutomatedTests() {
             return;
         }
 
-        // Handle final results
+        // Final results — show 100% / completion state, then tear down after a brief pause.
         if (event.data.type === 'TEST_RESULTS') {
             resultsReceived = true;
-            window.removeEventListener('message', handleTestMessages);
+            const data = event.data;
 
-            // Update progress to 100%
             const progressBar = document.getElementById(DOM_IDS.TEST_PROGRESS_BAR);
             const statusText = document.getElementById(DOM_IDS.TEST_STATUS_TEXT);
             const timeEstimate = document.getElementById(DOM_IDS.TEST_TIME_ESTIMATE);
             const title = document.getElementById(DOM_IDS.TEST_RUNNER_TITLE);
 
             if (progressBar) progressBar.style.width = '100%';
-            if (statusText) statusText.textContent = event.data.allPassed
+            if (statusText) statusText.textContent = data.allPassed
                 ? '✅ All tests passed!'
-                : `⚠️ ${event.data.totalTests - event.data.totalPassed} test(s) failed`;
+                : `⚠️ ${data.totalTests - data.totalPassed} test(s) failed`;
             if (timeEstimate) {
                 const totalTime = ((Date.now() - testStartTime) / 1000).toFixed(1);
                 timeEstimate.textContent = `Completed in ${totalTime}s`;
             }
-            if (title) title.textContent = event.data.allPassed
+            if (title) title.textContent = data.allPassed
                 ? '✅ Tests Complete'
                 : '⚠️ Tests Complete (with failures)';
 
-            // Wait a moment to show completion, then close
-            setTimeout(async () => {
-                try {
-                    closeTestRunnerModal(); // Also clears stored results
-                    displayTestResults(event.data);
-
-                    // Note: Test mode flag (IndexedDB) is cleared by module-test-suite.html
-                    // which also restores localStorage from backup before sending TEST_RESULTS
-
-                    // 🔄 RELOAD AppState from restored localStorage
-                    // This syncs the in-memory state with the restored backup data
-                    const AppState = getAppState();
-                    if (AppState?.reload) {
-                        AppState.reload();
-                    }
-
-                    getShowNotification()(
-                        event.data.allPassed
-                            ? `✅ All ${event.data.totalTests} tests passed!`
-                            : `⚠️ ${event.data.totalTests - event.data.totalPassed} test(s) failed`,
-                        event.data.allPassed ? 'success' : 'warning',
-                        5000
-                    );
-                } catch (error) {
-                    console.warn('⚠️ Post-test processing failed:', error);
-                }
-            }, 1500);
+            // Brief pause so the ✅ completion state is visible, then tear down.
+            setTimeout(() => finalizeTeardown(data), 1200);
+            return;
         }
     };
     window.addEventListener('message', handleTestMessages);
 
-    // Timeout after 20 minutes (production runs 112 modules through SW, takes longer than local)
+    // Timeout after 20 minutes (production runs 100+ modules through SW, takes a while)
     setTimeout(() => {
         if (!resultsReceived) {
             window.removeEventListener('message', handleTestMessages);
@@ -450,7 +344,7 @@ async function runAllAutomatedTests() {
 
 /**
  * Initialize testing modal integration (called by moduleLoader)
- * @param {Object} dependencies - { safeAddEventListenerById, showNotification, consoleCapture }
+ * @param {Object} dependencies - { safeAddEventListenerById, showNotification }
  */
 export function initTestingModalIntegration(dependencies = {}) {
     // Set dependencies
@@ -459,61 +353,10 @@ export function initTestingModalIntegration(dependencies = {}) {
     // Setup event listeners
     setupAutomatedTestingFunctions();
 
-    // Check for pending test results and auto-open modal if found
-    checkForPendingResultsOnLoad();
-
     return {
         runAllAutomatedTests,
-        setupAutomatedTestingFunctions,
-        checkAndDisplayStoredResults
+        setupAutomatedTestingFunctions
     };
-}
-
-// Check for pending results on page load and auto-open modal
-async function checkForPendingResultsOnLoad() {
-    const resultData = await getStoredTestResults();
-    if (!resultData) return;
-
-    // Only use results from last 5 minutes
-    if (Date.now() - resultData.timestamp > 300000) {
-        await clearStoredTestResults();
-        return;
-    }
-
-    // Wait a moment for page to settle, then open modal and show results
-    setTimeout(async () => {
-        try {
-            // Open testing modal
-            const testingModalBtn = document.getElementById(DOM_IDS.OPEN_TESTING_MODAL);
-            if (testingModalBtn) {
-                testingModalBtn.click();
-
-                // Switch to automated tests tab and display results
-                setTimeout(async () => {
-                    try {
-                        const automatedTab = document.querySelector('[data-tab="automated-tests"]');
-                        if (automatedTab) {
-                            automatedTab.click();
-
-                            setTimeout(async () => {
-                                try {
-                                    displayTestResults(resultData);
-                                    await clearStoredTestResults();
-                                    getShowNotification()('📊 Test results restored', 'success', 3000);
-                                } catch (error) {
-                                    console.warn('⚠️ Failed to display stored test results:', error);
-                                }
-                            }, 200);
-                        }
-                    } catch (error) {
-                        console.warn('⚠️ Failed to open automated tests tab:', error);
-                    }
-                }, 200);
-            }
-        } catch (error) {
-            console.warn('⚠️ Failed to auto-open testing modal:', error);
-        }
-    }, 500);
 }
 
 // Export functions for module use

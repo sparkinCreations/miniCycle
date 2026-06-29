@@ -56,6 +56,31 @@ export class ClearedTasksManager {
     // ========================================================================
 
     /**
+     * Build a stored cleared-task entry from a live task. Single source of truth for the
+     * entry shape shared by recordClearedTask + recordMultipleClearedTasks (review §2.3).
+     * @param {Object} task - Task object being cleared
+     * @param {string} clearedInMode - 'todo' | 'cycle' (mode the task was cleared in)
+     * @returns {Object} Stored cleared-task entry
+     */
+    _buildClearedEntry(task, clearedInMode) {
+        return {
+            id: `clr-${Date.now()}-${this._idCounter++}-${Math.random().toString(36).substr(2, 5)}`,
+            taskText: task.text,
+            clearedAt: Date.now(),
+            wasHighPriority: task.highPriority || false,
+            hadDueDate: !!task.dueDate,
+            dueDate: task.dueDate || null,
+            priorityColor: task.priorityColor || null,
+            remindersEnabled: task.remindersEnabled || false,
+            deleteWhenComplete: task.deleteWhenComplete || false,
+            deleteWhenCompleteSettings: task.deleteWhenCompleteSettings ? structuredClone(task.deleteWhenCompleteSettings) : null,
+            recurring: task.recurring || false,
+            recurringSettings: task.recurringSettings ? structuredClone(task.recurringSettings) : null,
+            clearedInMode
+        };
+    }
+
+    /**
      * Record a cleared task
      * @param {Object} task - Task object being cleared
      * @returns {void}
@@ -77,21 +102,7 @@ export class ClearedTasksManager {
         const activeCycle = state.data.cycles[activeCycleId];
         const clearedInMode = activeCycle?.deleteCheckedTasks ? 'todo' : 'cycle';
 
-        const entry = {
-            id: `clr-${Date.now()}-${this._idCounter++}-${Math.random().toString(36).substr(2, 5)}`,
-            taskText: task.text,
-            clearedAt: Date.now(),
-            wasHighPriority: task.highPriority || false,
-            hadDueDate: !!task.dueDate,
-            dueDate: task.dueDate || null,
-            priorityColor: task.priorityColor || null,
-            remindersEnabled: task.remindersEnabled || false,
-            deleteWhenComplete: task.deleteWhenComplete || false,
-            deleteWhenCompleteSettings: task.deleteWhenCompleteSettings ? structuredClone(task.deleteWhenCompleteSettings) : null,
-            recurring: task.recurring || false,
-            recurringSettings: task.recurringSettings ? structuredClone(task.recurringSettings) : null,
-            clearedInMode
-        };
+        const entry = this._buildClearedEntry(task, clearedInMode);
 
         this.deps.AppState.update(s => {
             const cycle = s.data.cycles[activeCycleId];
@@ -139,21 +150,7 @@ export class ClearedTasksManager {
         const activeCycle = state.data.cycles[activeCycleId];
         const clearedInMode = activeCycle?.deleteCheckedTasks ? 'todo' : 'cycle';
 
-        const entries = tasks.map(task => ({
-            id: `clr-${Date.now()}-${this._idCounter++}-${Math.random().toString(36).substr(2, 5)}`,
-            taskText: task.text,
-            clearedAt: Date.now(),
-            wasHighPriority: task.highPriority || false,
-            hadDueDate: !!task.dueDate,
-            dueDate: task.dueDate || null,
-            priorityColor: task.priorityColor || null,
-            remindersEnabled: task.remindersEnabled || false,
-            deleteWhenComplete: task.deleteWhenComplete || false,
-            deleteWhenCompleteSettings: task.deleteWhenCompleteSettings ? structuredClone(task.deleteWhenCompleteSettings) : null,
-            recurring: task.recurring || false,
-            recurringSettings: task.recurringSettings ? structuredClone(task.recurringSettings) : null,
-            clearedInMode
-        }));
+        const entries = tasks.map(task => this._buildClearedEntry(task, clearedInMode));
 
         this.deps.AppState.update(s => {
             const cycle = s.data.cycles[activeCycleId];

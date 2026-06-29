@@ -1,0 +1,149 @@
+/**
+ * Data Recovery Utilities
+ *
+ * Best-effort salvage for corrupted `miniCycleData` in localStorage. Before the app
+ * gives up and falls back to a fresh/minimal state, these helpers (1) snapshot the raw
+ * corrupted string so nothing is lost, and (2) try a few escalating repair strategies.
+ *
+ * Intentionally PURE and SYNCHRONOUS: AppState calls these from the boot-critical load
+ * path, which runs before DI is wired — so this module takes no injected dependencies
+ * and never prompts the user. The caller (AppState) owns notifications and the strict
+ * schema validation that gates whether salvaged data is actually used.
+ *
+ * @module modules/utils/dataRecovery
+ */
+
+import { STORAGE_KEYS, LIMITS } from '../core/constants.js';
+
+const CORRUPT_BACKUP_PREFIX = `${STORAGE_KEYS.DATA}_corrupted_`;
+
+/**
+ * Resolve a usable Storage-like object (defaults to global localStorage).
+ * @param {Storage|null} [storage]
+ * @returns {Storage|null}
+ */
+function resolveStorage(storage) {
+    if (storage) return storage;
+    return (typeof localStorage !== 'undefined') ? localStorage : null;
+}
+
+/**
+ * Attempt to salvage a corrupted JSON string using escalating strategies.
+ * @param {string} jsonString - The corrupted JSON string
+ * @returns {{ data: Object, strategy: string } | null} Salvaged data + the strategy that worked, or null
+ */
+export function attemptJsonSalvage(jsonString) {
+    if (!jsonString || typeof jsonString !== 'string') {
+        return null;
+    }
+
+    const strategies = [
+        // 1. Try as-is (corruption may be elsewhere / transient).
+        { name: 'direct-parse', fn: (str) => JSON.parse(str) },
+
+        // 2. Strip control characters that can sneak into stored strings.
+        // eslint-disable-next-line no-control-regex
+        { name: 'remove-control-chars', fn: (str) => JSON.parse(str.replace(/[\x00-\x1F\x7F]/g, '')) },
+
+        // 3. Repair truncation by closing any unbalanced brackets/braces.
+        {
+            name: 'close-brackets',
+            fn: (str) => {
+                const openBraces = (str.match(/{/g) || []).length;
+                const closeBraces = (str.match(/}/g) || []).length;
+                const openBrackets = (str.match(/\[/g) || []).length;
+                const closeBrackets = (str.match(/]/g) || []).length;
+                let fixed = str;
+                fixed += ']'.repeat(Math.max(0, openBrackets - closeBrackets));
+                fixed += '}'.repeat(Math.max(0, openBraces - closeBraces));
+                return JSON.parse(fixed);
+            }
+        }
+    ];
+
+    for (const strategy of strategies) {
+        try {
+            const result = strategy.fn(jsonString);
+            if (result && typeof result === 'object') {
+                console.log(`✅ Data salvaged using strategy: ${strategy.name}`);
+                return { data: result, strategy: strategy.name };
+            }
+        } catch (e) {
+            console.warn(`Salvage strategy "${strategy.name}" failed:`, e?.message || e);
+        }
+    }
+
+    return null;
+}
+
+/**
+ * Snapshot corrupted data to localStorage so it can be inspected/recovered manually
+ * later. Keeps at most LIMITS.MAX_CORRUPT_BACKUPS snapshots (oldest pruned first).
+ * @param {string} corruptedData - The raw corrupted string
+ * @param {Storage|null} [storage] - Storage target (defaults to global localStorage)
+ * @returns {string|null} The backup key, or null if it could not be stored
+ */
+export function backupCorruptedData(corruptedData, storage) {
+    const store = resolveStorage(storage);
+    if (!store || !corruptedData) return null;
+
+    const backupKey = `${CORRUPT_BACKUP_PREFIX}${Date.now()}`;
+
+    try {
+        // Prune old snapshots so corruption backups can't themselves fill storage.
+        const existing = [];
+        for (let i = 0; i < store.length; i++) {
+            const key = store.key(i);
+            if (key?.startsWith(CORRUPT_BACKUP_PREFIX)) existing.push(key);
+        }
+        if (existing.length >= LIMITS.MAX_CORRUPT_BACKUPS) {
+            existing.sort();
+            for (let i = 0; i <= existing.length - LIMITS.MAX_CORRUPT_BACKUPS; i++) {
+                store.removeItem(existing[i]);
+            }
+        }
+
+        store.setItem(backupKey, corruptedData);
+        console.log(`💾 Corrupted data backed up as: ${backupKey}`);
+        return backupKey;
+    } catch (e) {
+        console.warn('Could not back up corrupted data:', e?.message || e);
+        return null;
+    }
+}
+
+/**
+ * Lightweight structural check for salvaged data — just enough to confirm it's
+ * shaped like miniCycle data (a cycles map whose entries carry task arrays).
+ * AppState applies the stricter Schema 2.5 validator before actually adopting it.
+ * @param {Object} data
+ * @returns {boolean}
+ */
+export function validateRecoveredData(data) {
+    if (!data || typeof data !== 'object') return false;
+
+    const cycles = data.data?.cycles || data.cycles;
+    if (!cycles || typeof cycles !== 'object') return false;
+
+    for (const cycle of Object.values(cycles)) {
+        if (!cycle || !Array.isArray(cycle.tasks)) return false;
+    }
+    return true;
+}
+
+/**
+ * Full synchronous recovery pass: back up the corrupted string, then attempt salvage.
+ * Notifications and the final adopt/reject decision are the caller's responsibility.
+ * @param {string} corruptedString - The raw corrupted string from storage
+ * @param {{ storage?: Storage|null }} [options]
+ * @returns {{ recovered: boolean, data: Object|null, strategy: string|null, backupKey: string|null }}
+ */
+export function recoverCorruptedData(corruptedString, options = {}) {
+    const backupKey = backupCorruptedData(corruptedString, options.storage);
+    const salvage = attemptJsonSalvage(corruptedString);
+
+    if (salvage?.data && validateRecoveredData(salvage.data)) {
+        return { recovered: true, data: salvage.data, strategy: salvage.strategy, backupKey };
+    }
+    return { recovered: false, data: null, strategy: null, backupKey };
+}

@@ -27,148 +27,13 @@ import {
     DOM_IDS,
     STORAGE_KEYS, UI_TIMEOUTS, DOM_CLASSES } from './constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { recoverCorruptedData } from '../utils/dataRecovery.js';
 
-// ============================================================================
-// TEST MODE DETECTION - Detect interrupted tests and restore real data
-// ============================================================================
-
-const TEST_MODE_DB = 'miniCycleTestResultsDB';
-const TEST_MODE_STORE = 'results';
-
-// New separate backup database (app-side backup)
-const TEST_BACKUP_DB = 'miniCycleTestBackupDB';
-const TEST_BACKUP_STORE = 'backup';
-
-// localStorage keys for backup (more reliable than IndexedDB)
-// IndexedDB is the single source of truth for test mode state
-// No localStorage fallbacks - IndexedDB persists and is reliable
-
-/**
- * Check if test mode is active (tests running or were interrupted)
- * Checks IndexedDB for testModeActive flag - single source of truth
- * Exported for use by coreBoot.js for interrupted test recovery
- * @returns {Promise<boolean>} True if test mode flag is set in IndexedDB
- */
-export async function isTestModeActive() {
-    return new Promise((resolve) => {
-        try {
-            const request = indexedDB.open(TEST_MODE_DB, 1);
-            request.onerror = () => resolve(false);
-            request.onupgradeneeded = (e) => {
-                const db = e.target.result;
-                if (!db.objectStoreNames.contains(TEST_MODE_STORE)) {
-                    db.createObjectStore(TEST_MODE_STORE, { keyPath: 'id' });
-                }
-            };
-            request.onsuccess = () => {
-                const db = request.result;
-                try {
-                    const tx = db.transaction(TEST_MODE_STORE, 'readonly');
-                    const store = tx.objectStore(TEST_MODE_STORE);
-                    const getRequest = store.get('testModeActive');
-                    getRequest.onsuccess = () => {
-                        const isActive = getRequest.result?.active === true;
-                        db.close();
-                        if (isActive) {
-                        }
-                        resolve(isActive);
-                    };
-                    getRequest.onerror = () => { db.close(); resolve(false); };
-                } catch (e) {
-                    db.close();
-                    resolve(false);
-                }
-            };
-        } catch (e) {
-            resolve(false);
-        }
-    });
-}
-
-/**
- * Cached wrapper for isTestModeActive() — avoids opening IndexedDB on every save.
- * Test mode is set before tests start and cleared after, so caching once per session is safe.
- * @returns {Promise<boolean>}
- */
-let _testModeCached = null;
-async function getCachedTestMode() {
-    if (_testModeCached !== null) return _testModeCached;
-    _testModeCached = await isTestModeActive();
-    return _testModeCached;
-}
-
-/**
- * Get backed up real data (stored before tests ran)
- * Retrieves backup from IndexedDB - single source of truth
- * Exported for use by coreBoot.js for interrupted test recovery
- * @returns {Promise<Object|null>} Backed up data or null if none exists
- */
-export async function getBackedUpRealData() {
-    return new Promise((resolve) => {
-        try {
-            const request = indexedDB.open(TEST_MODE_DB, 1);
-            request.onerror = () => resolve(null);
-            request.onsuccess = () => {
-                const db = request.result;
-                try {
-                    const tx = db.transaction(TEST_MODE_STORE, 'readonly');
-                    const store = tx.objectStore(TEST_MODE_STORE);
-                    const getRequest = store.get('preTestBackup');
-                    getRequest.onsuccess = () => {
-                        const data = getRequest.result;
-                        db.close();
-                        if (data?.localStorageBackup) {
-                            resolve(data.localStorageBackup);
-                        } else {
-                            resolve(null);
-                        }
-                    };
-                    getRequest.onerror = () => { db.close(); resolve(null); };
-                } catch (e) {
-                    db.close();
-                    resolve(null);
-                }
-            };
-        } catch (e) {
-            resolve(null);
-        }
-    });
-}
-
-/**
- * Clear test mode flags and backup after successful restoration
- * Clears IndexedDB records - single source of truth
- * Exported for use by coreBoot.js for interrupted test recovery
- * @returns {Promise<void>}
- */
-export async function clearTestModeAndBackup() {
-    // Clear from IndexedDB
-    const clearResultsDB = () => new Promise((resolve) => {
-        try {
-            const request = indexedDB.open(TEST_MODE_DB, 1);
-            request.onerror = () => resolve();
-            request.onsuccess = () => {
-                const db = request.result;
-                try {
-                    const tx = db.transaction(TEST_MODE_STORE, 'readwrite');
-                    const store = tx.objectStore(TEST_MODE_STORE);
-                    store.delete('testModeActive');
-                    store.delete('appInitiatedTests');
-                    store.delete('preTestBackup');
-                    tx.oncomplete = () => { db.close(); resolve(); };
-                    tx.onerror = () => { db.close(); resolve(); };
-                } catch (e) {
-                    db.close();
-                    resolve();
-                }
-            };
-        } catch (e) {
-            resolve();
-        }
-    });
-
-    await clearResultsDB();
-}
+// NOTE: The in-app test runner now executes on a SEPARATE ORIGIN (test.minicycle.app),
+// so its storage is physically isolated from real user data. The former test-mode
+// detection / save-gate / IndexedDB-backup machinery here has been removed — isolation
+// is by construction, not by runtime cleanup. See docs/developer-guides and the
+// separate-origin test runner (tests/module-test-suite.html).
 
 // NOTE: Uses plain _deps instead of createDIModule() because AppState is Phase 1 core
 // infrastructure loaded in coreBoot before the manifest/moduleLoader system runs.
@@ -292,7 +157,18 @@ class MiniCycleState {
                 try {
                     parsed = JSON.parse(stored);
                 } catch (parseError) {
-                    console.warn('⚠️ Corrupted data in localStorage — creating fallback state', parseError);
+                    console.warn('⚠️ Corrupted data in localStorage — attempting recovery', parseError);
+                    const recovery = recoverCorruptedData(stored, { storage: this.deps.storage });
+                    if (recovery.recovered && this.validateSchema25Structure(recovery.data)) {
+                        this.data = recovery.data;
+                        this.isInitialized = true;
+                        this.deps.showNotification(
+                            getLabel('notify.dataRepaired'),
+                            'warning',
+                            UI_TIMEOUTS.NOTIFICATION_OVERLAY
+                        );
+                        return this.data;
+                    }
                     this.data = this.createMinimalFallbackState();
                     this.isInitialized = true;
                     this.deps.showNotification(
@@ -353,25 +229,46 @@ class MiniCycleState {
 
             // ✅ Check if Schema 2.5 data already exists
             let existingData = null;
+            let stored = null;
             try {
-                const stored = this.deps.storage.getItem(STORAGE_KEYS.DATA);
+                stored = this.deps.storage.getItem(STORAGE_KEYS.DATA);
                 if (stored) {
                     const parsed = JSON.parse(stored);
                     // ✅ Validate the structure before using
                     if (this.validateSchema25Structure(parsed)) {
                         existingData = parsed;
                     } else {
-                        console.warn('⚠️ Existing data structure is invalid');
+                        // Parsed fine but wrong shape — try to salvage before discarding.
+                        console.warn('⚠️ Existing data structure is invalid — attempting recovery');
+                        const recovery = recoverCorruptedData(stored, { storage: this.deps.storage });
+                        if (recovery.recovered && this.validateSchema25Structure(recovery.data)) {
+                            existingData = recovery.data;
+                            this.deps.showNotification(
+                                getLabel('notify.dataRepaired'),
+                                'warning',
+                                UI_TIMEOUTS.NOTIFICATION_OVERLAY
+                            );
+                        }
                     }
                 }
             } catch (parseError) {
-                console.warn('⚠️ Could not parse existing data — creating fallback state:', parseError);
-                existingData = this.createMinimalFallbackState();
-                this.deps.showNotification(
-                    getLabel('notify.dataCorruptedReset'),
-                    'error',
-                    UI_TIMEOUTS.NOTIFICATION_OVERLAY
-                );
+                console.warn('⚠️ Could not parse existing data — attempting recovery:', parseError);
+                const recovery = stored ? recoverCorruptedData(stored, { storage: this.deps.storage }) : { recovered: false };
+                if (recovery.recovered && this.validateSchema25Structure(recovery.data)) {
+                    existingData = recovery.data;
+                    this.deps.showNotification(
+                        getLabel('notify.dataRepaired'),
+                        'warning',
+                        UI_TIMEOUTS.NOTIFICATION_OVERLAY
+                    );
+                } else {
+                    existingData = this.createMinimalFallbackState();
+                    this.deps.showNotification(
+                        getLabel('notify.dataCorruptedReset'),
+                        'error',
+                        UI_TIMEOUTS.NOTIFICATION_OVERLAY
+                    );
+                }
             }
 
             // Use existing data or create initial data
@@ -456,11 +353,6 @@ class MiniCycleState {
             this._storageHandler = (event) => {
                 if (event.key !== STORAGE_KEYS.DATA) return;
                 if (!event.newValue) return;
-
-                // Skip sync if tests are running in another tab — test data is mock/temporary
-                if (localStorage.getItem(STORAGE_KEYS.TEST_RUNNING) === 'true') {
-                    return;
-                }
 
                 try {
                     const externalData = JSON.parse(event.newValue);
@@ -614,27 +506,18 @@ class MiniCycleState {
      * @param {boolean} [immediate=false] - If true, save synchronously
      * @private
      */
-    async scheduleSave(immediate = false) {
-        // 🧪 SKIP saves during test runs to prevent overwriting user data
-        // The testModeActive flag in IndexedDB means "tests are running in the iframe"
-        // - Main app window: should skip saves (tests might modify localStorage)
-        // - Test iframe: should save normally (tests need state persistence to work)
-        // We detect the test iframe via URL parameters set by testing-modal-integration.js
-        const isTestIframe = window.location.search.includes('embedded=true') ||
-                             window.location.pathname.includes('module-test-suite');
-        if (!isTestIframe) {
-            const testMode = await getCachedTestMode();
-            if (testMode) {
-                return;
-            }
-        }
-
+    scheduleSave(immediate = false) {
+        // NOTE: No test-mode save-gate. The in-app test runner runs on a separate origin
+        // (test.minicycle.app), so it cannot write to this origin's storage — there is
+        // nothing to gate against.
         if (this.saveTimeout) {
             clearTimeout(this.saveTimeout);
+            this.saveTimeout = null;
         }
 
         if (immediate) {
-            // ✅ For immediate saves, call save() synchronously to prevent data loss on quick refresh
+            // ✅ Synchronous save() — a quick refresh right after an immediate update
+            //    still flushes (no async hop before the write).
             this.save();
         } else {
             // ✅ For normal saves, use debounce delay

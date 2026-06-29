@@ -28,6 +28,7 @@ import {
 const di = createDIModule('RecurringIntegration', {
     appInit: optional(null),
     AppState: optional(null),
+    AppGlobalState: optional(null),  // CORE_DEP — forwarded to the watcher so it can suppress undo during system recreations (§1.2)
     loadMiniCycleData: optional(null),
     showNotification: optional(null),
     showNotificationWithTip: optional(null),
@@ -181,6 +182,9 @@ export async function initRecurringModules(options = {}) {
 
             // State management (required) - DI-pure (pass AppState directly)
             AppState: deps.AppState,
+            // Forwarded so the watcher can flag system-driven recreations and keep them
+            // out of undo history (§1.2). Spreads through to setRecurringWatcherDependencies.
+            AppGlobalState: deps.AppGlobalState,
             updateAppState: (updateFn, immediate = false) => {
                 if (!deps.AppState) {
                     throw new Error('AppState not available');

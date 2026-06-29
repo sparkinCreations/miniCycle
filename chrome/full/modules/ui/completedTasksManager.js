@@ -162,14 +162,11 @@ export class CompletedTasksManager {
             }
         }
 
-        // Clear stale interaction classes before moving
-        this._cleanupTaskStateBeforeMove(taskElement);
+        // Prep the node (clear stale classes, hide options, disable dragging)
+        this.prepareCompletedNode(taskElement);
 
         // Move the task element
         completedList.appendChild(taskElement);
-
-        // Disable dragging in completed list
-        taskElement.setAttribute('draggable', 'false');
 
         // Show the completed section if it has tasks
         completedSection.classList.add(DOM_CLASSES.SHOW);
@@ -177,6 +174,20 @@ export class CompletedTasksManager {
         // Update count and boundary markers
         this.updateCount();
         this._updateBoundaryMarkers();
+    }
+
+    /**
+     * Apply the node-level prep a completed task needs to live in the dropdown: clear stale
+     * interaction classes, hide its options, and disable dragging. Shared by moveToCompleted()
+     * (runtime move) and the renderer's partitioned render (render-path unification), so both
+     * paths produce identically-prepped completed nodes.
+     * @param {HTMLElement} taskElement
+     * @returns {void}
+     */
+    prepareCompletedNode(taskElement) {
+        if (!taskElement) return;
+        this._cleanupTaskStateBeforeMove(taskElement);
+        taskElement.setAttribute('draggable', 'false');
     }
 
     /**

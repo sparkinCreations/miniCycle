@@ -27,6 +27,7 @@
 // ✅ FIX: Dynamic import with version for cache-busting (prevents stale manifest issues)
 // Static imports can serve cached old versions even when moduleLoader.js is updated
 import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { featureAvailability } from '../utils/featureAvailability.js';
 
 let MODULE_MANIFESTS = {};
 let PHASES = {};
@@ -369,6 +370,7 @@ export async function loadModule(name, deps, coreResult, withV, wire = true) {
     } catch (error) {
         if (manifest.optional) {
             console.warn(`⚠️ Optional module ${name} failed to load:`, error.message);
+            featureAvailability.markFailed(name, error);
             return null;
         }
         console.error(`❌ Failed to load ${name}:`, error);
@@ -442,6 +444,7 @@ export async function initializeModule(name, mod, deps, coreResult) {
     } catch (error) {
         if (manifest.optional) {
             console.warn(`⚠️ Optional module ${name} failed to initialize:`, error.message);
+            featureAvailability.markFailed(name, error);
             return null;
         }
         console.error(`❌ Failed to initialize ${name}:`, error);
@@ -593,9 +596,15 @@ function runPostInitInjections(deps) {
         }
     }
 
-    // Inject organizeCompletedTasks into TaskRenderer (re-sort after full re-render)
+    // Inject completed-tasks wiring into TaskRenderer.
+    // - completedTasksManager instance: lets renderTasks project BOTH lists from state during
+    //   the atomic swap (isEnabled / prepareCompletedNode / updateCount) — render-path unification.
+    // - organizeCompletedTasks: retained for patch renders (undo/redo) that move nodes in place.
     if (deps.task?.taskDOMManager?.renderer && deps.ui?.completedTasksManager) {
         if (typeof deps.task.taskDOMManager.renderer.injectDependency === 'function') {
+            deps.task.taskDOMManager.renderer.injectDependency('completedTasksManager',
+                deps.ui.completedTasksManager
+            );
             deps.task.taskDOMManager.renderer.injectDependency('organizeCompletedTasks',
                 () => deps.ui.completedTasksManager.organize?.()
             );

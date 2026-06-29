@@ -108,6 +108,12 @@ export class RoutineSwitcher {
         // Instance state for temporary data (replaces window._tempRenameData)
         this._tempRenameData = null;
 
+        // Source of truth for which routine is selected in the switcher. The `.selected`
+        // DOM class is a *projection* of this — action handlers (delete/rename/etc.) read
+        // this field via _getSelectedItem(), never the DOM class, so a stray re-render that
+        // drops/moves the highlight can't make a destructive action target the wrong routine.
+        this._selectedCycleKey = null;
+
         this.loadMiniCycleListTimeout = null;
         this._idleSaveScheduled = false;
 
@@ -252,7 +258,7 @@ export class RoutineSwitcher {
                     // Stop propagation so the modal click handler doesn't also
                     // close the picker we're about to toggle
                     e.stopPropagation();
-                    const selected = this.deps.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM_SELECTED);
+                    const selected = this._getSelectedItem();
                     if (!selected) {
                         this.deps.showNotification(getLabel('switcher.selectFirst'), 'info', UI_TIMEOUTS.NOTIFICATION_SHORT);
                         return;
@@ -292,7 +298,7 @@ export class RoutineSwitcher {
      */
     renameMiniCycle() {
 
-        const selectedCycle = this.deps.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM_SELECTED);
+        const selectedCycle = this._getSelectedItem();
 
         if (!selectedCycle) {
             console.warn('⚠️ No cycle selected for rename');
@@ -332,7 +338,7 @@ export class RoutineSwitcher {
      */
     deleteMiniCycle() {
 
-        const selectedCycle = this.deps.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM_SELECTED);
+        const selectedCycle = this._getSelectedItem();
         if (!selectedCycle) {
             console.warn('⚠️ No cycle selected for deletion');
             this.deps.showNotification("⚠ " + getLabel('switcher.noSelectedForDelete'));
@@ -487,7 +493,7 @@ export class RoutineSwitcher {
      * Download the selected routine as a .mcyc file with confirmation
      */
     downloadMiniCycle() {
-        const selected = this.deps.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM_SELECTED);
+        const selected = this._getSelectedItem();
         if (!selected) {
             this.deps.showNotification(getLabel('switcher.selectFirst'), 'info', UI_TIMEOUTS.NOTIFICATION_SHORT);
             return;
@@ -566,7 +572,7 @@ export class RoutineSwitcher {
      */
     duplicateMiniCycle() {
 
-        const selectedCycle = this.deps.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM_SELECTED);
+        const selectedCycle = this._getSelectedItem();
 
         if (!selectedCycle) {
             console.warn('⚠️ No cycle selected for duplication');
@@ -647,6 +653,7 @@ export class RoutineSwitcher {
                 // Select the new item
                 this.deps.querySelectorAll(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM).forEach(item => item.classList.remove(DOM_CLASSES.SELECTED));
                 newItem.classList.add(DOM_CLASSES.SELECTED);
+                this._selectedCycleKey = newItem.dataset.cycleKey; // keep source of truth in sync
 
                 // Show the switch items row
                 const switchItemsRow = this.deps.getElementById(DOM_IDS.SWITCH_ITEMS_ROW);
@@ -1126,7 +1133,7 @@ export class RoutineSwitcher {
      */
     confirmMiniCycle() {
 
-        const selectedCycle = this.deps.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM_SELECTED);
+        const selectedCycle = this._getSelectedItem();
 
         if (!selectedCycle) {
             this.deps.showNotification('⚠️ ' + getLabel('notify.selectFirst'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
@@ -1574,12 +1581,36 @@ export class RoutineSwitcher {
     }
 
     /**
+     * The cycle key currently selected in the switcher (source of truth — NOT the DOM class).
+     * @returns {string|null}
+     */
+    _getSelectedCycleKey() {
+        return this._selectedCycleKey;
+    }
+
+    /**
+     * Resolve the selected routine's list element from the tracked key. Returns null if
+     * nothing is selected or the selected routine is no longer in the DOM (deleted/filtered).
+     * Action handlers use this instead of querying the `.selected` class so they always act
+     * on the user's actual selection, never a stale highlight.
+     * @returns {HTMLElement|null}
+     */
+    _getSelectedItem() {
+        const key = this._selectedCycleKey;
+        return key ? this.deps.querySelector(DATA_SELECTORS.cycleByKey(key)) : null;
+    }
+
+    /**
      * Select a routine by cycle key: highlight in list, update aria, show preview and actions.
      * Single source of truth for selection logic — used by list item clicks, chip clicks, and keyboard.
      * @param {string} cycleKey - The cycle storage key to select
      * @returns {void}
      */
     _selectRoutine(cycleKey) {
+        // Record the selection in the tracked source of truth FIRST; the `.selected`
+        // class set below is a projection of it.
+        this._selectedCycleKey = cycleKey || null;
+
         // Deselect all items
         this.deps.querySelectorAll(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM).forEach(item => {
             item.classList.remove(DOM_CLASSES.SELECTED);
@@ -1619,6 +1650,9 @@ export class RoutineSwitcher {
      * hide actions row, and close theme picker.
      */
     _deselectRoutine() {
+        // Clear the tracked source of truth, then the projected `.selected` classes.
+        this._selectedCycleKey = null;
+
         // Remove selection from all items
         this.deps.querySelectorAll(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM).forEach(item => {
             item.classList.remove(DOM_CLASSES.SELECTED);
@@ -1720,7 +1754,7 @@ export class RoutineSwitcher {
             }, false);
         }
 
-        const selected = this.deps.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM_SELECTED);
+        const selected = this._getSelectedItem();
         if (!selected) return;
 
         const cycleKey = selected.dataset.cycleKey;
