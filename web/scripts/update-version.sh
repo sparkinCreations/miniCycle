@@ -1609,19 +1609,26 @@ for cfg in CONFIGS:
     cur = set(current)
     missing = [h for h in canon if h not in cur]
     stale = [h for h in current if h not in canon_set]
-    if not missing and not stale:
+    repl = render_htaccess(canon) if cfg.endswith('.htaccess') else render_single(canon)
+    # Sync EVERY hash-bearing script-src directive (e.g. netlify.toml's "/*" AND
+    # "*.html" blocks — both must carry identical hashes so the SW-cached HTML shell
+    # has a valid CSP). NEVER touch a hashless directive: the "/tests/*" block uses
+    # 'unsafe-inline' and must keep it. The function form leaves non-hash matches
+    # alone and treats `repl` literally (no backslash/group escapes).
+    def _sync(_m):
+        block = _m.group(0)
+        return repl if "'sha256-" in block else block
+    new_content = re.sub(PATTERN, _sync, content, flags=re.DOTALL)
+    if new_content == content:
         print("✅ %s — already canonical (%d hashes)" % (cfg, len(canon)))
         continue
-    repl = render_htaccess(canon) if cfg.endswith('.htaccess') else render_single(canon)
-    # lambda => replacement string is treated literally (no backslash/group escapes).
-    content = re.sub(PATTERN, lambda _m: repl, content, count=1, flags=re.DOTALL)
-    open(cfg, 'w').write(content)
+    open(cfg, 'w').write(new_content)
     changed += 1
     for h in missing:
         print("   + %s  (%s)" % (h, cfg))
     for h in stale:
         print("   - %s  (%s)" % (h, cfg))
-    print("✅ %s — updated script-src (+%d new, -%d stale → %d total)" % (cfg, len(missing), len(stale), len(canon)))
+    print("✅ %s — synced hash-bearing script-src directive(s) → %d hashes" % (cfg, len(canon)))
 
 if changed == 0:
     print("✅ All CSP configs already match the canonical hash set (%d hashes)" % len(canon))
