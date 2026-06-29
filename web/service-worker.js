@@ -101,6 +101,7 @@ var BOOT_CRITICAL = [
   './modules/core/types.js',
   // Utils - ALL utility modules
   './modules/utils/globalUtils.js',
+  './modules/utils/featureAvailability.js',
   './modules/utils/errorHandler.js',
   './modules/utils/notifications.js',
   './modules/utils/deviceDetection.js',

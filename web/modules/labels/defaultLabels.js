@@ -564,6 +564,7 @@ export const DEFAULT_LABELS = deepFreeze({
 
         // Menu notifications
         appNotReady:             'App not ready. Please try again.',
+        featuresUnavailable:     'Some features are unavailable: {features}. The app will continue with reduced functionality.',
         dataNotAvailable:        'Data not available. Please try again.',
         invalidName:             'Please enter a valid name.',
         nameExists:              'Name already exists. Using "{name}" instead.',

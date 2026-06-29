@@ -46,7 +46,7 @@ const ALL_MODULES = [
     'orchestrator', 'diWiring', 'moduleLoader', 'moduleManifests', 'modalTemplates',
     'appContext', 'dataAccess', 'appGlobalState', 'migrationFacade', 'types',
     'modalRegistry', 'modalUtils', 'panelVisibilityHelpers', 'gesturePanelManager',
-    'titleManager', 'headerLayoutManager', 'uiOrchestrator', 'preferencesBgImage', 'preferencesPresets',
+    'titleManager', 'headerLayoutManager', 'featureAvailability', 'uiOrchestrator', 'preferencesBgImage', 'preferencesPresets',
     'taskDOMPatch', 'debugMode', 'iconInit', 'icons', 'keyboardNav', 'nameUtils',
     'recurringPanelEvents', 'recurringPanelForm', 'recurringPanelGrids',
     'recurringPanelSetup', 'recurringPanelSummary', 'recurringSettings',

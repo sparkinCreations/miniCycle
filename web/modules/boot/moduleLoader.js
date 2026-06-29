@@ -27,6 +27,7 @@
 // ✅ FIX: Dynamic import with version for cache-busting (prevents stale manifest issues)
 // Static imports can serve cached old versions even when moduleLoader.js is updated
 import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
+import { featureAvailability } from '../utils/featureAvailability.js';
 
 let MODULE_MANIFESTS = {};
 let PHASES = {};
@@ -369,6 +370,7 @@ export async function loadModule(name, deps, coreResult, withV, wire = true) {
     } catch (error) {
         if (manifest.optional) {
             console.warn(`⚠️ Optional module ${name} failed to load:`, error.message);
+            featureAvailability.markFailed(name, error);
             return null;
         }
         console.error(`❌ Failed to load ${name}:`, error);
@@ -442,6 +444,7 @@ export async function initializeModule(name, mod, deps, coreResult) {
     } catch (error) {
         if (manifest.optional) {
             console.warn(`⚠️ Optional module ${name} failed to initialize:`, error.message);
+            featureAvailability.markFailed(name, error);
             return null;
         }
         console.error(`❌ Failed to initialize ${name}:`, error);

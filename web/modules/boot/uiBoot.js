@@ -60,6 +60,7 @@ import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS } from '../core/consta
 import { getLabel } from '../labels/labelResolver.js';
 import { initNativeShell, isNativeApp } from '../platform/capacitorBridge.js';
 import { goToLiteVersion } from '../utils/liteVersion.js';
+import { featureAvailability } from '../utils/featureAvailability.js';
 import { initHeaderLayout } from '../ui/headerLayoutManager.js';
 
 let _appContextMod = null;
@@ -912,6 +913,10 @@ export async function finalizeUI(options) {
   // async and resumes after waitForCore(), potentially overwriting labels set
   // earlier. By running last in finalizeUI(), we guarantee the themed values win.
   deps.features?.themeManager?.refreshThemeLabels?.();
+
+  // Surface any OPTIONAL features that failed to load during boot as a single,
+  // non-blocking notice — so a silently-missing feature doesn't go unnoticed.
+  featureAvailability.showDegradedModeWarning(getShowNotification());
 
 }
 
