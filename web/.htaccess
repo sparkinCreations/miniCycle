@@ -40,7 +40,7 @@
             'sha256-HoVNOC42cKVHDxrnLY25aAvmKNrxd0QbgTdu4G7p9Vk=' \
             'sha256-ZmCo1D8qlgnCgO2lPu9go7bFumJyHt4sEttY02PYpQ8=' \
             'sha256-h+r8SXgnpMvpkOBx8UvUXtwr8qr+Jw6l0RYQo66Ga1s=' \
-            'sha256-4wkYgAS5FBUCHPc+oEJK+vaGprawf5sHkwfpVxgk9+8='; \
+            'sha256-p3tYkQflw5LCmaGWD/eTNkaWysr4FNoiTQRhWKRn4DY='; \
         style-src 'self' 'unsafe-inline'; \
         font-src 'self'; \
         img-src 'self' data: blob:; \
