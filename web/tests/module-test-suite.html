@@ -2448,34 +2448,44 @@
                         // This ensures consistent window.* exposure for all modules
                         await loadAndExposeModule(module.key);
 
-                    // Create a temporary div for results
-                    const tempDiv = document.createElement('div');
+                    // Per-module timeout with retry. Production fetches every module's imports
+                    // over the network (cache-busted, no SW on the test origin), so modules run
+                    // far slower than local and occasionally spike past the limit — but every
+                    // module passes in isolation, so a timeout there is transient, not a real
+                    // failure. Give production more headroom AND retry once before giving up.
+                    const isProd = location.hostname !== 'localhost' && location.hostname !== '127.0.0.1';
+                    const MODULE_TIMEOUT_MS = isProd ? 60000 : 30000;
+                    const MAX_ATTEMPTS = isProd ? 2 : 1;
+                    let result = null, winningHtml = '', timedOut = false;
 
-                    // Run the tests with a 30-second timeout per module
-                    const MODULE_TIMEOUT_MS = 30000;
-                    let result;
-
-                    const testPromise = module.runFn(tempDiv, true);
-                    const timeoutPromise = new Promise((_, reject) => {
-                        setTimeout(() => reject(new Error('TIMEOUT')), MODULE_TIMEOUT_MS);
-                    });
-
-                    try {
-                        result = await Promise.race([testPromise, timeoutPromise]);
-                    } catch (timeoutError) {
-                        if (timeoutError.message === 'TIMEOUT') {
-                            console.warn(`⏱️ Module "${module.name}" timed out after ${MODULE_TIMEOUT_MS / 1000}s`);
-                            allResults.push({
-                                name: module.name,
-                                passed: 0,
-                                total: 1,
-                                timedOut: true,
-                                html: `<div class="result fail">⏱️ TIMED OUT after ${MODULE_TIMEOUT_MS / 1000} seconds - skipped</div>`
-                            });
-                            totalTests += 1; // Count as 1 failed test
-                            continue; // Skip to next module
+                    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+                        const tempDiv = document.createElement('div');
+                        const timeoutPromise = new Promise((_, reject) => {
+                            setTimeout(() => reject(new Error('TIMEOUT')), MODULE_TIMEOUT_MS);
+                        });
+                        try {
+                            result = await Promise.race([module.runFn(tempDiv, true), timeoutPromise]);
+                            winningHtml = tempDiv.innerHTML;
+                            timedOut = false;
+                            break;
+                        } catch (timeoutError) {
+                            if (timeoutError.message !== 'TIMEOUT') throw timeoutError; // real error
+                            timedOut = true;
+                            console.warn(`⏱️ Module "${module.name}" timed out after ${MODULE_TIMEOUT_MS / 1000}s (attempt ${attempt}/${MAX_ATTEMPTS})`);
+                            if (attempt < MAX_ATTEMPTS) await loadAndExposeModule(module.key); // re-prime before retry
                         }
-                        throw timeoutError; // Re-throw non-timeout errors
+                    }
+
+                    if (timedOut) {
+                        allResults.push({
+                            name: module.name,
+                            passed: 0,
+                            total: 1,
+                            timedOut: true,
+                            html: `<div class="result fail">⏱️ TIMED OUT after ${MODULE_TIMEOUT_MS / 1000}s (×${MAX_ATTEMPTS}) - skipped</div>`
+                        });
+                        totalTests += 1; // Count as 1 failed test
+                        continue; // Skip to next module
                     }
 
                     // Store results
@@ -2483,7 +2493,7 @@
                         name: module.name,
                         passed: result?.passed || 0,
                         total: result?.total || 0,
-                        html: tempDiv.innerHTML
+                        html: winningHtml
                     });
 
                     totalPassed += (result?.passed || 0);
