@@ -499,125 +499,248 @@
             setupLocalStorage
         } from './testHelpers.js';
 
-        // Import test modules with cache busting
-        const { runPerformanceBenchmarks } = await import(`./performance.benchmark.js?v=${cacheBuster}`);
-        const { runIntegrationTests } = await import(`./integration.tests.js?v=${cacheBuster}`);
-        const { runThemeManagerTests } = await import(`./themeManager.tests.js?v=${cacheBuster}`);
-        const { runDeviceDetectionTests } = await import(`./deviceDetection.tests.js?v=${cacheBuster}`);
-        const { runRoutineLoaderTests } = await import(`./routineLoader.tests.js?v=${cacheBuster}`);
-        const { runStatsPanelTests } = await import(`./statsPanel.tests.js?v=${cacheBuster}`);
-        const { runConsoleCaptureTests } = await import(`./consoleCapture.tests.js?v=${cacheBuster}`);
-        const { runStateTests } = await import(`./state.tests.js?v=${cacheBuster}`);
-        const { runRecurringCoreTests } = await import(`./recurringCore.tests.js?v=${cacheBuster}`);
-        const { runRecurringIntegrationTests } = await import(`./recurringIntegration.tests.js?v=${cacheBuster}`);
-        const { runRecurringPanelTests } = await import(`./recurringPanel.tests.js?v=${cacheBuster}`);
-        const { runGlobalUtilsTests } = await import(`./globalUtils.tests.js?v=${cacheBuster}`);
-        const { runNotificationsTests } = await import(`./notifications.tests.js?v=${cacheBuster}`);
-        const { runDragDropManagerTests } = await import(`./dragDropManager.tests.js?v=${cacheBuster}`);
-        const { runMigrationManagerTests } = await import(`./migrationManager.tests.js?v=${cacheBuster}`);
-        const { runDueDatesTests } = await import(`./dueDates.tests.js?v=${cacheBuster}`);
-        const { runRemindersTests } = await import(`./reminders.tests.js?v=${cacheBuster}`);
-        const { runModeManagerTests } = await import(`./modeManager.tests.js?v=${cacheBuster}`);
-        const { runRoutineSwitcherTests } = await import(`./routineSwitcher.tests.js?v=${cacheBuster}`);
-        const { runRoutineManagerTests } = await import(`./routineManager.tests.js?v=${cacheBuster}`);
-        const { runUndoRedoManagerTests } = await import(`./undoRedoManager.tests.js?v=${cacheBuster}`);
-        const { runGamesManagerTests } = await import(`./gamesManager.tests.js?v=${cacheBuster}`);
-        const { runOnboardingManagerTests } = await import(`./onboardingManager.tests.js?v=${cacheBuster}`);
-        const { runHeaderLayoutManagerTests } = await import(`./headerLayoutManager.tests.js?v=${cacheBuster}`);
-        const { runGuidedTourManagerTests } = await import(`./guidedTourManager.tests.js?v=${cacheBuster}`);
-        const { runModalManagerTests } = await import(`./modalManager.tests.js?v=${cacheBuster}`);
-        const { runMenuManagerTests } = await import(`./menuManager.tests.js?v=${cacheBuster}`);
-        const { runSettingsManagerTests } = await import(`./settingsManager.tests.js?v=${cacheBuster}`);
-        const { runCompletedTasksManagerTests } = await import(`./completedTasksManager.tests.js?v=${cacheBuster}`);
-        const { runPullToRefreshTests } = await import(`./pullToRefresh.tests.js?v=${cacheBuster}`);
-        const { runTaskCoreTests } = await import(`./taskCore.tests.js?v=${cacheBuster}`);
-        const { runTaskValidationTests } = await import(`./taskValidation.tests.js?v=${cacheBuster}`);
-        const { runTaskUtilsTests } = await import(`./taskUtils.tests.js?v=${cacheBuster}`);
-        const { runTaskRendererTests } = await import(`./taskRenderer.tests.js?v=${cacheBuster}`);
-        const { runTaskEventsTests } = await import(`./taskEvents.tests.js?v=${cacheBuster}`);
-        const { runTaskDOMTests } = await import(`./taskDOM.tests.js?v=${cacheBuster}`);
-        const { runTaskOptionsCustomizerTests } = await import(`./taskOptionsCustomizer.tests.js?v=${cacheBuster}`);
-        const { runTaskUITests } = await import(`./taskUI.tests.js?v=${cacheBuster}`);
-        const { runTaskInteractionsTests } = await import(`./taskInteractions.tests.js?v=${cacheBuster}`);
-        const { runUIEffectsTests } = await import(`./uiEffects.tests.js?v=${cacheBuster}`);
-        const { runAllXSSTests } = await import(`./security/xss-vulnerability.tests.js?v=${cacheBuster}`);
-        const { runErrorHandlerTests } = await import(`./errorHandler.tests.js?v=${cacheBuster}`);
-        const { runTestingModalTests } = await import(`./testingModal.tests.js?v=${cacheBuster}`);
-        const { runBackupManagerTests } = await import(`./backupManager.tests.js?v=${cacheBuster}`);
-        const { runCycleCompletionTests } = await import(`./cycleCompletion.tests.js?v=${cacheBuster}`);
-        const { runDataValidatorTests } = await import(`./dataValidator.tests.js?v=${cacheBuster}`);
-        const { runAppInitTests } = await import(`./appInit.tests.js?v=${cacheBuster}`);
-        const { runAppStateTests } = await import(`./appState.tests.js?v=${cacheBuster}`);
-        const { runHelpWindowManagerTests } = await import(`./helpWindowManager.tests.js?v=${cacheBuster}`);
-        const { runConstantsTests } = await import(`./constants.tests.js?v=${cacheBuster}`);
-        const { runBasicPluginSystemTests } = await import(`./basicPluginSystem.tests.js?v=${cacheBuster}`);
-        const { runAccessibilityTests } = await import(`./accessibility.tests.js?v=${cacheBuster}`);
-        const { runStressTests } = await import(`./stress.tests.js?v=${cacheBuster}`);
-        const { runCoreBootTests } = await import(`./coreBoot.tests.js?v=${cacheBuster}`);
-        const { runUIBootTests } = await import(`./uiBoot.tests.js?v=${cacheBuster}`);
-        const { runFeatureBootTests } = await import(`./featureBoot.tests.js?v=${cacheBuster}`);
-        const { runLabelResolverTests } = await import(`./labelResolver.tests.js?v=${cacheBuster}`);
-        const { runDefaultLabelsTests } = await import(`./defaultLabels.tests.js?v=${cacheBuster}`);
-        const { runDiBaseTests } = await import(`./diBase.tests.js?v=${cacheBuster}`);
-        const { runThemesTests } = await import(`./themes.tests.js?v=${cacheBuster}`);
-        const { runDataSanitizerTests } = await import(`./dataSanitizer.tests.js?v=${cacheBuster}`);
-        const { runStorageUtilsTests } = await import(`./storageUtils.tests.js?v=${cacheBuster}`);
-        const { runAchievementsManagerTests } = await import(`./achievementsManager.tests.js?v=${cacheBuster}`);
-        const { runHistoryManagerTests } = await import(`./historyManager.tests.js?v=${cacheBuster}`);
-        const { runRecurringDateUtilsTests } = await import(`./recurringDateUtils.tests.js?v=${cacheBuster}`);
-        const { runClearedTasksManagerTests } = await import(`./clearedTasksManager.tests.js?v=${cacheBuster}`);
-        const { runTaskCompletionTests } = await import(`./taskCompletion.tests.js?v=${cacheBuster}`);
-        const { runTaskCRUDTests } = await import(`./taskCRUD.tests.js?v=${cacheBuster}`);
-        const { runDailyResetManagerTests } = await import(`./dailyResetManager.tests.js?v=${cacheBuster}`);
-        const { runNotificationDialogHostTests } = await import(`./notificationDialogHost.tests.js?v=${cacheBuster}`);
-        const { runRecurringMatcherTests } = await import(`./recurringMatcher.tests.js?v=${cacheBuster}`);
-        const { runRecurringCalculatorsTests } = await import(`./recurringCalculators.tests.js?v=${cacheBuster}`);
-        const { runRecurringActivationTests } = await import(`./recurringActivation.tests.js?v=${cacheBuster}`);
-        const { runPreferencesManagerTests } = await import(`./preferencesManager.tests.js?v=${cacheBuster}`);
-        const { runSettingsUIManagerTests } = await import(`./settingsUIManager.tests.js?v=${cacheBuster}`);
-        const { runFocusModeTests } = await import(`./focusMode.tests.js?v=${cacheBuster}`);
-        const { runTaskSearchTests } = await import(`./taskSearch.tests.js?v=${cacheBuster}`);
-        const { runQuickActionsManagerTests } = await import(`./quickActionsManager.tests.js?v=${cacheBuster}`);
-        const { runActionUsageTests } = await import(`./actionUsage.tests.js?v=${cacheBuster}`);
-        const { runBackupRestoreManagerTests } = await import(`./backupRestoreManager.tests.js?v=${cacheBuster}`);
-        const { runCycleExportManagerTests } = await import(`./cycleExportManager.tests.js?v=${cacheBuster}`);
-        const { runCycleImportManagerTests } = await import(`./cycleImportManager.tests.js?v=${cacheBuster}`);
-        const { runShareManagerTests } = await import(`./shareManager.tests.js?v=${cacheBuster}`);
-        const { runTaskButtonsTests } = await import(`./taskButtons.tests.js?v=${cacheBuster}`);
-        const { runTaskCycleResetTests } = await import(`./taskCycleReset.tests.js?v=${cacheBuster}`);
-        const { runBackupReminderTests } = await import(`./backupReminder.tests.js?v=${cacheBuster}`);
-        const { runOrchestratorTests } = await import(`./orchestrator.tests.js?v=${cacheBuster}`);
-        const { runModuleLoaderTests } = await import(`./moduleLoader.tests.js?v=${cacheBuster}`);
-        const { runModuleManifestsTests } = await import(`./moduleManifests.tests.js?v=${cacheBuster}`);
-        const { runModalTemplatesTests } = await import(`./modalTemplates.tests.js?v=${cacheBuster}`);
-        const { runAppContextTests } = await import(`./appContext.tests.js?v=${cacheBuster}`);
-        const { runDataAccessTests } = await import(`./dataAccess.tests.js?v=${cacheBuster}`);
-        const { runAppGlobalStateTests } = await import(`./appGlobalState.tests.js?v=${cacheBuster}`);
-        const { runMigrationFacadeTests } = await import(`./migrationFacade.tests.js?v=${cacheBuster}`);
-        const { runTypesTests } = await import(`./types.tests.js?v=${cacheBuster}`);
-        const { runModalRegistryTests } = await import(`./modalRegistry.tests.js?v=${cacheBuster}`);
-        const { runModalUtilsTests } = await import(`./modalUtils.tests.js?v=${cacheBuster}`);
-        const { runPanelVisibilityHelpersTests } = await import(`./panelVisibilityHelpers.tests.js?v=${cacheBuster}`);
-        const { runGesturePanelManagerTests } = await import(`./gesturePanelManager.tests.js?v=${cacheBuster}`);
-        const { runTitleManagerTests } = await import(`./titleManager.tests.js?v=${cacheBuster}`);
-        const { runUIOrchestratorTests } = await import(`./uiOrchestrator.tests.js?v=${cacheBuster}`);
-        const { runPreferencesBgImageTests } = await import(`./preferencesBgImage.tests.js?v=${cacheBuster}`);
-        const { runPreferencesPresetsTests } = await import(`./preferencesPresets.tests.js?v=${cacheBuster}`);
-        const { runTaskDOMPatchTests } = await import(`./taskDOMPatch.tests.js?v=${cacheBuster}`);
-        const { runDebugModeTests } = await import(`./debugMode.tests.js?v=${cacheBuster}`);
-        const { runIconInitTests } = await import(`./iconInit.tests.js?v=${cacheBuster}`);
-        const { runIconsTests } = await import(`./icons.tests.js?v=${cacheBuster}`);
-        const { runKeyboardNavTests } = await import(`./keyboardNav.tests.js?v=${cacheBuster}`);
-        const { runNameUtilsTests } = await import(`./nameUtils.tests.js?v=${cacheBuster}`);
-        const { runRecurringPanelEventsTests } = await import(`./recurringPanelEvents.tests.js?v=${cacheBuster}`);
-        const { runRecurringPanelFormTests } = await import(`./recurringPanelForm.tests.js?v=${cacheBuster}`);
-        const { runRecurringPanelGridsTests } = await import(`./recurringPanelGrids.tests.js?v=${cacheBuster}`);
-        const { runRecurringPanelSetupTests } = await import(`./recurringPanelSetup.tests.js?v=${cacheBuster}`);
-        const { runRecurringPanelSummaryTests } = await import(`./recurringPanelSummary.tests.js?v=${cacheBuster}`);
-        const { runRecurringSettingsTests } = await import(`./recurringSettings.tests.js?v=${cacheBuster}`);
-        const { runRecurringSettingsApplicatorTests } = await import(`./recurringSettingsApplicator.tests.js?v=${cacheBuster}`);
-        const { runRecurringWatcherTests } = await import(`./recurringWatcher.tests.js?v=${cacheBuster}`);
-        const { runDIWiringTests } = await import(`./diWiring.tests.js?v=${cacheBuster}`);
+        // Import test modules with cache busting — fired CONCURRENTLY then destructured
+        // from the resolved array. (Sequential awaits here previously serialized ~85
+        // network round-trips at page load, which dominated run time on production.)
+        const _testModuleResults = await Promise.all([
+            import(`./performance.benchmark.js?v=${cacheBuster}`),
+            import(`./integration.tests.js?v=${cacheBuster}`),
+            import(`./themeManager.tests.js?v=${cacheBuster}`),
+            import(`./deviceDetection.tests.js?v=${cacheBuster}`),
+            import(`./routineLoader.tests.js?v=${cacheBuster}`),
+            import(`./statsPanel.tests.js?v=${cacheBuster}`),
+            import(`./consoleCapture.tests.js?v=${cacheBuster}`),
+            import(`./state.tests.js?v=${cacheBuster}`),
+            import(`./recurringCore.tests.js?v=${cacheBuster}`),
+            import(`./recurringIntegration.tests.js?v=${cacheBuster}`),
+            import(`./recurringPanel.tests.js?v=${cacheBuster}`),
+            import(`./globalUtils.tests.js?v=${cacheBuster}`),
+            import(`./notifications.tests.js?v=${cacheBuster}`),
+            import(`./dragDropManager.tests.js?v=${cacheBuster}`),
+            import(`./migrationManager.tests.js?v=${cacheBuster}`),
+            import(`./dueDates.tests.js?v=${cacheBuster}`),
+            import(`./reminders.tests.js?v=${cacheBuster}`),
+            import(`./modeManager.tests.js?v=${cacheBuster}`),
+            import(`./routineSwitcher.tests.js?v=${cacheBuster}`),
+            import(`./routineManager.tests.js?v=${cacheBuster}`),
+            import(`./undoRedoManager.tests.js?v=${cacheBuster}`),
+            import(`./gamesManager.tests.js?v=${cacheBuster}`),
+            import(`./onboardingManager.tests.js?v=${cacheBuster}`),
+            import(`./headerLayoutManager.tests.js?v=${cacheBuster}`),
+            import(`./guidedTourManager.tests.js?v=${cacheBuster}`),
+            import(`./modalManager.tests.js?v=${cacheBuster}`),
+            import(`./menuManager.tests.js?v=${cacheBuster}`),
+            import(`./settingsManager.tests.js?v=${cacheBuster}`),
+            import(`./completedTasksManager.tests.js?v=${cacheBuster}`),
+            import(`./pullToRefresh.tests.js?v=${cacheBuster}`),
+            import(`./taskCore.tests.js?v=${cacheBuster}`),
+            import(`./taskValidation.tests.js?v=${cacheBuster}`),
+            import(`./taskUtils.tests.js?v=${cacheBuster}`),
+            import(`./taskRenderer.tests.js?v=${cacheBuster}`),
+            import(`./taskEvents.tests.js?v=${cacheBuster}`),
+            import(`./taskDOM.tests.js?v=${cacheBuster}`),
+            import(`./taskOptionsCustomizer.tests.js?v=${cacheBuster}`),
+            import(`./taskUI.tests.js?v=${cacheBuster}`),
+            import(`./taskInteractions.tests.js?v=${cacheBuster}`),
+            import(`./uiEffects.tests.js?v=${cacheBuster}`),
+            import(`./security/xss-vulnerability.tests.js?v=${cacheBuster}`),
+            import(`./errorHandler.tests.js?v=${cacheBuster}`),
+            import(`./testingModal.tests.js?v=${cacheBuster}`),
+            import(`./backupManager.tests.js?v=${cacheBuster}`),
+            import(`./cycleCompletion.tests.js?v=${cacheBuster}`),
+            import(`./dataValidator.tests.js?v=${cacheBuster}`),
+            import(`./appInit.tests.js?v=${cacheBuster}`),
+            import(`./appState.tests.js?v=${cacheBuster}`),
+            import(`./helpWindowManager.tests.js?v=${cacheBuster}`),
+            import(`./constants.tests.js?v=${cacheBuster}`),
+            import(`./basicPluginSystem.tests.js?v=${cacheBuster}`),
+            import(`./accessibility.tests.js?v=${cacheBuster}`),
+            import(`./stress.tests.js?v=${cacheBuster}`),
+            import(`./coreBoot.tests.js?v=${cacheBuster}`),
+            import(`./uiBoot.tests.js?v=${cacheBuster}`),
+            import(`./featureBoot.tests.js?v=${cacheBuster}`),
+            import(`./labelResolver.tests.js?v=${cacheBuster}`),
+            import(`./defaultLabels.tests.js?v=${cacheBuster}`),
+            import(`./diBase.tests.js?v=${cacheBuster}`),
+            import(`./themes.tests.js?v=${cacheBuster}`),
+            import(`./dataSanitizer.tests.js?v=${cacheBuster}`),
+            import(`./storageUtils.tests.js?v=${cacheBuster}`),
+            import(`./achievementsManager.tests.js?v=${cacheBuster}`),
+            import(`./historyManager.tests.js?v=${cacheBuster}`),
+            import(`./recurringDateUtils.tests.js?v=${cacheBuster}`),
+            import(`./clearedTasksManager.tests.js?v=${cacheBuster}`),
+            import(`./taskCompletion.tests.js?v=${cacheBuster}`),
+            import(`./taskCRUD.tests.js?v=${cacheBuster}`),
+            import(`./dailyResetManager.tests.js?v=${cacheBuster}`),
+            import(`./notificationDialogHost.tests.js?v=${cacheBuster}`),
+            import(`./recurringMatcher.tests.js?v=${cacheBuster}`),
+            import(`./recurringCalculators.tests.js?v=${cacheBuster}`),
+            import(`./recurringActivation.tests.js?v=${cacheBuster}`),
+            import(`./preferencesManager.tests.js?v=${cacheBuster}`),
+            import(`./settingsUIManager.tests.js?v=${cacheBuster}`),
+            import(`./focusMode.tests.js?v=${cacheBuster}`),
+            import(`./taskSearch.tests.js?v=${cacheBuster}`),
+            import(`./quickActionsManager.tests.js?v=${cacheBuster}`),
+            import(`./actionUsage.tests.js?v=${cacheBuster}`),
+            import(`./backupRestoreManager.tests.js?v=${cacheBuster}`),
+            import(`./cycleExportManager.tests.js?v=${cacheBuster}`),
+            import(`./cycleImportManager.tests.js?v=${cacheBuster}`),
+            import(`./shareManager.tests.js?v=${cacheBuster}`),
+            import(`./taskButtons.tests.js?v=${cacheBuster}`),
+            import(`./taskCycleReset.tests.js?v=${cacheBuster}`),
+            import(`./backupReminder.tests.js?v=${cacheBuster}`),
+            import(`./orchestrator.tests.js?v=${cacheBuster}`),
+            import(`./moduleLoader.tests.js?v=${cacheBuster}`),
+            import(`./moduleManifests.tests.js?v=${cacheBuster}`),
+            import(`./modalTemplates.tests.js?v=${cacheBuster}`),
+            import(`./appContext.tests.js?v=${cacheBuster}`),
+            import(`./dataAccess.tests.js?v=${cacheBuster}`),
+            import(`./appGlobalState.tests.js?v=${cacheBuster}`),
+            import(`./migrationFacade.tests.js?v=${cacheBuster}`),
+            import(`./types.tests.js?v=${cacheBuster}`),
+            import(`./modalRegistry.tests.js?v=${cacheBuster}`),
+            import(`./modalUtils.tests.js?v=${cacheBuster}`),
+            import(`./panelVisibilityHelpers.tests.js?v=${cacheBuster}`),
+            import(`./gesturePanelManager.tests.js?v=${cacheBuster}`),
+            import(`./titleManager.tests.js?v=${cacheBuster}`),
+            import(`./uiOrchestrator.tests.js?v=${cacheBuster}`),
+            import(`./preferencesBgImage.tests.js?v=${cacheBuster}`),
+            import(`./preferencesPresets.tests.js?v=${cacheBuster}`),
+            import(`./taskDOMPatch.tests.js?v=${cacheBuster}`),
+            import(`./debugMode.tests.js?v=${cacheBuster}`),
+            import(`./iconInit.tests.js?v=${cacheBuster}`),
+            import(`./icons.tests.js?v=${cacheBuster}`),
+            import(`./keyboardNav.tests.js?v=${cacheBuster}`),
+            import(`./nameUtils.tests.js?v=${cacheBuster}`),
+            import(`./recurringPanelEvents.tests.js?v=${cacheBuster}`),
+            import(`./recurringPanelForm.tests.js?v=${cacheBuster}`),
+            import(`./recurringPanelGrids.tests.js?v=${cacheBuster}`),
+            import(`./recurringPanelSetup.tests.js?v=${cacheBuster}`),
+            import(`./recurringPanelSummary.tests.js?v=${cacheBuster}`),
+            import(`./recurringSettings.tests.js?v=${cacheBuster}`),
+            import(`./recurringSettingsApplicator.tests.js?v=${cacheBuster}`),
+            import(`./recurringWatcher.tests.js?v=${cacheBuster}`),
+            import(`./diWiring.tests.js?v=${cacheBuster}`),
+        ]);
+        let _tmIdx = 0;
+        const { runPerformanceBenchmarks } = _testModuleResults[_tmIdx++];
+        const { runIntegrationTests } = _testModuleResults[_tmIdx++];
+        const { runThemeManagerTests } = _testModuleResults[_tmIdx++];
+        const { runDeviceDetectionTests } = _testModuleResults[_tmIdx++];
+        const { runRoutineLoaderTests } = _testModuleResults[_tmIdx++];
+        const { runStatsPanelTests } = _testModuleResults[_tmIdx++];
+        const { runConsoleCaptureTests } = _testModuleResults[_tmIdx++];
+        const { runStateTests } = _testModuleResults[_tmIdx++];
+        const { runRecurringCoreTests } = _testModuleResults[_tmIdx++];
+        const { runRecurringIntegrationTests } = _testModuleResults[_tmIdx++];
+        const { runRecurringPanelTests } = _testModuleResults[_tmIdx++];
+        const { runGlobalUtilsTests } = _testModuleResults[_tmIdx++];
+        const { runNotificationsTests } = _testModuleResults[_tmIdx++];
+        const { runDragDropManagerTests } = _testModuleResults[_tmIdx++];
+        const { runMigrationManagerTests } = _testModuleResults[_tmIdx++];
+        const { runDueDatesTests } = _testModuleResults[_tmIdx++];
+        const { runRemindersTests } = _testModuleResults[_tmIdx++];
+        const { runModeManagerTests } = _testModuleResults[_tmIdx++];
+        const { runRoutineSwitcherTests } = _testModuleResults[_tmIdx++];
+        const { runRoutineManagerTests } = _testModuleResults[_tmIdx++];
+        const { runUndoRedoManagerTests } = _testModuleResults[_tmIdx++];
+        const { runGamesManagerTests } = _testModuleResults[_tmIdx++];
+        const { runOnboardingManagerTests } = _testModuleResults[_tmIdx++];
+        const { runHeaderLayoutManagerTests } = _testModuleResults[_tmIdx++];
+        const { runGuidedTourManagerTests } = _testModuleResults[_tmIdx++];
+        const { runModalManagerTests } = _testModuleResults[_tmIdx++];
+        const { runMenuManagerTests } = _testModuleResults[_tmIdx++];
+        const { runSettingsManagerTests } = _testModuleResults[_tmIdx++];
+        const { runCompletedTasksManagerTests } = _testModuleResults[_tmIdx++];
+        const { runPullToRefreshTests } = _testModuleResults[_tmIdx++];
+        const { runTaskCoreTests } = _testModuleResults[_tmIdx++];
+        const { runTaskValidationTests } = _testModuleResults[_tmIdx++];
+        const { runTaskUtilsTests } = _testModuleResults[_tmIdx++];
+        const { runTaskRendererTests } = _testModuleResults[_tmIdx++];
+        const { runTaskEventsTests } = _testModuleResults[_tmIdx++];
+        const { runTaskDOMTests } = _testModuleResults[_tmIdx++];
+        const { runTaskOptionsCustomizerTests } = _testModuleResults[_tmIdx++];
+        const { runTaskUITests } = _testModuleResults[_tmIdx++];
+        const { runTaskInteractionsTests } = _testModuleResults[_tmIdx++];
+        const { runUIEffectsTests } = _testModuleResults[_tmIdx++];
+        const { runAllXSSTests } = _testModuleResults[_tmIdx++];
+        const { runErrorHandlerTests } = _testModuleResults[_tmIdx++];
+        const { runTestingModalTests } = _testModuleResults[_tmIdx++];
+        const { runBackupManagerTests } = _testModuleResults[_tmIdx++];
+        const { runCycleCompletionTests } = _testModuleResults[_tmIdx++];
+        const { runDataValidatorTests } = _testModuleResults[_tmIdx++];
+        const { runAppInitTests } = _testModuleResults[_tmIdx++];
+        const { runAppStateTests } = _testModuleResults[_tmIdx++];
+        const { runHelpWindowManagerTests } = _testModuleResults[_tmIdx++];
+        const { runConstantsTests } = _testModuleResults[_tmIdx++];
+        const { runBasicPluginSystemTests } = _testModuleResults[_tmIdx++];
+        const { runAccessibilityTests } = _testModuleResults[_tmIdx++];
+        const { runStressTests } = _testModuleResults[_tmIdx++];
+        const { runCoreBootTests } = _testModuleResults[_tmIdx++];
+        const { runUIBootTests } = _testModuleResults[_tmIdx++];
+        const { runFeatureBootTests } = _testModuleResults[_tmIdx++];
+        const { runLabelResolverTests } = _testModuleResults[_tmIdx++];
+        const { runDefaultLabelsTests } = _testModuleResults[_tmIdx++];
+        const { runDiBaseTests } = _testModuleResults[_tmIdx++];
+        const { runThemesTests } = _testModuleResults[_tmIdx++];
+        const { runDataSanitizerTests } = _testModuleResults[_tmIdx++];
+        const { runStorageUtilsTests } = _testModuleResults[_tmIdx++];
+        const { runAchievementsManagerTests } = _testModuleResults[_tmIdx++];
+        const { runHistoryManagerTests } = _testModuleResults[_tmIdx++];
+        const { runRecurringDateUtilsTests } = _testModuleResults[_tmIdx++];
+        const { runClearedTasksManagerTests } = _testModuleResults[_tmIdx++];
+        const { runTaskCompletionTests } = _testModuleResults[_tmIdx++];
+        const { runTaskCRUDTests } = _testModuleResults[_tmIdx++];
+        const { runDailyResetManagerTests } = _testModuleResults[_tmIdx++];
+        const { runNotificationDialogHostTests } = _testModuleResults[_tmIdx++];
+        const { runRecurringMatcherTests } = _testModuleResults[_tmIdx++];
+        const { runRecurringCalculatorsTests } = _testModuleResults[_tmIdx++];
+        const { runRecurringActivationTests } = _testModuleResults[_tmIdx++];
+        const { runPreferencesManagerTests } = _testModuleResults[_tmIdx++];
+        const { runSettingsUIManagerTests } = _testModuleResults[_tmIdx++];
+        const { runFocusModeTests } = _testModuleResults[_tmIdx++];
+        const { runTaskSearchTests } = _testModuleResults[_tmIdx++];
+        const { runQuickActionsManagerTests } = _testModuleResults[_tmIdx++];
+        const { runActionUsageTests } = _testModuleResults[_tmIdx++];
+        const { runBackupRestoreManagerTests } = _testModuleResults[_tmIdx++];
+        const { runCycleExportManagerTests } = _testModuleResults[_tmIdx++];
+        const { runCycleImportManagerTests } = _testModuleResults[_tmIdx++];
+        const { runShareManagerTests } = _testModuleResults[_tmIdx++];
+        const { runTaskButtonsTests } = _testModuleResults[_tmIdx++];
+        const { runTaskCycleResetTests } = _testModuleResults[_tmIdx++];
+        const { runBackupReminderTests } = _testModuleResults[_tmIdx++];
+        const { runOrchestratorTests } = _testModuleResults[_tmIdx++];
+        const { runModuleLoaderTests } = _testModuleResults[_tmIdx++];
+        const { runModuleManifestsTests } = _testModuleResults[_tmIdx++];
+        const { runModalTemplatesTests } = _testModuleResults[_tmIdx++];
+        const { runAppContextTests } = _testModuleResults[_tmIdx++];
+        const { runDataAccessTests } = _testModuleResults[_tmIdx++];
+        const { runAppGlobalStateTests } = _testModuleResults[_tmIdx++];
+        const { runMigrationFacadeTests } = _testModuleResults[_tmIdx++];
+        const { runTypesTests } = _testModuleResults[_tmIdx++];
+        const { runModalRegistryTests } = _testModuleResults[_tmIdx++];
+        const { runModalUtilsTests } = _testModuleResults[_tmIdx++];
+        const { runPanelVisibilityHelpersTests } = _testModuleResults[_tmIdx++];
+        const { runGesturePanelManagerTests } = _testModuleResults[_tmIdx++];
+        const { runTitleManagerTests } = _testModuleResults[_tmIdx++];
+        const { runUIOrchestratorTests } = _testModuleResults[_tmIdx++];
+        const { runPreferencesBgImageTests } = _testModuleResults[_tmIdx++];
+        const { runPreferencesPresetsTests } = _testModuleResults[_tmIdx++];
+        const { runTaskDOMPatchTests } = _testModuleResults[_tmIdx++];
+        const { runDebugModeTests } = _testModuleResults[_tmIdx++];
+        const { runIconInitTests } = _testModuleResults[_tmIdx++];
+        const { runIconsTests } = _testModuleResults[_tmIdx++];
+        const { runKeyboardNavTests } = _testModuleResults[_tmIdx++];
+        const { runNameUtilsTests } = _testModuleResults[_tmIdx++];
+        const { runRecurringPanelEventsTests } = _testModuleResults[_tmIdx++];
+        const { runRecurringPanelFormTests } = _testModuleResults[_tmIdx++];
+        const { runRecurringPanelGridsTests } = _testModuleResults[_tmIdx++];
+        const { runRecurringPanelSetupTests } = _testModuleResults[_tmIdx++];
+        const { runRecurringPanelSummaryTests } = _testModuleResults[_tmIdx++];
+        const { runRecurringSettingsTests } = _testModuleResults[_tmIdx++];
+        const { runRecurringSettingsApplicatorTests } = _testModuleResults[_tmIdx++];
+        const { runRecurringWatcherTests } = _testModuleResults[_tmIdx++];
+        const { runDIWiringTests } = _testModuleResults[_tmIdx++];
 
         // 🎯 Cross-origin target: the app embeds this runner from a different origin and
         // passes its own origin as ?parentOrigin=. All postMessage replies target it
