@@ -6,6 +6,28 @@
 
 ---
 
+## ⚠️ Accuracy Correction — June 29, 2026
+
+Reviewed against current code (post commit `00c727b3`). The **core strategy — derive `depMappings` from manifest `provides` + `api` category — remains feasible**, and the trap, the three incidents, the April audit, and the named special-case entries all check out. But three claims are wrong in ways that change the design and effort. Treat line numbers as June-2026 snapshots. Where this block conflicts with the prose below, **this block wins.**
+
+**Counts are overstated:**
+- "~370 entries" → **~221** actual (`depMappings` L836–1311). Fix everywhere it appears: intro, the `// ... ~370 more` comment, the Migration-Path before/after, and Decision Criterion #2.
+- "~80 modules × ~5 provides" → **52** modules.
+- Decision Criterion #2 ("crosses ~500, currently ~370") is doubly stale — actual is ~221, so that trigger is much further off than implied.
+
+**🔴 The instance-vs-call discriminator is broken against the real manifest shape.** The algorithm decides instance-accessor vs call-wrapper via `manifest.provideInstance === provided`. But across all **25** `provideInstance` declarations, the instance name lives *outside* its own `provides` array (e.g. `statsPanel`: `provideInstance: 'statsPanelManager'`, `provides: ['showStatsPanel', …]`; only `vocabThemes` has the name in both). So that test is essentially always false. As written, `buildAutoDepMappings` would **never** emit instance accessors and would silently fail to produce the ~25 instance-name deps that consumers (`historyManager`, `statsPanelManager`, `achievementsManager`, `vocabThemeManager`, …) depend on. Consequences:
+- `provideInstance` must be iterated as a **separate source** of mappings, not tested for membership in `provides`.
+- The "just detect instance vs function by runtime value type" fallback **cannot work**: `depMappings` is built before any instance exists — its closures aren't invoked at build time, and `ensureDepMappingKeys()` (L1628) relies on exactly that. So the `instanceProvides` / `callProvides` manifest hints are **required, not optional.**
+- Several instance deps are **method-binding Proxies** today (`historyManager`, `clearedTasksManager`, `achievementsManager`, `vocabThemeManager`, …) to preserve `this`. A naive `() => deps[cat]?.[name]` breaks them — the generator must reproduce the binding.
+
+**🔴 The override map is bigger than estimated (~60–80, not ~20–30).** Beyond the named special cases, many entries resolve to a **nested sub-API**, not `deps[category][providedName]`: recurring fns via `deps.recurring.core` / `deps.recurring.panel`; completed-tasks/help/gestures via `deps.ui.<manager>.<method>`. Plus multi-source fallbacks (`sanitizeInput`, `removeRecurringTasksFromCycle`, `hideMainMenu` — in addition to the correctly-named `createInitialSchema25Data`), the `deferredInvoke`-based `unlockMiniGame`, and the DOM-helper CORE_DEPS (no provider module — must stay static overrides). All need overrides.
+
+**`findProvidedValue()` does NOT enforce unique `provides` names.** The Risk section claims uniqueness is "already partially done — see `findProvidedValue()`." It isn't: `findProvidedValue()` (L1476) resolves one name against one instance with no cross-module awareness, and nothing else enforces uniqueness (the provider map silently last-write-wins on duplicates). Duplicate-provides detection is **net-new work** — build it into `buildAutoDepMappings` (the pseudocode's warn-and-skip is a start) or manifest validation. Drop the `findProvidedValue()` reference.
+
+**Corroborated (no change needed):** the trap mechanism; the three incidents (commits `228163f0`, `00c727b3`); the April audit remediation; `WARN_ON_UNMAPPED_DECLARED_DEPS` (L162); `closeAllModals` via `createValidatedWrapper` (L997); `isModalOpen` nested access (L999); `createInitialSchema25Data` multi-source (L1026); `getDepsCategoryForModule` (L1450) mapping `api`→category (`state`→core, `undo`→ui, else identity, unknown→features). **One caveat:** the `startGuidedTour` incident was actually a missing manifest `lazyRequires` declaration, not a missing `depMappings` entry — auto-generation would **not** have prevented that specific case (it's a sibling sub-mechanism, so grouping it slightly overstates the "auto-gen kills the whole class" framing).
+
+---
+
 ## Goal
 
 Eliminate the silent-failure bug class where a module declares a dep in its manifest (`requires` / `optionalDeps` / `lazyRequires`) but it has no corresponding entry in the `depMappings` object in `moduleLoader.js` — leaving the consumer to fall back to its `optional()` default forever, with no error.
@@ -18,14 +40,14 @@ The proposed approach: **derive `depMappings` from the manifests' `provides` dec
 
 ### The trap exists today
 
-`depMappings` (in [`web/modules/boot/moduleLoader.js`](../../modules/boot/moduleLoader.js)) is a hand-maintained object literal with ~370 entries that look like:
+`depMappings` (in [`web/modules/boot/moduleLoader.js`](../../modules/boot/moduleLoader.js)) is a hand-maintained object literal with ~221 entries that look like:
 
 ```javascript
 const depMappings = {
     isModalOpen: () => deps.ui?.modalManager?.isModalOpen?.(),
     startGuidedTour: (...args) => deps.ui?.startGuidedTour?.(...args),
     loadMiniCycle: (...args) => deps.cycle?.loadMiniCycle?.(...args),
-    // ... ~370 more
+    // ... ~221 more
 };
 ```
 
@@ -148,7 +170,7 @@ const depMappingsOverrides = {
 const depMappings = { ...buildAutoDepMappings(...), ...depMappingsOverrides };
 ```
 
-The override map stays small (~20-30 entries instead of ~370). Overrides win because they're applied last via spread.
+The override map stays small (~20-30 entries instead of ~370). Overrides win because they're applied last via spread. **(June 2026 correction: the override map is realistically ~60-80 entries, not ~20-30 — nested sub-API resolution, multi-source fallbacks, method-binding Proxies, and instance accessors all need overrides. See correction block at top.)**
 
 ### Manifest hint for instance vs function
 
@@ -190,12 +212,12 @@ After all categories are migrated, the hand-written `depMappings` only contains 
 
 ```javascript
 // Before:
-const depMappings = { /* 370 entries */ };
+const depMappings = { /* ~221 entries */ };
 
 // After:
 const depMappings = {
     ...buildAutoDepMappings(manifestRegistry, deps),
-    ...depMappingsOverrides,  // ~30 entries for special cases
+    ...depMappingsOverrides,  // ~60-80 entries for special cases (see correction block) — NOT ~30
 };
 ```
 
@@ -211,7 +233,7 @@ const depMappings = {
 
 ### Risk: Performance overhead at boot
 
-`buildAutoDepMappings()` walks ~80 modules × ~5 provides each = ~400 iterations. Negligible (<1ms).
+`buildAutoDepMappings()` walks ~52 modules × ~5 provides each = ~260 iterations. Negligible (<1ms).
 
 ### Risk: Auto-generated entries miss subtle behavior
 
@@ -223,7 +245,7 @@ Some current entries do things the auto-generator wouldn't replicate (e.g., the 
 
 ### Risk: Duplicate `provides` across modules
 
-If two modules declare `provides: ['someName']`, the auto-generator currently picks one and warns. Today's `depMappings` would also be ambiguous in that case. Solve by enforcing unique `provides` names at manifest validation time (already partially done — see `findProvidedValue()`).
+If two modules declare `provides: ['someName']`, the auto-generator currently picks one and warns. Today's `depMappings` would also be ambiguous in that case. Solve by enforcing unique `provides` names at manifest validation time. **(June 2026 correction: this is NOT yet done — `findProvidedValue()` does not check uniqueness, and the provider map silently last-write-wins on duplicates. Duplicate detection is net-new work. See the correction block at top.)**
 
 ### Tradeoff: Less flexibility for one-off wrappers
 
@@ -255,7 +277,7 @@ Current pattern lets you write any function as a depMapping. Auto-generation for
 Start this plan when **any one** of these is true:
 
 1. Another silent-failure bug from a missing `depMappings` entry surfaces in production
-2. The number of manual `depMappings` entries crosses ~500 (currently ~370)
+2. The number of manual `depMappings` entries crosses ~500 (currently ~221)
 3. ENFORCE_REQUIRES rollout reaches Phase 4 (the architectural cleanup phase)
 4. A new contributor joins and trips on the trap when adding their first cross-module dep
 

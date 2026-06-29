@@ -7,9 +7,39 @@
 
 ---
 
+## ⚠️ Accuracy Correction — June 29, 2026
+
+This plan was written March 15, 2026 and predates commit `00c727b3` (Apr 27), which rewrote the DI region of `moduleLoader.js`. **The strategy below is still sound** — nothing in the current code blocks it — but the specifics drifted. Treat all line numbers as June-2026 snapshots and prefer the symbol anchors. Where this block conflicts with the prose below, **this block wins.**
+
+**Corrected anchors** (`modules/boot/moduleLoader.js` unless noted):
+
+| Reference in plan | Current location |
+|---|---|
+| `ENFORCE_REQUIRES` "line 136" | `const ENFORCE_REQUIRES` @ **L148** (L136 is a doc-comment) |
+| `AUDIT_UNDECLARED_DEPS` "line 129" | `const AUDIT_UNDECLARED_DEPS` @ **L141** |
+| `Object.assign(result, depMappings)` "line 1056" | **L1374**, guarded by `if (!ENFORCE_REQUIRES)` @ L1373 |
+| validation suppression "line 1046" | **L1344** (+ a third CORE_DEPS-aware site at L1362) |
+| audit-proxy suppression "line 1079" | **L1397** |
+| `warnedProps` "line 1082" | **L1390** |
+| `CORE_DEPS` "moduleManifests.js line 631+" | **moduleManifests.js L701–731** (28 entries: 6 DOM helpers + `getTaskList`/`getProgressBar`) |
+| function `buildDependencies()` | never existed — the real function is **`buildModuleDependencies()`** @ L771 |
+| "~368 depMappings entries" | **~221** top-level entries (L836–1311); the "~5–20 instead of ~368" benefit is overstated ~60% |
+
+**Substantive corrections to the rollout:**
+
+1. **Step 1 is narrower than written.** Phase-1 boot CORE_DEPS (`AppState`, `appInit`, `GlobalUtils`, `AppGlobalState`, `FeatureFlags`, `AppMeta`) are *already* injected unconditionally at L776–833, before the flag check — the "CORE_DEPS not injected in strict mode" framing is too broad. The Step 1 loop only needs to cover the **depMappings-sourced** CORE_DEPS (DOM helpers, `sanitizeInput`, etc.); drop the `coreResult` branch from the pseudocode — it's dead. Insert the loop **before the broad `Object.assign` at L1374**, not "before line 1053."
+
+2. **🔴 NEW — Step 1 must also inject `optionalDeps`.** The per-req copy loops at L1319 (`requires`) and L1328 (`lazyRequires`) do **not** copy `optionalDeps`. Today those deps arrive *only* via the broad `Object.assign(result, depMappings)` at L1374 — the exact line Step 4 deletes. The moment the flag flips, every `optionalDeps`-declared dep that isn't also in `requires`/`lazyRequires` silently becomes `undefined`. Given how heavily modules lean on `optional()` deps, this is a wide blast radius. Add an explicit `optionalDeps` copy loop alongside the existing two. **This is the single most important gap in the original plan.**
+
+3. **Step 2 can lean on the existing WARN flag.** `WARN_ON_UNMAPPED_DECLARED_DEPS` (L162, currently `true`; warn block L1355–1369) already surfaces undeclared/unmapped deps at boot with far less noise than the `AUDIT_UNDECLARED_DEPS` Proxy. Prefer extending it over cleaning up the Proxy.
+
+4. **Manifests are closer to flip-ready than "Why Not Now" implies.** The April 2026 audit (see [AUTO_GENERATED_DEPMAPPINGS_PLAN.md](./AUTO_GENERATED_DEPMAPPINGS_PLAN.md)) already plugged 8 HIGH + 24 MEDIUM declaration gaps.
+
+---
+
 ## Goal
 
-Flip `ENFORCE_REQUIRES` to `true` in `moduleLoader.js` so that each module **only receives dependencies it explicitly declares** in its manifest (`requires`, `optionalDeps`, `lazyRequires`). Today the flag is `false` (line 136), meaning all ~368 `depMappings` entries are spread into every module regardless of declarations.
+Flip `ENFORCE_REQUIRES` to `true` in `moduleLoader.js` so that each module **only receives dependencies it explicitly declares** in its manifest (`requires`, `optionalDeps`, `lazyRequires`). Today the flag is `false` (L148), meaning all ~221 `depMappings` entries are spread into every module regardless of declarations.
 
 ---
 
@@ -49,7 +79,7 @@ The flag is all-or-nothing: every module gets strict enforcement or none do. If 
 
 ### Step 1: Make CORE_DEPS truly injected in strict mode
 
-Add unconditional injection of `CORE_DEPS` into the `result` object in `buildDependencies()`, before the `ENFORCE_REQUIRES` check:
+Add unconditional injection of `CORE_DEPS` into the `result` object in `buildModuleDependencies()`, before the `ENFORCE_REQUIRES` check:
 
 ```javascript
 // Always inject CORE_DEPS — these are framework-level, no manifest declaration needed
@@ -67,7 +97,7 @@ for (const coreDep of CORE_DEPS) {
 }
 ```
 
-**Location:** `moduleLoader.js`, inside `buildDependencies()`, before line 1053.
+**Location:** `moduleLoader.js`, inside `buildModuleDependencies()` (L771), before the broad `Object.assign(result, depMappings)` at L1374. (See correction block: only the depMappings-sourced CORE_DEPS need this — the `coreResult`-sourced ones are already injected at L776–833; and add an `optionalDeps` copy loop here too.)
 **Risk:** Low — only adds deps that were already available via broad injection.
 **Verification:** Boot app, confirm all DOM helpers resolve, run tests.
 
@@ -130,7 +160,7 @@ Once all phases are individually verified under strict enforcement:
 | **Explicit contracts** | Read a manifest → know exactly what a module depends on |
 | **Safe refactoring** | Removing a dep from `depMappings` only affects modules that declare it |
 | **Catch coupling early** | Undeclared dep access fails immediately, not silently |
-| **Smaller dep objects** | Modules receive ~5-20 deps instead of ~368 — less memory, clearer debugging |
+| **Smaller dep objects** | Modules receive ~5-20 deps instead of ~221 — less memory, clearer debugging |
 | **Documentation accuracy** | Manifests become the source of truth, not approximations |
 
 ---
@@ -164,8 +194,11 @@ The friction is intentional — it's the enforcement mechanism. The migration ri
 
 | File | Role |
 |------|------|
-| `modules/boot/moduleLoader.js` (line 136) | `ENFORCE_REQUIRES` flag |
-| `modules/boot/moduleLoader.js` (line 129) | `AUDIT_UNDECLARED_DEPS` flag |
-| `modules/boot/moduleLoader.js` (~line 1053) | Enforcement/injection logic |
-| `modules/boot/moduleManifests.js` (line 631+) | `CORE_DEPS` definition |
+| `modules/boot/moduleLoader.js` (L148) | `ENFORCE_REQUIRES` flag |
+| `modules/boot/moduleLoader.js` (L141) | `AUDIT_UNDECLARED_DEPS` flag |
+| `modules/boot/moduleLoader.js` (L162) | `WARN_ON_UNMAPPED_DECLARED_DEPS` flag (boot-time gap warnings) |
+| `modules/boot/moduleLoader.js` (`buildModuleDependencies`, L771; broad inject L1374) | Enforcement/injection logic |
+| `modules/boot/moduleManifests.js` (L701–731) | `CORE_DEPS` definition |
 | `modules/boot/moduleManifests.js` | All module manifests |
+
+> Line numbers above are June-2026 snapshots; prefer the symbol names when they drift.
