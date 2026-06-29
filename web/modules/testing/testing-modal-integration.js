@@ -48,7 +48,7 @@ function setupAutomatedTestingFunctions() {
 
 // Display test results in the output area
 function displayTestResults(resultData) {
-    const { totalPassed, totalTests, duration, allPassed, failedModules, anyBackgrounded } = resultData;
+    const { totalPassed, totalTests, duration, allPassed, failedModules, suiteWentHidden } = resultData;
 
     // Clear any waiting message
     const output = getAutomatedTestOutput();
@@ -63,27 +63,30 @@ function displayTestResults(resultData) {
         appendToAutomatedTestResults(`Completed in ${duration}s\n`);
         getShowNotification()(`✅ All ${totalTests} tests passed!`, "success", 5000);
     } else {
+        // Prominent banner when the tab was hidden at any point during the run. Throttled
+        // timers / paused requestAnimationFrame make timing-sensitive tests fail OR time out
+        // spuriously, so failures below may be false — covers assertion failures, not just
+        // module timeouts. (Foreground runs are 100%.)
+        if (suiteWentHidden) {
+            appendToAutomatedTestResults(`⏸️ THIS RUN WAS BACKGROUNDED — failures below may be FALSE.\n`);
+            appendToAutomatedTestResults(`Hidden tabs pause animation frames and throttle timers, so timing-sensitive tests stall. Re-run with this tab kept in the foreground (don't switch tabs/apps) before treating any failure as a real bug.\n\n`);
+        }
         appendToAutomatedTestResults(`⚠️ SOME TESTS FAILED\n\n`);
         appendToAutomatedTestResults(`${totalPassed}/${totalTests} tests passed\n\n`);
         appendToAutomatedTestResults(`Failed modules:\n`);
         failedModules.forEach(m => {
             const errorMsg = m.error ? ` - ${m.error}` : '';
             if (m.backgrounded) {
-                // Not a real failure — the tab was hidden, so the browser paused
-                // requestAnimationFrame / throttled timers and the module stalled.
+                // Timed out specifically while the tab was hidden — not a real failure.
                 appendToAutomatedTestResults(`  ⏸️ ${m.name}: ${m.passed}/${m.total} — stalled while tab was backgrounded (not a real failure)\n`);
             } else {
                 appendToAutomatedTestResults(`  ❌ ${m.name}: ${m.passed}/${m.total}${errorMsg}\n`);
             }
         });
-        if (anyBackgrounded) {
-            appendToAutomatedTestResults(`\n⏸️ One or more modules stalled because this tab was in the background. Browsers pause animation frames and throttle timers for hidden tabs — re-run with this tab kept in the foreground (don't switch tabs/apps during the run) and they should pass.\n`);
-        }
         appendToAutomatedTestResults(`\nCompleted in ${duration}s\n`);
         appendToAutomatedTestResults(`\nSee Test Suite Browser for detailed debugging.\n`);
-        const realFailures = failedModules.filter(m => !m.backgrounded).length;
-        if (anyBackgrounded && realFailures === 0) {
-            getShowNotification()(`⏸️ ${failedModules.length} module(s) stalled (tab backgrounded) — re-run focused`, "warning", 6000);
+        if (suiteWentHidden) {
+            getShowNotification()(`⏸️ Run was backgrounded — ${failedModules.length} failing module(s) may be false. Re-run focused.`, "warning", 6000);
         } else {
             getShowNotification()(`⚠️ ${failedModules.length} module(s) have failures`, "warning", 5000);
         }

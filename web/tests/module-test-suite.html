@@ -2265,6 +2265,15 @@
         runAllTestsBtn.addEventListener('click', async () => {
             const startTime = performance.now();
 
+            // Suite-level "did the tab go hidden during this run?" tracker. Backgrounding
+            // throttles setTimeout (to multi-second) and pauses requestAnimationFrame, which
+            // makes timing-sensitive tests fail or time out spuriously (e.g. a fixed-delay
+            // wait for an async modal). Flag the whole run so the results banner can say
+            // "re-run focused" instead of the failures looking like real bugs.
+            let suiteWentHidden = document.hidden;
+            const _suiteVisibilityWatch = () => { if (document.hidden) suiteWentHidden = true; };
+            document.addEventListener('visibilitychange', _suiteVisibilityWatch);
+
             resultsDiv.innerHTML = '<h2>🧪 Running All Tests...</h2><p>This may take a few moments...</p>';
             copyResultsBtn.style.display = 'none';
             copyFailedBtn.style.display = 'none';
@@ -2580,6 +2589,7 @@
 
                 const endTime = performance.now();
                 const duration = ((endTime - startTime) / 1000).toFixed(2);
+                document.removeEventListener('visibilitychange', _suiteVisibilityWatch);
 
                 // Display aggregated results
                 let output = '<h2>🧪 All Module Test Results</h2>';
@@ -2596,6 +2606,16 @@
             const passRowText = isDarkMode ? '#ffffff' : '#000000';
             const failRowBg = isDarkMode ? '#7f1d1d' : '#fee2e2';
             const failRowText = isDarkMode ? '#ffffff' : '#000000';
+
+            // Backgrounded-run banner: timing-sensitive tests can fail or time out
+            // spuriously when the tab was hidden (paused rAF, throttled timers). Make that
+            // explicit so failures aren't mistaken for real bugs.
+            if (suiteWentHidden) {
+                const bnBg = isDarkMode ? '#7c4700' : '#fef3c7';
+                const bnText = isDarkMode ? '#ffe8b3' : '#92400e';
+                const bnBorder = isDarkMode ? '#b45309' : '#f59e0b';
+                output += `<div style="background: ${bnBg}; color: ${bnText}; border: 1px solid ${bnBorder}; padding: 12px 16px; border-radius: 8px; margin: 16px 0; font-weight: 600; line-height: 1.4;">⏸️ This tab was in the background during the run. Browsers pause animation frames and throttle timers for hidden tabs, so timing-sensitive tests can fail or time out spuriously. Re-run with this tab kept in the foreground before treating any failure as a real bug.</div>`;
+            }
 
             output += `<div style="background: ${summaryBg}; padding: 20px; border-radius: 8px; margin: 20px 0; color: ${summaryText};">`;
             output += `<h3 style="color: ${summaryText}; margin-top: 0;">📊 Summary</h3>`;
@@ -2687,6 +2707,10 @@
                         // True if ANY module timed out while the tab was hidden — the parent
                         // shows a "re-run focused" hint instead of treating these as real bugs.
                         anyBackgrounded: failedModules.some(m => m.backgrounded),
+                        // True if the tab was hidden at ANY point during the run — covers
+                        // spurious ASSERTION failures too (not just timeouts), since
+                        // throttled timers/paused rAF break timing-sensitive tests.
+                        suiteWentHidden,
                         timestamp: Date.now()
                     };
 
