@@ -237,6 +237,7 @@ export const LIMITS = Object.freeze({
     STORAGE_WARNING_PERCENTAGE: 75,  // Show storage warning notification when localStorage usage exceeds this percentage
     BACKUP_REMINDER_EVERY_N_CYCLES: 25,  // Trigger backup reminder every N completed cycles
     BACKUP_REMINDER_EVERY_N_TASKS: 100,  // Trigger backup reminder every N cleared tasks (To-Do mode)
+    MAX_CORRUPT_BACKUPS: 3,              // Max raw-corrupted-data snapshots kept in localStorage for manual recovery
     LAYOUT_DRAG_THRESHOLD: 5,             // px - Task View Layout: pointer travel before drag starts (forgive hover jitter)
     LAYOUT_DOCK_GAP: 20                   // px - Task View Layout: vertical gap between an anchor element and its docked dependent
 });

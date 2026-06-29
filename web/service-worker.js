@@ -102,6 +102,7 @@ var BOOT_CRITICAL = [
   // Utils - ALL utility modules
   './modules/utils/globalUtils.js',
   './modules/utils/featureAvailability.js',
+  './modules/utils/dataRecovery.js',
   './modules/utils/errorHandler.js',
   './modules/utils/notifications.js',
   './modules/utils/deviceDetection.js',

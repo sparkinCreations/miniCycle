@@ -448,6 +448,7 @@
             <option value="titleManager">📰 Title Manager</option>
             <option value="headerLayoutManager">📏 Header Layout</option>
             <option value="featureAvailability">🚦 Feature Availability</option>
+            <option value="dataRecovery">🩹 Data Recovery</option>
             <option value="uiOrchestrator">🎼 UI Orchestrator</option>
             <option value="preferencesBgImage">🖼️ Preferences BG Image</option>
             <option value="preferencesPresets">🎨 Preferences Presets</option>
@@ -526,6 +527,7 @@
         const { runOnboardingManagerTests } = await import(`./onboardingManager.tests.js?v=${cacheBuster}`);
         const { runHeaderLayoutManagerTests } = await import(`./headerLayoutManager.tests.js?v=${cacheBuster}`);
         const { runFeatureAvailabilityTests } = await import(`./featureAvailability.tests.js?v=${cacheBuster}`);
+        const { runDataRecoveryTests } = await import(`./dataRecovery.tests.js?v=${cacheBuster}`);
         const { runGuidedTourManagerTests } = await import(`./guidedTourManager.tests.js?v=${cacheBuster}`);
         const { runModalManagerTests } = await import(`./modalManager.tests.js?v=${cacheBuster}`);
         const { runMenuManagerTests } = await import(`./menuManager.tests.js?v=${cacheBuster}`);
@@ -1807,7 +1809,7 @@
                     await import(`../modules/features/backupReminder.js?v=${cacheBuster}`);
                     currentModule = 'backupReminder';
                     resultsDiv.innerHTML = '<p>✅ BackupReminder loaded. Click "Run Tests" to begin.</p>';
-                } else if (['diWiring','orchestrator','moduleLoader','moduleManifests','modalTemplates','appContext','dataAccess','appGlobalState','migrationFacade','types','modalRegistry','modalUtils','panelVisibilityHelpers','gesturePanelManager','titleManager','headerLayoutManager','featureAvailability','uiOrchestrator','preferencesBgImage','preferencesPresets','taskDOMPatch','debugMode','iconInit','icons','keyboardNav','nameUtils','recurringPanelEvents','recurringPanelForm','recurringPanelGrids','recurringPanelSetup','recurringPanelSummary','recurringSettings','recurringSettingsApplicator','recurringWatcher'].includes(moduleName)) {
+                } else if (['diWiring','orchestrator','moduleLoader','moduleManifests','modalTemplates','appContext','dataAccess','appGlobalState','migrationFacade','types','modalRegistry','modalUtils','panelVisibilityHelpers','gesturePanelManager','titleManager','headerLayoutManager','featureAvailability','dataRecovery','uiOrchestrator','preferencesBgImage','preferencesPresets','taskDOMPatch','debugMode','iconInit','icons','keyboardNav','nameUtils','recurringPanelEvents','recurringPanelForm','recurringPanelGrids','recurringPanelSetup','recurringPanelSummary','recurringSettings','recurringSettingsApplicator','recurringWatcher'].includes(moduleName)) {
                     const pathMap = {
                         diWiring: '../modules/boot/moduleLoader.js',
                         orchestrator: '../modules/boot/orchestrator.js',
@@ -1826,6 +1828,7 @@
                         titleManager: '../modules/ui/titleManager.js',
                         headerLayoutManager: '../modules/ui/headerLayoutManager.js',
                         featureAvailability: '../modules/utils/featureAvailability.js',
+                        dataRecovery: '../modules/utils/dataRecovery.js',
                         uiOrchestrator: '../modules/ui/uiOrchestrator.js',
                         preferencesBgImage: '../modules/ui/preferencesBgImage.js',
                         preferencesPresets: '../modules/ui/preferencesPresets.js',
@@ -2086,6 +2089,7 @@
             } else if (currentModule === 'titleManager') { await runTitleManagerTests(resultsDiv);
             } else if (currentModule === 'headerLayoutManager') { await runHeaderLayoutManagerTests(resultsDiv);
             } else if (currentModule === 'featureAvailability') { await runFeatureAvailabilityTests(resultsDiv);
+            } else if (currentModule === 'dataRecovery') { await runDataRecoveryTests(resultsDiv);
             } else if (currentModule === 'uiOrchestrator') { await runUIOrchestratorTests(resultsDiv);
             } else if (currentModule === 'preferencesBgImage') { await runPreferencesBgImageTests(resultsDiv);
             } else if (currentModule === 'preferencesPresets') { await runPreferencesPresetsTests(resultsDiv);
@@ -2350,6 +2354,7 @@
                 { name: 'HelpWindowManager', key: 'helpWindowManager', runFn: runHelpWindowManagerTests, importPath: '../modules/ui/helpWindowManager.js' },
                 { name: 'HeaderLayoutManager', key: 'headerLayoutManager', runFn: runHeaderLayoutManagerTests, importPath: '../modules/ui/headerLayoutManager.js' },
                 { name: 'FeatureAvailability', key: 'featureAvailability', runFn: runFeatureAvailabilityTests, importPath: '../modules/utils/featureAvailability.js' },
+                { name: 'DataRecovery', key: 'dataRecovery', runFn: runDataRecoveryTests, importPath: '../modules/utils/dataRecovery.js' },
                 { name: 'Constants', key: 'constants', runFn: runConstantsTests, importPath: '../modules/core/constants.js' },
                 { name: 'BasicPluginSystem', key: 'basicPluginSystem', runFn: runBasicPluginSystemTests, importPath: '../modules/other/basicPluginSystem.js' },
                 { name: 'Accessibility', key: 'accessibility', runFn: runAccessibilityTests, importPath: null },

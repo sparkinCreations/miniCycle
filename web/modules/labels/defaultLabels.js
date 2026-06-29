@@ -363,6 +363,7 @@ export const DEFAULT_LABELS = deepFreeze({
         deleteUnavailable:      'Delete feature temporarily unavailable',
         priorityUnavailable:    'Priority toggle feature temporarily unavailable',
         dataCorruptedReset:     'Data was corrupted and has been reset. Your previous data could not be recovered.',
+        dataRepaired:           'Data corruption was detected and repaired. Some recent changes may be missing.',
         clearTasksFailed:       'Failed to clear tasks. Please try again.',
         deleteTasksFailed:      'Failed to delete tasks. Please try again.',
         deletionCancelled:      'Deletion cancelled.',

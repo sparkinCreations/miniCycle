@@ -27,6 +27,7 @@ import {
     DOM_IDS,
     STORAGE_KEYS, UI_TIMEOUTS, DOM_CLASSES } from './constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { recoverCorruptedData } from '../utils/dataRecovery.js';
 
 // NOTE: The in-app test runner now executes on a SEPARATE ORIGIN (test.minicycle.app),
 // so its storage is physically isolated from real user data. The former test-mode
@@ -156,7 +157,18 @@ class MiniCycleState {
                 try {
                     parsed = JSON.parse(stored);
                 } catch (parseError) {
-                    console.warn('⚠️ Corrupted data in localStorage — creating fallback state', parseError);
+                    console.warn('⚠️ Corrupted data in localStorage — attempting recovery', parseError);
+                    const recovery = recoverCorruptedData(stored, { storage: this.deps.storage });
+                    if (recovery.recovered && this.validateSchema25Structure(recovery.data)) {
+                        this.data = recovery.data;
+                        this.isInitialized = true;
+                        this.deps.showNotification(
+                            getLabel('notify.dataRepaired'),
+                            'warning',
+                            UI_TIMEOUTS.NOTIFICATION_OVERLAY
+                        );
+                        return this.data;
+                    }
                     this.data = this.createMinimalFallbackState();
                     this.isInitialized = true;
                     this.deps.showNotification(
@@ -217,25 +229,46 @@ class MiniCycleState {
 
             // ✅ Check if Schema 2.5 data already exists
             let existingData = null;
+            let stored = null;
             try {
-                const stored = this.deps.storage.getItem(STORAGE_KEYS.DATA);
+                stored = this.deps.storage.getItem(STORAGE_KEYS.DATA);
                 if (stored) {
                     const parsed = JSON.parse(stored);
                     // ✅ Validate the structure before using
                     if (this.validateSchema25Structure(parsed)) {
                         existingData = parsed;
                     } else {
-                        console.warn('⚠️ Existing data structure is invalid');
+                        // Parsed fine but wrong shape — try to salvage before discarding.
+                        console.warn('⚠️ Existing data structure is invalid — attempting recovery');
+                        const recovery = recoverCorruptedData(stored, { storage: this.deps.storage });
+                        if (recovery.recovered && this.validateSchema25Structure(recovery.data)) {
+                            existingData = recovery.data;
+                            this.deps.showNotification(
+                                getLabel('notify.dataRepaired'),
+                                'warning',
+                                UI_TIMEOUTS.NOTIFICATION_OVERLAY
+                            );
+                        }
                     }
                 }
             } catch (parseError) {
-                console.warn('⚠️ Could not parse existing data — creating fallback state:', parseError);
-                existingData = this.createMinimalFallbackState();
-                this.deps.showNotification(
-                    getLabel('notify.dataCorruptedReset'),
-                    'error',
-                    UI_TIMEOUTS.NOTIFICATION_OVERLAY
-                );
+                console.warn('⚠️ Could not parse existing data — attempting recovery:', parseError);
+                const recovery = stored ? recoverCorruptedData(stored, { storage: this.deps.storage }) : { recovered: false };
+                if (recovery.recovered && this.validateSchema25Structure(recovery.data)) {
+                    existingData = recovery.data;
+                    this.deps.showNotification(
+                        getLabel('notify.dataRepaired'),
+                        'warning',
+                        UI_TIMEOUTS.NOTIFICATION_OVERLAY
+                    );
+                } else {
+                    existingData = this.createMinimalFallbackState();
+                    this.deps.showNotification(
+                        getLabel('notify.dataCorruptedReset'),
+                        'error',
+                        UI_TIMEOUTS.NOTIFICATION_OVERLAY
+                    );
+                }
             }
 
             // Use existing data or create initial data
