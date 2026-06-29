@@ -2602,39 +2602,10 @@
                         timestamp: Date.now()
                     };
 
-                    // Store in IndexedDB for pickup by testing modal, then notify opener
-                    const storeAndNotify = () => {
-                        return new Promise((resolve) => {
-                            try {
-                                const dbRequest = indexedDB.open('miniCycleTestResultsDB', 1);
-                                dbRequest.onupgradeneeded = (e) => {
-                                    const db = e.target.result;
-                                    if (!db.objectStoreNames.contains('results')) {
-                                        db.createObjectStore('results', { keyPath: 'id' });
-                                    }
-                                };
-                                dbRequest.onsuccess = () => {
-                                    const db = dbRequest.result;
-                                    const tx = db.transaction('results', 'readwrite');
-                                    tx.objectStore('results').put({ id: 'latest', ...resultData });
-                                    tx.oncomplete = () => {
-                                        db.close();
-                                        console.log('💾 Stored test results in IndexedDB');
-                                        resolve();
-                                    };
-                                    tx.onerror = () => resolve();
-                                };
-                                dbRequest.onerror = () => resolve();
-                            } catch (e) {
-                                console.warn('Failed to store results in IndexedDB:', e);
-                                resolve();
-                            }
-                        });
-                    };
-
-                    await storeAndNotify();
-
-                    // Send results via postMessage
+                    // Results flow purely via postMessage. The parent app is on a different
+                    // origin and cannot read this origin's IndexedDB, so there is nothing to
+                    // store — and a stray IndexedDB transaction here could throw and hang the
+                    // completion before TEST_RESULTS is ever posted.
                     const isEmbedded = new URLSearchParams(window.location.search).get('embedded') === 'true';
                     if (isEmbedded && window.parent !== window) {
                         // Embedded in iframe - send to parent
@@ -2644,7 +2615,7 @@
                         // Popup window - send to opener
                         window.opener.postMessage(resultData, PARENT_ORIGIN);
                         window.opener.focus();
-                        console.log('📤 Sent test results to opener and focused');
+                        console.log('📤 Sent test results to opener');
                     }
                 }
 
