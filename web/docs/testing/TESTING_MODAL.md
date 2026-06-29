@@ -25,6 +25,15 @@ backup, no restore, and no save-gate — tests simply cannot reach the app's sto
 
 Tests run in an embedded cross-origin iframe while a progress modal shows status.
 
+> ⚠️ **Keep the tab focused and on-screen while the suite runs.** Browsers throttle timers
+> and **pause `requestAnimationFrame`** in backgrounded/hidden tabs, so timing-sensitive
+> tests (modal animation `setTimeout`s, rAF-driven layout measurement) stall and trip the
+> per-module timeout — showing up as ⏱️ *incomplete* modules that actually pass when run
+> foregrounded. The runner keeps its iframe on-screen and only counts **visible time**
+> toward the timeout to mitigate this, but switching away mid-run can still cause spurious
+> timeouts. If you see incomplete modules, re-run with the tab focused (or confirm via
+> `npm test`, which runs each module headless and is the authoritative 100%).
+
 ---
 
 ## How It Works
