@@ -1911,16 +1911,25 @@ if [ "$REBUILD_ANDROID" = true ]; then
     if [ -f "scripts/build-android-www.cjs" ]; then
         # Don't let a build failure abort the whole run (set -e) — the version
         # files are already updated; just warn that the payload may be stale.
+        ANDROID_BUILD_OK=false
         if node scripts/build-android-www.cjs; then
             echo "✅ Rebuilt mobile/android/www/ (v$NEW_VERSION)"
+            ANDROID_BUILD_OK=true
         else
-            echo "⚠️  Android web payload build failed — mobile/android/www/ may be stale"
+            echo "⚠️  Android web payload build failed — mobile/android/www/ is stale"
+            echo "    ↳ SKIPPING native versionName/versionCode bump + cap sync so the build can't"
+            echo "      be stamped v$NEW_VERSION while still running old code. Fix the build, then"
+            echo "      re-run: ./scripts/update-version.sh --android (no version bump needed)."
         fi
 
         # Sync the native versionName to NEW_VERSION and bump versionCode. The
         # native build.gradle is committed (not generated), so patch it in place.
+        # Gated on a SUCCESSFUL payload rebuild — bumping the version over a stale
+        # www/ is exactly the version/code mismatch we want to avoid.
         ANDROID_GRADLE="../mobile/android/android/app/build.gradle"
-        if [ "$DRY_RUN" = true ]; then
+        if [ "$ANDROID_BUILD_OK" = false ] && [ "$DRY_RUN" = false ]; then
+            :  # build failed — already warned above; leave build.gradle + cap sync untouched
+        elif [ "$DRY_RUN" = true ]; then
             echo "🔍 [dry-run] would set versionName \"$NEW_VERSION\" and bump versionCode in $ANDROID_GRADLE"
         elif [ -f "$ANDROID_GRADLE" ]; then
             "${SED_INPLACE[@]}" "s/versionName \"[^\"]*\"/versionName \"$NEW_VERSION\"/" "$ANDROID_GRADLE"
