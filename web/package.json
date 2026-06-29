@@ -21,6 +21,7 @@
     "perf": "node tests/automated/run-performance-benchmarks.cjs",
     "lint": "eslint modules/",
     "lint:fix": "eslint modules/ --fix",
+    "validate:di": "node scripts/validate-di-deps.js",
     "samples": "./scripts/generate-sample-manifest.sh",
     "build:chrome-full": "node scripts/build-chrome-full.cjs",
     "build:android": "node scripts/build-android-www.cjs",
