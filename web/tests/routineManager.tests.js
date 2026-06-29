@@ -167,12 +167,34 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
         };
     }
 
-    // Helper: Wait for creation dialog to appear and simulate user input
-    async function fillAndConfirmCreationDialog(inputValue, timeout = 500) {
-        // Wait for async _buildCreationDialog to complete
-        await new Promise(resolve => setTimeout(resolve, timeout));
+    // Helper: poll for a selector to appear (up to maxMs). The creation dialog is
+    // built behind a setTimeout PLUS an async sample-manifest fetch, so on
+    // production (and especially in the throttled cross-origin test iframe) it can
+    // appear well after any single fixed delay — poll instead of guessing one.
+    async function waitForSelector(selector, maxMs = 4000) {
+        const start = performance.now();
+        let el = document.querySelector(selector);
+        while (!el && performance.now() - start < maxMs) {
+            await new Promise(resolve => setTimeout(resolve, 50));
+            el = document.querySelector(selector);
+        }
+        return el;
+    }
 
-        const dialog = document.querySelector('.miniCycle-prompt-dialog');
+    // Helper: poll until a condition is true (up to maxMs).
+    async function waitForCondition(conditionFn, maxMs = 4000) {
+        const start = performance.now();
+        while (!conditionFn() && performance.now() - start < maxMs) {
+            await new Promise(resolve => setTimeout(resolve, 50));
+        }
+        return conditionFn();
+    }
+
+    // Helper: Wait for creation dialog to appear and simulate user input
+    async function fillAndConfirmCreationDialog(inputValue, timeout = 4000) {
+        // Poll for the async _buildCreationDialog to finish (floor of 4s so legacy
+        // callers passing a short timeout still tolerate a slow first fetch).
+        const dialog = await waitForSelector('.miniCycle-prompt-dialog', Math.max(timeout, 4000));
         if (!dialog) return null;
 
         const input = dialog.querySelector('.miniCycle-prompt-input');
@@ -377,10 +399,9 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
         const instance = new RoutineManager(deps);
         instance.showCycleCreationModal();
 
-        // Wait for setTimeout(500) + async _buildCreationDialog
-        await new Promise(resolve => setTimeout(resolve, 700));
-
-        const dialog = document.querySelector('.miniCycle-prompt-dialog');
+        // Poll for the dialog — it's built behind setTimeout(500) + an async
+        // sample-manifest fetch, which can exceed any fixed delay on production.
+        const dialog = await waitForSelector('.miniCycle-prompt-dialog', 4000);
         if (!dialog) {
             throw new Error('Creation dialog should appear in DOM');
         }
@@ -411,11 +432,11 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
         const instance = new RoutineManager(deps);
         instance.showCycleCreationModal();
 
-        // Wait for setTimeout(500) + async _buildCreationDialog
-        await fillAndConfirmCreationDialog('My New Cycle', 700);
+        await fillAndConfirmCreationDialog('My New Cycle');
 
-        // Wait for async onCreateBlank callback
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // Poll for the async onCreateBlank callback to call completeInitialSetup
+        // (its internal awaits — AppState.update etc. — settle asynchronously).
+        await waitForCondition(() => completeSetupCalled, 3000);
 
         if (!completeSetupCalled) {
             throw new Error('completeInitialSetup should be called');
