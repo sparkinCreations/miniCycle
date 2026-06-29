@@ -1,9 +1,31 @@
 # Error Handling Improvements Plan
 
 **Date:** December 23, 2025
-**Status:** Planning
+**Status:** Phases 1–2 ✅ IMPLEMENTED (Jun 2026) · Phases 3–5 deferred
 **Priority:** High
 **Goal:** Eliminate silent failures and improve error recovery
+
+---
+
+## Implementation Status (Jun 2026)
+
+- **Phase 1 — Feature Availability Tracking: DONE.** Shipped as `modules/utils/featureAvailability.js`
+  (boot-level singleton, not a DI module — needed in `moduleLoader.js`'s catch blocks before DI is
+  wired). `markFailed()` flips `<html data-degraded-mode>`; `uiBoot.finalizeUI()` calls
+  `showDegradedModeWarning()` once post-boot. Notice text: `notify.featuresUnavailable`.
+  Tests: `tests/featureAvailability.tests.js` (10).
+- **Phase 2 — Data Corruption Recovery: DONE, with adaptations.** Shipped as
+  `modules/utils/dataRecovery.js`. Kept **pure & synchronous** (no DI, no async confirmation modal)
+  because AppState's load path runs before DI is wired and must not block boot on a user prompt.
+  Strategies trimmed to the three that pass strict Schema 2.5 re-validation (direct-parse,
+  remove-control-chars, close-brackets); the "extract-cycles" regex strategy was dropped (its partial
+  output never survives `validateSchema25Structure`). Wired into all **three** previously-silent
+  data-loss paths in `appState.js` (`reload()` parse-error, `_initializeInternal()` parse-error, and
+  `_initializeInternal()` validate-false). Salvaged data is adopted only if it passes the strict
+  validator; otherwise the existing minimal-fallback behavior runs — but now the raw corrupted string
+  is always backed up first (`miniCycleData_corrupted_<ts>`, capped at `LIMITS.MAX_CORRUPT_BACKUPS`).
+  Notice text: `notify.dataRepaired`. Tests: `tests/dataRecovery.tests.js` (11).
+- **Phases 3–5 (transaction atomicity, actionable timeouts, error context): deferred** — not requested.
 
 ---
 
