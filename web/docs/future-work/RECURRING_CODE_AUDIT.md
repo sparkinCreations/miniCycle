@@ -1,8 +1,15 @@
 # Recurring Tasks — Code Audit
 
 > Audit date: Feb 28, 2026
-> Last updated: Feb 28, 2026
+> Last updated: Jun 29, 2026
 > Scope: All 15 files in `modules/recurring/` + `styles/components/recurring.css` + boot wiring
+
+> **Status (Jun 2026): P1 + all 12 P2 items resolved.** The 8 P2 items previously listed
+> "not started" were verified already-fixed against current code (strings on `getLabel()`,
+> `APP_VERSION` is now a static import not a `globalThis` fallback, no deps spread, selectors
+> via `constants.js`, 0 hardcoded colors in `recurring.css`). The **12 P3 Low** items below
+> remain open (deferred — low priority). This doc stays in `future-work/` until the P3 list is
+> cleared or explicitly dropped.
 
 ## Summary
 
@@ -10,8 +17,8 @@
 |----------|-------|--------|
 | P0 Critical | 0 | — |
 | P1 High | 1 | **FIXED** |
-| P2 Medium | 12 | 4 fixed, 8 not started |
-| P3 Low | 12 | Not started |
+| P2 Medium | 12 | **12 fixed ✅** |
+| P3 Low | 12 | Deferred (open) |
 
 ---
 
@@ -25,6 +32,10 @@
 ---
 
 ## P2 — Medium
+
+> **All 12 resolved (Jun 2026).** Items 1–4 were fixed earlier; items 5–12 (the string/selector/
+> color/globals migrations) were verified already-done against current code. The original
+> "**Fix:** …" notes below are retained as a record of what was addressed.
 
 ### 1. ~~Normalization cache corruption (recurringSettings.js)~~ — FIXED
 First call returned the raw `normalized` object without cloning. First caller could mutate the cached entry.
