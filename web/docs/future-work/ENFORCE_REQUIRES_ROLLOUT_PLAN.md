@@ -11,7 +11,7 @@
 
 This plan was written March 15, 2026 and predates commit `00c727b3` (Apr 27), which rewrote the DI region of `moduleLoader.js`. **The strategy below is still sound** — nothing in the current code blocks it — but the specifics drifted. Treat all line numbers as June-2026 snapshots and prefer the symbol anchors. Where this block conflicts with the prose below, **this block wins.**
 
-**Update — June 30, 2026:** item 2 below (`optionalDeps` injection) is now **implemented** (commit `6c373122`). That change added the `injectDeclaredDeps` helper, shifting line numbers below `buildModuleDependencies` by ~+26 (e.g. the broad `Object.assign` moved L1374 → L1400) — rely on the **symbol anchors**, not the table's numbers, for anything past ~L770.
+**Update — June 30, 2026:** **all of Step 1 is now implemented** — item 2 (`optionalDeps` injection, commit `6c373122`, helper `injectDeclaredDeps`) and item 1 (CORE_DEPS strict-mode injection, commit `ec110544`, helper `injectCoreDeps`). Both helpers run in `buildModuleDependencies()` before the broad `Object.assign` (now at L1440). These additions shifted line numbers below `buildModuleDependencies` substantially — rely on the **symbol anchors**, not the table's numbers, for anything past ~L770.
 
 **Corrected anchors** (`modules/boot/moduleLoader.js` unless noted):
 
@@ -29,9 +29,9 @@ This plan was written March 15, 2026 and predates commit `00c727b3` (Apr 27), wh
 
 **Substantive corrections to the rollout:**
 
-1. **Step 1 is narrower than written.** Phase-1 boot CORE_DEPS (`AppState`, `appInit`, `GlobalUtils`, `AppGlobalState`, `FeatureFlags`, `AppMeta`) are *already* injected unconditionally at L776–833, before the flag check — the "CORE_DEPS not injected in strict mode" framing is too broad. The Step 1 loop only needs to cover the **depMappings-sourced** CORE_DEPS (DOM helpers, `sanitizeInput`, etc.); drop the `coreResult` branch from the pseudocode — it's dead. Insert the loop **before the broad `Object.assign` at L1374**, not "before line 1053."
+1. **✅ DONE (June 30, 2026, commit `ec110544`) — CORE_DEPS are now injected in strict mode.** The original framing ("CORE_DEPS not injected in strict mode") was too broad: 6 of 28 CORE_DEPS (`AppState`, `appInit`, `GlobalUtils`, `AppGlobalState`, `FeatureFlags`, `AppMeta`) are *already* set unconditionally by the Phase-1 prologue of `buildModuleDependencies()`. A classification confirmed the other 22 are **depMappings keys** and that **none of the 6 Phase-1 names are depMappings keys** (0 unaccounted) — so the pseudocode's `coreResult` fallback was dead and was dropped. The fix is the exported helper **`injectCoreDeps(result, CORE_DEPS, depMappings)`**: it sets each CORE_DEP that is a depMappings key, leaving the 6 Phase-1 deps (incl. the `AppState` Proxy) untouched because they aren't depMappings keys. Behavior-neutral under `ENFORCE_REQUIRES=false`; only matters in strict mode. Guarded by unit tests (`tests/moduleLoader.tests.js`) including a `key-presence (in) not truthiness` test and a cross-file invariant test asserting the 6 Phase-1 names never become depMappings keys. A 4-lens adversarial review confirmed correctness (behavior-neutrality, no AppState clobber, placement). **Caveat:** this does NOT make a strict boot safe yet — modules still access ~208 non-CORE depMappings entries that strict mode would drop unless declared (the job of Steps 2–3 + the facade forward-through declarations).
 
-2. **✅ DONE (June 30, 2026, commit `6c373122`) — `optionalDeps` are now injected.** The original gap: the inline copy loops handled only `requires` and `lazyRequires`, so `optionalDeps` arrived *solely* via the broad `Object.assign(result, depMappings)` that Step 4 deletes — meaning every `optionalDeps`-declared dep would have silently become `undefined` the instant the flag flipped (a wide blast radius, given how heavily modules lean on `optional()`). The fix extracted all three buckets into an exported pure helper, **`injectDeclaredDeps(result, manifest, depMappings, coreResult)`** (injects `requires` + `optionalDeps` + `lazyRequires` identically), called from `buildModuleDependencies()`. It is behavior-neutral under the current `ENFORCE_REQUIRES=false` (the broad assign still overwrites with identical values) and only changes the strict-mode path. A unit test (`tests/moduleLoader.tests.js` → "injects requires, optionalDeps AND lazyRequires") guards it. **This was the single most important gap in the original plan; the remaining Step 1 blocker is the depMappings-sourced CORE_DEPS injection in item 1 above — still not done, and the last thing preventing a successful strict boot.**
+2. **✅ DONE (June 30, 2026, commit `6c373122`) — `optionalDeps` are now injected.** The original gap: the inline copy loops handled only `requires` and `lazyRequires`, so `optionalDeps` arrived *solely* via the broad `Object.assign(result, depMappings)` that Step 4 deletes — meaning every `optionalDeps`-declared dep would have silently become `undefined` the instant the flag flipped (a wide blast radius, given how heavily modules lean on `optional()`). The fix extracted all three buckets into an exported pure helper, **`injectDeclaredDeps(result, manifest, depMappings, coreResult)`** (injects `requires` + `optionalDeps` + `lazyRequires` identically), called from `buildModuleDependencies()`. It is behavior-neutral under the current `ENFORCE_REQUIRES=false` (the broad assign still overwrites with identical values) and only changes the strict-mode path. A unit test (`tests/moduleLoader.tests.js` → "injects requires, optionalDeps AND lazyRequires") guards it. **This was the single most important gap in the original plan.** (Item 1 above — the CORE_DEPS strict-mode injection — is now also done, so all of Step 1 is complete.)
 
 3. **Step 2 can lean on the existing WARN flag.** `WARN_ON_UNMAPPED_DECLARED_DEPS` (L162, currently `true`; warn block L1355–1369) already surfaces undeclared/unmapped deps at boot with far less noise than the `AUDIT_UNDECLARED_DEPS` Proxy. Prefer extending it over cleaning up the Proxy.
 
@@ -186,7 +186,7 @@ The friction is intentional — it's the enforcement mechanism. The migration ri
 | Manifest tightening (30 modules) | Complete |
 | CORE_DEPS expanded with DOM helpers | Complete |
 | `optionalDeps` injection in strict mode (Step 1a) | **Complete** (June 30, 2026 — commit `6c373122`, `injectDeclaredDeps`) |
-| CORE_DEPS injection in strict mode (Step 1b) | **Not started** — last Step 1 blocker before a strict boot can succeed |
+| CORE_DEPS injection in strict mode (Step 1b) | **Complete** (June 30, 2026 — commit `ec110544`, `injectCoreDeps`) |
 | Audit mode cleanup | **Not started** (Step 2) |
 | Per-phase enforcement | **Not started** (Step 3) |
 | Global flag flip | **Not started** (Step 4) |
@@ -200,7 +200,7 @@ The friction is intentional — it's the enforcement mechanism. The migration ri
 | `modules/boot/moduleLoader.js` (L148) | `ENFORCE_REQUIRES` flag |
 | `modules/boot/moduleLoader.js` (L141) | `AUDIT_UNDECLARED_DEPS` flag |
 | `modules/boot/moduleLoader.js` (L162) | `WARN_ON_UNMAPPED_DECLARED_DEPS` flag (boot-time gap warnings) |
-| `modules/boot/moduleLoader.js` (`injectDeclaredDeps` L785; `buildModuleDependencies` L808; broad inject L1400) | Enforcement/injection logic |
+| `modules/boot/moduleLoader.js` (`injectDeclaredDeps` L785; `injectCoreDeps` L824; `buildModuleDependencies` L842; broad inject L1440) | Enforcement/injection logic |
 | `modules/boot/moduleManifests.js` (L701–731) | `CORE_DEPS` definition |
 | `modules/boot/moduleManifests.js` | All module manifests |
 
