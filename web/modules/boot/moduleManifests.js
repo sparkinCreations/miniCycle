@@ -707,8 +707,8 @@ export const CORE_DEPS = new Set([
     'GlobalUtils',
     'FeatureFlags',
     'AppMeta',
-    'DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS',  // Constant, set on deps.core via coreBoot (not depMappings)
-    'performSchema25Migration',                // Migration function, set on deps.core via coreBoot (not depMappings)
+    'DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS',  // Constant from coreBoot (deps.core); also a depMappings key
+    'performSchema25Migration',                // Migration fn from coreBoot (deps.core); also a depMappings key
     'loadMiniCycleData',
     'autoSave',
     'sanitizeInput',

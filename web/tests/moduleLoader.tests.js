@@ -72,6 +72,52 @@ export async function runModuleLoaderTests(resultsDiv) {
         if (Object.keys(result).length !== 0) throw new Error('expected empty result for empty manifest');
     });
 
+    await test('injectCoreDeps is an exported function', () => {
+        if (typeof mod.injectCoreDeps !== 'function') {
+            throw new Error(`Expected function, got ${typeof mod.injectCoreDeps}`);
+        }
+    });
+
+    await test('injects depMappings-sourced CORE_DEPS (survive strict mode)', () => {
+        const coreDeps = new Set(['getElementById', 'sanitizeInput', 'AppState']);
+        const depMappings = { getElementById: 'gei', sanitizeInput: 'si', unrelated: 'x' };
+        const result = mod.injectCoreDeps({}, coreDeps, depMappings);
+        if (result.getElementById !== 'gei') throw new Error('DOM-helper CORE_DEP not injected');
+        if (result.sanitizeInput !== 'si') throw new Error('util CORE_DEP not injected');
+        if ('unrelated' in result) throw new Error('non-CORE depMapping leaked into result');
+    });
+
+    await test('does NOT clobber a Phase-1 CORE_DEP already set (AppState Proxy safety)', () => {
+        const proxySentinel = { __isAppStateProxy: true };
+        const coreDeps = new Set(['AppState', 'getElementById']);
+        const depMappings = { getElementById: 'gei' }; // AppState intentionally absent
+        const result = mod.injectCoreDeps({ AppState: proxySentinel }, coreDeps, depMappings);
+        if (result.AppState !== proxySentinel) throw new Error('AppState Proxy was clobbered');
+        if (result.getElementById !== 'gei') throw new Error('depMappings CORE_DEP not injected');
+    });
+
+    await test('uses key-presence (in), not truthiness — writes present-but-undefined resolvers', () => {
+        // Real CORE_DEP entries like generateId/safeJSONParse are direct refs
+        // (deps.utils?.x) that are present-but-undefined until their module populates.
+        // The `in` guard must still write them (overwriting any stale prior value),
+        // matching Object.assign semantics — a truthiness guard would silently drop them.
+        const result = mod.injectCoreDeps({ generateId: 'STALE' }, new Set(['generateId']), { generateId: undefined });
+        if (!('generateId' in result)) throw new Error('present-but-undefined CORE_DEP key not written');
+        if (result.generateId !== undefined) throw new Error('stale prior value not overwritten');
+    });
+
+    await test('Phase-1 CORE_DEPS are not depMappings keys (AppState Proxy safety invariant)', () => {
+        // injectCoreDeps only overwrites depMappings-keyed CORE_DEPS; the AppState
+        // Proxy survives strict mode *only* because the 6 Phase-1 names are absent
+        // from depMappings. Pin that cross-file invariant against the real maps.
+        const dmKeys = mod.ensureDepMappingKeys();
+        const phase1 = ['AppState', 'AppGlobalState', 'appInit', 'GlobalUtils', 'FeatureFlags', 'AppMeta'];
+        const leaked = phase1.filter(n => dmKeys.has(n));
+        if (leaked.length) {
+            throw new Error(`Phase-1 CORE_DEPS leaked into depMappings: ${leaked.join(', ')} — injectCoreDeps would clobber them`);
+        }
+    });
+
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;
     if (passed.count === total.count) {
