@@ -707,13 +707,27 @@ export function setupFactoryResetButton() {
                 ];
                 await Promise.allSettled(
                     idbDatabases.map(dbName => {
-                        return new Promise((resolve, reject) => {
+                        return new Promise((resolve) => {
+                            // Settle exactly once. A deleteDatabase against a DB the app
+                            // still holds open fires `blocked` the FIRST time — but on a
+                            // repeat factory reset (a prior blocked delete already pending
+                            // on that same open connection) the browser fires NO event at
+                            // all. Without the safety timeout that Promise never settles,
+                            // Promise.allSettled hangs, and the whole reset stalls before
+                            // re-init — leaving the app dataless until a manual refresh.
+                            let settled = false;
+                            const done = () => { if (!settled) { settled = true; resolve(); } };
+                            const timer = setTimeout(done, UI_TIMEOUTS.INDEXEDDB_DELETE_SAFETY);
+                            const finish = () => { clearTimeout(timer); done(); };
                             const req = indexedDB.deleteDatabase(dbName);
-                            req.onsuccess = () => resolve();
-                            req.onerror = () => reject(req.error);
+                            req.onsuccess = finish;
+                            req.onerror = () => {
+                                console.warn(`IndexedDB ${dbName} delete errored:`, req.error);
+                                finish();
+                            };
                             req.onblocked = () => {
                                 console.warn(`IndexedDB ${dbName} delete blocked (connections still open)`);
-                                resolve();
+                                finish();
                             };
                         });
                     })
