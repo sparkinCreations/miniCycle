@@ -418,7 +418,10 @@ function registerGroupedApisFromLoader(deps, appContextMod, coreResult) {
     trackAction: deps.ui?.trackAction,
     getModal: deps.ui?.getModal,
     initCompletedTasksSection: () => deps.ui?.completedTasksManager?.init?.(),
-    showMenuTourNotification: deps.ui?.showMenuTourNotification
+    showMenuTourNotification: deps.ui?.showMenuTourNotification,
+    // Lazy wrapper (call-time resolve) so the menu "Reset Tours → Start Tour"
+    // action reaches guidedTourManager.startGuidedTour regardless of boot order.
+    startGuidedTour: (...args) => deps.ui?.startGuidedTour?.(...args)
   };
   appContextMod.setContextValue('uiApi', uiApiObj);
   appContextMod.registerApi('ui', uiApiObj);
