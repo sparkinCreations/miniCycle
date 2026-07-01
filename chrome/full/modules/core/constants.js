@@ -109,6 +109,7 @@ export const UI_TIMEOUTS = Object.freeze({
     PAGE_RELOAD: 1000,             // 1000ms - Page reload after data operation
     SESSION_BACKUP_DELAY: 1000,    // 1000ms - Session backup delay after boot
     POST_RESTORE_RELOAD: 2500,     // 2500ms - Page reload after backup restoration
+    INDEXEDDB_DELETE_SAFETY: 2000, // 2000ms - Factory reset: give up waiting on a deleteDatabase that fires no success/blocked event (open connection with a prior pending delete) so the reset can't hang
     NOTIFICATION_BRIEF: 1500,      // 1500ms - Brief notification (undo, quick actions)
     NOTIFICATION_SHORT: 2000,      // 2000ms - Standard notification duration
     NOTIFICATION_MEDIUM: 2500,     // 2500ms - Medium notification (permissions, confirmations)

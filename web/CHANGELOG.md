@@ -1,3 +1,16 @@
+## [2.274] - 2026-07-01
+- fix(factory-reset): timeout-guard IndexedDB deletes so a repeat reset can't hang before re-init
+- fix(ui): expose startGuidedTour on ui api so menu Reset Tours → Start Tour works
+- docs(di-plans): mark CORE_DEPS injection (Step 1b) complete — all of Step 1 done
+- fix(di): inject depMappings-sourced CORE_DEPS in strict mode (ENFORCE Step 1b)
+- docs(di-plans): mark optionalDeps injection (Step 1a) complete in ENFORCE plan
+- fix(di): inject optionalDeps in dep build so they survive ENFORCE_REQUIRES
+- fix(di): declare 10 used-but-undeclared deps in manifests (optionalDeps)
+- tooling: add validate-di-deps static checker (npm run validate:di)
+- docs(di-plans): correct stale refs, flag optionalDeps + provideInstance gaps
+- fix(build): harden android www rebuild — retry rmrf on ENOTEMPTY + skip version bump/cap-sync when payload build fails
+
+
 ## [2.273] - 2026-06-29
 - docs: archive completed error-handling/recurring plans, split out remaining work, add ERROR_RECOVERY guide
 - docs(recurring-audit): mark all P1+P2 resolved, P3 deferred

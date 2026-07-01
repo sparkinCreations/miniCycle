@@ -762,6 +762,77 @@ function findInitFunction(mod, name) {
 }
 
 /**
+ * Inject a module's declared dependencies into `result`.
+ *
+ * All three declaration buckets — requires, optionalDeps, lazyRequires — are
+ * resolved identically (from depMappings, falling back to coreResult) so they
+ * all survive ENFORCE_REQUIRES mode. Under the default loader they're also
+ * supplied by the broad `Object.assign(result, depMappings)`, but that assign is
+ * skipped when ENFORCE_REQUIRES is true; this is then the only path, and omitting
+ * optionalDeps here (as the loader previously did) would make every optional dep
+ * silently resolve to undefined the moment the flag flips.
+ *
+ * Caller validates requires/lazyRequires separately; optionalDeps are not
+ * validated (they're allowed to be absent). Exported for unit testing the
+ * strict-mode injection path.
+ *
+ * @param {Object} result - Dependency object being assembled (mutated in place)
+ * @param {Object} manifest - Module manifest (reads requires/optionalDeps/lazyRequires)
+ * @param {Object} depMappings - Map of dep name → resolver
+ * @param {Object} coreResult - Phase-1 boot results, used as a fallback source
+ * @returns {Object} the same `result`, for chaining
+ */
+export function injectDeclaredDeps(result, manifest, depMappings, coreResult) {
+    const declared = [
+        ...(manifest.requires || []),
+        ...(manifest.optionalDeps || []),
+        ...(manifest.lazyRequires || []),
+    ];
+    for (const dep of declared) {
+        if (dep in depMappings) {
+            result[dep] = depMappings[dep];
+        } else if (coreResult && dep in coreResult) {
+            result[dep] = coreResult[dep];
+        }
+    }
+    return result;
+}
+
+/**
+ * Inject framework-level CORE_DEPS into `result`.
+ *
+ * CORE_DEPS are always available and never declared in a manifest. They come
+ * from two sources: a handful (AppState, appInit, GlobalUtils, AppGlobalState,
+ * FeatureFlags, AppMeta) are set directly on `result` by the Phase-1 prologue of
+ * buildModuleDependencies; the rest (DOM helpers, sanitizeInput, generateId, the
+ * safe* utilities, …) are entries in `depMappings`. Under the default loader the
+ * latter arrive via the broad `Object.assign(result, depMappings)`, but that
+ * assign is skipped under ENFORCE_REQUIRES — so without this loop every
+ * depMappings-sourced CORE_DEP (e.g. getElementById) would be undefined in strict
+ * mode and modules using it would break.
+ *
+ * Only CORE_DEPS that are depMappings keys are touched; the Phase-1 ones are NOT
+ * depMappings keys, so this never overwrites the AppState Proxy or its siblings.
+ * Behavior-neutral under ENFORCE_REQUIRES=false (the broad assign re-applies the
+ * identical values immediately after). Exported for unit testing.
+ *
+ * @param {Object} result - Dependency object being assembled (mutated in place)
+ * @param {Set<string>|Iterable<string>} coreDeps - The CORE_DEPS set
+ * @param {Object} depMappings - Map of dep name → resolver
+ * @returns {Object} the same `result`, for chaining
+ */
+export function injectCoreDeps(result, coreDeps, depMappings) {
+    for (const coreDep of coreDeps) {
+        if (coreDep in depMappings) {
+            result[coreDep] = depMappings[coreDep];
+        }
+        // CORE_DEPS not in depMappings are Phase-1 boot deps (AppState, appInit,
+        // …) already set on `result` before this runs — intentionally left alone.
+    }
+    return result;
+}
+
+/**
  * Build dependencies object for a module based on its manifest
  * @param {Object} manifest - Module manifest
  * @param {Object} deps - Dependencies container
@@ -1315,23 +1386,18 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         _depMappingKeys = new Set(Object.keys(depMappings));
     }
 
-    // Add required dependencies
-    for (const req of manifest.requires || []) {
-        if (req in depMappings) {
-            result[req] = depMappings[req];
-        } else if (req in coreResult) {
-            result[req] = coreResult[req];
-        }
-    }
+    // Inject declared deps: requires + lazyRequires + optionalDeps, all resolved
+    // the same way (depMappings, falling back to coreResult). optionalDeps MUST be
+    // injected here too — under ENFORCE_REQUIRES the broad Object.assign below is
+    // skipped, so this loop is their only source; without it every optionalDeps
+    // dep would silently become undefined when the flag flips.
+    injectDeclaredDeps(result, manifest, depMappings, coreResult);
 
-    // Also add lazyRequires (they're still provided, just not used for ordering)
-    for (const req of manifest.lazyRequires || []) {
-        if (req in depMappings) {
-            result[req] = depMappings[req];
-        } else if (req in coreResult) {
-            result[req] = coreResult[req];
-        }
-    }
+    // Inject framework-level CORE_DEPS (DOM helpers, sanitizeInput, safe* utils,
+    // …) that live in depMappings, so they survive ENFORCE_REQUIRES mode where the
+    // broad Object.assign below is skipped. The Phase-1 CORE_DEPS (AppState, …) are
+    // not depMappings keys, so the AppState Proxy set above is left untouched.
+    injectCoreDeps(result, CORE_DEPS, depMappings);
 
     // Validate required dependencies (warning-only)
     // This helps catch manifest errors where a module requires an API that doesn't exist
