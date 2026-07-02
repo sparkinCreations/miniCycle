@@ -691,6 +691,50 @@ export async function runCompletedTasksManagerTests(resultsDiv, isPartOfSuite = 
         }
     });
 
+    // Source of truth: organize() partitions by AppState `task.completed` (keyed by task
+    // id), NOT the DOM checkbox. Set up nodes whose checkbox DISAGREES with state and
+    // assert state wins — the ordering-safe behavior (e.g. an undo/redo patch render that
+    // hasn't repainted the checkbox yet must not misplace tasks in the dropdown).
+    await test('organize partitions by AppState task.completed, not a stale DOM checkbox', async () => {
+        createTestDOM();
+        setCompletedTasksManagerDependencies(createMockDeps({
+            AppState: {
+                isReady: () => true,
+                get: () => ({
+                    settings: { showCompletedDropdown: true },
+                    appState: { activeCycleId: 'c1' },
+                    data: { cycles: { c1: { tasks: [
+                        { id: 'a', completed: true },   // state: COMPLETED (box will say otherwise)
+                        { id: 'b', completed: false }   // state: NOT completed (box will say otherwise)
+                    ] } } }
+                })
+            }
+        }));
+        const manager = new CompletedTasksManager();
+
+        const taskList = document.getElementById('taskList');
+        const completedList = document.getElementById('completedTaskList');
+
+        // 'a' in the active list with an UNCHECKED box, but state says completed.
+        const a = createMockTask('a', false); a.dataset.taskId = 'a';
+        taskList.appendChild(a);
+        // 'b' in the completed section with a CHECKED box, but state says not completed.
+        const b = createMockTask('b', true); b.dataset.taskId = 'b';
+        completedList.appendChild(b);
+
+        manager.organize();
+
+        if (!completedList.querySelector('#task-a')) {
+            throw new Error('Task a (state.completed=true) must move to the completed section despite an unchecked box');
+        }
+        if (!taskList.querySelector('#task-b')) {
+            throw new Error('Task b (state.completed=false) must move to the active list despite a checked box');
+        }
+        if (completedList.querySelectorAll('.task').length !== 1) {
+            throw new Error(`Expected 1 completed task (a), got ${completedList.querySelectorAll('.task').length}`);
+        }
+    });
+
     // Regression: a full re-render (renderTasks → replaceChildren) regenerates every
     // task as a fresh node in the ACTIVE list but leaves the completed list untouched.
     // organize() then re-appends the fresh completed nodes — if it doesn't first drop
