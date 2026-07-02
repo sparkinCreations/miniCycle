@@ -377,6 +377,28 @@ export class CompletedTasksManager {
 
         const completedList = this.deps.getElementById(DOM_IDS.COMPLETED_TASK_LIST);
 
+        // SOURCE OF TRUTH: partition by AppState `task.completed` (keyed by task id),
+        // not the DOM checkbox. The checkbox is rendered from task.completed, so in
+        // steady state they agree — but reading state directly removes the ordering
+        // dependency on the checkbox being repainted first (e.g. an undo/redo patch
+        // render updates the checkbox in place; if organize() ran before that, a
+        // checkbox-driven pass would move the wrong task). Falls back to the rendered
+        // checkbox only when AppState isn't ready.
+        let completedIds = null, knownIds = null;
+        const AppState = this.deps.AppState;
+        if (AppState?.isReady?.()) {
+            const state = AppState.get();
+            const activeId = state?.appState?.activeCycleId;
+            const tasks = activeId ? state?.data?.cycles?.[activeId]?.tasks : null;
+            if (Array.isArray(tasks)) {
+                completedIds = new Set(tasks.filter(t => t.completed).map(t => t.id));
+                knownIds = new Set(tasks.map(t => t.id));
+            }
+        }
+        const isCompleted = (el) => completedIds
+            ? completedIds.has(el.dataset.taskId)
+            : !!el.querySelector('input[type="checkbox"]')?.checked;
+
         // DEDUPE: a full re-render (renderTasks → replaceChildren) regenerates every
         // task as a fresh node in the active list but leaves the completed list
         // untouched. Any completed-list node whose task now also has a fresh node in
@@ -399,18 +421,21 @@ export class CompletedTasksManager {
 
         // DOWN: move each completed task in the active list to the completed section.
         Array.from(taskList.querySelectorAll(DOM_SELECTORS.TASK)).forEach(taskElement => {
-            const checkbox = taskElement.querySelector('input[type="checkbox"]');
-            if (checkbox && checkbox.checked) {
+            if (isCompleted(taskElement)) {
                 this.moveToCompleted(taskElement);
             }
         });
 
         // UP: move any now-uncompleted task in the completed section back to the
-        // active list (restores its original position via moveToActive()).
+        // active list (restores its original position via moveToActive()). When state
+        // is authoritative, only move tasks the state still knows and marks incomplete —
+        // orphan nodes (task deleted from state) are left for the dedupe/render path.
         if (completedList) {
             Array.from(completedList.querySelectorAll(DOM_SELECTORS.TASK)).forEach(taskElement => {
-                const checkbox = taskElement.querySelector('input[type="checkbox"]');
-                if (checkbox && !checkbox.checked) {
+                const moveUp = completedIds
+                    ? (knownIds.has(taskElement.dataset.taskId) && !completedIds.has(taskElement.dataset.taskId))
+                    : !taskElement.querySelector('input[type="checkbox"]')?.checked;
+                if (moveUp) {
                     this.moveToActive(taskElement);
                 }
             });

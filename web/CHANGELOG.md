@@ -1,3 +1,8 @@
+## [2.275] - 2026-07-02
+- fix(completed-dropdown): reconcile dropdown on Uncheck All + Delete All (were left showing stale/deleted tasks)
+- fix(completed-dropdown): source organize() from AppState task.completed, not the DOM checkbox
+
+
 ## [2.274] - 2026-07-01
 - fix(factory-reset): timeout-guard IndexedDB deletes so a repeat reset can't hang before re-init
 - fix(ui): expose startGuidedTour on ui api so menu Reset Tours → Start Tour works
