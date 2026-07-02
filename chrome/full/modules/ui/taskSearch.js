@@ -432,17 +432,25 @@ function applyFiltersAndSort(query) {
     const tasks = [...taskList.querySelectorAll(DOM_SELECTORS.TASK)];
     const lowerQuery = query.toLowerCase().trim();
 
-    // 1. Apply sort (reorders DOM nodes)
+    // 1. Apply sort (reorders DOM nodes in the active list)
     applySortToDOM(tasks, taskList);
 
-    // 2. Apply text + category filter (show/hide each task)
-    const orderedTasks = [...taskList.querySelectorAll(DOM_SELECTORS.TASK)];
-    orderedTasks.forEach(task => {
+    // 2. Apply text + category filter (show/hide each task) to BOTH the active list
+    //    AND the completed-tasks dropdown. When that feature is enabled, completed
+    //    tasks live in #completedTaskList — filtering only #taskList would leave them
+    //    visible regardless of the search query.
+    const applyTo = (task) => {
         const taskText = task.querySelector(DOM_SELECTORS.TASK_TEXT)?.textContent?.toLowerCase() || '';
         const textMatch = lowerQuery === '' || taskText.includes(lowerQuery);
         const categoryMatch = matchesFilter(task);
         task.style.display = (textMatch && categoryMatch) ? '' : 'none';
-    });
+    };
+    [...taskList.querySelectorAll(DOM_SELECTORS.TASK)].forEach(applyTo);
+
+    const completedList = deps.getElementById(DOM_IDS.COMPLETED_TASK_LIST);
+    if (completedList) {
+        [...completedList.querySelectorAll(DOM_SELECTORS.TASK)].forEach(applyTo);
+    }
 }
 
 /**

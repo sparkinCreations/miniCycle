@@ -1,3 +1,7 @@
+## [2.276] - 2026-07-02
+- fix(completed-dropdown): filter completed tasks in the dropdown on search too (was #taskList-only)
+
+
 ## [2.275] - 2026-07-02
 - fix(completed-dropdown): reconcile dropdown on Uncheck All + Delete All (were left showing stale/deleted tasks)
 - fix(completed-dropdown): source organize() from AppState task.completed, not the DOM checkbox
