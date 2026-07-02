@@ -62,6 +62,9 @@ const di = createDIModule('MenuManager', {
     recurringPanel: optional(null),
     AppMeta: optional(null),
     trackAction: optional(null),
+    // Reconcile the completed-tasks dropdown after "uncheck all" clears completion
+    // in state — moves the now-uncompleted tasks back out of the dropdown.
+    organizeCompletedTasks: optional(null),
     // Cross-phase: focusMode loads in PHASES.UI_MANAGERS (Phase 6) while
     // menuManager loads in PHASES.CYCLE (Phase 5). Optional + only-called-
     // on-click means by the time the user opens the menu and clicks the
@@ -139,7 +142,8 @@ export class MenuManager {
             updateUndoRedoButtons: resolvedDeps.updateUndoRedoButtons,
             recurringPanel: resolvedDeps.recurringPanel,
             trackAction: resolvedDeps.trackAction,
-            activateFocusMode: resolvedDeps.activateFocusMode
+            activateFocusMode: resolvedDeps.activateFocusMode,
+            organizeCompletedTasks: resolvedDeps.organizeCompletedTasks
         };
 
         // Cache DOM elements (will be set in init)
@@ -636,8 +640,13 @@ export class MenuManager {
             return;
         }
 
-        // ✅ Uncheck tasks in the UI and remove overdue styling
-        this.deps.querySelectorAll(`#${DOM_IDS.TASK_LIST} ${DOM_SELECTORS.TASK}`).forEach(taskElement => {
+        // ✅ Uncheck tasks in the UI and remove overdue styling — cover BOTH the active
+        // list and the completed-tasks dropdown (#completedTaskList). When the dropdown
+        // feature is on, completed tasks live there, so a #taskList-only sweep would
+        // leave them checked and parked in the dropdown even though state cleared them.
+        this.deps.querySelectorAll(
+            `#${DOM_IDS.TASK_LIST} ${DOM_SELECTORS.TASK}, #${DOM_IDS.COMPLETED_TASK_LIST} ${DOM_SELECTORS.TASK}`
+        ).forEach(taskElement => {
             const checkbox = taskElement.querySelector(DOM_SELECTORS.TASK_CHECKBOX);
             if (checkbox) {
                 checkbox.checked = false;
@@ -645,6 +654,11 @@ export class MenuManager {
             // ✅ Remove overdue styling
             taskElement.classList.remove(DOM_CLASSES.OVERDUE_TASK);
         });
+
+        // ✅ Reconcile the completed dropdown against the now-cleared state: moves the
+        // (now-uncompleted) tasks back to the active list and hides the empty section.
+        // No-op when the dropdown feature is disabled.
+        this.deps.organizeCompletedTasks?.();
 
         // ✅ Update UI elements
         this.deps.updateProgressBar();
@@ -722,6 +736,15 @@ export class MenuManager {
                 if (taskList) {
                     taskList.replaceChildren(); // Fix #19: preserves event listeners on parent
                 }
+                // Also clear the completed-tasks dropdown — with the feature enabled, the
+                // deleted tasks live in #completedTaskList and would otherwise linger there
+                // (state emptied, but the dropdown still shows them). Then reconcile so the
+                // now-empty completed section hides.
+                const completedTaskList = this.deps.getElementById(DOM_IDS.COMPLETED_TASK_LIST);
+                if (completedTaskList) {
+                    completedTaskList.replaceChildren();
+                }
+                this.deps.organizeCompletedTasks?.();
 
                 this.deps.updateProgressBar();
                 this.deps.updateStatsPanel();
