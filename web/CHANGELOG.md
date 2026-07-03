@@ -1,3 +1,7 @@
+## [2.277] - 2026-07-03
+- feat(task-view): self-home docks (card, quick actions, status bubble) + docked-follower reload fix
+
+
 ## [2.276] - 2026-07-02
 - fix(completed-dropdown): filter completed tasks in the dropdown on search too (was #taskList-only)
 
