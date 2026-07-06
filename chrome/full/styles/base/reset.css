@@ -132,3 +132,10 @@ dialog:focus-visible {
     height: auto;
     overflow: visible;
 }
+
+/* Skip-link target: focusable programmatically (tabindex="-1") so the skip
+   link actually moves keyboard focus into content. It's not an interactive
+   control, so suppress the focus ring the browser would otherwise flash. */
+#app-container:focus {
+    outline: none;
+}

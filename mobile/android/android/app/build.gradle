@@ -10,8 +10,8 @@ android {
         // versionName tracks APP_VERSION (web/version.js). versionCode must
         // increase monotonically for every Play Store upload — bump it per release.
         // See mobile/android/docs/ANDROID_BUILD_AND_DIFFERENCES.md §Releases.
-        versionCode 10
-        versionName "2.276"
+        versionCode 11
+        versionName "2.279"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.

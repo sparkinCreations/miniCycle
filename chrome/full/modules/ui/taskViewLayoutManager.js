@@ -85,6 +85,7 @@ let taskViewLayoutManagerInstance = null;
  *   handleHostSelector?: string,
  *   handlePosition?: 'inside-top-left' | 'outside-left' | 'top-center-above',
  *   dock?: { relativeToId: string, side: 'bottom' | 'top', tolerancePx: number, widthFraction?: number }
+ *       | { self: true, tolerancePx: number, widthFraction?: number }
  * }>}
  */
 const DRAGGABLES = [
@@ -99,7 +100,18 @@ const DRAGGABLES = [
         // edge at title height.
         handleHostSelector: DOM_SELECTORS.TITLE_ROW,
         // Float to the left of the title row, vertically centered on it.
-        handlePosition: 'outside-left'
+        handlePosition: 'outside-left',
+        // Self-home dock. Unlike the satellites (which dock TO this card), the
+        // card snaps back to its OWN default flex-flow position. `self: true`
+        // means the snap zone is derived from the card's measured home rect
+        // (captured at drag start) rather than another element's live rect.
+        // Homing the card cascades its docked (non-customized) satellites home
+        // with it; independently-placed satellites are left where they are.
+        dock: {
+            self: true,
+            tolerancePx: 160,
+            widthFraction: 0.5
+        }
     },
     {
         key: 'add-task-input',
@@ -123,14 +135,26 @@ const DRAGGABLES = [
         elementId: DOM_IDS.QUICK_ACTIONS_WINDOW,
         ariaLabelKey: 'accessibility.dragHandleQuickActions',
         // Handle floats above the panel, horizontally centered.
-        handlePosition: 'top-center-above'
-        // No dock — the panel stays wherever the user puts it.
+        handlePosition: 'top-center-above',
+        // Self-home dock: snaps back to its own default position. Independent
+        // (no dependents), so no cascade — just returns itself to flex flow.
+        dock: {
+            self: true,
+            tolerancePx: 90,
+            widthFraction: 0.8
+        }
     },
     {
         key: 'status-bubble',
         elementId: DOM_IDS.HELP_WINDOW,
         ariaLabelKey: 'accessibility.dragHandleStatusBubble',
-        handlePosition: 'top-center-above'
+        handlePosition: 'top-center-above',
+        // Self-home dock: snaps back to its own default position. Independent.
+        dock: {
+            self: true,
+            tolerancePx: 90,
+            widthFraction: 0.8
+        }
     },
     {
         key: 'complete-cycle-btn',
@@ -386,19 +410,33 @@ export class TaskViewLayoutManager {
     }
 
     _clearSavedPosition(key) {
-        if (!this.deps.AppState?.update) return;
-        // Same first-interaction gate as _saveElementPosition — a dock-back
-        // is a user action that should produce an undo entry.
+        this._clearSavedPositions([key]);
+    }
+
+    /**
+     * Delete one or more saved positions in a SINGLE AppState.update, so a
+     * cascade (homing the card + its followers) is one undo entry, not one per
+     * key. Skips the update — and the first-interaction undo enable — entirely
+     * when none of the keys are actually persisted, so a no-op dock (or the
+     * caller's redundant follow-up clear) never captures a stray undo snapshot.
+     */
+    _clearSavedPositions(keys) {
+        if (!this.deps.AppState?.update || !keys?.length) return;
+        const positions = this._readPositions();
+        const present = keys.filter(
+            (k) => positions && Object.prototype.hasOwnProperty.call(positions, k)
+        );
+        if (!present.length) return;
+        // A dock-home is a user action that should produce an undo entry.
         this.deps.enableUndoSystemOnFirstInteraction?.();
         try {
             this.deps.AppState.update((state) => {
-                const positions = state.settings?.taskViewLayout?.positions;
-                if (positions && Object.prototype.hasOwnProperty.call(positions, key)) {
-                    delete positions[key];
-                }
+                const pos = state.settings?.taskViewLayout?.positions;
+                if (!pos) return;
+                for (const k of present) delete pos[k];
             }, true);
         } catch (err) {
-            console.warn('TaskViewLayoutManager: failed to clear saved position', key, err);
+            console.warn('TaskViewLayoutManager: failed to clear saved positions', present, err);
         }
     }
 
@@ -662,6 +700,15 @@ export class TaskViewLayoutManager {
                 });
             }
 
+            // Self-home dock: capture where the element sits in default flex
+            // flow NOW (its "home"), so the snap zone can target it even while
+            // the element is dragged far away. Cached on the registry entry and
+            // read by _getSnapZoneRect during this drag.
+            if (config.dock?.self) {
+                const homeEntry = this._registry.get(config.key);
+                if (homeEntry) homeEntry._homeRect = this._measureHomeRect(element);
+            }
+
             dragState = {
                 pointerId: e.pointerId,
                 startX: e.clientX,
@@ -730,7 +777,7 @@ export class TaskViewLayoutManager {
             // state so the user sees both endpoints of the snap.
             if (config.dock) {
                 const liveRect = element.getBoundingClientRect();
-                const inSnap = this._isInSnapZone(liveRect, config.dock);
+                const inSnap = this._isInSnapZone(liveRect, config);
                 element.classList.toggle(DOM_CLASSES.TVL_SNAP_HOVER, inSnap);
                 const indicator = this._snapIndicators.get(config.key);
                 if (indicator) {
@@ -763,12 +810,19 @@ export class TaskViewLayoutManager {
                 if (config.dock) this._hideSnapTarget(config);
                 // Decide on drop: snap back to dock, or hold absolute position.
                 const dropRect = element.getBoundingClientRect();
-                if (config.dock && this._isInSnapZone(dropRect, config.dock)) {
-                    this._snapToDock(element, config);
-                    // Re-dock cancels the user's customization — drop the
-                    // saved position so the element falls back to its
-                    // CSS-defined home on next load.
-                    this._clearSavedPosition(config.key);
+                if (config.dock && this._isInSnapZone(dropRect, config)) {
+                    const returnedToFlow = this._snapToDock(element, config);
+                    if (returnedToFlow) {
+                        // Anchor is at its default spot → the element is back in
+                        // its CSS-defined home; drop the saved position.
+                        this._clearSavedPosition(config.key);
+                    } else {
+                        // Anchor was moved → the element is glued to it as a
+                        // follower. Persist it (customized:false) so the glue
+                        // survives reload/resize instead of snapping back to
+                        // default flex flow on the next _applySavedPosition pass.
+                        this._saveElementPosition(element, config, false);
+                    }
                 } else {
                     this._endDrag(element);
                     // Save the dragged element as user-customized.
@@ -886,7 +940,7 @@ export class TaskViewLayoutManager {
     _showSnapTarget(config) {
         const indicator = this._snapIndicators.get(config.key);
         if (!indicator) return;
-        const zone = this._getSnapZoneRect(config.dock);
+        const zone = this._getSnapZoneRect(config);
         if (!zone) return;
         const wrapperRect = this._wrapper.getBoundingClientRect();
         indicator.style.left = `${zone.left - wrapperRect.left}px`;
@@ -1012,7 +1066,24 @@ export class TaskViewLayoutManager {
      * Returns null if the anchor element is missing. Used both for hit-testing
      * and for placing the visual indicator.
      */
-    _getSnapZoneRect(dockConfig) {
+    _getSnapZoneRect(config) {
+        const dockConfig = config.dock;
+        // Self-home dock: the zone is a band centered on the element's own home
+        // (flex-flow) position — captured at drag start — not relative to any
+        // other element. Snapping is by the dragged element's center, so a band
+        // centered on the home center means "drop roughly back where it lives."
+        if (dockConfig.self) {
+            const home = this._registry.get(config.key)?._homeRect;
+            if (!home) return null;
+            const selfWidth = home.width * (dockConfig.widthFraction ?? 1);
+            const selfTol = dockConfig.tolerancePx;
+            return {
+                left: home.left + (home.width - selfWidth) / 2,
+                top: home.top + home.height / 2 - selfTol / 2,
+                width: selfWidth,
+                height: selfTol
+            };
+        }
         const anchor = this.deps.getElementById(dockConfig.relativeToId);
         if (!anchor) return null;
         const anchorRect = anchor.getBoundingClientRect();
@@ -1031,8 +1102,8 @@ export class TaskViewLayoutManager {
         };
     }
 
-    _isInSnapZone(elementRect, dockConfig) {
-        const zone = this._getSnapZoneRect(dockConfig);
+    _isInSnapZone(elementRect, config) {
+        const zone = this._getSnapZoneRect(config);
         if (!zone) return false;
         const elementCenterX = elementRect.left + elementRect.width / 2;
         const elementCenterY = elementRect.top + elementRect.height / 2;
@@ -1056,6 +1127,11 @@ export class TaskViewLayoutManager {
      * dependent absolute and position it below the anchor's current
      * location. The dependent is still considered "docked"
      * (`customized=false`) so it will follow on subsequent anchor drags.
+     *
+     * @returns {boolean} true if the element returned to flex flow (caller
+     *   should drop any saved position); false if it stayed absolute, glued to
+     *   a moved anchor (caller must persist it as a follower so the glue
+     *   survives reload/resize).
      */
     _snapToDock(element, config) {
         element.classList.remove(DOM_CLASSES.TVL_DRAGGING);
@@ -1065,6 +1141,18 @@ export class TaskViewLayoutManager {
 
         const entry = this._registry.get(config.key);
         if (entry) entry.customized = false;
+
+        // Self-home dock (e.g. the task card): there's no other anchor to glue
+        // to — the element returns to its OWN flex-flow home. Clear its inline
+        // layout, then cascade its docked (non-customized) satellites home too
+        // so they ride back with it; independently-placed satellites stay put.
+        if (config.dock.self) {
+            // Home the element and cascade its docked dependents home too, all
+            // in ONE persisted transaction (see _homeSelf) — so the whole
+            // gesture is a single undo entry, not one per key.
+            this._homeSelf(element, config);
+            return true;
+        }
 
         const anchor = this.deps.getElementById(config.dock.relativeToId);
         const anchorEntry = this._findEntryByElement(anchor);
@@ -1083,20 +1171,75 @@ export class TaskViewLayoutManager {
                 anchorRect.width
             );
             element.style.zIndex = '';
+            // Glued to the moved anchor — caller must persist as a follower.
+            return false;
         } else {
             // Anchor is in flex flow — return dependent to flex flow too
             // by clearing inline styles. The element's natural CSS layout
             // (now that it's a true sibling in #task-view) places it back
             // at its default visual position.
-            element.style.position = '';
-            element.style.left = '';
-            element.style.top = '';
-            element.style.right = '';
-            element.style.bottom = '';
-            element.style.transform = '';
-            element.style.zIndex = '';
-            element.style.width = '';
+            this._clearInlineLayout(element);
+            // Back in default flex flow — caller should drop any saved position.
+            return true;
         }
+    }
+
+    /**
+     * Strip all inline layout styles so an element falls back to its default
+     * CSS (flex-flow) position.
+     */
+    _clearInlineLayout(el) {
+        el.style.position = '';
+        el.style.left = '';
+        el.style.top = '';
+        el.style.right = '';
+        el.style.bottom = '';
+        el.style.transform = '';
+        el.style.zIndex = '';
+        el.style.width = '';
+    }
+
+    /**
+     * Measure an element's default flex-flow rect (its "home") by momentarily
+     * stripping inline positioning. Runs synchronously within the caller's
+     * event handler, so the browser never paints the intermediate state — the
+     * element does not visibly jump.
+     */
+    _measureHomeRect(element) {
+        const saved = {
+            position: element.style.position,
+            left: element.style.left,
+            top: element.style.top,
+            right: element.style.right,
+            bottom: element.style.bottom,
+            transform: element.style.transform,
+            width: element.style.width,
+            zIndex: element.style.zIndex
+        };
+        this._clearInlineLayout(element);
+        const rect = element.getBoundingClientRect();
+        Object.assign(element.style, saved);
+        return rect;
+    }
+
+    /**
+     * Return a self-home element to its flex-flow home and cascade its docked
+     * (non-customized) dependents home with it — all persisted in ONE
+     * transaction, so the whole gesture is a single undo entry. Independently-
+     * placed dependents (`customized === true`) are left where the user put them.
+     * For a dependent-less element (status bubble, quick actions) this simply
+     * homes the element itself.
+     */
+    _homeSelf(element, config) {
+        this._clearInlineLayout(element);
+        const keys = [config.key];
+        for (const depEntry of this._getDependentsOf(element.id)) {
+            if (depEntry.customized) continue;   // independent — leave it
+            this._clearInlineLayout(depEntry.element);
+            depEntry.element.classList.remove(DOM_CLASSES.TVL_CUSTOMIZED);
+            keys.push(depEntry.config.key);
+        }
+        this._clearSavedPositions(keys);
     }
 
     destroy() {

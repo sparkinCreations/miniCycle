@@ -1218,7 +1218,8 @@ body.high-contrast:not(.dark-mode) .time-picker-wrapper {
 }
 
 body.high-contrast:not(.dark-mode) .time-picker-group input[type="number"],
-body.high-contrast:not(.dark-mode) .time-picker-group select {
+body.high-contrast:not(.dark-mode) .time-picker-group select,
+body.high-contrast:not(.dark-mode) .recurring-time-input {
     border: 2px solid #333;
 }
 
@@ -1343,7 +1344,8 @@ body.high-contrast.dark-mode .time-picker-wrapper {
 }
 
 body.high-contrast.dark-mode .time-picker-group input[type="number"],
-body.high-contrast.dark-mode .time-picker-group select {
+body.high-contrast.dark-mode .time-picker-group select,
+body.high-contrast.dark-mode .recurring-time-input {
     border: 2px solid #aaa;
 }
 

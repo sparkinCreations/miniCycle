@@ -1,3 +1,7 @@
+## [2.279] - 2026-07-06
+- feat(product-page): add June 2026 highlights to What's New timeline
+
+
 ## [2.278] - 2026-07-06
 - feat(recurring): native time picker replaces hour/minute/24h inputs (hourly minute unchanged)
 - fix(a11y): skip link now moves focus to main + Tab trap for main menu

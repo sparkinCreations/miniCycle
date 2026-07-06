@@ -281,6 +281,30 @@ export function attachMenuButtonListener(_GlobalUtils, menuButton, menu) {
 
         // Show menu guided tour prompt (first open only)
         getUiApi()?.showMenuTourNotification?.();
+
+        // Trap Tab focus within the menu while open. Unlike the app's <dialog>
+        // modals (which get native top-layer focus trapping via .showModal()),
+        // this <nav> overlay does not — so Tab would otherwise walk into the
+        // content behind it. Wrap Tab/Shift+Tab at the menu's focusable edges.
+        if (menu._trapHandler) menu.removeEventListener('keydown', menu._trapHandler);
+        menu._trapHandler = (e) => {
+          if (e.key !== 'Tab') return;
+          const focusable = [...menu.querySelectorAll(DOM_SELECTORS.FOCUSABLE_ELEMENTS)]
+            .filter(el => el.offsetParent !== null && !el.disabled);
+          if (focusable.length === 0) return;
+          const first = focusable[0];
+          const last = focusable[focusable.length - 1];
+          const active = document.activeElement;
+          if (e.shiftKey && (active === first || !menu.contains(active))) {
+            e.preventDefault();
+            last.focus({ focusVisible: false });
+          } else if (!e.shiftKey && active === last) {
+            e.preventDefault();
+            first.focus({ focusVisible: false });
+          }
+        };
+        menu.addEventListener('keydown', menu._trapHandler);
+
         // Escape key handler
         menu._escHandler = (e) => {
           if (e.key === 'Escape') {
@@ -289,6 +313,7 @@ export function attachMenuButtonListener(_GlobalUtils, menuButton, menu) {
             menuButton.setAttribute('aria-expanded', 'false');
             document.removeEventListener('keydown', menu._escHandler);
             document.removeEventListener('click', closeMenuOnClickOutside);
+            if (menu._trapHandler) menu.removeEventListener('keydown', menu._trapHandler);
             menu._previousFocus?.focus({ focusVisible: false });
           }
         };
@@ -303,6 +328,9 @@ export function attachMenuButtonListener(_GlobalUtils, menuButton, menu) {
         // Menu closing — clean up and restore focus
         if (menu._escHandler) {
           document.removeEventListener('keydown', menu._escHandler);
+        }
+        if (menu._trapHandler) {
+          menu.removeEventListener('keydown', menu._trapHandler);
         }
         menu._previousFocus?.focus({ focusVisible: false });
       }
