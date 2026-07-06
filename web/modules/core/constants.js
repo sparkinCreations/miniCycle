@@ -1039,10 +1039,7 @@ export const DOM_IDS = Object.freeze({
     SPECIFIC_DATE_TIME_OPTIONS: 'specific-date-time-options',
     SPECIFIC_DATE_SPECIFIC_TIME: 'specific-date-specific-time',
     SPECIFIC_DATE_TIME_CONTAINER: 'specific-date-time-container',
-    SPECIFIC_DATE_HOUR: 'specific-date-hour',
-    SPECIFIC_DATE_MINUTE: 'specific-date-minute',
-    SPECIFIC_DATE_MERIDIEM: 'specific-date-meridiem',
-    SPECIFIC_DATE_MILITARY: 'specific-date-military',
+    SPECIFIC_DATE_TIME: 'specific-date-time',
     HOURLY_OPTIONS: 'hourly-options',
     DAILY_OPTIONS: 'daily-options',
     WEEKLY_OPTIONS: 'weekly-options',
@@ -1076,10 +1073,7 @@ export const DOM_IDS = Object.freeze({
 
     // ---- Frequency Time Inputs (parametric by frequency name) ----
     freqSpecificTime: (freq) => `${freq}-specific-time`,
-    freqHour: (freq) => `${freq}-hour`,
-    freqMinute: (freq) => `${freq}-minute`,
-    freqMeridiem: (freq) => `${freq}-meridiem`,
-    freqMilitary: (freq) => `${freq}-military`,
+    freqTime: (freq) => `${freq}-time`,
     freqTimeContainer: (freq) => `${freq}-time-container`,
 
     // ---- Time Picker Sections (surfaced outside advanced) ----

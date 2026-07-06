@@ -59,24 +59,8 @@ export const RECURRING_PANEL_HTML = `<!-- Recurring Panel Modal w/ Overlay -->
       
         <div id="specific-date-time-container" class="hidden">
           <div class="time-picker-wrapper">
-            <div class="time-picker-stack">
-              <div class="time-picker-group">
-                <label for="specific-date-hour" class="visually-hidden">${getLabel('recurring.ariaHour')}</label>
-                <input type="number" id="specific-date-hour" name="specific-date-hour" placeholder="${getLabel('recurring.placeholderHours')}"> :
-                <label for="specific-date-minute" class="visually-hidden">${getLabel('recurring.ariaMinute')}</label>
-                <input type="number" id="specific-date-minute" name="specific-date-minute" placeholder="${getLabel('recurring.placeholderMinutes')}">
-      
-                <select id="specific-date-meridiem" aria-label="${getLabel('recurring.ariaAmPm')}">
-                  <option value="AM">${getLabel('recurring.am')}</option>
-                  <option value="PM">${getLabel('recurring.pm')}</option>
-                </select>
-              </div>
-      
-              <label class="time-format-toggle">
-                <input type="checkbox" id="specific-date-military" name="specific-date-military">
-                ${getLabel('recurring.use24HourFormat')}
-              </label>
-            </div>
+            <label for="specific-date-time" class="visually-hidden">${getLabel('recurring.ariaTimeOfDay')}</label>
+            <input type="time" id="specific-date-time" name="specific-date-time" class="recurring-time-input">
           </div>
         </div>
       </div>
@@ -123,22 +107,8 @@ export const RECURRING_PANEL_HTML = `<!-- Recurring Panel Modal w/ Overlay -->
           <label><input type="checkbox" id="daily-specific-time" name="daily-specific-time"> ${getLabel('recurring.specificTimeOfDay')}</label>
           <div id="daily-time-container" class="hidden">
             <div class="time-picker-wrapper">
-              <div class="time-picker-stack">
-                <div class="time-picker-group">
-                  <label for="daily-hour" class="visually-hidden">${getLabel('recurring.ariaHour')}</label>
-                  <input type="number" id="daily-hour" name="daily-hour" placeholder="${getLabel('recurring.placeholderHours')}">
-                  :
-                  <label for="daily-minute" class="visually-hidden">${getLabel('recurring.ariaMinute')}</label>
-                  <input type="number" id="daily-minute" name="daily-minute" placeholder="${getLabel('recurring.placeholderMinutes')}">
-                  <select id="daily-meridiem" aria-label="${getLabel('recurring.ariaAmPm')}">
-                    <option value="AM">${getLabel('recurring.am')}</option>
-                    <option value="PM">${getLabel('recurring.pm')}</option>
-                  </select>
-                </div>
-                <label class="time-format-toggle">
-                  <input type="checkbox" id="daily-military" name="daily-military"> ${getLabel('recurring.use24HourFormat')}
-                </label>
-              </div>
+              <label for="daily-time" class="visually-hidden">${getLabel('recurring.ariaTimeOfDay')}</label>
+              <input type="time" id="daily-time" name="daily-time" class="recurring-time-input">
             </div>
           </div>
         </div>
@@ -163,22 +133,8 @@ export const RECURRING_PANEL_HTML = `<!-- Recurring Panel Modal w/ Overlay -->
           <label><input type="checkbox" id="weekly-specific-time" name="weekly-specific-time"> ${getLabel('recurring.specificTime')}</label>
           <div id="weekly-time-container" class="hidden">
             <div class="time-picker-wrapper">
-              <div class="time-picker-stack">
-                <div class="time-picker-group">
-                  <label for="weekly-hour" class="visually-hidden">${getLabel('recurring.ariaHour')}</label>
-                  <input type="number" id="weekly-hour" name="weekly-hour" placeholder="${getLabel('recurring.placeholderHours')}">
-                  :
-                  <label for="weekly-minute" class="visually-hidden">${getLabel('recurring.ariaMinute')}</label>
-                  <input type="number" id="weekly-minute" name="weekly-minute" placeholder="${getLabel('recurring.placeholderMinutes')}">
-                  <select id="weekly-meridiem" aria-label="${getLabel('recurring.ariaAmPm')}">
-                    <option value="AM">${getLabel('recurring.am')}</option>
-                    <option value="PM">${getLabel('recurring.pm')}</option>
-                  </select>
-                </div>
-                <label class="time-format-toggle">
-                  <input type="checkbox" id="weekly-military" name="weekly-military"> ${getLabel('recurring.use24HourFormat')}
-                </label>
-              </div>
+              <label for="weekly-time" class="visually-hidden">${getLabel('recurring.ariaTimeOfDay')}</label>
+              <input type="time" id="weekly-time" name="weekly-time" class="recurring-time-input">
             </div>
           </div>
         </div>
@@ -188,22 +144,8 @@ export const RECURRING_PANEL_HTML = `<!-- Recurring Panel Modal w/ Overlay -->
           <label><input type="checkbox" id="biweekly-specific-time" name="biweekly-specific-time"> ${getLabel('recurring.specificTime')}</label>
           <div id="biweekly-time-container" class="hidden">
             <div class="time-picker-wrapper">
-              <div class="time-picker-stack">
-                <div class="time-picker-group">
-                  <label for="biweekly-hour" class="visually-hidden">${getLabel('recurring.ariaHour')}</label>
-                  <input type="number" id="biweekly-hour" name="biweekly-hour" placeholder="${getLabel('recurring.placeholderHours')}">
-                  :
-                  <label for="biweekly-minute" class="visually-hidden">${getLabel('recurring.ariaMinute')}</label>
-                  <input type="number" id="biweekly-minute" name="biweekly-minute" placeholder="${getLabel('recurring.placeholderMinutes')}">
-                  <select id="biweekly-meridiem" aria-label="${getLabel('recurring.ariaAmPm')}">
-                    <option value="AM">${getLabel('recurring.am')}</option>
-                    <option value="PM">${getLabel('recurring.pm')}</option>
-                  </select>
-                </div>
-                <label class="time-format-toggle">
-                  <input type="checkbox" id="biweekly-military" name="biweekly-military"> ${getLabel('recurring.use24HourFormat')}
-                </label>
-              </div>
+              <label for="biweekly-time" class="visually-hidden">${getLabel('recurring.ariaTimeOfDay')}</label>
+              <input type="time" id="biweekly-time" name="biweekly-time" class="recurring-time-input">
             </div>
           </div>
         </div>
@@ -213,22 +155,8 @@ export const RECURRING_PANEL_HTML = `<!-- Recurring Panel Modal w/ Overlay -->
           <label><input type="checkbox" id="monthly-specific-time" name="monthly-specific-time"> ${getLabel('recurring.specificTime')}</label>
           <div id="monthly-time-container" class="hidden">
             <div class="time-picker-wrapper">
-              <div class="time-picker-stack">
-                <div class="time-picker-group">
-                  <label for="monthly-hour" class="visually-hidden">${getLabel('recurring.ariaHour')}</label>
-                  <input type="number" id="monthly-hour" name="monthly-hour" placeholder="${getLabel('recurring.placeholderHours')}">
-                  :
-                  <label for="monthly-minute" class="visually-hidden">${getLabel('recurring.ariaMinute')}</label>
-                  <input type="number" id="monthly-minute" name="monthly-minute" placeholder="${getLabel('recurring.placeholderMinutes')}">
-                  <select id="monthly-meridiem" aria-label="${getLabel('recurring.ariaAmPm')}">
-                    <option value="AM">${getLabel('recurring.am')}</option>
-                    <option value="PM">${getLabel('recurring.pm')}</option>
-                  </select>
-                </div>
-                <label class="time-format-toggle">
-                  <input type="checkbox" id="monthly-military" name="monthly-military"> ${getLabel('recurring.use24HourFormat')}
-                </label>
-              </div>
+              <label for="monthly-time" class="visually-hidden">${getLabel('recurring.ariaTimeOfDay')}</label>
+              <input type="time" id="monthly-time" name="monthly-time" class="recurring-time-input">
             </div>
           </div>
         </div>
@@ -237,23 +165,9 @@ export const RECURRING_PANEL_HTML = `<!-- Recurring Panel Modal w/ Overlay -->
         <div id="yearly-time-section" class="frequency-time-section hidden">
           <label><input type="checkbox" id="yearly-specific-time" name="yearly-specific-time" aria-controls="yearly-time-container"> ${getLabel('recurring.specificTime')}</label>
           <div id="yearly-time-container" class="hidden" aria-live="polite">
-            <div class="time-picker-stack">
-              <div class="time-picker-wrapper">
-                <div class="time-picker-group" role="group" aria-label="${getLabel('recurring.ariaTimeOfDay')}">
-                  <label for="yearly-hour" class="visually-hidden">${getLabel('recurring.ariaHour')}</label>
-                  <input type="number" id="yearly-hour" name="yearly-hour" placeholder="${getLabel('recurring.placeholderHours')}">
-                  :
-                  <label for="yearly-minute" class="visually-hidden">${getLabel('recurring.ariaMinute')}</label>
-                  <input type="number" id="yearly-minute" name="yearly-minute" placeholder="${getLabel('recurring.placeholderMinutes')}">
-                  <select id="yearly-meridiem" aria-label="${getLabel('recurring.ariaAmPm')}">
-                    <option value="AM">${getLabel('recurring.am')}</option>
-                    <option value="PM">${getLabel('recurring.pm')}</option>
-                  </select>
-                </div>
-                <label class="time-format-toggle">
-                  <input type="checkbox" id="yearly-military" name="yearly-military" aria-label="${getLabel('recurring.ariaUse24HourFormat')}"> ${getLabel('recurring.use24HourFormat')}
-                </label>
-              </div>
+            <div class="time-picker-wrapper">
+              <label for="yearly-time" class="visually-hidden">${getLabel('recurring.ariaTimeOfDay')}</label>
+              <input type="time" id="yearly-time" name="yearly-time" class="recurring-time-input">
             </div>
           </div>
         </div>

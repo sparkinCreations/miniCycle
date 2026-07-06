@@ -656,15 +656,30 @@
     outline-offset: 2px;
 }
 
-select.hidden {
-    display: none;
+/* Native per-frequency time-of-day input (replaces the old number + meridiem +
+   24-hour-toggle cluster). Styled to match the panel's other inputs; the wheel/
+   spinner UI and 12/24h display are provided by the OS per device locale. */
+.recurring-time-input {
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--font-size-base);
+    border-radius: var(--radius-md);
+    border: 2px solid var(--theme-input-border);
+    text-align: center;
+    transition: border-color var(--transition-fast);
 }
 
-.time-format-toggle {
-    font-size: var(--font-size-sm);
-    display: flex;
-    align-items: center;
-    gap: var(--space-1-5);
+.recurring-time-input:focus {
+    outline: none;
+    border-color: var(--color-success);
+}
+
+.recurring-time-input:focus-visible {
+    outline: 2px solid var(--theme-input-focus-border, #4c79ff);
+    outline-offset: 2px;
+}
+
+select.hidden {
+    display: none;
 }
 
 .time-picker-stack {

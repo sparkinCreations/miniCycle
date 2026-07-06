@@ -163,6 +163,51 @@ export async function runRecurringPanelFormTests(resultsDiv) {
     });
 
     // ------------------------------------------------------------------
+    resultsDiv.innerHTML += '<h4 class="test-section">🕐 parseTimeInput / toTimeInputValue</h4>';
+
+    await test('parseTimeInput: "13:05" → 1:05 PM (12-hour storage shape)', () => {
+        const t = mod.parseTimeInput('13:05');
+        if (t.hour !== 1 || t.minute !== 5 || t.meridiem !== 'PM' || t.military !== false) {
+            throw new Error(JSON.stringify(t));
+        }
+    });
+
+    await test('parseTimeInput: "00:00" → 12:00 AM (midnight edge)', () => {
+        const t = mod.parseTimeInput('00:00');
+        if (t.hour !== 12 || t.minute !== 0 || t.meridiem !== 'AM') throw new Error(JSON.stringify(t));
+    });
+
+    await test('parseTimeInput: "12:30" → 12:30 PM (noon edge)', () => {
+        const t = mod.parseTimeInput('12:30');
+        if (t.hour !== 12 || t.meridiem !== 'PM') throw new Error(JSON.stringify(t));
+    });
+
+    await test('parseTimeInput: empty/invalid defaults to 12:00 AM', () => {
+        const t = mod.parseTimeInput('');
+        if (t.hour !== 12 || t.minute !== 0 || t.meridiem !== 'AM') throw new Error(JSON.stringify(t));
+    });
+
+    await test('toTimeInputValue: 9:30 PM → "21:30"', () => {
+        const v = mod.toTimeInputValue({ hour: 9, minute: 30, meridiem: 'PM', military: false });
+        if (v !== '21:30') throw new Error(v);
+    });
+
+    await test('toTimeInputValue: 12 AM → "00:00", 12 PM → "12:00"', () => {
+        if (mod.toTimeInputValue({ hour: 12, minute: 0, meridiem: 'AM' }) !== '00:00') throw new Error('12 AM');
+        if (mod.toTimeInputValue({ hour: 12, minute: 0, meridiem: 'PM' }) !== '12:00') throw new Error('12 PM');
+    });
+
+    await test('toTimeInputValue: legacy military-stored time round-trips', () => {
+        // A saved template stored as 24-hour (military: true) must still format correctly.
+        if (mod.toTimeInputValue({ hour: 18, minute: 5, military: true }) !== '18:05') throw new Error('military');
+    });
+
+    await test('parseTimeInput ∘ toTimeInputValue round-trips a 24-hour value', () => {
+        const v = mod.toTimeInputValue(mod.parseTimeInput('07:45'));
+        if (v !== '07:45') throw new Error(v);
+    });
+
+    // ------------------------------------------------------------------
     resultsDiv.innerHTML += '<h4 class="test-section">🏗️ buildRecurringSettingsFromPanel</h4>';
 
     // Ensure no normalize action interferes with raw-shape assertions.
@@ -354,14 +399,12 @@ export async function runRecurringPanelFormTests(resultsDiv) {
         } finally { unmount(); }
     });
 
-    await test('populate writes specific time fields for daily', () => {
+    await test('populate writes specific time to native time input for daily', () => {
         const deps = mount(
             '<select id="recur-frequency"><option value="daily" selected>daily</option></select>' +
             '<input type="checkbox" id="recur-indefinitely" checked>' +
             '<input type="checkbox" id="daily-specific-time">' +
-            '<input id="daily-hour"><input id="daily-minute">' +
-            '<select id="daily-meridiem"><option value="AM">AM</option><option value="PM">PM</option></select>' +
-            '<input type="checkbox" id="daily-military">'
+            '<input type="time" id="daily-time">'
         );
         try {
             mod.populateRecurringFormWithSettings(deps, {
@@ -371,9 +414,10 @@ export async function runRecurringPanelFormTests(resultsDiv) {
                 time: { hour: 9, minute: 30, meridiem: 'PM', military: false }
             });
             if (sandbox.querySelector('#daily-specific-time').checked !== true) throw new Error('time checkbox not checked');
-            if (sandbox.querySelector('#daily-hour').value !== '9') throw new Error('hour not written');
-            if (sandbox.querySelector('#daily-minute').value !== '30') throw new Error('minute not written');
-            if (sandbox.querySelector('#daily-meridiem').value !== 'PM') throw new Error('meridiem not written');
+            // 9:30 PM → "21:30" (native <input type="time"> is always 24-hour)
+            if (sandbox.querySelector('#daily-time').value !== '21:30') {
+                throw new Error(`time=${sandbox.querySelector('#daily-time').value}`);
+            }
         } finally { unmount(); }
     });
 

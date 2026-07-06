@@ -54,6 +54,49 @@ export function getTomorrow() {
 }
 
 /**
+ * Parse a native <input type="time"> value ("HH:MM", 24-hour) into the stored
+ * recurring time shape { hour, minute, meridiem, military }. The scheduling core
+ * (recurringMatcher / recurringCalculators / recurringPanelSummary) reads this
+ * shape, so it stays stable — only the form control changed. Empty/invalid input
+ * defaults to 12:00 AM (midnight).
+ * @param {string} value - "HH:MM" from a native time input
+ * @returns {{hour:number, minute:number, meridiem:string, military:boolean}}
+ */
+export function parseTimeInput(value) {
+    const [h = 0, m = 0] = String(value || '').split(':').map(n => parseInt(n, 10) || 0);
+    const hour24 = Math.min(23, Math.max(0, h));
+    const minute = Math.min(59, Math.max(0, m));
+    return {
+        hour: (hour24 % 12) || 12,          // 12-hour value (0 → 12, 13 → 1)
+        minute,
+        meridiem: hour24 < 12 ? 'AM' : 'PM',
+        military: false                      // store 12-hour so summaries read "1:00 PM"
+    };
+}
+
+/**
+ * Format the stored recurring time shape into a native <input type="time"> value
+ * ("HH:MM", 24-hour). Handles both 12-hour (meridiem) and legacy military-stored
+ * templates so existing saved recurring tasks keep loading correctly.
+ * @param {{hour:number, minute:number, meridiem?:string, military?:boolean}} time
+ * @returns {string} "HH:MM", or "" when no time is set
+ */
+export function toTimeInputValue(time) {
+    if (!time) return '';
+    const minute = Number.isInteger(time.minute) ? time.minute : 0;
+    let hour24;
+    if (time.military) {
+        hour24 = time.hour;
+    } else if (time.meridiem === 'PM') {
+        hour24 = time.hour === 12 ? 12 : time.hour + 12;
+    } else {
+        hour24 = time.hour === 12 ? 0 : time.hour;   // 12 AM → 00
+    }
+    hour24 = Math.min(23, Math.max(0, hour24 || 0));
+    return `${String(hour24).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+}
+
+/**
  * Get selected monthly days from DOM
  * @param {Object} deps - Dependencies (querySelectorAll)
  * @returns {number[]} Array of selected day numbers
@@ -150,12 +193,7 @@ export function buildRecurringSettingsFromPanel(deps, state) {
 
             if (deps.getElementById(DOM_IDS.SPECIFIC_DATE_SPECIFIC_TIME)?.checked) {
                 settings.useSpecificTime = true;
-                settings.time = {
-                    hour: parseInt(deps.getElementById(DOM_IDS.SPECIFIC_DATE_HOUR)?.value) || 0,
-                    minute: parseInt(deps.getElementById(DOM_IDS.SPECIFIC_DATE_MINUTE)?.value) || 0,
-                    meridiem: deps.getElementById(DOM_IDS.SPECIFIC_DATE_MERIDIEM)?.value,
-                    military: deps.getElementById(DOM_IDS.SPECIFIC_DATE_MILITARY)?.checked
-                };
+                settings.time = parseTimeInput(deps.getElementById(DOM_IDS.SPECIFIC_DATE_TIME)?.value);
             }
         } else {
             // Time block for non-specific-dates
@@ -164,12 +202,7 @@ export function buildRecurringSettingsFromPanel(deps, state) {
             // Time block for non-specific-dates - EXCLUDE hourly!
             if (frequency !== "hourly" && timeEnabled) {
                 settings.useSpecificTime = true;
-                settings.time = {
-                    hour: parseInt(deps.getElementById(DOM_IDS.freqHour(frequency))?.value) || 0,
-                    minute: parseInt(deps.getElementById(DOM_IDS.freqMinute(frequency))?.value) || 0,
-                    meridiem: deps.getElementById(DOM_IDS.freqMeridiem(frequency))?.value,
-                    military: deps.getElementById(DOM_IDS.freqMilitary(frequency))?.checked
-                };
+                settings.time = parseTimeInput(deps.getElementById(DOM_IDS.freqTime(frequency))?.value);
             }
 
             // Hourly Specific Minute
@@ -307,15 +340,8 @@ export function populateRecurringFormWithSettings(deps, settings) {
                 timeCheckbox.dispatchEvent(new Event('change'));
             }
 
-            const hourInput = deps.getElementById(DOM_IDS.freqHour(freq));
-            const minuteInput = deps.getElementById(DOM_IDS.freqMinute(freq));
-            const meridiemSelect = deps.getElementById(DOM_IDS.freqMeridiem(freq));
-            const militaryCheckbox = deps.getElementById(DOM_IDS.freqMilitary(freq));
-
-            if (hourInput) hourInput.value = settings.time.hour;
-            if (minuteInput) minuteInput.value = settings.time.minute;
-            if (meridiemSelect) meridiemSelect.value = settings.time.meridiem || 'AM';
-            if (militaryCheckbox) militaryCheckbox.checked = !!settings.time.military;
+            const timeInput = deps.getElementById(DOM_IDS.freqTime(freq));
+            if (timeInput) timeInput.value = toTimeInputValue(settings.time);
         }
 
         // Update the summary display via callback

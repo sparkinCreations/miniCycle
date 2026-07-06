@@ -201,28 +201,9 @@ export class RecurringPanelManager {
             // Setup advanced settings toggle
             this.setupAdvancedToggle();
 
-            // Setup time conversion for specific-date (special case) + all frequencies
-            this.setupTimeConversion({
-                hourInputId: DOM_IDS.SPECIFIC_DATE_HOUR,
-                minuteInputId: DOM_IDS.SPECIFIC_DATE_MINUTE,
-                meridiemSelectId: DOM_IDS.SPECIFIC_DATE_MERIDIEM,
-                militaryCheckboxId: DOM_IDS.SPECIFIC_DATE_MILITARY
-            });
-            ['daily', 'weekly', 'biweekly', 'monthly', 'yearly'].forEach(freq => {
-                this.setupTimeConversion({
-                    hourInputId: DOM_IDS.freqHour(freq),
-                    minuteInputId: DOM_IDS.freqMinute(freq),
-                    meridiemSelectId: DOM_IDS.freqMeridiem(freq),
-                    militaryCheckboxId: DOM_IDS.freqMilitary(freq)
-                });
-            });
-
-            // Setup military time toggles + wrap-around for number inputs
-            ['daily', 'weekly', 'biweekly', 'monthly', 'yearly'].forEach(freq => {
-                this.setupMilitaryTimeToggle(freq);
-                this.setupTimeInputWrapping(freq);
-            });
-            this.setupTimeInputWrapping('specific-date');
+            // Time-of-day uses native <input type="time"> per section, so no
+            // 12/24h conversion, meridiem toggle, or hour/minute wrap-around is
+            // needed. Hourly still uses a numeric minute input — keep its wrap.
             this.setupHourlyMinuteWrapping();
 
             // Setup day/week/month grids
@@ -355,29 +336,6 @@ export class RecurringPanelManager {
         if (result?.resetAdvanced) {
             this._resetAdvanced = result.resetAdvanced;
         }
-    }
-
-    /**
-     * Setup time conversion between 12hr and 24hr formats
-     * Delegates to recurringPanelSetup module
-     */
-    setupTimeConversion(config) {
-        _setupTimeConversion(this.deps, config);
-    }
-
-    /**
-     * Setup military time toggle for a frequency prefix
-     * Delegates to recurringPanelSetup module
-     */
-    setupMilitaryTimeToggle(prefix) {
-        _setupMilitaryTimeToggle(this.deps, prefix, () => this.updateRecurringSummary());
-    }
-
-    /**
-     * Setup wrap-around for hour/minute inputs on a frequency prefix
-     */
-    setupTimeInputWrapping(prefix) {
-        _setupTimeInputWrapping?.(this.deps, prefix, () => this.updateRecurringSummary());
     }
 
     /**
@@ -1900,9 +1858,6 @@ let _setupFrequencySelector = null;
 let _setupToggleVisibility = null;
 let _setupToggleCheckAll = null;
 let _setupAdvancedToggle = null;
-let _setupTimeConversion = null;
-let _setupMilitaryTimeToggle = null;
-let _setupTimeInputWrapping = null;
 let _setupHourlyMinuteWrapping = null;
 let _setupMonthlyMutualExclusion = null;
 let _setupAdditionalListeners = null;
@@ -1947,9 +1902,6 @@ export async function loadPanelSubModules(version) {
     _setupToggleVisibility = setupModule.setupToggleVisibility;
     _setupToggleCheckAll = setupModule.setupToggleCheckAll;
     _setupAdvancedToggle = setupModule.setupAdvancedToggle;
-    _setupTimeConversion = setupModule.setupTimeConversion;
-    _setupMilitaryTimeToggle = setupModule.setupMilitaryTimeToggle;
-    _setupTimeInputWrapping = setupModule.setupTimeInputWrapping;
     _setupHourlyMinuteWrapping = setupModule.setupHourlyMinuteWrapping;
     _setupMonthlyMutualExclusion = setupModule.setupMonthlyMutualExclusion;
     _setupAdditionalListeners = setupModule.setupAdditionalListeners;
