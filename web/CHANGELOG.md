@@ -1,3 +1,8 @@
+## [2.278] - 2026-07-06
+- feat(recurring): native time picker replaces hour/minute/24h inputs (hourly minute unchanged)
+- fix(a11y): skip link now moves focus to main + Tab trap for main menu
+
+
 ## [2.277] - 2026-07-03
 - feat(task-view): self-home docks (card, quick actions, status bubble) + docked-follower reload fix
 

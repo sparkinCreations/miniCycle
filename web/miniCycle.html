@@ -10,7 +10,7 @@
 <!-- ✅ Translucent status bar shows body background-color on iOS -->
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" id="status-bar-style-meta">
 
-<meta name="app-version" content="2.277">
+<meta name="app-version" content="2.278">
 
 <!-- Content Security Policy -->
 <!-- CSP is served via HTTP header in netlify.toml (production) -->
@@ -28,20 +28,20 @@
 <!-- Font Awesome removed - using inline SVG icons instead (see modules/utils/icons.js). fa-* classes are kept as the semantic source and swapped to inline <svg> at runtime by iconInit.js. -->
 <!-- Add cache busting version parameter -->
 <!-- Original CSS (for reference) -->
-<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=2.277"> -->
+<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=2.278"> -->
 
 <!-- Preload critical CSS files (they load in parallel, not blocking) -->
-<link rel="preload" href="styles/main.css?v=2.277" as="style">
-<link rel="preload" href="styles/base/variables.css?v=2.277" as="style">
-<link rel="preload" href="styles/base/reset.css?v=2.277" as="style">
-<link rel="preload" href="styles/layout/app-container.css?v=2.277" as="style">
-<link rel="preload" href="styles/layout/header.css?v=2.277" as="style">
-<link rel="preload" href="styles/components/task-list.css?v=2.277" as="style">
+<link rel="preload" href="styles/main.css?v=2.278" as="style">
+<link rel="preload" href="styles/base/variables.css?v=2.278" as="style">
+<link rel="preload" href="styles/base/reset.css?v=2.278" as="style">
+<link rel="preload" href="styles/layout/app-container.css?v=2.278" as="style">
+<link rel="preload" href="styles/layout/header.css?v=2.278" as="style">
+<link rel="preload" href="styles/components/task-list.css?v=2.278" as="style">
 
 <!-- Async CSS loading - doesn't block render, app starts with inline critical CSS -->
-<link rel="stylesheet" href="styles/main.css?v=2.277" media="print" id="async-main-css">
+<link rel="stylesheet" href="styles/main.css?v=2.278" media="print" id="async-main-css">
 <script>(function(){var l=document.getElementById('async-main-css');if(!l)return;function apply(){l.media='all';}if(l.sheet){apply();}else{l.addEventListener('load',apply);}})();</script>
-<noscript><link rel="stylesheet" href="styles/main.css?v=2.277"></noscript>
+<noscript><link rel="stylesheet" href="styles/main.css?v=2.278"></noscript>
 <link rel="manifest" href="manifest.json">
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -52,7 +52,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- version.js MUST load synchronously BEFORE modulepreloads to set globalThis.APP_VERSION -->
-<script src="./version.js?v=2.277"></script>
+<script src="./version.js?v=2.278"></script>
 
 <!-- Build version = the version baked into THIS HTML document (the meta tag
      above). It is the honest "what am I actually running" signal. By contrast,
@@ -2016,7 +2016,7 @@ window.installApp = () => {
 <div id="live-region" aria-live="polite" style="position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden;"></div>
 
 <!-- Boot File Split (Dec 2025): Load via entrypoint which orchestrates all boot files -->
- <script type="module" src="miniCycle-main.js?v=2.277"></script>
+ <script type="module" src="miniCycle-main.js?v=2.278"></script>
 
 <script>
 // Sync About modal version with meta app-version
