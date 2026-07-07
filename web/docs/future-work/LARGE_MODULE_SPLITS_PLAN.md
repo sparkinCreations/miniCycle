@@ -1,6 +1,7 @@
 # Large Module Splits Plan
 
 **Date:** March 15, 2026
+**Updated:** July 7, 2026 — god-module audit: added statsPanel (Priority 2), orchestrator assessment, false-positive list; refreshed line counts
 **Status:** Not Started
 **Related:** [DI_MIGRATION_COMPLETION_PLAN.md](./DI_MIGRATION_COMPLETION_PLAN.md), [ENFORCE_REQUIRES_ROLLOUT_PLAN.md](./ENFORCE_REQUIRES_ROLLOUT_PLAN.md)
 
@@ -8,16 +9,43 @@
 
 ## Problem
 
-Six modules exceed 1,300 lines and handle multiple distinct responsibilities. Large modules are harder to navigate, test in isolation, and modify without unintended side effects.
+Several modules exceed 1,300 lines and handle multiple distinct responsibilities. Large modules are harder to navigate, test in isolation, and modify without unintended side effects.
 
-| Module | Lines | Largest Function |
-|--------|-------|-----------------|
-| routineSwitcher.js | 2,092 | `loadMiniCycleListActual()` ~184L |
-| undoRedoManager.js | 2,070 | `performStateBasedUndo()` ~162L |
-| recurringPanel.js | 2,006 | `updateRecurringPanel()` ~113L |
-| taskDOM.js | 1,816 | `init()` ~176L |
-| migrationManager.js | 1,476 | `performAutoMigration()` ~270L |
-| moduleLoader.js | 1,332 | `buildModuleDependencies()` ~492L |
+Line counts as of July 2026. "DI deps" = `required()`/`optional()` declarations in the module's DI block; "methods" = approximate class-method count.
+
+| Module | Lines | DI Deps | ~Methods | Verdict |
+|--------|-------|---------|----------|---------|
+| routineSwitcher.js | 2,578 | 33 | 48 | **God module** — Priority 1 |
+| onboardingManager.js | 2,369 | 14 | 40 | Borderline (sequential step content) |
+| undoRedoManager.js | 2,073 | 17 | — | Split planned (Priority 3) |
+| statsPanel.js | 1,975 | 23 | 61 | **God module** — Priority 2 |
+| guidedTourManager.js | 1,962 | 10 | — | Borderline (sequential step content) |
+| recurringPanel.js | 1,930 | 25 | — | Already split (5 sub-modules) |
+| taskDOM.js | 1,825 | 12 | — | Already split (6 sub-modules) |
+| moduleLoader.js | 1,750 | — | — | Deferred (boot infrastructure) |
+| migrationManager.js | 1,501 | 7 | — | Deferred (working code) |
+| orchestrator.js | 1,027 | — | — | Deferred (see below) |
+
+Note: routineSwitcher grew from 2,092 → 2,578 lines between March and July 2026 (inline-edit modal, recently-used rendering, routine selection, data validation/repair). It is growing fastest of the candidates — another reason it stays Priority 1.
+
+---
+
+## July 2026 God-Module Audit — Methodology & Verdicts
+
+Line count alone over-flags. The audit combined three signals: **size** (lines), **fan-out** (DI deps declared), and **responsibility spread** (distinct method clusters). A module qualifies only when all three are high AND the responsibilities span multiple user-facing feature domains.
+
+**Confirmed god modules (2):**
+- `routineSwitcher.js` — six distinct jobs: switcher modal lifecycle, routine CRUD (rename/delete/duplicate/download), inline editing, vocab theme picker, preview pane + popout review modal, list infrastructure (search/sort/filter/recently-used/storage bar/validation-repair).
+- `statsPanel.js` — highest method count in the codebase (~61). Gesture *detection* was already extracted to `gesturePanelManager`, but statsPanel still hosts ~12 gesture handler-method bodies (touch/mouse/pointer/wheel/keyboard), plus stats rendering, theme-unlock logic, nav dots, and launcher code for four other modals.
+
+**Borderline (not scheduled):** `onboardingManager.js`, `guidedTourManager.js` — big but inherently sequential step content; long ≠ god unless they accrete non-onboarding work. `recurringPanel.js` — already split; see Priority 4.
+
+**Not god modules (false positives a size/dep-count tool will flag):**
+- **The four facades** — `settingsManager` (35 deps), `taskCore` (29), `taskDOM`, `preferencesManager`: high dep counts are the point of the facade pattern; they wire sub-modules. Intentional.
+- **Data files** — `defaultLabels.js` (2,688 lines), `constants.js` (1,609): pure data; centralizing them is an explicit project rule.
+- **Orchestrators with high fan-out but one job** — `taskCycleReset.js` (29 deps, 948 lines), `menuManager.js` (26 deps, 811 lines): cycle reset and the main menu touch everything by nature. High fan-out, single purpose.
+- **Boot infrastructure** — `moduleLoader.js`, `moduleManifests.js`: centralization is the design.
+- **`migrationManager.js`** — previously ruled acceptable (working write-once code).
 
 ---
 
@@ -68,7 +96,7 @@ Rules:
 
 ---
 
-## Priority 1: routineSwitcher.js (2,092 lines)
+## Priority 1: routineSwitcher.js (2,578 lines)
 
 ### Current Responsibilities
 - Modal presentation and lifecycle
@@ -101,12 +129,41 @@ All three have internal state or DOM side effects → dynamic versioned imports.
 - Pure UI filtering, operates on already-rendered list
 - Risk: Low — search/sort/filter are stateless transforms
 
-**Remaining routineSwitcher.js (~1,490 lines)**
+**Remaining routineSwitcher.js (~1,900 lines)**
 - Core modal, CRUD, list management, inline edit, export, storage bar
+- Note (July 2026): extraction estimates above are from the March audit; the module has since grown ~486 lines. Re-measure method boundaries before extracting — the theme picker and preview clusters have gained methods (`_selectTheme`, `_openPreviewReviewModal`, `_resetPreview`).
 
 ---
 
-## Priority 2: undoRedoManager.js (2,070 lines)
+## Priority 2: statsPanel.js (1,975 lines) — added July 2026
+
+### Current Responsibilities
+- View switching (task view ↔ stats panel), nav dots, view announcements
+- Gesture **handler bodies** (~12 methods: touch/mouse/pointer/wheel/keyboard) — detection/registration already lives in `gesturePanelManager`, but the handlers remain here
+- Stats rendering + task-stats caching (`updateStatsPanel`, `getCachedTaskStats`, `invalidateTaskStatsCache`)
+- Vocab theme unlock logic (`updateThemeUnlockStatus`, `updateThemeMessages`, `unlockThemesIfEligible`, themes panel open/close)
+- Launcher code for four other modals (themes, history, cleared tasks, achievements)
+- Collapsible-section preferences, quick dark-mode toggle, feature button injection
+
+### Proposed Extractions (2 dynamic sub-modules)
+
+**`statsPanelThemeUnlocks.js` (~200 lines)**
+- `updateThemeUnlockStatus()`, `updateThemeMessages()`, `unlockThemesIfEligible()`, `handleThemeToggleClick()`, `openThemesPanel()`, `closeThemesPanel()`
+- Self-contained vocab-theme concern; talks to `vocabThemeManager` (already an optionalDep)
+- Risk: Low–Medium — unlock flow fires on cycle completion; verify notification timing after extraction
+
+**`statsPanelGestures.js` (~250 lines)**
+- The ~12 `handle*` gesture methods + `resetMouseDrag()`, `_syncGestureManager()`
+- Handlers mutate view state, so they need a narrow interface back to the parent (current view index, `showTaskView`/`showStatsPanel`)
+- Alternative worth evaluating first: move handler bodies INTO `gesturePanelManager` since registration already lives there — one gesture home instead of two
+- Risk: Medium — multi-input-mode code is easy to regress; test on touch + trackpad + keyboard
+
+**Remaining statsPanel.js (~1,500 lines)**
+- View lifecycle, stats rendering, caching, modal launchers, preferences
+
+---
+
+## Priority 3: undoRedoManager.js (2,073 lines)
 
 ### Current Responsibilities
 - localStorage cache (instant boot)
@@ -141,7 +198,7 @@ Dynamic versioned imports — both reference module-level state and DI deps.
 
 ---
 
-## Priority 3: recurringPanel.js (2,006 lines)
+## Priority 4: recurringPanel.js (1,930 lines)
 
 ### Current State
 
@@ -159,11 +216,11 @@ Already has 5 dynamic sub-modules:
 - The "add recurring task" flow is a self-contained sub-feature
 - Risk: Medium — interacts with panel state and form values
 
-**Assessment:** Low priority. The existing 5 sub-modules already demonstrate good splitting. The remaining 2,006 lines include the class skeleton, lifecycle methods, and coordination logic that naturally belongs in one place.
+**Assessment:** Low priority. The existing 5 sub-modules already demonstrate good splitting. The remaining ~1,930 lines include the class skeleton, lifecycle methods, and coordination logic that naturally belongs in one place.
 
 ---
 
-## Priority 4: taskDOM.js (1,816 lines)
+## Priority 5: taskDOM.js (1,825 lines)
 
 ### Current State
 
@@ -187,7 +244,7 @@ Already has 6 dynamic sub-modules:
 
 ---
 
-## Deferred: migrationManager.js (1,476 lines)
+## Deferred: migrationManager.js (1,501 lines)
 
 Previously assessed as acceptable ("working code, not a problem"). Migration code is write-once infrastructure that rarely changes.
 
@@ -197,14 +254,34 @@ If revisited:
 
 ---
 
-## Deferred: moduleLoader.js (1,332 lines)
+## Deferred: moduleLoader.js (1,750 lines)
 
-Infrastructure code that rarely changes. The ~492-line `buildModuleDependencies()` function is large but self-contained — it's a single responsibility (mapping manifest declarations to actual dep values).
+Infrastructure code. The large `buildModuleDependencies()` function is self-contained — a single responsibility (mapping manifest declarations to actual dep values). Note: grew ~418 lines between March and July 2026 (depMappings additions, DI DOM helpers); if growth continues, revisit.
 
 If revisited:
-- **`dependencyBuilder.js` (~600 lines)** — `buildModuleDependencies()` (~492 lines) + helper functions (`findProviderModule`, `buildDependencyGraph`, `findCycles`)
-- Remaining `moduleLoader.js` (~730 lines)
+- **`dependencyBuilder.js`** — `buildModuleDependencies()` + helper functions (`findProviderModule`, `buildDependencyGraph`, `findCycles`)
 - Risk: Medium — this is boot-critical code; any regression breaks all modules
+
+---
+
+## Deferred: orchestrator.js (1,027 lines) — assessed July 2026
+
+Four concerns in one file:
+
+1. **Sequence control** (its actual job) — `runBootSequence()`, `initApp()`, `startOrchestrator()`, `loadDependencies()`, `withTimeout()`
+2. **Boot UI** — `updateLoaderProgress()`, `showUpdatingOverlay()`, `showBootError()`, `getErrorDetails()`, `escapeHtml()`, `ensureBootModalTemplate()`
+3. **Version/SW coordination** — `gateOnServerVersion()`, `checkProductionVersionGuard()`, `waitForServiceWorker()`, `isCacheError()`
+4. **Boot timing instrumentation** (June 2026 perf work) — `markBoot()`, `measureBoot()`, `clearBootTiming()`, `getBootTiming()`
+
+By responsibility count it qualifies as a god module, but it's graded a tier below routineSwitcher/statsPanel: it's phase-0 code that runs before the DI framework and module loader exist, so it *cannot* delegate the way ordinary modules do — some accretion is inherent. `CLAUDE.md` already documents it as "sequence control + boot UI + early boot coordination" (documented intent, not drift).
+
+If revisited, the split is unusually low-risk precisely because it's pre-DI — no manifests, no DI pipeline, no facade pattern:
+- **`boot/bootUI.js`** — loader progress, updating overlay, error screen (concern 2)
+- **`boot/bootTiming.js`** — mark/measure instrumentation (concern 4)
+- Both are plain static imports from sibling files (follow existing boot-file import conventions re: cache-busting)
+- Remaining orchestrator.js: ~500–600 lines of pure sequence + version-gating logic
+
+**Trigger:** not worth a dedicated refactor session; do it opportunistically next time the boot timing code is touched (e.g., continuing the load-perf investigation).
 
 ---
 
@@ -213,10 +290,14 @@ If revisited:
 1. **routineSwitcher theme picker** — smallest extraction (~110 lines), most isolated, lowest risk
 2. **routineSwitcher preview** — medium extraction (~250 lines), desktop-only feature
 3. **routineSwitcher search/sort/filter** — medium extraction (~240 lines), stateless transforms
-4. **undoIndexedDB** — small extraction (~190 lines), needs interface for module-level refs
-5. **taskDOMCompat** — large extraction (~450 lines), mostly pure delegation
-6. **undoSnapshotManager** — small extraction (~190 lines), needs interface for AppGlobalState fields
-7. **recurringPanelAddTask** — if desired (~275 lines), low priority
+4. **statsPanel theme unlocks** — (~200 lines), self-contained vocab-theme concern
+5. **statsPanel gestures** — (~250 lines), evaluate merging into `gesturePanelManager` first
+6. **undoIndexedDB** — small extraction (~190 lines), needs interface for module-level refs
+7. **taskDOMCompat** — large extraction (~450 lines), mostly pure delegation
+8. **undoSnapshotManager** — small extraction (~190 lines), needs interface for AppGlobalState fields
+9. **recurringPanelAddTask** — if desired (~275 lines), low priority
+
+Opportunistic (no scheduled slot): **orchestrator bootUI/bootTiming split** — next time boot timing code is touched.
 
 Each extraction should be done as a separate commit with full test verification before proceeding to the next.
 
