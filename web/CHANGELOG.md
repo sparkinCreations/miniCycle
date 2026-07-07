@@ -1,3 +1,10 @@
+## [2.280] - 2026-07-07
+- chore(dev): add port-8081 preview launch config for cache-free verification
+- fix(dark-mode): make auto-uncheck banner legible in dark mode
+- fix(daily-reset): enabling auto-uncheck no longer resets tasks immediately
+- docs(future-work): add July 2026 god-module audit to large module splits plan
+
+
 ## [2.279] - 2026-07-06
 - feat(product-page): add June 2026 highlights to What's New timeline
 
