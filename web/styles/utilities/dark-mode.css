@@ -1684,6 +1684,13 @@ body.dark-mode .task-list-container::-webkit-scrollbar-thumb {
     background-color: rgba(150, 150, 150, 0.5);
 }
 
+/* Auto-uncheck banner uses --theme-text-on-surface, which the dark-mode
+   variable block does not remap (only [data-theme] themes do) — override
+   here, falling back to the theme token when a data-theme is active. */
+body.dark-mode .auto-uncheck-banner {
+    color: var(--dark-text-dim, var(--theme-text-on-surface));
+}
+
 /* =============================================================================
    DARK MODE NAVIGATION DOTS
    ============================================================================= */
