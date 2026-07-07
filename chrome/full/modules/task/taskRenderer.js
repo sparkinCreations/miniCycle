@@ -368,16 +368,13 @@ export class TaskRenderer {
 
         // Guard: only restore when an explicit user action requested it (one-shot flag).
         // Background renders (e.g. recurring task watcher) must not trigger this path.
-        if (!currentState?.ui?.shouldRestoreActiveTaskOptions) return;
+        if (currentState?.ui?.shouldRestoreActiveTaskOptions !== true) return;
 
         const activeTaskId = currentState?.ui?.activeTaskId;
 
         if (!activeTaskId) {
             // Clear the flag even if there is no active task to restore
-            AppState.update(state => {
-                if (!state.ui) state.ui = {};
-                state.ui.shouldRestoreActiveTaskOptions = false;
-            }, false);
+            this._clearRestoreFlag(AppState);
             return;
         }
 
@@ -398,6 +395,15 @@ export class TaskRenderer {
 
         // Clear the one-shot flag after restoring so subsequent background renders
         // do not re-open the options.
+        this._clearRestoreFlag(AppState);
+    }
+
+    /**
+     * Clear the shouldRestoreActiveTaskOptions one-shot flag in AppState.
+     * @param {Object} AppState - AppState instance
+     * @private
+     */
+    _clearRestoreFlag(AppState) {
         AppState.update(state => {
             if (!state.ui) state.ui = {};
             state.ui.shouldRestoreActiveTaskOptions = false;
