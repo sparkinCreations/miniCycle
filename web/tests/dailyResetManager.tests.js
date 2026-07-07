@@ -254,9 +254,34 @@ export async function runDailyResetManagerTests(resultsDiv) {
         const { manager, getState, notifications } = makeManager({ state: makeMockState({ cycles, activeCycleId: 'a' }) });
         manager.setEnabled('a', true);
         if (!getState().data.cycles.a.autoUncheckDaily.enabled) throw new Error('enabled should be true');
-        // First notification = "enabled" toast; if checkAllRoutines fires immediately (00:00 already passed),
-        // a second notification may also be queued. Either way, the first should be 'info' enabled.
-        if (notifications.length < 1) throw new Error('Expected at least one notification');
+        if (notifications.length !== 1) throw new Error(`Expected exactly one (enabled) notification, got ${notifications.length}`);
+    });
+
+    await test('setEnabled(true) with already-passed trigger does NOT uncheck tasks (first fire waits for next occurrence)', () => {
+        // Fresh list, default 12:00 AM trigger — always in the past at enable time.
+        const cycles = { a: { tasks: [{ completed: true }, { completed: false }], autoUncheckDaily: undefined } };
+        const { manager, getState } = makeManager({ state: makeMockState({ cycles, activeCycleId: 'a' }) });
+        manager.setEnabled('a', true);
+        const s = getState().data.cycles.a;
+        if (!s.tasks[0].completed) throw new Error('Completed task was unchecked immediately on enable');
+        if (s.autoUncheckDaily.lastResetDate !== todayLocal()) {
+            throw new Error('lastResetDate should be stamped today so the first fire is tomorrow');
+        }
+        // And a follow-up check must not fire either (idempotency guard holds)
+        manager.checkAllRoutines();
+        if (!getState().data.cycles.a.tasks[0].completed) throw new Error('Follow-up check unchecked tasks same-day');
+    });
+
+    await test('setEnabled(true) with still-upcoming trigger leaves lastResetDate null (fires later today)', () => {
+        // Skip in the last minute of the day where 23:59 is no longer "upcoming"
+        const now = new Date();
+        if (now.getHours() === 23 && now.getMinutes() >= 59) return;
+        const cycles = { a: { tasks: [{ completed: true }], autoUncheckDaily: { enabled: false, hour: 23, minute: 59, lastResetDate: null, pendingNotification: false } } };
+        const { manager, getState } = makeManager({ state: makeMockState({ cycles, activeCycleId: 'a' }) });
+        manager.setEnabled('a', true);
+        const s = getState().data.cycles.a.autoUncheckDaily;
+        if (s.lastResetDate !== null) throw new Error('lastResetDate should stay null so today\'s upcoming trigger still fires');
+        if (!getState().data.cycles.a.tasks[0].completed) throw new Error('Tasks should not be unchecked before the trigger time');
     });
 
     await test('setEnabled(false) shows disabled notification and stops firing', () => {
