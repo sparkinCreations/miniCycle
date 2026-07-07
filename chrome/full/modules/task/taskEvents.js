@@ -431,6 +431,10 @@ export class TaskEvents {
             AppState.update(state => {
                 if (!state.ui) state.ui = {};
                 state.ui.activeTaskId = newActiveTaskId;
+                // Options are already visible from this direct interaction — do not
+                // request restoration across a future render (background renders must
+                // not re-open options the user did not explicitly request).
+                state.ui.shouldRestoreActiveTaskOptions = false;
             }, false); // Don't persist to localStorage - this is transient UI state
         }
     }

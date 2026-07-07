@@ -352,7 +352,12 @@ export class TaskRenderer {
 
     /**
      * Restore active task options from AppState (state-driven UI)
-     * Called after renderTasks to ensure task options are shown for the active task
+     * Called after renderTasks to ensure task options are shown for the active task.
+     *
+     * Only runs when `ui.shouldRestoreActiveTaskOptions` is explicitly set to true by
+     * an intentional user action (e.g. arrow-move reorder). This prevents background
+     * renders — such as recurring task auto-creation — from re-opening task option
+     * buttons that the user did not explicitly request.
      * @private
      */
     _restoreActiveTaskOptions() {
@@ -360,9 +365,21 @@ export class TaskRenderer {
         if (!AppState?.isReady?.()) return;
 
         const currentState = AppState.get();
+
+        // Guard: only restore when an explicit user action requested it (one-shot flag).
+        // Background renders (e.g. recurring task watcher) must not trigger this path.
+        if (!currentState?.ui?.shouldRestoreActiveTaskOptions) return;
+
         const activeTaskId = currentState?.ui?.activeTaskId;
 
-        if (!activeTaskId) return;
+        if (!activeTaskId) {
+            // Clear the flag even if there is no active task to restore
+            AppState.update(state => {
+                if (!state.ui) state.ui = {};
+                state.ui.shouldRestoreActiveTaskOptions = false;
+            }, false);
+            return;
+        }
 
         // Find the task element and show its options
         const taskElement = document.querySelector(DATA_SELECTORS.taskById(activeTaskId));
@@ -378,6 +395,13 @@ export class TaskRenderer {
                 });
             }
         }
+
+        // Clear the one-shot flag after restoring so subsequent background renders
+        // do not re-open the options.
+        AppState.update(state => {
+            if (!state.ui) state.ui = {};
+            state.ui.shouldRestoreActiveTaskOptions = false;
+        }, false);
     }
 }
 
