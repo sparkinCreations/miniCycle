@@ -7,6 +7,13 @@
       "runtimeArgs": ["-m", "http.server", "8080"],
       "port": 8080,
       "cwd": "web"
+    },
+    {
+      "name": "miniCycle-web-alt",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8081"],
+      "port": 8081,
+      "cwd": "web"
     }
   ]
 }
