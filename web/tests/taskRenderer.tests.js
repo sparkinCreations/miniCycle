@@ -353,6 +353,156 @@ export async function runTaskRendererTests(resultsDiv) {
     });
 
     // ============================================
+    // 🚩 TASK OPTION RESTORE FLAG TESTS
+    // Validates that _restoreActiveTaskOptions() only runs when
+    // ui.shouldRestoreActiveTaskOptions is explicitly set to true.
+    // This prevents background renders (e.g. recurring task watcher)
+    // from re-opening task option buttons automatically.
+    // ============================================
+    resultsDiv.innerHTML += '<h4 class="test-section">🚩 Task Option Restore Flag</h4>';
+
+    await test('_restoreActiveTaskOptions does nothing when flag is false', () => {
+        let stateUpdateCalled = false;
+        const mockState = {
+            ui: { activeTaskId: 'task-1', shouldRestoreActiveTaskOptions: false }
+        };
+        const renderer = new TaskRenderer(createMockDependencies({
+            AppState: {
+                isReady: () => true,
+                get: () => mockState,
+                update: (fn) => { stateUpdateCalled = true; fn(mockState); }
+            }
+        }));
+
+        // Create a fake task element in the DOM
+        const taskEl = document.createElement('div');
+        taskEl.className = 'task';
+        taskEl.dataset.taskId = 'task-1';
+        const taskOptions = document.createElement('div');
+        taskOptions.className = 'task-options';
+        taskEl.appendChild(taskOptions);
+        document.body.appendChild(taskEl);
+
+        try {
+            renderer._restoreActiveTaskOptions();
+            if (taskOptions.classList.contains('task-options--visible')) {
+                throw new Error('Options should NOT be shown when shouldRestoreActiveTaskOptions is false');
+            }
+            if (stateUpdateCalled) {
+                throw new Error('AppState.update should not be called when flag is false');
+            }
+        } finally {
+            taskEl.remove();
+        }
+    });
+
+    await test('_restoreActiveTaskOptions does nothing when flag is undefined', () => {
+        const mockState = { ui: { activeTaskId: 'task-2' } };
+        const renderer = new TaskRenderer(createMockDependencies({
+            AppState: {
+                isReady: () => true,
+                get: () => mockState,
+                update: () => {}
+            }
+        }));
+
+        const taskEl = document.createElement('div');
+        taskEl.className = 'task';
+        taskEl.dataset.taskId = 'task-2';
+        const taskOptions = document.createElement('div');
+        taskOptions.className = 'task-options';
+        taskEl.appendChild(taskOptions);
+        document.body.appendChild(taskEl);
+
+        try {
+            renderer._restoreActiveTaskOptions();
+            if (taskOptions.classList.contains('task-options--visible')) {
+                throw new Error('Options should NOT be shown when shouldRestoreActiveTaskOptions is undefined');
+            }
+        } finally {
+            taskEl.remove();
+        }
+    });
+
+    await test('_restoreActiveTaskOptions shows options when flag is true', () => {
+        const mockState = {
+            ui: { activeTaskId: 'task-3', shouldRestoreActiveTaskOptions: true }
+        };
+        const renderer = new TaskRenderer(createMockDependencies({
+            AppState: {
+                isReady: () => true,
+                get: () => mockState,
+                update: (fn) => { fn(mockState); }
+            }
+        }));
+
+        const taskEl = document.createElement('div');
+        taskEl.className = 'task';
+        taskEl.dataset.taskId = 'task-3';
+        const taskOptions = document.createElement('div');
+        taskOptions.className = 'task-options';
+        taskEl.appendChild(taskOptions);
+        document.body.appendChild(taskEl);
+
+        try {
+            renderer._restoreActiveTaskOptions();
+            if (!taskOptions.classList.contains('task-options--visible')) {
+                throw new Error('Options should be shown when shouldRestoreActiveTaskOptions is true');
+            }
+        } finally {
+            taskEl.remove();
+        }
+    });
+
+    await test('_restoreActiveTaskOptions clears the flag after restoring', () => {
+        const mockState = {
+            ui: { activeTaskId: 'task-4', shouldRestoreActiveTaskOptions: true }
+        };
+        const renderer = new TaskRenderer(createMockDependencies({
+            AppState: {
+                isReady: () => true,
+                get: () => mockState,
+                update: (fn) => { fn(mockState); }
+            }
+        }));
+
+        const taskEl = document.createElement('div');
+        taskEl.className = 'task';
+        taskEl.dataset.taskId = 'task-4';
+        const taskOptions = document.createElement('div');
+        taskOptions.className = 'task-options';
+        taskEl.appendChild(taskOptions);
+        document.body.appendChild(taskEl);
+
+        try {
+            renderer._restoreActiveTaskOptions();
+            if (mockState.ui.shouldRestoreActiveTaskOptions !== false) {
+                throw new Error('Flag should be cleared to false after restoring options');
+            }
+        } finally {
+            taskEl.remove();
+        }
+    });
+
+    await test('_restoreActiveTaskOptions clears flag even when activeTaskId is missing', () => {
+        const mockState = {
+            ui: { activeTaskId: null, shouldRestoreActiveTaskOptions: true }
+        };
+        const renderer = new TaskRenderer(createMockDependencies({
+            AppState: {
+                isReady: () => true,
+                get: () => mockState,
+                update: (fn) => { fn(mockState); }
+            }
+        }));
+
+        renderer._restoreActiveTaskOptions();
+        if (mockState.ui.shouldRestoreActiveTaskOptions !== false) {
+            throw new Error('Flag should be cleared even when there is no activeTaskId');
+        }
+    });
+
+    // ============================================
     // 📊 RESULTS
     // ============================================
     const percentage = Math.round((passed.count / total.count) * 100);

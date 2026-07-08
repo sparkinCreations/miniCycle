@@ -661,6 +661,8 @@ export class DragDropManager {
                     // Set activeTaskId so rendering restores task options (state-driven UI)
                     if (!state.ui) state.ui = {};
                     state.ui.activeTaskId = taskId || null;
+                    // Signal that this render should restore options (explicit user action)
+                    state.ui.shouldRestoreActiveTaskOptions = true;
                 }, true); // immediate save
 
                 // Remember which arrow was pressed for focus restoration
