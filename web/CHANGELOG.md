@@ -1,3 +1,8 @@
+## [2.281] - 2026-07-08
+- chore(dev): use autoPort in launch.json so worktree previews avoid port clashes
+- fix(dark-mode): remap --theme-text-on-surface to light in classic dark mode; pin static-light surfaces to static dark text
+
+
 ## [2.280] - 2026-07-07
 - chore(dev): add port-8081 preview launch config for cache-free verification
 - fix(dark-mode): make auto-uncheck banner legible in dark mode
