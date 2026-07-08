@@ -596,6 +596,12 @@ async function runBootSequence() {
   const bootStart = Date.now();
   const isRetry = bootAttempt > 1;
 
+  // 🧬 Boot generation: a timed-out phase keeps running (withTimeout can't
+  // cancel it). Bumping the generation FIRST makes the zombie attempt abort at
+  // its next moduleLoader checkpoint instead of racing this attempt's writes
+  // into the shared deps container (July 2026 boot audit, C2).
+  globalThis.__miniCycleBootGeneration = (globalThis.__miniCycleBootGeneration || 0) + 1;
+
   // ⏱️ Boot timing: wipe any prior-attempt marks, then anchor the start.
   clearBootTiming();
   markBoot(BOOT_MARKS.START);
@@ -651,7 +657,10 @@ async function runBootSequence() {
   const { bootFeatures, bootEarlyDeps } = featureBoot;
   const { initUIBoot } = uiBoot;
 
-  // Import moduleLoader to clear cache on retry
+  // Import moduleLoader to clear cache on retry. Even though this retry-suffixed
+  // URL yields a FRESH moduleLoader instance, the module registries live on
+  // globalThis.__miniCycleModuleRegistry (shared across instances), so
+  // destroyAllModules()/clearLoadedModules() below reach attempt 1's modules.
   const { clearLoadedModules, destroyAllModules } = await import(`./moduleLoader.js${vParam}`);
 
   // Import appInit to reset its state on retry

@@ -996,6 +996,11 @@ function setupDeferredFeatureTriggers(deps) {
   // listener bound to the specific node would end up on a stale/detached element.
   // The handler removes itself on first match; testingModal.init() then attaches
   // the real open handler, which the re-dispatched click triggers.
+  // Both stubs use replaceStoredEventListener (remove-before-add via a stored
+  // key on document) instead of plain addEventListener: on boot retry this
+  // function runs again with a NEW `ensure` closure, and the plain pattern
+  // would stack a second capture listener whose stale `ensure` targets the
+  // superseded moduleLoader instance (July 2026 boot audit, M4).
   const onTestingOpenClick = async (e) => {
     const openBtn = e.target.closest?.('#' + DOM_IDS.OPEN_TESTING_MODAL);
     if (!openBtn) return;
@@ -1004,7 +1009,7 @@ function setupDeferredFeatureTriggers(deps) {
     await ensure('testingModalIntegration');
     openBtn.click();                          // real handler (now attached) opens the modal
   };
-  document.addEventListener('click', onTestingOpenClick, true);
+  replaceStoredEventListener(document, 'click', '_miniCycleTestingOpenStub', onTestingOpenClick, true);
 
   // gamesManager — games are reachable only through the main menu, so load it on
   // the first menu-button click. Its init() runs checkGamesUnlock(), revealing
@@ -1015,7 +1020,7 @@ function setupDeferredFeatureTriggers(deps) {
     document.removeEventListener('click', onMenuOpenForGames, true);
     ensure('gamesManager');  // fire-and-forget; init reveals the menu item if unlocked
   };
-  document.addEventListener('click', onMenuOpenForGames, true);
+  replaceStoredEventListener(document, 'click', '_miniCycleMenuGamesStub', onMenuOpenForGames, true);
 }
 
 export async function initUIBoot({ GlobalUtils, deps, appContextMod }) {

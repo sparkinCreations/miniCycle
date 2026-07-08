@@ -98,9 +98,46 @@ export async function loadManifests(withV) {
 // ============================================================================
 // MODULE LOADING STATE
 // ============================================================================
+// ⚠️ The registries MUST be shared across ALL moduleLoader instances. On boot
+// retry the orchestrator imports moduleLoader with a DIFFERENT ?v= suffix
+// (?v=X.r2, or bare offline), which creates a separate ES module instance —
+// module-level Maps there would start empty, so destroyAllModules() would
+// iterate nothing and attempt 1's listeners/timers would survive into attempt 2
+// (July 2026 boot audit, finding C1). Anchoring the Maps on globalThis gives
+// one registry per page, the same cross-instance strategy as featureBoot's
+// HTML event bridge. This is deliberate boot infrastructure — NOT a precedent
+// for window.* globals in feature modules.
 
-const loadedModules = new Map();
-const moduleInstances = new Map();
+const _registryHost = globalThis.__miniCycleModuleRegistry =
+    globalThis.__miniCycleModuleRegistry || {
+        loadedModules: new Map(),
+        moduleInstances: new Map()
+    };
+const loadedModules = _registryHost.loadedModules;
+const moduleInstances = _registryHost.moduleInstances;
+
+// ============================================================================
+// BOOT GENERATION GUARD
+// ============================================================================
+// A phase that times out is NOT cancelled — withTimeout() only rejects the
+// race. The zombie attempt keeps importing/wiring modules concurrently with
+// the retry, writing stale instances into the shared deps container (July 2026
+// boot audit, finding C2). The orchestrator bumps
+// globalThis.__miniCycleBootGeneration at the start of every boot attempt;
+// loaders capture their generation and abort at the next checkpoint once
+// superseded. All checks no-op when the global is undefined (unit tests).
+
+let _bootGeneration; // generation captured by loadAllModules for this instance
+
+// Exported for tests (moduleLoader.tests.js pins the supersede contract).
+export function assertBootGenerationCurrent(myGeneration) {
+    const current = globalThis.__miniCycleBootGeneration;
+    if (current !== undefined && myGeneration !== undefined && current !== myGeneration) {
+        throw new Error(
+            `Boot attempt superseded (generation ${myGeneration} → ${current}) — aborting stale boot work`
+        );
+    }
+}
 
 // ============================================================================
 // DEFERRED (ON-DEMAND) MODULE LOADING
@@ -428,18 +465,50 @@ export async function initializeModule(name, mod, deps, coreResult) {
             registerProvides(name, manifest, mod, deps);
         }
 
+        // Register the instance under provideInstance for no-init modules too —
+        // previously only the init-fn branch did this, so a no-init module's
+        // provideInstance silently never registered (July 2026 boot audit, C3).
+        if (manifest.provideInstance && mod[manifest.provideInstance]) {
+            const category = getDepsCategoryForModule(manifest);
+            if (deps[category]) {
+                deps[category][manifest.provideInstance] = mod[manifest.provideInstance];
+            }
+        }
+
         // Check for exported instances that have init() methods (e.g., onboardingManager)
-        // These are pre-created singletons that need initialization after dependencies are set
-        if (manifest.provides) {
-            for (const provided of manifest.provides) {
+        // These are pre-created singletons that need initialization after dependencies are set.
+        // Any singleton exposing destroy() is registered in moduleInstances so
+        // destroy-on-retry reaches its listeners/timers — previously no-init modules
+        // (e.g. dailyResetManager) were invisible to destroyAllModules() (audit C3).
+        if (manifest.provides || manifest.provideInstance) {
+            const probeNames = [...(manifest.provides || [])];
+            if (manifest.provideInstance) probeNames.push(manifest.provideInstance);
+            const destroyables = [];
+            for (const provided of new Set(probeNames)) {
                 const exportedInstance = mod[provided];
-                if (exportedInstance && typeof exportedInstance.init === 'function' && !exportedInstance.initialized) {
+                if (!exportedInstance || typeof exportedInstance !== 'object') continue;
+                if (typeof exportedInstance.init === 'function' && !exportedInstance.initialized) {
                     try {
                         await exportedInstance.init();
                     } catch (initError) {
                         console.warn(`⚠️ ${name}.${provided}.init() failed:`, initError.message);
                     }
                 }
+                if (typeof exportedInstance.destroy === 'function' && !destroyables.includes(exportedInstance)) {
+                    destroyables.push(exportedInstance);
+                }
+            }
+            if (destroyables.length && !moduleInstances.has(name)) {
+                moduleInstances.set(
+                    name,
+                    destroyables.length === 1 ? destroyables[0] : {
+                        destroy() {
+                            for (const d of destroyables) {
+                                try { d.destroy(); } catch (e) { console.warn(`[moduleLoader] destroy() failed for ${name} singleton:`, e); }
+                            }
+                        }
+                    }
+                );
             }
         }
 
@@ -468,6 +537,7 @@ export async function initializeModule(name, mod, deps, coreResult) {
  */
 export async function loadPhase(deps, coreResult, phase) {
     const { withV } = coreResult;
+    const myGeneration = globalThis.__miniCycleBootGeneration;
 
     // ✅ Ensure manifests are loaded (idempotent - only loads once)
     if (!_manifestsLoaded) {
@@ -495,6 +565,10 @@ export async function loadPhase(deps, coreResult, phase) {
     // module captures same-phase providers correctly — identical semantics to the
     // original per-module sequential loop, with ONLY the import parallelized.
     for (const [name, manifest] of active) {
+        // Checkpoint: if a retry superseded this attempt while we were awaiting
+        // the previous module's init, stop before wiring anything else stale.
+        assertBootGenerationCurrent(myGeneration);
+
         const mod = loadedModules.get(name);
         if (!mod) continue; // optional import failed → skip
 
@@ -522,6 +596,7 @@ export async function loadAllModules(deps, coreResult) {
     // Capture boot context so deferred modules can be loaded on-demand after boot.
     _bootDeps = deps;
     _bootCoreResult = coreResult;
+    _bootGeneration = globalThis.__miniCycleBootGeneration;
 
     // ✅ FIX: Load manifests with version cache-busting BEFORE using any manifest data
     // This prevents stale cached manifests from causing 404s on moved/renamed modules
@@ -550,6 +625,8 @@ export async function loadAllModules(deps, coreResult) {
     // (the proven 74–78% of boot). Measures are read by name in orchestrator.js —
     // see clearBootTiming()/getBootTiming() for the matching prefix scan.
     for (const [phaseName, phase] of Object.entries(PHASES)) {
+        // Checkpoint: abort between phases if a retry superseded this attempt.
+        assertBootGenerationCurrent(_bootGeneration);
         const startMark = `mc:subphase:${phaseName}:start`;
         try { performance.mark(startMark); } catch (_) { /* perf API unavailable */ }
         const phaseResults = await loadPhase(deps, coreResult, phase);
@@ -627,6 +704,9 @@ function runPostInitInjections(deps) {
  */
 export async function ensureModuleLoaded(name) {
     if (moduleInstances.has(name)) return moduleInstances.get(name);
+    // A stale moduleLoader instance from a superseded boot attempt must not
+    // wire a deferred module with its outdated _bootDeps/_bootCoreResult.
+    assertBootGenerationCurrent(_bootGeneration);
     if (!_bootDeps || !_bootCoreResult) {
         console.warn(`⚠️ ensureModuleLoaded('${name}') called before boot captured context`);
         return null;

@@ -118,6 +118,68 @@ export async function runModuleLoaderTests(resultsDiv) {
         }
     });
 
+    resultsDiv.innerHTML += '<h4 class="test-section">🧬 Boot-retry safety (July 2026 audit C1/C2/C3)</h4>';
+
+    await test('module registries are shared across differently-versioned instances (C1)', async () => {
+        // A boot retry imports moduleLoader with a different ?v= suffix — a separate
+        // ES module instance. destroyAllModules() there must still see attempt 1's
+        // modules, so the registries live on globalThis.__miniCycleModuleRegistry.
+        const modB = await import(`../modules/boot/moduleLoader.js?v=${cacheBuster}-retrysim`);
+        if (modB === mod) throw new Error('Test setup: expected two distinct module instances');
+        const host = globalThis.__miniCycleModuleRegistry;
+        if (!host?.loadedModules || !host?.moduleInstances) {
+            throw new Error('globalThis.__miniCycleModuleRegistry host missing');
+        }
+        // Register a destroyable through instance A, destroy through instance B.
+        let destroyed = false;
+        host.moduleInstances.set('__c1Probe', { destroy() { destroyed = true; } });
+        try {
+            if (!modB.getModuleInstance || modB.getModuleInstance('__c1Probe') === null) {
+                throw new Error('Instance B cannot see instance A\'s registration — registries not shared');
+            }
+            modB.destroyAllModules();
+            if (!destroyed) throw new Error('destroyAllModules() from instance B did not reach instance A\'s module');
+        } finally {
+            host.moduleInstances.delete('__c1Probe');
+        }
+    });
+
+    await test('clearLoadedModules from a second instance clears the shared registry (C1)', async () => {
+        const modB = await import(`../modules/boot/moduleLoader.js?v=${cacheBuster}-retrysim`);
+        const host = globalThis.__miniCycleModuleRegistry;
+        host.loadedModules.set('__c1ClearProbe', {});
+        modB.clearLoadedModules();
+        if (host.loadedModules.has('__c1ClearProbe')) {
+            throw new Error('clearLoadedModules() from another instance left the shared map intact');
+        }
+    });
+
+    await test('assertBootGenerationCurrent throws only when superseded (C2)', () => {
+        const prevGen = globalThis.__miniCycleBootGeneration;
+        try {
+            // No generation set (unit-test context) → must no-op
+            delete globalThis.__miniCycleBootGeneration;
+            mod.assertBootGenerationCurrent(1);
+            mod.assertBootGenerationCurrent(undefined);
+
+            // Current attempt → must pass
+            globalThis.__miniCycleBootGeneration = 2;
+            mod.assertBootGenerationCurrent(2);
+            // Caller with no captured generation (never booted) → must no-op
+            mod.assertBootGenerationCurrent(undefined);
+
+            // Superseded attempt → must throw
+            let threw = false;
+            try { mod.assertBootGenerationCurrent(1); } catch (e) {
+                threw = /superseded/.test(e.message);
+            }
+            if (!threw) throw new Error('Stale generation did not throw — zombie boot attempts would keep wiring');
+        } finally {
+            if (prevGen === undefined) delete globalThis.__miniCycleBootGeneration;
+            else globalThis.__miniCycleBootGeneration = prevGen;
+        }
+    });
+
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;
     if (passed.count === total.count) {
