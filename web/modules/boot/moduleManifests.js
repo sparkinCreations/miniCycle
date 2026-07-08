@@ -622,6 +622,16 @@ export const MODULE_MANIFESTS = {
         after: ['clearedTasksManager', 'themeManager', 'gamesManager', 'vocabThemes']
     },
 
+    uxRatings: {
+        path: '../features/uxRatings.js',
+        phase: PHASES.FEATURES,
+        requires: ['appInit', 'AppState', 'safeAddEventListener'],
+        optionalDeps: ['AppMeta'],
+        provides: [],
+        provideInstance: 'uxRatings',
+        api: 'features'
+    },
+
     backupReminder: {
         path: '../features/backupReminder.js',
         phase: PHASES.FEATURES,

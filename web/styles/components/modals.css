@@ -726,6 +726,102 @@ body.dark-mode .btn-choice:hover {
     padding: var(--space-4) 0;
 }
 
+/* ---- Feedback star rating (wired by modules/features/uxRatings.js) ---- */
+
+.feedback-rating-section {
+    margin-bottom: var(--space-3);
+    text-align: center;
+}
+
+.feedback-rating-label {
+    display: block;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--pref-modal-text, var(--theme-modal-text, var(--theme-text-on-surface)));
+    margin-bottom: var(--space-2);
+}
+
+.feedback-star-row {
+    display: flex;
+    justify-content: center;
+    gap: var(--space-1-5);
+}
+
+.feedback-star {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: var(--space-1-5);
+    font-size: var(--font-size-2xl);
+    color: var(--theme-text-muted, var(--color-gray-400));
+    transition: color var(--transition-fast) ease, transform var(--transition-fast) ease;
+    border-radius: var(--radius-md);
+}
+
+/* Scoped state classes (is-*) — the bare .selected/.hover names collide with
+   the app-wide task-selection rules (e.g. body.dark-mode .selected). */
+.feedback-star.is-hovered,
+.feedback-star:hover,
+.feedback-star.is-selected {
+    color: var(--color-amber);
+}
+
+.feedback-star.is-hovered,
+.feedback-star:hover {
+    transform: scale(1.15);
+}
+
+.feedback-star:focus-visible {
+    outline: 2px solid var(--theme-accent, var(--color-primary));
+    outline-offset: 2px;
+}
+
+.feedback-rating-prompt {
+    font-size: var(--font-size-sm);
+    color: var(--theme-text-secondary, var(--color-gray-500));
+    margin: var(--space-2) 0 0;
+    min-height: 1.4em;
+}
+
+.feedback-tags-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    justify-content: center;
+    margin-top: var(--space-1);
+}
+
+.feedback-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-1-5) var(--space-2-5);
+    font-size: var(--font-size-xs);
+    font-weight: 500;
+    color: var(--theme-input-text, var(--theme-text-on-surface));
+    background: var(--theme-input-bg, var(--color-white));
+    border: 1px solid var(--theme-input-border, var(--color-gray-300));
+    border-radius: var(--radius-2xl);
+    cursor: pointer;
+    transition: background var(--transition-fast) ease, border-color var(--transition-fast) ease;
+}
+
+.feedback-tag:hover {
+    border-color: var(--theme-accent, var(--color-primary));
+}
+
+.feedback-tag.is-selected {
+    background: var(--highlight-blue-bg);
+    border-color: var(--theme-accent, var(--color-primary));
+}
+
+.feedback-previous-rating {
+    font-size: var(--font-size-xs);
+    color: var(--theme-text-muted, var(--color-gray-500));
+    margin: var(--space-2) 0 0;
+    font-style: italic;
+}
+
 /* NOTE: Reminders modal styles moved to recurring.css */
 
 /* NOTE: Onboarding modal styles are defined in onboarding.css */

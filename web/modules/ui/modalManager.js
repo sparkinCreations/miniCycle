@@ -284,9 +284,12 @@ export class ModalManager {
             feedbackForm._submitHandler = (event) => {
                 event.preventDefault(); // Prevent default form submission
 
-                // Manual validation (novalidate on form prevents browser flicker)
-                if (feedbackText && feedbackText.value.trim().length < 10) {
-                    this.deps.showNotification("⚠️ " + getLabel('feedback.minLength'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
+                // Manual validation (novalidate on form prevents browser flicker).
+                // A star rating (hidden input filled by uxRatings.js) makes the
+                // message optional — star-only submissions are allowed.
+                const hasRating = !!document.getElementById(DOM_IDS.FEEDBACK_RATING_VALUE)?.value;
+                if (feedbackText && feedbackText.value.trim().length < 10 && !hasRating) {
+                    this.deps.showNotification("⚠️ " + getLabel('feedback.minLengthOrRate'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
                     feedbackText.focus();
                     return;
                 }

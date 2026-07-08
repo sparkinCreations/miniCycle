@@ -1752,6 +1752,25 @@ window.installApp = () => {
             <!-- Web3Forms Honeypot Spam Protection -->
             <input type="checkbox" name="botcheck" style="display: none;" tabindex="-1" autocomplete="off">
 
+            <!-- Optional Star Rating (interactivity wired by modules/features/uxRatings.js;
+                 hidden rating/rating_tags inputs ride along in the FormData POST) -->
+            <div id="feedback-rating-section" class="feedback-rating-section">
+                <span id="feedback-rating-label" class="feedback-rating-label">How would you rate miniCycle?</span>
+                <div id="feedback-star-row" class="feedback-star-row" role="radiogroup" aria-labelledby="feedback-rating-label">
+                    <button type="button" class="feedback-star" data-rating="1" role="radio" aria-checked="false"><i class="far fa-star" aria-hidden="true"></i></button>
+                    <button type="button" class="feedback-star" data-rating="2" role="radio" aria-checked="false"><i class="far fa-star" aria-hidden="true"></i></button>
+                    <button type="button" class="feedback-star" data-rating="3" role="radio" aria-checked="false"><i class="far fa-star" aria-hidden="true"></i></button>
+                    <button type="button" class="feedback-star" data-rating="4" role="radio" aria-checked="false"><i class="far fa-star" aria-hidden="true"></i></button>
+                    <button type="button" class="feedback-star" data-rating="5" role="radio" aria-checked="false"><i class="far fa-star" aria-hidden="true"></i></button>
+                </div>
+                <p id="feedback-rating-prompt" class="feedback-rating-prompt" aria-live="polite"></p>
+                <span id="feedback-tags-label" class="feedback-rating-label hidden">What stands out? (optional)</span>
+                <div id="feedback-tags-row" class="feedback-tags-row hidden"></div>
+                <p id="feedback-previous-rating" class="feedback-previous-rating hidden"></p>
+                <input type="hidden" name="rating" id="feedback-rating-value" value="">
+                <input type="hidden" name="rating_tags" id="feedback-rating-tags-value" value="">
+            </div>
+
             <!-- Feedback Text -->
             <label for="feedback-text" class="visually-hidden">Your feedback</label>
             <textarea id="feedback-text" name="message" placeholder="Write your feedback here..." required minlength="10"></textarea>

@@ -233,6 +233,7 @@ export const LIMITS = Object.freeze({
     MAX_ERRORS_BEFORE_SILENCE: 10, // Max error notifications before silencing
     TASK_CHARACTER: 500,           // Max characters for task text
     CYCLE_NAME_CHARACTER: 100,     // Max characters for cycle name
+    RATING_HISTORY: 10,            // Max entries kept in userProgress.uxRatingHistory
     CONSOLE_BUFFER_MAX: 500,       // Max console log entries kept in the in-memory buffer
     CONSOLE_BUFFER_TRIM_TARGET: 100, // After overflow, trim the buffer down to this size
     STORAGE_WARNING_PERCENTAGE: 75,  // Show storage warning notification when localStorage usage exceeds this percentage
@@ -846,6 +847,15 @@ export const DOM_IDS = Object.freeze({
     FEEDBACK_EMAIL: 'feedback-email',
     SUBMIT_FEEDBACK: 'submit-feedback',
     THANK_YOU_MESSAGE: 'thank-you-message',
+    FEEDBACK_RATING_SECTION: 'feedback-rating-section',
+    FEEDBACK_RATING_LABEL: 'feedback-rating-label',
+    FEEDBACK_STAR_ROW: 'feedback-star-row',
+    FEEDBACK_RATING_PROMPT: 'feedback-rating-prompt',
+    FEEDBACK_TAGS_LABEL: 'feedback-tags-label',
+    FEEDBACK_TAGS_ROW: 'feedback-tags-row',
+    FEEDBACK_PREVIOUS_RATING: 'feedback-previous-rating',
+    FEEDBACK_RATING_VALUE: 'feedback-rating-value',
+    FEEDBACK_RATING_TAGS_VALUE: 'feedback-rating-tags-value',
     ABOUT_MODAL: 'about-modal',
     OPEN_ABOUT_MODAL: 'open-about-modal',
     ABOUT_VERSION: 'about-version',
@@ -1381,6 +1391,8 @@ export const DOM_SELECTORS = Object.freeze({
     // ---- Feedback ----
     FEEDBACK_MODAL: '.feedback-modal',
     CLOSE_FEEDBACK_MODAL: '.close-feedback-modal',
+    FEEDBACK_STAR: '.feedback-star',
+    FEEDBACK_TAG: '.feedback-tag',
 
     // ---- Notifications ----
     SHOW_QUICK_ACTIONS: '.show-quick-actions',

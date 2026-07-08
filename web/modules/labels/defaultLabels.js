@@ -1797,7 +1797,24 @@ export const DEFAULT_LABELS = deepFreeze({
         sending:       'Sending...',
         errorSend:     'Error sending feedback. Please try again.',
         errorNetwork:  'Network error. Please try again later.',
-        minLength:     'Please enter at least 10 characters.'
+        minLength:     'Please enter at least 10 characters.',
+        // ---- Rating (optional star rating inside the feedback form) ----
+        ratingLabel:    'How would you rate miniCycle?',
+        ratingStarAria: 'Rate {n} of 5',
+        ratingPrompt1:  "We're sorry to hear that. How can we improve?",
+        ratingPrompt2:  'Thanks for the feedback. What could be better?',
+        ratingPrompt3:  'Thanks! What would make it even better?',
+        ratingPrompt4:  'Great! What do you love about miniCycle?',
+        ratingPrompt5:  "Awesome! We're glad you're enjoying miniCycle!",
+        tagsLabel:      'What stands out? (optional)',
+        tagEasyToUse:   'Easy to Use',
+        tagHelpful:     'Helpful',
+        tagBeautiful:   'Beautiful Design',
+        tagFast:        'Fast & Smooth',
+        tagOrganized:   'Keeps Me Organized',
+        tagMotivating:  'Motivating',
+        previousRating: 'You previously rated {stars} of 5 on {date}',
+        minLengthOrRate: 'Please pick a star rating or enter at least 10 characters.'
     },
 
     // ========================================================================

@@ -431,6 +431,7 @@
             <option value="taskButtons">🔘 Task Buttons</option>
             <option value="taskCycleReset">🔄 Task Cycle Reset</option>
             <option value="backupReminder">🔔 Backup Reminder</option>
+            <option value="uxRatings">⭐ UX Ratings</option>
             <option value="orchestrator">🎭 Orchestrator</option>
             <option value="diWiring">🔌 DI Wiring Verification</option>
             <option value="moduleLoader">📦 Module Loader</option>
@@ -590,6 +591,7 @@
         const { runTaskButtonsTests } = await import(`./taskButtons.tests.js?v=${cacheBuster}`);
         const { runTaskCycleResetTests } = await import(`./taskCycleReset.tests.js?v=${cacheBuster}`);
         const { runBackupReminderTests } = await import(`./backupReminder.tests.js?v=${cacheBuster}`);
+        const { runUXRatingsTests } = await import(`./uxRatings.tests.js?v=${cacheBuster}`);
         const { runOrchestratorTests } = await import(`./orchestrator.tests.js?v=${cacheBuster}`);
         const { runModuleLoaderTests } = await import(`./moduleLoader.tests.js?v=${cacheBuster}`);
         const { runModuleManifestsTests } = await import(`./moduleManifests.tests.js?v=${cacheBuster}`);
@@ -1809,6 +1811,10 @@
                     await import(`../modules/features/backupReminder.js?v=${cacheBuster}`);
                     currentModule = 'backupReminder';
                     resultsDiv.innerHTML = '<p>✅ BackupReminder loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'uxRatings') {
+                    await import(`../modules/features/uxRatings.js?v=${cacheBuster}`);
+                    currentModule = 'uxRatings';
+                    resultsDiv.innerHTML = '<p>✅ UXRatings loaded. Click "Run Tests" to begin.</p>';
                 } else if (['diWiring','orchestrator','moduleLoader','moduleManifests','modalTemplates','appContext','dataAccess','appGlobalState','migrationFacade','types','modalRegistry','modalUtils','panelVisibilityHelpers','gesturePanelManager','titleManager','headerLayoutManager','featureAvailability','dataRecovery','uiOrchestrator','preferencesBgImage','preferencesPresets','taskDOMPatch','debugMode','iconInit','icons','keyboardNav','nameUtils','recurringPanelEvents','recurringPanelForm','recurringPanelGrids','recurringPanelSetup','recurringPanelSummary','recurringSettings','recurringSettingsApplicator','recurringWatcher'].includes(moduleName)) {
                     const pathMap = {
                         diWiring: '../modules/boot/moduleLoader.js',
@@ -2072,6 +2078,8 @@
                 await runTaskCycleResetTests(resultsDiv);
             } else if (currentModule === 'backupReminder') {
                 await runBackupReminderTests(resultsDiv);
+            } else if (currentModule === 'uxRatings') {
+                await runUXRatingsTests(resultsDiv);
             } else if (currentModule === 'orchestrator') { await runOrchestratorTests(resultsDiv);
             } else if (currentModule === 'diWiring') { await runDIWiringTests(resultsDiv);
             } else if (currentModule === 'moduleLoader') { await runModuleLoaderTests(resultsDiv);
@@ -2391,6 +2399,7 @@
                 { name: 'TaskButtons', key: 'taskButtons', runFn: runTaskButtonsTests, importPath: '../modules/task/taskButtons.js' },
                 { name: 'TaskCycleReset', key: 'taskCycleReset', runFn: runTaskCycleResetTests, importPath: '../modules/task/taskCycleReset.js' },
                 { name: 'BackupReminder', key: 'backupReminder', runFn: runBackupReminderTests, importPath: '../modules/features/backupReminder.js' },
+                { name: 'UXRatings', key: 'uxRatings', runFn: runUXRatingsTests, importPath: '../modules/features/uxRatings.js' },
                 { name: 'Orchestrator', key: 'orchestrator', runFn: runOrchestratorTests, importPath: '../modules/boot/orchestrator.js' },
                 { name: 'DI Wiring Verification', key: 'diWiring', runFn: runDIWiringTests, importPath: '../modules/boot/moduleLoader.js' },
                 { name: 'ModuleLoader', key: 'moduleLoader', runFn: runModuleLoaderTests, importPath: '../modules/boot/moduleLoader.js' },
