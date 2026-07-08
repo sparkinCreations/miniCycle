@@ -169,7 +169,7 @@ export function attachGlobalEventListeners(_GlobalUtils, _options = {}) {
 export function attachTaskInputListeners(_GlobalUtils, taskInput, addTaskButton, appContextMod) {
   // Dismiss first-time shimmer on the + button when user adds a task
   function dismissFirstTimeShimmer() {
-    const quickActionsBtn = document.getElementById(DOM_SELECTORS.QUICK_ACTIONS_BTN);
+    const quickActionsBtn = document.getElementById(DOM_IDS.QUICK_ACTIONS_BTN);
     if (quickActionsBtn?.classList.contains(DOM_CLASSES.FIRST_TIME_SHIMMER)) {
       quickActionsBtn.classList.remove(DOM_CLASSES.FIRST_TIME_SHIMMER);
       try {
