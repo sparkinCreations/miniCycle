@@ -264,7 +264,9 @@
     border: none;
     border-radius: var(--radius-2xl);
     background-color: var(--color-gray-300);
-    color: var(--theme-text-on-surface);
+    /* Static light background — text must stay static dark in every theme
+       (--theme-text-on-surface goes light in dark mode / dark themes). */
+    color: var(--color-gray-800);
     box-shadow: none;
     cursor: pointer;
     transition: background-color var(--transition-normal) ease;
