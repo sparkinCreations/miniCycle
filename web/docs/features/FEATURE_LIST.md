@@ -306,6 +306,8 @@ Create tasks that automatically appear on a schedule.
 | Confirmation Modals | Confirm destructive actions | `ui/modalManager.js` |
 | Prompt Modals | Text input dialogs | `ui/modalManager.js` |
 | Task Options Modal | Right-click/button for task actions | `ui/taskUI.js` |
+| Feedback Modal | Written feedback via Web3Forms, with optional star rating | `ui/modalManager.js` |
+| UX Star Rating | 1–5 stars + quick tags inside the feedback modal, local rating history — see [UX_RATINGS.md](UX_RATINGS.md) | `features/uxRatings.js` |
 
 ### Notifications
 | Feature | Description | Module |
