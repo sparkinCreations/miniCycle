@@ -987,9 +987,13 @@ self.addEventListener('fetch', function (event) {
             // imports after a PARTIAL precache on slow/old devices (a consumer gets
             // the stale module and a newly-added export is "not found", killing boot).
             // ONLINE: return null so the downstream path fetches fresh from the
-            // network (then STATIC_CACHE / synthetic), never an old-version module.
+            // network (then STATIC_CACHE / synthetic), never an old-version copy.
             // OFFLINE: a stale copy still beats a dead boot, so allow the broad match.
-            if (isModuleFile && self.navigator.onLine) return null;
+            // Must cover CSS too, not just /modules/ JS: a component stylesheet that
+            // missed the new precache (partial install) would otherwise be served
+            // stale from a kept old cache while ONLINE — new markup + old CSS
+            // (v2.282 star-rating regression: stars rendered unstyled for updaters).
+            if (preferCurrentCaches && self.navigator.onLine) return null;
             return caches.match(cacheRequest);
           })
         : caches.match(cacheRequest);
