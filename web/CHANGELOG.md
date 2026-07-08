@@ -1,3 +1,11 @@
+## [2.282] - 2026-07-08
+- docs(features): document UX ratings and add feedback modal to feature list
+- feat(feedback): add optional star rating with quick tags to feedback modal
+- refactor: improve _restoreActiveTaskOptions guard - use === true and extract _clearRestoreFlag helper
+- fix: gate _restoreActiveTaskOptions on shouldRestoreActiveTaskOptions flag
+- Initial plan
+
+
 ## [2.281] - 2026-07-08
 - chore(dev): use autoPort in launch.json so worktree previews avoid port clashes
 - fix(dark-mode): remap --theme-text-on-surface to light in classic dark mode; pin static-light surfaces to static dark text
