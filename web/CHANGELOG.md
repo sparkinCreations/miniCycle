@@ -1,3 +1,7 @@
+## [2.283] - 2026-07-08
+- fix(sw): serve CSS fresh from network when current caches miss, not from kept old caches
+
+
 ## [2.282] - 2026-07-08
 - docs(features): document UX ratings and add feedback modal to feature list
 - feat(feedback): add optional star rating with quick tags to feedback modal
