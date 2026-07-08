@@ -160,6 +160,9 @@ const ENFORCE_REQUIRES = false;
  * Default ON in development. Set false to suppress.
  */
 const WARN_ON_UNMAPPED_DECLARED_DEPS = true;
+// Dedupe DI-gap warnings — buildModuleDependencies re-runs on deferred loads,
+// so without this each gap spams the console once per wiring pass.
+const _warnedDIGaps = new Set();
 
 /**
  * Create a validated lazy wrapper that warns/throws on null provider access.
@@ -1085,16 +1088,16 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         exportMiniCycleData: (...args) => deps.ui?.exportMiniCycleData?.(...args),
         startGuidedTour: (...args) => deps.ui?.startGuidedTour?.(...args),
         markTourWelcomeShown: (...args) => deps.ui?.markTourWelcomeShown?.(...args),
-        // Provided by taskUI module
-        hideTaskButtons: (...args) => deps.task?.hideTaskButtons?.(...args),
+        // Provided by taskUI module (api: 'ui' — registered under deps.ui, not deps.task)
+        hideTaskButtons: (...args) => deps.ui?.hideTaskButtons?.(...args),
         // Provided by taskSearch module — toggles search row visibility
         updateSearchVisibility: (...args) => deps.ui?.updateSearchVisibility?.(...args),
         // Provided by basicPluginSystem module — instance accessor
         pluginManager: () => deps.plugins?.pluginManager,
         // Provided by dataValidator module — utils API category
         DataValidator: () => deps.utils?.DataValidator,
-        // Provided by migration modules — exported function reference (resolves at call time)
-        createInitialSchema25Data: (...args) => (deps.utils?.createInitialSchema25Data || deps.cycle?.createInitialSchema25Data)?.(...args),
+        // Registered by coreBoot at deps.core (migration module export) — utils/cycle kept as legacy fallbacks
+        createInitialSchema25Data: (...args) => (deps.core?.createInitialSchema25Data || deps.utils?.createInitialSchema25Data || deps.cycle?.createInitialSchema25Data)?.(...args),
 
         // ─── Boot/init helpers ───
         // Method on appInit instance — modules use it as a top-level dep instead of accessing appInit.waitForCore()
@@ -1107,6 +1110,7 @@ function buildModuleDependencies(manifest, deps, coreResult) {
 
         // ─── Task DOM helpers ───
         syncRecurringStateToDOM: (...args) => deps.task?.syncRecurringStateToDOM?.(...args),
+        toggleHoverTaskOptions: (...args) => deps.task?.toggleHoverTaskOptions?.(...args),
 
         // ─── Feature modules ───
         setupDueDateButtonInteraction: (...args) => deps.features?.dueDates?.setupDueDateButtonInteraction?.(...args),
@@ -1417,8 +1421,10 @@ function buildModuleDependencies(manifest, deps, coreResult) {
     // Audit: warn for any declared dep (incl. optionalDeps) that has no
     // depMappings entry and isn't a core dep. This catches the silent-failure
     // bug class where consumers fall back to their `optional()` default forever.
+    // Runs for optional modules too — dep declarations are static regardless of
+    // module optionality, and skipping them hid real gaps (July 2026 boot audit).
     // See WARN_ON_UNMAPPED_DECLARED_DEPS at top of file for context.
-    if (WARN_ON_UNMAPPED_DECLARED_DEPS && !manifest.optional) {
+    if (WARN_ON_UNMAPPED_DECLARED_DEPS) {
         const allDeclared = [
             ...(manifest.requires || []),
             ...(manifest.optionalDeps || []),
@@ -1426,10 +1432,14 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         ];
         for (const dep of allDeclared) {
             if (!(dep in depMappings) && !CORE_DEPS.has(dep)) {
-                console.warn(
-                    `⚠️ DI gap: ${manifest.path} declares "${dep}" but no depMappings entry exists. ` +
-                    `Consumer will fall back to its optional() default — function calls will silently no-op.`
-                );
+                const gapKey = `${manifest.path}::${dep}`;
+                if (!_warnedDIGaps.has(gapKey)) {
+                    _warnedDIGaps.add(gapKey);
+                    console.warn(
+                        `⚠️ DI gap: ${manifest.path} declares "${dep}" but no depMappings entry exists. ` +
+                        `Consumer will fall back to its optional() default — function calls will silently no-op.`
+                    );
+                }
             }
         }
     }

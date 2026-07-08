@@ -267,7 +267,8 @@ export const MODULE_MANIFESTS = {
             'validateAndSanitizeTaskInput', 'buildTaskContext', 'extractTaskDataFromDOM',
             'renderTasks', 'refreshTaskListUI', 'createTaskButtonContainer', 'handleTaskButtonClick',
             'setupRecurringButtonHandler', 'revealTaskButtons', 'taskToAddTaskOptions',
-            'patchTask', 'removeTask', 'applyTaskOrder', 'syncBoundaryMarkers'
+            'patchTask', 'removeTask', 'applyTaskOrder', 'syncBoundaryMarkers',
+            'syncRecurringStateToDOM', 'toggleHoverTaskOptions'
         ],
         provideInstance: 'taskDOMManager',
         api: 'task',
@@ -319,6 +320,7 @@ export const MODULE_MANIFESTS = {
         requires: ['appInit', 'AppState', 'showNotification'],
         optionalDeps: ['checkCompleteAllButton', 'saveTaskToSchema25', 'updateProgressBar', 'updateStatsPanel'],  // UI refresh after a due-date edit
         provides: ['checkOverdueTasks', 'createDueDateInput'],
+        provideInstance: 'dueDates',  // depMappings setupDueDateButtonInteraction resolves via deps.features.dueDates
         api: 'features',
         after: ['taskDOM']
     },
@@ -405,7 +407,7 @@ export const MODULE_MANIFESTS = {
         path: '../ui/settingsManager.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState', 'showNotification', 'getModal'],
-        optionalDeps: ['clearAllUndoHistory', 'loadMiniCycle', 'showLoader', 'hideLoader', 'closeAllModals', 'hasActiveNotifications', 'hideMainMenu', 'BackupManager', 'DataValidator', 'calculateNextOccurrence', 'disableDebug', 'enableDebug', 'isDebug', 'handleTaskListMovement', 'organizeCompletedTasks', 'onCycleCreated', 'performSchema25Migration', 'refreshTaskListUI', 'resetDefaultRecurringSettings', 'setupDarkModeToggle', 'setupQuickDarkToggle', 'showConfirmationModal', 'showPromptModal', 'showSettingsTourNotification', 'startGuidedTour', 'updateCompletedTasksCount', 'updateHelpWindow', 'updateMoveArrowsVisibility', 'updateStatsPanel'],
+        optionalDeps: ['clearAllUndoHistory', 'loadMiniCycle', 'showLoader', 'hideLoader', 'closeAllModals', 'hasActiveNotifications', 'hideMainMenu', 'BackupManager', 'DataValidator', 'calculateNextOccurrence', 'disableDebug', 'enableDebug', 'isDebug', 'handleTaskListMovement', 'organizeCompletedTasks', 'onCycleCreated', 'performSchema25Migration', 'refreshTaskListUI', 'resetDefaultRecurringSettings', 'setupDarkModeToggle', 'setupQuickDarkToggle', 'showConfirmationModal', 'showPromptModal', 'showSettingsTourNotification', 'startGuidedTour', 'toggleHoverTaskOptions', 'updateCompletedTasksCount', 'updateHelpWindow', 'updateMoveArrowsVisibility', 'updateStatsPanel'],
         provides: ['syncCurrentSettingsToStorage', 'exportMiniCycleData', 'downloadBackupFile'],
         provideInstance: 'settingsManager',
         api: 'ui',

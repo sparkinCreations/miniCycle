@@ -266,6 +266,7 @@ export async function initCoreBoot(deps, versionSuffix = null) {
   deps.utils.sanitizeInput = GlobalUtils.sanitizeInput;
   deps.utils.escapeHtml = GlobalUtils.escapeHtml;
   deps.utils.generateId = GlobalUtils.generateId;
+  deps.utils.generateHashId = GlobalUtils.generateHashId;
   deps.utils.debounce = GlobalUtils.debounce;
   deps.utils.throttle = GlobalUtils.throttle;
   deps.utils.safeAddEventListener = GlobalUtils.safeAddEventListener;
