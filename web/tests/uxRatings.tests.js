@@ -275,6 +275,10 @@ export async function runUXRatingsTests(resultsDiv) {
     });
 
     // ============================================
-    resultsDiv.innerHTML += `<h3>✅ Passed: ${passed.count}/${total.count}</h3>`;
+    // Harness convention: the automated runner waits for an <h3> containing
+    // "Results:" and parses "X/Y" from it — keep this format.
+    const percentage = total.count ? Math.round((passed.count / total.count) * 100) : 0;
+    const summary = `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;
+    resultsDiv.innerHTML = resultsDiv.innerHTML.replace(/<h3>Running tests\.\.\.<\/h3>/, summary);
     return { passed: passed.count, total: total.count };
 }
