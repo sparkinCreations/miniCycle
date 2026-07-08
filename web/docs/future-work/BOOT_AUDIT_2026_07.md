@@ -117,10 +117,86 @@ Both boot-time validators skipped `optional: true` modules (`moduleLoader.js:140
 
 ---
 
+## Remaining Work — Fix Designs (added July 8, 2026)
+
+Everything below is OPEN. Each design was written against the current code (post-v2.284); re-verify line numbers before implementing.
+
+### M2 — vocab themes never reach the three boot-injected modals
+
+**Current behavior:** `modalTemplates.js` evaluates `getLabel()` inside module-level template consts at import time (orchestrator imports it after Phase 1, *before* Phase 2 wires `getActiveLens` into labelResolver) — so the recurring panel, settings modal, and preferences modal bake default vocabulary permanently. `refreshThemeLabels()` → `_refreshLiveLensLabels()` (themeManager.js) only refreshes main-screen elements. The duplicate-injection guard correctly discards re-imports, so themed re-injection is not a path.
+
+**Fix — attribute sweep (recommended):**
+1. In `modalTemplates.js`, add `data-label-key="<key>"` to every element whose text is a **pure** `getLabel()` value that appears in `LENS_SENSITIVE_KEYS` (e.g. `recurring.title`, `recurring.addToRecurring`, `prefs.tasksCheckboxes`, `prefs.taskBackground`, `prefs.taskText`, `prefs.completeCycle`, `settings.backupAll`, `settings.restoreAll`, `settings.scrollToNew`, `settings.scrollToLast`). Skip elements with interpolation/counts — the sweep must never clobber dynamic text.
+2. In `themeManager._refreshLiveLensLabels()`, add a generic sweep: `document.querySelectorAll('[data-label-key]')` → `el.textContent = getLabel(el.dataset.labelKey)`. Runs on every theme/routine change AND in `uiBoot.finalizeUI()`'s boot-time `refreshThemeLabels()` call, which also fixes the boot-time staleness.
+3. Do NOT convert templates to lazy functions — injection happens before Phase 2 by design (modules query these elements during init), so laziness alone can't fix it.
+
+**Verify:** Fitness theme → open recurring panel / settings / preferences → themed strings; back to Classic → defaults; new-user boot with a themed default routine shows themed modal labels without reopening.
+**Risk:** low-medium. The sweep is additive and key-scoped; main risk is tagging an element whose textContent includes markup/counts — audit each tagged element.
+
+### M3 — main-menu document listeners leak + focus-stealing
+
+**Current behavior (verified against code):**
+- `closeMenuOnClickOutside` (uiBoot.js:526) is a stable module-level function attached via `replaceStoredEventListener` → does NOT stack. BUT it stays attached after any non-uiBoot close path (`menuManager.hideMainMenu()` — every menu-item click, menuManager.js:456 only removes the `visible` class). The next outside click then runs the close logic on an already-hidden menu and calls `menu._previousFocus?.focus()` — **focus steal mid-interaction**.
+- `menu._escHandler` (uiBoot.js:309) is a fresh closure per open attached with plain `addEventListener`. After a `hideMainMenu()` close, reopening overwrites `menu._escHandler` without removing the old one → **one orphaned document keydown handler per open/hideMainMenu cycle**, each firing the close logic + focus steal on Escape.
+- The toggle-close branch (uiBoot.js:327–336) removes esc + trap but NOT click-outside (bounded to one stale handler, but it still focus-steals on the next outside click).
+
+**Fix:**
+1. **Self-healing guard** at the top of BOTH document handlers: if `!menu.classList.contains(DOM_CLASSES.VISIBLE)` → remove esc + click-outside + trap listeners and `return` WITHOUT touching focus. Converts every stale handler into silent cleanup; kills the focus steal.
+2. **Single teardown helper** `closeMainMenu(menu, menuButton, { restoreFocus })` used by esc, click-outside, and the toggle-close branch — always removes all three listeners (esc, click-outside, trap) so no path leaves a partial set.
+3. **Esc handler keyed**: attach via `replaceStoredEventListener(document, 'keydown', '__miniCycleUiBootMenuEscHandler', …)` so reopen replaces instead of orphaning.
+4. Optional (nicer, cross-module): `hideMainMenu()` dispatches `CustomEvent('main-menu:closed')` on the menu; uiBoot listens and runs the teardown immediately instead of lazily. The self-healing guard alone is sufficient — do this only if the lazy window (stale handlers until the next click/Escape) matters.
+
+**Verify:** open menu → click a menu item → click a task: focus stays on the task; repeat open/menu-item-close ×5 → press Escape once: no focus jump, no multiple handler fires; Tab-trap (July 2026 a11y work) still cycles inside the open menu; legitimate closes (Escape, outside click, toggle) still restore focus to `_previousFocus`.
+**Risk:** medium — interacts with the custom Tab-trap and a11y focus restore; test with keyboard-only navigation.
+
+### M5 — offline + stale constants.js = permanent splash screen
+
+**Current behavior:** `coreBoot.js:231–236` — on a stale-constants detection, `handleStaleCacheRecovery()` is called and `initCoreBoot` returns `null` regardless of whether recovery could run. Offline, `attemptCacheRecovery` correctly refuses to clear caches and returns false → banner shows, boot returns false, no retry, no error screen, `hideAppLoader` never runs → splash screen forever (every offline launch).
+
+**Fix:** mirror the appInit stale path's `_staleAppInitForgiven` continue-anyway flag: when recovery was NOT initiated (offline or already-attempted), log prominently and **continue boot with the stale constants** instead of returning null. Stale constants are additive in practice; a booted app on slightly-old constants beats a dead splash screen. Keep returning null only when recovery WAS initiated (reload is coming).
+**Verify:** unit test the branch — mock `attemptCacheRecovery` → false + `navigator.onLine` → false, assert `initCoreBoot` returns a usable coreResult; existing stale-cache tests still pass (recovery-initiated path unchanged).
+**Risk:** low.
+
+### M6 — loadDependencies() failure bypasses retry/error machinery (+ non-Error rejection crash)
+
+**Fix (two small patches):**
+1. `orchestrator.js:1015–1020` (`startOrchestrator`'s catch): route through the existing machinery instead of only logging — `if (isCacheError(error)) attemptCacheRecovery()` fast-path, else `showBootError('Dependency load', error)`. This gives the signature stale-cache failure a one-shot recovery instead of a 60s spinner + Lite redirect.
+2. `orchestrator.js:914` (`initApp` catch): `error.message.includes(...)` → `(error?.message || '').includes(...)` — a non-Error rejection (string/undefined) currently throws inside the catch, skipping the error screen and retry entirely. Match the `getErrorDetails`/`showBootError` pattern which already guard with `error?.message ||`.
+
+**Verify:** unit-test `initApp`'s catch with `Promise.reject('string reason')`; manually break a boot-dep import URL locally and confirm the error screen (not the 60s spinner) appears.
+**Risk:** low.
+
+### Decision needed — dead declared deps (surfaced by the fixed validator at every boot)
+
+- **`pullToRefresh` → `checkRecurringTasksNow`**: no provider exists. Recommendation: **implement** — a pull-to-refresh SHOULD catch up recurring tasks; wire it to the recurring system's existing check entry point (verify what recurringWatcher/recurringCore exports — likely the watcher's check function) via a depMappings entry + provider registration.
+- **`pullToRefresh` → `promptServiceWorkerUpdate`**: no provider exists. Recommendation: **remove** the declaration and its guarded call (pullToRefresh.js:~476) — SW updates are now handled by the version gate + verifyVersionFresh flow; a manual prompt path would fight it.
+- **`basicPluginSystem` → `getCurrentCycle`**: no provider; module is deferred/inert with an internal fallback. Recommendation: **remove** the declaration.
+
+Until decided, these warn once per boot (by design — they are real gaps, and silencing them re-creates the bug class this audit exists to kill).
+
+### Low bucket — triage
+
+**Worth batching into one small PR:**
+- `orchestrator.js:914`-adjacent fallback `BOOT_TIMEOUTS` drift (add `VERSION_GATE`, sync PHASE_2/RETRY_DELAY with constants.js) — pairs naturally with M6.
+- Stale depMappings entries (`remindOverdueTasks`, `appendToTestResults`) and taskUI's stale `provides: ['refreshTaskListUI']` — deletions; also fixes the provider-map masking.
+- taskCRUD wiring moved OUT of taskSearch's try/catch (featureBoot.js:284–316) — 10-line reshuffle, removes a silent half-init path.
+- Hardcoded notification string (featureBoot.js:171 → label key) + four hardcoded IDs in uiBoot (129/137/845/853–861 → DOM_IDS).
+
+**Leave until touched for other reasons:**
+- Version-gate reload ping-pong (needs CDN-stale precondition; bounded by FAIL_KEY).
+- `waitForServiceWorker` dead 3000ms param / 8s floor (boot-perf territory — fold into the load-perf investigation).
+- Facade sub-module version split after retry (only matters after a retry AND a facade re-wire; revisit if retry telemetry shows real-world retries are common).
+- `ensureModuleLoaded` in-flight dedup (low likelihood; add if a double-init is ever observed).
+- `completedTasksManager` accessor/object mismatch (masked by featureBoot's manual re-wire; fix if that wiring is ever removed).
+- launchQueue offline `?v=` import; boot-error screen cosmetics; boot-timing zombie measures (diagnostic-only).
+
+---
+
 ## Fix plan / status
 
 - **(a) Retry machinery (C1+C2+C3+M4):** ✅ DONE July 7, 2026 — shared registries + boot-generation guard + no-init destroy registration + keyed stubs. Verified: 17/17 moduleLoader tests (3 new regression tests), all boot suites green, live cross-instance destroy simulation in the browser.
 - **(b) DI silent no-ops (D1–D8):** ✅ DONE July 7, 2026.
-- **(c) UI trio (M1 shimmer ✅ done; M2 modal labels, M3 menu leak):** M2/M3 open — independent, medium size each.
-- **(d) M5/M6 offline/error-path hardening:** open — small, testable.
-- **(e) Low bucket:** opportunistic.
+- **(c) UI trio (M1 shimmer ✅ done; M2 modal labels, M3 menu leak):** M2/M3 open — fix designs above, independent, medium size each.
+- **(d) M5/M6 offline/error-path hardening:** open — fix designs above, small, testable.
+- **(e) Low bucket:** triaged above into one batchable PR + leave-until-touched items.
+- **(f) Dead-deps decision (pullToRefresh/basicPluginSystem):** recommendations above — implement `checkRecurringTasksNow`, remove the other two declarations.
