@@ -13,7 +13,17 @@ A `depMappings` closure whose inner path never resolves (wrong deps group, missi
 
 ---
 
-## CRITICAL — retry machinery (NOT yet fixed; needs focused design pass)
+## CRITICAL — retry machinery — ✅ ALL FIXED July 7, 2026 (same-day follow-up pass)
+
+**Fixes applied (see sections below for the original findings):**
+- **C1:** `loadedModules`/`moduleInstances` now live on `globalThis.__miniCycleModuleRegistry` — one registry per page, shared across every moduleLoader instance regardless of `?v=` suffix (same cross-instance strategy as featureBoot's HTML event bridge; deliberate boot-infrastructure exception to the no-globals rule). Verified end-to-end in the live app: a `?v=X.r2`-imported instance's `destroyAllModules()` destroyed attempt-1 modules (dailyResetManager `initialized` flipped false) and `clearLoadedModules()` emptied the shared maps.
+- **C2:** orchestrator bumps `globalThis.__miniCycleBootGeneration` at the start of every `runBootSequence()` attempt (BEFORE imports, so the zombie halts ASAP). moduleLoader checkpoints: per-module in `loadPhase` Stage 2, between phases in `loadAllModules`, and in `ensureModuleLoaded` (a stale instance must not wire deferred modules with outdated `_bootDeps`). `assertBootGenerationCurrent()` is exported and contract-pinned by tests; all checks no-op when the global is undefined (unit-test contexts). Residual exposure: one in-flight module init between checkpoints — acceptable.
+- **C3:** the no-init branch of `initializeModule` now (a) registers `provideInstance` (previously init-fn-branch only), and (b) registers any provided singleton exposing `destroy()` into `moduleInstances` (composite wrapper if several) — so destroy-on-retry reaches no-init modules like dailyResetManager.
+- **M4:** the two deferred-feature capture stubs in `uiBoot.setupDeferredFeatureTriggers` now use `replaceStoredEventListener` (keyed on `document`) — no duplication on retry, and only the newest boot's `ensure` closure is ever attached.
+
+Original findings preserved below for context.
+
+## CRITICAL — retry machinery (original findings)
 
 ### C1. `destroyAllModules()` on boot retry targets the wrong moduleLoader instance
 
@@ -70,7 +80,7 @@ Both boot-time validators skipped `optional: true` modules (`moduleLoader.js:140
 | M1 | First-time shimmer dismissal permanently broken — `DOM_SELECTORS.QUICK_ACTIONS_BTN` doesn't exist (key lives in `DOM_IDS`) → `getElementById(undefined)`; modeManager.js:769 documents this path as guaranteed | uiBoot.js:172 | ✅ **FIXED** — `DOM_IDS.QUICK_ACTIONS_BTN` |
 | M2 | Vocab themes never reach the 3 boot-injected modals — modalTemplates evaluates `getLabel()` at import time (after Phase 1, before Phase 2 wires `getActiveLens`), so recurring/settings/preferences templates bake default vocabulary; `refreshThemeLabels()` only refreshes main-screen elements; duplicate-injection guard discards themed re-imports | modalTemplates.js (module-level template consts), orchestrator.js:745–761 | Open |
 | M3 | Main-menu document listeners leak + focus-stealing — every menu-item click path calls `hideMainMenu()` which only removes the `visible` class; document-level Escape + click-outside handlers accumulate one per open/close; stale click-outside handler later calls `menu._previousFocus?.focus()` mid-interaction | uiBoot.js:306–336, menuManager.js:456–462 | Open |
-| M4 | Deferred-feature capture listeners bypass `replaceStoredEventListener` — anonymous per-boot closures on `document` duplicate on retry and capture a dead attempt-1 `ensureModuleLoaded` | uiBoot.js:999–1018 | Open (fix alongside C1/C2) |
+| M4 | Deferred-feature capture listeners bypass `replaceStoredEventListener` — anonymous per-boot closures on `document` duplicate on retry and capture a dead attempt-1 `ensureModuleLoaded` | uiBoot.js:999–1018 | ✅ **FIXED** (with C1/C2) |
 | M5 | Offline + stale constants.js = permanent splash screen — `initCoreBoot` returns null whether or not cache recovery could run; offline recovery refuses (correctly) but no retry/error screen follows. appInit's stale path has a continue-anyway flag; constants path doesn't | coreBoot.js:231–236 | Open |
 | M6 | `loadDependencies()` failure bypasses retry/cache-recovery entirely — `startOrchestrator()`'s catch only logs; the signature stale-cache failure gets a 60s spinner + Lite redirect instead of one-shot cache recovery. Related: `initApp()` crashes on non-Error rejection (`error.message` without `?.`) at orchestrator.js:914 | orchestrator.js:206–218, 914, 1015–1020 | Open |
 
@@ -109,8 +119,8 @@ Both boot-time validators skipped `optional: true` modules (`moduleLoader.js:140
 
 ## Fix plan / status
 
-- **(a) Retry machinery (C1+C2+C3+M4):** OPEN — needs a focused design pass. Version-suffix-independent registries (event-bridge pattern) + attempt-generation guard. Boot-critical; regression risk high; do as its own change with full suite + manual retry testing (DevTools throttling to force a phase timeout).
-- **(b) DI silent no-ops (D1–D8):** ✅ DONE July 7, 2026 (this audit's session).
+- **(a) Retry machinery (C1+C2+C3+M4):** ✅ DONE July 7, 2026 — shared registries + boot-generation guard + no-init destroy registration + keyed stubs. Verified: 17/17 moduleLoader tests (3 new regression tests), all boot suites green, live cross-instance destroy simulation in the browser.
+- **(b) DI silent no-ops (D1–D8):** ✅ DONE July 7, 2026.
 - **(c) UI trio (M1 shimmer ✅ done; M2 modal labels, M3 menu leak):** M2/M3 open — independent, medium size each.
 - **(d) M5/M6 offline/error-path hardening:** open — small, testable.
 - **(e) Low bucket:** opportunistic.
