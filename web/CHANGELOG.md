@@ -1,3 +1,12 @@
+## [2.284] - 2026-07-08
+- docs(future-work): mark boot audit retry-machinery findings fixed
+- fix(boot): make retry teardown actually work — shared registries + generation guard
+- docs(future-work): add July 2026 boot pipeline audit
+- test(harness): register uxRatings module and align its results format
+- fix(boot): first-time shimmer dismissal used nonexistent DOM_SELECTORS key
+- fix(di): repair seven silent-undefined dep wirings found in boot audit
+
+
 ## [2.283] - 2026-07-08
 - fix(sw): serve CSS fresh from network when current caches miss, not from kept old caches
 
