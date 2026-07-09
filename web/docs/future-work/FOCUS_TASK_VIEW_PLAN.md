@@ -14,7 +14,7 @@
 - **Hide direction is hard-coded per panel:** `#task-view.hide` slides off LEFT (`translate(-200%,-50%)`, app-container.css:82); `#stats-panel.hide` slides off RIGHT (`translateX(200%)`, stats-panel.css:71). Works only because there are exactly 2 panels.
 - **gesturePanelManager (508 lines)** detects touch/mouse/wheel/pointer/keyboard and reduces ALL of them to a directional intent applied to a binary `state.isStatsVisible`, firing `onShowStatsPanel`/`onShowTaskView` callbacks. `syncStatsVisibility(bool)` is the external-sync API.
 - **statsPanel owns the view switch:** `showTaskView()`/`showStatsPanel()` (statsPanel.js:774/811) do class toggles + `inert` + slide-arrow indicators + `_syncGestureManager` + `announceViewChange` + `updateNavDots`. `updateNavDots`/`handleDotClick` are hard-coded to indexes 0/1. `handleNavPillClick` toggles. Both `show*` functions are **DI-provided public APIs with external consumers — their signatures must not change.**
-- **Nav dots markup** (miniCycle.html:2007): 2 `<button class="dot" role="tab" aria-controls="task-view|stats-panel">`. Focus-mode.css injects the text labels via `::before { content: "Routine"/"Stats" }` keyed off `aria-controls`, with a "|" separator as Routine's `::after`. (Note: these CSS content strings are hardcoded — a pre-existing vocab-theme gap; the new tab inherits the same limitation for now.)
+- **Nav dots markup** (miniCycle.html:2007): 2 `<button class="dot" role="tab" aria-controls="task-view|stats-panel">`. Focus-mode.css injects the text labels via `::before { content: "Routine"/"Stats" }` keyed off `aria-controls`, with a "|" separator as Routine's `::after`. **These CSS content strings are hardcoded — a label-system (rule #3) violation, as are the dots' `aria-label`s and visually-hidden span texts in the HTML.** Phase 2 fixes all of it via the `content: attr(data-tab-label)` bridge (decided July 9, 2026 — see Phase 2 step 2).
 - **focusMode.activate()/deactivate()** does NOT force a view — entering focus while on Stats stays on Stats. Exit must handle "was on the one-task panel."
 
 ---
@@ -72,7 +72,11 @@ Goal: binary → indexed, with zero behavior change. Ship-safe on its own.
 ### Phase 2 — Wire into focus view
 
 1. **Third dot** in `#nav-dots` (aria-controls="focus-task-panel", visually-hidden text). Hidden outside focus mode: `body:not(.focus-mode) .dot[aria-controls="focus-task-panel"] { display:none }`.
-2. **focus-mode.css**: `content: "Task"` ::before; rework the "|" separator (two separators for three tabs — move separators to dedicated rules instead of Routine-only ::after; the padding-balancing hacks noted at :599 need re-doing for 3 tabs).
+2. **focus-mode.css + label system**: convert ALL THREE tab labels to the label system via the CSS `attr()` bridge — `content: attr(data-tab-label)` — instead of adding a third hardcoded string:
+   - New label keys (`nav.tabTask`, `nav.tabRoutine`, `nav.tabStats`) in defaultLabels.js; `nav.tabTask` in `LENS_SENSITIVE_KEYS` (maps to the noun — Habit Tracker's pill becomes "Habit \| Routine \| Stats" for free).
+   - `_refreshLiveLensLabels()` (or the carousel's dot-sync) sets `dot.dataset.tabLabel = getLabel(key)` on each dot — refreshes on theme/routine change like everything else.
+   - Also fix the hardcoded dot `aria-label`s and visually-hidden span texts (miniCycle.html:2008–2013) via the same pass (spans can use the M2 `data-label-key` sweep).
+   - Rework the "\|" separator (two separators for three tabs — move separators to dedicated rules instead of Routine-only ::after; the padding-balancing hacks noted at :599 need re-doing for 3 tabs).
 3. **Gating**: `focusMode.activate()` → `carousel.setPanelEnabled('focus-task-panel', true)`; `deactivate()` → disable + `goTo('task-view')` if it was active (D7). Panel registered at index 0 always, enabled only in focus mode.
 4. **updateNavDots generalization** already handled by carousel (Phase 0); verify aria-selected/tab semantics with 3 tabs.
 5. **A11y pass**: keyboard nav across 3 panels, announceViewChange strings, inert correctness, reduced-motion (transitions already tokenized).
@@ -82,7 +86,7 @@ Goal: binary → indexed, with zero behavior change. Ship-safe on its own.
 - Vertical-swipe skip gesture on the card (needs gesturePanelManager vertical detection — new territory, keep out of v1).
 - Vocab-theme icons/labels on the card per theme; consider data-label-key sweep for its static bits.
 - Stats: track one-task-mode completions (actionUsage) to see if the feature earns its place.
-- Consider CSS `content` label theming for all three tabs (pre-existing gap).
+- ~~Consider CSS `content` label theming for all three tabs~~ — pulled into Phase 2 (July 9, 2026: user flagged the hardcoded strings; `attr(data-tab-label)` bridge).
 
 ---
 
