@@ -96,6 +96,30 @@ function replaceStoredEventListener(element, event, key, handler, options) {
   element.addEventListener(event, handler, options);
 }
 
+/**
+ * Remove a listener previously attached via replaceStoredEventListener.
+ * Retry-safe: removes by the reference stored on the element, so the newest
+ * boot can detach a prior boot's differently-versioned handler.
+ *
+ * @param {EventTarget|null} element
+ * @param {string} event
+ * @param {string} key
+ * @param {Object} [options]
+ */
+function removeStoredEventListener(element, event, key, options) {
+  if (element && typeof element[key] === 'function') {
+    element.removeEventListener(event, element[key], options);
+    element[key] = null;
+  }
+}
+
+// Stored-listener keys for the main-menu document handlers. Keyed attach/detach
+// (not plain add/removeEventListener) keeps them retry-safe AND, because the
+// handlers are stable module references, guarantees at most one of each is ever
+// attached — reopening replaces instead of stacking (July 2026 boot audit, M3).
+const MENU_ESC_KEY = '__miniCycleUiBootMenuEscHandler';
+const MENU_OUTSIDE_KEY = '__miniCycleUiBootMenuCloseOutsideHandler';
+
 // ============================================================================
 // GLOBAL EVENT LISTENERS
 // ============================================================================
@@ -305,34 +329,16 @@ export function attachMenuButtonListener(_GlobalUtils, menuButton, menu) {
         };
         menu.addEventListener('keydown', menu._trapHandler);
 
-        // Escape key handler
-        menu._escHandler = (e) => {
-          if (e.key === 'Escape') {
-            menu.classList.remove(DOM_CLASSES.VISIBLE);
-            document.body.classList.remove(DOM_CLASSES.MAIN_MENU_OPEN);
-            menuButton.setAttribute('aria-expanded', 'false');
-            document.removeEventListener('keydown', menu._escHandler);
-            document.removeEventListener('click', closeMenuOnClickOutside);
-            if (menu._trapHandler) menu.removeEventListener('keydown', menu._trapHandler);
-            menu._previousFocus?.focus({ focusVisible: false });
-          }
-        };
-        document.addEventListener('keydown', menu._escHandler);
-        replaceStoredEventListener(
-          document,
-          'click',
-          '__miniCycleUiBootMenuCloseOutsideHandler',
-          closeMenuOnClickOutside
-        );
+        // Escape + click-outside attached via stored keys. Both handlers are
+        // stable module references, so replaceStoredEventListener REPLACES the
+        // prior boot/open's listener rather than orphaning a fresh closure —
+        // fixing the leak where every open/hideMainMenu cycle stacked another
+        // document keydown handler that fired on subsequent Escapes.
+        replaceStoredEventListener(document, 'keydown', MENU_ESC_KEY, menuEscHandler);
+        replaceStoredEventListener(document, 'click', MENU_OUTSIDE_KEY, closeMenuOnClickOutside);
       } else {
-        // Menu closing — clean up and restore focus
-        if (menu._escHandler) {
-          document.removeEventListener('keydown', menu._escHandler);
-        }
-        if (menu._trapHandler) {
-          menu.removeEventListener('keydown', menu._trapHandler);
-        }
-        menu._previousFocus?.focus({ focusVisible: false });
+        // Toggle-close — detach all document listeners + trap, restore focus.
+        closeMainMenu(menu, menuButton, { restoreFocus: true });
       }
     });
   }
@@ -521,21 +527,67 @@ function handlePassiveTouchstart() {
 }
 
 /**
- * Close menu when clicking outside
+ * Detach the main menu's document-level Escape + click-outside handlers and
+ * its Tab-trap. Idempotent and retry-safe (removes via the stored keys).
+ * @param {HTMLElement|null} menu
+ */
+function teardownMenuListeners(menu) {
+  removeStoredEventListener(document, 'keydown', MENU_ESC_KEY);
+  removeStoredEventListener(document, 'click', MENU_OUTSIDE_KEY);
+  if (menu?._trapHandler) {
+    menu.removeEventListener('keydown', menu._trapHandler);
+    menu._trapHandler = null;
+  }
+}
+
+/**
+ * Close the main menu: strip visible state, detach every menu listener, and
+ * (optionally) restore focus to whatever was focused before it opened.
+ * The single close path for Escape, outside-click, and toggle-close so no
+ * caller can leave a partial set of listeners attached.
+ * @param {HTMLElement} menu
+ * @param {HTMLElement|null} menuButton
+ * @param {{restoreFocus?: boolean}} [opts]
+ */
+function closeMainMenu(menu, menuButton, { restoreFocus = false } = {}) {
+  menu.classList.remove(DOM_CLASSES.VISIBLE);
+  document.body.classList.remove(DOM_CLASSES.MAIN_MENU_OPEN);
+  menuButton?.setAttribute('aria-expanded', 'false');
+  teardownMenuListeners(menu);
+  if (restoreFocus) menu._previousFocus?.focus({ focusVisible: false });
+}
+
+/**
+ * Document keydown handler — Escape closes the menu. Stable module-level
+ * reference (attached via MENU_ESC_KEY) so reopening never orphans a per-open
+ * closure.
+ */
+function menuEscHandler(event) {
+  if (event.key !== 'Escape') return;
+  const menu = document.querySelector(DOM_SELECTORS.MENU_CONTAINER);
+  if (!menu) return;
+  const menuButton = document.querySelector(DOM_SELECTORS.MENU_BUTTON);
+  // Self-healing: if the menu was already closed by another path
+  // (menuManager.hideMainMenu strips only the visible class, leaving this
+  // handler attached), detach quietly — never steal focus from whatever the
+  // user is interacting with now.
+  if (!menu.classList.contains(DOM_CLASSES.VISIBLE)) { teardownMenuListeners(menu); return; }
+  closeMainMenu(menu, menuButton, { restoreFocus: true });
+}
+
+/**
+ * Document click handler — closes the menu when clicking outside it.
  */
 function closeMenuOnClickOutside(event) {
   const menu = document.querySelector(DOM_SELECTORS.MENU_CONTAINER);
+  if (!menu) return;
   const menuButton = document.querySelector(DOM_SELECTORS.MENU_BUTTON);
-
-  if (menu && !menu.contains(event.target) && !menuButton?.contains(event.target)) {
-    menu.classList.remove(DOM_CLASSES.VISIBLE);
-    document.body.classList.remove(DOM_CLASSES.MAIN_MENU_OPEN);
-    menuButton?.setAttribute('aria-expanded', 'false');
-    document.removeEventListener('click', closeMenuOnClickOutside);
-    if (menu._escHandler) {
-      document.removeEventListener('keydown', menu._escHandler);
-    }
-    menu._previousFocus?.focus({ focusVisible: false });
+  // Self-healing guard (see menuEscHandler): the menu may have been closed by a
+  // menu-item click via hideMainMenu, leaving this handler attached. Detach
+  // without touching focus instead of yanking it back mid-interaction.
+  if (!menu.classList.contains(DOM_CLASSES.VISIBLE)) { teardownMenuListeners(menu); return; }
+  if (!menu.contains(event.target) && !menuButton?.contains(event.target)) {
+    closeMainMenu(menu, menuButton, { restoreFocus: true });
   }
 }
 
