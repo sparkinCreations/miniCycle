@@ -27,10 +27,19 @@
 | D2 | **Which task shows** | First incomplete task in list order. Prev/next controls override temporarily; override resets on routine switch / cycle reset / panel leave. |
 | D3 | **Skip affordance** | ✅ DECIDED (July 9, 2026): explicit ‹ › prev/next buttons on the card (horizontal swipe is taken by panel nav; vertical swipe deferred to a later phase). Skipping never completes. |
 | D4 | **Completed tasks** | Prev/next can browse ALL tasks (completed ones render checked/dimmed) so out-of-order workflows (e.g. "Ran CMM or N/A") can review; auto-advance only targets incomplete ones. |
-| D5 | **All-done state** | Card shows "all done" state + the cycle action (mirrors mode: Complete Cycle / Clear Completed). In auto-cycle the reset happens on last completion anyway — celebration plays, panel re-renders to task 1. |
+| D5 | **Mode behavior** | ✅ DECIDED (July 9, 2026) — the panel honors the routine's mode: |
 | D6 | **Default panel entering focus mode** | Keep current behavior (whatever panel was active); do NOT auto-jump to the one-task panel. Revisit after usage. |
 | D7 | **Exiting focus mode while on one-task panel** | Carousel switches to Routine (panel doesn't exist outside focus mode). |
 | D8 | **Initial onboarding** | ✅ DECIDED (July 9, 2026): Task panel hidden AND unreachable during initial onboarding, until skipped or completed — same gate as the focus-mode exit X (`body.first-run-welcome-active`, cleared by onboardingManager on ×/skip/completion). The tab hides for free (nav-dots are hidden wholesale during the banner, first-run-welcome.css:151), but that alone leaves a gap: **swipes still work while dots are hidden**, so the carousel must also treat the panel as disabled while the body class is present. Check the class lazily at navigate/goTo time (self-healing, no event wiring; use `DOM_CLASSES.FIRST_RUN_WELCOME_ACTIVE`). |
+
+### D5 — Mode behavior detail
+
+The always-visible cycle/clear action is NOT a new button on the card — focus view's existing floating action button (bottom-right, `focusMode.refreshActionButton()`) is fixed-position, persists across all three panels, already swaps Cycle/Clear per mode, and is vocab-theme-aware (`focusMode.cycleActionLabel`/`clearActionLabel`). One source of truth; the card adds no duplicate. The panel *reacts* per mode:
+
+- **Manual cycle:** user taps the floating Cycle button at any time → cycle resets via the existing path → panel re-renders to task 1 (falls out of the AppState subscription; no special code beyond the celebration check below).
+- **To-do mode:** floating button reads Clear → completed tasks are removed → panel shows the next remaining task; the "N of M" position indicator recounts. Completed-but-uncleared tasks remain browsable via ‹ › (dimmed, per D4).
+- **Auto cycle:** completing the LAST task triggers the existing cycleCompletion flow untouched (notifications, achievements, theme unlocks). The panel detects the reset and, instead of snapping to task 1, shows a **card-level cycle-complete celebration state for ~2 seconds, then automatically renders task 1**. Duration = new `UI_TIMEOUTS.FOCUS_TASK_CELEBRATION` constant (not a magic number). The celebration must not duplicate/fight the existing cycle-complete notification — it's a card visual only.
+- **Reset detection:** the panel distinguishes "cycle reset" (all tasks flipped incomplete + cycleCount bump) from ordinary edits in its AppState subscriber, so manual resets and auto-cycle resets both land on task 1 — with the celebration reserved for the auto-cycle last-task moment (and optionally the manual Complete Cycle tap while the panel is visible).
 
 ---
 
@@ -67,7 +76,7 @@ Goal: binary → indexed, with zero behavior change. Ship-safe on its own.
    - ‹ › prev/next buttons (D3/D4), all-done state (D5).
    - Subscribes to AppState (task add/delete/complete/reorder, routine switch) → re-render. Unsubscribes + removes listeners in `destroy()` (boot-retry).
 3. **Labels**: new `focusTask.*` keys in defaultLabels.js (+ LENS_SENSITIVE_KEYS where nouny); no hardcoded strings.
-4. **Cycle-completion moment**: on last-task completion in auto-cycle, let the existing cycleCompletion flow run untouched; panel re-renders from state (all unchecked → shows task 1). Manual mode: all-done card exposes the cycle action.
+4. **Cycle-completion moment**: per D5 detail — existing cycleCompletion flow runs untouched; the panel's AppState subscriber detects the reset (all tasks flipped incomplete + cycleCount bump) and plays the ~2s card celebration (`UI_TIMEOUTS.FOCUS_TASK_CELEBRATION`) before rendering task 1. No new button on the card — the floating focus action button is the always-visible cycle/clear control in every mode.
 5. **Tests**: `focusTaskPanel.tests.js` — selection logic (first incomplete), advance-on-complete, prev/next override + reset, all-done, destroy cleanup.
 
 ### Phase 2 — Wire into focus view
