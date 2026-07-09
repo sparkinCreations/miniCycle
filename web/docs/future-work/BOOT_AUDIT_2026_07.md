@@ -78,7 +78,7 @@ Both boot-time validators skipped `optional: true` modules (`moduleLoader.js:140
 | # | Finding | Where | Status |
 |---|---------|-------|--------|
 | M1 | First-time shimmer dismissal permanently broken — `DOM_SELECTORS.QUICK_ACTIONS_BTN` doesn't exist (key lives in `DOM_IDS`) → `getElementById(undefined)`; modeManager.js:769 documents this path as guaranteed | uiBoot.js:172 | ✅ **FIXED** — `DOM_IDS.QUICK_ACTIONS_BTN` |
-| M2 | Vocab themes never reach the 3 boot-injected modals — modalTemplates evaluates `getLabel()` at import time (after Phase 1, before Phase 2 wires `getActiveLens`), so recurring/settings/preferences templates bake default vocabulary; `refreshThemeLabels()` only refreshes main-screen elements; duplicate-injection guard discards themed re-imports | modalTemplates.js (module-level template consts), orchestrator.js:745–761 | Open |
+| M2 | Vocab themes never reach the 3 boot-injected modals — modalTemplates evaluates `getLabel()` at import time (after Phase 1, before Phase 2 wires `getActiveLens`), so recurring/settings/preferences templates bake default vocabulary; `refreshThemeLabels()` only refreshes main-screen elements; duplicate-injection guard discards themed re-imports | modalTemplates.js (module-level template consts), orchestrator.js:745–761 | ✅ **FIXED** July 8, 2026 |
 | M3 | Main-menu document listeners leak + focus-stealing — every menu-item click path calls `hideMainMenu()` which only removes the `visible` class; document-level Escape + click-outside handlers accumulate one per open/close; stale click-outside handler later calls `menu._previousFocus?.focus()` mid-interaction | uiBoot.js:306–336, menuManager.js:456–462 | Open |
 | M4 | Deferred-feature capture listeners bypass `replaceStoredEventListener` — anonymous per-boot closures on `document` duplicate on retry and capture a dead attempt-1 `ensureModuleLoaded` | uiBoot.js:999–1018 | ✅ **FIXED** (with C1/C2) |
 | M5 | Offline + stale constants.js = permanent splash screen — `initCoreBoot` returns null whether or not cache recovery could run; offline recovery refuses (correctly) but no retry/error screen follows. appInit's stale path has a continue-anyway flag; constants path doesn't | coreBoot.js:231–236 | Open |
@@ -121,17 +121,18 @@ Both boot-time validators skipped `optional: true` modules (`moduleLoader.js:140
 
 Everything below is OPEN. Each design was written against the current code (post-v2.284); re-verify line numbers before implementing.
 
-### M2 — vocab themes never reach the three boot-injected modals
+### M2 — vocab themes never reach the three boot-injected modals — ✅ FIXED July 8, 2026
 
-**Current behavior:** `modalTemplates.js` evaluates `getLabel()` inside module-level template consts at import time (orchestrator imports it after Phase 1, *before* Phase 2 wires `getActiveLens` into labelResolver) — so the recurring panel, settings modal, and preferences modal bake default vocabulary permanently. `refreshThemeLabels()` → `_refreshLiveLensLabels()` (themeManager.js) only refreshes main-screen elements. The duplicate-injection guard correctly discards re-imports, so themed re-injection is not a path.
+**Was:** `modalTemplates.js` evaluated `getLabel()` inside module-level template consts at import time (orchestrator imports it after Phase 1, *before* Phase 2 wires `getActiveLens`) — so the recurring/settings/preferences modals baked default vocabulary permanently; `_refreshLiveLensLabels()` only touched main-screen elements.
 
-**Fix — attribute sweep (recommended):**
-1. In `modalTemplates.js`, add `data-label-key="<key>"` to every element whose text is a **pure** `getLabel()` value that appears in `LENS_SENSITIVE_KEYS` (e.g. `recurring.title`, `recurring.addToRecurring`, `prefs.tasksCheckboxes`, `prefs.taskBackground`, `prefs.taskText`, `prefs.completeCycle`, `settings.backupAll`, `settings.restoreAll`, `settings.scrollToNew`, `settings.scrollToLast`). Skip elements with interpolation/counts — the sweep must never clobber dynamic text.
-2. In `themeManager._refreshLiveLensLabels()`, add a generic sweep: `document.querySelectorAll('[data-label-key]')` → `el.textContent = getLabel(el.dataset.labelKey)`. Runs on every theme/routine change AND in `uiBoot.finalizeUI()`'s boot-time `refreshThemeLabels()` call, which also fixes the boot-time staleness.
-3. Do NOT convert templates to lazy functions — injection happens before Phase 2 by design (modules query these elements during init), so laziness alone can't fix it.
+**Important scoping finding:** with the current 5 shipped themes there is **NO user-visible symptom** — a union of all theme label overrides against all modal-template `getLabel` keys is **empty** (themes override `noun.task`, `action.completeCycle`, etc.; the modals use `recurring.*`/`prefs.*`/`settings.*`, none of which any theme currently overrides). So M2 was a **latent correctness fix**: it makes the mechanism support theming any lens-sensitive modal key, so a future theme author can override e.g. `recurring.title` and it will Just Work instead of freezing at the default.
 
-**Verify:** Fitness theme → open recurring panel / settings / preferences → themed strings; back to Classic → defaults; new-user boot with a themed default routine shows themed modal labels without reopening.
-**Risk:** low-medium. The sweep is additive and key-scoped; main risk is tagging an element whose textContent includes markup/counts — audit each tagged element.
+**Fix applied (attribute sweep):**
+1. Tagged the 18 lens-sensitive, non-interpolated `getLabel()` elements across the three templates with `data-label-key="<key>"`. Pure-text elements tagged directly; the two icon buttons (`backup-mini-cycles`, `restore-mini-cycles`) got the tag on an inner `<span>` so the sweep can't wipe their icon. `add-recurring-task-btn` tagged directly (no icon).
+2. Added a generic sweep to `themeManager._refreshLiveLensLabels()` (right before `renderVocabThemes()`): `_deps.querySelectorAll('[data-label-key]')` → `el.textContent = getLabel(key)`. Runs on every routine/theme change AND the boot-time `refreshThemeLabels()` in `finalizeUI()`.
+
+**Verified:** 18 tags land in valid DOM on fresh boot; icon buttons keep their SVG (iconInit swaps `<i>`→`<span class="icon"><svg>`, sweep touches only the sibling label span); repointing a tag to `noun.task` + `refreshThemeLabels()` re-resolves the text and preserves the icon; sweep is idempotent. modalTemplates suite 9/9 (5 new static invariants: keys real + lens-sensitive + pure-text + icon-button-wrapping); themeManager/themes/preferences/settings suites all green.
+**Guardrail:** the new `modalTemplates.tests.js` invariants fail the build if anyone tags a non-existent key, a non-lens key, an interpolated element, or tags an icon button directly.
 
 ### M3 — main-menu document listeners leak + focus-stealing
 
@@ -196,7 +197,7 @@ Until decided, these warn once per boot (by design — they are real gaps, and s
 
 - **(a) Retry machinery (C1+C2+C3+M4):** ✅ DONE July 7, 2026 — shared registries + boot-generation guard + no-init destroy registration + keyed stubs. Verified: 17/17 moduleLoader tests (3 new regression tests), all boot suites green, live cross-instance destroy simulation in the browser.
 - **(b) DI silent no-ops (D1–D8):** ✅ DONE July 7, 2026.
-- **(c) UI trio (M1 shimmer ✅ done; M2 modal labels, M3 menu leak):** M2/M3 open — fix designs above, independent, medium size each.
+- **(c) UI trio (M1 shimmer ✅ done; M2 modal labels ✅ done; M3 menu leak):** M3 open — fix design above.
 - **(d) M5/M6 offline/error-path hardening:** open — fix designs above, small, testable.
 - **(e) Low bucket:** triaged above into one batchable PR + leave-until-touched items.
 - **(f) Dead-deps decision (pullToRefresh/basicPluginSystem):** recommendations above — implement `checkRecurringTasksNow`, remove the other two declarations.
