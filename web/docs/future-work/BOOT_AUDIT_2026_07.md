@@ -79,7 +79,7 @@ Both boot-time validators skipped `optional: true` modules (`moduleLoader.js:140
 |---|---------|-------|--------|
 | M1 | First-time shimmer dismissal permanently broken — `DOM_SELECTORS.QUICK_ACTIONS_BTN` doesn't exist (key lives in `DOM_IDS`) → `getElementById(undefined)`; modeManager.js:769 documents this path as guaranteed | uiBoot.js:172 | ✅ **FIXED** — `DOM_IDS.QUICK_ACTIONS_BTN` |
 | M2 | Vocab themes never reach the 3 boot-injected modals — modalTemplates evaluates `getLabel()` at import time (after Phase 1, before Phase 2 wires `getActiveLens`), so recurring/settings/preferences templates bake default vocabulary; `refreshThemeLabels()` only refreshes main-screen elements; duplicate-injection guard discards themed re-imports | modalTemplates.js (module-level template consts), orchestrator.js:745–761 | ✅ **FIXED** July 8, 2026 |
-| M3 | Main-menu document listeners leak + focus-stealing — every menu-item click path calls `hideMainMenu()` which only removes the `visible` class; document-level Escape + click-outside handlers accumulate one per open/close; stale click-outside handler later calls `menu._previousFocus?.focus()` mid-interaction | uiBoot.js:306–336, menuManager.js:456–462 | Open |
+| M3 | Main-menu document listeners leak + focus-stealing — every menu-item click path calls `hideMainMenu()` which only removes the `visible` class; document-level Escape + click-outside handlers accumulate one per open/close; stale click-outside handler later calls `menu._previousFocus?.focus()` mid-interaction | uiBoot.js:306–336, menuManager.js:456–462 | ✅ **FIXED** July 9, 2026 |
 | M4 | Deferred-feature capture listeners bypass `replaceStoredEventListener` — anonymous per-boot closures on `document` duplicate on retry and capture a dead attempt-1 `ensureModuleLoaded` | uiBoot.js:999–1018 | ✅ **FIXED** (with C1/C2) |
 | M5 | Offline + stale constants.js = permanent splash screen — `initCoreBoot` returns null whether or not cache recovery could run; offline recovery refuses (correctly) but no retry/error screen follows. appInit's stale path has a continue-anyway flag; constants path doesn't | coreBoot.js:231–236 | Open |
 | M6 | `loadDependencies()` failure bypasses retry/cache-recovery entirely — `startOrchestrator()`'s catch only logs; the signature stale-cache failure gets a 60s spinner + Lite redirect instead of one-shot cache recovery. Related: `initApp()` crashes on non-Error rejection (`error.message` without `?.`) at orchestrator.js:914 | orchestrator.js:206–218, 914, 1015–1020 | Open |
@@ -134,7 +134,17 @@ Everything below is OPEN. Each design was written against the current code (post
 **Verified:** 18 tags land in valid DOM on fresh boot; icon buttons keep their SVG (iconInit swaps `<i>`→`<span class="icon"><svg>`, sweep touches only the sibling label span); repointing a tag to `noun.task` + `refreshThemeLabels()` re-resolves the text and preserves the icon; sweep is idempotent. modalTemplates suite 9/9 (5 new static invariants: keys real + lens-sensitive + pure-text + icon-button-wrapping); themeManager/themes/preferences/settings suites all green.
 **Guardrail:** the new `modalTemplates.tests.js` invariants fail the build if anyone tags a non-existent key, a non-lens key, an interpolated element, or tags an icon button directly.
 
-### M3 — main-menu document listeners leak + focus-stealing
+### M3 — main-menu document listeners leak + focus-stealing — ✅ FIXED July 9, 2026
+
+**Fix applied** (all in uiBoot.js — `menuManager.js` untouched, so the self-healing guard alone covers the external-close path):
+- Hoisted the Escape handler to a stable module-level `menuEscHandler` and attached both it and `closeMenuOnClickOutside` via `replaceStoredEventListener` (keys `MENU_ESC_KEY` / `MENU_OUTSIDE_KEY`). Reopening now REPLACES the prior listener instead of orphaning a fresh closure — at most one of each is ever attached, regardless of cycle count.
+- Added a **self-healing guard** at the top of both document handlers: if the menu isn't `.visible` (i.e. it was closed by `hideMainMenu`, which strips only the class), detach all menu listeners and `return` WITHOUT touching focus — kills the focus steal.
+- Added a single `closeMainMenu(menu, menuButton, {restoreFocus})` + `teardownMenuListeners(menu)` used by Escape, outside-click, and the toggle-close branch, so no path leaves a partial listener set. Added a retry-safe `removeStoredEventListener` helper.
+- Skipped the optional `CustomEvent` from `hideMainMenu` — the self-healing guard makes it unnecessary (stale handlers become inert no-ops that detach on the next document event).
+
+**Verified (live on a never-cached origin + automated):** 5× open→external-close leaves net **0** growth in document keydown listeners (steady state = exactly 1 live esc handler; pre-fix leaked 5); the esc handler is stored under its key; after an external close an outside click keeps focus on the user's element and self-heals the handler off; Escape closes + restores focus to the opener + detaches; real outside-click closes; Tab-trap attaches while open and detaches on close. uiBoot suite 13/13 (3 new regression tests); menuManager 27/27, accessibility 41/41, guidedTourManager 63/63 green.
+
+**Original design (for reference):**
 
 **Current behavior (verified against code):**
 - `closeMenuOnClickOutside` (uiBoot.js:526) is a stable module-level function attached via `replaceStoredEventListener` → does NOT stack. BUT it stays attached after any non-uiBoot close path (`menuManager.hideMainMenu()` — every menu-item click, menuManager.js:456 only removes the `visible` class). The next outside click then runs the close logic on an already-hidden menu and calls `menu._previousFocus?.focus()` — **focus steal mid-interaction**.
@@ -197,7 +207,7 @@ Until decided, these warn once per boot (by design — they are real gaps, and s
 
 - **(a) Retry machinery (C1+C2+C3+M4):** ✅ DONE July 7, 2026 — shared registries + boot-generation guard + no-init destroy registration + keyed stubs. Verified: 17/17 moduleLoader tests (3 new regression tests), all boot suites green, live cross-instance destroy simulation in the browser.
 - **(b) DI silent no-ops (D1–D8):** ✅ DONE July 7, 2026.
-- **(c) UI trio (M1 shimmer ✅ done; M2 modal labels ✅ done; M3 menu leak):** M3 open — fix design above.
+- **(c) UI trio (M1 shimmer ✅ done; M2 modal labels ✅ done; M3 menu leak ✅ done):** complete.
 - **(d) M5/M6 offline/error-path hardening:** open — fix designs above, small, testable.
 - **(e) Low bucket:** triaged above into one batchable PR + leave-until-touched items.
 - **(f) Dead-deps decision (pullToRefresh/basicPluginSystem):** recommendations above — implement `checkRecurringTasksNow`, remove the other two declarations.
