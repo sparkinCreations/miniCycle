@@ -287,6 +287,20 @@ function _refreshLiveLensLabels() {
         });
     }
 
+    // Generic lens-label sweep for statically-injected modals.
+    // The recurring panel, settings modal, and preferences modal are baked by
+    // modalTemplates.js at import time (Phase 1→2) — BEFORE the vocab lens is
+    // wired into labelResolver — so their lens-sensitive strings freeze at the
+    // default vocabulary and the element-specific updates above never touch them
+    // (July 2026 boot audit, M2). Any element tagged with data-label-key whose
+    // text is a PURE getLabel() value (no interpolation/counts) is re-resolved
+    // here, on every routine/theme change AND on the boot-time refreshThemeLabels()
+    // call in finalizeUI(). Keep the tag off interpolated/dynamic text.
+    _deps.querySelectorAll('[data-label-key]').forEach(el => {
+        const key = el.dataset.labelKey;
+        if (key) el.textContent = getLabel(key);
+    });
+
     // Keep the Themes modal section content fresh so it always reflects the active routine's theme,
     // regardless of which code path opens the modal (themeManager, preferencesManager, statsPanel).
     renderVocabThemes();
