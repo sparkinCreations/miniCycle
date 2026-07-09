@@ -30,6 +30,7 @@
 | D5 | **All-done state** | Card shows "all done" state + the cycle action (mirrors mode: Complete Cycle / Clear Completed). In auto-cycle the reset happens on last completion anyway — celebration plays, panel re-renders to task 1. |
 | D6 | **Default panel entering focus mode** | Keep current behavior (whatever panel was active); do NOT auto-jump to the one-task panel. Revisit after usage. |
 | D7 | **Exiting focus mode while on one-task panel** | Carousel switches to Routine (panel doesn't exist outside focus mode). |
+| D8 | **Initial onboarding** | ✅ DECIDED (July 9, 2026): Task panel hidden AND unreachable during initial onboarding, until skipped or completed — same gate as the focus-mode exit X (`body.first-run-welcome-active`, cleared by onboardingManager on ×/skip/completion). The tab hides for free (nav-dots are hidden wholesale during the banner, first-run-welcome.css:151), but that alone leaves a gap: **swipes still work while dots are hidden**, so the carousel must also treat the panel as disabled while the body class is present. Check the class lazily at navigate/goTo time (self-healing, no event wiring; use `DOM_CLASSES.FIRST_RUN_WELCOME_ACTIVE`). |
 
 ---
 
@@ -77,7 +78,7 @@ Goal: binary → indexed, with zero behavior change. Ship-safe on its own.
    - `_refreshLiveLensLabels()` (or the carousel's dot-sync) sets `dot.dataset.tabLabel = getLabel(key)` on each dot — refreshes on theme/routine change like everything else.
    - Also fix the hardcoded dot `aria-label`s and visually-hidden span texts (miniCycle.html:2008–2013) via the same pass (spans can use the M2 `data-label-key` sweep).
    - Rework the "\|" separator (two separators for three tabs — move separators to dedicated rules instead of Routine-only ::after; the padding-balancing hacks noted at :599 need re-doing for 3 tabs).
-3. **Gating**: `focusMode.activate()` → `carousel.setPanelEnabled('focus-task-panel', true)`; `deactivate()` → disable + `goTo('task-view')` if it was active (D7). Panel registered at index 0 always, enabled only in focus mode.
+3. **Gating**: `focusMode.activate()` → `carousel.setPanelEnabled('focus-task-panel', true)`; `deactivate()` → disable + `goTo('task-view')` if it was active (D7). Panel registered at index 0 always, enabled only in focus mode. **Onboarding gate (D8)**: in addition to the enabled flag, `navigate()`/`goTo()` skip the panel while `body` has `DOM_CLASSES.FIRST_RUN_WELCOME_ACTIVE` — lazily checked so no wiring to onboardingManager is needed; the moment the banner is dismissed (skip/complete/×) the panel becomes reachable. Tab visibility during the banner is already covered by first-run-welcome.css hiding `#nav-dots` wholesale.
 4. **updateNavDots generalization** already handled by carousel (Phase 0); verify aria-selected/tab semantics with 3 tabs.
 5. **A11y pass**: keyboard nav across 3 panels, announceViewChange strings, inert correctness, reduced-motion (transitions already tokenized).
 
