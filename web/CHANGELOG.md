@@ -1,3 +1,12 @@
+## [2.285] - 2026-07-09
+- docs(future-work): mark boot audit M3 fixed
+- fix(menu): stop main-menu document listener leak + focus steal (audit M3)
+- fix(onboarding): stop base .cycle-demo text rule clobbering per-element font sizes
+- docs(future-work): mark boot audit M2 fixed
+- fix(themes): sweep lens labels into boot-injected modals (audit M2)
+- docs(future-work): add fix designs for remaining boot audit items
+
+
 ## [2.284] - 2026-07-08
 - docs(future-work): mark boot audit retry-machinery findings fixed
 - fix(boot): make retry teardown actually work — shared registries + generation guard
