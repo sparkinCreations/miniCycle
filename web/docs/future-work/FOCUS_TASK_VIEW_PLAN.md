@@ -23,9 +23,9 @@
 
 | # | Decision | Recommendation |
 |---|----------|----------------|
-| D1 | **Tab name** | "Now" (short, fits the pill; alternatives: "Step", "One"). CSS `content` string like the others. |
+| D1 | **Tab name** | ✅ DECIDED (July 9, 2026): **"Task"** — pill reads "Task \| Routine \| Stats" (zoom-out progression: one step → whole routine → numbers). "Focus" rejected: recursive inside Focus View. "Task" maps to lens-sensitive `noun.task` if tab labels are ever themed. NOTE: internal names stay `focusTaskPanel` / `#focus-task-panel` — the routine-list panel is already `#task-view` in the DOM, so a second `task-*` element would be a code-naming minefield (display label ≠ internal name, same as `#task-view` being labeled "Routine"). |
 | D2 | **Which task shows** | First incomplete task in list order. Prev/next controls override temporarily; override resets on routine switch / cycle reset / panel leave. |
-| D3 | **Skip affordance** | Explicit ‹ › prev/next buttons on the card (horizontal swipe is taken by panel nav; vertical swipe deferred to a later phase). Skipping never completes. |
+| D3 | **Skip affordance** | ✅ DECIDED (July 9, 2026): explicit ‹ › prev/next buttons on the card (horizontal swipe is taken by panel nav; vertical swipe deferred to a later phase). Skipping never completes. |
 | D4 | **Completed tasks** | Prev/next can browse ALL tasks (completed ones render checked/dimmed) so out-of-order workflows (e.g. "Ran CMM or N/A") can review; auto-advance only targets incomplete ones. |
 | D5 | **All-done state** | Card shows "all done" state + the cycle action (mirrors mode: Complete Cycle / Clear Completed). In auto-cycle the reset happens on last completion anyway — celebration plays, panel re-renders to task 1. |
 | D6 | **Default panel entering focus mode** | Keep current behavior (whatever panel was active); do NOT auto-jump to the one-task panel. Revisit after usage. |
@@ -72,7 +72,7 @@ Goal: binary → indexed, with zero behavior change. Ship-safe on its own.
 ### Phase 2 — Wire into focus view
 
 1. **Third dot** in `#nav-dots` (aria-controls="focus-task-panel", visually-hidden text). Hidden outside focus mode: `body:not(.focus-mode) .dot[aria-controls="focus-task-panel"] { display:none }`.
-2. **focus-mode.css**: `content: "Now"` ::before; rework the "|" separator (two separators for three tabs — move separators to dedicated rules instead of Routine-only ::after; the padding-balancing hacks noted at :599 need re-doing for 3 tabs).
+2. **focus-mode.css**: `content: "Task"` ::before; rework the "|" separator (two separators for three tabs — move separators to dedicated rules instead of Routine-only ::after; the padding-balancing hacks noted at :599 need re-doing for 3 tabs).
 3. **Gating**: `focusMode.activate()` → `carousel.setPanelEnabled('focus-task-panel', true)`; `deactivate()` → disable + `goTo('task-view')` if it was active (D7). Panel registered at index 0 always, enabled only in focus mode.
 4. **updateNavDots generalization** already handled by carousel (Phase 0); verify aria-selected/tab semantics with 3 tabs.
 5. **A11y pass**: keyboard nav across 3 panels, announceViewChange strings, inert correctness, reduced-motion (transitions already tokenized).
