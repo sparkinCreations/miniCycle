@@ -45,9 +45,20 @@ The always-visible cycle/clear action is NOT a new button on the card — focus 
 
 ## Phases
 
-### Phase 0 — Generalize the carousel (no visible change)
+### Phase 0 — Generalize the carousel (no visible change) — ✅ DONE July 10, 2026
 
 Goal: binary → indexed, with zero behavior change. Ship-safe on its own.
+
+**As built (deviations from the sketch below, with rationale):**
+- `panelCarousel.js` is a **Pattern-2 pure-utility class** (no DI framework, no manifest entry, zero module-level state) constructed and OWNED by statsPanel — not a manifest module. Rationale: eliminates the entire silent-undefined DI failure class for the carousel itself, and a `?v=`-split second instance of a stateless class is harmless. External consumers reach it through statsPanel's DI surface (`navigatePanels` in provides; Phase 2 adds gating wrappers as needed).
+- gesturePanelManager routes ALL five input modalities through `_navigate(direction)` → optional `onNavigate` dep (depMappings → `statsPanelManager.navigatePanels`). Contract: `{id,index}` on move, `null` on clamp, **`undefined` = wiring dead → legacy binary fallback** (defense against the truthy-closure trap). Gestures are only consumed when a move happened, so clamped swipes keep tracking (matches old guarded behavior).
+- Keyboard toasts keyed by landed panel id (`ARROW_TOAST_BY_PANEL` / `QUICK_TOGGLE_TOAST_BY_PANEL`); unknown panels don't toast. Shift+Tab = `navigate(+1) || navigate(-1)` (exact old toggle with 2 panels; switch to carousel `cycleNext()` in Phase 2 if a true wrap is wanted).
+- `initTo()` writes ONLY inert + dot state at boot (no SHOW/HIDE classes — boot markup owns first paint; verified by the "no premature classes" live check).
+- Dots now also sync `aria-selected` (small a11y improvement; previously static).
+- `.hide-left`/`.hide-right` CSS **deferred to Phase 2** — with two panels the directions coincide with the existing `.hide` rules, so adding them now would be dead code. The carousel's `isEnabled` dynamic-gate hook (D8 groundwork) IS in.
+- statsPanel shrank: switch logic → carousel; panel-specific side effects live in `_onTaskViewShown()`/`_onStatsPanelShown()` callbacks.
+
+**Verified:** 12/12 new panelCarousel tests + statsPanel 24, gesturePanelManager 33, focusMode 40, quickActionsManager 9, diWiring 6, moduleLoader 17, moduleManifests 27, integration 11, uiBoot 13 — all green. Live parity: 22/22 checks in a fresh Playwright context (initial state, keyboard both directions + clamps, dot clicks, 500px mouse drags both directions, Shift+Tab toggle, navigatePanels contract). Two pre-existing gates confirmed unchanged: mouse/touch (not keyboard-arrow) paths are blocked while `isOverlayActive()` (onboarding modal etc.), and `MOUSE_DRAG_THRESHOLD` is 400px.
 
 1. **New module `modules/ui/panelCarousel.js`** (diBase; manifest entry, api `ui`). Owns an ordered panel registry:
    ```js
