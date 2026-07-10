@@ -251,7 +251,7 @@ export const MODULE_MANIFESTS = {
         phase: PHASES.TASK_MANAGEMENT,
         requires: ['showNotification', 'AppState', 'appInit', 'getModal'],
         optionalDeps: ['historyManager', 'clearedTasksManager', 'achievementsManager', 'gesturePanelManager', 'vocabThemeManager', 'hideMainMenu', 'isDraggingNotification', 'isOverlayActive', 'setupDarkModeToggle', 'trackAction', 'updateThemeColor', 'showStatsTourNotification'],
-        provides: ['showStatsPanel', 'showTaskView', 'updateStatsPanel', 'openHistoryModal', 'openClearedTasksModal', 'openAchievementsModal'],
+        provides: ['showStatsPanel', 'showTaskView', 'navigatePanels', 'updateStatsPanel', 'openHistoryModal', 'openClearedTasksModal', 'openAchievementsModal'],
         provideInstance: 'statsPanelManager',
         api: 'ui'
     },
@@ -529,7 +529,7 @@ export const MODULE_MANIFESTS = {
         path: '../ui/gesturePanelManager.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['safeAddEventListener', 'showNotification'],
-        optionalDeps: ['isOverlayActive', 'isDraggingNotification', 'onShowStatsPanel', 'onShowTaskView'],
+        optionalDeps: ['isOverlayActive', 'isDraggingNotification', 'onNavigate', 'onShowStatsPanel', 'onShowTaskView'],
         provides: [],
         provideInstance: 'gesturePanelManager',
         api: 'ui',

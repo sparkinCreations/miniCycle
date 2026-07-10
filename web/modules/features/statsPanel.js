@@ -26,6 +26,10 @@ import { createDIModule, optional } from '../core/diBase.js';
 import { GESTURE, UI_TIMEOUTS, CHART, INTERVALS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION } from '../core/constants.js';
 import { getLabel, getIcon } from '../labels/labelResolver.js';
 import { recordActionUsage } from '../ui/actionUsage.js';
+// Pure utility class (no side effects/module state) — safe static import.
+// Owns the ordered panel registry; statsPanel registers its panels into it.
+// See docs/future-work/FOCUS_TASK_VIEW_PLAN.md Phase 0.
+import { PanelCarousel } from '../ui/panelCarousel.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -138,6 +142,10 @@ export class StatsPanelManager {
 
         // ✅ Cache DOM elements synchronously (needed for tests)
         this.cacheElements();
+
+        // ✅ Build the panel carousel from the cached elements (synchronous,
+        // like cacheElements — tests construct instances directly)
+        this._setupCarousel();
 
         // ✅ Start async initialization (waits for core)
         this.init();
@@ -771,23 +779,35 @@ export class StatsPanelManager {
     /**
      * Show the task view and hide stats panel
      */
-    showTaskView() {
-        if (!this.elements.statsPanel || !this.elements.taskView) {
-            console.warn('⚠️ Cannot switch to task view - missing required elements');
-            return;
-        }
+    /**
+     * Build the panel carousel from cached elements. Panel order here IS the
+     * swipe order (index 0 = leftmost). Generic switching (SHOW/HIDE classes,
+     * inert, nav-dot state) lives in PanelCarousel; the onShow callbacks below
+     * carry the panel-specific side effects that used to live inline in
+     * showTaskView()/showStatsPanel().
+     */
+    _setupCarousel() {
+        this.carousel = null;
+        const { taskView, statsPanel } = this.elements;
+        if (!taskView || !statsPanel) return; // show* methods warn, as before
 
-        // Update panels
-        this.elements.statsPanel.classList.add(DOM_CLASSES.HIDE);
-        this.elements.statsPanel.classList.remove(DOM_CLASSES.SHOW);
-        this.elements.taskView.classList.add(DOM_CLASSES.SHOW);
-        this.elements.taskView.classList.remove(DOM_CLASSES.HIDE);
+        this.carousel = new PanelCarousel();
+        this.carousel.register({
+            id: 'task-view',
+            element: taskView,
+            dot: this.elements.dots?.[0] || null,
+            onShow: () => this._onTaskViewShown()
+        });
+        this.carousel.register({
+            id: 'stats-panel',
+            element: statsPanel,
+            dot: this.elements.dots?.[1] || null,
+            onShow: () => this._onStatsPanelShown()
+        });
+    }
 
-        // Remove hidden panel from tab order / screen readers
-        this.elements.statsPanel.inert = true;
-        this.elements.taskView.inert = false;
-
-        // Update slide indicators + tabindex
+    /** Panel-specific side effects when the task view becomes active. */
+    _onTaskViewShown() {
         if (this.elements.slideRight) {
             this.elements.slideRight.classList.add(DOM_CLASSES.SHOW);
             this.elements.slideRight.classList.remove(DOM_CLASSES.HIDE);
@@ -802,29 +822,10 @@ export class StatsPanelManager {
         this.state.isStatsVisible = false;
         this._syncGestureManager(false);
         this.announceViewChange(getLabel('accessibility.taskViewOpened'));
-        this.updateNavDots();
     }
 
-       /**
-     * Show the stats panel and hide task view
-     */
-    showStatsPanel() {
-        if (!this.elements.statsPanel || !this.elements.taskView) {
-            console.warn('⚠️ Cannot switch to stats panel - missing required elements');
-            return;
-        }
-
-        // Update panels
-        this.elements.statsPanel.classList.add(DOM_CLASSES.SHOW);
-        this.elements.statsPanel.classList.remove(DOM_CLASSES.HIDE);
-        this.elements.taskView.classList.add(DOM_CLASSES.HIDE);
-        this.elements.taskView.classList.remove(DOM_CLASSES.SHOW);
-
-        // Remove hidden panel from tab order / screen readers
-        this.elements.statsPanel.inert = false;
-        this.elements.taskView.inert = true;
-
-        // Update slide indicators + tabindex
+    /** Panel-specific side effects when the stats panel becomes active. */
+    _onStatsPanelShown() {
         if (this.elements.slideRight) {
             this.elements.slideRight.classList.add(DOM_CLASSES.HIDE);
             this.elements.slideRight.classList.remove(DOM_CLASSES.SHOW);
@@ -839,7 +840,6 @@ export class StatsPanelManager {
         this.state.isStatsVisible = true;
         this._syncGestureManager(true);
         this.announceViewChange(getLabel('accessibility.statsPanelOpened'));
-        this.updateNavDots();
         this._maybeShowStatsTour();
 
         // After the panel becomes visible, check whether the first-run
@@ -848,6 +848,38 @@ export class StatsPanelManager {
         // (its own shift, computed independently of task-view's because
         // the panel sits at a different natural position).
         requestAnimationFrame(() => this._measureWelcomeBannerOverlapForStats());
+    }
+
+    showTaskView() {
+        if (!this.carousel) {
+            console.warn('⚠️ Cannot switch to task view - missing required elements');
+            return;
+        }
+        this.carousel.goTo('task-view');
+    }
+
+    /**
+     * Show the stats panel and hide task view
+     */
+    showStatsPanel() {
+        if (!this.carousel) {
+            console.warn('⚠️ Cannot switch to stats panel - missing required elements');
+            return;
+        }
+        this.carousel.goTo('stats-panel');
+    }
+
+    /**
+     * Move the panel carousel by direction (+1 next / -1 previous).
+     * Public DI surface for gesturePanelManager's onNavigate wiring.
+     * @param {number} direction
+     * @returns {{id:string, index:number}|null|undefined} New panel, null when
+     *          clamped, or undefined when the carousel isn't available (lets
+     *          the gesture manager fall back to its legacy binary path).
+     */
+    navigatePanels(direction) {
+        if (!this.carousel) return undefined;
+        return this.carousel.navigate(direction);
     }
 
     /**
@@ -922,8 +954,13 @@ export class StatsPanelManager {
      * Initialize the view state
      */
     initView() {
-        // Start with task view visible, stats panel hidden from tab order
-        if (this.elements.statsPanel) {
+        // Start with task view visible, stats panel hidden from tab order.
+        // initTo() writes ONLY inert + dot state (no SHOW/HIDE classes, no
+        // callbacks) — boot markup already renders the initial view, and
+        // writing classes here would change first-paint CSS selector matches.
+        if (this.carousel) {
+            this.carousel.initTo('task-view');
+        } else if (this.elements.statsPanel) {
             this.elements.statsPanel.inert = true;
         }
         if (this.elements.slideLeft) {
@@ -1160,16 +1197,14 @@ export class StatsPanelManager {
      * Update navigation dots
      */
     updateNavDots() {
+        if (this.carousel) {
+            this.carousel.refreshDots();
+            return;
+        }
+        // Legacy fallback (elements missing at construction)
         const statsVisible = this.elements.statsPanel?.classList.contains(DOM_CLASSES.SHOW);
-
         this.elements.dots.forEach((dot, index) => {
-            if (index === 0) {
-                // Task view dot
-                dot.classList.toggle(DOM_CLASSES.ACTIVE, !statsVisible);
-            } else if (index === 1) {
-                // Stats panel dot
-                dot.classList.toggle(DOM_CLASSES.ACTIVE, statsVisible);
-            }
+            dot.classList.toggle(DOM_CLASSES.ACTIVE, index === 0 ? !statsVisible : statsVisible);
         });
     }
 
@@ -1177,22 +1212,15 @@ export class StatsPanelManager {
      * Handle navigation dot clicks (legacy - kept for potential direct calls)
      */
     handleDotClick(index) {
-        if (index === 0) {
-            this.showTaskView();
-        } else if (index === 1) {
-            this.showStatsPanel();
-        }
+        this.carousel?.goTo(index);
     }
 
     /**
-     * Handle navigation pill container click - toggles between views
+     * Handle navigation pill container click — advances to the next panel,
+     * wrapping at the end (with two panels this is exactly the old toggle).
      */
     handleNavPillClick() {
-        if (this.state.isStatsVisible) {
-            this.showTaskView();
-        } else {
-            this.showStatsPanel();
-        }
+        this.carousel?.cycleNext();
     }
 
     // NOTE: Badge UI methods (initBadgeTooltips, showBadgeDetail, hideBadgeDetail, updateBadges)
@@ -1738,6 +1766,10 @@ export class StatsPanelManager {
      * Cleanup event listeners
      */
     destroy() {
+
+        // Release the panel carousel (no listeners of its own — registry only)
+        this.carousel?.destroy();
+        this.carousel = null;
 
         // Remove feature button listeners
         if (this._historyClickHandler && this.elements.historyBtn) {

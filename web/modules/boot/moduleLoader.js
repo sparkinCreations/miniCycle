@@ -1407,6 +1407,12 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         showTaskView: (...args) => deps.ui?.statsPanelManager?.showTaskView?.(...args),
 
         // Gesture panel callbacks (for gesturePanelManager to call when gestures detected)
+        // onNavigate: indexed carousel navigation — returns {id,index} on move,
+        // null on clamp, undefined when statsPanel/carousel is unavailable
+        // (gesturePanelManager treats undefined as "fall back to the legacy
+        // binary path below"). Do NOT append ?.() semantics that would turn a
+        // missing method into undefined-silently-meaning-clamped.
+        onNavigate: (direction) => deps.ui?.statsPanelManager?.navigatePanels?.(direction),
         onShowStatsPanel: () => deps.ui?.statsPanelManager?.showStatsPanel?.(),
         onShowTaskView: () => deps.ui?.statsPanelManager?.showTaskView?.(),
 
