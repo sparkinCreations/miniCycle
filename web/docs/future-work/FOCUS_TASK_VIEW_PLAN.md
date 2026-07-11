@@ -78,7 +78,16 @@ Goal: binary → indexed, with zero behavior change. Ship-safe on its own.
 
 **Verify Phase 0:** normal + focus mode swipe/click/keyboard behave identically to today, on a NEVER-LOADED origin (SW/memory-cache trap).
 
-### Phase 1 — The one-task panel module
+### Phase 1 — The one-task panel module — ✅ DONE July 11, 2026
+
+**As built:**
+- `modules/ui/focusTaskPanel.js` (diBase; singleton via `initFocusTaskPanel`, idempotent re-init after `destroy()`). Manifest entry is **`deferred: true` + `optional: true`** — loaded on demand via `ensureModuleLoaded('focusTaskPanel')` (the exact call Phase 2's `focusMode.activate()` will make), keeping it off the boot path per the load-perf work.
+- **Completion = list parity**: `enableUndoSystemOnFirstInteraction?.()` → flip the REAL list checkbox → `dispatchEvent('change')` → `checkMiniCycle({lastToggledElement})` — the byte-identical trio from taskEvents.js's task-tap handler, so undo/progress/achievements/auto-cycle all ride the existing path. Browsing a completed task (D4) renders dimmed + the button unchecks.
+- D2 override (`_overrideTaskId`) clears on: complete, routine switch, cycle reset, task-gone; `clearOverride()` is public for Phase 2's onHide hook. ‹ › clamp with disabled states.
+- D5: `_onStateChange` detects cycleCount bump → card celebration (`UI_TIMEOUTS.FOCUS_TASK_CELEBRATION`, 2000ms) only while the panel has `.show`, then renders task 1; hidden panel re-renders silently. Mode-aware all-done hints (`deleteCheckedTasks`→todo / `autoReset`→auto / else manual, same resolution as routineSwitcher).
+- Static markup in miniCycle.html beside `#task-view`; `focus-task-panel.css` (token-based, base hidden off-LEFT mirroring stats-panel's off-right, `--focus-task-priority` accent var). 10 `focusTask.*` label keys (5 lens-sensitive, noun-bearing). 14 new DOM_IDS.
+
+**Verified:** 12/12 unit tests (selection, list-parity completion incl. checkMiniCycle/undo hooks, browse+clamp, override reset, celebration visible/hidden paths, priority var, destroy/re-init) + labelResolver/defaultLabels/moduleManifests/constants suites green. Live end-to-end (fresh Playwright context): 15/15 — deferred at boot, hidden/inert, `ensureModuleLoaded` initializes into the shared registry with zero DI-gap warnings, renders the real routine's task 1 ("1 of 3"), card completion flips the real list checkbox and auto-advances to "2 of 3", carousel correctly can't reach it yet. Also fixed a pre-existing `security/detect-unsafe-regex` lint error in constants.js (LAN-IP regex unnested, same semantics).
 
 1. **Static HTML**: `#focus-task-panel` section next to `#task-view` (in miniCycle.html — a main-screen panel, NOT modalTemplates). New `DOM_IDS`/`DOM_SELECTORS` entries.
 2. **New module `modules/ui/focusTaskPanel.js`** (diBase; deps: AppState required, task-completion fn, safeAddEventListener, getLabel via import, vocabThemeManager optional). Renders the current task card:
