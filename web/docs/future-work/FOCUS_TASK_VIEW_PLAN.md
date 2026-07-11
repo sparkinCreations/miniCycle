@@ -1,7 +1,7 @@
 # Focus Task View ("one task at a time") — Implementation Plan
 
 **Date:** July 9, 2026
-**Status:** Planned — awaiting design-decision sign-off
+**Status:** ✅ SHIPPED-READY (July 11, 2026) — Phases 0–2 complete + returning-user restore fix; unreleased pending version bump. Phase 3 (polish) remains optional/open.
 **Idea:** In focus view, add a third swipeable panel BEFORE Routine that shows a single task at a time — the routine's "current step." Swipe order becomes: **[One-task] ↔ [Routine] ↔ [Stats]**, with the one-task panel available ONLY in focus mode.
 
 **Why it fits:** miniCycle routines are often sequential work processes (e.g. the inspection checklist: job number → part number → serial → CMM…). The list is the *management* view; one-at-a-time is the *execution* view. Completing the final card and watching the cycle complete is a stronger gamification payoff than checking a list box.
