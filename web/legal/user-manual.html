@@ -55,9 +55,12 @@
             <h2>Navigation & Interface</h2>
             <h3>Main Views</h3>
             <img src="../assets/images/screenshots/Example/user-manual/v3/stats-panel.jpg" alt="The Stats panel showing Current Routine with Cleaning at 0% progress, 3 cycles completed, History button, Milestone Rewards section, and Achievement Badges row with all 5 badges unlocked." width="280" loading="lazy" style="display: block; margin: 1rem auto;">
+            <p>miniCycle has two ways of looking at the same routine. <strong>Home View</strong> (the default) shows everything — header, menus, input bar, and footer — and is best for setting up and managing routines. <strong>Focus View</strong> hides that chrome for a distraction-free screen and is best for working through a routine (see <a href="#advanced-features">Focus View</a>). Your tasks and progress are identical in both.</p>
+            <p>Each view contains swipeable panels:</p>
             <ul>
                 <li><strong>Task View:</strong> Your main task list and controls</li>
                 <li><strong>Stats Panel:</strong> Analytics, milestones, and performance tracking (shown above)</li>
+                <li><strong>Task card (Focus View only):</strong> One task at a time — the pill switcher in Focus View reads <strong>Task | Routine | Stats</strong></li>
             </ul>
 
             <h3>Navigation Dots</h3>
@@ -387,9 +390,17 @@
 
         <div class="section" id="advanced-features">
             <h2>Advanced Features</h2>
-            <h3>Focus Mode</h3>
-            <img src="../assets/images/screenshots/Example/user-manual/v3/focus-mode.jpg" alt="Focus Mode activated showing a simplified task list with no header, footer, or navigation chrome. Four of five tasks completed, with the compress button visible in the bottom-right corner." width="280" loading="lazy" style="display: block; margin: 1rem auto;">
-            <p>Focus Mode provides a distraction-free view for completing tasks. Tap the expand icon in the top-right corner of the task view to activate it. The header, footer, navigation, and help window fade away, leaving only your task list and progress bar. Exit Focus Mode by pressing Escape or tapping the compress icon. Your Focus Mode preference is saved and persists across sessions.</p>
+            <h3>Focus View</h3>
+            <img src="../assets/images/screenshots/Example/user-manual/v3/focus-mode.jpg" alt="Focus View activated showing a simplified task list with no header, footer, or navigation chrome. Four of five tasks completed, with the action button visible in the bottom-right corner." width="280" loading="lazy" style="display: block; margin: 1rem auto;">
+            <p>Focus View provides a distraction-free way to work through a routine. Tap the Focus View button beside the progress bar (or use the menu) to activate it. The header, footer, navigation, and help window fade away, leaving only your routine on a clean backdrop. Exit with the ✕ in the top-left corner or by pressing Escape. Your view preference is saved and persists across sessions.</p>
+            <p>While in Focus View:</p>
+            <ul>
+                <li><strong>Floating action button (bottom-right):</strong> honors your routine's mode — <strong>Cycle</strong> in Auto/Manual Cycle mode, <strong>Clear</strong> in To-Do Mode.</li>
+                <li><strong>⋯ menu (top-right):</strong> quick actions like switching or creating routines without leaving Focus View.</li>
+                <li><strong>Panel switcher (bottom):</strong> the pills read <strong>Task | Routine | Stats</strong> — swipe, tap a pill, or use Shift+Arrow keys to move between panels.</li>
+            </ul>
+            <h3>Task Card (One Task at a Time)</h3>
+            <p>Focus View's <strong>Task</strong> panel shows only your current step — the first unchecked task in your routine — on a single card with a <strong>"3 of 10"</strong> position indicator. Tap <strong>Complete task</strong> to check it off exactly as if you tapped it in the list (progress, achievements, and undo all count normally); the card automatically advances to the next unchecked task. Use the <strong>‹ ›</strong> buttons to peek at other tasks, including completed ones (shown dimmed, where the button flips to <strong>Mark incomplete</strong>). In Auto Cycle mode, completing the last task plays a short <em>Cycle complete!</em> celebration and starts you back at task 1. The Task tab appears after you finish or skip the first-run introduction.</p>
 
             <h3>Undo/Redo</h3>
             <p>Made a mistake? Use the undo button to reverse recent actions, or use <strong>Ctrl+Z</strong> / <strong>Cmd+Z</strong> on your keyboard. Redo with <strong>Ctrl+Y</strong> / <strong>Cmd+Y</strong>. Your undo history is preserved per routine.</p>
