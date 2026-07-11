@@ -1,0 +1,178 @@
+/* =============================================================================
+   FOCUS TASK PANEL (one task at a time — FOCUS_TASK_VIEW_PLAN Phase 1)
+
+   Carousel panel at index 0, left of #task-view. Base state is hidden
+   off-screen LEFT (mirror of #stats-panel's off-right base); .show centers it.
+   Only reachable inside focus view once Phase 2 registers it — but the
+   states are defined now so the module is fully testable.
+   ============================================================================= */
+
+#focus-task-panel {
+    position: fixed;
+    left: 50%;
+    top: 47%;
+    width: min(440px, 92vw);
+    transform: translateX(-250%) translateY(-50%);
+    opacity: 0;
+    pointer-events: none;
+    z-index: var(--z-content); /* same layer as #task-view / #stats-panel */
+    transition: transform var(--transition-normal) ease, opacity var(--transition-normal) ease;
+}
+
+#focus-task-panel.show {
+    transform: translateX(-50%) translateY(-50%);
+    opacity: 1;
+    pointer-events: all;
+}
+
+#focus-task-panel.hide {
+    transform: translateX(-250%) translateY(-50%);
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* ─── Card ─── */
+
+.focus-task-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-6) var(--space-5);
+    background: var(--pref-task-bg, var(--theme-card-bg, var(--color-white)));
+    color: var(--pref-task-text, var(--theme-text-on-surface));
+    border: 1px solid var(--theme-card-border, transparent);
+    /* High-priority accent — set by JS as --focus-task-priority when the
+       current task is flagged; falls back to transparent (no accent). */
+    border-left: 4px solid var(--focus-task-priority, transparent);
+    border-radius: var(--radius-2xl);
+    box-shadow: var(--shadow-lg);
+    text-align: center;
+}
+
+.focus-task-position {
+    font-size: var(--font-size-xs);
+    opacity: 0.65;
+    letter-spacing: 0.04em;
+}
+
+.focus-task-text {
+    font-size: var(--font-size-xl);
+    font-weight: 600;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+
+/* Browsing an already-completed task via prev/next (plan D4) */
+.focus-task-card.focus-task-completed .focus-task-text {
+    opacity: 0.55;
+    text-decoration: line-through;
+}
+
+.focus-task-indicators {
+    display: flex;
+    gap: var(--space-2);
+    font-size: var(--font-size-sm);
+    min-height: 1.2em;
+}
+
+.focus-task-indicator.hidden {
+    display: none;
+}
+
+/* ─── Actions ─── */
+
+.focus-task-complete-btn {
+    padding: var(--space-3) var(--space-6);
+    font-size: var(--font-size-md);
+    font-weight: 600;
+    font-family: inherit;
+    color: var(--color-white);
+    background: var(--theme-button-primary-bg, var(--color-primary));
+    border: none;
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    transition: filter var(--transition-fast) ease, transform var(--transition-fast) ease;
+}
+
+.focus-task-complete-btn:hover,
+.focus-task-complete-btn:focus-visible {
+    filter: brightness(1.08);
+}
+
+.focus-task-complete-btn:active {
+    transform: scale(0.97);
+}
+
+.focus-task-nav {
+    display: flex;
+    gap: var(--space-6);
+}
+
+.focus-task-nav-btn {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-size-lg);
+    font-family: inherit;
+    color: inherit;
+    background: transparent;
+    border: 1px solid var(--theme-card-border, currentColor);
+    border-radius: var(--radius-full);
+    opacity: 0.6;
+    cursor: pointer;
+    transition: opacity var(--transition-fast) ease;
+}
+
+.focus-task-nav-btn:hover,
+.focus-task-nav-btn:focus-visible {
+    opacity: 1;
+}
+
+.focus-task-nav-btn:disabled {
+    opacity: 0.2;
+    cursor: default;
+}
+
+/* ─── All-done + celebration states (JS toggles .hidden) ─── */
+
+.focus-task-alldone,
+.focus-task-celebration {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.focus-task-alldone.hidden,
+.focus-task-celebration.hidden {
+    display: none;
+}
+
+.focus-task-alldone-text,
+.focus-task-celebration-text {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+}
+
+.focus-task-alldone-hint {
+    font-size: var(--font-size-sm);
+    opacity: 0.7;
+}
+
+/* When the card is in all-done or celebration state, the task-facing controls
+   are hidden by JS via .hidden on each — keep layout stable via min height. */
+.focus-task-card {
+    min-height: 220px;
+    justify-content: center;
+}
+
+/* Focus mode hides the fixed header — nudge the card up slightly on small
+   screens, matching the stats panel's focus-mode adjustment. */
+@media (max-width: 768px) {
+    body.focus-mode #focus-task-panel {
+        top: 51%;
+    }
+}

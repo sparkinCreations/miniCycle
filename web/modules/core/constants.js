@@ -121,6 +121,7 @@ export const UI_TIMEOUTS = Object.freeze({
     NOTIFICATION_OVERLAY: 10000,   // 10000ms - Overlay/celebration auto-dismiss
     NOTIFICATION_RESUME_MIN: 1000, // 1000ms - Minimum time after hover/interaction before auto-dismiss
     CELEBRATION_DELAY: 1800,       // 1800ms - Delay before showing celebration overlay (lets reset animation play first)
+    FOCUS_TASK_CELEBRATION: 2000,  // 2000ms - Focus task panel cycle-complete card celebration before showing task 1 (FOCUS_TASK_VIEW_PLAN D5)
     TOOLTIP_HIDE: 3000,            // 3000ms - Tooltip auto-hide delay
     FIRST_RUN_WELCOME_SLIDE_HOLD: 8000,    // 8000ms - How long each first-run welcome banner slide is visible before auto-advance
 
@@ -1122,6 +1123,20 @@ export const DOM_IDS = Object.freeze({
     QUICK_ACTIONS_PICKER_OVERLAY: 'quick-actions-picker-overlay',
     QUICK_ACTIONS_TOOLTIP: 'quick-actions-tooltip',
     QUICK_ACTIONS_BTN: 'quick-actions-btn',
+    // Focus task panel (one task at a time — FOCUS_TASK_VIEW_PLAN Phase 1)
+    FOCUS_TASK_PANEL: 'focus-task-panel',
+    FOCUS_TASK_POSITION: 'focus-task-position',
+    FOCUS_TASK_TEXT: 'focus-task-text',
+    FOCUS_TASK_RECURRING_INDICATOR: 'focus-task-recurring-indicator',
+    FOCUS_TASK_DUE_INDICATOR: 'focus-task-due-indicator',
+    FOCUS_TASK_COMPLETE_BTN: 'focus-task-complete-btn',
+    FOCUS_TASK_PREV_BTN: 'focus-task-prev-btn',
+    FOCUS_TASK_NEXT_BTN: 'focus-task-next-btn',
+    FOCUS_TASK_ALLDONE: 'focus-task-alldone',
+    FOCUS_TASK_ALLDONE_TEXT: 'focus-task-alldone-text',
+    FOCUS_TASK_ALLDONE_HINT: 'focus-task-alldone-hint',
+    FOCUS_TASK_CELEBRATION: 'focus-task-celebration',
+    FOCUS_TASK_CELEBRATION_TEXT: 'focus-task-celebration-text',
     QUICK_ACTIONS_MENU: 'quick-actions-menu',
     TOGGLE_TASK_INPUT_BTN: 'toggle-task-input-btn',
     CREATE_ROUTINE_BTN: 'create-routine-btn',
@@ -1606,7 +1621,7 @@ export function getTestOrigin() {
         return 'https://test.minicycle.app';
     }
     // localhost, 127.0.0.1, or a LAN IP (e.g. 192.168.x for phone testing)
-    if (hostname === 'localhost' || /^\d{1,3}(\.\d{1,3}){3}$/.test(hostname)) {
+    if (hostname === 'localhost' || /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(hostname)) {
         return `${protocol}//${hostname}:8081`;
     }
     return origin;

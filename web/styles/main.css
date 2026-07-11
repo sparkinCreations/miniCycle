@@ -78,6 +78,9 @@
 /* Statistics panel */
 @import url('./components/stats-panel.css?v=2.285');
 
+/* Focus task panel (one task at a time) */
+@import url('./components/focus-task-panel.css?v=2.285');
+
 /* Progress indicators */
 @import url('./components/progress-bar.css?v=2.285');
 

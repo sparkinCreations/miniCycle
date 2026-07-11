@@ -1817,6 +1817,32 @@ window.installApp = () => {
 <!-- Right Arrow — visible in task view, navigates to stats panel -->
 <div id="slide-right" class="slide-arrow" tabindex="0" role="button" aria-label="Show Statistics" title="Show Statistics">❮</div>
 
+<!-- Focus Task Panel — one task at a time (FOCUS_TASK_VIEW_PLAN Phase 1).
+     Carousel index 0 (left of #task-view); focus-view-only, gated behind
+     onboarding (D8). Hidden until Phase 2 registers it with the carousel.
+     Text content and ARIA labels are set by focusTaskPanel.js via getLabel(). -->
+<section id="focus-task-panel" class="focus-task-panel" role="region" inert>
+    <div class="focus-task-card">
+        <div id="focus-task-position" class="focus-task-position" aria-live="polite"></div>
+        <div id="focus-task-text" class="focus-task-text"></div>
+        <div class="focus-task-indicators">
+            <span id="focus-task-recurring-indicator" class="focus-task-indicator hidden" aria-hidden="true">🔁</span>
+            <span id="focus-task-due-indicator" class="focus-task-indicator hidden"></span>
+        </div>
+        <button type="button" id="focus-task-complete-btn" class="focus-task-complete-btn"></button>
+        <div class="focus-task-nav">
+            <button type="button" id="focus-task-prev-btn" class="focus-task-nav-btn"><span aria-hidden="true">‹</span></button>
+            <button type="button" id="focus-task-next-btn" class="focus-task-nav-btn"><span aria-hidden="true">›</span></button>
+        </div>
+        <div id="focus-task-alldone" class="focus-task-alldone hidden">
+            <div id="focus-task-alldone-text" class="focus-task-alldone-text"></div>
+            <div id="focus-task-alldone-hint" class="focus-task-alldone-hint"></div>
+        </div>
+        <div id="focus-task-celebration" class="focus-task-celebration hidden">
+            <div id="focus-task-celebration-text" class="focus-task-celebration-text"></div>
+        </div>
+    </div>
+</section>
 
 <div id="task-view">
     <!-- Add task input bar — sibling of #task-card-group so it can be

@@ -1416,6 +1416,21 @@ export const DEFAULT_LABELS = deepFreeze({
     //  user-facing strings say "Focus View".)
     // ========================================================================
 
+    // Focus task panel — one-task-at-a-time card inside focus view
+    // (FOCUS_TASK_VIEW_PLAN Phase 1)
+    focusTask: {
+        panelAria:        'Current task',
+        position:         '{current} of {total}',
+        completeTask:     'Complete task',
+        uncompleteTask:   'Mark incomplete',
+        prevTask:         'Previous task',
+        nextTask:         'Next task',
+        allDone:          'All tasks complete!',
+        allDoneHintCycle: 'Use the cycle button to start again',
+        allDoneHintTodo:  'Use the clear button to remove completed tasks',
+        dueLabel:         'Due {date}'
+    },
+
     focusMode: {
         enter:          'Focus View',
         enterTitle:     'Hide distractions and focus on tasks',
@@ -2426,6 +2441,13 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'taskOptions.clearOnReset',
     'taskOptions.markedForClearing',
     'taskOptions.global',
+
+    // Focus task panel (one-task-at-a-time card — noun-bearing keys themeable)
+    'focusTask.panelAria',
+    'focusTask.completeTask',
+    'focusTask.prevTask',
+    'focusTask.nextTask',
+    'focusTask.allDone',
 
     // Focus mode
     'focusMode.enter',

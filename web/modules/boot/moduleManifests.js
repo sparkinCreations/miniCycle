@@ -525,6 +525,23 @@ export const MODULE_MANIFESTS = {
         api: 'ui'
     },
 
+    focusTaskPanel: {
+        path: '../ui/focusTaskPanel.js',
+        phase: PHASES.UI_MANAGERS,
+        requires: ['appInit', 'AppState'],
+        // Completion-path companions — same trio the task-list tap uses
+        optionalDeps: ['checkMiniCycle', 'enableUndoSystemOnFirstInteraction', 'safeAddEventListener'],
+        provides: [],
+        provideInstance: 'focusTaskPanel',
+        api: 'ui',
+        optional: true,
+        // Deferred: focus-view-only panel (FOCUS_TASK_VIEW_PLAN). Loaded
+        // on-demand when focus mode activates (Phase 2 wires
+        // ensureModuleLoaded('focusTaskPanel')) — keeps it off the boot path.
+        deferred: true,
+        after: ['statsPanel']
+    },
+
     gesturePanelManager: {
         path: '../ui/gesturePanelManager.js',
         phase: PHASES.UI_MANAGERS,
