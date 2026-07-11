@@ -1,3 +1,25 @@
+## [2.286] - 2026-07-11
+- docs(manual): add Home vs Focus View and Task card to in-app user manual
+- docs: document focus task view + add Home vs Focus View to user manual
+- docs(future-work): update focus task view plan status to shipped-ready
+- docs(future-work): record returning-user restore fix
+- fix(focus-task): wire ensureModuleLoaded before module inits so restored focus sessions load the Task panel
+- docs(future-work): mark focus task view phase 2 complete
+- test(panels): directional-class coverage + fixture aria-controls parity
+- feat(focus-task): wire Task panel into focus view with themed pills (plan phase 2)
+- docs(future-work): mark focus task view phase 1 complete
+- test(focusTaskPanel): add suite and register in harness
+- feat(focus-task): add one-task-at-a-time panel module (plan phase 1)
+- docs(future-work): mark focus task view phase 0 complete
+- test(panelCarousel): add carousel suite and register in harness
+- refactor(panels): generalize task/stats switcher into indexed panel carousel
+- docs(future-work): spec mode-honoring behavior for focus task panel (D5)
+- docs(future-work): gate Task panel behind onboarding completion (D8)
+- docs(future-work): pull tab-label theming into phase 2 via attr() bridge
+- docs(future-work): lock focus task view name (Task) and prev/next decision
+- docs(future-work): plan for focus-view one-task-at-a-time panel
+
+
 ## [2.285] - 2026-07-09
 - docs(future-work): mark boot audit M3 fixed
 - fix(menu): stop main-menu document listener leak + focus steal (audit M3)

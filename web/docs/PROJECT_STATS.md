@@ -5,7 +5,7 @@
 > This file contains metrics that change frequently (version, counts, etc.).
 > All other documentation should reference this file instead of hardcoding these values.
 
-**Last Updated**: July 09, 2026
+**Last Updated**: July 11, 2026
 
 ---
 
@@ -13,15 +13,15 @@
 
 | Metric | Value |
 |--------|-------|
-| **App Version** | 2.285 |
+| **App Version** | 2.286 |
 | **Lite Version** | 2.092 (frozen) |
 | **Schema Version** | 2.5 |
-| **Total Modules** | 130 |
-| **Total Tests** | 3009 |
+| **Total Modules** | 132 |
+| **Total Tests** | 3034 |
 | **Test Pass Rate** | 100% |
-| **CSS Files** | 43 |
-| **JSDoc Blocks** | 1299 |
-| **Documentation Files** | 224 |
+| **CSS Files** | 44 |
+| **JSDoc Blocks** | 1301 |
+| **Documentation Files** | 226 |
 | **DI Completion** | 100% |
 | **Custom window.* Globals (modules)** | 0 |
 
@@ -38,7 +38,7 @@
 | `task/` | 13 | Task CRUD, DOM, events, drag-drop, validation |
 | `routine/` | 5 | Routine management, switching, migration |
 | `recurring/` | 16 | Recurring task scheduling, panel, activation |
-| `ui/` | 35 | Modals, menus, settings, onboarding, gestures |
+| `ui/` | 37 | Modals, menus, settings, onboarding, gestures |
 | `features/` | 9 | Themes, stats, achievements, history, reminders |
 | `utils/` | 18 | Notifications, device detection, utilities |
 | `labels/` | 3 | Default labels + label resolver |
@@ -46,7 +46,7 @@
 | `progress/` | 1 | Cycle completion tracking |
 | `testing/` | 9 | Test infrastructure |
 | `other/` | 3 | Plugins, experimental |
-| **Total** | **130** | |
+| **Total** | **132** | |
 
 ---
 
@@ -57,9 +57,9 @@
 | `miniCycle-main.js` | ~49 | Entrypoint |
 | `modules/boot/orchestrator.js` | ~1036 | Sequence control + boot UI + early coordination |
 | `modules/boot/coreBoot.js` | ~753 | Core state & init |
-| `modules/boot/featureBoot.js` | ~595 | DI wiring hub |
+| `modules/boot/featureBoot.js` | ~602 | DI wiring hub |
 | `modules/boot/uiBoot.js` | ~1151 | UI handlers |
-| **Total** | **~3584** | |
+| **Total** | **~3591** | |
 
 ---
 
@@ -67,8 +67,8 @@
 
 | Category | Tests |
 |----------|-------|
-| Total Tests | 3009 |
-| Test Files | 121 |
+| Total Tests | 3034 |
+| Test Files | 123 |
 | Pass Rate | 100% |
 | Platforms Tested | Mac, iPad, iPhone |
 
