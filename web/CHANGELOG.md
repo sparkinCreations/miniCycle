@@ -1,3 +1,9 @@
+## [2.288] - 2026-07-11
+- docs: phase 3 complete — swipe-to-skip in guides and manual
+- test(focusTaskPanel): cover swipe gestures and completion metric
+- feat(focus-task): phase 3 polish — vertical swipe-to-skip, themed card content, usage metric
+
+
 ## [2.287] - 2026-07-11
 - fix(errors): ignore benign ResizeObserver noise + associate bg-image upload label
 
