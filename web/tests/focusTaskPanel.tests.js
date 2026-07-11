@@ -262,6 +262,86 @@ export async function runFocusTaskPanelTests(resultsDiv) {
         } finally { host.remove(); }
     });
 
+    resultsDiv.innerHTML += '<h4 class="test-section">📱 Vertical swipe-to-skip (Phase 3)</h4>';
+
+    await test('swipe up steps to next task; swipe down steps back', async () => {
+        const host = buildPanelFixture();
+        try {
+            const { panel } = await makeManager(makeState([T('a'), T('b'), T('c')]));
+            const text = () => document.getElementById('focus-task-text').textContent;
+            const el = document.getElementById('focus-task-panel');
+            // Simulate through the real handlers with fake touch payloads
+            panel._onPanelTouchStart({ target: el, touches: [{ clientX: 100, clientY: 400 }] });
+            panel._onPanelTouchMove({ touches: [{ clientX: 102, clientY: 300 }] }); // dy=-100 → up
+            if (text() !== 'Task b') throw new Error(`Swipe up should show next task, got "${text()}"`);
+            panel._onPanelTouchStart({ target: el, touches: [{ clientX: 100, clientY: 300 }] });
+            panel._onPanelTouchMove({ touches: [{ clientX: 98, clientY: 420 }] });  // dy=+120 → down
+            if (text() !== 'Task a') throw new Error(`Swipe down should step back, got "${text()}"`);
+            panel.destroy();
+        } finally { host.remove(); }
+    });
+
+    await test('diagonal and sub-threshold moves do not skip; one step per gesture', async () => {
+        const host = buildPanelFixture();
+        try {
+            const { panel } = await makeManager(makeState([T('a'), T('b'), T('c')]));
+            const text = () => document.getElementById('focus-task-text').textContent;
+            const el = document.getElementById('focus-task-panel');
+            // Predominantly horizontal (dy 80 < dx 100 * 1.5) → no skip
+            panel._onPanelTouchStart({ target: el, touches: [{ clientX: 100, clientY: 400 }] });
+            panel._onPanelTouchMove({ touches: [{ clientX: 200, clientY: 320 }] });
+            if (text() !== 'Task a') throw new Error('Diagonal move must not skip');
+            // Sub-threshold vertical → no skip
+            panel._onPanelTouchStart({ target: el, touches: [{ clientX: 100, clientY: 400 }] });
+            panel._onPanelTouchMove({ touches: [{ clientX: 100, clientY: 360 }] });
+            if (text() !== 'Task a') throw new Error('Sub-threshold move must not skip');
+            // One step per gesture: continuing the same gesture must not double-step
+            panel._onPanelTouchStart({ target: el, touches: [{ clientX: 100, clientY: 500 }] });
+            panel._onPanelTouchMove({ touches: [{ clientX: 100, clientY: 400 }] });
+            panel._onPanelTouchMove({ touches: [{ clientX: 100, clientY: 250 }] });
+            if (text() !== 'Task b') throw new Error('A single gesture must step exactly once');
+            panel.destroy();
+        } finally { host.remove(); }
+    });
+
+    await test('swipes starting on buttons are ignored', async () => {
+        const host = buildPanelFixture();
+        try {
+            const { panel } = await makeManager(makeState([T('a'), T('b')]));
+            const btn = document.getElementById('focus-task-complete-btn');
+            panel._onPanelTouchStart({ target: btn, touches: [{ clientX: 100, clientY: 400 }] });
+            panel._onPanelTouchMove({ touches: [{ clientX: 100, clientY: 250 }] });
+            if (document.getElementById('focus-task-text').textContent !== 'Task a') {
+                throw new Error('Swipe starting on a button must not skip');
+            }
+            panel.destroy();
+        } finally { host.remove(); }
+    });
+
+    resultsDiv.innerHTML += '<h4 class="test-section">📊 Usage metric (Phase 3)</h4>';
+
+    await test('card completion increments userProgress.focusTaskCompletions; uncheck does not', async () => {
+        const host = buildPanelFixture();
+        try {
+            addListTask(host, 'a');
+            const { panel, AppState } = await makeManager(makeState([T('a'), T('b')]));
+            document.getElementById('focus-task-complete-btn').click();
+            if (AppState.get().userProgress?.focusTaskCompletions !== 1) {
+                throw new Error('Completion through the card should count');
+            }
+            // Browse back to the (now checked in DOM) task and uncheck it —
+            // simulate state agreement first
+            AppState.get().data.cycles.r1.tasks[0].completed = true;
+            panel.render();
+            document.getElementById('focus-task-prev-btn').click();
+            document.getElementById('focus-task-complete-btn').click(); // uncheck path
+            if (AppState.get().userProgress?.focusTaskCompletions !== 1) {
+                throw new Error('Unchecking must not increment the completion metric');
+            }
+            panel.destroy();
+        } finally { host.remove(); }
+    });
+
     resultsDiv.innerHTML += '<h4 class="test-section">🧹 Lifecycle</h4>';
 
     await test('priority accent variable set for high-priority task, removed otherwise', async () => {
