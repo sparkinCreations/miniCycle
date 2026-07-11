@@ -292,6 +292,16 @@ Create tasks that automatically appear on a schedule.
 | Help Window | Mode-aware in-app help and documentation | `ui/helpWindowManager.js` |
 | Reset Achievement Progress | Reset global achievements (keeps routine stats) | `ui/settingsUIManager.js` |
 
+### Focus View
+| Feature | Description | Module |
+|---------|-------------|--------|
+| Focus View | Distraction-free view hiding header/menus/footer; persists across sessions | `ui/focusMode.js` |
+| Focus Action Button | Floating mode-aware button (Cycle / Clear) in the bottom-right corner | `ui/focusMode.js` |
+| Focus Quick Menu | ⋯ menu for routine actions (switch/create) without leaving Focus View | `ui/focusMode.js` |
+| Task View (One at a Time) | Focus-only panel showing the current step: complete button, "N of M" position, ‹ › browse (incl. dimmed completed tasks), mode-aware cycle-complete celebration | `ui/focusTaskPanel.js` |
+| Panel Switcher | Task \| Routine \| Stats carousel — swipe, tap a pill, or Shift+Arrow keys; Task tab gated until onboarding completes | `ui/panelCarousel.js` |
+| Themed Tab Labels | Pill tab names resolve through the vocabulary theme system (e.g. "Habit \| Routine \| Stats") | `features/themeManager.js` |
+
 ### Theme System
 | Feature | Description | Module |
 |---------|-------------|--------|
@@ -515,14 +525,14 @@ A **static, frozen fallback** for older devices (ES5 compatible).
 | Progress & Gamification | 23 |
 | Statistics | 7 |
 | Data Management | 12 |
-| User Interface | 22 |
+| User Interface | 28 |
 | Personalization | 14 |
 | Undo/Redo | 5 |
 | Mobile & PWA | 8 |
 | Privacy & Security | 7 |
 | Accessibility | 5 |
 | Developer Features | 8 |
-| **Total** | **~156 features** |
+| **Total** | **~162 features** |
 
 ---
 

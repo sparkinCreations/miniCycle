@@ -17,6 +17,7 @@
 - [Creating Your First Cycle](#creating-your-first-cycle)
 - [Working with Tasks](#working-with-tasks)
 - [Understanding Modes](#understanding-modes)
+- [Views: Home & Focus](#views-home--focus)
 - [Recurring Tasks](#recurring-tasks)
 - [Organizing Tasks](#organizing-tasks)
 - [Customization](#customization)
@@ -322,6 +323,53 @@ miniCycle has **three operational modes** to match different workflows. **Mode c
 1. Menu → **Settings**
 2. Find your cycle's settings
 3. Toggle **"To-Do Mode"**
+
+---
+
+## Views: Home & Focus
+
+miniCycle has two ways of looking at the same routine. **Modes** (above) change how your routine *behaves*; **views** change what you *see*. Your data is identical in both.
+
+### Home View (the default)
+
+Everything is on screen: the header, the main menu button, the add-task input, the routine card with your full task list, the progress bar, and the footer. This is where you **manage** a routine — add and reorder tasks, open menus and settings, switch routines.
+
+- Swipe (or use the navigation dots) to flip between the **task list** and the **Stats panel**.
+
+### Focus View (distraction-free)
+
+Focus View hides the surrounding chrome — header, menus, input bar, footer — leaving just your routine on a clean backdrop. This is where you **run** a routine.
+
+**Entering:** tap the Focus View button next to the progress bar, or Menu → **Enter Focus View**.
+**Exiting:** tap the **✕** in the top-left corner.
+miniCycle remembers your choice — if you close the app in Focus View, it reopens there.
+
+While in Focus View you get:
+
+- **A floating action button** (bottom-right) that honors your routine's mode — **Cycle** in Auto/Manual Cycle mode, **Clear** in To-Do Mode.
+- **A ⋯ menu** (top-right) for quick actions like switching or creating routines without leaving Focus View.
+- **A three-panel switcher** at the bottom: **Task | Routine | Stats**. Swipe left/right anywhere, tap a tab, or use Shift + ←/→ to move between panels.
+
+| | **Home View** | **Focus View** |
+|---|---|---|
+| **Best for** | Setting up and managing routines | Working through a routine |
+| **Chrome** | Header, menus, input bar, footer | Hidden — just your tasks |
+| **Panels** | Routine ↔ Stats | **Task** ↔ Routine ↔ Stats |
+| **Add tasks** | Input bar / quick actions | Via the ⋯ menu options |
+| **Cycle/Clear** | Button below the task list | Floating button, bottom-right |
+
+### The Task panel (one task at a time)
+
+Focus View's third panel shows **only your current step** — the first unchecked task in your routine — on a single card:
+
+- **"3 of 10"** position indicator so you always know where you are.
+- **Complete task** button — works exactly like checking the task in the list (progress, achievements, and undo all count normally), then automatically advances to the next unchecked task.
+- **‹ ›** buttons to peek at other tasks, including completed ones (shown dimmed — the button flips to **Mark incomplete** there, handy for out-of-order work). Browsing snaps back to the current step when you complete a task or switch routines.
+- **Mode-aware finish:** in Auto Cycle mode, completing the last task plays a short *Cycle complete!* celebration on the card, then starts you back at task 1. In Manual Cycle or To-Do Mode, use the floating Cycle/Clear button any time — the card follows along.
+
+> 💡 The Task panel is made for sequential routines — checklists you work top to bottom, one step at a time.
+
+**Note:** during the first-run introduction, the Task tab stays hidden until you complete or skip the intro.
 
 ---
 
@@ -745,6 +793,9 @@ Share your themes or use themes from others:
 | **Open settings** | Alt + S |
 | **Switch cycle** | Alt + C |
 | **Focus task input** | Alt + N |
+| **Next panel** (Task / Routine / Stats) | Shift + → |
+| **Previous panel** | Shift + ← |
+| **Quick-toggle panels** | Shift + Tab (when nothing is focused) |
 
 **Tip:** Hover over buttons to see tooltips with shortcuts!
 

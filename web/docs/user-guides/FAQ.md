@@ -135,6 +135,26 @@ Depends on your **mode**:
 
 ---
 
+### What's the difference between Home View and Focus View?
+
+They're two ways of looking at the **same routine** — nothing about your data changes:
+
+- **Home View** (default) shows everything: header, menus, add-task input, footer. Best for *managing* routines.
+- **Focus View** hides all of that for a distraction-free screen. Best for *running* routines. Enter it with the Focus View button next to the progress bar (or Menu → Enter Focus View); exit with the ✕ in the top-left. miniCycle remembers which view you were in.
+
+Focus View also adds a third panel: swipe between **Task | Routine | Stats**, where **Task** shows one task at a time. See the [User Guide — Views: Home & Focus](USER_GUIDE.md#views-home--focus).
+
+---
+
+### Why don't I see the Task tab in Focus View?
+
+Two possibilities:
+
+1. **You're still in the first-run introduction** — the Task tab stays hidden until you complete or skip the intro.
+2. **You're in Home View** — the Task panel only exists in Focus View; Home View swipes between the task list and Stats.
+
+---
+
 ### Can I reorder tasks?
 
 **Yes!**
