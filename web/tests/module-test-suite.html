@@ -460,6 +460,7 @@
             <option value="keyboardNav">⌨️ Keyboard Nav</option>
             <option value="nameUtils">📛 Name Utils</option>
             <option value="panelCarousel">🎠 Panel Carousel</option>
+            <option value="focusTaskPanel">🎯 Focus Task Panel</option>
             <option value="recurringPanelEvents">📅 Recurring Panel Events</option>
             <option value="recurringPanelForm">📝 Recurring Panel Form</option>
             <option value="recurringPanelGrids">📊 Recurring Panel Grids</option>
@@ -617,6 +618,7 @@
         const { runKeyboardNavTests } = await import(`./keyboardNav.tests.js?v=${cacheBuster}`);
         const { runNameUtilsTests } = await import(`./nameUtils.tests.js?v=${cacheBuster}`);
         const { runPanelCarouselTests } = await import(`./panelCarousel.tests.js?v=${cacheBuster}`);
+        const { runFocusTaskPanelTests } = await import(`./focusTaskPanel.tests.js?v=${cacheBuster}`);
         const { runRecurringPanelEventsTests } = await import(`./recurringPanelEvents.tests.js?v=${cacheBuster}`);
         const { runRecurringPanelFormTests } = await import(`./recurringPanelForm.tests.js?v=${cacheBuster}`);
         const { runRecurringPanelGridsTests } = await import(`./recurringPanelGrids.tests.js?v=${cacheBuster}`);
@@ -1817,7 +1819,7 @@
                     await import(`../modules/features/uxRatings.js?v=${cacheBuster}`);
                     currentModule = 'uxRatings';
                     resultsDiv.innerHTML = '<p>✅ UXRatings loaded. Click "Run Tests" to begin.</p>';
-                } else if (['diWiring','orchestrator','moduleLoader','moduleManifests','modalTemplates','appContext','dataAccess','appGlobalState','migrationFacade','types','modalRegistry','modalUtils','panelVisibilityHelpers','gesturePanelManager','titleManager','headerLayoutManager','featureAvailability','dataRecovery','uiOrchestrator','preferencesBgImage','preferencesPresets','taskDOMPatch','debugMode','iconInit','icons','keyboardNav','nameUtils','panelCarousel','recurringPanelEvents','recurringPanelForm','recurringPanelGrids','recurringPanelSetup','recurringPanelSummary','recurringSettings','recurringSettingsApplicator','recurringWatcher'].includes(moduleName)) {
+                } else if (['diWiring','orchestrator','moduleLoader','moduleManifests','modalTemplates','appContext','dataAccess','appGlobalState','migrationFacade','types','modalRegistry','modalUtils','panelVisibilityHelpers','gesturePanelManager','titleManager','headerLayoutManager','featureAvailability','dataRecovery','uiOrchestrator','preferencesBgImage','preferencesPresets','taskDOMPatch','debugMode','iconInit','icons','keyboardNav','nameUtils','panelCarousel','focusTaskPanel','recurringPanelEvents','recurringPanelForm','recurringPanelGrids','recurringPanelSetup','recurringPanelSummary','recurringSettings','recurringSettingsApplicator','recurringWatcher'].includes(moduleName)) {
                     const pathMap = {
                         diWiring: '../modules/boot/moduleLoader.js',
                         orchestrator: '../modules/boot/orchestrator.js',
@@ -1847,6 +1849,7 @@
                         keyboardNav: '../modules/utils/keyboardNav.js',
                         nameUtils: '../modules/utils/nameUtils.js',
                         panelCarousel: '../modules/ui/panelCarousel.js',
+                        focusTaskPanel: '../modules/ui/focusTaskPanel.js',
                         recurringPanelEvents: '../modules/recurring/recurringPanelEvents.js',
                         recurringPanelForm: '../modules/recurring/recurringPanelForm.js',
                         recurringPanelGrids: '../modules/recurring/recurringPanelGrids.js',
@@ -2111,6 +2114,7 @@
             } else if (currentModule === 'keyboardNav') { await runKeyboardNavTests(resultsDiv);
             } else if (currentModule === 'nameUtils') { await runNameUtilsTests(resultsDiv);
             } else if (currentModule === 'panelCarousel') { await runPanelCarouselTests(resultsDiv);
+            } else if (currentModule === 'focusTaskPanel') { await runFocusTaskPanelTests(resultsDiv);
             } else if (currentModule === 'recurringPanelEvents') { await runRecurringPanelEventsTests(resultsDiv);
             } else if (currentModule === 'recurringPanelForm') { await runRecurringPanelFormTests(resultsDiv);
             } else if (currentModule === 'recurringPanelGrids') { await runRecurringPanelGridsTests(resultsDiv);
@@ -2429,6 +2433,7 @@
                 { name: 'KeyboardNav', key: 'keyboardNav', runFn: runKeyboardNavTests, importPath: '../modules/utils/keyboardNav.js' },
                 { name: 'NameUtils', key: 'nameUtils', runFn: runNameUtilsTests, importPath: '../modules/utils/nameUtils.js' },
                 { name: 'PanelCarousel', key: 'panelCarousel', runFn: runPanelCarouselTests, importPath: '../modules/ui/panelCarousel.js' },
+                { name: 'FocusTaskPanel', key: 'focusTaskPanel', runFn: runFocusTaskPanelTests, importPath: '../modules/ui/focusTaskPanel.js' },
                 { name: 'RecurringPanelEvents', key: 'recurringPanelEvents', runFn: runRecurringPanelEventsTests, importPath: '../modules/recurring/recurringPanelEvents.js' },
                 { name: 'RecurringPanelForm', key: 'recurringPanelForm', runFn: runRecurringPanelFormTests, importPath: '../modules/recurring/recurringPanelForm.js' },
                 { name: 'RecurringPanelGrids', key: 'recurringPanelGrids', runFn: runRecurringPanelGridsTests, importPath: '../modules/recurring/recurringPanelGrids.js' },

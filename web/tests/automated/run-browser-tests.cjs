@@ -50,7 +50,7 @@ const ALL_MODULES = [
     'taskDOMPatch', 'debugMode', 'iconInit', 'icons', 'keyboardNav', 'nameUtils',
     'recurringPanelEvents', 'recurringPanelForm', 'recurringPanelGrids',
     'recurringPanelSetup', 'recurringPanelSummary', 'recurringSettings',
-    'recurringSettingsApplicator', 'recurringWatcher', 'uxRatings', 'panelCarousel'
+    'recurringSettingsApplicator', 'recurringWatcher', 'uxRatings', 'panelCarousel', 'focusTaskPanel'
 ];
 
 // Test files that intentionally have no registered module in ALL_MODULES.
