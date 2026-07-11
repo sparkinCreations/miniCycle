@@ -101,6 +101,22 @@ export async function runPanelCarouselTests(resultsDiv) {
         } finally { cleanup(); }
     });
 
+    await test('hidden panels get directional classes relative to the active panel', () => {
+        const { carousel, els, cleanup } = buildCarousel(['a', 'b', 'c']);
+        try {
+            carousel.goTo('b'); // middle active: a is left, c is right
+            if (!els.a.el.classList.contains('hide-left')) throw new Error('Lower-index panel should get hide-left');
+            if (!els.c.el.classList.contains('hide-right')) throw new Error('Higher-index panel should get hide-right');
+            carousel.goTo('a'); // first active: b and c both right
+            if (!els.b.el.classList.contains('hide-right') || !els.c.el.classList.contains('hide-right')) {
+                throw new Error('Panels right of active should get hide-right');
+            }
+            if (els.a.el.classList.contains('hide-left') || els.a.el.classList.contains('hide-right')) {
+                throw new Error('Active panel must carry no directional class');
+            }
+        } finally { cleanup(); }
+    });
+
     await test('dots track active state with class AND aria-selected', () => {
         const { carousel, els, cleanup } = buildCarousel(['a', 'b']);
         try {

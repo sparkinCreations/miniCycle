@@ -583,8 +583,10 @@ function createTestDOM() {
         <div id="live-region"></div>
         <button id="slide-left">←</button>
         <button id="slide-right">→</button>
-        <div class="dot"></div>
-        <div class="dot"></div>
+        <!-- dots carry aria-controls like the real markup — the carousel
+             matches dots to panels by aria-controls, not array position -->
+        <div class="dot" aria-controls="task-view"></div>
+        <div class="dot" aria-controls="stats-panel"></div>
         <div class="badge" data-milestone="5"></div>
         <div class="badge" data-milestone="50"></div>
         <div class="badge" data-milestone="100"></div>
