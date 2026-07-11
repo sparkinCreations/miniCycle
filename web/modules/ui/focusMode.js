@@ -806,8 +806,14 @@ export class FocusMode {
         // the time the user swipes to it. Fire-and-forget: the carousel's
         // isEnabled gate governs reachability, and module init is idempotent —
         // a slow load just means the card renders when the promise resolves.
-        this.deps.ensureModuleLoaded?.('focusTaskPanel')?.catch?.(e =>
-            console.warn('⚠️ FocusMode: focusTaskPanel load failed:', e));
+        // An `undefined` result means the loader wiring is dead (truthy-closure
+        // trap) — warn loudly instead of leaving an empty skeleton card.
+        const panelLoad = this.deps.ensureModuleLoaded?.('focusTaskPanel');
+        if (panelLoad === undefined) {
+            console.warn('⚠️ FocusMode: ensureModuleLoaded unavailable — focus task panel will not render');
+        } else {
+            panelLoad.catch?.(e => console.warn('⚠️ FocusMode: focusTaskPanel load failed:', e));
+        }
 
         if (this._button) {
             body.appendChild(this._button);

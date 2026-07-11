@@ -229,14 +229,21 @@ export async function bootFeatures(deps, coreResult) {
     // Log load order for debugging
     const loadOrder = getLoadOrder();
 
-    // Load all modules using moduleLoader
-    const result = await loadAllModules(deps, coreResult);
-
     // Expose the on-demand loader (from THIS versioned moduleLoader instance) so
     // later phases (uiBoot) can lazy-load deferred modules. Must come from the
     // versioned import — a static import would be a separate instance with no
     // captured boot context.
+    //
+    // Wired BEFORE loadAllModules: modules that restore persisted state during
+    // their own init may need it MID-Phase-2 (e.g. focusMode restoring a saved
+    // focus session calls ensureModuleLoaded('focusTaskPanel')). loadAllModules
+    // captures the boot context (_bootDeps) as its first step, so the loader is
+    // fully functional by the time any module init runs; anything earlier hits
+    // its own "called before boot captured context" guard.
     deps.core.ensureModuleLoaded = ensureModuleLoaded;
+
+    // Load all modules using moduleLoader
+    const result = await loadAllModules(deps, coreResult);
 
     // Copy loaded modules to features container
     for (const [name, mod] of result.modules) {
