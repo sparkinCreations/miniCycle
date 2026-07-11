@@ -84,6 +84,15 @@
     transform: translate(-200%, -50%);
 }
 
+/* Directional hide (panel carousel): when the focus task panel (index 0)
+   is active, #task-view sits to its RIGHT and must exit right instead.
+   The carousel sets .hide-left/.hide-right alongside .hide based on each
+   panel's position relative to the active one. */
+#task-view.hide.hide-right {
+    left: 150%;
+    transform: translate(-50%, -50%);
+}
+
 /* Visible state - centered */
 #task-view.show {
     left: 50%;

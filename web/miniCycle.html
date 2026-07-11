@@ -2031,10 +2031,17 @@ window.installApp = () => {
 </div>
 
 <nav id="nav-dots" class="navigation-dots" role="tablist" aria-label="Page navigation">
-<button class="dot active" role="tab" aria-selected="true" aria-controls="task-view" aria-label="Tasks view" title="Tasks view">
+<!-- Focus task tab — index 0, focus-view-only (hidden outside focus mode via
+     CSS; unreachable during onboarding via the carousel's isEnabled gate).
+     data-tab-label seeds the focus-mode pill text; themeManager re-resolves
+     all three via getLabel() on every theme/routine change. -->
+<button class="dot focus-task-dot" role="tab" aria-selected="false" aria-controls="focus-task-panel" aria-label="Task view" title="Task view" data-tab-label="Task">
+<span class="visually-hidden">Task</span>
+</button>
+<button class="dot active" role="tab" aria-selected="true" aria-controls="task-view" aria-label="Tasks view" title="Tasks view" data-tab-label="Routine">
 <span class="visually-hidden">Tasks</span>
 </button>
-<button class="dot" role="tab" aria-selected="false" aria-controls="stats-panel" aria-label="Statistics view" title="Statistics view">
+<button class="dot" role="tab" aria-selected="false" aria-controls="stats-panel" aria-label="Statistics view" title="Statistics view" data-tab-label="Stats">
 <span class="visually-hidden">Stats</span>
 </button>
 </nav>

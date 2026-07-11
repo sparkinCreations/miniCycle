@@ -191,6 +191,11 @@ export class PanelCarousel {
             const isActive = i === index;
             panel.element.classList.toggle(DOM_CLASSES.SHOW, isActive);
             panel.element.classList.toggle(DOM_CLASSES.HIDE, !isActive);
+            // Directional hint: hidden panels exit toward their side of the
+            // active panel (lower index = off-left, higher = off-right).
+            // CSS opts in per panel (e.g. #task-view.hide.hide-right).
+            panel.element.classList.toggle(DOM_CLASSES.HIDE_LEFT, !isActive && i < index);
+            panel.element.classList.toggle(DOM_CLASSES.HIDE_RIGHT, !isActive && i > index);
             panel.element.inert = !isActive;
         });
         this.refreshDots();

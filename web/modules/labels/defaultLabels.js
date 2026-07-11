@@ -679,8 +679,10 @@ export const DEFAULT_LABELS = deepFreeze({
         // Keyboard shortcut notifications
         keyboardStatsOpened:     'Keyboard shortcut - Stats Panel opened',
         keyboardTaskOpened:      'Keyboard shortcut - Routine View opened',
+        keyboardFocusTaskOpened: 'Keyboard shortcut - Task View opened',
         quickToggleTask:         'Quick toggle - Routine View',
         quickToggleStats:        'Quick toggle - Stats Panel',
+        quickToggleFocusTask:    'Quick toggle - Task View',
 
         // Migration notifications
         forceMigrationComplete:  'Force migration completed! Some data may need manual review.',
@@ -1393,6 +1395,11 @@ export const DEFAULT_LABELS = deepFreeze({
         tasksTab:       'Tasks',
         statsView:      'Statistics view',
         statsTab:       'Stats',
+        // Focus-view pill switcher tabs (rendered via CSS content: attr(data-tab-label);
+        // themeManager re-resolves these on every theme/routine change)
+        tabTask:        'Task',
+        tabRoutine:     'Routine',
+        tabStats:       'Stats',
         showStats:      'Show Stats',
         showTasks:      'Show Tasks',
         quickActions:   'Quick Actions',
@@ -2009,6 +2016,7 @@ export const DEFAULT_LABELS = deepFreeze({
         taskAdded: 'Task added: {name}',
         taskViewOpened: 'Routine view opened',
         statsPanelOpened: 'Stats panel opened',
+        focusTaskPanelOpened: 'Task view opened',
         dayNumber: 'Day {day}',
         dragHandleTaskCard:      'Drag handle, task card group',
         dragHandleCompleteCycle: 'Drag handle, complete cycle button',
@@ -2443,6 +2451,7 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'taskOptions.global',
 
     // Focus task panel (one-task-at-a-time card — noun-bearing keys themeable)
+    'nav.tabTask',
     'focusTask.panelAria',
     'focusTask.completeTask',
     'focusTask.prevTask',

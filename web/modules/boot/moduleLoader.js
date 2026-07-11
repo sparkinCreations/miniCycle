@@ -1419,6 +1419,13 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         // Gesture panel manager (from deps.ui) - returns instance when called as function
         gesturePanelManager: () => deps.ui?.gesturePanelManager,
 
+        // Focus task panel instance accessor (deferred module — undefined until
+        // focusMode.activate() runs ensureModuleLoaded('focusTaskPanel'))
+        focusTaskPanel: () => deps.ui?.focusTaskPanel,
+
+        // On-demand loader for deferred modules (from the boot-captured context)
+        ensureModuleLoaded: (...args) => deps.core?.ensureModuleLoaded?.(...args),
+
         // Onboarding manager (from deps.ui) - returns instance when called as function
         getOnboardingManager: () => deps.ui?.onboardingManager,
 

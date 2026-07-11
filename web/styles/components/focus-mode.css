@@ -593,9 +593,14 @@ body.focus-mode #nav-dots .dot.active {
     background-size: 4px 4px;
 }
 
-/* Stats has padding-left: 0 (to balance the "|" separator on Routine),
-   which shifts its text 6px left of the button center. Without this
-   override the dot appears too far right relative to the text. */
+/* Padding-driven text shifts (see the padding-balancing rules below):
+   Task keeps its left padding (text shifted +6px right), Stats keeps its
+   right padding (text shifted -6px left), Routine has both zeroed (centered).
+   Offset each active-tab dot indicator to match its text center. */
+body.focus-mode #nav-dots .dot[aria-controls="focus-task-panel"].active {
+    background-position: calc(50% + 6px) calc(100% - 4px);
+}
+
 body.focus-mode #nav-dots .dot[aria-controls="stats-panel"].active {
     background-position: calc(50% - 6px) calc(100% - 4px);
 }
@@ -610,20 +615,25 @@ body.focus-mode #nav-dots .dot::after {
     content: '';
 }
 
-/* Inject the text labels via ::before */
-body.focus-mode #nav-dots .dot[aria-controls="task-view"]::before {
-    content: "Routine";
+/* Inject the tab text via ::before from data-tab-label — seeded in the HTML
+   and re-resolved through getLabel() by themeManager on every theme/routine
+   change (label-system compliant; vocab themes can rename the tabs,
+   e.g. Habit Tracker → "Habit | Routine | Stats"). */
+body.focus-mode #nav-dots .dot::before {
+    content: attr(data-tab-label);
 }
 
-body.focus-mode #nav-dots .dot[aria-controls="stats-panel"]::before {
-    content: "Stats";
+/* Symmetric gaps around the "|" separators.
+   Each separator lives in the ::after of the tab to its LEFT (Task and
+   Routine), so the inner-facing paddings on both sides of each separator
+   are zeroed — spacing is governed purely by the separators' margins.
+   Resulting paddings: Task 12/0, Routine 0/0, Stats 0/12. */
+body.focus-mode #nav-dots .dot[aria-controls="focus-task-panel"] {
+    padding-right: 0;
 }
 
-/* Symmetric gaps around the "|" separator.
-   The "|" is inside Routine's box (as its ::after), so Routine's
-   right padding inflates the perceived gap. Zero both inner paddings
-   so spacing is governed purely by the separator's symmetric margins. */
 body.focus-mode #nav-dots .dot[aria-controls="task-view"] {
+    padding-left: 0;
     padding-right: 0;
 }
 
@@ -647,8 +657,10 @@ body.focus-mode #nav-dots .dot.active:focus-visible {
     opacity: 1;
 }
 
-/* Separator "|" between the two tabs — repurpose ::after on the first one.
-   Symmetric horizontal margins keep the visual rhythm centered. */
+/* Separator "|" between tabs — repurposed ::after on each tab except the
+   last (Task| Routine| Stats). Symmetric horizontal margins keep the
+   visual rhythm centered. */
+body.focus-mode #nav-dots .dot[aria-controls="focus-task-panel"]::after,
 body.focus-mode #nav-dots .dot[aria-controls="task-view"]::after {
     content: "|";
     width: auto;

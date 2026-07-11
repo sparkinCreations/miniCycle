@@ -7,6 +7,13 @@
    states are defined now so the module is fully testable.
    ============================================================================= */
 
+/* The Task tab exists only inside focus view (plan D8: also unreachable
+   during onboarding via the carousel's isEnabled gate — CSS hides, the
+   gate blocks swipes). */
+body:not(.focus-mode) #nav-dots .dot[aria-controls="focus-task-panel"] {
+    display: none;
+}
+
 #focus-task-panel {
     position: fixed;
     left: 50%;

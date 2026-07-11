@@ -33,11 +33,13 @@ const di = createDIModule('GesturePanelManager', {
 // Panels without an entry (future panels) simply don't toast.
 const ARROW_TOAST_BY_PANEL = {
     'stats-panel': 'notify.keyboardStatsOpened',
-    'task-view': 'notify.keyboardTaskOpened'
+    'task-view': 'notify.keyboardTaskOpened',
+    'focus-task-panel': 'notify.keyboardFocusTaskOpened'
 };
 const QUICK_TOGGLE_TOAST_BY_PANEL = {
     'stats-panel': 'notify.quickToggleStats',
-    'task-view': 'notify.quickToggleTask'
+    'task-view': 'notify.quickToggleTask',
+    'focus-task-panel': 'notify.quickToggleFocusTask'
 };
 
 /**

@@ -485,6 +485,8 @@ export const DOM_CLASSES = Object.freeze({
     VISIBLE: 'visible',
     SHOW: 'show',
     HIDE: 'hide',
+    HIDE_LEFT: 'hide-left',    // panel carousel: hidden panel sits left of the active one
+    HIDE_RIGHT: 'hide-right',  // panel carousel: hidden panel sits right of the active one
     COLLAPSED: 'collapsed',
 
     // ---- State ----

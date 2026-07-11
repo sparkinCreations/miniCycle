@@ -310,6 +310,7 @@ export class StatsPanelManager {
         this.elements = {
             statsPanel: getById(DOM_IDS.STATS_PANEL),
             taskView: getById(DOM_IDS.TASK_VIEW),
+            focusTaskPanel: getById(DOM_IDS.FOCUS_TASK_PANEL),
             liveRegion: getById(DOM_IDS.LIVE_REGION),
             slideLeft: getById(DOM_IDS.SLIDE_LEFT),
             slideRight: getById(DOM_IDS.SLIDE_RIGHT),
@@ -788,22 +789,70 @@ export class StatsPanelManager {
      */
     _setupCarousel() {
         this.carousel = null;
-        const { taskView, statsPanel } = this.elements;
+        const { taskView, statsPanel, focusTaskPanel } = this.elements;
         if (!taskView || !statsPanel) return; // show* methods warn, as before
 
+        // Dots are matched to panels by aria-controls, not array position —
+        // the focus-task dot only exists in newer markup and test fixtures
+        // may omit it entirely.
+        const dotFor = (panelId) =>
+            Array.from(this.elements.dots || []).find(d => d.getAttribute('aria-controls') === panelId) || null;
+
         this.carousel = new PanelCarousel();
+
+        // Index 0 — focus task panel (one task at a time). Focus-view-only
+        // AND gated behind onboarding (plan D8): the lazy isEnabled check
+        // makes it unreachable by swipe/keyboard the moment either gate
+        // closes, with no event wiring to focusMode/onboardingManager.
+        if (focusTaskPanel) {
+            this.carousel.register({
+                id: 'focus-task-panel',
+                element: focusTaskPanel,
+                dot: dotFor('focus-task-panel'),
+                isEnabled: () => {
+                    const body = document.body;
+                    return body.classList.contains(DOM_CLASSES.FOCUS_MODE)
+                        && !body.classList.contains(DOM_CLASSES.FIRST_RUN_WELCOME_ACTIVE);
+                },
+                onShow: () => this._onFocusTaskShown(),
+                onHide: () => this._onFocusTaskHidden()
+            });
+        }
+
         this.carousel.register({
             id: 'task-view',
             element: taskView,
-            dot: this.elements.dots?.[0] || null,
+            dot: dotFor('task-view'),
             onShow: () => this._onTaskViewShown()
         });
         this.carousel.register({
             id: 'stats-panel',
             element: statsPanel,
-            dot: this.elements.dots?.[1] || null,
+            dot: dotFor('stats-panel'),
             onShow: () => this._onStatsPanelShown()
         });
+    }
+
+    /** Panel-specific side effects when the focus task panel becomes active. */
+    _onFocusTaskShown() {
+        // Leftmost panel — both slide arrows point at panels to the right of
+        // the pair they serve; hide them entirely here.
+        [this.elements.slideRight, this.elements.slideLeft].forEach(arrow => {
+            if (!arrow) return;
+            arrow.classList.add(DOM_CLASSES.HIDE);
+            arrow.classList.remove(DOM_CLASSES.SHOW);
+            arrow.tabIndex = -1;
+        });
+        this.state.isStatsVisible = false;
+        this._syncGestureManager(false);
+        this.announceViewChange(getLabel('accessibility.focusTaskPanelOpened'));
+    }
+
+    /** Leaving the focus task panel — reset its ‹ › browse override (D2). */
+    _onFocusTaskHidden() {
+        const ftp = _deps.focusTaskPanel;
+        const instance = typeof ftp === 'function' ? ftp() : ftp;
+        instance?.clearOverride?.();
     }
 
     /** Panel-specific side effects when the task view becomes active. */
