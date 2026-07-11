@@ -99,7 +99,18 @@ Goal: binary → indexed, with zero behavior change. Ship-safe on its own.
 4. **Cycle-completion moment**: per D5 detail — existing cycleCompletion flow runs untouched; the panel's AppState subscriber detects the reset (all tasks flipped incomplete + cycleCount bump) and plays the ~2s card celebration (`UI_TIMEOUTS.FOCUS_TASK_CELEBRATION`) before rendering task 1. No new button on the card — the floating focus action button is the always-visible cycle/clear control in every mode.
 5. **Tests**: `focusTaskPanel.tests.js` — selection logic (first incomplete), advance-on-complete, prev/next override + reset, all-done, destroy cleanup.
 
-### Phase 2 — Wire into focus view
+### Phase 2 — Wire into focus view — ✅ DONE July 11, 2026
+
+**As built:**
+- Third dot (index 0, `aria-controls="focus-task-panel"`) in `#nav-dots`; hidden outside focus mode via `body:not(.focus-mode)` rule in focus-task-panel.css. statsPanel matches dots to panels **by aria-controls, not array position** (test fixtures may omit dots).
+- **attr() bridge shipped for all three tabs**: `content: attr(data-tab-label)` in focus-mode.css; HTML seeds the attributes; `themeManager._refreshLiveLensLabels()` re-resolves `nav.tabTask/tabRoutine/tabStats` through getLabel() (+ aria-label + title on each dot) on every theme/routine change. `nav.tabTask` is lens-sensitive.
+- Separators: `::after "|"` on the Task and Routine tabs; paddings rebalanced (Task 12/0, Routine 0/0, Stats 0/12) with matching active-dot indicator offsets (+6px/center/−6px).
+- **D8 gate**: carousel `isEnabled` = `body.focus-mode && !body.first-run-welcome-active`, checked lazily per navigation. Verified under the REAL new-user condition — the app boots new users INTO focus mode with the welcome banner, and the onboarding gate alone blocked the panel.
+- **focusMode.activate()** fire-and-forget `ensureModuleLoaded('focusTaskPanel')` (deferred module); **deactivate()** implements D7 (if the panel is `.show`, `showTaskView()` before chrome restore). New optional deps `ensureModuleLoaded` + `showTaskView` wired through all 4 DI layers (new generic `ensureModuleLoaded` depMappings entry → `deps.core`).
+- statsPanel: `_onFocusTaskShown` (hide both slide arrows, gesture sync, announce via new `accessibility.focusTaskPanelOpened`) / `_onFocusTaskHidden` (clears the ‹ › override via the `focusTaskPanel` instance dep — new depMappings accessor + statsPanel optionalDeps).
+- Directional CSS: `#task-view.hide.hide-right` (exits right when the Task panel is active); carousel sets `hide-left`/`hide-right` (DOM_CLASSES) relative to the active index. gpm keyboard toasts extended (`notify.keyboardFocusTaskOpened` / `quickToggleFocusTask`).
+
+**Verified:** suites — panelCarousel 13 (new directional-class test), statsPanel 24 (fixture updated to carry aria-controls like real markup), gesturePanelManager 33, focusMode 40, focusTaskPanel 12, themeManager 21, defaultLabels 18, moduleManifests 27, diWiring 6 — all green. Live end-to-end (fresh Playwright context): **17/17** — onboarding gate blocks in-focus-mode navigation until dismissed; activate() deferred-loads the module; swipe reaches the panel; task-view exits off-right; pills render "Task | Routine | Stats" via attr(); card completes + advances against real state; keyboard traverses all 3 panels; D7 exit returns to Routine and re-hides the dot; zero DI-gap warnings/console errors. Screenshot sanity-check of the pill bar + card passed.
 
 1. **Third dot** in `#nav-dots` (aria-controls="focus-task-panel", visually-hidden text). Hidden outside focus mode: `body:not(.focus-mode) .dot[aria-controls="focus-task-panel"] { display:none }`.
 2. **focus-mode.css + label system**: convert ALL THREE tab labels to the label system via the CSS `attr()` bridge — `content: attr(data-tab-label)` — instead of adding a third hardcoded string:
