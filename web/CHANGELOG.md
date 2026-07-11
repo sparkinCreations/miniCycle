@@ -1,3 +1,7 @@
+## [2.287] - 2026-07-11
+- fix(errors): ignore benign ResizeObserver noise + associate bg-image upload label
+
+
 ## [2.286] - 2026-07-11
 - docs(manual): add Home vs Focus View and Task card to in-app user manual
 - docs: document focus task view + add Home vs Focus View to user manual
