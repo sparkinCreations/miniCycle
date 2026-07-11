@@ -225,6 +225,13 @@ export class PullToRefresh {
             return false;
         }
 
+        // Check for the focus task panel being active — its vertical
+        // swipe-to-skip gesture must not co-trigger pull-to-refresh
+        const focusTaskPanel = document.getElementById(DOM_IDS.FOCUS_TASK_PANEL);
+        if (focusTaskPanel?.classList.contains(DOM_CLASSES.SHOW)) {
+            return false;
+        }
+
         // Check for any visible modal (data-modal covers most; specific selectors catch the rest)
         const modals = document.querySelectorAll(`${DOM_SELECTORS.DATA_MODAL}, ${DOM_SELECTORS.SETTINGS_MODAL}, ${DOM_SELECTORS.MINI_CYCLE_SWITCH_MODAL}, ${DOM_SELECTORS.PREFERENCES_MODAL}, ${DOM_SELECTORS.TESTING_MODAL}, ${DOM_SELECTORS.FEEDBACK_MODAL}`);
         for (const modal of modals) {

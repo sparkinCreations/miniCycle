@@ -24,7 +24,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS, DATA_SELECTORS, DOM_CLASSES, UI_TIMEOUTS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DATA_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, GESTURE } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -60,6 +60,11 @@ export class FocusTaskPanel {
         this._boundComplete = () => this._completeCurrent();
         this._boundPrev = () => this._step(-1);
         this._boundNext = () => this._step(1);
+        // Vertical swipe-to-skip (touch): swipe up = next, down = previous
+        this._touch = { startX: 0, startY: 0, tracking: false };
+        this._boundTouchStart = (e) => this._onPanelTouchStart(e);
+        this._boundTouchMove = (e) => this._onPanelTouchMove(e);
+        this._boundTouchEnd = () => { this._touch.tracking = false; };
         this.initialized = false;
     }
 
@@ -97,10 +102,13 @@ export class FocusTaskPanel {
             this.deps.AppState?.unsubscribe?.(SUBSCRIBER_KEY, this._onStateChange);
             this._subscribed = false;
         }
-        const { completeBtn, prevBtn, nextBtn } = this.elements;
+        const { completeBtn, prevBtn, nextBtn, panel } = this.elements;
         completeBtn?.removeEventListener('click', this._boundComplete);
         prevBtn?.removeEventListener('click', this._boundPrev);
         nextBtn?.removeEventListener('click', this._boundNext);
+        panel?.removeEventListener('touchstart', this._boundTouchStart);
+        panel?.removeEventListener('touchmove', this._boundTouchMove);
+        panel?.removeEventListener('touchend', this._boundTouchEnd);
         this.initialized = false;
     }
 
@@ -159,6 +167,10 @@ export class FocusTaskPanel {
         // A celebration in progress owns the card until its timer ends
         if (this._celebrationTimer) return;
         this.elements.celebration.classList.add(DOM_CLASSES.HIDDEN);
+
+        // Re-resolve ARIA labels/titles every render so vocab-theme switches
+        // (which fire a state change → render) retheme them live (Phase 3).
+        this._applyStaticLabels();
 
         const tasks = this._getTasks();
         const task = this._currentTask();
@@ -235,10 +247,22 @@ export class FocusTaskPanel {
             return;
         }
 
+        const wasCompleted = checkbox.checked;
         this.deps.enableUndoSystemOnFirstInteraction?.();
         checkbox.checked = !checkbox.checked;
         checkbox.dispatchEvent(new Event('change'));
         this.deps.checkMiniCycle?.({ lastToggledElement: taskEl });
+
+        // Usage metric (plan Phase 3): count completions made THROUGH the
+        // card so the feature's real-world use is measurable. Lives in
+        // userProgress (stats home), NOT quickActions counts — those drive
+        // the quick-actions MRU UI and must only contain action-button ids.
+        if (!wasCompleted) {
+            this.deps.AppState?.update?.(s => {
+                if (!s.userProgress) s.userProgress = {};
+                s.userProgress.focusTaskCompletions = (s.userProgress.focusTaskCompletions || 0) + 1;
+            });
+        }
 
         // Auto-advance (D2): drop any browse override so the next render
         // shows the first incomplete task.
@@ -367,10 +391,44 @@ export class FocusTaskPanel {
 
     _attachListeners() {
         const add = this.deps.safeAddEventListener
-            || ((el, ev, fn) => el.addEventListener(ev, fn));
+            || ((el, ev, fn, opts) => el.addEventListener(ev, fn, opts));
         add(this.elements.completeBtn, 'click', this._boundComplete);
         add(this.elements.prevBtn, 'click', this._boundPrev);
         add(this.elements.nextBtn, 'click', this._boundNext);
+        // Vertical swipe-to-skip — scoped to the PANEL element (not document),
+        // so it can't fight gesturePanelManager's horizontal detection, and
+        // pull-to-refresh is gated off while this panel is shown.
+        add(this.elements.panel, 'touchstart', this._boundTouchStart, { passive: true });
+        add(this.elements.panel, 'touchmove', this._boundTouchMove, { passive: true });
+        add(this.elements.panel, 'touchend', this._boundTouchEnd, { passive: true });
+    }
+
+    /** Track a vertical swipe unless it starts on an interactive control. */
+    _onPanelTouchStart(event) {
+        if (event.target.closest('button, input, select, textarea, a[href]')) {
+            this._touch.tracking = false;
+            return;
+        }
+        const touch = event.touches?.[0];
+        if (!touch) return;
+        this._touch = { startX: touch.clientX, startY: touch.clientY, tracking: true };
+    }
+
+    /**
+     * Swipe up = next task, swipe down = previous (D3 follow-up, plan Phase 3).
+     * Requires the move to be predominantly vertical so horizontal panel
+     * swipes (handled by gesturePanelManager) are never double-interpreted.
+     */
+    _onPanelTouchMove(event) {
+        if (!this._touch.tracking) return;
+        const touch = event.touches?.[0];
+        if (!touch) return;
+        const dx = touch.clientX - this._touch.startX;
+        const dy = touch.clientY - this._touch.startY;
+        if (Math.abs(dy) < GESTURE.VERTICAL_SWIPE) return;
+        if (Math.abs(dy) < Math.abs(dx) * 1.5) return; // not vertical enough
+        this._touch.tracking = false; // consume — one step per gesture
+        this._step(dy < 0 ? 1 : -1);
     }
 }
 

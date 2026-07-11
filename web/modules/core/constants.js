@@ -272,6 +272,7 @@ export const GESTURE = Object.freeze({
     MOUSE_DRAG_THRESHOLD: 400,     // Minimum distance for mouse drag
     MOUSE_DRAG_START: 20,          // Minimum distance to start mouse drag
     TOUCH_SWIPE: 50,               // Minimum distance for touch swipe
+    VERTICAL_SWIPE: 60,            // Minimum vertical distance for the focus task panel's swipe-to-skip (higher than TOUCH_SWIPE to avoid scroll-intent misfires)
     WHEEL_SCROLL_MIN: 10           // Minimum wheel scroll to trigger action
 });
 
