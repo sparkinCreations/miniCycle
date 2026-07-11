@@ -530,7 +530,7 @@ export const PREFERENCES_MODAL_HTML = `<!-- Preferences Modal -->
                     <div class="preferences-bg-image-section">
                         <div class="preferences-color-row">
                             <span class="pref-color-icon">&#x1F5BC;</span>
-                            <label>${getLabel('prefs.backgroundImage')}</label>
+                            <label for="bg-image-upload">${getLabel('prefs.backgroundImage')}</label>
                             <input type="file" id="bg-image-upload" accept="image/*" style="display: none;" aria-label="${getLabel('prefs.backgroundImage')}">
                             <button class="preferences-upload-btn" id="bg-image-upload-btn">${getLabel('prefs.upload')}</button>
                             <button class="preferences-remove-btn" id="bg-image-remove-btn" style="display: none;">${getLabel('prefs.removeImage')}</button>

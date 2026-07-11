@@ -83,6 +83,35 @@ export async function runErrorHandlerTests(resultsDiv) {
         }
     });
 
+    test('benign ResizeObserver messages are dropped (no count, no log)', () => {
+        if (!Array.isArray(module.BENIGN_ERROR_PATTERNS) || module.BENIGN_ERROR_PATTERNS.length === 0) {
+            throw new Error('BENIGN_ERROR_PATTERNS export missing');
+        }
+        errorHandler.reset();
+        // The exact shape Chrome/Edge deliver via window.onerror
+        errorHandler.handleError({
+            type: 'window.onerror',
+            message: 'ResizeObserver loop completed with undelivered notifications.',
+            error: null,
+            lineno: 0,
+            colno: 0
+        });
+        errorHandler.handleError({
+            type: 'window.onerror',
+            message: 'ResizeObserver loop limit exceeded'
+        });
+        const stats = errorHandler.getStats();
+        if (stats.totalErrors !== 0) {
+            throw new Error(`Benign messages were counted as errors (totalErrors=${stats.totalErrors})`);
+        }
+        // A REAL error must still count
+        errorHandler.handleError({ type: 'window.onerror', message: 'Actual failure' });
+        if (errorHandler.getStats().totalErrors !== 1) {
+            throw new Error('Real errors must still be handled');
+        }
+        errorHandler.reset();
+    });
+
     // ===== SAFE LOCALSTORAGE TESTS =====
     resultsDiv.innerHTML += '<h4 class="test-section">💾 Safe localStorage Functions</h4>';
 

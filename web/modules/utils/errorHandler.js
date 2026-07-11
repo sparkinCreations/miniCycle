@@ -34,6 +34,18 @@ const di = createDIModule('ErrorHandler', {
  */
 export const setErrorHandlerDependencies = (dependencies) => di.setDependencies(dependencies);
 
+// Known-benign browser noise, delivered via window.onerror with error:null /
+// lineno:0. "ResizeObserver loop…" means the browser deferred re-observations
+// to the next frame because an observer callback changed layout — nothing
+// failed and no work was lost. Every major error tracker ignores these by
+// default; without this filter they show up as red [ErrorHandler] objects in
+// the console AND can toast an error notification at the user.
+// Exported for tests.
+export const BENIGN_ERROR_PATTERNS = Object.freeze([
+    'ResizeObserver loop completed with undelivered notifications',
+    'ResizeObserver loop limit exceeded'
+]);
+
 // ============================================================================
 // ERROR HANDLER CLASS
 // ============================================================================
@@ -116,6 +128,13 @@ class ErrorHandler {
      * Handle an error and notify user
      */
     handleError(errorInfo) {
+        // Drop known-benign browser noise before it counts against the
+        // notification budget or alarms anyone in the console.
+        const messageText = typeof errorInfo?.message === 'string' ? errorInfo.message : '';
+        if (BENIGN_ERROR_PATTERNS.some(pattern => messageText.includes(pattern))) {
+            return;
+        }
+
         this.errorCount++;
 
         // Log to console
