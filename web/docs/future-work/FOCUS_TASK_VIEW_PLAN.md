@@ -1,7 +1,7 @@
 # Focus Task View ("one task at a time") — Implementation Plan
 
 **Date:** July 9, 2026
-**Status:** ✅ SHIPPED-READY (July 11, 2026) — Phases 0–2 complete + returning-user restore fix; unreleased pending version bump. Phase 3 (polish) remains optional/open.
+**Status:** ✅ COMPLETE (July 11, 2026) — all phases done. Phases 0–2 + restore fix shipped in v2.286; Phase 3 polish (vertical-swipe skip, themed card content, usage metric) pending next release.
 **Idea:** In focus view, add a third swipeable panel BEFORE Routine that shows a single task at a time — the routine's "current step." Swipe order becomes: **[One-task] ↔ [Routine] ↔ [Stats]**, with the one-task panel available ONLY in focus mode.
 
 **Why it fits:** miniCycle routines are often sequential work processes (e.g. the inspection checklist: job number → part number → serial → CMM…). The list is the *management* view; one-at-a-time is the *execution* view. Completing the final card and watching the cycle complete is a stronger gamification payoff than checking a list box.
@@ -124,12 +124,15 @@ Goal: binary → indexed, with zero behavior change. Ship-safe on its own.
 4. **updateNavDots generalization** already handled by carousel (Phase 0); verify aria-selected/tab semantics with 3 tabs.
 5. **A11y pass**: keyboard nav across 3 panels, announceViewChange strings, inert correctness, reduced-motion (transitions already tokenized).
 
-### Phase 3 — Polish (separate, optional)
+### Phase 3 — Polish — ✅ DONE July 11, 2026
 
-- Vertical-swipe skip gesture on the card (needs gesturePanelManager vertical detection — new territory, keep out of v1).
-- Vocab-theme icons/labels on the card per theme; consider data-label-key sweep for its static bits.
-- Stats: track one-task-mode completions (actionUsage) to see if the feature earns its place.
+- ✅ **Vertical-swipe skip**: implemented in focusTaskPanel itself (NOT gesturePanelManager) — touch listeners scoped to the panel element, so they can't fight gpm's document-level horizontal detection. Swipe up = next, down = previous; requires `GESTURE.VERTICAL_SWIPE` (60px) AND vertical dominance (|dy| > |dx|×1.5); one step per gesture; ignores swipes starting on interactive controls. **pullToRefresh's `isMainTaskViewActive()` now also returns false while the panel is shown** — a down-swipe would otherwise co-trigger the refresh spinner.
+- ✅ **Vocab-theme content**: all 4 non-classic themes now override `nav.tabTask` + `focusTask.completeTask/allDone/prevTask/nextTask/panelAria` (Habit/Exercise/Topic/Chore voices) — this made the "Habit \| Routine \| Stats" docs claim actually true (lens-sensitivity alone doesn't substitute nouns; themes must override explicitly). Card ARIA labels re-resolve on every `render()` so theme switches retheme them live.
+- ✅ **Usage metric**: card completions increment `userProgress.focusTaskCompletions` (uncheck doesn't). Deliberately NOT `actionUsage`/quickActions counts — those drive the quick-actions MRU UI and must only contain action-button ids.
 - ~~Consider CSS `content` label theming for all three tabs~~ — pulled into Phase 2 (July 9, 2026: user flagged the hardcoded strings; `attr(data-tab-label)` bridge).
+- Deferred/not doing: per-theme card *icons* (the 🔁/due indicators are adequate; revisit if themes grow icon sets).
+
+**Verified:** focusTaskPanel 16/16 (4 new: swipe directions, diagonal/sub-threshold/one-step-per-gesture, button exclusion, metric semantics); themes 28, pullToRefresh 18, labelResolver 41, defaultLabels 18, constants 21, themeManager 21 — green. Live (fresh context, hasTouch): Habit Tracker renders pill "Habit", button "Complete habit", aria "Current/Next habit"; real TouchEvent swipe-up advanced the card; metric persisted to state.
 
 ---
 

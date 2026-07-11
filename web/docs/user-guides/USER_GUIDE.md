@@ -365,6 +365,7 @@ Focus View's third panel shows **only your current step** — the first unchecke
 - **"3 of 10"** position indicator so you always know where you are.
 - **Complete task** button — works exactly like checking the task in the list (progress, achievements, and undo all count normally), then automatically advances to the next unchecked task.
 - **‹ ›** buttons to peek at other tasks, including completed ones (shown dimmed — the button flips to **Mark incomplete** there, handy for out-of-order work). Browsing snaps back to the current step when you complete a task or switch routines.
+- **On touch screens**, swipe **up** on the card for the next task and **down** for the previous one — same as the ‹ › buttons.
 - **Mode-aware finish:** in Auto Cycle mode, completing the last task plays a short *Cycle complete!* celebration on the card, then starts you back at task 1. In Manual Cycle or To-Do Mode, use the floating Cycle/Clear button any time — the card follows along.
 
 > 💡 The Task panel is made for sequential routines — checklists you work top to bottom, one step at a time.

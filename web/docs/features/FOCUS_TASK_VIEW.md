@@ -28,6 +28,7 @@ miniCycle routines are often **sequential work processes** (an inspection checkl
 - **Task text**, high-priority accent (left border in the task's priority color), recurring indicator (🔁), and due date when set.
 - **Complete task** button — goes through the exact same path as tapping the task in the list, so undo, progress, achievements, and auto-cycle detection all behave identically.
 - **‹ › browse buttons** — step through the whole list, including completed tasks (rendered dimmed with a strikethrough; the button becomes "Mark incomplete" there). Browsing is a temporary override: it resets when you complete a task, switch routines, reset the cycle, or leave the panel.
+- **Vertical swipe (touch)** — swipe **up** on the card for the next task, **down** for the previous one. Same browsing rules as ‹ ›. Pull-to-refresh is disabled while this panel is shown so a down-swipe can't trigger both.
 
 ### Which task shows
 
@@ -45,7 +46,7 @@ The always-visible cycle/clear control is Focus View's existing floating action 
 
 ### Vocabulary themes
 
-The tab labels go through the label system (`nav.tabTask` is lens-sensitive), so themes can rename the tab — e.g. Habit Tracker renders **Habit | Routine | Stats**. Card strings (`focusTask.*` keys) are themeable the same way.
+The tab labels go through the label system, and all four non-classic themes override them: Habit Tracker renders **Habit | Routine | Stats**, Fitness **Exercise**, Scholar **Topic**, Cleaning **Chore**. The card strings follow the same voice ("Complete habit", "All exercises complete!", "Current chore" ARIA, …) and retheme live when the routine's theme changes. Card completions are counted in `userProgress.focusTaskCompletions` for usage insight.
 
 ---
 
