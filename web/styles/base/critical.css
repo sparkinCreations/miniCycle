@@ -324,19 +324,13 @@ html[data-app-loaded="true"] .first-run-lite {
   height: 100%;
   width: 0;
   background: rgba(255, 255, 255, 0.7);
-  animation: first-run-creep 25s cubic-bezier(0.15, 0.6, 0.3, 1) forwards;
-}
-@keyframes first-run-creep {
-  0% { width: 0; }
-  12% { width: 38%; }
-  35% { width: 64%; }
-  70% { width: 84%; }
-  100% { width: 94%; }
+  /* Width is driven by updateLoaderProgress() with the real boot percent.
+     Ease between the discrete real steps so it moves smoothly, not snappily. */
+  transition: width 0.5s ease-out;
 }
 @media (prefers-reduced-motion: reduce) {
   .first-run-bottom-fill {
-    animation: none;
-    width: 66%;
+    transition: none;
   }
   .first-run-btn.is-chosen {
     animation: none;

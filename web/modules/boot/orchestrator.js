@@ -300,6 +300,13 @@ function updateLoaderProgress(message, percent = 0) {
   if (status) {
     status.textContent = text;
   }
+  // Drive the first-run bottom progress bar from the SAME real percent — honest
+  // progress (moves in real boot steps: 2→4→5→15→30→55→85→100), not a timed
+  // creep. If boot stalls on a phase, the bar sits there — diagnostic, not fake.
+  const bottomFill = document.querySelector('.first-run-bottom-fill');
+  if (bottomFill) {
+    bottomFill.style.width = `${Math.max(0, Math.min(100, percent))}%`;
+  }
 }
 
 /**
