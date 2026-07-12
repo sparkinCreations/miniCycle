@@ -133,6 +133,24 @@ body.app-loading #undo-redo-buttons {
   justify-content: flex-start;
   padding-top: 12vh;
 }
+/* Soft scrim behind the content so white text is legible over the LIGHT areas
+   of the photo (the clipboard paper). Radial + transparent edges keep the airy
+   look; the buttons are white cards so they don't need it, but it's harmless. */
+#app-loader.first-run-mode::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 115% 55% at 50% 38%,
+              rgba(0, 0, 0, 0.42) 0%, rgba(0, 0, 0, 0.18) 45%, rgba(0, 0, 0, 0) 72%);
+  pointer-events: none;
+}
+/* Raise the text block above the scrim (these are static flex items; the tip,
+   status, and bottom bar are already position:absolute so sit above it). */
+#app-loader.first-run-mode .loader-logo,
+#app-loader.first-run-mode .first-run-choice {
+  position: relative;
+  z-index: 1;
+}
 /* In choice mode the tip is demoted to a small, quiet strip just above the
    bottom progress bar — the buttons and tagline own the screen. (Its top-15%
    pin also collided with the centered column on short/wide viewports.) */
