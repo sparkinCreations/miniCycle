@@ -1,5 +1,11 @@
 # Minification (Deploy-Time Release Step) — Plan
 
+> ⚠️ **SUPERSEDED (July 2026) by `BUILD_PIPELINE_PLAN.md`.** This plan chose per-file
+> minification without bundling; the r/website feedback + July cold-load measurements showed the
+> real cost is import-chain round trips and the SW precache double-fetch, which only bundling +
+> content-hashed filenames fix. The DI-safety analysis below (keep-names, what must not be touched)
+> still applies and is referenced by the successor plan.
+
 **Status:** PLAN (June 15 2026). The high-ceiling structural lever from `BOOT_PERF_ROADMAP.md` —
 cuts parse cost across **every** boot phase (~3.4 MB unminified JS) with no per-feature regression
 surface. Bonus: obfuscation aligns with the proprietary license.
