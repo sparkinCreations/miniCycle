@@ -22,6 +22,12 @@ Interactive 3642ms | pre-boot ~1059ms | bootSequence 2583ms
 ```
 High run-to-run variance on this device — treat numbers as directional, re-measure 2–3 warm runs.
 
+> **July 2026 addendum:** the structural lever changed — `BUILD_PIPELINE_PLAN.md` (esbuild bundle +
+> content-hashed filenames + generated precache) supersedes `MINIFICATION_PLAN.md` as Lever 1.
+> New zero-risk measurement task before any further deferral: **add per-module `performance.mark`s
+> to `loadModule()`** (currently per-phase `mc:subphase:*` only) so the 17 UI_MANAGERS modules rank
+> by measured cost, not line-count estimates. See `FEEDBACK_TODO_2026_07.md` P0 addendum.
+
 ## Two classes of work
 
 1. **Module deferral** — cut what's *parsed* at boot. Proven recipe (recurring, games, testing):

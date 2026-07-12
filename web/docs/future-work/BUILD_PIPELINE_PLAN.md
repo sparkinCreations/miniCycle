@@ -23,6 +23,14 @@ the double-fetch AND retires the `?v=` cache-busting mechanism — the root caus
 versioned-import **split-instance bug class** (boot-retry criticals C1/C2, the labelResolver bare-vs-
 versioned trap, the facade sub-module version split). One build step kills a whole bug family.
 
+**Bonus payoff — deletable defensive code (noguchilin's atomicity point, verified):** a global
+`?v=` bump is not atomic per-file, which is exactly why the SW carries half-old/half-new guards —
+it strips `?v=` from cache keys (service-worker.js:778) and prefers current-cache entries to avoid
+mixed-version module graphs. Content-addressed filenames make a stale mix *impossible* (an old HTML
+can only reference old hashes, a new one only new), so those guards — and the stale-cache recovery
+paths that exist to un-wedge `?v=` mismatches — can be **simplified or removed** once the pipeline
+ships. Budget a cleanup pass in Phase 4.
+
 ## Constraints (what the design must preserve)
 
 - **Dev stays no-build.** `npm start` serves pristine source; all dev/debug workflows unchanged.

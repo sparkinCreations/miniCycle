@@ -25,6 +25,35 @@ This was raised independently by noguchilin, motomeru2526, unoriginalusername26,
 
 ---
 
+## P0 addendum — warm-execution load time (from the revised doc, corrected July 2026)
+
+A revised version of this doc (reviewed July 12) correctly split the load problem in two: the
+**cold-network fetch waterfall** (bundling/hashing — `BUILD_PIPELINE_PLAN.md`) and the
+**warm-execution init cost** (the UI_MANAGERS phase dominating boot). That framing is right and
+worth keeping. Its "defer these 10 modules" list, however, re-proposed modules the June 2026
+investigation already found NOT safely deferrable — see `BOOT_PERF_ROADMAP.md` and
+`MODULE_DEFERRAL_AUDIT.md` for the per-module reasons. Corrected state:
+
+- [ ] **Add per-module timing to `loadModule()`** — the revision's genuinely new, zero-risk task.
+  `moduleLoader.js` emits per-*phase* `mc:subphase:*` measures only; per-module marks would rank
+  the 17 UI_MANAGERS modules by real cost instead of line-count estimates, and surface in the
+  testing modal's Boot Timing view. Do this before any further deferral work.
+- [ ] **Defer `settingsManager`** — June's "cleanest remaining win" (boot job is just
+  initAllToggles → defer to settings-open; verify toggle side-effects first).
+- **Already shipped, not missing:** the deferral mechanism (`deferred: true` +
+  `ensureModuleLoaded`) exists and three batches shipped in June (testing cascade, gamesManager,
+  recurringPanel — the last device-confirmed at ~150ms saved, v2.239).
+- **Not safely deferrable** (investigated June 2026, reasons documented): focusMode (restores
+  persisted focus state at boot), undoRedoManager (titleManager hard-requires; hot path),
+  helpWindowManager (always-on ambient), guidedTourManager (boot-schedules tours; 14 returning-user
+  tips), taskSearch (featureBoot special-cases into render path), preferencesManager (boot
+  color-apply → needs init-split, not deferral), gesturePanelManager/pullToRefresh (category
+  error: a gesture module must be resident to detect its own trigger).
+- **June's ROI conclusion stands:** remaining deferrals are ~100–250ms each at medium effort and
+  regression risk; the build pipeline (minify+bundle cuts parse across every phase) is better ROI.
+
+---
+
 ## P0 — Concept clarity on first contact
 
 Multiple people couldn't tell what the app was for before they experienced a cycle. ExplanationOk2014: "What is the purpose? I only see some achievements, I am honestly confused." Ambivalent_Oracle: "It seems like another TODO list." You diagnosed this yourself in-thread: "I may have focused so much on making the app feel simple that people categorize it as just a to-do list before they experience the cycle concept, which is really the whole point."
