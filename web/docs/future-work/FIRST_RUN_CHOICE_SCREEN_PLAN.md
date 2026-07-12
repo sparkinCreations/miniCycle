@@ -1,8 +1,25 @@
 # First-Run Choice Screen — Plan
 
-**Status:** PLAN (July 12, 2026). Companion to `BUILD_PIPELINE_PLAN.md` (perception fix vs actual
-fix — complementary, not substitutes) and `FEEDBACK_TODO_2026_07.md` (kills both P0s: perceived
-load time + concept clarity on first contact).
+**Status:** ✅ IMPLEMENTED & SHIPPED July 12, 2026. Companion to `BUILD_PIPELINE_PLAN.md`
+(perception fix vs actual fix — complementary, not substitutes) and `FEEDBACK_TODO_2026_07.md`
+(kills both P0s: perceived load time + concept clarity on first contact).
+
+**As-built summary:**
+- Static three-choice screen in `miniCycle.html` (sibling of `#app-loader`, reuses splash kit +
+  rotating tips), inline ES5 controller gates on `miniCycleData` absence, stores the pick in
+  `sessionStorage.miniCycle_firstRunChoice`, dispatches `firstrun:choice`. Solid-white buttons,
+  soft radial scrim for text legibility, wordmark + descriptor + to-do-contrast tagline.
+- `uiBoot.hideAppLoader()` defers the splash dismiss while `data-awaiting-choice` (marks appLoaded
+  to defuse the 60s lite failsafe); dismisses on the choice event. Boot-error screen still wins.
+- Routing in `appInit._routeFirstRunChoice()`: create → creation modal (Home View) + one-shot
+  friendlier empty hint (`empty.firstStepHint`); sample → picker (`startInSampleView`); learn/null
+  → focus-view `runFirstRunFlow`. create/sample mark `onboardingCompleted` (stops the Home View
+  tour reappearing on refresh); learn does not (its flow completes on focus exit).
+- Wait-gated Lite link (>10s + not loaded); perceived-wait metrics in `getBootTiming().firstRun`
+  surfaced in the testing-modal Boot Timing view; `firstRun.*` label keys as i18n source of truth.
+- Tests: appInit routing (4) + choice-screen source invariants (2). Onboarding review confirmed
+  the Home View modal should NOT show for create/sample (declined intent) and that "learn" is
+  correctly routed to the richer focus-view flow (which has its own cycle animation).
 
 ## The screen
 
@@ -55,6 +72,10 @@ showcase. The "Create" user declined guidance twice (didn't pick Learn, didn't p
 not interrupt them with a tour.
 
 ### Visuals — reuse the splash kit
+
+**Keep the rotating loading tips** (the `#loader-tip` 💡 pill, top of screen) on the choice screen
+— they already load from `loading-tips.json` via their own inline script and occupy the top band,
+so they coexist with the centered tagline + buttons. Decided July 12.
 
 The choice screen is a sibling of `#app-loader` and inherits its visual language wholesale
 (`styles/base/critical.css`): the blue gradient over `Routine_Lists.webp` (with the existing

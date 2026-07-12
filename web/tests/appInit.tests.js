@@ -874,6 +874,87 @@ export async function runAppInitTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
+    // === FIRST-RUN CHOICE ROUTING (choice screen → destination) ===
+    // Helper: wire mocks, capture what _routeFirstRunChoice does for a choice.
+    function routeWith(choice) {
+        const captured = {
+            state: { settings: {} },
+            createArgs: undefined,
+            createCalled: false,
+            firstRunFlowCalled: false
+        };
+        setAppInitDependencies({
+            getMiniCycleState: () => ({
+                update: (fn) => { fn(captured.state); }
+            }),
+            showCycleCreationModal: (...args) => { captured.createCalled = true; captured.createArgs = args; },
+            getOnboardingManager: () => ({})
+        });
+        const onboardingManager = {
+            runFirstRunFlow: async () => { captured.firstRunFlowCalled = true; },
+            showOnboarding: () => {}
+        };
+        try { sessionStorage.removeItem('miniCycle_firstRunCreate'); } catch (e) {}
+        appInit._routeFirstRunChoice(choice, onboardingManager, {}, null, { settings: {} });
+        captured.firstRunCreateFlag = (() => { try { return sessionStorage.getItem('miniCycle_firstRunCreate'); } catch (e) { return null; } })();
+        return captured;
+    }
+
+    await test('choice "create" → opens creation modal (no args) + marks onboarding complete + sets first-run flag', () => {
+        const r = routeWith('create');
+        if (!r.createCalled) throw new Error('showCycleCreationModal should be called for create');
+        if (r.createArgs.length !== 0) throw new Error('create should open the modal with NO args (blank routine)');
+        if (r.state.settings.onboardingCompleted !== true) throw new Error('create must mark onboardingCompleted (stops Home View tour on refresh)');
+        if (r.firstRunCreateFlag !== '1') throw new Error('create must set the miniCycle_firstRunCreate one-shot flag');
+        if (r.firstRunFlowCalled) throw new Error('create must NOT run the focus-view first-run flow');
+    });
+
+    await test('choice "sample" → opens picker (startInSampleView) + marks onboarding complete', () => {
+        const r = routeWith('sample');
+        if (!r.createCalled) throw new Error('showCycleCreationModal should be called for sample');
+        if (!r.createArgs[0] || r.createArgs[0].startInSampleView !== true) throw new Error('sample must pass { startInSampleView: true }');
+        if (r.state.settings.onboardingCompleted !== true) throw new Error('sample must mark onboardingCompleted');
+    });
+
+    await test('choice "learn" → runs focus-view first-run flow + does NOT mark onboarding complete', () => {
+        const r = routeWith('learn');
+        if (!r.firstRunFlowCalled) throw new Error('learn must run runFirstRunFlow');
+        if (r.createCalled) throw new Error('learn must NOT open the creation modal');
+        if (r.state.settings.onboardingCompleted === true) throw new Error('learn must NOT mark onboardingCompleted here (runFirstRunFlow completes it on focus exit)');
+    });
+
+    await test('choice null (skip/default) → runs focus-view first-run flow', () => {
+        const r = routeWith(null);
+        if (!r.firstRunFlowCalled) throw new Error('null choice must fall back to runFirstRunFlow');
+        if (r.createCalled) throw new Error('null choice must NOT open the creation modal');
+    });
+
+    // === FIRST-RUN CHOICE SCREEN WIRING (source invariants) ===
+    await test('choice screen shell + controller wired in miniCycle.html', async () => {
+        const html = await (await fetch('../miniCycle.html')).text();
+        // Three-choice shell present with the right data-choice values
+        if (!/id="first-run-choice"/.test(html)) throw new Error('#first-run-choice missing');
+        ['create', 'sample', 'learn'].forEach(c => {
+            if (!new RegExp(`data-choice="${c}"`).test(html)) throw new Error(`choice button "${c}" missing`);
+        });
+        // Only shown to brand-new users (no data) — controller gates on miniCycleData
+        if (!/getItem\('miniCycleData'\)/.test(html)) throw new Error('controller must gate on miniCycleData absence');
+        // Handoff contract: stores choice + dispatches the event boot consumes
+        if (!/miniCycle_firstRunChoice/.test(html)) throw new Error('controller must store the choice in sessionStorage');
+        if (!/firstrun:choice/.test(html)) throw new Error("controller must dispatch 'firstrun:choice'");
+        // Perceived-wait marks (read by getBootTiming)
+        if (!/mc:firstrun:choiceShown/.test(html)) throw new Error('choiceShown mark missing');
+        if (!/mc:firstrun:choiceTapped/.test(html)) throw new Error('choiceTapped mark missing');
+    });
+
+    await test('hideAppLoader defers dismissal while awaiting a first-run choice', async () => {
+        const src = await (await fetch('../modules/boot/uiBoot.js')).text();
+        // Boot must NOT hide the splash out from under an unpicked choice screen;
+        // it marks appLoaded (defuses the 60s lite failsafe) and waits for the event.
+        if (!/data-awaiting-choice/.test(src)) throw new Error('hideAppLoader must check data-awaiting-choice');
+        if (!/firstrun:choice/.test(src)) throw new Error('hideAppLoader must defer dismissal to the firstrun:choice event');
+    });
+
     // === SUMMARY ===
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;

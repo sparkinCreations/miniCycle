@@ -170,6 +170,25 @@ function getBootTiming() {
     });
     moduleTimings.sort((a, b) => b.total_ms - a.total_ms);
   } catch (_) { /* perf API unavailable */ }
+  // First-run choice-screen perception metrics (only present when the screen was
+  // shown — a brand-new user). Marks are set by the inline controller in
+  // miniCycle.html. perceivedWait = how long the user actually waited AFTER
+  // picking; ~0 (or bootDoneBeforeTap true) means boot finished while they read.
+  let firstRun = null;
+  try {
+    const shownAt = at('mc:firstrun:choiceShown');
+    if (shownAt != null) {
+      const tappedAt = at('mc:firstrun:choiceTapped');
+      const interactiveAt = at(BOOT_MARKS.INTERACTIVE);
+      firstRun = {
+        choiceShownAt_ms: shownAt,
+        choiceTappedAt_ms: tappedAt,
+        decisionTime_ms: (tappedAt != null) ? tappedAt - shownAt : null,
+        perceivedWait_ms: (tappedAt != null && interactiveAt != null) ? Math.max(0, interactiveAt - tappedAt) : null,
+        bootDoneBeforeTap: (tappedAt != null && interactiveAt != null) ? interactiveAt <= tappedAt : null
+      };
+    }
+  } catch (_) { /* perf API unavailable */ }
   return {
     // ms from navigation start (timeOrigin) until app interactive — includes the
     // pre-orchestrator cold-cache/precache window, which dominates first loads.
@@ -187,6 +206,8 @@ function getBootTiming() {
     // Per-module {name, import_ms, init_ms, total_ms}, ranked by total_ms desc.
     // init_ms is exact/additive; import_ms overlaps within a phase (rank-only).
     moduleTimings,
+    // Choice-screen perception metrics, or null for returning users.
+    firstRun,
     // total time spent inside runBootSequence() (start → interactive).
     bootSequence_ms: dur(BOOT_MEASURES.TOTAL)
   };

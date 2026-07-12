@@ -330,6 +330,10 @@ class AppInit {
 				// false), open the creation dialog. Cancelling falls back to the
 				// getting-started sample via the dialog's own onboarding guard.
 				markOnboardingComplete();
+				// One-shot flag: the empty-state hint shown after this routine is
+				// created uses the friendlier first-step copy (routineManager reads
+				// + clears it). Cleared on first render so later routines are normal.
+				try { sessionStorage.setItem('miniCycle_firstRunCreate', '1'); } catch (e) { /* private mode */ }
 				if (_deps.showCycleCreationModal) {
 					_deps.showCycleCreationModal();
 				} else {

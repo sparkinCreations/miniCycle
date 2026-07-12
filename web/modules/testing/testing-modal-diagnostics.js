@@ -314,6 +314,21 @@ export function showBootTiming() {
         out.push(`  ${label.padEnd(13)}${ms(v).padStart(8)}${pctOf(v, boot)}`);
     });
 
+    // First-run choice-screen perception (only present for a brand-new user's
+    // first session — the screen sets the marks). Shows how much of the real
+    // boot the choice screen masked: perceived wait ≪ real boot is the win.
+    const fr = timing.firstRun;
+    if (fr) {
+        out.push('');
+        out.push('FIRST-RUN PERCEPTION');
+        out.push('─'.repeat(RULE_W));
+        out.push(`${'Choice shown'.padEnd(16)}${ms(fr.choiceShownAt_ms).padStart(8)}  (since page open)`);
+        out.push(`${'User decided in'.padEnd(16)}${ms(fr.decisionTime_ms).padStart(8)}`);
+        out.push(`${'Perceived wait'.padEnd(16)}${ms(fr.perceivedWait_ms).padStart(8)}  (after tapping)`);
+        out.push(`${'Real boot'.padEnd(16)}${ms(boot).padStart(8)}`);
+        if (fr.bootDoneBeforeTap === true) out.push('  ✓ boot finished before the user picked');
+    }
+
     // Per-phase breakdown of the Features window, ranked with bars — the dominant
     // phase is the first defer/parallelization target on slow devices.
     const rankedPhases = Object.entries(timing.featuresByPhase || {})

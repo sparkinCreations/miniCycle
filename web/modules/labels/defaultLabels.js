@@ -942,6 +942,9 @@ export const DEFAULT_LABELS = deepFreeze({
         noTasks:              'No tasks yet',
         noTasksHint:          'Press the + button to show the task bar to add a task or create a new routine',
         noTasksHintFocus:     'Open the {menuIcon} menu at the top and tap {showHide} to start adding tasks',
+        // Shown once, right after a brand-new user picks "Create My First Routine"
+        // and names an empty routine — friendlier than the generic hint above.
+        firstStepHint:        'Add the first step of your routine — press the + button to begin',
         createFirst:          'Create your first routine',
         orTrySample:          'or try a sample',
         noRecurringTasks:     'Add a task from this routine to make it recurring',
@@ -1944,6 +1947,29 @@ export const DEFAULT_LABELS = deepFreeze({
         suggestRefresh:     'Try refreshing or clearing cache',
         errorOffline:       'You appear to be offline',
         suggestReconnect:   'Connect to the internet and try again, or use Lite version'
+    },
+
+    // ========================================================================
+    // 29b. FIRST-RUN CHOICE SCREEN
+    // Canonical copy for the three-choice first-run screen. NOTE: the screen is
+    // static HTML baked into miniCycle.html and painted PRE-BOOT (getLabel isn't
+    // available yet), so these keys are NOT read at runtime today — the HTML
+    // duplicates them. They live here as the single source of truth for i18n
+    // (see I18N_LANGUAGE_PACK_PLAN.md): when a build/i18n step lands, it can
+    // inject the active-language values into the baked HTML from these keys.
+    // Keep this block and the HTML in sync until then.
+    // ========================================================================
+    firstRun: {
+        wordmark:    'miniCycle',
+        descriptor:  'Routine Checklist Manager',
+        tagline:     'Repeatable checklists that reset on completion — not one-and-done to-dos.',
+        createBtn:   'Create My First Routine',
+        sampleBtn:   'Load a Sample',
+        learnBtn:    'Learn How Cycles Work',
+        busyCreate:  'Setting up your routine…',
+        busySample:  'Loading samples…',
+        busyLearn:   'Starting the tour…',
+        liteHint:    'Taking a while? Try the Lite version →'
     },
 
     // ========================================================================

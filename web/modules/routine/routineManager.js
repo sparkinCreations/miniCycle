@@ -255,6 +255,19 @@ export class RoutineManager {
                     this.deps.refreshThemeLabels?.();
                     this.deps.updateRecurringInfoLink?.();
                     await this.deps.completeInitialSetup(finalTitle, appState.get());
+
+                    // First-run "Create My First Routine" one-shot: now that the
+                    // empty routine has rendered, swap the generic empty hint for
+                    // the friendlier first-step copy. Set LAST so it wins over the
+                    // render's own hint; cleared so later routines are normal.
+                    try {
+                        if (sessionStorage.getItem('miniCycle_firstRunCreate') === '1') {
+                            sessionStorage.removeItem('miniCycle_firstRunCreate');
+                            const firstHint = this.deps.querySelector(DOM_SELECTORS.EMPTY_STATE_HINT);
+                            if (firstHint) firstHint.innerHTML = getLabel('empty.firstStepHint').replace('+', '<strong>+</strong>');
+                        }
+                    } catch (e) { /* private mode — skip the nicety */ }
+
                     document.dispatchEvent(new Event('onboarding:setup-complete'));
                 }
             });
