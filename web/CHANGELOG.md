@@ -1,3 +1,24 @@
+## [2.292] - 2026-07-12
+- feat(onboarding): first-run choice-screen finalization — perception metrics, first-step hint, firstRun labels, routing tests
+- fix(onboarding): create/sample choices mark onboardingCompleted — stop Home View tour reappearing on refresh
+- harden(boot): forward args in invoke-style appInit/migration DI wrappers (kills the arg-swallow bug class)
+- feat(onboarding): route first-run choice — create→Home creation modal, sample→picker, learn→focus flow
+- polish(onboarding): soft scrim behind choice-screen text for legibility over light photo
+- copy(onboarding): choice-screen tagline contrasts against one-and-done to-dos
+- copy(onboarding): plainer choice-screen tagline — states the reset differentiator directly
+- polish(onboarding): choice screen — real percent-driven progress bar (was timed creep) + wait-gated Lite link
+- feat(onboarding): wait-gated Lite link on choice screen — CSS-timed reveal (>10s boot), data-app-loaded suppression gate
+- polish(onboarding): choice screen — logo lifted, miniCycle wordmark + descriptor, low-key bottom-right boot status
+- polish(onboarding): choice buttons — solid white with brand-blue text, tap inverts to blue
+- polish(onboarding): declutter choice screen — one-line tagline, tip demoted to bottom strip
+- fix(onboarding): choice screen — tip pill joins flex column (overlap on short viewports)
+- feat(onboarding): first-run choice screen shell — three choices, deferred splash dismiss, tips kept, z-leak fix
+- docs: choice screen — per-choice landing table + splash visual-kit reuse
+- docs: choice screen revised to three buttons (create / sample picker / opt-in onboarding)
+- docs: first-run choice screen plan (two buttons, perceived-wait metrics, lite reroute rework)
+- docs: record v2.291 old-Android per-module baseline + facade-parse insight
+
+
 ## [2.291] - 2026-07-12
 - polish(testing): boot timing output — aligned columns, phase bars, module table
 
