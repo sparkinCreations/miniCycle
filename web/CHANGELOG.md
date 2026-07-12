@@ -1,3 +1,7 @@
+## [2.291] - 2026-07-12
+- polish(testing): boot timing output — aligned columns, phase bars, module table
+
+
 ## [2.290] - 2026-07-12
 - feat(boot): per-module timing marks + ranked module list in Boot Timing view
 - docs: fold revised feedback review into plans (per-module timing task, SW-guard cleanup payoff, corrected defer list)
