@@ -1,3 +1,9 @@
+## [2.290] - 2026-07-12
+- feat(boot): per-module timing marks + ranked module list in Boot Timing view
+- docs: fold revised feedback review into plans (per-module timing task, SW-guard cleanup payoff, corrected defer list)
+- docs: add r/website feedback todo + build pipeline plan (supersedes minification plan)
+
+
 ## [2.288] - 2026-07-11
 - docs: phase 3 complete — swipe-to-skip in guides and manual
 - test(focusTaskPanel): cover swipe gestures and completion metric
