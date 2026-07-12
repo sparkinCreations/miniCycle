@@ -127,14 +127,23 @@ body.app-loading #undo-redo-buttons {
 #app-loader.first-run-mode .loader-bar-container {
   display: none;
 }
-/* In choice mode the tip joins the flex column (above the logo) instead of
-   being pinned at top 15% — the absolute pin collides with the centered
-   column on short/wide viewports. */
+/* In choice mode the tip is demoted to a small, quiet strip just above the
+   bottom progress bar — the buttons and tagline own the screen. (Its top-15%
+   pin also collided with the centered column on short/wide viewports.) */
 #app-loader.first-run-mode .loader-tip {
-  position: static;
-  transform: none;
-  order: -1;
-  margin-bottom: 20px;
+  top: auto;
+  bottom: 26px;
+  width: auto;
+  max-width: 78vw;
+  padding: 7px 16px;
+  font-size: var(--font-size-sm, 13px);
+  background: rgba(0, 0, 0, 0.18);
+}
+#app-loader.first-run-mode .loader-tip.visible {
+  opacity: 0.7;
+}
+#app-loader.first-run-mode .loader-tip-header {
+  display: none;
 }
 .first-run-choice {
   display: flex;
