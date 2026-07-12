@@ -19,20 +19,33 @@ behind it:
    │  Create My First Routine   │
    └────────────────────────────┘
    ┌────────────────────────────┐
-   │   Try a Sample Routine     │
+   │      Load a Sample         │
+   └────────────────────────────┘
+   ┌────────────────────────────┐
+   │   Learn How Cycles Work    │
    └────────────────────────────┘
 
    ▁▁▁▁▁▁▁▁▂▂▂░░░░░░░░░░░░░░░░░░   ← thin progress bar, bottom edge
 ```
 
-**Two buttons, deliberately not three.** "Just Show Me The App" was cut: it duplicates the
-"just looking" intent of the sample, a new user can't reason about the difference, and an empty
-state is the *worst* landing for the "seems like another TODO list" problem — the pre-filled
-sample resetting on completion IS the concept explanation.
+**Three buttons — three real destinations, all of which already exist in the app:**
 
-- **Create My First Routine** → boot completes → routine-creation flow (no sample created).
-- **Try a Sample Routine** → boot completes → current sample-routine flow.
-- Small text link under the buttons ("skip") is optional; the sample button effectively is skip.
+- **Create My First Routine** → the routine-creation window (`showCycleCreationModal`), blank —
+  no auto-created sample. For the user who arrived with a routine in their head.
+- **Load a Sample** → the sample-routine picker. NOT a demo: `examples/sample-routines/` holds
+  8+ real, usable `.mcyc` routines (QA Inspection Checklist, Opening/Closing Procedures, the 4Ps
+  Hourly Rounding, Daily Routine, Cardio & Core, …) with a generated `manifest.json`
+  (`npm run samples`) that the Create New Routine dialog already consumes — this button routes to
+  that existing list. For the user who wants a working starting point.
+- **Learn How Cycles Work** → the existing interactive onboarding/intro flow — which thereby
+  becomes **opt-in** instead of shown-to-everyone. For the user asking "what is this?".
+
+**Decision log:** an earlier draft had two buttons, cutting a third ("Just Show Me The App")
+because it duplicated the sample's just-looking intent and an empty state worsens the
+"seems like another TODO list" problem. This three-button version is different in kind: each
+button maps to a distinct user question ("I know what I want" / "give me a starting point" /
+"what is this?") and to a distinct, already-built destination — no overlapping intents, so the
+choice stays instant. A small "skip" text link (→ current default flow) remains optional.
 
 ## Perception mechanics (why this works)
 
@@ -99,18 +112,20 @@ The deviceDetection auto-redirect's two problems:
 - **Inline HTML/CSS in miniCycle.html** (that's what makes it paint instantly) — sibling of the
   `#app-loader` splash; shown only when the inline script detects no existing data
   (`localStorage` Schema 2.5 key absent — same signal appInit uses for first-run).
-- **Choice storage:** `sessionStorage.setItem('miniCycle_firstRunChoice', 'create'|'sample')`;
+- **Choice storage:** `sessionStorage.setItem('miniCycle_firstRunChoice', 'create'|'sample'|'learn')`;
   boot (appInit / onboarding path) reads and routes. No module code runs on the screen itself.
 - **CSP:** the tap handler is an inline script → recompute the CSP hashes in miniCycle.html +
   `.htaccess`/netlify.toml (lessons file: every inline-script edit needs this).
-- **Onboarding interplay (open decision):** today every new user silently gets a sample routine
-  and boots into Focus View with the welcome flow. "Create My First Routine" should skip sample
-  creation and land in the routine-creation modal; "Try a Sample" keeps the current flow. Decide
-  whether the choice screen replaces the first-run welcome overlay or precedes it (recommendation:
-  replaces — two welcome layers is one too many).
+- **Onboarding interplay:** today every new user silently gets a sample routine, boots into
+  Focus View, and gets the welcome/intro flow. Under this plan the intro runs ONLY via
+  "Learn How Cycles Work" (opt-in); "Create" skips sample creation and opens the creation modal;
+  "Load a Sample" opens the picker. The choice screen REPLACES the first-run welcome overlay —
+  two welcome layers is one too many. Open sub-decision: what "Learn" lands on after the intro
+  completes (recommendation: the sample picker, so the lesson ends with a working routine).
 - **Label system:** button/tagline strings via `getLabel` is impossible pre-boot (static HTML) —
   they're baked, like the splash. Add the keys anyway for the post-boot surfaces that reference
-  the same copy (`firstRun.createRoutine`, `firstRun.trySample`, `firstRun.tagline`).
+  the same copy (`firstRun.createRoutine`, `firstRun.loadSample`, `firstRun.learnCycles`,
+  `firstRun.tagline`).
 
 ## Out of scope
 
