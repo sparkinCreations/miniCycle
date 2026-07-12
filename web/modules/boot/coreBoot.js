@@ -372,12 +372,16 @@ export async function initAppState(deps, showNotification) {
   if (typeof setAppInitDependencies === 'function') {
     setAppInitDependencies({
       // For initialSetup
-      loadMiniCycleData: () => loadMiniCycleData?.(),
-      createInitialSchema25Data: () => migrationMod.createInitialSchema25Data?.(),
+      // NOTE: invoke-style wrappers forward args (...args) so a future arg isn't
+      // silently swallowed — the trap that hid the sample-view option (July 2026).
+      // The getter-style wrappers below (loadMiniCycle, updateReminderButtons, …)
+      // return a function/value and must NOT take args.
+      loadMiniCycleData: (...args) => loadMiniCycleData?.(...args),
+      createInitialSchema25Data: (...args) => migrationMod.createInitialSchema25Data?.(...args),
       showCycleCreationModal: (...args) => appContextMod.getCycleApi?.()?.create?.(...args),
       getOnboardingManager: () => appContextMod.getUiApi?.()?.onboardingManager || null,
       getMiniCycleState: () => deps.core.AppState || null,
-      showNotification: (msg, type, duration) => showNotification?.(msg, type, duration),  // For data integrity warnings
+      showNotification: (...args) => showNotification?.(...args),  // For data integrity warnings
 
       // For completeInitialSetup - use grouped APIs (not legacy getters)
       loadMiniCycle: () => appContextMod.getCycleApi?.()?.load,
@@ -385,8 +389,8 @@ export async function initAppState(deps, showNotification) {
       updateDueDateVisibility: () => appContextMod.getUiApi?.()?.updateDueDateVisibility,
       checkOverdueTasks: () => appContextMod.getReminderApi?.()?.checkOverdue,
       organizeCompletedTasks: () => appContextMod.getUiApi?.()?.organizeCompletedTasks,
-      startReminders: () => appContextMod.getReminderApi?.()?.start?.(),
-      updateThemeColor: () => appContextMod.getUiApi?.()?.updateThemeColor?.(),
+      startReminders: (...args) => appContextMod.getReminderApi?.()?.start?.(...args),
+      updateThemeColor: (...args) => appContextMod.getUiApi?.()?.updateThemeColor?.(...args),
       syncModeFromToggles: () => {
         const cycleApi = appContextMod.getCycleApi?.();
         const mm = cycleApi?.modeManager;
@@ -403,7 +407,7 @@ export async function initAppState(deps, showNotification) {
   migrationMod.setMigrationManagerDependencies({
     storage: localStorage,
     sessionStorage: sessionStorage,
-    showNotification: (msg, type, duration) => showNotification?.(msg, type, duration),
+    showNotification: (...args) => showNotification?.(...args),
     initialSetup: () => {
       if (typeof appInit.runInitialSetup === 'function') {
         return appInit.runInitialSetup();
