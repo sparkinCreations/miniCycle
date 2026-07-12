@@ -311,11 +311,25 @@ class AppInit {
 			}
 		};
 
+		// create/sample land in Home View and have NO further tutorial (the user
+		// declined it by their pick). Mark onboarding complete NOW so a refresh in
+		// Home View doesn't re-trigger the legacy welcome modal (appInit's second
+		// first-run branch fires on !onboardingCompleted && !focusModeActive).
+		// 'learn' is NOT marked here — runFirstRunFlow completes it on focus exit.
+		const markOnboardingComplete = () => {
+			const AppState = _deps.getMiniCycleState?.();
+			AppState?.update?.((s) => {
+				if (!s.settings) s.settings = {};
+				s.settings.onboardingCompleted = true;
+			}, true); // immediate save — survives a fast refresh
+		};
+
 		switch (choice) {
 			case 'create':
 				// Blank routine: stay in Home View (empty schema keeps focusModeActive
 				// false), open the creation dialog. Cancelling falls back to the
 				// getting-started sample via the dialog's own onboarding guard.
+				markOnboardingComplete();
 				if (_deps.showCycleCreationModal) {
 					_deps.showCycleCreationModal();
 				} else {
@@ -325,6 +339,7 @@ class AppInit {
 				break;
 			case 'sample':
 				// Sample picker: same dialog, opened straight to the sample list.
+				markOnboardingComplete();
 				if (_deps.showCycleCreationModal) {
 					_deps.showCycleCreationModal({ startInSampleView: true });
 				} else {
