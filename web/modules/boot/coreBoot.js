@@ -231,8 +231,17 @@ export async function initCoreBoot(deps, versionSuffix = null) {
   // Validate constants loaded
   if (typeof DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS === 'undefined') {
     console.error('❌ Stale constants.js cache detected');
-    await handleStaleCacheRecovery();
-    return null;
+    const recoveryInitiated = await handleStaleCacheRecovery();
+    if (recoveryInitiated) {
+      return null; // Reload is coming — abort this boot
+    }
+    // Recovery could NOT run (offline, or attempts exhausted). Returning null
+    // here leaves the splash screen up forever with no retry or error screen —
+    // a booted app on stale constants beats a dead splash. Continue with safe
+    // fallback copies of the missing exports (mirrors constants.js values).
+    console.warn('⚠️ Continuing boot with stale constants.js (recovery unavailable) — using fallback defaults');
+    DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS = Object.freeze({ cycle: false, todo: true });
+    DEFAULT_RECURRING_DELETE_SETTINGS = DEFAULT_RECURRING_DELETE_SETTINGS ?? Object.freeze({ cycle: true, todo: true });
   }
 
   deps.core.DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS = DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS;

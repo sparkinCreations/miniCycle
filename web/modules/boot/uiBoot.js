@@ -149,7 +149,7 @@ export function attachGlobalEventListeners(_GlobalUtils, _options = {}) {
 
   // ========== Reset Notification Position ==========
   replaceStoredEventListener(
-    document.getElementById('reset-notification-position'),
+    document.getElementById(DOM_IDS.RESET_NOTIFICATION_POSITION),
     'click',
     '__miniCycleUiBootResetNotificationClickHandler',
     handleResetNotificationPosition
@@ -157,7 +157,7 @@ export function attachGlobalEventListeners(_GlobalUtils, _options = {}) {
 
   // ========== Reset Task View Layout ==========
   replaceStoredEventListener(
-    document.getElementById('reset-task-view-layout'),
+    document.getElementById(DOM_IDS.RESET_TASK_VIEW_LAYOUT),
     'click',
     '__miniCycleUiBootResetTaskViewLayoutClickHandler',
     handleResetTaskViewLayoutClick
@@ -894,7 +894,7 @@ export function setupTryLiteVersionButton(_GlobalUtils, deps) {
   // It isn't bundled in the native (Capacitor) build, so don't offer it there —
   // hide the menu entries and skip wiring. No effect on web (isNativeApp() false).
   if (isNativeApp()) {
-    for (const id of ['try-lite-version', 'menu-lite-version']) {
+    for (const id of [DOM_IDS.TRY_LITE_VERSION, DOM_IDS.MENU_LITE_VERSION]) {
       const el = document.getElementById(id);
       if (el) el.style.display = 'none';
     }
@@ -902,13 +902,13 @@ export function setupTryLiteVersionButton(_GlobalUtils, deps) {
   }
 
   replaceStoredEventListener(
-    document.getElementById('try-lite-version'),
+    document.getElementById(DOM_IDS.TRY_LITE_VERSION),
     'click',
     '__miniCycleUiBootTryLiteClickHandler',
     () => handleTryLiteVersionClick(deps)
   );
   replaceStoredEventListener(
-    document.getElementById('menu-lite-version'),
+    document.getElementById(DOM_IDS.MENU_LITE_VERSION),
     'click',
     '__miniCycleUiBootTryLiteClickHandler',
     () => handleTryLiteVersionClick(deps)

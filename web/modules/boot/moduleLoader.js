@@ -1208,9 +1208,6 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         // Notification drag state — used by gesture / swipe handlers to skip while dragging a toast
         isDraggingNotification: () => deps.utils?.notifications?.isDraggingNotification ?? false,
 
-        // ─── Testing ───
-        appendToTestResults: (...args) => deps.testing?.appendToTestResults?.(...args),
-
         // ─── Constants / migrations injected via deps.core (set by coreBoot) ───
         // Direct value access (not a function wrapper) — depMappings is built per-module
         // inside buildModuleDependencies, so deps.core is already populated by this point.
@@ -1269,7 +1266,6 @@ function buildModuleDependencies(manifest, deps, coreResult) {
 
         // Due dates (from deps.features)
         checkOverdueTasks: (...args) => deps.features?.checkOverdueTasks?.(...args),
-        remindOverdueTasks: (...args) => deps.features?.remindOverdueTasks?.(...args),
         createDueDateInput: (...args) => deps.features?.createDueDateInput?.(...args),
 
         // History manager (from deps.features) - use Proxy for lazy resolution

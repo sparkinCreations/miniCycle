@@ -13,6 +13,8 @@ import {
     setupTestEnvironment
 } from './testHelpers.js';
 
+import { DOM_CLASSES } from '../modules/core/constants.js';
+
 // ============================================
 // 🧪 MOCK DEPENDENCIES FOR TASKRENDERER
 // (Phase 3 - all deps are now required)
@@ -385,7 +387,7 @@ export async function runTaskRendererTests(resultsDiv) {
 
         try {
             renderer._restoreActiveTaskOptions();
-            if (taskOptions.classList.contains('task-options--visible')) {
+            if (taskOptions.classList.contains(DOM_CLASSES.TASK_OPTIONS_VISIBLE)) {
                 throw new Error('Options should NOT be shown when shouldRestoreActiveTaskOptions is false');
             }
             if (stateUpdateCalled) {
@@ -416,7 +418,7 @@ export async function runTaskRendererTests(resultsDiv) {
 
         try {
             renderer._restoreActiveTaskOptions();
-            if (taskOptions.classList.contains('task-options--visible')) {
+            if (taskOptions.classList.contains(DOM_CLASSES.TASK_OPTIONS_VISIBLE)) {
                 throw new Error('Options should NOT be shown when shouldRestoreActiveTaskOptions is undefined');
             }
         } finally {
@@ -446,7 +448,7 @@ export async function runTaskRendererTests(resultsDiv) {
 
         try {
             renderer._restoreActiveTaskOptions();
-            if (!taskOptions.classList.contains('task-options--visible')) {
+            if (!taskOptions.classList.contains(DOM_CLASSES.TASK_OPTIONS_VISIBLE)) {
                 throw new Error('Options should be shown when shouldRestoreActiveTaskOptions is true');
             }
         } finally {

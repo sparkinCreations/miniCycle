@@ -143,6 +143,22 @@ export async function runCoreBootTests(resultsDiv) {
         }
     });
 
+    await test('stale-constants path continues boot when recovery unavailable (M5)', async () => {
+        const response = await fetch('../modules/boot/coreBoot.js');
+        const code = await response.text();
+
+        // Offline (or recovery-exhausted), returning null left the splash
+        // screen up forever with no retry or error screen. The branch must
+        // capture the recovery result and continue with fallback defaults
+        // when no reload is coming.
+        if (!code.includes('recoveryInitiated')) {
+            throw new Error('M5 regression: stale-constants branch must capture handleStaleCacheRecovery() result');
+        }
+        if (!code.includes('Continuing boot with stale constants.js')) {
+            throw new Error('M5 regression: continue-anyway path missing from stale-constants branch');
+        }
+    });
+
     // Summary
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${Math.round(passed.count/total.count*100)}%)</h3>`;
 

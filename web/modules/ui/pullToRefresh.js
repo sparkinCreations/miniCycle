@@ -27,16 +27,14 @@ import { getLabel } from '../labels/labelResolver.js';
 const di = createDIModule('PullToRefresh', {
     refreshUIFromState: optional(null),
     loadMiniCycle: optional(null),
-    checkRecurringTasksNow: optional(null),
     watchRecurringTasks: optional(null),
-    promptServiceWorkerUpdate: optional(null),
     showNotification: optional(null),
     isModalOpen: optional(null)
 });
 
 /**
  * Set dependencies for PullToRefresh (call before initPullToRefresh)
- * @param {Object} dependencies - { refreshUIFromState, checkRecurringTasksNow, watchRecurringTasks, promptServiceWorkerUpdate, showNotification }
+ * @param {Object} dependencies - { refreshUIFromState, loadMiniCycle, watchRecurringTasks, showNotification, isModalOpen }
  */
 export function setPullToRefreshDependencies(dependencies) {
     di.setDependencies(dependencies);
@@ -441,13 +439,9 @@ export class PullToRefresh {
                     // Check if there's a waiting worker (update available)
                     if (registration.waiting) {
                         results.swUpdate = true;
-
-                        // Prompt user about update
-                        if (this.deps.promptServiceWorkerUpdate) {
-                            this.deps.promptServiceWorkerUpdate();
-                        } else {
-                            this.deps.showNotification(getLabel('notify.updateAvailableReload'), 'info', UI_TIMEOUTS.NOTIFICATION_SLOW);
-                        }
+                        // SW updates are owned by the version gate + verifyVersionFresh
+                        // flow — just inform the user; don't prompt a competing update.
+                        this.deps.showNotification(getLabel('notify.updateAvailableReload'), 'info', UI_TIMEOUTS.NOTIFICATION_SLOW);
                     }
                 }
             } catch (err) {
@@ -479,15 +473,8 @@ export class PullToRefresh {
             }
         }
 
-        // 3. Check recurring tasks
-        if (this.deps.checkRecurringTasksNow) {
-            try {
-                await this.deps.checkRecurringTasksNow();
-                results.recurringChecked = true;
-            } catch (err) {
-                console.warn('Recurring check failed:', err);
-            }
-        } else if (this.deps.watchRecurringTasks) {
+        // 3. Check recurring tasks (single immediate watcher pass)
+        if (this.deps.watchRecurringTasks) {
             try {
                 await this.deps.watchRecurringTasks();
                 results.recurringChecked = true;

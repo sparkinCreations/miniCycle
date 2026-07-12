@@ -45,6 +45,19 @@ let setStorageDependencies, getLocalStorageUsedBytesFn, getLocalStorageQuotaFn;
 let BOOT_TIMEOUTS;
 let attemptCacheRecovery, clearAllCaches, clearRecoveryFlags, isRecoveryExhausted;
 
+// Emergency fallback if constants.js fails to load or lacks BOOT_TIMEOUTS —
+// keep values in sync with BOOT_TIMEOUTS in core/constants.js.
+const FALLBACK_BOOT_TIMEOUTS = Object.freeze({
+  MODULE_IMPORT: 10000,
+  PHASE_1: 15000,
+  PHASE_2: 30000,
+  PHASE_3: 15000,
+  TOTAL: 60000,
+  RETRY_DELAY: 2000,
+  IDB_OPERATION: 3000,
+  VERSION_GATE: 1500
+});
+
 // ✅ FIX: Shared deps container that persists across boot retries
 // Creating fresh deps on each retry breaks DI closures that capture deps reference
 let deps = null;
@@ -182,14 +195,7 @@ async function loadDependencies() {
       console.error('❌ BOOT_TIMEOUTS not found in constants.js exports!');
       console.error('   Available exports:', Object.keys(constantsMod));
       // Use fallback values to prevent crash
-      BOOT_TIMEOUTS = {
-        MODULE_IMPORT: 10000,
-        PHASE_1: 15000,
-        PHASE_2: 20000,
-        PHASE_3: 15000,
-        TOTAL: 45000,
-        RETRY_DELAY: 1000
-      };
+      BOOT_TIMEOUTS = FALLBACK_BOOT_TIMEOUTS;
     }
 
     // Assign from coreBoot
@@ -206,14 +212,7 @@ async function loadDependencies() {
   } catch (error) {
     console.error('❌ Failed to load orchestrator dependencies:', error);
     // Use fallback BOOT_TIMEOUTS to allow boot to continue
-    BOOT_TIMEOUTS = {
-      MODULE_IMPORT: 10000,
-      PHASE_1: 15000,
-      PHASE_2: 20000,
-      PHASE_3: 15000,
-      TOTAL: 45000,
-      RETRY_DELAY: 1000
-    };
+    BOOT_TIMEOUTS = FALLBACK_BOOT_TIMEOUTS;
     throw error; // Re-throw to trigger error handling
   }
 }
@@ -920,7 +919,10 @@ async function initApp() {
     const success = await runBootSequence();
     if (success === false) return; // Reload initiated by core boot
   } catch (error) {
-    const phase = error.message.includes('Phase') ? error.message.split(' timed')[0] : 'initialization';
+    // Non-Error rejections (string/undefined) have no .message — guard so the
+    // error screen still renders instead of throwing inside the catch.
+    const errMsg = error?.message || '';
+    const phase = errMsg.includes('Phase') ? errMsg.split(' timed')[0] : 'initialization';
 
     // ✅ FAST-PATH: A "binding name not found" / "Importing"-class error is a
     // signature stale-cache failure (e.g. a static import like
@@ -1025,7 +1027,19 @@ async function startOrchestrator() {
     await initApp();
   } catch (error) {
     console.error('❌ Orchestrator failed to start:', error);
-    // HTML fallback will redirect to lite version after timeout
+    // A loadDependencies() failure never reached initApp's retry/recovery
+    // machinery — without this, the user gets a 60s spinner then the Lite
+    // redirect. Give the signature stale-cache failure the same one-shot
+    // recovery as initApp's fast-path, else show the boot error screen.
+    // attemptCacheRecovery is wired BY loadDependencies, so it can be
+    // undefined when the failure happened early — guard it.
+    if (isCacheError(error) && typeof attemptCacheRecovery === 'function' && navigator.onLine) {
+      showUpdatingOverlay();
+      const recovered = await attemptCacheRecovery('orchestrator-startFailure');
+      if (recovered) return;
+    }
+    showBootError('Dependency load', error, false);
+    // If the error screen couldn't render, the HTML fallback still redirects to Lite.
   }
 }
 

@@ -829,6 +829,12 @@ export const DOM_IDS = Object.freeze({
 
     // ---- Behavior Settings ----
     TOGGLE_NOTIFICATIONS: 'toggle-notifications',
+    RESET_NOTIFICATION_POSITION: 'reset-notification-position',
+    RESET_TASK_VIEW_LAYOUT: 'reset-task-view-layout',
+
+    // ---- Lite Version ----
+    TRY_LITE_VERSION: 'try-lite-version',
+    MENU_LITE_VERSION: 'menu-lite-version',
 
     // ---- Backup & Recovery ----
     BACKUP_MINI_CYCLES: 'backup-mini-cycles',

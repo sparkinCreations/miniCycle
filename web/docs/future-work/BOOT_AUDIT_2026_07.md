@@ -81,8 +81,8 @@ Both boot-time validators skipped `optional: true` modules (`moduleLoader.js:140
 | M2 | Vocab themes never reach the 3 boot-injected modals — modalTemplates evaluates `getLabel()` at import time (after Phase 1, before Phase 2 wires `getActiveLens`), so recurring/settings/preferences templates bake default vocabulary; `refreshThemeLabels()` only refreshes main-screen elements; duplicate-injection guard discards themed re-imports | modalTemplates.js (module-level template consts), orchestrator.js:745–761 | ✅ **FIXED** July 8, 2026 |
 | M3 | Main-menu document listeners leak + focus-stealing — every menu-item click path calls `hideMainMenu()` which only removes the `visible` class; document-level Escape + click-outside handlers accumulate one per open/close; stale click-outside handler later calls `menu._previousFocus?.focus()` mid-interaction | uiBoot.js:306–336, menuManager.js:456–462 | ✅ **FIXED** July 9, 2026 |
 | M4 | Deferred-feature capture listeners bypass `replaceStoredEventListener` — anonymous per-boot closures on `document` duplicate on retry and capture a dead attempt-1 `ensureModuleLoaded` | uiBoot.js:999–1018 | ✅ **FIXED** (with C1/C2) |
-| M5 | Offline + stale constants.js = permanent splash screen — `initCoreBoot` returns null whether or not cache recovery could run; offline recovery refuses (correctly) but no retry/error screen follows. appInit's stale path has a continue-anyway flag; constants path doesn't | coreBoot.js:231–236 | Open |
-| M6 | `loadDependencies()` failure bypasses retry/cache-recovery entirely — `startOrchestrator()`'s catch only logs; the signature stale-cache failure gets a 60s spinner + Lite redirect instead of one-shot cache recovery. Related: `initApp()` crashes on non-Error rejection (`error.message` without `?.`) at orchestrator.js:914 | orchestrator.js:206–218, 914, 1015–1020 | Open |
+| M5 | Offline + stale constants.js = permanent splash screen — `initCoreBoot` returns null whether or not cache recovery could run; offline recovery refuses (correctly) but no retry/error screen follows. appInit's stale path has a continue-anyway flag; constants path didn't | coreBoot.js:231–236 | ✅ **FIXED** July 11, 2026 |
+| M6 | `loadDependencies()` failure bypasses retry/cache-recovery entirely — `startOrchestrator()`'s catch only logs; the signature stale-cache failure gets a 60s spinner + Lite redirect instead of one-shot cache recovery. Related: `initApp()` crashes on non-Error rejection (`error.message` without `?.`) at orchestrator.js:914 | orchestrator.js:206–218, 914, 1015–1020 | ✅ **FIXED** July 11, 2026 |
 
 ---
 
@@ -160,7 +160,11 @@ Everything below is OPEN. Each design was written against the current code (post
 **Verify:** open menu → click a menu item → click a task: focus stays on the task; repeat open/menu-item-close ×5 → press Escape once: no focus jump, no multiple handler fires; Tab-trap (July 2026 a11y work) still cycles inside the open menu; legitimate closes (Escape, outside click, toggle) still restore focus to `_previousFocus`.
 **Risk:** medium — interacts with the custom Tab-trap and a11y focus restore; test with keyboard-only navigation.
 
-### M5 — offline + stale constants.js = permanent splash screen
+### M5 — offline + stale constants.js = permanent splash screen — ✅ FIXED July 11, 2026
+
+**Fix applied:** as designed — `initCoreBoot` now captures `handleStaleCacheRecovery()`'s result; when a reload was initiated it still returns null (reload coming), otherwise it logs prominently and continues boot with inline fallback copies of the two missing exports (`DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS` / `DEFAULT_RECURRING_DELETE_SETTINGS`, mirroring constants.js values — same pattern as `TASK_LIMIT`'s `|| 150`). Regression test added to coreBoot.tests.js (source invariant on the `recoveryInitiated` capture + continue-anyway path). Suite 10/10.
+
+**Original design (for reference):**
 
 **Current behavior:** `coreBoot.js:231–236` — on a stale-constants detection, `handleStaleCacheRecovery()` is called and `initCoreBoot` returns `null` regardless of whether recovery could run. Offline, `attemptCacheRecovery` correctly refuses to clear caches and returns false → banner shows, boot returns false, no retry, no error screen, `hideAppLoader` never runs → splash screen forever (every offline launch).
 
@@ -168,7 +172,11 @@ Everything below is OPEN. Each design was written against the current code (post
 **Verify:** unit test the branch — mock `attemptCacheRecovery` → false + `navigator.onLine` → false, assert `initCoreBoot` returns a usable coreResult; existing stale-cache tests still pass (recovery-initiated path unchanged).
 **Risk:** low.
 
-### M6 — loadDependencies() failure bypasses retry/error machinery (+ non-Error rejection crash)
+### M6 — loadDependencies() failure bypasses retry/error machinery (+ non-Error rejection crash) — ✅ FIXED July 11, 2026
+
+**Fix applied:** both patches as designed. `startOrchestrator`'s catch now fast-paths cache-class errors through `attemptCacheRecovery('orchestrator-startFailure')` (guarded with `typeof === 'function'` — it's wired BY `loadDependencies`, so an early failure leaves it undefined) and otherwise renders `showBootError('Dependency load', error, false)`; `initApp`'s catch extracts `error?.message || ''` before the phase parse. Bonus from the same batch: both duplicated fallback `BOOT_TIMEOUTS` objects replaced by a single `FALLBACK_BOOT_TIMEOUTS` const synced with constants.js (adds `VERSION_GATE`/`IDB_OPERATION`, fixes PHASE_2 20s→30s + RETRY_DELAY 1s→2s drift). Three regression tests added to orchestrator.tests.js, including a dynamic sync-check that fails if the fallback ever drifts from constants.js again. Suite 7/7.
+
+**Original design (for reference):**
 
 **Fix (two small patches):**
 1. `orchestrator.js:1015–1020` (`startOrchestrator`'s catch): route through the existing machinery instead of only logging — `if (isCacheError(error)) attemptCacheRecovery()` fast-path, else `showBootError('Dependency load', error)`. This gives the signature stale-cache failure a one-shot recovery instead of a 60s spinner + Lite redirect.
@@ -177,7 +185,15 @@ Everything below is OPEN. Each design was written against the current code (post
 **Verify:** unit-test `initApp`'s catch with `Promise.reject('string reason')`; manually break a boot-dep import URL locally and confirm the error screen (not the 60s spinner) appears.
 **Risk:** low.
 
-### Decision needed — dead declared deps (surfaced by the fixed validator at every boot)
+### Decision needed — dead declared deps — ✅ RESOLVED July 11, 2026
+
+**Decisions taken (one deviation from the recommendations below):**
+- **`checkRecurringTasksNow`: REMOVED instead of implemented.** The recommendation to implement was written without noticing pullToRefresh's `refresh()` already has a *working* fallback branch: `watchRecurringTasks` is declared, mapped (`deps.recurring.core.watchRecurringTasks`), and live — recurringCore re-exports it as a live binding populated during Phase-4 `setRecurringCoreDependencies()`. So pull-to-refresh ALREADY catches up recurring tasks; `checkRecurringTasksNow` would have been a redundant alias. Removed the declaration, manifest entry, and primary branch — `watchRecurringTasks` is now the single path.
+- **`promptServiceWorkerUpdate`: removed** (declaration, manifest entry, and the guarded call) — the `registration.waiting` branch now always uses the `notify.updateAvailableReload` notification; SW updates are owned by the version gate + verifyVersionFresh flow.
+- **`getCurrentCycle` (basicPluginSystem): removed** — declaration, manifest `optionalDeps`, and the dead primary branch; the AppState fallback is now the only path.
+- **Bonus fix found during the sweep:** basicPluginSystem's `getCurrentTasks()` preferred `this.deps.getTaskList` — but `getTaskList` is a CORE_DEP **DOM helper** returning the `#taskList` *element*, auto-injected into every module. The truthy function shadowed the correct AppState fallback, so `getCurrentTasks()` returned an HTMLElement where callers expect a task array (inert today — module is deferred with no registered plugins). Removed the branch with a warning comment. This is a new variant of the bug class: **a dead dep that becomes wrongly-alive because a CORE_DEP shares its name.**
+
+**Original recommendations (for reference):**
 
 - **`pullToRefresh` → `checkRecurringTasksNow`**: no provider exists. Recommendation: **implement** — a pull-to-refresh SHOULD catch up recurring tasks; wire it to the recurring system's existing check entry point (verify what recurringWatcher/recurringCore exports — likely the watcher's check function) via a depMappings entry + provider registration.
 - **`pullToRefresh` → `promptServiceWorkerUpdate`**: no provider exists. Recommendation: **remove** the declaration and its guarded call (pullToRefresh.js:~476) — SW updates are now handled by the version gate + verifyVersionFresh flow; a manual prompt path would fight it.
@@ -187,7 +203,10 @@ Until decided, these warn once per boot (by design — they are real gaps, and s
 
 ### Low bucket — triage
 
-**Worth batching into one small PR:**
+**Worth batching into one small PR:** ✅ ALL DONE July 11, 2026 —
+fallback `BOOT_TIMEOUTS` → shared synced `FALLBACK_BOOT_TIMEOUTS` const (see M6); stale depMappings `remindOverdueTasks` + `appendToTestResults` deleted (consoleCapture's manifest declaration removed too — its wrapper method already no-ops on null; the di declaration stays for direct test injection); taskUI's stale `provides: ['refreshTaskListUI']` removed with a comment explaining the provider-map masking (the export itself stays — tests import it directly); taskCRUD wiring moved out of taskSearch's try/catch into its own (search deps optional via `taskSearchMod?.`); featureBoot cache notification now uses `getLabel('boot.appUpdated')` (label existed since the boot section was created but was never wired) + `UI_TIMEOUTS.NOTIFICATION_SLOW`, with labelResolver imported BARE on purpose to join the instance all static importers share; four uiBoot hardcoded IDs → new `DOM_IDS.RESET_NOTIFICATION_POSITION` / `RESET_TASK_VIEW_LAYOUT` / `TRY_LITE_VERSION` / `MENU_LITE_VERSION`.
+
+**Original triage list (batched items):**
 - `orchestrator.js:914`-adjacent fallback `BOOT_TIMEOUTS` drift (add `VERSION_GATE`, sync PHASE_2/RETRY_DELAY with constants.js) — pairs naturally with M6.
 - Stale depMappings entries (`remindOverdueTasks`, `appendToTestResults`) and taskUI's stale `provides: ['refreshTaskListUI']` — deletions; also fixes the provider-map masking.
 - taskCRUD wiring moved OUT of taskSearch's try/catch (featureBoot.js:284–316) — 10-line reshuffle, removes a silent half-init path.
@@ -208,6 +227,8 @@ Until decided, these warn once per boot (by design — they are real gaps, and s
 - **(a) Retry machinery (C1+C2+C3+M4):** ✅ DONE July 7, 2026 — shared registries + boot-generation guard + no-init destroy registration + keyed stubs. Verified: 17/17 moduleLoader tests (3 new regression tests), all boot suites green, live cross-instance destroy simulation in the browser.
 - **(b) DI silent no-ops (D1–D8):** ✅ DONE July 7, 2026.
 - **(c) UI trio (M1 shimmer ✅ done; M2 modal labels ✅ done; M3 menu leak ✅ done):** complete.
-- **(d) M5/M6 offline/error-path hardening:** open — fix designs above, small, testable.
-- **(e) Low bucket:** triaged above into one batchable PR + leave-until-touched items.
-- **(f) Dead-deps decision (pullToRefresh/basicPluginSystem):** recommendations above — implement `checkRecurringTasksNow`, remove the other two declarations.
+- **(d) M5/M6 offline/error-path hardening:** ✅ DONE July 11, 2026 — details in the fix-design sections above. 4 new regression tests (coreBoot 10/10, orchestrator 7/7).
+- **(e) Low bucket:** ✅ batchable PR DONE July 11, 2026 (see triage section). Leave-until-touched items remain as documented.
+- **(f) Dead-deps decision (pullToRefresh/basicPluginSystem):** ✅ DONE July 11, 2026 — all three removed (`checkRecurringTasksNow` removed rather than implemented: `watchRecurringTasks` was already wired and live); bonus `getTaskList` CORE_DEP name-collision fix in basicPluginSystem.
+
+**The audit is now closed** except for the leave-until-touched low items, which are intentionally deferred with their triggers documented above.

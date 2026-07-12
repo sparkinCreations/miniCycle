@@ -13,11 +13,11 @@
 
 | Metric | Value |
 |--------|-------|
-| **App Version** | 2.288 |
+| **App Version** | 2.289 |
 | **Lite Version** | 2.092 (frozen) |
 | **Schema Version** | 2.5 |
 | **Total Modules** | 132 |
-| **Total Tests** | 3039 |
+| **Total Tests** | 3043 |
 | **Test Pass Rate** | 100% |
 | **CSS Files** | 44 |
 | **JSDoc Blocks** | 1301 |
@@ -55,11 +55,11 @@
 | File | Lines | Purpose |
 |------|-------|---------|
 | `miniCycle-main.js` | ~49 | Entrypoint |
-| `modules/boot/orchestrator.js` | ~1036 | Sequence control + boot UI + early coordination |
-| `modules/boot/coreBoot.js` | ~753 | Core state & init |
-| `modules/boot/featureBoot.js` | ~602 | DI wiring hub |
+| `modules/boot/orchestrator.js` | ~1050 | Sequence control + boot UI + early coordination |
+| `modules/boot/coreBoot.js` | ~762 | Core state & init |
+| `modules/boot/featureBoot.js` | ~618 | DI wiring hub |
 | `modules/boot/uiBoot.js` | ~1151 | UI handlers |
-| **Total** | **~3591** | |
+| **Total** | **~3630** | |
 
 ---
 
@@ -67,7 +67,7 @@
 
 | Category | Tests |
 |----------|-------|
-| Total Tests | 3039 |
+| Total Tests | 3043 |
 | Test Files | 123 |
 | Pass Rate | 100% |
 | Platforms Tested | Mac, iPad, iPhone |

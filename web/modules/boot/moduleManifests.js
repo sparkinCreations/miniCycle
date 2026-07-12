@@ -93,7 +93,7 @@ export const MODULE_MANIFESTS = {
         path: '../utils/consoleCapture.js',
         phase: PHASES.CORE_UTILS,
         requires: [],
-        optionalDeps: ['appendToTestResults', 'showNotification'],
+        optionalDeps: ['showNotification'],
         provides: ['consoleCapture'],
         api: 'utils',
         optional: true
@@ -471,7 +471,10 @@ export const MODULE_MANIFESTS = {
         phase: PHASES.THEME_VISUAL, // Must load before TASK_MANAGEMENT so TaskOptionsVisibilityController is available
         requires: ['appInit', 'loadMiniCycleData'],
         optionalDeps: ['showCustomizerTip', 'addTask', 'isTouchDevice', 'taskToAddTaskOptions'],
-        provides: ['refreshTaskListUI', 'showTaskOptions', 'hideTaskOptions', 'checkCompleteAllButton', 'TaskOptionsVisibilityController', 'hideTaskButtons'],
+        // NOTE: taskUI also exports refreshTaskListUI (tested directly), but the DI
+        // mapping reads taskDOM's deps.task copy — declaring it here would mask
+        // taskDOM as the provider in buildProviderMap (last-writer-wins).
+        provides: ['showTaskOptions', 'hideTaskOptions', 'checkCompleteAllButton', 'TaskOptionsVisibilityController', 'hideTaskButtons'],
         api: 'ui'
     },
 
@@ -578,7 +581,7 @@ export const MODULE_MANIFESTS = {
         path: '../ui/pullToRefresh.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['showNotification'],
-        optionalDeps: ['refreshUIFromState', 'loadMiniCycle', 'watchRecurringTasks', 'isModalOpen', 'checkRecurringTasksNow', 'promptServiceWorkerUpdate'],
+        optionalDeps: ['refreshUIFromState', 'loadMiniCycle', 'watchRecurringTasks', 'isModalOpen'],
         provides: ['pullToRefresh'],
         api: 'ui',
         optional: true
@@ -705,7 +708,6 @@ export const MODULE_MANIFESTS = {
         path: '../other/basicPluginSystem.js',
         phase: PHASES.TESTING,
         requires: ['appInit', 'AppState', 'showNotification'],
-        optionalDeps: ['getCurrentCycle'],
         provides: ['pluginManager'],
         api: 'plugins',
         optional: true,
