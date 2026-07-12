@@ -241,6 +241,51 @@ body.app-loading #undo-redo-buttons {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.75; }
 }
+/* Wait-gated Lite escape hatch. Reveal is CSS-driven — a 10s animation-delay,
+   NOT a JS timer, because a slow boot saturates the main thread and would starve
+   setTimeout on exactly the devices this is for. CSS animations run off-thread,
+   so it fades in on time even mid-boot. If boot finishes first, the loader fades
+   out before 10s elapses, so a fast/capable device never sees it. To retune the
+   threshold, change the 10s delay below. */
+.first-run-lite {
+  margin-top: 16px;
+  color: white;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: var(--font-size-sm, 13px);
+  font-weight: 400;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-shadow: var(--text-shadow-lg);
+  opacity: 0;
+  pointer-events: none;
+  animation: first-run-lite-in 0.6s ease-out 10s forwards;
+}
+.first-run-lite:hover {
+  opacity: 1;
+}
+@keyframes first-run-lite-in {
+  from { opacity: 0; transform: translateY(4px); pointer-events: none; }
+  to { opacity: 0.72; transform: translateY(0); pointer-events: auto; }
+}
+/* Gate: once boot completes (uiBoot sets html[data-app-loaded]), cancel the
+   reveal — even though the choice screen lingers awaiting a tap. This is what
+   stops a capable device that finished in 250ms from showing "Try Lite" just
+   because the user read the screen for 10s. Off-thread CSS handles the TIMING;
+   this attribute (set by JS when the thread is free, post-boot) handles the
+   CONDITION. Together: reveal only if still booting at 10s. */
+html[data-app-loaded="true"] .first-run-lite {
+  animation: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  /* Keep the timed reveal (it's a functional gate, not decoration) but drop the slide. */
+  .first-run-lite { animation: first-run-lite-fade 0.1s linear 10s forwards; }
+  @keyframes first-run-lite-fade {
+    to { opacity: 0.72; pointer-events: auto; }
+  }
+}
+
 /* Thin, quiet progress strip pinned to the bottom edge — continuous creep,
    no text, no percentage. Designed to be ignorable. */
 .first-run-bottom-bar {
