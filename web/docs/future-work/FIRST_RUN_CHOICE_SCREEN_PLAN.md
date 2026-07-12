@@ -40,6 +40,30 @@ behind it:
 - **Learn How Cycles Work** → the existing interactive onboarding/intro flow — which thereby
   becomes **opt-in** instead of shown-to-everyone. For the user asking "what is this?".
 
+### Per-choice landing (decided July 12)
+
+| Choice | Immediately | Then lands in |
+|---|---|---|
+| Create My First Routine | Routine-creation window (name it) | **Home View** — named routine, empty list, add-task input focused + existing shimmer, routine-flavored empty-state hint ("Add the first step of your routine" — new label key, theme-aware) |
+| Load a Sample | Sample picker (existing manifest list) | **Focus View — Routine panel** (see the whole checklist first; the Task card is a better discovery than a first impression) |
+| Learn How Cycles Work | Onboarding intro (existing) | Focus View, as onboarding already does |
+
+Rationale: the landing view teaches the Home-vs-Focus model implicitly — builders arrive at the
+workbench, runners in the cockpit. A just-created routine is empty, and an execution view with
+nothing to execute reads as broken; conversely a populated sample in Focus View is the app's best
+showcase. The "Create" user declined guidance twice (didn't pick Learn, didn't pick Sample) — do
+not interrupt them with a tour.
+
+### Visuals — reuse the splash kit
+
+The choice screen is a sibling of `#app-loader` and inherits its visual language wholesale
+(`styles/base/critical.css`): the blue gradient over `Routine_Lists.webp` (with the existing
+mobile variant), the logo, and the `.loader-tip` frosted-glass pill treatment — which is exactly
+the right style for the three buttons (backdrop-blur pills on the photo background). Same
+`fade-out` transition class for the handoff into the app. Net new CSS ≈ button sizing/stacking
+only; no new design language. Paint timing is identical to today's splash (critical.css + webp),
+so no first-paint regression.
+
 **Decision log:** an earlier draft had two buttons, cutting a third ("Just Show Me The App")
 because it duplicated the sample's just-looking intent and an empty state worsens the
 "seems like another TODO list" problem. This three-button version is different in kind: each
