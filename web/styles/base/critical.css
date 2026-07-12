@@ -174,38 +174,42 @@ body.app-loading #undo-redo-buttons {
   width: 100%;
 }
 .first-run-btn {
-  /* Same frosted-glass treatment as .loader-tip */
-  padding: 14px 20px;
-  border: 1px solid rgba(255, 255, 255, 0.35);
+  /* Solid white on the photo background — same button language as the
+     boot-error screen (white bg, brand-blue text). */
+  padding: 15px 20px;
+  border: none;
   border-radius: 12px;
-  background: rgba(0, 0, 0, 0.25);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  color: white;
+  background: rgba(255, 255, 255, 0.95);
+  color: #4c79ff;
   font-size: var(--font-size-base, 15px);
   font-weight: 600;
   font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
   cursor: pointer;
-  transition: background 0.2s ease, transform 0.1s ease;
+  transition: background 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
 }
 .first-run-btn:hover {
-  background: rgba(0, 0, 0, 0.4);
+  background: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
 }
 .first-run-btn:active {
   transform: scale(0.98);
 }
 .first-run-btn:disabled {
-  opacity: 0.45;
+  opacity: 0.5;
   cursor: default;
 }
 .first-run-btn.is-chosen {
+  /* Tapped button inverts to brand blue as the working state */
   opacity: 1;
-  border-color: rgba(255, 255, 255, 0.8);
+  background: #4c79ff;
+  color: white;
   animation: first-run-chosen-pulse 1.2s ease-in-out infinite;
 }
 @keyframes first-run-chosen-pulse {
-  0%, 100% { background: rgba(0, 0, 0, 0.25); }
-  50% { background: rgba(0, 0, 0, 0.45); }
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.75; }
 }
 /* Thin, quiet progress strip pinned to the bottom edge — continuous creep,
    no text, no percentage. Designed to be ignorable. */
@@ -240,7 +244,6 @@ body.app-loading #undo-redo-buttons {
   }
   .first-run-btn.is-chosen {
     animation: none;
-    background: rgba(0, 0, 0, 0.45);
   }
 }
 
