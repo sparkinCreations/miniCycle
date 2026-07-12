@@ -22,6 +22,32 @@ Interactive 3642ms | pre-boot ~1059ms | bootSequence 2583ms
 ```
 High run-to-run variance on this device — treat numbers as directional, re-measure 2–3 warm runs.
 
+## Baseline #2 — v2.291 on old Android (July 12 2026, COLD run — first per-module trace)
+
+```
+Interactive 7505ms | pre-boot 3066ms | bootSequence 4439ms
+  Imports 106ms (2%) | Core 353ms (8%) | Features 3627ms (82%) | UI finalize 354ms (8%)
+  Phases: UI_MANAGERS 891 | RECURRING 722 | TASK_MANAGEMENT 588 | THEME_VISUAL 407
+          CORE_UTILS 349 | CYCLE 291 | FEATURES 185 | TESTING 32
+  Top init_ms (exact): recurringIntegration 508, taskDOM 227, settingsManager 161,
+          preferencesManager 92, statsPanel 56, taskCore 53, helpWindowManager 48
+```
+
+**Cold-run caveat:** pre-boot 3066ms (vs ~1059 warm in Baseline #1) marks this as a cold/slow
+run — re-measure 2–3 warm runs before treating deltas as real. RECURRING 722ms vs 251ms warm
+(Baseline #1) is cold multiplier, NOT a deferral regression — verified July 12: recurringPanel
+is not fetched at boot; the cost is the eager core stack (8 files parsed inside init).
+
+**Key insight from the per-module columns:** the init_ms ranking is effectively a **facade
+sub-module parse ranking** — recurringIntegration, taskDOM, settingsManager, and
+preferencesManager import their sub-module trees *inside* init(), so that parse lands in the
+exact/additive init column (~990ms of the ~1.3s init total), while manifest modules' parse lands
+in the overlapped import column (~2.3s wall). Both buckets are parse-dominated → the build
+pipeline (minify+bundle, `BUILD_PIPELINE_PLAN.md`) attacks ALL of it plus the 3.1s pre-boot fetch
+window — measured target ≈5.9s of the 7.5s cold interactive. Module deferral can't touch most of
+this; settingsManager (253ms total on-device) remains the only worthwhile deferral and is
+optional next to the pipeline.
+
 > **July 2026 addendum:** the structural lever changed — `BUILD_PIPELINE_PLAN.md` (esbuild bundle +
 > content-hashed filenames + generated precache) supersedes `MINIFICATION_PLAN.md` as Lever 1.
 > New zero-risk measurement task before any further deferral: **add per-module `performance.mark`s
