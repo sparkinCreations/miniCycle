@@ -642,23 +642,43 @@ export function updateNavDots() {
  */
 export function hideAppLoader() {
   setTimeout(() => {
-    // Remove app-loading class to reveal main content (prevents CLS during boot)
-    document.body.classList.remove(DOM_CLASSES.APP_LOADING);
-
     const appLoader = document.getElementById(DOM_IDS.APP_LOADER);
-    if (appLoader) {
-      appLoader.classList.add(DOM_CLASSES.FADE_OUT);
-      setTimeout(() => {
-        appLoader.style.display = 'none';
-        // Signal successful load via dataset (HTML checks this instead of window.*)
-        document.documentElement.dataset.appLoaded = 'true';
 
-        // Update iOS status bar color now that loading is complete
-        // (starts black during load, switches to theme color after)
-        _appContextMod?.getUiApi?.()?.updateThemeColor?.();
-      }, 500);
+    // First-run choice screen: boot is done but the user hasn't picked yet.
+    // Mark the app loaded NOW (so the HTML 60s lite failsafe can't fire while
+    // they read the buttons) and defer the actual hide until the inline
+    // controller dispatches 'firstrun:choice'. See FIRST_RUN_CHOICE_SCREEN_PLAN.md.
+    if (appLoader?.getAttribute('data-awaiting-choice') === 'true') {
+      document.documentElement.dataset.appLoaded = 'true';
+      document.addEventListener('firstrun:choice', () => dismissAppLoader(appLoader), { once: true });
+      return;
     }
+
+    dismissAppLoader(appLoader);
   }, 500);
+}
+
+/**
+ * Actually fade out and remove the splash (shared by the normal boot path and
+ * the deferred first-run-choice path).
+ * @param {HTMLElement|null} appLoader
+ */
+function dismissAppLoader(appLoader) {
+  // Remove app-loading class to reveal main content (prevents CLS during boot)
+  document.body.classList.remove(DOM_CLASSES.APP_LOADING);
+
+  if (appLoader) {
+    appLoader.classList.add(DOM_CLASSES.FADE_OUT);
+    setTimeout(() => {
+      appLoader.style.display = 'none';
+      // Signal successful load via dataset (HTML checks this instead of window.*)
+      document.documentElement.dataset.appLoaded = 'true';
+
+      // Update iOS status bar color now that loading is complete
+      // (starts black during load, switches to theme color after)
+      _appContextMod?.getUiApi?.()?.updateThemeColor?.();
+    }, 500);
+  }
 }
 
 /**

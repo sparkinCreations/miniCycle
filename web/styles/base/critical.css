@@ -107,6 +107,125 @@ html, body {
   transition: transform var(--transition-fast) ease-out;
 }
 
+/* While the splash (or first-run choice screen) is up, focus-mode's floating
+   chrome sits on the --z-notification tier (100000) — ABOVE the splash (99999)
+   — and leaks over it. Pre-existing on any slow boot into focus mode; became
+   obvious once the choice screen lingers. Keep it hidden until the splash goes. */
+body.app-loading #focus-mode-btn,
+body.app-loading #focus-mode-menu-btn,
+body.app-loading #focus-mode-menu,
+body.app-loading #focus-mode-exit-btn,
+body.app-loading #undo-redo-buttons {
+  visibility: hidden;
+}
+
+/* ── First-run choice screen (splash variant for brand-new users) ──
+   Revealed by the inline controller in miniCycle.html; reuses the splash
+   background/logo/tips. The centered loading text + bar are replaced by the
+   tagline + three frosted-pill buttons and a thin bottom progress strip. */
+#app-loader.first-run-mode .loader-text,
+#app-loader.first-run-mode .loader-bar-container {
+  display: none;
+}
+.first-run-choice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 18px;
+  width: 300px;
+  max-width: 84vw;
+}
+.first-run-choice[hidden] {
+  display: none;
+}
+.first-run-tagline {
+  margin: 0 0 18px;
+  color: white;
+  text-align: center;
+  font-size: var(--font-size-base, 15px);
+  font-weight: 500;
+  line-height: 1.45;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  text-shadow: var(--text-shadow-lg);
+  opacity: 0.95;
+}
+.first-run-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+.first-run-btn {
+  /* Same frosted-glass treatment as .loader-tip */
+  padding: 14px 20px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: white;
+  font-size: var(--font-size-base, 15px);
+  font-weight: 600;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+.first-run-btn:hover {
+  background: rgba(0, 0, 0, 0.4);
+}
+.first-run-btn:active {
+  transform: scale(0.98);
+}
+.first-run-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.first-run-btn.is-chosen {
+  opacity: 1;
+  border-color: rgba(255, 255, 255, 0.8);
+  animation: first-run-chosen-pulse 1.2s ease-in-out infinite;
+}
+@keyframes first-run-chosen-pulse {
+  0%, 100% { background: rgba(0, 0, 0, 0.25); }
+  50% { background: rgba(0, 0, 0, 0.45); }
+}
+/* Thin, quiet progress strip pinned to the bottom edge — continuous creep,
+   no text, no percentage. Designed to be ignorable. */
+.first-run-bottom-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.15);
+}
+.first-run-bottom-bar[hidden] {
+  display: none;
+}
+.first-run-bottom-fill {
+  height: 100%;
+  width: 0;
+  background: rgba(255, 255, 255, 0.7);
+  animation: first-run-creep 25s cubic-bezier(0.15, 0.6, 0.3, 1) forwards;
+}
+@keyframes first-run-creep {
+  0% { width: 0; }
+  12% { width: 38%; }
+  35% { width: 64%; }
+  70% { width: 84%; }
+  100% { width: 94%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .first-run-bottom-fill {
+    animation: none;
+    width: 66%;
+  }
+  .first-run-btn.is-chosen {
+    animation: none;
+    background: rgba(0, 0, 0, 0.45);
+  }
+}
+
 /* Mobile loading screen optimizations */
 @media (max-width: 768px) {
   #app-loader {

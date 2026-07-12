@@ -1057,6 +1057,19 @@ window.installApp = () => {
     <div class="loader-bar-container">
       <div class="loader-bar"></div>
     </div>
+    <!-- First-run choice screen (revealed by inline script below when no data exists).
+         Strings are baked like the splash text — getLabel isn't available pre-boot. -->
+    <div id="first-run-choice" class="first-run-choice" hidden>
+      <p class="first-run-tagline">Routines that reset — like a pilot's checklist.<br>Same steps every time, ready again for the next run.</p>
+      <div class="first-run-buttons">
+        <button type="button" class="first-run-btn" data-choice="create" data-busy="Setting up your routine…">Create My First Routine</button>
+        <button type="button" class="first-run-btn" data-choice="sample" data-busy="Loading samples…">Load a Sample</button>
+        <button type="button" class="first-run-btn" data-choice="learn" data-busy="Starting the tour…">Learn How Cycles Work</button>
+      </div>
+    </div>
+    <div id="first-run-bottom-bar" class="first-run-bottom-bar" hidden>
+      <div class="first-run-bottom-fill"></div>
+    </div>
   </div>
 
   <!-- Loading tips rotation -->
@@ -1076,8 +1089,12 @@ window.installApp = () => {
         var rotation = setInterval(function() {
           // Stop rotating once the app has booted (loader is gone) — otherwise this
           // timer runs forever, mutating a hidden/detached element. uiBoot.js sets
-          // dataset.appLoaded='true' on a successful boot.
-          if (document.documentElement.dataset.appLoaded === 'true') {
+          // dataset.appLoaded='true' on a successful boot. Exception: while the
+          // first-run choice screen is awaiting a pick, boot may be done but the
+          // loader is still visible — keep the tips rotating.
+          var loaderEl = document.getElementById('app-loader');
+          var awaitingChoice = loaderEl && loaderEl.getAttribute('data-awaiting-choice') === 'true';
+          if (document.documentElement.dataset.appLoaded === 'true' && !awaitingChoice) {
             clearInterval(rotation);
             return;
           }
@@ -1090,6 +1107,50 @@ window.installApp = () => {
         }, 4000);
       })
       .catch(function() {});
+  })();
+  </script>
+
+  <!-- First-run choice screen controller (ES5-safe, like the other inline scripts).
+       Shows the three-choice screen for brand-new users (no miniCycleData) while
+       boot continues behind it. Boot side: uiBoot.hideAppLoader() defers the hide
+       while data-awaiting-choice='true' and resumes on the 'firstrun:choice' event.
+       If boot fails, orchestrator's showBootError() replaces the loader's content,
+       which removes this screen — error UI takes precedence by construction. -->
+  <script>
+  (function () {
+    var hasData = null;
+    try { hasData = localStorage.getItem('miniCycleData'); } catch (e) { return; }
+    if (hasData) return; // returning user → normal splash
+
+    var loader = document.getElementById('app-loader');
+    var choice = document.getElementById('first-run-choice');
+    var bottomBar = document.getElementById('first-run-bottom-bar');
+    if (!loader || !choice) return;
+
+    loader.classList.add('first-run-mode');
+    loader.setAttribute('data-awaiting-choice', 'true');
+    choice.hidden = false;
+    if (bottomBar) bottomBar.hidden = false;
+    try { performance.mark('mc:firstrun:choiceShown'); } catch (e) {}
+
+    choice.addEventListener('click', function (e) {
+      var btn = e.target && e.target.closest ? e.target.closest('.first-run-btn') : null;
+      if (!btn || btn.disabled) return;
+      var value = btn.getAttribute('data-choice');
+      try { sessionStorage.setItem('miniCycle_firstRunChoice', value); } catch (err) {}
+      try { performance.mark('mc:firstrun:choiceTapped'); } catch (err) {}
+
+      // Button takeover: the tapped button becomes the progress surface.
+      var btns = choice.querySelectorAll('.first-run-btn');
+      for (var i = 0; i < btns.length; i++) { btns[i].disabled = true; }
+      btn.classList.add('is-chosen');
+      btn.textContent = btn.getAttribute('data-busy') || 'Setting up…';
+
+      loader.setAttribute('data-awaiting-choice', 'false');
+      try {
+        document.dispatchEvent(new CustomEvent('firstrun:choice', { detail: { choice: value } }));
+      } catch (err) {}
+    });
   })();
   </script>
 
