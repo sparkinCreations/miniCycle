@@ -390,8 +390,15 @@ export async function loadModule(name, deps, coreResult, withV, wire = true) {
 
     try {
 
-        // Import the module
+        // Import the module.
+        // ⏱️ Per-module import measure (`mc:module:<name>:import`). NOTE: within a
+        // phase these awaits run in Promise.all, so durations OVERLAP in wall-clock
+        // (each includes main-thread parse of whichever module evaluates first) —
+        // rank with them, don't sum them. The `:init` measure below is the exact one.
+        const importStartMark = `mc:module:${name}:import:start`;
+        try { performance.mark(importStartMark); } catch (_) { /* perf API unavailable */ }
         const mod = await import(withV(manifest.path));
+        try { performance.measure(`mc:module:${name}:import`, importStartMark); } catch (_) { /* mark missing */ }
         loadedModules.set(name, mod);
 
         // Wire dependencies (setDependencies). Skipped when wire=false: loadPhase defers
@@ -572,12 +579,19 @@ export async function loadPhase(deps, coreResult, phase) {
         const mod = loadedModules.get(name);
         if (!mod) continue; // optional import failed → skip
 
+        // ⏱️ Per-module wire+init measure (`mc:module:<name>:init`). Stage 2 is
+        // sequential, so these ARE additive — they include buildModuleDependencies
+        // (the DI-wiring cost) plus the module's init(). getBootTiming() ranks them.
+        const initStartMark = `mc:module:${name}:init:start`;
+        try { performance.mark(initStartMark); } catch (_) { /* perf API unavailable */ }
+
         const setDepsFn = findSetDependenciesFunction(mod, name);
         if (setDepsFn) {
             setDepsFn(buildModuleDependencies(manifest, deps, coreResult));
         }
 
         const instance = await initializeModule(name, mod, deps, coreResult);
+        try { performance.measure(`mc:module:${name}:init`, initStartMark); } catch (_) { /* mark missing */ }
         results.set(name, instance || mod);
     }
 
@@ -732,7 +746,13 @@ export async function ensureModuleLoaded(name) {
     const { withV } = _bootCoreResult;
     const mod = await loadModule(name, _bootDeps, _bootCoreResult, withV);
     if (!mod) return null;
+    // ⏱️ Same `mc:module:<name>:init` measure as loadPhase Stage 2, so on-demand
+    // (deferred) loads rank alongside boot loads in getBootTiming().moduleTimings —
+    // their import `at_ms` places them after boot-interactive.
+    const initStartMark = `mc:module:${name}:init:start`;
+    try { performance.mark(initStartMark); } catch (_) { /* perf API unavailable */ }
     const instance = await initializeModule(name, mod, _bootDeps, _bootCoreResult);
+    try { performance.measure(`mc:module:${name}:init`, initStartMark); } catch (_) { /* mark missing */ }
     // Wire the new provider into already-loaded consumers.
     runPostInitInjections(_bootDeps);
     return instance ?? mod;

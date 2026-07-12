@@ -319,6 +319,19 @@ export function showBootTiming() {
         });
     }
 
+    // Per-module ranking (top 15) — the deferral decision data. init is exact
+    // (sequential wire+init incl. DI wiring); import overlaps within a phase
+    // (parallel fetch+parse), so rank by it but never sum it.
+    const mods = timing.moduleTimings || [];
+    if (mods.length) {
+        const interactiveAt = timing.interactiveSinceNavigation_ms;
+        appendToTestResults(`     ↳ by module, top 15 of ${mods.length} (init exact; import overlapped — rank, don't sum):\n`);
+        mods.slice(0, 15).forEach(m => {
+            const postBoot = (interactiveAt != null && m.at_ms != null && m.at_ms >= interactiveAt) ? ' · post-boot' : '';
+            appendToTestResults(`        - ${m.name}: ${fmt(m.total_ms)} (import ${fmt(m.import_ms)} + init ${fmt(m.init_ms)})${postBoot}\n`);
+        });
+    }
+
     appendToTestResults(`   • UI finalize: ${fmt(p.ui_ms)}\n\n`);
 
     showNotification(getLabel('notify.diagBootTiming'), "info", UI_TIMEOUTS.NOTIFICATION_SHORT);

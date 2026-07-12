@@ -100,17 +100,20 @@ function measureBoot(name, startMark, endMark) {
 // named `mc:subphase:<PHASE_NAME>` (+ `:start` marks). Read here by prefix so the
 // two files stay decoupled — orchestrator never imports the PHASES enum.
 const SUBPHASE_PREFIX = 'mc:subphase:';
+// Per-module measures emitted by loadModule/loadPhase in moduleLoader.js, named
+// `mc:module:<name>:import` and `mc:module:<name>:init` (+ `:start` marks).
+const MODULE_PREFIX = 'mc:module:';
 
 function clearBootTiming() {
   // Wipe prior-attempt entries so a retry's timing isn't read as the first attempt's.
   try {
     Object.values(BOOT_MARKS).forEach(m => performance.clearMarks(m));
     Object.values(BOOT_MEASURES).forEach(m => performance.clearMeasures(m));
-    // Sub-phase marks/measures use dynamic names — clear them by prefix.
+    // Sub-phase and per-module marks/measures use dynamic names — clear by prefix.
     performance.getEntriesByType('mark')
-      .forEach(e => { if (e.name.startsWith(SUBPHASE_PREFIX)) performance.clearMarks(e.name); });
+      .forEach(e => { if (e.name.startsWith(SUBPHASE_PREFIX) || e.name.startsWith(MODULE_PREFIX)) performance.clearMarks(e.name); });
     performance.getEntriesByType('measure')
-      .forEach(e => { if (e.name.startsWith(SUBPHASE_PREFIX)) performance.clearMeasures(e.name); });
+      .forEach(e => { if (e.name.startsWith(SUBPHASE_PREFIX) || e.name.startsWith(MODULE_PREFIX)) performance.clearMeasures(e.name); });
   } catch (_) { /* perf API unavailable */ }
 }
 
@@ -142,6 +145,31 @@ function getBootTiming() {
       subPhases[name.slice(SUBPHASE_PREFIX.length) + '_ms'] = Math.round(e.duration);
     });
   } catch (_) { /* perf API unavailable */ }
+  // Per-module breakdown, ranked by cost. init_ms is exact and additive (Stage 2 is
+  // sequential; includes DI-wiring + init()). import_ms values OVERLAP within a phase
+  // (parallel Promise.all) — use them to rank heavy parses, never to sum.
+  const moduleTimings = [];
+  try {
+    const byModule = new Map();
+    performance.getEntriesByType('measure').forEach(e => {
+      if (!e.name.startsWith(MODULE_PREFIX)) return;
+      const rest = e.name.slice(MODULE_PREFIX.length);           // '<name>:import' | '<name>:init'
+      const sep = rest.lastIndexOf(':');
+      const modName = rest.slice(0, sep);
+      const kind = rest.slice(sep + 1);
+      const entry = byModule.get(modName) || { name: modName, import_ms: null, init_ms: null, at_ms: null };
+      entry[kind + '_ms'] = Math.round(e.duration);              // last wins per name
+      // Import start time (since navigation) — an at_ms after boot-interactive
+      // marks an on-demand (deferred) load rather than boot cost.
+      if (kind === 'import') entry.at_ms = Math.round(e.startTime);
+      byModule.set(modName, entry);
+    });
+    byModule.forEach(entry => {
+      entry.total_ms = (entry.import_ms || 0) + (entry.init_ms || 0);
+      moduleTimings.push(entry);
+    });
+    moduleTimings.sort((a, b) => b.total_ms - a.total_ms);
+  } catch (_) { /* perf API unavailable */ }
   return {
     // ms from navigation start (timeOrigin) until app interactive — includes the
     // pre-orchestrator cold-cache/precache window, which dominates first loads.
@@ -156,6 +184,9 @@ function getBootTiming() {
     },
     // Breakdown of features_ms by module-load phase (CORE_UTILS … TESTING).
     featuresByPhase: subPhases,
+    // Per-module {name, import_ms, init_ms, total_ms}, ranked by total_ms desc.
+    // init_ms is exact/additive; import_ms overlaps within a phase (rank-only).
+    moduleTimings,
     // total time spent inside runBootSequence() (start → interactive).
     bootSequence_ms: dur(BOOT_MEASURES.TOTAL)
   };
