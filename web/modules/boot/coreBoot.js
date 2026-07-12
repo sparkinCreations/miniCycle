@@ -374,7 +374,7 @@ export async function initAppState(deps, showNotification) {
       // For initialSetup
       loadMiniCycleData: () => loadMiniCycleData?.(),
       createInitialSchema25Data: () => migrationMod.createInitialSchema25Data?.(),
-      showCycleCreationModal: () => appContextMod.getCycleApi?.()?.create?.(),
+      showCycleCreationModal: (...args) => appContextMod.getCycleApi?.()?.create?.(...args),
       getOnboardingManager: () => appContextMod.getUiApi?.()?.onboardingManager || null,
       getMiniCycleState: () => deps.core.AppState || null,
       showNotification: (msg, type, duration) => showNotification?.(msg, type, duration),  // For data integrity warnings

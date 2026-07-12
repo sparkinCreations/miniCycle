@@ -182,7 +182,7 @@ export class RoutineManager {
     /**
      * Show cycle creation modal for onboarding
      */
-    showCycleCreationModal() {
+    showCycleCreationModal(options = {}) {
 
         setTimeout(() => {
             this._buildCreationDialog({
@@ -190,6 +190,8 @@ export class RoutineManager {
                 message: 'modal.createRoutineMessage',
                 placeholder: 'modal.createRoutinePlaceholder',
                 isOnboarding: true,
+                // First-run "Load a Sample" choice opens straight to the picker.
+                startInSampleView: options.startInSampleView === true,
                 onCreateBlank: async (inputValue) => {
                     const newCycleName = this.deps.sanitizeInput(inputValue);
                     const cycleId = `cycle_${Date.now()}`;
@@ -642,7 +644,7 @@ export class RoutineManager {
      * @private
      */
     async _buildCreationDialog(config) {
-        const { title, message, placeholder, isOnboarding = false, onCreateBlank } = config;
+        const { title, message, placeholder, isOnboarding = false, onCreateBlank, startInSampleView = false } = config;
 
         // Fetch sample manifest (cached after first call)
         const samples = await this._fetchSampleManifest();
@@ -862,9 +864,14 @@ export class RoutineManager {
             }
         };
 
-        // Show dialog and focus input
+        // Show dialog. Open straight to the sample picker when requested (the
+        // first-run "Load a Sample" choice) and samples exist; else the name view.
         dialog.showModal();
-        input.focus();
+        if (startInSampleView && samples.length > 0) {
+            showSampleView();
+        } else {
+            input.focus();
+        }
     }
 }
 
