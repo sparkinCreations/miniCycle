@@ -127,6 +127,15 @@ body.app-loading #undo-redo-buttons {
 #app-loader.first-run-mode .loader-bar-container {
   display: none;
 }
+/* In choice mode the tip joins the flex column (above the logo) instead of
+   being pinned at top 15% — the absolute pin collides with the centered
+   column on short/wide viewports. */
+#app-loader.first-run-mode .loader-tip {
+  position: static;
+  transform: none;
+  order: -1;
+  margin-bottom: 20px;
+}
 .first-run-choice {
   display: flex;
   flex-direction: column;
