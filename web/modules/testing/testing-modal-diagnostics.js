@@ -286,36 +286,48 @@ export function showPerformanceInfo() {
  * (module fetch vs core vs feature wiring vs UI).
  */
 export function showBootTiming() {
-    appendToTestResults("Boot Timing:\n");
-
     const timing = window.getMiniCycleBootTiming?.();
     if (!timing || timing.interactiveSinceNavigation_ms == null) {
-        appendToTestResults("- Not available (page may have booted before instrumentation, or perf API blocked)\n\n");
+        appendToTestResults("⏱️ BOOT TIMING\n- Not available (page may have booted before instrumentation, or perf API blocked)\n\n");
         showNotification(getLabel('notify.diagBootTiming'), "info", UI_TIMEOUTS.NOTIFICATION_SHORT);
         return;
     }
 
-    const fmt = (v) => (v == null ? 'N/A' : v + 'ms');
+    // Output renders in .testing-output (monospace, pre-wrap) — aligned columns
+    // and bars display correctly. Keep lines ≤ ~45 chars for the mobile modal.
+    const RULE_W = 34;
+    const ms = (v) => (v == null ? 'N/A' : `${v}ms`);
     const p = timing.phases || {};
+    const boot = timing.bootSequence_ms;
+    const out = [];
 
-    appendToTestResults(`- Interactive (since page open): ${fmt(timing.interactiveSinceNavigation_ms)}\n`);
-    appendToTestResults(`- Boot started at: ${fmt(timing.bootStartSinceNavigation_ms)}\n`);
-    appendToTestResults(`- Boot sequence total: ${fmt(timing.bootSequence_ms)}\n`);
-    appendToTestResults(`   • Module import: ${fmt(p.moduleImport_ms)}\n`);
-    appendToTestResults(`   • Core (AppState): ${fmt(p.core_ms)}\n`);
-    appendToTestResults(`   • Features (all modules): ${fmt(p.features_ms)}\n`);
+    out.push('⏱️ BOOT TIMING');
+    out.push('═'.repeat(RULE_W));
+    out.push(`${'Interactive'.padEnd(15)}${ms(timing.interactiveSinceNavigation_ms).padStart(8)}  (since page open)`);
+    out.push(`${'Boot started'.padEnd(15)}${ms(timing.bootStartSinceNavigation_ms).padStart(8)}`);
+    out.push(`${'Boot sequence'.padEnd(15)}${ms(boot).padStart(8)}`);
+    const pctOf = (v, total) => (v != null && total ? `${String(Math.round((v / total) * 100)).padStart(4)}%` : '');
+    [['Imports', p.moduleImport_ms],
+     ['Core', p.core_ms],
+     ['Features', p.features_ms],
+     ['UI finalize', p.ui_ms]].forEach(([label, v]) => {
+        out.push(`  ${label.padEnd(13)}${ms(v).padStart(8)}${pctOf(v, boot)}`);
+    });
 
-    // Per-phase breakdown of the Features window, ranked descending — the dominant
-    // phase is the first defer/parallelization target on slow devices. Keyed like
-    // { UI_MANAGERS_ms: 120, THEME_VISUAL_ms: 80, ... } by getMiniCycleBootTiming().
-    const byPhase = timing.featuresByPhase || {};
-    const rankedPhases = Object.entries(byPhase)
-        .map(([k, v]) => [k.replace(/_ms$/, ''), v])
-        .sort((a, b) => (b[1] ?? 0) - (a[1] ?? 0));
+    // Per-phase breakdown of the Features window, ranked with bars — the dominant
+    // phase is the first defer/parallelization target on slow devices.
+    const rankedPhases = Object.entries(timing.featuresByPhase || {})
+        .map(([k, v]) => [k.replace(/_ms$/, ''), v ?? 0])
+        .sort((a, b) => b[1] - a[1]);
     if (rankedPhases.length) {
-        appendToTestResults(`     ↳ by module phase (ranked):\n`);
-        rankedPhases.forEach(([name, ms]) => {
-            appendToTestResults(`        - ${name}: ${fmt(ms)}\n`);
+        out.push('');
+        out.push('FEATURES BY PHASE');
+        out.push('─'.repeat(RULE_W));
+        const maxPhase = rankedPhases[0][1] || 1;
+        const featTotal = p.features_ms || rankedPhases.reduce((s, [, v]) => s + v, 0) || 1;
+        rankedPhases.forEach(([name, v]) => {
+            const bar = '█'.repeat(Math.max(1, Math.round((v / maxPhase) * 10)));
+            out.push(`${name.padEnd(16)}${ms(v).padStart(7)}${pctOf(v, featTotal)} ${bar}`);
         });
     }
 
@@ -325,15 +337,20 @@ export function showBootTiming() {
     const mods = timing.moduleTimings || [];
     if (mods.length) {
         const interactiveAt = timing.interactiveSinceNavigation_ms;
-        appendToTestResults(`     ↳ by module, top 15 of ${mods.length} (init exact; import overlapped — rank, don't sum):\n`);
+        const n = (v) => (v == null ? '–' : String(v));
+        out.push('');
+        out.push(`TOP MODULES (15 of ${mods.length}, ms)`);
+        out.push('─'.repeat(RULE_W));
+        out.push(`${'module'.padEnd(22)}${'total'.padStart(6)}${'imp'.padStart(5)}${'init'.padStart(5)}`);
         mods.slice(0, 15).forEach(m => {
-            const postBoot = (interactiveAt != null && m.at_ms != null && m.at_ms >= interactiveAt) ? ' · post-boot' : '';
-            appendToTestResults(`        - ${m.name}: ${fmt(m.total_ms)} (import ${fmt(m.import_ms)} + init ${fmt(m.init_ms)})${postBoot}\n`);
+            const post = interactiveAt != null && m.at_ms != null && m.at_ms >= interactiveAt;
+            out.push(`${(m.name + (post ? '⁺' : '')).padEnd(22)}${n(m.total_ms).padStart(6)}${n(m.import_ms).padStart(5)}${n(m.init_ms).padStart(5)}`);
         });
+        out.push('⁺ = post-boot (loaded after interactive)');
+        out.push('init exact · imp overlaps — rank, don\'t sum');
     }
 
-    appendToTestResults(`   • UI finalize: ${fmt(p.ui_ms)}\n\n`);
-
+    appendToTestResults(out.join('\n') + '\n\n');
     showNotification(getLabel('notify.diagBootTiming'), "info", UI_TIMEOUTS.NOTIFICATION_SHORT);
 }
 
