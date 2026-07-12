@@ -127,6 +127,12 @@ body.app-loading #undo-redo-buttons {
 #app-loader.first-run-mode .loader-bar-container {
   display: none;
 }
+/* Lift the whole stack: top-anchor it instead of dead-centering, so the logo
+   sits higher and the buttons land in the comfortable lower-middle. */
+#app-loader.first-run-mode {
+  justify-content: flex-start;
+  padding-top: 12vh;
+}
 /* In choice mode the tip is demoted to a small, quiet strip just above the
    bottom progress bar — the buttons and tagline own the screen. (Its top-15%
    pin also collided with the centered column on short/wide viewports.) */
@@ -149,23 +155,47 @@ body.app-loading #undo-redo-buttons {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-top: 18px;
+  margin-top: 14px;
   width: 300px;
   max-width: 84vw;
 }
 .first-run-choice[hidden] {
   display: none;
 }
+/* Brand block: wordmark + category descriptor (what the app IS). */
+.first-run-brand {
+  text-align: center;
+  margin-bottom: 10px;
+}
+.first-run-wordmark {
+  color: white;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: var(--font-size-xl, 26px);
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  line-height: 1.1;
+  text-shadow: var(--text-shadow-lg);
+}
+.first-run-descriptor {
+  color: white;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: var(--font-size-sm, 13px);
+  font-weight: 500;
+  letter-spacing: 0.4px;
+  margin-top: 3px;
+  opacity: 0.9;
+  text-shadow: var(--text-shadow-lg);
+}
 .first-run-tagline {
   margin: 0 0 18px;
   color: white;
   text-align: center;
-  font-size: var(--font-size-base, 15px);
-  font-weight: 500;
+  font-size: var(--font-size-sm, 13px);
+  font-weight: 400;
   line-height: 1.45;
   font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   text-shadow: var(--text-shadow-lg);
-  opacity: 0.95;
+  opacity: 0.82;
 }
 .first-run-buttons {
   display: flex;
@@ -223,6 +253,27 @@ body.app-loading #undo-redo-buttons {
 }
 .first-run-bottom-bar[hidden] {
   display: none;
+}
+/* Low-key live boot status, bottom-right — mirrors updateLoaderProgress().
+   Only visible on the choice screen; ignorable by design. */
+.first-run-status {
+  display: none;
+}
+#app-loader.first-run-mode .first-run-status {
+  display: block;
+  position: absolute;
+  right: 14px;
+  bottom: 12px;
+  max-width: 60vw;
+  color: white;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.2px;
+  text-align: right;
+  opacity: 0.55;
+  text-shadow: var(--text-shadow-lg);
+  pointer-events: none;
 }
 .first-run-bottom-fill {
   height: 100%;

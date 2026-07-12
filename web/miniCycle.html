@@ -1060,6 +1060,10 @@ window.installApp = () => {
     <!-- First-run choice screen (revealed by inline script below when no data exists).
          Strings are baked like the splash text — getLabel isn't available pre-boot. -->
     <div id="first-run-choice" class="first-run-choice" hidden>
+      <div class="first-run-brand">
+        <div class="first-run-wordmark">miniCycle</div>
+        <div class="first-run-descriptor">Routine Checklist Manager</div>
+      </div>
       <p class="first-run-tagline">Routines that reset — like a pilot's checklist.</p>
       <div class="first-run-buttons">
         <button type="button" class="first-run-btn" data-choice="create" data-busy="Setting up your routine…">Create My First Routine</button>
@@ -1067,6 +1071,8 @@ window.installApp = () => {
         <button type="button" class="first-run-btn" data-choice="learn" data-busy="Starting the tour…">Learn How Cycles Work</button>
       </div>
     </div>
+    <!-- Low-key live boot status (bottom-right); mirrored from updateLoaderProgress(). -->
+    <div id="first-run-status" class="first-run-status" aria-hidden="true"></div>
     <div id="first-run-bottom-bar" class="first-run-bottom-bar" hidden>
       <div class="first-run-bottom-fill"></div>
     </div>

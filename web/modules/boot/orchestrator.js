@@ -284,13 +284,21 @@ function ensureBootModalTemplate(anchorId, modalId, templateHtml) {
  * @param {number} percent - Progress percentage (0-100)
  */
 function updateLoaderProgress(message, percent = 0) {
+  const text = loaderMessageOverride || message;
   const loaderText = document.querySelector(DOM_SELECTORS.LOADER_TEXT);
   if (loaderText) {
-    loaderText.textContent = loaderMessageOverride || message;
+    loaderText.textContent = text;
   }
   const loaderBar = document.querySelector(DOM_SELECTORS.LOADER_BAR);
   if (loaderBar) {
     loaderBar.style.transform = `scaleX(${percent / 100})`;
+  }
+  // Mirror into the first-run choice screen's low-key bottom-right status.
+  // The centered .loader-text is hidden there, so this keeps live boot progress
+  // visible while the user reads the choices. No-op on the normal splash.
+  const status = document.getElementById('first-run-status');
+  if (status) {
+    status.textContent = text;
   }
 }
 
