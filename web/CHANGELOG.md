@@ -1,3 +1,8 @@
+## [2.293] - 2026-07-13
+- polish(onboarding): choice screen — brand header top-anchored, buttons vertically centered
+- fix(onboarding): keep choice screen until a choice is made — non-chooser reload no longer falls through to focus mode
+
+
 ## [2.292] - 2026-07-12
 - feat(onboarding): first-run choice-screen finalization — perception metrics, first-step hint, firstRun labels, routing tests
 - fix(onboarding): create/sample choices mark onboardingCompleted — stop Home View tour reappearing on refresh
