@@ -113,9 +113,27 @@ So the honest before/after target: request count 258 → ~a couple dozen, first-
 6.2MB → roughly half (single-fetch precache), and the slow-CPU cohort's parse window (the
 Android 7.5s) — NOT the fast-cohort 1.8s, which is already fine.
 
-- **Phase 1 — Build to dist, verify locally:** build → serve `dist/` on a fresh origin → app
-  boots, SW installs, offline reload works, focus/recurring/settings/themes exercised; full
-  Playwright suite against source stays green (unchanged); dist smoke suite (boot + core flows).
+- **Phase 1 — Build to dist, verify locally:** ✅ DONE July 13 2026 (`scripts/build-web.cjs`,
+  `npm run build:web`). **As-built deviations from the design above:**
+  1. **No runtime module map.** Entries keep STABLE paths (only chunks get `[hash]` names), so
+     the ~60 runtime-computed specifiers work with zero runtime changes; full entry-hashing is a
+     follow-up. `withV`/`?v=` remain the entry cache-buster for now.
+  2. **Runtime-import rewriter plugin** (in build-web.cjs) — required by two esbuild behaviors
+     discovered empirically: (a) template dynamic imports (`` `./x.js?v=${V}` ``) become a
+     GLOB-MAP that *throws* "Module not found in bundle" when the glob matched nothing;
+     (b) `splitting` can hoist importer code into `modules/chunks/`, breaking RELATIVE runtime
+     specifiers. The plugin rewrites every runtime specifier (withV args, templates, concats,
+     bare literals, and `manifest.path` data) to ROOT-ABSOLUTE paths in opaque-to-minify forms.
+     **Minify folds `(0,'x')` and `String('x')` back into resolvable literals** — the two forms
+     that survive are templates with a real `${expr}` and `['x'].join('')`. Verified in tests
+     before use; don't "simplify" these wrappers.
+  3. SW precache generation landed here (not Phase 2) — dist's `BOOT_CRITICAL` would otherwise
+     404 on inlined files and offline would silently die.
+  Results: **107 entries + 18 shared chunks, 3.4MB → 1.43MB minified**, build 3.3s. Gates all
+  green on a fresh origin: boot 425ms interactive, choice screen + sample routing, recurring
+  facade chain, settings facade, deferred testing modal, zero 404s/console errors, offline
+  reload boots from SW. Source suites untouched (appInit/moduleLoader/orchestrator/coreBoot).
+  Constraint accepted: root-absolute specifiers assume the app is served at the domain root.
 - **Phase 2 — CSS bundle** (+ optional hand-purge) with the same gates.
 - **Phase 3 — Netlify preview deploy** → verify preview URL (update flow from a *previous* version
   especially: old client + new hashed deploy → version gate → clean upgrade) → flip production.

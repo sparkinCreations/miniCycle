@@ -130,6 +130,13 @@
   [headers.values]
     Cache-Control = "public, max-age=86400"
 
+# Hashed chunk files (build pipeline) — content-addressed, safe to cache forever.
+# Inert until publish flips to dist/ (Phase 3).
+[[headers]]
+  for = "/modules/chunks/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
 # CRITICAL FILES - Must come AFTER general *.js rule (last match wins in Netlify)
 # These use no-store for Safari compatibility - Safari ignores must-revalidate
 [[headers]]
