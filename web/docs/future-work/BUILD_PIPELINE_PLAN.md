@@ -94,6 +94,25 @@ PROD:  Netlify → build-web.cjs → dist/ (bundled, hashed, generated precache)
 - **Phase 0 — Measure (before any code):** record baselines — PageSpeed on minicycle.app, boot
   timing modal numbers, the July 11 fresh-context measurements, request count + transfer size.
   These are the before/after proof (and the Reddit follow-up post material).
+### Phase 0 baseline — CAPTURED July 13 2026 (production, v2.293, fresh profile)
+
+Fast desktop + fast connection (my region; the favorable end of the cohort range):
+- **TTFB 59–98ms** (Netlify edge — noguchilin measured ~850ms from his region: network cohort spread is real)
+- **Boot interactive 1.2–1.5s; `appLoaded` (choice screen ready) at interactive+501ms → ~1.7–1.9s cold**
+- **258 requests on first visit (146 JS, 90 CSS), ~6.2MB** — SW-precache double-fetch confirmed on prod
+- Slow-CPU anchor: **old Android cold interactive 7.5s** (Baseline #2 in `BOOT_PERF_ROADMAP.md`)
+- PSI: keyless API quota exhausted — capture score via browser later (not blocking)
+
+**Measurement lesson (binding for the after-side):** Playwright `page.on('request'/'response')`
+listeners contend on the CDP connection during the 258-request precache storm and inflate
+wall-clock "app-usable" ~4× (8.1s vs the true 1.8s). Measure via **in-page performance marks**
+(appLoaded flip stamped by MutationObserver from an init script); use listener-attached runs only
+for request/byte counting, never for timing.
+
+So the honest before/after target: request count 258 → ~a couple dozen, first-visit transfer
+6.2MB → roughly half (single-fetch precache), and the slow-CPU cohort's parse window (the
+Android 7.5s) — NOT the fast-cohort 1.8s, which is already fine.
+
 - **Phase 1 — Build to dist, verify locally:** build → serve `dist/` on a fresh origin → app
   boots, SW installs, offline reload works, focus/recurring/settings/themes exercised; full
   Playwright suite against source stays green (unchanged); dist smoke suite (boot + core flows).
