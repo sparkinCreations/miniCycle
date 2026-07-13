@@ -127,21 +127,21 @@ body.app-loading #undo-redo-buttons {
 #app-loader.first-run-mode .loader-bar-container {
   display: none;
 }
-/* Lift the whole stack: top-anchor it instead of dead-centering, so the logo
-   sits higher and the buttons land in the comfortable lower-middle. */
+/* Top-anchor the header (logo + brand + tagline) near the top; the choice
+   container then fills the rest of the height so the buttons can center in it. */
 #app-loader.first-run-mode {
   justify-content: flex-start;
-  padding-top: 12vh;
+  padding-top: 8vh;
 }
-/* Soft scrim behind the content so white text is legible over the LIGHT areas
-   of the photo (the clipboard paper). Radial + transparent edges keep the airy
-   look; the buttons are white cards so they don't need it, but it's harmless. */
+/* Soft scrim behind the header text so white is legible over the LIGHT areas of
+   the photo (the clipboard paper). Concentrated near the top now that the brand
+   sits there; transparent edges keep the airy look. Buttons are white cards. */
 #app-loader.first-run-mode::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse 115% 55% at 50% 38%,
-              rgba(0, 0, 0, 0.42) 0%, rgba(0, 0, 0, 0.18) 45%, rgba(0, 0, 0, 0) 72%);
+  background: radial-gradient(ellipse 115% 48% at 50% 24%,
+              rgba(0, 0, 0, 0.42) 0%, rgba(0, 0, 0, 0.16) 48%, rgba(0, 0, 0, 0) 70%);
   pointer-events: none;
 }
 /* Raise the text block above the scrim (these are static flex items; the tip,
@@ -176,6 +176,24 @@ body.app-loading #undo-redo-buttons {
   margin-top: 14px;
   width: 300px;
   max-width: 84vw;
+}
+/* In choice mode the container fills the height below the logo so the actions
+   group can vertically center in the leftover space (brand + tagline stay at the
+   top of this zone, right under the logo). */
+#app-loader.first-run-mode .first-run-choice {
+  flex: 1 1 auto;
+  margin-top: 14px;
+  min-height: 0;
+  padding-bottom: 56px; /* clear the bottom tip strip / progress bar */
+}
+/* Actions = buttons + lite link, centered in the space beneath the header. */
+.first-run-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  margin-top: auto;
+  margin-bottom: auto;
 }
 .first-run-choice[hidden] {
   display: none;

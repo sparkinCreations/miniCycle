@@ -1065,15 +1065,19 @@ window.installApp = () => {
         <div class="first-run-descriptor">Routine Checklist Manager</div>
       </div>
       <p class="first-run-tagline">Repeatable checklists that reset on completion — not one-and-done to-dos.</p>
-      <div class="first-run-buttons">
-        <button type="button" class="first-run-btn" data-choice="create" data-busy="Setting up your routine…">Create My First Routine</button>
-        <button type="button" class="first-run-btn" data-choice="sample" data-busy="Loading samples…">Load a Sample</button>
-        <button type="button" class="first-run-btn" data-choice="learn" data-busy="Starting the tour…">Learn How Cycles Work</button>
+      <!-- Actions group: centered in the space below the brand header (brand + tagline
+           stay top-anchored; buttons sit in the vertical middle). -->
+      <div class="first-run-actions">
+        <div class="first-run-buttons">
+          <button type="button" class="first-run-btn" data-choice="create" data-busy="Setting up your routine…">Create My First Routine</button>
+          <button type="button" class="first-run-btn" data-choice="sample" data-busy="Loading samples…">Load a Sample</button>
+          <button type="button" class="first-run-btn" data-choice="learn" data-busy="Starting the tour…">Learn How Cycles Work</button>
+        </div>
+        <!-- Wait-gated escape hatch: revealed only if boot exceeds ~10s and isn't done
+             yet (see controller below). Not shown upfront — a new user can't reason
+             about "Lite" cold, and capable devices should never be nudged into it. -->
+        <a id="first-run-lite" class="first-run-lite" href="./lite/miniCycle-lite.html?mode=lite&src=choice-slow">Taking a while? Try the Lite version →</a>
       </div>
-      <!-- Wait-gated escape hatch: revealed only if boot exceeds ~10s and isn't done
-           yet (see controller below). Not shown upfront — a new user can't reason
-           about "Lite" cold, and capable devices should never be nudged into it. -->
-      <a id="first-run-lite" class="first-run-lite" href="./lite/miniCycle-lite.html?mode=lite&src=choice-slow">Taking a while? Try the Lite version →</a>
     </div>
     <!-- Low-key live boot status (bottom-right); mirrored from updateLoaderProgress(). -->
     <div id="first-run-status" class="first-run-status" aria-hidden="true"></div>
