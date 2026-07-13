@@ -2,11 +2,10 @@
 # https://docs.netlify.com/configure-builds/file-based-configuration/
 
 [build]
-  # Publish directory (where your built site files are located)
-  publish = "."
-
-  # Install dependencies (required for Netlify Functions)
-  command = "npm install"
+  # Build pipeline (BUILD_PIPELINE_PLAN.md): bundle+minify into dist/, publish that.
+  # Dev stays no-build — this only runs on Netlify deploys.
+  publish = "dist"
+  command = "npm install && node scripts/build-web.cjs"
 
 [functions]
   directory = "netlify/functions"
