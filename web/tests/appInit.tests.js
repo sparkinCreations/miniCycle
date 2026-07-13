@@ -937,10 +937,15 @@ export async function runAppInitTests(resultsDiv, isPartOfSuite = false) {
         ['create', 'sample', 'learn'].forEach(c => {
             if (!new RegExp(`data-choice="${c}"`).test(html)) throw new Error(`choice button "${c}" missing`);
         });
-        // Only shown to brand-new users (no data) — controller gates on miniCycleData
-        if (!/getItem\('miniCycleData'\)/.test(html)) throw new Error('controller must gate on miniCycleData absence');
-        // Handoff contract: stores choice + dispatches the event boot consumes
+        // Gate: shown until the user MAKES a choice, not merely until data exists —
+        // boot creates miniCycleData mid-startup, so a non-chooser's reload must still
+        // see the screen (else they silently fall through to the focus-mode default).
+        if (!/getItem\('miniCycleData'\)/.test(html)) throw new Error('controller must read miniCycleData');
+        if (!/miniCycle_firstRunChoiceMade/.test(html)) throw new Error('controller must gate on the durable choice-made flag (non-chooser persistence)');
+        if (!/onboardingCompleted/.test(html)) throw new Error('controller must let onboarding-complete users skip the choice screen');
+        // Handoff contract: stores choice (session for routing + durable flag) + dispatches the event boot consumes
         if (!/miniCycle_firstRunChoice/.test(html)) throw new Error('controller must store the choice in sessionStorage');
+        if (!/setItem\('miniCycle_firstRunChoiceMade'/.test(html)) throw new Error('controller must set the durable choice-made flag on tap');
         if (!/firstrun:choice/.test(html)) throw new Error("controller must dispatch 'firstrun:choice'");
         // Perceived-wait marks (read by getBootTiming)
         if (!/mc:firstrun:choiceShown/.test(html)) throw new Error('choiceShown mark missing');
