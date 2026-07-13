@@ -37,3 +37,4 @@ backup/
 
 # Ignore subdirectories in docs/archive (keep files only)
 docs/archive/*/
+dist/

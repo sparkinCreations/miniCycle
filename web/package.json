@@ -27,7 +27,9 @@
     "build:android": "node scripts/build-android-www.cjs",
     "capture:screenshots": "node scripts/capture-store-screenshots.cjs",
     "lighthouse": "lhci autorun",
-    "lighthouse:install": "npm install -g @lhci/cli"
+    "lighthouse:install": "npm install -g @lhci/cli",
+    "build:web": "node scripts/build-web.cjs",
+    "preview:dist": "cd dist && python3 -m http.server 8081"
   },
   "keywords": [
     "productivity",
@@ -38,6 +40,7 @@
   "author": "miniCycle",
   "license": "SEE LICENSE IN LICENSE",
   "devDependencies": {
+    "esbuild": "^0.28.1",
     "eslint": "^9.39.2",
     "eslint-plugin-security": "^3.0.1",
     "eslint-plugin-sonarjs": "^3.0.5",

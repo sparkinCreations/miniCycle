@@ -73,6 +73,9 @@ var CORE = [
 ];
 
 // Boot-critical files - MUST be precached for instant startup
+// __BUILD_JS_PRECACHE_START__  (scripts/build-web.cjs replaces this whole array
+// in the dist copy with the generated bundled entry+chunk list — the hand list
+// below is the DEV/source list; do not remove the marker comments.)
 var BOOT_CRITICAL = [
   // HTML shells
   './miniCycle.html',
@@ -217,6 +220,7 @@ var BOOT_CRITICAL = [
   './modules/features/backupReminder.js',
   './modules/other/basicPluginSystem.js'
 ];
+// __BUILD_JS_PRECACHE_END__
 
 // CSS files - all @imports from main.css (required for offline styling)
 // ✅ Versioned with APP_VERSION for cache busting (matches main.css ?v= params)
