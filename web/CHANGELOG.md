@@ -1,3 +1,9 @@
+## [2.295] - 2026-07-14
+- polish(testing): boot timing stamp adds capture date/time
+- polish(testing): boot timing header stamps app version + cache (trace attribution)
+- docs: build pipeline Phase 3 shipped — prod verification + stale-client upgrade results
+
+
 ## [2.294] - 2026-07-14
 - deploy: publish bundled dist (branch preview for build pipeline)
 - docs+headers: Phase 1 as-built notes; immutable cache rule for hashed chunks (inert until dist flip)
