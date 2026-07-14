@@ -301,10 +301,12 @@ export function showBootTiming() {
     const boot = timing.bootSequence_ms;
     const out = [];
 
-    // Version + cache stamp: traces get shared (screenshots/feedback form) —
-    // without this a trace can't be attributed to a build (July 14 lesson:
-    // an Android trace arrived unidentifiable mid-rollout).
+    // Version + cache + capture-time stamp: traces get shared (screenshots /
+    // feedback form) — without these a trace can't be attributed to a build or
+    // placed in a rollout timeline (July 14 lesson: an Android trace arrived
+    // unidentifiable mid-rollout). Time = when the trace was captured, local.
     out.push(`⏱️ BOOT TIMING (v${globalThis.APP_VERSION || '?'} · cache ${globalThis.CACHE_VERSION || '?'})`);
+    out.push(new Date().toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }));
     out.push('═'.repeat(RULE_W));
     out.push(`${'Interactive'.padEnd(15)}${ms(timing.interactiveSinceNavigation_ms).padStart(8)}  (since page open)`);
     out.push(`${'Boot started'.padEnd(15)}${ms(timing.bootStartSinceNavigation_ms).padStart(8)}`);
