@@ -1,3 +1,7 @@
+## [2.296] - 2026-07-14
+- feat(testing): boot timing gains network/cache accounting + precache completeness (remote warm-run diagnosis)
+
+
 ## [2.295] - 2026-07-14
 - polish(testing): boot timing stamp adds capture date/time
 - polish(testing): boot timing header stamps app version + cache (trace attribution)
