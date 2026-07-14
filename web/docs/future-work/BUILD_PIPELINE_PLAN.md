@@ -135,8 +135,16 @@ Android 7.5s) — NOT the fast-cohort 1.8s, which is already fine.
   reload boots from SW. Source suites untouched (appInit/moduleLoader/orchestrator/coreBoot).
   Constraint accepted: root-absolute specifiers assume the app is served at the domain root.
 - **Phase 2 — CSS bundle** (+ optional hand-purge) with the same gates.
-- **Phase 3 — Netlify preview deploy** → verify preview URL (update flow from a *previous* version
-  especially: old client + new hashed deploy → version gate → clean upgrade) → flip production.
+- **Phase 3 — Netlify preview deploy → production:** ✅ DONE July 14 2026. Deploy preview
+  (PR #7, site `minicycle`, 25s build) passed all gates (the only console error was Netlify's
+  own preview toolbar vs our CSP — absent on prod). Merged + released **v2.294** (cache v1137):
+  the FIRST bundled production deploy. Prod gates all green. **Stale-client upgrade verified for
+  real**: a persistent profile captured on v2.293 (old layout, SW controlling, 12 tasks) upgraded
+  to bundled v2.294 in **4 seconds, data intact, zero console errors** (version gate + SW update
+  dance, 5 navigations). Post-deploy measurement (fast desktop, marks-based):
+  **interactive 493ms vs 1,228–1,540ms baseline (~2.7×)**; bootSeq 383ms; features 288ms.
+  Transfer unchanged (~6.2MB/253 reqs) as expected — pending CSS bundling + entry hashing
+  (the ?v= page-fetch vs bare-precache double-fetch survives until then).
 - **Phase 4 — Measure again**, update PROJECT_STATS, retire `?v=` docs/lessons references, mark
   MINIFICATION_PLAN superseded-and-done, post the follow-up.
 
