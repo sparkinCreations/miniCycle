@@ -1,3 +1,10 @@
+## [2.294] - 2026-07-14
+- deploy: publish bundled dist (branch preview for build pipeline)
+- docs+headers: Phase 1 as-built notes; immutable cache rule for hashed chunks (inert until dist flip)
+- feat(build): esbuild release pipeline — stable-path entries + hashed chunks, runtime-import rewriter, generated SW precache
+- docs: build pipeline Phase 0 baseline captured (prod v2.293) + marks-not-harness measurement rule
+
+
 ## [2.293] - 2026-07-13
 - polish(onboarding): choice screen — brand header top-anchored, buttons vertically centered
 - fix(onboarding): keep choice screen until a choice is made — non-chooser reload no longer falls through to focus mode
