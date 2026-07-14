@@ -370,7 +370,43 @@ export function showBootTiming() {
         out.push('init exact · imp overlaps — rank, don\'t sum');
     }
 
-    appendToTestResults(out.join('\n') + '\n\n');
+    // ── Network/cache accounting for THIS load + precache completeness ──
+    // Answers "was this run actually served from cache?" remotely (July 14:
+    // a device's warm runs showed network-shaped imps; a controlled run served
+    // 121/121 from SW — the trace must be able to tell those apart itself).
+    // transferSize === 0 ⇒ served from SW/HTTP cache; > 0 ⇒ real network bytes.
+    const js = performance.getEntriesByType('resource').filter(e => /\.js(\?|$)/.test(e.name));
+    const cached = js.filter(e => e.transferSize === 0).length;
+    const networked = js.filter(e => e.transferSize > 0);
+    const netKB = Math.round(networked.reduce((s, e) => s + e.transferSize, 0) / 1024);
+    out.push('');
+    out.push('NETWORK (this load, JS)');
+    out.push('─'.repeat(RULE_W));
+    out.push(`${'served'.padEnd(12)}${String(js.length).padStart(5)}   cached ${cached} · networked ${networked.length} (${netKB}KB)`);
+    [...networked].sort((a, b) => b.duration - a.duration).slice(0, 5).forEach(e => {
+        out.push(`  ${Math.round(e.duration)}ms ${Math.round(e.transferSize / 1024)}KB ${e.name.split('/').pop().split('?')[0].slice(0, 28)}`);
+    });
+
+    appendToTestResults(out.join('\n') + '\n');
+
+    // Precache completeness (async): count entries in the static cache — an
+    // interrupted install (Android kills the SW with the app) leaves this short
+    // and every later "warm" load re-fetches the missing files.
+    if (typeof caches !== 'undefined' && caches.keys) {
+        caches.keys().then(async (names) => {
+            const lines = [];
+            for (const name of names.filter(n => n.includes('miniCycle'))) {
+                const c = await caches.open(name);
+                const count = (await c.keys()).length;
+                lines.push(`${name}: ${count} entries`);
+            }
+            const controlled = navigator.serviceWorker?.controller ? 'controlling' : 'NOT controlling';
+            appendToTestResults(`SW ${controlled} · ` + (lines.join(' · ') || 'no caches') + '\n\n');
+        }).catch(() => appendToTestResults('cache enumeration unavailable\n\n'));
+    } else {
+        appendToTestResults('\n');
+    }
+
     showNotification(getLabel('notify.diagBootTiming'), "info", UI_TIMEOUTS.NOTIFICATION_SHORT);
 }
 
