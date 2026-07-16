@@ -25,7 +25,9 @@ npx serve .
 open http://localhost:8080/miniCycle.html
 ```
 
-No build step. No webpack. No bundler. Pure vanilla JavaScript with ES6 modules.
+No build step to develop. No webpack config to learn. Pure vanilla JavaScript with ES6
+modules. (A deploy-time esbuild step bundles releases on Netlify — you never touch it as a
+contributor; see [BUILD_PROCESS.md](../deployment/BUILD_PROCESS.md) if curious.)
 
 ---
 

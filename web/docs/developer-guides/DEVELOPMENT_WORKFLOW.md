@@ -151,27 +151,27 @@ console.log(cycle.recurringTemplates);
 
 **See [DEPLOYMENT.md](../deployment/DEPLOYMENT.md) for complete deployment guide.**
 
-**Quick Deployment:**
+**Quick Deployment (since v2.294 — bundled builds):**
 
 ```bash
-# 1. Update version
-./scripts/update-version.sh
-
-# 2. Run tests
-npm test          # Module suite (see ../PROJECT_STATS.md for counts)
+# 1. Run tests (against source — the pipeline doesn't change dev/test)
+npm test              # Module suite (see ../PROJECT_STATS.md for counts)
 npm run test:layout   # Centred-panel overlap + measured-var guard (after layout/header changes)
 npm run test:sw       # Offline boot + precache drift guard (after module/CSS/service-worker changes)
 npm run test:journey  # End-to-end user journey: persistence + cycle completion + offline reload
 
-# 3. Commit changes
-git add .
-git commit -m "feat: Add new feature"
-git push origin main
+# 2. (Optional) verify the bundled build locally
+npm run build:web     # → web/dist/ (~3s)
+npm run preview:dist  # serve dist on :8081 — check on a FRESH origin/incognito
 
-# 4. Upload to minicycle.app
-# Upload entire /web directory to server root
-# No build step needed!
+# 3. SHIP — this is the whole release step (commit, version bump, CSP hashes, tag, push):
+./scripts/update-version.sh --auto --push --changelog
 ```
+
+> ⚠️ **Every push to `main` auto-deploys** (Netlify builds `dist/` and publishes it).
+> **Never bare-push app-code changes** — without the version bump, existing users' service
+> workers keep serving the old build (half-dark deploy). Docs-only pushes are fine.
+> Full details: [BUILD_PROCESS.md](../deployment/BUILD_PROCESS.md)
 
 **Live URLs:**
 - Official: [minicycleapp.com](https://minicycleapp.com) → redirects to minicycle.app/pages/product.html

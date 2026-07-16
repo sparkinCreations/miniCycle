@@ -31,9 +31,18 @@ npm start                    # Starts Python HTTP server on port 8080
 npm test                     # Run automated tests (Playwright)
 npm run lint                 # ESLint with security + SonarJS plugins
 
-# Version Management
-./scripts/update-version.sh  # Interactive version updater
+# Release build (what Netlify runs on deploy; dev never needs it)
+npm run build:web            # esbuild bundle → web/dist/ (~3s)
+npm run preview:dist         # serve dist/ on :8081 (verify on a fresh origin)
+
+# SHIP (the only way app-code changes reach users)
+./scripts/update-version.sh --auto --push --changelog
 ```
+
+> ⚠️ **Push = production deploy** (since v2.294): Netlify builds and publishes `dist/` on
+> every push to `main`. App-code changes must ship via `update-version.sh` (a bare push is a
+> half-dark deploy — existing users' SWs keep the old build). Docs-only pushes are fine.
+> See [BUILD_PROCESS.md](../deployment/BUILD_PROCESS.md).
 
 ### File Access
 - **Main App**: http://localhost:8080/miniCycle.html

@@ -30,19 +30,23 @@ All content is hosted at **minicycle.app** via **Netlify**:
 
 miniCycle is deployed on **Netlify** with automatic Git-based deploys.
 
-### How It Works
+### How It Works (since v2.294, July 2026)
 ```
 git push origin main
        ↓
-Netlify detects push → builds from repo root
+Netlify: npm install && node scripts/build-web.cjs   (~25s)
        ↓
-Site published to minicycle.app CDN
+Publishes web/dist/ — bundled + minified (3.4MB JS → 1.43MB) — to minicycle.app CDN
 ```
 
-- **No build step** — the app is vanilla JS/HTML/CSS, served as static files
-- **Publish directory:** `.` (repo root, configured in `netlify.toml`)
-- **Auto-deploy:** Every push to `main` triggers a deploy
-- **Preview deploys:** Pull requests get preview URLs automatically
+- **Build step at deploy time only** — dev stays no-build (`npm start` serves pristine source).
+  Full guide: [BUILD_PROCESS.md](./BUILD_PROCESS.md)
+- **Publish directory:** `dist` (configured in `netlify.toml`)
+- **Auto-deploy:** every push to `main` deploys — **but app-code changes must ship via
+  `update-version.sh`** (a bare push is a half-dark deploy: existing users' SWs keep serving
+  the old build until CACHE_VERSION bumps). Docs-only pushes are fine.
+- **Preview deploys:** pull requests get preview URLs automatically
+  (`deploy-preview-<PR#>--minicycle.netlify.app`)
 
 ### Domain Setup
 ```

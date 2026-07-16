@@ -32,7 +32,16 @@ cd web
 npm start          # Python HTTP server on port 8080
 npm test           # Playwright browser tests (server must be running)
 npm run lint       # ESLint with security + SonarJS plugins
+npm run build:web  # esbuild release bundle → web/dist/ (what Netlify runs; dev never needs it)
 ```
+
+## SHIPPING — Push = Production Deploy
+
+Since v2.294, **every push to `main` triggers a Netlify build of `web/dist/` and deploys it**.
+App-code changes must ship via `./scripts/update-version.sh --auto --push --changelog`
+(version + cache bump + CSP hashes + tag + push). A bare `git push` of app code creates a
+**half-dark deploy**: new visitors get the new build, existing users' service workers keep the
+old one. Docs-only pushes are fine. Details: `web/docs/deployment/BUILD_PROCESS.md`.
 
 ## Project Structure
 

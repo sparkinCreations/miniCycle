@@ -44,10 +44,11 @@ The monolithic 8,000+ line `miniCycle-styles.css` was refactored into 30 focused
 
 ## Design Principles
 
-### ✅ Zero Deployment Complexity
-- No build step required
-- Works with existing Netlify setup
-- All files deploy as-is from `web/`
+### ✅ Zero Development Complexity
+- No build step to develop — `npm start` serves pristine source
+- Deploys via a deploy-time bundling step (since v2.294): Netlify runs
+  `scripts/build-web.cjs` and publishes `web/dist/` — see
+  [BUILD_PROCESS.md](../deployment/BUILD_PROCESS.md)
 
 ### ✅ Domain-Driven Organization
 - Modules grouped by business domain (task, routine, recurring)
@@ -673,8 +674,8 @@ miniCycle-main.js (entrypoint)
 **Alternative considered:** Split into `public/`, `web/`, `shared/`
 **Chosen approach:** Everything in `web/`
 **Reasoning:**
-- Netlify deploys `web/` folder directly
-- No build step required
+- Netlify builds from `web/` (publishes bundled `web/dist/` since v2.294)
+- No build step for development — source structure IS the runtime structure in dev
 - URLs work immediately
 - Can restructure later when multi-platform actually happens
 

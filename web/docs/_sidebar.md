@@ -96,6 +96,7 @@
 
 * **Deployment & Updates**
   * [Deployment Guide](deployment/DEPLOYMENT.md)
+  * [Build Process (esbuild pipeline)](deployment/BUILD_PROCESS.md)
   * [PWA Offline Architecture](deployment/PWA_OFFLINE_ARCHITECTURE.md)
   * [Service Worker Update Strategy](deployment/SERVICE_WORKER_UPDATE_STRATEGY.md)
   * [Update Version Guide](deployment/UPDATE-VERSION-GUIDE.md)

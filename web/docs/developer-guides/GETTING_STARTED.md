@@ -34,7 +34,9 @@ npm test                            # Automated tests (all passing)
 open http://localhost:8080/tests/module-test-suite.html  # Browser tests
 ```
 
-**That's it!** No build process, no npm install, no webpack config. Pure vanilla JavaScript.
+**That's it!** No build process to develop, no webpack config. Pure vanilla JavaScript.
+(Releases are bundled at deploy time by Netlify — see
+[BUILD_PROCESS.md](../deployment/BUILD_PROCESS.md); local development never needs it.)
 
 ### Testing on Mobile Devices
 
