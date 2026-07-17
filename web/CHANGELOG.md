@@ -1,3 +1,9 @@
+## [2.297] - 2026-07-17
+- fix(undo): rollback path was fully dead (AppState.set never existed) — restore via update() + repaint on failure
+- docs: integrate ADRs + HOW_MINICYCLE_WORKS + incident/bug reports; ADR-010 deploy-time bundling; cross-link incident to pipeline plan
+- docs: document esbuild build process + push=deploy rule; fix stale no-build claims
+
+
 ## [2.296] - 2026-07-14
 - feat(testing): boot timing gains network/cache accounting + precache completeness (remote warm-run diagnosis)
 
