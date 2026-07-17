@@ -1878,6 +1878,75 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         }
     });
 
+    // === ROLLBACK UI-REFRESH REGRESSION (BUG_undo-redo-rollback-ui-refresh.md) ===
+    // A failed undo/redo rolls state back but must ALSO repaint — restoring
+    // AppState alone leaves the DOM showing the half-applied state. These force
+    // the apply path to throw and assert the catch path calls the UI refresh
+    // (via the refreshUIFromState fallback, since no UIOrchestrator is injected).
+    resultsDiv.innerHTML += '<h4 class="test-section">🎨 Rollback UI Refresh (failure-path regression)</h4>';
+
+    function createRollbackFailureDeps() {
+        const deps = createMockDependencies();
+        const spies = { refreshCalls: 0, restoreCalls: 0 };
+        deps.refreshUIFromState = () => { spies.refreshCalls++; };
+        // ONE-SHOT failure: the apply update throws; the rollback's restore
+        // update (restoreFullState — there is NO AppState.set) must succeed
+        // and is counted. (The original bug was double: set() didn't exist,
+        // so restore AND repaint were both silently dead.)
+        const realUpdate = deps.AppState.update;
+        let updateCalls = 0;
+        deps.AppState.update = async (fn, immediate) => {
+            updateCalls++;
+            if (updateCalls === 1) throw new Error('forced apply failure');
+            spies.restoreCalls++;
+            return realUpdate(fn, immediate);
+        };
+        // A stack snapshot that differs from current state (else it's skipped
+        // as a duplicate and the apply path never runs).
+        const snapshot = {
+            activeCycleId: 'Test Cycle',
+            tasks: [{ id: 'task-1', text: 'Task 1 EDITED', completed: false, highPriority: false }],
+            recurringTemplates: {},
+            title: 'Test Cycle',
+            autoReset: false,
+            deleteCheckedTasks: false,
+            cycleCount: 0,
+            theme: 'classic',
+            clearedTasks: null,
+            taskViewLayout: null,
+            timestamp: Date.now() - 1000
+        };
+        return { deps, spies, snapshot };
+    }
+
+    await test('undo failure rolls back AND repaints the UI', async () => {
+        const { deps, spies, snapshot } = createRollbackFailureDeps();
+        deps.AppGlobalState.activeUndoStack = [snapshot];
+        setUndoRedoManagerDependencies(deps);
+
+        let threw = false;
+        try { await performStateBasedUndo(); } catch (e) { threw = e.message.includes('forced'); }
+
+        if (!threw) throw new Error('forced failure should re-throw to the caller');
+        if (spies.restoreCalls < 1) throw new Error('rollback must restore state via a second AppState.update (restoreFullState)');
+        if (spies.refreshCalls < 1) throw new Error('rollback must repaint (refreshUIFromState not called in catch path)');
+        if (deps.AppGlobalState.isPerformingUndoRedo !== false) throw new Error('finally must clear isPerformingUndoRedo');
+    });
+
+    await test('redo failure rolls back AND repaints the UI', async () => {
+        const { deps, spies, snapshot } = createRollbackFailureDeps();
+        deps.AppGlobalState.activeRedoStack = [snapshot];
+        setUndoRedoManagerDependencies(deps);
+
+        let threw = false;
+        try { await performStateBasedRedo(); } catch (e) { threw = e.message.includes('forced'); }
+
+        if (!threw) throw new Error('forced failure should re-throw to the caller');
+        if (spies.restoreCalls < 1) throw new Error('rollback must restore state via a second AppState.update (restoreFullState)');
+        if (spies.refreshCalls < 1) throw new Error('rollback must repaint (refreshUIFromState not called in catch path)');
+        if (deps.AppGlobalState.isPerformingUndoRedo !== false) throw new Error('finally must clear isPerformingUndoRedo');
+    });
+
     // === SUMMARY ===
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>All Tests Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;

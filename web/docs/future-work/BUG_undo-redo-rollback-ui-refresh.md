@@ -2,8 +2,23 @@
 
 **Module:** `web/modules/ui/undoRedoManager.js`
 **Severity:** Medium — no data loss, but the app displays incorrect information the user cannot trust
-**Status:** Unverified in production (see reproduction steps); confirmed by code inspection
+**Status:** ✅ **FIXED (July 16 2026)** — and the fix uncovered that the bug was WORSE than
+documented: `AppState.set()` **does not exist on StateManager**, so the catch's very first line
+threw a TypeError that the inner catch swallowed — meaning the ENTIRE rollback path (state
+restore, stack restore, toast, and the missing repaint this doc describes) was silently dead,
+not just the repaint. Live-app forced-failure E2E confirmed it: only the generic error toast
+appeared; "Undo failed" never fired.
+**Fix shipped:** a `restoreFullState()` helper restores the snapshot through `AppState.update()`
+(the ADR-003 single door — no `set()` was ever added), and both catch blocks now call
+`handleUndoRedoUIUpdate({ requiresFullRender: true, cycleChanged: true }, …)` before
+`updateUndoRedoButtons()` (a real diff object — the sketch below passes `null`, which would
+itself throw on `diff.requiresFullRender`). Verified: 2 new forced-failure regression tests
+(one-shot update poison; suite 79/79) + live-app E2E (restore + repaint + "Undo failed" toast,
+DOM consistent with state, no uncaught errors).
 **Affects:** Both `performStateBasedUndo()` and `performStateBasedRedo()` (symmetric bug)
+
+> The analysis below is preserved as originally written. Its diagnosis of the missing repaint
+> was correct; it just trusted that the `AppState.set(rollbackState)` line above it worked.
 
 ---
 
