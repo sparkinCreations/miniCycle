@@ -17,6 +17,8 @@
 * **Developer Guides**
   * [Your First Contribution](developer-guides/FIRST_CONTRIBUTION.md)
   * [Getting Started](developer-guides/GETTING_STARTED.md)
+  * [How miniCycle Works (ground-up)](guides/HOW_MINICYCLE_WORKS.md)
+  * [Architecture Decision Records](ARCHITECTURE_DECISIONS.md)
   * [Developer Documentation](developer-guides/DEVELOPER_DOCUMENTATION.md)
   * [Documentation Index](developer-guides/INDEX.md)
   * [Architecture Overview](developer-guides/ARCHITECTURE_OVERVIEW.md)

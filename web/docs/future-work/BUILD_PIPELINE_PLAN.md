@@ -158,6 +158,13 @@ Android 7.5s) — NOT the fast-cohort 1.8s, which is already fine.
 | SW placeholder injection drifts from SW edits | Injection is anchored to a marked placeholder; build fails loudly if the marker is missing |
 | update-version.sh interplay | Script keeps bumping APP_VERSION/CACHE_VERSION (display + SW cache name); it stops rewriting `?v=` in HTML once the src rewrite is build-owned |
 
+> **July 2026 — real-world casualty of the `?v=` scheme:** a months-stale work machine got
+> stranded on a mixed module graph (`2.296.r2` vs `2.296` — the SW logged version mismatches on
+> every module; `coreFunctions` resolved undefined; factory reset didn't recover it). Full
+> write-up + user-recovery feature designs: `INCIDENT_service-worker-stale-cache.md`. This
+> escalates the **full entry-hashing phase** from "nice to have" to the next priority: content
+> identity is the only thing that makes a mixed graph unrepresentable.
+
 ## Explicitly out of scope
 
 SVGO pass, W3C error fixes, hero/concept rework, mobile font default (all tracked in
