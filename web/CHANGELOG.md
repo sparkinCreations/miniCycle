@@ -1,3 +1,7 @@
+## [2.298] - 2026-07-17
+- feat(recovery): error-screen data backup + crash report; restore-from-backup on choice screen (sessionStorage handoff)
+
+
 ## [2.297] - 2026-07-17
 - fix(undo): rollback path was fully dead (AppState.set never existed) — restore via update() + repaint on failure
 - docs: integrate ADRs + HOW_MINICYCLE_WORKS + incident/bug reports; ADR-010 deploy-time bundling; cross-link incident to pipeline plan
