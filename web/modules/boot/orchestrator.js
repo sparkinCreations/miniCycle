@@ -544,6 +544,16 @@ function showBootError(phase, error, willRetry = false) {
           ${escapeHtml(getLabel('boot.useLite'))}
         </button>
       </div>
+      <div style="margin-top: 14px; display: flex; gap: 16px; justify-content: center;">
+        ${hasBackupableData() ? `
+        <button id="boot-backup-btn" style="padding: 8px 14px; cursor: pointer; border: 1px solid rgba(255,255,255,0.5); background: transparent; color: white; border-radius: 8px; font-size: 13px; font-family: 'Inter', sans-serif;">
+          💾 ${escapeHtml(getLabel('boot.backupData'))}
+        </button>
+        ` : ''}
+        <button id="boot-report-btn" style="padding: 8px 14px; cursor: pointer; border: 1px solid rgba(255,255,255,0.5); background: transparent; color: white; border-radius: 8px; font-size: 13px; font-family: 'Inter', sans-serif;">
+          📧 ${escapeHtml(getLabel('boot.reportProblem'))}
+        </button>
+      </div>
       <div style="margin-top: 12px; padding: 8px; background: rgba(0,0,0,0.3); border-radius: 6px; color: rgba(255,255,255,0.7); font-size: 10px; font-family: monospace; max-width: 300px; word-break: break-word; text-align: left;">
         Phase: ${finalDiagPhase} | ${finalDiagOnline} | ${finalDiagSW} | ${finalDiagTime}<br>
         Attempt: ${bootAttempt} | v${escapeHtml(APP_VERSION || '?')}<br>
@@ -554,6 +564,42 @@ function showBootError(phase, error, willRetry = false) {
     // Add button handlers (uses addEventListener instead of inline onclick)
     const tryAgainBtn = document.getElementById('try-again-btn');
     tryAgainBtn?.addEventListener('click', () => location.reload());
+
+    // Backup: works even though boot failed — reads localStorage directly, no
+    // module machinery. See INCIDENT_service-worker-stale-cache.md §6a.
+    const backupBtn = document.getElementById('boot-backup-btn');
+    backupBtn?.addEventListener('click', () => {
+      try {
+        const count = downloadDataBackup();
+        backupBtn.textContent = '✅ ' + getLabel('boot.backupSaved', { vars: { count } });
+        backupBtn.disabled = true;
+      } catch (err) {
+        console.error('Backup failed:', err);
+        backupBtn.textContent = '⚠️ ' + getLabel('boot.backupFailed');
+      }
+    });
+
+    // Crash report: diagnostics ONLY (never user data) via mailto — zero
+    // infrastructure, works from a broken boot. §6b.
+    const reportBtn = document.getElementById('boot-report-btn');
+    reportBtn?.addEventListener('click', () => {
+      const subject = `miniCycle boot failure report (v${APP_VERSION})`;
+      const body = [
+        'Auto-generated diagnostic from the boot error screen.',
+        'No routine/task data is included.',
+        '',
+        `Phase: ${phase}`,
+        `Error: ${(error?.message || 'Unknown').substring(0, 300)}`,
+        `Version: ${APP_VERSION} | Attempt: ${bootAttempt}`,
+        `Online: ${navigator.onLine} | SW controlling: ${!!navigator.serviceWorker?.controller}`,
+        `UA: ${navigator.userAgent}`,
+        `Time: ${new Date().toISOString()}`,
+      ].join('\n');
+      const mailtoUrl = 'mailto:sparkintechproductions@gmail.com?subject=' +
+        encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+      reportBtn.dataset.mailto = mailtoUrl; // inspectable (location.href is unforgeable in tests)
+      location.href = mailtoUrl;
+    });
 
     const liteBtn = document.getElementById('lite-version-btn');
     liteBtn?.addEventListener('click', () => goToLiteVersion({ params: { fallback: 'true' }, reason: 'boot-failure UI' }));
@@ -578,6 +624,53 @@ function showBootError(phase, error, willRetry = false) {
       });
     }
   }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DATA BACKUP FROM THE ERROR SCREEN (INCIDENT_service-worker-stale-cache.md §6a)
+// All user data is plain localStorage, available even when boot failed — so a
+// stranded user can save their routines BEFORE trying destructive recovery
+// (clear cache / reinstall). Restore lives on the first-run choice screen.
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Non-prefixed legacy keys that belong to miniCycle (see STORAGE_KEYS in
+// constants.js — not imported here so backup works independent of module state).
+const BACKUP_EXTRA_KEYS = ['lastUsedMiniCycle', 'milestoneUnlocks', 'darkModeEnabled', 'currentTheme'];
+
+function collectBackupEntries() {
+  const entries = {};
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && (key.indexOf('miniCycle') === 0 || key.indexOf('__miniCycle') === 0 || BACKUP_EXTRA_KEYS.includes(key))) {
+      entries[key] = localStorage.getItem(key); // raw strings — never parse/rewrite
+    }
+  }
+  return entries;
+}
+
+function hasBackupableData() {
+  try { return !!localStorage.getItem('miniCycleData') || Object.keys(collectBackupEntries()).length > 0; }
+  catch (_) { return false; }
+}
+
+/** Download all miniCycle localStorage keys as a JSON file. @returns {number} key count */
+function downloadDataBackup() {
+  const keys = collectBackupEntries();
+  const payload = {
+    type: 'miniCycle-backup',
+    appVersion: APP_VERSION,
+    exportedAt: new Date().toISOString(),
+    keys,
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `minicycle-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  return Object.keys(keys).length;
 }
 
 /**

@@ -4,8 +4,13 @@
 (`BUILD_PIPELINE_PLAN.md`, v2.294) delivered bundling, generated precache, and hashed shared
 chunks. The **permanent fix in §5 (content-hashed ENTRY filenames, atomic swap, `?v=` removal)
 is the plan's remaining "full entry-hashing" phase — this incident is the production evidence
-for prioritizing it.** The §6 user-recovery features (error-screen backup/restore, crash
-report) remain unstarted and are not covered by the pipeline.
+for prioritizing it.** The §6 user-recovery trio **shipped July 16 2026**: 💾 "Back Up My Data"
++ 📧 "Report Problem" (diagnostics-only mailto) on the final boot-error screen, and "Restore
+from a backup file" on the first-run choice screen. Restore hands off via sessionStorage and
+applies on the NEXT load before any app code runs — writing localStorage directly pre-reload
+gets clobbered by the running app's save-on-unload (found by the rescue-loop E2E). Full loop
+verified: data → forced boot failure → backup download → fresh profile → restore → data intact.
+Remaining from §6: known-issue article (d) + website support section (e) — content tasks.
 **Severity:** High — strands existing users on an unopenable app across updates, with no self-service recovery for non-technical users
 **Affected versions:** All versions using the `?v=` query-parameter cache-busting scheme (through 2.296.r2)
 **Symptom surfaced on:** An old work machine that had loaded the app months earlier

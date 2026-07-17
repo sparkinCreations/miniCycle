@@ -1077,6 +1077,10 @@ window.installApp = () => {
              yet (see controller below). Not shown upfront — a new user can't reason
              about "Lite" cold, and capable devices should never be nudged into it. -->
         <a id="first-run-lite" class="first-run-lite" href="./lite/miniCycle-lite.html?mode=lite&src=choice-slow">Taking a while? Try the Lite version →</a>
+        <!-- Restore path for users returning after a clear/reinstall (pairs with the
+             boot error screen's "Back Up My Data" button — INCIDENT doc §6a). -->
+        <button type="button" id="first-run-restore" class="first-run-restore">Restore from a backup file</button>
+        <input type="file" id="first-run-restore-file" accept=".json,application/json" hidden>
       </div>
     </div>
     <!-- Low-key live boot status (bottom-right); mirrored from updateLoaderProgress(). -->
@@ -1132,6 +1136,27 @@ window.installApp = () => {
        which removes this screen — error UI takes precedence by construction. -->
   <script>
   (function () {
+    // Apply a pending restore FIRST — before the gate below reads localStorage
+    // and before any app code runs. The restore is handed off via sessionStorage
+    // because writing localStorage directly pre-reload gets CLOBBERED: the app
+    // running behind the choice screen saves its in-memory state on unload,
+    // overwriting the restored data (found by the rescue-loop E2E).
+    try {
+      var pendingRestore = sessionStorage.getItem('miniCycle_pendingRestore');
+      if (pendingRestore) {
+        sessionStorage.removeItem('miniCycle_pendingRestore');
+        var restorePayload = JSON.parse(pendingRestore);
+        if (restorePayload && restorePayload.type === 'miniCycle-backup' && restorePayload.keys && restorePayload.keys.miniCycleData) {
+          var restoreNames = Object.keys(restorePayload.keys);
+          for (var ri = 0; ri < restoreNames.length; ri++) {
+            if (typeof restorePayload.keys[restoreNames[ri]] === 'string') {
+              localStorage.setItem(restoreNames[ri], restorePayload.keys[restoreNames[ri]]);
+            }
+          }
+        }
+      }
+    } catch (e) { /* invalid payload — fall through to normal first-run */ }
+
     // Show the choice screen until the user actually MAKES a choice. Boot creates
     // miniCycleData during startup (createInitialSchema25Data), so "data exists" is
     // NOT a reliable "returning user" signal — a user who reloads before choosing
@@ -1194,6 +1219,40 @@ window.installApp = () => {
         document.dispatchEvent(new CustomEvent('firstrun:choice', { detail: { choice: value } }));
       } catch (err) {}
     });
+
+    // Restore-from-backup (pairs with the error screen's backup button).
+    // Validates the file, writes the raw localStorage keys back, reloads —
+    // the reload takes the returning-user path with the restored data.
+    var restoreBtn = document.getElementById('first-run-restore');
+    var restoreFile = document.getElementById('first-run-restore-file');
+    if (restoreBtn && restoreFile) {
+      restoreBtn.addEventListener('click', function () { restoreFile.click(); });
+      restoreFile.addEventListener('change', function () {
+        var file = restoreFile.files && restoreFile.files[0];
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function () {
+          var parsed = null;
+          try { parsed = JSON.parse(reader.result); } catch (err) {}
+          if (!parsed || parsed.type !== 'miniCycle-backup' || !parsed.keys || !parsed.keys.miniCycleData) {
+            alert('That file is not a valid miniCycle backup.');
+            restoreFile.value = '';
+            return;
+          }
+          // Hand off via sessionStorage; the NEXT load applies it before any app
+          // code runs. Writing localStorage here would be clobbered by the
+          // running app's save-on-unload during the reload.
+          try {
+            sessionStorage.setItem('miniCycle_pendingRestore', reader.result);
+          } catch (err) {
+            alert('Restore failed: ' + err.message);
+            return;
+          }
+          location.reload();
+        };
+        reader.readAsText(file);
+      });
+    }
   })();
   </script>
 
