@@ -1065,6 +1065,9 @@ window.installApp = () => {
         <div class="first-run-descriptor">Routine Checklist Manager</div>
       </div>
       <p class="first-run-tagline">Repeatable checklists that reset on completion — not one-and-done to-dos.</p>
+      <!-- Rotating use cases (controller cycles these like the bottom tips).
+           aria-hidden: decorative reinforcement — screen readers get the tagline. -->
+      <p class="first-run-usecase" aria-hidden="true"><span id="first-run-usecase-text" class="first-run-usecase-text">✈️ Pre-flight checklists</span></p>
       <!-- Actions group: centered in the space below the brand header (brand + tagline
            stay top-anchored; buttons sit in the vertical middle). -->
       <div class="first-run-actions">
@@ -1190,6 +1193,33 @@ window.installApp = () => {
     choice.hidden = false;
     if (bottomBar) bottomBar.hidden = false;
     try { performance.mark('mc:firstrun:choiceShown'); } catch (e) {}
+
+    // Rotating use-case line (under the tagline) — same rhythm as the bottom
+    // tips: fade out, swap, fade in. Stops once the screen is dismissed.
+    var useCases = [
+      '✈️ Pre-flight checklists',
+      '🩺 Hourly nurse rounds',
+      '🔍 QA inspections',
+      '🍳 Opening & closing procedures',
+      '🧹 Cleaning rounds',
+      '🌅 Morning routines',
+      '💪 Workout circuits',
+      '📦 Packing lists you reuse'
+    ];
+    var useCaseEl = document.getElementById('first-run-usecase-text');
+    if (useCaseEl) {
+      var uc = 0;
+      var ucTimer = setInterval(function () {
+        // Stop when the choice screen is gone (loader dismissed after a pick).
+        if (getComputedStyle(loader).display === 'none') { clearInterval(ucTimer); return; }
+        useCaseEl.classList.add('is-swapping');
+        setTimeout(function () {
+          uc = (uc + 1) % useCases.length;
+          useCaseEl.textContent = useCases[uc];
+          useCaseEl.classList.remove('is-swapping');
+        }, 350);
+      }, 2800);
+    }
     // NOTE: the Lite escape hatch reveal is CSS-driven (animation-delay), NOT a
     // JS timer. A slow boot saturates the main thread, so a setTimeout would be
     // starved until boot finishes — defeating the hint on exactly the devices

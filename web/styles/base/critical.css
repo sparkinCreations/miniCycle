@@ -223,7 +223,7 @@ body.app-loading #undo-redo-buttons {
   text-shadow: var(--text-shadow-lg);
 }
 .first-run-tagline {
-  margin: 0 0 18px;
+  margin: 0 0 10px;
   color: white;
   text-align: center;
   font-size: var(--font-size-sm, 13px);
@@ -232,6 +232,30 @@ body.app-loading #undo-redo-buttons {
   font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   text-shadow: var(--text-shadow-lg);
   opacity: 0.82;
+}
+/* Rotating use-case line — FIXED height so swaps never shift the centered
+   buttons below. Slightly brighter than the tagline: it's the "that's me" hook. */
+.first-run-usecase {
+  margin: 0 0 14px;
+  height: 1.5em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: var(--font-size-sm, 13px);
+  font-weight: 500;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  text-shadow: var(--text-shadow-lg);
+}
+.first-run-usecase-text {
+  opacity: 0.95;
+  transition: opacity 0.35s ease;
+}
+.first-run-usecase-text.is-swapping {
+  opacity: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .first-run-usecase-text { transition: none; }
 }
 .first-run-buttons {
   display: flex;
