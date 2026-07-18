@@ -1,3 +1,8 @@
+## [2.299] - 2026-07-18
+- polish(onboarding): use-case line — ticker reveal (slide up through clipped window) + size hierarchy vs tagline
+- feat(onboarding): rotating use-case line on choice screen (preflight / nurse rounds / inspections …)
+
+
 ## [2.298] - 2026-07-17
 - feat(recovery): error-screen data backup + crash report; restore-from-backup on choice screen (sessionStorage handoff)
 
