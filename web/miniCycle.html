@@ -1212,12 +1212,18 @@ window.installApp = () => {
       var ucTimer = setInterval(function () {
         // Stop when the choice screen is gone (loader dismissed after a pick).
         if (getComputedStyle(loader).display === 'none') { clearInterval(ucTimer); return; }
-        useCaseEl.classList.add('is-swapping');
+        // Ticker reveal: slide the old line up out of the clipped window…
+        useCaseEl.classList.add('is-leaving');
         setTimeout(function () {
           uc = (uc + 1) % useCases.length;
           useCaseEl.textContent = useCases[uc];
-          useCaseEl.classList.remove('is-swapping');
-        }, 350);
+          // …place the new line below the window (no transition)…
+          useCaseEl.classList.remove('is-leaving');
+          useCaseEl.classList.add('is-entering');
+          void useCaseEl.offsetHeight; // force reflow so the jump isn't animated
+          // …then let it rise into place.
+          useCaseEl.classList.remove('is-entering');
+        }, 330);
       }, 2800);
     }
     // NOTE: the Lite escape hatch reveal is CSS-driven (animation-delay), NOT a

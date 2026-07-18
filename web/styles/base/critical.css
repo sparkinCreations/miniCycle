@@ -223,36 +223,49 @@ body.app-loading #undo-redo-buttons {
   text-shadow: var(--text-shadow-lg);
 }
 .first-run-tagline {
-  margin: 0 0 10px;
+  /* Quiet context line — deliberately smaller/dimmer than the use-case hook below. */
+  margin: 0 0 8px;
   color: white;
   text-align: center;
-  font-size: var(--font-size-sm, 13px);
+  font-size: var(--font-size-xs, 12px);
   font-weight: 400;
   line-height: 1.45;
   font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   text-shadow: var(--text-shadow-lg);
-  opacity: 0.82;
+  opacity: 0.72;
 }
-/* Rotating use-case line — FIXED height so swaps never shift the centered
-   buttons below. Slightly brighter than the tagline: it's the "that's me" hook. */
+/* Rotating use-case line — the "that's me" hook, so it OUTRANKS the tagline
+   (bigger + heavier). FIXED height + overflow hidden: swaps never shift the
+   centered buttons, and the clipped window is what makes the ticker reveal work. */
 .first-run-usecase {
-  margin: 0 0 14px;
-  height: 1.5em;
+  margin: 0 0 16px;
+  height: 1.6em;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: var(--font-size-sm, 13px);
-  font-weight: 500;
+  font-size: var(--font-size-base, 15px);
+  font-weight: 600;
   font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   text-shadow: var(--text-shadow-lg);
 }
+/* Ticker reveal: outgoing line slides UP out of the clipped window; the new
+   line is placed below (is-entering, no transition) and rises into place. */
 .first-run-usecase-text {
-  opacity: 0.95;
-  transition: opacity 0.35s ease;
+  display: inline-block;
+  transform: translateY(0);
+  opacity: 0.97;
+  transition: transform 0.32s cubic-bezier(0.3, 0.7, 0.3, 1), opacity 0.32s ease;
 }
-.first-run-usecase-text.is-swapping {
+.first-run-usecase-text.is-leaving {
+  transform: translateY(-130%);
   opacity: 0;
+}
+.first-run-usecase-text.is-entering {
+  transform: translateY(130%);
+  opacity: 0;
+  transition: none;
 }
 @media (prefers-reduced-motion: reduce) {
   .first-run-usecase-text { transition: none; }
