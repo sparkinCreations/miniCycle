@@ -1,0 +1,24 @@
+# Repo-root Netlify config — the BUILD AUTHORITY for the production site.
+#
+# WHY THIS FILE EXISTS (July 19 2026): Netlify only reads netlify.toml from the
+# repo root or the configured base directory. web/netlify.toml was NOT being
+# read as build config — the site was publishing the raw web/ source tree
+# directly (its [build] block silently ignored), while its [[headers]] and
+# [[redirects]] still applied only because the file happened to sit INSIDE the
+# published folder, where Netlify processes deploy-file config. Result: the
+# build pipeline (web/scripts/build-web.cjs → web/dist/) never ran on deploys,
+# and source-only files (package.json, scripts/, docs/) were publicly served.
+#
+# This root file pins the build settings; a netlify.toml always overrides the
+# site's UI settings. Headers/redirects intentionally STAY in web/netlify.toml
+# (kept current by update-version.sh's CSP stage) — the build copies it into
+# dist/, so it continues to be processed from the deployed files exactly as it
+# is today.
+#
+# --include=dev: esbuild lives in devDependencies; this keeps the build working
+# even if the site sets NODE_ENV=production (which would otherwise prune it).
+
+[build]
+  base = "web"
+  command = "npm install --include=dev && node scripts/build-web.cjs"
+  publish = "dist"
