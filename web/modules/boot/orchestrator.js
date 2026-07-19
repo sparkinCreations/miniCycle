@@ -773,15 +773,23 @@ async function runBootSequence() {
   //   matches what the browser cached during previous online sessions, so the
   //   browser's HTTP cache serves the file even without the SW.
   // - Normal (first attempt): use APP_VERSION for SW cache matching
+  // Bundled dist (__MC_MODULE_MAP present): hashed filenames ARE the version,
+  // so the first attempt imports BARE mapped URLs — matching the modulepreload
+  // hints and the SW precache keys (no double-fetch). Retries still append a
+  // ?v= suffix ON TOP of the mapped URL (the build keeps the `${vParam}` tail
+  // for this file) because the retry teardown depends on distinct URLs yielding
+  // fresh module instances. Offline retries keep the suffix too: hashed files
+  // are served cache-first by the SW regardless of query, so no network needed.
+  const hasModuleMap = !!globalThis.__MC_MODULE_MAP;
   let versionSuffix;
-  if (isRetry && navigator.onLine) {
+  if (isRetry && (navigator.onLine || hasModuleMap)) {
     versionSuffix = `${APP_VERSION}.r${bootAttempt}`;
-  } else if (isRetry && !navigator.onLine) {
+  } else if (isRetry) {
     versionSuffix = ''; // Drop version — use browser HTTP cache
   } else {
     versionSuffix = APP_VERSION;
   }
-  const vParam = versionSuffix ? `?v=${versionSuffix}` : '';
+  const vParam = (hasModuleMap && !isRetry) ? '' : (versionSuffix ? `?v=${versionSuffix}` : '');
 
   // ⛔ Kick off the pre-boot version gate NOW (non-blocking) so its tiny no-store
   // fetch overlaps the boot-module imports + Phase 1 — ≈free on a healthy network.

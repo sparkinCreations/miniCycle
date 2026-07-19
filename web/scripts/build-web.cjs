@@ -1,26 +1,44 @@
 #!/usr/bin/env node
 /**
- * build-web.cjs — release bundling for miniCycle (BUILD_PIPELINE_PLAN.md Phase 1)
+ * build-web.cjs — release bundling for miniCycle (BUILD_PIPELINE_PLAN.md)
  *
- * Produces web/dist/: a deployable copy where every runtime-imported module is a
- * minified esbuild ENTRY at its STABLE path (so the ~60 runtime-computed
- * `import(withV('…'))` specifiers keep resolving with zero runtime changes),
- * with shared code split into content-hashed chunks. Dev stays no-build.
+ * Phase 1 (Jul 13 2026) bundled with STABLE entry paths. This version completes
+ * the plan: FULL ENTRY HASHING + runtime module map + CSS bundling.
  *
  *   DEV:   npm start          → python serves web/ (pristine source, ?v= as today)
- *   PROD:  node scripts/build-web.cjs → dist/ (bundled, minified, generated precache)
+ *   PROD:  node scripts/build-web.cjs → dist/ (bundled, hashed, generated precache)
+ *
+ * Output layout:
+ *   dist/build/**            — ALL hashed output (JS entries, chunks, CSS bundle).
+ *                              Immutable by name → netlify serves it with
+ *                              Cache-Control: immutable; SW serves it cache-first.
+ *   dist/version.js          — source copy + appended __MC_MODULE_MAP
+ *                              (source path → hashed URL). The ONLY indirection:
+ *                              importers reference source paths, only the map
+ *                              knows hashes, so there is no hash cascade.
+ *   dist/modules/**.js       — tiny stable-path SHIMS (`export * from <hashed>`)
+ *                              so the in-browser testing modal's direct source-
+ *                              path imports keep working on production.
+ *   dist/service-worker.js   — precache lists + MODULE_MAP injected between
+ *                              marker comments.
+ *   dist/miniCycle.html      — byte-identical EXCEPT attribute rewrites (main.js
+ *                              script src + main.css hrefs → hashed URLs).
+ *                              Inline script CONTENT untouched → CSP hashes valid.
  *
  * Design invariants (do not break):
- *  - Entries keep stable paths; ONLY chunks get [hash] names. Full entry-hashing
- *    is a follow-up phase (needs a runtime module map — see plan doc).
- *  - `splitting: true` is MANDATORY: it guarantees a module referenced both
- *    statically (by another entry) and dynamically (as its own entry) lives in
- *    ONE shared chunk — module-level state stays single-instance even though
- *    `?v=` query strings give entries multiple URL cache keys.
+ *  - Content identity: every runtime-imported JS/CSS byte lives under /build/
+ *    with a content hash in its name. A mixed old/new module graph is
+ *    unrepresentable — old HTML can only name old hashes.
+ *  - Runtime imports resolve through __MC_MODULE_MAP. Mapped URLs are used BARE
+ *    (matches the SW precache key → kills the ?v= double-fetch). The ?v= form
+ *    survives only as the dev fallback and the boot-retry freshness suffix.
+ *  - orchestrator.js keeps its `${vParam}` tail ON TOP of the mapped URL — the
+ *    boot-retry teardown depends on distinct URLs yielding fresh instances.
+ *  - `splitting: true` is MANDATORY (single-instance shared state).
  *  - `keepNames: true`: the DI layer string-matches export/class names.
- *  - HTML and its inline scripts are copied byte-identical → CSP hashes valid.
- *  - service-worker.js gets its BOOT_CRITICAL list regenerated between the
- *    __BUILD_JS_PRECACHE_START/END__ markers from actual build output.
+ *  - Minify folds `(0,'x')` and `String('x')` back into literals — the rewrite
+ *    forms that survive are property-access expressions, templates containing a
+ *    real ${expr}, and ['x'].join(''). Don't "simplify" them.
  */
 const fs = require('fs');
 const path = require('path');
@@ -45,9 +63,18 @@ function stripComments(src) {
 function fail(msg) { console.error('❌ build-web: ' + msg); process.exit(1); }
 
 // ── 1. entry list ───────────────────────────────────────────────────────────
+// EVERY module is an entry (not just dynamic-import targets): the stable-path
+// shims must cover every module the in-browser testing modal imports directly,
+// and statically-only modules (diBase, labelResolver, …) would otherwise have
+// no standalone hashed file to shim to. `splitting` keeps shared code in
+// single-instance chunks regardless of entry count. The specifier scan below
+// is retained purely as VALIDATION (fails the build on unresolvable imports).
 function collectEntries() {
   const entries = new Set();
   const misses = [];
+  for (const f of walk(path.join(WEB, 'modules'))) {
+    if (f.endsWith('.js')) entries.add(f);
+  }
   const addResolved = (specifier, fromDir, source) => {
     const clean = specifier.split('?')[0].split('${')[0];
     if (!clean.endsWith('.js')) return;
@@ -100,80 +127,155 @@ function copyStatic() {
   }
 }
 
-// ── 3. service-worker precache injection ────────────────────────────────────
-function injectPrecache(builtJs) {
+// ── 3. injections into the dist copies ──────────────────────────────────────
+function replaceBetween(file, startMarker, endMarker, generated) {
+  const src = fs.readFileSync(file, 'utf8');
+  const s = src.indexOf(startMarker), e = src.indexOf(endMarker);
+  if (s === -1 || e === -1) fail(`markers ${startMarker} missing from ${path.basename(file)}`);
+  fs.writeFileSync(file, src.slice(0, s) + generated + src.slice(e + endMarker.length));
+}
+
+function injectSw(builtJs, cssBundle, moduleMap) {
   const swPath = path.join(DIST, 'service-worker.js');
-  const sw = fs.readFileSync(swPath, 'utf8');
-  const START = '// __BUILD_JS_PRECACHE_START__';
-  const END = '// __BUILD_JS_PRECACHE_END__';
-  const s = sw.indexOf(START), e = sw.indexOf(END);
-  if (s === -1 || e === -1) fail('precache markers missing from service-worker.js');
-  const shell = [
-    './miniCycle.html', './version.js', './styles/main.css',
-  ];
-  const list = shell.concat(builtJs.map(p => './' + p));
-  const generated =
-    START + '  (generated by scripts/build-web.cjs — bundled entries + chunks)\n' +
-    'var BOOT_CRITICAL = [\n' +
-    list.map(u => `  '${u}'`).join(',\n') +
-    '\n];\n';
-  fs.writeFileSync(swPath, sw.slice(0, s) + generated + sw.slice(e + END.length));
-  return list.length;
+
+  // JS precache: shell + every hashed entry/chunk. Stable-path shims are NOT
+  // precached — they exist only for the testing modal (online use).
+  const shell = ['./miniCycle.html', './version.js'];
+  const jsList = shell.concat(builtJs.map(p => './' + p));
+  replaceBetween(swPath, '// __BUILD_JS_PRECACHE_START__', '// __BUILD_JS_PRECACHE_END__',
+    '// __BUILD_JS_PRECACHE_START__  (generated by scripts/build-web.cjs — hashed entries + chunks)\n' +
+    'var BOOT_CRITICAL = [\n' + jsList.map(u => `  '${u}'`).join(',\n') + '\n];\n');
+
+  // CSS precache: the hashed bundle + the two directly-linked stylesheets that
+  // stay outside the bundle (critical.css blocks first paint; fonts.css is in CORE).
+  const cssList = ['./styles/base/critical.css', './' + cssBundle];
+  replaceBetween(swPath, '// __BUILD_CSS_PRECACHE_START__', '// __BUILD_CSS_PRECACHE_END__',
+    '// __BUILD_CSS_PRECACHE_START__  (generated by scripts/build-web.cjs — bundled stylesheet)\n' +
+    'var CSS_FILES = [\n' + cssList.map(u => `  '${u}'`).join(',\n') + '\n];\n');
+
+  // Module map for the synthetic version.js fallback.
+  replaceBetween(swPath, '// __BUILD_MODULE_MAP_START__', '// __BUILD_MODULE_MAP_END__',
+    '// __BUILD_MODULE_MAP_START__  (generated by scripts/build-web.cjs)\n' +
+    'var MODULE_MAP = ' + JSON.stringify(moduleMap) + ';\n');
+
+  return jsList.length + cssList.length;
+}
+
+function appendMapToVersionJs(moduleMap) {
+  const p = path.join(DIST, 'version.js');
+  fs.appendFileSync(p,
+    '\n// Injected by scripts/build-web.cjs — source path → content-hashed URL.\n' +
+    '// The hash IS the version: mapped URLs are used bare by the boot chain.\n' +
+    'globalThis.__MC_MODULE_MAP = ' + JSON.stringify(moduleMap) + ';\n');
+}
+
+function rewriteHtml(moduleMap, cssBundle) {
+  const p = path.join(DIST, 'miniCycle.html');
+  let html = fs.readFileSync(p, 'utf8');
+  const mainHashed = moduleMap['/miniCycle-main.js'];
+  if (!mainHashed) fail('module map has no entry for /miniCycle-main.js');
+
+  // ATTRIBUTE rewrites only — inline script content must stay byte-identical
+  // (CSP hashes cover inline content, not attributes).
+  const before = html;
+  html = html.replace(/src="miniCycle-main\.js\?v=[0-9.]+"/, `src="${mainHashed}"`);
+  html = html.replace(/styles\/main\.css\?v=[0-9.]+/g, cssBundle);
+  // Drop preload hints for main.css's @import children — the bundle inlines
+  // them, so these would fetch dead weight. (Whole-element removal: CSP hashes
+  // only cover inline script content, which stays byte-identical.)
+  html = html.replace(/[ \t]*<link rel="preload" href="styles\/[^"]+\.css\?v=[0-9.]+" as="style">\r?\n/g, '');
+  if (html === before) fail('HTML rewrite matched nothing — main.js/main.css references changed shape');
+  fs.writeFileSync(p, html);
+}
+
+function emitShims(moduleMap) {
+  // Stable-path re-export shims so the production testing modal's direct
+  // source-path imports (tests import '../modules/x.js?v=<buster>') resolve.
+  // `export *` misses default exports — special-case files that have one.
+  let count = 0;
+  for (const [srcPath, hashed] of Object.entries(moduleMap)) {
+    const srcAbs = path.join(WEB, srcPath.slice(1));
+    const hasDefault = /(^|\n)\s*export\s+default\s/.test(fs.readFileSync(srcAbs, 'utf8'));
+    const dest = path.join(DIST, srcPath.slice(1));
+    fs.mkdirSync(path.dirname(dest), { recursive: true });
+    fs.writeFileSync(dest,
+      `// Stable-path shim (build-web.cjs) — real module is content-hashed.\n` +
+      `export * from '${hashed}';\n` +
+      (hasDefault ? `export { default } from '${hashed}';\n` : ''));
+    count++;
+  }
+  return count;
 }
 
 // ── runtime-import rewriter plugin ──────────────────────────────────────────
-// Two hazards make raw runtime imports unsafe in the bundle:
-//  1. esbuild compiles template-literal dynamic imports (`./x.js?v=${V}`) into a
-//     GLOB-MAP lookup; when the glob matched nothing at build time (query strings
-//     never match files) it THROWS "Module not found in bundle" at runtime.
-//  2. splitting can hoist importing code into modules/chunks/, breaking RELATIVE
-//     runtime specifiers ('./coreBoot.js' from a chunk resolves to chunks/…).
-// Fix both at once: rewrite every runtime-computed specifier to a ROOT-ABSOLUTE
-// path and wrap in a sequence expression `(0, …)` so esbuild treats it as opaque
-// runtime data. Source stays untouched — this happens only in the build.
-// Constraint: assumes the app is served at the DOMAIN ROOT (true for Netlify,
-// the Apache mirror, and dev servers).
+// Rewrites every runtime-computed import so that, in the bundle, it resolves
+// through globalThis.__MC_MODULE_MAP (set by dist version.js):
+//   - mapped hit  → hashed URL, used BARE (kills ?v=; matches precache key)
+//   - map miss    → original root-absolute + original ?v= tail (defensive; the
+//                   build FAILS if any manifest path lacks a map entry)
+// orchestrator.js is the exception: its tail (`${vParam}`) is appended ON TOP
+// of the mapped URL because boot-retry correctness needs distinct URLs.
+// All forms are opaque to esbuild/minify: property access, templates with a
+// real ${expr}, or ['x'].join('').
 function makeRewritePlugin() {
   const toAbs = (spec, dir) => '/' + rel(path.resolve(dir, spec));
+  const M = `(globalThis.__MC_MODULE_MAP||{})`;
   return {
     name: 'runtime-import-rewriter',
     setup(build) {
       build.onLoad({ filter: /\.js$/ }, (args) => {
         if (!args.path.startsWith(WEB) || args.path.includes('node_modules')) return null;
         const dir = path.dirname(args.path);
+        const isOrchestrator = args.path.endsWith('modules/boot/orchestrator.js');
         let src = fs.readFileSync(args.path, 'utf8');
 
-        // moduleManifests.js: manifest.path values feed import(withV(path)) in a
-        // possibly-relocated moduleLoader — make them root-absolute data.
+        // moduleManifests.js: manifest.path values feed import(withV(path)) —
+        // make them root-absolute data (withV itself is map-aware).
         if (args.path.endsWith('modules/boot/moduleManifests.js')) {
           src = src.replace(/path:\s*'(\.\.?\/[^']+)'/g, (_, p) => `path: '${toAbs(p, dir)}'`);
         }
 
-        // import(withV('REL')) → import(withV('/ABS'))  (withV just appends ?v=)
+        // import(withV('REL')) → import(withV('/ABS'))  (withV resolves the map)
         src = src.replace(/withV\(\s*(['"`])(\.\.?\/[^'"`]+?)\1\s*\)/g,
           (_, q, p) => `withV(${q}${toAbs(p, dir)}${q})`);
 
-        // NOTE on opacity: minify folds `(0,'x')` and `String('x')` back into
-        // literals (verified empirically) — esbuild then tries to bundle-resolve
-        // them and errors. Two forms survive minified: templates containing a
-        // real ${expr}, and ['x'].join('').
-
-        // import(`REL?v=${V}`) → import(`/ABS?v=${V}`)  (the ${} keeps it runtime);
-        // a template with NO expression needs the join('') form instead.
+        // import(`REL?v=${V}`) / import(`REL${tail}`)
         src = src.replace(/import\(\s*`(\.\.?\/[^`?$]+?)((?:\?|\$)[^`]*)?`\s*\)/g,
-          (_, p, tail) => tail
-            ? `import(\`${toAbs(p, dir)}${tail}\`)`
-            : `import(['${toAbs(p, dir)}'].join(''))`);
+          (_, p, tail) => {
+            const abs = toAbs(p, dir);
+            if (isOrchestrator && tail && tail.includes('vParam')) {
+              // retry-aware: mapped URL + runtime tail (distinct URLs per attempt;
+              // vParam is '' on a normal map-world boot, so this stays bare then)
+              return `import((${M}['${abs}'] || '${abs}') + \`${tail}\`)`;
+            }
+            return tail
+              ? `import(${M}['${abs}'] || \`${abs}${tail}\`)`
+              : `import(${M}['${abs}'] || ['${abs}'].join(''))`;
+          });
 
-        // import('REL' + expr) → import('/ABS' + expr)  (unknown expr = unfoldable)
+        // import('REL' + expr) → map lookup with concat fallback
         src = src.replace(/import\(\s*'(\.\.?\/[^']+?)'\s*\+\s*([^)]+?)\)/g,
-          (_, p, expr) => `import('${toAbs(p, dir)}' + ${expr})`);
+          (_, p, expr) => {
+            const abs = toAbs(p, dir);
+            return `import(${M}['${abs}'] || ('${abs}' + ${expr}))`;
+          });
 
-        // bare import('./REL.js') → import(['/ABS.js'].join(''))
+        // bare import('./REL.js') → map lookup with join fallback
         src = src.replace(/import\(\s*(['"])(\.\.?\/[^'"]+?\.js)\1\s*\)/g,
-          (_, q, p) => `import(['${toAbs(p, dir)}'].join(''))`);
+          (_, q, p) => {
+            const abs = toAbs(p, dir);
+            return `import(${M}['${abs}'] || ['${abs}'].join(''))`;
+          });
 
         return { contents: src, loader: 'js' };
+      });
+
+      // CSS: strip ?v= from @import url('x.css?v=N.NNN') so esbuild can resolve
+      // and inline them into the bundle.
+      build.onLoad({ filter: /\.css$/ }, (args) => {
+        if (!args.path.startsWith(WEB)) return null;
+        const src = fs.readFileSync(args.path, 'utf8').replace(/(\.css)\?v=[0-9.]+/g, '$1');
+        return { contents: src, loader: 'css' };
       });
     },
   };
@@ -185,11 +287,12 @@ function makeRewritePlugin() {
   fs.rmSync(DIST, { recursive: true, force: true });
   fs.mkdirSync(DIST, { recursive: true });
 
-  const entryPoints = collectEntries();
-  console.log(`🧩 entries: ${entryPoints.length} (manifest modules + facade sub-modules + boot chain + main)`);
+  const jsEntries = collectEntries();
+  const cssEntries = [path.join(WEB, 'styles/main.css')];
+  console.log(`🧩 entries: ${jsEntries.length} JS (manifest modules + facade sub-modules + boot chain + main) + ${cssEntries.length} CSS`);
 
   const result = await esbuild.build({
-    entryPoints,
+    entryPoints: jsEntries.concat(cssEntries),
     outdir: DIST,
     outbase: WEB,
     bundle: true,
@@ -199,8 +302,13 @@ function makeRewritePlugin() {
     keepNames: true,
     sourcemap: true,
     target: ['es2020'],
-    entryNames: '[dir]/[name]',              // STABLE paths — runtime specifiers keep working
-    chunkNames: 'modules/chunks/chunk-[hash]', // shared code — immutable, hashed
+    entryNames: 'build/[dir]/[name]-[hash]',   // content-hashed, immutable
+    chunkNames: 'build/chunks/chunk-[hash]',
+    assetNames: '[dir]/[name]',                // CSS url() assets keep their real paths
+    loader: {
+      '.png': 'file', '.svg': 'file', '.webp': 'file', '.jpg': 'file',
+      '.jpeg': 'file', '.gif': 'file', '.woff2': 'file', '.woff': 'file',
+    },
     metafile: true,
     logLevel: 'warning',
     plugins: [makeRewritePlugin()],
@@ -208,16 +316,39 @@ function makeRewritePlugin() {
 
   copyStatic();
 
-  const outputs = Object.keys(result.metafile.outputs)
-    .filter(p => p.endsWith('.js'))
-    .map(p => rel(path.resolve(p)));
-  const chunkCount = outputs.filter(p => p.includes('modules/chunks/')).length;
-  const precacheCount = injectPrecache(outputs);
+  // Module map + built-file lists from the metafile.
+  const moduleMap = {};
+  let cssBundle = null;
+  const builtJs = [];
+  for (const [outPath, meta] of Object.entries(result.metafile.outputs)) {
+    const outRel = rel(path.resolve(outPath)).replace(/^dist\//, '');
+    if (outRel.endsWith('.js')) builtJs.push(outRel);
+    if (!meta.entryPoint) continue;
+    const srcRel = '/' + meta.entryPoint.replace(/\\/g, '/');
+    if (outRel.endsWith('.css')) { cssBundle = outRel; continue; }
+    if (outRel.endsWith('.js')) moduleMap[srcRel] = '/' + outRel;
+  }
+  if (!cssBundle) fail('CSS bundle missing from build output');
 
+  // Gate: every manifest path and JS entry must have a map entry.
+  for (const e of jsEntries) {
+    const key = '/' + rel(e);
+    if (!moduleMap[key]) fail(`no map entry for ${key}`);
+  }
+
+  appendMapToVersionJs(moduleMap);
+  const precacheCount = injectSw(builtJs, cssBundle, moduleMap);
+  rewriteHtml(moduleMap, cssBundle);
+  const shimCount = emitShims(moduleMap);
+
+  const chunkCount = builtJs.filter(p => p.startsWith('build/chunks/')).length;
   const totalBytes = Object.entries(result.metafile.outputs)
     .filter(([p]) => p.endsWith('.js'))
     .reduce((s, [, o]) => s + o.bytes, 0);
-  console.log(`📦 built ${outputs.length} JS files (${outputs.length - chunkCount} entries + ${chunkCount} chunks), ${(totalBytes / 1024 / 1024).toFixed(2)}MB minified`);
+  console.log(`📦 built ${builtJs.length} hashed JS (${builtJs.length - chunkCount} entries + ${chunkCount} chunks), ${(totalBytes / 1024 / 1024).toFixed(2)}MB minified`);
+  console.log(`🎨 CSS bundle: ${cssBundle}`);
+  console.log(`🗺  module map: ${Object.keys(moduleMap).length} entries (appended to version.js + SW)`);
+  console.log(`🧷 stable-path shims: ${shimCount} (testing modal)`);
   console.log(`🛰  SW precache regenerated: ${precacheCount} URLs`);
   console.log(`✅ dist/ ready in ${((Date.now() - t0) / 1000).toFixed(1)}s`);
 })().catch(e => fail(e.message));

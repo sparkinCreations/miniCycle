@@ -101,7 +101,14 @@ let TASK_LIMIT = 150; // Fix #37: use consistent value with LIMITS.TASKS_PER_CYC
 
 // Fix #47: Use APP_VERSION directly since effectiveVersion is defined inside initCoreBoot
 // This will be updated inside initCoreBoot with the actual version
-let withV = (path) => `${path}?v=${APP_VERSION}`;
+// Bundled dist: __MC_MODULE_MAP (set by dist version.js) maps source paths to
+// content-hashed URLs. Mapped paths go BARE — the hash IS the version, and a
+// bare URL matches the SW precache key so page-fetch and precache share one
+// cached copy (kills the ?v= double-fetch). Dev has no map → unchanged ?v=.
+let withV = (path) => {
+    const hashed = globalThis.__MC_MODULE_MAP?.[path];
+    return hashed || `${path}?v=${APP_VERSION}`;
+};
 
 // ============================================================================
 // SECTION 1: Core Initialization
@@ -251,9 +258,23 @@ export async function initCoreBoot(deps, versionSuffix = null) {
   // ========== Update withV helper ==========
   // When offline retry (dropVersionParam), withV returns bare path — no ?v= suffix
   // This lets browser HTTP cache serve files when SW is dead (iOS kills SW between sessions)
-  withV = dropVersionParam
-    ? (path) => path
-    : (path) => `${path}?v=${effectiveVersion}`;
+  //
+  // Bundled dist (__MC_MODULE_MAP present): mapped paths go BARE on a normal
+  // boot (hash = version; matches the SW precache key). Retries still need
+  // DISTINCT URLs — the retry teardown depends on fresh module instances — so:
+  //   - online retry ('2.301.r2'): append ?v=<suffix> to the hashed URL
+  //   - offline retry (dropVersionParam): append ?v=retry — hashed files are
+  //     served cache-first by the SW regardless of query, so this stays
+  //     network-free while still forcing a fresh module instance
+  const moduleMap = globalThis.__MC_MODULE_MAP || null;
+  withV = (path) => {
+    const hashed = moduleMap && moduleMap[path];
+    if (hashed) {
+      if (dropVersionParam) return `${hashed}?v=retry`;
+      return effectiveVersion !== APP_VERSION ? `${hashed}?v=${effectiveVersion}` : hashed;
+    }
+    return dropVersionParam ? path : `${path}?v=${effectiveVersion}`;
+  };
   deps.core.withV = withV;
 
   // ========== Create AppMeta ==========

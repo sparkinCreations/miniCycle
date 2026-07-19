@@ -7,6 +7,22 @@ var CACHE_VERSION_NUMBER = 1143; // Numeric version matching version.js (for syn
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
+// __BUILD_MODULE_MAP_START__  (scripts/build-web.cjs replaces this in the dist
+// copy with the source-path → hashed-URL map so the synthetic version.js
+// fallback can carry it. Stays null in dev — do not remove the markers.)
+var MODULE_MAP = null;
+// __BUILD_MODULE_MAP_END__
+
+// Body of a synthetic version.js — used by every fallback path when the real
+// file is unreachable. The SW always has the version constants (inlined above),
+// and in the bundled build it also carries MODULE_MAP, without which no hashed
+// module URL can resolve.
+function versionJsBody() {
+  return 'globalThis.APP_VERSION = "' + APP_VERSION + '";\n' +
+    'globalThis.CACHE_VERSION = ' + CACHE_VERSION_NUMBER + ';' +
+    (MODULE_MAP ? '\nglobalThis.__MC_MODULE_MAP = ' + JSON.stringify(MODULE_MAP) + ';' : '');
+}
+
 // ✅ Service worker caching for offline support and faster loading
 // Version mismatch issues resolved via boot failsafe + forced cache clear on version change
 var DISABLE_CACHING = false;
@@ -224,6 +240,9 @@ var BOOT_CRITICAL = [
 
 // CSS files - all @imports from main.css (required for offline styling)
 // ✅ Versioned with APP_VERSION for cache busting (matches main.css ?v= params)
+// __BUILD_CSS_PRECACHE_START__  (scripts/build-web.cjs replaces this array in
+// the dist copy with the bundled hashed stylesheet — the hand list below is the
+// DEV/source list; do not remove the marker comments.)
 var CSS_FILES = [
   './styles/base/critical.css?v=' + APP_VERSION,
   './styles/base/variables.css?v=' + APP_VERSION,
@@ -272,6 +291,7 @@ var CSS_FILES = [
   './styles/components/history.css?v=' + APP_VERSION,
   './styles/components/achievements.css?v=' + APP_VERSION
 ];
+// __BUILD_CSS_PRECACHE_END__
 
 // Lite version shell (smaller precache)
 var LITE_SHELL = [
@@ -782,6 +802,57 @@ self.addEventListener('fetch', function (event) {
     cacheUrl.searchParams.delete('v');
     var cacheRequest = new Request(cacheUrl.href);
 
+    // ═══════════════════════════════════════════════════════════════════════
+    // CONTENT-HASHED BUILD OUTPUT (/build/ tree, bundled dist only):
+    // the filename IS the version, so these are immutable — cache-first with a
+    // plain network fallback. No mismatch logic, no revalidation, no network-
+    // first: a changed file always has a NEW name, so a cached copy can never
+    // be stale, and a mixed old/new module graph is unrepresentable. Query
+    // params (retry ?v= suffixes) are ignored via the normalized cacheRequest.
+    // Dev never serves /build/ paths, so this branch is inert on source.
+    // ═══════════════════════════════════════════════════════════════════════
+    if (url.pathname.indexOf('/build/') === 0) {
+      event.respondWith(
+        caches.open(STATIC_CACHE).then(function (sc) {
+          return sc.match(cacheRequest);
+        }).then(function (staticHit) {
+          if (staticHit) return staticHit;
+          return caches.open(DYNAMIC_CACHE).then(function (dc) {
+            return dc.match(cacheRequest);
+          });
+        }).then(function (cached) {
+          if (cached) return cached;
+          return fetchWithTimeout(new Request(cacheUrl.href), FETCH_TIMEOUT_MS).then(function (res) {
+            if (res && res.status === 200) {
+              return caches.open(DYNAMIC_CACHE).then(function (cache) {
+                return safeCachePut(cache, cacheRequest, res.clone()).then(function () {
+                  trimCache(DYNAMIC_CACHE, MAX_DYNAMIC_ENTRIES);
+                  return res;
+                });
+              });
+            }
+            return res;
+          }).catch(function () {
+            // Offline + not cached — a hashed file we never precached. Broad
+            // match is SAFE here (hash = identity; an old cache can only hold
+            // this exact content or nothing).
+            return caches.match(cacheRequest).then(function (anyHit) {
+              if (anyHit) return anyHit;
+              var safePath = url.pathname.replace(/[^a-zA-Z0-9._\-\/]/g, '');
+              return new Response(
+                url.pathname.endsWith('.css')
+                  ? '/* offline: not cached */'
+                  : 'throw new Error("Module not available offline: ' + safePath + '");',
+                { status: 200,
+                  headers: { 'Content-Type': url.pathname.endsWith('.css') ? 'text/css' : 'application/javascript' } }
+              );
+            });
+          });
+        })
+      );
+      return;
+    }
+
     // ✅ VERSION MISMATCH DETECTION:
     var requestVersion = url.searchParams.get('v');
     var isTestFile = url.pathname.indexOf('/tests/') !== -1;
@@ -854,7 +925,7 @@ self.addEventListener('fetch', function (event) {
               if (url.pathname.endsWith('version.js')) {
                 console.log('📴 Generating synthetic version.js (APP_VERSION=' + APP_VERSION + ', CACHE_VERSION=' + CACHE_VERSION + ')');
                 return new Response(
-                  'globalThis.APP_VERSION = "' + APP_VERSION + '";\nglobalThis.CACHE_VERSION = ' + CACHE_VERSION_NUMBER + ';',
+                  versionJsBody(),
                   { status: 200, headers: { 'Content-Type': 'application/javascript' } }
                 );
               }
@@ -926,7 +997,7 @@ self.addEventListener('fetch', function (event) {
                 if (url.pathname.endsWith('version.js')) {
                   console.log('🔧 Generating synthetic version.js (APP_VERSION=' + APP_VERSION + ', CACHE_VERSION=' + CACHE_VERSION + ')');
                   return new Response(
-                    'globalThis.APP_VERSION = "' + APP_VERSION + '";\nglobalThis.CACHE_VERSION = ' + CACHE_VERSION_NUMBER + ';',
+                    versionJsBody(),
                     { status: 200, headers: { 'Content-Type': 'application/javascript' } }
                   );
                 }
@@ -1048,7 +1119,7 @@ self.addEventListener('fetch', function (event) {
               if (url.pathname.endsWith('version.js')) {
                 console.log('📴 Generating synthetic version.js');
                 return new Response(
-                  'globalThis.APP_VERSION = "' + APP_VERSION + '";\nglobalThis.CACHE_VERSION = ' + CACHE_VERSION_NUMBER + ';',
+                  versionJsBody(),
                   { status: 200, headers: { 'Content-Type': 'application/javascript' } }
                 );
               }
@@ -1123,7 +1194,7 @@ self.addEventListener('fetch', function (event) {
               if (url.pathname.endsWith('version.js')) {
                 console.log('🔧 Generating synthetic version.js (stale-while-revalidate fallback)');
                 return new Response(
-                  'globalThis.APP_VERSION = "' + APP_VERSION + '";\nglobalThis.CACHE_VERSION = ' + CACHE_VERSION_NUMBER + ';',
+                  versionJsBody(),
                   { status: 200, headers: { 'Content-Type': 'application/javascript' } }
                 );
               }
