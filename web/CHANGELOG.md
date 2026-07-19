@@ -1,3 +1,8 @@
+## [2.301] - 2026-07-19
+- feat(build): CSS bundle + /build/* immutable headers; plan doc as-built notes
+- feat(build): full entry hashing + module map + stable-path shims — content identity for all app code
+
+
 ## [2.300] - 2026-07-19
 - fix(sw): prefer current caches for all script/style — close stale version.js/miniCycle-main.js broad-match gap
 - fix(boot): retire vestigial v1327 SW-migration block (every-load cache sweep fought SW kept-fallback pair) + CSP hash sync
