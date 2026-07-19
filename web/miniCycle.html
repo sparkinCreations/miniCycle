@@ -583,9 +583,22 @@ if ('serviceWorker' in navigator) {
       });
     });
 
-    // Handle controlled page refresh - AUTO-RELOAD when new SW takes control
+    // Handle controlled page refresh - AUTO-RELOAD when new SW takes control.
+    // FIRST-INSTALL EXCEPTION: when the page loaded with NO controller (very
+    // first visit, or right after a heal unregistered the old worker), the new
+    // worker claiming us needs no reload — this page already booted fine from
+    // the network, and the SW only needs to control FUTURE loads. Skipping it
+    // means first visits boot ONCE instead of twice, and it removes the
+    // mid-trace reload that Lighthouse misread as a giant layout shift (the
+    // reloaded document briefly painted at an un-emulated viewport width —
+    // CLS 0.787 artifact; real-browser CLS is 0).
+    const hadControllerAtLoad = !!navigator.serviceWorker.controller;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (refreshing) return;
+      if (!hadControllerAtLoad) {
+        console.log('📱 First service worker install — no reload needed');
+        return;
+      }
       // ✅ Check cooldown to prevent perpetual reload loops
       if (!canReloadSafely()) {
         console.log('⏳ Skipping reload due to cooldown');
