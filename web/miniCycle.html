@@ -21,6 +21,14 @@
 <link rel="canonical" href="https://minicycle.app/minicycle">
 
 <!-- Self-hosted fonts (no external requests) -->
+<!-- Preload the dominant weights so Poppins is available AT first paint. The
+     bundled build inlines fonts.css, which makes first paint early enough that
+     text would otherwise render in the fallback font and reflow when Poppins
+     swaps in (the v2.305 CLS-0.76 regression). crossorigin is REQUIRED on font
+     preloads even same-origin, or the preload is refetched and wasted. -->
+<link rel="preload" href="assets/fonts/poppins-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/poppins-500.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/poppins-600.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="assets/fonts/fonts.css">
 
 <link rel="icon" type="image/png" href="assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" />
