@@ -1,3 +1,7 @@
+## [2.308] - 2026-07-19
+- fix(sw): skip controllerchange reload on first install — one boot for new visitors, kills the Lighthouse mid-trace reload CLS artifact
+
+
 ## [2.307] - 2026-07-19
 - fix(perf): metric-matched Poppins fallback (size-adjust overrides) — font swap can no longer shift layout
 
