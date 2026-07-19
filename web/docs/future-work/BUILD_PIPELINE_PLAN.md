@@ -192,6 +192,30 @@ As-built (deviations from the original §Design are noted):
 - **Phase 4 — Measure again**, update PROJECT_STATS, retire `?v=` docs/lessons references, mark
   MINIFICATION_PLAN superseded-and-done, post the follow-up.
 
+### ⚠️ July 19 2026 DEPLOY-CONFIG DISCOVERY (found while shipping entry-hashing)
+
+Production had been publishing the **raw `web/` source tree**, not `dist/` — the v2.301
+entry-hashed release went live as unbundled source. Root cause: **Netlify only reads
+netlify.toml as build config from the repo root or the site's base directory**, and there was
+no root netlify.toml; `web/netlify.toml`'s `[build]` block was silently ignored. Its
+`[[headers]]`/`[[redirects]]` still worked because the file sits INSIDE the published folder,
+where Netlify processes deploy-file config — which made the setup look healthy (CSP updates
+went live!) while the build never ran. Side effect: source-only files (package.json, scripts/,
+docs/) were publicly served.
+
+Fix: repo-root `netlify.toml` pinning `base = "web"`, `publish = "dist"`, and the build
+command with `npm install --include=dev` (esbuild is a devDependency — survives a
+NODE_ENV=production site setting). Headers/redirects intentionally stay in `web/netlify.toml`
+(update-version.sh's CSP stage keeps writing it; the build copies it into dist/ where it keeps
+being processed from the deploy files). The flip was shipped as **v2.302 (cache v1145)** — a
+version+cache bump is MANDATORY for this flip: switching source→dist at the same version is
+the non-atomic same-name-cache overwrite hazard (SW precaches new bytes into the same cache
+namespace with no version signal to heal from).
+
+Trust note: this also means past "prod" performance claims need re-basing — the v2.294
+"bundled prod, 493ms" measurement predates whatever config state caused this; treat v2.302 as
+the first VERIFIED bundled production deploy and re-measure from here.
+
 ## Risks
 
 | Risk | Mitigation |
