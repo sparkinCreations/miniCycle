@@ -1,3 +1,7 @@
+## [2.306] - 2026-07-19
+- fix(perf): preload dominant Poppins weights — kills the font-swap CLS regression from early first paint
+
+
 ## [2.305] - 2026-07-19
 - perf(build): inline fonts.css too — zero render-blocking stylesheets in dist
 
