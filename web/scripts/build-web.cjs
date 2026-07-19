@@ -198,6 +198,15 @@ function rewriteHtml(moduleMap, cssBundle) {
   if (!linkRe.test(html)) fail('critical.css link tag not found for inlining');
   html = html.replace(linkRe, '<style>/* critical.css — inlined by build-web.cjs */\n' + critMin + '</style>');
 
+  // fonts.css (930B of @font-face) is the OTHER render-blocking stylesheet —
+  // same treatment. Font files themselves stay async (font-display: swap).
+  const fontSrc = fs.readFileSync(path.join(WEB, 'assets/fonts/fonts.css'), 'utf8')
+    .replace(/\.\//g, '/assets/fonts/');
+  const fontMin = esbuild.transformSync(fontSrc, { loader: 'css', minify: true }).code.trim();
+  const fontRe = /<link rel="stylesheet" href="assets\/fonts\/fonts\.css">/;
+  if (!fontRe.test(html)) fail('fonts.css link tag not found for inlining');
+  html = html.replace(fontRe, '<style>/* fonts.css — inlined by build-web.cjs */\n' + fontMin + '</style>');
+
   if (html === before) fail('HTML rewrite matched nothing — main.js/main.css references changed shape');
   fs.writeFileSync(p, html);
 }
