@@ -1,3 +1,7 @@
+## [2.302] - 2026-07-19
+- fix(deploy): root netlify.toml — pin base/command/publish so the dist build actually runs on Netlify
+
+
 ## [2.301] - 2026-07-19
 - feat(build): CSS bundle + /build/* immutable headers; plan doc as-built notes
 - feat(build): full entry hashing + module map + stable-path shims — content identity for all app code
