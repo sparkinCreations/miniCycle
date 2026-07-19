@@ -1,3 +1,7 @@
+## [2.305] - 2026-07-19
+- perf(build): inline fonts.css too — zero render-blocking stylesheets in dist
+
+
 ## [2.304] - 2026-07-19
 - perf(build): inline critical.css into dist HTML — removes the render-blocking fetch gating LCP
 
