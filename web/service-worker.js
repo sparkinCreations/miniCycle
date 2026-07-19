@@ -306,10 +306,9 @@ var LAZY_CACHE_ON_USE = [
   // User manual (in legal/ subdirectory)
   './legal/user-manual.html',
   './legal/user-manual-styles.css',
-  // Additional logos
-  './assets/images/logo/taskcycle_logo_blackandwhite_transparent.png',
-  './assets/images/logo/app_name.png',
-  './assets/images/logo/App_Name_tp_bw.png'
+  // Additional logos (app_name.png / App_Name_tp_bw.png removed July 2026 —
+  // they were referenced nowhere but this list; files deleted)
+  './assets/images/logo/taskcycle_logo_blackandwhite_transparent.png'
   // All other modules will be cached on first use automatically
 ];
 
