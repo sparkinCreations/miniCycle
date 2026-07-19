@@ -957,7 +957,7 @@ self.addEventListener('fetch', function (event) {
       // `EVENTS` to constants.js → "Importing binding name 'EVENTS' is not
       // found" because consumers got the stale copy).
       //
-      // Fix: for module/CSS requests, look in the CURRENT STATIC_CACHE /
+      // Fix: for all script/style requests, look in the CURRENT STATIC_CACHE /
       // DYNAMIC_CACHE first; fall back to the broad search only if neither has
       // the file (e.g. a brand-new module the precache missed).
       // NOTE: this now covers VERSIONED (?v=) requests too. The earlier
@@ -972,11 +972,17 @@ self.addEventListener('fetch', function (event) {
       // kept old cache even for a versioned request. That is exactly what served the
       // old themeManager.js / recurringPanel.js to stale machines (Frankenstein
       // cache). Looking in the current STATIC_CACHE / DYNAMIC_CACHE first prevents
-      // it; on a current-cache miss while online, isModuleFile returns null below so
+      // it; on a current-cache miss while online, the match returns null below so
       // the file is fetched fresh from the network instead of an old-version copy.
-      var preferCurrentCaches = (isModuleFile || url.pathname.endsWith('.css'));
-      var matchPromise = preferCurrentCaches
-        ? caches.open(STATIC_CACHE).then(function (sc) {
+      // Must cover ROOT-LEVEL JS too (version.js, miniCycle-main.js), not just
+      // /modules/ + CSS: both are precached in BOOT_CRITICAL, and caches.match()
+      // searches caches oldest-first — so with a kept old pair, the OLD version.js
+      // won the broad match. APP_VERSION then read stale on a fresh HTML build and
+      // every dynamic import requested the old ?v= (mass network-first mismatch +
+      // a redundant verifyVersionFresh nuke/reload). Same bug class as the
+      // themeManager fix — everything in this branch is script-or-style, so
+      // prefer current caches unconditionally.
+      var matchPromise = caches.open(STATIC_CACHE).then(function (sc) {
             return sc.match(cacheRequest);
           }).then(function (staticHit) {
             if (staticHit) return staticHit;
@@ -997,10 +1003,9 @@ self.addEventListener('fetch', function (event) {
             // missed the new precache (partial install) would otherwise be served
             // stale from a kept old cache while ONLINE — new markup + old CSS
             // (v2.282 star-rating regression: stars rendered unstyled for updaters).
-            if (preferCurrentCaches && self.navigator.onLine) return null;
+            if (self.navigator.onLine) return null;
             return caches.match(cacheRequest);
-          })
-        : caches.match(cacheRequest);
+          });
 
       event.respondWith(
         matchPromise.then(function (cached) {
