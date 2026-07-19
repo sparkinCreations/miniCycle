@@ -129,10 +129,12 @@
   [headers.values]
     Cache-Control = "public, max-age=86400"
 
-# Hashed chunk files (build pipeline) — content-addressed, safe to cache forever.
-# Inert until publish flips to dist/ (Phase 3).
+# Hashed build output (entries + chunks + CSS bundle, entry-hashing phase) —
+# content-addressed filenames, safe to cache forever. This is what makes the
+# SW-precache double-fetch free: precache requests hit the browser HTTP cache,
+# and unchanged files cost nothing across deploys.
 [[headers]]
-  for = "/modules/chunks/*"
+  for = "/build/*"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 

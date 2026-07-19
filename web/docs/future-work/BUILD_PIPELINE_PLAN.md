@@ -134,7 +134,51 @@ Android 7.5s) — NOT the fast-cohort 1.8s, which is already fine.
   facade chain, settings facade, deferred testing modal, zero 404s/console errors, offline
   reload boots from SW. Source suites untouched (appInit/moduleLoader/orchestrator/coreBoot).
   Constraint accepted: root-absolute specifiers assume the app is served at the domain root.
-- **Phase 2 — CSS bundle** (+ optional hand-purge) with the same gates.
+- **Phase 2 — CSS bundle**: ✅ DONE July 19 2026 (shipped together with full entry-hashing,
+  below). `styles/main.css` + its 44 `@import`s → one hashed bundle at `build/styles/main-[hash].css`
+  (esbuild CSS entry; the build strips `?v=` from `@import url()`s so esbuild can resolve them;
+  `url()` assets rebase correctly via file loaders with `assetNames: '[dir]/[name]'` — same paths
+  as the static copy, so no duplication). `critical.css` + `fonts.css` stay separate direct links.
+  Hand-purge NOT done (vocab-theme runtime classes make it risky — still optional/later).
+
+### FULL ENTRY-HASHING — ✅ DONE July 19 2026 (the "content identity" phase)
+
+As-built (deviations from the original §Design are noted):
+
+- **All hashed output lives under `dist/build/`** (`entryNames: 'build/[dir]/[name]-[hash]'`,
+  `chunkNames: 'build/chunks/chunk-[hash]'`) — one path prefix for the netlify `immutable`
+  header, the SW's cache-first branch, and human eyeballs.
+- **EVERY module is an esbuild entry** (133 entries + ~30 shared chunks), not just
+  dynamic-import targets: statically-only modules (diBase, labelResolver…) need standalone
+  hashed files so the stable-path shims (below) can cover them. `splitting` keeps shared code
+  single-instance regardless of entry count.
+- **Module map rides version.js** (not a separate module-map.json fetch): the build appends
+  `globalThis.__MC_MODULE_MAP = {…}` (source path → hashed URL) to `dist/version.js`, which is
+  already synchronous-first, SW-precached, and version-gated. The SW also carries the map
+  (injected `MODULE_MAP` between markers) so its **synthetic version.js fallback** includes it.
+- **Runtime resolution**: `withV()` in coreBoot is map-aware — mapped URLs are used **BARE**
+  (the hash IS the version; bare URLs match the SW precache key, which is what kills the
+  ?v= page-fetch vs precache double-fetch). The build's rewrite plugin wraps every non-withV
+  dynamic import in a `(__MC_MODULE_MAP[abs] || <original ?v= form>)` expression. Dev keeps
+  plain `?v=` (no map present).
+- **Boot-retry freshness preserved**: orchestrator.js keeps its `${vParam}` tail ON TOP of the
+  mapped URL, and `vParam` is `''` on a map-world first boot (bare) but `?v=<ver>.rN` on retry —
+  distinct URLs still yield the fresh module instances the retry teardown depends on. Offline
+  retries keep the suffix too (hashed files serve cache-first from the SW regardless of query).
+- **Stable-path shims**: every module also gets a tiny `export * from '<hashed>'` file at its
+  original `/modules/…` path so the in-browser **testing modal's** direct source-path imports
+  keep working on production. (This also quietly fixes a Phase 1 gap: statically-bundled-only
+  modules had NO stable-path file in dist, so their tests were broken on prod since v2.294.)
+  Shims are not precached.
+- **SW**: new `/build/` prefix branch = cache-first, no revalidation, no mismatch logic (a
+  changed file always has a new name). Precache lists (JS + CSS) and MODULE_MAP are injected
+  between marker comments. The wasted `<link rel="preload">` hints for main.css's @import
+  children are stripped from dist HTML (element removal — CSP hashes cover inline content only).
+- **netlify.toml**: `/build/*` → `Cache-Control: public, max-age=31536000, immutable`
+  (replaces the obsolete `/modules/chunks/*` rule).
+- Local gates all green (fresh boot, zero 404s/errors, ALL /build/ requests bare, offline
+  reload boots fully from SW cache, sample routine loads, shim imports resolve incl. the
+  featureAvailability default export, dev source behavior unchanged).
 - **Phase 3 — Netlify preview deploy → production:** ✅ DONE July 14 2026. Deploy preview
   (PR #7, site `minicycle`, 25s build) passed all gates (the only console error was Netlify's
   own preview toolbar vs our CSP — absent on prod). Merged + released **v2.294** (cache v1137):
