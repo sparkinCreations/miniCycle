@@ -1,3 +1,8 @@
+## [2.303] - 2026-07-19
+- perf(assets): quantize+resize logos (69KB→6KB splash icon), recompress choice-screen bg, delete 20 unreferenced images (~750KB)
+- docs(build): record deploy-config discovery + v2.302 as first verified bundled deploy
+
+
 ## [2.302] - 2026-07-19
 - fix(deploy): root netlify.toml — pin base/command/publish so the dist build actually runs on Netlify
 
