@@ -1,3 +1,8 @@
+## [2.300] - 2026-07-19
+- fix(sw): prefer current caches for all script/style — close stale version.js/miniCycle-main.js broad-match gap
+- fix(boot): retire vestigial v1327 SW-migration block (every-load cache sweep fought SW kept-fallback pair) + CSP hash sync
+
+
 ## [2.299] - 2026-07-18
 - polish(onboarding): use-case line — ticker reveal (slide up through clipped window) + size hierarchy vs tagline
 - feat(onboarding): rotating use-case line on choice screen (preflight / nurse rounds / inspections …)
