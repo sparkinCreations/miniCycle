@@ -440,7 +440,6 @@ if ('serviceWorker' in navigator) {
   // version.js loads synchronously before this script and sets window.APP_VERSION/CACHE_VERSION
   const APP_VERSION = window.APP_VERSION || '1.0';
   const CACHE_VERSION = window.CACHE_VERSION || 1;
-  const CURRENT_CACHE_VERSION = 'v' + CACHE_VERSION;
 
   // ═══════════════════════════════════════════════════════════════════════════
   // POST-LOAD VERSION VERIFICATION
@@ -635,76 +634,15 @@ if ('serviceWorker' in navigator) {
 
   window.addEventListener('load', async () => {
     try {
-      // ✅ CHECK FLAG FIRST - Skip migration if already done
-      if (localStorage.getItem('sw-migration-v1327-done') === 'true') {
-        console.log('✅ Migration already completed - skipping old SW checks');
-        // Jump straight to registration
-        await registerServiceWorker();
-        return;
-      }
+      // A one-time v1.327 SW-migration block used to live here (mismatched-?v=
+      // unregister + old-cache sweep + reload modal). Retired: register() with a
+      // new ?v= URL replaces the registration itself, ensureControllingWorkerFresh()
+      // heals a stale controlling worker, and the old-cache sweep fought the SW's
+      // "keep previous cache pair as offline fallback" strategy. Its completion
+      // flag stays in legacyKeysToRemove (backupRestoreManager) — drop it here too.
+      localStorage.removeItem('sw-migration-v1327-done');
 
-      // ✅ STEP 0: NUCLEAR OPTION - Clear old caches BEFORE checking SW
-      // This ensures old cached files don't persist
-      const allCaches = await caches.keys();
-      const oldCaches = allCaches.filter(name =>
-        name.includes('miniCycle-') &&
-        !name.includes(CURRENT_CACHE_VERSION) // Keep only current version caches
-      );
-
-      if (oldCaches.length > 0) {
-        console.log(`🧹 Found ${oldCaches.length} old cache(s), deleting...`);
-        for (const cacheName of oldCaches) {
-          await caches.delete(cacheName);
-          console.log(`✅ Deleted old cache: ${cacheName}`);
-        }
-      }
-
-      // ✅ STEP 1: Check for old service worker registrations and clean them up
-      const existingRegistrations = await navigator.serviceWorker.getRegistrations();
-      console.log(`🔍 Found ${existingRegistrations.length} existing service worker(s)`);
-
-      let needsReload = false;
-
-      // Check if we have an old SW without version parameter or with mismatched version
-      for (const reg of existingRegistrations) {
-        const scriptURL = reg.active?.scriptURL || reg.waiting?.scriptURL || reg.installing?.scriptURL;
-        if (scriptURL && scriptURL.includes('service-worker.js') && !scriptURL.includes(`?v=${APP_VERSION}`)) {
-          console.log('🗑️ Found old service worker (version mismatch) - unregistering:', scriptURL);
-          await reg.unregister();
-          console.log('✅ Old service worker unregistered successfully');
-          needsReload = true;
-        }
-      }
-
-      // ✅ If we unregistered an old SW, prompt user to reload once
-      if (needsReload) {
-        console.log('🔄 Old service worker removed - prompting user to reload');
-
-        // Set flag IMMEDIATELY (use localStorage for persistence across sessions)
-        localStorage.setItem('sw-migration-v1327-done', 'true');
-
-        // Show user-friendly notification
-        setTimeout(() => {
-          showNotification('🔄 App update ready - reload recommended', 'info', 8000);
-
-          showConfirmationModal({
-              title: "🔄 Important App Update",
-              message: `We've updated miniCycle's core system!\n\n✅ Old version has been safely removed\n🆕 New version is ready to install\n🔄 Please reload the page to complete the update\n\nThis is a one-time update to improve future update reliability.`,
-              confirmText: "🔄 Reload Now",
-              cancelText: "Later",
-              callback: (confirmed) => {
-                if (confirmed) {
-                  window.location.reload();
-                }
-              }
-            });
-        }, 1500);
-        return; // Don't register SW yet - wait for reload
-      }
-
-      // ✅ STEP 2: Register new service worker (no old SW found, or migration complete)
       await registerServiceWorker();
-
     } catch (error) {
       console.error('❌ Service Worker registration failed:', error);
     }
