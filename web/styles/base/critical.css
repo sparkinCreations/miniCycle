@@ -12,7 +12,7 @@ html, body {
   margin: 0;
   padding: 0;
   min-height: 100vh;
-  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Poppins', 'Poppins Fallback', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   /* CRITICAL: Start black for loading screen, updateThemeColor() sets proper color after load */
   background-color: #000000;
   background-image: linear-gradient(135deg, #4c79ff, #74c0fc);
@@ -57,7 +57,7 @@ html, body {
   color: white;
   font-size: var(--font-size-base, 15px);
   font-weight: 500;
-  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Poppins', 'Poppins Fallback', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   text-align: center;
   line-height: 1.4;
   opacity: 0;
@@ -86,7 +86,7 @@ html, body {
   color: white;
   font-size: var(--font-size-base);
   font-weight: 500;
-  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Poppins', 'Poppins Fallback', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   opacity: 0.9;
 }
 .loader-bar-container {
@@ -205,7 +205,7 @@ body.app-loading #undo-redo-buttons {
 }
 .first-run-wordmark {
   color: white;
-  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Poppins', 'Poppins Fallback', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-size: var(--font-size-xl, 26px);
   font-weight: 700;
   letter-spacing: 0.2px;
@@ -214,7 +214,7 @@ body.app-loading #undo-redo-buttons {
 }
 .first-run-descriptor {
   color: white;
-  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Poppins', 'Poppins Fallback', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-size: var(--font-size-sm, 13px);
   font-weight: 500;
   letter-spacing: 0.4px;
@@ -230,7 +230,7 @@ body.app-loading #undo-redo-buttons {
   font-size: var(--font-size-xs, 12px);
   font-weight: 400;
   line-height: 1.45;
-  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Poppins', 'Poppins Fallback', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   text-shadow: var(--text-shadow-lg);
   opacity: 0.72;
 }
@@ -247,7 +247,7 @@ body.app-loading #undo-redo-buttons {
   color: white;
   font-size: var(--font-size-base, 15px);
   font-weight: 600;
-  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Poppins', 'Poppins Fallback', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   text-shadow: var(--text-shadow-lg);
 }
 /* Ticker reveal: outgoing line slides UP out of the clipped window; the new
@@ -286,7 +286,7 @@ body.app-loading #undo-redo-buttons {
   color: #4c79ff;
   font-size: var(--font-size-base, 15px);
   font-weight: 600;
-  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Poppins', 'Poppins Fallback', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
   cursor: pointer;
   transition: background 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
@@ -323,7 +323,7 @@ body.app-loading #undo-redo-buttons {
 .first-run-lite {
   margin-top: 16px;
   color: white;
-  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Poppins', 'Poppins Fallback', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-size: var(--font-size-sm, 13px);
   font-weight: 400;
   text-decoration: underline;
@@ -369,7 +369,7 @@ html[data-app-loaded="true"] .first-run-lite {
   border: none;
   background: none;
   color: white;
-  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Poppins', 'Poppins Fallback', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-size: var(--font-size-sm, 13px);
   font-weight: 400;
   text-decoration: underline;
@@ -407,7 +407,7 @@ html[data-app-loaded="true"] .first-run-lite {
   bottom: 12px;
   max-width: 60vw;
   color: white;
-  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Poppins', 'Poppins Fallback', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-size: 11px;
   font-weight: 400;
   letter-spacing: 0.2px;
