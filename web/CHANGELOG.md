@@ -1,3 +1,7 @@
+## [2.304] - 2026-07-19
+- perf(build): inline critical.css into dist HTML — removes the render-blocking fetch gating LCP
+
+
 ## [2.303] - 2026-07-19
 - perf(assets): quantize+resize logos (69KB→6KB splash icon), recompress choice-screen bg, delete 20 unreferenced images (~750KB)
 - docs(build): record deploy-config discovery + v2.302 as first verified bundled deploy
