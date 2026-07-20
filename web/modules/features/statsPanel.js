@@ -437,11 +437,19 @@ export class StatsPanelManager {
             safeAdd(this.elements.navDotsContainer, "click", this.boundHandlers.handleNavPillClick);
         }
 
-        // Navigation dots - also toggle on click (for tooltip support)
+        // Navigation dots — DIRECT navigation to the dot's own panel
+        // (aria-controls), not "toggle to whatever's next". In focus view the
+        // dots are restyled into labeled Task | Routine | Stats targets, so a
+        // click is an intentional destination choice; toggling cycled the
+        // three views instead of honoring it. goTo() respects the isEnabled
+        // gates (e.g. the Task panel outside focus view) and returns null when
+        // blocked — fall back to the legacy pill toggle in that case.
         // stopPropagation prevents double-firing with container
         if (!this.boundHandlers.handleDotClickWithStop) {
             this.boundHandlers.handleDotClickWithStop = (event) => {
                 event.stopPropagation();
+                const panelId = event.currentTarget?.getAttribute('aria-controls');
+                if (panelId && this.carousel?.goTo(panelId)) return;
                 this.handleNavPillClick();
             };
         }
