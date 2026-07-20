@@ -289,6 +289,74 @@ class AppInit {
 		const status = this.getStatus();
 	}
 
+	/**
+	 * Route a brand-new user based on their first-run choice-screen pick.
+	 * All three destinations use existing machinery; this only picks the path.
+	 * @param {'create'|'sample'|'learn'|null|undefined} choice
+	 * @param {Object} onboardingManager - resolved onboarding manager (may be null)
+	 * @param {Object} cycles, @param {string} activeCycle, @param {Object} schemaData
+	 */
+	_routeFirstRunChoice(choice, onboardingManager, cycles, activeCycle, schemaData) {
+		// The focus-first flow (typewriter splash → Focus View w/ Your First
+		// Routine → welcome banner + tour) is BOTH the "learn" experience and the
+		// legacy default, so 'learn' and null map to it.
+		const runLegacyFocusFlow = () => {
+			if (onboardingManager?.runFirstRunFlow) {
+				onboardingManager.runFirstRunFlow().catch(err => {
+					console.error('❌ runFirstRunFlow failed:', err);
+				});
+			} else {
+				console.warn('⚠️ runFirstRunFlow unavailable — falling back to legacy welcome modal');
+				onboardingManager?.showOnboarding?.(cycles, activeCycle, schemaData);
+			}
+		};
+
+		// create/sample land in Home View and have NO further tutorial (the user
+		// declined it by their pick). Mark onboarding complete NOW so a refresh in
+		// Home View doesn't re-trigger the legacy welcome modal (appInit's second
+		// first-run branch fires on !onboardingCompleted && !focusModeActive).
+		// 'learn' is NOT marked here — runFirstRunFlow completes it on focus exit.
+		const markOnboardingComplete = () => {
+			const AppState = _deps.getMiniCycleState?.();
+			AppState?.update?.((s) => {
+				if (!s.settings) s.settings = {};
+				s.settings.onboardingCompleted = true;
+			}, true); // immediate save — survives a fast refresh
+		};
+
+		switch (choice) {
+			case 'create':
+				// Blank routine: stay in Home View (empty schema keeps focusModeActive
+				// false), open the creation dialog. Cancelling falls back to the
+				// getting-started sample via the dialog's own onboarding guard.
+				markOnboardingComplete();
+				// One-shot flag: the empty-state hint shown after this routine is
+				// created uses the friendlier first-step copy (routineManager reads
+				// + clears it). Cleared on first render so later routines are normal.
+				try { sessionStorage.setItem('miniCycle_firstRunCreate', '1'); } catch (e) { /* private mode */ }
+				if (_deps.showCycleCreationModal) {
+					_deps.showCycleCreationModal();
+				} else {
+					console.warn('⚠️ showCycleCreationModal unavailable — legacy flow');
+					runLegacyFocusFlow();
+				}
+				break;
+			case 'sample':
+				// Sample picker: same dialog, opened straight to the sample list.
+				markOnboardingComplete();
+				if (_deps.showCycleCreationModal) {
+					_deps.showCycleCreationModal({ startInSampleView: true });
+				} else {
+					runLegacyFocusFlow();
+				}
+				break;
+			case 'learn':
+			default:
+				runLegacyFocusFlow();
+				break;
+		}
+	}
+
 	async runInitialSetup() {
 
 		// Wait for core systems (AppState, etc.) to be ready before loading data
@@ -345,14 +413,30 @@ class AppInit {
 		// notification defer until first focus-view exit (or app close).
 		if (!hasSeenOnboarding && cycleCount === 0) {
 			const onboardingManager = _deps.getOnboardingManager?.();
-			if (onboardingManager?.runFirstRunFlow) {
-				onboardingManager.runFirstRunFlow().catch(err => {
-					console.error('❌ runFirstRunFlow failed:', err);
-				});
-			} else {
-				console.warn('⚠️ runFirstRunFlow unavailable — falling back to legacy welcome modal');
-				onboardingManager?.showOnboarding?.(cycles, activeCycle, schemaData);
+
+			// First-run choice screen (static, shown pre-boot when no data exists):
+			// route by the user's pick instead of unconditionally running the
+			// focus-first flow. appInit runs DURING boot — before the tap — so the
+			// choice is usually not set yet; defer to the 'firstrun:choice' event.
+			// Falls back to the legacy focus-first flow when the screen is absent.
+			const loaderEl = _deps.getElementById?.(DOM_IDS.APP_LOADER);
+			const choiceScreenActive = loaderEl?.classList?.contains?.('first-run-mode');
+			let pendingChoice = null;
+			try { pendingChoice = sessionStorage.getItem('miniCycle_firstRunChoice'); } catch (e) { /* private mode */ }
+
+			if (pendingChoice) {
+				this._routeFirstRunChoice(pendingChoice, onboardingManager, cycles, activeCycle, schemaData);
+				return;
 			}
+			if (choiceScreenActive) {
+				document.addEventListener('firstrun:choice', (e) => {
+					this._routeFirstRunChoice(e?.detail?.choice, onboardingManager, cycles, activeCycle, schemaData);
+				}, { once: true });
+				return;
+			}
+
+			// No choice screen → legacy default (unchanged behavior).
+			this._routeFirstRunChoice(null, onboardingManager, cycles, activeCycle, schemaData);
 			return;
 		}
 

@@ -14,8 +14,6 @@ import { createDIModule, optional } from '../core/diBase.js';
 const di = createDIModule('BasicPluginSystem', {
     appInit: optional(null),
     showNotification: optional(null),
-    getTaskList: optional(null),
-    getCurrentCycle: optional(null),
     AppState: optional(null)
 });
 
@@ -183,10 +181,8 @@ class MiniCyclePlugin {
      * @returns {Object[]} Array of task objects
      */
     getCurrentTasks() {
-        if (typeof this.deps.getTaskList === 'function') {
-            return this.deps.getTaskList();
-        }
-        // Fallback: try to get from AppState if available
+        // NOTE: do not read tasks via the CORE_DEPS `getTaskList` — that shared
+        // name is a DOM helper returning the #taskList ELEMENT, not a task array.
         if (this.deps.AppState?.get) {
             const state = this.deps.AppState.get();
             const activeCycleId = state?.appState?.activeCycleId;
@@ -200,10 +196,6 @@ class MiniCyclePlugin {
      * @returns {Object|null} Cycle data object or null
      */
     getCurrentCycle() {
-        if (typeof this.deps.getCurrentCycle === 'function') {
-            return this.deps.getCurrentCycle();
-        }
-        // Fallback: try to get from AppState if available
         if (this.deps.AppState?.get) {
             const state = this.deps.AppState.get();
             const activeCycleId = state?.appState?.activeCycleId;

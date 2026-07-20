@@ -45,6 +45,19 @@ let setStorageDependencies, getLocalStorageUsedBytesFn, getLocalStorageQuotaFn;
 let BOOT_TIMEOUTS;
 let attemptCacheRecovery, clearAllCaches, clearRecoveryFlags, isRecoveryExhausted;
 
+// Emergency fallback if constants.js fails to load or lacks BOOT_TIMEOUTS —
+// keep values in sync with BOOT_TIMEOUTS in core/constants.js.
+const FALLBACK_BOOT_TIMEOUTS = Object.freeze({
+  MODULE_IMPORT: 10000,
+  PHASE_1: 15000,
+  PHASE_2: 30000,
+  PHASE_3: 15000,
+  TOTAL: 60000,
+  RETRY_DELAY: 2000,
+  IDB_OPERATION: 3000,
+  VERSION_GATE: 1500
+});
+
 // ✅ FIX: Shared deps container that persists across boot retries
 // Creating fresh deps on each retry breaks DI closures that capture deps reference
 let deps = null;
@@ -87,17 +100,20 @@ function measureBoot(name, startMark, endMark) {
 // named `mc:subphase:<PHASE_NAME>` (+ `:start` marks). Read here by prefix so the
 // two files stay decoupled — orchestrator never imports the PHASES enum.
 const SUBPHASE_PREFIX = 'mc:subphase:';
+// Per-module measures emitted by loadModule/loadPhase in moduleLoader.js, named
+// `mc:module:<name>:import` and `mc:module:<name>:init` (+ `:start` marks).
+const MODULE_PREFIX = 'mc:module:';
 
 function clearBootTiming() {
   // Wipe prior-attempt entries so a retry's timing isn't read as the first attempt's.
   try {
     Object.values(BOOT_MARKS).forEach(m => performance.clearMarks(m));
     Object.values(BOOT_MEASURES).forEach(m => performance.clearMeasures(m));
-    // Sub-phase marks/measures use dynamic names — clear them by prefix.
+    // Sub-phase and per-module marks/measures use dynamic names — clear by prefix.
     performance.getEntriesByType('mark')
-      .forEach(e => { if (e.name.startsWith(SUBPHASE_PREFIX)) performance.clearMarks(e.name); });
+      .forEach(e => { if (e.name.startsWith(SUBPHASE_PREFIX) || e.name.startsWith(MODULE_PREFIX)) performance.clearMarks(e.name); });
     performance.getEntriesByType('measure')
-      .forEach(e => { if (e.name.startsWith(SUBPHASE_PREFIX)) performance.clearMeasures(e.name); });
+      .forEach(e => { if (e.name.startsWith(SUBPHASE_PREFIX) || e.name.startsWith(MODULE_PREFIX)) performance.clearMeasures(e.name); });
   } catch (_) { /* perf API unavailable */ }
 }
 
@@ -129,6 +145,50 @@ function getBootTiming() {
       subPhases[name.slice(SUBPHASE_PREFIX.length) + '_ms'] = Math.round(e.duration);
     });
   } catch (_) { /* perf API unavailable */ }
+  // Per-module breakdown, ranked by cost. init_ms is exact and additive (Stage 2 is
+  // sequential; includes DI-wiring + init()). import_ms values OVERLAP within a phase
+  // (parallel Promise.all) — use them to rank heavy parses, never to sum.
+  const moduleTimings = [];
+  try {
+    const byModule = new Map();
+    performance.getEntriesByType('measure').forEach(e => {
+      if (!e.name.startsWith(MODULE_PREFIX)) return;
+      const rest = e.name.slice(MODULE_PREFIX.length);           // '<name>:import' | '<name>:init'
+      const sep = rest.lastIndexOf(':');
+      const modName = rest.slice(0, sep);
+      const kind = rest.slice(sep + 1);
+      const entry = byModule.get(modName) || { name: modName, import_ms: null, init_ms: null, at_ms: null };
+      entry[kind + '_ms'] = Math.round(e.duration);              // last wins per name
+      // Import start time (since navigation) — an at_ms after boot-interactive
+      // marks an on-demand (deferred) load rather than boot cost.
+      if (kind === 'import') entry.at_ms = Math.round(e.startTime);
+      byModule.set(modName, entry);
+    });
+    byModule.forEach(entry => {
+      entry.total_ms = (entry.import_ms || 0) + (entry.init_ms || 0);
+      moduleTimings.push(entry);
+    });
+    moduleTimings.sort((a, b) => b.total_ms - a.total_ms);
+  } catch (_) { /* perf API unavailable */ }
+  // First-run choice-screen perception metrics (only present when the screen was
+  // shown — a brand-new user). Marks are set by the inline controller in
+  // miniCycle.html. perceivedWait = how long the user actually waited AFTER
+  // picking; ~0 (or bootDoneBeforeTap true) means boot finished while they read.
+  let firstRun = null;
+  try {
+    const shownAt = at('mc:firstrun:choiceShown');
+    if (shownAt != null) {
+      const tappedAt = at('mc:firstrun:choiceTapped');
+      const interactiveAt = at(BOOT_MARKS.INTERACTIVE);
+      firstRun = {
+        choiceShownAt_ms: shownAt,
+        choiceTappedAt_ms: tappedAt,
+        decisionTime_ms: (tappedAt != null) ? tappedAt - shownAt : null,
+        perceivedWait_ms: (tappedAt != null && interactiveAt != null) ? Math.max(0, interactiveAt - tappedAt) : null,
+        bootDoneBeforeTap: (tappedAt != null && interactiveAt != null) ? interactiveAt <= tappedAt : null
+      };
+    }
+  } catch (_) { /* perf API unavailable */ }
   return {
     // ms from navigation start (timeOrigin) until app interactive — includes the
     // pre-orchestrator cold-cache/precache window, which dominates first loads.
@@ -143,6 +203,11 @@ function getBootTiming() {
     },
     // Breakdown of features_ms by module-load phase (CORE_UTILS … TESTING).
     featuresByPhase: subPhases,
+    // Per-module {name, import_ms, init_ms, total_ms}, ranked by total_ms desc.
+    // init_ms is exact/additive; import_ms overlaps within a phase (rank-only).
+    moduleTimings,
+    // Choice-screen perception metrics, or null for returning users.
+    firstRun,
     // total time spent inside runBootSequence() (start → interactive).
     bootSequence_ms: dur(BOOT_MEASURES.TOTAL)
   };
@@ -182,14 +247,7 @@ async function loadDependencies() {
       console.error('❌ BOOT_TIMEOUTS not found in constants.js exports!');
       console.error('   Available exports:', Object.keys(constantsMod));
       // Use fallback values to prevent crash
-      BOOT_TIMEOUTS = {
-        MODULE_IMPORT: 10000,
-        PHASE_1: 15000,
-        PHASE_2: 20000,
-        PHASE_3: 15000,
-        TOTAL: 45000,
-        RETRY_DELAY: 1000
-      };
+      BOOT_TIMEOUTS = FALLBACK_BOOT_TIMEOUTS;
     }
 
     // Assign from coreBoot
@@ -206,14 +264,7 @@ async function loadDependencies() {
   } catch (error) {
     console.error('❌ Failed to load orchestrator dependencies:', error);
     // Use fallback BOOT_TIMEOUTS to allow boot to continue
-    BOOT_TIMEOUTS = {
-      MODULE_IMPORT: 10000,
-      PHASE_1: 15000,
-      PHASE_2: 20000,
-      PHASE_3: 15000,
-      TOTAL: 45000,
-      RETRY_DELAY: 1000
-    };
+    BOOT_TIMEOUTS = FALLBACK_BOOT_TIMEOUTS;
     throw error; // Re-throw to trigger error handling
   }
 }
@@ -254,13 +305,28 @@ function ensureBootModalTemplate(anchorId, modalId, templateHtml) {
  * @param {number} percent - Progress percentage (0-100)
  */
 function updateLoaderProgress(message, percent = 0) {
+  const text = loaderMessageOverride || message;
   const loaderText = document.querySelector(DOM_SELECTORS.LOADER_TEXT);
   if (loaderText) {
-    loaderText.textContent = loaderMessageOverride || message;
+    loaderText.textContent = text;
   }
   const loaderBar = document.querySelector(DOM_SELECTORS.LOADER_BAR);
   if (loaderBar) {
     loaderBar.style.transform = `scaleX(${percent / 100})`;
+  }
+  // Mirror into the first-run choice screen's low-key bottom-right status.
+  // The centered .loader-text is hidden there, so this keeps live boot progress
+  // visible while the user reads the choices. No-op on the normal splash.
+  const status = document.getElementById('first-run-status');
+  if (status) {
+    status.textContent = text;
+  }
+  // Drive the first-run bottom progress bar from the SAME real percent — honest
+  // progress (moves in real boot steps: 2→4→5→15→30→55→85→100), not a timed
+  // creep. If boot stalls on a phase, the bar sits there — diagnostic, not fake.
+  const bottomFill = document.querySelector('.first-run-bottom-fill');
+  if (bottomFill) {
+    bottomFill.style.width = `${Math.max(0, Math.min(100, percent))}%`;
   }
 }
 
@@ -478,6 +544,16 @@ function showBootError(phase, error, willRetry = false) {
           ${escapeHtml(getLabel('boot.useLite'))}
         </button>
       </div>
+      <div style="margin-top: 14px; display: flex; gap: 16px; justify-content: center;">
+        ${hasBackupableData() ? `
+        <button id="boot-backup-btn" style="padding: 8px 14px; cursor: pointer; border: 1px solid rgba(255,255,255,0.5); background: transparent; color: white; border-radius: 8px; font-size: 13px; font-family: 'Inter', sans-serif;">
+          💾 ${escapeHtml(getLabel('boot.backupData'))}
+        </button>
+        ` : ''}
+        <button id="boot-report-btn" style="padding: 8px 14px; cursor: pointer; border: 1px solid rgba(255,255,255,0.5); background: transparent; color: white; border-radius: 8px; font-size: 13px; font-family: 'Inter', sans-serif;">
+          📧 ${escapeHtml(getLabel('boot.reportProblem'))}
+        </button>
+      </div>
       <div style="margin-top: 12px; padding: 8px; background: rgba(0,0,0,0.3); border-radius: 6px; color: rgba(255,255,255,0.7); font-size: 10px; font-family: monospace; max-width: 300px; word-break: break-word; text-align: left;">
         Phase: ${finalDiagPhase} | ${finalDiagOnline} | ${finalDiagSW} | ${finalDiagTime}<br>
         Attempt: ${bootAttempt} | v${escapeHtml(APP_VERSION || '?')}<br>
@@ -488,6 +564,42 @@ function showBootError(phase, error, willRetry = false) {
     // Add button handlers (uses addEventListener instead of inline onclick)
     const tryAgainBtn = document.getElementById('try-again-btn');
     tryAgainBtn?.addEventListener('click', () => location.reload());
+
+    // Backup: works even though boot failed — reads localStorage directly, no
+    // module machinery. See INCIDENT_service-worker-stale-cache.md §6a.
+    const backupBtn = document.getElementById('boot-backup-btn');
+    backupBtn?.addEventListener('click', () => {
+      try {
+        const count = downloadDataBackup();
+        backupBtn.textContent = '✅ ' + getLabel('boot.backupSaved', { vars: { count } });
+        backupBtn.disabled = true;
+      } catch (err) {
+        console.error('Backup failed:', err);
+        backupBtn.textContent = '⚠️ ' + getLabel('boot.backupFailed');
+      }
+    });
+
+    // Crash report: diagnostics ONLY (never user data) via mailto — zero
+    // infrastructure, works from a broken boot. §6b.
+    const reportBtn = document.getElementById('boot-report-btn');
+    reportBtn?.addEventListener('click', () => {
+      const subject = `miniCycle boot failure report (v${APP_VERSION})`;
+      const body = [
+        'Auto-generated diagnostic from the boot error screen.',
+        'No routine/task data is included.',
+        '',
+        `Phase: ${phase}`,
+        `Error: ${(error?.message || 'Unknown').substring(0, 300)}`,
+        `Version: ${APP_VERSION} | Attempt: ${bootAttempt}`,
+        `Online: ${navigator.onLine} | SW controlling: ${!!navigator.serviceWorker?.controller}`,
+        `UA: ${navigator.userAgent}`,
+        `Time: ${new Date().toISOString()}`,
+      ].join('\n');
+      const mailtoUrl = 'mailto:sparkintechproductions@gmail.com?subject=' +
+        encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+      reportBtn.dataset.mailto = mailtoUrl; // inspectable (location.href is unforgeable in tests)
+      location.href = mailtoUrl;
+    });
 
     const liteBtn = document.getElementById('lite-version-btn');
     liteBtn?.addEventListener('click', () => goToLiteVersion({ params: { fallback: 'true' }, reason: 'boot-failure UI' }));
@@ -512,6 +624,53 @@ function showBootError(phase, error, willRetry = false) {
       });
     }
   }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DATA BACKUP FROM THE ERROR SCREEN (INCIDENT_service-worker-stale-cache.md §6a)
+// All user data is plain localStorage, available even when boot failed — so a
+// stranded user can save their routines BEFORE trying destructive recovery
+// (clear cache / reinstall). Restore lives on the first-run choice screen.
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Non-prefixed legacy keys that belong to miniCycle (see STORAGE_KEYS in
+// constants.js — not imported here so backup works independent of module state).
+const BACKUP_EXTRA_KEYS = ['lastUsedMiniCycle', 'milestoneUnlocks', 'darkModeEnabled', 'currentTheme'];
+
+function collectBackupEntries() {
+  const entries = {};
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && (key.indexOf('miniCycle') === 0 || key.indexOf('__miniCycle') === 0 || BACKUP_EXTRA_KEYS.includes(key))) {
+      entries[key] = localStorage.getItem(key); // raw strings — never parse/rewrite
+    }
+  }
+  return entries;
+}
+
+function hasBackupableData() {
+  try { return !!localStorage.getItem('miniCycleData') || Object.keys(collectBackupEntries()).length > 0; }
+  catch (_) { return false; }
+}
+
+/** Download all miniCycle localStorage keys as a JSON file. @returns {number} key count */
+function downloadDataBackup() {
+  const keys = collectBackupEntries();
+  const payload = {
+    type: 'miniCycle-backup',
+    appVersion: APP_VERSION,
+    exportedAt: new Date().toISOString(),
+    keys,
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `minicycle-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  return Object.keys(keys).length;
 }
 
 /**
@@ -596,6 +755,12 @@ async function runBootSequence() {
   const bootStart = Date.now();
   const isRetry = bootAttempt > 1;
 
+  // 🧬 Boot generation: a timed-out phase keeps running (withTimeout can't
+  // cancel it). Bumping the generation FIRST makes the zombie attempt abort at
+  // its next moduleLoader checkpoint instead of racing this attempt's writes
+  // into the shared deps container (July 2026 boot audit, C2).
+  globalThis.__miniCycleBootGeneration = (globalThis.__miniCycleBootGeneration || 0) + 1;
+
   // ⏱️ Boot timing: wipe any prior-attempt marks, then anchor the start.
   clearBootTiming();
   markBoot(BOOT_MARKS.START);
@@ -608,15 +773,23 @@ async function runBootSequence() {
   //   matches what the browser cached during previous online sessions, so the
   //   browser's HTTP cache serves the file even without the SW.
   // - Normal (first attempt): use APP_VERSION for SW cache matching
+  // Bundled dist (__MC_MODULE_MAP present): hashed filenames ARE the version,
+  // so the first attempt imports BARE mapped URLs — matching the modulepreload
+  // hints and the SW precache keys (no double-fetch). Retries still append a
+  // ?v= suffix ON TOP of the mapped URL (the build keeps the `${vParam}` tail
+  // for this file) because the retry teardown depends on distinct URLs yielding
+  // fresh module instances. Offline retries keep the suffix too: hashed files
+  // are served cache-first by the SW regardless of query, so no network needed.
+  const hasModuleMap = !!globalThis.__MC_MODULE_MAP;
   let versionSuffix;
-  if (isRetry && navigator.onLine) {
+  if (isRetry && (navigator.onLine || hasModuleMap)) {
     versionSuffix = `${APP_VERSION}.r${bootAttempt}`;
-  } else if (isRetry && !navigator.onLine) {
+  } else if (isRetry) {
     versionSuffix = ''; // Drop version — use browser HTTP cache
   } else {
     versionSuffix = APP_VERSION;
   }
-  const vParam = versionSuffix ? `?v=${versionSuffix}` : '';
+  const vParam = (hasModuleMap && !isRetry) ? '' : (versionSuffix ? `?v=${versionSuffix}` : '');
 
   // ⛔ Kick off the pre-boot version gate NOW (non-blocking) so its tiny no-store
   // fetch overlaps the boot-module imports + Phase 1 — ≈free on a healthy network.
@@ -651,7 +824,10 @@ async function runBootSequence() {
   const { bootFeatures, bootEarlyDeps } = featureBoot;
   const { initUIBoot } = uiBoot;
 
-  // Import moduleLoader to clear cache on retry
+  // Import moduleLoader to clear cache on retry. Even though this retry-suffixed
+  // URL yields a FRESH moduleLoader instance, the module registries live on
+  // globalThis.__miniCycleModuleRegistry (shared across instances), so
+  // destroyAllModules()/clearLoadedModules() below reach attempt 1's modules.
   const { clearLoadedModules, destroyAllModules } = await import(`./moduleLoader.js${vParam}`);
 
   // Import appInit to reset its state on retry
@@ -911,7 +1087,10 @@ async function initApp() {
     const success = await runBootSequence();
     if (success === false) return; // Reload initiated by core boot
   } catch (error) {
-    const phase = error.message.includes('Phase') ? error.message.split(' timed')[0] : 'initialization';
+    // Non-Error rejections (string/undefined) have no .message — guard so the
+    // error screen still renders instead of throwing inside the catch.
+    const errMsg = error?.message || '';
+    const phase = errMsg.includes('Phase') ? errMsg.split(' timed')[0] : 'initialization';
 
     // ✅ FAST-PATH: A "binding name not found" / "Importing"-class error is a
     // signature stale-cache failure (e.g. a static import like
@@ -1016,7 +1195,19 @@ async function startOrchestrator() {
     await initApp();
   } catch (error) {
     console.error('❌ Orchestrator failed to start:', error);
-    // HTML fallback will redirect to lite version after timeout
+    // A loadDependencies() failure never reached initApp's retry/recovery
+    // machinery — without this, the user gets a 60s spinner then the Lite
+    // redirect. Give the signature stale-cache failure the same one-shot
+    // recovery as initApp's fast-path, else show the boot error screen.
+    // attemptCacheRecovery is wired BY loadDependencies, so it can be
+    // undefined when the failure happened early — guard it.
+    if (isCacheError(error) && typeof attemptCacheRecovery === 'function' && navigator.onLine) {
+      showUpdatingOverlay();
+      const recovered = await attemptCacheRecovery('orchestrator-startFailure');
+      if (recovered) return;
+    }
+    showBootError('Dependency load', error, false);
+    // If the error screen couldn't render, the HTML fallback still redirects to Lite.
   }
 }
 

@@ -31,6 +31,11 @@ const di = createDIModule('FocusMode', {
     deleteAllTasks: optional(null),
     switchMiniCycle: optional(null),
     createNewMiniCycle: optional(null),
+    // Focus task panel (deferred module): loaded on focus-mode entry;
+    // showTaskView returns the carousel to Routine when exiting while
+    // the Task panel is active (FOCUS_TASK_VIEW_PLAN D7)
+    ensureModuleLoaded: optional(null),
+    showTaskView: optional(null),
     getElementById: optional((id) => document.getElementById(id)),
     querySelector: optional((sel) => document.querySelector(sel)),
     getBody: optional(() => document.body),
@@ -797,6 +802,19 @@ export class FocusMode {
         const body = this.deps.getBody();
         body.classList.add(DOM_CLASSES.FOCUS_MODE);
 
+        // Load the deferred focus task panel so the Task tab is functional by
+        // the time the user swipes to it. Fire-and-forget: the carousel's
+        // isEnabled gate governs reachability, and module init is idempotent —
+        // a slow load just means the card renders when the promise resolves.
+        // An `undefined` result means the loader wiring is dead (truthy-closure
+        // trap) — warn loudly instead of leaving an empty skeleton card.
+        const panelLoad = this.deps.ensureModuleLoaded?.('focusTaskPanel');
+        if (panelLoad === undefined) {
+            console.warn('⚠️ FocusMode: ensureModuleLoaded unavailable — focus task panel will not render');
+        } else {
+            panelLoad.catch?.(e => console.warn('⚠️ FocusMode: focusTaskPanel load failed:', e));
+        }
+
         if (this._button) {
             body.appendChild(this._button);
             this._button.innerHTML = getIcon('compress');
@@ -853,6 +871,14 @@ export class FocusMode {
         // If the three-dots menu was open when focus mode was toggled off,
         // clear the body-class flag so the backdrop blur doesn't linger.
         this.deps.getBody?.()?.classList.remove(DOM_CLASSES.FOCUS_MODE_MENU_OPEN);
+
+        // D7: the Task panel only exists inside focus view — if it's the
+        // active carousel panel, return to Routine before restoring chrome
+        // (goTo('task-view') is always allowed regardless of gates).
+        const focusTaskPanel = this.deps.getElementById(DOM_IDS.FOCUS_TASK_PANEL);
+        if (focusTaskPanel?.classList.contains(DOM_CLASSES.SHOW)) {
+            this.deps.showTaskView?.();
+        }
 
         const taskView = this.deps.getElementById(DOM_IDS.TASK_VIEW);
 

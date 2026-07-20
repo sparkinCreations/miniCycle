@@ -93,7 +93,7 @@ export const MODULE_MANIFESTS = {
         path: '../utils/consoleCapture.js',
         phase: PHASES.CORE_UTILS,
         requires: [],
-        optionalDeps: ['appendToTestResults', 'showNotification'],
+        optionalDeps: ['showNotification'],
         provides: ['consoleCapture'],
         api: 'utils',
         optional: true
@@ -250,8 +250,8 @@ export const MODULE_MANIFESTS = {
         path: '../features/statsPanel.js',
         phase: PHASES.TASK_MANAGEMENT,
         requires: ['showNotification', 'AppState', 'appInit', 'getModal'],
-        optionalDeps: ['historyManager', 'clearedTasksManager', 'achievementsManager', 'gesturePanelManager', 'vocabThemeManager', 'hideMainMenu', 'isDraggingNotification', 'isOverlayActive', 'setupDarkModeToggle', 'trackAction', 'updateThemeColor', 'showStatsTourNotification'],
-        provides: ['showStatsPanel', 'showTaskView', 'updateStatsPanel', 'openHistoryModal', 'openClearedTasksModal', 'openAchievementsModal'],
+        optionalDeps: ['historyManager', 'clearedTasksManager', 'achievementsManager', 'gesturePanelManager', 'vocabThemeManager', 'focusTaskPanel', 'hideMainMenu', 'isDraggingNotification', 'isOverlayActive', 'setupDarkModeToggle', 'trackAction', 'updateThemeColor', 'showStatsTourNotification'],
+        provides: ['showStatsPanel', 'showTaskView', 'navigatePanels', 'updateStatsPanel', 'openHistoryModal', 'openClearedTasksModal', 'openAchievementsModal'],
         provideInstance: 'statsPanelManager',
         api: 'ui'
     },
@@ -267,7 +267,8 @@ export const MODULE_MANIFESTS = {
             'validateAndSanitizeTaskInput', 'buildTaskContext', 'extractTaskDataFromDOM',
             'renderTasks', 'refreshTaskListUI', 'createTaskButtonContainer', 'handleTaskButtonClick',
             'setupRecurringButtonHandler', 'revealTaskButtons', 'taskToAddTaskOptions',
-            'patchTask', 'removeTask', 'applyTaskOrder', 'syncBoundaryMarkers'
+            'patchTask', 'removeTask', 'applyTaskOrder', 'syncBoundaryMarkers',
+            'syncRecurringStateToDOM', 'toggleHoverTaskOptions'
         ],
         provideInstance: 'taskDOMManager',
         api: 'task',
@@ -319,6 +320,7 @@ export const MODULE_MANIFESTS = {
         requires: ['appInit', 'AppState', 'showNotification'],
         optionalDeps: ['checkCompleteAllButton', 'saveTaskToSchema25', 'updateProgressBar', 'updateStatsPanel'],  // UI refresh after a due-date edit
         provides: ['checkOverdueTasks', 'createDueDateInput'],
+        provideInstance: 'dueDates',  // depMappings setupDueDateButtonInteraction resolves via deps.features.dueDates
         api: 'features',
         after: ['taskDOM']
     },
@@ -405,7 +407,7 @@ export const MODULE_MANIFESTS = {
         path: '../ui/settingsManager.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState', 'showNotification', 'getModal'],
-        optionalDeps: ['clearAllUndoHistory', 'loadMiniCycle', 'showLoader', 'hideLoader', 'closeAllModals', 'hasActiveNotifications', 'hideMainMenu', 'BackupManager', 'DataValidator', 'calculateNextOccurrence', 'disableDebug', 'enableDebug', 'isDebug', 'handleTaskListMovement', 'organizeCompletedTasks', 'onCycleCreated', 'performSchema25Migration', 'refreshTaskListUI', 'resetDefaultRecurringSettings', 'setupDarkModeToggle', 'setupQuickDarkToggle', 'showConfirmationModal', 'showPromptModal', 'showSettingsTourNotification', 'startGuidedTour', 'updateCompletedTasksCount', 'updateHelpWindow', 'updateMoveArrowsVisibility', 'updateStatsPanel'],
+        optionalDeps: ['clearAllUndoHistory', 'loadMiniCycle', 'showLoader', 'hideLoader', 'closeAllModals', 'hasActiveNotifications', 'hideMainMenu', 'BackupManager', 'DataValidator', 'calculateNextOccurrence', 'disableDebug', 'enableDebug', 'isDebug', 'handleTaskListMovement', 'organizeCompletedTasks', 'onCycleCreated', 'performSchema25Migration', 'refreshTaskListUI', 'resetDefaultRecurringSettings', 'setupDarkModeToggle', 'setupQuickDarkToggle', 'showConfirmationModal', 'showPromptModal', 'showSettingsTourNotification', 'startGuidedTour', 'toggleHoverTaskOptions', 'updateCompletedTasksCount', 'updateHelpWindow', 'updateMoveArrowsVisibility', 'updateStatsPanel'],
         provides: ['syncCurrentSettingsToStorage', 'exportMiniCycleData', 'downloadBackupFile'],
         provideInstance: 'settingsManager',
         api: 'ui',
@@ -469,7 +471,10 @@ export const MODULE_MANIFESTS = {
         phase: PHASES.THEME_VISUAL, // Must load before TASK_MANAGEMENT so TaskOptionsVisibilityController is available
         requires: ['appInit', 'loadMiniCycleData'],
         optionalDeps: ['showCustomizerTip', 'addTask', 'isTouchDevice', 'taskToAddTaskOptions'],
-        provides: ['refreshTaskListUI', 'showTaskOptions', 'hideTaskOptions', 'checkCompleteAllButton', 'TaskOptionsVisibilityController', 'hideTaskButtons'],
+        // NOTE: taskUI also exports refreshTaskListUI (tested directly), but the DI
+        // mapping reads taskDOM's deps.task copy — declaring it here would mask
+        // taskDOM as the provider in buildProviderMap (last-writer-wins).
+        provides: ['showTaskOptions', 'hideTaskOptions', 'checkCompleteAllButton', 'TaskOptionsVisibilityController', 'hideTaskButtons'],
         api: 'ui'
     },
 
@@ -523,11 +528,28 @@ export const MODULE_MANIFESTS = {
         api: 'ui'
     },
 
+    focusTaskPanel: {
+        path: '../ui/focusTaskPanel.js',
+        phase: PHASES.UI_MANAGERS,
+        requires: ['appInit', 'AppState'],
+        // Completion-path companions — same trio the task-list tap uses
+        optionalDeps: ['checkMiniCycle', 'enableUndoSystemOnFirstInteraction', 'safeAddEventListener'],
+        provides: [],
+        provideInstance: 'focusTaskPanel',
+        api: 'ui',
+        optional: true,
+        // Deferred: focus-view-only panel (FOCUS_TASK_VIEW_PLAN). Loaded
+        // on-demand when focus mode activates (Phase 2 wires
+        // ensureModuleLoaded('focusTaskPanel')) — keeps it off the boot path.
+        deferred: true,
+        after: ['statsPanel']
+    },
+
     gesturePanelManager: {
         path: '../ui/gesturePanelManager.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['safeAddEventListener', 'showNotification'],
-        optionalDeps: ['isOverlayActive', 'isDraggingNotification', 'onShowStatsPanel', 'onShowTaskView'],
+        optionalDeps: ['isOverlayActive', 'isDraggingNotification', 'onNavigate', 'onShowStatsPanel', 'onShowTaskView'],
         provides: [],
         provideInstance: 'gesturePanelManager',
         api: 'ui',
@@ -559,7 +581,7 @@ export const MODULE_MANIFESTS = {
         path: '../ui/pullToRefresh.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['showNotification'],
-        optionalDeps: ['refreshUIFromState', 'loadMiniCycle', 'watchRecurringTasks', 'isModalOpen', 'checkRecurringTasksNow', 'promptServiceWorkerUpdate'],
+        optionalDeps: ['refreshUIFromState', 'loadMiniCycle', 'watchRecurringTasks', 'isModalOpen'],
         provides: ['pullToRefresh'],
         api: 'ui',
         optional: true
@@ -568,7 +590,7 @@ export const MODULE_MANIFESTS = {
     focusMode: {
         path: '../ui/focusMode.js',
         phase: PHASES.UI_MANAGERS,
-        optionalDeps: ['showNotification', 'safeAddEventListener', 'AppState', 'clearAllTasks', 'deleteAllTasks', 'switchMiniCycle', 'createNewMiniCycle'],
+        optionalDeps: ['showNotification', 'safeAddEventListener', 'AppState', 'clearAllTasks', 'deleteAllTasks', 'switchMiniCycle', 'createNewMiniCycle', 'ensureModuleLoaded', 'showTaskView'],
         provides: ['activateFocusMode'],
         provideInstance: 'focusMode',
         api: 'ui',
@@ -620,6 +642,16 @@ export const MODULE_MANIFESTS = {
         provideInstance: 'achievementsManager',
         api: 'features',
         after: ['clearedTasksManager', 'themeManager', 'gamesManager', 'vocabThemes']
+    },
+
+    uxRatings: {
+        path: '../features/uxRatings.js',
+        phase: PHASES.FEATURES,
+        requires: ['appInit', 'AppState', 'safeAddEventListener'],
+        optionalDeps: ['AppMeta'],
+        provides: [],
+        provideInstance: 'uxRatings',
+        api: 'features'
     },
 
     backupReminder: {
@@ -676,7 +708,6 @@ export const MODULE_MANIFESTS = {
         path: '../other/basicPluginSystem.js',
         phase: PHASES.TESTING,
         requires: ['appInit', 'AppState', 'showNotification'],
-        optionalDeps: ['getCurrentCycle'],
         provides: ['pluginManager'],
         api: 'plugins',
         optional: true,

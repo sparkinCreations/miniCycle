@@ -34,3 +34,18 @@
     font-display: swap;
     src: url('./poppins-600.woff2') format('woff2');
 }
+
+/* Metric-matched local fallback: Arial adjusted to Poppins' geometry
+   (fontaine-standard overrides, cross-checked against poppins-400.woff2's
+   hhea table: ascent 1050 / descent -350 / lineGap 100 @ upem 1000).
+   Slotted after 'Poppins' in every font stack, this makes the swap when
+   Poppins arrives after first paint geometrically invisible — CLS 0 by
+   construction on cold loads, instead of hoping preloads win the race. */
+@font-face {
+    font-family: 'Poppins Fallback';
+    src: local('Arial');
+    size-adjust: 112.16%;
+    ascent-override: 93.66%;
+    descent-override: 31.22%;
+    line-gap-override: 8.92%;
+}

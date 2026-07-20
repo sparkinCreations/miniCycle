@@ -148,6 +148,9 @@ body.dark-mode:not([data-theme]) {
     --theme-text-primary: #f0f0f0;
     --theme-text-secondary: #cccccc;
     --theme-text-muted: #999999;
+    /* Matches [data-theme] dark (themes.css). Consumers on static light
+       surfaces must pin a static dark color instead (see .mode-description). */
+    --theme-text-on-surface: #e0e0e0;
     --theme-bg-surface: #3a3a3a;
     --theme-bg-surface-elevated: #4a4a4a;
     --theme-color-success: #4caf50;
@@ -1682,6 +1685,13 @@ body.dark-mode .task-list-container {
 
 body.dark-mode .task-list-container::-webkit-scrollbar-thumb {
     background-color: rgba(150, 150, 150, 0.5);
+}
+
+/* Auto-uncheck banner uses --theme-text-on-surface, which the dark-mode
+   variable block does not remap (only [data-theme] themes do) — override
+   here, falling back to the theme token when a data-theme is active. */
+body.dark-mode .auto-uncheck-banner {
+    color: var(--dark-text-dim, var(--theme-text-on-surface));
 }
 
 /* =============================================================================

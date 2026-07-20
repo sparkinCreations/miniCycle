@@ -1176,9 +1176,23 @@ export async function performStateBasedUndo() {
 
     // ✅ Rollback on failure
     try {
-      await _deps.AppState.set(rollbackState);
+      // Restore through update() — the sanctioned single door (ADR-003).
+      // NOTE: this previously called AppState.set(), which DOES NOT EXIST on
+      // StateManager — the TypeError was swallowed by the catch below, so the
+      // whole rollback path (state restore, stacks, toast) was silently dead.
+      await restoreFullState(rollbackState);
       _deps.AppGlobalState.activeUndoStack = rollbackUndoStack;
       _deps.AppGlobalState.activeRedoStack = rollbackRedoStack;
+
+      // Repaint from the restored state — restoring AppState alone does NOT
+      // redraw the DOM, so without this the screen keeps showing the
+      // half-applied state while the data is already correct (the exact
+      // trust-killer for an undo feature). Full render: after a partial apply
+      // we can't know which tasks changed, so no patch diff is possible.
+      // Runs while isPerformingUndoRedo is still true (finally clears it),
+      // same flush-window rule as the success path.
+      handleUndoRedoUIUpdate({ requiresFullRender: true, cycleChanged: true }, _deps.AppState.get());
+
       updateUndoRedoButtons();
 
       if (_deps.showNotification) {
@@ -1196,6 +1210,20 @@ export async function performStateBasedUndo() {
     // where renderTasks() is async and continues after this flag is cleared)
     _deps.AppGlobalState.undoRedoCompletedAt = Date.now();
   }
+}
+
+/**
+ * Restore a full state snapshot through AppState.update() (ADR-003: every
+ * change goes through the one door — there is no AppState.set()). Replaces
+ * all top-level keys of the draft with a deep copy of the snapshot.
+ * @param {Object} snapshot - structuredClone of a prior full state
+ */
+async function restoreFullState(snapshot) {
+  const restored = structuredClone(snapshot);
+  await _deps.AppState.update(state => {
+    Object.keys(state).forEach(k => delete state[k]);
+    Object.assign(state, restored);
+  }, false);
 }
 
 /**
@@ -1356,9 +1384,17 @@ export async function performStateBasedRedo() {
 
     // ✅ Rollback on failure
     try {
-      await _deps.AppState.set(rollbackState);
+      // Restore through update() — same fix as the undo catch (AppState.set()
+      // never existed; the old call died as a swallowed TypeError).
+      await restoreFullState(rollbackState);
       _deps.AppGlobalState.activeUndoStack = rollbackUndoStack;
       _deps.AppGlobalState.activeRedoStack = rollbackRedoStack;
+
+      // Repaint from the restored state — same reasoning as the undo catch:
+      // restoring state alone doesn't redraw, and a failed partial apply means
+      // only a full render is safe. Symmetric fix; keep both in sync.
+      handleUndoRedoUIUpdate({ requiresFullRender: true, cycleChanged: true }, _deps.AppState.get());
+
       updateUndoRedoButtons();
 
       if (_deps.showNotification) {

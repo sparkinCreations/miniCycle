@@ -287,6 +287,38 @@ function _refreshLiveLensLabels() {
         });
     }
 
+    // Generic lens-label sweep for statically-injected modals.
+    // The recurring panel, settings modal, and preferences modal are baked by
+    // modalTemplates.js at import time (Phase 1→2) — BEFORE the vocab lens is
+    // wired into labelResolver — so their lens-sensitive strings freeze at the
+    // default vocabulary and the element-specific updates above never touch them
+    // (July 2026 boot audit, M2). Any element tagged with data-label-key whose
+    // text is a PURE getLabel() value (no interpolation/counts) is re-resolved
+    // here, on every routine/theme change AND on the boot-time refreshThemeLabels()
+    // call in finalizeUI(). Keep the tag off interpolated/dynamic text.
+    _deps.querySelectorAll('[data-label-key]').forEach(el => {
+        const key = el.dataset.labelKey;
+        if (key) el.textContent = getLabel(key);
+    });
+
+    // Focus-view pill tabs — the visible text is CSS `content: attr(data-tab-label)`
+    // on the nav dots (focus-mode.css), so re-resolve the attribute (and the
+    // dot's accessible name) through the label system here. `nav.tabTask` is
+    // lens-sensitive, so e.g. Habit Tracker renders "Habit | Routine | Stats".
+    const TAB_LABEL_KEYS = {
+        'focus-task-panel': 'nav.tabTask',
+        'task-view': 'nav.tabRoutine',
+        'stats-panel': 'nav.tabStats'
+    };
+    _deps.querySelectorAll(DOM_SELECTORS.DOT).forEach(dot => {
+        const key = TAB_LABEL_KEYS[dot.getAttribute('aria-controls')];
+        if (!key) return;
+        const label = getLabel(key);
+        dot.dataset.tabLabel = label;
+        dot.setAttribute('aria-label', label);
+        dot.title = label;
+    });
+
     // Keep the Themes modal section content fresh so it always reflects the active routine's theme,
     // regardless of which code path opens the modal (themeManager, preferencesManager, statsPanel).
     renderVocabThemes();

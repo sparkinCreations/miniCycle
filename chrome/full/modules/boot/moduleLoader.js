@@ -98,9 +98,46 @@ export async function loadManifests(withV) {
 // ============================================================================
 // MODULE LOADING STATE
 // ============================================================================
+// ⚠️ The registries MUST be shared across ALL moduleLoader instances. On boot
+// retry the orchestrator imports moduleLoader with a DIFFERENT ?v= suffix
+// (?v=X.r2, or bare offline), which creates a separate ES module instance —
+// module-level Maps there would start empty, so destroyAllModules() would
+// iterate nothing and attempt 1's listeners/timers would survive into attempt 2
+// (July 2026 boot audit, finding C1). Anchoring the Maps on globalThis gives
+// one registry per page, the same cross-instance strategy as featureBoot's
+// HTML event bridge. This is deliberate boot infrastructure — NOT a precedent
+// for window.* globals in feature modules.
 
-const loadedModules = new Map();
-const moduleInstances = new Map();
+const _registryHost = globalThis.__miniCycleModuleRegistry =
+    globalThis.__miniCycleModuleRegistry || {
+        loadedModules: new Map(),
+        moduleInstances: new Map()
+    };
+const loadedModules = _registryHost.loadedModules;
+const moduleInstances = _registryHost.moduleInstances;
+
+// ============================================================================
+// BOOT GENERATION GUARD
+// ============================================================================
+// A phase that times out is NOT cancelled — withTimeout() only rejects the
+// race. The zombie attempt keeps importing/wiring modules concurrently with
+// the retry, writing stale instances into the shared deps container (July 2026
+// boot audit, finding C2). The orchestrator bumps
+// globalThis.__miniCycleBootGeneration at the start of every boot attempt;
+// loaders capture their generation and abort at the next checkpoint once
+// superseded. All checks no-op when the global is undefined (unit tests).
+
+let _bootGeneration; // generation captured by loadAllModules for this instance
+
+// Exported for tests (moduleLoader.tests.js pins the supersede contract).
+export function assertBootGenerationCurrent(myGeneration) {
+    const current = globalThis.__miniCycleBootGeneration;
+    if (current !== undefined && myGeneration !== undefined && current !== myGeneration) {
+        throw new Error(
+            `Boot attempt superseded (generation ${myGeneration} → ${current}) — aborting stale boot work`
+        );
+    }
+}
 
 // ============================================================================
 // DEFERRED (ON-DEMAND) MODULE LOADING
@@ -160,6 +197,9 @@ const ENFORCE_REQUIRES = false;
  * Default ON in development. Set false to suppress.
  */
 const WARN_ON_UNMAPPED_DECLARED_DEPS = true;
+// Dedupe DI-gap warnings — buildModuleDependencies re-runs on deferred loads,
+// so without this each gap spams the console once per wiring pass.
+const _warnedDIGaps = new Set();
 
 /**
  * Create a validated lazy wrapper that warns/throws on null provider access.
@@ -350,8 +390,15 @@ export async function loadModule(name, deps, coreResult, withV, wire = true) {
 
     try {
 
-        // Import the module
+        // Import the module.
+        // ⏱️ Per-module import measure (`mc:module:<name>:import`). NOTE: within a
+        // phase these awaits run in Promise.all, so durations OVERLAP in wall-clock
+        // (each includes main-thread parse of whichever module evaluates first) —
+        // rank with them, don't sum them. The `:init` measure below is the exact one.
+        const importStartMark = `mc:module:${name}:import:start`;
+        try { performance.mark(importStartMark); } catch (_) { /* perf API unavailable */ }
         const mod = await import(withV(manifest.path));
+        try { performance.measure(`mc:module:${name}:import`, importStartMark); } catch (_) { /* mark missing */ }
         loadedModules.set(name, mod);
 
         // Wire dependencies (setDependencies). Skipped when wire=false: loadPhase defers
@@ -425,18 +472,50 @@ export async function initializeModule(name, mod, deps, coreResult) {
             registerProvides(name, manifest, mod, deps);
         }
 
+        // Register the instance under provideInstance for no-init modules too —
+        // previously only the init-fn branch did this, so a no-init module's
+        // provideInstance silently never registered (July 2026 boot audit, C3).
+        if (manifest.provideInstance && mod[manifest.provideInstance]) {
+            const category = getDepsCategoryForModule(manifest);
+            if (deps[category]) {
+                deps[category][manifest.provideInstance] = mod[manifest.provideInstance];
+            }
+        }
+
         // Check for exported instances that have init() methods (e.g., onboardingManager)
-        // These are pre-created singletons that need initialization after dependencies are set
-        if (manifest.provides) {
-            for (const provided of manifest.provides) {
+        // These are pre-created singletons that need initialization after dependencies are set.
+        // Any singleton exposing destroy() is registered in moduleInstances so
+        // destroy-on-retry reaches its listeners/timers — previously no-init modules
+        // (e.g. dailyResetManager) were invisible to destroyAllModules() (audit C3).
+        if (manifest.provides || manifest.provideInstance) {
+            const probeNames = [...(manifest.provides || [])];
+            if (manifest.provideInstance) probeNames.push(manifest.provideInstance);
+            const destroyables = [];
+            for (const provided of new Set(probeNames)) {
                 const exportedInstance = mod[provided];
-                if (exportedInstance && typeof exportedInstance.init === 'function' && !exportedInstance.initialized) {
+                if (!exportedInstance || typeof exportedInstance !== 'object') continue;
+                if (typeof exportedInstance.init === 'function' && !exportedInstance.initialized) {
                     try {
                         await exportedInstance.init();
                     } catch (initError) {
                         console.warn(`⚠️ ${name}.${provided}.init() failed:`, initError.message);
                     }
                 }
+                if (typeof exportedInstance.destroy === 'function' && !destroyables.includes(exportedInstance)) {
+                    destroyables.push(exportedInstance);
+                }
+            }
+            if (destroyables.length && !moduleInstances.has(name)) {
+                moduleInstances.set(
+                    name,
+                    destroyables.length === 1 ? destroyables[0] : {
+                        destroy() {
+                            for (const d of destroyables) {
+                                try { d.destroy(); } catch (e) { console.warn(`[moduleLoader] destroy() failed for ${name} singleton:`, e); }
+                            }
+                        }
+                    }
+                );
             }
         }
 
@@ -465,6 +544,7 @@ export async function initializeModule(name, mod, deps, coreResult) {
  */
 export async function loadPhase(deps, coreResult, phase) {
     const { withV } = coreResult;
+    const myGeneration = globalThis.__miniCycleBootGeneration;
 
     // ✅ Ensure manifests are loaded (idempotent - only loads once)
     if (!_manifestsLoaded) {
@@ -492,8 +572,18 @@ export async function loadPhase(deps, coreResult, phase) {
     // module captures same-phase providers correctly — identical semantics to the
     // original per-module sequential loop, with ONLY the import parallelized.
     for (const [name, manifest] of active) {
+        // Checkpoint: if a retry superseded this attempt while we were awaiting
+        // the previous module's init, stop before wiring anything else stale.
+        assertBootGenerationCurrent(myGeneration);
+
         const mod = loadedModules.get(name);
         if (!mod) continue; // optional import failed → skip
+
+        // ⏱️ Per-module wire+init measure (`mc:module:<name>:init`). Stage 2 is
+        // sequential, so these ARE additive — they include buildModuleDependencies
+        // (the DI-wiring cost) plus the module's init(). getBootTiming() ranks them.
+        const initStartMark = `mc:module:${name}:init:start`;
+        try { performance.mark(initStartMark); } catch (_) { /* perf API unavailable */ }
 
         const setDepsFn = findSetDependenciesFunction(mod, name);
         if (setDepsFn) {
@@ -501,6 +591,7 @@ export async function loadPhase(deps, coreResult, phase) {
         }
 
         const instance = await initializeModule(name, mod, deps, coreResult);
+        try { performance.measure(`mc:module:${name}:init`, initStartMark); } catch (_) { /* mark missing */ }
         results.set(name, instance || mod);
     }
 
@@ -519,6 +610,7 @@ export async function loadAllModules(deps, coreResult) {
     // Capture boot context so deferred modules can be loaded on-demand after boot.
     _bootDeps = deps;
     _bootCoreResult = coreResult;
+    _bootGeneration = globalThis.__miniCycleBootGeneration;
 
     // ✅ FIX: Load manifests with version cache-busting BEFORE using any manifest data
     // This prevents stale cached manifests from causing 404s on moved/renamed modules
@@ -547,6 +639,8 @@ export async function loadAllModules(deps, coreResult) {
     // (the proven 74–78% of boot). Measures are read by name in orchestrator.js —
     // see clearBootTiming()/getBootTiming() for the matching prefix scan.
     for (const [phaseName, phase] of Object.entries(PHASES)) {
+        // Checkpoint: abort between phases if a retry superseded this attempt.
+        assertBootGenerationCurrent(_bootGeneration);
         const startMark = `mc:subphase:${phaseName}:start`;
         try { performance.mark(startMark); } catch (_) { /* perf API unavailable */ }
         const phaseResults = await loadPhase(deps, coreResult, phase);
@@ -624,6 +718,9 @@ function runPostInitInjections(deps) {
  */
 export async function ensureModuleLoaded(name) {
     if (moduleInstances.has(name)) return moduleInstances.get(name);
+    // A stale moduleLoader instance from a superseded boot attempt must not
+    // wire a deferred module with its outdated _bootDeps/_bootCoreResult.
+    assertBootGenerationCurrent(_bootGeneration);
     if (!_bootDeps || !_bootCoreResult) {
         console.warn(`⚠️ ensureModuleLoaded('${name}') called before boot captured context`);
         return null;
@@ -649,7 +746,13 @@ export async function ensureModuleLoaded(name) {
     const { withV } = _bootCoreResult;
     const mod = await loadModule(name, _bootDeps, _bootCoreResult, withV);
     if (!mod) return null;
+    // ⏱️ Same `mc:module:<name>:init` measure as loadPhase Stage 2, so on-demand
+    // (deferred) loads rank alongside boot loads in getBootTiming().moduleTimings —
+    // their import `at_ms` places them after boot-interactive.
+    const initStartMark = `mc:module:${name}:init:start`;
+    try { performance.mark(initStartMark); } catch (_) { /* perf API unavailable */ }
     const instance = await initializeModule(name, mod, _bootDeps, _bootCoreResult);
+    try { performance.measure(`mc:module:${name}:init`, initStartMark); } catch (_) { /* mark missing */ }
     // Wire the new provider into already-loaded consumers.
     runPostInitInjections(_bootDeps);
     return instance ?? mod;
@@ -1085,16 +1188,16 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         exportMiniCycleData: (...args) => deps.ui?.exportMiniCycleData?.(...args),
         startGuidedTour: (...args) => deps.ui?.startGuidedTour?.(...args),
         markTourWelcomeShown: (...args) => deps.ui?.markTourWelcomeShown?.(...args),
-        // Provided by taskUI module
-        hideTaskButtons: (...args) => deps.task?.hideTaskButtons?.(...args),
+        // Provided by taskUI module (api: 'ui' — registered under deps.ui, not deps.task)
+        hideTaskButtons: (...args) => deps.ui?.hideTaskButtons?.(...args),
         // Provided by taskSearch module — toggles search row visibility
         updateSearchVisibility: (...args) => deps.ui?.updateSearchVisibility?.(...args),
         // Provided by basicPluginSystem module — instance accessor
         pluginManager: () => deps.plugins?.pluginManager,
         // Provided by dataValidator module — utils API category
         DataValidator: () => deps.utils?.DataValidator,
-        // Provided by migration modules — exported function reference (resolves at call time)
-        createInitialSchema25Data: (...args) => (deps.utils?.createInitialSchema25Data || deps.cycle?.createInitialSchema25Data)?.(...args),
+        // Registered by coreBoot at deps.core (migration module export) — utils/cycle kept as legacy fallbacks
+        createInitialSchema25Data: (...args) => (deps.core?.createInitialSchema25Data || deps.utils?.createInitialSchema25Data || deps.cycle?.createInitialSchema25Data)?.(...args),
 
         // ─── Boot/init helpers ───
         // Method on appInit instance — modules use it as a top-level dep instead of accessing appInit.waitForCore()
@@ -1107,6 +1210,7 @@ function buildModuleDependencies(manifest, deps, coreResult) {
 
         // ─── Task DOM helpers ───
         syncRecurringStateToDOM: (...args) => deps.task?.syncRecurringStateToDOM?.(...args),
+        toggleHoverTaskOptions: (...args) => deps.task?.toggleHoverTaskOptions?.(...args),
 
         // ─── Feature modules ───
         setupDueDateButtonInteraction: (...args) => deps.features?.dueDates?.setupDueDateButtonInteraction?.(...args),
@@ -1123,9 +1227,6 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         isPerformingUndoRedo: () => deps.core?.AppGlobalState?.isPerformingUndoRedo ?? false,
         // Notification drag state — used by gesture / swipe handlers to skip while dragging a toast
         isDraggingNotification: () => deps.utils?.notifications?.isDraggingNotification ?? false,
-
-        // ─── Testing ───
-        appendToTestResults: (...args) => deps.testing?.appendToTestResults?.(...args),
 
         // ─── Constants / migrations injected via deps.core (set by coreBoot) ───
         // Direct value access (not a function wrapper) — depMappings is built per-module
@@ -1185,7 +1286,6 @@ function buildModuleDependencies(manifest, deps, coreResult) {
 
         // Due dates (from deps.features)
         checkOverdueTasks: (...args) => deps.features?.checkOverdueTasks?.(...args),
-        remindOverdueTasks: (...args) => deps.features?.remindOverdueTasks?.(...args),
         createDueDateInput: (...args) => deps.features?.createDueDateInput?.(...args),
 
         // History manager (from deps.features) - use Proxy for lazy resolution
@@ -1323,11 +1423,24 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         showTaskView: (...args) => deps.ui?.statsPanelManager?.showTaskView?.(...args),
 
         // Gesture panel callbacks (for gesturePanelManager to call when gestures detected)
+        // onNavigate: indexed carousel navigation — returns {id,index} on move,
+        // null on clamp, undefined when statsPanel/carousel is unavailable
+        // (gesturePanelManager treats undefined as "fall back to the legacy
+        // binary path below"). Do NOT append ?.() semantics that would turn a
+        // missing method into undefined-silently-meaning-clamped.
+        onNavigate: (direction) => deps.ui?.statsPanelManager?.navigatePanels?.(direction),
         onShowStatsPanel: () => deps.ui?.statsPanelManager?.showStatsPanel?.(),
         onShowTaskView: () => deps.ui?.statsPanelManager?.showTaskView?.(),
 
         // Gesture panel manager (from deps.ui) - returns instance when called as function
         gesturePanelManager: () => deps.ui?.gesturePanelManager,
+
+        // Focus task panel instance accessor (deferred module — undefined until
+        // focusMode.activate() runs ensureModuleLoaded('focusTaskPanel'))
+        focusTaskPanel: () => deps.ui?.focusTaskPanel,
+
+        // On-demand loader for deferred modules (from the boot-captured context)
+        ensureModuleLoaded: (...args) => deps.core?.ensureModuleLoaded?.(...args),
 
         // Onboarding manager (from deps.ui) - returns instance when called as function
         getOnboardingManager: () => deps.ui?.onboardingManager,
@@ -1417,8 +1530,10 @@ function buildModuleDependencies(manifest, deps, coreResult) {
     // Audit: warn for any declared dep (incl. optionalDeps) that has no
     // depMappings entry and isn't a core dep. This catches the silent-failure
     // bug class where consumers fall back to their `optional()` default forever.
+    // Runs for optional modules too — dep declarations are static regardless of
+    // module optionality, and skipping them hid real gaps (July 2026 boot audit).
     // See WARN_ON_UNMAPPED_DECLARED_DEPS at top of file for context.
-    if (WARN_ON_UNMAPPED_DECLARED_DEPS && !manifest.optional) {
+    if (WARN_ON_UNMAPPED_DECLARED_DEPS) {
         const allDeclared = [
             ...(manifest.requires || []),
             ...(manifest.optionalDeps || []),
@@ -1426,10 +1541,14 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         ];
         for (const dep of allDeclared) {
             if (!(dep in depMappings) && !CORE_DEPS.has(dep)) {
-                console.warn(
-                    `⚠️ DI gap: ${manifest.path} declares "${dep}" but no depMappings entry exists. ` +
-                    `Consumer will fall back to its optional() default — function calls will silently no-op.`
-                );
+                const gapKey = `${manifest.path}::${dep}`;
+                if (!_warnedDIGaps.has(gapKey)) {
+                    _warnedDIGaps.add(gapKey);
+                    console.warn(
+                        `⚠️ DI gap: ${manifest.path} declares "${dep}" but no depMappings entry exists. ` +
+                        `Consumer will fall back to its optional() default — function calls will silently no-op.`
+                    );
+                }
             }
         }
     }

@@ -1,3 +1,8 @@
+## [2.310] - 2026-07-20
+- docs: second sweep — incident marked resolved (entry hashing shipped), FIX_3 guard update, focus-view dot-nav note, source ?v= rationale for contributors
+- docs: post-pipeline docs pass — rewrite BUILD_PROCESS, current-state callouts (SW/PWA/version-guide/deployment), Baseline #3, Lighthouse 2026 results; archive 10 completed/superseded plans
+
+
 ## [2.309] - 2026-07-20
 - fix(nav): focus-view Task/Routine/Stats labels navigate to their own panel — dot clicks were toggling to whatever was next
 

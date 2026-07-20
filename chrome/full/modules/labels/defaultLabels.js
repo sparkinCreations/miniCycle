@@ -679,8 +679,10 @@ export const DEFAULT_LABELS = deepFreeze({
         // Keyboard shortcut notifications
         keyboardStatsOpened:     'Keyboard shortcut - Stats Panel opened',
         keyboardTaskOpened:      'Keyboard shortcut - Routine View opened',
+        keyboardFocusTaskOpened: 'Keyboard shortcut - Task View opened',
         quickToggleTask:         'Quick toggle - Routine View',
         quickToggleStats:        'Quick toggle - Stats Panel',
+        quickToggleFocusTask:    'Quick toggle - Task View',
 
         // Migration notifications
         forceMigrationComplete:  'Force migration completed! Some data may need manual review.',
@@ -940,6 +942,9 @@ export const DEFAULT_LABELS = deepFreeze({
         noTasks:              'No tasks yet',
         noTasksHint:          'Press the + button to show the task bar to add a task or create a new routine',
         noTasksHintFocus:     'Open the {menuIcon} menu at the top and tap {showHide} to start adding tasks',
+        // Shown once, right after a brand-new user picks "Create My First Routine"
+        // and names an empty routine — friendlier than the generic hint above.
+        firstStepHint:        'Add the first step of your routine — press the + button to begin',
         createFirst:          'Create your first routine',
         orTrySample:          'or try a sample',
         noRecurringTasks:     'Add a task from this routine to make it recurring',
@@ -1393,6 +1398,11 @@ export const DEFAULT_LABELS = deepFreeze({
         tasksTab:       'Tasks',
         statsView:      'Statistics view',
         statsTab:       'Stats',
+        // Focus-view pill switcher tabs (rendered via CSS content: attr(data-tab-label);
+        // themeManager re-resolves these on every theme/routine change)
+        tabTask:        'Task',
+        tabRoutine:     'Routine',
+        tabStats:       'Stats',
         showStats:      'Show Stats',
         showTasks:      'Show Tasks',
         quickActions:   'Quick Actions',
@@ -1415,6 +1425,21 @@ export const DEFAULT_LABELS = deepFreeze({
     // (Label keys keep the `focusMode` namespace for code-stability;
     //  user-facing strings say "Focus View".)
     // ========================================================================
+
+    // Focus task panel — one-task-at-a-time card inside focus view
+    // (FOCUS_TASK_VIEW_PLAN Phase 1)
+    focusTask: {
+        panelAria:        'Current task',
+        position:         '{current} of {total}',
+        completeTask:     'Complete task',
+        uncompleteTask:   'Mark incomplete',
+        prevTask:         'Previous task',
+        nextTask:         'Next task',
+        allDone:          'All tasks complete!',
+        allDoneHintCycle: 'Use the cycle button to start again',
+        allDoneHintTodo:  'Use the clear button to remove completed tasks',
+        dueLabel:         'Due {date}'
+    },
 
     focusMode: {
         enter:          'Focus View',
@@ -1797,7 +1822,24 @@ export const DEFAULT_LABELS = deepFreeze({
         sending:       'Sending...',
         errorSend:     'Error sending feedback. Please try again.',
         errorNetwork:  'Network error. Please try again later.',
-        minLength:     'Please enter at least 10 characters.'
+        minLength:     'Please enter at least 10 characters.',
+        // ---- Rating (optional star rating inside the feedback form) ----
+        ratingLabel:    'How would you rate miniCycle?',
+        ratingStarAria: 'Rate {n} of 5',
+        ratingPrompt1:  "We're sorry to hear that. How can we improve?",
+        ratingPrompt2:  'Thanks for the feedback. What could be better?',
+        ratingPrompt3:  'Thanks! What would make it even better?',
+        ratingPrompt4:  'Great! What do you love about miniCycle?',
+        ratingPrompt5:  "Awesome! We're glad you're enjoying miniCycle!",
+        tagsLabel:      'What stands out? (optional)',
+        tagEasyToUse:   'Easy to Use',
+        tagHelpful:     'Helpful',
+        tagBeautiful:   'Beautiful Design',
+        tagFast:        'Fast & Smooth',
+        tagOrganized:   'Keeps Me Organized',
+        tagMotivating:  'Motivating',
+        previousRating: 'You previously rated {stars} of 5 on {date}',
+        minLengthOrRate: 'Please pick a star rating or enter at least 10 characters.'
     },
 
     // ========================================================================
@@ -1880,6 +1922,10 @@ export const DEFAULT_LABELS = deepFreeze({
         useLite:          'Use Lite Version',
         failedAt:         'Failed at: {phase} (attempt {number})',
         appUpdated:       'App updated! Cache refreshed automatically.',
+        backupData:       'Back Up My Data',
+        backupSaved:      'Backup saved ({count} items)',
+        backupFailed:     'Backup failed — see console',
+        reportProblem:    'Report Problem',
         updatingToLatest: 'Updating to latest version...',
         updatingDetail:   'This only takes a moment.',
         dataRestored:     'Data restored after interrupted test run',
@@ -1905,6 +1951,29 @@ export const DEFAULT_LABELS = deepFreeze({
         suggestRefresh:     'Try refreshing or clearing cache',
         errorOffline:       'You appear to be offline',
         suggestReconnect:   'Connect to the internet and try again, or use Lite version'
+    },
+
+    // ========================================================================
+    // 29b. FIRST-RUN CHOICE SCREEN
+    // Canonical copy for the three-choice first-run screen. NOTE: the screen is
+    // static HTML baked into miniCycle.html and painted PRE-BOOT (getLabel isn't
+    // available yet), so these keys are NOT read at runtime today — the HTML
+    // duplicates them. They live here as the single source of truth for i18n
+    // (see I18N_LANGUAGE_PACK_PLAN.md): when a build/i18n step lands, it can
+    // inject the active-language values into the baked HTML from these keys.
+    // Keep this block and the HTML in sync until then.
+    // ========================================================================
+    firstRun: {
+        wordmark:    'miniCycle',
+        descriptor:  'Routine Checklist Manager',
+        tagline:     'Repeatable checklists that reset on completion — not one-and-done to-dos.',
+        createBtn:   'Create My First Routine',
+        sampleBtn:   'Load a Sample',
+        learnBtn:    'Learn How Cycles Work',
+        busyCreate:  'Setting up your routine…',
+        busySample:  'Loading samples…',
+        busyLearn:   'Starting the tour…',
+        liteHint:    'Taking a while? Try the Lite version →'
     },
 
     // ========================================================================
@@ -1977,6 +2046,7 @@ export const DEFAULT_LABELS = deepFreeze({
         taskAdded: 'Task added: {name}',
         taskViewOpened: 'Routine view opened',
         statsPanelOpened: 'Stats panel opened',
+        focusTaskPanelOpened: 'Task view opened',
         dayNumber: 'Day {day}',
         dragHandleTaskCard:      'Drag handle, task card group',
         dragHandleCompleteCycle: 'Drag handle, complete cycle button',
@@ -2409,6 +2479,14 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'taskOptions.clearOnReset',
     'taskOptions.markedForClearing',
     'taskOptions.global',
+
+    // Focus task panel (one-task-at-a-time card — noun-bearing keys themeable)
+    'nav.tabTask',
+    'focusTask.panelAria',
+    'focusTask.completeTask',
+    'focusTask.prevTask',
+    'focusTask.nextTask',
+    'focusTask.allDone',
 
     // Focus mode
     'focusMode.enter',

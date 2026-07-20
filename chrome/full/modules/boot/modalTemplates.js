@@ -13,7 +13,7 @@ import { DOM_IDS } from '../core/constants.js';
 export const RECURRING_PANEL_HTML = `<!-- Recurring Panel Modal w/ Overlay -->
 <dialog id="recurring-panel-overlay" class="modal-overlay" aria-labelledby="recurring-panel-title" aria-modal="true">
   <div id="recurring-panel" class="modal-panel has-corner-logo">
-    <h2 id="recurring-panel-title">${getLabel('recurring.title')}</h2>
+    <h2 id="recurring-panel-title" data-label-key="recurring.title">${getLabel('recurring.title')}</h2>
     <div class="recurring-panel-body">
     <div class="recurring-panel-left">
     <div id="recurring-toggle-actions" class="hidden">
@@ -344,7 +344,7 @@ export const RECURRING_PANEL_HTML = `<!-- Recurring Panel Modal w/ Overlay -->
       </div>
       <!-- Add Task Section -->
       <div id="add-recurring-task-section">
-        <button id="add-recurring-task-btn" class="add-recurring-task-btn" title="${getLabel('recurring.addTaskTitle')}">
+        <button id="add-recurring-task-btn" class="add-recurring-task-btn" title="${getLabel('recurring.addTaskTitle')}" data-label-key="recurring.addToRecurring">
           ${getLabel('recurring.addToRecurring')}
         </button>
         <div id="available-tasks-list" class="available-tasks-list hidden">
@@ -530,7 +530,7 @@ export const PREFERENCES_MODAL_HTML = `<!-- Preferences Modal -->
                     <div class="preferences-bg-image-section">
                         <div class="preferences-color-row">
                             <span class="pref-color-icon">&#x1F5BC;</span>
-                            <label>${getLabel('prefs.backgroundImage')}</label>
+                            <label for="bg-image-upload">${getLabel('prefs.backgroundImage')}</label>
                             <input type="file" id="bg-image-upload" accept="image/*" style="display: none;" aria-label="${getLabel('prefs.backgroundImage')}">
                             <button class="preferences-upload-btn" id="bg-image-upload-btn">${getLabel('prefs.upload')}</button>
                             <button class="preferences-remove-btn" id="bg-image-remove-btn" style="display: none;">${getLabel('prefs.removeImage')}</button>
@@ -603,19 +603,19 @@ export const PREFERENCES_MODAL_HTML = `<!-- Preferences Modal -->
             <div class="preferences-section collapsed" data-section="tasks">
                 <div class="preferences-section-header collapsible" role="button" tabindex="0" data-toggle="tasks" aria-expanded="false" aria-label="${getLabel('prefs.ariaToggleTasks')}" aria-controls="pref-section-tasks">
                     <span class="preferences-section-icon">&#x2705;</span>
-                    <span>${getLabel('prefs.tasksCheckboxes')}</span>
+                    <span data-label-key="prefs.tasksCheckboxes">${getLabel('prefs.tasksCheckboxes')}</span>
                     <span class="preferences-section-toggle">&#x25BC;</span>
                 </div>
                 <div class="preferences-section-content" id="pref-section-tasks">
                     <div class="preferences-color-row">
                         <span class="pref-color-icon">&#x1F4DD;</span>
-                        <label for="pref-task-bg">${getLabel('prefs.taskBackground')}</label>
+                        <label for="pref-task-bg" data-label-key="prefs.taskBackground">${getLabel('prefs.taskBackground')}</label>
                         <input type="color" id="pref-task-bg" value="#ffffff" />
                         <button class="preferences-reset-btn" data-target="pref-task-bg" title="${getLabel('prefs.resetDefault')}">${getLabel('button.reset')}</button>
                     </div>
                     <div class="preferences-color-row">
                         <span class="pref-color-icon">&#x1F4AC;</span>
-                        <label for="pref-task-text">${getLabel('prefs.taskText')}</label>
+                        <label for="pref-task-text" data-label-key="prefs.taskText">${getLabel('prefs.taskText')}</label>
                         <input type="color" id="pref-task-text" value="#333333" />
                         <button class="preferences-reset-btn" data-target="pref-task-text" title="${getLabel('prefs.resetDefault')}">${getLabel('button.reset')}</button>
                     </div>
@@ -668,7 +668,7 @@ export const PREFERENCES_MODAL_HTML = `<!-- Preferences Modal -->
                 <div class="preferences-section-content" id="pref-section-buttons">
                     <div class="preferences-color-row">
                         <span class="pref-color-icon">&#x1F504;</span>
-                        <label for="pref-complete-btn">${getLabel('prefs.completeCycle')}</label>
+                        <label for="pref-complete-btn" data-label-key="prefs.completeCycle">${getLabel('prefs.completeCycle')}</label>
                         <input type="color" id="pref-complete-btn" value="#08c352" />
                         <button class="preferences-reset-btn" data-target="pref-complete-btn" title="${getLabel('prefs.resetDefault')}">${getLabel('button.reset')}</button>
                     </div>
@@ -847,7 +847,7 @@ export const SETTINGS_MODAL_HTML = `            <!-- Settings Modal -->
                 <div class="settings-section collapsible collapsed" data-section="accessibility">
                     <div class="settings-section-header" role="button" tabindex="0" data-toggle="accessibility" aria-expanded="false" aria-label="${getLabel('settings.ariaToggleAccessibility')}" aria-controls="settings-section-accessibility">
                         <span class="settings-section-icon">&#x267F;</span>
-                        <span>${getLabel('settings.accessibility')}</span>
+                        <span data-label-key="settings.accessibility">${getLabel('settings.accessibility')}</span>
                         <span class="settings-section-toggle">&#9660;</span>
                     </div>
                     <div class="settings-section-content" id="settings-section-accessibility">
@@ -870,22 +870,22 @@ export const SETTINGS_MODAL_HTML = `            <!-- Settings Modal -->
                                 <input type="checkbox" id="toggle-reduced-motion" name="toggle-reduced-motion">
                                 <span class="toggle-slider"></span>
                             </span>
-                            <span>${getLabel('settings.reducedMotion')}</span>
+                            <span data-label-key="settings.reducedMotion">${getLabel('settings.reducedMotion')}</span>
                         </label>
                         <label class="settings-option">
                             <span class="toggle-switch">
                                 <input type="checkbox" id="toggle-high-contrast" name="toggle-high-contrast">
                                 <span class="toggle-slider"></span>
                             </span>
-                            <span>${getLabel('settings.highContrast')}</span>
+                            <span data-label-key="settings.highContrast">${getLabel('settings.highContrast')}</span>
                         </label>
                         <div class="settings-option settings-option-vertical">
-                            <label for="font-size-select">${getLabel('settings.fontSize')}</label>
+                            <label for="font-size-select" data-label-key="settings.fontSize">${getLabel('settings.fontSize')}</label>
                             <select id="font-size-select" class="settings-select">
-                                <option value="14">${getLabel('settings.fontSizeSmall')}</option>
-                                <option value="16" selected>${getLabel('settings.fontSizeDefault')}</option>
-                                <option value="18">${getLabel('settings.fontSizeLarge')}</option>
-                                <option value="20">${getLabel('settings.fontSizeExtraLarge')}</option>
+                                <option value="14" data-label-key="settings.fontSizeSmall">${getLabel('settings.fontSizeSmall')}</option>
+                                <option value="16" selected data-label-key="settings.fontSizeDefault">${getLabel('settings.fontSizeDefault')}</option>
+                                <option value="18" data-label-key="settings.fontSizeLarge">${getLabel('settings.fontSizeLarge')}</option>
+                                <option value="20" data-label-key="settings.fontSizeExtraLarge">${getLabel('settings.fontSizeExtraLarge')}</option>
                             </select>
                         </div>
                     </div>
@@ -904,14 +904,14 @@ export const SETTINGS_MODAL_HTML = `            <!-- Settings Modal -->
                                 <input type="checkbox" id="toggle-scroll-to-new-task" name="toggle-scroll-to-new-task" checked>
                                 <span class="toggle-slider"></span>
                             </span>
-                            <span>${getLabel('settings.scrollToNew')}</span>
+                            <span data-label-key="settings.scrollToNew">${getLabel('settings.scrollToNew')}</span>
                         </label>
                         <label class="settings-option">
                             <span class="toggle-switch">
                                 <input type="checkbox" id="toggle-scroll-on-load" name="toggle-scroll-on-load">
                                 <span class="toggle-slider"></span>
                             </span>
-                            <span>${getLabel('settings.scrollToLast')}</span>
+                            <span data-label-key="settings.scrollToLast">${getLabel('settings.scrollToLast')}</span>
                         </label>
                         <label class="settings-option">
                             <span class="toggle-switch">
@@ -931,8 +931,8 @@ export const SETTINGS_MODAL_HTML = `            <!-- Settings Modal -->
                         <span class="settings-section-toggle">▼</span>
                     </div>
                     <div class="settings-section-content" id="settings-section-data">
-                        <button id="backup-mini-cycles" class="settings-btn settings-btn-primary"><i class="fas fa-download"></i> ${getLabel('settings.backupAll')}</button>
-                        <button id="restore-mini-cycles" class="settings-btn settings-btn-primary"><i class="fas fa-upload"></i> ${getLabel('settings.restoreAll')}</button>
+                        <button id="backup-mini-cycles" class="settings-btn settings-btn-primary"><i class="fas fa-download"></i> <span data-label-key="settings.backupAll">${getLabel('settings.backupAll')}</span></button>
+                        <button id="restore-mini-cycles" class="settings-btn settings-btn-primary"><i class="fas fa-upload"></i> <span data-label-key="settings.restoreAll">${getLabel('settings.restoreAll')}</span></button>
                     </div>
                 </div>
 

@@ -101,7 +101,14 @@ let TASK_LIMIT = 150; // Fix #37: use consistent value with LIMITS.TASKS_PER_CYC
 
 // Fix #47: Use APP_VERSION directly since effectiveVersion is defined inside initCoreBoot
 // This will be updated inside initCoreBoot with the actual version
-let withV = (path) => `${path}?v=${APP_VERSION}`;
+// Bundled dist: __MC_MODULE_MAP (set by dist version.js) maps source paths to
+// content-hashed URLs. Mapped paths go BARE — the hash IS the version, and a
+// bare URL matches the SW precache key so page-fetch and precache share one
+// cached copy (kills the ?v= double-fetch). Dev has no map → unchanged ?v=.
+let withV = (path) => {
+    const hashed = globalThis.__MC_MODULE_MAP?.[path];
+    return hashed || `${path}?v=${APP_VERSION}`;
+};
 
 // ============================================================================
 // SECTION 1: Core Initialization
@@ -231,8 +238,17 @@ export async function initCoreBoot(deps, versionSuffix = null) {
   // Validate constants loaded
   if (typeof DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS === 'undefined') {
     console.error('❌ Stale constants.js cache detected');
-    await handleStaleCacheRecovery();
-    return null;
+    const recoveryInitiated = await handleStaleCacheRecovery();
+    if (recoveryInitiated) {
+      return null; // Reload is coming — abort this boot
+    }
+    // Recovery could NOT run (offline, or attempts exhausted). Returning null
+    // here leaves the splash screen up forever with no retry or error screen —
+    // a booted app on stale constants beats a dead splash. Continue with safe
+    // fallback copies of the missing exports (mirrors constants.js values).
+    console.warn('⚠️ Continuing boot with stale constants.js (recovery unavailable) — using fallback defaults');
+    DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS = Object.freeze({ cycle: false, todo: true });
+    DEFAULT_RECURRING_DELETE_SETTINGS = DEFAULT_RECURRING_DELETE_SETTINGS ?? Object.freeze({ cycle: true, todo: true });
   }
 
   deps.core.DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS = DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS;
@@ -242,9 +258,23 @@ export async function initCoreBoot(deps, versionSuffix = null) {
   // ========== Update withV helper ==========
   // When offline retry (dropVersionParam), withV returns bare path — no ?v= suffix
   // This lets browser HTTP cache serve files when SW is dead (iOS kills SW between sessions)
-  withV = dropVersionParam
-    ? (path) => path
-    : (path) => `${path}?v=${effectiveVersion}`;
+  //
+  // Bundled dist (__MC_MODULE_MAP present): mapped paths go BARE on a normal
+  // boot (hash = version; matches the SW precache key). Retries still need
+  // DISTINCT URLs — the retry teardown depends on fresh module instances — so:
+  //   - online retry ('2.301.r2'): append ?v=<suffix> to the hashed URL
+  //   - offline retry (dropVersionParam): append ?v=retry — hashed files are
+  //     served cache-first by the SW regardless of query, so this stays
+  //     network-free while still forcing a fresh module instance
+  const moduleMap = globalThis.__MC_MODULE_MAP || null;
+  withV = (path) => {
+    const hashed = moduleMap && moduleMap[path];
+    if (hashed) {
+      if (dropVersionParam) return `${hashed}?v=retry`;
+      return effectiveVersion !== APP_VERSION ? `${hashed}?v=${effectiveVersion}` : hashed;
+    }
+    return dropVersionParam ? path : `${path}?v=${effectiveVersion}`;
+  };
   deps.core.withV = withV;
 
   // ========== Create AppMeta ==========
@@ -266,6 +296,7 @@ export async function initCoreBoot(deps, versionSuffix = null) {
   deps.utils.sanitizeInput = GlobalUtils.sanitizeInput;
   deps.utils.escapeHtml = GlobalUtils.escapeHtml;
   deps.utils.generateId = GlobalUtils.generateId;
+  deps.utils.generateHashId = GlobalUtils.generateHashId;
   deps.utils.debounce = GlobalUtils.debounce;
   deps.utils.throttle = GlobalUtils.throttle;
   deps.utils.safeAddEventListener = GlobalUtils.safeAddEventListener;
@@ -362,12 +393,16 @@ export async function initAppState(deps, showNotification) {
   if (typeof setAppInitDependencies === 'function') {
     setAppInitDependencies({
       // For initialSetup
-      loadMiniCycleData: () => loadMiniCycleData?.(),
-      createInitialSchema25Data: () => migrationMod.createInitialSchema25Data?.(),
-      showCycleCreationModal: () => appContextMod.getCycleApi?.()?.create?.(),
+      // NOTE: invoke-style wrappers forward args (...args) so a future arg isn't
+      // silently swallowed — the trap that hid the sample-view option (July 2026).
+      // The getter-style wrappers below (loadMiniCycle, updateReminderButtons, …)
+      // return a function/value and must NOT take args.
+      loadMiniCycleData: (...args) => loadMiniCycleData?.(...args),
+      createInitialSchema25Data: (...args) => migrationMod.createInitialSchema25Data?.(...args),
+      showCycleCreationModal: (...args) => appContextMod.getCycleApi?.()?.create?.(...args),
       getOnboardingManager: () => appContextMod.getUiApi?.()?.onboardingManager || null,
       getMiniCycleState: () => deps.core.AppState || null,
-      showNotification: (msg, type, duration) => showNotification?.(msg, type, duration),  // For data integrity warnings
+      showNotification: (...args) => showNotification?.(...args),  // For data integrity warnings
 
       // For completeInitialSetup - use grouped APIs (not legacy getters)
       loadMiniCycle: () => appContextMod.getCycleApi?.()?.load,
@@ -375,8 +410,8 @@ export async function initAppState(deps, showNotification) {
       updateDueDateVisibility: () => appContextMod.getUiApi?.()?.updateDueDateVisibility,
       checkOverdueTasks: () => appContextMod.getReminderApi?.()?.checkOverdue,
       organizeCompletedTasks: () => appContextMod.getUiApi?.()?.organizeCompletedTasks,
-      startReminders: () => appContextMod.getReminderApi?.()?.start?.(),
-      updateThemeColor: () => appContextMod.getUiApi?.()?.updateThemeColor?.(),
+      startReminders: (...args) => appContextMod.getReminderApi?.()?.start?.(...args),
+      updateThemeColor: (...args) => appContextMod.getUiApi?.()?.updateThemeColor?.(...args),
       syncModeFromToggles: () => {
         const cycleApi = appContextMod.getCycleApi?.();
         const mm = cycleApi?.modeManager;
@@ -393,7 +428,7 @@ export async function initAppState(deps, showNotification) {
   migrationMod.setMigrationManagerDependencies({
     storage: localStorage,
     sessionStorage: sessionStorage,
-    showNotification: (msg, type, duration) => showNotification?.(msg, type, duration),
+    showNotification: (...args) => showNotification?.(...args),
     initialSetup: () => {
       if (typeof appInit.runInitialSetup === 'function') {
         return appInit.runInitialSetup();

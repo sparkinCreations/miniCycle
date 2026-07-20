@@ -182,7 +182,7 @@ export class RoutineManager {
     /**
      * Show cycle creation modal for onboarding
      */
-    showCycleCreationModal() {
+    showCycleCreationModal(options = {}) {
 
         setTimeout(() => {
             this._buildCreationDialog({
@@ -190,6 +190,8 @@ export class RoutineManager {
                 message: 'modal.createRoutineMessage',
                 placeholder: 'modal.createRoutinePlaceholder',
                 isOnboarding: true,
+                // First-run "Load a Sample" choice opens straight to the picker.
+                startInSampleView: options.startInSampleView === true,
                 onCreateBlank: async (inputValue) => {
                     const newCycleName = this.deps.sanitizeInput(inputValue);
                     const cycleId = `cycle_${Date.now()}`;
@@ -253,6 +255,19 @@ export class RoutineManager {
                     this.deps.refreshThemeLabels?.();
                     this.deps.updateRecurringInfoLink?.();
                     await this.deps.completeInitialSetup(finalTitle, appState.get());
+
+                    // First-run "Create My First Routine" one-shot: now that the
+                    // empty routine has rendered, swap the generic empty hint for
+                    // the friendlier first-step copy. Set LAST so it wins over the
+                    // render's own hint; cleared so later routines are normal.
+                    try {
+                        if (sessionStorage.getItem('miniCycle_firstRunCreate') === '1') {
+                            sessionStorage.removeItem('miniCycle_firstRunCreate');
+                            const firstHint = this.deps.querySelector(DOM_SELECTORS.EMPTY_STATE_HINT);
+                            if (firstHint) firstHint.innerHTML = getLabel('empty.firstStepHint').replace('+', '<strong>+</strong>');
+                        }
+                    } catch (e) { /* private mode — skip the nicety */ }
+
                     document.dispatchEvent(new Event('onboarding:setup-complete'));
                 }
             });
@@ -642,7 +657,7 @@ export class RoutineManager {
      * @private
      */
     async _buildCreationDialog(config) {
-        const { title, message, placeholder, isOnboarding = false, onCreateBlank } = config;
+        const { title, message, placeholder, isOnboarding = false, onCreateBlank, startInSampleView = false } = config;
 
         // Fetch sample manifest (cached after first call)
         const samples = await this._fetchSampleManifest();
@@ -862,9 +877,14 @@ export class RoutineManager {
             }
         };
 
-        // Show dialog and focus input
+        // Show dialog. Open straight to the sample picker when requested (the
+        // first-run "Load a Sample" choice) and samples exist; else the name view.
         dialog.showModal();
-        input.focus();
+        if (startInSampleView && samples.length > 0) {
+            showSampleView();
+        } else {
+            input.focus();
+        }
     }
 }
 

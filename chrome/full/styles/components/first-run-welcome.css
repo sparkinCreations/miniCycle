@@ -642,12 +642,15 @@ body.focus-mode.first-run-welcome-active #undo-redo-buttons {
 
 .cycle-demo text {
     fill: currentColor;
-    font-size: 9px;
     font-family: inherit;
     font-weight: var(--font-weight-semibold);
     /* SVG <text> doesn't honor text-shadow — use drop-shadow to mirror the
        banner's dark halo for parity on the glass surface. */
     filter: drop-shadow(0 var(--space-px) var(--space-px) rgba(0, 0, 0, 0.5));
+    /* NOTE: no font-size here. `.cycle-demo text` (0,1,1) would out-specify the
+       per-element `.cycle-demo__*` size rules (0,1,0) and clobber them — that
+       forced the subtitle to 9px (it wants 7px), overflowing the viewBox and
+       clipping the caption. Each text element sets its own size below. */
 }
 
 .cycle-demo__counter {
@@ -708,6 +711,10 @@ body.focus-mode.first-run-welcome-active #undo-redo-buttons {
 }
 
 .cycle-demo__label {
+    /* Task-row label size (was inherited from the base `.cycle-demo text` rule
+       before its font-size was removed to stop it clobbering the __subtitle /
+       __counter / __complete sizes). */
+    font-size: 9px;
     transition: opacity var(--cycle-demo-task-transition) ease;
 }
 

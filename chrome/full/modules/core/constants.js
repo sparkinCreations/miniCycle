@@ -121,6 +121,7 @@ export const UI_TIMEOUTS = Object.freeze({
     NOTIFICATION_OVERLAY: 10000,   // 10000ms - Overlay/celebration auto-dismiss
     NOTIFICATION_RESUME_MIN: 1000, // 1000ms - Minimum time after hover/interaction before auto-dismiss
     CELEBRATION_DELAY: 1800,       // 1800ms - Delay before showing celebration overlay (lets reset animation play first)
+    FOCUS_TASK_CELEBRATION: 2000,  // 2000ms - Focus task panel cycle-complete card celebration before showing task 1 (FOCUS_TASK_VIEW_PLAN D5)
     TOOLTIP_HIDE: 3000,            // 3000ms - Tooltip auto-hide delay
     FIRST_RUN_WELCOME_SLIDE_HOLD: 8000,    // 8000ms - How long each first-run welcome banner slide is visible before auto-advance
 
@@ -233,6 +234,7 @@ export const LIMITS = Object.freeze({
     MAX_ERRORS_BEFORE_SILENCE: 10, // Max error notifications before silencing
     TASK_CHARACTER: 500,           // Max characters for task text
     CYCLE_NAME_CHARACTER: 100,     // Max characters for cycle name
+    RATING_HISTORY: 10,            // Max entries kept in userProgress.uxRatingHistory
     CONSOLE_BUFFER_MAX: 500,       // Max console log entries kept in the in-memory buffer
     CONSOLE_BUFFER_TRIM_TARGET: 100, // After overflow, trim the buffer down to this size
     STORAGE_WARNING_PERCENTAGE: 75,  // Show storage warning notification when localStorage usage exceeds this percentage
@@ -270,6 +272,7 @@ export const GESTURE = Object.freeze({
     MOUSE_DRAG_THRESHOLD: 400,     // Minimum distance for mouse drag
     MOUSE_DRAG_START: 20,          // Minimum distance to start mouse drag
     TOUCH_SWIPE: 50,               // Minimum distance for touch swipe
+    VERTICAL_SWIPE: 60,            // Minimum vertical distance for the focus task panel's swipe-to-skip (higher than TOUCH_SWIPE to avoid scroll-intent misfires)
     WHEEL_SCROLL_MIN: 10           // Minimum wheel scroll to trigger action
 });
 
@@ -483,6 +486,8 @@ export const DOM_CLASSES = Object.freeze({
     VISIBLE: 'visible',
     SHOW: 'show',
     HIDE: 'hide',
+    HIDE_LEFT: 'hide-left',    // panel carousel: hidden panel sits left of the active one
+    HIDE_RIGHT: 'hide-right',  // panel carousel: hidden panel sits right of the active one
     COLLAPSED: 'collapsed',
 
     // ---- State ----
@@ -824,6 +829,12 @@ export const DOM_IDS = Object.freeze({
 
     // ---- Behavior Settings ----
     TOGGLE_NOTIFICATIONS: 'toggle-notifications',
+    RESET_NOTIFICATION_POSITION: 'reset-notification-position',
+    RESET_TASK_VIEW_LAYOUT: 'reset-task-view-layout',
+
+    // ---- Lite Version ----
+    TRY_LITE_VERSION: 'try-lite-version',
+    MENU_LITE_VERSION: 'menu-lite-version',
 
     // ---- Backup & Recovery ----
     BACKUP_MINI_CYCLES: 'backup-mini-cycles',
@@ -846,6 +857,15 @@ export const DOM_IDS = Object.freeze({
     FEEDBACK_EMAIL: 'feedback-email',
     SUBMIT_FEEDBACK: 'submit-feedback',
     THANK_YOU_MESSAGE: 'thank-you-message',
+    FEEDBACK_RATING_SECTION: 'feedback-rating-section',
+    FEEDBACK_RATING_LABEL: 'feedback-rating-label',
+    FEEDBACK_STAR_ROW: 'feedback-star-row',
+    FEEDBACK_RATING_PROMPT: 'feedback-rating-prompt',
+    FEEDBACK_TAGS_LABEL: 'feedback-tags-label',
+    FEEDBACK_TAGS_ROW: 'feedback-tags-row',
+    FEEDBACK_PREVIOUS_RATING: 'feedback-previous-rating',
+    FEEDBACK_RATING_VALUE: 'feedback-rating-value',
+    FEEDBACK_RATING_TAGS_VALUE: 'feedback-rating-tags-value',
     ABOUT_MODAL: 'about-modal',
     OPEN_ABOUT_MODAL: 'open-about-modal',
     ABOUT_VERSION: 'about-version',
@@ -1112,6 +1132,20 @@ export const DOM_IDS = Object.freeze({
     QUICK_ACTIONS_PICKER_OVERLAY: 'quick-actions-picker-overlay',
     QUICK_ACTIONS_TOOLTIP: 'quick-actions-tooltip',
     QUICK_ACTIONS_BTN: 'quick-actions-btn',
+    // Focus task panel (one task at a time — FOCUS_TASK_VIEW_PLAN Phase 1)
+    FOCUS_TASK_PANEL: 'focus-task-panel',
+    FOCUS_TASK_POSITION: 'focus-task-position',
+    FOCUS_TASK_TEXT: 'focus-task-text',
+    FOCUS_TASK_RECURRING_INDICATOR: 'focus-task-recurring-indicator',
+    FOCUS_TASK_DUE_INDICATOR: 'focus-task-due-indicator',
+    FOCUS_TASK_COMPLETE_BTN: 'focus-task-complete-btn',
+    FOCUS_TASK_PREV_BTN: 'focus-task-prev-btn',
+    FOCUS_TASK_NEXT_BTN: 'focus-task-next-btn',
+    FOCUS_TASK_ALLDONE: 'focus-task-alldone',
+    FOCUS_TASK_ALLDONE_TEXT: 'focus-task-alldone-text',
+    FOCUS_TASK_ALLDONE_HINT: 'focus-task-alldone-hint',
+    FOCUS_TASK_CELEBRATION: 'focus-task-celebration',
+    FOCUS_TASK_CELEBRATION_TEXT: 'focus-task-celebration-text',
     QUICK_ACTIONS_MENU: 'quick-actions-menu',
     TOGGLE_TASK_INPUT_BTN: 'toggle-task-input-btn',
     CREATE_ROUTINE_BTN: 'create-routine-btn',
@@ -1381,6 +1415,8 @@ export const DOM_SELECTORS = Object.freeze({
     // ---- Feedback ----
     FEEDBACK_MODAL: '.feedback-modal',
     CLOSE_FEEDBACK_MODAL: '.close-feedback-modal',
+    FEEDBACK_STAR: '.feedback-star',
+    FEEDBACK_TAG: '.feedback-tag',
 
     // ---- Notifications ----
     SHOW_QUICK_ACTIONS: '.show-quick-actions',
@@ -1594,7 +1630,7 @@ export function getTestOrigin() {
         return 'https://test.minicycle.app';
     }
     // localhost, 127.0.0.1, or a LAN IP (e.g. 192.168.x for phone testing)
-    if (hostname === 'localhost' || /^\d{1,3}(\.\d{1,3}){3}$/.test(hostname)) {
+    if (hostname === 'localhost' || /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(hostname)) {
         return `${protocol}//${hostname}:8081`;
     }
     return origin;

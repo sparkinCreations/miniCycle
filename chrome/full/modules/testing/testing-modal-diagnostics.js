@@ -286,40 +286,126 @@ export function showPerformanceInfo() {
  * (module fetch vs core vs feature wiring vs UI).
  */
 export function showBootTiming() {
-    appendToTestResults("Boot Timing:\n");
-
     const timing = window.getMiniCycleBootTiming?.();
     if (!timing || timing.interactiveSinceNavigation_ms == null) {
-        appendToTestResults("- Not available (page may have booted before instrumentation, or perf API blocked)\n\n");
+        appendToTestResults("⏱️ BOOT TIMING\n- Not available (page may have booted before instrumentation, or perf API blocked)\n\n");
         showNotification(getLabel('notify.diagBootTiming'), "info", UI_TIMEOUTS.NOTIFICATION_SHORT);
         return;
     }
 
-    const fmt = (v) => (v == null ? 'N/A' : v + 'ms');
+    // Output renders in .testing-output (monospace, pre-wrap) — aligned columns
+    // and bars display correctly. Keep lines ≤ ~45 chars for the mobile modal.
+    const RULE_W = 34;
+    const ms = (v) => (v == null ? 'N/A' : `${v}ms`);
     const p = timing.phases || {};
+    const boot = timing.bootSequence_ms;
+    const out = [];
 
-    appendToTestResults(`- Interactive (since page open): ${fmt(timing.interactiveSinceNavigation_ms)}\n`);
-    appendToTestResults(`- Boot started at: ${fmt(timing.bootStartSinceNavigation_ms)}\n`);
-    appendToTestResults(`- Boot sequence total: ${fmt(timing.bootSequence_ms)}\n`);
-    appendToTestResults(`   • Module import: ${fmt(p.moduleImport_ms)}\n`);
-    appendToTestResults(`   • Core (AppState): ${fmt(p.core_ms)}\n`);
-    appendToTestResults(`   • Features (all modules): ${fmt(p.features_ms)}\n`);
+    // Version + cache + capture-time stamp: traces get shared (screenshots /
+    // feedback form) — without these a trace can't be attributed to a build or
+    // placed in a rollout timeline (July 14 lesson: an Android trace arrived
+    // unidentifiable mid-rollout). Time = when the trace was captured, local.
+    out.push(`⏱️ BOOT TIMING (v${globalThis.APP_VERSION || '?'} · cache ${globalThis.CACHE_VERSION || '?'})`);
+    out.push(new Date().toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }));
+    out.push('═'.repeat(RULE_W));
+    out.push(`${'Interactive'.padEnd(15)}${ms(timing.interactiveSinceNavigation_ms).padStart(8)}  (since page open)`);
+    out.push(`${'Boot started'.padEnd(15)}${ms(timing.bootStartSinceNavigation_ms).padStart(8)}`);
+    out.push(`${'Boot sequence'.padEnd(15)}${ms(boot).padStart(8)}`);
+    const pctOf = (v, total) => (v != null && total ? `${String(Math.round((v / total) * 100)).padStart(4)}%` : '');
+    [['Imports', p.moduleImport_ms],
+     ['Core', p.core_ms],
+     ['Features', p.features_ms],
+     ['UI finalize', p.ui_ms]].forEach(([label, v]) => {
+        out.push(`  ${label.padEnd(13)}${ms(v).padStart(8)}${pctOf(v, boot)}`);
+    });
 
-    // Per-phase breakdown of the Features window, ranked descending — the dominant
-    // phase is the first defer/parallelization target on slow devices. Keyed like
-    // { UI_MANAGERS_ms: 120, THEME_VISUAL_ms: 80, ... } by getMiniCycleBootTiming().
-    const byPhase = timing.featuresByPhase || {};
-    const rankedPhases = Object.entries(byPhase)
-        .map(([k, v]) => [k.replace(/_ms$/, ''), v])
-        .sort((a, b) => (b[1] ?? 0) - (a[1] ?? 0));
+    // First-run choice-screen perception (only present for a brand-new user's
+    // first session — the screen sets the marks). Shows how much of the real
+    // boot the choice screen masked: perceived wait ≪ real boot is the win.
+    const fr = timing.firstRun;
+    if (fr) {
+        out.push('');
+        out.push('FIRST-RUN PERCEPTION');
+        out.push('─'.repeat(RULE_W));
+        out.push(`${'Choice shown'.padEnd(16)}${ms(fr.choiceShownAt_ms).padStart(8)}  (since page open)`);
+        out.push(`${'User decided in'.padEnd(16)}${ms(fr.decisionTime_ms).padStart(8)}`);
+        out.push(`${'Perceived wait'.padEnd(16)}${ms(fr.perceivedWait_ms).padStart(8)}  (after tapping)`);
+        out.push(`${'Real boot'.padEnd(16)}${ms(boot).padStart(8)}`);
+        if (fr.bootDoneBeforeTap === true) out.push('  ✓ boot finished before the user picked');
+    }
+
+    // Per-phase breakdown of the Features window, ranked with bars — the dominant
+    // phase is the first defer/parallelization target on slow devices.
+    const rankedPhases = Object.entries(timing.featuresByPhase || {})
+        .map(([k, v]) => [k.replace(/_ms$/, ''), v ?? 0])
+        .sort((a, b) => b[1] - a[1]);
     if (rankedPhases.length) {
-        appendToTestResults(`     ↳ by module phase (ranked):\n`);
-        rankedPhases.forEach(([name, ms]) => {
-            appendToTestResults(`        - ${name}: ${fmt(ms)}\n`);
+        out.push('');
+        out.push('FEATURES BY PHASE');
+        out.push('─'.repeat(RULE_W));
+        const maxPhase = rankedPhases[0][1] || 1;
+        const featTotal = p.features_ms || rankedPhases.reduce((s, [, v]) => s + v, 0) || 1;
+        rankedPhases.forEach(([name, v]) => {
+            const bar = '█'.repeat(Math.max(1, Math.round((v / maxPhase) * 10)));
+            out.push(`${name.padEnd(16)}${ms(v).padStart(7)}${pctOf(v, featTotal)} ${bar}`);
         });
     }
 
-    appendToTestResults(`   • UI finalize: ${fmt(p.ui_ms)}\n\n`);
+    // Per-module ranking (top 15) — the deferral decision data. init is exact
+    // (sequential wire+init incl. DI wiring); import overlaps within a phase
+    // (parallel fetch+parse), so rank by it but never sum it.
+    const mods = timing.moduleTimings || [];
+    if (mods.length) {
+        const interactiveAt = timing.interactiveSinceNavigation_ms;
+        const n = (v) => (v == null ? '–' : String(v));
+        out.push('');
+        out.push(`TOP MODULES (15 of ${mods.length}, ms)`);
+        out.push('─'.repeat(RULE_W));
+        out.push(`${'module'.padEnd(22)}${'total'.padStart(6)}${'imp'.padStart(5)}${'init'.padStart(5)}`);
+        mods.slice(0, 15).forEach(m => {
+            const post = interactiveAt != null && m.at_ms != null && m.at_ms >= interactiveAt;
+            out.push(`${(m.name + (post ? '⁺' : '')).padEnd(22)}${n(m.total_ms).padStart(6)}${n(m.import_ms).padStart(5)}${n(m.init_ms).padStart(5)}`);
+        });
+        out.push('⁺ = post-boot (loaded after interactive)');
+        out.push('init exact · imp overlaps — rank, don\'t sum');
+    }
+
+    // ── Network/cache accounting for THIS load + precache completeness ──
+    // Answers "was this run actually served from cache?" remotely (July 14:
+    // a device's warm runs showed network-shaped imps; a controlled run served
+    // 121/121 from SW — the trace must be able to tell those apart itself).
+    // transferSize === 0 ⇒ served from SW/HTTP cache; > 0 ⇒ real network bytes.
+    const js = performance.getEntriesByType('resource').filter(e => /\.js(\?|$)/.test(e.name));
+    const cached = js.filter(e => e.transferSize === 0).length;
+    const networked = js.filter(e => e.transferSize > 0);
+    const netKB = Math.round(networked.reduce((s, e) => s + e.transferSize, 0) / 1024);
+    out.push('');
+    out.push('NETWORK (this load, JS)');
+    out.push('─'.repeat(RULE_W));
+    out.push(`${'served'.padEnd(12)}${String(js.length).padStart(5)}   cached ${cached} · networked ${networked.length} (${netKB}KB)`);
+    [...networked].sort((a, b) => b.duration - a.duration).slice(0, 5).forEach(e => {
+        out.push(`  ${Math.round(e.duration)}ms ${Math.round(e.transferSize / 1024)}KB ${e.name.split('/').pop().split('?')[0].slice(0, 28)}`);
+    });
+
+    appendToTestResults(out.join('\n') + '\n');
+
+    // Precache completeness (async): count entries in the static cache — an
+    // interrupted install (Android kills the SW with the app) leaves this short
+    // and every later "warm" load re-fetches the missing files.
+    if (typeof caches !== 'undefined' && caches.keys) {
+        caches.keys().then(async (names) => {
+            const lines = [];
+            for (const name of names.filter(n => n.includes('miniCycle'))) {
+                const c = await caches.open(name);
+                const count = (await c.keys()).length;
+                lines.push(`${name}: ${count} entries`);
+            }
+            const controlled = navigator.serviceWorker?.controller ? 'controlling' : 'NOT controlling';
+            appendToTestResults(`SW ${controlled} · ` + (lines.join(' · ') || 'no caches') + '\n\n');
+        }).catch(() => appendToTestResults('cache enumeration unavailable\n\n'));
+    } else {
+        appendToTestResults('\n');
+    }
 
     showNotification(getLabel('notify.diagBootTiming'), "info", UI_TIMEOUTS.NOTIFICATION_SHORT);
 }

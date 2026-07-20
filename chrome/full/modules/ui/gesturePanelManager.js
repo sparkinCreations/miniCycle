@@ -21,10 +21,26 @@ const di = createDIModule('GesturePanelManager', {
     showNotification: optional(null),
     isOverlayActive: optional(() => false),
     isDraggingNotification: optional(() => false),
-    // Callbacks for view switching
+    // Indexed navigation (panel carousel) — returns {id,index} on move, null on
+    // clamp, undefined when the carousel isn't available (→ legacy fallback).
+    onNavigate: optional(null),
+    // Legacy binary callbacks — fallback path when onNavigate is unwired/dead
     onShowStatsPanel: optional(null),
     onShowTaskView: optional(null)
 });
+
+// Keyboard-shortcut toast labels per landed panel (arrow keys / quick toggle).
+// Panels without an entry (future panels) simply don't toast.
+const ARROW_TOAST_BY_PANEL = {
+    'stats-panel': 'notify.keyboardStatsOpened',
+    'task-view': 'notify.keyboardTaskOpened',
+    'focus-task-panel': 'notify.keyboardFocusTaskOpened'
+};
+const QUICK_TOGGLE_TOAST_BY_PANEL = {
+    'stats-panel': 'notify.quickToggleStats',
+    'task-view': 'notify.quickToggleTask',
+    'focus-task-panel': 'notify.quickToggleFocusTask'
+};
 
 /**
  * Inject dependencies for the gesture panel manager module.
@@ -193,16 +209,14 @@ export class GesturePanelManager {
         const moveX = event.touches[0].clientX;
         const difference = this.state.startX - moveX;
 
-        if (difference > this.config.TOUCH_SWIPE_THRESHOLD && !this.state.isStatsVisible) {
-            this.state.isStatsVisible = true;
-            this._triggerShowStatsPanel();
-            this.state.isSwiping = false;
-        }
-
-        if (difference < -this.config.TOUCH_SWIPE_THRESHOLD && this.state.isStatsVisible) {
-            this.state.isStatsVisible = false;
-            this._triggerShowTaskView();
-            this.state.isSwiping = false;
+        // Left swipe = next panel, right swipe = previous. The gesture is only
+        // consumed when a move actually happened — a clamped swipe at either
+        // end keeps tracking, so reversing direction mid-gesture still works
+        // (matches the old guarded-binary behavior).
+        if (difference > this.config.TOUCH_SWIPE_THRESHOLD) {
+            if (this._navigate(1)) this.state.isSwiping = false;
+        } else if (difference < -this.config.TOUCH_SWIPE_THRESHOLD) {
+            if (this._navigate(-1)) this.state.isSwiping = false;
         }
     }
 
@@ -243,17 +257,13 @@ export class GesturePanelManager {
         }
 
         if (this.state.isMouseDragging && absDelta > this.config.MOUSE_DRAG_THRESHOLD) {
-            // Left drag (negative deltaX) = show stats panel
-            if (deltaX < -this.config.MOUSE_DRAG_THRESHOLD && !this.state.isStatsVisible) {
-                this.state.isStatsVisible = true;
-                this._triggerShowStatsPanel();
-                this.resetMouseDrag();
+            // Left drag (negative deltaX) = next panel
+            if (deltaX < -this.config.MOUSE_DRAG_THRESHOLD) {
+                if (this._navigate(1)) this.resetMouseDrag();
             }
-            // Right drag (positive deltaX) = show task view
-            else if (deltaX > this.config.MOUSE_DRAG_THRESHOLD && this.state.isStatsVisible) {
-                this.state.isStatsVisible = false;
-                this._triggerShowTaskView();
-                this.resetMouseDrag();
+            // Right drag (positive deltaX) = previous panel
+            else if (deltaX > this.config.MOUSE_DRAG_THRESHOLD) {
+                if (this._navigate(-1)) this.resetMouseDrag();
             }
         }
     }
@@ -292,17 +302,13 @@ export class GesturePanelManager {
         }
 
         // Check if we've reached the swipe threshold
+        // (wheel accumulation resets at the threshold whether or not the
+        // carousel moved — same as the old guarded behavior)
         if (this.state.wheelDeltaX > this.config.SWIPE_THRESHOLD) {
-            if (!this.state.isStatsVisible) {
-                this.state.isStatsVisible = true;
-                this._triggerShowStatsPanel();
-            }
+            this._navigate(1);
             this.state.wheelDeltaX = 0;
         } else if (this.state.wheelDeltaX < -this.config.SWIPE_THRESHOLD) {
-            if (this.state.isStatsVisible) {
-                this.state.isStatsVisible = false;
-                this._triggerShowTaskView();
-            }
+            this._navigate(-1);
             this.state.wheelDeltaX = 0;
         }
 
@@ -342,14 +348,10 @@ export class GesturePanelManager {
         const difference = this.state.pointerStartX - moveX;
 
         if (Math.abs(difference) > this.config.TOUCH_SWIPE_THRESHOLD) {
-            if (difference > this.config.TOUCH_SWIPE_THRESHOLD && !this.state.isStatsVisible) {
-                this.state.isStatsVisible = true;
-                this._triggerShowStatsPanel();
-                this.state.isPointerSwiping = false;
-            } else if (difference < -this.config.TOUCH_SWIPE_THRESHOLD && this.state.isStatsVisible) {
-                this.state.isStatsVisible = false;
-                this._triggerShowTaskView();
-                this.state.isPointerSwiping = false;
+            if (difference > this.config.TOUCH_SWIPE_THRESHOLD) {
+                if (this._navigate(1)) this.state.isPointerSwiping = false;
+            } else if (difference < -this.config.TOUCH_SWIPE_THRESHOLD) {
+                if (this._navigate(-1)) this.state.isPointerSwiping = false;
             }
         }
     }
@@ -367,14 +369,20 @@ export class GesturePanelManager {
 
         const showNotification = this.deps.showNotification || (() => {});
 
-        if (event.key === "ArrowRight" && !this.state.isStatsVisible) {
-            event.preventDefault();
-            this._triggerShowStatsPanel();
-            showNotification(`⌨️ ${getLabel('notify.keyboardStatsOpened')}`, "info", UI_TIMEOUTS.NOTIFICATION_BRIEF);
-        } else if (event.key === "ArrowLeft" && this.state.isStatsVisible) {
-            event.preventDefault();
-            this._triggerShowTaskView();
-            showNotification(`⌨️ ${getLabel('notify.keyboardTaskOpened')}`, "info", UI_TIMEOUTS.NOTIFICATION_BRIEF);
+        if (event.key === "ArrowRight") {
+            const result = this._navigate(1);
+            if (result) {
+                event.preventDefault();
+                const labelKey = ARROW_TOAST_BY_PANEL[result.id];
+                if (labelKey) showNotification(`⌨️ ${getLabel(labelKey)}`, "info", UI_TIMEOUTS.NOTIFICATION_BRIEF);
+            }
+        } else if (event.key === "ArrowLeft") {
+            const result = this._navigate(-1);
+            if (result) {
+                event.preventDefault();
+                const labelKey = ARROW_TOAST_BY_PANEL[result.id];
+                if (labelKey) showNotification(`⌨️ ${getLabel(labelKey)}`, "info", UI_TIMEOUTS.NOTIFICATION_BRIEF);
+            }
         }
 
         // Shift+Tab for quick toggle (only when nothing is focused — preserve normal tab navigation)
@@ -384,12 +392,14 @@ export class GesturePanelManager {
             if (hasFocusedElement || this.deps.isOverlayActive()) return;
 
             event.preventDefault();
-            if (this.state.isStatsVisible) {
-                this._triggerShowTaskView();
-                showNotification(`⌨️ ${getLabel('notify.quickToggleTask')}`, "info", UI_TIMEOUTS.NOTIFICATION_BRIEF);
-            } else {
-                this._triggerShowStatsPanel();
-                showNotification(`⌨️ ${getLabel('notify.quickToggleStats')}`, "info", UI_TIMEOUTS.NOTIFICATION_BRIEF);
+            // Next panel, or step back when clamped at the end — with two
+            // panels this is exactly the historical toggle. (If a true wrap is
+            // wanted once a third panel exists, route this through the
+            // carousel's cycleNext() instead — see Phase 2 of the plan.)
+            const result = this._navigate(1) || this._navigate(-1);
+            if (result) {
+                const labelKey = QUICK_TOGGLE_TOAST_BY_PANEL[result.id];
+                if (labelKey) showNotification(`⌨️ ${getLabel(labelKey)}`, "info", UI_TIMEOUTS.NOTIFICATION_BRIEF);
             }
         }
     }
@@ -397,6 +407,43 @@ export class GesturePanelManager {
     // ==========================================
     // 🔗 CALLBACKS
     // ==========================================
+
+    /**
+     * Navigate the panel carousel by direction (+1 next / -1 previous).
+     * Every input modality reduces to this. Returns the landed panel
+     * ({id, index}) or null when nothing moved (clamped at an end).
+     *
+     * Fallback discipline: onNavigate is a depMappings closure, which is
+     * TRUTHY even when its inner path is dead (July 2026 audit, truthy-closure
+     * trap). The carousel contract is "null = clamped, undefined = not
+     * available" — so an undefined result falls back to the legacy binary
+     * path, keeping gestures alive even if the carousel wiring breaks.
+     * @param {number} direction
+     * @returns {{id:string, index:number}|null}
+     * @private
+     */
+    _navigate(direction) {
+        if (typeof this.deps.onNavigate === 'function') {
+            const result = this.deps.onNavigate(direction);
+            if (result !== undefined) {
+                if (result) {
+                    this.state.isStatsVisible = result.id === 'stats-panel';
+                }
+                return result;
+            }
+        }
+
+        // Legacy binary fallback — identical to the pre-carousel behavior
+        if (direction > 0 && !this.state.isStatsVisible) {
+            this._triggerShowStatsPanel();
+            return { id: 'stats-panel', index: 1 };
+        }
+        if (direction < 0 && this.state.isStatsVisible) {
+            this._triggerShowTaskView();
+            return { id: 'task-view', index: 0 };
+        }
+        return null;
+    }
 
     /**
      * Trigger show stats panel callback

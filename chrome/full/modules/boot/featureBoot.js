@@ -168,7 +168,14 @@ export async function bootEarlyDeps(deps, coreResult) {
 
     // Show deferred cache notification if needed
     if (AppGlobalState.pendingCacheNotification) {
-      notifications.show('App updated! Cache refreshed automatically.', 'info', 4000);
+      // labelResolver is imported BARE on purpose — every static importer
+      // (notifications.js included) resolves it without ?v=, so this joins
+      // the same shared instance instead of creating a versioned split.
+      const [{ getLabel }, { UI_TIMEOUTS }] = await Promise.all([
+        import('../labels/labelResolver.js'),
+        import(withV('../core/constants.js'))
+      ]);
+      notifications.show(getLabel('boot.appUpdated'), 'info', UI_TIMEOUTS.NOTIFICATION_SLOW);
       AppGlobalState.pendingCacheNotification = false;
     }
   } catch (error) {
@@ -229,14 +236,21 @@ export async function bootFeatures(deps, coreResult) {
     // Log load order for debugging
     const loadOrder = getLoadOrder();
 
-    // Load all modules using moduleLoader
-    const result = await loadAllModules(deps, coreResult);
-
     // Expose the on-demand loader (from THIS versioned moduleLoader instance) so
     // later phases (uiBoot) can lazy-load deferred modules. Must come from the
     // versioned import — a static import would be a separate instance with no
     // captured boot context.
+    //
+    // Wired BEFORE loadAllModules: modules that restore persisted state during
+    // their own init may need it MID-Phase-2 (e.g. focusMode restoring a saved
+    // focus session calls ensureModuleLoaded('focusTaskPanel')). loadAllModules
+    // captures the boot context (_bootDeps) as its first step, so the loader is
+    // fully functional by the time any module init runs; anything earlier hits
+    // its own "called before boot captured context" guard.
     deps.core.ensureModuleLoaded = ensureModuleLoaded;
+
+    // Load all modules using moduleLoader
+    const result = await loadAllModules(deps, coreResult);
 
     // Copy loaded modules to features container
     for (const [name, mod] of result.modules) {
@@ -281,8 +295,9 @@ export async function bootFeatures(deps, coreResult) {
     // =========================================================================
     // LOAD TASK SEARCH MODULE
     // =========================================================================
+    let taskSearchMod = null;
     try {
-      const taskSearchMod = await import(withV('../ui/taskSearch.js'));
+      taskSearchMod = await import(withV('../ui/taskSearch.js'));
       deps.ui.initTaskSearch = taskSearchMod.initTaskSearch;
       deps.ui.updateSearchVisibility = taskSearchMod.updateSearchVisibility;
       deps.ui.resetSearch = taskSearchMod.resetSearch;
@@ -299,20 +314,28 @@ export async function bootFeatures(deps, coreResult) {
           completedTasksManager: deps.ui?.completedTasksManager
         });
       }
+    } catch (err) {
+      console.warn('⚠️ TaskSearch module failed to load:', err);
+    }
 
-      // Inject into taskCRUD for add/delete visibility updates
+    // =========================================================================
+    // WIRE TASK CRUD
+    // =========================================================================
+    // Deliberately OUTSIDE the taskSearch try/catch: a taskSearch import
+    // failure must not silently strip notifications/history-logging/reminders
+    // from task CRUD. Search deps are optional (undefined when search failed).
+    try {
       const { setTaskCRUDDependencies, initTaskCRUD } = await import(withV('../task/taskCRUD.js'));
       await initTaskCRUD(); // Load utilities with version cache-busting
       setTaskCRUDDependencies({
-        updateSearchVisibility: taskSearchMod.updateSearchVisibility,
-        getTaskCount: taskSearchMod.getTaskCount,
+        updateSearchVisibility: taskSearchMod?.updateSearchVisibility,
+        getTaskCount: taskSearchMod?.getTaskCount,
         startReminders: deps.features?.startReminders,
         notifications: deps.utils?.notifications,
         logHistoryEvent: (...args) => deps.features?.historyManager?.logEvent?.(...args)
       });
-
     } catch (err) {
-      console.warn('⚠️ TaskSearch module failed to load:', err);
+      console.error('❌ taskCRUD wiring failed:', err);
     }
 
     // =========================================================================

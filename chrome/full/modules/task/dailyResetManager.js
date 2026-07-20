@@ -259,6 +259,16 @@ export class DailyResetManager {
             if (!c) return;
             c.autoUncheckDaily = c.autoUncheckDaily || { hour: 0, minute: 0, lastResetDate: null, pendingNotification: false };
             c.autoUncheckDaily.enabled = !!enabled;
+            if (enabled) {
+                // The first fire belongs to the NEXT occurrence of the trigger
+                // time. If today's trigger has already passed at enable time
+                // (always true for the 12:00 AM default), stamp today as done —
+                // otherwise the next check would uncheck tasks immediately.
+                const cur = readSettings(c);
+                if (Date.now() >= localTimeToday(cur.hour, cur.minute)) {
+                    c.autoUncheckDaily.lastResetDate = todayLocal();
+                }
+            }
             snapshot = readSettings(c);
             name = c.title || cycleId;
         }, true);
@@ -278,8 +288,6 @@ export class DailyResetManager {
                     }
                 }
             );
-            // After enabling, run a check in case the time has already passed today
-            this.checkAllRoutines();
         } else {
             this.deps.showNotification(
                 getLabel('notify.autoUncheckDisabled', { vars: { name } }),

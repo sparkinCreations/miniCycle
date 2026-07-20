@@ -85,6 +85,18 @@ function fallbackSanitize(input, maxLength = 100) {
     return temp.textContent.trim().substring(0, maxLength);
 }
 
+/**
+ * DI injects DataValidator as a lazy accessor function (see depMappings in
+ * moduleLoader.js), not the class itself. Unwrap it; tolerate a direct class
+ * for tests that inject one.
+ * @param {Function|Object|null} dep - Injected DataValidator dep
+ * @returns {Object|null} The DataValidator class, or null
+ */
+function resolveDataValidator(dep) {
+    if (typeof dep === 'function' && !dep.validateTask) return dep() || null;
+    return dep || null;
+}
+
 // ============================================================================
 // IMPORT FUNCTIONS
 // ============================================================================
@@ -506,7 +518,7 @@ export async function processImportedData(fileContent) {
 
         // Validate task structure (DataValidator provides additional validation if available)
         try {
-            const DataValidator = _deps.DataValidator;
+            const DataValidator = resolveDataValidator(_deps.DataValidator);
             if (DataValidator?.validateTask) {
                 return DataValidator.validateTask(taskData);
             }
@@ -564,7 +576,7 @@ export async function processImportedData(fileContent) {
     );
     // Additional validation via DataValidator if available
     try {
-        const DataValidator = _deps.DataValidator;
+        const DataValidator = resolveDataValidator(_deps.DataValidator);
         if (DataValidator?.validateCycleName) {
             cycleTitle = DataValidator.validateCycleName(cycleTitle);
         }

@@ -14,7 +14,7 @@
     color: var(--pref-panel-text, var(--color-white));
     text-align: center;
     font-size: 12px;
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Poppins', 'Poppins Fallback', sans-serif;
     z-index: var(--z-base);
     width: 100%;
 }

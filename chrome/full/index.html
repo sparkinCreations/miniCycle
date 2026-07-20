@@ -10,7 +10,7 @@
 <!-- ✅ Translucent status bar shows body background-color on iOS -->
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" id="status-bar-style-meta">
 
-<meta name="app-version" content="2.279">
+<meta name="app-version" content="2.310">
 
 <!-- Content Security Policy -->
 <!-- CSP is served via HTTP header in netlify.toml (production) -->
@@ -21,6 +21,14 @@
 <link rel="canonical" href="https://minicycle.app/minicycle">
 
 <!-- Self-hosted fonts (no external requests) -->
+<!-- Preload the dominant weights so Poppins is available AT first paint. The
+     bundled build inlines fonts.css, which makes first paint early enough that
+     text would otherwise render in the fallback font and reflow when Poppins
+     swaps in (the v2.305 CLS-0.76 regression). crossorigin is REQUIRED on font
+     preloads even same-origin, or the preload is refetched and wasted. -->
+<link rel="preload" href="assets/fonts/poppins-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/poppins-500.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/poppins-600.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="assets/fonts/fonts.css">
 
 <link rel="icon" type="image/png" href="assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" />
@@ -28,20 +36,20 @@
 <!-- Font Awesome removed - using inline SVG icons instead (see modules/utils/icons.js). fa-* classes are kept as the semantic source and swapped to inline <svg> at runtime by iconInit.js. -->
 <!-- Add cache busting version parameter -->
 <!-- Original CSS (for reference) -->
-<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=2.279"> -->
+<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=2.310"> -->
 
 <!-- Preload critical CSS files (they load in parallel, not blocking) -->
-<link rel="preload" href="styles/main.css?v=2.279" as="style">
-<link rel="preload" href="styles/base/variables.css?v=2.279" as="style">
-<link rel="preload" href="styles/base/reset.css?v=2.279" as="style">
-<link rel="preload" href="styles/layout/app-container.css?v=2.279" as="style">
-<link rel="preload" href="styles/layout/header.css?v=2.279" as="style">
-<link rel="preload" href="styles/components/task-list.css?v=2.279" as="style">
+<link rel="preload" href="styles/main.css?v=2.310" as="style">
+<link rel="preload" href="styles/base/variables.css?v=2.310" as="style">
+<link rel="preload" href="styles/base/reset.css?v=2.310" as="style">
+<link rel="preload" href="styles/layout/app-container.css?v=2.310" as="style">
+<link rel="preload" href="styles/layout/header.css?v=2.310" as="style">
+<link rel="preload" href="styles/components/task-list.css?v=2.310" as="style">
 
 <!-- Async CSS loading - doesn't block render, app starts with inline critical CSS -->
-<link rel="stylesheet" href="styles/main.css?v=2.279" media="print" id="async-main-css">
+<link rel="stylesheet" href="styles/main.css?v=2.310" media="print" id="async-main-css">
 <script src="ext-boot/01.js"></script>
-<noscript><link rel="stylesheet" href="styles/main.css?v=2.279"></noscript>
+<noscript><link rel="stylesheet" href="styles/main.css?v=2.310"></noscript>
 <!-- [chrome-ext build] removed PWA manifest link -->
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -52,7 +60,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- version.js MUST load synchronously BEFORE modulepreloads to set globalThis.APP_VERSION -->
-<script src="./version.js?v=2.279"></script>
+<script src="./version.js?v=2.310"></script>
 
 <!-- Build version = the version baked into THIS HTML document (the meta tag
      above). It is the honest "what am I actually running" signal. By contrast,
@@ -123,10 +131,52 @@
     <div class="loader-bar-container">
       <div class="loader-bar"></div>
     </div>
+    <!-- First-run choice screen (revealed by inline script below when no data exists).
+         Strings are baked like the splash text — getLabel isn't available pre-boot. -->
+    <div id="first-run-choice" class="first-run-choice" hidden>
+      <div class="first-run-brand">
+        <div class="first-run-wordmark">miniCycle</div>
+        <div class="first-run-descriptor">Routine Checklist Manager</div>
+      </div>
+      <p class="first-run-tagline">Repeatable checklists that reset on completion — not one-and-done to-dos.</p>
+      <!-- Rotating use cases (controller cycles these like the bottom tips).
+           aria-hidden: decorative reinforcement — screen readers get the tagline. -->
+      <p class="first-run-usecase" aria-hidden="true"><span id="first-run-usecase-text" class="first-run-usecase-text">✈️ Pre-flight checklists</span></p>
+      <!-- Actions group: centered in the space below the brand header (brand + tagline
+           stay top-anchored; buttons sit in the vertical middle). -->
+      <div class="first-run-actions">
+        <div class="first-run-buttons">
+          <button type="button" class="first-run-btn" data-choice="create" data-busy="Setting up your routine…">Create My First Routine</button>
+          <button type="button" class="first-run-btn" data-choice="sample" data-busy="Loading samples…">Load a Sample</button>
+          <button type="button" class="first-run-btn" data-choice="learn" data-busy="Starting the tour…">Learn How Cycles Work</button>
+        </div>
+        <!-- Wait-gated escape hatch: revealed only if boot exceeds ~10s and isn't done
+             yet (see controller below). Not shown upfront — a new user can't reason
+             about "Lite" cold, and capable devices should never be nudged into it. -->
+        <a id="first-run-lite" class="first-run-lite" href="./lite/miniCycle-lite.html?mode=lite&src=choice-slow">Taking a while? Try the Lite version →</a>
+        <!-- Restore path for users returning after a clear/reinstall (pairs with the
+             boot error screen's "Back Up My Data" button — INCIDENT doc §6a). -->
+        <button type="button" id="first-run-restore" class="first-run-restore">Restore from a backup file</button>
+        <input type="file" id="first-run-restore-file" accept=".json,application/json" hidden>
+      </div>
+    </div>
+    <!-- Low-key live boot status (bottom-right); mirrored from updateLoaderProgress(). -->
+    <div id="first-run-status" class="first-run-status" aria-hidden="true"></div>
+    <div id="first-run-bottom-bar" class="first-run-bottom-bar" hidden>
+      <div class="first-run-bottom-fill"></div>
+    </div>
   </div>
 
   <!-- Loading tips rotation -->
   <script src="ext-boot/09.js"></script>
+
+  <!-- First-run choice screen controller (ES5-safe, like the other inline scripts).
+       Shows the three-choice screen for brand-new users (no miniCycleData) while
+       boot continues behind it. Boot side: uiBoot.hideAppLoader() defers the hide
+       while data-awaiting-choice='true' and resumes on the 'firstrun:choice' event.
+       If boot fails, orchestrator's showBootError() replaces the loader's content,
+       which removes this screen — error UI takes precedence by construction. -->
+  <script src="ext-boot/10.js"></script>
 
   <!-- Loading Overlay for Operations -->
   <div id="loading-overlay" class="loading-overlay" role="status" aria-label="Operation in progress">
@@ -787,6 +837,25 @@
             <!-- Web3Forms Honeypot Spam Protection -->
             <input type="checkbox" name="botcheck" style="display: none;" tabindex="-1" autocomplete="off">
 
+            <!-- Optional Star Rating (interactivity wired by modules/features/uxRatings.js;
+                 hidden rating/rating_tags inputs ride along in the FormData POST) -->
+            <div id="feedback-rating-section" class="feedback-rating-section">
+                <span id="feedback-rating-label" class="feedback-rating-label">How would you rate miniCycle?</span>
+                <div id="feedback-star-row" class="feedback-star-row" role="radiogroup" aria-labelledby="feedback-rating-label">
+                    <button type="button" class="feedback-star" data-rating="1" role="radio" aria-checked="false"><i class="far fa-star" aria-hidden="true"></i></button>
+                    <button type="button" class="feedback-star" data-rating="2" role="radio" aria-checked="false"><i class="far fa-star" aria-hidden="true"></i></button>
+                    <button type="button" class="feedback-star" data-rating="3" role="radio" aria-checked="false"><i class="far fa-star" aria-hidden="true"></i></button>
+                    <button type="button" class="feedback-star" data-rating="4" role="radio" aria-checked="false"><i class="far fa-star" aria-hidden="true"></i></button>
+                    <button type="button" class="feedback-star" data-rating="5" role="radio" aria-checked="false"><i class="far fa-star" aria-hidden="true"></i></button>
+                </div>
+                <p id="feedback-rating-prompt" class="feedback-rating-prompt" aria-live="polite"></p>
+                <span id="feedback-tags-label" class="feedback-rating-label hidden">What stands out? (optional)</span>
+                <div id="feedback-tags-row" class="feedback-tags-row hidden"></div>
+                <p id="feedback-previous-rating" class="feedback-previous-rating hidden"></p>
+                <input type="hidden" name="rating" id="feedback-rating-value" value="">
+                <input type="hidden" name="rating_tags" id="feedback-rating-tags-value" value="">
+            </div>
+
             <!-- Feedback Text -->
             <label for="feedback-text" class="visually-hidden">Your feedback</label>
             <textarea id="feedback-text" name="message" placeholder="Write your feedback here..." required minlength="10"></textarea>
@@ -833,6 +902,32 @@
 <!-- Right Arrow — visible in task view, navigates to stats panel -->
 <div id="slide-right" class="slide-arrow" tabindex="0" role="button" aria-label="Show Statistics" title="Show Statistics">❮</div>
 
+<!-- Focus Task Panel — one task at a time (FOCUS_TASK_VIEW_PLAN Phase 1).
+     Carousel index 0 (left of #task-view); focus-view-only, gated behind
+     onboarding (D8). Hidden until Phase 2 registers it with the carousel.
+     Text content and ARIA labels are set by focusTaskPanel.js via getLabel(). -->
+<section id="focus-task-panel" class="focus-task-panel" role="region" inert>
+    <div class="focus-task-card">
+        <div id="focus-task-position" class="focus-task-position" aria-live="polite"></div>
+        <div id="focus-task-text" class="focus-task-text"></div>
+        <div class="focus-task-indicators">
+            <span id="focus-task-recurring-indicator" class="focus-task-indicator hidden" aria-hidden="true">🔁</span>
+            <span id="focus-task-due-indicator" class="focus-task-indicator hidden"></span>
+        </div>
+        <button type="button" id="focus-task-complete-btn" class="focus-task-complete-btn"></button>
+        <div class="focus-task-nav">
+            <button type="button" id="focus-task-prev-btn" class="focus-task-nav-btn"><span aria-hidden="true">‹</span></button>
+            <button type="button" id="focus-task-next-btn" class="focus-task-nav-btn"><span aria-hidden="true">›</span></button>
+        </div>
+        <div id="focus-task-alldone" class="focus-task-alldone hidden">
+            <div id="focus-task-alldone-text" class="focus-task-alldone-text"></div>
+            <div id="focus-task-alldone-hint" class="focus-task-alldone-hint"></div>
+        </div>
+        <div id="focus-task-celebration" class="focus-task-celebration hidden">
+            <div id="focus-task-celebration-text" class="focus-task-celebration-text"></div>
+        </div>
+    </div>
+</section>
 
 <div id="task-view">
     <!-- Add task input bar — sibling of #task-card-group so it can be
@@ -1021,10 +1116,17 @@
 </div>
 
 <nav id="nav-dots" class="navigation-dots" role="tablist" aria-label="Page navigation">
-<button class="dot active" role="tab" aria-selected="true" aria-controls="task-view" aria-label="Tasks view" title="Tasks view">
+<!-- Focus task tab — index 0, focus-view-only (hidden outside focus mode via
+     CSS; unreachable during onboarding via the carousel's isEnabled gate).
+     data-tab-label seeds the focus-mode pill text; themeManager re-resolves
+     all three via getLabel() on every theme/routine change. -->
+<button class="dot focus-task-dot" role="tab" aria-selected="false" aria-controls="focus-task-panel" aria-label="Task view" title="Task view" data-tab-label="Task">
+<span class="visually-hidden">Task</span>
+</button>
+<button class="dot active" role="tab" aria-selected="true" aria-controls="task-view" aria-label="Tasks view" title="Tasks view" data-tab-label="Routine">
 <span class="visually-hidden">Tasks</span>
 </button>
-<button class="dot" role="tab" aria-selected="false" aria-controls="stats-panel" aria-label="Statistics view" title="Statistics view">
+<button class="dot" role="tab" aria-selected="false" aria-controls="stats-panel" aria-label="Statistics view" title="Statistics view" data-tab-label="Stats">
 <span class="visually-hidden">Stats</span>
 </button>
 </nav>
@@ -1051,9 +1153,9 @@
 <div id="live-region" aria-live="polite" style="position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden;"></div>
 
 <!-- Boot File Split (Dec 2025): Load via entrypoint which orchestrates all boot files -->
- <script type="module" src="miniCycle-main.js?v=2.279"></script>
+ <script type="module" src="miniCycle-main.js?v=2.310"></script>
 
-<script src="ext-boot/10.js"></script>
+<script src="ext-boot/11.js"></script>
    <!-- [chrome-ext build] removed inline script: late lite-version fallback redirect -->
 
 

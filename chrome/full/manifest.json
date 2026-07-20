@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "miniCycle: Routine Checklist Manager",
-  "version": "2.279",
-  "version_name": "Chrome Edition v2.279",
+  "version": "2.310",
+  "version_name": "Chrome Edition v2.310",
   "description": "A routine manager. Tasks persist and reset on cycle completion. Stay consistent, unlock themes, and share routines.",
   "author": "sparkinCreations",
   "homepage_url": "https://minicycleapp.com",

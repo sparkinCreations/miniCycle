@@ -1,5 +1,9 @@
 (function() {
   var v = globalThis.APP_VERSION || 'dev-local';
+  // Bundled dist: version.js also sets __MC_MODULE_MAP (source path → hashed
+  // URL). Preload the hashed URL BARE so it matches the exact URL the boot
+  // chain imports; dev has no map and keeps the ?v= form.
+  var map = globalThis.__MC_MODULE_MAP || null;
   var modules = [
     './miniCycle-main.js',
     './modules/boot/orchestrator.js',
@@ -19,9 +23,10 @@
   ];
   var head = document.head;
   for (var i = 0; i < modules.length; i++) {
+    var hashed = map && map[modules[i].slice(1)]; // './x' → '/x' (map keys are root-absolute)
     var link = document.createElement('link');
     link.rel = 'modulepreload';
-    link.href = modules[i] + '?v=' + v;
+    link.href = hashed || (modules[i] + '?v=' + v);
     head.appendChild(link);
   }
 })();
