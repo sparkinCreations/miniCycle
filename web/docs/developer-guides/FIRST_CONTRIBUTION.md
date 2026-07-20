@@ -330,6 +330,11 @@ const version = globalThis.APP_VERSION || 'dev-local'
 const mod = await import(`./mySubModule.js?v=${version}`)
 ```
 
+> Still required in source even though production is content-hashed: dev serves raw
+> source where `?v=` is the cache identity, and the release build's rewriter recognizes
+> exactly these patterns to rewrite them onto hashed `/build/…` URLs (see
+> `docs/deployment/BUILD_PROCESS.md`). A bare `import('./x.js')` breaks BOTH worlds.
+
 ### 3. Assuming the app is a todo list
 
 Tasks in miniCycle **cycle** — they reset when completed, not delete. If your feature assumes tasks disappear after completion, it won't fit the product model.

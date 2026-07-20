@@ -3,6 +3,14 @@
 > Why the app could fail to boot on already-installed machines after a deploy,
 > and how the service worker + page were changed to prevent and self-heal it.
 
+> **Updated July 19 2026 (v2.300/v2.301):** the `preferCurrentCaches` guard described
+> below was broadened to **ALL script/style requests** unconditionally — the
+> `(isModuleFile || .css)` form left root-level JS (`version.js`, `miniCycle-main.js`)
+> broad-matchable to a kept old cache. And with full entry-hashing live (content-hashed
+> `/build/…` URLs, SW cache-first), this whole bug class is structurally impossible for
+> the bundled build — the machinery below now matters for dev and for clients
+> transitioning from pre-hash versions.
+
 ## TL;DR
 
 - The app code is correct. Affected machines were being served **old, cached
