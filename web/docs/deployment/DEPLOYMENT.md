@@ -30,18 +30,24 @@ All content is hosted at **minicycle.app** via **Netlify**:
 
 miniCycle is deployed on **Netlify** with automatic Git-based deploys.
 
-### How It Works (since v2.294, July 2026)
+### How It Works (since v2.302, July 19 2026 — first VERIFIED bundled deploy)
 ```
 git push origin main
        ↓
-Netlify: npm install && node scripts/build-web.cjs   (~25s)
+Netlify (per REPO-ROOT netlify.toml): npm install --include=dev && node scripts/build-web.cjs
        ↓
-Publishes web/dist/ — bundled + minified (3.4MB JS → 1.43MB) — to minicycle.app CDN
+Publishes web/dist/ — bundled, minified, content-hashed under /build/ — to minicycle.app CDN
 ```
 
 - **Build step at deploy time only** — dev stays no-build (`npm start` serves pristine source).
   Full guide: [BUILD_PROCESS.md](./BUILD_PROCESS.md)
-- **Publish directory:** `dist` (configured in `netlify.toml`)
+- **⚠️ The REPO-ROOT `netlify.toml` is the build authority** (base=web, publish=dist,
+  command). Netlify only reads build config from the repo root or the site's base dir —
+  `web/netlify.toml`'s [build] block was silently ignored for months and production served
+  raw source until v2.302 (full story in BUILD_PROCESS.md). `web/netlify.toml` remains the
+  home of headers/redirects/CSP (it ships inside dist, where deploy-file processing applies it).
+- **Verify deploys by artifact shape, not version**: HTML script src points into `/build/…`;
+  `package.json` returns 404 (reachable = raw source is being served).
 - **Auto-deploy:** every push to `main` deploys — **but app-code changes must ship via
   `update-version.sh`** (a bare push is a half-dark deploy: existing users' SWs keep serving
   the old build until CACHE_VERSION bumps). Docs-only pushes are fine.
@@ -64,7 +70,7 @@ web/
 ├── service-worker.js              # Offline caching, precache, update logic
 ├── version.js                     # APP_VERSION + CACHE_VERSION (single source of truth)
 ├── manifest.json                  # PWA manifest
-├── netlify.toml                   # Netlify config: headers, redirects, CSP
+├── netlify.toml                   # Headers, redirects, CSP (build config lives in REPO-ROOT netlify.toml)
 ├── product.html                   # Landing page (redirect target)
 ├── modules/                       # ES6 modules (strict DI, zero window.* fallbacks)
 │   ├── boot/                      # orchestrator → coreBoot → featureBoot → uiBoot

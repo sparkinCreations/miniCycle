@@ -208,3 +208,27 @@ Per deferral, the proven gate: device-test the open/trigger paths, and confirm t
 - Lever 2 (precache trim): mainly helps cold/update loads (the ~1s pre-boot window)
 - Lever 1 (minification): the big multiplier — potentially 30–50% of remaining parse, all phases
 - Tier C (statsPanel): ~100–150ms off TASK_MANAGEMENT if unblocked
+
+---
+
+## Baseline #3 — v2.308 on old Android (July 19 2026, post-pipeline) — THE PARSE CHAPTER IS CLOSED
+
+Entry-hashed bundled build, on-device via the Boot Timing view:
+
+**Warm:** interactive 3926ms (pre-boot 993ms · bootSeq 2933ms) — **Imports 34ms = 1%**
+(Baseline #2's diagnosis was "~5.9s of 7.5s cold is parse+fetch that only the build
+pipeline attacks" — that cost is now gone). Network: **131/131 JS from SW cache, 0
+networked, 0KB.** Features 2202ms (75%) is now almost pure DI-wiring + init:
+UI_MANAGERS 668ms #1, THEME_VISUAL 311, CORE_UTILS 298. Top init costs:
+settingsManager 136ms, recurringIntegration 125ms, preferencesManager 72ms.
+
+**Reinstall/first-run:** interactive 4563ms, but **perceived wait after tapping = 0ms** —
+choice screen at 661ms, boot (3099ms) finished while the user read the options. The
+first-run masking strategy is validated end-to-end on the slowest device class.
+
+**Lever status:** Lever 1 (minification/parse) — DONE via the build pipeline, retire it.
+Precache trim — largely moot (single-fetch immutable precache). The ONLY remaining
+frontier is **module init work** (the init-split/deferral tiers above, settingsManager
+first at ~140-250ms) — optional; users behind the choice screen can't feel it.
+Also shipped en route: first-install controllerchange no longer reloads (v2.308) —
+new visitors boot ONCE (the old double-boot is gone from every first-visit trace).

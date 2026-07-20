@@ -1,8 +1,23 @@
 # Service Worker Update Strategy
 
-**Version:** 2.249 (June 2026)
-**Last Updated:** June 2026
+**Version:** 2.249 (June 2026) · **Last Updated:** July 2026 (callout below)
 **Problem Solved:** Users with old cached service workers and modules not receiving updates
+
+> ## ⚡ CURRENT STATE (July 19 2026, v2.300–v2.309) — read this first
+> The strategies below are accurate history, but four things changed with the
+> entry-hashed build pipeline (see [BUILD_PROCESS.md](./BUILD_PROCESS.md)):
+> 1. **Production module identity is now the content hash**, not `?v=`. All app code is
+>    served from hashed `/build/…` URLs (immutable, SW cache-first branch). A mixed
+>    old/new module graph is **unrepresentable** — old HTML can only name old hashes.
+>    The `?v=` mismatch machinery below still runs, but it now matters for DEV and for
+>    clients transitioning from pre-hash builds.
+> 2. **First-install `controllerchange` no longer reloads** (v2.308): when the page
+>    loaded with no controller, the new worker claims it without a reload — new
+>    visitors boot once. Update-driven reloads (a previous controller existed) unchanged.
+> 3. **`preferCurrentCaches` covers ALL script/style** (v2.300), not just `/modules/`+CSS —
+>    closing the stale root-level `version.js`/`miniCycle-main.js` broad-match gap.
+> 4. The SW carries the **module map** and includes it in its synthetic `version.js`
+>    fallback — without it, no hashed URL can resolve in the bundled build.
 
 > For full offline boot architecture, caching layers, and iOS-specific issues, see **[PWA_OFFLINE_ARCHITECTURE.md](./PWA_OFFLINE_ARCHITECTURE.md)**.
 

@@ -1,7 +1,12 @@
 # Build Pipeline (Bundle + Hash + Generated Precache) — Plan
 
-**Status:** PLAN (July 11, 2026). **Supersedes `MINIFICATION_PLAN.md`** (June 15 — per-file terser,
-no bundling). Written after the r/website feedback thread (see `FEEDBACK_TODO_2026_07.md` P0) and
+**Status:** ✅ SHIPPED (July 19 2026) — Phase 1 (v2.294), full entry-hashing + CSS bundle
+(v2.301), first VERIFIED bundled production deploy after the deploy-config discovery (v2.302).
+Operational guide: `docs/deployment/BUILD_PROCESS.md`. Remaining OPTIONAL items: Phase 4
+`?v=`-guard cleanup in the SW, CSS hand-purge, old-Android cold re-trace (warm re-trace done —
+Baseline #3 in `BOOT_PERF_ROADMAP.md`: imports 34ms = 1%, parse chapter closed).
+**Supersedes `MINIFICATION_PLAN.md`** (June 15 — per-file terser, no bundling; superseded-and-done,
+archived). Written after the r/website feedback thread (see `FEEDBACK_TODO_2026_07.md` P0) and
 the July cold-load measurements. Companion to `BOOT_PERF_ROADMAP.md`.
 
 ## Why the June plan is superseded

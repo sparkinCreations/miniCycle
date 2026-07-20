@@ -37,11 +37,16 @@ npm run build:web  # esbuild release bundle → web/dist/ (what Netlify runs; de
 
 ## SHIPPING — Push = Production Deploy
 
-Since v2.294, **every push to `main` triggers a Netlify build of `web/dist/` and deploys it**.
+**Every push to `main` triggers a Netlify build of `web/dist/` and deploys it** — driven by
+the **repo-root `netlify.toml`** (the build authority; do not delete it — `web/netlify.toml`
+is headers/redirects only, and its [build] block is NOT read). Since v2.301 the build is
+fully content-hashed (`/build/` tree + module map; `?v=` is dev-only).
 App-code changes must ship via `./scripts/update-version.sh --auto --push --changelog`
 (version + cache bump + CSP hashes + tag + push). A bare `git push` of app code creates a
-**half-dark deploy**: new visitors get the new build, existing users' service workers keep the
-old one. Docs-only pushes are fine. Details: `web/docs/deployment/BUILD_PROCESS.md`.
+**half-dark deploy** — and post-hashing, a potentially corrupt one (same-name cache
+overwritten non-atomically with no version signal). Docs-only pushes are fine.
+Verify deploys by ARTIFACT SHAPE (HTML src points into `/build/`; `/package.json` 404s),
+never by version number alone. Details: `web/docs/deployment/BUILD_PROCESS.md`.
 
 ## Project Structure
 

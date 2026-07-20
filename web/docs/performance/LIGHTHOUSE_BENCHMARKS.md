@@ -2,10 +2,39 @@
 
 > Lighthouse audit results and Core Web Vitals for minicycle.app
 
-**Last Tested:** December 12, 2025
-**App Version:** 1.474
-**Service Worker Cache:** v261
-**Test Environment:** Chrome DevTools (Chromium 143)
+**Last Tested:** July 19–20, 2026 · **App Version:** 2.308 (entry-hashed bundled build)
+**Test Environment:** Lighthouse CLI (headless Chrome, mobile simulation: slow-4G, 4× CPU)
+
+## Current (July 2026, mobile simulation — the strict profile)
+
+| Category | Score |
+|----------|-------|
+| **Performance** | 89 stable (~92 without the harness artifact below) |
+| **Accessibility** | 100 |
+| **Best Practices** | 100 |
+| **SEO** | 100 |
+
+Key metrics (simulated slow-4G/4×CPU): FCP ~2.1s, LCP 2.3–2.5s, **TBT 0ms**, Speed Index
+0.99, CLS 0.009, total byte weight ~345KiB (was 6.2MB pre-pipeline). Observed unthrottled
+FCP=LCP: 174–926ms. On-device (old Android, warm): interactive 3.9s, 0 bytes networked,
+first-run **perceived wait 0ms**.
+
+**⚠️ Known measurement artifact (NOT a real regression):** runs sometimes report
+**CLS 0.787**. Trace forensics showed the app's first paint (~28ms post-nav, thanks to
+inlined critical/fonts CSS) can land BEFORE Lighthouse applies its device-metrics
+override — content lays out centered for the pre-override window (~485px) then recenters
+at 412px. Real browsers never re-apply metrics: PerformanceObserver measured **CLS 0**
+at both desktop and mobile viewports through full boot. The v2.308 first-install
+no-reload fix removed a related mid-trace navigation. Median of ≥3 runs, and treat a
+0.787 reading as the artifact. History/context: memory + BUILD_PIPELINE_PLAN.md.
+
+**Measurement discipline:** simulated LCP varies ±0.5s run-to-run; never cite a single
+run. Run in incognito/fresh profile — stored IndexedDB state and browser extensions
+pollute results (a real extension once added 134KB of foreign CSS to a report).
+
+---
+
+## Historical: December 12, 2025 (v1.474, desktop, Chromium 143)
 
 ---
 

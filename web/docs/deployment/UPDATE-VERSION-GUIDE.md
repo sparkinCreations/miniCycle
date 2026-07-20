@@ -3,6 +3,19 @@
 > **Developer-friendly documentation for `update-version.sh` v5.5**
 > Complete guide with real examples, macOS specifics, and troubleshooting tips
 
+> ## ⚡ ROLE SHIFT (July 19 2026, entry-hashed pipeline)
+> The script's duties are unchanged, but what they *mean* shifted
+> (see [BUILD_PROCESS.md](./BUILD_PROCESS.md)):
+> - **Content hashes version the FILES in production; this script versions the RELEASE.**
+>   Its `?v=` rewrites (HTML, main.css @imports) now serve **dev only** — the build
+>   rewrites/inlines those references in dist.
+> - Still production-critical: `version.js` generation (the staleness signal for every
+>   heal path — and in dist, the module map's delivery vehicle), the SW constants
+>   (CACHE_VERSION rotates the cache namespace = deploy atomicity), the HTML
+>   `app-version` meta (build-vs-server heal trigger), CSP hashes, commit-before-tag.
+> - The push it makes triggers the Netlify build **per the repo-root `netlify.toml`**
+>   (the build authority — `web/netlify.toml` is headers/redirects only).
+
 ---
 
 ## Table of Contents

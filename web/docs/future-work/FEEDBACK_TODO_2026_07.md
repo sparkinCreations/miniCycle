@@ -16,9 +16,9 @@ Priority key: **P0** = near-unanimous / highest leverage · **P1** = strong sing
 
 This was raised independently by noguchilin, motomeru2526, unoriginalusername26, why_so_sergious, and ExplanationOk2014. It happens *before* anyone experiences the cycle concept, so it caps everything else. You acknowledged it to each of them and named it your next priority — consistent with how you handled the rest of the thread (you took the W3C link and committed to fixing the errors, located the magic value yourself, agreed to move the inline SVGs). This is the highest-leverage item on the list.
 
-- [ ] **Add a build/release step (bundle + minify JS).** noguchilin's core diagnosis: the problem isn't total weight (~265KB at first render is fine), it's *round trips* — 74 separate JS files resolved serially through native ES-module import chains, each level adding a network round trip. esbuild can bundle+minify into a few files in milliseconds. Keep source unminified for dev, add the step only for release. Source maps keep debugging workable on locked-down machines.
-- [ ] **Minify shipped JS and CSS.** Raised by noguchilin, unoriginalusername26 ("use pagespeed"), and ExplanationOk2014. You already said "minifying is on the list" — this is that.
-- [ ] **Reduce/serve fewer CSS files.** 44 separate CSS files noted by noguchilin. Bundling applies here too.
+- [x] **Add a build/release step (bundle + minify JS).** noguchilin's core diagnosis: the problem isn't total weight (~265KB at first render is fine), it's *round trips* — 74 separate JS files resolved serially through native ES-module import chains, each level adding a network round trip. esbuild can bundle+minify into a few files in milliseconds. Keep source unminified for dev, add the step only for release. Source maps keep debugging workable on locked-down machines. **✅ DONE v2.294–v2.302 (BUILD_PIPELINE_PLAN.md — bundled, minified, content-hashed, verified in prod)**
+- [x] **Minify shipped JS and CSS.** Raised by noguchilin, unoriginalusername26 ("use pagespeed"), and ExplanationOk2014. You already said "minifying is on the list" — this is that. **✅ DONE — esbuild minifies JS + the CSS bundle (v2.301)**
+- [x] **Reduce/serve fewer CSS files.** 44 separate CSS files noted by noguchilin. Bundling applies here too. **✅ DONE v2.301 — main.css + 44 @imports → one hashed bundle; live CSS requests 90 → 3**
 - [ ] **Purge unused CSS — carefully.** ExplanationOk2014 ran PurifyCSS: **55.26% of your CSS reported unused (~14.93KB).** ⚠️ Do NOT run the purified output blind. Your app applies classes at runtime (icon swaps, vocabulary themes rewriting labels/colors, personalization), and static purifiers routinely strip classes that are only added by JS. Use the report as a *map* to hand-remove obvious dead weight, and verify against every theme and dynamic state before shipping.
 - [ ] **Consider a CDN in front.** noguchilin measured ~850ms TTFB; a CDN would cut most of that. Combined with bundling, should put first render in the 1–2s range without touching architecture.
 - [ ] **Defer non-critical loading past first interaction.** why_so_sergious: you don't need to go fully pre-transpiled — defer as much as possible to after first interaction, but some compilation/minification is mandatory for production regardless. Run it in a CI/CD pipeline.
@@ -34,7 +34,7 @@ worth keeping. Its "defer these 10 modules" list, however, re-proposed modules t
 investigation already found NOT safely deferrable — see `BOOT_PERF_ROADMAP.md` and
 `MODULE_DEFERRAL_AUDIT.md` for the per-module reasons. Corrected state:
 
-- [ ] **Add per-module timing to `loadModule()`** — the revision's genuinely new, zero-risk task.
+- [x] **Add per-module timing to `loadModule()`** — the revision's genuinely new, zero-risk task. **✅ DONE v2.290/v2.291 — mc:module measures + Boot Timing table**
   `moduleLoader.js` emits per-*phase* `mc:subphase:*` measures only; per-module marks would rank
   the 17 UI_MANAGERS modules by real cost instead of line-count estimates, and surface in the
   testing modal's Boot Timing view. Do this before any further deferral work.

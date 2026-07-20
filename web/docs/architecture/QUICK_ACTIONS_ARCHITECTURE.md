@@ -143,7 +143,7 @@ The listener is set up once in `quickActionsManager.init()` and lives for the ap
 > **History:** earlier, only 5 of 22 actions tracked usage outside the panel (each feature's
 > open path had to remember to call `trackAction`). The delegated listener made it uniform and
 > removed those 5 scattered calls + the panel's hand-rolled `trackAction`. See
-> [ACTION_DISPATCH_PLAN.md](../future-work/ACTION_DISPATCH_PLAN.md).
+> [ACTION_DISPATCH_PLAN.md](../archive/ACTION_DISPATCH_PLAN.md).
 
 ## Adding a new quick action
 

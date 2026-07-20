@@ -1,7 +1,20 @@
 # PWA Offline Architecture
 
-**Version:** 2.249 (June 2026)
+**Version:** 2.249 (June 2026) · **Callout updated:** July 2026
 **Status:** Fully implemented and tested on iOS Safari
+
+> ## ⚡ CURRENT STATE (July 19 2026, entry-hashed pipeline) — read this first
+> The architecture below still holds, with these production-side changes
+> (see [BUILD_PROCESS.md](./BUILD_PROCESS.md) for the full picture):
+> - **Precache lists are GENERATED per deploy** in the dist SW (hashed `/build/` entries +
+>   chunks + CSS bundle, ~167 URLs). The hand-maintained lists in source are the DEV lists.
+> - **`/build/` paths are served cache-first, no revalidation** — the filename IS the
+>   version. `?v=`-based descriptions below apply to dev and to the pre-hash era.
+> - `dist/version.js` (and the SW's synthetic fallback) carry `__MC_MODULE_MAP`; hashed
+>   files are requested BARE, so page-fetch and precache share one cached copy — the
+>   double-fetch problem documented below is gone.
+> - `critical.css` + `fonts.css` are inlined into the dist HTML (fewer offline-critical
+>   files); on-device verification: a warm old-Android load reads `networked 0 (0KB)`.
 **Related docs:** [SERVICE_WORKER_UPDATE_STRATEGY.md](./SERVICE_WORKER_UPDATE_STRATEGY.md), [DEPLOYMENT.md](./DEPLOYMENT.md), [UPDATE-VERSION-GUIDE.md](./UPDATE-VERSION-GUIDE.md)
 
 ---

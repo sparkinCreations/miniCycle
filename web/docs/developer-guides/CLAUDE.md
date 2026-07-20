@@ -39,10 +39,13 @@ npm run preview:dist         # serve dist/ on :8081 (verify on a fresh origin)
 ./scripts/update-version.sh --auto --push --changelog
 ```
 
-> ⚠️ **Push = production deploy** (since v2.294): Netlify builds and publishes `dist/` on
-> every push to `main`. App-code changes must ship via `update-version.sh` (a bare push is a
-> half-dark deploy — existing users' SWs keep the old build). Docs-only pushes are fine.
-> See [BUILD_PROCESS.md](../deployment/BUILD_PROCESS.md).
+> ⚠️ **Push = production deploy**: Netlify builds and publishes `dist/` on every push to
+> `main`, driven by the **repo-root `netlify.toml`** (build authority; `web/netlify.toml`
+> is headers/redirects only). Since v2.301 the build is content-hashed (`/build/` tree +
+> module map — `?v=` is dev-only). App-code changes must ship via `update-version.sh`
+> (a bare push is a half-dark deploy — and post-hashing, a same-name cache overwrite with
+> no version signal). Docs-only pushes are fine. Verify deploys by artifact shape (HTML
+> src → `/build/`, `/package.json` 404s). See [BUILD_PROCESS.md](../deployment/BUILD_PROCESS.md).
 
 ### File Access
 - **Main App**: http://localhost:8080/miniCycle.html
