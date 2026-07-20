@@ -1,3 +1,7 @@
+## [2.309] - 2026-07-20
+- fix(nav): focus-view Task/Routine/Stats labels navigate to their own panel — dot clicks were toggling to whatever was next
+
+
 ## [2.308] - 2026-07-19
 - fix(sw): skip controllerchange reload on first install — one boot for new visitors, kills the Lighthouse mid-trace reload CLS artifact
 
