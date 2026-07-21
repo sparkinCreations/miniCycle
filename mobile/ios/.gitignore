@@ -1,0 +1,11 @@
+# Dependencies
+node_modules/
+
+# Generated web payload — produced from web/ by web/scripts/build-ios-www.cjs.
+# Never committed: `npm run sync` regenerates it and `npx cap sync` copies it into
+# ios/App/App/public (which Capacitor's ios/.gitignore ignores).
+www/
+
+# OS files
+.DS_Store
+Thumbs.db

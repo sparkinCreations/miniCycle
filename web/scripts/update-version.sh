@@ -19,6 +19,7 @@
 #  - --chrome flag to rebuild the Chrome (full) extension into chrome/full/
 #  - --android flag to rebuild the Capacitor web payload + sync the native version
 #  - --android-run flag to also build the debug APK and install/launch it on a device
+#  - --ios flag to rebuild the iOS Capacitor payload + sync MARKETING_VERSION/build number
 #  - Automatic CSP hash verification — detects new/changed inline scripts and updates netlify.toml
 
 # ============================================
@@ -186,6 +187,7 @@ AUTO_SAMPLES=false
 BUILD_CHROME=false
 BUILD_ANDROID=false
 DEPLOY_ANDROID=false
+BUILD_IOS=false
 DRY_RUN=false
 
 # ============================================
@@ -237,6 +239,10 @@ while [[ $# -gt 0 ]]; do
             BUILD_ANDROID=true  # deploy implies rebuild the payload first
             shift
             ;;
+        --ios|-I)
+            BUILD_IOS=true
+            shift
+            ;;
         --dry-run|-n)
             DRY_RUN=true
             shift
@@ -253,6 +259,7 @@ while [[ $# -gt 0 ]]; do
             echo "  --chrome, -C    Rebuild the Chrome (full) extension to chrome/full/"
             echo "  --android, -A   Rebuild the Android (Capacitor) web payload + sync versionName"
             echo "  --android-run, -R  Also build the debug APK + install/launch on a connected device"
+            echo "  --ios, -I       Rebuild the iOS (Capacitor) web payload + sync MARKETING_VERSION"
             echo "  --lite, -l      Include lite version files (normally static)"
             echo "  --lite-only     Update ONLY lite version files (independent of main app)"
             echo "  --tag, -t       Auto-create git tag (use with --auto)"
@@ -2025,6 +2032,97 @@ if [ "$REBUILD_ANDROID" = true ]; then
     fi
 else
     echo "⏭️  Skipping Android app"
+fi
+
+echo ""
+
+# ============================================
+# OPTIONAL: REBUILD IOS (CAPACITOR) PAYLOAD
+# ============================================
+# Regenerates mobile/ios/www/ from web/ (same shared transform as Android —
+# build-capacitor-www.cjs), syncs the native MARKETING_VERSION to $NEW_VERSION,
+# and bumps CURRENT_PROJECT_VERSION (App Store Connect requires a strictly-
+# increasing build number per version). Runs BEFORE the git-tag stage so the
+# rebuilt payload + version bump are part of the release commit/tag.
+# See web/scripts/build-ios-www.cjs and mobile/ios/docs/IOS_BUILD_AND_DIFFERENCES.md.
+
+echo "🍎 Optional: iOS (Capacitor) App"
+echo "--------------------------------"
+
+REBUILD_IOS=false
+if [ "$LITE_ONLY" = true ]; then
+    echo "⏭️  Skipping iOS app (LITE ONLY mode)"
+elif [ "$AUTO_MODE" = true ]; then
+    if [ "$BUILD_IOS" = true ]; then
+        REBUILD_IOS=true
+        echo "🍎 Auto mode: Rebuilding iOS web payload..."
+    else
+        echo "⏭️  Skipping iOS app (use --ios to rebuild)"
+    fi
+else
+    if [ "$BUILD_IOS" = true ]; then
+        REBUILD_IOS=true
+    else
+        read -p "Rebuild iOS (Capacitor) web payload to mobile/ios/www/? (y/N): " -n 1 -r
+        echo ""
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            REBUILD_IOS=true
+        fi
+    fi
+fi
+
+if [ "$REBUILD_IOS" = true ]; then
+    if [ -f "scripts/build-ios-www.cjs" ]; then
+        # Don't let a build failure abort the whole run (set -e) — the version
+        # files are already updated; just warn that the payload may be stale.
+        IOS_BUILD_OK=false
+        if node scripts/build-ios-www.cjs; then
+            echo "✅ Rebuilt mobile/ios/www/ (v$NEW_VERSION)"
+            IOS_BUILD_OK=true
+        else
+            echo "⚠️  iOS web payload build failed — mobile/ios/www/ is stale"
+            echo "    ↳ SKIPPING native MARKETING_VERSION/build-number bump + cap sync so the build"
+            echo "      can't be stamped v$NEW_VERSION while still running old code. Fix the build,"
+            echo "      then re-run: ./scripts/update-version.sh --ios (no version bump needed)."
+        fi
+
+        # Sync MARKETING_VERSION to NEW_VERSION and bump CURRENT_PROJECT_VERSION.
+        # The Xcode project is committed (not generated), so patch it in place —
+        # both occurrences (Debug + Release configs) are kept in lockstep by /g.
+        # Gated on a SUCCESSFUL payload rebuild — bumping the version over a stale
+        # www/ is exactly the version/code mismatch we want to avoid.
+        IOS_PBXPROJ="../mobile/ios/ios/App/App.xcodeproj/project.pbxproj"
+        if [ "$IOS_BUILD_OK" = false ] && [ "$DRY_RUN" = false ]; then
+            :  # build failed — already warned above; leave the Xcode project + cap sync untouched
+        elif [ "$DRY_RUN" = true ]; then
+            echo "🔍 [dry-run] would set MARKETING_VERSION = $NEW_VERSION and bump CURRENT_PROJECT_VERSION in $IOS_PBXPROJ"
+        elif [ -f "$IOS_PBXPROJ" ]; then
+            "${SED_INPLACE[@]}" "s/MARKETING_VERSION = [^;]*;/MARKETING_VERSION = $NEW_VERSION;/g" "$IOS_PBXPROJ"
+            CURRENT_BUILD=$(grep -oE 'CURRENT_PROJECT_VERSION = [0-9]+' "$IOS_PBXPROJ" | grep -oE '[0-9]+' | head -1)
+            if [ -n "$CURRENT_BUILD" ]; then
+                NEW_BUILD=$((CURRENT_BUILD + 1))
+                "${SED_INPLACE[@]}" "s/CURRENT_PROJECT_VERSION = [0-9][0-9]*;/CURRENT_PROJECT_VERSION = $NEW_BUILD;/g" "$IOS_PBXPROJ"
+                echo "✅ iOS version: MARKETING_VERSION $NEW_VERSION, build $CURRENT_BUILD → $NEW_BUILD"
+            else
+                echo "⚠️  Could not read CURRENT_PROJECT_VERSION from project.pbxproj — bump it manually"
+            fi
+
+            # Copy the rebuilt payload into the native project if Capacitor is installed.
+            if [ -d "../mobile/ios/node_modules/@capacitor/cli" ]; then
+                ( cd ../mobile/ios && npx cap sync ios ) \
+                    && echo "✅ cap sync complete" \
+                    || echo "⚠️  cap sync failed — run 'npm run sync' in mobile/ios before building"
+            else
+                echo "ℹ️  Capacitor not installed in mobile/ios — run 'npm install && npm run sync' there before building in Xcode"
+            fi
+        else
+            echo "⚠️  $IOS_PBXPROJ not found — skipping native version sync"
+        fi
+    else
+        echo "⚠️  scripts/build-ios-www.cjs not found - skipping"
+    fi
+else
+    echo "⏭️  Skipping iOS app"
 fi
 
 echo ""

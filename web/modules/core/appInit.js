@@ -542,7 +542,6 @@ class AppInit {
 			if (typeof organizeCompletedTasks === 'function') {
 				organizeCompletedTasks();
 			}
-		} else {
 		}
 
 		const miniCycleState = _deps.getMiniCycleState?.();

@@ -589,8 +589,6 @@ export async function processImportedData(fileContent) {
     const existingCycles = appState.get()?.data?.cycles || {};
     const { name: finalCycleTitle, wasModified: titleWasModified } = getUniqueCycleName(cycleTitle, existingCycles);
 
-    if (titleWasModified) {
-    }
 
     // Security: Merge imported template metadata with sanitized text from tasks.
     // Only extract specific safe metadata fields from import (timestamps, etc.)

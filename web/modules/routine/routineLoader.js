@@ -342,8 +342,6 @@ function repairAndCleanTasks(currentCycle, cycleKey = 'unknown') {
     console.warn(`⚠️ Removed ${removedCount} corrupted tasks during sanitization`);
   }
 
-  if (tasksModified) {
-  }
 
   return {
     tasks: validTasks,

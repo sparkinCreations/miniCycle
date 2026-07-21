@@ -101,8 +101,10 @@ and style code** — only the HTML shell and surrounding plumbing change.
 
 Two layers, mirroring the Chrome flow:
 
-**Layer 1 — generate the web payload.** `web/scripts/build-android-www.cjs` (Node stdlib only,
-no deps). Idempotent: it `rmrf`s `mobile/android/www/` and regenerates the whole tree each run,
+**Layer 1 — generate the web payload.** `web/scripts/build-android-www.cjs` — a thin shim over
+the shared Android/iOS engine **`build-capacitor-www.cjs`** (Node stdlib only, no deps; the
+transform is identical per platform, only the output dir and overrides stylesheet differ).
+Idempotent: it `rmrf`s `mobile/android/www/` and regenerates the whole tree each run,
 so the output never drifts from `web/`. Inline-block classification is **content-based** (stable
 substrings), not line numbers, so it survives edits to `miniCycle.html`.
 
@@ -234,7 +236,8 @@ mobile/android/
   gitignored.
 - **Keep `versionName` in sync with `APP_VERSION`** and **bump `versionCode`** every release.
 - **After restructuring `miniCycle.html` inline scripts,** re-verify the `RULES` table in
-  `build-android-www.cjs` (it shares the substring matchers with the Chrome build — update both).
+  `build-capacitor-www.cjs` (the shared Android/iOS engine; it shares the substring matchers
+  with the Chrome build — update both).
 - **Re-run `npx cap sync`** after every web payload rebuild and after adding any Capacitor plugin.
 
 ---
@@ -291,4 +294,7 @@ Still open (not yet wired):
 - [`android/README.md`](./android/README.md) — quick-start for the Android project
 - [`../chrome/BUILD_AND_DIFFERENCES.md`](../chrome/BUILD_AND_DIFFERENCES.md) — the Chrome
   extension's sibling build (the externalizing MV3 variant of this transform)
-- `web/scripts/build-android-www.cjs` — the web-payload build script (authoritative)
+- `web/scripts/build-capacitor-www.cjs` — the shared web-payload build engine (authoritative;
+  `build-android-www.cjs` / `build-ios-www.cjs` are its per-platform entry points)
+- [`../../ios/docs/IOS_BUILD_AND_DIFFERENCES.md`](../../ios/docs/IOS_BUILD_AND_DIFFERENCES.md) —
+  the iOS sibling (same transform; documents only the iOS deltas)

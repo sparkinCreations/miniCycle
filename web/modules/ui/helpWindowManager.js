@@ -7,7 +7,12 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION } from '../core/constants.js';
+import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION, BREAKPOINTS } from '../core/constants.js';
+
+// Vertical chrome above/below the task view — MUST match task-list.css
+// `max-height: calc(100vh - 385px)` (header + 200px bottom padding). The
+// side-layout hysteresis compares content height against the same budget.
+const VIEWPORT_CHROME_PX = 385;
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -89,7 +94,7 @@ export class HelpWindowManager {
         if (!taskView || !taskListContainer) return;
 
         // Only apply on desktop (1024px+)
-        const isDesktop = window.innerWidth >= 1024;
+        const isDesktop = window.innerWidth >= BREAKPOINTS.DESKTOP_MIN;
 
         if (!isDesktop) {
             // On mobile/tablet, always use bottom layout
@@ -116,7 +121,7 @@ export class HelpWindowManager {
         if (this.sideLayoutEnabled) {
             // Currently in side layout - only disable if content fits with buffer
             // Check against the smaller max-height threshold
-            const normalMaxHeight = window.innerHeight - 385;
+            const normalMaxHeight = window.innerHeight - VIEWPORT_CHROME_PX;
             shouldEnableSideLayout = scrollHeight > (normalMaxHeight - bufferPx);
         } else {
             // Currently in bottom layout - enable if overflowing

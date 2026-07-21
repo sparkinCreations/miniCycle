@@ -30,6 +30,27 @@
         ]
     });
 
+    /***** Game Constants *****/
+    // Self-contained page — local constants by design (core/constants.js is the
+    // app-side home; games are outside the DI system).
+    var BTN_CLEARANCE_X   = 140;  // spawn margin ≈ widest task button, keeps buttons fully inside the window
+    var BTN_CLEARANCE_Y   = 50;   // spawn margin ≈ button height
+    var TASK_LABEL_MAX    = 22;   // chars before truncation
+
+    var PARTICLE_COUNT    = 12;
+    var PARTICLE_MIN_DIST = 50;   // px — burst radius = MIN + random * SPREAD
+    var PARTICLE_SPREAD   = 50;
+    var PARTICLE_LIFE_MS  = 700;
+
+    var SPEED_JITTER_BASE  = 0.8; // speed = multiplier * (BASE + random * RANGE)
+    var SPEED_JITTER_RANGE = 0.4;
+    var BOUNCE_DAMP_BASE   = 0.9; // wall bounce: dx *= -(BASE + random * RANGE)
+    var BOUNCE_DAMP_RANGE  = 0.2;
+
+    var NEXT_ROUND_DELAY_MS = 1500;
+    var NEW_BEST_DELAY_MS   = 800;
+    var TIMER_TICK_MS       = 250;
+
     /** Populate DOM elements from LABELS */
     function populateLabels() {
         document.querySelector('h1').textContent = LABELS.title;
@@ -59,7 +80,7 @@
 
     /** Clean task name for game display */
     function cleanTaskName(text) {
-        return truncateText(text.trim(), 22);
+        return truncateText(text.trim(), TASK_LABEL_MAX);
     }
 
     /***** Difficulty Settings *****/
@@ -186,7 +207,7 @@
             var mins = Math.floor(elapsed / 60);
             var secs = elapsed % 60;
             timerEl.textContent = mins + ':' + (secs < 10 ? '0' : '') + secs;
-        }, 250);
+        }, TIMER_TICK_MS);
     }
 
     function stopTimer() {
@@ -214,7 +235,7 @@
     function createParticles(x, y, color) {
         if (prefersReducedMotion()) return;
 
-        var particleCount = 12;
+        var particleCount = PARTICLE_COUNT;
         for (var i = 0; i < particleCount; i++) {
             var particle = document.createElement('div');
             particle.className = 'particle';
@@ -223,12 +244,12 @@
             particle.style.top = y + 'px';
 
             var angle = (Math.PI * 2 * i) / particleCount;
-            var distance = 50 + Math.random() * 50;
+            var distance = PARTICLE_MIN_DIST + Math.random() * PARTICLE_SPREAD;
             particle.style.setProperty('--tx', Math.cos(angle) * distance + 'px');
             particle.style.setProperty('--ty', Math.sin(angle) * distance + 'px');
 
             taskWindow.appendChild(particle);
-            setTimeout(function (p) { return function () { p.remove(); }; }(particle), 700);
+            setTimeout(function (p) { return function () { p.remove(); }; }(particle), PARTICLE_LIFE_MS);
         }
     }
 
@@ -290,7 +311,7 @@
         var settings = DIFFICULTY_SETTINGS[currentDifficulty];
         var speedMultiplier = settings.baseSpeed + (round - 1) * settings.speedIncrease;
         var angle = Math.random() * Math.PI * 2;
-        var speed = speedMultiplier * (0.8 + Math.random() * 0.4);
+        var speed = speedMultiplier * (SPEED_JITTER_BASE + Math.random() * SPEED_JITTER_RANGE);
 
         btn.dataset.dx = (Math.cos(angle) * speed).toFixed(2);
         btn.dataset.dy = (Math.sin(angle) * speed).toFixed(2);
@@ -333,7 +354,7 @@
                     feedbackEl.className = "feedback success";
                     stopMovement();
                     round++;
-                    setTimeout(startRound, 1500);
+                    setTimeout(startRound, NEXT_ROUND_DELAY_MS);
                 }
             } else {
                 stopMovement();
@@ -343,7 +364,7 @@
                 feedbackEl.textContent = LABELS.wrongOrder;
                 feedbackEl.className = "feedback error";
                 if (result2.isNewBest) {
-                    setTimeout(function () { showNewBest(); }, 800);
+                    setTimeout(function () { showNewBest(); }, NEW_BEST_DELAY_MS);
                 }
                 gameActive = false;
                 restartBtn.style.display = "block";
@@ -367,8 +388,8 @@
 
     function getRandomPosition() {
         var rect = taskWindow.getBoundingClientRect();
-        var maxX = rect.width - 140;
-        var maxY = rect.height - 50;
+        var maxX = rect.width - BTN_CLEARANCE_X;
+        var maxY = rect.height - BTN_CLEARANCE_Y;
         return {
             x: Math.max(0, Math.floor(Math.random() * maxX)),
             y: Math.max(0, Math.floor(Math.random() * maxY))
@@ -409,10 +430,10 @@
             x += dx * dt;
             y += dy * dt;
 
-            if (x < 0) { x = 0; dx = -dx * (0.9 + Math.random() * 0.2); btn.dataset.dx = dx; }
-            if (x > rect.width - btn.offsetWidth) { x = rect.width - btn.offsetWidth; dx = -dx * (0.9 + Math.random() * 0.2); btn.dataset.dx = dx; }
-            if (y < 0) { y = 0; dy = -dy * (0.9 + Math.random() * 0.2); btn.dataset.dy = dy; }
-            if (y > rect.height - btn.offsetHeight) { y = rect.height - btn.offsetHeight; dy = -dy * (0.9 + Math.random() * 0.2); btn.dataset.dy = dy; }
+            if (x < 0) { x = 0; dx = -dx * (BOUNCE_DAMP_BASE + Math.random() * BOUNCE_DAMP_RANGE); btn.dataset.dx = dx; }
+            if (x > rect.width - btn.offsetWidth) { x = rect.width - btn.offsetWidth; dx = -dx * (BOUNCE_DAMP_BASE + Math.random() * BOUNCE_DAMP_RANGE); btn.dataset.dx = dx; }
+            if (y < 0) { y = 0; dy = -dy * (BOUNCE_DAMP_BASE + Math.random() * BOUNCE_DAMP_RANGE); btn.dataset.dy = dy; }
+            if (y > rect.height - btn.offsetHeight) { y = rect.height - btn.offsetHeight; dy = -dy * (BOUNCE_DAMP_BASE + Math.random() * BOUNCE_DAMP_RANGE); btn.dataset.dy = dy; }
 
             btn.style.left = x + "px";
             btn.style.top = y + "px";

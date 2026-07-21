@@ -305,7 +305,6 @@ export class TaskUtils {
             // Only push to cycle data if NOT loading (prevents duplicate tasks)
             if (!isLoading) {
                 currentCycle.tasks.push(existingTask);
-            } else {
             }
 
             // Handle recurring template creation
@@ -336,7 +335,6 @@ export class TaskUtils {
                 saveTaskToSchema25(activeCycle, currentCycle);
             } else if (!isLoading) {
                 console.warn('⚠️ saveTaskToSchema25 not available - task not persisted');
-            } else {
             }
         }
 

@@ -522,8 +522,6 @@ export function removeRecurringTasksFromCycle(taskElements, cycleData) {
         Deps.updateProgressBar();
     }
 
-    if (keptCount > 0) {
-    }
 }
 
 /**
@@ -555,8 +553,5 @@ export function handleRecurringTasksAfterReset() {
     const recurringTemplates = cycleData.recurringTemplates || {};
     const templateCount = Object.keys(recurringTemplates).length;
 
-    if (templateCount > 0) {
-    } else {
-    }
 }
 

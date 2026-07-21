@@ -14,6 +14,9 @@
 
 import { createDIModule, required, optional } from '../core/diBase.js';
 import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
+
+// Gap between the tooltip's bottom edge and its anchor's top edge
+const TOOLTIP_OFFSET_PX = 10;
 import { getLabel } from '../labels/labelResolver.js';
 import { handleHorizontalArrowNav } from '../utils/keyboardNav.js';
 // Uniform usage tracking — one delegated listener records every action-button click
@@ -1234,7 +1237,7 @@ export class QuickActionsManager {
             });
         };
         slots.addEventListener('transitionend', onEnd, { once: true });
-        setTimeout(onEnd, 300);
+        setTimeout(onEnd, UI_TIMEOUTS.TRANSITION_FALLBACK);
     }
 
     _setupSwipeGesture(element) {
@@ -1304,7 +1307,7 @@ export class QuickActionsManager {
                 };
                 slots.addEventListener('transitionend', onEnd, { once: true });
                 // Safety fallback in case transitionend doesn't fire
-                setTimeout(onEnd, 300);
+                setTimeout(onEnd, UI_TIMEOUTS.TRANSITION_FALLBACK);
             } else {
                 // Snap back
                 slots.style.transition = 'transform var(--transition-fast) ease-out, opacity var(--transition-fast) ease-out';
@@ -1413,7 +1416,7 @@ export class QuickActionsManager {
 
         Object.assign(this._tooltip.style, {
             left: `${rect.left + rect.width / 2}px`,
-            top: `${rect.top - 10}px`,
+            top: `${rect.top - TOOLTIP_OFFSET_PX}px`,
             transform: 'translate(-50%, -100%)'
         });
         this._tooltip.classList.add(DOM_CLASSES.VISIBLE);

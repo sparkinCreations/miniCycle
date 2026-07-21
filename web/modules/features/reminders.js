@@ -378,7 +378,6 @@ export class MiniCycleReminders {
         if (this.state.reminderTimeoutId) {
             clearTimeout(this.state.reminderTimeoutId);
             this.state.reminderTimeoutId = null;
-        } else {
         }
 
     }

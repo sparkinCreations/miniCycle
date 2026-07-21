@@ -254,8 +254,6 @@ export class ClearedTasksManager {
         clearedTasks.entries = clearedTasks.entries.filter(e => e.clearedAt > cutoff);
 
         const pruned = originalLength - clearedTasks.entries.length;
-        if (pruned > 0) {
-        }
     }
 
     // ========================================================================

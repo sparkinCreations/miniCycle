@@ -1,0 +1,27 @@
+{
+  "name": "minicycle-ios",
+  "version": "2.310",
+  "description": "miniCycle iOS app — Capacitor shell wrapping the byte-identical web app (web/).",
+  "private": true,
+  "//": "The web payload (www/) is GENERATED from web/ by web/scripts/build-ios-www.cjs. Never hand-edit www/. See mobile/ios/docs/IOS_BUILD_AND_DIFFERENCES.md.",
+  "scripts": {
+    "build:www": "node ../../web/scripts/build-ios-www.cjs",
+    "sync": "npm run build:www && npx cap sync ios",
+    "open": "npx cap open ios"
+  },
+  "author": "sparkinCreations",
+  "license": "SEE LICENSE IN ../../LICENSE",
+  "dependencies": {
+    "@capacitor/app": "^8.1.0",
+    "@capacitor/core": "^8.4.1",
+    "@capacitor/filesystem": "^8.1.2",
+    "@capacitor/ios": "^8.4.1",
+    "@capacitor/local-notifications": "^8.2.0",
+    "@capacitor/share": "^8.0.1",
+    "@capacitor/splash-screen": "^8.0.1",
+    "@capacitor/status-bar": "^8.0.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.4.1"
+  }
+}

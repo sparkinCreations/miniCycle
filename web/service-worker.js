@@ -1152,7 +1152,7 @@ self.addEventListener('fetch', function (event) {
                     });
                   });
                 }
-              }).catch(function () {});
+              }).catch(function () { /* cache write is best-effort */ });
             }
             return cached;
           }

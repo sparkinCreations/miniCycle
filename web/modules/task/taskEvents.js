@@ -404,8 +404,6 @@ export class TaskEvents {
             }
         });
 
-        if (hiddenCount > 0) {
-        }
 
         // Determine new active task ID
         let newActiveTaskId = null;

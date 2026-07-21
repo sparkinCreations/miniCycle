@@ -439,7 +439,7 @@ export async function editTaskImpl(taskItem, deps = {}) {
             innerOverlay.classList.remove(DOM_CLASSES.ACTIVE);
             const removeOverlays = () => { pageOverlay.remove(); innerOverlay.remove(); };
             pageOverlay.addEventListener('transitionend', removeOverlays, { once: true });
-            setTimeout(removeOverlays, 500);
+            setTimeout(removeOverlays, UI_TIMEOUTS.EDIT_OVERLAY_REMOVE);
             // Restore draggable state
             if (wasDraggable) taskItem.setAttribute('draggable', wasDraggable);
             else taskItem.removeAttribute('draggable');

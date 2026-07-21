@@ -172,7 +172,6 @@ class MiniCyclePlugin {
     addNotification(message, type = 'info') {
         if (this.deps.showNotification) {
             this.deps.showNotification(message, type);
-        } else {
         }
     }
 

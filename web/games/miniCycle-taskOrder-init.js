@@ -5,4 +5,4 @@ try {
         if (d.settings.darkMode) document.documentElement.classList.add('dark-mode');
         if (d.settings.reducedMotion) document.documentElement.classList.add('reduced-motion');
     }
-} catch(e) {}
+} catch(e) { /* corrupt/missing storage must not block first paint */ }

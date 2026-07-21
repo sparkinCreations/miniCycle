@@ -49,6 +49,7 @@ export default [
                 IntersectionObserver: 'readonly',
                 ResizeObserver: 'readonly',
                 HTMLElement: 'readonly',
+                HTMLDialogElement: 'readonly',
                 Element: 'readonly',
                 Node: 'readonly',
                 NodeList: 'readonly',
@@ -74,6 +75,7 @@ export default [
                 atob: 'readonly',
                 btoa: 'readonly',
                 // Service Worker / Cache API
+                self: 'readonly',
                 caches: 'readonly',
                 Request: 'readonly',
                 Response: 'readonly',
@@ -129,6 +131,10 @@ export default [
             'sonarjs/cognitive-complexity': ['warn', 25], // Flag very complex functions
 
             // Basic JS rules
+            // Empty catch blocks must carry an intent comment (a comment makes
+            // the block non-empty to ESLint) — same regression-gate philosophy
+            // as the Lighthouse CI CLS gate. See magic-number-audit.md.
+            'no-empty': ['error', { allowEmptyCatch: false }],
             'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
             'no-undef': 'error',
             'no-console': 'off', // Console logging is used throughout

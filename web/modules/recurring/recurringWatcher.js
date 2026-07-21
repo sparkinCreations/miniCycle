@@ -569,7 +569,6 @@ export async function setupRecurringWatcher() {
         // Initial check only if templates exist
         await catchUpMissedRecurringTasks();
         await watchRecurringTasks();
-    } else {
     }
 
     // Setup interval (active or idle based on template count)

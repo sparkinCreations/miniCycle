@@ -381,7 +381,7 @@ export function incrementCycleCount(miniCycleName, savedMiniCycles) {
     // ---- Milestone celebration overlays (one-time each) ----
     // Uses >= so backup restores past the threshold still trigger once
     // Delayed so the user sees the task reset animation play first.
-    if (globalCyclesCompleted >= 100 && !updatedState.userProgress?.celebrated100Cycles) {
+    if (globalCyclesCompleted >= MILESTONES.CELEBRATE_CYCLES_100 && !updatedState.userProgress?.celebrated100Cycles) {
         setTimeout(() => {
             showMilestoneCelebrationOverlay('milestoneTrail', 'notify.milestone100Cycles', 'notify.milestone100CyclesSubtitle');
         }, UI_TIMEOUTS.CELEBRATION_DELAY);
@@ -391,7 +391,7 @@ export function incrementCycleCount(miniCycleName, savedMiniCycles) {
         }, true);
     }
 
-    if (globalCyclesCompleted >= 500 && !updatedState.userProgress?.celebrated500Cycles) {
+    if (globalCyclesCompleted >= MILESTONES.CELEBRATE_CYCLES_500 && !updatedState.userProgress?.celebrated500Cycles) {
         setTimeout(() => {
             showMilestoneCelebrationOverlay('milestoneTrail', 'notify.milestone500Cycles', 'notify.milestone500CyclesSubtitle');
         }, UI_TIMEOUTS.CELEBRATION_DELAY);
@@ -678,7 +678,6 @@ export function checkMiniCycle(options = {}) {
                 deps.resetTasks?.();
             }, 1000);
             return;
-        } else {
         }
     }
 

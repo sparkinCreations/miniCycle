@@ -270,8 +270,6 @@ export function createDIModule(moduleName, schema = {}, options = {}) {
                 }
             }
 
-            if (logResolution) {
-            }
 
             // Cache result only when no overrides (standard Proxy access path)
             if (!hasOverrides) {

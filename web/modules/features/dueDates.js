@@ -510,7 +510,6 @@ export class MiniCycleDueDates {
 
         if (overdueTasks.length > 0) {
             this.deps.showNotification("⚠️ " + getLabel('notify.dueDateOverdue') + `\n~ ${overdueTasks.join("\n~ ")}`, "error");
-        } else {
         }
     }
 

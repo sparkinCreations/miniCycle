@@ -15,7 +15,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
+import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, BREAKPOINTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { isClickOnNotification } from './modalUtils.js';
 
@@ -403,7 +403,7 @@ export class TaskOptionsCustomizer {
         // Sync preview height to match the options list (desktop only —
         // on mobile the preview is a compact single-line bar below the list)
         requestAnimationFrame(() => {
-            if (window.innerWidth <= 768) return;
+            if (window.innerWidth <= BREAKPOINTS.MOBILE_MAX) return;
             const list = modal.querySelector(DOM_SELECTORS.TASK_OPTIONS_LIST);
             const preview = modal.querySelector(DOM_SELECTORS.TASK_OPTION_PREVIEW);
             if (list && preview) {

@@ -388,20 +388,17 @@ export function testRecurringIntegration(recurringModules = null) {
     // Test 1: AppState ready (via deps)
     try {
         tests.appStateReady = deps.AppState && deps.AppState.isReady();
-    } catch (e) {
-    }
+    } catch (e) { /* probe failed — flag stays falsy */ }
 
     // Test 2: Core module loaded
     try {
         tests.coreLoaded = recurringModules?.core && typeof recurringModules.core.applyRecurringToTaskSchema25 === 'function';
-    } catch (e) {
-    }
+    } catch (e) { /* probe failed — flag stays falsy */ }
 
     // Test 3: Panel loaded
     try {
         tests.panelLoaded = recurringModules?.panel && typeof recurringModules.panel.updateRecurringPanel === 'function';
-    } catch (e) {
-    }
+    } catch (e) { /* probe failed — flag stays falsy */ }
 
     // Test 4: Core API complete
     try {
@@ -414,8 +411,7 @@ export function testRecurringIntegration(recurringModules = null) {
         ];
         tests.coreAPIComplete = recurringModules?.coreAPI &&
             requiredCoreFunctions.every(fn => typeof recurringModules.coreAPI[fn] === 'function');
-    } catch (e) {
-    }
+    } catch (e) { /* probe failed — flag stays falsy */ }
 
     // Test 5: Panel API complete
     try {
@@ -430,8 +426,7 @@ export function testRecurringIntegration(recurringModules = null) {
         ];
         tests.panelAPIComplete = recurringModules?.panelAPI &&
             requiredPanelFunctions.every(fn => typeof recurringModules.panelAPI[fn] === 'function');
-    } catch (e) {
-    }
+    } catch (e) { /* probe failed — flag stays falsy */ }
 
     // Summary
     const allPassed = Object.values(tests).every(t => t === true);

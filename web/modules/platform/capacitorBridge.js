@@ -22,6 +22,9 @@
 
 'use strict';
 
+// Local by design — this file is a pure leaf module (no app imports; see header).
+const HINT_REMOVE_MS = 200; // remove the toast hint after its 150ms opacity fade completes
+
 // ── platform detection ───────────────────────────────────────────────────────
 
 function cap() {
@@ -221,7 +224,7 @@ function showExitHint() {
     requestAnimationFrame(() => { hint.style.opacity = '1'; });
     setTimeout(() => {
         hint.style.opacity = '0';
-        setTimeout(() => hint.remove(), 200);
+        setTimeout(() => hint.remove(), HINT_REMOVE_MS);
     }, 1800);
 }
 

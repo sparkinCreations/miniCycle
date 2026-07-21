@@ -613,6 +613,5 @@ function validateCriticalDIWiring(deps) {
     for (const { name, fix, error } of warnings) {
       console.warn(`  ❌ ${name}: ${fix}${error ? ` (Error: ${error})` : ''}`);
     }
-  } else {
   }
 }

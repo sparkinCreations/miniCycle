@@ -10,6 +10,9 @@
 
 import { createDIModule, required, optional } from '../core/diBase.js';
 import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION } from '../core/constants.js';
+
+// Coin-flip easter egg: one haptic tick per half rotation of the spun coin
+const HAPTIC_ROTATION_STEP_DEG = 180;
 import { getLabel } from '../labels/labelResolver.js';
 import { handleHorizontalArrowNav } from '../utils/keyboardNav.js';
 import { isClickOnNotification } from '../ui/modalUtils.js';
@@ -776,8 +779,8 @@ export class AchievementsManager {
                     currentRotation = deltaX * 2; // Multiply for more spin
                     coin.style.transform = `rotateY(${currentRotation}deg)`;
 
-                    // Haptic tick every 180 degrees
-                    if (Math.abs(currentRotation - lastHapticRotation) >= 180) {
+                    // Haptic tick every half rotation
+                    if (Math.abs(currentRotation - lastHapticRotation) >= HAPTIC_ROTATION_STEP_DEG) {
                         triggerHaptic(5);
                         lastHapticRotation = currentRotation;
                     }
@@ -805,8 +808,8 @@ export class AchievementsManager {
                         currentRotation += velocity;
                         coin.style.transform = `rotateY(${currentRotation}deg)`;
 
-                        // Haptic tick every 180 degrees during momentum
-                        if (Math.abs(currentRotation - lastHapticRotation) >= 180) {
+                        // Haptic tick every half rotation during momentum
+                        if (Math.abs(currentRotation - lastHapticRotation) >= HAPTIC_ROTATION_STEP_DEG) {
                             triggerHaptic(3);
                             lastHapticRotation = currentRotation;
                         }

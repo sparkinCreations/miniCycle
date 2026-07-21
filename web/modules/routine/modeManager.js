@@ -1252,7 +1252,6 @@ export class ModeManager {
 
             // Refresh UI to reflect correct mode
             this.refreshTaskButtonsForModeChange();
-        } else {
         }
     }
 

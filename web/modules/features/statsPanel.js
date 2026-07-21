@@ -1473,7 +1473,7 @@ export class StatsPanelManager {
             if (!state.userProgress.rewardMilestones) state.userProgress.rewardMilestones = [];
 
             // Unlock Task Order Game at 100 GLOBAL cycles
-            if (globalCyclesCompleted >= 100 && !milestoneUnlocks.taskOrderGame) {
+            if (globalCyclesCompleted >= MILESTONES.TASK_ORDER_GAME && !milestoneUnlocks.taskOrderGame) {
                 if (!state.settings.unlockedFeatures.includes("task-order-game")) {
                     state.settings.unlockedFeatures.push("task-order-game");
                     state.userProgress.rewardMilestones.push("task-order-game-100");
@@ -1482,8 +1482,6 @@ export class StatsPanelManager {
             }
         }, true); // Fix #35: needsUpdate evaluated before callback - always save immediately
 
-        if (needsUpdate) {
-        }
     }
 
     /**

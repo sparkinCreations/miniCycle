@@ -1,0 +1,8 @@
+{
+  "appId": "com.sparkincreations.minicycle",
+  "appName": "miniCycle",
+  "webDir": "www",
+  "ios": {
+    "backgroundColor": "#4c79ff"
+  }
+}

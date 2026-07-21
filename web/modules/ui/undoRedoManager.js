@@ -1517,7 +1517,7 @@ export async function onCycleSwitched(newCycleId) {
     updateUndoRedoButtons();
 
     // ✅ Small delay to let cycle fully load before re-enabling snapshots
-    await new Promise(resolve => setTimeout(resolve, 300));
+    await new Promise(resolve => setTimeout(resolve, UI_TIMEOUTS.CYCLE_SWITCH_TRANSITION));
   } catch (e) {
     console.error('❌ Cycle switch failed:', e);
 

@@ -50,7 +50,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { TASK_TIMEOUTS, UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
+import { TASK_TIMEOUTS, UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, MILESTONES } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -438,8 +438,6 @@ function moveCompletedTasksBack(context, deps) {
         taskList.appendChild(taskEl);
     });
 
-    if (completedTaskElements.length > 0) {
-    }
 
     // Restore original task order from AppState
     if (AppState?.isReady?.()) {
@@ -764,7 +762,7 @@ export async function deleteCompletedTasksImpl(activeCycleId, cycleData, taskLis
         // Check for 500 tasks cleared milestone celebration
         const postUpdateState = AppState.get();
         const newTotalTasks = postUpdateState.userProgress?.totalTasksCompleted || 0;
-        if (newTotalTasks >= 500 && !postUpdateState.userProgress?.celebrated500Tasks) {
+        if (newTotalTasks >= MILESTONES.CELEBRATE_TASKS_500 && !postUpdateState.userProgress?.celebrated500Tasks) {
             _deps.showMilestoneCelebrationOverlay?.('milestoneTrail', 'notify.milestone500Tasks', 'notify.milestone500TasksSubtitle');
             await AppState.update(state => {
                 if (!state.userProgress) state.userProgress = {};

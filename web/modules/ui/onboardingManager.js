@@ -15,7 +15,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_CLASSES, DOM_SELECTORS, UI_TIMEOUTS, EVENTS } from '../core/constants.js';
+import { DOM_IDS, DOM_CLASSES, DOM_SELECTORS, UI_TIMEOUTS, EVENTS, BREAKPOINTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -782,12 +782,14 @@ export class OnboardingManager {
         const currentShift = parseFloat(currentShiftStr) || 0;
         const naturalTop = taskTop - currentShift;
 
-        // GAP_PX must match --first-run-welcome-gap in CSS:
+        // Gap must match --first-run-welcome-gap in CSS:
         //   desktop (>768px viewport): --space-4 = 16px (comfortable)
         //   mobile  (≤768px viewport): --space-2 = 8px  (tighter for shorter viewport)
         // Hardcoded here since CSS custom properties returning `var()` chains
         // don't resolve to pixels via getPropertyValue alone.
-        const GAP_PX = window.innerWidth <= 768 ? 8 : 16;
+        const GAP_MOBILE_PX = 8;   // --space-2
+        const GAP_DESKTOP_PX = 16; // --space-4
+        const GAP_PX = window.innerWidth <= BREAKPOINTS.MOBILE_MAX ? GAP_MOBILE_PX : GAP_DESKTOP_PX;
         const requiredShift = Math.max(0, bannerBottom - naturalTop + GAP_PX);
 
         // Bottom-anchored controls (#nav-dots, #undo-redo-buttons) are hidden
