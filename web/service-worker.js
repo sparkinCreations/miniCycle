@@ -1,6 +1,36 @@
-// ES5-compatible (no const/let, no arrow funcs, no async/await, no optional chaining)
-// ✅ Version constants inlined directly (updated by update-version.sh)
-// This ensures the SW always has correct version info without HTTP cache issues
+// ═══════════════════════════════════════════════════════════════════════════
+// miniCycle Service Worker
+// ═══════════════════════════════════════════════════════════════════════════
+// ONE FILE, TWO WORLDS — read this before judging any branch "dead":
+//
+//   DEV  (npm start, raw source):  ?v= query params ARE the cache identity.
+//        The mismatch/network-first machinery below is the daily driver that
+//        picks up edits on reload and keeps module graphs consistent.
+//
+//   PROD (Netlify dist build):     app code lives at content-hashed /build/…
+//        URLs (immutable; the filename IS the version — see §7a). The ?v=
+//        machinery still runs but is nearly inert day-to-day; its remaining
+//        job is DORMANT-CLIENT RECOVERY — a device that last opened the app
+//        months ago wakes up requesting old-?v= stable paths, and network-
+//        first is what serves it fresh code so the page-side heal
+//        (verifyVersionFresh) can converge it. Rarely needed ≠ removable.
+//
+// The build (scripts/build-web.cjs) injects three things into the DIST copy
+// between marker comments — never remove the markers:
+//   __BUILD_JS_PRECACHE_*__   generated hashed entry+chunk list (§3)
+//   __BUILD_CSS_PRECACHE_*__  generated hashed CSS bundle list  (§3)
+//   __BUILD_MODULE_MAP_*__    source-path → hashed-URL map      (§1)
+//
+// Style contract: ES5 only (no const/let, arrows, async/await, optional
+// chaining) — this file must parse on the oldest supported WebViews.
+// Operational guide: docs/deployment/BUILD_PROCESS.md
+// Update strategy:   docs/deployment/SERVICE_WORKER_UPDATE_STRATEGY.md
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════════════════════════
+// §1 VERSION IDENTITY (update-version.sh rewrites the three vars below — keep
+//    their exact `var NAME = …` shapes) + the build-injected module map.
+// ═══════════════════════════════════════════════════════════════════════════
 var APP_VERSION = '2.311';
 var CACHE_VERSION = 'v1154';
 var CACHE_VERSION_NUMBER = 1154; // Numeric version matching version.js (for synthetic fallback)
@@ -23,50 +53,45 @@ function versionJsBody() {
     (MODULE_MAP ? '\nglobalThis.__MC_MODULE_MAP = ' + JSON.stringify(MODULE_MAP) + ';' : '');
 }
 
-// ✅ Service worker caching for offline support and faster loading
-// Version mismatch issues resolved via boot failsafe + forced cache clear on version change
+// ═══════════════════════════════════════════════════════════════════════════
+// §2 CONFIG
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Kill switch: serve everything network-only and delete caches on activate.
+// (Version-mismatch recovery itself is layered in the page: boot failsafe +
+// forced cache clear on version change + verifyVersionFresh.)
 var DISABLE_CACHING = false;
 
-// ✅ Cache expiration configuration
-var MAX_DYNAMIC_ENTRIES = 300;  // Maximum entries in dynamic cache (app has 100+ modules)
-var MAX_CACHE_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
+var MAX_DYNAMIC_ENTRIES = 300;  // dynamic-cache cap (app has 130+ modules)
+var MAX_CACHE_AGE_MS = 7 * 24 * 60 * 60 * 1000; // dynamic entries expire after 7 days
 
-// ✅ iOS OPTIMIZATION: Minimal network-first patterns for faster offline startup
-// ============================================================================
-// NETWORK-FIRST STRATEGY — History & Current Approach
-// ============================================================================
-// Previously, a NETWORK_FIRST_PATTERNS array listed path prefixes (version.js,
-// modules/boot/, modules/core/, modules/utils/, modules/recurring/, styles/)
-// that should always use network-first fetching. An isNetworkFirstFile() helper
-// checked URLs against those patterns.
+// ═══════════════════════════════════════════════════════════════════════════
+// REQUEST ROUTING MAP — the fetch handler (§7) walks these branches in order:
 //
-// The current strategy lives in the fetch handler:
-//   var needsNetworkFirst = versionMismatch || staticImportWithoutVersion;
+//   bypass   non-GET · non-http(s) · /tests/ · version.js?_cb= (heal probes)
+//   §7-nav   navigations → CACHE-FIRST + background revalidation
+//            (instant open; staleness is healed page-side by verifyVersionFresh)
+//   §7a      /build/… (dist only) → CACHE-FIRST, immutable, no revalidation
+//            (content-hashed: a changed file always has a new NAME)
+//   §7b      script/style with ?v= ≠ APP_VERSION, or un-versioned /modules/ JS
+//            → NETWORK-FIRST (3s timeout, cache fallback). Dev's freshness
+//            path + prod's dormant-client recovery. Guarded offline by the
+//            _appCodeNetworkDown circuit breaker (§6) because iOS reopens
+//            backgrounded PWAs "online" while the radio is actually dead.
+//   §7c      remaining script/style (?v= matches, test busters, lite, CSS)
+//            → STALE-WHILE-REVALIDATE, current-caches-first (Frankenstein
+//            guard: never serve a kept OLD cache's copy while online).
+//   §7d      everything else (images/fonts/json) → cache-first.
 //
-// Network-first applies to (a) genuine version mismatches (?v=X ≠ APP_VERSION)
-// AND (b) un-versioned /modules/ JS — your app code — so a deploy is picked up
-// immediately instead of being served stale-while-revalidate (cached copy first,
-// background update), which was the stale-build class of bug. CSS keeps
-// stale-while-revalidate; its @imports already carry ?v=, so a deploy bumps them
-// into the mismatch path. This interacts with offline boot on iOS:
-//
-// - iOS kills the PWA's service worker when backgrounded. When the user reopens
-//   offline, navigator.onLine can lie (return true). Naive network-first would
-//   then send 100+ files through 3-10s network timeouts before falling back to
-//   cache, exceeding the boot budget.
-//
-// - That's bounded by the _appCodeNetworkDown circuit breaker: the first failed
-//   app-code fetch trips it and every subsequent un-versioned module serves
-//   straight from cache (re-armed on a successful fetch and at each navigation).
-//   So at most one file pays the timeout. Precaching keeps the cache current
-//   after each SW activation, so the cache fallback is fresh.
-//
-// The old pattern-based approach and isNetworkFirstFile() were removed in v2.057
-// because they were dead code — never called by the fetch handler.
-// ============================================================================
+// History worth keeping: a NETWORK_FIRST_PATTERNS list + isNetworkFirstFile()
+// existed before v2.057 (dead code, removed); network-first became
+// mismatch-driven instead of path-driven at that point.
+// ═══════════════════════════════════════════════════════════════════════════
 
 // ============================================================================
-// PRECACHE LISTS - Optimized for iOS PWA performance
+// §3 PRECACHE LISTS — optimized for iOS PWA install (source lists = DEV;
+//    the dist build regenerates the marked blocks). Files NOT listed here are
+//    lazy-cached on first use by §7c/§7d (e.g. legal/user-manual pages).
 // ============================================================================
 
 // Core assets needed for basic app shell
@@ -234,7 +259,11 @@ var BOOT_CRITICAL = [
   './modules/ui/guidedTourManager.js',
   './modules/task/dailyResetManager.js',
   './modules/features/backupReminder.js',
-  './modules/other/basicPluginSystem.js'
+  './modules/other/basicPluginSystem.js',
+  // July 2026 drift fix (test:sw caught these missing):
+  './modules/features/uxRatings.js',
+  './modules/ui/focusTaskPanel.js',
+  './modules/ui/panelCarousel.js'
 ];
 // __BUILD_JS_PRECACHE_END__
 
@@ -289,7 +318,8 @@ var CSS_FILES = [
   './styles/components/first-run-welcome.css?v=' + APP_VERSION,
   './styles/components/guided-tour.css?v=' + APP_VERSION,
   './styles/components/history.css?v=' + APP_VERSION,
-  './styles/components/achievements.css?v=' + APP_VERSION
+  './styles/components/achievements.css?v=' + APP_VERSION,
+  './styles/components/focus-task-panel.css?v=' + APP_VERSION
 ];
 // __BUILD_CSS_PRECACHE_END__
 
@@ -300,17 +330,14 @@ var LITE_SHELL = [
   './lite/miniCycle-lite-scripts.js'
 ];
 
-// Secondary files - will be lazy-cached on first use via stale-while-revalidate
-// NOT precached to keep install fast on iOS
-var LAZY_CACHE_ON_USE = [
-  // User manual (in legal/ subdirectory)
-  './legal/user-manual.html',
-  './legal/user-manual-styles.css',
-  // Additional logos (app_name.png / App_Name_tp_bw.png removed July 2026 —
-  // they were referenced nowhere but this list; files deleted)
-  './assets/images/logo/taskcycle_logo_blackandwhite_transparent.png'
-  // All other modules will be cached on first use automatically
-];
+// (A LAZY_CACHE_ON_USE list lived here until v2.312 — it was documentation
+// masquerading as config: never read by any code. Its truth survives in the
+// §3 banner: unlisted files simply lazy-cache on first use.)
+
+// ============================================================================
+// §4 INSTALL — precache the shell + boot-critical files, then skipWaiting.
+//    addAllSafe: one bad URL must not kill the whole install (iOS especially).
+// ============================================================================
 
 self.addEventListener('install', function (event) {
   console.log('🔧 Service Worker ' + CACHE_VERSION + ' (App v' + APP_VERSION + ') installing...');
@@ -402,6 +429,15 @@ self.addEventListener('install', function (event) {
   );
 });
 
+// ============================================================================
+// §5 ACTIVATE — enable navigation preload, clean old caches (KEEPING the most
+//    recent previous static+dynamic pair: iOS can kill the SW mid-install,
+//    leaving the new precache incomplete — the kept pair fills those gaps via
+//    broad caches.match(). With hashed /build/ files this is pure upside:
+//    old hashed names can never collide with new ones, and the un-hashed
+//    shell (HTML, version.js) still benefits from the fallback.
+// ============================================================================
+
 self.addEventListener('activate', function (event) {
   console.log('🚀 Service Worker ' + CACHE_VERSION + ' activated');
   event.waitUntil(
@@ -469,9 +505,24 @@ self.addEventListener('activate', function (event) {
   );
 });
 
+// ============================================================================
+// §6 FETCH HELPERS — timeout wrapper, cache hygiene, quota-safe writes,
+//    offline shell picker, and the app-code network circuit breaker.
+// ============================================================================
+
 function fromScope(path) {
   return new URL(path, self.registration.scope).href;
 }
+
+// ✅ Network circuit breaker for app-code fetches (used by §7b).
+// iOS can reopen a backgrounded PWA OFFLINE while navigator.onLine still
+// returns true ("the lie"). Without protection, every network-first module
+// would wait out its timeout — the documented boot death spiral. Instead the
+// FIRST failed app-code fetch trips this flag and subsequent un-versioned
+// module requests serve straight from cache: at most ONE file pays the
+// timeout. Re-armed on any successful network response and at the start of
+// every navigation (a fresh page load is a fresh chance to reach the network).
+var _appCodeNetworkDown = false;
 
 /**
  * ✅ iOS FIX: Fetch with timeout to prevent hanging on slow/flaky connections
@@ -497,11 +548,6 @@ function fetchWithTimeout(request, timeoutMs) {
   });
 }
 
-// isNetworkFirstFile() was removed in v2.057 — see comment block at top of file.
-// Network-first is determined in the fetch handler by version mismatch OR an
-// un-versioned /modules/ request: needsNetworkFirst = versionMismatch ||
-// staticImportWithoutVersion (circuit-breaker protected).
-
 /**
  * Trim cache to prevent unbounded growth (LRU-style)
  * Removes oldest entries when cache exceeds MAX_DYNAMIC_ENTRIES
@@ -512,16 +558,6 @@ function fetchWithTimeout(request, timeoutMs) {
  */
 var _trimCacheTimeout = null;
 var _trimCachePending = false;
-
-// ✅ Network circuit breaker for app-code (un-versioned /modules/ JS).
-// Those requests are network-first (so app code is never served stale), but iOS
-// can reopen a backgrounded PWA OFFLINE while navigator.onLine still returns true
-// ("the lie"). Without protection, every module would then wait out the network
-// timeout — the documented boot death spiral. Instead, the FIRST failed app-code
-// fetch trips this flag and every subsequent un-versioned module serves straight
-// from cache. So at most one file pays the timeout, not 100+. Reset on any
-// successful network response and at the start of each navigation (page load).
-var _appCodeNetworkDown = false;
 
 function trimCache(cacheName, maxEntries) {
   // Debounce: schedule trim for later if not already pending
@@ -631,6 +667,10 @@ function pickShell(urlObj) {
   return 'full';
 }
 
+// ============================================================================
+// §7 FETCH ROUTING — see the REQUEST ROUTING MAP in §2 for the branch overview.
+// ============================================================================
+
 self.addEventListener('fetch', function (event) {
   var request = event.request;
   if (request.method !== 'GET') return;
@@ -671,7 +711,7 @@ self.addEventListener('fetch', function (event) {
     _appCodeNetworkDown = false;
 
     // ═══════════════════════════════════════════════════════════════════════
-    // NAVIGATION: Cache-first with background revalidation
+    // §7-nav NAVIGATION: Cache-first with background revalidation
     // ═══════════════════════════════════════════════════════════════════════
     // Serves cached HTML instantly (same speed as offline), then updates
     // the cache in the background. Version mismatches are caught by
@@ -790,19 +830,22 @@ self.addEventListener('fetch', function (event) {
                         url.pathname.endsWith('.mjs');
 
   if (isScriptOrStyle) {
-    // ✅ AUTO-VERSION: Append version parameter to JS/CSS requests for cache-busting
+    // ✅ AUTO-VERSION: append ?v= to un-versioned .js NETWORK fetches so the
+    // HTTP-cache key stays consistent with versioned requests (dev-era
+    // mechanism; harmless for the few un-hashed prod fetches it still touches).
     var fetchUrl = new URL(request.url);
     if (!fetchUrl.searchParams.has('v') && fetchUrl.pathname.endsWith('.js')) {
       fetchUrl.searchParams.set('v', APP_VERSION);
     }
 
-    // ✅ Create normalized cache key (strip version param for consistent caching)
+    // ✅ Normalized CACHE key: the ?v= is stripped, so every version of a URL
+    // shares one cache slot. This is why "current caches first" matters in §7c.
     var cacheUrl = new URL(request.url);
     cacheUrl.searchParams.delete('v');
     var cacheRequest = new Request(cacheUrl.href);
 
     // ═══════════════════════════════════════════════════════════════════════
-    // CONTENT-HASHED BUILD OUTPUT (/build/ tree, bundled dist only):
+    // §7a CONTENT-HASHED BUILD OUTPUT (/build/ tree, bundled dist only):
     // the filename IS the version, so these are immutable — cache-first with a
     // plain network fallback. No mismatch logic, no revalidation, no network-
     // first: a changed file always has a NEW name, so a cached copy can never
@@ -852,14 +895,19 @@ self.addEventListener('fetch', function (event) {
       return;
     }
 
-    // ✅ VERSION MISMATCH DETECTION:
+    // ✅ VERSION MISMATCH DETECTION (feeds §7b vs §7c):
     var requestVersion = url.searchParams.get('v');
     var isTestFile = url.pathname.indexOf('/tests/') !== -1;
     // Test cache busters use Date.now() (13-digit timestamps) or "test"/"dev-local"/etc.
     // These are NOT real version mismatches — skip network-first to avoid 3s timeouts per file.
     // Real app versions match pattern like "2.154" (short numeric with dot).
     var isTestCacheBuster = requestVersion && (requestVersion.length > 10 || requestVersion === 'test' || requestVersion === 'dev-local' || requestVersion === 'undefined');
-    var versionMismatch = requestVersion && requestVersion !== APP_VERSION && !isTestFile && !isTestCacheBuster;
+    // Lite is versioned INDEPENDENTLY (e.g. ?v=2.092 vs APP_VERSION 2.3xx), so
+    // its ?v= would mismatch forever — an accident, not a freshness signal.
+    // Exempt it so lite's 3 files get §7c stale-while-revalidate instead of
+    // paying a permanent network-first round trip (v2.312).
+    var isLiteFile = url.pathname.indexOf('/lite/') !== -1;
+    var versionMismatch = requestVersion && requestVersion !== APP_VERSION && !isTestFile && !isTestCacheBuster && !isLiteFile;
     var isModuleFile = url.pathname.indexOf('/modules/') !== -1;
     var staticImportWithoutVersion = isModuleFile && !requestVersion;
 
@@ -870,20 +918,19 @@ self.addEventListener('fetch', function (event) {
       console.log('📦 Static import (no version):', url.pathname);
     }
 
-    // ✅ NETWORK-FIRST for app code: genuine version mismatches AND un-versioned
-    // /modules/ JS (static imports like constants.js, diBase.js). App code is
-    // served fresh-first so a deploy is picked up immediately, instead of the old
-    // stale-while-revalidate that served the cached copy first and only updated
-    // in the background — the stale-build class of bug.
-    //
-    // Why this used to be mismatch-only: moduleLoader pulls many modules whose
-    // static imports carry no ?v=, and iOS can reopen a backgrounded PWA OFFLINE
-    // while navigator.onLine lies (returns true) — every file would then wait out
-    // the 3s network timeout and blow the boot budget. That is now handled by the
-    // _appCodeNetworkDown circuit breaker in the offline fast-path below: the
-    // first failed app-code fetch trips it and the rest serve straight from cache,
-    // so at most one file pays the timeout. CSS keeps its existing handling — its
-    // @imports already carry ?v=, so a deploy bumps them into the mismatch path.
+    // ═══════════════════════════════════════════════════════════════════════
+    // §7b NETWORK-FIRST — the freshness/recovery path.
+    // Fires for genuine ?v= mismatches and un-versioned /modules/ JS.
+    //   DEV:  this is the daily driver — edits are picked up on reload, and
+    //         mixed module graphs can't form (the stale-build bug class).
+    //   PROD (hashed dist): app code never lands here (§7a catches /build/);
+    //         what remains is version.js and DORMANT CLIENTS — devices waking
+    //         up with months-old ?v= requests get served fresh code here so
+    //         the page-side heal can converge them. Low traffic, high value.
+    // iOS guard: un-versioned module fetches ride the _appCodeNetworkDown
+    // breaker (§6) so an offline "online" device pays ONE timeout, not 100.
+    // CSS @imports carry ?v= in dev, so a deploy bumps them into this path too.
+    // ═══════════════════════════════════════════════════════════════════════
     var needsNetworkFirst = versionMismatch || staticImportWithoutVersion;
 
     if (needsNetworkFirst) {
@@ -1015,43 +1062,27 @@ self.addEventListener('fetch', function (event) {
       );
     } else {
       // ═══════════════════════════════════════════════════════════════════
-      // STALE-WHILE-REVALIDATE: Non-critical files for faster repeat loads
-      // Serves cached version instantly, updates in background
+      // §7c STALE-WHILE-REVALIDATE — matching-?v= files, test-buster fetches,
+      // lite, CSS: serve cached instantly, refresh in the background.
       //
-      // ⚠️ STATIC IMPORT FRESHNESS GUARD:
-      // Activate keeps the previous static cache as an offline fallback, so a
-      // broad `caches.match()` may return the OLD cached copy of an unversioned
-      // file (e.g. `constants.js`) even when the NEW STATIC_CACHE has the
-      // updated version. That breaks static imports the moment a deploy adds
-      // a new export to a file other modules statically import (e.g. adding
-      // `EVENTS` to constants.js → "Importing binding name 'EVENTS' is not
-      // found" because consumers got the stale copy).
+      // ⚠️ FRANKENSTEIN GUARD — current caches FIRST, broad match only offline.
+      // §5 keeps the previous cache pair as an offline fallback, cache keys are
+      // ?v=-stripped, and caches.match() searches caches OLDEST-FIRST — so a
+      // broad match can hand back the PREVIOUS version's copy of a file even
+      // for a versioned request. That mixed old/new module graph is the
+      // "Frankenstein cache": one stale file with a missing export kills boot
+      // ("Importing binding name 'X' is not found" — the themeManager/
+      // recurringPanel incident), and one stale stylesheet un-styles new
+      // markup (the v2.282 star-rating regression). Scope must be ALL
+      // script/style — including root-level version.js/miniCycle-main.js
+      // (v2.300: an old kept version.js won the broad match and dragged every
+      // dynamic import onto the old ?v=).
       //
-      // Fix: for all script/style requests, look in the CURRENT STATIC_CACHE /
-      // DYNAMIC_CACHE first; fall back to the broad search only if neither has
-      // the file (e.g. a brand-new module the precache missed).
-      // NOTE: this now covers VERSIONED (?v=) requests too. The earlier
-      // assumption that "?v= requests are safe to broad-search because the URL
-      // carries the version" was WRONG — the ?v= is stripped from the cache key
-      // (see ~line 730), so a versioned request can still match a stale entry in
-      // a kept old cache. That was the themeManager/recurringPanel stale-serve bug.
+      // Rule: look in the CURRENT static/dynamic caches first. On a miss —
+      // ONLINE: return null so the code below fetches fresh (never an
+      // old-version copy). OFFLINE: allow the broad match — a stale copy
+      // beats a dead boot.
       // ═══════════════════════════════════════════════════════════════════
-      // Prefer the CURRENT version's cache for ALL app-code files — versioned
-      // (?v=) imports included. The cache key has the ?v= stripped (see ~line 730),
-      // so the broad "search all caches" path below can return a STALE copy from a
-      // kept old cache even for a versioned request. That is exactly what served the
-      // old themeManager.js / recurringPanel.js to stale machines (Frankenstein
-      // cache). Looking in the current STATIC_CACHE / DYNAMIC_CACHE first prevents
-      // it; on a current-cache miss while online, the match returns null below so
-      // the file is fetched fresh from the network instead of an old-version copy.
-      // Must cover ROOT-LEVEL JS too (version.js, miniCycle-main.js), not just
-      // /modules/ + CSS: both are precached in BOOT_CRITICAL, and caches.match()
-      // searches caches oldest-first — so with a kept old pair, the OLD version.js
-      // won the broad match. APP_VERSION then read stale on a fresh HTML build and
-      // every dynamic import requested the old ?v= (mass network-first mismatch +
-      // a redundant verifyVersionFresh nuke/reload). Same bug class as the
-      // themeManager fix — everything in this branch is script-or-style, so
-      // prefer current caches unconditionally.
       var matchPromise = caches.open(STATIC_CACHE).then(function (sc) {
             return sc.match(cacheRequest);
           }).then(function (staticHit) {
@@ -1061,18 +1092,8 @@ self.addEventListener('fetch', function (event) {
             });
           }).then(function (currentHit) {
             if (currentHit) return currentHit;
-            // Current caches missed this unversioned file. A broad caches.match()
-            // here can return a STALE copy from a PREVIOUS version's cache (kept as
-            // an offline fallback) — the "Frankenstein cache" that breaks static
-            // imports after a PARTIAL precache on slow/old devices (a consumer gets
-            // the stale module and a newly-added export is "not found", killing boot).
-            // ONLINE: return null so the downstream path fetches fresh from the
-            // network (then STATIC_CACHE / synthetic), never an old-version copy.
-            // OFFLINE: a stale copy still beats a dead boot, so allow the broad match.
-            // Must cover CSS too, not just /modules/ JS: a component stylesheet that
-            // missed the new precache (partial install) would otherwise be served
-            // stale from a kept old cache while ONLINE — new markup + old CSS
-            // (v2.282 star-rating regression: stars rendered unstyled for updaters).
+            // Current-cache miss — see the Frankenstein guard banner above:
+            // online → null (fetch fresh below); offline → broad match allowed.
             if (self.navigator.onLine) return null;
             return caches.match(cacheRequest);
           });
@@ -1214,7 +1235,9 @@ self.addEventListener('fetch', function (event) {
       );
     }
   } else {
-    // ✅ CACHE-FIRST for images and other static assets
+    // ═══════════════════════════════════════════════════════════════════════
+    // §7d EVERYTHING ELSE (images, fonts, JSON, …) — plain cache-first.
+    // ═══════════════════════════════════════════════════════════════════════
     event.respondWith(
       caches.match(request).then(function (cached) {
         if (cached) {
@@ -1247,7 +1270,14 @@ self.addEventListener('fetch', function (event) {
   }
 });
 
-// ✅ Message handler
+// ============================================================================
+// §8 MESSAGES & DIAGNOSTICS — page ↔ SW contracts:
+//   SKIP_WAITING      update flow (page's "Prepare Update" confirmation)
+//   GET_VERSION       ensureControllingWorkerFresh + testing modal
+//   WARM_CACHE        post-boot gap-fill (orchestrator, after online boot)
+//   GET_CACHE_STATUS  testing modal cache inventory
+// ============================================================================
+
 self.addEventListener('message', function (event) {
   var data = event.data || {};
   console.log('📨 Service Worker received message:', data);
