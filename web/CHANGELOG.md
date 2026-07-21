@@ -1,3 +1,7 @@
+## [2.314] - 2026-07-21
+- fix(tests): self-healing test environment — version.js via _cb bypass (always-fresh map), busted HTML fetch, SW-vs-deployed mismatch banner on the suite page
+
+
 ## [2.313] - 2026-07-21
 - fix(tests): dist-compatible test suite — query-forwarding shims (per-buster fresh instances), version.js/map in suite page, map-aware source fetches, import-based export checks, skip-on-bundled for structural greps
 - ios: stamp v2.312 build 2 for first archive
