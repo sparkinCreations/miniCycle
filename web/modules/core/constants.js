@@ -249,7 +249,8 @@ export const LIMITS = Object.freeze({
     BACKUP_REMINDER_EVERY_N_TASKS: 100,  // Trigger backup reminder every N cleared tasks (To-Do mode)
     MAX_CORRUPT_BACKUPS: 3,              // Max raw-corrupted-data snapshots kept in localStorage for manual recovery
     LAYOUT_DRAG_THRESHOLD: 5,             // px - Task View Layout: pointer travel before drag starts (forgive hover jitter)
-    LAYOUT_DOCK_GAP: 20                   // px - Task View Layout: vertical gap between an anchor element and its docked dependent
+    LAYOUT_DOCK_GAP: 20,                  // px - Task View Layout: vertical gap between an anchor element and its docked dependent
+    NATIVE_REMINDER_SCHEDULE_MAX: 24      // Max future reminder occurrences pre-scheduled as native notifications (iOS caps pending local notifications at 64 app-wide)
 });
 
 /**

@@ -687,9 +687,31 @@ self.addEventListener('fetch', function (event) {
     return; // Let the browser handle extension requests, data URLs, etc.
   }
 
-  // ✅ BYPASS: Always fetch fresh for test files (network-only, no cache)
+  // ✅ BYPASS: Always fetch fresh for test files (network-only, no cache) —
+  // stale tests asserting against current code produce meaningless results.
+  // Offline, say WHY instead of surfacing a raw fetch failure (Oct 2025 design,
+  // messaged July 2026): navigations get a friendly page, scripts a clear throw.
   if (url.pathname.indexOf('/tests/') !== -1) {
-    event.respondWith(fetch(request));
+    event.respondWith(fetch(request).catch(function () {
+      var accept = (request.headers && request.headers.get('accept')) || '';
+      var wantsHtml = accept.indexOf('text/html') !== -1 || url.pathname.endsWith('.html');
+      if (wantsHtml) {
+        return new Response(
+          '<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">' +
+          '<title>Tests require network</title>' +
+          '<body style="margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#1e293b;color:#fff">' +
+          '<div style="max-width:420px;padding:24px"><div style="font-size:48px">📡</div>' +
+          '<h2 style="margin:12px 0 8px">Tests require a network connection</h2>' +
+          '<p style="color:#cbd5e1;line-height:1.5">Test files are always fetched fresh so results match the deployed code — they are never cached. ' +
+          'Reconnect and try again.<br><br>Diagnostics (Boot Timing, cache status) work offline from Settings → Testing.</p></div></body>',
+          { status: 200, headers: { 'Content-Type': 'text/html' } }
+        );
+      }
+      return new Response(
+        'throw new Error("Tests require a network connection — test files are never cached (results must match the deployed code).");',
+        { status: 200, headers: { 'Content-Type': 'application/javascript' } }
+      );
+    }));
     return;
   }
 

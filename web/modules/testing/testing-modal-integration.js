@@ -13,7 +13,8 @@
  * @module testing-modal-integration
  */
 
-import { DOM_IDS, getTestOrigin } from '../core/constants.js';
+import { DOM_IDS, getTestOrigin, UI_TIMEOUTS } from '../core/constants.js';
+import { getLabel } from '../labels/labelResolver.js';
 import { createDIModule, required, optional } from '../core/diBase.js';
 
 const di = createDIModule('TestingModalIntegration', {
@@ -133,6 +134,12 @@ let testRunnerModal = null;
 
 // Create and show the test runner iframe modal
 function createTestRunnerModal() {
+    // Tests are network-only BY DESIGN (the SW never caches /tests/ so results
+    // always match deployed code) — say so instead of showing a dead iframe.
+    if (!navigator.onLine) {
+        getShowNotification()('📡 ' + getLabel('notify.testsRequireNetwork'), 'warning', UI_TIMEOUTS.NOTIFICATION_EXTENDED);
+        return;
+    }
     // Remove any existing modal
     if (testRunnerModal) {
         testRunnerModal.remove();

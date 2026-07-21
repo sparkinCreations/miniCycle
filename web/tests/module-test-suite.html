@@ -840,6 +840,17 @@
         let currentModule = null;
 
         const moduleSelect = document.getElementById('module-select');
+        // Tests are network-only by design (the SW never caches /tests/), so an
+        // offline run can only produce fetch failures — refuse with a clear message.
+        function requireOnline() {
+            if (navigator.onLine) return true;
+            const note = document.createElement('div');
+            note.className = 'result fail';
+            note.textContent = '📡 Tests require a network connection — test files are always fetched fresh so results match the deployed code. Reconnect and try again. (Diagnostics like Boot Timing work offline.)';
+            resultsDiv.prepend(note);
+            return false;
+        }
+
         const runTestsBtn = document.getElementById('run-tests-btn');
         const runAllTestsBtn = document.getElementById('run-all-tests-btn');
         const copyResultsBtn = document.getElementById('copy-results-btn');
@@ -1900,6 +1911,7 @@
 
         // Run tests (async to handle async test functions)
         runTestsBtn.addEventListener('click', async () => {
+            if (!requireOnline()) return;
             if (!currentModule) {
                 resultsDiv.innerHTML = '<div class="result fail">❌ Please select a module first</div>';
                 return;
@@ -2317,6 +2329,7 @@
 
         // Run all tests
         runAllTestsBtn.addEventListener('click', async () => {
+            if (!requireOnline()) return;
             const startTime = performance.now();
 
             // Suite-level "did the tab go hidden during this run?" tracker. Backgrounding

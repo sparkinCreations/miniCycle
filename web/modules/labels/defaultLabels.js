@@ -643,6 +643,7 @@ export const DEFAULT_LABELS = deepFreeze({
         // Reminder notifications
         reminderNotificationTitle: 'miniCycle Reminder',
         reminderTasksToComplete: 'You have tasks to complete:',
+        reminderBackgroundBody: 'You have unfinished tasks in your routine',
         reminderEnabled:         'Reminder enabled: {settings}',
         reminderCustomSettings:  'Custom settings',
         reminderEveryFrequency:  'Every {freq} {unit}',
@@ -832,6 +833,7 @@ export const DEFAULT_LABELS = deepFreeze({
 
         // Reminder notifications
         reminderEnabled:         'Task reminders enabled!',
+        testsRequireNetwork:     'Tests require a network connection — test files are always fetched fresh. Reconnect and try again.',
         reminderDisabled:        'Task reminders disabled.',
         taskReminderDisabled:    'Reminder disabled for task.',
 

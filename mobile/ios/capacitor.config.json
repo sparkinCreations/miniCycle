@@ -4,5 +4,10 @@
   "webDir": "www",
   "ios": {
     "backgroundColor": "#4c79ff"
+  },
+  "plugins": {
+    "LocalNotifications": {
+      "presentationOptions": []
+    }
   }
 }

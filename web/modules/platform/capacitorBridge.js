@@ -287,6 +287,81 @@ export async function sendNativeNotification({ title, body }) {
     }
 }
 
+// ── 2b. scheduled reminder series (delivery while the app is closed) ─────────
+//
+// The reminders module's JS timer stops the moment the OS suspends the WebView
+// (backgrounded/closed app), so on native the upcoming occurrences are ALSO
+// pre-scheduled as future-dated local notifications and the OS delivers them.
+// A reserved ID range namespaces the series so it can be cancelled/re-anchored
+// wholesale without touching other notifications (e.g. the immediate ones from
+// sendNativeNotification, which use small incrementing ids).
+
+const REMINDER_SERIES_ID_BASE = 100001; // reserved id namespace for the series
+
+/**
+ * Cancel every pending notification in the reminder-series id range.
+ * @param {number} maxCount  How many series slots to clear (callers pass the
+ *                           same cap they schedule with, e.g. LIMITS.NATIVE_REMINDER_SCHEDULE_MAX).
+ * @returns {Promise<boolean>} true if handled natively; false off-native.
+ */
+export async function cancelNativeReminderSeries(maxCount) {
+    const LocalNotifications = getPlugin('LocalNotifications');
+    if (!LocalNotifications) return false;
+    try {
+        const ids = Array.from({ length: maxCount }, (_, i) => ({ id: REMINDER_SERIES_ID_BASE + i }));
+        await LocalNotifications.cancel({ notifications: ids });
+        return true;
+    } catch (e) {
+        console.warn('[capacitorBridge] cancel reminder series failed:', e);
+        return false;
+    }
+}
+
+/**
+ * Replace the pending reminder series: cancel the old one, then schedule up to
+ * `count` occurrences at startAt, startAt+intervalMs, … as OS-delivered local
+ * notifications. Content is static (future task state is unknowable at
+ * schedule time) — callers re-anchor the series whenever reminder state
+ * changes, so stale runs are bounded.
+ *
+ * @param {Object} opts
+ * @param {string} opts.title       Notification title.
+ * @param {string} opts.body        Notification body.
+ * @param {number} opts.startAt     Epoch ms of the first occurrence (must be future).
+ * @param {number} opts.intervalMs  Gap between occurrences (> 0).
+ * @param {number} opts.count       Occurrences to schedule (clamped to maxCount).
+ * @param {number} opts.maxCount    Series cap (also the cancel range).
+ * @returns {Promise<boolean>} true if scheduled natively; false otherwise.
+ */
+export async function scheduleNativeReminderSeries({ title, body, startAt, intervalMs, count, maxCount }) {
+    const LocalNotifications = getPlugin('LocalNotifications');
+    if (!LocalNotifications) return false;
+    try {
+        const perm = await checkNotificationPermission();
+        if (perm !== 'granted') return false;
+
+        await cancelNativeReminderSeries(maxCount);
+
+        const n = Math.max(0, Math.min(count, maxCount));
+        if (n === 0 || !(intervalMs > 0)) return true; // series cleared, nothing to schedule
+
+        const notifications = [];
+        for (let i = 0; i < n; i++) {
+            notifications.push({
+                id: REMINDER_SERIES_ID_BASE + i,
+                title,
+                body,
+                schedule: { at: new Date(startAt + i * intervalMs), allowWhileIdle: true },
+            });
+        }
+        await LocalNotifications.schedule({ notifications });
+        return true;
+    } catch (e) {
+        console.warn('[capacitorBridge] schedule reminder series failed:', e);
+        return false;
+    }
+}
+
 // ── 3. file share / export (.mcyc) ────────────────────────────────────────────
 
 /**
