@@ -57,7 +57,7 @@ export async function runModuleManifestsTests(resultsDiv) {
     // the declarative provides graph.
     const depMappingKeys = new Set();
     try {
-        const res = await fetch(`../modules/boot/moduleLoader.js?v=${cacheBuster}`);
+        const res = await fetch(((globalThis.__MC_MODULE_MAP || {})['/modules/boot/moduleLoader.js'] || '../modules/boot/moduleLoader.js') + `?v=${cacheBuster}`);
         const text = await res.text();
         const start = text.indexOf('const depMappings = {');
         const end = text.indexOf('return {', start);
@@ -169,12 +169,14 @@ export async function runModuleManifestsTests(resultsDiv) {
     };
 
     await test('moduleLoader depMappings were extracted (test prerequisite)', () => {
+        if (globalThis.__MC_MODULE_MAP) { console.log('⏭️ skipped on bundled build — source-structural check (identifiers are minified; covered by the source CI run)'); return; }
         if (depMappingKeys.size === 0) {
             throw new Error('could not read depMappings from moduleLoader.js — dangling-requires check would be unreliable');
         }
     });
 
     await test('every requires[] entry resolves to a provider/core dep/module/depMapping', () => {
+        if (globalThis.__MC_MODULE_MAP) { console.log('⏭️ skipped on bundled build — source-structural check (identifiers are minified; covered by the source CI run)'); return; }
         const dangling = [];
         for (const [name, m] of entries) {
             for (const dep of m.requires || []) {

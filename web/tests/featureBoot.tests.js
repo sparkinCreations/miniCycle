@@ -36,38 +36,29 @@ export async function runFeatureBootTests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">📁 Module Structure</h4>';
 
     await test('featureBoot.js file is accessible', async () => {
-        const response = await fetch('../modules/boot/featureBoot.js');
+        const response = await fetch((globalThis.__MC_MODULE_MAP || {})['/modules/boot/featureBoot.js'] || '../modules/boot/featureBoot.js');
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}`);
         }
     });
 
     await test('featureBoot.js exports createDepsContainer', async () => {
-        const response = await fetch('../modules/boot/featureBoot.js');
-        const code = await response.text();
-
-        if (!code.includes('export function createDepsContainer')) {
-            throw new Error('createDepsContainer not found');
-        }
+        // Import-based (not a source grep): works on source AND the minified bundle.
+        const m = await import(((globalThis.__MC_MODULE_MAP || {})['/modules/boot/featureBoot.js'] || '../modules/boot/featureBoot.js') + '?v=' + Date.now());
+        if (typeof m.createDepsContainer !== 'function') throw new Error('createDepsContainer not found');
     });
 
     await test('featureBoot.js exports boot functions', async () => {
-        const response = await fetch('../modules/boot/featureBoot.js');
-        const code = await response.text();
-
-        if (!code.includes('export async function bootEarlyDeps')) {
-            throw new Error('bootEarlyDeps not found');
-        }
-        if (!code.includes('export async function bootFeatures')) {
-            throw new Error('bootFeatures not found');
-        }
+        const m = await import(((globalThis.__MC_MODULE_MAP || {})['/modules/boot/featureBoot.js'] || '../modules/boot/featureBoot.js') + '?v=' + Date.now());
+        if (typeof m.bootEarlyDeps !== 'function') throw new Error('bootEarlyDeps not found');
+        if (typeof m.bootFeatures !== 'function') throw new Error('bootFeatures not found');
     });
 
     // ===== NAMESPACE TESTS =====
     resultsDiv.innerHTML += '<h4 class="test-section">📦 Namespace Structure</h4>';
 
     await test('Container has expected namespaces', async () => {
-        const response = await fetch('../modules/boot/featureBoot.js');
+        const response = await fetch((globalThis.__MC_MODULE_MAP || {})['/modules/boot/featureBoot.js'] || '../modules/boot/featureBoot.js');
         const code = await response.text();
 
         const namespaces = ['utils:', 'features:', 'ui:', 'core:', 'task:', 'cycle:'];
@@ -79,7 +70,7 @@ export async function runFeatureBootTests(resultsDiv) {
     });
 
     await test('Container has recurring namespace', async () => {
-        const response = await fetch('../modules/boot/featureBoot.js');
+        const response = await fetch((globalThis.__MC_MODULE_MAP || {})['/modules/boot/featureBoot.js'] || '../modules/boot/featureBoot.js');
         const code = await response.text();
 
         if (!code.includes('recurring:')) {
@@ -88,7 +79,7 @@ export async function runFeatureBootTests(resultsDiv) {
     });
 
     await test('Container has storage namespace', async () => {
-        const response = await fetch('../modules/boot/featureBoot.js');
+        const response = await fetch((globalThis.__MC_MODULE_MAP || {})['/modules/boot/featureBoot.js'] || '../modules/boot/featureBoot.js');
         const code = await response.text();
 
         if (!code.includes('storage:')) {

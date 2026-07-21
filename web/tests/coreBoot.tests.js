@@ -113,14 +113,14 @@ export async function runCoreBootTests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">📁 Module Structure</h4>';
 
     await test('coreBoot.js file is accessible', async () => {
-        const response = await fetch('../modules/boot/coreBoot.js');
+        const response = await fetch((globalThis.__MC_MODULE_MAP || {})['/modules/boot/coreBoot.js'] || '../modules/boot/coreBoot.js');
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}`);
         }
     });
 
     await test('coreBoot.js exports data functions', async () => {
-        const response = await fetch('../modules/boot/coreBoot.js');
+        const response = await fetch((globalThis.__MC_MODULE_MAP || {})['/modules/boot/coreBoot.js'] || '../modules/boot/coreBoot.js');
         const code = await response.text();
 
         if (!code.includes('loadMiniCycleData')) {
@@ -135,7 +135,7 @@ export async function runCoreBootTests(resultsDiv) {
     });
 
     await test('coreBoot.js sets boot flags', async () => {
-        const response = await fetch('../modules/boot/coreBoot.js');
+        const response = await fetch((globalThis.__MC_MODULE_MAP || {})['/modules/boot/coreBoot.js'] || '../modules/boot/coreBoot.js');
         const code = await response.text();
 
         if (!code.includes("dataset.appBooted")) {
@@ -144,7 +144,8 @@ export async function runCoreBootTests(resultsDiv) {
     });
 
     await test('stale-constants path continues boot when recovery unavailable (M5)', async () => {
-        const response = await fetch('../modules/boot/coreBoot.js');
+        if (globalThis.__MC_MODULE_MAP) { console.log('⏭️ skipped on bundled build — source-structural check (identifiers are minified; covered by the source CI run)'); return; }
+        const response = await fetch((globalThis.__MC_MODULE_MAP || {})['/modules/boot/coreBoot.js'] || '../modules/boot/coreBoot.js');
         const code = await response.text();
 
         // Offline (or recovery-exhausted), returning null left the splash

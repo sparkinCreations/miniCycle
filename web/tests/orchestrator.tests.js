@@ -47,35 +47,38 @@ export async function runOrchestratorTests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">🛡️ Boot Audit Regressions (M6)</h4>';
 
     await test('startOrchestrator failure routes through boot-error machinery (M6)', async () => {
-        const response = await fetch('../modules/boot/orchestrator.js');
+        const response = await fetch((globalThis.__MC_MODULE_MAP || {})['/modules/boot/orchestrator.js'] || '../modules/boot/orchestrator.js');
         const code = await response.text();
         // The startOrchestrator catch must not only log — a loadDependencies()
         // failure needs cache recovery or the boot-error screen, not a 60s
         // spinner + Lite redirect.
-        if (!code.includes("showBootError('Dependency load'")) {
+        // Both-worlds greps: string LITERALS survive minification (identifiers don't).
+        if (!/['"]Dependency load['"]/.test(code)) {
             throw new Error('M6 regression: startOrchestrator catch must call showBootError');
         }
-        if (!code.includes("attemptCacheRecovery('orchestrator-startFailure')")) {
+        if (!/['"]orchestrator-startFailure['"]/.test(code)) {
             throw new Error('M6 regression: startOrchestrator catch must fast-path cache-class errors');
         }
     });
 
     await test('initApp catch guards non-Error rejections (M6)', async () => {
-        const response = await fetch('../modules/boot/orchestrator.js');
+        const response = await fetch((globalThis.__MC_MODULE_MAP || {})['/modules/boot/orchestrator.js'] || '../modules/boot/orchestrator.js');
         const code = await response.text();
         // A string/undefined rejection has no .message — unguarded access threw
         // inside the catch and skipped the error screen and retry entirely.
         if (code.includes("const phase = error.message.includes")) {
             throw new Error('M6 regression: initApp catch reads error.message without ?. guard');
         }
-        if (!code.includes("error?.message || ''")) {
+        // Minify-tolerant: source `error?.message || ''` becomes e.g. `e?.message||""`.
+        if (!/[A-Za-z_$][\w$]*\?\.message\s*\|\|\s*(''|"")/.test(code)) {
             throw new Error('M6 regression: guarded errMsg extraction missing from initApp catch');
         }
     });
 
     await test('fallback BOOT_TIMEOUTS stays in sync with constants.js', async () => {
+        if (globalThis.__MC_MODULE_MAP) { console.log('⏭️ skipped on bundled build — source-structural check (identifiers are minified; covered by the source CI run)'); return; }
         const [orchCode, constantsMod] = await Promise.all([
-            fetch('../modules/boot/orchestrator.js').then(r => r.text()),
+            fetch((globalThis.__MC_MODULE_MAP || {})['/modules/boot/orchestrator.js'] || '../modules/boot/orchestrator.js').then(r => r.text()),
             import(`../modules/core/constants.js?v=${cacheBuster}`)
         ]);
         const canonical = constantsMod.BOOT_TIMEOUTS;

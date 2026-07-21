@@ -1,6 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- version.js sets APP_VERSION and, on the bundled build, __MC_MODULE_MAP —
+         tests use the map to resolve stable module paths to hashed /build/ URLs
+         (source-text greps must read the real bundle, not the 2-line shims). -->
+    <script src="../version.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#5680ff">

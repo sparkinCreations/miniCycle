@@ -953,7 +953,7 @@ export async function runAppInitTests(resultsDiv, isPartOfSuite = false) {
     });
 
     await test('hideAppLoader defers dismissal while awaiting a first-run choice', async () => {
-        const src = await (await fetch('../modules/boot/uiBoot.js')).text();
+        const src = await (await fetch((globalThis.__MC_MODULE_MAP || {})['/modules/boot/uiBoot.js'] || '../modules/boot/uiBoot.js')).text();
         // Boot must NOT hide the splash out from under an unpicked choice screen;
         // it marks appLoaded (defuses the 60s lite failsafe) and waits for the event.
         if (!/data-awaiting-choice/.test(src)) throw new Error('hideAppLoader must check data-awaiting-choice');

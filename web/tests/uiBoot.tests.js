@@ -36,34 +36,23 @@ export async function runUIBootTests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">📁 Module Structure</h4>';
 
     await test('uiBoot.js file is accessible', async () => {
-        const response = await fetch('../modules/boot/uiBoot.js');
+        const response = await fetch((globalThis.__MC_MODULE_MAP || {})['/modules/boot/uiBoot.js'] || '../modules/boot/uiBoot.js');
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}`);
         }
     });
 
     await test('uiBoot.js exports loader functions', async () => {
-        const response = await fetch('../modules/boot/uiBoot.js');
-        const code = await response.text();
-
-        if (!code.includes('export function showLoader')) {
-            throw new Error('showLoader not found');
-        }
-        if (!code.includes('export function hideLoader')) {
-            throw new Error('hideLoader not found');
-        }
+        // Import-based (not a source grep): works on source AND the minified bundle.
+        const m = await import(((globalThis.__MC_MODULE_MAP || {})['/modules/boot/uiBoot.js'] || '../modules/boot/uiBoot.js') + '?v=' + Date.now());
+        if (typeof m.showLoader !== 'function') throw new Error('showLoader not found');
+        if (typeof m.hideLoader !== 'function') throw new Error('hideLoader not found');
     });
 
     await test('uiBoot.js exports device detection', async () => {
-        const response = await fetch('../modules/boot/uiBoot.js');
-        const code = await response.text();
-
-        if (!code.includes('export function isTouchDevice')) {
-            throw new Error('isTouchDevice not found');
-        }
-        if (!code.includes('export function detectDeviceType')) {
-            throw new Error('detectDeviceType not found');
-        }
+        const m = await import(((globalThis.__MC_MODULE_MAP || {})['/modules/boot/uiBoot.js'] || '../modules/boot/uiBoot.js') + '?v=' + Date.now());
+        if (typeof m.isTouchDevice !== 'function') throw new Error('isTouchDevice not found');
+        if (typeof m.detectDeviceType !== 'function') throw new Error('detectDeviceType not found');
     });
 
     // ===== DOM TESTS =====

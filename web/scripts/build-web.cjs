@@ -211,20 +211,36 @@ function rewriteHtml(moduleMap, cssBundle) {
   fs.writeFileSync(p, html);
 }
 
-function emitShims(moduleMap) {
-  // Stable-path re-export shims so the production testing modal's direct
-  // source-path imports (tests import '../modules/x.js?v=<buster>') resolve.
-  // `export *` misses default exports — special-case files that have one.
+function emitShims(moduleMap, exportsByHashed) {
+  // Stable-path shims so the production testing modal's direct source-path
+  // imports (tests import '../modules/x.js?v=<buster>') resolve.
+  //
+  // QUERY-FORWARDING (v2.313): a static `export * from` shim resolved every
+  // buster to the SAME hashed URL — one shared module instance, so the
+  // in-browser full-suite run leaked state across suites (the ?v= buster's
+  // whole job was per-suite fresh instances). These shims forward their own
+  // query onto the hashed import instead: each buster yields a FRESH instance
+  // of the real module. Requires explicit export lists (from the esbuild
+  // metafile) because dynamic re-export can't be expressed with `export *`.
+  // The app itself never fetches these files (the module map bypasses them).
   let count = 0;
   for (const [srcPath, hashed] of Object.entries(moduleMap)) {
-    const srcAbs = path.join(WEB, srcPath.slice(1));
-    const hasDefault = /(^|\n)\s*export\s+default\s/.test(fs.readFileSync(srcAbs, 'utf8'));
+    const names = (exportsByHashed[hashed] || []).filter(n => n !== 'default');
+    const hasDefault = (exportsByHashed[hashed] || []).includes('default');
     const dest = path.join(DIST, srcPath.slice(1));
     fs.mkdirSync(path.dirname(dest), { recursive: true });
-    fs.writeFileSync(dest,
-      `// Stable-path shim (build-web.cjs) — real module is content-hashed.\n` +
-      `export * from '${hashed}';\n` +
-      (hasDefault ? `export { default } from '${hashed}';\n` : ''));
+    const lines = [
+      `// Stable-path shim (build-web.cjs) — real module is content-hashed.`,
+      `// Forwards ?v= busters so each one yields a fresh module instance (test isolation).`,
+      `const m = await import('${hashed}' + new URL(import.meta.url).search);`,
+    ];
+    if (names.length) {
+      lines.push(`let ${names.join(', ')};`);
+      lines.push(`({ ${names.join(', ')} } = m);`);
+      lines.push(`export { ${names.join(', ')} };`);
+    }
+    if (hasDefault) lines.push(`export default m.default;`);
+    fs.writeFileSync(dest, lines.join('\n') + '\n');
     count++;
   }
   return count;
@@ -341,6 +357,7 @@ function makeRewritePlugin() {
 
   // Module map + built-file lists from the metafile.
   const moduleMap = {};
+  const exportsByHashed = {};
   let cssBundle = null;
   const builtJs = [];
   for (const [outPath, meta] of Object.entries(result.metafile.outputs)) {
@@ -349,7 +366,10 @@ function makeRewritePlugin() {
     if (!meta.entryPoint) continue;
     const srcRel = '/' + meta.entryPoint.replace(/\\/g, '/');
     if (outRel.endsWith('.css')) { cssBundle = outRel; continue; }
-    if (outRel.endsWith('.js')) moduleMap[srcRel] = '/' + outRel;
+    if (outRel.endsWith('.js')) {
+      moduleMap[srcRel] = '/' + outRel;
+      exportsByHashed['/' + outRel] = meta.exports || [];
+    }
   }
   if (!cssBundle) fail('CSS bundle missing from build output');
 
@@ -362,7 +382,7 @@ function makeRewritePlugin() {
   appendMapToVersionJs(moduleMap);
   const precacheCount = injectSw(builtJs, cssBundle, moduleMap);
   rewriteHtml(moduleMap, cssBundle);
-  const shimCount = emitShims(moduleMap);
+  const shimCount = emitShims(moduleMap, exportsByHashed);
 
   const chunkCount = builtJs.filter(p => p.startsWith('build/chunks/')).length;
   const totalBytes = Object.entries(result.metafile.outputs)
