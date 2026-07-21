@@ -1,3 +1,7 @@
+## [2.311] - 2026-07-21
+- refactor(constants): execute magic-number audit — BREAKPOINTS, 6 new UI_TIMEOUTS, milestone dedup, game constants; delete 31 dead if/else shells; no-empty lint gate + SW in lint scope
+
+
 ## [2.310] - 2026-07-20
 - docs: second sweep — incident marked resolved (entry hashing shipped), FIX_3 guard update, focus-view dot-nav note, source ?v= rationale for contributors
 - docs: post-pipeline docs pass — rewrite BUILD_PROCESS, current-state callouts (SW/PWA/version-guide/deployment), Baseline #3, Lighthouse 2026 results; archive 10 completed/superseded plans
