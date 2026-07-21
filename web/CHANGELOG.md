@@ -1,3 +1,7 @@
+## [2.312] - 2026-07-21
+- refactor(sw): reorganize into 8 labeled sections w/ routing map + two-worlds header; delete dead LAZY list; lite ?v= exemption (was permanently network-first); fix precache drift (uxRatings, focusTaskPanel, panelCarousel, focus-task-panel.css)
+
+
 ## [2.311] - 2026-07-21
 - refactor(constants): execute magic-number audit — BREAKPOINTS, 6 new UI_TIMEOUTS, milestone dedup, game constants; delete 31 dead if/else shells; no-empty lint gate + SW in lint scope
 
