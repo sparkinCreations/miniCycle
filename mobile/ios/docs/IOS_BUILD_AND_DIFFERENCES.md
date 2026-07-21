@@ -183,6 +183,10 @@ Still open (iOS-specific):
 
 ## See also
 
+- [`IOS_APP_ARCHITECTURE.md`](./IOS_APP_ARCHITECTURE.md) — how the code works, tap-to-interactive
+- [`BUILD_AND_RUN.md`](./BUILD_AND_RUN.md) — every way to build & run, troubleshooting
+- [`APP_STORE_RELEASE.md`](./APP_STORE_RELEASE.md) — what's remaining for the App Store
+- [`../CHANGELOG.md`](../CHANGELOG.md) — iOS shell history
 - [`../README.md`](../README.md) — quick-start for the iOS project
 - [`../../README.md`](../../README.md) — the `mobile/` folder overview
 - [`../../android/docs/ANDROID_BUILD_AND_DIFFERENCES.md`](../../android/docs/ANDROID_BUILD_AND_DIFFERENCES.md)

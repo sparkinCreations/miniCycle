@@ -3,9 +3,12 @@
 The iOS app: a [Capacitor](https://capacitorjs.com/) shell whose WKWebView loads the
 **byte-identical** miniCycle web app (`web/`), bundled into the app so it works fully offline.
 
-> **Full reference:** packaging rationale, every web-vs-iOS difference, the build pipeline,
-> and the release workflow live in
-> [`docs/IOS_BUILD_AND_DIFFERENCES.md`](./docs/IOS_BUILD_AND_DIFFERENCES.md).
+> **Docs:**
+> - [`docs/IOS_APP_ARCHITECTURE.md`](./docs/IOS_APP_ARCHITECTURE.md) — how the code works (layers, boot flow, bridge, versioning)
+> - [`docs/BUILD_AND_RUN.md`](./docs/BUILD_AND_RUN.md) — dev loop, CLI builds, release stamping, troubleshooting
+> - [`docs/IOS_BUILD_AND_DIFFERENCES.md`](./docs/IOS_BUILD_AND_DIFFERENCES.md) — every web-vs-iOS difference + the payload transform
+> - [`docs/APP_STORE_RELEASE.md`](./docs/APP_STORE_RELEASE.md) — what's remaining to ship to the App Store
+> - [`CHANGELOG.md`](./CHANGELOG.md) — iOS shell history
 
 ## Layout
 

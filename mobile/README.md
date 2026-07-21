@@ -7,7 +7,7 @@ Native mobile builds of miniCycle.
 | Folder | Status | What it is |
 | --- | --- | --- |
 | [`android/`](./android) | ✅ Working | [Capacitor](https://capacitorjs.com/) app — a WebView shell wrapping the byte-identical web app (`web/`), bundled for offline. Opens like any native app. |
-| [`ios/`](./ios) | 🚧 Scaffolded | Capacitor app — same shell pattern as Android (shared build engine, SPM-based Xcode project). Needs full Xcode installed to build; icons/splash not yet branded. |
+| [`ios/`](./ios) | ✅ Working | Capacitor app — same shell pattern as Android (shared build engine, SPM-based Xcode project). Branded, signed, verified on simulator + real iPhone. App Store distribution pending ([checklist](./ios/docs/APP_STORE_RELEASE.md)). |
 
 ## Android
 
@@ -44,8 +44,10 @@ npm run open       # open in Xcode to build & run (requires full Xcode)
 ```
 
 - **Quick start:** [`ios/README.md`](./ios/README.md)
-- **Full reference** (iOS-vs-Android deltas, SPM, releases):
-  [`ios/docs/IOS_BUILD_AND_DIFFERENCES.md`](./ios/docs/IOS_BUILD_AND_DIFFERENCES.md)
+- **How it works:** [`ios/docs/IOS_APP_ARCHITECTURE.md`](./ios/docs/IOS_APP_ARCHITECTURE.md)
+- **Building & running:** [`ios/docs/BUILD_AND_RUN.md`](./ios/docs/BUILD_AND_RUN.md)
+- **Web-vs-iOS deltas:** [`ios/docs/IOS_BUILD_AND_DIFFERENCES.md`](./ios/docs/IOS_BUILD_AND_DIFFERENCES.md)
+- **Road to the App Store:** [`ios/docs/APP_STORE_RELEASE.md`](./ios/docs/APP_STORE_RELEASE.md)
 
 ## Why Capacitor (not React Native / native)
 
