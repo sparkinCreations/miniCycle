@@ -931,7 +931,7 @@ export async function runAppInitTests(resultsDiv, isPartOfSuite = false) {
 
     // === FIRST-RUN CHOICE SCREEN WIRING (source invariants) ===
     await test('choice screen shell + controller wired in miniCycle.html', async () => {
-        const html = await (await fetch('../miniCycle.html')).text();
+        const html = await (await fetch('../miniCycle.html?_cb=' + Date.now())).text(); // buster: bypass any stale SW-cached copy
         // Three-choice shell present with the right data-choice values
         if (!/id="first-run-choice"/.test(html)) throw new Error('#first-run-choice missing');
         ['create', 'sample', 'learn'].forEach(c => {

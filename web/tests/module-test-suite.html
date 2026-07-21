@@ -4,7 +4,33 @@
     <!-- version.js sets APP_VERSION and, on the bundled build, __MC_MODULE_MAP —
          tests use the map to resolve stable module paths to hashed /build/ URLs
          (source-text greps must read the real bundle, not the 2-line shims). -->
-    <script src="../version.js"></script>
+    <script src="../version.js?_cb=1"></script>
+    <!-- Environment guard: this standalone origin has NONE of the app's
+         version-heal machinery, so its SW/caches can serve a stale module
+         environment while the (buster-fetched) test files are current. If the
+         controlling SW's version differs from the fresh version.js above, warn
+         loudly — results against a mixed environment are meaningless. -->
+    <script>
+    (function () {
+        if (!('serviceWorker' in navigator) || !navigator.serviceWorker.controller) return;
+        var ch = new MessageChannel();
+        var timer = setTimeout(function () {}, 0);
+        ch.port1.onmessage = function (e) {
+            clearTimeout(timer);
+            var sw = e.data && e.data.appVersion;
+            if (sw && globalThis.APP_VERSION && sw !== globalThis.APP_VERSION) {
+                var div = document.createElement('div');
+                div.setAttribute('style', 'background:#b91c1c;color:#fff;padding:10px 14px;font:14px monospace;position:sticky;top:0;z-index:9999');
+                div.textContent = '⚠️ TEST ENVIRONMENT STALE: service worker v' + sw +
+                    ' ≠ deployed v' + globalThis.APP_VERSION +
+                    ' — cached modules may be old. Hard-reload (or close/reopen) before trusting results.';
+                document.body ? document.body.prepend(div)
+                    : document.addEventListener('DOMContentLoaded', function () { document.body.prepend(div); });
+            }
+        };
+        navigator.serviceWorker.controller.postMessage({ type: 'GET_VERSION' }, [ch.port2]);
+    })();
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#5680ff">
