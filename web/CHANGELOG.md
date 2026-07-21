@@ -1,3 +1,11 @@
+## [2.313] - 2026-07-21
+- fix(tests): dist-compatible test suite — query-forwarding shims (per-buster fresh instances), version.js/map in suite page, map-aware source fetches, import-based export checks, skip-on-bundled for structural greps
+- ios: stamp v2.312 build 2 for first archive
+- ios: full docs suite — architecture, build/run guide, App Store checklist, changelog
+- ios: apply Xcode recommended settings, move dev team to project level
+- ios: set Xcode development team for code signing
+
+
 ## [2.312] - 2026-07-21
 - refactor(sw): reorganize into 8 labeled sections w/ routing map + two-worlds header; delete dead LAZY list; lite ?v= exemption (was permanently network-first); fix precache drift (uxRatings, focusTaskPanel, panelCarousel, focus-task-panel.css)
 
