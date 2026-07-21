@@ -1,3 +1,7 @@
+## [2.315] - 2026-07-21
+- feat(tests): offline messaging — SW serves 'tests require network' page/throw for /tests/ when offline, modal pre-check notification (new label), suite-page run guards
+
+
 ## [2.314] - 2026-07-21
 - fix(tests): self-healing test environment — version.js via _cb bypass (always-fresh map), busted HTML fetch, SW-vs-deployed mismatch banner on the suite page
 
