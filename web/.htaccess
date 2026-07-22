@@ -23,7 +23,7 @@
     Header set Content-Security-Policy "\
         default-src 'self'; \
         script-src 'self' \
-            'sha256-+sCt9DGqLftOHnb3O5lO9dE8UqrRrOXeF6+qE1JCp5U=' \
+            'sha256-598+MlUQwZnsi4Bl2TqCLwtrDbSviEHUuCw5e2zjclo=' \
             'sha256-za1ttq364TAwTTqV10AwAnsXHlgFSXnVpzP82BNmJcM=' \
             'sha256-PtjTViCuOjuj2D2cao71d7bjI5Rdyc2IJz+Vf3u5IxM=' \
             'sha256-TJvKNGd2juQ/x1tfGoDak7F4WXI6XRM55SvnV6tddE4=' \
@@ -31,7 +31,7 @@
             'sha256-WSp59MtTWFmuS0HmN4+K9vuOY8c/2axiUsdE8iasRSc=' \
             'sha256-4+Try4BCJl5RqrE2z8ON18rf30QjL9aCI3JCAtsTyvQ=' \
             'sha256-+6526Rf5+lTxqDrYYOqJKAcOUAOI90/BdtCzCPsLCek=' \
-            'sha256-KQKRQQTq/Un10nUU8vBvCmyllORZwo91grLKx3vBjwI=' \
+            'sha256-xKEnQQKX7rAxgfrtbJ35w4GdguDFK2VkQTCRapyR7JI=' \
             'sha256-L48rSzQZDz0xm1+gznsZQdu6UuyrnapUIVm3MtKxJtg=' \
             'sha256-NCQDpMElAFpEOmEDwtxDbr+k8yGngX1SOggJUrOpgGg=' \
             'sha256-P6CBWOB36C+wEB4kKaP18V1Ru+ooW+5lIvMW1c8UeYM=' \

@@ -27,13 +27,13 @@
      ── CONTRACT 1: PARSE SAFETY ─────────────────────────────────────────────
      Every script ABOVE the ES3/ES5 feature gate MUST parse on ES3/ES5 browsers:
      no arrow functions, no const/let, no template literals, no optional chaining,
-     no shorthand/destructuring. A <script> is parsed IN FULL before ANY of it
+     no shorthand/destructuring. A script element is parsed IN FULL before ANY of it
      runs — so one modern token anywhere in a pre-gate block kills that entire
      block on an old browser. If a block above the gate fails to parse, the gate
      never runs and old devices get a white screen instead of the Lite redirect.
      The gate can only catch what parses before it.
 
-     The gate lives in its OWN <script> block for exactly this reason — do not
+     The gate lives in its OWN script block for exactly this reason — do not
      merge it with neighbouring code. Everything below the "END OF ES5-ONLY
      REGION" banner may use modern syntax freely.
 
@@ -61,8 +61,16 @@
      <body> — that is the ~28 ms first-paint path.
 
      ── ALSO ─────────────────────────────────────────────────────────────────
-     Editing ANY inline <script> changes its CSP hash. Ship via
+     Editing ANY inline script changes its CSP hash. Ship via
      scripts/update-version.sh, which regenerates the hashes in netlify.toml.
+
+     ⚠️ NEVER write a literal script open/close tag inside an HTML comment in this
+     file. The CSP hashing step in update-version.sh matches script blocks with a
+     regex that does NOT strip comments, so a tag written in prose starts a bogus
+     match that swallows the next REAL script block — that block's true hash then
+     never reaches the CSP and the browser blocks it in production. Write "script
+     element" or "script block" in prose instead. (This shipped broken once in
+     v2.316: it blocked the async main-CSS loader and the boot failsafe.)
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -73,7 +81,7 @@
 <!-- ✅ Translucent status bar shows body background-color on iOS -->
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" id="status-bar-style-meta">
 
-<meta name="app-version" content="2.316">
+<meta name="app-version" content="2.317">
 
 <!-- Content Security Policy -->
 <!-- CSP is served via HTTP header in netlify.toml (production) -->
@@ -99,7 +107,7 @@
 <!-- Font Awesome removed - using inline SVG icons instead (see modules/utils/icons.js). fa-* classes are kept as the semantic source and swapped to inline <svg> at runtime by iconInit.js. -->
 <!-- Add cache busting version parameter -->
 <!-- Original CSS (for reference) -->
-<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=2.316"> -->
+<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=2.317"> -->
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
      § BOOT GAUNTLET (head) — ORDERED. DO NOT REARRANGE.
@@ -114,17 +122,17 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- Preload critical CSS files (they load in parallel, not blocking) -->
-<link rel="preload" href="styles/main.css?v=2.316" as="style">
-<link rel="preload" href="styles/base/variables.css?v=2.316" as="style">
-<link rel="preload" href="styles/base/reset.css?v=2.316" as="style">
-<link rel="preload" href="styles/layout/app-container.css?v=2.316" as="style">
-<link rel="preload" href="styles/layout/header.css?v=2.316" as="style">
-<link rel="preload" href="styles/components/task-list.css?v=2.316" as="style">
+<link rel="preload" href="styles/main.css?v=2.317" as="style">
+<link rel="preload" href="styles/base/variables.css?v=2.317" as="style">
+<link rel="preload" href="styles/base/reset.css?v=2.317" as="style">
+<link rel="preload" href="styles/layout/app-container.css?v=2.317" as="style">
+<link rel="preload" href="styles/layout/header.css?v=2.317" as="style">
+<link rel="preload" href="styles/components/task-list.css?v=2.317" as="style">
 
 <!-- Async CSS loading - doesn't block render, app starts with inline critical CSS -->
-<link rel="stylesheet" href="styles/main.css?v=2.316" media="print" id="async-main-css">
+<link rel="stylesheet" href="styles/main.css?v=2.317" media="print" id="async-main-css">
 <script>(function(){var l=document.getElementById('async-main-css');if(!l)return;function apply(){l.media='all';}if(l.sheet){apply();}else{l.addEventListener('load',apply);}})();</script>
-<noscript><link rel="stylesheet" href="styles/main.css?v=2.316"></noscript>
+<noscript><link rel="stylesheet" href="styles/main.css?v=2.317"></noscript>
 <link rel="manifest" href="manifest.json">
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -135,7 +143,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- version.js MUST load synchronously BEFORE modulepreloads to set globalThis.APP_VERSION -->
-<script src="./version.js?v=2.316"></script>
+<script src="./version.js?v=2.317"></script>
 
 <!-- Build version = the version baked into THIS HTML document (the meta tag
      above). It is the honest "what am I actually running" signal. By contrast,
@@ -477,7 +485,7 @@
      ⛔ END OF THE ES5-ONLY REGION. Everything BELOW this line may use modern
      syntax; everything ABOVE it may not. See the file-map banner at the top.
 
-     This block break is load-bearing, not cosmetic. A <script> is parsed in full
+     This block break is load-bearing, not cosmetic. A script element is parsed in full
      before ANY of it executes, so while the gate above lived in the same block as
      the ES6 code below (let/const/arrows in the SW registration), the whole block
      failed to parse on exactly the ES3/ES5 browsers the gate exists to catch —
@@ -2372,7 +2380,7 @@ window.installApp = () => {
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- Boot File Split (Dec 2025): Load via entrypoint which orchestrates all boot files -->
- <script type="module" src="miniCycle-main.js?v=2.316"></script>
+ <script type="module" src="miniCycle-main.js?v=2.317"></script>
 
 <script>
 // Sync About modal version with meta app-version
