@@ -355,8 +355,13 @@ export function wireUndoRedoUI() {
 }
 
 /**
- * Wire up keyboard shortcuts for undo/redo (Ctrl+Z, Ctrl+Y, Ctrl+Shift+Z)
- * Called once during app initialization
+ * Wire up keyboard shortcuts for undo/redo (Ctrl+Z, Ctrl+Y, Ctrl+Shift+Z).
+ *
+ * ⚠️ NOT called during normal boot. Global undo/redo shortcuts are owned by
+ * uiBoot.handleGlobalKeydown (via the public appContext undo API). Calling this
+ * in addition installs a SECOND document keydown listener, making every shortcut
+ * fire undo/redo twice. Kept exported only for standalone/embedded use where uiBoot's
+ * global handler is not present — never wire both in the same document.
  */
 export function wireUndoRedoKeyboardShortcuts() {
   // ✅ Idempotency guard
@@ -2071,8 +2076,11 @@ export async function initUndoRedoManager(dependencies = {}) {
   // Wire up undo/redo button event listeners
   wireUndoRedoUI();
 
-  // Wire up keyboard shortcuts (Ctrl+Z, Ctrl+Y, Ctrl+Shift+Z)
-  wireUndoRedoKeyboardShortcuts();
+  // NOTE: Global keyboard shortcuts (Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z) are owned by
+  // uiBoot.attachGlobalEventListeners → handleGlobalKeydown, which drives undo/redo
+  // through the public appContext undo API (getUndoApi().undo/redo). Do NOT also call
+  // wireUndoRedoKeyboardShortcuts() here — a second document-level keydown listener
+  // makes every shortcut fire undo/redo TWICE (see run-journey-tests undo/redo journey).
 
   // Setup state-based undo/redo system
   setupStateBasedUndoRedo();
