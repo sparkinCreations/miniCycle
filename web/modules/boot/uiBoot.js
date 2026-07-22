@@ -363,7 +363,9 @@ function handleGlobalKeydown(e) {
   }
 
   // Redo: Ctrl/Cmd + Shift + Z or Ctrl/Cmd + Y
-  if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+  // NOTE: with Shift held the browser reports the key as uppercase 'Z', so the
+  // Shift+Z branch must compare against 'Z' (comparing to 'z' never matches).
+  if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.shiftKey && e.key === 'Z'))) {
     e.preventDefault();
     try {
       getUndoApi()?.redo?.();
