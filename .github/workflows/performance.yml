@@ -11,6 +11,19 @@ name: Performance
 #   regression now fails the build instead of hiding in the logs. (Service-worker
 #   behaviour is gated far more rigorously by `npm run test:sw`; Lighthouse 12
 #   removed its PWA audits, so we don't rely on them here.)
+# html-validation job: GATING. Runs the W3C Nu validator over the four maintained
+#   HTML pages. Only ERRORS affect the exit code (warnings/info are ignored), and
+#   HTML validity is deterministic — the same class of noise-free check as viewport
+#   and CLS above, so no continue-on-error.
+#   It calls the live validator.w3.org service, so the script separates "could not
+#   reach the validator" (exit 2, with an explicit note that it is NOT a validation
+#   failure) from "the HTML is invalid" (exit 1) — but both still fail the job. If
+#   w3.org flakiness becomes a problem, add continue-on-error here rather than
+#   switching engines: the pip `html5validator` package bundles a Nu jar years
+#   behind the living standard and false-flags `fetchpriority`, `popover`, `inert`
+#   and role-less `<dialog>` (15+ phantom errors on valid modern HTML), and
+#   `html-validator-cli` v7 pulls in `request`/`form-data`/`minimist` with 4
+#   critical advisories and no forward fix.
 
 on:
   push:
@@ -57,6 +70,21 @@ jobs:
           path: web/tests/results/
           if-no-files-found: ignore
           retention-days: 30
+
+  html-validation:
+    name: HTML Validation (W3C Nu)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      # No Node, no `npm ci`, no dev server: scripts/validate-html.py is pure
+      # stdlib + curl and posts the files straight to validator.w3.org. That
+      # keeps this the cheapest job in the workflow (a few seconds).
+      # NOT continue-on-error: see the header note.
+      - name: Validate HTML
+        working-directory: ./web
+        run: python3 scripts/validate-html.py
 
   lighthouse:
     name: Lighthouse CI
