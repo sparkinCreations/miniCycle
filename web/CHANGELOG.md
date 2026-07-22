@@ -1,3 +1,26 @@
+## [2.322] - 2026-07-22
+- fix(undo): stop Ctrl+Z / Ctrl+Y from firing undo/redo twice
+- chore: sync package-lock.json version to 2.321
+- chore(release): update version to 2.321
+- chore(release): update version to 2.320
+- chore(release): update version to 2.319
+- chore(release): update version to 2.318
+- chore(release): update version to 2.317
+- chore(release): update version to 2.316
+- chore(release): update version to 2.315
+- feat(tests): offline messaging — SW serves 'tests require network' page/throw for /tests/ when offline, modal pre-check notification (new label), suite-page run guards
+- chore(release): update version to 2.314
+- fix(tests): self-healing test environment — version.js via _cb bypass (always-fresh map), busted HTML fetch, SW-vs-deployed mismatch banner on the suite page
+- chore(release): update version to 2.313
+- fix(tests): dist-compatible test suite — query-forwarding shims (per-buster fresh instances), version.js/map in suite page, map-aware source fetches, import-based export checks, skip-on-bundled for structural greps
+- ios: stamp v2.312 build 2 for first archive
+- ios: full docs suite — architecture, build/run guide, App Store checklist, changelog
+- ios: apply Xcode recommended settings, move dev team to project level
+- ios: set Xcode development team for code signing
+- chore(release): update version to 2.312
+- refactor(sw): reorganize into 8 labeled sections w/ routing map + two-worlds header; delete dead LAZY list; lite ?v= exemption (was permanently network-first); fix precache drift (uxRatings, focusTaskPanel, panelCarousel, focus-task-panel.css)
+
+
 ## [2.315] - 2026-07-21
 - feat(tests): offline messaging — SW serves 'tests require network' page/throw for /tests/ when offline, modal pre-check notification (new label), suite-page run guards
 

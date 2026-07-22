@@ -31,9 +31,9 @@
 // §1 VERSION IDENTITY (update-version.sh rewrites the three vars below — keep
 //    their exact `var NAME = …` shapes) + the build-injected module map.
 // ═══════════════════════════════════════════════════════════════════════════
-var APP_VERSION = '2.321';
-var CACHE_VERSION = 'v1164';
-var CACHE_VERSION_NUMBER = 1164; // Numeric version matching version.js (for synthetic fallback)
+var APP_VERSION = '2.322';
+var CACHE_VERSION = 'v1165';
+var CACHE_VERSION_NUMBER = 1165; // Numeric version matching version.js (for synthetic fallback)
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
