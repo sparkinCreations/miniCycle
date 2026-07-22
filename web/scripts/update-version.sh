@@ -1572,6 +1572,24 @@ import hashlib, base64, re, os
 SRC_FILES = ['miniCycle.html', 'lite/miniCycle-lite.html', 'tests/module-test-suite.html']
 CONFIGS = ['netlify.toml', '.htaccess', 'nginx-security.conf']
 
+COMMENT_RE = re.compile(r'<!--.*?-->', re.DOTALL)
+SCRIPT_RE = re.compile(r'<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>', re.DOTALL)
+
+def strip_comments(html):
+    """Blank out HTML comments before matching script blocks.
+
+    WHY (v2.316 postmortem): the browser treats comments as comments, but a bare
+    regex does not. A literal script tag written in PROSE inside a comment starts
+    a bogus non-greedy match that swallows everything up to the next REAL closing
+    tag — emitting a junk hash for [prose + real block] while the real block's
+    true hash never reaches the CSP. The browser then blocks that script in
+    production. The block COUNT is unchanged, so counting can't detect it.
+    v2.316 shipped this way and blocked the async main-CSS loader.
+
+    Spaces (not '') preserve length so line numbers stay meaningful.
+    """
+    return COMMENT_RE.sub(lambda m: re.sub(r'[^\n]', ' ', m.group(0)), html)
+
 # 1) Canonical, de-duplicated hash set (insertion order preserved).
 hashes = []
 for f in SRC_FILES:
@@ -1579,7 +1597,13 @@ for f in SRC_FILES:
         html = open(f).read()
     except FileNotFoundError:
         continue
-    for s in re.findall(r'<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>', html, re.DOTALL):
+    # Nudge authors away from the footgun even though it is now handled.
+    for m in COMMENT_RE.finditer(html):
+        if re.search(r'</?script', m.group(0)):
+            print("⚠️  %s: literal script tag inside an HTML comment near line %d — "
+                  "handled, but write \"script element\" in prose instead."
+                  % (f, html[:m.start()].count('\n') + 1))
+    for s in SCRIPT_RE.findall(strip_comments(html)):
         if s.strip():
             h = base64.b64encode(hashlib.sha256(s.encode()).digest()).decode()
             hashes.append("'sha256-%s'" % h)
@@ -2123,6 +2147,45 @@ if [ "$REBUILD_IOS" = true ]; then
     fi
 else
     echo "⏭️  Skipping iOS app"
+fi
+
+echo ""
+
+# ============================================
+# PRE-PUSH GATE: CSP COVERS EVERY INLINE SCRIPT
+# ============================================
+# Runs BEFORE tag/push so a broken CSP can never reach production. A missing
+# hash silently blocks that inline script in the browser — the build succeeds,
+# the tests pass, and nothing else notices. v2.316 shipped exactly that and
+# blocked the async main-CSS loader + the boot failsafe. See scripts/validate-csp.py.
+# NOTE: this script has no `set -e`, so the exit code must be checked explicitly.
+
+echo "🔒 Pre-push gate: CSP inline-script coverage"
+echo "--------------------------------------------"
+
+# (No --dry-run branch needed: dry runs exit at the "DRY RUN COMPLETE" block above.)
+if [ ! -f "scripts/validate-csp.py" ]; then
+    echo "⚠️  scripts/validate-csp.py not found — skipping (cannot verify CSP coverage)"
+else
+    if python3 scripts/validate-csp.py; then
+        echo "✅ CSP gate passed"
+    else
+        echo ""
+        echo "════════════════════════════════════════"
+        echo "🛑 RELEASE ABORTED — CSP would block inline scripts"
+        echo "════════════════════════════════════════"
+        echo ""
+        echo "Nothing was tagged or pushed. Version/cache files ARE already bumped."
+        echo ""
+        echo "Fix, then re-run this script:"
+        echo "  • If a source file changed after the CSP stage, just re-run the release."
+        echo "  • If a deploy config was hand-edited, restore it from the backup below."
+        echo ""
+        if [ -n "$BACKUP_FOLDER" ]; then
+            echo "🔄 Restore: cd $BACKUP_FOLDER && ./restore.sh"
+        fi
+        exit 1
+    fi
 fi
 
 echo ""

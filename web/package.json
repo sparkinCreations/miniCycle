@@ -1,6 +1,6 @@
 {
   "name": "minicycle-web",
-  "version": "2.317",
+  "version": "2.318",
   "description": "miniCycle - Turn Your Routine Into Progress",
   "type": "module",
   "private": true,
@@ -22,6 +22,7 @@
     "lint": "eslint modules/ service-worker.js miniCycle-main.js",
     "lint:fix": "eslint modules/ --fix",
     "validate:di": "node scripts/validate-di-deps.js",
+    "validate:csp": "python3 scripts/validate-csp.py",
     "samples": "./scripts/generate-sample-manifest.sh",
     "build:chrome-full": "node scripts/build-chrome-full.cjs",
     "build:android": "node scripts/build-android-www.cjs",
