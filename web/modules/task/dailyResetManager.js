@@ -452,7 +452,9 @@ export class DailyResetManager {
 
         if (timeBtn) {
             this._timeBtnHandler = (e) => {
-                // Stop click bubbling to the parent <label>, which would re-toggle the checkbox
+                // Defensive: the button now sits outside the row's <label> (it used to
+                // be inside it, where a click activated the label and re-toggled the
+                // checkbox). Kept so the row stays click-safe if the markup shifts again.
                 e.preventDefault();
                 e.stopPropagation();
                 const cycleId = this.deps.AppState?.get?.()?.appState?.activeCycleId;

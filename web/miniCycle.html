@@ -2,6 +2,69 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     miniCycle.html — FILE MAP & LOAD-ORDER CONTRACTS
+     ═══════════════════════════════════════════════════════════════════════════
+
+     This file is NOT disorganized — the head is an ordered boot gauntlet where
+     the sequence is load-bearing, and the ES5 syntax above the feature gate is a
+     deliberate parse-safety chain. Read the two contracts before editing.
+
+     NOTE: this banner sits AFTER <meta charset> on purpose. The HTML spec only
+     guarantees encoding detection in the first 1024 bytes; a banner above the
+     charset would push it out of that window (the bug lite/miniCycle-lite.html
+     actually had). Keep <meta charset> first inside <head>.
+
+     ── REGIONS (line numbers drift; the section banners below are canonical) ──
+       BOOT GAUNTLET (head) ...... the ordered <head> scripts, see contract 2
+       LOADER & FIRST-RUN ........ #app-loader + first-run choice screen
+       APP CHROME ................ header, quick actions, main menu
+       MODALS & PANELS ........... hidden <dialog> overlays
+       APP ROOT .................. focus panel, task view, stats, footer, nav dots
+       FOOTER SCRIPTS ............ about-version sync, late Lite fallback
+
+     ── CONTRACT 1: PARSE SAFETY ─────────────────────────────────────────────
+     Every script ABOVE the ES3/ES5 feature gate MUST parse on ES3/ES5 browsers:
+     no arrow functions, no const/let, no template literals, no optional chaining,
+     no shorthand/destructuring. A <script> is parsed IN FULL before ANY of it
+     runs — so one modern token anywhere in a pre-gate block kills that entire
+     block on an old browser. If a block above the gate fails to parse, the gate
+     never runs and old devices get a white screen instead of the Lite redirect.
+     The gate can only catch what parses before it.
+
+     The gate lives in its OWN <script> block for exactly this reason — do not
+     merge it with neighbouring code. Everything below the "END OF ES5-ONLY
+     REGION" banner may use modern syntax freely.
+
+     Verify with acorn (ecmaVersion: 5) over every pre-gate inline block before
+     shipping changes to the head.
+
+     ── CONTRACT 2: ORDER (the head gauntlet) ────────────────────────────────
+     The sequence IS the engineering. Do not reorder:
+       1. async-CSS swap
+       2. version.js (SYNCHRONOUS, and BEFORE any modulepreload)
+       3. getBuildVersion helper
+       4. iOS standalone handling
+       5. boot-failure failsafe
+       6. version-mismatch check + cache-clear interstitial
+       7. modulepreload injection (map-aware, bare hashed URLs)
+       8. pre-paint settings reader (single parse — dark mode / a11y / app bg)
+       9. ES3 feature gate  ← must be last, and alone in its block
+
+     Why: version detection must finish before preloads populate the browser's
+     module map with stale content; the settings reader must run before first
+     paint (anti-flash); the gate runs last so everything above it has had its
+     chance on old browsers.
+
+     BODY CONTRACT: #app-loader + the first-run choice screen stay FIRST in
+     <body> — that is the ~28 ms first-paint path.
+
+     ── ALSO ─────────────────────────────────────────────────────────────────
+     Editing ANY inline <script> changes its CSP hash. Ship via
+     scripts/update-version.sh, which regenerates the hashes in netlify.toml.
+     ═══════════════════════════════════════════════════════════════════════════ -->
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
 <!-- ✅ iOS status bar - uses body background-color with black-translucent -->
@@ -10,7 +73,7 @@
 <!-- ✅ Translucent status bar shows body background-color on iOS -->
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" id="status-bar-style-meta">
 
-<meta name="app-version" content="2.315">
+<meta name="app-version" content="2.316">
 
 <!-- Content Security Policy -->
 <!-- CSP is served via HTTP header in netlify.toml (production) -->
@@ -36,20 +99,32 @@
 <!-- Font Awesome removed - using inline SVG icons instead (see modules/utils/icons.js). fa-* classes are kept as the semantic source and swapped to inline <svg> at runtime by iconInit.js. -->
 <!-- Add cache busting version parameter -->
 <!-- Original CSS (for reference) -->
-<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=2.315"> -->
+<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=2.316"> -->
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     § BOOT GAUNTLET (head) — ORDERED. DO NOT REARRANGE.
+     Steps 1-9 of Contract 2 (see file map at the top of this file) run from here
+     down to the feature gate. Everything in this region is ES5-only (Contract 1).
+
+     The two failure modes this ordering prevents:
+       • modulepreload injected before version.js  → preloads populate the module
+         map with STALE hashed URLs, and the app boots a mixed-version tree.
+       • pre-paint settings reader moved after first paint → visible flash of
+         light mode / full motion / default background on every load.
+     ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- Preload critical CSS files (they load in parallel, not blocking) -->
-<link rel="preload" href="styles/main.css?v=2.315" as="style">
-<link rel="preload" href="styles/base/variables.css?v=2.315" as="style">
-<link rel="preload" href="styles/base/reset.css?v=2.315" as="style">
-<link rel="preload" href="styles/layout/app-container.css?v=2.315" as="style">
-<link rel="preload" href="styles/layout/header.css?v=2.315" as="style">
-<link rel="preload" href="styles/components/task-list.css?v=2.315" as="style">
+<link rel="preload" href="styles/main.css?v=2.316" as="style">
+<link rel="preload" href="styles/base/variables.css?v=2.316" as="style">
+<link rel="preload" href="styles/base/reset.css?v=2.316" as="style">
+<link rel="preload" href="styles/layout/app-container.css?v=2.316" as="style">
+<link rel="preload" href="styles/layout/header.css?v=2.316" as="style">
+<link rel="preload" href="styles/components/task-list.css?v=2.316" as="style">
 
 <!-- Async CSS loading - doesn't block render, app starts with inline critical CSS -->
-<link rel="stylesheet" href="styles/main.css?v=2.315" media="print" id="async-main-css">
+<link rel="stylesheet" href="styles/main.css?v=2.316" media="print" id="async-main-css">
 <script>(function(){var l=document.getElementById('async-main-css');if(!l)return;function apply(){l.media='all';}if(l.sheet){apply();}else{l.addEventListener('load',apply);}})();</script>
-<noscript><link rel="stylesheet" href="styles/main.css?v=2.315"></noscript>
+<noscript><link rel="stylesheet" href="styles/main.css?v=2.316"></noscript>
 <link rel="manifest" href="manifest.json">
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -60,7 +135,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- version.js MUST load synchronously BEFORE modulepreloads to set globalThis.APP_VERSION -->
-<script src="./version.js?v=2.315"></script>
+<script src="./version.js?v=2.316"></script>
 
 <!-- Build version = the version baked into THIS HTML document (the meta tag
      above). It is the honest "what am I actually running" signal. By contrast,
@@ -273,78 +348,82 @@
 <!-- Critical CSS - extracted to external file for CSP compliance (no 'unsafe-inline' needed) -->
 <link rel="stylesheet" href="./styles/base/critical.css">
 
-<!-- Early dark mode application - prevents flash of light mode -->
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     PRE-PAINT SETTINGS READER — dark mode, accessibility, custom app background.
+     Runs before first paint so none of these settings visibly flash in.
+
+     Merged (Jul 2026) from three separate blocks that EACH did their own
+     localStorage.getItem + JSON.parse of miniCycleData — the same blob parsed
+     three times before paint, costing most on exactly the old/slow devices the
+     boot gauntlet exists to protect. Now: read once, parse once, apply three.
+
+     Failure isolation is preserved deliberately — each setting is applied in its
+     own try/catch so one corrupt value (say a garbage custom color) cannot stop
+     dark mode from applying. A failed read/parse skips all three, which is what
+     the three original blocks did too; the app's JS applies them properly later.
+
+     ⚠️ ES5 ONLY — this sits ABOVE the feature gate. No const/let, no arrows, no
+     template literals, no optional chaining. See the file-map banner at the top
+     of this file for the full parse-safety contract.
+     ═══════════════════════════════════════════════════════════════════════════ -->
 <script>
   (function() {
+    var settings = null;
     try {
       var data = localStorage.getItem('miniCycleData');
-      if (data) {
-        var parsed = JSON.parse(data);
-        var isDarkMode = parsed && parsed.settings && parsed.settings.darkMode;
-        if (isDarkMode) {
-          // Apply to html immediately (body doesn't exist yet)
-          document.documentElement.classList.add('dark-mode');
-          // Also apply to body once it's ready
-          document.addEventListener('DOMContentLoaded', function() {
-            document.body.classList.add('dark-mode');
-          });
-        } else {
-          // Ensure dark mode is removed (in case of stale state)
-          document.documentElement.classList.remove('dark-mode');
-          document.addEventListener('DOMContentLoaded', function() {
-            document.body.classList.remove('dark-mode');
-          });
-        }
+      if (!data) return;
+      var parsed = JSON.parse(data);
+      settings = (parsed && parsed.settings) || null;
+    } catch (e) {
+      return; // Unreadable/corrupt — everything gets applied later by app JS.
+    }
+
+    // Local helper; this block shares nothing with other gauntlet scripts.
+    function onReady(fn) {
+      document.addEventListener('DOMContentLoaded', fn);
+    }
+    var root = document.documentElement;
+
+    // 1. Dark mode — prevents flash of light mode.
+    try {
+      if (settings && settings.darkMode) {
+        // Apply to html immediately (body doesn't exist yet), body once ready.
+        root.classList.add('dark-mode');
+        onReady(function() { document.body.classList.add('dark-mode'); });
+      } else {
+        // Ensure dark mode is removed (in case of stale state).
+        root.classList.remove('dark-mode');
+        onReady(function() { document.body.classList.remove('dark-mode'); });
       }
     } catch (e) {
       // Silently fail - dark mode will be applied later by JS
     }
-  })();
-</script>
 
-<!-- Early accessibility settings - prevents animation/contrast flash -->
-<script>
-  (function() {
+    // 2. Accessibility — prevents animation/contrast/font-size flash.
     try {
-      var data = localStorage.getItem('miniCycleData');
-      if (data) {
-        var s = JSON.parse(data).settings;
-        if (s) {
-          if (s.reducedMotion) {
-            document.documentElement.classList.add('reduced-motion');
-            document.addEventListener('DOMContentLoaded', function() {
-              document.body.classList.add('reduced-motion');
-            });
-          }
-          if (s.highContrast) {
-            document.documentElement.classList.add('high-contrast');
-            document.addEventListener('DOMContentLoaded', function() {
-              document.body.classList.add('high-contrast');
-            });
-          }
-          if (s.fontSize && s.fontSize !== '16') {
-            document.documentElement.style.setProperty('--font-size-base', s.fontSize + 'px');
-          }
+      if (settings) {
+        if (settings.reducedMotion) {
+          root.classList.add('reduced-motion');
+          onReady(function() { document.body.classList.add('reduced-motion'); });
+        }
+        if (settings.highContrast) {
+          root.classList.add('high-contrast');
+          onReady(function() { document.body.classList.add('high-contrast'); });
+        }
+        if (settings.fontSize && settings.fontSize !== '16') {
+          root.style.setProperty('--font-size-base', settings.fontSize + 'px');
         }
       }
     } catch (e) {
       // Silently fail - accessibility settings will be applied later by JS
     }
-  })();
-</script>
 
-<!-- Early app background color - only set if user has custom color saved -->
-<script>
-  (function() {
+    // 3. Custom app background — only set when a custom color is saved, so the
+    //    default gradient survives.
     try {
-      var data = localStorage.getItem('miniCycleData');
-      if (data) {
-        var parsed = JSON.parse(data);
-        var customAppBg = parsed && parsed.settings && parsed.settings.customColors && parsed.settings.customColors.appBg;
-        if (customAppBg) {
-          // Only set CSS variable if there's a custom color (preserves gradient for default)
-          document.documentElement.style.setProperty('--pref-app-bg', customAppBg);
-        }
+      var customAppBg = settings && settings.customColors && settings.customColors.appBg;
+      if (customAppBg) {
+        root.style.setProperty('--pref-app-bg', customAppBg);
       }
     } catch (e) {
       // Silently fail - gradient will be used as default
@@ -392,8 +471,22 @@
     location.replace('./lite/miniCycle-lite.html?mode=lite&src=feature-gate&reasons=' + encodeURIComponent(reasons.join(',')));
   }
 })();
+</script>
 
-  
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ⛔ END OF THE ES5-ONLY REGION. Everything BELOW this line may use modern
+     syntax; everything ABOVE it may not. See the file-map banner at the top.
+
+     This block break is load-bearing, not cosmetic. A <script> is parsed in full
+     before ANY of it executes, so while the gate above lived in the same block as
+     the ES6 code below (let/const/arrows in the SW registration), the whole block
+     failed to parse on exactly the ES3/ES5 browsers the gate exists to catch —
+     making the gate dead code for its only audience. Those devices fell through
+     to the 16-second late fallback and were logged as 'no-boot' rather than
+     'feature-gate'. Keep the gate in its own block. (Fixed Jul 2026.)
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<script>
+
 // ✅ Loading timeout failsafe - redirect to lite if app doesn't load in 60 seconds
 (function() {
   var LOAD_TIMEOUT_MS = 60000; // 60 seconds
@@ -1010,6 +1103,14 @@ window.installApp = () => {
 
 <body class="app-loading">
   <a href="#app-container" class="skip-to-content">Skip to main content</a>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     § LOADER & FIRST-RUN
+     #app-loader + the first-run choice screen. These stay FIRST in <body> —
+     it is the ~28 ms first-paint path (body contract, see file map at top).
+     Do not push markup above this block.
+     ═══════════════════════════════════════════════════════════════════════════ -->
+
   <!-- Initial App Loader -->
   <div id="app-loader" role="status" aria-label="Application loading" aria-live="polite">
     <div id="loader-tip" class="loader-tip" aria-live="polite">
@@ -1269,6 +1370,13 @@ window.installApp = () => {
 
   
 
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     § APP CHROME — header, quick actions, main menu
+     Persistent UI that frames the app. The main menu (<nav id="main-menu">) is a
+     custom Tab-trap, not a <dialog> — see EVENT_LISTENER_GUIDE.md before
+     changing its focus handling.
+     ═══════════════════════════════════════════════════════════════════════════ -->
+
 <!-- Fixed Header Container - wraps header and mode selector -->
 <div class="fixed-header-container">
   <header class="mini-cycle-header-row">
@@ -1416,14 +1524,16 @@ window.installApp = () => {
                     <span class="menu-section-toggle">&#x25BC;</span>
                 </div>
                 <div class="menu-section-grid" id="menu-section-tasks">
-                    <label class="auto-uncheck-row" for="auto-uncheck-daily-toggle" title="Automatically uncheck all tasks in this routine at a set time each day">
-                        <input type="checkbox" id="auto-uncheck-daily-toggle">
-                        <span class="auto-uncheck-row-text">Auto-uncheck daily</span>
+                    <div class="auto-uncheck-row" title="Automatically uncheck all tasks in this routine at a set time each day">
+                        <label class="auto-uncheck-row-label" for="auto-uncheck-daily-toggle">
+                            <input type="checkbox" id="auto-uncheck-daily-toggle">
+                            <span class="auto-uncheck-row-text">Auto-uncheck daily</span>
+                        </label>
                         <button type="button" id="auto-uncheck-daily-time-btn" class="auto-uncheck-row-time-btn hidden" title="Change auto-uncheck time">
                             <span id="auto-uncheck-daily-time-label">12:00 AM</span>
                             <i class="fas fa-clock" aria-hidden="true"></i>
                         </button>
-                    </label>
+                    </div>
                     <button id="clear-mini-cycle-tasks" title="Uncheck all tasks in this routine"><i class="fas fa-eraser"></i>Uncheck All</button>
                     <button id="delete-all-mini-cycle-tasks" title="Delete all tasks in this routine"><i class="fas fa-trash"></i>Delete All</button>
                     <button id="open-reminders-modal" title="Configure reminders and notifications"><i class="fas fa-bell"></i>Reminders</button>
@@ -1569,6 +1679,19 @@ window.installApp = () => {
 </nav>
 
 
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     § MODALS & PANELS
+     Hidden <dialog> overlays. Source position here is reader-facing, but NOT
+     free: DOM order still determines Tab order and the paint order of elements
+     that tie on z-index. Prefer the Z_INDEX constants / CSS z-index tokens over
+     relying on source position.
+
+     Not all modals live here — the largest (recurring panel) is injected at boot
+     from modules/boot/modalTemplates.js. modalRegistry expects a modal's markup
+     to exist by the time it initialises, so anything moved out must be injected
+     before Phase 3 of boot.
+     ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- recurring-panel-overlay injected at boot via modalTemplates.js -->
 
@@ -1913,7 +2036,7 @@ window.installApp = () => {
             <input type="hidden" name="subject" value="miniCycle Feedback">
 
             <!-- Web3Forms Honeypot Spam Protection -->
-            <input type="checkbox" name="botcheck" style="display: none;" tabindex="-1" autocomplete="off">
+            <input type="checkbox" name="botcheck" style="display: none;" tabindex="-1">
 
             <!-- Optional Star Rating (interactivity wired by modules/features/uxRatings.js;
                  hidden rating/rating_tags inputs ride along in the FormData POST) -->
@@ -1974,6 +2097,15 @@ window.installApp = () => {
   <button id="quick-dark-toggle" aria-label="Toggle dark mode" title="Toggle dark mode">
     🌓
   </button>
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     § APP ROOT
+     The three carousel panels (#focus-task-panel · #task-view · #stats-panel),
+     the view arrows, footer and nav dots. The nav dots are role="tab" and each
+     panel is its matching role="tabpanel" — keep aria-controls and the panel
+     roles in sync, and note themeManager rewrites the dots' accessible names
+     per vocabulary theme (so don't hardcode panel names that duplicate them).
+     ═══════════════════════════════════════════════════════════════════════════ -->
+
     <!-- Left Arrow — visible in stats view, navigates to task view -->
 <div id="slide-left" class="slide-arrow" tabindex="0" role="button" aria-label="Show Routine View" title="Show Routine View">❯</div>
 
@@ -1984,7 +2116,7 @@ window.installApp = () => {
      Carousel index 0 (left of #task-view); focus-view-only, gated behind
      onboarding (D8). Hidden until Phase 2 registers it with the carousel.
      Text content and ARIA labels are set by focusTaskPanel.js via getLabel(). -->
-<section id="focus-task-panel" class="focus-task-panel" role="region" inert>
+<section id="focus-task-panel" class="focus-task-panel" role="tabpanel" inert>
     <div class="focus-task-card">
         <div id="focus-task-position" class="focus-task-position" aria-live="polite"></div>
         <div id="focus-task-text" class="focus-task-text"></div>
@@ -2007,7 +2139,7 @@ window.installApp = () => {
     </div>
 </section>
 
-<div id="task-view">
+<div id="task-view" role="tabpanel" aria-labelledby="nav-dot-task-view">
     <!-- Add task input bar — sibling of #task-card-group so it can be
          independently dragged with #task-view as its positioned ancestor.
          Default flex order keeps it visually above the routine card. -->
@@ -2117,7 +2249,7 @@ window.installApp = () => {
 </div>
 
     <!-- Stats Panel (Initially Hidden) -->
-    <section id="stats-panel" class="stats-panel" role="region" aria-labelledby="stats-header" inert>
+    <section id="stats-panel" class="stats-panel" role="tabpanel" aria-labelledby="stats-header" inert>
         <h2 id="stats-header">📊 Stats</h2>
         <div class="current-routine-status" id="current-routine-status">
             <h3 class="clickable" tabindex="0" aria-expanded="true" aria-label="Toggle current routine details">
@@ -2201,7 +2333,7 @@ window.installApp = () => {
 <button class="dot focus-task-dot" role="tab" aria-selected="false" aria-controls="focus-task-panel" aria-label="Task view" title="Task view" data-tab-label="Task">
 <span class="visually-hidden">Task</span>
 </button>
-<button class="dot active" role="tab" aria-selected="true" aria-controls="task-view" aria-label="Tasks view" title="Tasks view" data-tab-label="Routine">
+<button id="nav-dot-task-view" class="dot active" role="tab" aria-selected="true" aria-controls="task-view" aria-label="Tasks view" title="Tasks view" data-tab-label="Routine">
 <span class="visually-hidden">Tasks</span>
 </button>
 <button class="dot" role="tab" aria-selected="false" aria-controls="stats-panel" aria-label="Statistics view" title="Statistics view" data-tab-label="Stats">
@@ -2230,8 +2362,17 @@ window.installApp = () => {
 <!-- 🔊 ARIA Live Region for announcing view changes -->
 <div id="live-region" aria-live="polite" style="position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden;"></div>
 
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     § FOOTER SCRIPTS — module entrypoint, about-version sync, late Lite fallback
+     Below the ES5-only region, so modern syntax is fine here. The late fallback
+     is the LAST safety net: it fires 16 s after load and redirects to Lite if the
+     feature gate flagged the browser, or if nothing ever set dataset.appBooted.
+     It must keep working even when everything above it failed — keep it small,
+     self-contained, and dependency-free.
+     ═══════════════════════════════════════════════════════════════════════════ -->
+
 <!-- Boot File Split (Dec 2025): Load via entrypoint which orchestrates all boot files -->
- <script type="module" src="miniCycle-main.js?v=2.315"></script>
+ <script type="module" src="miniCycle-main.js?v=2.316"></script>
 
 <script>
 // Sync About modal version with meta app-version

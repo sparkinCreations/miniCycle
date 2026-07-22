@@ -1,8 +1,16 @@
 <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
 <!--
 ================================================================================
 📱 miniCycle LITE - Static Fallback Version
 ================================================================================
+
+NOTE: this charter comment sits *after* <meta charset> on purpose. The HTML spec
+only guarantees encoding detection within the first 1024 bytes of the document,
+and the comment is long enough to push the charset past that window. Keep the
+charset as the first thing inside <head>.
 
 PURPOSE:
 This is a STATIC, FROZEN version of miniCycle designed for:
@@ -46,15 +54,8 @@ Last meaningful update: v2.092 (intentionally static thereafter)
 © 2026 sparkinCreations - https://sparkincreations.com
 ================================================================================
 -->
-<html lang="en">
-<head>
-<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
-<!-- ✅ Cache prevention for development -->
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
 
 <title>miniCycle lite - Routine Manager</title>
 
@@ -444,7 +445,7 @@ window.addEventListener('appinstalled', function () {
 </nav>
 <!-- ✅ Task management section with tooltips -->
 <main id="app-container" role="main">
-  <div id="task-view" role="region" aria-label="Task management">
+  <div id="task-view" role="tabpanel" aria-label="Task management">
     <!-- ✅ Add Task Button (opens modal) -->
     <div class="add-task-button-container">
       <button id="open-add-task-modal" class="add-task-btn" aria-label="Add new tasks" tabindex="0" data-tooltip="Open the add tasks dialog">
@@ -468,8 +469,8 @@ window.addEventListener('appinstalled', function () {
     </div>
     
     <div class="progress-row">
-      <div class="progress-container" role="progressbar" aria-label="Task completion progress" data-tooltip="Shows your progress completing all tasks">
-        <div id="progressBar" class="progress-bar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
+      <div class="progress-container" role="progressbar" aria-label="Task completion progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" data-tooltip="Shows your progress completing all tasks">
+        <div id="progressBar" class="progress-bar"></div>
       </div>
       <button id="focus-toggle" aria-label="Toggle focus mode" title="Toggle focus mode" tabindex="0" aria-pressed="false" data-tooltip="Toggle focus mode">
         <svg class="focus-icon-expand" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
@@ -500,7 +501,7 @@ window.addEventListener('appinstalled', function () {
   <button id="quick-help-toggle" aria-label="Toggle help window" title="Toggle help window" tabindex="0" data-tooltip="Show or hide help information">❓</button>
 
   <!-- ✅ Stats panel with tooltips -->
-  <section id="stats-panel" class="stats-panel" role="region" aria-label="Statistics">
+  <section id="stats-panel" class="stats-panel" role="tabpanel" aria-label="Statistics">
     <h2>📊 Stats</h2>
 
     <!-- ✅ Overview Stats Card -->
@@ -563,8 +564,8 @@ window.addEventListener('appinstalled', function () {
   </div>
     <!-- ✅ Navigation dots with tooltips -->
 <div class="navigation-dots" role="tablist" aria-label="View navigation">
-  <button class="dot active" data-view="tasks" role="tab" aria-selected="true" aria-label="Tasks view" tabindex="0" data-tooltip="Switch to tasks view"></button>
-  <button class="dot" data-view="stats" role="tab" aria-selected="false" aria-label="Statistics view" tabindex="0" data-tooltip="Switch to statistics view"></button>
+  <button class="dot active" data-view="tasks" role="tab" aria-selected="true" aria-controls="task-view" aria-label="Tasks view" tabindex="0" data-tooltip="Switch to tasks view"></button>
+  <button class="dot" data-view="stats" role="tab" aria-selected="false" aria-controls="stats-panel" aria-label="Statistics view" tabindex="0" data-tooltip="Switch to statistics view"></button>
 </div>
   <ul class="footer-links">
     <li>&copy; 2026 <a href="https://sparkincreations.com" target="_blank" rel="noopener">sparkinCreations</a></li>
@@ -618,7 +619,7 @@ window.addEventListener('appinstalled', function () {
       <!-- Subject line for email identification -->
       <input type="hidden" name="subject" value="miniCycle Lite Feedback">
       <!-- Honeypot Spam Protection -->
-      <input type="checkbox" name="botcheck" style="display: none;" tabindex="-1" autocomplete="off">
+      <input type="checkbox" name="botcheck" style="display: none;" tabindex="-1">
       <div class="feedback-modal-body">
         <p>Help us improve miniCycle Lite! Share your thoughts, report bugs, or suggest features.</p>
         <label for="feedback-text" class="sr-only">Your feedback</label>

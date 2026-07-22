@@ -294,6 +294,28 @@ orchestrator.js (sequence control + boot UI + early boot coordination)
 - Wire dependencies BEFORE creating instances
 - Use `await appInit.waitForCore()` before accessing AppState
 
+### miniCycle.html Head — Two Load-Order Contracts
+
+The `<head>` of `miniCycle.html` is an ordered boot gauntlet, not loose setup code.
+Full explanation lives in the file-map banner at the top of `miniCycle.html`; the short form:
+
+1. **Parse safety — ES5 only above the feature gate.** No arrow functions, `const`/`let`,
+   template literals, optional chaining, destructuring, or shorthand in any inline script
+   above the ES3 gate. A `<script>` is parsed **in full before any of it executes**, so one
+   modern token anywhere in a pre-gate block kills that whole block on an old browser — and
+   if the gate itself doesn't run, old devices get a white screen instead of the Lite
+   redirect. **Keep the gate alone in its own `<script>` block.** (This was a live bug until
+   Jul 2026: the gate shared a block with ~600 lines of ES6 and could never fire.)
+
+2. **Order — never rearrange the gauntlet.** In particular: **never move modulepreload
+   injection above `version.js`** (preloads would populate the module map with stale hashed
+   URLs), and never move the pre-paint settings reader after first paint (visible flash).
+   The gate runs **last**. `#app-loader` + the first-run screen stay **first in `<body>`**.
+
+Verify pre-gate blocks parse as ES5 (e.g. acorn with `ecmaVersion: 5`) before shipping head
+changes. Editing any inline `<script>` changes its CSP hash — ship via `update-version.sh`,
+which regenerates them in `netlify.toml`.
+
 ---
 
 ## COMMON MISTAKES TO AVOID

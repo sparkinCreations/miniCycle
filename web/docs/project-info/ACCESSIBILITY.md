@@ -112,11 +112,45 @@ miniCycle uses proper semantic structure:
 
 - `<main role="main">` for primary content
 - `<nav role="tablist">` for navigation
-- `<section role="region" aria-labelledby="...">` for logical groupings
+- `<section role="region" aria-labelledby="...">` for logical groupings — **except the
+  three carousel panels**, see below
 - `<footer role="contentinfo">` for footer
 - `<button>` for all clickable actions
 - `<label>` for all form inputs
 - `<input>` elements with both `id` and `name` attributes for proper form accessibility
+
+#### Exception: the three carousel panels are `tabpanel`, not `region`
+
+`#focus-task-panel`, `#task-view` and `#stats-panel` use `role="tabpanel"`, **not**
+`role="region"`. This is deliberate and the two patterns above cannot both apply here.
+
+The nav dots (`#nav-dots`) are a real tab widget — `<nav role="tablist">` containing three
+`role="tab"` buttons with `aria-controls`. Under ARIA, every active `role="tab"` must have a
+matching `role="tabpanel"`; the W3C Nu validator reports a hard **error** when it doesn't
+(this was one of the 4 errors fixed in the Jul 2026 validation pass). Since the panels are
+controlled by a tablist, `tabpanel` is the correct role and `region` is not available to them.
+
+Consequence, stated plainly: `#focus-task-panel` and `#stats-panel` were previously
+`role="region"` and are **no longer landmarks**, so they don't appear in screen-reader landmark
+navigation. (`#task-view` was a bare `<div>` with no role, so it lost nothing.) That is the
+accepted trade — the tab widget provides equivalent navigation and announces position
+("tab 2 of 3").
+
+Landmark coverage is unaffected at the document level. `miniCycle.html` still exposes the core
+set: `banner` (`<header>`), `main` (`<main role="main">`), `contentinfo`
+(`<footer role="contentinfo">`), and `navigation` (`<nav id="main-menu">`). Note that
+`#nav-dots` is `<nav role="tablist">` — the explicit role overrides the implicit navigation
+landmark, which is correct for a tab widget.
+
+As a result `miniCycle.html` currently contains **no** `role="region"` at all; the pattern
+remains the right default for any *future* logical grouping that is not driven by a tablist
+(it is still in use in `pages/product.html` and `lite/miniCycle-lite.html`).
+
+Panel naming: `#task-view` is named via `aria-labelledby` pointing at its tab
+(`#nav-dot-task-view`) rather than a hardcoded `aria-label`, because `themeManager` rewrites the
+dots' accessible names per vocabulary theme — a static label would go stale. `#stats-panel`
+keeps its existing `aria-labelledby="stats-header"`, and `#focus-task-panel` gets its name at
+runtime from `focusTaskPanel.js` via `getLabel()`.
 
 ### Screen Reader Announcements ✅
 

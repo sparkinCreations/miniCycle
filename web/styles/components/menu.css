@@ -1206,6 +1206,18 @@ body.theme-golden-glow .menu-section-grid #menu-task-options .icon-text {
     background: var(--menu-button-hover-bg, var(--overlay-medium));
 }
 
+/* Inner label wraps only the checkbox + text so the row stays valid HTML
+   (a <label for=""> may contain at most one labelable element — the time
+   button lives outside it). It carries the flex layout the row used to. */
+.menu-section-grid .auto-uncheck-row-label {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex: 1;
+    min-width: 0;
+    cursor: pointer;
+}
+
 .menu-section-grid .auto-uncheck-row input[type="checkbox"] {
     margin: 0;
     cursor: pointer;
