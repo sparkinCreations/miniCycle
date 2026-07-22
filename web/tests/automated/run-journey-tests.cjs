@@ -89,7 +89,7 @@ function readActiveCycleInPage() {
 // ── Page-level helpers (take a Playwright `page`) ────────────────────────────
 
 async function bootApp(page, timeout = 20000) {
-    await page.waitForFunction(() => document.documentElement.dataset.appLoaded === 'true', { timeout });
+    await page.waitForFunction(() => document.documentElement.dataset.appLoaded === 'true', null, { timeout });
     await page.evaluate(normalizeLayoutInPage);
     // The welcome overlay can mount a beat after appLoaded — keep dismissing it
     // until it's truly gone so it can't intercept the first interaction.
@@ -103,7 +103,7 @@ async function bootApp(page, timeout = 20000) {
         const row = document.getElementById('task-input-row');
         if (row) row.classList.remove('hidden');
         return !document.getElementById('first-run-welcome');
-    }, { timeout: 8000 }).catch(() => {});
+    }, null, { timeout: 8000 }).catch(() => {});
 }
 
 // Open a fresh, isolated app instance. Returns { context, page }.
@@ -114,14 +114,30 @@ async function openFresh(browser, baseURL) {
     page.on('pageerror', err => console.log(`   ${colors.yellow}page error: ${err.message}${colors.reset}`));
     await page.goto(`${baseURL}/miniCycle.html`, { waitUntil: 'domcontentloaded', timeout: 20000 });
     await bootApp(page);
-    // First-run seeds a sample routine — wait until a cycle actually exists.
+    // First run shows a CHOICE screen (create / sample / learn) — it does NOT
+    // auto-seed a routine (added Jul 2026, commit aef52185; this harness silently
+    // hung on the old "it seeds itself" assumption until it was fixed).
+    //   create → opens the naming modal   (needs typed input)
+    //   sample → opens the sample picker  (needs a pick)
+    //   learn  → runLegacyFocusFlow()     ← seeds "Your First Routine", the
+    //            pre-choice-screen behaviour these journeys were written against.
+    // See appInit._routeFirstRunChoice.
+    await page.waitForFunction(
+        () => !!document.querySelector('.first-run-btn[data-choice="learn"]'),
+        null, { timeout: 20000 }
+    ).catch(() => { /* returning-user path: no choice screen, cycles already exist */ });
+    await page.evaluate(() => {
+        const btn = document.querySelector('.first-run-btn[data-choice="learn"]');
+        if (btn && !btn.disabled) btn.click();
+    });
+    // Now a cycle really should appear.
     await page.waitForFunction(() => {
         try {
             const p = JSON.parse(localStorage.getItem('miniCycleData') || 'null');
             const cycles = p && ((p.data && p.data.cycles) || p.cycles);
             return cycles && Object.keys(cycles).length > 0;
         } catch { return false; }
-    }, { timeout: 20000 });
+    }, null, { timeout: 20000 });
     return { context, page };
 }
 
@@ -164,7 +180,7 @@ async function clickEl(page, selector, timeout = 10000) {
 async function openMenu(page) {
     await clickEl(page, '.menu-button');
     await page.waitForFunction(() =>
-        document.getElementById('main-menu')?.classList.contains('visible'), { timeout: 8000 });
+        document.getElementById('main-menu')?.classList.contains('visible'), null, { timeout: 8000 });
     await page.evaluate(() =>
         document.querySelectorAll('.menu-section.collapsed').forEach(s => s.classList.remove('collapsed')));
 }
@@ -236,7 +252,7 @@ async function journeyCore(browser, baseURL) {
         if (cycleIncremented) {
             await page.waitForFunction(() =>
                 document.querySelectorAll('#taskList li input[type="checkbox"]:checked').length === 0,
-                { timeout: 10000 }).catch(() => {});
+                null, { timeout: 10000 }).catch(() => {});
             record('tasks reset to unchecked', (await checkedCount(page)) === 0, `${await checkedCount(page)} checked`);
             record('tasks remain after reset', (await taskCount(page)) === startCount + 2,
                 `count=${await taskCount(page)}`);
@@ -251,7 +267,7 @@ async function journeyCore(browser, baseURL) {
                 if (await c.match('/modules/core/constants.js') || await c.match('./modules/core/constants.js')) return true;
             }
             return false;
-        }, { timeout: 20000 }).catch(() => {});
+        }, null, { timeout: 20000 }).catch(() => {});
         await context.setOffline(true);
         let offlineBooted = false;
         try {
@@ -489,7 +505,7 @@ async function journeyRecurring(browser, baseURL) {
                     return rt && (Array.isArray(rt) ? rt.length : Object.keys(rt).length) > 0;
                 });
             } catch { return false; }
-        }, { timeout: 10000 });
+        }, null, { timeout: 10000 });
         record('task marked recurring (template created)', (await persisted(page)).recurringCount > 0,
             `recurringTemplates=${(await persisted(page)).recurringCount}`);
 
