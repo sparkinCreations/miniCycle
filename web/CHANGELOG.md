@@ -1,3 +1,7 @@
+## [2.324] - 2026-07-23
+- fix: address CodeRabbit review follow-ups from #9
+
+
 ## [2.323] - 2026-07-23
 - fix(undo): per-cycle IndexedDB write timers to prevent cross-cycle data loss
 - fix(a11y): stop the mode selector from clipping text at larger font sizes
