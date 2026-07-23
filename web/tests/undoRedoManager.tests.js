@@ -1947,6 +1947,43 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         if (deps.AppGlobalState.isPerformingUndoRedo !== false) throw new Error('finally must clear isPerformingUndoRedo');
     });
 
+    // The repaint tests above assert state restore + repaint; these pin the
+    // OTHER half of the rollback contract — both undo/redo STACKS returning to
+    // their pre-attempt state (the pop and the opposite-stack push are undone).
+    await test('undo failure restores BOTH stacks to their pre-attempt state', async () => {
+        const { deps, snapshot } = createRollbackFailureDeps();
+        deps.AppGlobalState.activeUndoStack = [snapshot];
+        deps.AppGlobalState.activeRedoStack = [];
+        setUndoRedoManagerDependencies(deps);
+
+        try { await performStateBasedUndo(); } catch (e) { /* forced failure expected */ }
+
+        // The undo popped `snapshot` and pushed a current snapshot onto redo —
+        // rollback must undo both, leaving undo=[snapshot], redo=[].
+        if (deps.AppGlobalState.activeUndoStack.length !== 1) {
+            throw new Error(`undo stack not restored: expected 1, got ${deps.AppGlobalState.activeUndoStack.length}`);
+        }
+        if (deps.AppGlobalState.activeRedoStack.length !== 0) {
+            throw new Error(`redo stack not restored: expected 0, got ${deps.AppGlobalState.activeRedoStack.length}`);
+        }
+    });
+
+    await test('redo failure restores BOTH stacks to their pre-attempt state', async () => {
+        const { deps, snapshot } = createRollbackFailureDeps();
+        deps.AppGlobalState.activeRedoStack = [snapshot];
+        deps.AppGlobalState.activeUndoStack = [];
+        setUndoRedoManagerDependencies(deps);
+
+        try { await performStateBasedRedo(); } catch (e) { /* forced failure expected */ }
+
+        if (deps.AppGlobalState.activeRedoStack.length !== 1) {
+            throw new Error(`redo stack not restored: expected 1, got ${deps.AppGlobalState.activeRedoStack.length}`);
+        }
+        if (deps.AppGlobalState.activeUndoStack.length !== 0) {
+            throw new Error(`undo stack not restored: expected 0, got ${deps.AppGlobalState.activeUndoStack.length}`);
+        }
+    });
+
     // === SUMMARY ===
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>All Tests Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;
