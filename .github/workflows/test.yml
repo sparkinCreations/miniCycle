@@ -8,6 +8,34 @@ on:
   workflow_dispatch: # Allows manual triggering from GitHub UI
 
 jobs:
+  # Fast, standalone lint gate. ESLint exits non-zero only on ERRORS, so this
+  # gates on error-level problems (0 today) the same way the Lighthouse/HTML jobs
+  # gate on deterministic, noise-free checks. The ~1000 existing warnings
+  # (mostly security/detect-object-injection) stay informational and do NOT fail
+  # the build — matching how score/timing metrics are treated as `warn` elsewhere.
+  # No browser, no server, no matrix: needs only Node + the eslint devDependency.
+  lint:
+    name: Lint (ESLint)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./web
+        run: npm ci
+
+      - name: Run ESLint
+        working-directory: ./web
+        run: npm run lint
+
   test:
     runs-on: ubuntu-latest
 
