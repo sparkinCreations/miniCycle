@@ -121,7 +121,7 @@ export class AchievementsManager {
 
                 // Trigger reward (theme unlock, game unlock, etc.)
                 // Theme unlock functions are idempotent — safe if also called from cycleCompletion
-                this._triggerReward(milestone, unlockedVia);
+                const rewardNotified = this._triggerReward(milestone, unlockedVia);
 
                 // Log history event
                 if (this.deps.logHistoryEvent) {
@@ -132,12 +132,18 @@ export class AchievementsManager {
                     });
                 }
 
-                // Show notification
-                this.deps.showNotification(
-                    getLabel('notify.achievementUnlocked', { vars: { name: milestone.name } }),
-                    'success',
-                    UI_TIMEOUTS.NOTIFICATION_SLOW
-                );
+                // Show the generic "Achievement Unlocked" notification ONLY when the
+                // reward didn't already surface its own. Every current milestone
+                // rewards a vocab theme (notified by _triggerReward), so firing this
+                // too showed the user two notifications for one unlock — a "Theme
+                // Unlocked" and an "Achievement Unlocked" (reported Jul 2026).
+                if (!rewardNotified) {
+                    this.deps.showNotification(
+                        getLabel('notify.achievementUnlocked', { vars: { name: milestone.name } }),
+                        'success',
+                        UI_TIMEOUTS.NOTIFICATION_SLOW
+                    );
+                }
             }
         }
 
@@ -145,18 +151,22 @@ export class AchievementsManager {
     }
 
     /**
-     * Trigger reward for a milestone
+     * Trigger reward for a milestone.
      * @private
+     * @returns {boolean} true if this showed its own notification (so the caller
+     *   should NOT also show the generic "Achievement Unlocked" one). Game rewards
+     *   return false here because their notification is fired separately by
+     *   cycleCompletion.handleMilestoneUnlocks, not by this method.
      */
     _triggerReward(milestone, unlockedVia) {
-        if (!milestone.reward) return;
+        if (!milestone.reward) return false;
 
         switch (milestone.rewardType) {
             case 'game':
                 if (this.deps.unlockMiniGame) {
                     this.deps.unlockMiniGame(milestone.reward);
                 }
-                break;
+                return false;
             case 'vocab-theme': {
                 const wasNew = this.deps.vocabThemeManager?.unlockThemeFromAchievement?.(milestone.reward);
                 if (wasNew) {
@@ -174,10 +184,12 @@ export class AchievementsManager {
                             }
                         }
                     );
+                    return true;
                 }
-                break;
+                return false;
             }
         }
+        return false;
     }
 
     /**

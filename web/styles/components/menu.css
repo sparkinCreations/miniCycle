@@ -1004,7 +1004,10 @@ body.quick-actions-open #quick-actions-window {
     .help-window {
         width: 90%;
         max-width: 400px;
-        font-size: 13px;
+        /* No font-size here: buttons.css sets a scaling token per breakpoint
+           (var(--font-size-sm) ≤768, var(--font-size-xs) ≤480) so the help
+           window text follows the accessibility Font Size setting. A hardcoded
+           px here (was 13px) froze it and stopped it scaling on phones. */
     }
 
     .title-row {

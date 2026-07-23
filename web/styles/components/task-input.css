@@ -19,7 +19,11 @@
     margin-bottom: var(--space-4);
     max-width: 450px;
     width: 80%;
-    height: 40px;
+    /* min-height (not height) so the row grows to contain #taskInput when the
+       accessibility Font Size enlarges it. A fixed 40px let the white input
+       field (font-size: var(--font-size-base)) poke out past the rounded
+       rectangle at larger fonts. */
+    min-height: 40px;
     flex-shrink: 0; /* Don't shrink - task list shrinks instead */
     transition: box-shadow 0.15s ease;
 }
@@ -70,7 +74,11 @@ input[type="text"]:focus-visible {
     flex: 1;
     background: var(--theme-input-bg, rgb(255, 255, 255));
     color: var(--theme-input-text, var(--theme-text-on-surface));
-    padding: var(--space-1-75) 0 var(--space-1-75) var(--space-1-75);
+    /* No vertical padding: the row (.task-input) already pads and centers this
+       field. Its own top/bottom padding stacked with a font-size-driven line
+       box, making the field taller than the row at large fonts so its white
+       background poked out past the rounded rectangle. Horizontal padding stays. */
+    padding: 0 0 0 var(--space-1-75);
     font-size: var(--font-size-base);
     border: none;
     border-radius: var(--radius-6);
