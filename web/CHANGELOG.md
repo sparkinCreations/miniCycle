@@ -1,3 +1,12 @@
+## [2.323] - 2026-07-23
+- fix(undo): per-cycle IndexedDB write timers to prevent cross-cycle data loss
+- fix(a11y): stop the mode selector from clipping text at larger font sizes
+- a11y(fonts): move two readable sub-12px labels onto the --font-size-xs token
+- feat(a11y): bump base font to 17px on phones + fix inline-override clobber
+- fix(gestures): stop focus-view swipes from skipping a panel (double-navigate)
+- fix(cache): serve root HTML no-cache instead of the 1-year catch-all
+
+
 ## [2.322] - 2026-07-22
 - fix(undo): stop Ctrl+Z / Ctrl+Y from firing undo/redo twice
 - chore: sync package-lock.json version to 2.321
