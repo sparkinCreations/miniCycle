@@ -342,6 +342,15 @@ export class GesturePanelManager {
                 return;
             }
 
+            // A pen also emits a COMPATIBILITY MOUSE stream (mousedown/move/up),
+            // which handleMouse* would process — navigating a second time for one
+            // pen swipe. Canceling the primary pointerdown sets the browser's
+            // "prevent mouse event" flag (Pointer Events spec), suppressing that
+            // compat stream so a pen swipe navigates exactly once.
+            if (event.isPrimary && event.cancelable) {
+                event.preventDefault();
+            }
+
             this.state.isPointerSwiping = true;
             this.state.pointerStartX = event.clientX;
         }

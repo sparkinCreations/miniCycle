@@ -187,7 +187,7 @@
     font-weight: 500;
     max-width: 140px;
     /* min-height (not height) so larger accessibility font sizes don't clip the text. */
-    min-height: 25px;
+    min-height: var(--space-6-25);
     appearance: none;
     cursor: pointer;
     box-sizing: border-box;

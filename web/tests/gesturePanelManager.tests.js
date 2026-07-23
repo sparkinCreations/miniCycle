@@ -279,6 +279,27 @@ export async function runGesturePanelManagerTests(resultsDiv) {
         if (m.getState().isPointerSwiping !== false) throw new Error('mouse pointer should not start swipe');
     });
 
+    // Regression: a pen ALSO emits a compatibility mouse stream (mousedown/move/up)
+    // that handleMouse* would process — navigating a second time for one pen swipe.
+    // A primary, cancelable pen pointerdown must be preventDefault()'d to suppress it.
+    await test('pen pointerdown preventDefaults to suppress the compat mouse stream', () => {
+        const m = makeManager({ onShowStatsPanel: () => {} });
+        let prevented = false;
+        const penDown = { clientX: 300, pointerType: 'pen', isPrimary: true, cancelable: true, target: document.body, preventDefault() { prevented = true; } };
+        m.handlePointerDown(penDown);
+        if (!prevented) throw new Error('primary pen pointerdown must call preventDefault()');
+        if (m.getState().isPointerSwiping !== true) throw new Error('pen pointerdown should still start a pen swipe');
+    });
+
+    await test('touch pointerdown does NOT preventDefault (handled by the touch handlers)', () => {
+        const m = makeManager({ onShowStatsPanel: () => {} });
+        let prevented = false;
+        const touchDown = { clientX: 300, pointerType: 'touch', isPrimary: true, cancelable: true, target: document.body, preventDefault() { prevented = true; } };
+        m.handlePointerDown(touchDown);
+        if (prevented) throw new Error('touch pointerdown must not be preventDefaulted in the pointer path');
+        if (m.getState().isPointerSwiping !== false) throw new Error('touch-type pointer should not start a swipe');
+    });
+
     // ── keyboard behavior ─────────────────────────────────────────────────────
     resultsDiv.innerHTML += '<h4 class="test-section">⌨️ keyboard</h4>';
 

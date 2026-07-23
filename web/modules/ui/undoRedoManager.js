@@ -324,6 +324,11 @@ const _initialized = {
 // Module-scope handler reference for cleanup
 let _handleUndoRedoKeydown = null;
 
+// beforeunload handler reference so destroyUndoRedoManager() can remove it (an
+// anonymous listener would accumulate across boot retries and let a torn-down
+// instance still write history on unload).
+let _beforeunloadHandler = null;
+
 // ============ UI INITIALIZATION ============
 
 /**
@@ -1697,8 +1702,12 @@ export async function initUndoSystemForApp() {
     // 4. Update UI with whatever we have so far
     updateUndoRedoButtons();
 
-    // 5. Set up page unload handler to force immediate save
-    window.addEventListener('beforeunload', () => {
+    // 5. Set up page unload handler to force immediate save. Store the reference
+    //    and drop any prior one first so re-init (boot retry) can't stack handlers.
+    if (_beforeunloadHandler) {
+      window.removeEventListener('beforeunload', _beforeunloadHandler);
+    }
+    _beforeunloadHandler = () => {
       // Flush EVERY pending debounced write synchronously (not just the active
       // cycle's) so a fast switch-then-close can't drop a scheduled write.
       dbWriteTimers.forEach((entry, cid) => {
@@ -1746,7 +1755,8 @@ export async function initUndoSystemForApp() {
           console.warn('⚠️ Failed to force-save undo history:', e);
         }
       }
-    });
+    };
+    window.addEventListener('beforeunload', _beforeunloadHandler);
 
   } catch (e) {
     // ✅ FIX #5: Error boundary for undo system initialization
@@ -2104,6 +2114,12 @@ function destroyUndoRedoManager() {
   if (_handleUndoRedoKeydown) {
     document.removeEventListener('keydown', _handleUndoRedoKeydown);
     _handleUndoRedoKeydown = null;
+  }
+  // Remove the unload handler so retries don't stack listeners (and a torn-down
+  // instance can't still write history on unload).
+  if (_beforeunloadHandler) {
+    window.removeEventListener('beforeunload', _beforeunloadHandler);
+    _beforeunloadHandler = null;
   }
   // Cancel any pending debounced writes so they don't fire after teardown.
   dbWriteTimers.forEach(entry => clearTimeout(entry.timer));
