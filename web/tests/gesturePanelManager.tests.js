@@ -253,12 +253,23 @@ export async function runGesturePanelManagerTests(resultsDiv) {
     // ── pointer behavior ──────────────────────────────────────────────────────
     resultsDiv.innerHTML += '<h4 class="test-section">👆 pointer</h4>';
 
-    await test('pointer (touch type) left swipe shows stats', () => {
+    await test('pointer (pen type) left swipe shows stats', () => {
         let shown = 0;
         const m = makeManager({ onShowStatsPanel: () => { shown++; } });
-        m.handlePointerDown(pointer(300, 'touch'));
-        m.handlePointerMove(pointer(200, 'touch')); // diff 100 > 50
-        if (shown !== 1) throw new Error('pointer swipe did not show stats');
+        m.handlePointerDown(pointer(300, 'pen'));
+        m.handlePointerMove(pointer(200, 'pen')); // diff 100 > 50
+        if (shown !== 1) throw new Error('pen pointer swipe did not show stats');
+    });
+
+    // Regression: a touch device dispatches BOTH the touch and pointer streams
+    // for one finger swipe. The pointer path must ignore touch (the touchstart/
+    // move/end handlers own it) — otherwise every swipe navigates TWICE and steps
+    // two panels at once (e.g. Task → Stats, skipping Routine).
+    await test('pointer touch-type events are ignored (prevents double-navigate)', () => {
+        const m = makeManager({ onShowStatsPanel: () => { throw new Error('pointer-touch should not navigate'); } });
+        m.handlePointerDown(pointer(300, 'touch')); // ignored — touch is handled by handleTouch*
+        m.handlePointerMove(pointer(100, 'touch'));
+        if (m.getState().isPointerSwiping !== false) throw new Error('touch-type pointer should not start a swipe');
     });
 
     await test('mouse-type pointer events are ignored', () => {

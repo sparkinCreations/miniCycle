@@ -76,6 +76,19 @@
     Pragma = "no-cache"
     Expires = "0"
 
+# Root document. `_redirects` serves it via a 200 REWRITE ("/  /miniCycle.html  200"),
+# so Netlify matches headers on the REQUEST path "/", which the "*.html" rule above
+# cannot match (no extension). Without this, "/" falls through to the "/*" catch-all
+# and the entry HTML is cached for a YEAR — serving stale markup that references old
+# /build/ hashes after a deploy. Same pretty-URL/no-extension fix already applied to
+# "/pages/*" below. Last-match-wins, and this is after "/*", so it overrides it.
+[[headers]]
+  for = "/"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
+
 [[headers]]
   for = "/pages/*"
   [headers.values]
