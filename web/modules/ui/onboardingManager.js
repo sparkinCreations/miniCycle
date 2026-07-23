@@ -1531,6 +1531,41 @@ export class OnboardingManager {
     }
 
     /**
+     * Land a first-run user in Focus View after they picked "Create My First
+     * Routine" or "Load a Sample" on the choice screen.
+     *
+     * This is the focus-first landing WITHOUT the guided tour — deliberately
+     * NOT runFirstRunFlow(): no typewriter splash, no welcome banner, no
+     * _attachFirstSessionLifecycle(). Those belong to the "learn" choice; a
+     * user who picked create/sample declined the walkthrough.
+     *
+     * Onboarding isn't lost, just resequenced: guidedTourManager defers its
+     * "Want a quick tour of Home View?" prompt while focusModeActive is true
+     * and fires it on FOCUS_MODE_DEACTIVATED — so the user gets oriented to
+     * Home View the moment they leave Focus View, on their terms.
+     *
+     * The "create" path's empty routine also needs the task input bar showing,
+     * but appInit sets that BEFORE the routine renders (modeManager only reads
+     * the setting once, during render), so it isn't handled here.
+     *
+     * @returns {Promise<void>}
+     */
+    async startFocusViewForNewRoutine() {
+        this._activateFocusViewWhenReady();
+
+        await this.deps.AppState?.update?.(state => {
+            if (!state.settings) state.settings = {};
+            state.settings.focusModeActive = true;
+        }, true);
+
+        this.deps.showNotification?.(
+            getLabel('notify.focusViewFirstRun'),
+            'info',
+            UI_TIMEOUTS.NOTIFICATION_PERSISTENT
+        );
+    }
+
+    /**
      * Public entry point — re-arms the first-session lifecycle for users who
      * are mid-first-run (cycles exist but onboardingCompleted is still false).
      * Called by appInit when it sees this state on boot.

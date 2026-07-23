@@ -1,3 +1,7 @@
+## [2.326] - 2026-07-23
+- product: add pre-flight checklists use-case chip
+
+
 ## [2.325] - 2026-07-23
 - ci: add error-level ESLint gate to Automated Tests workflow
 - chore(release): update version to 2.324

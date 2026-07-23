@@ -311,10 +311,10 @@ class AppInit {
 			}
 		};
 
-		// create/sample land in Home View and have NO further tutorial (the user
-		// declined it by their pick). Mark onboarding complete NOW so a refresh in
-		// Home View doesn't re-trigger the legacy welcome modal (appInit's second
-		// first-run branch fires on !onboardingCompleted && !focusModeActive).
+		// create/sample have NO guided tour (the user declined it by their pick).
+		// Mark onboarding complete NOW so a refresh doesn't re-trigger the legacy
+		// welcome modal (appInit's second first-run branch fires on
+		// !onboardingCompleted && !focusModeActive).
 		// 'learn' is NOT marked here — runFirstRunFlow completes it on focus exit.
 		const markOnboardingComplete = () => {
 			const AppState = _deps.getMiniCycleState?.();
@@ -324,17 +324,37 @@ class AppInit {
 			}, true); // immediate save — survives a fast refresh
 		};
 
+		// Both create and sample land the new user in FOCUS VIEW rather than Home
+		// View — one task at a time is a calmer, more pointed first impression than
+		// the full list plus all the chrome, and it puts the cycle itself front and
+		// centre. The tour is still skipped; onboardingManager shows a short
+		// notification naming the ⋯ menu (exiting is the excuse to make them
+		// discover the menu), and guidedTourManager's "tour of Home View" prompt
+		// fires by itself on the first focus exit.
+		//
+		// Deferred until the routine actually exists — activating focus view while
+		// the creation dialog is still open would land on nothing. Both paths
+		// finish through completeInitialSetup() → runCompleteInitialSetup(), which
+		// consumes this flag. (An 'onboarding:setup-complete' listener does NOT
+		// work here: routineManager fires that event on the create path only —
+		// loadSampleRoutine completes without it.)
+		const landInFocusViewWhenRoutineReady = ({ showInputBar }) => {
+			this._pendingFirstRunFocusView = { showInputBar };
+		};
+
 		switch (choice) {
 			case 'create':
-				// Blank routine: stay in Home View (empty schema keeps focusModeActive
-				// false), open the creation dialog. Cancelling falls back to the
-				// getting-started sample via the dialog's own onboarding guard.
+				// Blank routine: open the creation dialog, then land in Focus View
+				// with the task input bar showing — the routine is empty, so the
+				// input is the one thing there is to act on. Cancelling falls back
+				// to the getting-started sample via the dialog's own guard.
 				markOnboardingComplete();
 				// One-shot flag: the empty-state hint shown after this routine is
 				// created uses the friendlier first-step copy (routineManager reads
 				// + clears it). Cleared on first render so later routines are normal.
 				try { sessionStorage.setItem('miniCycle_firstRunCreate', '1'); } catch (e) { /* private mode */ }
 				if (_deps.showCycleCreationModal) {
+					landInFocusViewWhenRoutineReady({ showInputBar: true });
 					_deps.showCycleCreationModal();
 				} else {
 					console.warn('⚠️ showCycleCreationModal unavailable — legacy flow');
@@ -343,8 +363,11 @@ class AppInit {
 				break;
 			case 'sample':
 				// Sample picker: same dialog, opened straight to the sample list.
+				// The sample arrives with tasks, so Focus View has something to show
+				// immediately — no input bar needed.
 				markOnboardingComplete();
 				if (_deps.showCycleCreationModal) {
+					landInFocusViewWhenRoutineReady({ showInputBar: false });
 					_deps.showCycleCreationModal({ startInSampleView: true });
 				} else {
 					runLegacyFocusFlow();
@@ -517,6 +540,21 @@ class AppInit {
 			await this.waitForCore();
 		}
 
+		// First-run "create": reveal the task input bar for the new (empty) routine.
+		// Must happen BEFORE loadMiniCycle() below, because modeManager reads the
+		// per-routine `showTaskInput` once during that render — setting it after
+		// persists the preference but leaves the bar hidden until the next render.
+		// Writing the setting (rather than clicking the toggle button) also avoids
+		// the button's own "Add tasks using the input bar…" notification, which
+		// would double up with the Focus View one shown at the end of this method.
+		if (this._pendingFirstRunFocusView?.showInputBar) {
+			const AppStateForInput = _deps.getMiniCycleState?.();
+			await AppStateForInput?.update?.((state) => {
+				const cycle = state.data?.cycles?.[activeCycle];
+				if (cycle) cycle.showTaskInput = true;
+			}, true);
+		}
+
 		const loadMiniCycle = _deps.loadMiniCycle?.();
 		if (typeof loadMiniCycle === 'function') {
 			await loadMiniCycle();
@@ -619,6 +657,16 @@ class AppInit {
 		}
 		if (settings.fontSize && settings.fontSize !== '16') {
 			document.documentElement.style.setProperty('--font-size-base', `${settings.fontSize}px`);
+		}
+
+		// First-run "create"/"sample" choices land the user in Focus View instead
+		// of Home View. Done HERE (rather than in _routeFirstRunChoice) because
+		// this is the first point where the routine actually exists and has
+		// rendered — both paths funnel through completeInitialSetup() to get here.
+		// Consumed one-shot so later routine creations behave normally.
+		if (this._pendingFirstRunFocusView) {
+			this._pendingFirstRunFocusView = null;
+			_deps.getOnboardingManager?.()?.startFocusViewForNewRoutine?.();
 		}
 
 		return true;
