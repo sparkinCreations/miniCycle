@@ -323,8 +323,14 @@ export class GesturePanelManager {
     // ==========================================
 
     handlePointerDown(event) {
-        // Only track if it's a touch or pen input
-        if (event.pointerType === "touch" || event.pointerType === "pen") {
+        // Pen ONLY. Touch is served by the touchstart/move/end handlers and mouse
+        // by the mousedown/move/up handlers — a touch device dispatches BOTH the
+        // touch and pointer streams for one finger swipe, so handling "touch" here
+        // too made every swipe call _navigate() twice, stepping two panels at once
+        // (e.g. from the Task panel a left-swipe landed on Stats, skipping Routine).
+        // Restricting the pointer path to pen keeps each input type on exactly one
+        // handler and eliminates the double-navigate.
+        if (event.pointerType === "pen") {
             if (this.deps.isDraggingNotification()) return;
             if (this.deps.isOverlayActive()) return;
 
@@ -342,7 +348,9 @@ export class GesturePanelManager {
     }
 
     handlePointerMove(event) {
-        if (!this.state.isPointerSwiping || event.pointerType === "mouse") return;
+        // Pen only (see handlePointerDown) — isPointerSwiping is set exclusively
+        // for pen, and this guard keeps a stray touch/mouse pointermove out.
+        if (!this.state.isPointerSwiping || event.pointerType !== "pen") return;
 
         const moveX = event.clientX;
         const difference = this.state.pointerStartX - moveX;
