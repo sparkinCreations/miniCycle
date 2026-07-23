@@ -25,7 +25,9 @@
     font-size: var(--font-size-xs);
     font-weight: 500;
     max-width: 200px;
-    height: 25px;
+    /* min-height (not height) so the box grows when the accessibility Font Size
+       enlarges --font-size-xs — a fixed height clipped the enlarged text. */
+    min-height: 25px;
     appearance: none;
     -webkit-appearance: none;
     cursor: pointer;
@@ -54,7 +56,7 @@
     border-radius: var(--radius-10);
     margin: 0;
     padding: 5px var(--space-3);
-    height: 28px;
+    min-height: 28px;
     cursor: pointer;
     transition: all var(--transition-normal) ease;
     z-index: var(--z-content);
@@ -319,7 +321,7 @@ body.reduced-motion .quick-actions-btn.first-time-shimmer {
 
     .mode-selector-wrapper .mode-selector {
         font-size: var(--font-size-xs);
-        height: 25px;
+        min-height: 25px;
         padding: 3px var(--space-5) 4px var(--space-2);
         max-width: 200px;
     }
