@@ -1949,35 +1949,50 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
 
     // The repaint tests above assert state restore + repaint; these pin the
     // OTHER half of the rollback contract — both undo/redo STACKS returning to
-    // their pre-attempt state (the pop and the opposite-stack push are undone).
-    await test('undo failure restores BOTH stacks to their pre-attempt state', async () => {
-        const { deps, snapshot } = createRollbackFailureDeps();
-        deps.AppGlobalState.activeUndoStack = [snapshot];
+    // their pre-attempt state. Use MULTI-ENTRY stacks and assert the restored
+    // entries by identity AND order, not just length: a broken rollback could
+    // replace the original entry with a freshly-built snapshot of the same length
+    // and a length-only check would miss it.
+    const mkSnap = (marker, taskTexts) => ({
+        activeCycleId: 'Test Cycle',
+        tasks: taskTexts.map((t, i) => ({ id: `${marker}-${i}`, text: t, completed: false, highPriority: false })),
+        recurringTemplates: {}, title: 'Test Cycle', autoReset: false, deleteCheckedTasks: false,
+        cycleCount: 0, theme: 'classic', clearedTasks: null, taskViewLayout: null, timestamp: marker
+    });
+
+    await test('undo failure restores both stacks EXACTLY (contents + order)', async () => {
+        const { deps } = createRollbackFailureDeps();
+        // Both differ from the current 2-task state so the undo actually pops.
+        const snapA = mkSnap(1000, ['A only']);
+        const snapB = mkSnap(2000, ['B one', 'B two', 'B three']);
+        deps.AppGlobalState.activeUndoStack = [snapA, snapB];
         deps.AppGlobalState.activeRedoStack = [];
         setUndoRedoManagerDependencies(deps);
 
         try { await performStateBasedUndo(); } catch (e) { /* forced failure expected */ }
 
-        // The undo popped `snapshot` and pushed a current snapshot onto redo —
-        // rollback must undo both, leaving undo=[snapshot], redo=[].
-        if (deps.AppGlobalState.activeUndoStack.length !== 1) {
-            throw new Error(`undo stack not restored: expected 1, got ${deps.AppGlobalState.activeUndoStack.length}`);
+        const u = deps.AppGlobalState.activeUndoStack;
+        if (u.length !== 2 || u[0] !== snapA || u[1] !== snapB) {
+            throw new Error('undo stack not restored exactly (contents/order)');
         }
         if (deps.AppGlobalState.activeRedoStack.length !== 0) {
             throw new Error(`redo stack not restored: expected 0, got ${deps.AppGlobalState.activeRedoStack.length}`);
         }
     });
 
-    await test('redo failure restores BOTH stacks to their pre-attempt state', async () => {
-        const { deps, snapshot } = createRollbackFailureDeps();
-        deps.AppGlobalState.activeRedoStack = [snapshot];
+    await test('redo failure restores both stacks EXACTLY (contents + order)', async () => {
+        const { deps } = createRollbackFailureDeps();
+        const snapA = mkSnap(1000, ['A only']);
+        const snapB = mkSnap(2000, ['B one', 'B two', 'B three']);
+        deps.AppGlobalState.activeRedoStack = [snapA, snapB];
         deps.AppGlobalState.activeUndoStack = [];
         setUndoRedoManagerDependencies(deps);
 
         try { await performStateBasedRedo(); } catch (e) { /* forced failure expected */ }
 
-        if (deps.AppGlobalState.activeRedoStack.length !== 1) {
-            throw new Error(`redo stack not restored: expected 1, got ${deps.AppGlobalState.activeRedoStack.length}`);
+        const r = deps.AppGlobalState.activeRedoStack;
+        if (r.length !== 2 || r[0] !== snapA || r[1] !== snapB) {
+            throw new Error('redo stack not restored exactly (contents/order)');
         }
         if (deps.AppGlobalState.activeUndoStack.length !== 0) {
             throw new Error(`undo stack not restored: expected 0, got ${deps.AppGlobalState.activeUndoStack.length}`);
