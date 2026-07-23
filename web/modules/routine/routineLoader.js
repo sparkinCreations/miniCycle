@@ -423,8 +423,16 @@ function applyThemeSettings(settings) {
   document.body.classList.toggle(DOM_CLASSES.REDUCED_MOTION, !!settings.reducedMotion);
   document.documentElement.classList.toggle(DOM_CLASSES.REDUCED_MOTION, !!settings.reducedMotion);
   document.body.classList.toggle(DOM_CLASSES.HIGH_CONTRAST, !!settings.highContrast);
-  document.documentElement.style.setProperty('--font-size-base',
-      (settings.fontSize && settings.fontSize !== '16') ? `${settings.fontSize}px` : '16px');
+  // Font size: only set an inline override when the user chose a non-default
+  // size. For the default, REMOVE the inline property so control returns to the
+  // stylesheet (the max-width:480px media query bumps the base to 17px on phones).
+  // Unconditionally writing an inline '16px' here — as this did before — beats the
+  // media query at every specificity and killed any CSS-level responsive default.
+  if (settings.fontSize && settings.fontSize !== '16') {
+    document.documentElement.style.setProperty('--font-size-base', `${settings.fontSize}px`);
+  } else {
+    document.documentElement.style.removeProperty('--font-size-base');
+  }
 }
 
 /**
