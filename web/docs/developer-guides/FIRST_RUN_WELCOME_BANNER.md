@@ -696,6 +696,27 @@ if (state?.settings?.focusModeActive) {
 
 So if the user is still in Focus View with the welcome banner showing, the tour stays quiet. When they exit Focus View, both the welcome banner goes away (via the focus-exit handler) AND the tour notification fires (via the deferred listener). Coordinated handoff.
 
+### With the create / sample first-run choices
+
+The welcome banner + splash + `_attachFirstSessionLifecycle` described above belong to the **"learn how cycles work"** choice (and the legacy default). The other two first-run choices skip the banner and land the user straight in Focus View via `startFocusViewForNewRoutine(choice)` (routed by `appInit._routeFirstRunChoice`). Their **first Focus View exit** is where they get oriented to Home View — and each choice gets a different prompt:
+
+| First-run choice | First focus-exit prompt | Owner |
+|---|---|---|
+| **learn** | Merged "Welcome to Home View" — **Start a blank routine** + **Start Tour** | `onboardingManager._showHomeViewWelcomeNotification()` (via the first-session lifecycle) |
+| **sample** | Same merged "Welcome to Home View" notification | `onboardingManager._attachSampleFirstExitWelcome()` → `_showHomeViewWelcomeNotification()` |
+| **create** | Lighter "Want a quick tour of Home View?" + **Take a Quick Tour** | `guidedTourManager` (deferred off `onboarding:setup-complete`, which `routineManager` dispatches on the create path only) |
+
+**Why sample differs from create:** a "sample" user loaded a *prebuilt template* rather than building their own routine, so offering **Start a blank routine** (make it yours) alongside the tour is the right nudge. A "create" user already built their own routine, so the redundant "start blank" is dropped in favor of the lighter tour-only prompt. (Before this split the sample path fired *nothing* on first exit — its tour prompt was never scheduled because `onboarding:setup-complete` isn't dispatched on the sample path.)
+
+`_showHomeViewWelcomeNotification()` is shared by the learn and sample paths and calls `markTourWelcomeShown()` so guidedTourManager's delayed auto tour-welcome doesn't stack on top of the merged notification (which already offers the tour). The sample listener is one-shot (`{ once: true }`), idempotent while pending, and torn down in `destroy()`.
+
+**Suppressing the generic "Back in Home View" toast on the graduation exit.** `focusMode.deactivate()` normally fires a `focusMode.deactivated` ("Back in Home View") toast on every exit — but on the *first-run* exit that would be redundant noise stacked under the onboarding prompt above. It detects that exit two ways:
+
+- **learn** — `onboardingCompleted` is still `false` at first exit (the focus-exit handler marks it complete *during* the exit), which `deactivate()` already reads as the graduation exit.
+- **create / sample** — these mark `onboardingCompleted = true` *upfront* in `_routeFirstRunChoice`, so it can't be the signal. Instead `startFocusViewForNewRoutine()` sets `settings.firstRunFocusExitPending = true` at landing; `deactivate()` treats that as a graduation exit and **consumes it** (clears the flag) so every later, normal exit toasts as usual.
+
+So the rule is: suppress when `!onboardingCompleted || firstRunFocusExitPending`. Before this flag existed the create/sample paths leaked the "Back in Home View" toast on top of their first-exit prompt (the `onboardingCompleted` guard only ever worked for the learn path).
+
 ### With Reset Onboarding
 
 The settings "Reset Onboarding" feature clears all the relevant flags:

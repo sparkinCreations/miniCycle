@@ -1,3 +1,26 @@
+## [2.327] - 2026-07-24
+- fix(onboarding): suppress redundant "Back in Home View" toast on first-run exit
+- feat(onboarding): show Home View welcome on the sample first-run path
+- chore: sync package-lock version to match package.json (2.326)
+- chore(release): update version to 2.326
+- product: add pre-flight checklists use-case chip
+- chore(release): update version to 2.325
+- ci: add error-level ESLint gate to Automated Tests workflow
+- chore(release): update version to 2.324
+- fix: address CodeRabbit review follow-ups from #9
+- chore(release): update version to 2.323
+- fix(undo): per-cycle IndexedDB write timers to prevent cross-cycle data loss
+- fix(a11y): stop the mode selector from clipping text at larger font sizes
+- a11y(fonts): move two readable sub-12px labels onto the --font-size-xs token
+- feat(a11y): bump base font to 17px on phones + fix inline-override clobber
+- fix(gestures): stop focus-view swipes from skipping a panel (double-navigate)
+- fix(cache): serve root HTML no-cache instead of the 1-year catch-all
+- chore(release): update version to 2.322
+- fix(undo): stop Ctrl+Z / Ctrl+Y from firing undo/redo twice
+- chore: sync package-lock.json version to 2.321
+- chore(release): update version to 2.321
+
+
 ## [2.326] - 2026-07-23
 - product: add pre-flight checklists use-case chip
 

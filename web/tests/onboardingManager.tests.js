@@ -1124,6 +1124,145 @@ export async function runOnboardingManagerTests(resultsDiv) {
         }
     });
 
+    // ===== SAMPLE / CREATE FIRST-EXIT WELCOME =====
+
+    resultsDiv.innerHTML += '<h4 class="test-section">🏠 First-exit Home View welcome (sample vs create)</h4>';
+
+    // Detect the merged "Welcome to Home View" notification by its distinctive
+    // shape: a 4th options arg carrying BOTH a primary and secondary action
+    // button. The "we start you in Focus View" toast has no options arg.
+    const isMergedWelcome = (args) => !!(args[3] && args[3].actionButton && args[3].secondaryActionButton);
+
+    await test('startFocusViewForNewRoutine("sample") shows merged Home View welcome on first focus exit', async () => {
+        const state = { settings: {}, data: { cycles: {} } };
+        const notifications = [];
+        let tourWelcomeMarked = 0;
+
+        setOnboardingManagerDependencies(createMockDeps({
+            AppState: {
+                isReady: () => true,
+                get: () => state,
+                update: (fn) => { fn(state); return state; }
+            },
+            appInit: { isAppReady: () => true },
+            activateFocusMode: () => {},
+            showNotification: (...args) => { notifications.push(args); },
+            markTourWelcomeShown: () => { tourWelcomeMarked++; },
+            createNewMiniCycle: () => {},
+            startGuidedTour: () => {}
+        }));
+        const om = new OnboardingManager();
+
+        await om.startFocusViewForNewRoutine('sample');
+
+        // Not until they leave Focus View — only the focus-view toast so far.
+        if (notifications.filter(isMergedWelcome).length !== 0) {
+            throw new Error('Merged welcome should not fire before Focus View is exited');
+        }
+
+        document.dispatchEvent(new CustomEvent('focusMode:deactivated'));
+
+        const merged = notifications.filter(isMergedWelcome);
+        if (merged.length !== 1) {
+            throw new Error(`Expected exactly 1 merged welcome on focus exit, got ${merged.length}`);
+        }
+        if (tourWelcomeMarked !== 1) {
+            throw new Error('markTourWelcomeShown should fire once so the auto tour-welcome does not stack');
+        }
+
+        om.destroy();
+    });
+
+    await test('startFocusViewForNewRoutine("create") does NOT show merged welcome on focus exit', async () => {
+        const state = { settings: {}, data: { cycles: {} } };
+        const notifications = [];
+        let tourWelcomeMarked = 0;
+
+        setOnboardingManagerDependencies(createMockDeps({
+            AppState: {
+                isReady: () => true,
+                get: () => state,
+                update: (fn) => { fn(state); return state; }
+            },
+            appInit: { isAppReady: () => true },
+            activateFocusMode: () => {},
+            showNotification: (...args) => { notifications.push(args); },
+            markTourWelcomeShown: () => { tourWelcomeMarked++; }
+        }));
+        const om = new OnboardingManager();
+
+        await om.startFocusViewForNewRoutine('create');
+        document.dispatchEvent(new CustomEvent('focusMode:deactivated'));
+
+        if (notifications.filter(isMergedWelcome).length !== 0) {
+            throw new Error('Create path must not show the merged welcome — guidedTourManager owns its first-exit prompt');
+        }
+        if (tourWelcomeMarked !== 0) {
+            throw new Error('Create path should not suppress the auto tour-welcome');
+        }
+
+        om.destroy();
+    });
+
+    await test('sample first-exit welcome fires only once across repeated focus exits', async () => {
+        const state = { settings: {}, data: { cycles: {} } };
+        const notifications = [];
+
+        setOnboardingManagerDependencies(createMockDeps({
+            AppState: {
+                isReady: () => true,
+                get: () => state,
+                update: (fn) => { fn(state); return state; }
+            },
+            appInit: { isAppReady: () => true },
+            activateFocusMode: () => {},
+            showNotification: (...args) => { notifications.push(args); },
+            markTourWelcomeShown: () => {},
+            createNewMiniCycle: () => {},
+            startGuidedTour: () => {}
+        }));
+        const om = new OnboardingManager();
+
+        await om.startFocusViewForNewRoutine('sample');
+        document.dispatchEvent(new CustomEvent('focusMode:deactivated'));
+        document.dispatchEvent(new CustomEvent('focusMode:deactivated'));
+        document.dispatchEvent(new CustomEvent('focusMode:deactivated'));
+
+        const merged = notifications.filter(isMergedWelcome);
+        if (merged.length !== 1) {
+            throw new Error(`Expected merged welcome exactly once across repeated exits, got ${merged.length}`);
+        }
+
+        om.destroy();
+    });
+
+    await test('destroy cleans up the pending sample first-exit welcome listener', async () => {
+        const state = { settings: {}, data: { cycles: {} } };
+        const notifications = [];
+
+        setOnboardingManagerDependencies(createMockDeps({
+            AppState: {
+                isReady: () => true,
+                get: () => state,
+                update: (fn) => { fn(state); return state; }
+            },
+            appInit: { isAppReady: () => true },
+            activateFocusMode: () => {},
+            showNotification: (...args) => { notifications.push(args); },
+            markTourWelcomeShown: () => {}
+        }));
+        const om = new OnboardingManager();
+
+        await om.startFocusViewForNewRoutine('sample');
+        om.destroy();
+
+        document.dispatchEvent(new CustomEvent('focusMode:deactivated'));
+
+        if (notifications.filter(isMergedWelcome).length !== 0) {
+            throw new Error('Merged welcome should not fire after destroy — the one-shot listener must be removed');
+        }
+    });
+
     // ===== SUMMARY =====
 
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed</h3>`;

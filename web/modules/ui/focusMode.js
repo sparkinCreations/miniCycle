@@ -940,16 +940,26 @@ export class FocusMode {
             }
         }, 400);
 
-        const onboardingCompleted = !!this.deps.AppState?.get?.()?.settings?.onboardingCompleted;
+        const settings = this.deps.AppState?.get?.()?.settings;
+        const onboardingCompleted = !!settings?.onboardingCompleted;
+        // Is this the first-run "graduation" exit? Two first-run shapes reach it:
+        //   • learn  → onboardingCompleted is still false until this exit
+        //   • create/sample → onboardingCompleted was marked true upfront, but
+        //     startFocusViewForNewRoutine set firstRunFocusExitPending at landing
+        // Either way the onboarding manager owns the first-exit prompt (merged
+        // Home View welcome or the tour prompt), so the generic "Back in Home
+        // View" toast would just be redundant noise on that one exit.
+        const firstRunFocusExit = !onboardingCompleted || !!settings?.firstRunFocusExitPending;
 
         this.deps.AppState?.update?.(state => {
             state.settings.focusModeActive = false;
+            // One-shot: consume the flag so normal, later exits still toast.
+            if (state.settings.firstRunFocusExitPending) {
+                state.settings.firstRunFocusExitPending = false;
+            }
         });
 
-        // Suppress the "Back to Home View" toast on the very first exit —
-        // the onboarding manager shows its own "Welcome to Home View"
-        // notification with a CTA, so this would just be noise.
-        if (onboardingCompleted) {
+        if (!firstRunFocusExit) {
             this.deps.showNotification?.(getLabel('focusMode.deactivated'), 'info', UI_TIMEOUTS.NOTIFICATION_BRIEF);
         }
 
