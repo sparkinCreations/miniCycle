@@ -138,8 +138,6 @@ export function iconHTML(name) {
  */
 export function initIcons() {
     const count = replaceAllFAIcons();
-    if (count > 0) {
-    }
 }
 
 // Auto-initialize if DOM is already ready

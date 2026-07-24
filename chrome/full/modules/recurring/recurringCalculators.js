@@ -533,8 +533,6 @@ export function calculateNextOccurrence(settings, fromTime = Date.now()) {
                 settings.time
             );
 
-            if (next === null) {
-            }
 
             return next;
         }

@@ -271,7 +271,9 @@ body.hide-quick-actions .quick-actions-menu-row {
 
 .quick-actions-menu-row .quick-actions-title {
     color: rgba(0, 0, 0, 0.7);
-    font-size: 11px;
+    /* Readable row-title text — use the token so it scales with the Font Size
+       setting and the mobile bump (was a fixed 11px). */
+    font-size: var(--font-size-xs);
     min-width: 80px;
 }
 

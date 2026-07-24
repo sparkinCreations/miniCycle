@@ -1004,7 +1004,10 @@ body.quick-actions-open #quick-actions-window {
     .help-window {
         width: 90%;
         max-width: 400px;
-        font-size: 13px;
+        /* No font-size here: buttons.css sets a scaling token per breakpoint
+           (var(--font-size-sm) ≤768, var(--font-size-xs) ≤480) so the help
+           window text follows the accessibility Font Size setting. A hardcoded
+           px here (was 13px) froze it and stopped it scaling on phones. */
     }
 
     .title-row {
@@ -1204,6 +1207,18 @@ body.theme-golden-glow .menu-section-grid #menu-task-options .icon-text {
 
 .menu-section-grid .auto-uncheck-row:hover {
     background: var(--menu-button-hover-bg, var(--overlay-medium));
+}
+
+/* Inner label wraps only the checkbox + text so the row stays valid HTML
+   (a <label for=""> may contain at most one labelable element — the time
+   button lives outside it). It carries the flex layout the row used to. */
+.menu-section-grid .auto-uncheck-row-label {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex: 1;
+    min-width: 0;
+    cursor: pointer;
 }
 
 .menu-section-grid .auto-uncheck-row input[type="checkbox"] {

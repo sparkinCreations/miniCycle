@@ -190,7 +190,6 @@ export function setTaskCoreDependencies(dependencies) {
                 taskCoreInstance.deps[key] = value;
             }
         }
-    } else {
     }
 }
 

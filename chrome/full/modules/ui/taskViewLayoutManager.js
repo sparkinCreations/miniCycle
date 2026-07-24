@@ -26,7 +26,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_CLASSES, DOM_SELECTORS, Z_INDEX, LIMITS, LAYOUT_PLAY_AREA_INSETS, UI_TIMEOUTS, EVENTS } from '../core/constants.js';
+import { DOM_IDS, DOM_CLASSES, DOM_SELECTORS, Z_INDEX, LIMITS, LAYOUT_PLAY_AREA_INSETS, UI_TIMEOUTS, EVENTS, BREAKPOINTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { getIcon } from '../utils/icons.js';
 import { isTouchDevice } from '../utils/deviceDetection.js';
@@ -331,7 +331,7 @@ export class TaskViewLayoutManager {
 
     _isDesktop() {
         if (isTouchDevice()) return false;
-        if (window.innerWidth < 1024) return false;
+        if (window.innerWidth < BREAKPOINTS.DESKTOP_MIN) return false;
         return window.matchMedia('(hover: hover) and (pointer: fine)').matches;
     }
 

@@ -558,6 +558,13 @@
     /* Drop the nav dots / undo / redo row lower so it sits tighter to the footer,
        giving the task list ~31px more height. (Desktop keeps the 55px base.) */
     --nav-area-height: var(--space-6);
+    /* Nudge the base up 1px on phones so body text reads a touch larger without a
+       manual Font Size change. The whole scale is fixed-offset from this token, so
+       17px keeps every derived size a whole pixel (xs/sm/lg/xl/2xl/3xl = 13/15/19/21/25/31).
+       The Settings → Font Size selector writes an INLINE --font-size-base that beats
+       this rule, so the user's choice still wins (see routineLoader/settingsUIManager,
+       which removeProperty on the default so control returns to this media query). */
+    --font-size-base: 17px;
   }
 }
 

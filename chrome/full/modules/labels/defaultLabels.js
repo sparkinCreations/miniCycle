@@ -356,6 +356,11 @@ export const DEFAULT_LABELS = deepFreeze({
         // the user toggles via the ⋯ menu in the top-right corner instead.
         taskInputShownFocus:    'Add tasks using the input bar. Press the ⋯ menu above to hide it when you\'re done.',
         taskInputHiddenFocus:   'Task input hidden. Press the ⋯ menu above to show it again.',
+        // Shown once when a first-run user lands in Focus View after choosing
+        // "Create My First Routine" / "Load a Sample". Names the ⋯ menu on
+        // purpose — exiting is the excuse to make them discover the menu that
+        // holds every focus-mode action.
+        focusViewFirstRun:      'To keep things simple, we start you in Focus View. Press the ⋯ menu to exit.',
         taskSystemLimited:      'Task system initialized with limited functionality',
         taskDisplayLimited:     'Task display may not work properly',
         featureUnavailable:     'Feature temporarily unavailable',
@@ -643,6 +648,7 @@ export const DEFAULT_LABELS = deepFreeze({
         // Reminder notifications
         reminderNotificationTitle: 'miniCycle Reminder',
         reminderTasksToComplete: 'You have tasks to complete:',
+        reminderBackgroundBody: 'You have unfinished tasks in your routine',
         reminderEnabled:         'Reminder enabled: {settings}',
         reminderCustomSettings:  'Custom settings',
         reminderEveryFrequency:  'Every {freq} {unit}',
@@ -832,6 +838,7 @@ export const DEFAULT_LABELS = deepFreeze({
 
         // Reminder notifications
         reminderEnabled:         'Task reminders enabled!',
+        testsRequireNetwork:     'Tests require a network connection — test files are always fetched fresh. Reconnect and try again.',
         reminderDisabled:        'Task reminders disabled.',
         taskReminderDisabled:    'Reminder disabled for task.',
 
@@ -1499,7 +1506,7 @@ export const DEFAULT_LABELS = deepFreeze({
         backToHomeAria:           'Return to Home View',
         welcomeNotification:      'Welcome to Home View\n\nManage and customize your routines and setup.',
         startBlankRoutineButton:  'Start with a blank routine',
-        startTourButton:          'Explore Home View',
+        startTourButton:          'Start Tour',
     },
 
     // ========================================================================

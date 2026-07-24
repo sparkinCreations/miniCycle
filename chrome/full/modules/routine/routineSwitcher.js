@@ -869,7 +869,7 @@ export class RoutineSwitcher {
             overlay.classList.remove(DOM_CLASSES.EDIT_FOCUS_ACTIVE);
             const removeOverlay = () => overlay.remove();
             overlay.addEventListener('transitionend', removeOverlay, { once: true });
-            setTimeout(removeOverlay, 500);
+            setTimeout(removeOverlay, UI_TIMEOUTS.EDIT_OVERLAY_REMOVE);
         }
     }
 
@@ -1157,8 +1157,6 @@ export class RoutineSwitcher {
 
         // ✅ Validate and repair cycle data before switching (like import does)
         const repaired = this._validateAndRepairCycleData(cycleKey);
-        if (repaired) {
-        }
 
         // ✅ Update through state system
         this.deps.AppState.update(state => {

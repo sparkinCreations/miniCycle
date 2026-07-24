@@ -62,7 +62,6 @@ export class MiniCycleConsoleCapture {
         // Use original console to avoid recursion
         if (this.originalConsole.log) {
             this.originalConsole.log(`[ConsoleCapture] ${type.toUpperCase()}: ${message}`);
-        } else {
         }
     }
 
@@ -411,7 +410,6 @@ export class MiniCycleConsoleCapture {
     appendToTestResults(text) {
         if (this.deps.appendToTestResults) {
             this.deps.appendToTestResults(text);
-        } else {
         }
     }
 

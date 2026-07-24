@@ -128,10 +128,10 @@ export async function exportMiniCycleData(miniCycleData, cycleName) {
                 if (notified) return;
                 notified = true;
                 window.removeEventListener('focus', showSuccess);
-                notify("✅ " + getLabel('notify.exportSuccess', { vars: { name: cycleName } }), "success", 3000);
+                notify("✅ " + getLabel('notify.exportSuccess', { vars: { name: cycleName } }), "success", UI_TIMEOUTS.NOTIFICATION_LONG);
             };
             window.addEventListener('focus', showSuccess);
-            setTimeout(showSuccess, 3000); // fallback if no save dialog
+            setTimeout(showSuccess, UI_TIMEOUTS.EXPORT_FALLBACK_SUCCESS); // fallback if no save dialog
         }
 
     } catch (error) {

@@ -24,7 +24,7 @@
  * @see {@link module:boot/uiBoot} - Phase 3 implementation
  */
 
-import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { isNativeApp } from '../platform/capacitorBridge.js';
 import { goToLiteVersion } from '../utils/liteVersion.js';
@@ -54,6 +54,7 @@ const FALLBACK_BOOT_TIMEOUTS = Object.freeze({
   PHASE_3: 15000,
   TOTAL: 60000,
   RETRY_DELAY: 2000,
+  SW_SPINUP_GRACE: 2000,
   IDB_OPERATION: 3000,
   VERSION_GATE: 1500
 });
@@ -669,7 +670,7 @@ function downloadDataBackup() {
   document.body.appendChild(a);
   a.click();
   a.remove();
-  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  setTimeout(() => URL.revokeObjectURL(a.href), UI_TIMEOUTS.BLOB_URL_REVOKE);
   return Object.keys(keys).length;
 }
 
@@ -1169,7 +1170,7 @@ async function waitForServiceWorker(timeoutMs = 3000) {
     console.warn('SW ready check failed:', e.message);
     // If offline and SW isn't ready, wait a bit more for iOS to spin it up
     if (isOffline && !navigator.serviceWorker.controller) {
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise(resolve => setTimeout(resolve, (BOOT_TIMEOUTS || FALLBACK_BOOT_TIMEOUTS).SW_SPINUP_GRACE));
     }
   }
 }

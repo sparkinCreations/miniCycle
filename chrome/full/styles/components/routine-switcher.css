@@ -16,7 +16,11 @@
     color: var(--color-navy);
     border-radius: var(--radius-5);
     width: 88px;
-    height: 22px;
+    /* Match the mode selector's height (see .quick-actions-btn in
+       mode-selector.css). The selector is a native <select> that stays ~25px,
+       so a fixed height on the same token keeps the header controls level.
+       Was a mismatched 22px. */
+    height: var(--space-6-25);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -1049,7 +1053,8 @@ input.routine-search-input:focus {
 @media (max-width: 767px) {
     .routine-switcher-btn {
         width: 70px;
-        height: 20px;
+        /* height inherits var(--space-6-25) from the base rule so it stays
+           level with the mode selector on small screens too. */
     }
 
     .mini-cycle-switch-modal-content {

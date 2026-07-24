@@ -144,7 +144,6 @@ export class DeviceDetectionManager {
 
     if (shouldUseLite) {
       this.redirectToLite();
-    } else {
     }
   }
 
@@ -223,7 +222,6 @@ export class DeviceDetectionManager {
 
       // ✅ No need for setTimeout - appInit.waitForCore() already handles timing
       await this.runDeviceDetection();
-    } else {
     }
   }
 

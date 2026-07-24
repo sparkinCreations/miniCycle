@@ -760,7 +760,6 @@ async function performAutoMigration(options = {}) {
         } else if (!fixResult.success) {
             console.warn('⚠️ Data fixing encountered issues, but continuing with migration');
             console.warn('🔧 Fix error:', fixResult.message);
-        } else {
         }
 
         // Step 4: ✅ ENHANCED - Use lenient validation for auto-migration
@@ -980,7 +979,6 @@ async function handleMigrationFailure(reason, backupKey) {
                 console.error('📋 Continuing with fallback strategy...');
                 // Continue with fallback - don't fail here
             }
-        } else {
         }
 
         // Step 2: Ensure legacy data is accessible

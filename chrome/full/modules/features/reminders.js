@@ -17,10 +17,16 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, FREQUENCY_MS } from '../core/constants.js';
+import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, FREQUENCY_MS, LIMITS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { isClickOnNotification } from '../ui/modalUtils.js';
-import { isNativeApp, sendNativeNotification, requestNotificationPermission } from '../platform/capacitorBridge.js';
+import {
+    isNativeApp,
+    requestNotificationPermission,
+    checkNotificationPermission,
+    scheduleNativeReminderSeries,
+    cancelNativeReminderSeries
+} from '../platform/capacitorBridge.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -378,7 +384,12 @@ export class MiniCycleReminders {
         if (this.state.reminderTimeoutId) {
             clearTimeout(this.state.reminderTimeoutId);
             this.state.reminderTimeoutId = null;
-        } else {
+        }
+
+        // Native: clear the OS-scheduled series too, or the phone keeps
+        // delivering reminders the app no longer intends to send.
+        if (isNativeApp()) {
+            cancelNativeReminderSeries(LIMITS.NATIVE_REMINDER_SCHEDULE_MAX);
         }
 
     }
@@ -484,10 +495,18 @@ export class MiniCycleReminders {
         if (enableReminders) enableReminders.checked = reminders.enabled;
         if (indefiniteCheckbox) indefiniteCheckbox.checked = reminders.indefinite;
         if (dueDatesReminders) dueDatesReminders.checked = reminders.dueDatesReminders;
-        // Only check browser notifications if permission is still granted
+        // Only check browser notifications if permission is still granted.
+        // Native app: the WebView has no web Notification API, so verify against
+        // the native permission — the web-only check silently uncleared the box
+        // on every launch, killing system reminders until re-enabled by hand.
         if (browserNotifications) {
-            browserNotifications.checked = reminders.browserNotifications &&
-                typeof Notification !== 'undefined' && Notification.permission === 'granted';
+            if (isNativeApp()) {
+                const nativePerm = await checkNotificationPermission();
+                browserNotifications.checked = !!reminders.browserNotifications && nativePerm === 'granted';
+            } else {
+                browserNotifications.checked = reminders.browserNotifications &&
+                    typeof Notification !== 'undefined' && Notification.permission === 'granted';
+            }
         }
         const privacyNotice = this.deps.getElementById(DOM_IDS.PRIVACY_NOTICE_DETAILS);
         if (privacyNotice) privacyNotice.open = reminders.privacyNoticeOpen ?? false;
@@ -618,14 +637,11 @@ export class MiniCycleReminders {
         if (remindersSettings.browserNotifications) {
             const notificationBody = incompleteTasks.map(t => `~ ${t}`).join('\n');
 
-            // Native (Capacitor) path first — the Android WebView lacks the web
-            // Notification API, so route through LocalNotifications instead.
-            if (isNativeApp()) {
-                await sendNativeNotification({
-                    title: getLabel('notify.reminderNotificationTitle'),
-                    body: notificationBody
-                });
-            } else if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+            // Native (Capacitor): NO immediate send — the OS-scheduled series
+            // (syncNativeReminderSeries) already has an occurrence at this exact
+            // time, so an immediate send would double-notify on Android. The
+            // series is re-anchored below via scheduleNextReminder().
+            if (!isNativeApp() && typeof Notification !== 'undefined' && Notification.permission === 'granted') {
                 try {
                     // Try ServiceWorker notification first (more reliable, works when tab is in background)
                     const registration = await navigator.serviceWorker?.getRegistration();
@@ -770,6 +786,54 @@ export class MiniCycleReminders {
             await this.sendReminderNotificationIfNeeded();
         }, timeUntilNext);
 
+        // Native: mirror the upcoming occurrences as OS-scheduled notifications
+        // so they deliver while the app is backgrounded/closed (fire-and-forget;
+        // the bridge swallows its own errors and no-ops on the web).
+        this.syncNativeReminderSeries();
+
+    }
+
+    /**
+     * Mirror the upcoming reminder occurrences into OS-scheduled local
+     * notifications (native only). The WebView's JS timer dies the moment the
+     * OS suspends the app, so these are the only reminders that reach the user
+     * with the app backgrounded or closed. Every call re-anchors the whole
+     * series from current settings; stopReminders() clears it.
+     */
+    async syncNativeReminderSeries() {
+        if (!isNativeApp()) return;
+
+        const schemaData = this.deps.loadMiniCycleData();
+        const remindersSettings = schemaData?.reminders || {};
+
+        // Off, or system notifications not opted in — make sure nothing is pending.
+        if (!remindersSettings.enabled || !remindersSettings.browserNotifications) {
+            await cancelNativeReminderSeries(LIMITS.NATIVE_REMINDER_SCHEDULE_MAX);
+            return;
+        }
+
+        const multiplier = FREQUENCY_MS[remindersSettings.frequencyUnit] || FREQUENCY_MS.minutes;
+        const intervalMs = (remindersSettings.frequencyValue || 1) * multiplier;
+        const now = Date.now();
+        let startAt = remindersSettings.nextReminderTime || (now + intervalMs);
+        if (startAt <= now) startAt = now + intervalMs;
+
+        // Respect the repeat cap: only schedule the reminders still owed.
+        const timesReminded = remindersSettings.timesReminded || 0;
+        const count = remindersSettings.indefinite
+            ? LIMITS.NATIVE_REMINDER_SCHEDULE_MAX
+            : Math.max(0, (remindersSettings.repeatCount || 0) - timesReminded);
+
+        // Content is static — future task state is unknowable at schedule time;
+        // the series is re-anchored on every fire/change, so staleness is bounded.
+        await scheduleNativeReminderSeries({
+            title: getLabel('notify.reminderNotificationTitle'),
+            body: getLabel('notify.reminderBackgroundBody'),
+            startAt,
+            intervalMs,
+            count,
+            maxCount: LIMITS.NATIVE_REMINDER_SCHEDULE_MAX
+        });
     }
 
     /**
@@ -983,7 +1047,11 @@ export class MiniCycleReminders {
                             const permission = await requestNotificationPermission();
                             if (permission === 'granted') {
                                 browserNotificationsCheckbox.checked = true;
-                                this.autoSaveReminders();
+                                await this.autoSaveReminders();
+                                // Anchor the OS-scheduled series now — waiting for
+                                // the next JS fire could be hours away, and the app
+                                // may be backgrounded before then.
+                                this.syncNativeReminderSeries();
                                 this.deps.showNotification(getLabel('reminders.permissionGranted'), 'success', UI_TIMEOUTS.NOTIFICATION_MEDIUM);
                             } else {
                                 this.deps.showNotification(getLabel('reminders.permissionDenied'), 'info', UI_TIMEOUTS.NOTIFICATION_EXTENDED);
@@ -1066,8 +1134,10 @@ export class MiniCycleReminders {
                         }
                     });
                 } else {
-                    // Toggling OFF — save and confirm
-                    this.autoSaveReminders();
+                    // Toggling OFF — save, then clear any OS-scheduled series
+                    // (syncNativeReminderSeries reads the saved "off" state and
+                    // cancels; no-op on the web).
+                    this.autoSaveReminders().then(() => this.syncNativeReminderSeries());
                     this.deps.showNotification(getLabel('reminders.browserNotificationsDisabled'), 'info', UI_TIMEOUTS.NOTIFICATION_SHORT);
                 }
             });

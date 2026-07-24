@@ -35,7 +35,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { UI_TIMEOUTS, COLORS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS } from '../core/constants.js';
+import { UI_TIMEOUTS, COLORS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, BREAKPOINTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { reshowPopover } from './popoverUtils.js';
 
@@ -803,7 +803,7 @@ async setDefaultPosition(notificationContainer) {
     const notificationWidth = 320; // Approximate notification width
     const rightMargin = 20; // Gap from right edge
 
-    if (viewportWidth <= 768) {
+    if (viewportWidth <= BREAKPOINTS.MOBILE_MAX) {
         // Mobile: Right side, below logo area
         defaultX = Math.max(20, viewportWidth - notificationWidth - rightMargin);
         defaultY = 70; // Below logo
@@ -834,8 +834,7 @@ async setDefaultPosition(notificationContainer) {
                 state.settings.notificationPositionModified = false; // Mark as default
             }
         }, true);
-    } catch (error) {
-    }
+    } catch (error) { /* settings-listener setup is best-effort — position falls back to default */ }
 }
   /**
    * ⏰ Setup auto-remove with hover pause functionality
@@ -1066,7 +1065,7 @@ async setDefaultPosition(notificationContainer) {
 
       // Capture the pointer so move/up events fire on the container regardless
       // of where the cursor is — including over inert modal backdrops.
-      try { notificationContainer.setPointerCapture(pointerId); } catch {}
+      try { notificationContainer.setPointerCapture(pointerId); } catch { /* capture unsupported — drag still works */ }
 
       const onPointerMove = (ev) => {
         if (ev.pointerId !== pointerId) return;
@@ -1116,7 +1115,7 @@ async setDefaultPosition(notificationContainer) {
             window.removeEventListener('click', swallowClick, { capture: true });
           }, 50);
         }
-        try { notificationContainer.releasePointerCapture(pointerId); } catch {}
+        try { notificationContainer.releasePointerCapture(pointerId); } catch { /* ignore — capture may already be gone */ }
         notificationContainer.removeEventListener("pointermove", onPointerMove);
         notificationContainer.removeEventListener("pointerup", endDrag);
         notificationContainer.removeEventListener("pointercancel", endDrag);
@@ -1131,7 +1130,7 @@ async setDefaultPosition(notificationContainer) {
         notificationContainer.removeEventListener("pointermove", onPointerMove);
         notificationContainer.removeEventListener("pointerup", endDrag);
         notificationContainer.removeEventListener("pointercancel", endDrag);
-        try { notificationContainer.releasePointerCapture(pointerId); } catch {}
+        try { notificationContainer.releasePointerCapture(pointerId); } catch { /* ignore — capture may already be gone */ }
       });
     };
 
@@ -1673,7 +1672,7 @@ async setDefaultPosition(notificationContainer) {
     const confirmBtn = modal.querySelector(DOM_SELECTORS.BTN_CONFIRM);
     const cancelBtn = modal.querySelector(DOM_SELECTORS.BTN_CANCEL);
 
-    setTimeout(() => cancelBtn.focus({ focusVisible: false }), 20);
+    setTimeout(() => cancelBtn.focus({ focusVisible: false }), UI_TIMEOUTS.FOCUS_NEXT_TICK);
 
     let handleKeydown = null;
 
@@ -1778,7 +1777,7 @@ async setDefaultPosition(notificationContainer) {
 
     // Focus first choice button
     if (choiceBtns.length > 0) {
-      setTimeout(() => choiceBtns[0].focus({ focusVisible: false }), 20);
+      setTimeout(() => choiceBtns[0].focus({ focusVisible: false }), UI_TIMEOUTS.FOCUS_NEXT_TICK);
     }
 
     const cleanup = () => {

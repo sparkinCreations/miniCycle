@@ -15,7 +15,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_CLASSES, DOM_SELECTORS, UI_TIMEOUTS, EVENTS } from '../core/constants.js';
+import { DOM_IDS, DOM_CLASSES, DOM_SELECTORS, UI_TIMEOUTS, EVENTS, BREAKPOINTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -175,27 +175,52 @@ export class OnboardingManager {
     }
 
     /**
+     * Show the welcome splash on its own, with no banner hand-off — the
+     * title cascades in, rests centered for a beat, then fades out.
+     *
+     * Used by the "create" and "sample" first-run picks. Those paths have no
+     * welcome banner (they go straight to the routine-creation dialog), so
+     * phase 3 — flying each word up to the banner title — has no target and
+     * is skipped.
+     *
+     * @returns {Promise<void>} Resolves once the splash is fully gone. Always
+     *   resolves (watchdog-backed), so it is safe to gate follow-up UI on it.
+     */
+    showWelcomeSplash() {
+        return this._showFirstRunSplash({ standalone: true });
+    }
+
+    /**
      * Show the typewriter splash for first-time users. Builds a black
      * full-screen overlay with the welcome title typed in character-by-
      * character. Positioned so the title lands at the same spot as the
      * banner title — when the splash fades out, the banner (mounted behind
      * it) is revealed continuously.
      *
-     * @returns {Promise<void>} Resolves when the typewriter animation
-     *   (all chars + brief hold) completes. Caller should `await` this
-     *   before calling _hideFirstRunSplash so the fade only starts after
-     *   the user has read the full text.
+     * @param {Object} [options]
+     * @param {boolean} [options.standalone=false] Skip the phase-3 banner
+     *   hand-off and hold the centered title longer instead. For callers with
+     *   no welcome banner behind the splash.
+     * @returns {Promise<void>} Resolves once the splash has faded and been
+     *   removed. Resolves immediately when the splash is gated off. Callers
+     *   that just want the visual can ignore it — the splash is self-managing.
      * @private
      */
-    _showFirstRunSplash() {
+    _showFirstRunSplash({ standalone = false } = {}) {
         // Same gate as the welcome banner — once the user dismisses the
         // welcome (× on the banner) OR exits focus mode (which sets
         // onboardingCompleted), neither the splash nor the banner show on
         // subsequent reloads. App close alone does NOT graduate them.
         const state = this.deps.AppState?.get?.();
-        if (state?.settings?.firstRunWelcomeDismissed) return;
+        if (state?.settings?.firstRunWelcomeDismissed) return Promise.resolve();
 
-        if (this._firstRunSplash) return;
+        if (this._firstRunSplash) return this._firstRunSplashDone ?? Promise.resolve();
+
+        // Completion promise — resolved by _hideFirstRunSplash once the
+        // element is actually off the page.
+        this._firstRunSplashDone = new Promise(resolve => {
+            this._resolveFirstRunSplashDone = resolve;
+        });
 
         const titleText = getLabel('firstRunWelcome.title');
         const splash = document.createElement('div');
@@ -291,6 +316,17 @@ export class OnboardingManager {
         };
         splash.addEventListener('pointerdown', dismissOnTap);
 
+        // Watchdog — everything below is driven by `animationend`, which never
+        // fires when the char animations don't run: prefers-reduced-motion
+        // sets `animation: none` on .first-run-splash__char, and an animation
+        // can also be canceled mid-flight. Without this the splash would sit
+        // there black until tapped. Cleared by _hideFirstRunSplash on the
+        // normal path, so it only ever fires as a true last resort.
+        this._firstRunSplashWatchdog = setTimeout(() => {
+            this._firstRunSplashWatchdog = null;
+            this._hideFirstRunSplash();
+        }, UI_TIMEOUTS.FIRST_RUN_SPLASH_WATCHDOG);
+
         // Self-managing lifecycle: after the LAST character's SHRINK
         // animation ends (phase 2 of the cascade) + a brief hold, fade
         // the splash out automatically. We filter on animation name
@@ -299,23 +335,33 @@ export class OnboardingManager {
         const lastChar = title.lastElementChild;
         if (!lastChar) {
             this._hideFirstRunSplash();
-            return;
+            return this._firstRunSplashDone;
         }
         const startHold = () => {
             this._firstRunSplashHoldTimer = setTimeout(() => {
                 this._firstRunSplashHoldTimer = null;
                 this._hideFirstRunSplash();
-            }, this._readSplashHoldDuration());
+            }, this._readSplashHoldDuration(standalone));
         };
+
+        // Reduced motion: the cascade is disabled in CSS, so the title is
+        // already sitting there fully visible. Go straight to the hold rather
+        // than waiting out a watchdog on a black screen.
+        if (window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) {
+            startHold();
+            return this._firstRunSplashDone;
+        }
+
         const onLastCharDone = (event) => {
             if (event.animationName !== 'first-run-splash-shrink') return;
             lastChar.removeEventListener('animationend', onLastCharDone);
 
             // Phase 3 — animate each splash word to its exact spot in the
-            // banner title. Falls back to immediate hold if the banner
+            // banner title. Skipped entirely in standalone mode (no banner
+            // to land on). Falls back to immediate hold if the banner
             // isn't measurable (e.g., not yet mounted, mismatched word
             // count, no text node).
-            const landedWords = this._landSplashWordsOnBanner();
+            const landedWords = standalone ? null : this._landSplashWordsOnBanner();
             if (!landedWords || landedWords.length === 0) {
                 startHold();
                 return;
@@ -329,6 +375,8 @@ export class OnboardingManager {
             lastWord.addEventListener('animationend', onWordLanded);
         };
         lastChar.addEventListener('animationend', onLastCharDone);
+
+        return this._firstRunSplashDone;
     }
 
     /**
@@ -376,15 +424,19 @@ export class OnboardingManager {
 
     /**
      * Read the splash hold duration from the CSS variable
-     * `--first-run-splash-hold` so timing stays in sync with the stylesheet.
+     * `--first-run-splash-hold` (or `--first-run-splash-hold-standalone` for
+     * the no-banner variant) so timing stays in sync with the stylesheet.
      * Falls back to 450ms if the var isn't readable for any reason.
+     * @param {boolean} [standalone=false] Read the standalone hold instead.
      * @returns {number} milliseconds
      * @private
      */
-    _readSplashHoldDuration() {
+    _readSplashHoldDuration(standalone = false) {
         try {
             const raw = getComputedStyle(document.documentElement)
-                .getPropertyValue('--first-run-splash-hold')
+                .getPropertyValue(standalone
+                    ? '--first-run-splash-hold-standalone'
+                    : '--first-run-splash-hold')
                 .trim();
             if (raw.endsWith('ms')) return parseFloat(raw);
             if (raw.endsWith('s')) return parseFloat(raw) * 1000;
@@ -406,6 +458,24 @@ export class OnboardingManager {
             clearTimeout(this._firstRunSplashHoldTimer);
             this._firstRunSplashHoldTimer = null;
         }
+        if (this._firstRunSplashWatchdog) {
+            clearTimeout(this._firstRunSplashWatchdog);
+            this._firstRunSplashWatchdog = null;
+        }
+
+        // Settle the completion promise once — whichever removal path wins
+        // (transitionend or the safety net). Callers gate follow-up UI on it,
+        // so it must resolve exactly once and never be dropped.
+        //
+        // The resolver is detached HERE rather than read at removal time:
+        // _firstRunSplash is cleared below, so a new splash can legitimately
+        // mount during this one's fade. Binding each hide to the resolver that
+        // was live when it started keeps the old fade from resolving the new
+        // splash's promise early.
+        const resolveThisSplash = this._resolveFirstRunSplashDone;
+        this._resolveFirstRunSplashDone = null;
+        this._firstRunSplashDone = null;
+        const settleSplashDone = () => resolveThisSplash?.();
 
         splash.classList.add(DOM_CLASSES.FIRST_RUN_SPLASH_FADING);
         // Once the splash is gone, hand control to the welcome banner's
@@ -424,6 +494,7 @@ export class OnboardingManager {
             }
             splash.remove();
             startWelcomeCarousel();
+            settleSplashDone();
         };
         splash.addEventListener('transitionend', removeAfterFade, { once: true });
         // Safety net in case the transition is interrupted / canceled.
@@ -431,6 +502,7 @@ export class OnboardingManager {
             this._firstRunSplashRemoveTimer = null;
             if (splash.isConnected) splash.remove();
             startWelcomeCarousel();
+            settleSplashDone();
         }, UI_TIMEOUTS.NOTIFICATION_LONG);
 
         this._firstRunSplash = null;
@@ -782,12 +854,14 @@ export class OnboardingManager {
         const currentShift = parseFloat(currentShiftStr) || 0;
         const naturalTop = taskTop - currentShift;
 
-        // GAP_PX must match --first-run-welcome-gap in CSS:
+        // Gap must match --first-run-welcome-gap in CSS:
         //   desktop (>768px viewport): --space-4 = 16px (comfortable)
         //   mobile  (≤768px viewport): --space-2 = 8px  (tighter for shorter viewport)
         // Hardcoded here since CSS custom properties returning `var()` chains
         // don't resolve to pixels via getPropertyValue alone.
-        const GAP_PX = window.innerWidth <= 768 ? 8 : 16;
+        const GAP_MOBILE_PX = 8;   // --space-2
+        const GAP_DESKTOP_PX = 16; // --space-4
+        const GAP_PX = window.innerWidth <= BREAKPOINTS.MOBILE_MAX ? GAP_MOBILE_PX : GAP_DESKTOP_PX;
         const requiredShift = Math.max(0, bannerBottom - naturalTop + GAP_PX);
 
         // Bottom-anchored controls (#nav-dots, #undo-redo-buttons) are hidden
@@ -1529,6 +1603,108 @@ export class OnboardingManager {
     }
 
     /**
+     * Land a first-run user in Focus View after they picked "Create My First
+     * Routine" or "Load a Sample" on the choice screen.
+     *
+     * This is the focus-first landing WITHOUT the guided tour — deliberately
+     * NOT runFirstRunFlow(): no typewriter splash, no welcome banner, no
+     * _attachFirstSessionLifecycle(). Those belong to the "learn" choice; a
+     * user who picked create/sample declined the walkthrough.
+     *
+     * Onboarding isn't lost, just resequenced: guidedTourManager defers its
+     * "Want a quick tour of Home View?" prompt while focusModeActive is true
+     * and fires it on FOCUS_MODE_DEACTIVATED — so the user gets oriented to
+     * Home View the moment they leave Focus View, on their terms.
+     *
+     * The "create" path's empty routine also needs the task input bar showing,
+     * but appInit sets that BEFORE the routine renders (modeManager only reads
+     * the setting once, during render), so it isn't handled here.
+     *
+     * @returns {Promise<void>}
+     */
+    async startFocusViewForNewRoutine(choice = null) {
+        this._activateFocusViewWhenReady();
+
+        await this.deps.AppState?.update?.(state => {
+            if (!state.settings) state.settings = {};
+            state.settings.focusModeActive = true;
+            // First-run graduation flag. The first Focus View exit after a
+            // create/sample landing shows an onboarding prompt (guidedTourManager's
+            // "Want a quick tour?" for create, or the merged Home View welcome for
+            // sample), so focusMode should suppress its generic "Back in Home View"
+            // toast on that one exit. Consumed by focusMode.deactivate(). (The learn
+            // path doesn't need this — its onboardingCompleted is still false at
+            // first exit, which focusMode already treats as the graduation exit.)
+            state.settings.firstRunFocusExitPending = true;
+        }, true);
+
+        this.deps.showNotification?.(
+            getLabel('notify.focusViewFirstRun'),
+            'info',
+            UI_TIMEOUTS.NOTIFICATION_PERSISTENT
+        );
+
+        // "sample" (template) users loaded a prebuilt routine rather than
+        // building their own, so on their first Focus View exit they get the
+        // merged Home View welcome — "Start a blank routine" (make it yours)
+        // plus the Home View tour. The "create" path deliberately skips this:
+        // those users already built their own routine, so guidedTourManager's
+        // lighter "Want a quick tour?" prompt (scheduled off
+        // onboarding:setup-complete) is the right first-exit nudge for them.
+        if (choice === 'sample') {
+            this._attachSampleFirstExitWelcome();
+        }
+    }
+
+    /**
+     * One-shot listener: show the merged Home View welcome the first time a
+     * "sample" first-run user leaves Focus View. Idempotent — a second call is
+     * a no-op while a handler is still pending. Auto-removes on fire (once) and
+     * is torn down defensively in destroy().
+     * @private
+     */
+    _attachSampleFirstExitWelcome() {
+        if (this._sampleFirstExitHandler) return;
+        this._sampleFirstExitHandler = () => {
+            this._sampleFirstExitHandler = null;
+            this._showHomeViewWelcomeNotification();
+        };
+        document.addEventListener(EVENTS.FOCUS_MODE_DEACTIVATED, this._sampleFirstExitHandler, { once: true });
+    }
+
+    /**
+     * Show the merged "Welcome to Home View" notification: primary action
+     * "Start a blank routine" (createNewMiniCycle), secondary action the Home
+     * View tour (startGuidedTour). Shared by the "learn" first-run flow (on the
+     * first Focus View exit) and the "sample" first-run flow.
+     *
+     * Also calls markTourWelcomeShown() so guidedTourManager's delayed auto
+     * tour-welcome doesn't stack on top of this one — this notification already
+     * offers the tour. (If the user clicks the tour button, startTour()
+     * re-persists the step and the tour proceeds normally.)
+     * @private
+     */
+    _showHomeViewWelcomeNotification() {
+        this.deps.markTourWelcomeShown?.();
+        this.deps.showNotification?.(
+            getLabel('homeView.welcomeNotification'),
+            'info',
+            UI_TIMEOUTS.NOTIFICATION_OVERLAY,
+            {
+                className: 'notification-titled',
+                actionButton: {
+                    label: getLabel('homeView.startBlankRoutineButton'),
+                    onClick: () => this.deps.createNewMiniCycle?.()
+                },
+                secondaryActionButton: {
+                    label: getLabel('homeView.startTourButton'),
+                    onClick: () => this.deps.startGuidedTour?.()
+                }
+            }
+        );
+    }
+
+    /**
      * Public entry point — re-arms the first-session lifecycle for users who
      * are mid-first-run (cycles exist but onboardingCompleted is still false).
      * Called by appInit when it sees this state on boot.
@@ -1574,29 +1750,11 @@ export class OnboardingManager {
             this._detachFirstSessionLifecycle();
             if (!wasFresh) return;
             document.dispatchEvent(new Event('onboarding:setup-complete'));
-            // Suppress the auto tour-welcome immediately — the merged Home
-            // View notification already offers both "Start tour" and
-            // "Start blank routine", so the 17s-delayed auto-welcome would
-            // either pile on top of this one or fire just after the user
-            // chooses an option. Calling upfront (not per-handler) closes
-            // the race where the user takes >17s to interact.
-            this.deps.markTourWelcomeShown?.();
-            this.deps.showNotification?.(
-                getLabel('homeView.welcomeNotification'),
-                'info',
-                UI_TIMEOUTS.NOTIFICATION_OVERLAY,
-                {
-                    className: 'notification-titled',
-                    actionButton: {
-                        label: getLabel('homeView.startBlankRoutineButton'),
-                        onClick: () => this.deps.createNewMiniCycle?.()
-                    },
-                    secondaryActionButton: {
-                        label: getLabel('homeView.startTourButton'),
-                        onClick: () => this.deps.startGuidedTour?.()
-                    }
-                }
-            );
+            // The merged Home View welcome doubles as the first-exit welcome
+            // for the "learn" flow. It's shown upfront (not per-handler) so the
+            // delayed auto tour-welcome is suppressed before the user can take
+            // >17s to interact — see _showHomeViewWelcomeNotification.
+            this._showHomeViewWelcomeNotification();
         };
         document.addEventListener(EVENTS.FOCUS_MODE_DEACTIVATED, this._firstFocusExitHandler, { once: true });
 
@@ -2294,6 +2452,13 @@ export class OnboardingManager {
         // beforeunload). Idempotent — no-op if no first-run flow ran.
         this._detachFirstSessionLifecycle?.();
 
+        // Sample first-run one-shot welcome listener (focusMode:deactivated).
+        // Idempotent — no-op if the sample flow never armed it or it already fired.
+        if (this._sampleFirstExitHandler) {
+            document.removeEventListener(EVENTS.FOCUS_MODE_DEACTIVATED, this._sampleFirstExitHandler);
+            this._sampleFirstExitHandler = null;
+        }
+
         // First-run welcome banner — remove DOM + listener if still mounted
         this._hideFirstRunWelcome?.();
 
@@ -2306,11 +2471,21 @@ export class OnboardingManager {
             clearTimeout(this._firstRunSplashRemoveTimer);
             this._firstRunSplashRemoveTimer = null;
         }
+        if (this._firstRunSplashWatchdog) {
+            clearTimeout(this._firstRunSplashWatchdog);
+            this._firstRunSplashWatchdog = null;
+        }
         if (this._firstRunSplash?.isConnected) {
             this._firstRunSplash.remove();
         }
         this._firstRunSplash = null;
         this._firstRunSplashAnimationDone = null;
+        // Release anyone awaiting the splash (create/sample gate their dialog
+        // on it) — a destroy during boot retry must not strand them.
+        const resolveSplashDone = this._resolveFirstRunSplashDone;
+        this._resolveFirstRunSplashDone = null;
+        this._firstRunSplashDone = null;
+        resolveSplashDone?.();
 
         const resetBtn = document.getElementById(DOM_IDS.RESET_ONBOARDING);
         if (resetBtn && this._resetOnboardingHandler) {

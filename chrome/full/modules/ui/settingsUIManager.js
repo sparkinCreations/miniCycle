@@ -1236,7 +1236,14 @@ export function setupFontSizeSelect() {
             return;
         }
 
-        document.documentElement.style.setProperty('--font-size-base', `${size}px`);
+        // Selecting "16" (Default) must hand control back to the stylesheet, not
+        // pin an inline 16px — otherwise the max-width:480px media query (17px on
+        // phones) can never apply once the user has touched this control.
+        if (size !== '16') {
+            document.documentElement.style.setProperty('--font-size-base', `${size}px`);
+        } else {
+            document.documentElement.style.removeProperty('--font-size-base');
+        }
 
         const labelKey = FONT_SIZE_LABELS[size] || 'settings.fontSizeDefault';
         _deps.showNotification?.(

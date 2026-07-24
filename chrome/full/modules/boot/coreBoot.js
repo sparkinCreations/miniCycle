@@ -565,8 +565,6 @@ export async function clearAllCaches() {
     for (const reg of registrations) {
       await reg.unregister();
     }
-    if (registrations.length > 0) {
-    }
   }
 
   return cleared;

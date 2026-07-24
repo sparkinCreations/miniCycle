@@ -1,15 +1,18 @@
+// ✅ Loading timeout failsafe - redirect to lite if app doesn't load in 60 seconds
 (function() {
-    try {
-      var data = localStorage.getItem('miniCycleData');
-      if (data) {
-        var parsed = JSON.parse(data);
-        var customAppBg = parsed && parsed.settings && parsed.settings.customColors && parsed.settings.customColors.appBg;
-        if (customAppBg) {
-          // Only set CSS variable if there's a custom color (preserves gradient for default)
-          document.documentElement.style.setProperty('--pref-app-bg', customAppBg);
-        }
-      }
-    } catch (e) {
-      // Silently fail - gradient will be used as default
+  var LOAD_TIMEOUT_MS = 60000; // 60 seconds
+  var timeoutId = setTimeout(function() {
+    // Check if app actually loaded (app-loader hidden means success)
+    var loader = document.getElementById('app-loader');
+    var isStillLoading = loader && loader.style.display !== 'none';
+
+    // Check if app loaded successfully via dataset (set by uiBoot.js)
+    if (document.documentElement.dataset.appLoaded === 'true') {
+      return; // App loaded successfully
     }
-  })();
+    if (isStillLoading && location.pathname.indexOf('miniCycle-lite.html') === -1) {
+      console.warn('⚠️ App load timeout - redirecting to lite version');
+      console.warn('[miniCycle-ext] lite fallback suppressed (full extension build)');
+    }
+  }, LOAD_TIMEOUT_MS);
+})();

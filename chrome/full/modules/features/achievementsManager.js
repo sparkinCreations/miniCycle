@@ -10,6 +10,9 @@
 
 import { createDIModule, required, optional } from '../core/diBase.js';
 import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION } from '../core/constants.js';
+
+// Coin-flip easter egg: one haptic tick per half rotation of the spun coin
+const HAPTIC_ROTATION_STEP_DEG = 180;
 import { getLabel } from '../labels/labelResolver.js';
 import { handleHorizontalArrowNav } from '../utils/keyboardNav.js';
 import { isClickOnNotification } from '../ui/modalUtils.js';
@@ -118,7 +121,7 @@ export class AchievementsManager {
 
                 // Trigger reward (theme unlock, game unlock, etc.)
                 // Theme unlock functions are idempotent — safe if also called from cycleCompletion
-                this._triggerReward(milestone, unlockedVia);
+                const rewardNotified = this._triggerReward(milestone, unlockedVia);
 
                 // Log history event
                 if (this.deps.logHistoryEvent) {
@@ -129,12 +132,18 @@ export class AchievementsManager {
                     });
                 }
 
-                // Show notification
-                this.deps.showNotification(
-                    getLabel('notify.achievementUnlocked', { vars: { name: milestone.name } }),
-                    'success',
-                    UI_TIMEOUTS.NOTIFICATION_SLOW
-                );
+                // Show the generic "Achievement Unlocked" notification ONLY when the
+                // reward didn't already surface its own. Every current milestone
+                // rewards a vocab theme (notified by _triggerReward), so firing this
+                // too showed the user two notifications for one unlock — a "Theme
+                // Unlocked" and an "Achievement Unlocked" (reported Jul 2026).
+                if (!rewardNotified) {
+                    this.deps.showNotification(
+                        getLabel('notify.achievementUnlocked', { vars: { name: milestone.name } }),
+                        'success',
+                        UI_TIMEOUTS.NOTIFICATION_SLOW
+                    );
+                }
             }
         }
 
@@ -142,18 +151,22 @@ export class AchievementsManager {
     }
 
     /**
-     * Trigger reward for a milestone
+     * Trigger reward for a milestone.
      * @private
+     * @returns {boolean} true if this showed its own notification (so the caller
+     *   should NOT also show the generic "Achievement Unlocked" one). Game rewards
+     *   return false here because their notification is fired separately by
+     *   cycleCompletion.handleMilestoneUnlocks, not by this method.
      */
     _triggerReward(milestone, unlockedVia) {
-        if (!milestone.reward) return;
+        if (!milestone.reward) return false;
 
         switch (milestone.rewardType) {
             case 'game':
                 if (this.deps.unlockMiniGame) {
                     this.deps.unlockMiniGame(milestone.reward);
                 }
-                break;
+                return false;
             case 'vocab-theme': {
                 const wasNew = this.deps.vocabThemeManager?.unlockThemeFromAchievement?.(milestone.reward);
                 if (wasNew) {
@@ -171,10 +184,12 @@ export class AchievementsManager {
                             }
                         }
                     );
+                    return true;
                 }
-                break;
+                return false;
             }
         }
+        return false;
     }
 
     /**
@@ -776,8 +791,8 @@ export class AchievementsManager {
                     currentRotation = deltaX * 2; // Multiply for more spin
                     coin.style.transform = `rotateY(${currentRotation}deg)`;
 
-                    // Haptic tick every 180 degrees
-                    if (Math.abs(currentRotation - lastHapticRotation) >= 180) {
+                    // Haptic tick every half rotation
+                    if (Math.abs(currentRotation - lastHapticRotation) >= HAPTIC_ROTATION_STEP_DEG) {
                         triggerHaptic(5);
                         lastHapticRotation = currentRotation;
                     }
@@ -805,8 +820,8 @@ export class AchievementsManager {
                         currentRotation += velocity;
                         coin.style.transform = `rotateY(${currentRotation}deg)`;
 
-                        // Haptic tick every 180 degrees during momentum
-                        if (Math.abs(currentRotation - lastHapticRotation) >= 180) {
+                        // Haptic tick every half rotation during momentum
+                        if (Math.abs(currentRotation - lastHapticRotation) >= HAPTIC_ROTATION_STEP_DEG) {
                             triggerHaptic(3);
                             lastHapticRotation = currentRotation;
                         }

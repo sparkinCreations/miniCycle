@@ -782,7 +782,9 @@ body.focus-mode .focus-mode-btn::after {
     top: calc(100% + 4px);
     left: 50%;
     transform: translateX(-50%);
-    font-size: 11px;
+    /* Readable action-button caption — use the token so it scales with the Font
+       Size setting and the mobile bump (was a fixed 11px). */
+    font-size: var(--font-size-xs);
     font-weight: 600;
     letter-spacing: 0.3px;
     line-height: 1.2;

@@ -63,6 +63,7 @@ export const BOOT_TIMEOUTS = Object.freeze({
     TOTAL: 60000,          // 60s — documentation-only (not enforced); matches the sum of
                            // raised phase budgets and the HTML load-timeout lite fallback
     RETRY_DELAY: 2000,     // 2s delay before boot retry (iOS needs time to restart killed SW)
+    SW_SPINUP_GRACE: 2000, // 2s extra wait for iOS to spin up a killed SW when offline (waitForServiceWorker catch path)
     IDB_OPERATION: 3000,   // 3s timeout for IndexedDB ops during boot recovery; raised from
                            // 1s — old/slow devices were timing out test-mode/backup checks
     VERSION_GATE: 1500     // 1.5s cap on the pre-boot server-version check (orchestrator
@@ -97,6 +98,12 @@ export const UI_TIMEOUTS = Object.freeze({
     CYCLE_SWITCH_TRANSITION: 300,  // 300ms - Delay during cycle switch
     STATS_UPDATE_DELAY: 100,       // 100ms - Stats panel update delay
     WHEEL_RESET_DELAY: 15,         // 15ms - Mouse wheel reset delay
+    FOCUS_NEXT_TICK: 20,           // 20ms - Focus a control just after a dialog/modal renders
+    IDLE_CALLBACK_FALLBACK: 100,   // 100ms - setTimeout fallback where requestIdleCallback is unavailable
+    TRANSITION_FALLBACK: 300,      // 300ms - Safety fallback when a CSS transitionend never fires (fast transitions)
+    EDIT_OVERLAY_REMOVE: 500,      // 500ms - Edit-focus overlay removal fallback (matches its CSS transition)
+    EXPORT_FALLBACK_SUCCESS: 3000, // 3000ms - Assume export saved if no focus/save-dialog signal arrives by then
+    BLOB_URL_REVOKE: 5000,         // 5000ms - Revoke a download blob URL (generous grace for slow save dialogs)
     FOCUS_DELAY: 100,              // 100ms - Focus input after action
     FOCUS_DELAY_SHORT: 50,         // 50ms - Focus an element shortly after it appears (inputs/edit fields)
     SAVE_DEFER: 50,                // 50ms - Defer a state save to the next tick so DOM/state settles first
@@ -124,6 +131,7 @@ export const UI_TIMEOUTS = Object.freeze({
     FOCUS_TASK_CELEBRATION: 2000,  // 2000ms - Focus task panel cycle-complete card celebration before showing task 1 (FOCUS_TASK_VIEW_PLAN D5)
     TOOLTIP_HIDE: 3000,            // 3000ms - Tooltip auto-hide delay
     FIRST_RUN_WELCOME_SLIDE_HOLD: 8000,    // 8000ms - How long each first-run welcome banner slide is visible before auto-advance
+    FIRST_RUN_SPLASH_WATCHDOG: 12000,      // 12000ms - Hard ceiling on the typewriter splash. Its phase chain hangs off animationend, which never fires if the char animations are disabled or interrupted; this guarantees the splash always fades and its completion promise always resolves (the create/sample picks open their dialog on it)
 
     // Cycle-demo SVG choreography (slide 3) — relative offsets WITHIN one
     // iteration of the loop. Each iteration runs end-to-end then schedules
@@ -242,7 +250,8 @@ export const LIMITS = Object.freeze({
     BACKUP_REMINDER_EVERY_N_TASKS: 100,  // Trigger backup reminder every N cleared tasks (To-Do mode)
     MAX_CORRUPT_BACKUPS: 3,              // Max raw-corrupted-data snapshots kept in localStorage for manual recovery
     LAYOUT_DRAG_THRESHOLD: 5,             // px - Task View Layout: pointer travel before drag starts (forgive hover jitter)
-    LAYOUT_DOCK_GAP: 20                   // px - Task View Layout: vertical gap between an anchor element and its docked dependent
+    LAYOUT_DOCK_GAP: 20,                  // px - Task View Layout: vertical gap between an anchor element and its docked dependent
+    NATIVE_REMINDER_SCHEDULE_MAX: 24      // Max future reminder occurrences pre-scheduled as native notifications (iOS caps pending local notifications at 64 app-wide)
 });
 
 /**
@@ -257,6 +266,14 @@ export const LAYOUT_PLAY_AREA_INSETS = Object.freeze({
     bottom: 90,     // nav-dots + footer clearance
     left: 20,       // edge gutter
     right: 20       // edge gutter
+});
+
+// RESPONSIVE BREAKPOINTS — keep in sync with styles/base media queries.
+// Convention: mobile check = `innerWidth <= BREAKPOINTS.MOBILE_MAX`,
+// desktop check = `innerWidth >= BREAKPOINTS.DESKTOP_MIN` (negate for not-desktop).
+export const BREAKPOINTS = Object.freeze({
+    MOBILE_MAX: 768,    // ≤ 768px → mobile layout
+    DESKTOP_MIN: 1024   // ≥ 1024px → desktop layout
 });
 
 // ============================================================================
@@ -291,7 +308,13 @@ export const GESTURE = Object.freeze({
  * To change thresholds, edit ONLY this file.
  */
 export const MILESTONES = Object.freeze({
-    TASK_ORDER_GAME: 100,
+    TASK_ORDER_GAME: 100,       // global cycles → unlock Task Order game
+
+    // One-time celebration overlay thresholds (>= so backup restores past
+    // the threshold still trigger once — see cycleCompletion/taskCycleReset)
+    CELEBRATE_CYCLES_100: 100,  // global cycles completed
+    CELEBRATE_CYCLES_500: 500,  // global cycles completed
+    CELEBRATE_TASKS_500: 500,   // total tasks completed
 
     // Full milestone definitions (5 tiers: 5, 25, 50, 75, 100)
     // Emojis match vocab theme celebrate icons: 🔥 💪 📚 🧹 👑

@@ -386,7 +386,7 @@ export function updateStorageBarUI(barElement, textElement, showNotification) {
         if ('requestIdleCallback' in window) {
             requestIdleCallback(detectAndRepaint, { timeout: 2000 });
         } else {
-            setTimeout(detectAndRepaint, 100);
+            setTimeout(detectAndRepaint, UI_TIMEOUTS.IDLE_CALLBACK_FALLBACK);
         }
     }
 

@@ -324,6 +324,11 @@ const _initialized = {
 // Module-scope handler reference for cleanup
 let _handleUndoRedoKeydown = null;
 
+// beforeunload handler reference so destroyUndoRedoManager() can remove it (an
+// anonymous listener would accumulate across boot retries and let a torn-down
+// instance still write history on unload).
+let _beforeunloadHandler = null;
+
 // ============ UI INITIALIZATION ============
 
 /**
@@ -355,8 +360,13 @@ export function wireUndoRedoUI() {
 }
 
 /**
- * Wire up keyboard shortcuts for undo/redo (Ctrl+Z, Ctrl+Y, Ctrl+Shift+Z)
- * Called once during app initialization
+ * Wire up keyboard shortcuts for undo/redo (Ctrl+Z, Ctrl+Y, Ctrl+Shift+Z).
+ *
+ * ⚠️ NOT called during normal boot. Global undo/redo shortcuts are owned by
+ * uiBoot.handleGlobalKeydown (via the public appContext undo API). Calling this
+ * in addition installs a SECOND document keydown listener, making every shortcut
+ * fire undo/redo twice. Kept exported only for standalone/embedded use where uiBoot's
+ * global handler is not present — never wire both in the same document.
  */
 export function wireUndoRedoKeyboardShortcuts() {
   // ✅ Idempotency guard
@@ -1517,7 +1527,7 @@ export async function onCycleSwitched(newCycleId) {
     updateUndoRedoButtons();
 
     // ✅ Small delay to let cycle fully load before re-enabling snapshots
-    await new Promise(resolve => setTimeout(resolve, 300));
+    await new Promise(resolve => setTimeout(resolve, UI_TIMEOUTS.CYCLE_SWITCH_TRANSITION));
   } catch (e) {
     console.error('❌ Cycle switch failed:', e);
 
@@ -1574,6 +1584,10 @@ export async function onCycleCreated(cycleId) {
 export async function onCycleDeleted(cycleId) {
 
   try {
+    // Cancel any pending debounced write FIRST — otherwise it fires after the
+    // delete below and recreates the record we just removed (orphaned history).
+    cancelPendingDbWrite(cycleId);
+
     // Remove from IndexedDB
     await deleteUndoStackFromIndexedDB(cycleId);
 
@@ -1609,6 +1623,10 @@ export async function onCycleDeleted(cycleId) {
 export async function onCycleRenamed(oldCycleId, newCycleId) {
 
   try {
+    // Cancel any pending write for the OLD id first — otherwise it fires after
+    // the migration below and recreates a stale record under the old name.
+    cancelPendingDbWrite(oldCycleId);
+
     // Migrate in IndexedDB
     await renameUndoStackInIndexedDB(oldCycleId, newCycleId);
 
@@ -1684,13 +1702,32 @@ export async function initUndoSystemForApp() {
     // 4. Update UI with whatever we have so far
     updateUndoRedoButtons();
 
-    // 5. Set up page unload handler to force immediate save
-    window.addEventListener('beforeunload', () => {
-      // Clear debounce timeout and save immediately
-      if (dbWriteTimeout) {
-        clearTimeout(dbWriteTimeout);
-        dbWriteTimeout = null;
-      }
+    // 5. Set up page unload handler to force immediate save. Store the reference
+    //    and drop any prior one first so re-init (boot retry) can't stack handlers.
+    if (_beforeunloadHandler) {
+      window.removeEventListener('beforeunload', _beforeunloadHandler);
+    }
+    _beforeunloadHandler = () => {
+      // Flush EVERY pending debounced write synchronously (not just the active
+      // cycle's) so a fast switch-then-close can't drop a scheduled write.
+      dbWriteTimers.forEach((entry, cid) => {
+        clearTimeout(entry.timer);
+        if (undoDB && cid) {
+          try {
+            const tx = undoDB.transaction(["undoStacks"], "readwrite");
+            tx.objectStore("undoStacks").put({
+              cycleId: cid,
+              undoStack: entry.undoSnap,
+              redoStack: entry.redoSnap,
+              lastUpdated: Date.now(),
+              version: APP_VERSION
+            });
+          } catch (e) {
+            console.warn('⚠️ Failed to flush pending undo write:', e);
+          }
+        }
+      });
+      dbWriteTimers.clear();
 
       const cycleId = _deps.AppGlobalState.activeCycleIdForUndo;
       const undoStack = _deps.AppGlobalState.activeUndoStack || [];
@@ -1718,7 +1755,8 @@ export async function initUndoSystemForApp() {
           console.warn('⚠️ Failed to force-save undo history:', e);
         }
       }
-    });
+    };
+    window.addEventListener('beforeunload', _beforeunloadHandler);
 
   } catch (e) {
     // ✅ FIX #5: Error boundary for undo system initialization
@@ -1738,7 +1776,29 @@ export async function initUndoSystemForApp() {
 // ============ INDEXEDDB PERSISTENCE ============
 
 let undoDB = null;  // Database connection
-let dbWriteTimeout = null;  // Debounce timer
+
+// Per-cycle debounced IndexedDB write timers, keyed by cycleId.
+// A SINGLE shared timer used to let a save for one cycle cancel another cycle's
+// pending write (clearTimeout on every call) — dropping the other cycle's undo
+// history on a fast switch, and letting a late write resurrect a deleted/renamed
+// record. Keying by cycleId keeps cycles independent. Each entry also carries the
+// call-time array snapshots so beforeunload can flush every pending write.
+// Map<cycleId, { timer:number, undoSnap:Array, redoSnap:Array }>
+const dbWriteTimers = new Map();
+
+/**
+ * Cancel a cycle's pending debounced IndexedDB write, if any. Used on
+ * delete/rename so a late write can't recreate the deleted record or misfile
+ * the renamed one.
+ * @param {string} cycleId
+ */
+function cancelPendingDbWrite(cycleId) {
+  const entry = dbWriteTimers.get(cycleId);
+  if (entry) {
+    clearTimeout(entry.timer);
+    dbWriteTimers.delete(cycleId);
+  }
+}
 
 /**
  * Initialize IndexedDB for undo history persistence
@@ -1806,20 +1866,27 @@ export function saveUndoStackToIndexedDB(cycleId, undoStack, redoStack, options 
   // Graceful degradation if IndexedDB unavailable
   if (!undoDB) return;
 
-  // Debounce IndexedDB writes
-  if (dbWriteTimeout) {
-    clearTimeout(dbWriteTimeout);
-  }
+  // Snapshot the arrays at CALL time. captureStateSnapshot mutates the live
+  // stack in place (push/shift), so serializing at fire time could otherwise
+  // persist a state that no longer matches this call. (Belt-and-suspenders — the
+  // cross-cycle switch path reassigns, but a copy is cheap and removes the class.)
+  const undoSnap = Array.isArray(undoStack) ? [...undoStack] : [];
+  const redoSnap = Array.isArray(redoStack) ? [...redoStack] : [];
 
-  dbWriteTimeout = setTimeout(async () => {
+  // Debounce IndexedDB writes PER CYCLE (see dbWriteTimers) — only cancel this
+  // cycle's own pending write, never another cycle's.
+  cancelPendingDbWrite(cycleId);
+
+  const timer = setTimeout(async () => {
+    dbWriteTimers.delete(cycleId);
     try {
       const transaction = undoDB.transaction(["undoStacks"], "readwrite");
       const objectStore = transaction.objectStore("undoStacks");
 
       const data = {
         cycleId,
-        undoStack: undoStack || [],
-        redoStack: redoStack || [],
+        undoStack: undoSnap,
+        redoStack: redoSnap,
         lastUpdated: Date.now(),
         version: APP_VERSION
       };
@@ -1851,6 +1918,8 @@ export function saveUndoStackToIndexedDB(cycleId, undoStack, redoStack, options 
       }
     }
   }, UNDO_DB_WRITE_DEBOUNCE_MS);
+
+  dbWriteTimers.set(cycleId, { timer, undoSnap, redoSnap });
 }
 
 /**
@@ -2007,11 +2076,9 @@ export async function clearAllUndoHistoryFromIndexedDB() {
  * and repopulate the cache we just cleared.
  */
 export async function clearAllUndoHistory() {
-  // 1. Cancel any pending debounced IndexedDB write that would re-save old data
-  if (dbWriteTimeout) {
-    clearTimeout(dbWriteTimeout);
-    dbWriteTimeout = null;
-  }
+  // 1. Cancel ALL pending debounced IndexedDB writes that would re-save old data
+  dbWriteTimers.forEach(entry => clearTimeout(entry.timer));
+  dbWriteTimers.clear();
 
   // 2. Guard against snapshot recapture during cleanup
   if (_deps.AppGlobalState) {
@@ -2048,6 +2115,15 @@ function destroyUndoRedoManager() {
     document.removeEventListener('keydown', _handleUndoRedoKeydown);
     _handleUndoRedoKeydown = null;
   }
+  // Remove the unload handler so retries don't stack listeners (and a torn-down
+  // instance can't still write history on unload).
+  if (_beforeunloadHandler) {
+    window.removeEventListener('beforeunload', _beforeunloadHandler);
+    _beforeunloadHandler = null;
+  }
+  // Cancel any pending debounced writes so they don't fire after teardown.
+  dbWriteTimers.forEach(entry => clearTimeout(entry.timer));
+  dbWriteTimers.clear();
   _initialized.undoRedoUI = false;
   _initialized.undoRedoKeyboard = false;
 }
@@ -2071,8 +2147,11 @@ export async function initUndoRedoManager(dependencies = {}) {
   // Wire up undo/redo button event listeners
   wireUndoRedoUI();
 
-  // Wire up keyboard shortcuts (Ctrl+Z, Ctrl+Y, Ctrl+Shift+Z)
-  wireUndoRedoKeyboardShortcuts();
+  // NOTE: Global keyboard shortcuts (Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z) are owned by
+  // uiBoot.attachGlobalEventListeners → handleGlobalKeydown, which drives undo/redo
+  // through the public appContext undo API (getUndoApi().undo/redo). Do NOT also call
+  // wireUndoRedoKeyboardShortcuts() here — a second document-level keydown listener
+  // makes every shortcut fire undo/redo TWICE (see run-journey-tests undo/redo journey).
 
   // Setup state-based undo/redo system
   setupStateBasedUndoRedo();

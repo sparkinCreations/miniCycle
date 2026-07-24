@@ -25,7 +25,9 @@
     font-size: var(--font-size-xs);
     font-weight: 500;
     max-width: 200px;
-    height: 25px;
+    /* min-height (not height) so the box grows when the accessibility Font Size
+       enlarges --font-size-xs — a fixed height clipped the enlarged text. */
+    min-height: var(--space-6-25);
     appearance: none;
     -webkit-appearance: none;
     cursor: pointer;
@@ -54,7 +56,7 @@
     border-radius: var(--radius-10);
     margin: 0;
     padding: 5px var(--space-3);
-    height: 28px;
+    min-height: var(--space-7);
     cursor: pointer;
     transition: all var(--transition-normal) ease;
     z-index: var(--z-content);
@@ -177,7 +179,11 @@ body.dark-mode.todo-mode-mode .mode-selector-wrapper .mode-selector {
     color: rgb(44, 50, 112);
     border-radius: var(--radius-5);
     width: 88px;
-    height: 22px;
+    /* Match the mode selector's height. The selector is a native <select> whose
+       height stays ~25px (browsers don't reliably scale a closed select's box
+       with font-size), so a fixed height on the same token keeps all three
+       header controls level. Was a mismatched 22px. */
+    height: var(--space-6-25);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -319,14 +325,15 @@ body.reduced-motion .quick-actions-btn.first-time-shimmer {
 
     .mode-selector-wrapper .mode-selector {
         font-size: var(--font-size-xs);
-        height: 25px;
+        min-height: var(--space-6-25);
         padding: 3px var(--space-5) 4px var(--space-2);
         max-width: 200px;
     }
 
     .quick-actions-btn {
         width: 70px;
-        height: 24px;
+        /* height inherits var(--space-6-25) from the base rule so it stays
+           level with the mode selector (which keeps that height here too). */
     }
 }
 
