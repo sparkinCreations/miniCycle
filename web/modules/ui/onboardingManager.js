@@ -1556,6 +1556,14 @@ export class OnboardingManager {
         await this.deps.AppState?.update?.(state => {
             if (!state.settings) state.settings = {};
             state.settings.focusModeActive = true;
+            // First-run graduation flag. The first Focus View exit after a
+            // create/sample landing shows an onboarding prompt (guidedTourManager's
+            // "Want a quick tour?" for create, or the merged Home View welcome for
+            // sample), so focusMode should suppress its generic "Back in Home View"
+            // toast on that one exit. Consumed by focusMode.deactivate(). (The learn
+            // path doesn't need this — its onboardingCompleted is still false at
+            // first exit, which focusMode already treats as the graduation exit.)
+            state.settings.firstRunFocusExitPending = true;
         }, true);
 
         this.deps.showNotification?.(

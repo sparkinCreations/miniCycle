@@ -573,6 +573,85 @@ export async function runFocusModeTests(resultsDiv) {
         }
     });
 
+    /**
+     * create/sample first-run landings mark onboardingCompleted=true upfront, so
+     * onboardingCompleted alone can't detect their first (graduation) exit.
+     * startFocusViewForNewRoutine sets firstRunFocusExitPending for exactly that —
+     * deactivate must treat it as a first exit and suppress the toast.
+     */
+    await test('deactivate suppresses notification on create/sample first exit (firstRunFocusExitPending=true)', () => {
+        setupDOMScaffold();
+        const notificationCalls = [];
+        mod.setFocusModeDependencies({
+            AppState: createMockAppState({
+                settings: { focusModeActive: true, onboardingCompleted: true, firstRunFocusExitPending: true }
+            }),
+            getElementById: (id) => document.getElementById(id),
+            querySelector: (sel) => document.querySelector(sel),
+            getBody: () => document.body,
+            safeAddEventListener: (el, evt, fn) => el.addEventListener(evt, fn),
+            showNotification: (msg, type, duration) => {
+                notificationCalls.push({ msg, type, duration });
+            }
+        });
+        const instance = new mod.FocusMode();
+        instance.init();
+        instance.activate(true);
+        notificationCalls.length = 0;
+        instance.deactivate();
+        instance.destroy();
+        teardownDOMScaffold();
+
+        if (notificationCalls.length !== 0) {
+            throw new Error(
+                `Expected zero notifications on create/sample first exit, got ${notificationCalls.length}: ` +
+                JSON.stringify(notificationCalls)
+            );
+        }
+    });
+
+    await test('deactivate consumes firstRunFocusExitPending so the next exit toasts', () => {
+        setupDOMScaffold();
+        const notificationCalls = [];
+        const appState = createMockAppState({
+            settings: { focusModeActive: true, onboardingCompleted: true, firstRunFocusExitPending: true }
+        });
+        mod.setFocusModeDependencies({
+            AppState: appState,
+            getElementById: (id) => document.getElementById(id),
+            querySelector: (sel) => document.querySelector(sel),
+            getBody: () => document.body,
+            safeAddEventListener: (el, evt, fn) => el.addEventListener(evt, fn),
+            showNotification: (msg, type, duration) => {
+                notificationCalls.push({ msg, type, duration });
+            }
+        });
+        const instance = new mod.FocusMode();
+        instance.init();
+
+        // First exit — suppressed AND the one-shot flag consumed.
+        instance.activate(true);
+        notificationCalls.length = 0;
+        instance.deactivate();
+        if (appState.get().settings.firstRunFocusExitPending !== false) {
+            throw new Error('firstRunFocusExitPending should be cleared after the first exit');
+        }
+        if (notificationCalls.length !== 0) {
+            throw new Error(`First exit should be silent, got ${notificationCalls.length}`);
+        }
+
+        // Second exit — flag gone, onboardingCompleted still true → toast shows.
+        instance.activate(true);
+        notificationCalls.length = 0;
+        instance.deactivate();
+        instance.destroy();
+        teardownDOMScaffold();
+
+        if (notificationCalls.length !== 1) {
+            throw new Error(`Expected one notification on the second (normal) exit, got ${notificationCalls.length}`);
+        }
+    });
+
     await test('switch-mode action opens the mode-switch modal', () => {
         setupDOMScaffold();
         mod.setFocusModeDependencies({

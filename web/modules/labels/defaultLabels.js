@@ -1506,7 +1506,7 @@ export const DEFAULT_LABELS = deepFreeze({
         backToHomeAria:           'Return to Home View',
         welcomeNotification:      'Welcome to Home View\n\nManage and customize your routines and setup.',
         startBlankRoutineButton:  'Start with a blank routine',
-        startTourButton:          'Take the Home View Tour',
+        startTourButton:          'Start Tour',
     },
 
     // ========================================================================
