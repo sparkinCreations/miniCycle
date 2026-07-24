@@ -1,3 +1,11 @@
+## [2.328] - 2026-07-24
+- feat(onboarding): play welcome splash on create and sample first-run picks
+- chore(release): update version to 2.327
+- fix(onboarding): suppress redundant "Back in Home View" toast on first-run exit
+- feat(onboarding): show Home View welcome on the sample first-run path
+- chore: sync package-lock version to match package.json (2.326)
+
+
 ## [2.327] - 2026-07-24
 - fix(onboarding): suppress redundant "Back in Home View" toast on first-run exit
 - feat(onboarding): show Home View welcome on the sample first-run path
