@@ -1550,7 +1550,7 @@ export class OnboardingManager {
      *
      * @returns {Promise<void>}
      */
-    async startFocusViewForNewRoutine() {
+    async startFocusViewForNewRoutine(choice = null) {
         this._activateFocusViewWhenReady();
 
         await this.deps.AppState?.update?.(state => {
@@ -1562,6 +1562,65 @@ export class OnboardingManager {
             getLabel('notify.focusViewFirstRun'),
             'info',
             UI_TIMEOUTS.NOTIFICATION_PERSISTENT
+        );
+
+        // "sample" (template) users loaded a prebuilt routine rather than
+        // building their own, so on their first Focus View exit they get the
+        // merged Home View welcome — "Start a blank routine" (make it yours)
+        // plus the Home View tour. The "create" path deliberately skips this:
+        // those users already built their own routine, so guidedTourManager's
+        // lighter "Want a quick tour?" prompt (scheduled off
+        // onboarding:setup-complete) is the right first-exit nudge for them.
+        if (choice === 'sample') {
+            this._attachSampleFirstExitWelcome();
+        }
+    }
+
+    /**
+     * One-shot listener: show the merged Home View welcome the first time a
+     * "sample" first-run user leaves Focus View. Idempotent — a second call is
+     * a no-op while a handler is still pending. Auto-removes on fire (once) and
+     * is torn down defensively in destroy().
+     * @private
+     */
+    _attachSampleFirstExitWelcome() {
+        if (this._sampleFirstExitHandler) return;
+        this._sampleFirstExitHandler = () => {
+            this._sampleFirstExitHandler = null;
+            this._showHomeViewWelcomeNotification();
+        };
+        document.addEventListener(EVENTS.FOCUS_MODE_DEACTIVATED, this._sampleFirstExitHandler, { once: true });
+    }
+
+    /**
+     * Show the merged "Welcome to Home View" notification: primary action
+     * "Start a blank routine" (createNewMiniCycle), secondary action the Home
+     * View tour (startGuidedTour). Shared by the "learn" first-run flow (on the
+     * first Focus View exit) and the "sample" first-run flow.
+     *
+     * Also calls markTourWelcomeShown() so guidedTourManager's delayed auto
+     * tour-welcome doesn't stack on top of this one — this notification already
+     * offers the tour. (If the user clicks the tour button, startTour()
+     * re-persists the step and the tour proceeds normally.)
+     * @private
+     */
+    _showHomeViewWelcomeNotification() {
+        this.deps.markTourWelcomeShown?.();
+        this.deps.showNotification?.(
+            getLabel('homeView.welcomeNotification'),
+            'info',
+            UI_TIMEOUTS.NOTIFICATION_OVERLAY,
+            {
+                className: 'notification-titled',
+                actionButton: {
+                    label: getLabel('homeView.startBlankRoutineButton'),
+                    onClick: () => this.deps.createNewMiniCycle?.()
+                },
+                secondaryActionButton: {
+                    label: getLabel('homeView.startTourButton'),
+                    onClick: () => this.deps.startGuidedTour?.()
+                }
+            }
         );
     }
 
@@ -1611,29 +1670,11 @@ export class OnboardingManager {
             this._detachFirstSessionLifecycle();
             if (!wasFresh) return;
             document.dispatchEvent(new Event('onboarding:setup-complete'));
-            // Suppress the auto tour-welcome immediately — the merged Home
-            // View notification already offers both "Start tour" and
-            // "Start blank routine", so the 17s-delayed auto-welcome would
-            // either pile on top of this one or fire just after the user
-            // chooses an option. Calling upfront (not per-handler) closes
-            // the race where the user takes >17s to interact.
-            this.deps.markTourWelcomeShown?.();
-            this.deps.showNotification?.(
-                getLabel('homeView.welcomeNotification'),
-                'info',
-                UI_TIMEOUTS.NOTIFICATION_OVERLAY,
-                {
-                    className: 'notification-titled',
-                    actionButton: {
-                        label: getLabel('homeView.startBlankRoutineButton'),
-                        onClick: () => this.deps.createNewMiniCycle?.()
-                    },
-                    secondaryActionButton: {
-                        label: getLabel('homeView.startTourButton'),
-                        onClick: () => this.deps.startGuidedTour?.()
-                    }
-                }
-            );
+            // The merged Home View welcome doubles as the first-exit welcome
+            // for the "learn" flow. It's shown upfront (not per-handler) so the
+            // delayed auto tour-welcome is suppressed before the user can take
+            // >17s to interact — see _showHomeViewWelcomeNotification.
+            this._showHomeViewWelcomeNotification();
         };
         document.addEventListener(EVENTS.FOCUS_MODE_DEACTIVATED, this._firstFocusExitHandler, { once: true });
 
@@ -2330,6 +2371,13 @@ export class OnboardingManager {
         // First-run focus-first lifecycle listeners (focusMode:deactivated +
         // beforeunload). Idempotent — no-op if no first-run flow ran.
         this._detachFirstSessionLifecycle?.();
+
+        // Sample first-run one-shot welcome listener (focusMode:deactivated).
+        // Idempotent — no-op if the sample flow never armed it or it already fired.
+        if (this._sampleFirstExitHandler) {
+            document.removeEventListener(EVENTS.FOCUS_MODE_DEACTIVATED, this._sampleFirstExitHandler);
+            this._sampleFirstExitHandler = null;
+        }
 
         // First-run welcome banner — remove DOM + listener if still mounted
         this._hideFirstRunWelcome?.();

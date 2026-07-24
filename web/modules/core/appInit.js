@@ -338,8 +338,8 @@ class AppInit {
 		// consumes this flag. (An 'onboarding:setup-complete' listener does NOT
 		// work here: routineManager fires that event on the create path only —
 		// loadSampleRoutine completes without it.)
-		const landInFocusViewWhenRoutineReady = ({ showInputBar }) => {
-			this._pendingFirstRunFocusView = { showInputBar };
+		const landInFocusViewWhenRoutineReady = ({ showInputBar, choice }) => {
+			this._pendingFirstRunFocusView = { showInputBar, choice };
 		};
 
 		switch (choice) {
@@ -354,7 +354,7 @@ class AppInit {
 				// + clears it). Cleared on first render so later routines are normal.
 				try { sessionStorage.setItem('miniCycle_firstRunCreate', '1'); } catch (e) { /* private mode */ }
 				if (_deps.showCycleCreationModal) {
-					landInFocusViewWhenRoutineReady({ showInputBar: true });
+					landInFocusViewWhenRoutineReady({ showInputBar: true, choice: 'create' });
 					_deps.showCycleCreationModal();
 				} else {
 					console.warn('⚠️ showCycleCreationModal unavailable — legacy flow');
@@ -367,7 +367,7 @@ class AppInit {
 				// immediately — no input bar needed.
 				markOnboardingComplete();
 				if (_deps.showCycleCreationModal) {
-					landInFocusViewWhenRoutineReady({ showInputBar: false });
+					landInFocusViewWhenRoutineReady({ showInputBar: false, choice: 'sample' });
 					_deps.showCycleCreationModal({ startInSampleView: true });
 				} else {
 					runLegacyFocusFlow();
@@ -665,8 +665,9 @@ class AppInit {
 		// rendered — both paths funnel through completeInitialSetup() to get here.
 		// Consumed one-shot so later routine creations behave normally.
 		if (this._pendingFirstRunFocusView) {
+			const firstRunChoice = this._pendingFirstRunFocusView.choice;
 			this._pendingFirstRunFocusView = null;
-			_deps.getOnboardingManager?.()?.startFocusViewForNewRoutine?.();
+			_deps.getOnboardingManager?.()?.startFocusViewForNewRoutine?.(firstRunChoice);
 		}
 
 		return true;
