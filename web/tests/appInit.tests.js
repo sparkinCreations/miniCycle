@@ -929,6 +929,66 @@ export async function runAppInitTests(resultsDiv, isPartOfSuite = false) {
         if (r.createCalled) throw new Error('null choice must NOT open the creation modal');
     });
 
+    // === WELCOME SPLASH GATING (create / sample) ===
+    // create/sample play the welcome splash first, then open their dialog once
+    // it fades. Opening the dialog behind the splash would autofocus its name
+    // input under a black overlay (mobile: keyboard against a blank screen).
+    function routeWithSplash(choice) {
+        const captured = { state: { settings: {} }, createCalled: false, splashShown: false };
+        let releaseSplash;
+        const splashDone = new Promise(resolve => { releaseSplash = resolve; });
+        setAppInitDependencies({
+            getMiniCycleState: () => ({ update: (fn) => { fn(captured.state); } }),
+            showCycleCreationModal: () => { captured.createCalled = true; },
+            getOnboardingManager: () => ({})
+        });
+        const onboardingManager = {
+            runFirstRunFlow: async () => {},
+            showOnboarding: () => {},
+            showWelcomeSplash: () => { captured.splashShown = true; return splashDone; }
+        };
+        appInit._routeFirstRunChoice(choice, onboardingManager, {}, null, { settings: {} });
+        return { captured, releaseSplash };
+    }
+
+    await test('choice "create" → plays welcome splash and holds the dialog until it finishes', async () => {
+        const { captured, releaseSplash } = routeWithSplash('create');
+        if (!captured.splashShown) throw new Error('create must play the standalone welcome splash');
+        if (captured.createCalled) throw new Error('create must NOT open the dialog while the splash is still up');
+
+        releaseSplash();
+        await Promise.resolve(); await Promise.resolve();
+        if (!captured.createCalled) throw new Error('create must open the dialog once the splash resolves');
+    });
+
+    await test('choice "sample" → plays welcome splash and holds the picker until it finishes', async () => {
+        const { captured, releaseSplash } = routeWithSplash('sample');
+        if (!captured.splashShown) throw new Error('sample must play the standalone welcome splash');
+        if (captured.createCalled) throw new Error('sample must NOT open the picker while the splash is still up');
+
+        releaseSplash();
+        await Promise.resolve(); await Promise.resolve();
+        if (!captured.createCalled) throw new Error('sample must open the picker once the splash resolves');
+    });
+
+    await test('choice "learn" → does NOT use the standalone splash (its own flow owns the banner hand-off)', () => {
+        const { captured } = routeWithSplash('learn');
+        if (captured.splashShown) throw new Error('learn must not call showWelcomeSplash — runFirstRunFlow shows the banner-landing splash itself');
+    });
+
+    await test('missing showWelcomeSplash → dialog still opens (older/partial onboarding manager)', () => {
+        const captured = { state: { settings: {} }, createCalled: false };
+        setAppInitDependencies({
+            getMiniCycleState: () => ({ update: (fn) => { fn(captured.state); } }),
+            showCycleCreationModal: () => { captured.createCalled = true; },
+            getOnboardingManager: () => ({})
+        });
+        // No showWelcomeSplash on the manager at all — must fall through
+        // synchronously rather than stranding the user on the choice screen.
+        appInit._routeFirstRunChoice('create', { runFirstRunFlow: async () => {} }, {}, null, { settings: {} });
+        if (!captured.createCalled) throw new Error('dialog must open synchronously when no splash is available');
+    });
+
     // === FIRST-RUN CHOICE SCREEN WIRING (source invariants) ===
     await test('choice screen shell + controller wired in miniCycle.html', async () => {
         const html = await (await fetch('../miniCycle.html?_cb=' + Date.now())).text(); // buster: bypass any stale SW-cached copy

@@ -342,6 +342,25 @@ class AppInit {
 			this._pendingFirstRunFocusView = { showInputBar, choice };
 		};
 
+		// create/sample get the same welcome splash as 'learn', minus the
+		// phase-3 hand-off — there's no welcome banner on these paths, so the
+		// title just rests centered and fades. The dialog opens AFTER the fade
+		// rather than behind it: its name input autofocuses, and a dialog
+		// hidden under the splash would raise the mobile keyboard against a
+		// black screen. showWelcomeSplash is watchdog-backed so it always
+		// settles; the guards below cover the manager being unavailable.
+		const openAfterWelcomeSplash = (openDialog) => {
+			const splashDone = onboardingManager?.showWelcomeSplash?.();
+			if (typeof splashDone?.then !== 'function') {
+				openDialog();
+				return;
+			}
+			splashDone.then(openDialog).catch(err => {
+				console.error('❌ welcome splash failed — opening dialog anyway:', err);
+				openDialog();
+			});
+		};
+
 		switch (choice) {
 			case 'create':
 				// Blank routine: open the creation dialog, then land in Focus View
@@ -355,7 +374,7 @@ class AppInit {
 				try { sessionStorage.setItem('miniCycle_firstRunCreate', '1'); } catch (e) { /* private mode */ }
 				if (_deps.showCycleCreationModal) {
 					landInFocusViewWhenRoutineReady({ showInputBar: true, choice: 'create' });
-					_deps.showCycleCreationModal();
+					openAfterWelcomeSplash(() => _deps.showCycleCreationModal());
 				} else {
 					console.warn('⚠️ showCycleCreationModal unavailable — legacy flow');
 					runLegacyFocusFlow();
@@ -368,7 +387,7 @@ class AppInit {
 				markOnboardingComplete();
 				if (_deps.showCycleCreationModal) {
 					landInFocusViewWhenRoutineReady({ showInputBar: false, choice: 'sample' });
-					_deps.showCycleCreationModal({ startInSampleView: true });
+					openAfterWelcomeSplash(() => _deps.showCycleCreationModal({ startInSampleView: true }));
 				} else {
 					runLegacyFocusFlow();
 				}

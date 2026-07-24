@@ -60,6 +60,12 @@
        exact spot in the welcome banner's single-line title. */
     --first-run-splash-land-duration: 900ms;
     --first-run-splash-hold: 400ms;
+    /* Standalone splash (the create / sample first-run picks). There's no
+       welcome banner for the title to fly into, so phase 3 is skipped and the
+       title simply rests centered — the hold IS the whole payoff there, where
+       the banner path fills that same beat with the word-landing animation.
+       Longer accordingly. */
+    --first-run-splash-hold-standalone: 1500ms;
     --first-run-splash-fade-duration: 600ms;
     /* Banner max width — wide enough to read, narrow enough not to fight
        with the centered routine card behind it. */

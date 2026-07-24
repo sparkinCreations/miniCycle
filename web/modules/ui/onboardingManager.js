@@ -175,27 +175,52 @@ export class OnboardingManager {
     }
 
     /**
+     * Show the welcome splash on its own, with no banner hand-off — the
+     * title cascades in, rests centered for a beat, then fades out.
+     *
+     * Used by the "create" and "sample" first-run picks. Those paths have no
+     * welcome banner (they go straight to the routine-creation dialog), so
+     * phase 3 — flying each word up to the banner title — has no target and
+     * is skipped.
+     *
+     * @returns {Promise<void>} Resolves once the splash is fully gone. Always
+     *   resolves (watchdog-backed), so it is safe to gate follow-up UI on it.
+     */
+    showWelcomeSplash() {
+        return this._showFirstRunSplash({ standalone: true });
+    }
+
+    /**
      * Show the typewriter splash for first-time users. Builds a black
      * full-screen overlay with the welcome title typed in character-by-
      * character. Positioned so the title lands at the same spot as the
      * banner title — when the splash fades out, the banner (mounted behind
      * it) is revealed continuously.
      *
-     * @returns {Promise<void>} Resolves when the typewriter animation
-     *   (all chars + brief hold) completes. Caller should `await` this
-     *   before calling _hideFirstRunSplash so the fade only starts after
-     *   the user has read the full text.
+     * @param {Object} [options]
+     * @param {boolean} [options.standalone=false] Skip the phase-3 banner
+     *   hand-off and hold the centered title longer instead. For callers with
+     *   no welcome banner behind the splash.
+     * @returns {Promise<void>} Resolves once the splash has faded and been
+     *   removed. Resolves immediately when the splash is gated off. Callers
+     *   that just want the visual can ignore it — the splash is self-managing.
      * @private
      */
-    _showFirstRunSplash() {
+    _showFirstRunSplash({ standalone = false } = {}) {
         // Same gate as the welcome banner — once the user dismisses the
         // welcome (× on the banner) OR exits focus mode (which sets
         // onboardingCompleted), neither the splash nor the banner show on
         // subsequent reloads. App close alone does NOT graduate them.
         const state = this.deps.AppState?.get?.();
-        if (state?.settings?.firstRunWelcomeDismissed) return;
+        if (state?.settings?.firstRunWelcomeDismissed) return Promise.resolve();
 
-        if (this._firstRunSplash) return;
+        if (this._firstRunSplash) return this._firstRunSplashDone ?? Promise.resolve();
+
+        // Completion promise — resolved by _hideFirstRunSplash once the
+        // element is actually off the page.
+        this._firstRunSplashDone = new Promise(resolve => {
+            this._resolveFirstRunSplashDone = resolve;
+        });
 
         const titleText = getLabel('firstRunWelcome.title');
         const splash = document.createElement('div');
@@ -291,6 +316,17 @@ export class OnboardingManager {
         };
         splash.addEventListener('pointerdown', dismissOnTap);
 
+        // Watchdog — everything below is driven by `animationend`, which never
+        // fires when the char animations don't run: prefers-reduced-motion
+        // sets `animation: none` on .first-run-splash__char, and an animation
+        // can also be canceled mid-flight. Without this the splash would sit
+        // there black until tapped. Cleared by _hideFirstRunSplash on the
+        // normal path, so it only ever fires as a true last resort.
+        this._firstRunSplashWatchdog = setTimeout(() => {
+            this._firstRunSplashWatchdog = null;
+            this._hideFirstRunSplash();
+        }, UI_TIMEOUTS.FIRST_RUN_SPLASH_WATCHDOG);
+
         // Self-managing lifecycle: after the LAST character's SHRINK
         // animation ends (phase 2 of the cascade) + a brief hold, fade
         // the splash out automatically. We filter on animation name
@@ -299,23 +335,33 @@ export class OnboardingManager {
         const lastChar = title.lastElementChild;
         if (!lastChar) {
             this._hideFirstRunSplash();
-            return;
+            return this._firstRunSplashDone;
         }
         const startHold = () => {
             this._firstRunSplashHoldTimer = setTimeout(() => {
                 this._firstRunSplashHoldTimer = null;
                 this._hideFirstRunSplash();
-            }, this._readSplashHoldDuration());
+            }, this._readSplashHoldDuration(standalone));
         };
+
+        // Reduced motion: the cascade is disabled in CSS, so the title is
+        // already sitting there fully visible. Go straight to the hold rather
+        // than waiting out a watchdog on a black screen.
+        if (window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) {
+            startHold();
+            return this._firstRunSplashDone;
+        }
+
         const onLastCharDone = (event) => {
             if (event.animationName !== 'first-run-splash-shrink') return;
             lastChar.removeEventListener('animationend', onLastCharDone);
 
             // Phase 3 — animate each splash word to its exact spot in the
-            // banner title. Falls back to immediate hold if the banner
+            // banner title. Skipped entirely in standalone mode (no banner
+            // to land on). Falls back to immediate hold if the banner
             // isn't measurable (e.g., not yet mounted, mismatched word
             // count, no text node).
-            const landedWords = this._landSplashWordsOnBanner();
+            const landedWords = standalone ? null : this._landSplashWordsOnBanner();
             if (!landedWords || landedWords.length === 0) {
                 startHold();
                 return;
@@ -329,6 +375,8 @@ export class OnboardingManager {
             lastWord.addEventListener('animationend', onWordLanded);
         };
         lastChar.addEventListener('animationend', onLastCharDone);
+
+        return this._firstRunSplashDone;
     }
 
     /**
@@ -376,15 +424,19 @@ export class OnboardingManager {
 
     /**
      * Read the splash hold duration from the CSS variable
-     * `--first-run-splash-hold` so timing stays in sync with the stylesheet.
+     * `--first-run-splash-hold` (or `--first-run-splash-hold-standalone` for
+     * the no-banner variant) so timing stays in sync with the stylesheet.
      * Falls back to 450ms if the var isn't readable for any reason.
+     * @param {boolean} [standalone=false] Read the standalone hold instead.
      * @returns {number} milliseconds
      * @private
      */
-    _readSplashHoldDuration() {
+    _readSplashHoldDuration(standalone = false) {
         try {
             const raw = getComputedStyle(document.documentElement)
-                .getPropertyValue('--first-run-splash-hold')
+                .getPropertyValue(standalone
+                    ? '--first-run-splash-hold-standalone'
+                    : '--first-run-splash-hold')
                 .trim();
             if (raw.endsWith('ms')) return parseFloat(raw);
             if (raw.endsWith('s')) return parseFloat(raw) * 1000;
@@ -406,6 +458,24 @@ export class OnboardingManager {
             clearTimeout(this._firstRunSplashHoldTimer);
             this._firstRunSplashHoldTimer = null;
         }
+        if (this._firstRunSplashWatchdog) {
+            clearTimeout(this._firstRunSplashWatchdog);
+            this._firstRunSplashWatchdog = null;
+        }
+
+        // Settle the completion promise once — whichever removal path wins
+        // (transitionend or the safety net). Callers gate follow-up UI on it,
+        // so it must resolve exactly once and never be dropped.
+        //
+        // The resolver is detached HERE rather than read at removal time:
+        // _firstRunSplash is cleared below, so a new splash can legitimately
+        // mount during this one's fade. Binding each hide to the resolver that
+        // was live when it started keeps the old fade from resolving the new
+        // splash's promise early.
+        const resolveThisSplash = this._resolveFirstRunSplashDone;
+        this._resolveFirstRunSplashDone = null;
+        this._firstRunSplashDone = null;
+        const settleSplashDone = () => resolveThisSplash?.();
 
         splash.classList.add(DOM_CLASSES.FIRST_RUN_SPLASH_FADING);
         // Once the splash is gone, hand control to the welcome banner's
@@ -424,6 +494,7 @@ export class OnboardingManager {
             }
             splash.remove();
             startWelcomeCarousel();
+            settleSplashDone();
         };
         splash.addEventListener('transitionend', removeAfterFade, { once: true });
         // Safety net in case the transition is interrupted / canceled.
@@ -431,6 +502,7 @@ export class OnboardingManager {
             this._firstRunSplashRemoveTimer = null;
             if (splash.isConnected) splash.remove();
             startWelcomeCarousel();
+            settleSplashDone();
         }, UI_TIMEOUTS.NOTIFICATION_LONG);
 
         this._firstRunSplash = null;
@@ -2399,11 +2471,21 @@ export class OnboardingManager {
             clearTimeout(this._firstRunSplashRemoveTimer);
             this._firstRunSplashRemoveTimer = null;
         }
+        if (this._firstRunSplashWatchdog) {
+            clearTimeout(this._firstRunSplashWatchdog);
+            this._firstRunSplashWatchdog = null;
+        }
         if (this._firstRunSplash?.isConnected) {
             this._firstRunSplash.remove();
         }
         this._firstRunSplash = null;
         this._firstRunSplashAnimationDone = null;
+        // Release anyone awaiting the splash (create/sample gate their dialog
+        // on it) — a destroy during boot retry must not strand them.
+        const resolveSplashDone = this._resolveFirstRunSplashDone;
+        this._resolveFirstRunSplashDone = null;
+        this._firstRunSplashDone = null;
+        resolveSplashDone?.();
 
         const resetBtn = document.getElementById(DOM_IDS.RESET_ONBOARDING);
         if (resetBtn && this._resetOnboardingHandler) {

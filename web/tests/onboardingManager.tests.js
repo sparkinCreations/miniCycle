@@ -7,6 +7,12 @@
 
 // DI-pure pattern: direct module imports instead of testContext
 
+// Upper bound for the splash to leave the DOM after _hideFirstRunSplash: the
+// fade transitionend normally settles it in ~600ms, but when the stylesheet
+// isn't loaded no transition fires and the module's own safety-net timer
+// (UI_TIMEOUTS.NOTIFICATION_LONG, 3000ms) does the removal. Sits above both.
+const SPLASH_SETTLE_TIMEOUT_MS = 3500;
+
 // Import the module and its DI setter
 let OnboardingManager = null;
 let setOnboardingManagerDependencies = null;
@@ -1064,6 +1070,109 @@ export async function runOnboardingManagerTests(resultsDiv) {
         if (state.settings.onboardingCompleted === true) {
             throw new Error('onboardingCompleted should NOT be true after just a beforeunload');
         }
+
+        om.destroy();
+    });
+
+    // === STANDALONE WELCOME SPLASH (create / sample first-run picks) ===
+
+    // Earlier tests can leave a splash mid-fade: _hideFirstRunSplash clears
+    // the instance reference immediately but the element lives on until its
+    // own removal timer fires, so destroy() can no longer reach it. Start from
+    // a known-empty DOM instead of inheriting one.
+    const clearSplashDom = () => {
+        document.querySelectorAll('#first-run-splash').forEach(el => el.remove());
+    };
+
+    await test('showWelcomeSplash mounts the centered splash and skips the banner hand-off', async () => {
+        clearSplashDom();
+        const state = { settings: {}, data: { cycles: {} } };
+        setOnboardingManagerDependencies(createMockDeps({
+            AppState: { isReady: () => true, get: () => state, update: (fn) => { fn(state); return state; } }
+        }));
+        const om = new OnboardingManager();
+
+        const done = om.showWelcomeSplash();
+
+        const splash = document.getElementById('first-run-splash');
+        if (!splash) throw new Error('showWelcomeSplash should mount #first-run-splash');
+        if (typeof done?.then !== 'function') throw new Error('showWelcomeSplash must return a promise (callers gate their dialog on it)');
+        // Phase 3 flies each word up to the welcome banner. There is no banner
+        // on the create/sample paths, so no word may be put in landing mode.
+        if (splash.querySelector('.first-run-splash__word--landing')) {
+            throw new Error('standalone splash must NOT run the phase-3 banner landing');
+        }
+
+        om.destroy();
+        await done; // destroy must settle it — see the stranding test below
+    });
+
+    await test('showWelcomeSplash resolves once the splash is gone', async () => {
+        clearSplashDom();
+        const state = { settings: {}, data: { cycles: {} } };
+        setOnboardingManagerDependencies(createMockDeps({
+            AppState: { isReady: () => true, get: () => state, update: (fn) => { fn(state); return state; } }
+        }));
+        const om = new OnboardingManager();
+
+        const done = om.showWelcomeSplash();
+        // Hold the element itself — asserting via getElementById would pick up
+        // any unrelated splash and make this test depend on DOM cleanliness.
+        const splashEl = document.getElementById('first-run-splash');
+
+        // Drive the lifecycle directly rather than waiting out the real ~6s
+        // cascade — the contract under test is "hide ⇒ promise settles".
+        om._hideFirstRunSplash();
+
+        const outcome = await Promise.race([
+            done.then(() => 'settled'),
+            new Promise(r => setTimeout(() => r('timeout'), SPLASH_SETTLE_TIMEOUT_MS))
+        ]);
+        if (outcome !== 'settled') throw new Error('promise should settle after the splash is hidden + removed');
+        if (splashEl.isConnected) {
+            throw new Error('splash element should be removed from the DOM before the promise settles');
+        }
+
+        om.destroy();
+    });
+
+    await test('destroy settles a pending splash promise (never strands the create/sample dialog)', async () => {
+        clearSplashDom();
+        const state = { settings: {}, data: { cycles: {} } };
+        setOnboardingManagerDependencies(createMockDeps({
+            AppState: { isReady: () => true, get: () => state, update: (fn) => { fn(state); return state; } }
+        }));
+        const om = new OnboardingManager();
+
+        const done = om.showWelcomeSplash();
+        om.destroy(); // e.g. a boot retry mid-splash
+
+        // If destroy leaked the resolver, this race resolves to 'timeout' and
+        // the real app would sit on a black screen with no dialog forever.
+        const outcome = await Promise.race([
+            done.then(() => 'settled'),
+            new Promise(r => setTimeout(() => r('timeout'), SPLASH_SETTLE_TIMEOUT_MS))
+        ]);
+        if (outcome !== 'settled') throw new Error('destroy must settle the splash promise, not strand awaiting callers');
+    });
+
+    await test('showWelcomeSplash no-ops once the welcome has been dismissed', async () => {
+        const state = { settings: { firstRunWelcomeDismissed: true }, data: { cycles: {} } };
+        setOnboardingManagerDependencies(createMockDeps({
+            AppState: { isReady: () => true, get: () => state, update: (fn) => { fn(state); return state; } }
+        }));
+        const om = new OnboardingManager();
+
+        const done = om.showWelcomeSplash();
+        if (document.getElementById('first-run-splash')) {
+            throw new Error('splash must not mount for a user who already dismissed the welcome');
+        }
+        // Must still resolve — the caller opens its dialog off this promise.
+        const outcome = await Promise.race([
+            done.then(() => 'settled'),
+            new Promise(r => setTimeout(() => r('timeout'), SPLASH_SETTLE_TIMEOUT_MS))
+        ]);
+        if (outcome !== 'settled') throw new Error('gated-off splash must still resolve immediately');
 
         om.destroy();
     });
