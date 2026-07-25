@@ -1,3 +1,11 @@
+## [2.329] - 2026-07-25
+- docs: add documentation drift review v2 (supersedes review-findings)
+- fix(onboarding): crossfade the first-run use-case ticker (no blank flash)
+- fix(routine): deleting the last routine opens the create dialog, not onboarding
+- chore: remove stale iCloud-duplicate package json (v1.634 snapshot)
+- build(chrome): regenerate full extension at v2.328
+
+
 ## [2.328] - 2026-07-24
 - feat(onboarding): play welcome splash on create and sample first-run picks
 - chore(release): update version to 2.327
