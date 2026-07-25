@@ -544,6 +544,70 @@ export async function runRoutineSwitcherTests(resultsDiv, isPartOfSuite = false)
         }
     });
 
+    await test('deleting the LAST routine opens the create-routine dialog, not the new-user onboarding', async () => {
+        // Regression guard: deleting your final routine leaves zero cycles. That
+        // path used to call showOnboarding() — the brand-new-user "Welcome to
+        // miniCycle" walkthrough — which is wrong for an existing user who just
+        // deleted a routine. It must open the neutral create-routine dialog
+        // instead. (Reported on r/websitefeedback.)
+        const selectedCycle = document.createElement('div');
+        selectedCycle.className = 'mini-cycle-switch-item selected';
+        selectedCycle.dataset.cycleKey = 'Only Routine';
+        document.body.appendChild(selectedCycle);
+
+        // Single-cycle state; AppState.update mutates it in place so the
+        // post-delete get() returns zero cycles (drives the "no cycles" branch).
+        const state = {
+            data: { cycles: { 'Only Routine': { id: 'c1', title: 'Only Routine', tasks: [] } } },
+            appState: { activeCycleId: 'Only Routine' },
+            metadata: {}
+        };
+
+        let creationModalOpened = false;
+        let onboardingShown = false;
+
+        const mockDeps = {
+            AppState: {
+                isReady: () => true,
+                get: () => state,
+                update: (fn) => { fn(state); return state; }
+            },
+            showConfirmationModal: ({ callback }) => callback(true), // auto-confirm
+            showNotification: () => {},
+            querySelector: (sel) => document.querySelector(sel),
+            getElementById: () => document.createElement('div'),
+            getBody: () => document.body,
+            onCycleDeleted: async () => {},
+            showCycleCreationModal: () => { creationModalOpened = true; }, // the target behavior
+            // Even if an onboarding manager is reachable via deps, the last-routine
+            // delete must NOT invoke the new-user walkthrough.
+            getOnboardingManager: () => ({ showOnboarding: () => { onboardingShown = true; } }),
+            getModal: () => null,
+            AppMeta: { version: 'test' }
+        };
+
+        const instance = new RoutineSwitcher(mockDeps);
+        instance.hideSwitchMiniCycleModal = () => {};
+        instance._selectedCycleKey = 'Only Routine';
+
+        instance.deleteMiniCycle();
+
+        // Delete runs behind two nested setTimeouts (300ms + 500ms).
+        await new Promise(resolve => setTimeout(resolve, 950));
+
+        selectedCycle.remove();
+
+        if (Object.keys(state.data.cycles).length !== 0) {
+            throw new Error('precondition failed: the only cycle should have been deleted');
+        }
+        if (!creationModalOpened) {
+            throw new Error('deleting the last routine must open the create-routine dialog (showCycleCreationModal)');
+        }
+        if (onboardingShown) {
+            throw new Error('deleting the last routine must NOT show the new-user onboarding walkthrough');
+        }
+    });
+
     // === INTEGRATION TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">🔗 Integration Tests</h4>';
 

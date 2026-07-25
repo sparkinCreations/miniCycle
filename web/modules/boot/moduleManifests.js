@@ -353,7 +353,7 @@ export const MODULE_MANIFESTS = {
     routineSwitcher: {
         path: '../routine/routineSwitcher.js',
         phase: PHASES.CYCLE,
-        requires: ['appInit', 'AppState', 'showNotification', 'showPromptModal', 'showCycleCreationModal', 'getOnboardingManager', 'getModal'],
+        requires: ['appInit', 'AppState', 'showNotification', 'showPromptModal', 'showCycleCreationModal', 'getModal'],
         optionalDeps: ['onCycleRenamed', 'onCycleDeleted', 'onCycleSwitched', 'vocabThemeManager', 'checkCompleteAllButton', 'updateStatsPanel', 'updateMainMenuHeader', 'refreshThemeLabels', 'logHistoryEvent', 'exportMiniCycleData', 'hideMainMenu', 'showRoutineSwitcherTourNotification', 'hasActiveNotifications', 'isTouchDevice', 'loadMiniCycle', 'showConfirmationModal', 'updateReminderButtons'],
         provides: ['switchMiniCycle', 'renameMiniCycle', 'deleteMiniCycle'],
         api: 'cycle',
