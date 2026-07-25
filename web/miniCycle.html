@@ -1140,7 +1140,9 @@ window.installApp = () => {
       <p class="first-run-tagline">Repeatable checklists that reset on completion — not one-and-done to-dos.</p>
       <!-- Rotating use cases (controller cycles these like the bottom tips).
            aria-hidden: decorative reinforcement — screen readers get the tagline. -->
-      <p class="first-run-usecase" aria-hidden="true"><span id="first-run-usecase-text" class="first-run-usecase-text">✈️ Pre-flight checklists</span></p>
+      <!-- Two stacked layers so the rotation is a true CROSSFADE (incoming fades
+           in while outgoing fades out) — a line is always visible, no empty flash. -->
+      <p class="first-run-usecase" aria-hidden="true"><span id="first-run-usecase-text" class="first-run-usecase-text is-active">✈️ Pre-flight checklists</span><span id="first-run-usecase-text-b" class="first-run-usecase-text"></span></p>
       <!-- Actions group: centered in the space below the brand header (brand + tagline
            stay top-anchored; buttons sit in the vertical middle). -->
       <div class="first-run-actions">
@@ -1279,24 +1281,24 @@ window.installApp = () => {
       '💪 Workout circuits',
       '📦 Packing lists you reuse'
     ];
-    var useCaseEl = document.getElementById('first-run-usecase-text');
-    if (useCaseEl) {
+    var useCaseA = document.getElementById('first-run-usecase-text');
+    var useCaseB = document.getElementById('first-run-usecase-text-b');
+    if (useCaseA && useCaseB) {
       var uc = 0;
+      var showingA = true;
       var ucTimer = setInterval(function () {
         // Stop when the choice screen is gone (loader dismissed after a pick).
         if (getComputedStyle(loader).display === 'none') { clearInterval(ucTimer); return; }
-        // Ticker reveal: slide the old line up out of the clipped window…
-        useCaseEl.classList.add('is-leaving');
-        setTimeout(function () {
-          uc = (uc + 1) % useCases.length;
-          useCaseEl.textContent = useCases[uc];
-          // …place the new line below the window (no transition)…
-          useCaseEl.classList.remove('is-leaving');
-          useCaseEl.classList.add('is-entering');
-          void useCaseEl.offsetHeight; // force reflow so the jump isn't animated
-          // …then let it rise into place.
-          useCaseEl.classList.remove('is-entering');
-        }, 330);
+        uc = (uc + 1) % useCases.length;
+        var incoming = showingA ? useCaseB : useCaseA;
+        var outgoing = showingA ? useCaseA : useCaseB;
+        // True crossfade: the incoming layer fades IN at the same time the
+        // outgoing fades OUT (both animate together), so a line is always on
+        // screen — no blank frame between use cases.
+        incoming.textContent = useCases[uc];
+        incoming.classList.add('is-active');
+        outgoing.classList.remove('is-active');
+        showingA = !showingA;
       }, 2800);
     }
     // NOTE: the Lite escape hatch reveal is CSS-driven (animation-delay), NOT a
