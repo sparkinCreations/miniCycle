@@ -473,6 +473,58 @@ export async function runAppStateTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
+    await test('save conflict path notifies subscribers + warns user (no silent state swap)', async () => {
+        // Regression guard (drift-review v2 §1.1): when another context saves newer
+        // data while we hold unsaved changes, save() adopts the stored data to avoid
+        // clobbering it. It used to do so WITHOUT notifyListeners() or a user warning —
+        // the UI kept rendering the just-discarded edits until an unrelated redraw
+        // dropped them silently. Must mirror the storage-event handler: warn + notify.
+        const stateManager = createStateManager();
+        await stateManager.init();
+
+        // Our in-memory timestamp.
+        const ourTs = 1000000;
+        if (!stateManager.data.metadata) stateManager.data.metadata = {};
+        stateManager.data.metadata.lastModified = ourTs;
+
+        // Newer data appears in storage from "another tab" — diff well over the 1s
+        // CONCURRENT_MOD_CONFLICT threshold, with a marker to detect adoption.
+        const storedTs = ourTs + 5000;
+        localStorage.setItem('miniCycleData', JSON.stringify({
+            metadata: { lastModified: storedTs },
+            settings: { theme: 'from-other-tab' },
+            data: { cycles: {} },
+            appState: { activeCycleId: null }
+        }));
+
+        let notified = false;
+        const listener = () => { notified = true; };
+        stateManager.subscribe('conflict-test', listener);
+        let warned = false;
+        stateManager.deps.showNotification = () => { warned = true; };
+
+        // Reset in case subscribe invoked the listener once on registration.
+        notified = false;
+
+        stateManager.isDirty = true;
+        stateManager.save();
+
+        if (stateManager.data.settings.theme !== 'from-other-tab') {
+            throw new Error('conflict path should adopt the newer stored data');
+        }
+        if (stateManager.isDirty !== false) {
+            throw new Error('conflict path should clear isDirty');
+        }
+        if (!notified) {
+            throw new Error('conflict path MUST notify subscribers so the UI redraws (this was the bug)');
+        }
+        if (!warned) {
+            throw new Error('conflict path should warn the user their unsaved changes were superseded');
+        }
+
+        stateManager.unsubscribe('conflict-test', listener);
+    });
+
     // === SUBSCRIPTION SYSTEM ===
     resultsDiv.innerHTML += '<h4 class="test-section">🔔 Subscription System</h4>';
 

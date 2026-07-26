@@ -567,10 +567,30 @@ class MiniCycleState {
                                 diff
                             });
 
-                            // Reload the newer data to prevent overwriting
+                            // Another context saved newer data while we still had
+                            // unsaved changes (save() only runs when isDirty, so our
+                            // edits are the ones being discarded here). Adopt the newer
+                            // data to avoid clobbering it — and mirror the storage-event
+                            // handler above: warn the user their in-flight changes were
+                            // superseded, and NOTIFY subscribers so the UI redraws
+                            // against the adopted state. Skipping the notify (the prior
+                            // bug) left the UI showing edits that had already been
+                            // dropped — they vanished at the next unrelated render with
+                            // no explanation (same failure mode as the undo rollback-UI
+                            // bug: state swapped under a UI never told to redraw).
+                            const previousData = this.data;
+                            if (this.deps.showNotification) {
+                                this.deps.showNotification(
+                                    getLabel('notify.multiTabConflict'),
+                                    'warning',
+                                    UI_TIMEOUTS.NOTIFICATION_SLOW
+                                );
+                            }
                             this.data = storedData;
                             this.isDirty = false;
+                            this.lastSavedTimestamp = storedTimestamp;
                             this._hideSavingIndicator();
+                            this.notifyListeners(previousData, this.data);
                             return;
                         } else {
                             // Small diff - just our own rapid saves, proceed with save
