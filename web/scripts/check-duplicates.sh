@@ -8,8 +8,9 @@
 #   1. name matches "<base> <N>.<ext>" with N >= 2   (iCloud's first copy is " 2";
 #      " 1" is a human-numbered file, never an iCloud dup)
 #   2. the de-duplicated "<base>.<ext>" exists right next to it (the real signal)
-#   3. it is NOT inside .git / node_modules / backup / dist / build / any archive
-#      dir (archives + build outputs may hold legit "<name> 2.ext" names)
+#   3. it is NOT inside .git / node_modules / backup / dist / build / any dir named
+#      "archive" (case-insensitive: archive/Archive/ARCHIVE) — archives + build
+#      outputs may hold legit "<name> 2.ext" names
 #
 # Even then, TRACKED files are NEVER auto-removed — a committed "<name> 2.ext" is
 # almost always intentional; the rare committed-cruft case (e.g. a slipped
@@ -51,7 +52,7 @@ while IFS= read -r -d '' f; do
     confirmed+=("$f")
   fi
 done < <(find . \
-  -type d \( -name .git -o -name node_modules -o -name backup -o -name dist -o -name build -o -name archive \) -prune -o \
+  -type d \( -name .git -o -name node_modules -o -name backup -o -name dist -o -name build -o -iname archive \) -prune -o \
   -type f -name '* [0-9]*.*' -print0)
 
 n=${#confirmed[@]}
