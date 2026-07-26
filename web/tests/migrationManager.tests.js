@@ -207,6 +207,36 @@ export async function runMigrationManagerTests(resultsDiv, isPartOfSuite = false
     });
 
     // === INITIAL DATA CREATION TESTS ===
+    await test('pruneOldMigrationBackups caps per-prefix backups, keeps newest, leaves others', () => {
+        // §2.1: pre_migration_/migration_ backups (full-dataset copies, one per
+        // migration) were never pruned. Cap them like the corrupt-data snapshots.
+        const m = {
+            'pre_migration_backup_1000': 'a',
+            'pre_migration_backup_2000': 'b',
+            'pre_migration_backup_3000': 'c',
+            'migration_backup_5000': 'other-prefix',
+            'miniCycleData': 'live-data'
+        };
+        const store = {
+            getItem: (k) => (k in m ? m[k] : null),
+            setItem: (k, v) => { m[k] = String(v); },
+            removeItem: (k) => { delete m[k]; },
+            get length() { return Object.keys(m).length; },
+            key: (i) => Object.keys(m)[i] ?? null
+        };
+        MigrationManager.setMigrationManagerDependencies({ storage: store, now: () => 9999 });
+
+        MigrationManager.pruneOldMigrationBackups('pre_migration_backup_');
+
+        const keys = Object.keys(m);
+        const preKeys = keys.filter(k => k.startsWith('pre_migration_backup_'));
+        // keepBeforeWrite = MAX_MIGRATION_BACKUPS(2) - 1 = 1 → only the newest remains
+        if (preKeys.length !== 1) throw new Error('should keep MAX-1 pre_migration backups, got ' + preKeys.length);
+        if (preKeys[0] !== 'pre_migration_backup_3000') throw new Error('should keep the NEWEST, got ' + preKeys[0]);
+        if (!keys.includes('migration_backup_5000')) throw new Error('a different prefix must be untouched');
+        if (!keys.includes('miniCycleData')) throw new Error('live data must be untouched');
+    });
+
     resultsDiv.innerHTML += '<h4 class="test-section">🆕 Initial Data Creation</h4>';
 
     await test('creates valid Schema 2.5 structure', () => {
