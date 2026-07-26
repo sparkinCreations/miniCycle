@@ -47,6 +47,7 @@ build is the set of mechanical transforms that bridge those two worlds:
 | **CSP** | `netlify.toml` / `.htaccess` with per-inline-script hashes | MV3 default page CSP (`script-src 'self'`) — no hashes needed | Inline scripts externalized |
 | **Updates / caching** | SW cache-bust + version gate + cache-first navigation | No SW; updates via Web Store (or reload-unpacked) | Different distribution model |
 | **`legal/` pages** (privacy/terms/security/accessibility/user-manual) | Linked relatively, served live | **Bundled** into `chrome/full/legal/`; back-links rewritten `../miniCycle.html` → `../index.html` | Keep legal nav inside the extension instead of bouncing users to minicycle.app |
+| **Task Order mini-game** (unlocks at 100 cycles) | `games/miniCycle-taskOrder.html` + its 2 scripts | **Bundled** into `chrome/full/games/`; back-link rewritten `../miniCycle.html` → `../index.html` | Otherwise the in-app "Play" button 404s. Only this game ships; `taskGame`/`taskScramble` are dead experiments with inline `<script>` and are excluded |
 | **`pages/` + `tests/` links** | Relative | Rewritten to absolute `https://minicycle.app/…` | Not bundled; would 404 from `chrome-extension://` |
 | **Automated-test tab** | Visible in the testing modal | Hidden via `ext-overrides.css` | `tests/` isn't bundled; the iframe would 404 |
 | **"Open in full tab" button** | n/a | Injected via `ext-boot/open-fulltab.js` (styled in `ext-overrides.css`) | Side-panel escape hatch to the wide layout |

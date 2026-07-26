@@ -340,6 +340,41 @@ function copyLegal() {
   log(`legal: bundled legal/ (${patched} page(s) re-linked to the app)`);
 }
 
+// ── 3d. bundle the unlockable Task Order mini-game ───────────────────────────
+// gamesManager sends the user to games/miniCycle-taskOrder.html when they unlock
+// the Task Order game at 100 global cycles. Bundle that ONE game + its two
+// scripts. Its "Back to miniCycle" button navigates to ../miniCycle.html, which
+// is index.html in this build, so rewrite it. The other games/ files (taskGame,
+// taskScramble) are dead experiments never linked from the app — left out so the
+// payload carries no unused code. The game's favicon + variables.css are already
+// covered (assets scan + styles copy).
+const GAME_FILES = [
+  'miniCycle-taskOrder.html',
+  'miniCycle-taskOrder.js',
+  'miniCycle-taskOrder-init.js',
+];
+
+function copyGames() {
+  const srcDir = path.join(WEB_ROOT, 'games');
+  const destDir = path.join(OUT, 'games');
+  let copied = 0;
+  for (const name of GAME_FILES) {
+    const src = path.join(srcDir, name);
+    if (!fs.existsSync(src)) { log(`   WARN game file not found: games/${name}`); continue; }
+    if (name.endsWith('.js')) {
+      // Back-to-app navigation: web entry is miniCycle.html; here it is index.html.
+      const before = fs.readFileSync(src, 'utf8');
+      const after = before.replace(/(["'])\.\.\/miniCycle\.html\1/g, '$1../index.html$1');
+      ensureDir(destDir);
+      fs.writeFileSync(path.join(destDir, name), after, 'utf8');
+    } else {
+      copyFileEnsured(src, path.join(destDir, name));
+    }
+    copied += 1;
+  }
+  log(`games: bundled ${copied} file(s) (Task Order mini-game)`);
+}
+
 // ── 4. prune OS junk ────────────────────────────────────────────────────────
 function pruneJunk() {
   let removed = 0;
@@ -377,6 +412,7 @@ function run(platform) {
   copyAssets();
   copyExamples();
   copyLegal();
+  copyGames();
   pruneJunk();
 
   log(`done — v${version}, ${human(dirSize(OUT))} total`);

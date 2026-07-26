@@ -1859,7 +1859,9 @@ echo ""
 # Regenerates chrome/full/ from web/ (externalizes inline scripts, strips the
 # service worker, prunes assets, writes the MV3 manifest with $NEW_VERSION).
 # Runs BEFORE the git-tag stage so the rebuilt extension is included in the
-# release commit/tag. See web/scripts/build-chrome-full.cjs.
+# release commit/tag. Bundles the full app, including the unlockable Task Order
+# mini-game (games/), with its back-link rewritten for the index.html entry.
+# See web/scripts/build-chrome-full.cjs.
 
 echo "🧩 Optional: Chrome (full) Extension"
 echo "------------------------------------"
@@ -1910,7 +1912,9 @@ echo ""
 # Regenerates mobile/android/www/ from web/ (drops the PWA/SW blocks, prunes
 # assets), syncs the native versionName to $NEW_VERSION, and bumps versionCode
 # (Play requires a strictly-increasing integer). Runs BEFORE the git-tag stage so
-# the rebuilt payload + version bump are part of the release commit/tag.
+# the rebuilt payload + version bump are part of the release commit/tag. The
+# payload bundles the unlockable Task Order mini-game (games/); the following
+# cap sync propagates it into the native project.
 # See web/scripts/build-android-www.cjs and mobile/android/docs/ANDROID_BUILD_AND_DIFFERENCES.md.
 
 echo "🤖 Optional: Android (Capacitor) App"
@@ -2067,7 +2071,9 @@ echo ""
 # build-capacitor-www.cjs), syncs the native MARKETING_VERSION to $NEW_VERSION,
 # and bumps CURRENT_PROJECT_VERSION (App Store Connect requires a strictly-
 # increasing build number per version). Runs BEFORE the git-tag stage so the
-# rebuilt payload + version bump are part of the release commit/tag.
+# rebuilt payload + version bump are part of the release commit/tag. The payload
+# bundles the unlockable Task Order mini-game (games/); the following cap sync
+# propagates it into the native project.
 # See web/scripts/build-ios-www.cjs and mobile/ios/docs/IOS_BUILD_AND_DIFFERENCES.md.
 
 echo "🍎 Optional: iOS (Capacitor) App"
