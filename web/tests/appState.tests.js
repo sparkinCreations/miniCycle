@@ -525,6 +525,68 @@ export async function runAppStateTests(resultsDiv, isPartOfSuite = false) {
         stateManager.unsubscribe('conflict-test', listener);
     });
 
+    await test('flushes a pending save on pagehide and visibilitychange→hidden (iOS unload safety)', async () => {
+        // beforeunload is unreliable on iOS (not fired on background/swipe-away), so
+        // the debounced save must also flush on pagehide and when the tab is hidden.
+        // (drift-review v2 §1.2)
+        const stateManager = createStateManager();
+        await stateManager.init();
+
+        // Dirty change with a PENDING (not-yet-fired) debounced save the handler must flush.
+        const makeDirtyPending = (marker) => {
+            stateManager.data.settings.theme = marker;
+            stateManager.isDirty = true;
+            stateManager.saveTimeout = setTimeout(() => {}, 10000);
+        };
+        const persistedTheme = () => JSON.parse(localStorage.getItem('miniCycleData')).settings.theme;
+
+        // 1) pagehide flushes.
+        makeDirtyPending('flushed-on-pagehide');
+        window.dispatchEvent(new Event('pagehide'));
+        if (stateManager.isDirty !== false) throw new Error('pagehide should flush the pending save');
+        if (persistedTheme() !== 'flushed-on-pagehide') throw new Error('pagehide flush should persist the change');
+        if (stateManager.saveTimeout !== null) throw new Error('pagehide flush should clear the pending save timer');
+
+        // 2) visibilitychange flushes only on the hidden edge (visible must NOT).
+        const origViz = Object.getOwnPropertyDescriptor(document, 'visibilityState');
+        try {
+            makeDirtyPending('flushed-on-hidden');
+            Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'visible' });
+            document.dispatchEvent(new Event('visibilitychange'));
+            if (stateManager.isDirty !== true) throw new Error('visibilitychange while VISIBLE must not flush');
+
+            Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'hidden' });
+            document.dispatchEvent(new Event('visibilitychange'));
+            if (stateManager.isDirty !== false) throw new Error('visibilitychange→hidden should flush the pending save');
+            if (persistedTheme() !== 'flushed-on-hidden') throw new Error('hidden flush should persist the change');
+        } finally {
+            if (origViz) Object.defineProperty(document, 'visibilityState', origViz);
+            else delete document.visibilityState;
+        }
+
+        stateManager.destroy();
+    });
+
+    await test('data-repaired notice is quantified (recovered routine count, no leftover placeholders)', async () => {
+        // §2.3: replaces the vague "some recent changes may be missing" with a count.
+        const stateManager = createStateManager();
+        await stateManager.init();
+        let shown = null;
+        stateManager.deps.showNotification = (msg) => { shown = msg; };
+
+        stateManager._notifyDataRepaired({
+            data: { data: { cycles: { a: {}, b: {} } } },
+            backupKey: 'miniCycleData_corrupted_1'
+        });
+
+        if (!shown) throw new Error('should show a notification');
+        if (/\{count\}|\{routines\}/.test(shown)) throw new Error('placeholders must be interpolated, not literal: ' + shown);
+        if (!/\b2\b/.test(shown)) throw new Error('should report the recovered routine count (2): ' + shown);
+        if (!/routines/.test(shown)) throw new Error('should pluralize the noun (routines): ' + shown);
+
+        stateManager.destroy();
+    });
+
     // === SUBSCRIPTION SYSTEM ===
     resultsDiv.innerHTML += '<h4 class="test-section">🔔 Subscription System</h4>';
 
