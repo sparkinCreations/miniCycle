@@ -1,3 +1,8 @@
+## [2.330] - 2026-07-26
+- docs: add drift-review v2 accuracy correction
+- fix(state): notify subscribers + warn user on concurrent-modification discard
+
+
 ## [2.329] - 2026-07-25
 - docs: add documentation drift review v2 (supersedes review-findings)
 - fix(onboarding): crossfade the first-run use-case ticker (no blank flash)
