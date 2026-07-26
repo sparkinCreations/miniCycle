@@ -365,6 +365,50 @@ deploys but leaves existing users' service workers on the old build).
 
 ---
 
+## ADR-011 — Concurrent-modification conflict: last-write-wins + notify (supersedes the never-shipped merge intent)
+
+**Status:** Accepted · **Date:** 2026-07-26 (v2.330)
+
+**Decision.** When `save()` detects that another context persisted newer data while this
+context still holds unsaved changes (stored `lastModified` newer by more than
+`DEBOUNCE.CONCURRENT_MOD_CONFLICT`), **adopt the stored data (last-write-wins)** and then
+**warn the user + notify subscribers** — rather than merging the two states. This supersedes
+the unimplemented `mergeStates()` branch sketched in the 2025 AppState spec
+(`archive/CODE_REVIEW_FINDINGS_2025.md`).
+
+**Why.**
+- The 2025 spec sketched a merge (`this.data = this.mergeStates(current, this.data)`), but
+  `mergeStates()` was never implemented (`grep mergeStates modules/` → 0). What shipped was a
+  discard placeholder that *also* skipped `notifyListeners()` — so the conflict path both lost
+  the losing context's edits **and** left the UI rendering ghosts of them until an unrelated
+  redraw dropped them. That silent-swap-under-a-stale-UI is the same failure shape as the undo
+  rollback-UI bug and the exact hazard ADR-003's notify guarantee exists to prevent.
+- The real harm was the *silent + UI-lying* part, not the choice of resolution strategy. v2.330
+  restores the ADR-003 guarantee on this path: warn the user their in-flight changes were
+  superseded, and notify subscribers so the UI redraws against the adopted state (mirroring the
+  storage-event handler that already handled the same situation correctly).
+- Correctly merging two divergent full-state trees (task order, completion, recurring templates,
+  per-cycle settings) is genuinely hard; a wrong merge corrupts silently. For a single-user app
+  where same-routine concurrent editing across contexts is rare, predictable last-write-wins is
+  the safer default than a bespoke merge.
+
+**Rejected alternatives.**
+- *Implement `mergeStates()` as the 2025 spec intended:* preserves both contexts' edits, but
+  safe merging of divergent trees is a large, high-risk effort. Deferred, not dropped — tracked
+  in `future-work/APPSTATE_MERGE_STATES.md`; revisit if multi-context concurrent editing becomes
+  common or users report lost edits.
+- *Keep the silent discard:* loses data **and** lies to the UI. That was the bug fixed here.
+
+**Consequences.**
+- (+) The UI can no longer render ghost edits after a conflict; the user is told when their
+  unsaved changes were superseded. Restores ADR-003's notify guarantee on the last path missing it.
+- (−) The losing context's unsaved edits are still discarded — this is *announced* data loss, not
+  *prevented* data loss. Accepted for single-user usage; the merge upgrade is the escape hatch.
+- Does **not** supersede ADR-003 (its guarantee stands and is now honored here); supersedes only
+  the unimplemented 2025 merge sketch.
+
+---
+
 ## Template for new ADRs
 
 ```markdown
