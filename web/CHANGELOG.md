@@ -1,3 +1,7 @@
+## [2.332] - 2026-07-26
+- feat(storage): request durable (persistent) origin storage
+
+
 ## [2.331] - 2026-07-26
 - docs: drift-review v2 follow-through (§1.3 resolved note, §1.4 stat refresh)
 - fix(migration): check force-mode backup result + cap migration backups

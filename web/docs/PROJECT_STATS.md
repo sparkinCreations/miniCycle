@@ -13,14 +13,14 @@
 
 | Metric | Value |
 |--------|-------|
-| **App Version** | 2.331 |
+| **App Version** | 2.332 |
 | **Lite Version** | 2.092 (frozen) |
 | **Schema Version** | 2.5 |
-| **Total Modules** | 132 |
-| **Total Tests** | 3093 |
+| **Total Modules** | 133 |
+| **Total Tests** | 3101 |
 | **Test Pass Rate** | 100% |
 | **CSS Files** | 44 |
-| **JSDoc Blocks** | 1308 |
+| **JSDoc Blocks** | 1312 |
 | **Documentation Files** | 238 |
 | **DI Completion** | 100% |
 | **Custom window.* Globals (modules)** | 0 |
@@ -42,11 +42,11 @@
 | `features/` | 9 | Themes, stats, achievements, history, reminders |
 | `utils/` | 18 | Notifications, device detection, utilities |
 | `labels/` | 3 | Default labels + label resolver |
-| `storage/` | 1 | Backup manager |
+| `storage/` | 2 | Backup manager |
 | `progress/` | 1 | Cycle completion tracking |
 | `testing/` | 9 | Test infrastructure |
 | `other/` | 3 | Plugins, experimental |
-| **Total** | **132** | |
+| **Total** | **133** | |
 
 ---
 
@@ -67,8 +67,8 @@
 
 | Category | Tests |
 |----------|-------|
-| Total Tests | 3093 |
-| Test Files | 123 |
+| Total Tests | 3101 |
+| Test Files | 124 |
 | Pass Rate | 100% |
 | Platforms Tested | Mac, iPad, iPhone |
 
