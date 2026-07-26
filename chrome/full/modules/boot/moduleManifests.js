@@ -499,6 +499,18 @@ export const MODULE_MANIFESTS = {
         api: 'ui'
     },
 
+    // Requests durable (non-evictable) origin storage. Dependency-free side-effect
+    // module: its init() checks/requests persistence and arms a one-shot gesture
+    // retry. provideInstance exposes getStatus() for a future settings UI.
+    storagePersistence: {
+        path: '../storage/storagePersistence.js',
+        phase: PHASES.FEATURES,
+        requires: [],
+        optionalDeps: [],
+        provideInstance: 'storagePersistence',
+        api: 'storage'
+    },
+
     taskSearch: {
         path: '../ui/taskSearch.js',
         phase: PHASES.UI_MANAGERS,

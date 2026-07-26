@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en" role="document">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/png" href="../assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" />
+  <link rel="stylesheet" href="../styles/base/variables.css" />
+  <title>Whack-a-Order - Mini Game</title>
+  <!-- Dark mode + reduced motion detection (flash-free, before paint) -->
+  <script src="miniCycle-taskOrder-init.js"></script>
+  <style>
+    /* ================================================================
+       Game-Specific CSS Custom Properties
+       ================================================================ */
+    :root {
+      --game-body-bg: linear-gradient(135deg, #4a90d9 0%, #6db3f2 30%, #87ceeb 60%, #a8d8ea 100%);
+      --game-container-bg: rgba(255, 255, 255, 0.15);
+      --game-container-border: rgba(255, 255, 255, 0.3);
+      --game-container-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+      --game-heading-color: #ffffff;
+      --game-heading-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      --game-primary: #4c79ff;
+      --game-primary-shadow: rgba(76, 121, 255, 0.4);
+      --game-success: #28a745;
+      --game-error: #ff4d4d;
+      --game-error-hover: #e04343;
+      --game-error-shadow: rgba(255, 77, 77, 0.4);
+      --game-text-light: rgba(255, 255, 255, 0.9);
+      --game-text-light-alt: rgba(255, 255, 255, 0.85);
+      --game-text-dark: #444;
+      --game-btn-text: white;
+      --game-field-bg: linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(200,220,245,0.9) 100%);
+      --game-field-border: rgba(255, 255, 255, 0.5);
+      --game-btn-shadow: rgba(0, 0, 0, 0.15);
+      --game-leaderboard-bg: rgba(255, 255, 255, 0.15);
+      --game-leaderboard-text: rgba(255, 255, 255, 0.9);
+      --game-leaderboard-border: rgba(255, 255, 255, 0.2);
+      --game-back-btn-bg: rgba(0, 0, 0, 0.3);
+      --game-back-btn-hover: rgba(0, 0, 0, 0.45);
+      --game-back-btn-shadow: rgba(0, 0, 0, 0.2);
+      --game-difficulty-bg: rgba(255, 255, 255, 0.15);
+      --game-difficulty-border: rgba(255, 255, 255, 0.3);
+      --game-difficulty-hover: rgba(255, 255, 255, 0.25);
+      --game-focus-outline: #ffd700;
+      --game-timer-color: rgba(255, 255, 255, 0.7);
+      --game-new-best-color: #ffd700;
+      --game-stat-label: rgba(255, 255, 255, 0.6);
+    }
+
+    /* Dark mode overrides */
+    html.dark-mode {
+      --game-body-bg: linear-gradient(135deg, #0f1923 0%, #1a2a3a 30%, #1e3450 60%, #243b55 100%);
+      --game-container-bg: rgba(255, 255, 255, 0.06);
+      --game-container-border: rgba(255, 255, 255, 0.1);
+      --game-container-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+      --game-heading-color: #e0e0e0;
+      --game-heading-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+      --game-primary: #6b93ff;
+      --game-primary-shadow: rgba(107, 147, 255, 0.4);
+      --game-text-light: rgba(255, 255, 255, 0.8);
+      --game-text-light-alt: rgba(255, 255, 255, 0.7);
+      --game-text-dark: #cccccc;
+      --game-field-bg: linear-gradient(180deg, rgba(30,42,58,0.95) 0%, rgba(42,61,85,0.9) 100%);
+      --game-field-border: rgba(255, 255, 255, 0.15);
+      --game-btn-shadow: rgba(0, 0, 0, 0.4);
+      --game-leaderboard-bg: rgba(255, 255, 255, 0.06);
+      --game-leaderboard-text: rgba(255, 255, 255, 0.8);
+      --game-leaderboard-border: rgba(255, 255, 255, 0.08);
+      --game-back-btn-bg: rgba(255, 255, 255, 0.1);
+      --game-back-btn-hover: rgba(255, 255, 255, 0.15);
+      --game-back-btn-shadow: rgba(0, 0, 0, 0.3);
+      --game-difficulty-bg: rgba(255, 255, 255, 0.08);
+      --game-difficulty-border: rgba(255, 255, 255, 0.12);
+      --game-difficulty-hover: rgba(255, 255, 255, 0.15);
+      --game-focus-outline: #ffd700;
+      --game-timer-color: rgba(255, 255, 255, 0.5);
+      --game-stat-label: rgba(255, 255, 255, 0.45);
+    }
+
+    /* ================================================================
+       Game Layout
+       ================================================================ */
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--game-body-bg);
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    /* Game Container — glassmorphism card */
+    .game-container {
+      background: var(--game-container-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      padding: 28px 32px;
+      border: 1px solid var(--game-container-border);
+      border-radius: 20px;
+      box-shadow: var(--game-container-shadow);
+      text-align: center;
+      max-width: 620px;
+      width: 100%;
+    }
+
+    /* Header */
+    h1 {
+      color: var(--game-heading-color);
+      text-shadow: var(--game-heading-shadow);
+      font-size: 28px;
+      font-weight: 700;
+      margin: 0 0 4px 0;
+      letter-spacing: -0.5px;
+    }
+
+    /* Difficulty Selector */
+    .difficulty-selector {
+      margin: 12px 0 16px;
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+    }
+    .difficulty-btn {
+      padding: 6px 18px;
+      background: var(--game-difficulty-bg);
+      border: 1px solid var(--game-difficulty-border);
+      border-radius: 20px;
+      color: var(--game-btn-text);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+    }
+    .difficulty-btn:hover {
+      background: var(--game-difficulty-hover);
+      transform: translateY(-1px);
+    }
+    .difficulty-btn.active {
+      background: var(--game-primary);
+      border-color: var(--game-primary);
+      box-shadow: 0 3px 12px var(--game-primary-shadow);
+    }
+
+    /* Instructions & Score */
+    #instructions {
+      margin-bottom: 6px;
+      color: var(--game-text-light);
+      font-size: 13px;
+      opacity: 0.85;
+    }
+
+    /* Scoreboard row */
+    .scoreboard-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 12px;
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--game-text-light-alt);
+    }
+    #timer {
+      color: var(--game-timer-color);
+      font-size: 13px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Task Field */
+    #taskWindow {
+      position: relative;
+      width: 100%;
+      height: 340px;
+      border: 1px solid var(--game-field-border);
+      border-radius: 16px;
+      overflow: hidden;
+      margin-bottom: 12px;
+      background: var(--game-field-bg);
+      box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.06);
+    }
+
+    /* Task Buttons */
+    .task-btn {
+      position: absolute;
+      padding: 8px 14px;
+      background: var(--game-primary);
+      color: var(--game-btn-text);
+      border: none;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.15s ease;
+      box-shadow: 0 2px 8px var(--game-btn-shadow);
+      white-space: nowrap;
+      max-width: 200px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .task-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 14px var(--game-primary-shadow);
+    }
+    .task-btn.clicked {
+      background: var(--game-success);
+      cursor: default;
+      animation: successPulse 0.35s ease;
+    }
+    .task-btn:focus {
+      outline: 3px solid var(--game-focus-outline);
+      outline-offset: 2px;
+    }
+
+    /* Animations */
+    @keyframes successPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.15); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes particle {
+      0% { transform: translate(0, 0) scale(1); opacity: 1; }
+      100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+    }
+    @keyframes newBestPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.08); }
+    }
+
+    /* Feedback Text */
+    .feedback {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--game-text-dark);
+      margin-top: 10px;
+      min-height: 24px;
+      animation: fadeIn 0.3s ease;
+    }
+    .feedback.success { color: var(--game-success); }
+    .feedback.error { color: var(--game-error); }
+    .feedback.new-best {
+      color: var(--game-new-best-color);
+      animation: newBestPulse 0.6s ease 2;
+    }
+
+    /* Particle Effect */
+    .particle {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      pointer-events: none;
+      animation: particle 0.7s ease-out forwards;
+    }
+
+    /* Restart Button */
+    #restartBtn {
+      display: none;
+      margin: 12px auto 0 auto;
+      padding: 10px 24px;
+      font-size: 14px;
+      font-weight: 600;
+      border: none;
+      background: var(--game-error);
+      color: var(--game-btn-text);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    #restartBtn:hover {
+      background: var(--game-error-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px var(--game-error-shadow);
+    }
+
+    /* Leaderboard */
+    #leaderboard {
+      margin-top: 16px;
+      font-size: 13px;
+      color: var(--game-leaderboard-text);
+      background: var(--game-leaderboard-bg);
+      border: 1px solid var(--game-leaderboard-border);
+      padding: 12px 16px;
+      border-radius: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 4px 20px;
+    }
+    #leaderboard .lb-title {
+      width: 100%;
+      text-align: center;
+      font-weight: 600;
+      margin-bottom: 4px;
+      font-size: 14px;
+    }
+    .lb-stat {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 80px;
+    }
+    .lb-stat .lb-value {
+      font-size: 20px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+    .lb-stat .lb-label {
+      font-size: 11px;
+      color: var(--game-stat-label);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Back Button */
+    #back-to-minicycle {
+      margin-top: 16px;
+      padding: 8px 20px;
+      font-size: 13px;
+      font-weight: 500;
+      background: var(--game-back-btn-bg);
+      color: var(--game-btn-text);
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    #back-to-minicycle:hover {
+      background: var(--game-back-btn-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px var(--game-back-btn-shadow);
+    }
+
+    /* ================================================================
+       Responsive
+       ================================================================ */
+    @media (max-width: 480px) {
+      body { padding: 12px; }
+      .game-container { padding: 20px 16px; }
+      h1 { font-size: 22px; }
+      #taskWindow { height: 260px; }
+      .task-btn { font-size: 12px; padding: 6px 10px; max-width: 160px; }
+      .scoreboard-row { font-size: 13px; gap: 10px; }
+      #leaderboard { gap: 4px 12px; }
+      .lb-stat .lb-value { font-size: 17px; }
+    }
+
+    /* ================================================================
+       Reduced Motion Support
+       ================================================================ */
+    @media (prefers-reduced-motion: reduce) {
+      .game-container, .difficulty-btn, .task-btn, #restartBtn, #back-to-minicycle {
+        transition: none;
+      }
+      .game-container:hover, .difficulty-btn:hover, .task-btn:hover,
+      #restartBtn:hover, #back-to-minicycle:hover {
+        transform: none;
+      }
+      .task-btn.clicked, .feedback, .feedback.new-best { animation: none; }
+      .particle { animation: none; display: none; }
+    }
+    html.reduced-motion .game-container,
+    html.reduced-motion .difficulty-btn,
+    html.reduced-motion .task-btn,
+    html.reduced-motion #restartBtn,
+    html.reduced-motion #back-to-minicycle { transition: none; }
+    html.reduced-motion .game-container:hover,
+    html.reduced-motion .difficulty-btn:hover,
+    html.reduced-motion .task-btn:hover,
+    html.reduced-motion #restartBtn:hover,
+    html.reduced-motion #back-to-minicycle:hover { transform: none; }
+    html.reduced-motion .task-btn.clicked,
+    html.reduced-motion .feedback,
+    html.reduced-motion .feedback.new-best { animation: none; }
+    html.reduced-motion .particle { animation: none; display: none; }
+  </style>
+</head>
+<body>
+  <main role="main">
+    <div class="game-container" aria-label="Whack-a-Order Mini Game">
+    <h1>Whack-a-Order</h1>
+
+    <!-- Difficulty Selector -->
+    <div class="difficulty-selector">
+      <button class="difficulty-btn active" data-difficulty="easy">Easy</button>
+      <button class="difficulty-btn" data-difficulty="normal">Normal</button>
+      <button class="difficulty-btn" data-difficulty="hard">Hard</button>
+    </div>
+
+    <div id="instructions">
+      Click the tasks in the correct order (1, 2, 3, ...). They will move faster each round!
+    </div>
+    <div class="scoreboard-row">
+      <span id="scoreboard" aria-live="polite">Round: 1 | Score: 0</span>
+      <span id="timer">0:00</span>
+    </div>
+    <!-- Task Window Container -->
+    <div id="taskWindow" aria-label="Task field"></div>
+    <div class="feedback" id="feedback" aria-live="polite"></div>
+    <button id="restartBtn" aria-label="Restart Game">Restart Game</button>
+    <!-- Leaderboard Display -->
+    <div id="leaderboard">
+      <div class="lb-title" id="lbTitle">Your Best (Easy):</div>
+      <div class="lb-stat">
+        <span class="lb-value" id="bestRound">0</span>
+        <span class="lb-label">Best Round</span>
+      </div>
+      <div class="lb-stat">
+        <span class="lb-value" id="bestTime">--</span>
+        <span class="lb-label">Best Time</span>
+      </div>
+      <div class="lb-stat">
+        <span class="lb-value" id="gamesPlayed">0</span>
+        <span class="lb-label">Played</span>
+      </div>
+    </div>
+    <button id="back-to-minicycle" aria-label="Go back to miniCycle">Back to miniCycle</button>
+  </div>
+
+  <script src="miniCycle-taskOrder.js"></script>
+  </main>
+</body>
+</html>

@@ -162,11 +162,7 @@ class MiniCycleState {
                     if (recovery.recovered && this.validateSchema25Structure(recovery.data)) {
                         this.data = recovery.data;
                         this.isInitialized = true;
-                        this.deps.showNotification(
-                            getLabel('notify.dataRepaired'),
-                            'warning',
-                            UI_TIMEOUTS.NOTIFICATION_OVERLAY
-                        );
+                        this._notifyDataRepaired(recovery);
                         return this.data;
                     }
                     this.data = this.createMinimalFallbackState();
@@ -190,6 +186,28 @@ class MiniCycleState {
             console.error('❌ Error reloading AppState:', error);
             return null;
         }
+    }
+
+    /**
+     * Show the "data repaired" notification, quantified: how many routines the
+     * salvage actually recovered, rather than the vague "some recent changes may
+     * be missing." The corrupted original is preserved under a
+     * `miniCycleData_corrupted_<ts>` key (logged to console by recoverCorruptedData)
+     * so recovery is still possible. Note: we can report what was *recovered*, not
+     * an "N of M" — the original count can't be trusted from corrupted bytes.
+     * (drift-review v2 §2.3)
+     * @param {{data: Object|null, backupKey: string|null}} recovery
+     * @private
+     */
+    _notifyDataRepaired(recovery) {
+        const count = Object.keys(recovery?.data?.data?.cycles || {}).length;
+        this.deps.showNotification(
+            getLabel('notify.dataRepaired', {
+                vars: { count, routines: getLabel('noun.routine', { count }) }
+            }),
+            'warning',
+            UI_TIMEOUTS.NOTIFICATION_OVERLAY
+        );
     }
 
     /**
@@ -243,11 +261,7 @@ class MiniCycleState {
                         const recovery = recoverCorruptedData(stored, { storage: this.deps.storage });
                         if (recovery.recovered && this.validateSchema25Structure(recovery.data)) {
                             existingData = recovery.data;
-                            this.deps.showNotification(
-                                getLabel('notify.dataRepaired'),
-                                'warning',
-                                UI_TIMEOUTS.NOTIFICATION_OVERLAY
-                            );
+                            this._notifyDataRepaired(recovery);
                         }
                     }
                 }
@@ -256,11 +270,7 @@ class MiniCycleState {
                 const recovery = stored ? recoverCorruptedData(stored, { storage: this.deps.storage }) : { recovered: false };
                 if (recovery.recovered && this.validateSchema25Structure(recovery.data)) {
                     existingData = recovery.data;
-                    this.deps.showNotification(
-                        getLabel('notify.dataRepaired'),
-                        'warning',
-                        UI_TIMEOUTS.NOTIFICATION_OVERLAY
-                    );
+                    this._notifyDataRepaired(recovery);
                 } else {
                     existingData = this.createMinimalFallbackState();
                     this.deps.showNotification(
@@ -337,8 +347,15 @@ class MiniCycleState {
 
             this.isInitialized = true;
 
-            // ✅ Flush pending saves on page unload to prevent data loss
-            this._beforeUnloadHandler = () => {
+            // ✅ Flush pending saves on page unload/hide to prevent data loss.
+            // beforeunload is unreliable on iOS — frequently NOT fired when the app
+            // is backgrounded or swiped away — so a checked-final-task-then-swipe can
+            // drop the debounced write on the platform we screenshot most. Also flush
+            // on pagehide and on visibilitychange→hidden, the events that DO fire
+            // there. Same iOS-interruption trio taskViewLayoutManager uses for drag
+            // cleanup. save() writes synchronously (no async hop), so it completes
+            // inside these handlers. (drift-review v2 §1.2)
+            this._flushPendingSave = () => {
                 if (this.saveTimeout) {
                     clearTimeout(this.saveTimeout);
                     this.saveTimeout = null;
@@ -347,7 +364,13 @@ class MiniCycleState {
                     this.save();
                 }
             };
-            this.deps.addWindowListener('beforeunload', this._beforeUnloadHandler);
+            // visibilitychange is a document event; only flush on the hidden edge.
+            this._visibilityFlushHandler = () => {
+                if (document.visibilityState === 'hidden') this._flushPendingSave();
+            };
+            this.deps.addWindowListener('beforeunload', this._flushPendingSave);
+            this.deps.addWindowListener('pagehide', this._flushPendingSave);
+            document.addEventListener('visibilitychange', this._visibilityFlushHandler);
 
             // ✅ Multi-tab sync: Detect changes from other tabs via storage event
             this._storageHandler = (event) => {
@@ -916,9 +939,14 @@ class MiniCycleState {
      * resetStateManager() for tests.
      */
     destroy() {
-        if (this._beforeUnloadHandler) {
-            window.removeEventListener('beforeunload', this._beforeUnloadHandler);
-            this._beforeUnloadHandler = null;
+        if (this._flushPendingSave) {
+            window.removeEventListener('beforeunload', this._flushPendingSave);
+            window.removeEventListener('pagehide', this._flushPendingSave);
+            this._flushPendingSave = null;
+        }
+        if (this._visibilityFlushHandler) {
+            document.removeEventListener('visibilitychange', this._visibilityFlushHandler);
+            this._visibilityFlushHandler = null;
         }
         if (this._storageHandler) {
             window.removeEventListener('storage', this._storageHandler);

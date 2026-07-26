@@ -21,7 +21,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { Z_INDEX, UI_TIMEOUTS, DOM_CLASSES } from '../core/constants.js';
+import { Z_INDEX, UI_TIMEOUTS, DOM_CLASSES, LIMITS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -390,6 +390,7 @@ export function simulateMigrationToSchema25(dryRun = true) {
                 darkModeEnabled: darkModeEnabled,
                 currentTheme: currentTheme
             };
+            pruneOldMigrationBackups('migration_backup_');
             _deps.storage.setItem(backupKey, JSON.stringify(oldData));
             results.changes.push(`💾 Old data backed up to ${backupKey}`);
 
@@ -406,6 +407,41 @@ export function simulateMigrationToSchema25(dryRun = true) {
     }
 
     return results;
+}
+
+/**
+ * Prune old timestamped migration backups sharing a prefix, keeping the newest so
+ * that after the caller writes its new backup at most LIMITS.MAX_MIGRATION_BACKUPS
+ * remain. `pre_migration_backup_` and `migration_backup_` are full-dataset copies
+ * created per migration and were never otherwise pruned (auto_migration_ already
+ * caps via its index). Mirrors backupCorruptedData's cap in dataRecovery.js.
+ * Non-fatal by design — migration must never fail because cleanup threw.
+ * (drift-review v2 §2.1)
+ * @param {string} prefix - e.g. 'pre_migration_backup_' or 'migration_backup_'
+ * @returns {void}
+ */
+export function pruneOldMigrationBackups(prefix) {
+    try {
+        const store = _deps.storage;
+        if (!store || typeof store.key !== 'function') return;
+        const existing = [];
+        for (let i = 0; i < store.length; i++) {
+            const key = store.key(i);
+            if (key && key.startsWith(prefix)) existing.push(key);
+        }
+        // Leave room for the backup the caller is about to write: trim to CAP - 1.
+        const keepBeforeWrite = Math.max(0, LIMITS.MAX_MIGRATION_BACKUPS - 1);
+        if (existing.length > keepBeforeWrite) {
+            // Keys are `${prefix}${epochMs}` — a same-length numeric suffix, so a
+            // lexical sort is chronological. Remove the oldest beyond the window.
+            existing.sort();
+            for (let i = 0; i < existing.length - keepBeforeWrite; i++) {
+                try { store.removeItem(existing[i]); } catch (e) { /* non-fatal */ }
+            }
+        }
+    } catch (e) {
+        console.warn('⚠️ Migration backup prune failed (non-fatal):', e?.message || e);
+    }
 }
 
 /**
@@ -431,6 +467,7 @@ export function performSchema25Migration() {
         if (value) currentData[key] = value;
     });
 
+    pruneOldMigrationBackups('pre_migration_backup_');
     _deps.storage.setItem(backupKey, JSON.stringify(currentData));
 
     // Perform actual migration
@@ -709,6 +746,15 @@ async function performAutoMigration(options = {}) {
 
             if (!skipBackup) {
                 const backupResult = await createAutomaticMigrationBackup();
+                // Force mode proceeds regardless — it's the production push-through
+                // path (gated by checkMigrationNeeded, so it only runs when migration
+                // is genuinely required, which is exactly when a restore point matters
+                // most). But the result must not be silently dropped (it was: assigned,
+                // never read). Surface a failed backup so the "migrated without a
+                // restore point" case is at least visible in logs. (drift-review v2 §2.2)
+                if (!backupResult?.success) {
+                    console.error('❌ Force migration: pre-migration backup FAILED — proceeding without a restore point.', backupResult?.message);
+                }
             }
 
             // ✅ Apply fixes without validation
