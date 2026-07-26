@@ -27,6 +27,24 @@ The animation runs again on subsequent reloads **until the user graduates** by e
 
 App close alone does NOT graduate (this was an intentional design decision — see `_attachFirstSessionLifecycle` comments).
 
+### Standalone splash (the create / sample first-run choices)
+
+The **create** and **sample** first-run picks reuse the same typewriter splash via
+`onboardingManager.showWelcomeSplash()` → `_showFirstRunSplash({ standalone: true })`, but with **no
+welcome banner behind it** (those paths go straight to the routine-creation dialog). So **Phase 3
+(word landing) is skipped** — the title rests centered, then fades. The centered hold is longer
+(`--first-run-splash-hold-standalone`, 1500ms) to fill the beat the banner path spends on the landing.
+
+`showWelcomeSplash()` returns a promise that resolves once the splash is fully gone, and `appInit`
+opens the creation dialog **after** it resolves (not behind it) so the dialog's autofocused name input
+can't raise the mobile keyboard against a black overlay. (v2.328)
+
+**Reliability.** The phase chain hangs off `animationend`, which never fires when the character
+animations are disabled — so `_showFirstRunSplash` takes a reduced-motion fast-path (straight to the
+hold) and a `UI_TIMEOUTS.FIRST_RUN_SPLASH_WATCHDOG` (12s) ceiling guarantees the splash always fades and
+its completion promise always settles. This closed a latent bug where reduced-motion users saw the
+splash hang until they tapped it.
+
 ---
 
 ## The Three Phases

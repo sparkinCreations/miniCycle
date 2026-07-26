@@ -42,7 +42,7 @@
 | `features/` | 9 | Themes, stats, achievements, history, reminders |
 | `utils/` | 18 | Notifications, device detection, utilities |
 | `labels/` | 3 | Default labels + label resolver |
-| `storage/` | 2 | Backup manager |
+| `storage/` | 2 | Backup manager (IndexedDB), storage persistence (eviction protection) |
 | `progress/` | 1 | Cycle completion tracking |
 | `testing/` | 9 | Test infrastructure |
 | `other/` | 3 | Plugins, experimental |

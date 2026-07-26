@@ -72,6 +72,40 @@ miniCycle reserves 0.25MB (256KB) as a safety buffer. This:
 
 The storage bar shows available space *after* this buffer is applied.
 
+## Storage Persistence (eviction protection)
+
+The buffer above governs *how much* the app writes. It does **not** stop the browser from **evicting**
+the whole origin bucket — best-effort `localStorage`/IndexedDB can be cleared under storage pressure, and
+WebKit evicts script-writable storage after a stretch of no visits. That threatens *already-saved*
+routines — a different failure from the unload-flush in `appState.js` (which protects *unsaved* edits).
+
+The **`storagePersistence`** module (`modules/storage/storagePersistence.js`, `FEATURES` boot phase, v2.332)
+asks the browser for durable storage via the Storage API:
+
+- On boot it checks `navigator.storage.persisted()`; if not already granted, it requests
+  `navigator.storage.persist()` once, then re-attempts on the **first user gesture** (many browsers only
+  grant after engagement). Chrome decides silently on heuristics (install / engagement); Firefox may
+  prompt; Safari ties it to home-screen install.
+- It's **best-effort and silent** — a denied grant isn't actionable, so outcomes are logged, not shown.
+  The `.mcyc` export + backup-reminder system remains the user-facing durability net.
+- `getStatus()` exposes `{ supported, persisted, estimate }` live (nothing consumes it yet — it's there
+  for a future settings display), and is the intended path to fold real `navigator.storage.estimate()`
+  quota into the storage bar (which today measures usage manually via `getLocalStorageUsedBytes()`).
+
+Dependency-free side-effect module; see **ADR-012**.
+
+### System-written backups (outside the user budget)
+
+The quota gates below govern **user-initiated** growth. Several system writers store full-dataset copies
+*outside* that budget; each is capped so it can't accumulate unbounded (drift-review v2 §2.1):
+
+| Writer | Cap | Constant |
+|---|---|---|
+| Corrupted-data snapshots (`miniCycleData_corrupted_<ts>`) | 3 | `LIMITS.MAX_CORRUPT_BACKUPS` |
+| Migration backups (`pre_migration_backup_`, `migration_backup_`) | 2 per prefix | `LIMITS.MAX_MIGRATION_BACKUPS` (v2.331) |
+| Auto-migration backups (`auto_migration_backup_`) | 5 | via `miniCycleBackupIndex` |
+| Undo cache | 20 snapshots | `LIMITS.UNDO_STACK` |
+
 ## User-Facing Features
 
 ### Storage Bar

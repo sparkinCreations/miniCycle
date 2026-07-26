@@ -409,6 +409,42 @@ the unimplemented `mergeStates()` branch sketched in the 2025 AppState spec
 
 ---
 
+## ADR-012 — Request durable origin storage (persistence); backups remain the net
+
+**Status:** Accepted · **Date:** 2026-07-26 (v2.332)
+
+**Decision.** On boot, ask the browser for durable (non-evictable) origin storage via
+`navigator.storage.persist()` (the `storagePersistence` module) so *saved* routines survive
+storage-pressure and idle eviction. Best-effort: check `persisted()` first, request once, then
+re-attempt on the first user gesture. Do **not** surface the outcome to the user — the `.mcyc` export +
+backup-reminder system stays the user-facing durability net.
+
+**Why.**
+- All data lives in best-effort `localStorage`, which browsers can evict (Chrome under storage pressure;
+  WebKit after a stretch of no visits). That silently loses *saved* routines — the app's whole value —
+  and nothing previously asked the browser not to. This is a distinct threat from the unload-flush in
+  `appState.js`, which protects *unsaved* edits.
+- The grant is heuristic (Chrome) or gesture-gated, so a one-shot boot request under-performs; the
+  first-gesture retry raises the grant rate on browsers that require engagement, at ~zero cost.
+- A denied grant isn't user-actionable, so a notification would be noise. Backups are the honest,
+  user-controlled durability path; persistence is a silent best-effort layer on top.
+
+**Rejected alternatives.**
+- *Do nothing (rely on backups alone):* leaves an easy, free durability win on the table; a single
+  `persist()` meaningfully reduces eviction for engaged/installed users.
+- *Prompt the user to enable persistence:* unactionable jargon for the target audience, and Chrome grants
+  silently anyway — a prompt would be confusing and often redundant.
+- *Block boot on the grant:* persistence is best-effort and async; boot must never depend on it.
+
+**Consequences.**
+- (+) Saved routines survive eviction on browsers that grant (installed PWAs / engaged users especially).
+- (−) Best-effort only — no guarantee; unsupported or low-engagement contexts still rely on backups.
+  Status is queryable via `getStatus()` but not yet shown anywhere.
+- Complements the ADR-003 durability guarantees and the unload-flush; details in
+  `features/STORAGE_MANAGEMENT.md`.
+
+---
+
 ## Template for new ADRs
 
 ```markdown

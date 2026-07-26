@@ -40,6 +40,10 @@ The **Routine Switcher** (`routineSwitcher.js`) manages the modal interface for 
 - Search functionality
 - Routine duplication with inline rename
 - Rename and delete operations
+  - **Deleting the *last* routine** (zero cycles remain) opens the neutral **"Create a Routine"** dialog
+    — *not* the brand-new-user onboarding walkthrough. An existing user who just deleted a routine is
+    treated as the returning user they are; cancelling the dialog loads the getting-started sample so the
+    app is never left empty. (`deleteMiniCycle` → `showCycleCreationModal`, v2.329)
 - Preview panel updates
 - Storage usage display
 - Undo system integration

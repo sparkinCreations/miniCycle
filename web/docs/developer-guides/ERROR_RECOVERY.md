@@ -69,7 +69,13 @@ Wired into all **three** previously-silent data-loss paths: `reload()` parse-err
 
 **Salvaged data is adopted only if it then passes the strict `validateSchema25Structure()` validator.**
 Otherwise the existing minimal-fallback runs — but the corrupted bytes are already backed up. On a
-successful repair the user sees `notify.dataRepaired` ("…some recent changes may be missing").
+successful repair the user sees `notify.dataRepaired`, **quantified** by how many routines were
+recovered — e.g. *"Recovered 2 routines from unreadable data. A backup of the original was saved in
+case anything is missing."* (v2.331 / drift-review v2 §2.3; previously the vaguer "…some recent changes
+may be missing"). The three call sites route through `appState._notifyDataRepaired(recovery)`, which
+counts `recovery.data.data.cycles`. The recovered count is honest; an "N of M" is not shown because the
+original total can't be trusted from corrupted bytes. The corrupted original stays at
+`miniCycleData_corrupted_<ts>`.
 
 > The plan's `extract-cycles` regex strategy was dropped: its partial output never survives the strict
 > Schema 2.5 re-validation, so it could never be adopted.

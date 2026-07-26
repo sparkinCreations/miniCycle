@@ -698,7 +698,7 @@ So if the user is still in Focus View with the welcome banner showing, the tour 
 
 ### With the create / sample first-run choices
 
-The welcome banner + splash + `_attachFirstSessionLifecycle` described above belong to the **"learn how cycles work"** choice (and the legacy default). The other two first-run choices skip the banner and land the user straight in Focus View via `startFocusViewForNewRoutine(choice)` (routed by `appInit._routeFirstRunChoice`). Their **first Focus View exit** is where they get oriented to Home View — and each choice gets a different prompt:
+The welcome banner + splash + `_attachFirstSessionLifecycle` described above belong to the **"learn how cycles work"** choice (and the legacy default). The other two first-run choices skip the *banner* — but as of v2.328 they still play the **standalone welcome splash** on entry (before the routine-creation dialog opens; see `FIRST_RUN_WELCOME_ANIMATION.md` → *Standalone splash*) — and land the user straight in Focus View via `startFocusViewForNewRoutine(choice)` (routed by `appInit._routeFirstRunChoice`). Their **first Focus View exit** is where they get oriented to Home View — and each choice gets a different prompt:
 
 | First-run choice | First focus-exit prompt | Owner |
 |---|---|---|
