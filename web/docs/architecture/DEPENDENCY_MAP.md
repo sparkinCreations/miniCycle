@@ -15,7 +15,7 @@ The miniCycle codebase has modules across 12 directories (see [PROJECT_STATS.md]
 ### Key Numbers
 | Metric | Before (Nov 2025) | Current | Target | Progress |
 |--------|-------------------|---------|--------|----------|
-| Total modules | 43 | **114** | — | — |
+| Total modules | 43 | **133** _(live count in [PROJECT_STATS.md](../PROJECT_STATS.md))_ | — | — |
 | Custom `window.*` globals (business logic) | ~68 | **0** | 0 | **100%** ✅ |
 | `window.*` fallbacks in modules | ~748 | **0** | 0 | **100%** ✅ |
 | Modules with DI setters (`set*Dependencies`) | 0 | **40+** | All stateful | **Exceeded** |
@@ -42,7 +42,7 @@ The miniCycle codebase has modules across 12 directories (see [PROJECT_STATS.md]
 | labels/ | 3 |
 | other/ | 3 |
 | progress/ | 1 |
-| storage/ | 1 |
+| storage/ | 2 |
 
 > **Modular overhaul complete (December 2025).** All modules use strict DI.
 >
@@ -345,6 +345,7 @@ These modules are endpoints - they use other modules but nothing uses them:
 - `deviceDetection.js` - Device detection
 - `dataValidator.js` - Validation utility
 - `backupManager.js` - Backup utility
+- `storagePersistence.js` - Durable-storage request (eviction protection)
 - `basicPluginSystem.js` - Plugin system
 - `testing-modal*.js` - Testing infrastructure
 

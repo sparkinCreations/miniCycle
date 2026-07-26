@@ -210,8 +210,9 @@ web/
 │   │   ├── consoleCapture.js        # Console logging
 │   │   └── errorHandler.js          # Error handling
 │   │
-│   ├── storage/                     # Storage (1 module)
-│   │   └── backupManager.js         # IndexedDB backups
+│   ├── storage/                     # Storage (2 modules)
+│   │   ├── backupManager.js         # IndexedDB backups
+│   │   └── storagePersistence.js    # Durable-storage request (eviction protection)
 │   │
 │   ├── progress/                    # Progress (1 module)
 │   │   └── cycleCompletion.js       # Completion tracking

@@ -41,6 +41,8 @@ Welcome to the miniCycle documentation site! Use the sidebar to navigate through
 - **[DRAG_DROP_ARCHITECTURE.md](./architecture/DRAG_DROP_ARCHITECTURE.md)** - Drag & drop system architecture
 - **[DRAG_DROP_LONG_PRESS.md](./architecture/DRAG_DROP_LONG_PRESS.md)** - Cross-platform interaction patterns
 - **[UNDO_REDO_ARCHITECTURE.md](./architecture/UNDO_REDO_ARCHITECTURE.md)** - Per-cycle undo/redo with IndexedDB persistence
+- **[STORAGE_MANAGEMENT.md](./features/STORAGE_MANAGEMENT.md)** - Storage budget, quota gates, eviction protection (persistence), and system-backup caps
+- **[ERROR_RECOVERY.md](./developer-guides/ERROR_RECOVERY.md)** - Corrupted-data salvage ladder and manual recovery
 
 ---
 

@@ -143,7 +143,7 @@ web/
 │   │   ├── defaultLabels.js             # Pure data: all user-facing strings
 │   │   └── labelResolver.js             # getLabel() with pluralization & interpolation
 │   ├── utils/                           # Notifications, device detection, utilities
-│   ├── storage/                         # Backup manager
+│   ├── storage/                         # Backup manager, storage persistence
 │   ├── progress/                        # Cycle completion tracking
 │   ├── testing/                         # Test infrastructure
 │   └── other/                           # Plugins, experimental
@@ -511,11 +511,12 @@ miniCycle-main.js (entrypoint)
 
 ---
 
-### `storage/` - Storage & Backup (1 module)
-**Purpose:** Storage management and backup functionality
-**When to add here:** Backup, export, storage quota management
+### `storage/` - Storage & Backup (2 modules)
+**Purpose:** Storage management, backup, and durability
+**When to add here:** Backup, export, storage quota management, eviction protection
 
 - `backupManager.js` - Backup creation and management
+- `storagePersistence.js` - Requests durable (non-evictable) origin storage via `navigator.storage.persist` (see [STORAGE_MANAGEMENT.md](../features/STORAGE_MANAGEMENT.md) → Storage Persistence)
 
 **Philosophy:** Storage concerns are isolated from business logic.
 

@@ -29,6 +29,7 @@
   * [AppInit System](developer-guides/APPINIT_SYSTEM.md)
   * [API Reference](developer-guides/API_REFERENCE.md)
   * [Data Schema Guide](developer-guides/DATA_SCHEMA_GUIDE.md)
+  * [Error Recovery & Salvage](developer-guides/ERROR_RECOVERY.md)
   * [Background Pattern](developer-guides/BACKGROUND_PATTERN.md)
   * [Async UI Patterns](developer-guides/ASYNC_UI_PATTERNS.md)
   * [Security Guide](developer-guides/SECURITY_GUIDE.md)
@@ -55,6 +56,7 @@
   * [Label System Architecture](architecture/LABEL_SYSTEM_ARCHITECTURE.md)
   * [Label Registry Reference](architecture/LABEL_REGISTRY_REFERENCE.md)
   * [Mode Manager Architecture](architecture/MODE_MANAGER_ARCHITECTURE.md)
+  * [Routine Switcher Architecture](architecture/ROUTINE_SWITCHER_ARCHITECTURE.md)
   * [Framework Equivalents](architecture/FRAMEWORK_EQUIVALENTS.md)
   * [Lite Version](architecture/LITE_VERSION.md)
 
