@@ -176,7 +176,7 @@ The result is an app that solves the same problems frameworks solve — but with
 
 | Metric | Count |
 |--------|-------|
-| JavaScript | 77,653 lines across 117 modules |
+| JavaScript | ~89,000 lines across 132 modules (see [PROJECT_STATS.md](web/docs/PROJECT_STATS.md) for live counts) |
 | CSS | 22,352 lines across 41 files |
 | Automated Tests | 1,757 tests in 55 test files (100% pass) |
 | DI-Manifested Modules | 51 with 8 load phases |

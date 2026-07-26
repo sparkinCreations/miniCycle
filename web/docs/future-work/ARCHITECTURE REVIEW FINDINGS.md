@@ -162,12 +162,17 @@ risk is concentrated wherever something escapes that single-source discipline.
 ## What is genuinely strong (leave alone)
 
 - **AppState core** — transactional `update()` with snapshot + rollback, debounced vs
-  immediate save, multi-tab concurrent-modification detection, beforeunload flush.
+  immediate save, multi-tab concurrent-modification detection (now notifies + warns on
+  the discard path — ADR-011), unload flush on beforeunload + pagehide + visibilitychange
+  (v2.331; pagehide/visibilitychange added for iOS reliability — drift-review v2 §1.2).
 - **Boot & persistence** — validate-before-adopt, minimal valid fallback on
   corruption, clean first-run signal, deferred self-heal of missing fields. localStorage
-  is the primary store; IndexedDB is a *narrow* test-data safety vault with pre-boot
-  recovery (justifies its complexity, though that complexity exists to compensate for
-  the test runner sharing live storage — a "someday, deliberately" root-cause item).
+  is the primary store.
+  > **Resolved (2026-07-26 / drift-review v2 §1.3):** the former test-data IndexedDB
+  > safety-vault + test-mode save-gate machinery this bullet described has been **removed**.
+  > The in-app test runner now runs on a **separate origin** (`test.minicycle.app`), so its
+  > storage is isolated by construction rather than by runtime cleanup — see `appState.js:32-36`.
+  > The old "someday, deliberately" root-cause item is closed.
 - **Recurring engine** — pure testable calculators, correct calendar math (day-31/Feb
   guarded via `isValidDate`, week-of-month handled, last-day explicit), deliberate
   **DST-safe** day-counting for biweekly parity, identity-based dedup, adaptive

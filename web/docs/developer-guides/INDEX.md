@@ -502,7 +502,7 @@
 
 ```
 📝 Code Reduction: 74.8% (15,677 → 3,674 lines)
-🧩 Modules: 117 ES6 modules (see [PROJECT_STATS.md](../PROJECT_STATS.md))
+🧩 Modules: 132 ES6 modules (see [PROJECT_STATS.md](../PROJECT_STATS.md) — the auto-updated source of truth)
 📂 Lines Extracted: 12,003 lines
 ✅ Modularization: Complete
 ```
