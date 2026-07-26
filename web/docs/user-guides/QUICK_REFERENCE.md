@@ -287,7 +287,7 @@ function assertInjected(name, fn) {
                         remindersEnabled: false,
                         recurring: false,
                         recurringSettings: {},
-                        schemaVersion: 2.5,
+                        schemaVersion: 2,     // per-task shape version (number)
                         createdAt: "2025-10-07T09:00:00Z",
                         completedAt: null
                     }
@@ -308,7 +308,7 @@ function assertInjected(name, fn) {
     appState: {
         activeCycleId: "cycle-abc123",
         currentMode: "auto-cycle",  // or "manual-cycle", "todo-mode"
-        ui: { moveArrowsVisible: true, statsView: "tasks" }
+        ui: { moveArrowsVisible: true, activeTaskId: null }
     },
 
     settings: {

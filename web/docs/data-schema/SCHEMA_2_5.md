@@ -1,7 +1,7 @@
 # miniCycle Schema 2.5 Documentation
 
 **Version**: See [PROJECT_STATS.md](../PROJECT_STATS.md)
-**Last Updated**: January 17, 2026
+**Last Updated**: July 26, 2026 — audited field-by-field against `createInitialState()`, `types.js`, and the modules that read/write each field.
 
 ## Overview
 
@@ -12,6 +12,47 @@ Schema 2.5 represents the current data structure for miniCycle, consolidating al
 ## Schema Version
 
 **Current Version**: `2.5`
+
+### Two Version Stamps (Document vs. Task)
+
+miniCycle data carries **two separate version stamps**, and they are *intentionally
+different values of different types*. They are not a mismatch — they count two
+different things:
+
+| Stamp | Where it lives | Current value | Type |
+|-------|----------------|---------------|------|
+| **Document version** | Top-level `schemaVersion` and `metadata.schemaVersion` | `"2.5"` | string |
+| **Task version** | `schemaVersion` on each individual task | `2` | number |
+
+Think of it as a **shipping container with individually-labeled boxes**:
+
+- The **document version** is the label on the whole container — it describes how
+  the entire data structure is organized (which sections exist, how cycles are
+  stored, etc.).
+- The **task version** is a label on each box inside — it describes the shape of a
+  *single task*.
+
+Why both exist: a task can travel on its own — exported, shared, copied, or
+spawned from a recurring template — *apart from* the document it came from. Its own
+version stamp lets any code understand a single task without needing the whole
+document. The two also evolve on independent timelines: the document layout can
+change without changing a task's shape, and vice versa, so each gets its own counter.
+
+**Current behavior (as implemented today):**
+
+- Every task is written with `schemaVersion: 2` (a number). New, imported, exported,
+  and recurring tasks all receive `2`.
+- No code compares a task's version to decide it is "outdated." The only task-version
+  read (`routineLoader`) simply repairs a missing/invalid stamp back to `2`. So `2`
+  is the current, correct task value — not a leftover from an older "Schema 2."
+- The document version `"2.5"` is the value gated on for migrations and validation
+  (e.g. `schemaVersion === "2.5"`). Pre-2.5 migration applies only to dev-era data;
+  public data is always 2.5.
+
+> **Note:** The two stamps currently differ in type (string `"2.5"` vs. number `2`).
+> This is accepted as-is today. Because versions are compared by exact match
+> (`=== "2.5"`) and task versions are never compared with `<`/`>`, the type difference
+> is currently harmless. This document describes current behavior only.
 
 ## Complete Schema Structure
 
@@ -49,16 +90,15 @@ Schema 2.5 represents the current data structure for miniCycle, consolidating al
     notificationPositionModified: false,   // User has customized position
     showCompletedDropdown: false,          // Enable completed tasks dropdown
     completedTasksExpanded: false,         // Completed section expanded state
-    accessibility: {
-      reducedMotion: false,                // Reduce animations
-      highContrast: false,                 // High contrast mode
-      screenReaderHints: false             // Enhanced screen reader support
-    },
+    // Accessibility is FLAT (not nested under an `accessibility` object):
+    reducedMotion: false,                  // Reduce animations
+    highContrast: false,                   // High contrast mode
+    fontSize: "16",                        // Base font size (string)
     debugMode: false,                      // Debug mode enabled
-    statsPanel: {                          // Stats panel preferences
-      currentRoutineExpanded: true,        // Current routine section expanded
-      milestonesExpanded: false            // Milestones section expanded
-    }
+    // …plus guided-tour step trackers (guidedTourStep, statsTourStep, …),
+    // customColors {}, savedColorPresets [], menuCollapsedSections {},
+    // settingsCollapsedSections {}, and more. See createInitialState() in
+    // appState.js / the Settings typedef in types.js for the exhaustive list.
   },
 
   data: {
@@ -88,8 +128,9 @@ Schema 2.5 represents the current data structure for miniCycle, consolidating al
         },
         history: [],                       // Per-routine activity log
         clearedTasks: {                    // Cleared tasks (To-Do mode clears + cycle reset auto-removes)
-          items: [],                       // Array of cleared task records
-          totalCleared: 0                  // Total tasks cleared in this routine
+          entries: [],                     // Array of cleared task records
+          totalCleared: 0,                 // Total tasks cleared in this routine
+          autoPruneEnabled: true           // Whether old entries are auto-pruned
         }
       }
     }
@@ -97,23 +138,21 @@ Schema 2.5 represents the current data structure for miniCycle, consolidating al
 
   appState: {
     activeCycleId: "cycle-abc123",         // Currently selected cycle
-    currentMode: "auto-cycle",             // "auto-cycle"|"manual-cycle"|"todo-mode"
     overdueTaskStates: {}                  // { [taskId]: boolean }
+    // NOTE: the current mode is NOT stored here — it's derived from the active
+    // cycle's autoReset / deleteCheckedTasks flags (see modeManager).
   },
 
   ui: {
     moveArrowsVisible: false,              // Global arrow visibility
-    statsView: "tasks"                     // Current stats panel view
+    activeTaskId: null                     // Task ID whose options are currently open
   },
 
   userProgress: {
     cyclesCompleted: 42,                   // Total cycles completed (global)
-    totalTasksCompleted: 156,              // Total tasks cleared in To-Do mode (global)
-    rewardMilestones: [],                  // Reached milestone IDs (e.g., "golden-glow-50")
-    streaks: {                             // Streak tracking (placeholder)
-      current: 0,
-      longest: 0
-    }
+    rewardMilestones: []                   // Reached milestone IDs (e.g., "golden-glow-50")
+    // Fresh state seeds only these two. A `streaks` object is NOT currently
+    // written by any code path — treat it as not-yet-implemented.
   },
 
   achievements: {
@@ -184,18 +223,18 @@ Tracks application-level information and migration history:
 | `dismissedEducationalTips` | object | Map of dismissed tip IDs |
 | `debugMode` | boolean | Debug mode enabled |
 
-#### Accessibility
+#### Accessibility (flat settings fields — **not** nested under an `accessibility` object)
 | Field | Type | Description |
 |-------|------|-------------|
 | `reducedMotion` | boolean | Reduce animations |
 | `highContrast` | boolean | High contrast mode |
-| `screenReaderHints` | boolean | Enhanced screen reader support |
+| `fontSize` | string | Base font size (e.g. `"16"`) |
 
-#### Stats Panel Preferences
+#### Collapsible-section State
 | Field | Type | Description |
 |-------|------|-------------|
-| `statsPanel.currentRoutineExpanded` | boolean | Current routine section expanded |
-| `statsPanel.milestonesExpanded` | boolean | Milestones section expanded |
+| `menuCollapsedSections` | object | Per-section collapse state for the main menu |
+| `settingsCollapsedSections` | object | Per-section collapse state for Settings |
 
 ### Data
 
@@ -218,8 +257,9 @@ Each cycle contains:
 | `taskOptionButtons` | object | Per-cycle button visibility settings |
 | `history` | array | Per-routine activity log entries |
 | `clearedTasks` | object | Cleared tasks tracking (To-Do mode + cycle reset auto-removes) |
-| `clearedTasks.items` | array | Array of cleared task records |
+| `clearedTasks.entries` | array | Array of cleared task records |
 | `clearedTasks.totalCleared` | number | Total tasks cleared in this routine |
+| `clearedTasks.autoPruneEnabled` | boolean | Whether old entries are automatically pruned |
 
 #### History Entry Structure
 
@@ -234,12 +274,20 @@ Each entry in the `history` array:
 
 #### Cleared Task Record Structure
 
-Each item in `clearedTasks.items`:
+Each entry in `clearedTasks.entries`:
 
 | Field | Type | Description |
 |-------|------|-------------|
+| `id` | string | Unique id for the cleared entry (e.g. `clr-...`) |
 | `taskText` | string | Text of the cleared task |
 | `clearedAt` | number | Unix timestamp when cleared |
+| `wasHighPriority` | boolean | Whether the task was high priority when cleared |
+| `hadDueDate` | boolean | Whether the task had a due date |
+| `dueDate` | string\|null | The task's due date, if any |
+| `priorityColor` | string\|null | The task's priority color, if any |
+| `remindersEnabled` | boolean | Whether task reminders were enabled |
+| `deleteWhenComplete` | boolean | Active delete-when-complete flag at clear time |
+| `deleteWhenCompleteSettings` | object\|null | Per-mode delete-when-complete settings snapshot |
 
 #### Task Option Buttons
 
@@ -270,7 +318,7 @@ Each task object in the `tasks` array:
 | `remindersEnabled` | boolean | Task-specific reminder toggle |
 | `recurring` | boolean | Whether task is recurring |
 | `recurringSettings` | object | Recurring task configuration |
-| `schemaVersion` | number | Schema version (2.5) |
+| `schemaVersion` | number | Per-task shape version. Currently the number `2`. This is a *separate* counter from the document's `schemaVersion` (`"2.5"`) — see "Two Version Stamps" below. |
 | `createdAt` | string | ISO timestamp of creation |
 | `completedAt` | string\|null | ISO timestamp of completion |
 | `deleteWhenComplete` | boolean | 🧹 Active flag for current mode (synced from deleteWhenCompleteSettings) |
@@ -312,8 +360,9 @@ Tracks current application state:
 | Field | Type | Description |
 |-------|------|-------------|
 | `activeCycleId` | string\|null | Currently selected cycle ID |
-| `currentMode` | string | "auto-cycle"\|"manual-cycle"\|"todo-mode" |
 | `overdueTaskStates` | object | Map of task ID to overdue boolean |
+
+> The current **mode** is not stored in `appState` — it's derived from the active cycle's `autoReset` / `deleteCheckedTasks` flags (see modeManager).
 
 ### UI State
 
@@ -322,7 +371,7 @@ Global UI configuration:
 | Field | Type | Description |
 |-------|------|-------------|
 | `moveArrowsVisible` | boolean | Global arrow visibility |
-| `statsView` | string | Current stats panel view |
+| `activeTaskId` | string\|null | Task ID whose options panel is currently open |
 
 ### User Progress
 
@@ -331,11 +380,9 @@ Gamification and achievement tracking:
 | Field | Type | Description |
 |-------|------|-------------|
 | `cyclesCompleted` | number | Total cycles completed (global across all routines) |
-| `totalTasksCompleted` | number | Total tasks cleared in To-Do mode (global) |
 | `rewardMilestones` | string[] | Reached milestone IDs (e.g., "golden-glow-50") |
-| `streaks` | object | Streak tracking (placeholder) |
-| `streaks.current` | number | Current streak count |
-| `streaks.longest` | number | Longest streak ever |
+
+> `streaks` and a `userProgress.totalTasksCompleted` are **not** written by the current code — fresh state seeds only `cyclesCompleted` + `rewardMilestones`. Don't rely on them. (Lifetime task/cycle totals live in `metadata.totalTasksCompleted` / `metadata.totalCyclesCreated`.)
 
 ### Achievements
 

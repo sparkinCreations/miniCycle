@@ -25,7 +25,7 @@
  * @property {boolean} [remindersEnabled=false] - Whether reminders are enabled
  * @property {boolean} [recurring=false] - Whether this is a recurring task
  * @property {RecurringSettings|Object} [recurringSettings={}] - Recurrence configuration
- * @property {number} [schemaVersion=2.5] - Schema version for this task
+ * @property {number} [schemaVersion=2] - Per-task shape version (the code writes the number `2`; routineLoader repairs missing/invalid stamps to `2`). Distinct from the document's `schemaVersion` string `"2.5"`.
  * @property {string} [createdAt] - ISO timestamp of creation
  * @property {string|null} [completedAt=null] - ISO timestamp of completion or null
  * @property {boolean} [deleteWhenComplete] - Whether to delete task on completion

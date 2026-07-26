@@ -442,7 +442,7 @@ function generateRecurringTask(template) {
         remindersEnabled: template.remindersEnabled || false,
         recurring: true,
         recurringSettings: structuredClone(template.recurringSettings),
-        schemaVersion: 2.5,
+        schemaVersion: 2,     // per-task shape version (number)
         createdAt: new Date().toISOString(),
         completedAt: null
     };

@@ -202,7 +202,7 @@ All notification messages, modal text, ARIA labels, and button text should use `
 ### Data Schema (2.5)
 ```javascript
 {
-  schemaVersion: 2.5,
+  schemaVersion: "2.5",          // string (the per-task schemaVersion is the number 2)
   metadata: { createdAt, lastModified, schemaVersion },
   settings: { theme, darkMode, onboardingCompleted },
   data: {
@@ -214,9 +214,9 @@ All notification messages, modal text, ARIA labels, and button text should use `
         autoReset: boolean,
         deleteCheckedTasks: boolean,
         taskOptionButtons: { /* per-cycle button visibility */ },
-        recurringTemplates: [],
-        history: [],           // Per-routine activity log
-        clearedTasks: { items: [], totalCleared: 0 }  // To-Do mode clears + cycle reset auto-removes
+        recurringTemplates: {},   // map keyed by taskId (NOT an array)
+        history: [],              // Per-routine activity log
+        clearedTasks: { entries: [], totalCleared: 0, autoPruneEnabled: true }  // To-Do clears + cycle-reset auto-removes
       }
     }
   },

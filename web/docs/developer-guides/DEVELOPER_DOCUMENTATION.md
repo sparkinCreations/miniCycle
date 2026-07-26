@@ -130,7 +130,7 @@ await appInit.waitForApp();
 
 ```javascript
 {
-  schemaVersion: 2.5,
+  schemaVersion: "2.5",   // document version is a STRING (per-task version is the number 2)
   cycles: {
     [cycleId]: {
       name: string,

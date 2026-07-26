@@ -54,7 +54,7 @@
                         remindersEnabled: false,
                         recurring: false,
                         recurringSettings: {},
-                        schemaVersion: 2.5,
+                        schemaVersion: 2,     // per-task shape version (number)
                         createdAt: "2025-10-07T09:00:00.000Z",
                         completedAt: null,       // ISO string or null
                         deleteWhenComplete: false
@@ -103,13 +103,13 @@
 
     appState: {
         activeCycleId: "cycle-abc123",
-        currentMode: "auto-cycle",           // "auto-cycle"|"manual-cycle"|"todo-mode"
         overdueTaskStates: {}                // {[taskId]: boolean}
+        // Mode is NOT stored here — derived from the cycle's autoReset/deleteCheckedTasks.
     },
 
     ui: {
         moveArrowsVisible: false,
-        statsView: "tasks"
+        activeTaskId: null                   // Task ID whose options panel is open
     },
 
     settings: {
@@ -131,12 +131,12 @@
         notificationPositionModified: false,
         showCompletedDropdown: false,
         completedTasksExpanded: false,
-        accessibility: {
-            reducedMotion: false,
-            highContrast: false,
-            screenReaderHints: false
-        },
+        reducedMotion: false,                // FLAT — not nested under `accessibility`
+        highContrast: false,
+        fontSize: "16",
         debugMode: false
+        // …plus tour-step trackers, customColors, savedColorPresets,
+        // menuCollapsedSections, settingsCollapsedSections. Full list: SCHEMA_2_5.md / types.js.
     },
 
     customReminders: {
@@ -208,7 +208,7 @@ function addTask(taskText) {
         remindersEnabled: false,
         recurring: false,
         recurringSettings: {},
-        schemaVersion: 2.5,
+        schemaVersion: 2,     // per-task shape version (number)
         createdAt: new Date().toISOString(),
         completedAt: null,
         deleteWhenComplete: false

@@ -201,7 +201,7 @@ const newTask = {
     // Add your new property:
     myCustomProperty: "custom value",
 
-    schemaVersion: 2.5,
+    schemaVersion: 2,     // per-task shape version (number)
     createdAt: new Date().toISOString(),
     completedAt: null
 };
