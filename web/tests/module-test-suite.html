@@ -420,6 +420,7 @@
             <option value="errorHandler">🛡️ Error Handler Tests</option>
             <option value="testingModal">🧪 Testing Modal</option>
             <option value="backupManager">💾 Backup Manager</option>
+            <option value="storagePersistence">💾 Storage Persistence</option>
             <option value="cycleCompletion">🎯 Cycle Completion</option>
             <option value="dataValidator">🛡️ Data Validator</option>
             <option value="appInit">🚀 AppInit</option>
@@ -581,6 +582,7 @@
         const { runErrorHandlerTests } = await import(`./errorHandler.tests.js?v=${cacheBuster}`);
         const { runTestingModalTests } = await import(`./testingModal.tests.js?v=${cacheBuster}`);
         const { runBackupManagerTests } = await import(`./backupManager.tests.js?v=${cacheBuster}`);
+        const { runStoragePersistenceTests } = await import(`./storagePersistence.tests.js?v=${cacheBuster}`);
         const { runCycleCompletionTests } = await import(`./cycleCompletion.tests.js?v=${cacheBuster}`);
         const { runDataValidatorTests } = await import(`./dataValidator.tests.js?v=${cacheBuster}`);
         const { runAppInitTests } = await import(`./appInit.tests.js?v=${cacheBuster}`);
@@ -1672,6 +1674,10 @@
                     await import(`../modules/storage/backupManager.js?v=${cacheBuster}`);
                     currentModule = 'backupManager';
                     resultsDiv.innerHTML = '<p>✅ BackupManager loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'storagePersistence') {
+                    await import(`../modules/storage/storagePersistence.js?v=${cacheBuster}`);
+                    currentModule = 'storagePersistence';
+                    resultsDiv.innerHTML = '<p>✅ StoragePersistence loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'cycleCompletion') {
                     await import(`../modules/progress/cycleCompletion.js?v=${cacheBuster}`);
                     currentModule = 'cycleCompletion';
@@ -2042,6 +2048,8 @@
                 await runTestingModalTests(resultsDiv);
             } else if (currentModule === 'backupManager') {
                 await runBackupManagerTests(resultsDiv);
+            } else if (currentModule === 'storagePersistence') {
+                await runStoragePersistenceTests(resultsDiv);
             } else if (currentModule === 'cycleCompletion') {
                 await runCycleCompletionTests(resultsDiv);
             } else if (currentModule === 'dataValidator') {
@@ -2406,6 +2414,7 @@
                 { name: 'Error Handler', key: 'errorHandler', runFn: runErrorHandlerTests, importPath: '../modules/utils/errorHandler.js' },
                 { name: 'Testing Modal', key: 'testingModal', runFn: runTestingModalTests, importPath: '../modules/testing/testing-modal.js', secondaryImport: '../modules/storage/backupManager.js' },
                 { name: 'Backup Manager', key: 'backupManager', runFn: runBackupManagerTests, importPath: '../modules/storage/backupManager.js' },
+                { name: 'Storage Persistence', key: 'storagePersistence', runFn: runStoragePersistenceTests, importPath: '../modules/storage/storagePersistence.js' },
                 { name: 'Cycle Completion', key: 'cycleCompletion', runFn: runCycleCompletionTests, importPath: '../modules/progress/cycleCompletion.js' },
                 { name: 'Data Validator', key: 'dataValidator', runFn: runDataValidatorTests, importPath: '../modules/utils/dataValidator.js' },
                 { name: 'AppInit', key: 'appInit', runFn: runAppInitTests, importPath: '../modules/core/appInit.js' },
