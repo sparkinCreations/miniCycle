@@ -23,6 +23,8 @@
     "lint:fix": "eslint modules/ --fix",
     "validate:di": "node scripts/validate-di-deps.js",
     "validate:csp": "python3 scripts/validate-csp.py",
+    "check:dupes": "bash scripts/check-duplicates.sh",
+    "clean:dupes": "bash scripts/check-duplicates.sh --fix",
     "validate:html": "python3 scripts/validate-html.py",
     "validate:html:dist": "python3 scripts/validate-html.py --dist",
     "samples": "./scripts/generate-sample-manifest.sh",

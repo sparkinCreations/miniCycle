@@ -2228,6 +2228,11 @@ if [ "$CREATE_TAG" = true ]; then
         # and this script's file updates are still uncommitted at this point.
         # backup/ is gitignored, so `git add -A` won't sweep the backup folder.
         if [ "$DRY_RUN" = false ] && [ -n "$(git status --porcelain 2>/dev/null)" ]; then
+            # Sweep iCloud "conflict copy" duplicates BEFORE staging so they can't
+            # ride into the release commit via `git add -A` (this repo lives under
+            # iCloud Drive). Removes only untracked dupes; tracked matches are just
+            # reported. See scripts/check-duplicates.sh.
+            bash "$(dirname "$0")/check-duplicates.sh" --prune-untracked || true
             git add -A
             if git commit -q -m "chore(release): update version to $NEW_VERSION"; then
                 echo "✅ Committed release changes (tag will point here)"
