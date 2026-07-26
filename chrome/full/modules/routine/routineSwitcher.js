@@ -61,7 +61,6 @@ const di = createDIModule('RoutineSwitcher', {
     updateUndoRedoButtons: optional(() => {}),
     initialSetup: optional(() => {}),
     showCycleCreationModal: optional(() => {}),
-    getOnboardingManager: optional(() => null),
     getElementById: optional((id) => document.getElementById(id)),
     querySelector: optional((sel) => document.querySelector(sel)),
     querySelectorAll: optional((sel) => document.querySelectorAll(sel)),
@@ -435,7 +434,8 @@ export class RoutineSwitcher {
                 const remainingCycles = Object.keys(finalState.data.cycles);
 
                 if (remainingCycles.length === 0) {
-                    // No cycles left - show onboarding flow
+                    // No cycles left — return the EXISTING user to the neutral
+                    // create-routine flow (not the new-user onboarding).
                     setTimeout(() => {
                         this.hideSwitchMiniCycleModal();
 
@@ -449,15 +449,19 @@ export class RoutineSwitcher {
                         }
                         if (toggleAutoReset) toggleAutoReset.checked = false;
 
-                        // Show onboarding flow (placeholder + modal)
+                        // Deleting your last routine is an explicit action by an
+                        // EXISTING user — not a reason to replay the brand-new-user
+                        // onboarding ("Welcome to miniCycle" + tour walkthrough), which
+                        // is what showOnboarding() renders. Show the neutral "Create a
+                        // Routine" dialog instead: it offers Load Sample, and cancelling
+                        // it loads the getting-started sample, so the app is never left
+                        // empty. (Reported on r/websitefeedback — deleting the last
+                        // routine surfaced the new-user welcome.)
                         setTimeout(() => {
-                            const onboardingManager = this.deps.getOnboardingManager?.();
-                            if (onboardingManager?.showOnboarding) {
-                                const state = this.deps.AppState?.get();
-                                onboardingManager.showOnboarding(state?.data?.cycles || {}, null, state);
-                            } else {
-                                // Fallback to creation modal
+                            if (typeof this.deps.showCycleCreationModal === 'function') {
                                 this.deps.showCycleCreationModal();
+                            } else {
+                                console.warn('⚠️ showCycleCreationModal unavailable after deleting last routine');
                             }
                         }, 500);
                     }, 300);

@@ -238,36 +238,36 @@ body.app-loading #undo-redo-buttons {
    (bigger + heavier). FIXED height + overflow hidden: swaps never shift the
    centered buttons, and the clipped window is what makes the ticker reveal work. */
 .first-run-usecase {
+  /* Grid stack: both crossfade layers live in the SAME cell (grid-area 1/1),
+     so they overlap AND stay in normal flow — the element keeps its size
+     (unlike absolute children, which collapse it to 0). */
+  display: grid;
+  place-items: center;
   margin: 0 0 16px;
   height: 1.6em;
   overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   color: white;
   font-size: var(--font-size-base, 15px);
   font-weight: 600;
   font-family: 'Poppins', 'Poppins Fallback', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   text-shadow: var(--text-shadow-lg);
 }
-/* Ticker reveal: outgoing line slides UP out of the clipped window; the new
-   line is placed below (is-entering, no transition) and rises into place. */
+/* Crossfade layers: stacked in one grid cell. The active one is at full
+   opacity, the idle one at 0. On each rotation the roles swap, so the incoming
+   line fades in WHILE the outgoing fades out — a line is always visible (no
+   blank frame). nowrap keeps each to a single line inside the clipped window. */
 .first-run-usecase-text {
-  display: inline-block;
-  transform: translateY(0);
+  grid-area: 1 / 1;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.55s ease;
+}
+.first-run-usecase-text.is-active {
   opacity: 0.97;
-  transition: transform 0.32s cubic-bezier(0.3, 0.7, 0.3, 1), opacity 0.32s ease;
-}
-.first-run-usecase-text.is-leaving {
-  transform: translateY(-130%);
-  opacity: 0;
-}
-.first-run-usecase-text.is-entering {
-  transform: translateY(130%);
-  opacity: 0;
-  transition: none;
 }
 @media (prefers-reduced-motion: reduce) {
+  /* Instant swap — still gap-free (incoming appears the same frame the
+     outgoing disappears), just no fade. */
   .first-run-usecase-text { transition: none; }
 }
 .first-run-buttons {

@@ -1442,9 +1442,6 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         // On-demand loader for deferred modules (from the boot-captured context)
         ensureModuleLoaded: (...args) => deps.core?.ensureModuleLoaded?.(...args),
 
-        // Onboarding manager (from deps.ui) - returns instance when called as function
-        getOnboardingManager: () => deps.ui?.onboardingManager,
-
         // UIOrchestrator (from deps.ui) - lazy resolution for UI update coalescing
         // Note: Use getUIOrchestrator() to get the instance, not the class
         // Methods must be bound to preserve 'this' context
