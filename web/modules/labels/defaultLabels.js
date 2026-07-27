@@ -947,11 +947,19 @@ export const DEFAULT_LABELS = deepFreeze({
 
     empty: {
         noTasks:              'No tasks yet',
+        // Four hints, one per (view × input-bar) state. The *Visible variants run
+        // when the input bar is already on screen — pointing at the + button or
+        // the ⋯ menu there would tell the user to HIDE the very bar they need.
         noTasksHint:          'Press the + button to show the task bar to add a task or create a new routine',
+        noTasksHintVisible:   'Type your first task in the bar above and press Add',
         noTasksHintFocus:     'Open the {menuIcon} menu at the top and tap {showHide} to start adding tasks',
+        noTasksHintFocusVisible: 'Type your first task in the bar above and press Add',
         // Shown once, right after a brand-new user picks "Create My First Routine"
         // and names an empty routine — friendlier than the generic hint above.
+        // That flow reveals the input bar (appInit sets showTaskInput), so the
+        // Visible variant is the one a first-run user actually sees.
         firstStepHint:        'Add the first step of your routine — press the + button to begin',
+        firstStepHintVisible: 'Add the first step of your routine — type it in the bar above to begin',
         createFirst:          'Create your first routine',
         orTrySample:          'or try a sample',
         noRecurringTasks:     'Add a task from this routine to make it recurring',
@@ -2542,7 +2550,11 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     // Empty states
     'empty.noTasks',
     'empty.noTasksHint',
+    'empty.noTasksHintVisible',
     'empty.noTasksHintFocus',
+    'empty.noTasksHintFocusVisible',
+    'empty.firstStepHint',
+    'empty.firstStepHintVisible',
     'empty.createFirst',
     'empty.noRecurringTasks',
     'empty.noRoutineTasks',

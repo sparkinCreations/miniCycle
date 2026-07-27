@@ -263,8 +263,15 @@ export class RoutineManager {
                     try {
                         if (sessionStorage.getItem('miniCycle_firstRunCreate') === '1') {
                             sessionStorage.removeItem('miniCycle_firstRunCreate');
+                            // Write BOTH home variants: this flow reveals the input
+                            // bar (appInit sets showTaskInput), so the bar-visible
+                            // copy is the one actually on screen — but set the
+                            // hidden-bar copy too in case the user toggles the bar
+                            // off before adding anything.
                             const firstHint = this.deps.querySelector(DOM_SELECTORS.EMPTY_STATE_HINT);
                             if (firstHint) firstHint.innerHTML = getLabel('empty.firstStepHint').replace('+', '<strong>+</strong>');
+                            const firstHintVisible = this.deps.querySelector(DOM_SELECTORS.EMPTY_STATE_HINT_VISIBLE);
+                            if (firstHintVisible) firstHintVisible.textContent = getLabel('empty.firstStepHintVisible');
                         }
                     } catch (e) { /* private mode — skip the nicety */ }
 
@@ -471,6 +478,12 @@ export class RoutineManager {
                 const emptyHint = this.deps.querySelector(DOM_SELECTORS.EMPTY_STATE_HINT);
                 if (emptyHint) {
                     emptyHint.innerHTML = getLabel('empty.noTasksHint').replace('+', '<strong>+</strong>');
+                }
+                // Reset the bar-visible variant too — a new routine must not
+                // inherit the previous one's first-step copy.
+                const emptyHintVisible = this.deps.querySelector(DOM_SELECTORS.EMPTY_STATE_HINT_VISIBLE);
+                if (emptyHintVisible) {
+                    emptyHintVisible.textContent = getLabel('empty.noTasksHintVisible');
                 }
 
                 if (finalResult && typeof this.deps.onCycleCreated === 'function') {

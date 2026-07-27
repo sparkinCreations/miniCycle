@@ -2213,7 +2213,12 @@ window.installApp = () => {
         <div id="empty-state" class="empty-state">
             <div class="empty-state-icon">📋</div>
             <div class="empty-state-text">No tasks yet</div>
+            <!-- Four hint variants: (home | focus) × (input bar hidden | visible).
+                 CSS in focus-mode.css shows exactly one via body.focus-mode ×
+                 body.input-bar-visible. The two focus variants are injected at
+                 runtime by focusMode.js. -->
             <div class="empty-state-hint">Press the <strong>+</strong> button to show the task bar to add a task or create a new routine</div>
+            <div class="empty-state-hint-visible">Type your first task in the bar above and press Add</div>
         </div>
 
         <!-- Recurring Info Link - shown when recurring templates exist -->

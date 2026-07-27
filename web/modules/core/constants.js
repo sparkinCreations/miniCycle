@@ -641,8 +641,19 @@ export const DOM_CLASSES = Object.freeze({
     DROPDOWN_OPEN: 'dropdown-open',
     REFRESHING: 'refreshing',
 
-    // ---- Empty State (focus-mode variant of the task list empty hint) ----
+    // ---- Empty State ----
+    // The empty-state hint varies across TWO axes: which view is active
+    // (home vs focus) and whether the task input bar is currently showing.
+    // That's 4 messages; CSS picks one using `body.focus-mode` ×
+    // `body.input-bar-visible`. Each hint names the affordance that actually
+    // works in its state, so we never tell the user to reveal a bar that is
+    // already open (which would in fact hide it).
     EMPTY_STATE_HINT_FOCUS: 'empty-state-hint-focus',
+    EMPTY_STATE_HINT_VISIBLE: 'empty-state-hint-visible',
+    EMPTY_STATE_HINT_FOCUS_VISIBLE: 'empty-state-hint-focus-visible',
+    // Set on <body> whenever the task input bar is showing (see modeManager's
+    // _updateTaskInputVisibility — the single choke point for that state).
+    INPUT_BAR_VISIBLE: 'input-bar-visible',
 
     // ---- Main Menu section headers (icon + label grouping) ----
     MENU_SECTION_LABEL: 'menu-section-label',
@@ -1274,7 +1285,11 @@ export const DOM_SELECTORS = Object.freeze({
     FIXED_HEADER_CONTAINER: '.fixed-header-container',
     COMPLETE_ALL_BTN: '.complete-all-btn',
     EMPTY_STATE_TEXT: '.empty-state-text',
+    // Home-view hint shown while the input bar is HIDDEN. The variant classes
+    // below are separate tokens (never stacked on the same element), so this
+    // selector keeps matching exactly one node — existing callers are unaffected.
     EMPTY_STATE_HINT: '.empty-state-hint',
+    EMPTY_STATE_HINT_VISIBLE: '.empty-state-hint-visible',
     TASK_NOT_FOUND: '.task-not-found',
     TASK_BY_ID: '.task[data-task-id]',
     IS_FIRST_TASK: '.is-first-task',

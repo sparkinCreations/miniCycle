@@ -260,6 +260,9 @@ export class FocusMode {
         // Don't double-inject if init() somehow runs twice
         if (emptyState.querySelector(`.${DOM_CLASSES.EMPTY_STATE_HINT_FOCUS}`)) return;
 
+        // Two focus variants: one for when the input bar is hidden (points at
+        // the ⋯ menu) and one for when it is already showing (points at the bar).
+        // CSS picks between them on body.input-bar-visible.
         this._emptyStateHint = document.createElement('div');
         this._emptyStateHint.className = DOM_CLASSES.EMPTY_STATE_HINT_FOCUS;
         // Cross-reference focusMode.toggleInputBar so the hint stays in sync
@@ -272,6 +275,11 @@ export class FocusMode {
             }
         });
         emptyState.appendChild(this._emptyStateHint);
+
+        this._emptyStateHintVisible = document.createElement('div');
+        this._emptyStateHintVisible.className = DOM_CLASSES.EMPTY_STATE_HINT_FOCUS_VISIBLE;
+        this._emptyStateHintVisible.textContent = getLabel('empty.noTasksHintFocusVisible');
+        emptyState.appendChild(this._emptyStateHintVisible);
     }
 
     /**

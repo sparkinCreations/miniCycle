@@ -111,14 +111,24 @@
     color: rgba(255, 255, 255, 0.9);
 }
 
-.empty-state-hint {
+/* Home-view hints. `.empty-state-hint` covers the input-bar-hidden state and
+   `.empty-state-hint-visible` the bar-visible one; focus-mode.css owns the two
+   focus variants and decides which of the four is displayed. */
+.empty-state-hint,
+.empty-state-hint-visible {
     font-size: var(--font-size-sm);
     color: rgba(255, 255, 255, 0.7);
     max-width: 250px;
     line-height: 1.4;
 }
 
-.empty-state-hint strong {
+/* Hidden until the input bar is showing (focus-mode.css flips this). */
+.empty-state-hint-visible {
+    display: none;
+}
+
+.empty-state-hint strong,
+.empty-state-hint-visible strong {
     background: rgba(255, 255, 255, 0.2);
     padding: 2px var(--space-2);
     border-radius: var(--radius-sm);
