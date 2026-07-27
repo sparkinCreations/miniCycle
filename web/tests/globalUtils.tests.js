@@ -504,31 +504,41 @@ export function runGlobalUtilsTests(resultsDiv) {
         }
     });
 
-    // ===== sanitizeInput — text normalization, NOT XSS escaping =====
-    resultsDiv.innerHTML += '<h4 class="test-section">🧼 sanitizeInput (normalize, not escape)</h4>';
+    // ===== normalizeText — text normalization, NOT XSS escaping =====
+    resultsDiv.innerHTML += '<h4 class="test-section">🧼 normalizeText (normalize, not escape)</h4>';
 
     // Tests the REAL implementation (no mock). Guards the documented contract:
-    // sanitizeInput trims + length-clamps only. It does NOT HTML-escape — the app
+    // normalizeText trims + length-clamps only. It does NOT HTML-escape — the app
     // escapes at the render sink instead (textContent / escapeHtml). If someone
     // "fixes" this to escape at input time, this test fails loudly and points
     // them at the sink (input-time escaping double-encodes shared .mcyc data).
-    test('sanitizeInput passes HTML through unchanged (does NOT escape)', () => {
+    test('normalizeText passes HTML through unchanged (does NOT escape)', () => {
         const payload = '<img src=x onerror="alert(1)">';
-        const out = GlobalUtils.sanitizeInput(payload, 500);
+        const out = GlobalUtils.normalizeText(payload, 500);
         if (out !== payload) {
-            throw new Error(`sanitizeInput must not alter HTML — expected unchanged, got: ${out}`);
+            throw new Error(`normalizeText must not alter HTML — expected unchanged, got: ${out}`);
         }
     });
 
-    test('sanitizeInput trims, clamps length, and rejects non-strings', () => {
-        if (GlobalUtils.sanitizeInput('  hello  ') !== 'hello') {
+    test('normalizeText trims, clamps length, and rejects non-strings', () => {
+        if (GlobalUtils.normalizeText('  hello  ') !== 'hello') {
             throw new Error('should trim surrounding whitespace');
         }
-        if (GlobalUtils.sanitizeInput('abcdef', 3) !== 'abc') {
+        if (GlobalUtils.normalizeText('abcdef', 3) !== 'abc') {
             throw new Error('should clamp to maxLength');
         }
-        if (GlobalUtils.sanitizeInput(42) !== '') {
+        if (GlobalUtils.normalizeText(42) !== '') {
             throw new Error('non-strings should return empty string');
+        }
+    });
+
+    test('sanitizeInput is a deprecated alias of normalizeText', () => {
+        const payload = '  <b>Trim & clamp me</b>  ';
+        // Alias must forward correctly even when called unbound (it's injected as
+        // the sanitizeInput CORE_DEP, so `this` is not GlobalUtils at call time).
+        const alias = GlobalUtils.sanitizeInput;
+        if (alias(payload, 10) !== GlobalUtils.normalizeText(payload, 10)) {
+            throw new Error('sanitizeInput alias must match normalizeText output (even unbound)');
         }
     });
 

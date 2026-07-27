@@ -364,16 +364,30 @@ export class GlobalUtils {
      * double-encode and corrupt real user data on every round-trip.
      * Escape at the sink, never here.
      *
-     * (Name retained to avoid a breaking change; a rename to normalizeText()
-     * with a deprecated alias is tracked as a follow-up.)
+     * @param {string} input - Free text to normalize.
+     * @param {number} maxLength - Maximum allowed length (default: 100 characters).
+     * @returns {string} Trimmed, length-clamped text (unescaped).
+     */
+    static normalizeText(input, maxLength = 100) {
+        if (typeof input !== "string") return "";
+        return input.trim().substring(0, maxLength);
+    }
+
+    /**
+     * @deprecated Misleading name — this has never escaped HTML. Prefer
+     * normalizeText() for clarity, and escape at the render sink (textContent /
+     * escapeHtml()) for XSS safety. Retained as a thin alias so the CORE_DEP key
+     * `sanitizeInput` and its consumers keep working until they migrate; behavior
+     * is identical to normalizeText().
      *
      * @param {string} input - Free text to normalize.
      * @param {number} maxLength - Maximum allowed length (default: 100 characters).
      * @returns {string} Trimmed, length-clamped text (unescaped).
      */
     static sanitizeInput(input, maxLength = 100) {
-        if (typeof input !== "string") return "";
-        return input.trim().substring(0, maxLength);
+        // Explicit class reference (not `this`) — this method is injected as a
+        // bare function via the `sanitizeInput` CORE_DEP, so `this` is not the class.
+        return GlobalUtils.normalizeText(input, maxLength);
     }
 
     /**
@@ -854,9 +868,9 @@ UTILITY FUNCTIONS:
     const uniqueId = generateId(); // id-1234567890-abc123def
     const prefixedId = generateId('task'); // task-1234567890-abc123def
 
-15. Sanitize User Input:
-    const cleanText = sanitizeInput(userInput); // max 100 chars
-    const cleanText = sanitizeInput(userInput, 200); // custom max length
+15. Normalize Free-Text Input (trim + length-clamp; NOT XSS escaping):
+    const cleanText = normalizeText(userInput); // max 100 chars
+    const cleanText = normalizeText(userInput, 200); // custom max length
 
 MODULE INFORMATION:
 

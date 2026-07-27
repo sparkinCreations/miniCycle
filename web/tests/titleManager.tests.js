@@ -68,7 +68,12 @@ export async function runTitleManagerTests(resultsDiv) {
         // It also calls setupMiniCycleTitleListener() — ensure a title element exists.
         makeTitleEl(overrides.__titleText ?? 'Seed');
         const deps = {
-            GlobalUtils: { sanitizeInput: (s) => String(s).replace(/<[^>]*>/g, '').trim() },
+            // Faithful mock — mirrors the real GlobalUtils.normalizeText exactly
+            // (trim + length-clamp to maxLength, default 100; NO HTML stripping).
+            // A mock that strips HTML or skips the clamp is what hid the no-op
+            // sanitizer and masked titleManager's real behavior (SECURITY audit
+            // Finding 5: a mock may never differ in capability from the real fn).
+            GlobalUtils: { normalizeText: (s, m = 100) => String(s).trim().substring(0, m) },
             updateMainMenuHeader: () => {},
             updateUndoRedoButtons: () => {},
             captureStateSnapshot: () => {},
@@ -214,21 +219,29 @@ export async function runTitleManagerTests(resultsDiv) {
         } finally { removeTitleEl(); }
     });
 
-    await test('over-limit title is truncated to LIMITS.CYCLE_NAME_CHARACTER', async () => {
+    await test('over-limit title is clamped to LIMITS.CYCLE_NAME_CHARACTER (stored key)', async () => {
         removeTitleEl();
         const limit = LIMITS.CYCLE_NAME_CHARACTER || 100;
         const env = makeEnv({ Short: { title: 'Short', tasks: [] } }, 'Short');
         const notify = makeNotifSpy();
         await wire({ AppState: env.AppState, loadMiniCycleData: env.loadMiniCycleData, showNotification: notify });
         const longName = 'X'.repeat(limit + 25);
-        const el = makeTitleEl(longName);
+        makeTitleEl(longName);
         try {
             await mod.handleMiniCycleTitleBlur();
-            if (el.textContent.length !== limit) {
-                throw new Error(`title not truncated to ${limit}, got ${el.textContent.length}`);
-            }
+            // normalizeText clamps to `limit` (its default maxLength === CYCLE_NAME_CHARACTER),
+            // so the routine is stored under the truncated key — the real guarantee.
+            // (The prior assertion on el.textContent relied on a non-clamping mock that
+            // let titleManager's redundant line-137 truncation path fire; in production
+            // normalizeText clamps first, so that path never runs.)
             const truncatedKey = 'X'.repeat(limit);
-            if (!env.state.data.cycles[truncatedKey]) throw new Error('truncated key not used for cycle');
+            if (!env.state.data.cycles[truncatedKey]) {
+                throw new Error('over-limit title not clamped to the limit for storage; key lengths: '
+                    + Object.keys(env.state.data.cycles).map(k => k.length).join(','));
+            }
+            if (env.state.data.cycles[longName]) {
+                throw new Error('the un-truncated title must not be used as a stored key');
+            }
         } finally { removeTitleEl(); }
     });
 
@@ -253,15 +266,23 @@ export async function runTitleManagerTests(resultsDiv) {
         } finally { removeTitleEl(); }
     });
 
-    await test('sanitizes input (strips HTML) before using as title', async () => {
+    await test('title is normalized (trimmed), NOT HTML-stripped; renders safely via textContent', async () => {
         removeTitleEl();
         const env = makeEnv({ Plain: { title: 'Plain', tasks: [] } }, 'Plain');
         await wire({ AppState: env.AppState, loadMiniCycleData: env.loadMiniCycleData, showNotification: makeNotifSpy() });
-        const el = makeTitleEl('<b>Bold</b>Name');
+        const el = makeTitleEl('  <b>Bold</b>Name  ');
         try {
             await mod.handleMiniCycleTitleBlur();
-            if (!env.state.data.cycles['BoldName']) {
-                throw new Error('HTML not stripped; keys: ' + Object.keys(env.state.data.cycles).join(','));
+            // normalizeText trims but does NOT strip HTML — the literal text is kept.
+            // (The previous version of this test asserted HTML stripping, a property
+            // titleManager never actually had; the sanitizer was a no-op.)
+            if (!env.state.data.cycles['<b>Bold</b>Name']) {
+                throw new Error('title should be trimmed and kept literal; keys: ' + Object.keys(env.state.data.cycles).join(','));
+            }
+            // XSS safety lives at the render sink: the title is applied via
+            // textContent, so "<b>" is literal text, never a parsed element.
+            if (el.querySelector('b')) {
+                throw new Error('XSS: <b> was parsed into a real element in the title DOM');
             }
         } finally { removeTitleEl(); }
     });

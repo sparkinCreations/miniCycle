@@ -153,9 +153,9 @@ When importing `.mcyc` cycle files:
 |-------|----------------|
 | File size | 10MB limit via `MAX_FILE_SIZE_BYTES` |
 | Task count | 250 max via `MAX_TASK_COUNT` |
-| Task text | Normalized via `fallbackSanitize()` (trim, 100-char clamp, control-char strip); XSS-safe because task text renders via `textContent`, not `innerHTML` |
-| Cycle name | Normalized via `fallbackSanitize()` (trim, 100-char clamp, control-char strip); rendered via `textContent` |
-| Recurring templates | Imported and merged from file data; task text is normalized via `fallbackSanitize()` |
+| Task text | Normalized via `normalizeImportedText()` (trim, 100-char clamp, control-char strip); XSS-safe because task text renders via `textContent`, not `innerHTML` |
+| Cycle name | Normalized via `normalizeImportedText()` (trim, 100-char clamp, control-char strip); rendered via `textContent` |
+| Recurring templates | Imported and merged from file data; task text is normalized via `normalizeImportedText()` |
 | JSON parsing | Standard `JSON.parse()` with try-catch |
 
 **Backup Restore (full app data) - `modules/testing/testing-modal.js`:**
@@ -167,7 +167,7 @@ When restoring full backups (via Developer Tools):
 
 **Security checks on import:**
 - ✅ File size limited (10MB for cycles)
-- ✅ All user content escaped at the render sink — task text via `textContent`, notifications via `escapeHtml()` (import-time `fallbackSanitize()` only trims / length-clamps / strips control chars; it does **not** HTML-escape)
+- ✅ All user content escaped at the render sink — task text via `textContent`, notifications via `escapeHtml()` (import-time `normalizeImportedText()` only trims / length-clamps / strips control chars; it does **not** HTML-escape)
 - ✅ Task/name length limits enforced
 - ✅ Invalid files rejected with error message
 
@@ -227,12 +227,12 @@ function escapeHtml(text) {
 
 **Input Length Limits:**
 ```javascript
-sanitizeInput(input, maxLength = 100)
+GlobalUtils.normalizeText(input, maxLength = 100)  // sanitizeInput() is a deprecated alias
 ```
 - Default 100-character limit for most inputs
 - Configurable per use case
-- Prevents UI/performance issues (not a security feature)
-- Used in 11+ locations across codebase
+- Trims + length-clamps only — **not** an XSS defense (escaping happens at the render sink)
+- Injected as the `sanitizeInput` CORE_DEP (alias) in 12+ modules; new code should use `normalizeText`
 
 ### Content Security Policy
 
@@ -297,7 +297,7 @@ When contributing to miniCycle, follow these security practices:
 - Validate imported data before using (check types, lengths, structure)
 
 **External Data:**
-- All imported .mcyc file content is normalized via `fallbackSanitize()` / `DataValidator` (trim, length-clamp, control-char strip) and stored **raw** — XSS safety comes from escaping at the render sink (`textContent` / `escapeHtml()`), never from import-time HTML-escaping (which would double-encode shared routines on re-import)
+- All imported .mcyc file content is normalized via `normalizeImportedText()` / `DataValidator` (trim, length-clamp, control-char strip) and stored **raw** — XSS safety comes from escaping at the render sink (`textContent` / `escapeHtml()`), never from import-time HTML-escaping (which would double-encode shared routines on re-import)
 - Never trust imported data - treat as untrusted input
 - Apply length limits to prevent DoS (10MB file, 250 tasks, 500 char text)
 
