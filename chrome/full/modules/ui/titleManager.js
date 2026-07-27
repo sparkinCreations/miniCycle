@@ -123,7 +123,7 @@ async function handleMiniCycleTitleBlur() {
     }
 
     const oldTitle = miniCycleData.title || activeCycle;
-    let newTitle = GlobalUtils?.sanitizeInput?.(titleElement.textContent.trim()) || titleElement.textContent.trim();
+    let newTitle = GlobalUtils?.normalizeText?.(titleElement.textContent.trim()) || titleElement.textContent.trim();
 
     // Handle empty title - revert
     if (newTitle === "") {

@@ -375,10 +375,11 @@ body.focus-mode #focus-mode-mode-item::after {
    (injected by focusMode.js). Show one or the other based on body class.
    ============================================================================= */
 
-/* Focus-mode hint is hidden by default (normal mode shows the regular hint).
+/* Focus-mode hints are hidden by default (normal mode shows the home hints).
    Visual styling matches `.empty-state-hint` (task-list.css) so the message
    reads identically when focus mode swaps it in. */
-.empty-state-hint-focus {
+.empty-state-hint-focus,
+.empty-state-hint-focus-visible {
     display: none;
     font-size: var(--font-size-sm);
     color: rgba(255, 255, 255, 0.7);
@@ -386,12 +387,43 @@ body.focus-mode #focus-mode-mode-item::after {
     line-height: 1.4;
 }
 
-/* In focus mode: hide the regular hint, show the focus-mode hint */
-body.focus-mode #empty-state .empty-state-hint {
+/* The hint varies on TWO axes — which view is active and whether the task
+   input bar is on screen — so there are four messages and exactly one is
+   shown. Telling a user to press + / open the ⋯ menu while the bar is
+   already open would instruct them to HIDE the thing they need, so the
+   bar-visible states get their own copy pointing at the bar itself.
+
+       body class            | hint shown
+       ----------------------|--------------------------------
+       (none)                | .empty-state-hint
+       .input-bar-visible    | .empty-state-hint-visible
+       .focus-mode           | .empty-state-hint-focus
+       .focus-mode           |
+         + .input-bar-visible| .empty-state-hint-focus-visible
+
+   `body.input-bar-visible` is maintained by modeManager's
+   _updateTaskInputVisibility(), the single choke point for that state. */
+
+/* --- Home view, input bar showing --- */
+body.input-bar-visible:not(.focus-mode) #empty-state .empty-state-hint {
     display: none;
 }
 
-body.focus-mode #empty-state .empty-state-hint-focus {
+body.input-bar-visible:not(.focus-mode) #empty-state .empty-state-hint-visible {
+    display: block;
+}
+
+/* --- Focus view: both home hints give way to a focus variant --- */
+body.focus-mode #empty-state .empty-state-hint,
+body.focus-mode #empty-state .empty-state-hint-visible {
+    display: none;
+}
+
+body.focus-mode:not(.input-bar-visible) #empty-state .empty-state-hint-focus {
+    display: block;
+}
+
+body.focus-mode.input-bar-visible #empty-state .empty-state-hint-focus-visible {
     display: block;
 }
 

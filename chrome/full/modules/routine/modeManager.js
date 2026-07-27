@@ -834,6 +834,12 @@ export class ModeManager {
                 }
                 taskInput.classList.toggle(DOM_CLASSES.HIDDEN, !isVisible);
 
+                // Signal input-bar state to CSS so the empty-state hint can name
+                // the affordance that actually works right now (see focus-mode.css).
+                // This is the single choke point for bar visibility — init, the
+                // toggle button, and per-cycle refresh all land here.
+                this.deps.getBody()?.classList.toggle(DOM_CLASSES.INPUT_BAR_VISIBLE, isVisible);
+
                 // Fix tab order: remove hidden inputs from focus sequence
                 const focusableChildren = taskInput.querySelectorAll('input, button');
                 focusableChildren.forEach(el => {

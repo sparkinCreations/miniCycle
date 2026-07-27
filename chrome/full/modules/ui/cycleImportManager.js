@@ -67,22 +67,36 @@ const MAX_TASK_TEXT_LENGTH = LIMITS.TASK_CHARACTER;
 const MAX_CYCLE_NAME_LENGTH = LIMITS.CYCLE_NAME_CHARACTER;
 
 // ============================================================================
-// FALLBACK SANITIZATION (when DataValidator not available)
+// FALLBACK IMPORT-TEXT NORMALIZATION (when DataValidator not available)
 // ============================================================================
 
 /**
- * Fallback sanitization for when DataValidator is not injected.
- * Escapes HTML and enforces length limits.
- * @param {string} input - Text to sanitize
+ * Normalize free-text from an imported .mcyc file: strip control characters,
+ * trim, and clamp length.
+ *
+ * ⚠️ This does NOT HTML-escape. Imported text is stored raw and escaped at the
+ * render sink (task text via textContent, notifications via escapeHtml), so
+ * escaping here would double-encode shared routines on re-import. The
+ * control-character strip is defense-in-depth against untrusted import data —
+ * null bytes and control chars have no place in a task name and can defeat
+ * visual review of a .mcyc file.
+ *
+ * @param {string} input - Text to normalize
  * @param {number} [maxLength=100] - Maximum allowed length
- * @returns {string} Sanitized text
+ * @returns {string} Trimmed, length-clamped, control-char-free text (unescaped)
  */
-function fallbackSanitize(input, maxLength = 100) {
+function normalizeImportedText(input, maxLength = 100) {
     if (typeof input !== 'string') return '';
-    // Use textContent to strip any HTML
-    const temp = document.createElement('div');
-    temp.textContent = input;
-    return temp.textContent.trim().substring(0, maxLength);
+    // Strip C0/C1 control characters (0x00-0x1F and 0x7F-0x9F): they have no
+    // place in a task name and can defeat visual review of an imported .mcyc
+    // file. Done with a codepoint filter (not a control-char regex literal) so
+    // the source stays free of literal control bytes. Emoji/international text
+    // is preserved (code points above 0x9F pass through).
+    const cleaned = Array.from(input).filter(ch => {
+        const code = ch.codePointAt(0);
+        return code > 0x1F && !(code >= 0x7F && code <= 0x9F);
+    }).join('');
+    return cleaned.trim().substring(0, maxLength);
 }
 
 /**
@@ -495,7 +509,7 @@ export async function processImportedData(fileContent) {
         }
 
         // Security: Always sanitize task text, with or without DataValidator
-        const sanitizedText = fallbackSanitize(task.text || "", MAX_TASK_TEXT_LENGTH);
+        const sanitizedText = normalizeImportedText(task.text || "", MAX_TASK_TEXT_LENGTH);
 
         const taskData = {
             id: task.id || `task-${importTimestamp}-${index}`,
@@ -570,7 +584,7 @@ export async function processImportedData(fileContent) {
     }
 
     // Security: Always sanitize cycle title, with or without DataValidator
-    let cycleTitle = fallbackSanitize(
+    let cycleTitle = normalizeImportedText(
         importedData.title || importedData.name || 'Imported Cycle',
         MAX_CYCLE_NAME_LENGTH
     );
@@ -642,7 +656,7 @@ export async function processImportedData(fileContent) {
             frequencyValue: typeof r.frequencyValue === 'number' ? r.frequencyValue : 1,
             frequencyUnit: (r.frequencyUnit === 'minutes' || r.frequencyUnit === 'hours') ? r.frequencyUnit : 'hours',
             customMessages: Array.isArray(r.customMessages)
-                ? r.customMessages.filter(m => typeof m === 'string').map(m => fallbackSanitize(m, MAX_TASK_TEXT_LENGTH))
+                ? r.customMessages.filter(m => typeof m === 'string').map(m => normalizeImportedText(m, MAX_TASK_TEXT_LENGTH))
                 : []
         };
     }
@@ -696,7 +710,7 @@ export async function processImportedData(fileContent) {
                     delete details._cycleNoun;
                     delete details._taskNoun;
                     return {
-                        type: fallbackSanitize(e.type, 50),
+                        type: normalizeImportedText(e.type, 50),
                         timestamp: typeof e.timestamp === 'number' ? e.timestamp : Date.now(),
                         details
                     };
@@ -713,9 +727,9 @@ export async function processImportedData(fileContent) {
             ? ct.entries.filter(e => e && typeof e === 'object')
                 .slice(0, 500)
                 .map(e => ({
-                    text: fallbackSanitize(e.text || '', MAX_TASK_TEXT_LENGTH),
+                    text: normalizeImportedText(e.text || '', MAX_TASK_TEXT_LENGTH),
                     clearedAt: typeof e.clearedAt === 'number' ? e.clearedAt : Date.now(),
-                    ...(e.id ? { id: fallbackSanitize(String(e.id), 100) } : {})
+                    ...(e.id ? { id: normalizeImportedText(String(e.id), 100) } : {})
                 }))
             : [];
         safeClearedTasks = {
