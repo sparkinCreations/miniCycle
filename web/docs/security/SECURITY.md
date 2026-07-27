@@ -171,6 +171,14 @@ When restoring full backups (via Developer Tools):
 - ✅ Task/name length limits enforced
 - ✅ Invalid files rejected with error message
 
+> **Full app vs Lite — intentional divergence (do not "reconcile").** The frozen
+> Lite build (`lite/`, a static fallback that is never updated) strips `<`, `>`,
+> and `"` from imported text. The full app deliberately does **not**: it stores
+> imported names raw and escapes them at the render sink, so legitimate names
+> like `A/C < 70F & log it` survive a share → import round-trip intact. Do not
+> make the full app strip these characters to match Lite — that would corrupt
+> real user data. XSS safety comes from render-sink escaping, not input stripping.
+
 ### When Sharing Data
 
 **If exporting/sharing .mcyc files:**
