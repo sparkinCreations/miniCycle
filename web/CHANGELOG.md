@@ -1,3 +1,7 @@
+## [2.336] - 2026-07-27
+- build(release): rebuild Chrome, Android, and iOS web payloads so every shell ships the input-sanitizer fixes (Android versionCode 12→13, iOS build 4→5)
+
+
 ## [2.335] - 2026-07-27
 - fix(title): restore over-limit truncation warning + DOM sync (dead-code quirk)
 
