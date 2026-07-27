@@ -354,18 +354,26 @@ export class GlobalUtils {
     }
 
     /**
-     * Sanitize user input to prevent XSS attacks and limit length.
-     * Removes HTML tags and trims whitespace, then enforces character limit.
+     * Normalize free-text input: coerce to string, trim, and clamp length.
      *
-     * @param {string} input - The user input to sanitize.
+     * ⚠️ This is NOT an XSS defense. The result is NOT HTML-escaped and is
+     * unsafe to assign to innerHTML. miniCycle escapes at the render sink
+     * instead — task text via textContent (taskDOM.createTaskLabel) and
+     * notification text via escapeHtml(). Escaping here would be wrong:
+     * .mcyc files are shared and re-imported, so input-time escaping would
+     * double-encode and corrupt real user data on every round-trip.
+     * Escape at the sink, never here.
+     *
+     * (Name retained to avoid a breaking change; a rename to normalizeText()
+     * with a deprecated alias is tracked as a follow-up.)
+     *
+     * @param {string} input - Free text to normalize.
      * @param {number} maxLength - Maximum allowed length (default: 100 characters).
-     * @returns {string} Sanitized and trimmed text.
+     * @returns {string} Trimmed, length-clamped text (unescaped).
      */
     static sanitizeInput(input, maxLength = 100) {
         if (typeof input !== "string") return "";
-        const temp = document.createElement("div");
-        temp.textContent = input; // Set as raw text (sanitized)
-        return temp.textContent.trim().substring(0, maxLength);
+        return input.trim().substring(0, maxLength);
     }
 
     /**

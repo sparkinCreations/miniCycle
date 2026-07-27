@@ -153,9 +153,9 @@ When importing `.mcyc` cycle files:
 |-------|----------------|
 | File size | 10MB limit via `MAX_FILE_SIZE_BYTES` |
 | Task count | 250 max via `MAX_TASK_COUNT` |
-| Task text | Sanitized via `fallbackSanitize()` (100 chars default) |
-| Cycle name | Sanitized via `fallbackSanitize()` (100 chars) |
-| Recurring templates | Imported and merged from file data; task text is sanitized |
+| Task text | Normalized via `fallbackSanitize()` (trim, 100-char clamp, control-char strip); XSS-safe because task text renders via `textContent`, not `innerHTML` |
+| Cycle name | Normalized via `fallbackSanitize()` (trim, 100-char clamp, control-char strip); rendered via `textContent` |
+| Recurring templates | Imported and merged from file data; task text is normalized via `fallbackSanitize()` |
 | JSON parsing | Standard `JSON.parse()` with try-catch |
 
 **Backup Restore (full app data) - `modules/testing/testing-modal.js`:**
@@ -167,7 +167,7 @@ When restoring full backups (via Developer Tools):
 
 **Security checks on import:**
 - ✅ File size limited (10MB for cycles)
-- ✅ All user content sanitized for XSS
+- ✅ All user content escaped at the render sink — task text via `textContent`, notifications via `escapeHtml()` (import-time `fallbackSanitize()` only trims / length-clamps / strips control chars; it does **not** HTML-escape)
 - ✅ Task/name length limits enforced
 - ✅ Invalid files rejected with error message
 
@@ -297,7 +297,7 @@ When contributing to miniCycle, follow these security practices:
 - Validate imported data before using (check types, lengths, structure)
 
 **External Data:**
-- All imported .mcyc file content must be sanitized via `fallbackSanitize()` or `DataValidator`
+- All imported .mcyc file content is normalized via `fallbackSanitize()` / `DataValidator` (trim, length-clamp, control-char strip) and stored **raw** — XSS safety comes from escaping at the render sink (`textContent` / `escapeHtml()`), never from import-time HTML-escaping (which would double-encode shared routines on re-import)
 - Never trust imported data - treat as untrusted input
 - Apply length limits to prevent DoS (10MB file, 250 tasks, 500 char text)
 

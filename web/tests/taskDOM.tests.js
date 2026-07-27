@@ -388,6 +388,28 @@ export async function runTaskDOMTests(resultsDiv) {
         }
     });
 
+    // XSS SINK TEST — this is the test the suite was missing. It asserts on the
+    // REAL render path (createTaskLabel) rather than on whether a sanitizer was
+    // called, so it stays correct regardless of how input normalization is named
+    // or implemented. Task text is rendered via textContent, so a malicious
+    // payload must appear as literal text with NO element injected into the DOM.
+    await test('createTaskLabel renders malicious text literally (no element injected)', () => {
+        const manager = new TaskDOMManager(getDefaultDeps());
+        const payload = '<img src=x onerror="alert(1)">';
+
+        const label = manager.createTaskLabel(payload, 'xss-id', false);
+
+        if (label.querySelector('img')) {
+            throw new Error('XSS: <img> element was injected into the task label DOM');
+        }
+        if (label.querySelector('*')) {
+            throw new Error('XSS: an element was injected into the task label DOM');
+        }
+        if (label.textContent !== payload) {
+            throw new Error(`Task text should render as literal text — got: ${label.textContent}`);
+        }
+    });
+
     await test('createMainTaskElement creates list item', () => {
         const manager = new TaskDOMManager(getDefaultDeps());
 

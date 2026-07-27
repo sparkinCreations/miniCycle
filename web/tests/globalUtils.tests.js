@@ -504,6 +504,34 @@ export function runGlobalUtilsTests(resultsDiv) {
         }
     });
 
+    // ===== sanitizeInput — text normalization, NOT XSS escaping =====
+    resultsDiv.innerHTML += '<h4 class="test-section">🧼 sanitizeInput (normalize, not escape)</h4>';
+
+    // Tests the REAL implementation (no mock). Guards the documented contract:
+    // sanitizeInput trims + length-clamps only. It does NOT HTML-escape — the app
+    // escapes at the render sink instead (textContent / escapeHtml). If someone
+    // "fixes" this to escape at input time, this test fails loudly and points
+    // them at the sink (input-time escaping double-encodes shared .mcyc data).
+    test('sanitizeInput passes HTML through unchanged (does NOT escape)', () => {
+        const payload = '<img src=x onerror="alert(1)">';
+        const out = GlobalUtils.sanitizeInput(payload, 500);
+        if (out !== payload) {
+            throw new Error(`sanitizeInput must not alter HTML — expected unchanged, got: ${out}`);
+        }
+    });
+
+    test('sanitizeInput trims, clamps length, and rejects non-strings', () => {
+        if (GlobalUtils.sanitizeInput('  hello  ') !== 'hello') {
+            throw new Error('should trim surrounding whitespace');
+        }
+        if (GlobalUtils.sanitizeInput('abcdef', 3) !== 'abc') {
+            throw new Error('should clamp to maxLength');
+        }
+        if (GlobalUtils.sanitizeInput(42) !== '') {
+            throw new Error('non-strings should return empty string');
+        }
+    });
+
     // Summary
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;
