@@ -1,3 +1,7 @@
+## [2.335] - 2026-07-27
+- fix(title): restore over-limit truncation warning + DOM sync (dead-code quirk)
+
+
 ## [2.334] - 2026-07-27
 - chore(lint): warn on template-literal → innerHTML writes (XSS regression aid)
 - docs(security): mark the full-app vs Lite import divergence as intentional (bucket C)
