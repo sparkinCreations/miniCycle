@@ -250,7 +250,7 @@ Click the checkbox again to uncheck a completed task.
 2. Select **"Delete"**
 3. Confirm deletion
 
-**Warning:** Deleted tasks cannot be recovered unless you have a backup!
+**Tip:** Deleted a task by mistake? Press **Undo** (or Ctrl+Z / ⌘+Z) right away to bring it back. Undo history is per-routine, so switching routines before you undo will lose the chance — for anything you can't afford to lose, keep an exported `.mcyc` backup.
 
 ---
 

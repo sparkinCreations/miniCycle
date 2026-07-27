@@ -897,7 +897,7 @@ export const DEFAULT_LABELS = deepFreeze({
         duplicatePlaceholder:     'e.g., My Custom Routine',
         saveCopy:                 'Save Copy',
         deleteAllTasks:           'Delete All Tasks',
-        deleteAllMessage:         'Are you sure you want to permanently delete all tasks in "{name}"? This action cannot be undone.',
+        deleteAllMessage:         'Are you sure you want to delete all tasks in "{name}"?',
         restoreBackupTitle:       'Restore Backup',
         restoreBackupMessage:     'This will replace all your current routines, settings, and progress with the backup data. A safety backup will be saved first.',
         restoreBackupConfirm:     'Restore',
