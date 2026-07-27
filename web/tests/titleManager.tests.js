@@ -219,28 +219,33 @@ export async function runTitleManagerTests(resultsDiv) {
         } finally { removeTitleEl(); }
     });
 
-    await test('over-limit title is clamped to LIMITS.CYCLE_NAME_CHARACTER (stored key)', async () => {
+    await test('over-limit title is clamped to LIMITS.CYCLE_NAME_CHARACTER (storage, DOM, and warning)', async () => {
         removeTitleEl();
         const limit = LIMITS.CYCLE_NAME_CHARACTER || 100;
         const env = makeEnv({ Short: { title: 'Short', tasks: [] } }, 'Short');
         const notify = makeNotifSpy();
         await wire({ AppState: env.AppState, loadMiniCycleData: env.loadMiniCycleData, showNotification: notify });
         const longName = 'X'.repeat(limit + 25);
-        makeTitleEl(longName);
+        const el = makeTitleEl(longName);
         try {
             await mod.handleMiniCycleTitleBlur();
-            // normalizeText clamps to `limit` (its default maxLength === CYCLE_NAME_CHARACTER),
-            // so the routine is stored under the truncated key — the real guarantee.
-            // (The prior assertion on el.textContent relied on a non-clamping mock that
-            // let titleManager's redundant line-137 truncation path fire; in production
-            // normalizeText clamps first, so that path never runs.)
+            // Stored under the clamped key (the un-truncated one must not exist).
             const truncatedKey = 'X'.repeat(limit);
             if (!env.state.data.cycles[truncatedKey]) {
-                throw new Error('over-limit title not clamped to the limit for storage; key lengths: '
+                throw new Error('over-limit title not clamped for storage; key lengths: '
                     + Object.keys(env.state.data.cycles).map(k => k.length).join(','));
             }
             if (env.state.data.cycles[longName]) {
                 throw new Error('the un-truncated title must not be used as a stored key');
+            }
+            // The visible <h1> is synced to the clamped title — no stale over-long text.
+            // (This is the DOM-sync path that was dead before the raw-length fix.)
+            if (el.textContent.length !== limit) {
+                throw new Error(`title element not synced to the clamped length; got ${el.textContent.length}`);
+            }
+            // ...and the user is warned that truncation happened.
+            if (!notify.calls.some(c => c.type === 'warning')) {
+                throw new Error('expected a truncation warning notification');
             }
         } finally { removeTitleEl(); }
     });

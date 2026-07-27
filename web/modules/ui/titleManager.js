@@ -123,7 +123,14 @@ async function handleMiniCycleTitleBlur() {
     }
 
     const oldTitle = miniCycleData.title || activeCycle;
-    let newTitle = GlobalUtils?.normalizeText?.(titleElement.textContent.trim()) || titleElement.textContent.trim();
+    const maxLength = LIMITS.CYCLE_NAME_CHARACTER || 100;
+
+    // normalizeText trims and clamps to maxLength. Keep the RAW (pre-clamp)
+    // length so we can tell whether truncation actually happened — comparing the
+    // already-clamped result against maxLength can never be true, which used to
+    // make the truncation notice + DOM sync below dead code.
+    const rawTitle = titleElement.textContent.trim();
+    const newTitle = GlobalUtils?.normalizeText?.(rawTitle, maxLength) || rawTitle.substring(0, maxLength);
 
     // Handle empty title - revert
     if (newTitle === "") {
@@ -132,10 +139,10 @@ async function handleMiniCycleTitleBlur() {
         return;
     }
 
-    // ✅ FIX #2: Enforce character limit
-    const maxLength = LIMITS.CYCLE_NAME_CHARACTER || 100;
-    if (newTitle.length > maxLength) {
-        newTitle = newTitle.substring(0, maxLength);
+    // ✅ FIX #2: Enforce character limit — the title was clamped above, so reflect
+    // that in the visible <h1> (it would otherwise keep the over-long text) and
+    // warn the user.
+    if (rawTitle.length > maxLength) {
         titleElement.textContent = newTitle;
         showNotification?.(getLabel('notify.titleTruncated', { vars: { limit: maxLength } }), "warning", UI_TIMEOUTS.NOTIFICATION_SHORT);
     }
