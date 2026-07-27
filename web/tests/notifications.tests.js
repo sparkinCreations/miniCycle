@@ -226,6 +226,28 @@ export async function runNotificationsTests(resultsDiv) {
         }
     });
 
+    // Hardening regression: setupMockGlobals() does NOT inject escapeHtml, so this
+    // exercises the un-wired path. Before the fix this path fell back to the raw
+    // message and parsed injected markup; getEscapeHtml() now guarantees a
+    // complete escaper even with no DI. Would fail (img injected) pre-fix.
+    await test('show() escapes HTML in message even when escapeHtml is NOT injected', () => {
+        setupMockGlobals();
+        const container = createNotificationContainer();
+        const notifications = new window.MiniCycleNotifications();
+
+        const payload = '<img src=x onerror="alert(1)">';
+        notifications.show(payload, 'info');
+
+        const notif = container.querySelector('.notification');
+        if (!notif) throw new Error('notification not created');
+        if (notif.querySelector('img')) {
+            throw new Error('XSS: <img> was parsed into the notification DOM (escape fallback failed)');
+        }
+        if (notif.textContent.indexOf('<img') === -1) {
+            throw new Error('escaped payload should appear as literal text in the notification');
+        }
+    });
+
     await test('show() applies correct type classes', () => {
         setupMockGlobals();
         const container = createNotificationContainer();

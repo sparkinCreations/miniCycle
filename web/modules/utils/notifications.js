@@ -444,9 +444,11 @@ export class MiniCycleNotifications {
 
       // ✅ XSS PROTECTION: Always escape HTML in message content (DI-pure)
       // Security fix (v1.353): Remove bypass condition to prevent XSS
-      const escapedMessage = this.deps.GlobalUtils?.escapeHtml
-        ? this.deps.GlobalUtils.escapeHtml(message)
-        : (typeof this.deps.escapeHtml === 'function' ? this.deps.escapeHtml(message) : message);
+      // getEscapeHtml() guarantees a complete HTML escaper even when neither
+      // GlobalUtils.escapeHtml nor a DI escapeHtml is wired — no raw-`message`
+      // fallback. This closes the one notification path that could otherwise
+      // interpolate unescaped user content into innerHTML.
+      const escapedMessage = getEscapeHtml(this.deps)(message);
 
       // Always escape user content, regardless of structure
       // When an action button is present, wrap message in a span so both sit in a flex-column
@@ -1208,10 +1210,10 @@ async setDefaultPosition(notificationContainer) {
       </div>
     `;
 
-    // ✅ XSS PROTECTION: Use DI-based escape for consistency (DI-pure)
-    const escape = this.deps.GlobalUtils?.escapeHtml
-      || this.deps.escapeHtml
-      || ((s) => s.replace(/</g, '&lt;').replace(/>/g, '&gt;'));
+    // ✅ XSS PROTECTION: single escape resolver (DI-pure). getEscapeHtml()'s
+    // fallback escapes the full set (& < > " ' /), unlike the previous inline
+    // fallback here which only handled < and > (missing quotes/ampersand).
+    const escape = getEscapeHtml(this.deps);
     const escapedTaskText = escape(taskText);
 
     return `
