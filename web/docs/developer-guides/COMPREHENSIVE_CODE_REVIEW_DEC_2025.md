@@ -131,7 +131,7 @@ async init() {
 
 #### Comprehensive Input Validation
 - Type checking, range validation, format validation in `dataValidator.js`
-- XSS protection via `escapeHtml()` and `sanitizeInput()`
+- XSS protection via `escapeHtml()` at the render sink (`normalizeText()` / the deprecated `sanitizeInput()` normalize only — they do **not** escape; see the SECURITY.md v2.336 input-normalizer audit)
 - Import data sanitization in `dataSanitizer.js`
 
 ### Key Files
@@ -216,7 +216,7 @@ static escapeHtml(text) {
 ```
 
 #### Input Sanitization Pipeline
-- `sanitizeInput()` uses DOM API to strip HTML safely
+- `normalizeText()` (formerly `sanitizeInput()`) trims + length-clamps; it does **not** strip HTML — XSS safety is at the render sink (`textContent` / `escapeHtml()`). See the SECURITY.md v2.336 audit
 - `DataValidator` enforces schema, types, and limits
 - Import data sanitized recursively (prevents malicious .mcyc files)
 
