@@ -1,3 +1,18 @@
+## [2.333] - 2026-07-27
+- refactor(legal): rename user-manual-styles.css to static-page-styles.css (shared by all 5 static pages)
+- docs(plan): add docs reorg plan (step 5 struck — schema dedupe already landed in 9f2e10da)
+- refactor(dashboard): aggregate tracking storage + replace carousel with grid
+- fix(ui): make empty-state hint aware of input-bar state in both home and focus view
+- fix(undo): arm undo system for Delete All / Uncheck All + drop false 'cannot be undone' warning
+- build(tooling): exclude archive dirs case-insensitively (Archive/ARCHIVE) from dupe scan
+- build(tooling): add check-duplicates.sh to catch iCloud conflict-copy files
+- build(chrome): regenerate full extension at v2.332
+- fix: bundle Task Order mini-game in chrome + mobile shell builds
+- docs(schema): audit Schema 2.5 docs against code + consolidate duplicate
+- docs: register storagePersistence in nav + module-enumeration docs
+- docs: cover today's work across v2.328–2.332
+
+
 ## [2.332] - 2026-07-26
 - feat(storage): request durable (persistent) origin storage
 
