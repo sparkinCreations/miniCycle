@@ -59,6 +59,12 @@ const di = createDIModule('MenuManager', {
     updateStatsPanel: optional(null),
     checkCompleteAllButton: optional(null),
     updateUndoRedoButtons: optional(null),
+    // Arms the undo system before a destructive menu action. Without this,
+    // captureStateSnapshot() bails on `isInitializing` and "Delete All" /
+    // "Uncheck All" are silently unrecoverable when the user hasn't touched
+    // a task yet this session. Every other action module (taskCRUD,
+    // dragDropManager, titleManager, focusTaskPanel) already does this.
+    enableUndoSystemOnFirstInteraction: optional(null),
     recurringPanel: optional(null),
     AppMeta: optional(null),
     trackAction: optional(null),
@@ -77,7 +83,7 @@ const di = createDIModule('MenuManager', {
 });
 
 // Late-binding deps via Proxy
-/** @type {{appInit: Object|null, loadMiniCycleData: Function|null, AppState: Object|null, showNotification: Function|null, showPromptModal: Function|null, showConfirmationModal: Function|null, safeAddEventListener: Function|null, switchMiniCycle: Function|null, createNewMiniCycle: Function|null, loadMiniCycle: Function|null, updateCycleModeDescription: Function|null, checkGamesUnlock: Function|null, sanitizeInput: Function|null, updateCycleData: Function|null, updateProgressBar: Function|null, updateStatsPanel: Function|null, checkCompleteAllButton: Function|null, updateUndoRedoButtons: Function|null, recurringPanel: Object|null, AppMeta: Object|null, getElementById: Function, querySelector: Function, querySelectorAll: Function}} */
+/** @type {{appInit: Object|null, loadMiniCycleData: Function|null, AppState: Object|null, showNotification: Function|null, showPromptModal: Function|null, showConfirmationModal: Function|null, safeAddEventListener: Function|null, switchMiniCycle: Function|null, createNewMiniCycle: Function|null, loadMiniCycle: Function|null, updateCycleModeDescription: Function|null, checkGamesUnlock: Function|null, sanitizeInput: Function|null, updateCycleData: Function|null, updateProgressBar: Function|null, updateStatsPanel: Function|null, checkCompleteAllButton: Function|null, updateUndoRedoButtons: Function|null, enableUndoSystemOnFirstInteraction: Function|null, recurringPanel: Object|null, AppMeta: Object|null, getElementById: Function, querySelector: Function, querySelectorAll: Function}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];
@@ -140,6 +146,7 @@ export class MenuManager {
             updateStatsPanel: resolvedDeps.updateStatsPanel,
             checkCompleteAllButton: resolvedDeps.checkCompleteAllButton,
             updateUndoRedoButtons: resolvedDeps.updateUndoRedoButtons,
+            enableUndoSystemOnFirstInteraction: resolvedDeps.enableUndoSystemOnFirstInteraction,
             recurringPanel: resolvedDeps.recurringPanel,
             trackAction: resolvedDeps.trackAction,
             activateFocusMode: resolvedDeps.activateFocusMode,
@@ -626,7 +633,12 @@ export class MenuManager {
             return;
         }
 
+        // ✅ Arm the undo system so the snapshot below is actually captured
+        // (see deleteAllTasks for why — captureStateSnapshot bails on isInitializing)
+        this.deps.enableUndoSystemOnFirstInteraction?.();
+
         // ✅ Create undo snapshot before making changes
+        // (the AppState.update wrapper captures pre-state on the call below)
 
         // ✅ Uncheck all tasks (DO NOT DELETE) - Use helper to prevent race conditions
         // ✅ CRITICAL: Await the update to ensure state is saved before updating UI
@@ -713,7 +725,14 @@ export class MenuManager {
                     return;
                 }
 
+                // ✅ Arm the undo system so the snapshot below is actually captured.
+                // captureStateSnapshot() returns early while isInitializing is true,
+                // so without this the delete is unrecoverable when the user hasn't
+                // interacted with a task yet this session.
+                this.deps.enableUndoSystemOnFirstInteraction?.();
+
                 // ✅ Push undo snapshot before deletion
+                // (the AppState.update wrapper captures pre-state on the call below)
 
                 // ✅ Clear tasks completely - Use helper to prevent race conditions
                 // ✅ CRITICAL: Await the update to ensure state is saved before updating UI

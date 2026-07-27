@@ -119,6 +119,18 @@ export default [
             'security/detect-no-csrf-before-method-override': 'error',
             'security/detect-possible-timing-attacks': 'warn',
 
+            // XSS regression aid (input-normalizer audit): flag any
+            // `el.innerHTML = `...${x}...`` write for triage. Interpolate ONLY
+            // escapeHtml() output, getLabel(), or static constants into an
+            // innerHTML template — never raw user/import text. `warn` (not
+            // `error`) because ~57 pre-existing, reviewed-safe sites predate the
+            // rule; the goal is to surface any NEW site for review. If a flagged
+            // site is safe, add an eslint-disable-next-line with a short reason.
+            'no-restricted-syntax': ['warn', {
+                selector: "AssignmentExpression[left.property.name='innerHTML'][right.type='TemplateLiteral']",
+                message: 'Template literal assigned to innerHTML — interpolate only escapeHtml() output, getLabel(), or static constants, never raw user/import text. If this site is safe, add an eslint-disable-next-line with a reason.'
+            }],
+
             // SonarJS rules (code quality)
             'sonarjs/no-identical-functions': 'warn',
             'sonarjs/no-duplicated-branches': 'warn',

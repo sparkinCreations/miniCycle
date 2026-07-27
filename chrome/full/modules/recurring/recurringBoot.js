@@ -60,13 +60,23 @@ export function updateRecurringInfoLink(deps, { openPanel } = {}) {
         if (!linkEl) return;
 
         const hint = deps.querySelector?.(DOM_SELECTORS.EMPTY_STATE_HINT);
+        // The empty state carries a second, bar-visible hint variant. Both need
+        // the same treatment or the recurring summary vanishes (replaced by the
+        // generic hint) whenever the task input bar happens to be open.
+        const hintVisible = deps.querySelector?.(DOM_SELECTORS.EMPTY_STATE_HINT_VISIBLE);
+        const restoreDefaultHints = () => {
+            if (hint) {
+                hint.innerHTML = getLabel('empty.noTasksHint').replace('+', '<strong>+</strong>');
+            }
+            if (hintVisible) {
+                hintVisible.textContent = getLabel('empty.noTasksHintVisible');
+            }
+        };
 
         if (templateCount === 0) {
             linkEl.classList.remove(DOM_CLASSES.SHOW);
             // Restore default empty state hint
-            if (hint) {
-                hint.innerHTML = getLabel('empty.noTasksHint').replace('+', '<strong>+</strong>');
-            }
+            restoreDefaultHints();
             return;
         }
 
@@ -95,12 +105,12 @@ export function updateRecurringInfoLink(deps, { openPanel } = {}) {
         deps.safeAddEventListener?.(linkEl, 'keydown', _onInfoLinkKeydown);
 
         // If task list is empty, enhance the empty state hint
-        if (hint) {
-            if (taskCount === 0) {
-                hint.innerHTML = '↻ ' + countText + ' · ' + getLabel('empty.viewRecurring');
-            } else {
-                hint.innerHTML = getLabel('empty.noTasksHint').replace('+', '<strong>+</strong>');
-            }
+        if (taskCount === 0) {
+            const recurringSummary = '↻ ' + countText + ' · ' + getLabel('empty.viewRecurring');
+            if (hint) hint.innerHTML = recurringSummary;
+            if (hintVisible) hintVisible.innerHTML = recurringSummary;
+        } else {
+            restoreDefaultHints();
         }
     } catch (error) {
         console.error('❌ Error updating recurring info link:', error);

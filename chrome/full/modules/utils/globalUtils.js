@@ -354,18 +354,40 @@ export class GlobalUtils {
     }
 
     /**
-     * Sanitize user input to prevent XSS attacks and limit length.
-     * Removes HTML tags and trims whitespace, then enforces character limit.
+     * Normalize free-text input: coerce to string, trim, and clamp length.
      *
-     * @param {string} input - The user input to sanitize.
+     * ⚠️ This is NOT an XSS defense. The result is NOT HTML-escaped and is
+     * unsafe to assign to innerHTML. miniCycle escapes at the render sink
+     * instead — task text via textContent (taskDOM.createTaskLabel) and
+     * notification text via escapeHtml(). Escaping here would be wrong:
+     * .mcyc files are shared and re-imported, so input-time escaping would
+     * double-encode and corrupt real user data on every round-trip.
+     * Escape at the sink, never here.
+     *
+     * @param {string} input - Free text to normalize.
      * @param {number} maxLength - Maximum allowed length (default: 100 characters).
-     * @returns {string} Sanitized and trimmed text.
+     * @returns {string} Trimmed, length-clamped text (unescaped).
+     */
+    static normalizeText(input, maxLength = 100) {
+        if (typeof input !== "string") return "";
+        return input.trim().substring(0, maxLength);
+    }
+
+    /**
+     * @deprecated Misleading name — this has never escaped HTML. Prefer
+     * normalizeText() for clarity, and escape at the render sink (textContent /
+     * escapeHtml()) for XSS safety. Retained as a thin alias so the CORE_DEP key
+     * `sanitizeInput` and its consumers keep working until they migrate; behavior
+     * is identical to normalizeText().
+     *
+     * @param {string} input - Free text to normalize.
+     * @param {number} maxLength - Maximum allowed length (default: 100 characters).
+     * @returns {string} Trimmed, length-clamped text (unescaped).
      */
     static sanitizeInput(input, maxLength = 100) {
-        if (typeof input !== "string") return "";
-        const temp = document.createElement("div");
-        temp.textContent = input; // Set as raw text (sanitized)
-        return temp.textContent.trim().substring(0, maxLength);
+        // Explicit class reference (not `this`) — this method is injected as a
+        // bare function via the `sanitizeInput` CORE_DEP, so `this` is not the class.
+        return GlobalUtils.normalizeText(input, maxLength);
     }
 
     /**
@@ -846,9 +868,9 @@ UTILITY FUNCTIONS:
     const uniqueId = generateId(); // id-1234567890-abc123def
     const prefixedId = generateId('task'); // task-1234567890-abc123def
 
-15. Sanitize User Input:
-    const cleanText = sanitizeInput(userInput); // max 100 chars
-    const cleanText = sanitizeInput(userInput, 200); // custom max length
+15. Normalize Free-Text Input (trim + length-clamp; NOT XSS escaping):
+    const cleanText = normalizeText(userInput); // max 100 chars
+    const cleanText = normalizeText(userInput, 200); // custom max length
 
 MODULE INFORMATION:
 

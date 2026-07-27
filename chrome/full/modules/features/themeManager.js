@@ -233,8 +233,13 @@ function _refreshLiveLensLabels() {
     if (emptyState) {
         const emptyText = emptyState.querySelector(DOM_SELECTORS.EMPTY_STATE_TEXT);
         if (emptyText) emptyText.textContent = getLabel('empty.noTasks');
+        // All four (view × input-bar) hint variants need re-theming, not just the
+        // two visible ones — the hidden variants must already be correct by the
+        // time CSS swaps them in on a view change or input-bar toggle.
         const emptyHint = emptyState.querySelector(DOM_SELECTORS.EMPTY_STATE_HINT);
         if (emptyHint) emptyHint.textContent = getLabel('empty.noTasksHint');
+        const emptyHintVisible = emptyState.querySelector(DOM_SELECTORS.EMPTY_STATE_HINT_VISIBLE);
+        if (emptyHintVisible) emptyHintVisible.textContent = getLabel('empty.noTasksHintVisible');
         const emptyHintFocus = emptyState.querySelector(`.${DOM_CLASSES.EMPTY_STATE_HINT_FOCUS}`);
         if (emptyHintFocus) {
             emptyHintFocus.textContent = getLabel('empty.noTasksHintFocus', {
@@ -243,6 +248,10 @@ function _refreshLiveLensLabels() {
                     showHide: getLabel('focusMode.toggleInputBar')
                 }
             });
+        }
+        const emptyHintFocusVisible = emptyState.querySelector(`.${DOM_CLASSES.EMPTY_STATE_HINT_FOCUS_VISIBLE}`);
+        if (emptyHintFocusVisible) {
+            emptyHintFocusVisible.textContent = getLabel('empty.noTasksHintFocusVisible');
         }
     }
 

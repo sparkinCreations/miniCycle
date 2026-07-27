@@ -1,3 +1,21 @@
+## [2.336] - 2026-07-27
+- build(release): rebuild Chrome, Android, and iOS web payloads so every shell ships the input-sanitizer fixes (Android versionCode 12→13, iOS build 4→5)
+
+
+## [2.335] - 2026-07-27
+- fix(title): restore over-limit truncation warning + DOM sync (dead-code quirk)
+
+
+## [2.334] - 2026-07-27
+- chore(lint): warn on template-literal → innerHTML writes (XSS regression aid)
+- docs(security): mark the full-app vs Lite import divergence as intentional (bucket C)
+- fix(security): route notification escaping through the complete resolver (bucket D)
+- refactor(security): rename sanitizers to honest names (bucket B, split — low-risk half)
+- fix(security): tell the truth about input normalizers + add the missing XSS sink test
+- docs(nav): group developer guides by intent, fold modal guides into features, surface 22 orphaned docs
+- docs: reorganize by reader intent — add start-here/ and incidents/, dissolve guides/ (Option A)
+
+
 ## [2.333] - 2026-07-27
 - refactor(legal): rename user-manual-styles.css to static-page-styles.css (shared by all 5 static pages)
 - docs(plan): add docs reorg plan (step 5 struck — schema dedupe already landed in 9f2e10da)

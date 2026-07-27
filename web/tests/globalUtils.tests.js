@@ -504,6 +504,44 @@ export function runGlobalUtilsTests(resultsDiv) {
         }
     });
 
+    // ===== normalizeText — text normalization, NOT XSS escaping =====
+    resultsDiv.innerHTML += '<h4 class="test-section">🧼 normalizeText (normalize, not escape)</h4>';
+
+    // Tests the REAL implementation (no mock). Guards the documented contract:
+    // normalizeText trims + length-clamps only. It does NOT HTML-escape — the app
+    // escapes at the render sink instead (textContent / escapeHtml). If someone
+    // "fixes" this to escape at input time, this test fails loudly and points
+    // them at the sink (input-time escaping double-encodes shared .mcyc data).
+    test('normalizeText passes HTML through unchanged (does NOT escape)', () => {
+        const payload = '<img src=x onerror="alert(1)">';
+        const out = GlobalUtils.normalizeText(payload, 500);
+        if (out !== payload) {
+            throw new Error(`normalizeText must not alter HTML — expected unchanged, got: ${out}`);
+        }
+    });
+
+    test('normalizeText trims, clamps length, and rejects non-strings', () => {
+        if (GlobalUtils.normalizeText('  hello  ') !== 'hello') {
+            throw new Error('should trim surrounding whitespace');
+        }
+        if (GlobalUtils.normalizeText('abcdef', 3) !== 'abc') {
+            throw new Error('should clamp to maxLength');
+        }
+        if (GlobalUtils.normalizeText(42) !== '') {
+            throw new Error('non-strings should return empty string');
+        }
+    });
+
+    test('sanitizeInput is a deprecated alias of normalizeText', () => {
+        const payload = '  <b>Trim & clamp me</b>  ';
+        // Alias must forward correctly even when called unbound (it's injected as
+        // the sanitizeInput CORE_DEP, so `this` is not GlobalUtils at call time).
+        const alias = GlobalUtils.sanitizeInput;
+        if (alias(payload, 10) !== GlobalUtils.normalizeText(payload, 10)) {
+            throw new Error('sanitizeInput alias must match normalizeText output (even unbound)');
+        }
+    });
+
     // Summary
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;
