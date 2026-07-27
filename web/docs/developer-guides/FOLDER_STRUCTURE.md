@@ -152,11 +152,14 @@ web/
 │   ├── product.html
 │   └── learn_more.html
 │
-├── 📁 legal/                            # Legal & user documentation
+├── 📁 legal/                            # Standalone static pages (outside the app shell)
 │   ├── privacy.html
 │   ├── terms.html
-│   ├── user-manual.html
-│   └── user-manual-styles.css
+│   ├── security.html
+│   ├── accessibility.html
+│   ├── user-manual.html                 # End-user manual (not a legal doc — see note)
+│   ├── legal-footer.js                  # Shared footer injected into each page
+│   └── static-page-styles.css           # Shared stylesheet for ALL pages above
 │
 ├── 📁 lite/                             # ⚠️ STATIC fallback (NOT maintained)
 │   ├── miniCycle-lite.html              # Frozen ES5 version for old devices
