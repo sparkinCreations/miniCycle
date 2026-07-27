@@ -2,7 +2,7 @@
 
 > **Added:** v2.286 (July 2026)
 > **Modules:** [`web/modules/ui/focusTaskPanel.js`](../../modules/ui/focusTaskPanel.js), [`web/modules/ui/panelCarousel.js`](../../modules/ui/panelCarousel.js)
-> **Plan/history:** [FOCUS_TASK_VIEW_PLAN.md](../future-work/FOCUS_TASK_VIEW_PLAN.md)
+> **Plan/history:** [FOCUS_TASK_VIEW_PLAN.md](../archive/FOCUS_TASK_VIEW_PLAN.md)
 
 A one-task-at-a-time card inside **Focus View**. The panel switcher at the bottom of Focus View reads **Task | Routine | Stats** — the Task tab shows only the routine's *current step*, with a big Complete button. It exists only in Focus View and stays hidden until onboarding is completed or skipped.
 
@@ -64,6 +64,6 @@ The tab labels go through the label system, and all four non-classic themes over
 ## Related Documentation
 
 - **User Guide — Views: Home & Focus:** [USER_GUIDE.md](../user-guides/USER_GUIDE.md)
-- **Implementation plan & decision log (D1–D8):** [FOCUS_TASK_VIEW_PLAN.md](../future-work/FOCUS_TASK_VIEW_PLAN.md)
+- **Implementation plan & decision log (D1–D8):** [FOCUS_TASK_VIEW_PLAN.md](../archive/FOCUS_TASK_VIEW_PLAN.md)
 - **Feature List:** [FEATURE_LIST.md](./FEATURE_LIST.md)
 - **Stats Panel (the carousel's other panel):** [STATS_PANEL.md](./STATS_PANEL.md)

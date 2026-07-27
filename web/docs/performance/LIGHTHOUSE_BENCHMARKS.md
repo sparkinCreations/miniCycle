@@ -239,7 +239,7 @@ Recommended limits to maintain current scores:
 
 ## 📚 Related Documentation
 
-- [FOLDER_STRUCTURE.md](../developer-guides/FOLDER_STRUCTURE.md) - Module organization
+- [FOLDER_STRUCTURE.md](../start-here/FOLDER_STRUCTURE.md) - Module organization
 - [ERROR_HANDLING_IMPROVEMENTS.md](../security/ERROR_HANDLING_IMPROVEMENTS.md) - Error handling score
 - [UPDATE-VERSION-GUIDE.md](../deployment/UPDATE-VERSION-GUIDE.md) - Version management
 

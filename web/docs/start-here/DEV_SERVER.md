@@ -137,4 +137,4 @@ Press `Ctrl+C` to stop the server gracefully.
 
 ---
 
-**Next**: See [update-version.sh](../scripts/update-version.sh) for version management
+**Next**: See [update-version.sh](../../scripts/update-version.sh) for version management

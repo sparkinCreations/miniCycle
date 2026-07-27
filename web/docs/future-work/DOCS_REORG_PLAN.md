@@ -1,13 +1,41 @@
 # Documentation Reorganization Plan
 
-**Status:** 📋 Proposed — not started
+**Status:** ✅ **Option A COMPLETE** (July 27, 2026) · 📋 Option B still proposed
 **Created:** July 20, 2026
 **Revised:** July 27, 2026 — claims re-verified against the tree; **step 5 struck** (see below); Option B boundaries re-cut.
-**Scope:** `web/docs/` (~238 files, 15 directories — see [PROJECT_STATS.md](../PROJECT_STATS.md))
-**Home:** this file. Move to `archive/` when complete.
+**Scope:** `web/docs/` (~238 files — see [PROJECT_STATS.md](../PROJECT_STATS.md))
+**Home:** this file. Move to `archive/` once Option B ships or is dropped.
 
 > Standing rule: if this document conflicts with the actual state of `docs/`, **the actual state wins**.
-> This plan has already gone stale once (see the struck step 5). Re-verify before executing.
+> This plan has already gone stale twice (see the struck step 5 and the `BOOT_PERF_ROADMAP`
+> note below). Re-verify each step against the tree before executing.
+
+> **Why this is still in `future-work/` and not `archive/`:** the original checklist said to
+> archive this plan when complete, but only **Option A** shipped. Option B (splitting the
+> 41-file `developer-guides/`) is deliberately deferred until A settles, so the document is
+> still active work. Move it to `archive/` when Option B ships or is formally dropped.
+
+### What Option A actually changed (July 27, 2026)
+
+- Created `start-here/` (7 docs, numbered 1→7 in `_sidebar.md`) and `incidents/` (3 postmortems).
+- Dissolved `guides/`; its two modal docs moved to `features/`.
+- Archived **`BUILD_PIPELINE_PLAN.md`** and **`FOCUS_TASK_VIEW_PLAN.md`** — both marked
+  ✅ shipped/complete in their own headers.
+- **`BOOT_PERF_ROADMAP.md` was NOT archived.** The original plan listed it as a completed
+  plan; its header still reads `**Status:** PLAN (June 14 2026)`. It is active work.
+  *(Second time this plan's snapshot disagreed with the tree — see the struck step 5.)*
+- Moved `generate_testing_pdf.py` + `miniCycle_Testing_Directions.pdf` → `testing/`,
+  and the stray `.rtf` → `archive/`.
+- Rewrote every inbound link. Also repaired the `_sidebar.md` **Future Work** section, which
+  had drifted badly: 9 entries pointed at files archived long ago (8 of them still exist in
+  `archive/`, `CSS_REFACTOR_PLAN.md` is gone entirely) and 18 real plans were missing from
+  nav altogether.
+- Added the new-doc rule to [CONTRIBUTING.md](../project-info/CONTRIBUTING.md).
+
+**Known remaining rot (pre-existing, not caused by these moves):** ~60 broken relative links
+elsewhere in `docs/`, mostly pointing at plans archived in earlier cleanups. Not fixed here
+to keep this change reviewable. This is exactly what the proposed `validate:docs` gate would
+have caught — see [Proposed: make the sweep a gate](#proposed-make-the-sweep-a-gate-not-a-ritual).
 
 ---
 
@@ -230,10 +258,15 @@ This is the durable half of the plan. Without it, a future reorg re-derives the 
 
 ## Definition of done
 
-- [ ] No file in a folder whose intent-test it fails
-- [ ] `start-here/` reads 1→7 without a broken link
-- [ ] `grep` sweep returns only `archive/` hits
-- [ ] `_sidebar.md` and both `CLAUDE.md` routers updated
-- [ ] New-doc rule added to `CONTRIBUTING.md`
+**Option A:**
+- [x] No file in a folder whose intent-test it fails *(within A's scope)*
+- [x] `start-here/` reads 1→7 without a broken link
+- [x] No broken link caused by the moves (verified 0 of 8 remaining)
+- [x] `_sidebar.md` and both `CLAUDE.md` routers updated
+- [x] New-doc rule added to `CONTRIBUTING.md`
+
+**Still open:**
+- [ ] Option B (split `developer-guides/`)
 - [ ] `validate:docs` added and passing in CI *(proposed)*
-- [ ] This plan moved to `archive/`
+- [ ] ~60 pre-existing broken links elsewhere in `docs/` swept
+- [ ] This plan moved to `archive/` — only once Option B ships or is dropped

@@ -214,7 +214,7 @@ The manual update paths were rewritten to compare the running **build** against 
 3. Clears ALL caches + unregisters the SW → reloads to `?_cb=<timestamp>` (fresh from network)
 4. Loop guard (`sessionStorage['__miniCycle_buildHeal']`, keyed on server version) prevents reload loops if the cache still can't refresh; a fresh launch retries
 
-> **Caveat:** The self-heal only protects a device once it is **already on 2.249+**. A device stuck on a pre-2.249 build still needs a one-time manual cache clear / PWA reinstall to first load 2.249. See the copy-paste console snippet in [FIX_3_STALE_CACHE.md → Manual recovery](../developer-guides/FIX_3_STALE_CACHE.md#manual-recovery--force-clear-a-stuck-device).
+> **Caveat:** The self-heal only protects a device once it is **already on 2.249+**. A device stuck on a pre-2.249 build still needs a one-time manual cache clear / PWA reinstall to first load 2.249. See the copy-paste console snippet in [FIX_3_STALE_CACHE.md → Manual recovery](../incidents/FIX_3_STALE_CACHE.md#manual-recovery--force-clear-a-stuck-device).
 
 ---
 

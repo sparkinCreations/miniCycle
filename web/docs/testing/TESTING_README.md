@@ -519,7 +519,7 @@ diff performance-baselines/v1.352.txt performance-baselines/v1.353.txt
 - **[PERFORMANCE_SETUP.md](../performance/PERFORMANCE_SETUP.md)** - Quick setup guide
 - **[CLAUDE.md](../developer-guides/CLAUDE.md)** - Architecture documentation
 - **[UNDO_REDO_ARCHITECTURE.md](../architecture/UNDO_REDO_ARCHITECTURE.md)** - Undo/redo system
-- **[WHAT_IS_MINICYCLE.md](../user-guides/WHAT_IS_MINICYCLE.md)** - Product overview
+- **[WHAT_IS_MINICYCLE.md](../start-here/WHAT_IS_MINICYCLE.md)** - Product overview
 
 ### External Resources
 

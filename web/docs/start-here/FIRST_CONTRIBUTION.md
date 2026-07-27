@@ -2,7 +2,7 @@
 
 A step-by-step walkthrough for making your first pull request.
 
-> **Before you start**, read [WHAT_IS_MINICYCLE.md](../user-guides/WHAT_IS_MINICYCLE.md) so you understand the product. miniCycle is a **routine manager**, not a todo app — tasks cycle (reset) instead of being deleted.
+> **Before you start**, read [WHAT_IS_MINICYCLE.md](../start-here/WHAT_IS_MINICYCLE.md) so you understand the product. miniCycle is a **routine manager**, not a todo app — tasks cycle (reset) instead of being deleted.
 
 ---
 
@@ -365,7 +365,7 @@ const state = _deps.AppState.get()
 
 | Resource | Purpose |
 |----------|---------|
-| [WHAT_IS_MINICYCLE.md](../user-guides/WHAT_IS_MINICYCLE.md) | Understand the product |
+| [WHAT_IS_MINICYCLE.md](../start-here/WHAT_IS_MINICYCLE.md) | Understand the product |
 | [DEPENDENCY_MAP.md](../architecture/DEPENDENCY_MAP.md) | See actual module dependencies |
 | [DI_PATTERNS.md](DI_PATTERNS.md) | DI best practices and examples |
 | [MODULE_SYSTEM_GUIDE.md](MODULE_SYSTEM_GUIDE.md) | How the module system works |

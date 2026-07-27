@@ -11,7 +11,7 @@ Welcome to the miniCycle documentation site! Use the sidebar to navigate through
 ## 🚀 Start Here
 
 ### New to miniCycle?
-- **[WHAT_IS_MINICYCLE.md](./user-guides/WHAT_IS_MINICYCLE.md)** - Product overview and philosophy (routine manager, not todo app!)
+- **[WHAT_IS_MINICYCLE.md](./start-here/WHAT_IS_MINICYCLE.md)** - Product overview and philosophy (routine manager, not todo app!)
 - **[CLAUDE.md](./developer-guides/CLAUDE.md)** - Essential guidance for AI assistants and quick onboarding
 - **[QUICK_REFERENCE.md](./user-guides/QUICK_REFERENCE.md)** - Fast lookup for common tasks
 
@@ -109,7 +109,7 @@ See [DEPENDENCY_MAP.md](./architecture/DEPENDENCY_MAP.md) for complete analysis.
 ### "I want to..."
 
 **...understand how miniCycle works**
-→ Start with [WHAT_IS_MINICYCLE.md](./user-guides/WHAT_IS_MINICYCLE.md) then [DEVELOPER_DOCUMENTATION.md](./developer-guides/DEVELOPER_DOCUMENTATION.md)
+→ Start with [WHAT_IS_MINICYCLE.md](./start-here/WHAT_IS_MINICYCLE.md) then [DEVELOPER_DOCUMENTATION.md](./developer-guides/DEVELOPER_DOCUMENTATION.md)
 
 **...add a new feature**
 → Read [DEPENDENCY_MAP.md](./architecture/DEPENDENCY_MAP.md) and [TESTING_QUICK_REFERENCE.md](./testing/TESTING_QUICK_REFERENCE.md)
@@ -136,7 +136,7 @@ See [DEPENDENCY_MAP.md](./architecture/DEPENDENCY_MAP.md) for complete analysis.
 → Check [COMPREHENSIVE_CODE_REVIEW_DEC_2025.md](./developer-guides/COMPREHENSIVE_CODE_REVIEW_DEC_2025.md) and [HIDDEN_CODEBASE_INSIGHTS.md](./developer-guides/HIDDEN_CODEBASE_INSIGHTS.md)
 
 **...modify styles or CSS**
-→ See `styles/` folder structure in [FOLDER_STRUCTURE.md](./developer-guides/FOLDER_STRUCTURE.md) and CSS standards in [CODING_STANDARDS.md](./developer-guides/CODING_STANDARDS.md)
+→ See `styles/` folder structure in [FOLDER_STRUCTURE.md](./start-here/FOLDER_STRUCTURE.md) and CSS standards in [CODING_STANDARDS.md](./developer-guides/CODING_STANDARDS.md)
 
 **...add or modify a vocabulary theme**
 → See [VOCAB_THEME_SYSTEM.md](./developer-guides/VOCAB_THEME_SYSTEM.md) and [THEME_ARCHITECTURE.md](./architecture/THEME_ARCHITECTURE.md)

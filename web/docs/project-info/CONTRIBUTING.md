@@ -5,7 +5,7 @@ This guide explains how the app is structured, how modules communicate, and how 
 
 miniCycle is built with **vanilla JavaScript (ES6 modules)** and uses a **pure dependency injection system** with zero global fallbacks.
 
-> **New here?** Start with the [Your First Contribution](../developer-guides/FIRST_CONTRIBUTION.md) guide for a step-by-step walkthrough.
+> **New here?** Start with the [Your First Contribution](../start-here/FIRST_CONTRIBUTION.md) guide for a step-by-step walkthrough.
 
 > **Pure Dependency Injection**
 >
@@ -68,6 +68,31 @@ modules/
  ├── testing/     ← Test infrastructure
  └── other/       ← Plugins, experimental
 ```
+
+### Where a new *document* goes
+
+`docs/` is sorted by **what the reader is trying to do**, not by topic. Before adding a
+doc, answer *learn / do / why / lookup / incident / plan* and file it accordingly:
+
+| If the reader is asking… | Put it in | Test |
+|---|---|---|
+| "I'm new — teach me" | `docs/start-here/` | Read once, in order |
+| "I need to change code" | `docs/developer-guides/` | Task-oriented, followed while working |
+| "Why is it built this way?" | `docs/architecture/` | Explanation, decision rationale |
+| "What is the exact value/API/key?" | `docs/data-schema/`, `docs/developer-guides/` | Looked up, never read cover-to-cover |
+| "What happened and what did we learn?" | `docs/incidents/` | Dated postmortem |
+| "What might we build?" | `docs/future-work/` | Active plans only; done → `docs/archive/` |
+
+Two rules that keep this from rotting:
+
+1. **A doc that no longer describes future work does not stay in `future-work/`** — ship it
+   to `archive/` (completed) or `incidents/` (it's history).
+2. **Add the doc to `_sidebar.md` in the same commit.** An unlisted doc is an invisible doc,
+   and a listed-but-deleted doc is a broken nav link.
+
+> This rule exists because `developer-guides/` accumulated four different document types
+> until finding anything required already knowing its filename. See
+> [DOCS_REORG_PLAN.md](../future-work/DOCS_REORG_PLAN.md).
 
 ---
 

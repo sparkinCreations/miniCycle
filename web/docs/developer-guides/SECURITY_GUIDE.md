@@ -246,14 +246,14 @@ If you discover a security vulnerability:
 ### Documentation Files
 
 - **[CLAUDE.md](../CLAUDE.md)** - Architecture overview for AI assistants
-- **[FOLDER_STRUCTURE.md](FOLDER_STRUCTURE.md)** - Complete organization documentation
+- **[FOLDER_STRUCTURE.md](../start-here/FOLDER_STRUCTURE.md)** - Complete organization documentation
 - **[DRAG_DROP_ARCHITECTURE.md](../architecture/DRAG_DROP_ARCHITECTURE.md)** - Drag & drop code deep dive
 - **[SAFARI_DRAGDROP_FIX.md](../architecture/SAFARI_DRAGDROP_FIX.md)** - Safari desktop compatibility fix
 - **[legal/user-manual.html](../../legal/user-manual.html)** - End-user documentation
 
 ### Code Organization
 
-For a comprehensive understanding of miniCycle's folder structure, see **[FOLDER_STRUCTURE.md](FOLDER_STRUCTURE.md)** which documents the complete organization, philosophy, and reasoning behind the current structure.
+For a comprehensive understanding of miniCycle's folder structure, see **[FOLDER_STRUCTURE.md](../start-here/FOLDER_STRUCTURE.md)** which documents the complete organization, philosophy, and reasoning behind the current structure.
 
 ### Key Concepts Summary
 
@@ -338,7 +338,7 @@ This comprehensive guide covers:
 
 ## Next Steps
 
-- **[Getting Started](GETTING_STARTED.md)** - Quick start guide
+- **[Getting Started](../start-here/GETTING_STARTED.md)** - Quick start guide
 - **[Architecture Overview](ARCHITECTURE_OVERVIEW.md)** - Understand the system
 - **[Development Workflow](DEVELOPMENT_WORKFLOW.md)** - Start making changes
 

@@ -4,7 +4,7 @@
 > (July 19 2026)** that build is fully **content-hashed** (entry hashing + module map + CSS
 > bundle), and v2.302 is the **first VERIFIED bundled production deploy** (see the
 > deploy-config discovery below). Plan & history:
-> [`docs/future-work/BUILD_PIPELINE_PLAN.md`](../future-work/BUILD_PIPELINE_PLAN.md).
+> [`docs/archive/BUILD_PIPELINE_PLAN.md`](../archive/BUILD_PIPELINE_PLAN.md).
 > This is the operational guide: how it works, how to verify it, and what not to break.
 
 ---

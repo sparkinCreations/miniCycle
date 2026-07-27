@@ -538,14 +538,14 @@ A **static, frozen fallback** for older devices (ES5 compatible).
 
 ## Related Documentation
 
-- **Product Vision:** [WHAT_IS_MINICYCLE.md](../user-guides/WHAT_IS_MINICYCLE.md)
+- **Product Vision:** [WHAT_IS_MINICYCLE.md](../start-here/WHAT_IS_MINICYCLE.md)
 - **User Guide:** [USER_GUIDE.md](../user-guides/USER_GUIDE.md)
 - **Quick Reference:** [QUICK_REFERENCE.md](../user-guides/QUICK_REFERENCE.md)
 - **FAQ:** [FAQ.md](../user-guides/FAQ.md)
 - **Task Options Customizer:** [TASK_OPTIONS_CUSTOMIZER.md](./TASK_OPTIONS_CUSTOMIZER.md)
 - **Recurring Tasks Guide:** [minicycle-recurring-guide.md](./minicycle-recurring-guide.md)
 - **Architecture Overview:** [ARCHITECTURE_OVERVIEW.md](../developer-guides/ARCHITECTURE_OVERVIEW.md)
-- **Folder Structure:** [FOLDER_STRUCTURE.md](../developer-guides/FOLDER_STRUCTURE.md)
+- **Folder Structure:** [FOLDER_STRUCTURE.md](../start-here/FOLDER_STRUCTURE.md)
 
 ---
 

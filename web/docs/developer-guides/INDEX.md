@@ -18,7 +18,7 @@
 | **Understand the architecture** | [CLAUDE.md](./CLAUDE.md) | 15 min |
 | **See test results** | [PERFORMANCE_SUMMARY.md](../performance/PERFORMANCE_SUMMARY.md) | 5 min |
 | **Deep dive into testing** | [PERFORMANCE_TESTING_GUIDE.md](../performance/PERFORMANCE_TESTING_GUIDE.md) | 30 min |
-| **Understand the system** | [WHAT_IS_MINICYCLE.md](../user-guides/WHAT_IS_MINICYCLE.md) | 5 min |
+| **Understand the system** | [WHAT_IS_MINICYCLE.md](../start-here/WHAT_IS_MINICYCLE.md) | 5 min |
 
 ---
 
@@ -26,7 +26,7 @@
 
 ### 🚀 Getting Started
 
-#### [WHAT_IS_MINICYCLE.md](../user-guides/WHAT_IS_MINICYCLE.md)
+#### [WHAT_IS_MINICYCLE.md](../start-here/WHAT_IS_MINICYCLE.md)
 **What it is**: Product overview and core concepts
 **Read if**: You're new to miniCycle
 **Time**: 5 minutes
@@ -59,7 +59,7 @@
 **Read if**: You want to navigate the developer guide system
 **Time**: 2 minutes
 
-#### [GETTING_STARTED.md](./GETTING_STARTED.md)
+#### [GETTING_STARTED.md](../start-here/GETTING_STARTED.md)
 **What it is**: Quick start guide for developers
 **Read if**: You're setting up miniCycle for the first time
 **Time**: 5 minutes
@@ -422,7 +422,7 @@
 
 ### "I'm new to miniCycle"
 
-1. **Product overview**: [WHAT_IS_MINICYCLE.md](../user-guides/WHAT_IS_MINICYCLE.md)
+1. **Product overview**: [WHAT_IS_MINICYCLE.md](../start-here/WHAT_IS_MINICYCLE.md)
 2. **Architecture**: [CLAUDE.md](./CLAUDE.md)
 3. **Data structure**: [SCHEMA_2_5.md](../data-schema/SCHEMA_2_5.md)
 4. **Test system**: [TESTING_README.md](../testing/TESTING_README.md)

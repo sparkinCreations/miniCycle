@@ -1,7 +1,7 @@
 # miniCycle — Feedback To-Do
 
 > **Added to repo July 2026.** The P0 load/startup section is planned in detail in
-> [`BUILD_PIPELINE_PLAN.md`](./BUILD_PIPELINE_PLAN.md) (which supersedes `MINIFICATION_PLAN.md`).
+> [`BUILD_PIPELINE_PLAN.md`](../archive/BUILD_PIPELINE_PLAN.md) (which supersedes `MINIFICATION_PLAN.md`).
 > i18n items belong to [`I18N_LANGUAGE_PACK_PLAN.md`](./I18N_LANGUAGE_PACK_PLAN.md) — note the
 > flat-vs-nested key advice conflicts with the existing ~591-key nested label system and should be
 > decided there, not adopted reflexively.

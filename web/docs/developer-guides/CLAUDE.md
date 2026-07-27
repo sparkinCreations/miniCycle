@@ -8,7 +8,7 @@ This is the **detailed reference** for working with this repository. The root `C
 
 **miniCycle is a routine manager, not a todo app.**
 
-Read [WHAT_IS_MINICYCLE.md](../user-guides/WHAT_IS_MINICYCLE.md) first to understand the product vision:
+Read [WHAT_IS_MINICYCLE.md](../start-here/WHAT_IS_MINICYCLE.md) first to understand the product vision:
 - Routines persist and reset (not deleted when complete)
 - Cycle counts track consistency over time
 - Gamification rewards consistent routine completion
@@ -232,7 +232,7 @@ All notification messages, modal text, ARIA labels, and button text should use `
 
 ### Before You Start
 1. Read this file completely
-2. Read [WHAT_IS_MINICYCLE.md](../user-guides/WHAT_IS_MINICYCLE.md)
+2. Read [WHAT_IS_MINICYCLE.md](../start-here/WHAT_IS_MINICYCLE.md)
 3. Understand this is a routine manager with gamification
 
 ### Key Patterns
@@ -458,7 +458,7 @@ Every DI module follows this pattern:
 ## Documentation
 
 - **Current metrics**: [PROJECT_STATS.md](../PROJECT_STATS.md)
-- **Product vision**: [WHAT_IS_MINICYCLE.md](../user-guides/WHAT_IS_MINICYCLE.md)
+- **Product vision**: [WHAT_IS_MINICYCLE.md](../start-here/WHAT_IS_MINICYCLE.md)
 - **DI patterns & pitfalls**: [DI_PATTERNS.md](./DI_PATTERNS.md)
 - **Architecture overview**: [ARCHITECTURE_OVERVIEW.md](./ARCHITECTURE_OVERVIEW.md)
 - **Label system**: [LABEL_SYSTEM_ARCHITECTURE.md](../architecture/LABEL_SYSTEM_ARCHITECTURE.md)
@@ -467,7 +467,7 @@ Every DI module follows this pattern:
 - **Event listeners**: [EVENT_LISTENER_GUIDE.md](./EVENT_LISTENER_GUIDE.md)
 - **How to add X**: [HOW_TO_ADD_COOKBOOK.md](./HOW_TO_ADD_COOKBOOK.md)
 - **Making changes**: [MAKING_CODE_CHANGES.md](./MAKING_CODE_CHANGES.md)
-- **Folder structure**: [FOLDER_STRUCTURE.md](./FOLDER_STRUCTURE.md)
+- **Folder structure**: [FOLDER_STRUCTURE.md](../start-here/FOLDER_STRUCTURE.md)
 - **Testing guide**: [TESTING_GUIDE.md](./TESTING_GUIDE.md)
 - **Version management**: [UPDATE-VERSION-GUIDE.md](../deployment/UPDATE-VERSION-GUIDE.md)
 - **All docs**: [README.md](../README.md)

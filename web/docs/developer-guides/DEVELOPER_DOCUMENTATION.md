@@ -11,7 +11,7 @@
 miniCycle is a **routine manager** that helps users build and maintain repeatable routines. Tasks persist and cycle (reset) rather than being deleted when completed.
 
 **Before contributing, read:**
-1. [WHAT_IS_MINICYCLE.md](../user-guides/WHAT_IS_MINICYCLE.md) - Product vision
+1. [WHAT_IS_MINICYCLE.md](../start-here/WHAT_IS_MINICYCLE.md) - Product vision
 2. [CLAUDE.md](CLAUDE.md) - Quick onboarding for AI assistants
 
 ---
@@ -19,7 +19,7 @@ miniCycle is a **routine manager** that helps users build and maintain repeatabl
 ## Quick Navigation
 
 ### Getting Started
-- **[Getting Started Guide](GETTING_STARTED.md)** - Get running in 2 minutes
+- **[Getting Started Guide](../start-here/GETTING_STARTED.md)** - Get running in 2 minutes
 - **[CLAUDE.md](CLAUDE.md)** - Essential guidance for AI assistants
 
 ### Architecture
@@ -178,7 +178,7 @@ http://localhost:8080/tests/module-test-suite.html # Tests
 
 ### Before You Start
 
-1. **Understand the product** - Read [WHAT_IS_MINICYCLE.md](../user-guides/WHAT_IS_MINICYCLE.md)
+1. **Understand the product** - Read [WHAT_IS_MINICYCLE.md](../start-here/WHAT_IS_MINICYCLE.md)
 2. **Understand the architecture** - Read [DEPENDENCY_MAP.md](../architecture/DEPENDENCY_MAP.md)
 3. **Run the tests** - `npm test`
 
@@ -247,12 +247,12 @@ See [DI_PATTERNS.md](./DI_PATTERNS.md) for the current DI architecture.
 ## Documentation Map
 
 ### Core Docs (Start Here)
-- [WHAT_IS_MINICYCLE.md](../user-guides/WHAT_IS_MINICYCLE.md) - Product vision
+- [WHAT_IS_MINICYCLE.md](../start-here/WHAT_IS_MINICYCLE.md) - Product vision
 - [CLAUDE.md](CLAUDE.md) - AI assistant guide
 - [DEPENDENCY_MAP.md](../architecture/DEPENDENCY_MAP.md) - Actual architecture
 
 ### Development Guides
-- [GETTING_STARTED.md](GETTING_STARTED.md) - Quick start
+- [GETTING_STARTED.md](../start-here/GETTING_STARTED.md) - Quick start
 - [DEVELOPMENT_WORKFLOW.md](DEVELOPMENT_WORKFLOW.md) - How to make changes
 - [TESTING_GUIDE.md](TESTING_GUIDE.md) - Testing practices
 - [SECURITY_GUIDE.md](SECURITY_GUIDE.md) - Security patterns
