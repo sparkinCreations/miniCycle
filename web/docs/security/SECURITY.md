@@ -365,6 +365,15 @@ For details, see [Error Handling Documentation](ERROR_HANDLING_AND_TESTING_SUMMA
 
 ## Vulnerability History
 
+### v2.336 (2026-07-27)
+
+**Input Normalizer Audit — `sanitizeInput` / `normalizeImportedText` (formerly `fallbackSanitize`):**
+- Two functions documented as XSS protection performed no HTML neutralization — both set `textContent` on a detached element and read it back, an identity op (trim + length-clamp only), so the named "security" primitives escaped nothing.
+- Not exploitable in any render path examined (task text renders via `textContent`, notifications via `escapeHtml()`), but the guardrail the docs asserted was absent, and the test suite mocked the functions with *working* stubs, so the gap was structurally undetectable.
+- Fixes: renamed to honest names (`normalizeText` / `normalizeImportedText`) with a deprecated `sanitizeInput` alias; corrected the JSDoc and this document; added C0/C1 control-character stripping to the `.mcyc` import path; routed the notification escape fallback through the complete resolver (no more raw-content fallback); added a real-implementation test and an XSS sink test (the suite had neither); added an ESLint guard flagging new template-literal `innerHTML` writes.
+- **Impact:** Removes a silent, believed-present guardrail before a future `innerHTML` sink could trust it; hardens the import path and the escape fallback (defense in depth).
+- **Severity:** Low (not currently exploitable) / High priority (silent failure mode)
+
 ### v1.569 (2025-12-27)
 
 **Content Security Policy Implementation:**
@@ -487,14 +496,14 @@ No known security vulnerabilities reported.
 
 ### Reporting Security Issues
 
-- **Email:** security@minicycle.app (if available)
+- **Email:** security@sparkincreations.com
 - **GitHub:** Security Advisories (preferred)
 - **Response Time:** 48 hours
 
 ### Security Team
 
-- Lead: (maintainer name/GitHub handle)
-- Contact: (email/GitHub)
+- Lead: sparkinCreations (@sparkinCreations on GitHub)
+- Contact: security@sparkincreations.com
 
 ---
 
@@ -598,8 +607,8 @@ If self-hosting or modifying miniCycle:
 
 ---
 
-**Security Policy Version:** 1.1
-**Last Updated:** December 27, 2025
-**miniCycle Version:** 1.569
+**Security Policy Version:** 1.2
+**Last Updated:** July 27, 2026
+**miniCycle Version:** 2.336
 
 *This security policy is a living document and will be updated as needed.*
