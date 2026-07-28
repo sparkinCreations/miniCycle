@@ -119,44 +119,10 @@ export async function runRecurringIntegrationTests(resultsDiv) {
         }
     }
 
-    // === MOCK SETUP TESTS ===
-    resultsDiv.innerHTML += '<h4 class="test-section">🔧 Mock Setup</h4>';
-
-    test('creates mock AppState for testing', () => {
-        const mockAppState = {
-            get: () => ({
-                schemaVersion: "2.5",
-                data: { cycles: {} },
-                appState: { activeCycleId: null }
-            }),
-            update: (fn) => {},
-            isReady: () => true
-        };
-
-        window.AppState = mockAppState;
-
-        if (!window.AppState || !window.AppState.isReady()) {
-            throw new Error('Mock AppState not set up correctly');
-        }
-    });
-
-    test('creates mock notification system', () => {
-        window.showNotification = (msg, type, duration) => {
-            return { message: msg, type, duration };
-        };
-
-        if (typeof window.showNotification !== 'function') {
-            throw new Error('Mock notification not set up');
-        }
-    });
-
-    test('creates mock FeatureFlags', () => {
-        window.FeatureFlags = { recurringEnabled: true };
-
-        if (!window.FeatureFlags || window.FeatureFlags.recurringEnabled !== true) {
-            throw new Error('Mock FeatureFlags not set up correctly');
-        }
-    });
+    // NOTE: The former "Mock Setup" section (creates mock AppState / notification /
+    // FeatureFlags) was removed — those tests only asserted that the mock the test
+    // itself had just assigned was truthy, exercising no product code. The
+    // Initialization tests below assert real behavior of initRecurringModules().
 
     // === INITIALIZATION TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">🚀 Initialization</h4>';
@@ -364,9 +330,13 @@ export async function runRecurringIntegrationTests(resultsDiv) {
     // === DEPENDENCY CONFIGURATION TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">🔌 Dependency Configuration</h4>';
 
-    await test('configures state management dependencies', async () => {
+    await test('wires the injected AppState through to a usable coreAPI', async () => {
         const mockAppState = {
-            get: () => ({ test: 'data' }),
+            get: () => ({
+                schemaVersion: "2.5",
+                data: { cycles: {} },
+                appState: { activeCycleId: null }
+            }),
             update: (fn) => {},
             isReady: () => true
         };
@@ -380,13 +350,17 @@ export async function runRecurringIntegrationTests(resultsDiv) {
 
         const result = await initRecurringModules({ AppMeta: { version: 'test' } });
 
-        // Verify dependencies were configured by checking core is functional
-        if (!result.core) {
-            throw new Error('Core not returned with configured dependencies');
+        // Configuration is only "real" if it produced a working API surface, not just
+        // a truthy core object. Assert the state-driven entry points are callable.
+        if (typeof result.coreAPI?.applyRecurringSettings !== 'function') {
+            throw new Error('coreAPI.applyRecurringSettings should be wired');
+        }
+        if (typeof result.coreAPI?.handleActivation !== 'function') {
+            throw new Error('coreAPI.handleActivation should be wired');
         }
     });
 
-    await test('configures notification dependencies', async () => {
+    await test('does not surface a notification on a successful init', async () => {
         const mockAppState = {
             get: () => ({
                 schemaVersion: "2.5",
@@ -396,8 +370,11 @@ export async function runRecurringIntegrationTests(resultsDiv) {
             update: (fn) => {},
             isReady: () => true
         };
+        // The failure path (tested below) fires a notification; the happy path must stay
+        // silent. This turns the previously-dead `notificationCalled` flag into a real
+        // negative assertion instead of the old tautology (typeof showNotification === 'function').
         let notificationCalled = false;
-        const mockShowNotification = (msg) => { notificationCalled = true; };
+        const mockShowNotification = () => { notificationCalled = true; };
         const mockFeatureFlags = { recurringEnabled: true };
 
         window.AppState = mockAppState;
@@ -405,15 +382,13 @@ export async function runRecurringIntegrationTests(resultsDiv) {
         window.FeatureFlags = mockFeatureFlags;
         setupDIDeps(mockAppState, mockShowNotification, mockFeatureFlags);
 
-        await initRecurringModules({ AppMeta: { version: 'test' } });
+        const result = await initRecurringModules({ AppMeta: { version: 'test' } });
 
-        // Verify notification dependency works
-        if (typeof window.showNotification !== 'function') {
-            throw new Error('Notification function not available');
-        }
+        if (!result.core) throw new Error('init should succeed');
+        if (notificationCalled) throw new Error('successful init must not surface a user notification');
     });
 
-    await test('configures feature flag dependencies', async () => {
+    await test('still returns core AND panel when the recurring feature flag is disabled', async () => {
         const mockAppState = {
             get: () => ({
                 schemaVersion: "2.5",
@@ -431,12 +406,11 @@ export async function runRecurringIntegrationTests(resultsDiv) {
         window.FeatureFlags = mockFeatureFlags;
         setupDIDeps(mockAppState, mockShowNotification, mockFeatureFlags);
 
-        // Should still initialize even if feature is disabled
+        // Disabling the flag must not skip module construction — both halves still load.
         const result = await initRecurringModules({ AppMeta: { version: 'test' } });
 
-        if (!result) {
-            throw new Error('Should initialize even with feature disabled');
-        }
+        if (!result.core) throw new Error('core should load even with feature disabled');
+        if (!result.panel) throw new Error('panel should load even with feature disabled');
     });
 
     // === ERROR HANDLING TESTS ===

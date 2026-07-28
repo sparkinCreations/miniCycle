@@ -378,11 +378,17 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
 
         const dl = mockDownloadEnvironment();
         try {
-            instance.exportMiniCycleData({
+            await instance.exportMiniCycleData({
                 name: 'test', title: 'Test',
                 tasks: [{ id: 'task-1', text: 'Task 1', completed: false }],
                 autoReset: false, cycleCount: 0, deleteCheckedTasks: false
             }, 'Test Cycle');
+
+            // Was a does-not-throw no-op (and wasn't even awaited); assert the real export
+            // artifacts like the sibling test above.
+            if (!dl.tracked.linkCreated || !dl.tracked.blobCreated) {
+                throw new Error('export flow should create the download link and blob');
+            }
         } finally {
             dl.restore();
         }
@@ -403,8 +409,11 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
                 autoReset: true, cycleCount: 0, deleteCheckedTasks: false
             }, 'My Cycle!');
 
-            if (!dl.tracked.filename.endsWith('.mcyc')) {
-                throw new Error('Filename should have .mcyc extension');
+            // Source: cycleName.replace(/[^a-z0-9]/gi, '_') + '.mcyc'. The space and '!' both
+            // become '_', so 'My Cycle!' → 'My_Cycle_.mcyc'. The old check only verified the
+            // extension and would pass even if sanitization were removed entirely.
+            if (dl.tracked.filename !== 'My_Cycle_.mcyc') {
+                throw new Error(`filename should be sanitized to "My_Cycle_.mcyc", got "${dl.tracked.filename}"`);
             }
         } finally {
             dl.restore();

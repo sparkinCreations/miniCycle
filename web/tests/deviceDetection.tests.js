@@ -180,52 +180,75 @@ export async function runDeviceDetectionTests(resultsDiv, isPartOfSuite = false)
     // === MANUAL OVERRIDE TESTS ===
     resultsDiv.innerHTML += '<h4>🚀 Manual Override Tests</h4>';
     
-    await test('respects manual override preference', () => {
+    await test('respects manual override preference', async () => {
+        // checkManualOverride is async — the old test never awaited it, so `hasOverride` was a
+        // Promise (always truthy) and `if (!hasOverride)` could never fire (green even if override
+        // detection were broken). Also: deps resolve from the MODULE-level DI (di.resolve),
+        // NOT constructor args, and loadMiniCycleData DEFAULTS to null — so the override path
+        // (which needs a real schema) requires injecting one.
         localStorage.setItem('miniCycleForceFullVersion', 'true');
-        
-        const manager = new DeviceDetectionManager({
+        module.setDeviceDetectionDependencies({
             loadMiniCycleData: () => ({ metadata: { version: '2.5' }, settings: {} }),
-            showNotification: () => {}
+            AppState: { isReady: () => false },        // saveCompatibilityData no-ops when not ready
+            appInit: { waitForCore: async () => {} }
         });
-        
-        const hasOverride = manager.checkManualOverride('test-agent');
-        
-        if (!hasOverride) {
-            throw new Error('Should detect manual override');
+        try {
+            const manager = new DeviceDetectionManager();
+            const hasOverride = await manager.checkManualOverride('test-agent');
+            if (hasOverride !== true) {
+                throw new Error('Should detect manual override when miniCycleForceFullVersion is set');
+            }
+        } finally {
+            localStorage.removeItem('miniCycleForceFullVersion');
+            module.setDeviceDetectionDependencies({ loadMiniCycleData: () => null }); // restore default
         }
     });
     
     // === VERSION CHANGE DETECTION ===
     resultsDiv.innerHTML += '<h4>🔄 Version Change Detection</h4>';
     
-    await test('detects version changes', () => {
-        const manager = new DeviceDetectionManager({
+    await test('detects version changes', async () => {
+        // autoRedetectOnVersionChange re-runs detection only when the stored
+        // settings.deviceCompatibility.lastDetectionVersion differs from currentVersion; it
+        // awaits runDeviceDetection() directly (no setTimeout). The old test never asserted its
+        // `detectionRan` spy and only checked the method still exists.
+        // Deps resolve from module-level DI; only AppMeta.version drives this.currentVersion.
+        module.setDeviceDetectionDependencies({
             loadMiniCycleData: () => ({ metadata: { version: '2.5' }, settings: {} }),
-            currentVersion: '1.999'
+            AppState: { isReady: () => false },
+            appInit: { waitForCore: async () => {} }
         });
-        
-        // Save old version data
-        manager.saveCompatibilityData({
-            shouldUseLite: false,
-            reason: 'test'
-        });
-        
-        // Create new manager with different version
-        const newManager = new DeviceDetectionManager({
-            loadMiniCycleData: () => ({ metadata: { version: '2.5' }, settings: {} }),
-            currentVersion: '2.000'
-        });
-        
-        // Mock the runDeviceDetection to track if it was called
-        let detectionRan = false;
-        newManager.runDeviceDetection = () => { detectionRan = true; };
-        
-        newManager.autoRedetectOnVersionChange();
-        
-        // Since autoRedetectOnVersionChange uses setTimeout internally,
-        // we'll just check that the function doesn't throw
-        if (typeof newManager.autoRedetectOnVersionChange !== 'function') {
-            throw new Error('autoRedetectOnVersionChange should be a function');
+        const makeManager = (version) => {
+            const m = new DeviceDetectionManager({ AppMeta: { version } });   // sets this.currentVersion
+            m.detectionRan = false;
+            m.runDeviceDetection = () => { m.detectionRan = true; };
+            return m;
+        };
+
+        try {
+            // Version CHANGED (stored 1.999 → current 2.000) → detection re-runs.
+            localStorage.setItem('miniCycleData', JSON.stringify({
+                settings: { deviceCompatibility: { lastDetectionVersion: '1.999' } }
+            }));
+            const changed = makeManager('2.000');
+            await changed.autoRedetectOnVersionChange();
+            if (!changed.detectionRan) {
+                throw new Error('detection should re-run when the stored version differs from current');
+            }
+
+            // Version SAME (stored 2.000 === current 2.000) → detection does NOT run (the control
+            // that makes the test meaningful — fails if the version comparison were removed).
+            localStorage.setItem('miniCycleData', JSON.stringify({
+                settings: { deviceCompatibility: { lastDetectionVersion: '2.000' } }
+            }));
+            const same = makeManager('2.000');
+            await same.autoRedetectOnVersionChange();
+            if (same.detectionRan) {
+                throw new Error('detection should NOT re-run when the stored version matches current');
+            }
+        } finally {
+            localStorage.removeItem('miniCycleData');
+            module.setDeviceDetectionDependencies({ loadMiniCycleData: () => null }); // restore default
         }
     });
 

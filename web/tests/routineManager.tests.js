@@ -716,14 +716,10 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
         if (!mockData.data.cycles['Duplicate Name (2)']) {
             throw new Error('Should create numbered variation for duplicate');
         }
-        // Check notification was sent (may contain warning about duplicate)
-        const hasWarning = notifications.some(msg =>
-            msg && (msg.includes('already exists') || msg.includes('Using'))
-        );
-        if (!hasWarning && notifications.length === 0) {
-            // If no notifications, the cycle was still created correctly - test passes
-            // The notification is optional behavior
-        }
+        // Note: a duplicate-warning notification is optional behavior and intentionally
+        // not asserted — the observable contract is the numbered-suffix cycle above. The
+        // old test computed `hasWarning` and then left its only branch empty (asserting
+        // nothing); dropped rather than pretend to check an optional notification.
     });
 
     await test('createNewMiniCycle falls back to timestamp when too many duplicates', async () => {

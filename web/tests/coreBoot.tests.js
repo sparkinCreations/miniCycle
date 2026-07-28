@@ -52,60 +52,38 @@ export async function runCoreBootTests(resultsDiv) {
         }
     });
 
-    // ===== LOCALSTORAGE TESTS =====
-    resultsDiv.innerHTML += '<h4 class="test-section">📦 localStorage</h4>';
+    // ===== RECOVERY-FLAG LOGIC (real coreBoot exports) =====
+    // Replaced a cluster of tests that exercised localStorage / JSON.parse PLATFORM
+    // behavior and a hand-built mock object — none of which called coreBoot.
+    resultsDiv.innerHTML += '<h4 class="test-section">🔁 Recovery flags</h4>';
 
-    await test('localStorage can store and retrieve data', () => {
-        const testKey = 'coreBoot-test-key';
-        const testData = { test: true, timestamp: Date.now() };
+    const loadCoreBoot = () => import(((globalThis.__MC_MODULE_MAP || {})['/modules/boot/coreBoot.js'] || '../modules/boot/coreBoot.js') + '?v=' + Date.now());
 
-        localStorage.setItem(testKey, JSON.stringify(testData));
-        const retrieved = JSON.parse(localStorage.getItem(testKey));
-        localStorage.removeItem(testKey);
+    await test('getRecoveryAttemptCount reflects sessionStorage and clearRecoveryFlags resets it', async () => {
+        const { getRecoveryAttemptCount, clearRecoveryFlags } = await loadCoreBoot();
+        clearRecoveryFlags();
+        if (getRecoveryAttemptCount() !== 0) throw new Error('cleared counter should read 0');
 
-        if (!retrieved || !retrieved.test) {
-            throw new Error('Failed to store/retrieve from localStorage');
-        }
+        sessionStorage.setItem('_cacheRecoveryAttempts', '2');
+        if (getRecoveryAttemptCount() !== 2) throw new Error('counter should reflect sessionStorage value');
+
+        clearRecoveryFlags();
+        if (getRecoveryAttemptCount() !== 0) throw new Error('clearRecoveryFlags should reset the counter');
     });
 
-    await test('Schema 2.5 structure can be created', () => {
-        const mockData = {
-            metadata: { version: '2.5', lastModified: Date.now() },
-            settings: { theme: 'default' },
-            data: { cycles: {} },
-            appState: { activeCycleId: null }
-        };
-
-        const requiredProps = ['metadata', 'settings', 'data', 'appState'];
-        for (const prop of requiredProps) {
-            if (!(prop in mockData)) {
-                throw new Error(`Missing property: ${prop}`);
-            }
-        }
-    });
-
-    await test('Empty localStorage returns null', () => {
-        const key = 'nonexistent-key-12345';
-        const data = localStorage.getItem(key);
-        if (data !== null) {
-            throw new Error('Non-existent key should return null');
-        }
-    });
-
-    await test('Corrupted JSON can be detected', () => {
-        const key = 'coreBoot-corrupt-test';
-        localStorage.setItem(key, 'not-valid-json{{{');
-
-        let parseError = null;
+    await test('isRecoveryExhausted flips at the MAX_RECOVERY_ATTEMPTS (2) threshold', async () => {
+        const { isRecoveryExhausted, clearRecoveryFlags } = await loadCoreBoot();
         try {
-            JSON.parse(localStorage.getItem(key));
-        } catch (e) {
-            parseError = e;
-        }
-        localStorage.removeItem(key);
+            clearRecoveryFlags();
+            if (isRecoveryExhausted()) throw new Error('0 attempts should not be exhausted');
 
-        if (!parseError) {
-            throw new Error('Corrupted JSON should throw');
+            sessionStorage.setItem('_cacheRecoveryAttempts', '1');
+            if (isRecoveryExhausted()) throw new Error('1 attempt (< max) should not be exhausted');
+
+            sessionStorage.setItem('_cacheRecoveryAttempts', '2');
+            if (!isRecoveryExhausted()) throw new Error('2 attempts (>= max) should be exhausted');
+        } finally {
+            clearRecoveryFlags();
         }
     });
 

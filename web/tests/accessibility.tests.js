@@ -19,6 +19,22 @@ export async function runAccessibilityTests(resultsDiv, isPartOfSuite = false) {
 
     const env = await setupTestEnvironment();
 
+    // Real product code under test: the app's task-button accessibility. The DOM-attribute
+    // tests below verify WCAG *patterns* against hand-built elements (they exercise the
+    // browser's setAttribute/getAttribute, not miniCycle) — useful as a spec, but they can't
+    // catch an app regression. These imports let the "Real App ARIA" section assert that
+    // miniCycle's own TaskButtons actually applies the right labels/states.
+    let TaskButtons = null, getLabel = null;
+    try {
+        const cacheBuster = window.testCacheBuster || Date.now();
+        const tb = await import(`../modules/task/taskButtons.js?v=${cacheBuster}`);
+        const lr = await import(`../modules/labels/labelResolver.js?v=${cacheBuster}`);
+        TaskButtons = tb.TaskButtons;
+        getLabel = lr.getLabel;
+    } catch (e) {
+        console.error('accessibility.tests: could not load taskButtons/labelResolver for real-ARIA section', e);
+    }
+
     resultsDiv.innerHTML = '<h2>Accessibility Tests</h2><h3>Running tests...</h3>';
     let passed = { count: 0 }, total = { count: 0 };
 
@@ -856,6 +872,133 @@ export async function runAccessibilityTests(resultsDiv, isPartOfSuite = false) {
         if (!gap || parseInt(gap) < 8) {
             throw new Error('Interactive elements should have adequate spacing');
         }
+    });
+
+    // === REAL APP ARIA (miniCycle TaskButtons) ===
+    // Unlike the pattern tests above, these drive miniCycle's OWN accessibility code
+    // (modules/task/taskButtons.js) and would fail if the app stopped labelling its
+    // task buttons — real regression protection, not a DOM-API tautology.
+    resultsDiv.innerHTML += '<h4 class="test-section">🧩 Real App ARIA (TaskButtons)</h4>';
+
+    await test('TaskButtons applies label-system aria-labels per button class', () => {
+        if (!TaskButtons || !getLabel) throw new Error('TaskButtons/getLabel not loaded');
+        const inst = new TaskButtons({});
+        const container = createTestContainer();
+
+        // btnClass → the label key the app is contracted to use (taskButtons.js ariaLabelKeys).
+        const cases = {
+            'move-up': 'taskOption.moveUp',
+            'move-down': 'taskOption.moveDown',
+            'recurring-btn': 'taskOption.recurring',
+            'set-due-date': 'taskOption.dueDate',
+            'enable-task-reminders': 'taskOption.reminders',
+            'priority-btn': 'taskOption.priority',
+            'edit-btn': 'taskOption.edit',
+            'delete-btn': 'taskOption.delete'
+        };
+
+        for (const [btnClass, key] of Object.entries(cases)) {
+            const button = document.createElement('button');
+            button.className = `task-btn ${btnClass}`;
+            container.appendChild(button);
+            inst.setupButtonAccessibility(button, btnClass, container);
+
+            const expected = getLabel(key);
+            if (button.getAttribute('aria-label') !== expected) {
+                throw new Error(`${btnClass} aria-label should be "${expected}", got "${button.getAttribute('aria-label')}"`);
+            }
+            // Real app also mirrors the label into title for tooltip parity, and drops the
+            // button out of the tab order (options are revealed on focus/hover).
+            if (button.getAttribute('title') !== expected) throw new Error(`${btnClass} title should match aria-label`);
+            if (button.getAttribute('tabindex') !== '-1') throw new Error(`${btnClass} should be tabindex=-1`);
+        }
+
+        // Distinctness guard: the mapping is not a constant — delete ≠ edit.
+        if (getLabel('taskOption.delete') === getLabel('taskOption.edit')) {
+            throw new Error('label system should give distinct labels per action');
+        }
+    });
+
+    await test('TaskButtons falls back to showOptions label for an unknown button class', () => {
+        if (!TaskButtons || !getLabel) throw new Error('TaskButtons/getLabel not loaded');
+        const inst = new TaskButtons({});
+        const container = createTestContainer();
+        const button = document.createElement('button');
+        button.className = 'task-btn mystery-btn';
+        container.appendChild(button);
+
+        inst.setupButtonAccessibility(button, 'mystery-btn', container);
+
+        if (button.getAttribute('aria-label') !== getLabel('taskOption.showOptions')) {
+            throw new Error('unknown button class should fall back to the showOptions label');
+        }
+    });
+
+    await test('TaskButtons toggle buttons expose aria-pressed reflecting state', () => {
+        if (!TaskButtons) throw new Error('TaskButtons not loaded');
+        const inst = new TaskButtons({});
+        const container = createTestContainer();
+
+        const makeBtn = (cls) => { const b = document.createElement('button'); b.className = `task-btn ${cls}`; container.appendChild(b); return b; };
+
+        // reminders on → aria-pressed="true"; off → "false"
+        const remOn = makeBtn('enable-task-reminders');
+        inst.setupButtonAriaStates(remOn, 'enable-task-reminders', true, false, false, 't1', {}, false);
+        if (remOn.getAttribute('aria-pressed') !== 'true') throw new Error('reminders-on should be aria-pressed=true');
+
+        const remOff = makeBtn('enable-task-reminders');
+        inst.setupButtonAriaStates(remOff, 'enable-task-reminders', false, false, false, 't1', {}, false);
+        if (remOff.getAttribute('aria-pressed') !== 'false') throw new Error('reminders-off should be aria-pressed=false');
+
+        // priority reflects highPriority flag
+        const prio = makeBtn('priority-btn');
+        inst.setupButtonAriaStates(prio, 'priority-btn', false, false, true, 't1', {}, false);
+        if (prio.getAttribute('aria-pressed') !== 'true') throw new Error('high-priority should be aria-pressed=true');
+
+        // recurring reflects the recurring flag → aria-pressed toggles true/false.
+        const recOn = makeBtn('recurring-btn');
+        inst.setupButtonAriaStates(recOn, 'recurring-btn', false, true, false, 't1', {}, false);
+        if (recOn.getAttribute('aria-pressed') !== 'true') throw new Error('recurring task should be aria-pressed=true');
+
+        const recOff = makeBtn('recurring-btn');
+        inst.setupButtonAriaStates(recOff, 'recurring-btn', false, false, false, 't1', {}, false);
+        if (recOff.getAttribute('aria-pressed') !== 'false') throw new Error('non-recurring task should be aria-pressed=false');
+
+        // Template-present path: a task with a recurringTemplates entry must produce a VALID
+        // boolean aria-pressed, not "[object Object]" (regression guard for the taskButtons.js
+        // `!!hasRecurringTemplate || !!recurring` coercion fix).
+        const recTmpl = makeBtn('recurring-btn');
+        inst.setupButtonAriaStates(recTmpl, 'recurring-btn', false, false, false, 't1', { recurringTemplates: { t1: { id: 't1' } } }, false);
+        if (recTmpl.getAttribute('aria-pressed') !== 'true') {
+            throw new Error(`recurring task with a template should be aria-pressed="true", got "${recTmpl.getAttribute('aria-pressed')}"`);
+        }
+
+        // due-date uses aria-expanded (reveals an input), not aria-pressed
+        const due = makeBtn('set-due-date');
+        inst.setupButtonAriaStates(due, 'set-due-date', false, false, false, 't1', {}, false);
+        if (due.getAttribute('aria-expanded') !== 'false') throw new Error('due-date should start aria-expanded=false');
+    });
+
+    await test('TaskButtons keyboard handler activates on Space (real handler)', () => {
+        if (!TaskButtons) throw new Error('TaskButtons not loaded');
+        const inst = new TaskButtons({});
+        const container = createTestContainer();
+        const button = document.createElement('button');
+        button.className = 'task-btn delete-btn';
+        container.appendChild(button);
+
+        let clicked = false;
+        button.addEventListener('click', () => { clicked = true; });
+
+        // Real app attaches the keydown handler here (falls back to addEventListener when
+        // safeAddEventListener isn't injected).
+        inst.setupButtonAccessibility(button, 'delete-btn', container);
+
+        const evt = new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true });
+        button.dispatchEvent(evt);
+
+        if (!clicked) throw new Error('Space should activate the task button via the real handler');
+        if (!evt.defaultPrevented) throw new Error('Space handler should preventDefault to avoid page scroll');
     });
 
     // === SUMMARY ===

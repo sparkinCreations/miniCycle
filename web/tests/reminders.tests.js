@@ -167,6 +167,26 @@ export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
             }
         }
 
+        // The module is DI-pure (module-level DI); window.AppState/AppGlobalState set above
+        // never reach it. Behavior tests MUST wire deps via setRemindersDependencies, and
+        // crucially inject AppGlobalState — without it `instance.state` is a black hole
+        // (getters return null, setters no-op), which is exactly why the old stopReminders
+        // tests passed while asserting nothing. Construct the instance AFTER wiring so its
+        // deps cache resolves the freshly-set module deps.
+        const { setRemindersDependencies } = module;
+        function wireReminders({ AppGlobalState = {}, loadMiniCycleData = () => null, AppState = null, appInit = null } = {}) {
+            const notifications = [];
+            setRemindersDependencies({
+                AppGlobalState,
+                loadMiniCycleData,
+                AppState,
+                appInit,
+                showNotification: (msg, type) => { notifications.push({ msg, type }); },
+            });
+            const instance = new MiniCycleReminders();
+            return { instance, notifications, AppGlobalState };
+        }
+
         // === INITIALIZATION TESTS ===
         resultsDiv.innerHTML += '<h4>🔧 Initialization Tests</h4>';
 
@@ -198,41 +218,121 @@ export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
 
 
 
-        await test('stopReminders clears interval', async () => {
-            const instance = new MiniCycleReminders();
-
-            instance.state.reminderIntervalId = setInterval(() => {}, 1000);
-
+        await test('stopReminders clears the stored timeout id', async () => {
+            const { instance, AppGlobalState } = wireReminders();   // AppGlobalState injected → state persists
+            const realId = setTimeout(() => {}, 100000);
+            instance.state.reminderTimeoutId = realId;
+            // Precondition: the id is actually stored (proves the injected AppGlobalState is wired,
+            // unlike the old test where this was a silent no-op).
+            if (AppGlobalState.reminderTimeoutId !== realId) throw new Error('state should store the id via AppGlobalState');
             instance.stopReminders();
-
-            if (instance.state.reminderIntervalId !== null) {
-                throw new Error('Reminder interval not cleared');
-            }
+            if (instance.state.reminderTimeoutId !== null) throw new Error('stopReminders should clear the stored id');
+            clearTimeout(realId);
         });
 
         // === ERROR HANDLING TESTS ===
         resultsDiv.innerHTML += '<h4>⚠️ Error Handling</h4>';
 
 
-        await test('stopReminders handles null interval gracefully', async () => {
-            const instance = new MiniCycleReminders();
-            instance.state.reminderIntervalId = null;
+        await test('stopReminders handles a null interval gracefully', async () => {
+            const { instance } = wireReminders();
+            instance.state.reminderTimeoutId = null;
+            instance.stopReminders();   // should not throw
+            if (instance.state.reminderTimeoutId !== null) throw new Error('id should remain null');
+        });
 
-            // Should not throw
-            instance.stopReminders();
+        // === START / SCHEDULE REMINDERS ===
+        resultsDiv.innerHTML += '<h4>⏰ startReminders / scheduleNextReminder</h4>';
 
-            if (instance.state.reminderIntervalId !== null) {
-                throw new Error('Interval ID should remain null');
+        await test('startReminders schedules a timeout when enabled with a future next time', async () => {
+            const { instance, AppGlobalState } = wireReminders({
+                loadMiniCycleData: () => ({ reminders: { enabled: true, indefinite: true, frequencyValue: 30, frequencyUnit: 'minutes', nextReminderTime: Date.now() + 3600000 } })
+            });
+            try {
+                await instance.startReminders();
+                if (!AppGlobalState.reminderTimeoutId) throw new Error('an enabled reminder with a future time should schedule a timeout');
+            } finally {
+                if (AppGlobalState.reminderTimeoutId) clearTimeout(AppGlobalState.reminderTimeoutId);
             }
         });
 
-        // === INTEGRATION TESTS ===
-        resultsDiv.innerHTML += '<h4>🔗 Integration Tests</h4>';
+        await test('startReminders does nothing when reminders are disabled', async () => {
+            const { instance, AppGlobalState } = wireReminders({ loadMiniCycleData: () => ({ reminders: { enabled: false } }) });
+            await instance.startReminders();
+            if (AppGlobalState.reminderTimeoutId) { clearTimeout(AppGlobalState.reminderTimeoutId); throw new Error('disabled reminders must not schedule a timeout'); }
+        });
 
+        await test('startReminders stops once the repeat count is reached (non-indefinite)', async () => {
+            const { instance, AppGlobalState } = wireReminders({
+                loadMiniCycleData: () => ({ reminders: { enabled: true, indefinite: false, repeatCount: 3, timesReminded: 3, nextReminderTime: Date.now() + 3600000 } })
+            });
+            await instance.startReminders();
+            if (AppGlobalState.reminderTimeoutId) { clearTimeout(AppGlobalState.reminderTimeoutId); throw new Error('should not schedule once repeatCount is reached'); }
+        });
 
-        // === PERFORMANCE TESTS ===
-        resultsDiv.innerHTML += '<h4>⚡ Performance Tests</h4>';
+        await test('startReminders exits gracefully with no schema data', async () => {
+            const { instance, AppGlobalState } = wireReminders({ loadMiniCycleData: () => null });
+            await instance.startReminders();   // must not throw
+            if (AppGlobalState.reminderTimeoutId) throw new Error('no schema data → no timer scheduled');
+        });
 
+        await test('scheduleNextReminder recomputes the interval from frequency when overdue', async () => {
+            const { instance, AppGlobalState } = wireReminders({
+                loadMiniCycleData: () => ({ reminders: { enabled: true, frequencyValue: 2, frequencyUnit: 'hours', nextReminderTime: Date.now() - 1000 } })
+            });
+            const origSetTimeout = window.setTimeout;
+            let capturedDelay = null;
+            window.setTimeout = (fn, delay) => { capturedDelay = delay; return 987654; };
+            try {
+                await instance.scheduleNextReminder();
+                // Overdue (timeUntilNext <= 0) → recompute: 2 * FREQUENCY_MS.hours = 7,200,000 ms.
+                if (capturedDelay !== 7200000) throw new Error(`expected recomputed delay 7200000, got ${capturedDelay}`);
+                if (AppGlobalState.reminderTimeoutId !== 987654) throw new Error('the scheduled timeout id should be stored in state');
+            } finally {
+                window.setTimeout = origSetTimeout;
+            }
+        });
+
+        // === TOGGLE / PER-TASK STATE ===
+        resultsDiv.innerHTML += '<h4>🔔 Toggle & Per-Task State</h4>';
+
+        await test('setupReminderToggle reflects the saved enabled state onto the checkbox + frequency section', () => {
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox'; checkbox.id = 'enableReminders';
+            const freqSection = document.createElement('div');
+            freqSection.id = 'frequency-section';
+            testContainer.appendChild(checkbox);
+            testContainer.appendChild(freqSection);
+            try {
+                // Enabled → checkbox checked, frequency section visible (no 'hidden' class).
+                let { instance } = wireReminders({ loadMiniCycleData: () => ({ reminders: { enabled: true } }) });
+                instance.setupReminderToggle();
+                if (checkbox.checked !== true) throw new Error('checkbox should reflect saved enabled=true');
+                if (freqSection.classList.contains('hidden')) throw new Error('frequency section should be visible when enabled');
+
+                // Disabled → checkbox unchecked, frequency section hidden.
+                ({ instance } = wireReminders({ loadMiniCycleData: () => ({ reminders: { enabled: false } }) }));
+                instance.setupReminderToggle();
+                if (checkbox.checked !== false) throw new Error('checkbox should reflect saved enabled=false');
+                if (!freqSection.classList.contains('hidden')) throw new Error('frequency section should be hidden when disabled');
+            } finally {
+                checkbox.remove(); freqSection.remove();
+            }
+        });
+
+        await test('saveTaskReminderState writes remindersEnabled onto the matching task', async () => {
+            const cycle = { tasks: [{ id: 'task-1', remindersEnabled: false }] };
+            const state = { data: { cycles: { c1: cycle } }, appState: { activeCycleId: 'c1' } };
+            const AppState = { isReady: () => true, get: () => state, update: async (fn) => fn(state) };
+            const { instance } = wireReminders({ loadMiniCycleData: () => state, AppState });
+
+            await instance.saveTaskReminderState('task-1', true);
+            if (state.data.cycles.c1.tasks[0].remindersEnabled !== true) throw new Error('the task remindersEnabled flag should be set true');
+
+            // Unknown task id → no-op (no throw, no new task).
+            await instance.saveTaskReminderState('does-not-exist', true);
+            if (state.data.cycles.c1.tasks.length !== 1) throw new Error('an unknown task id should be a no-op');
+        });
 
         // === SUMMARY ===
         const percentage = Math.round((passed.count / total.count) * 100);

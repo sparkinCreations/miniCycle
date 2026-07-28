@@ -252,10 +252,12 @@ export async function runTaskValidationTests(resultsDiv) {
     await test('calls sanitizeInput function', () => {
         let sanitizeCalled = false;
 
+        // Faithful mock — mirrors the real GlobalUtils.normalizeText (trim only).
+        // A mock must never be more capable than the implementation it replaces.
         const validator = new TaskValidator({
             sanitizeInput: (input) => {
                 sanitizeCalled = true;
-                return input.replace(/[<>]/g, '');
+                return input.trim();
             }
         });
 
@@ -266,19 +268,21 @@ export async function runTaskValidationTests(resultsDiv) {
         }
     });
 
-    await test('sanitizes HTML tags from input', () => {
+    await test('preserves HTML markup unchanged (normalize, not escape)', () => {
+        // The validator normalizes (trim + length); it does NOT strip or escape HTML.
+        // Task text renders via textContent, so escaping at input would double-encode
+        // real user data. XSS safety lives at the render sink. See the input-normalizer
+        // audit (SECURITY.md v2.336). The old version of this test injected a mock that
+        // stripped `<>` and asserted on the stripped output — a fiction that only passed
+        // because of its own over-capable mock.
         const validator = new TaskValidator({
-            sanitizeInput: (input) => input.replace(/[<>]/g, '')
+            sanitizeInput: (input) => input.trim()   // faithful — mirrors normalizeText
         });
 
         const result = validator.validateAndSanitizeTaskInput('test<script>alert(1)</script>');
 
-        if (result.includes('<') || result.includes('>')) {
-            throw new Error('Should sanitize HTML tags');
-        }
-
-        if (result !== 'testscriptalert(1)/script') {
-            throw new Error(`Expected sanitized text, got '${result}'`);
+        if (result !== 'test<script>alert(1)</script>') {
+            throw new Error(`Expected HTML preserved unchanged, got '${result}'`);
         }
     });
 

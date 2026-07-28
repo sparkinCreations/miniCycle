@@ -319,24 +319,27 @@ export async function runTaskEventsTests(resultsDiv) {
 
     await test('setupTaskHoverInteractions adds hover for non-three-dots mode', () => {
         const deps = createMockDependencies();
+        // The method wires hover via the INJECTED showTaskOptions/hideTaskOptions +
+        // safeAddEventListener (the old test set window.* globals, which it never reads).
+        deps.showTaskOptions = () => {};
+        deps.hideTaskOptions = () => {};
+        deps.safeAddEventListener = (el, ev, fn, opts) => el.addEventListener(ev, fn, opts);
         const events = new TaskEvents(deps);
 
         const taskItem = createMockTaskItem();
         document.body.appendChild(taskItem);
+        try {
+            events.setupTaskHoverInteractions(taskItem, { showThreeDots: false });
 
-        // Mock hover functions
-        window.showTaskOptions = () => {};
-        window.hideTaskOptions = () => {};
-
-        const settings = { showThreeDots: false };
-        events.setupTaskHoverInteractions(taskItem, settings);
-
-        // Verify event listeners were added (we can't directly test this, but no errors is good)
-
-        // Clean up
-        document.body.removeChild(taskItem);
-        delete window.showTaskOptions;
-        delete window.hideTaskOptions;
+            // In non-three-dots mode it wires mouseenter/mouseleave hover handlers onto the
+            // task (from the injected deps). The old test asserted nothing.
+            if (taskItem._hoverShowHandler !== deps.showTaskOptions ||
+                taskItem._hoverHideHandler !== deps.hideTaskOptions) {
+                throw new Error('setupTaskHoverInteractions should wire hover show/hide handlers in non-three-dots mode');
+            }
+        } finally {
+            document.body.removeChild(taskItem);
+        }
     });
 
     // NOTE: setupTaskFocusInteractions test removed - depends on TaskOptionsVisibilityController

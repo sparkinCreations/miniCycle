@@ -119,15 +119,18 @@ export async function runTaskDOMPatchTests(resultsDiv) {
         } finally { unmount(list); }
     });
 
-    await test('text patch runs through injected sanitizeInput', () => {
+    await test('text patch passes raw text to the normalizer and renders it literally', () => {
         const list = mountList('t1');
         try {
             let received = null;
-            const p = make({ sanitizeInput: (s) => { received = s; return s.replace(/</g, ''); } });
+            // Faithful mock — mirrors normalizeText (trim only); must not strip HTML.
+            const p = make({ sanitizeInput: (s) => { received = s; return s.trim(); } });
             p.patchTask('t1', { text: '<script>x' }, ['text']);
-            if (received !== '<script>x') throw new Error('sanitizeInput not invoked with raw text');
+            if (received !== '<script>x') throw new Error('normalizer not invoked with raw text');
             const label = list.querySelector('.task[data-task-id="t1"] .task-text');
-            if (label.textContent.includes('<')) throw new Error('sanitized output not used');
+            // The real defense: text renders literally via textContent — no element is parsed.
+            if (label.textContent !== '<script>x') throw new Error('text should render literally, got: ' + label.textContent);
+            if (label.querySelector('script')) throw new Error('XSS: script element parsed into DOM');
         } finally { unmount(list); }
     });
 

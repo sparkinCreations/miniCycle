@@ -88,11 +88,20 @@ export async function runRecurringCalculatorsTests(resultsDiv) {
         if (result < Date.now()) throw new Error('Should be in the future');
     });
 
-    await test('calculateNextOccurrence returns null for disabled', () => {
-        const settings = { enabled: false, frequency: 'daily' };
+    await test('calculateNextOccurrence ignores `enabled` — it computes from frequency (gating is the caller\'s job)', () => {
+        // Pins the REAL contract. calculateNextOccurrence (recurringCalculators.js) does
+        // NOT gate on settings.enabled — whether a task is active is decided by the caller
+        // (the recurring watcher), so a disabled+daily setting still yields the next daily
+        // timestamp. The old test was named "returns null for disabled" and hollowed its
+        // only assertion (`if (result !== null && result !== undefined) { /* comment */ }`),
+        // silently accepting the real return (a timestamp) and hiding that the name was a fiction.
+        const settings = { enabled: false, frequency: 'daily', time: { hour: 9, minute: 0, meridiem: 'AM' } };
         const result = calculateNextOccurrence(settings);
-        if (result !== null && result !== undefined) {
-            // Some implementations return null, others return 0
+        if (typeof result !== 'number') {
+            throw new Error(`expected a timestamp (enabled is ignored at this layer), got ${result}`);
+        }
+        if (result < Date.now()) {
+            throw new Error('next daily occurrence should be in the future');
         }
     });
 

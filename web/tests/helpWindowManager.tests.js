@@ -160,92 +160,107 @@ export async function runHelpWindowManagerTests(resultsDiv, isPartOfSuite = fals
         }
     });
 
-    await test('HelpWindowManager class exists', () => {
-        if (typeof HelpWindowManager !== 'function') {
-            throw new Error('HelpWindowManager should be a class/function');
+    await test('HelpWindowManager constructs an instance', () => {
+        if (!(new HelpWindowManager() instanceof HelpWindowManager)) {
+            throw new Error('HelpWindowManager should construct an instance');
         }
     });
 
-    await test('initHelpWindowManager is a function', () => {
-        if (typeof initHelpWindowManager !== 'function') {
-            throw new Error('initHelpWindowManager should be a function');
-        }
+    await test('initHelpWindowManager resolves the same singleton each call', async () => {
+        const a = await initHelpWindowManager();
+        const b = await initHelpWindowManager();
+        if (!(a instanceof HelpWindowManager)) throw new Error('init should resolve a HelpWindowManager');
+        if (a !== b) throw new Error('init should return the same singleton on repeat calls');
     });
 
-    await test('getHelpWindowManager is a function', () => {
-        if (typeof getHelpWindowManager !== 'function') {
-            throw new Error('getHelpWindowManager should be a function');
+    await test('getHelpWindowManager returns the initialized singleton', async () => {
+        const inited = await initHelpWindowManager();
+        if (getHelpWindowManager() !== inited) {
+            throw new Error('getHelpWindowManager should return the singleton created by init');
         }
     });
 
     // === CLASS INSTANTIATION ===
     resultsDiv.innerHTML += '<h4 class="test-section">🏗️ Class Instantiation</h4>';
 
-    await test('HelpWindowManager can be instantiated', () => {
+    // NOTE: because the harness wires getModal('help') → the #help-window element,
+    // the constructor's init() actually RUNS. So a freshly-constructed manager already
+    // holds concrete state (initialized=true, isVisible=true, a rendered welcome message).
+    // These tests assert those concrete values instead of mere property presence.
+
+    await test('constructing a HelpWindowManager runs init() and marks it initialized', () => {
         const manager = new HelpWindowManager();
-        if (!manager) {
-            throw new Error('Should create HelpWindowManager instance');
+        if (!(manager instanceof HelpWindowManager)) throw new Error('should be a HelpWindowManager');
+        if (manager.initialized !== true) throw new Error('constructor init() should set initialized=true');
+    });
+
+    await test('helpWindow references the #help-window element', () => {
+        const manager = new HelpWindowManager();
+        if (manager.helpWindow !== document.getElementById('help-window')) {
+            throw new Error('helpWindow should reference the resolved #help-window element');
         }
     });
 
-    await test('HelpWindowManager has helpWindow property', () => {
+    await test('isVisible is true right after init() renders the welcome message', () => {
         const manager = new HelpWindowManager();
-        // helpWindow should reference the DOM element (or null if not found)
-        if (!('helpWindow' in manager)) {
-            throw new Error('Should have helpWindow property');
+        if (manager.isVisible !== true) throw new Error('init() should leave the window visible');
+        if (!helpWindowEl.classList.contains('show')) throw new Error('init() should add the show class');
+    });
+
+    await test('currentMessage holds the rendered welcome text', () => {
+        const manager = new HelpWindowManager();
+        if (typeof manager.currentMessage !== 'string' || manager.currentMessage.trim() === '') {
+            throw new Error('init() should populate currentMessage with a non-empty welcome string');
+        }
+        // The welcome text is actually rendered into the help window.
+        if (!helpWindowEl.textContent.includes(manager.currentMessage)) {
+            throw new Error('the rendered help window should contain currentMessage');
         }
     });
 
-    await test('HelpWindowManager has isVisible property', () => {
-        const manager = new HelpWindowManager();
-        if (typeof manager.isVisible !== 'boolean') {
-            throw new Error('isVisible should be a boolean');
+    await test('isShowingCycleComplete starts false', () => {
+        if (new HelpWindowManager().isShowingCycleComplete !== false) {
+            throw new Error('isShowingCycleComplete should initialize to false');
         }
     });
 
-    await test('HelpWindowManager has currentMessage property', () => {
-        const manager = new HelpWindowManager();
-        if (!('currentMessage' in manager)) {
-            throw new Error('Should have currentMessage property');
+    await test('isShowingModeDescription starts false', () => {
+        if (new HelpWindowManager().isShowingModeDescription !== false) {
+            throw new Error('isShowingModeDescription should initialize to false');
         }
     });
 
-    await test('HelpWindowManager has isShowingCycleComplete property', () => {
-        const manager = new HelpWindowManager();
-        if (typeof manager.isShowingCycleComplete !== 'boolean') {
-            throw new Error('isShowingCycleComplete should be a boolean');
-        }
-    });
-
-    await test('HelpWindowManager has isShowingModeDescription property', () => {
-        const manager = new HelpWindowManager();
-        if (typeof manager.isShowingModeDescription !== 'boolean') {
-            throw new Error('isShowingModeDescription should be a boolean');
-        }
-    });
-
-    await test('HelpWindowManager has initialized property', () => {
-        const manager = new HelpWindowManager();
-        if (typeof manager.initialized !== 'boolean') {
-            throw new Error('initialized should be a boolean');
+    await test('initialized is true after construction', () => {
+        if (new HelpWindowManager().initialized !== true) {
+            throw new Error('a constructed manager should report initialized=true');
         }
     });
 
     // === METHODS EXIST ===
     resultsDiv.innerHTML += '<h4 class="test-section">🔧 Methods</h4>';
 
-    await test('init method exists', () => {
-        const manager = new HelpWindowManager();
-        if (typeof manager.init !== 'function') {
-            throw new Error('init should be a function');
+    await test('init is idempotent (guard prevents a second run)', () => {
+        const manager = new HelpWindowManager();   // init() already ran
+        manager.currentMessage = '__SENTINEL__';
+        manager.init();                            // guard at source:138 should return early
+        if (manager.currentMessage !== '__SENTINEL__') {
+            throw new Error('a second init() should no-op, not overwrite currentMessage with the welcome text');
         }
     });
 
-    await test('setupEventListeners method exists', () => {
-        const manager = new HelpWindowManager();
-        if (typeof manager.setupEventListeners !== 'function') {
-            throw new Error('setupEventListeners should be a function');
-        }
+    await test('setupEventListeners wires task handlers + a MutationObserver (once)', () => {
+        const manager = new HelpWindowManager();   // init() already called setupEventListeners()
+        if (manager._eventListenersInitialized !== true) throw new Error('should flag listeners initialized');
+        if (typeof manager._changeHandler !== 'function') throw new Error('_changeHandler should be wired');
+        if (typeof manager._clickHandler !== 'function') throw new Error('_clickHandler should be wired');
+        if (!(manager._taskListObserver instanceof MutationObserver)) throw new Error('_taskListObserver should be a MutationObserver');
+
+        // Idempotency: a repeat call must not replace the existing handlers (source:162 guard).
+        const prevChange = manager._changeHandler;
+        const prevObserver = manager._taskListObserver;
+        manager.setupEventListeners();
+        if (manager._changeHandler !== prevChange) throw new Error('repeat setup must not re-create _changeHandler');
+        if (manager._taskListObserver !== prevObserver) throw new Error('repeat setup must not re-create the observer');
     });
 
     await test('show method exists', () => {
@@ -262,17 +277,31 @@ export async function runHelpWindowManagerTests(resultsDiv, isPartOfSuite = fals
         }
     });
 
-    await test('showConstantMessage method exists', () => {
+    await test('showConstantMessage renders status and makes the window visible', () => {
         const manager = new HelpWindowManager();
-        if (typeof manager.showConstantMessage !== 'function') {
-            throw new Error('showConstantMessage should be a function');
-        }
+        // Put it in a hidden state so show() actually does something (source:651 early-returns if visible).
+        manager.hide();
+        manager.isVisible = false;
+        helpWindowEl.classList.remove('show', 'hide');
+
+        manager.showConstantMessage();
+
+        if (manager.isVisible !== true) throw new Error('showConstantMessage should show the window');
+        if (!helpWindowEl.classList.contains('show')) throw new Error('showConstantMessage should add the show class');
+        if (helpWindowEl.textContent.trim() === '') throw new Error('showConstantMessage should render status content');
     });
 
-    await test('updateConstantMessage method exists', () => {
+    await test('updateConstantMessage no-ops while a cycle-complete message is showing', () => {
         const manager = new HelpWindowManager();
-        if (typeof manager.updateConstantMessage !== 'function') {
-            throw new Error('updateConstantMessage should be a function');
+        // Guard at source:259 — must not overwrite the cycle-complete message.
+        manager.isShowingCycleComplete = true;
+        manager.updateContent('__CYCLE_COMPLETE__');
+        const before = helpWindowEl.innerHTML;
+
+        manager.updateConstantMessage();
+
+        if (helpWindowEl.innerHTML !== before) {
+            throw new Error('updateConstantMessage should not re-render while isShowingCycleComplete is true');
         }
     });
 
@@ -314,13 +343,18 @@ export async function runHelpWindowManagerTests(resultsDiv, isPartOfSuite = fals
     // === SHOW/HIDE FUNCTIONALITY ===
     resultsDiv.innerHTML += '<h4 class="test-section">👁️ Show/Hide</h4>';
 
-    await test('show makes window visible', () => {
+    await test('show makes a hidden window visible again', () => {
         const manager = new HelpWindowManager();
+        // init() leaves it visible, so show() would early-return (source:651). Hide first so
+        // this actually exercises show()'s state transition rather than trivially passing.
+        manager.hide();
+        manager.isVisible = false;
+        helpWindowEl.classList.remove('show', 'hide');
+
         manager.show();
 
-        if (!manager.isVisible) {
-            throw new Error('isVisible should be true after show()');
-        }
+        if (!manager.isVisible) throw new Error('isVisible should be true after show()');
+        if (!helpWindowEl.classList.contains('show')) throw new Error('show() should add the show class');
     });
 
     await test('show adds show class', () => {
@@ -376,27 +410,29 @@ export async function runHelpWindowManagerTests(resultsDiv, isPartOfSuite = fals
         }
     });
 
-    await test('show does nothing if already visible', () => {
-        const manager = new HelpWindowManager();
+    await test('show is a no-op when already visible (DOM untouched)', () => {
+        const manager = new HelpWindowManager();   // already visible after init()
         manager.show();
         const initialHTML = helpWindowEl.innerHTML;
-        manager.show(); // Call again
+        manager.show(); // guard at source:651 should early-return
 
-        // Should not throw and should still be visible
-        if (!manager.isVisible) {
-            throw new Error('Should still be visible');
-        }
+        if (!manager.isVisible) throw new Error('Should still be visible');
+        // The captured HTML is the whole point — the guard must leave content unchanged.
+        if (helpWindowEl.innerHTML !== initialHTML) throw new Error('a redundant show() must not mutate the window');
     });
 
-    await test('hide does nothing if not visible', () => {
+    await test('hide is a no-op when already hidden (guard untouched DOM)', () => {
         const manager = new HelpWindowManager();
-        // Don't call show first
+        // Force the not-visible state so hide()'s guard (source:672) is the path under test.
+        manager.isVisible = false;
+        helpWindowEl.classList.remove('show', 'hide');
+        const initialHTML = helpWindowEl.innerHTML;
+
         manager.hide();
 
-        // Should not throw
-        if (manager.isVisible !== false) {
-            throw new Error('Should remain not visible');
-        }
+        if (manager.isVisible !== false) throw new Error('Should remain not visible');
+        if (helpWindowEl.classList.contains('hide')) throw new Error('guarded hide() must not add the hide class');
+        if (helpWindowEl.innerHTML !== initialHTML) throw new Error('guarded hide() must not mutate the window');
     });
 
     // === STATUS MESSAGES ===
@@ -409,8 +445,10 @@ export async function runHelpWindowManagerTests(resultsDiv, isPartOfSuite = fals
         if (typeof parts !== 'object' || parts === null) {
             throw new Error('Should return a parts object, not a string');
         }
-        if (!('icon' in parts) || !('body' in parts) || !('size' in parts)) {
-            throw new Error('Parts must have icon, body, and size keys');
+        // The function always returns icon/body/size/cta (source:575-593); the old check
+        // omitted cta, so a dropped cta key would have slipped through.
+        if (!('icon' in parts) || !('body' in parts) || !('size' in parts) || !('cta' in parts)) {
+            throw new Error('Parts must have icon, body, size, and cta keys');
         }
     });
 
@@ -762,11 +800,18 @@ export async function runHelpWindowManagerTests(resultsDiv, isPartOfSuite = fals
         }
     });
 
-    await test('destroy is safe to call multiple times', () => {
+    await test('destroy tears down timers, listeners and observer (idempotently)', () => {
         const manager = new HelpWindowManager();
         manager.destroy();
-        manager.destroy();
-        // Should not throw
+        manager.destroy();   // second call must be safe AND leave the cleared state
+
+        // Source:680-733 — destroy nulls handlers/observer, empties pending timeouts, resets flags.
+        if (manager.modeDescriptionTimeout !== null) throw new Error('modeDescriptionTimeout should be cleared');
+        if (manager._pendingTimeouts.length !== 0) throw new Error('_pendingTimeouts should be emptied');
+        if (manager._changeHandler !== null) throw new Error('_changeHandler should be nulled');
+        if (manager._taskListObserver !== null) throw new Error('_taskListObserver should be disconnected + nulled');
+        if (manager._eventListenersInitialized !== false) throw new Error('_eventListenersInitialized should reset to false');
+        if (manager.sideLayoutEnabled !== false) throw new Error('sideLayoutEnabled should reset to false');
     });
 
     // === DEPENDENCY INJECTION ===

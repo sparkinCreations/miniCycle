@@ -135,12 +135,17 @@ export async function runPullToRefreshTests(resultsDiv) {
 
     test('destroy removes indicator', () => {
         const ptr = new PullToRefresh();
+        // The constructor inserts the indicator into document.body.
+        if (!ptr.indicator) throw new Error('PullToRefresh should create an indicator element');
+        if (!ptr.indicator.parentNode) document.body.appendChild(ptr.indicator);
+
         ptr.destroy();
 
-        // Create new instance to check indicator was removed
-        const indicatorAfter = document.getElementById('pull-refresh-indicator');
-        // Note: destroy removes it, but if tests run in sequence another instance might create it
-        // Just verify destroy() doesn't throw
+        // destroy() removes the indicator from its parent. The old test asserted nothing
+        // ("just verify destroy() doesn't throw").
+        if (ptr.indicator.parentNode) {
+            throw new Error('destroy() should remove the indicator from the DOM');
+        }
     });
 
     // ===== STATE MANAGEMENT TESTS =====
@@ -300,12 +305,22 @@ export async function runPullToRefreshTests(resultsDiv) {
     test('destroy removes event listeners', () => {
         const ptr = new PullToRefresh();
 
-        // Should not throw
-        ptr.destroy();
+        const removed = [];
+        const realRemove = document.removeEventListener.bind(document);
+        document.removeEventListener = (ev, fn, opts) => { removed.push(ev); return realRemove(ev, fn, opts); };
+        try {
+            ptr.destroy();
+        } finally {
+            document.removeEventListener = realRemove;
+        }
 
-        // Verify we can create a new instance (listeners were properly removed)
-        const ptr2 = new PullToRefresh();
-        ptr2.destroy();
+        // destroy() → detachEventListeners() removes the document touch listeners it
+        // registered. The old test only created/destroyed instances and asserted nothing.
+        for (const ev of ['touchstart', 'touchmove', 'touchend']) {
+            if (!removed.includes(ev)) {
+                throw new Error(`destroy() should remove the document "${ev}" listener`);
+            }
+        }
     });
 
     // ===== SUMMARY =====

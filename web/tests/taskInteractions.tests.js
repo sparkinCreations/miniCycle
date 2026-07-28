@@ -10,6 +10,11 @@
 let setTaskInteractionsDependencies = null;
 let attachKeyboardTaskOptionToggle = null;
 let ensureTaskUILoaded = null;
+let RealVisibilityController = null;
+
+// CSS classes the REAL TaskOptionsVisibilityController toggles (constants.js DOM_CLASSES).
+const CLS_VISIBLE = 'task-options-visible';
+const CLS_HIDDEN = 'task-options-force-hidden';
 
 export async function runTaskInteractionsTests(resultsDiv, isPartOfSuite = false) {
     resultsDiv.innerHTML = '<h2>TaskInteractions Tests (DI-Pure)</h2><h3>Loading module...</h3>';
@@ -25,6 +30,15 @@ export async function runTaskInteractionsTests(resultsDiv, isPartOfSuite = false
         if (typeof ensureTaskUILoaded === 'function') {
             await ensureTaskUILoaded();
         }
+        // Use the REAL visibility controller — the three-dots mode gating and the
+        // show/hide CSS-class contract live inside it, so a hand-rolled mock that
+        // re-implements those rules would only test the mock. The controller's
+        // show/hide/setVisibility are static and DI-free, so we can use it directly.
+        const taskUI = await import(`../modules/ui/taskUI.js?v=${cacheBuster}`);
+        RealVisibilityController = taskUI.TaskOptionsVisibilityController;
+        if (typeof RealVisibilityController?.show !== 'function') {
+            throw new Error('TaskOptionsVisibilityController.show not available');
+        }
         resultsDiv.innerHTML = '<h2>TaskInteractions Tests (DI-Pure)</h2><h3>Running tests...</h3>';
     } catch (e) {
         resultsDiv.innerHTML = `<h2>TaskInteractions Tests</h2><div class="result fail">Failed to import module: ${e.message}</div>`;
@@ -38,35 +52,11 @@ export async function runTaskInteractionsTests(resultsDiv, isPartOfSuite = false
 
     let passed = { count: 0 }, total = { count: 0 };
 
-    // Create mock dependencies
+    // Wire the module to the REAL controller (not a mock re-implementation).
     function createMockDeps(overrides = {}) {
         return {
             safeAddEventListener: (el, evt, fn) => el?.addEventListener(evt, fn),
-            // Mock TaskOptionsVisibilityController that directly manipulates visibility
-            TaskOptionsVisibilityController: {
-                show: (taskItem, source) => {
-                    const taskOptions = taskItem.querySelector('.task-options');
-                    if (taskOptions) {
-                        // Check if source is permitted (mock three-dots check)
-                        const isThreeDotsMode = document.body.classList.contains('show-three-dots-enabled');
-                        const threeDotsPermissions = ['hover', 'long-press', 'three-dots'];
-                        if (isThreeDotsMode && !threeDotsPermissions.includes(source)) {
-                            return; // Block non-permitted sources in three-dots mode
-                        }
-                        taskOptions.style.visibility = 'visible';
-                        taskOptions.style.opacity = '1';
-                        taskOptions.style.pointerEvents = 'auto';
-                    }
-                },
-                hide: (taskItem, source) => {
-                    const taskOptions = taskItem.querySelector('.task-options');
-                    if (taskOptions) {
-                        taskOptions.style.visibility = 'hidden';
-                        taskOptions.style.opacity = '0';
-                        taskOptions.style.pointerEvents = 'none';
-                    }
-                }
-            },
+            TaskOptionsVisibilityController: RealVisibilityController,
             ...overrides
         };
     }
@@ -183,8 +173,9 @@ export async function runTaskInteractionsTests(resultsDiv, isPartOfSuite = false
         task.dispatchEvent(focusEvent);
 
         const taskOptions = task.querySelector('.task-options');
-        if (taskOptions.style.visibility !== 'visible') {
-            throw new Error('Task options should be visible after focusin on button');
+        // Real controller toggles the visible CSS class (and clears inline styles).
+        if (!taskOptions.classList.contains(CLS_VISIBLE)) {
+            throw new Error('Task options should get the visible class after focusin on button');
         }
     });
 
@@ -207,7 +198,7 @@ export async function runTaskInteractionsTests(resultsDiv, isPartOfSuite = false
         task.dispatchEvent(focusEvent);
 
         const taskOptions = task.querySelector('.task-options');
-        if (taskOptions.style.visibility === 'visible') {
+        if (taskOptions.classList.contains(CLS_VISIBLE)) {
             throw new Error('Task options should remain hidden when focusing checkbox');
         }
     });
@@ -231,7 +222,7 @@ export async function runTaskInteractionsTests(resultsDiv, isPartOfSuite = false
         task.dispatchEvent(focusEvent);
 
         const taskOptions = task.querySelector('.task-options');
-        if (taskOptions.style.visibility === 'visible') {
+        if (taskOptions.classList.contains(CLS_VISIBLE)) {
             throw new Error('Task options should remain hidden when focusing task-text');
         }
     });
@@ -268,7 +259,8 @@ export async function runTaskInteractionsTests(resultsDiv, isPartOfSuite = false
         external.remove();
 
         const taskOptions = task.querySelector('.task-options');
-        if (taskOptions.style.visibility !== 'hidden') {
+        // focusout is permitted in hover mode → controller hides (removes visible, adds hidden).
+        if (taskOptions.classList.contains(CLS_VISIBLE) || !taskOptions.classList.contains(CLS_HIDDEN)) {
             throw new Error('Task options should be hidden after focus leaves task');
         }
     });
@@ -305,7 +297,9 @@ export async function runTaskInteractionsTests(resultsDiv, isPartOfSuite = false
         task.dispatchEvent(focusoutEvent);
 
         const taskOptions = task.querySelector('.task-options');
-        if (taskOptions.style.visibility !== 'visible') {
+        // relatedTarget is inside the task → module returns early, controller.hide is never
+        // called, so the visible class from the earlier focusin stays put.
+        if (!taskOptions.classList.contains(CLS_VISIBLE)) {
             throw new Error('Task options should remain visible when focus stays within task');
         }
     });
@@ -342,8 +336,10 @@ export async function runTaskInteractionsTests(resultsDiv, isPartOfSuite = false
         task.dispatchEvent(focusEvent);
 
         const taskOptions = task.querySelector('.task-options');
-        // focusin is not in three-dots permissions, so should be blocked
-        if (taskOptions.style.visibility === 'visible') {
+        // Real controller: three-dots mode permits only 'three-dots-button' and 'focusout',
+        // so a 'focusin'-sourced show() is refused (canHandle returns false, no class added).
+        // This now exercises the controller's real permission table instead of a mock copy.
+        if (taskOptions.classList.contains(CLS_VISIBLE)) {
             throw new Error('Task options should be blocked by three-dots mode for focusin');
         }
     });

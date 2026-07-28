@@ -356,11 +356,13 @@ export async function runBackupManagerTests(resultsDiv, isPartOfSuite = false) {
             throw new Error(`Expected at least ${initialManualCount} manual backups, got ${manual.length}`);
         }
 
-        // Verify the new backup exists by name regardless of count
+        // The newly created backup must be present by name. Even at the retention
+        // limit (MAX_MANUAL_BACKUPS=50) the NEW backup is kept and the OLDEST is
+        // trimmed, so it is findable regardless of the total count. The old test
+        // computed hasNewBackup and then left its only branch empty, asserting nothing.
         const hasNewBackup = manual.some(b => b.name === 'List Test Manual' || b.label === 'List Test Manual');
-        if (!hasNewBackup && manual.length === initialManualCount) {
-            // At retention limit — verify count didn't decrease (backup was created + oldest trimmed)
-            // This is the expected behavior, not an error
+        if (!hasNewBackup) {
+            throw new Error('newly created manual backup "List Test Manual" not found in listAllBackups()');
         }
     });
 

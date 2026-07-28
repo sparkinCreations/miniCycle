@@ -55,114 +55,29 @@ export async function runUIBootTests(resultsDiv) {
         if (typeof m.detectDeviceType !== 'function') throw new Error('detectDeviceType not found');
     });
 
-    // ===== DOM TESTS =====
-    resultsDiv.innerHTML += '<h4 class="test-section">⏳ DOM Manipulation</h4>';
+    // ===== LOADER (real uiBoot exports) =====
+    // Replaced a cluster of tests that exercised DOM classList / dispatchEvent /
+    // navigator.maxTouchPoints / querySelector PLATFORM behavior on local elements —
+    // none of which called uiBoot. (The main-menu hygiene tests below are the real ones.)
+    resultsDiv.innerHTML += '<h4 class="test-section">⏳ Loader</h4>';
 
-    await test('Loading overlay can be created and toggled', () => {
-        const overlay = document.createElement('div');
-        overlay.id = 'test-overlay';
-        document.body.appendChild(overlay);
+    await test('showLoader reveals #app-loader and hideLoader fades it out', async () => {
+        const { showLoader, hideLoader } = await import(((globalThis.__MC_MODULE_MAP || {})['/modules/boot/uiBoot.js'] || '../modules/boot/uiBoot.js') + '?v=' + Date.now());
+        const loader = document.createElement('div');
+        loader.id = 'app-loader';                 // DOM_IDS.APP_LOADER
+        loader.style.display = 'none';
+        loader.classList.add('fade-out');         // DOM_CLASSES.FADE_OUT
+        document.body.appendChild(loader);
+        try {
+            showLoader('Working...');
+            if (loader.style.display === 'none') throw new Error('showLoader should reveal the app loader');
+            if (loader.classList.contains('fade-out')) throw new Error('showLoader should clear the fade-out class');
 
-        overlay.classList.add('active');
-        if (!overlay.classList.contains('active')) {
-            throw new Error('Failed to add active class');
+            hideLoader();
+            if (!loader.classList.contains('fade-out')) throw new Error('hideLoader should add the fade-out class');
+        } finally {
+            loader.remove();
         }
-
-        overlay.classList.remove('active');
-        if (overlay.classList.contains('active')) {
-            throw new Error('Failed to remove active class');
-        }
-
-        overlay.remove();
-    });
-
-    await test('Spinner text can be updated', () => {
-        const overlay = document.createElement('div');
-        overlay.innerHTML = '<span class="loading-spinner-text"></span>';
-        document.body.appendChild(overlay);
-
-        const textEl = overlay.querySelector('.loading-spinner-text');
-        textEl.textContent = 'Test Message';
-
-        if (textEl.textContent !== 'Test Message') {
-            throw new Error('Failed to update text');
-        }
-
-        overlay.remove();
-    });
-
-    // ===== TOUCH DETECTION TESTS =====
-    resultsDiv.innerHTML += '<h4 class="test-section">👆 Touch Detection</h4>';
-
-    await test('maxTouchPoints is accessible', () => {
-        if (!('maxTouchPoints' in navigator)) {
-            throw new Error('maxTouchPoints should be accessible');
-        }
-    });
-
-    await test('Device mode classes can be set', () => {
-        document.body.classList.add('desktop-mode');
-        if (!document.body.classList.contains('desktop-mode')) {
-            throw new Error('Failed to add desktop-mode');
-        }
-        document.body.classList.remove('desktop-mode');
-
-        document.body.classList.add('touch-mode');
-        if (!document.body.classList.contains('touch-mode')) {
-            throw new Error('Failed to add touch-mode');
-        }
-        document.body.classList.remove('touch-mode');
-    });
-
-    // ===== EVENT TESTS =====
-    resultsDiv.innerHTML += '<h4 class="test-section">🎯 Events</h4>';
-
-    await test('Keyboard events work', () => {
-        let captured = false;
-        const handler = () => { captured = true; };
-
-        document.addEventListener('keydown', handler);
-        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'z' }));
-        document.removeEventListener('keydown', handler);
-
-        if (!captured) {
-            throw new Error('Event not captured');
-        }
-    });
-
-    await test('Click events work', () => {
-        let captured = false;
-        const handler = () => { captured = true; };
-
-        document.addEventListener('click', handler);
-        document.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-        document.removeEventListener('click', handler);
-
-        if (!captured) {
-            throw new Error('Event not captured');
-        }
-    });
-
-    // ===== MODAL TESTS =====
-    resultsDiv.innerHTML += '<h4 class="test-section">🎭 Modal Detection</h4>';
-
-    await test('Modal active detection works', () => {
-        const modal = document.createElement('div');
-        modal.className = 'modal';
-        document.body.appendChild(modal);
-
-        let active = document.querySelector('.modal.active');
-        if (active) {
-            throw new Error('Should not find active modal initially');
-        }
-
-        modal.classList.add('active');
-        active = document.querySelector('.modal.active');
-        if (!active) {
-            throw new Error('Should find active modal');
-        }
-
-        modal.remove();
     });
 
     // ===== MAIN-MENU LISTENER LEAK / FOCUS-STEAL (July 2026 boot audit M3) =====

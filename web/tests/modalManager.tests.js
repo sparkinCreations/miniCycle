@@ -95,41 +95,45 @@ export async function runModalManagerTests(resultsDiv) {
 
     test('creates instance successfully', () => {
         const mm = new ModalManager();
-        if (!mm || typeof mm.closeAllModals !== 'function') {
-            throw new Error('ModalManager not properly initialized');
-        }
+        if (!(mm instanceof ModalManager)) throw new Error('should be a ModalManager instance');
+        // Constructor contract (modalManager.js:113): a fresh instance is NOT yet initialized.
+        if (mm.initialized !== false) throw new Error(`fresh instance should have initialized===false, got ${mm.initialized}`);
     });
 
     test('has global instance', () => {
         const instance = getModalManager();
-        if (!instance) {
-            throw new Error('Global modalManager instance not found');
-        }
-        if (typeof instance.closeAllModals !== 'function') {
-            throw new Error('Global instance missing methods');
-        }
+        if (!(instance instanceof ModalManager)) throw new Error('global instance should be a ModalManager');
+        // The singleton was awaited through initModalManager() in setup, so init() ran →
+        // initialized flips true (modalManager.js:136). A weak truthiness check missed this.
+        if (instance.initialized !== true) throw new Error('initialized global instance should have initialized===true');
     });
 
 
     test('has initialized property', () => {
+        // Assert the EXACT constructor value, not merely "is a boolean" — the old check would
+        // pass even if the constructor wrongly started initialized===true.
         const mm = new ModalManager();
-        if (typeof mm.initialized === 'undefined') {
-            throw new Error('initialized property missing');
-        }
-        if (typeof mm.initialized !== 'boolean') {
-            throw new Error('initialized should be a boolean');
-        }
+        if (mm.initialized !== false) throw new Error(`new ModalManager().initialized should be false, got ${mm.initialized}`);
     });
 
     // ===== MODAL SETUP TESTS =====
 
     resultsDiv.innerHTML += '<h4 class="test-section">⚙️ Modal Setup</h4>';
 
-    test('setupEventListeners method exists', () => {
+    test('setupEventListeners is idempotent (runs sub-setups once)', () => {
         const mm = new ModalManager();
-        if (typeof mm.setupEventListeners !== 'function') {
-            throw new Error('setupEventListeners method not found');
-        }
+        // Count how many times a delegated sub-setup runs across two calls.
+        let feedbackSetups = 0;
+        const realSetup = mm.setupFeedbackModal.bind(mm);
+        mm.setupFeedbackModal = () => { feedbackSetups++; return realSetup(); };
+
+        mm.setupEventListeners();
+        if (mm._eventListenersInitialized !== true) throw new Error('first call should set the idempotency flag');
+        if (feedbackSetups !== 1) throw new Error(`first call should run the feedback sub-setup once, ran ${feedbackSetups}`);
+
+        // Second call must early-return (modalManager.js:144) — no duplicate wiring.
+        mm.setupEventListeners();
+        if (feedbackSetups !== 1) throw new Error(`second call should be a no-op, sub-setup ran ${feedbackSetups} times total`);
     });
 
     test('setupFeedbackModal method exists', () => {
@@ -322,11 +326,32 @@ export async function runModalManagerTests(resultsDiv) {
         mm.setupFeedbackModal();
     });
 
-    test('setupFeedbackFooterButton method exists', () => {
-        const mm = new ModalManager();
-        if (typeof mm.setupFeedbackFooterButton !== 'function') {
-            throw new Error('setupFeedbackFooterButton method not found');
-        }
+    test('setupFeedbackFooterButton opens the feedback dialog and hides thank-you', () => {
+        const mm = new ModalManager({ safeAddEventListener: mockSafeAddEventListener });
+
+        const modal = document.createElement('dialog');
+        modal.id = 'feedback-modal';
+        document.body.appendChild(modal);
+
+        const thankYou = document.createElement('div');
+        thankYou.id = 'thank-you-message';
+        thankYou.style.display = 'block';
+        modal.appendChild(thankYou);
+
+        const footerBtn = document.createElement('button');
+        footerBtn.id = 'open-feedback-modal-footer';   // DOM_IDS.OPEN_FEEDBACK_MODAL_FOOTER
+        document.body.appendChild(footerBtn);
+
+        mm.setupFeedbackFooterButton();
+        footerBtn.click();
+
+        // Source (modalManager.js:363-369): click handler opens the dialog and hides thank-you.
+        if (!modal.open) throw new Error('footer button click should open the feedback dialog');
+        if (thankYou.style.display !== 'none') throw new Error('footer button click should hide the thank-you message');
+
+        if (modal.open) modal.close();
+        modal.remove();
+        footerBtn.remove();
     });
 
     test('feedback modal opens when button clicked', () => {

@@ -37,7 +37,7 @@ export async function runConsoleCaptureTests(resultsDiv) {
         table: console.table
     };
 
-    function test(name, testFn) {
+    async function test(name, testFn) {
         total.count++;
 
         // 🔒 SAVE REAL APP DATA before test runs
@@ -54,8 +54,12 @@ export async function runConsoleCaptureTests(resultsDiv) {
         localStorage.clear();
 
         try {
-            // Run test
-            testFn();
+            // Run test. Await async bodies so their assertions are observed: a floating
+            // promise would report ✅ before the body runs (see the menuManager fix).
+            const result = testFn();
+            if (result instanceof Promise) {
+                await result;
+            }
 
             resultsDiv.innerHTML += `<div class="result pass">✅ ${name}</div>`;
             passed.count++;

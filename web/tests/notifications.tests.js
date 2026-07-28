@@ -626,14 +626,24 @@ export async function runNotificationsTests(resultsDiv) {
         notification.className = 'notification';
         container.appendChild(notification);
 
+        // Record every event type registered on the notification. setupAutoRemove
+        // attaches its listeners via addEventListener (through the injected
+        // safeAddEventListener, which forwards to element.addEventListener), so a
+        // recording wrapper captures them. The old test checked `.onmouseenter`/
+        // `.onmouseleave` — always null since listeners aren't attached as properties —
+        // and left its only branch empty, so it verified nothing.
+        const registered = [];
+        const realAdd = notification.addEventListener.bind(notification);
+        notification.addEventListener = (type, handler, options) => {
+            registered.push(type);
+            return realAdd(type, handler, options);
+        };
+
         const notifications = new window.MiniCycleNotifications();
         notifications.setupAutoRemove(notification, 3000);
 
-        // Check if event listeners are attached by checking internal state
-        // (This is a simplified test - in real scenarios you'd test actual behavior)
-        if (!notification.onmouseenter && !notification.onmouseleave) {
-            // Listeners are attached via addEventListener, not as properties
-            // So we just verify the function runs without error
+        if (!registered.includes('mouseenter') || !registered.includes('mouseleave')) {
+            throw new Error(`hover listeners not attached — registered: [${registered.join(', ')}]`);
         }
     });
 
@@ -659,10 +669,18 @@ export async function runNotificationsTests(resultsDiv) {
         const notifications = new window.MiniCycleNotifications();
 
         notifications.setupNotificationDragging(container);
+        const observer1 = container._pointerEventsObserver;
         notifications.setupNotificationDragging(container);
+        const observer2 = container._pointerEventsObserver;
 
-        // Should only attach once (flag prevents duplicate)
-        // Test passes if no error thrown
+        // The dedup guard (`if (!container._pointerEventsObserver)`) installs the observer
+        // once and makes the second call a no-op. The old test only checked "no error thrown".
+        if (!observer1) {
+            throw new Error('first setupNotificationDragging should install the pointer-events observer');
+        }
+        if (observer1 !== observer2) {
+            throw new Error('second setupNotificationDragging should be a no-op (observer must not be recreated)');
+        }
     });
 
     await test('setDraggingState() updates state', () => {
@@ -783,10 +801,16 @@ export async function runNotificationsTests(resultsDiv) {
             'indefinitely'
         );
 
-        // Check if monthly option has 'selected' class
-        if (!html.includes('data-freq="monthly"') ||
-            !html.includes('selected')) {
-            throw new Error('Selected frequency not marked');
+        // The MONTHLY option specifically must carry the `selected` class — not merely that
+        // a monthly option exists AND some option is selected (both are always true for any
+        // valid frequency). Source: notifications.js:1252-1253 renders
+        // `class="radio-circle ${freq==='monthly'?'selected':''}" data-freq="monthly"`.
+        if (!html.includes('radio-circle selected" data-freq="monthly"')) {
+            throw new Error('Monthly option should be marked selected');
+        }
+        // And a different frequency must NOT be marked (guards against highlighting the wrong one).
+        if (html.includes('radio-circle selected" data-freq="daily"')) {
+            throw new Error('Daily should not be marked selected when monthly is chosen');
         }
     });
 

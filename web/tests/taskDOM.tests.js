@@ -273,11 +273,13 @@ export async function runTaskDOMTests(resultsDiv) {
     await test('validateAndSanitizeTaskInput uses sanitize function', async () => {
         let sanitizeCalled = false;
 
+        // Faithful mock — mirrors the real normalizeText (trim only). It must not be
+        // more capable than the implementation: normalizeText does NOT strip HTML.
         const manager = new TaskDOMManager({
             ...getDefaultDeps(),
             sanitizeInput: (input) => {
                 sanitizeCalled = true;
-                return input.replace(/[<>]/g, '');
+                return input.trim();
             }
         });
 
@@ -289,8 +291,9 @@ export async function runTaskDOMTests(resultsDiv) {
             throw new Error('Sanitize function should be called');
         }
 
-        if (result.includes('<') || result.includes('>')) {
-            throw new Error('Should sanitize HTML tags');
+        // HTML is preserved unchanged — escaping happens at the render sink, not here.
+        if (result !== 'test<script>alert(1)</script>') {
+            throw new Error(`Expected HTML preserved unchanged, got '${result}'`);
         }
     });
 

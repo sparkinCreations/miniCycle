@@ -110,16 +110,17 @@ export async function runUIEffectsTests(resultsDiv, isPartOfSuite = false) {
 
     await test('triggerLogoBackground uses default green color', async () => {
         createTestDOM();
+        document.documentElement.style.removeProperty('--pref-checkbox-bg'); // ensure the default path
         setUIEffectsDependencies(createMockDeps());
 
-        triggerLogoBackground();
+        triggerLogoBackground();  // default color param is 'green'
 
         const logo = document.querySelector('.header-branding .header-logo');
-        const bgColor = logo.style.backgroundColor;
-
-        // Check that some color is applied (defaults vary by browser)
-        if (!bgColor || bgColor === '') {
-            throw new Error('Default background color should be applied');
+        // effectColor = getComputedStyle('--pref-checkbox-bg') || 'green'; with the var unset it
+        // falls back to green. The old test only checked the bg was non-empty, so a WRONG default
+        // color would still pass.
+        if (logo.style.backgroundColor !== 'green') {
+            throw new Error(`expected default green background, got "${logo.style.backgroundColor}"`);
         }
     });
 

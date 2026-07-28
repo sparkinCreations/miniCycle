@@ -141,16 +141,22 @@ export async function runDragDropManagerTests(resultsDiv) {
     test('setupRearrange() sets up event listeners', () => {
         const manager = new DragDropManager();
 
-        // Create mock taskList
         const taskList = document.createElement('div');
         taskList.id = 'taskList';
         document.body.appendChild(taskList);
-
-        // Should not throw
-        manager.setupRearrange();
-
-        // Cleanup
-        document.body.removeChild(taskList);
+        try {
+            manager.setupRearrange();
+            // setupRearrange installs the arrow-click handler on #taskList and the
+            // dragover/drop handlers on the manager. The old test only ran it ("does not throw").
+            if (typeof taskList._arrowClickHandler !== 'function') {
+                throw new Error('setupRearrange should install the arrow-click handler on #taskList');
+            }
+            if (typeof manager._dragoverHandler !== 'function' || typeof manager._dropHandler !== 'function') {
+                throw new Error('setupRearrange should install dragover/drop handlers');
+            }
+        } finally {
+            document.body.removeChild(taskList);
+        }
     });
 
     // ============================================
@@ -195,8 +201,12 @@ export async function runDragDropManagerTests(resultsDiv) {
 
         manager.enableDragAndDrop(taskElement);
 
-        // The actual addEventListener is called, so touchstart should be registered
-        // In real DOM, this would be true
+        // enableDragAndDrop attaches its touchstart handler via safeAddEventListener,
+        // which forwards to taskElement.addEventListener — captured by the spy above.
+        // The old test set touchStartCalled and then never asserted it.
+        if (!touchStartCalled) {
+            throw new Error('enableDragAndDrop should register a touchstart listener on the task element');
+        }
     });
 
     test('cleanupDragState() handles missing elements gracefully', () => {
@@ -246,86 +256,71 @@ export async function runDragDropManagerTests(resultsDiv) {
         manager.handleArrowClick(button);
     });
 
-    test('handleArrowClick() calculates move-up index', () => {
-        const manager = new DragDropManager();
-
-        // Create mock task list
+    // Shared builder: a #taskList DOM whose child order mirrors the state's tasks
+    // array, wired to a DragDropManager via a mock AppState. handleArrowClick reads
+    // the current index from the DOM and reorders the state tasks array (splice
+    // currentIndex→newIndex), so these tests assert on that array — the real contract.
+    // (The old three tests built this DOM and then never called handleArrowClick at all.)
+    function buildArrowScenario(ids, arrowIndex, arrowClass) {
         const taskList = document.createElement('div');
         taskList.id = 'taskList';
-
-        const task1 = document.createElement('div');
-        task1.className = 'task';
-        const task2 = document.createElement('div');
-        task2.className = 'task';
-        const task3 = document.createElement('div');
-        task3.className = 'task';
-
-        taskList.appendChild(task1);
-        taskList.appendChild(task2);
-        taskList.appendChild(task3);
+        ids.forEach(id => {
+            const t = document.createElement('div');
+            t.className = 'task';
+            t.dataset.taskId = id;
+            taskList.appendChild(t);
+        });
         document.body.appendChild(taskList);
 
         const button = document.createElement('button');
-        button.className = 'move-up';
-        task2.appendChild(button);
+        button.className = arrowClass;
+        taskList.children[arrowIndex].appendChild(button);
 
-        // Test would move task2 from index 1 to index 0
+        const state = {
+            appState: { activeCycleId: 'c1' },
+            data: { cycles: { c1: { tasks: ids.map(id => ({ id })) } } },
+            metadata: {},
+            ui: {}
+        };
+        const manager = new DragDropManager({
+            AppState: { isReady: () => true, get: () => state, update: (fn) => { fn(state); return state; } },
+            refreshUIFromState: () => {},
+            captureStateSnapshot: () => {},
+            updateUndoRedoButtons: () => {}
+        });
+        return { taskList, button, state, manager };
+    }
 
-        // Cleanup
-        document.body.removeChild(taskList);
+    const arrowOrder = (state) => state.data.cycles.c1.tasks.map(t => t.id).join(',');
+
+    await test('handleArrowClick() moves a task up (reorders the state tasks array)', async () => {
+        const { taskList, button, state, manager } = buildArrowScenario(['task-1', 'task-2', 'task-3'], 1, 'move-up');
+        try {
+            await manager.handleArrowClick(button);
+            if (arrowOrder(state) !== 'task-2,task-1,task-3') {
+                throw new Error(`move-up should reorder to task-2,task-1,task-3; got ${arrowOrder(state)}`);
+            }
+        } finally { document.body.removeChild(taskList); }
     });
 
-    test('handleArrowClick() calculates move-down index', () => {
-        const manager = new DragDropManager();
-
-        // Create mock task list
-        const taskList = document.createElement('div');
-        taskList.id = 'taskList';
-
-        const task1 = document.createElement('div');
-        task1.className = 'task';
-        const task2 = document.createElement('div');
-        task2.className = 'task';
-        const task3 = document.createElement('div');
-        task3.className = 'task';
-
-        taskList.appendChild(task1);
-        taskList.appendChild(task2);
-        taskList.appendChild(task3);
-        document.body.appendChild(taskList);
-
-        const button = document.createElement('button');
-        button.className = 'move-down';
-        task2.appendChild(button);
-
-        // Test would move task2 from index 1 to index 2
-
-        // Cleanup
-        document.body.removeChild(taskList);
+    await test('handleArrowClick() moves a task down (reorders the state tasks array)', async () => {
+        const { taskList, button, state, manager } = buildArrowScenario(['task-1', 'task-2', 'task-3'], 1, 'move-down');
+        try {
+            await manager.handleArrowClick(button);
+            if (arrowOrder(state) !== 'task-1,task-3,task-2') {
+                throw new Error(`move-down should reorder to task-1,task-3,task-2; got ${arrowOrder(state)}`);
+            }
+        } finally { document.body.removeChild(taskList); }
     });
 
-    test('handleArrowClick() does not move beyond bounds', () => {
-        const manager = new DragDropManager();
-
-        // Create mock task list
-        const taskList = document.createElement('div');
-        taskList.id = 'taskList';
-
-        const task1 = document.createElement('div');
-        task1.className = 'task';
-
-        taskList.appendChild(task1);
-        document.body.appendChild(taskList);
-
-        const buttonUp = document.createElement('button');
-        buttonUp.className = 'move-up';
-        task1.appendChild(buttonUp);
-
-        // Should not move task1 up (already at top)
-        manager.handleArrowClick(buttonUp);
-
-        // Cleanup
-        document.body.removeChild(taskList);
+    await test('handleArrowClick() does not move a task beyond bounds (top stays put)', async () => {
+        const { taskList, button, state, manager } = buildArrowScenario(['task-1', 'task-2', 'task-3'], 0, 'move-up');
+        try {
+            await manager.handleArrowClick(button);
+            if (arrowOrder(state) !== 'task-1,task-2,task-3') {
+                throw new Error(`move-up at the top should be a no-op; got ${arrowOrder(state)}`);
+            }
+        } finally { document.body.removeChild(taskList); }
     });
 
     // ============================================
@@ -395,42 +390,13 @@ export async function runDragDropManagerTests(resultsDiv) {
         manager.updateArrowsInDOM(false);
     });
 
-    test('updateMoveArrowsVisibility() reads from AppState', () => {
-        const manager = new DragDropManager();
-
-        // Mock AppState
-        const originalAppState = window.AppState;
-        window.AppState = {
-            isReady: () => true,
-            get: () => ({
-                ui: {
-                    moveArrowsVisible: true
-                }
-            })
-        };
-
-        // Should not throw
-        manager.updateMoveArrowsVisibility();
-
-        // Restore
-        window.AppState = originalAppState;
-    });
-
-    test('updateMoveArrowsVisibility() falls back to localStorage', () => {
-        const manager = new DragDropManager();
-
-        // Mock AppState as not ready
-        const originalAppState = window.AppState;
-        window.AppState = { isReady: () => false };
-
-        localStorage.setItem('miniCycleMoveArrows', 'true');
-
-        // Should not throw and should read from localStorage
-        manager.updateMoveArrowsVisibility();
-
-        // Restore
-        window.AppState = originalAppState;
-    });
+    // NOTE: two former updateMoveArrowsVisibility() tests removed here.
+    //  • 'reads from AppState' set window.AppState — which the module IGNORES (it reads the
+    //    injected this.deps.AppState) — and asserted nothing. The real AppState→DOM path is
+    //    now covered by 'updateMoveArrowsVisibility() reflects injected AppState into the
+    //    taskList DOM' above, with a real data-move-arrows assertion.
+    //  • 'falls back to localStorage' was mis-premised: updateMoveArrowsVisibility() early-
+    //    returns when AppState isn't ready — there is no localStorage fallback. (Test-suite audit.)
 
     await test('toggleArrowVisibility() defers when AppState not ready', async () => {
         const manager = new DragDropManager();
@@ -469,80 +435,12 @@ export async function runDragDropManagerTests(resultsDiv) {
         manager.handleRearrange(target, event);
     });
 
-    test('handleRearrange() ignores if target is draggedTask', () => {
-        const manager = new DragDropManager();
-
-        const taskElement = document.createElement('div');
-        taskElement.className = 'task';
-
-        if (!window.AppGlobalState) {
-            window.AppGlobalState = {};
-        }
-        window.AppGlobalState.draggedTask = taskElement;
-
-        const event = { clientY: 100 };
-
-        // Should return early without rearranging
-        manager.handleRearrange(taskElement, event);
-    });
-
-    test('handleRearrange() uses debouncing timeout', () => {
-        const manager = new DragDropManager();
-
-        const task1 = document.createElement('div');
-        task1.className = 'task';
-        const task2 = document.createElement('div');
-        task2.className = 'task';
-
-        document.body.appendChild(task1);
-        document.body.appendChild(task2);
-
-        if (!window.AppGlobalState) {
-            window.AppGlobalState = {};
-        }
-        window.AppGlobalState.draggedTask = task1;
-
-        const event = {
-            clientY: 50,
-            target: task2
-        };
-
-        // First call should set timeout
-        const timeoutBefore = manager.rearrangeTimeout;
-        manager.handleRearrange(task2, event);
-        const timeoutAfter = manager.rearrangeTimeout;
-
-        // Cleanup
-        document.body.removeChild(task1);
-        document.body.removeChild(task2);
-    });
-
-    test('handleRearrange() tracks reorder time for snapshots', () => {
-        const manager = new DragDropManager();
-
-        const task1 = document.createElement('div');
-        task1.className = 'task';
-        const task2 = document.createElement('div');
-        task2.className = 'task';
-
-        const parent = document.createElement('div');
-        parent.appendChild(task1);
-        parent.appendChild(task2);
-        document.body.appendChild(parent);
-
-        if (!window.AppGlobalState) {
-            window.AppGlobalState = {};
-        }
-        window.AppGlobalState.draggedTask = task1;
-        window.AppGlobalState.lastReorderTime = 0;
-
-        const event = { clientY: 50 };
-
-        manager.handleRearrange(task2, event);
-
-        // Cleanup
-        document.body.removeChild(parent);
-    });
+    // NOTE: three former handleRearrange() tests were removed here. Each asserted
+    // nothing AND was built on the removed `window.AppGlobalState.draggedTask` global —
+    // drag state moved to instance fields (`this.draggedTask`), so none exercised the
+    // real drag-over reorder path. Rather than keep zero-coverage tests that only look
+    // like coverage, they were deleted; the arrow-button reorder contract is covered
+    // above with real AppState-driven tests. (Test-suite audit.)
 
     // ============================================
     // 🛡️ DI DEPENDENCY TESTS
@@ -593,25 +491,23 @@ export async function runDragDropManagerTests(resultsDiv) {
     // ============================================
     resultsDiv.innerHTML += '<h4 class="test-section">🔗 Integration Tests</h4>';
 
-    test('integrates with AppState for arrow visibility', () => {
-        const manager = new DragDropManager();
-
-        // Mock AppState with state data
-        const originalAppState = window.AppState;
-        window.AppState = {
-            isReady: () => true,
-            get: () => ({
-                ui: {
-                    moveArrowsVisible: true
-                }
-            })
-        };
-
-        // Should read from AppState successfully
-        manager.updateMoveArrowsVisibility();
-
-        // Restore
-        window.AppState = originalAppState;
+    test('updateMoveArrowsVisibility() reflects injected AppState into the taskList DOM', () => {
+        // Real wiring: updateMoveArrowsVisibility reads state.ui.moveArrowsVisible from the
+        // INJECTED AppState (this.deps.AppState — NOT window.AppState) and forwards it to
+        // updateArrowsInDOM → setArrowsEnabled, which sets #taskList's data-move-arrows.
+        // The old test set window.AppState (ignored by the module) and asserted nothing.
+        const taskList = document.createElement('div');
+        taskList.id = 'taskList';
+        document.body.appendChild(taskList);
+        try {
+            const manager = new DragDropManager({
+                AppState: { isReady: () => true, get: () => ({ ui: { moveArrowsVisible: true } }) }
+            });
+            manager.updateMoveArrowsVisibility();
+            if (taskList.dataset.moveArrows !== 'true') {
+                throw new Error(`expected #taskList data-move-arrows="true", got ${taskList.dataset.moveArrows}`);
+            }
+        } finally { document.body.removeChild(taskList); }
     });
 
     await test('waits for appInit before initialization', async () => {

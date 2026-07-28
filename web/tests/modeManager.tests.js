@@ -643,21 +643,25 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
     resultsDiv.innerHTML += '<h4 class="test-section">🔗 Integration Tests (DI)</h4>';
 
     await test('integrates with injected AppState (DI)', async () => {
+        let stateRead = false;
         const mockAppState = {
             isReady: () => true,
-            get: () => ({
-                metadata: { version: '2.5' },
-                settings: {},
-                data: {
-                    cycles: {
-                        'cycle-1': {
-                            autoReset: true,
-                            deleteCheckedTasks: false
+            get: () => {
+                stateRead = true;
+                return {
+                    metadata: { version: '2.5' },
+                    settings: {},
+                    data: {
+                        cycles: {
+                            'cycle-1': {
+                                autoReset: true,
+                                deleteCheckedTasks: false
+                            }
                         }
-                    }
-                },
-                appState: { activeCycleId: 'cycle-1' }
-            }),
+                    },
+                    appState: { activeCycleId: 'cycle-1' }
+                };
+            },
             update: (updateFn, immediate) => {}
         };
 
@@ -668,24 +672,39 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
         }));
         const manager = new ModeManager();
 
-        // Should work with AppState
         await manager.syncModeFromToggles();
+
+        // syncModeFromToggles reads the injected AppState (AppState.get()) before it
+        // touches the DOM — assert it actually did. The old test called it and asserted nothing.
+        if (!stateRead) {
+            throw new Error('syncModeFromToggles should read from the injected AppState');
+        }
     });
 
     await test('works without AppState (fallback mode) (DI)', async () => {
+        let fallbackLoadCalled = false;
         setModeManagerDependencies(createMockDeps({
             AppState: null,
-            loadMiniCycleData: () => ({
-                metadata: { version: '2.5' },
-                settings: {},
-                cycles: {}
-            }),
+            loadMiniCycleData: () => {
+                fallbackLoadCalled = true;
+                return {
+                    metadata: { version: '2.5' },
+                    settings: {},
+                    cycles: {}
+                };
+            },
             getElementById: () => null
         }));
         const manager = new ModeManager();
 
-        // Should work with fallback
         await manager.updateCycleModeDescription();
+
+        // In fallback mode (no AppState) updateCycleModeDescription sources data from
+        // loadMiniCycleData — assert that fallback path was actually taken. The old test
+        // called it and asserted nothing.
+        if (!fallbackLoadCalled) {
+            throw new Error('fallback path should read data via loadMiniCycleData when AppState is absent');
+        }
     });
 
     // === GLOBAL COMPATIBILITY TESTS ===

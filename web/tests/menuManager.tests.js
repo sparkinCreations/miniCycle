@@ -154,7 +154,7 @@ export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
     // This populates module-level variables that are otherwise only set via initMenuManager at runtime.
     await initMenuManager(createMockDeps());
 
-    function test(name, testFn) {
+    async function test(name, testFn) {
         total.count++;
         try {
             // Reset environment before each test
@@ -163,7 +163,15 @@ export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
             // Reset DOM state
             document.body.className = '';
 
-            testFn();
+            // Await async test bodies so their assertions are actually observed.
+            // Without this, an async testFn() returns a floating promise: the try
+            // block reaches passed.count++ and reports ✅ before the body runs, and
+            // any throw inside becomes an unhandled rejection this catch never sees.
+            // Async call sites therefore MUST use `await test(...)`.
+            const result = testFn();
+            if (result instanceof Promise) {
+                await result;
+            }
             resultsDiv.innerHTML += `<div class="result pass">✅ ${name}</div>`;
             passed.count++;
         } catch (error) {
@@ -379,7 +387,7 @@ export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
     // === CRITICAL OPERATIONS TESTS ===
     resultsDiv.innerHTML += '<h4>🔴 Critical Operations (DI)</h4>';
 
-    test('clearAllTasks unchecks all tasks (DI)', async () => {
+    await test('clearAllTasks unchecks all tasks (DI)', async () => {
         let updatedCycle = null;
         const mockFlattenedData = {
             cycles: {
@@ -416,7 +424,7 @@ export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
-    test('deleteAllTasks removes all tasks (DI)', async () => {
+    await test('deleteAllTasks removes all tasks (DI)', async () => {
         let updatedCycle = null;
         const mockFlattenedData = {
             cycles: {
@@ -518,22 +526,23 @@ export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
         instance.hideMainMenu();
     });
 
-    test('handles missing AppState gracefully (DI)', () => {
+    await test('shows an error notification when Schema 2.5 data is missing (DI)', async () => {
+        let notified = null;
         setMenuManagerDependencies(createMockDeps({
-            loadMiniCycleData: () => null,  // Return null to trigger early exit
+            loadMiniCycleData: () => null,  // missing data → early guard
             AppState: () => null,
-            showNotification: () => {}
+            showNotification: (msg, type) => { notified = { msg, type }; }
         }));
         const instance = new MenuManager();
 
-        // Should throw specific error
-        try {
-            instance.clearAllTasks();
-        } catch (e) {
-            if (!e.message.includes('Schema 2.5 data not found')) {
-                throw e;
-            }
-        }
+        await instance.clearAllTasks();
+
+        // clearAllTasks does NOT throw on missing data (menuManager.js:621-624) — it surfaces
+        // an error notification and returns. The old test wrapped the async call in a SYNC
+        // try/catch (which can't catch an async rejection) AND expected a 'Schema 2.5 data not
+        // found' throw the source never emits — dead code with a wrong expectation.
+        if (!notified) throw new Error('missing data should surface a notification');
+        if (notified.type !== 'error') throw new Error(`expected an error notification, got type ${notified.type}`);
     });
 
     test('handles user cancellation in saveMiniCycleAsNew (DI)', () => {
@@ -626,19 +635,26 @@ export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
-    test('works with fallback mode when AppState null (DI)', () => {
+    await test('clears (unchecks) tasks via updateCycleData when a cycle is active (DI)', async () => {
+        let clearedCycleId = null;
+        const cycle = { title: 'Test', tasks: [{ id: 't1', completed: true }] };
         setMenuManagerDependencies(createMockDeps({
             AppState: () => null,
-            loadMiniCycleData: () => ({
-                cycles: { 'cycle-1': { title: 'Test', tasks: [] } },
-                activeCycle: 'cycle-1'
-            }),
+            loadMiniCycleData: () => ({ cycles: { 'cycle-1': cycle }, activeCycle: 'cycle-1' }),
+            updateCycleData: (id, updateFn) => { clearedCycleId = id; updateFn(cycle); return true; },
+            querySelectorAll: () => [],
             getElementById: () => ({ textContent: '' })
         }));
         const instance = new MenuManager();
 
-        // Should not throw
-        instance.clearAllTasks().catch(() => {}); // clearAllTasks is async and may fail, that's ok
+        await instance.clearAllTasks();
+
+        // With an active cycle, clearAllTasks routes through updateCycleData to uncheck tasks.
+        // The old test was `instance.clearAllTasks().catch(()=>{})` with no assertion — it
+        // could never fail. (Its "fallback mode when AppState null" name was also misleading:
+        // clearAllTasks reads loadMiniCycleData + updateCycleData, not AppState.)
+        if (clearedCycleId !== 'cycle-1') throw new Error('should update the active cycle via updateCycleData');
+        if (cycle.tasks[0].completed !== false) throw new Error('tasks should be unchecked');
     });
 
     // === GLOBAL COMPATIBILITY TESTS ===
@@ -715,18 +731,19 @@ export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
         instance.updateMainMenuHeader();
     });
 
-    test('handles missing cycle in data (DI)', () => {
+    await test('shows a notification when there is no active cycle to clear (DI)', async () => {
+        let notified = null;
         setMenuManagerDependencies(createMockDeps({
-            loadMiniCycleData: () => ({
-                cycles: {},
-                activeCycle: null
-            }),
-            showNotification: () => {}
+            loadMiniCycleData: () => ({ cycles: {}, activeCycle: null }),
+            showNotification: (msg) => { notified = msg; }
         }));
         const instance = new MenuManager();
 
-        // Should not throw
-        instance.clearAllTasks().catch(() => {});
+        await instance.clearAllTasks();
+
+        // No active cycle (menuManager.js:630-634) → surfaces a notification and returns.
+        // The old test was `.catch(()=>{})` with no assertion.
+        if (!notified) throw new Error('missing active cycle should surface a notification');
     });
 
     // === SUMMARY ===

@@ -48,9 +48,11 @@ export async function runCycleExportManagerTests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">✅ Function Signatures</h4>';
 
     await test('exportMiniCycleData accepts two arguments (data, name)', () => {
-        // Verify function signature — do NOT call it, as it triggers a file download
-        if (mod.exportMiniCycleData.length < 1) {
-            throw new Error('exportMiniCycleData should accept arguments');
+        // Verify function signature — do NOT call it, as it triggers a file download.
+        // Source: exportMiniCycleData(miniCycleData, cycleName) → arity 2. The old check
+        // (`< 1`, i.e. ≥1) would pass even if it silently dropped to a single parameter.
+        if (mod.exportMiniCycleData.length !== 2) {
+            throw new Error(`exportMiniCycleData should accept 2 args (data, name), got arity ${mod.exportMiniCycleData.length}`);
         }
     });
 

@@ -135,7 +135,11 @@ export async function runAchievementsManagerTests(resultsDiv) {
     await test('checkAchievements unlocks at 5 cycles', () => {
         const m = freshMgr();
         const result = m.checkAchievements(5, 0);
-        if (result.length === 0) throw new Error('Should unlock at 5 cycles');
+        // Assert the SPECIFIC milestone unlocked — the old `result.length === 0` check would
+        // pass even if the WRONG milestone unlocked.
+        if (!result.some(a => a.milestone.id === 'milestone-5')) {
+            throw new Error(`expected milestone-5 to unlock at 5 cycles, got: ${JSON.stringify(result.map(a => a.milestone.id))}`);
+        }
     });
 
     await test('checkAchievements does not double-unlock', () => {

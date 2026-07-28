@@ -1,10 +1,28 @@
 ## [2.339] - 2026-07-28
+- test(suite): coverage-gap pass wave 15 — quickActions + reminders behavior
+- test(suite): coverage-gap pass wave 14 — clearedTasks + backupReminder logic
+- test(suite): assertion-quality pass wave 13 — factory reset + settingsManager
+- test(suite): assertion-quality pass wave 12 — settingsUIManager + preferencesManager
+- test(suite): assertion-quality pass wave 11 — modalManager + helpWindowManager
+- fix(a11y): recurring button aria-pressed was "[object Object]" with a template
+- test(suite): assertion-quality pass wave 10 — testingModal tests real code
+- test(suite): assertion-quality pass wave 9 — accessibility tests real app code
+- test(suite): assertion-quality pass wave 8 — statsPanel cache + stats math
+- test(suite): assertion-quality pass wave 7 — recurring + task interactions
+- test(suite): assertion-quality pass wave 6 — undoRedoManager stack moves
+- test(suite): assertion-quality pass wave 5 — utility functions
+- test(suite): assertion-quality pass wave 4 — menuManager/taskCompletion/achievements
+- test(suite): assertion-quality pass wave 3 — boot suites test the module
+- test(suite): assertion-quality pass wave 2 — data sanitizer/recovery/export
+- test(suite): assertion-quality pass wave 1 — green-against-a-bug fixes
+- test(suite): drive the meta-guard grandfather baseline to zero
+- test(suite): remediate vacuous/fictional tests + add meta guards
+- docs(changelog): trim the 2.338 entry to its actual change
+- chore: sync package-lock version field to 2.338
 - build(docs): publish curated docsify site to dist (filtered sidebar + GitHub link repointing)
 - docs: document all validation gates (VALIDATION_GATES.md) and surface them in CLAUDE.md
 - build(docs): add validate:docs gate for links, sidebar orphans, and CLAUDE.md routing
 - docs: dissolve developer-guides/ into working-on-code, architecture, reference (Option B)
-- docs(changelog): trim the 2.338 entry to its actual change
-- chore: sync package-lock version field to 2.338
 - chore(release): update version to 2.338
 - fix(sw): precache storagePersistence.js (offline-boot drift guard)
 - chore: sync package-lock version field to 2.337

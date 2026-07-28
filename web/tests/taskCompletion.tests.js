@@ -56,29 +56,32 @@ export async function runTaskCompletionTests(resultsDiv) {
     // ============================================
     resultsDiv.innerHTML += '<h4 class="test-section">💾 saveTaskToSchema25Impl</h4>';
 
-    await test('saveTaskToSchema25Impl updates state', () => {
+    await test('saveTaskToSchema25Impl updates state (bumps lastModified)', () => {
         const state = createMockState();
-        const mockAS = createMockAppState(state);
-        const deps = { AppState: mockAS };
+        state.metadata.lastModified = 0;   // reset so we can see the impl set it
+        const deps = { AppState: createMockAppState(state) };
 
         const cycle = state.data.cycles['cycle-1'];
         saveTaskToSchema25Impl('cycle-1', cycle, deps);
 
-        // Should update lastModified
-        if (!state.metadata.lastModified) throw new Error('lastModified not set');
+        // The impl's update callback sets metadata.lastModified (taskCompletion.js). createMockState
+        // pre-set it to Date.now(), so the old `if (!lastModified)` was already true before the call.
+        if (!state.metadata.lastModified) throw new Error('saveTaskToSchema25Impl should set metadata.lastModified');
     });
 
-    await test('saveTaskToSchema25Impl preserves task data', () => {
+    await test('saveTaskToSchema25Impl persists the passed cycle into state', () => {
         const state = createMockState();
-        const mockAS = createMockAppState(state);
-        const deps = { AppState: mockAS };
+        const deps = { AppState: createMockAppState(state) };
 
-        const cycle = state.data.cycles['cycle-1'];
-        cycle.tasks[0].text = 'Modified';
-        saveTaskToSchema25Impl('cycle-1', cycle, deps);
+        // A SEPARATE cycle object (not the reference already in state), so the assertion proves
+        // the impl actually WROTE it. The old test mutated state.data.cycles['cycle-1'] directly
+        // (same reference) and read it back — a tautology that passes even with deps = {}.
+        const newCycle = { title: 'Test', tasks: [{ id: 'task-1', text: 'Rewritten', completed: false }] };
+        saveTaskToSchema25Impl('cycle-1', newCycle, deps);
 
-        const saved = state.data.cycles['cycle-1'].tasks[0];
-        if (saved.text !== 'Modified') throw new Error('Task text not preserved');
+        const saved = state.data.cycles['cycle-1'];
+        if (saved !== newCycle) throw new Error('impl should assign the passed cycle into state');
+        if (saved.tasks[0].text !== 'Rewritten') throw new Error('persisted cycle should carry the passed task data');
     });
 
     // ============================================
