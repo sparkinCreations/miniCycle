@@ -1,3 +1,26 @@
+## [2.340] - 2026-07-28
+- fix(docs): unlink gitignored DEVELOPER_PROFILE from sidebar; validate against tracked files so local matches CI
+- chore(release): update version to 2.339
+- test(suite): coverage-gap pass wave 15 — quickActions + reminders behavior
+- test(suite): coverage-gap pass wave 14 — clearedTasks + backupReminder logic
+- test(suite): assertion-quality pass wave 13 — factory reset + settingsManager
+- test(suite): assertion-quality pass wave 12 — settingsUIManager + preferencesManager
+- test(suite): assertion-quality pass wave 11 — modalManager + helpWindowManager
+- fix(a11y): recurring button aria-pressed was "[object Object]" with a template
+- test(suite): assertion-quality pass wave 10 — testingModal tests real code
+- test(suite): assertion-quality pass wave 9 — accessibility tests real app code
+- test(suite): assertion-quality pass wave 8 — statsPanel cache + stats math
+- test(suite): assertion-quality pass wave 7 — recurring + task interactions
+- test(suite): assertion-quality pass wave 6 — undoRedoManager stack moves
+- test(suite): assertion-quality pass wave 5 — utility functions
+- test(suite): assertion-quality pass wave 4 — menuManager/taskCompletion/achievements
+- test(suite): assertion-quality pass wave 3 — boot suites test the module
+- test(suite): assertion-quality pass wave 2 — data sanitizer/recovery/export
+- test(suite): assertion-quality pass wave 1 — green-against-a-bug fixes
+- test(suite): drive the meta-guard grandfather baseline to zero
+- test(suite): remediate vacuous/fictional tests + add meta guards
+
+
 ## [2.339] - 2026-07-28
 - test(suite): coverage-gap pass wave 15 — quickActions + reminders behavior
 - test(suite): coverage-gap pass wave 14 — clearedTasks + backupReminder logic
