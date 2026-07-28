@@ -1,639 +1,257 @@
 /**
  * Testing Modal Tests
  *
- * Tests for the testing modal functionality including:
- * - Backup/restore operations
- * - Data integrity checks
- * - Data repair functions
- * - Debug reporting
- * - App info display
+ * Tests for the REAL testing-modal module functions in modules/testing/*:
+ * - Core: escapeHtml, appendToTestResults / clearTestResults
+ * - Diagnostics: checkDataIntegrity, validateSchema, showAppInfo, showStorageInfo
+ * - Debug: getServiceWorkerInfo
  *
- * These tests ensure the testing modal works independently
- * and can be safely removed from production if needed.
+ * History: this suite previously re-implemented the integrity/repair/debug-report
+ * logic INLINE inside each test and asserted its own copy (and asserted a mock
+ * BackupManager returned what the mock defined) — it never loaded modules/testing/*,
+ * so it proved nothing about the product. It now drives the real functions and asserts
+ * their real output, so a regression in the testing modal would actually fail here.
  */
 
 export async function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
-    resultsDiv.innerHTML = '<h2>Testing Modal Tests</h2>';
+    resultsDiv.innerHTML = '<h2>Testing Modal Tests</h2><h3>Loading real modules...</h3>';
     let passed = { count: 0 }, total = { count: 0 };
 
-    // 🔒 SAVE REAL APP DATA before all tests run (only when running individually)
-    let savedRealData = {};
-    if (!isPartOfSuite) {
-        const protectedKeys = ['miniCycleData', 'miniCycleForceFullVersion'];
-        protectedKeys.forEach(key => {
-            const value = localStorage.getItem(key);
-            if (value !== null) {
-                savedRealData[key] = value;
-            }
-        });
-        console.log('🔒 Saved original localStorage for individual TestingModal test');
+    // --- Load the REAL testing-modal modules under test -------------------------
+    // NOTE: import WITHOUT a ?v= cache-buster. The diagnostics/debug sub-modules import
+    // testing-modal-core.js unversioned (`from './testing-modal-core.js'`), so a
+    // cache-busted core here would be a DIFFERENT instance than the one they read —
+    // our setTestingModalCoreDependencies() would wire deps the sub-modules never see.
+    let core, diagnostics, debug;
+    try {
+        core = await import('../modules/testing/testing-modal-core.js');
+        diagnostics = await import('../modules/testing/testing-modal-diagnostics.js');
+        debug = await import('../modules/testing/testing-modal-debug.js');
+    } catch (e) {
+        resultsDiv.innerHTML = `<h2>Testing Modal Tests</h2><div class="result fail">Failed to import modules/testing/*: ${e.message}</div>`;
+        return { passed: 0, total: 1 };
     }
 
-    // Helper to restore original data after all tests
-    function restoreOriginalData() {
-        if (!isPartOfSuite) {
-            localStorage.clear();
-            Object.keys(savedRealData).forEach(key => {
-                localStorage.setItem(key, savedRealData[key]);
-            });
-            console.log('✅ Individual TestingModal test completed - original localStorage restored');
-        }
-    }
+    const { escapeHtml, appendToTestResults, clearTestResults, setTestingModalCoreDependencies } = core;
+    const { checkDataIntegrity, validateSchema, showAppInfo, showStorageInfo } = diagnostics;
+    const { getServiceWorkerInfo } = debug;
 
-    // Mock BackupManager if not available
-    const mockBackupManager = {
-        createAutoBackup: async () => true,
-        createManualBackup: async (name) => true,
-        listAllBackups: async () => ({ auto: [], manual: [] }),
-        restoreBackup: async (id, type) => ({
-            data: { cycles: {} },
-            metadata: { schemaVersion: '2.5' }
-        }),
-        getStats: async () => ({
-            autoBackups: 0,
-            manualBackups: 0,
-            totalBackups: 0,
-            totalSize: 0,
-            totalSizeMB: '0.00'
-        })
-    };
+    // DOM_IDS.TESTING_OUTPUT === 'testing-output' — the element the modules write into.
+    const OUTPUT_ID = 'testing-output';
 
-    // Mock AppState
-    const mockAppState = {
-        isReady: () => true,
-        get: () => ({
+    // Configurable mock AppState — tests swap `mockState` to exercise integrity branches.
+    function cleanState() {
+        return {
+            metadata: { version: '2.5-test', schemaVersion: '2.5', lastModified: Date.now() },
             data: {
                 cycles: {
                     'test-cycle': {
                         title: 'Test Routine',
-                        mode: 'auto',
+                        schemaVersion: 2.5,
                         tasks: [
-                            {
-                                id: 0,
-                                text: 'Test Task',
-                                completed: false,
-                                deleteWhenCompleteSettings: { cycle: false, todo: true }
-                            }
+                            { id: 't1', text: 'Task one', completed: false },
+                            { id: 't2', text: 'Task two', completed: true }
                         ]
                     }
                 }
             },
-            appState: {
-                activeCycleId: 'test-cycle'
-            },
-            metadata: {
-                version: '1.371',
-                schemaVersion: '2.5',
-                lastModified: Date.now()
-            },
-            settings: {
-                darkMode: false,
-                statsPanel: {}
-            },
-            userProgress: {}
-        }),
-        update: (mutator, immediate) => {
-            const state = mockAppState.get();
-            mutator(state);
-        }
+            appState: { activeCycleId: 'test-cycle' },
+            settings: {}
+        };
+    }
+    let mockState = cleanState();
+    const mockAppState = {
+        isReady: () => true,
+        get: () => mockState,
+        update: (fn) => fn(mockState)
     };
+
+    // Wire the real core deps once (sub-modules read AppState via getDeps()).
+    setTestingModalCoreDependencies({
+        AppState: mockAppState,
+        showNotification: () => {},
+        notifications: null
+    });
+
+    // Ensure the output element exists; track whether we created it so cleanup is exact.
+    let createdOutput = false;
+    function ensureOutput() {
+        let el = document.getElementById(OUTPUT_ID);
+        if (!el) {
+            el = document.createElement('div');
+            el.id = OUTPUT_ID;
+            document.body.appendChild(el);
+            createdOutput = true;
+        }
+        el.textContent = '';
+        return el;
+    }
+    function outputText() {
+        return document.getElementById(OUTPUT_ID)?.textContent || '';
+    }
 
     async function test(name, testFn) {
         total.count++;
         try {
-            // Reset environment before each test
-            localStorage.clear();
-
-            // Mock Schema 2.5 data
-            const mockSchemaData = {
-                metadata: {
-                    version: "1.371",
-                    schemaVersion: "2.5",
-                    lastModified: Date.now()
-                },
-                settings: {
-                    darkMode: false,
-                    statsPanel: {}
-                },
-                data: {
-                    cycles: {
-                        'test-cycle': {
-                            title: 'Test Routine',
-                            mode: 'auto',
-                            tasks: [
-                                {
-                                    id: 0,
-                                    text: 'Test Task',
-                                    completed: false,
-                                    deleteWhenCompleteSettings: { cycle: false, todo: true }
-                                }
-                            ]
-                        }
-                    }
-                },
-                appState: {
-                    activeCycleId: 'test-cycle'
-                },
-                userProgress: {}
-            };
-            localStorage.setItem('miniCycleData', JSON.stringify(mockSchemaData));
-
-            // Mock globals
-            window.AppState = mockAppState;
-            window.BackupManager = mockBackupManager;
-
-            // Reset DOM
-            document.body.className = '';
-
+            mockState = cleanState();  // reset per test
+            ensureOutput();
             await testFn();
             resultsDiv.innerHTML += `<div class="result pass">✅ ${name}</div>`;
             passed.count++;
         } catch (error) {
             resultsDiv.innerHTML += `<div class="result fail">❌ ${name}: ${error.message}</div>`;
+            console.error(`Test failed: ${name}`, error);
         }
     }
 
-    // === BACKUP MANAGER INTEGRATION TESTS ===
-    resultsDiv.innerHTML += '<h4>💾 Backup Manager Integration</h4>';
+    resultsDiv.innerHTML = '<h2>Testing Modal Tests</h2><h3>Running tests...</h3>';
 
-    await test('BackupManager exists and has correct interface', async () => {
-        // Use window.BackupManager which is set up by the test framework
-        const BackupManager = window.BackupManager;
-        if (!BackupManager) {
-            throw new Error('BackupManager not available');
-        }
+    // =====================================================
+    // Core: escapeHtml (pure)
+    // =====================================================
+    resultsDiv.innerHTML += '<h4>🔒 escapeHtml (XSS-safe)</h4>';
 
-        const requiredMethods = [
-            'createAutoBackup',
-            'createManualBackup',
-            'listAllBackups',
-            'restoreBackup',
-            'getStats'
-        ];
-
-        requiredMethods.forEach(method => {
-            if (typeof BackupManager[method] !== 'function') {
-                throw new Error(`BackupManager missing method: ${method}`);
-            }
-        });
-    });
-
-    await test('can list available backups', async () => {
-        const result = await window.BackupManager.listAllBackups();
-
-        if (!result || typeof result !== 'object') {
-            throw new Error('listAllBackups should return object');
-        }
-
-        if (!Array.isArray(result.auto) || !Array.isArray(result.manual)) {
-            throw new Error('listAllBackups should return {auto: [], manual: []}');
+    await test('escapeHtml neutralizes angle brackets', () => {
+        if (escapeHtml('<script>alert(1)</script>') !== '&lt;script&gt;alert(1)&lt;&#x2F;script&gt;') {
+            throw new Error(`got "${escapeHtml('<script>alert(1)</script>')}"`);
         }
     });
 
-    await test('can create manual backup with name', async () => {
-        const backupName = 'Test Backup';
-        const result = await window.BackupManager.createManualBackup(backupName);
+    await test('escapeHtml escapes ampersand, quotes, apostrophe and slash', () => {
+        if (escapeHtml('a & b') !== 'a &amp; b') throw new Error('& not escaped');
+        if (escapeHtml('say "hi"') !== 'say &quot;hi&quot;') throw new Error('double quote not escaped');
+        if (escapeHtml("it's") !== 'it&#x27;s') throw new Error('apostrophe not escaped');
+        if (escapeHtml('a/b') !== 'a&#x2F;b') throw new Error('slash not escaped');
+    });
 
-        if (result !== true) {
-            throw new Error('createManualBackup should return true on success');
+    await test('escapeHtml returns non-strings unchanged', () => {
+        if (escapeHtml(42) !== 42) throw new Error('number should pass through');
+        if (escapeHtml(null) !== null) throw new Error('null should pass through');
+    });
+
+    // =====================================================
+    // Core: appendToTestResults / clearTestResults (DOM contract)
+    // =====================================================
+    resultsDiv.innerHTML += '<h4>📝 Results Output</h4>';
+
+    await test('appendToTestResults concatenates into the output element', () => {
+        appendToTestResults('line-a\n');
+        appendToTestResults('line-b\n');
+        const text = outputText();
+        if (!text.includes('line-a') || !text.includes('line-b')) throw new Error(`missing appended text: "${text}"`);
+        if (text.indexOf('line-a') > text.indexOf('line-b')) throw new Error('append order should be preserved');
+    });
+
+    await test('clearTestResults empties the output element', () => {
+        appendToTestResults('something\n');
+        if (outputText() === '') throw new Error('precondition: output should be non-empty');
+        clearTestResults();
+        if (outputText() !== '') throw new Error('clearTestResults should empty the output');
+    });
+
+    // =====================================================
+    // Diagnostics: checkDataIntegrity (real, async — setTimeout 1000ms)
+    // =====================================================
+    resultsDiv.innerHTML += '<h4>🔍 checkDataIntegrity</h4>';
+
+    await test('checkDataIntegrity reports PASSED for a valid Schema 2.5 state', async () => {
+        checkDataIntegrity();
+        await new Promise(r => setTimeout(r, 1200));
+        if (!outputText().includes('PASSED')) throw new Error(`expected PASSED, got: "${outputText()}"`);
+    });
+
+    await test('checkDataIntegrity detects a task with a missing id', async () => {
+        delete mockState.data.cycles['test-cycle'].tasks[0].id;
+        checkDataIntegrity();
+        await new Promise(r => setTimeout(r, 1200));
+        if (!outputText().includes('Missing task ID')) throw new Error(`expected "Missing task ID", got: "${outputText()}"`);
+    });
+
+    await test('checkDataIntegrity detects a cycle with a missing title', async () => {
+        delete mockState.data.cycles['test-cycle'].title;
+        checkDataIntegrity();
+        await new Promise(r => setTimeout(r, 1200));
+        if (!outputText().includes('Missing title')) throw new Error(`expected "Missing title", got: "${outputText()}"`);
+    });
+
+    await test('checkDataIntegrity detects a cycle whose tasks is not an array', async () => {
+        mockState.data.cycles['test-cycle'].tasks = 'not-an-array';
+        checkDataIntegrity();
+        await new Promise(r => setTimeout(r, 1200));
+        if (!outputText().includes('not an array')) throw new Error(`expected "not an array", got: "${outputText()}"`);
+    });
+
+    // =====================================================
+    // Diagnostics: validateSchema (real, async — setTimeout 800ms)
+    // =====================================================
+    resultsDiv.innerHTML += '<h4>🧬 validateSchema</h4>';
+
+    await test('validateSchema reports the analysis with the real task total', async () => {
+        validateSchema();
+        await new Promise(r => setTimeout(r, 1000));
+        const text = outputText();
+        if (!text.includes('Schema Analysis')) throw new Error('expected Schema Analysis header');
+        // cleanState has 2 tasks across 1 routine.
+        if (!text.includes('Total Tasks: 2')) throw new Error(`expected 2 total tasks, got: "${text}"`);
+        if (!text.includes('Total Routines: 1')) throw new Error('expected 1 routine');
+    });
+
+    await test('validateSchema flags cycles with an old per-cycle schemaVersion', async () => {
+        mockState.data.cycles['test-cycle'].schemaVersion = 2.0;  // < 2.5 → needs migration
+        validateSchema();
+        await new Promise(r => setTimeout(r, 1000));
+        if (!outputText().includes('Cycles needing migration: 1')) {
+            throw new Error(`expected 1 cycle needing migration, got: "${outputText()}"`);
         }
     });
 
-    await test('can get backup statistics', async () => {
-        const stats = await window.BackupManager.getStats();
+    // =====================================================
+    // Diagnostics: showAppInfo / showStorageInfo (real, sync)
+    // =====================================================
+    resultsDiv.innerHTML += '<h4>ℹ️ Info Displays</h4>';
 
-        if (!stats || typeof stats !== 'object') {
-            throw new Error('getStats should return object');
-        }
-
-        const requiredFields = ['autoBackups', 'manualBackups', 'totalBackups', 'totalSizeMB'];
-        requiredFields.forEach(field => {
-            if (stats[field] === undefined) {
-                throw new Error(`Stats missing field: ${field}`);
-            }
-        });
+    await test('showAppInfo prints version + schema from metadata', () => {
+        showAppInfo();
+        const text = outputText();
+        if (!text.includes('2.5-test')) throw new Error(`expected metadata version, got: "${text}"`);
+        if (!text.includes('Schema Version: 2.5')) throw new Error('expected schema version line');
+        if (!text.includes('miniCycle')) throw new Error('expected app name');
     });
 
-    // === DATA INTEGRITY TESTS ===
-    resultsDiv.innerHTML += '<h4>🔍 Data Integrity Checks</h4>';
-
-    await test('detects missing task IDs', async () => {
-        const state = window.AppState.get();
-        const cycle = state.data.cycles['test-cycle'];
-
-        // Remove ID from one task
-        delete cycle.tasks[0].id;
-
-        const issues = [];
-        cycle.tasks.forEach((task, index) => {
-            if (task.id === undefined) {
-                issues.push({ cycle: cycle.title, taskIndex: index, issue: 'Missing task ID' });
-            }
-        });
-
-        if (issues.length === 0) {
-            throw new Error('Should detect missing task ID');
-        }
+    await test('showStorageInfo prints key count and usage', () => {
+        showStorageInfo();
+        const text = outputText();
+        if (!text.includes('Available Keys:')) throw new Error('expected key count line');
+        if (!text.includes('Storage Used:')) throw new Error('expected storage used line');
+        if (!/Usage: [\d.]+%/.test(text)) throw new Error(`expected a usage percentage, got: "${text}"`);
     });
 
-    await test('detects missing cycle titles', async () => {
-        const state = window.AppState.get();
-        delete state.data.cycles['test-cycle'].title;
+    // =====================================================
+    // Debug: getServiceWorkerInfo (real, async — returns a promise)
+    // =====================================================
+    resultsDiv.innerHTML += '<h4>⚙️ getServiceWorkerInfo</h4>';
 
-        const issues = [];
-        Object.entries(state.data.cycles).forEach(([cycleId, cycle]) => {
-            if (!cycle.title) {
-                issues.push({ cycle: cycleId, issue: 'Missing title' });
-            }
-        });
-
-        if (issues.length === 0) {
-            throw new Error('Should detect missing cycle title');
+    await test('getServiceWorkerInfo resolves the documented info shape', async () => {
+        const info = await getServiceWorkerInfo();
+        if (!info || typeof info !== 'object') throw new Error('should resolve an object');
+        if (typeof info.supported !== 'boolean') throw new Error('supported should be a boolean');
+        if (typeof info.registered !== 'boolean') throw new Error('registered should be a boolean');
+        // These keys are always present in the returned shape (null when unknown).
+        for (const key of ['state', 'scope', 'version', 'scriptURL', 'updateAvailable', 'error']) {
+            if (!(key in info)) throw new Error(`missing key: ${key}`);
         }
     });
 
-    await test('detects missing task arrays', async () => {
-        const state = window.AppState.get();
-        delete state.data.cycles['test-cycle'].tasks;
-
-        const issues = [];
-        Object.entries(state.data.cycles).forEach(([cycleId, cycle]) => {
-            if (!Array.isArray(cycle.tasks)) {
-                issues.push({ cycle: cycleId, issue: 'Tasks is not an array' });
-            }
-        });
-
-        if (issues.length === 0) {
-            throw new Error('Should detect missing tasks array');
-        }
-    });
-
-    await test('validates deleteWhenCompleteSettings exist', async () => {
-        const state = window.AppState.get();
-        const task = state.data.cycles['test-cycle'].tasks[0];
-
-        // Remove deleteWhenCompleteSettings
-        delete task.deleteWhenCompleteSettings;
-
-        if (task.deleteWhenCompleteSettings) {
-            throw new Error('Settings should be undefined after deletion');
-        }
-
-        // Repair function should detect this
-        const needsRepair = !task.deleteWhenCompleteSettings;
-        if (!needsRepair) {
-            throw new Error('Should detect missing deleteWhenCompleteSettings');
-        }
-    });
-
-    // === DATA REPAIR TESTS ===
-    resultsDiv.innerHTML += '<h4>🔧 Data Repair Functions</h4>';
-
-    await test('repairs missing task IDs', async () => {
-        const state = window.AppState.get();
-        const cycle = state.data.cycles['test-cycle'];
-
-        // Remove ID
-        delete cycle.tasks[0].id;
-
-        // Simulate repair
-        let repaired = 0;
-        cycle.tasks.forEach((task, index) => {
-            if (task.id === undefined) {
-                task.id = index;
-                repaired++;
-            }
-        });
-
-        if (repaired === 0) {
-            throw new Error('Should have repaired missing task ID');
-        }
-
-        if (cycle.tasks[0].id !== 0) {
-            throw new Error('Task ID should be set to index');
-        }
-    });
-
-    await test('repairs missing cycle titles', async () => {
-        const state = window.AppState.get();
-        delete state.data.cycles['test-cycle'].title;
-
-        let repaired = 0;
-        Object.entries(state.data.cycles).forEach(([cycleId, cycle]) => {
-            if (!cycle.title) {
-                cycle.title = cycleId;
-                repaired++;
-            }
-        });
-
-        if (repaired === 0) {
-            throw new Error('Should have repaired missing title');
-        }
-
-        if (state.data.cycles['test-cycle'].title !== 'test-cycle') {
-            throw new Error('Title should be set to cycle ID');
-        }
-    });
-
-    await test('repairs missing task arrays', async () => {
-        const state = window.AppState.get();
-        delete state.data.cycles['test-cycle'].tasks;
-
-        let repaired = 0;
-        Object.entries(state.data.cycles).forEach(([cycleId, cycle]) => {
-            if (!cycle.tasks) {
-                cycle.tasks = [];
-                repaired++;
-            }
-        });
-
-        if (repaired === 0) {
-            throw new Error('Should have repaired missing tasks array');
-        }
-
-        if (!Array.isArray(state.data.cycles['test-cycle'].tasks)) {
-            throw new Error('Tasks should be an empty array');
-        }
-    });
-
-    await test('repairs missing deleteWhenCompleteSettings', async () => {
-        const state = window.AppState.get();
-        const task = state.data.cycles['test-cycle'].tasks[0];
-        delete task.deleteWhenCompleteSettings;
-
-        let repaired = 0;
-        if (!task.deleteWhenCompleteSettings) {
-            task.deleteWhenCompleteSettings = { cycle: false, todo: true };
-            repaired++;
-        }
-
-        if (repaired === 0) {
-            throw new Error('Should have repaired missing settings');
-        }
-
-        if (!task.deleteWhenCompleteSettings || task.deleteWhenCompleteSettings.cycle !== false) {
-            throw new Error('Settings should have correct defaults');
-        }
-    });
-
-    // === DEBUG REPORT TESTS ===
-    resultsDiv.innerHTML += '<h4>📋 Debug Report Generation</h4>';
-
-    await test('generates debug report with all sections', async () => {
-        const state = window.AppState.get();
-        const cycles = state.data.cycles || {};
-        const activeCycleId = state.appState.activeCycleId;
-        const metadata = state.metadata;
-
-        const report = {
-            timestamp: new Date().toISOString(),
-            appInfo: {
-                version: metadata?.version || "1.371",
-                schemaVersion: metadata?.schemaVersion || "2.5",
-                name: "miniCycle",
-                developer: "Sparkin Creations"
-            },
-            systemInfo: {
-                userAgent: navigator.userAgent,
-                viewport: `${window.innerWidth}x${window.innerHeight}`,
-                memory: performance.memory?.usedJSHeapSize || "Not available",
-                cookiesEnabled: navigator.cookieEnabled,
-                language: navigator.language
-            },
-            dataInfo: {
-                totalRoutines: Object.keys(cycles).length,
-                activeCycle: activeCycleId,
-                totalTasks: Object.values(cycles).reduce((acc, cycle) => acc + (cycle.tasks?.length || 0), 0),
-                storageUsed: JSON.stringify(localStorage).length
-            }
-        };
-
-        if (!report.appInfo || !report.systemInfo || !report.dataInfo) {
-            throw new Error('Debug report missing required sections');
-        }
-
-        if (report.dataInfo.totalRoutines !== 1) {
-            throw new Error('Should report 1 test routine');
-        }
-    });
-
-    await test('app info includes version and schema', async () => {
-        const state = window.AppState.get();
-        const metadata = state?.metadata || {};
-        const version = metadata.version || metadata.schemaVersion || "1.371";
-        const schemaVersion = metadata.schemaVersion || "2.5";
-
-        if (!version || !schemaVersion) {
-            throw new Error('App info should include version and schema');
-        }
-
-        if (schemaVersion !== '2.5') {
-            throw new Error('Schema version should be 2.5');
-        }
-    });
-
-    await test('performance info calculates correctly', async () => {
-        const performanceInfo = performance.getEntriesByType("navigation")[0];
-
-        if (performanceInfo) {
-            const pageLoadTime = performanceInfo.loadEventEnd - performanceInfo.fetchStart;
-            const domLoadTime = performanceInfo.domContentLoadedEventEnd - performanceInfo.fetchStart;
-
-            // These might be 0 or negative during tests, which is okay
-            if (typeof pageLoadTime !== 'number' || typeof domLoadTime !== 'number') {
-                throw new Error('Performance times should be numbers');
-            }
-        }
-
-        const memoryUsed = (performance.memory?.usedJSHeapSize / 1024 / 1024 || 0);
-        if (typeof memoryUsed !== 'number') {
-            throw new Error('Memory usage should be a number');
-        }
-    });
-
-    // === APP STATE INTEGRATION TESTS ===
-    resultsDiv.innerHTML += '<h4>🔄 AppState Integration</h4>';
-
-    await test('can access AppState data', async () => {
-        const state = window.AppState?.get();
-
-        if (!state) {
-            throw new Error('AppState.get() should return data');
-        }
-
-        if (!state.data || !state.metadata) {
-            throw new Error('AppState should have data and metadata');
-        }
-    });
-
-    await test('can read cycles from AppState', async () => {
-        const state = window.AppState?.get();
-        const cycles = state?.data?.cycles || {};
-
-        if (Object.keys(cycles).length === 0) {
-            throw new Error('Should have test cycles');
-        }
-
-        if (!cycles['test-cycle']) {
-            throw new Error('Should have test-cycle');
-        }
-    });
-
-    await test('can update AppState data', async () => {
-        let updateCalled = false;
-
-        window.AppState.update = (mutator, immediate) => {
-            updateCalled = true;
-            const state = mockAppState.get();
-            mutator(state);
-        };
-
-        window.AppState.update(state => {
-            state.data.cycles['test-cycle'].title = 'Updated Title';
-        }, true);
-
-        if (!updateCalled) {
-            throw new Error('AppState.update should be called');
-        }
-    });
-
-    await test('metadata includes required fields', async () => {
-        const state = window.AppState.get();
-        const metadata = state?.metadata;
-
-        const requiredFields = ['version', 'schemaVersion', 'lastModified'];
-        requiredFields.forEach(field => {
-            if (!metadata[field]) {
-                throw new Error(`Metadata missing required field: ${field}`);
-            }
-        });
-    });
-
-    // === SCHEMA VERSION TESTS ===
-    resultsDiv.innerHTML += '<h4>📊 Schema Version Validation</h4>';
-
-    await test('validates schema version is 2.5', async () => {
-        const state = window.AppState.get();
-        const schemaVersion = state?.metadata?.schemaVersion;
-
-        if (schemaVersion !== '2.5') {
-            throw new Error(`Schema version should be 2.5, got ${schemaVersion}`);
-        }
-    });
-
-    await test('counts tasks correctly across cycles', async () => {
-        const state = window.AppState.get();
-        const cycles = state.data.cycles || {};
-
-        let totalTasks = 0;
-        Object.values(cycles).forEach(cycle => {
-            totalTasks += (cycle.tasks?.length || 0);
-        });
-
-        if (totalTasks !== 1) {
-            throw new Error('Should count 1 test task');
-        }
-    });
-
-    await test('identifies mode settings correctly', async () => {
-        const state = window.AppState.get();
-        const cycle = state.data.cycles['test-cycle'];
-
-        if (!cycle.mode) {
-            throw new Error('Cycle should have mode setting');
-        }
-
-        const validModes = ['auto', 'manual', 'todo'];
-        if (!validModes.includes(cycle.mode)) {
-            throw new Error(`Invalid mode: ${cycle.mode}`);
-        }
-    });
-
-    // === STORAGE TESTS ===
-    resultsDiv.innerHTML += '<h4>💾 Storage Operations</h4>';
-
-    await test('calculates storage usage correctly', async () => {
-        const storageUsed = JSON.stringify(localStorage).length;
-        const storageLimit = 5 * 1024 * 1024; // 5MB
-        const usagePercent = ((storageUsed / storageLimit) * 100).toFixed(2);
-
-        if (typeof parseFloat(usagePercent) !== 'number') {
-            throw new Error('Usage percent should be a number');
-        }
-
-        if (parseFloat(usagePercent) > 100) {
-            throw new Error('Usage percent should not exceed 100%');
-        }
-    });
-
-    await test('counts localStorage keys correctly', async () => {
-        const keyCount = Object.keys(localStorage).length;
-
-        if (typeof keyCount !== 'number') {
-            throw new Error('Key count should be a number');
-        }
-
-        if (keyCount < 1) {
-            throw new Error('Should have at least miniCycleData key');
-        }
-    });
-
-    // === ERROR HANDLING TESTS ===
-    resultsDiv.innerHTML += '<h4>⚠️ Error Handling</h4>';
-
-    await test('handles missing AppState gracefully', async () => {
-        delete window.AppState;
-
-        const state = window.AppState?.get();
-
-        if (state !== undefined) {
-            throw new Error('Should return undefined when AppState missing');
-        }
-
-        // Restore for other tests
-        window.AppState = mockAppState;
-    });
-
-    await test('handles missing BackupManager gracefully', async () => {
-        delete window.BackupManager;
-
-        const manager = window.BackupManager;
-
-        if (manager !== undefined) {
-            throw new Error('Should return undefined when BackupManager missing');
-        }
-
-        // Restore for other tests
-        window.BackupManager = mockBackupManager;
-    });
-
-    await test('handles corrupted localStorage data', async () => {
-        localStorage.setItem('miniCycleData', 'invalid json');
-
-        let errorThrown = false;
-        try {
-            JSON.parse(localStorage.getItem('miniCycleData'));
-        } catch (e) {
-            errorThrown = true;
-        }
-
-        if (!errorThrown) {
-            throw new Error('Should throw error for invalid JSON');
-        }
-    });
-
-    // === SUMMARY ===
-    const percentage = total.count > 0 ? Math.round((passed.count / total.count) * 100) : 0;
+    // --- Cleanup ---------------------------------------------------------------
+    if (createdOutput) document.getElementById(OUTPUT_ID)?.remove();
+
+    // === RESULTS ===
+    const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;
-
     if (passed.count === total.count) {
-        resultsDiv.innerHTML += '<p class="all-pass">✅ All tests passed!</p>';
+        resultsDiv.innerHTML += '<div class="result pass">🎉 All tests passed!</div>';
     } else {
-        resultsDiv.innerHTML += `<p class="some-fail">⚠️ ${total.count - passed.count} test(s) failed</p>`;
+        resultsDiv.innerHTML += `<div class="result fail">⚠️ ${total.count - passed.count} test(s) failed</div>`;
     }
-
-    // 🔒 RESTORE REAL APP DATA after all tests (only when running individually)
-    restoreOriginalData();
-
     return { passed: passed.count, total: total.count };
 }
