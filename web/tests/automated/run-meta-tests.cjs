@@ -129,7 +129,12 @@ const NO_THROW_NAME_PATTERNS = [
     /\bno-?throw\b/i,
     /\bno-?ops?\b/i,
     /\bdoes\s+nothing\b/i,
-    /\bhandles?\b/i,                       // "handles X" — conventional no-throw idiom
+    // "handles X" is only a no-throw idiom when X is a DEGENERATE input
+    // ("handles missing task element", "handles corrupted localStorage") — a
+    // bare "handles very large data export" is a behavioral claim and must
+    // assert. Require a degenerate-input qualifier within reach of the verb.
+    // NOTE: corrupt\w*/uninit\w* (not \bcorrupt\b) so "corrupted"/"uninitialized" match.
+    /\bhandles?\b[^.]{0,40}\b(gracefully|missing|null|undefined|empty|absent|without|invalid|corrupt\w*|uninit\w*|malformed|nonexistent|non-existent|unavailable)\b/i,
     /\bvalidates?\b/i,                     // "validates array input" — validation smoke
     /\bsets?\s+dependenc/i,                // "sets dependencies correctly" — DI smoke
     /\btolerat/i,

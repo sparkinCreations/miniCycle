@@ -1,3 +1,8 @@
+## [2.341] - 2026-07-28
+- fix(achievements): one toast per game unlock — no generic stacking
+- fix(a11y): help-window text + Add button now scale cleanly with Font Size
+- test: Round 2 audit remediation — faithful sanitize mocks, real assertions
+
 ## [2.340] - 2026-07-28
 - fix(docs): unlink gitignored DEVELOPER_PROFILE from sidebar; validate against tracked files so local matches CI
 - chore(release): update version to 2.339
