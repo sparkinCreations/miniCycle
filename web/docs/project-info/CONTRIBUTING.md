@@ -98,6 +98,8 @@ Two rules that keep this from rotting:
 Both rules are enforced — `npm run validate:docs` fails on broken relative links, docs
 missing from `_sidebar.md`, and root `CLAUDE.md` paths that no longer resolve. It runs in
 CI, so a doc filed in the wrong place (or not filed at all) is caught before merge.
+See [VALIDATION_GATES.md](../working-on-code/VALIDATION_GATES.md) for every gate in the
+project and what a failure means.
 
 > This rule exists because `developer-guides/` accumulated four different document types
 > until finding anything required already knowing its filename. See

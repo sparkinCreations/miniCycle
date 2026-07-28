@@ -35,6 +35,18 @@ npm run lint       # ESLint with security + SonarJS plugins
 npm run build:web  # esbuild release bundle → web/dist/ (what Netlify runs; dev never needs it)
 ```
 
+**Validation gates** — full reference: `web/docs/working-on-code/VALIDATION_GATES.md`
+
+```bash
+npm run validate:csp   # inline-script CSP hashes — HARD pre-push gate (blocks release)
+npm run validate:html  # W3C validity (CI)
+npm run validate:docs  # docs links, sidebar orphans, and THIS file's doc paths (CI)
+npm run validate:di    # DI declarations — advisory, always exits 0; run as a before/after diff
+```
+
+`validate:docs` checks that every `web/docs/…md` path in this file still resolves. A stale
+path here fails **silently** — it routes to a missing file and degrades every later change.
+
 ## SHIPPING — Push = Production Deploy
 
 **Every push to `main` triggers a Netlify build of `web/dist/` and deploys it** — driven by

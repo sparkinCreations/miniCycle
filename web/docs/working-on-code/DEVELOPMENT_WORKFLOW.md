@@ -86,6 +86,14 @@ Refresh → Styles applied!
 
 ## Testing Your Changes
 
+> **Before you push:** run the validation gates. `validate:csp` is a hard pre-push gate that
+> will block a release; the rest fail CI. See
+> [VALIDATION_GATES.md](VALIDATION_GATES.md) for what each one checks and how to fix a failure.
+>
+> ```bash
+> npm run validate:csp && npm run validate:html && npm run validate:docs && npm run lint
+> ```
+
 ### Use Built-in Testing Modal
 
 ```javascript

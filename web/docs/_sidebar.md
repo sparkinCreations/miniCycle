@@ -38,6 +38,7 @@
   * [Security Guide](working-on-code/SECURITY_GUIDE.md)
   * [Error Recovery & Salvage](working-on-code/ERROR_RECOVERY.md)
   * [Testing Guide](working-on-code/TESTING_GUIDE.md)
+  * [Validation Gates](working-on-code/VALIDATION_GATES.md)
   * [Debug Mode](working-on-code/DEBUG_MODE.md)
   * [Hidden Codebase Insights](working-on-code/HIDDEN_CODEBASE_INSIGHTS.md)
   * [AI-Assisted Development](working-on-code/AI_ASSISTED_DEVELOPMENT.md)
