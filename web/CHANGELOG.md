@@ -1,3 +1,33 @@
+## [2.339] - 2026-07-28
+- build(docs): publish curated docsify site to dist (filtered sidebar + GitHub link repointing)
+- docs: document all validation gates (VALIDATION_GATES.md) and surface them in CLAUDE.md
+- build(docs): add validate:docs gate for links, sidebar orphans, and CLAUDE.md routing
+- docs: dissolve developer-guides/ into working-on-code, architecture, reference (Option B)
+- docs(changelog): trim the 2.338 entry to its actual change
+- chore: sync package-lock version field to 2.338
+- chore(release): update version to 2.338
+- fix(sw): precache storagePersistence.js (offline-boot drift guard)
+- chore: sync package-lock version field to 2.337
+- chore(release): update version to 2.337
+- chore: sync package-lock version field to match package.json (2.336)
+- docs(review): date the correction to the Dec 2025 code review (don't edit history silently)
+- test(security): rewrite the XSS suite to assert real protection, not sanitizer theater
+- fix(security): clean-sweep — stop escaping task text at input; correct stale doc claims
+- docs(security): refresh SECURITY.md metadata + record the input-normalizer audit
+- docs(changelog): add the 2.336 entry (multi-platform rebuild)
+- chore(release): update version to 2.336
+- chore(release): update version to 2.335
+- fix(title): restore over-limit truncation warning + DOM sync (dead-code quirk)
+- chore(release): update version to 2.334
+- chore(lint): warn on template-literal → innerHTML writes (XSS regression aid)
+- docs(security): mark the full-app vs Lite import divergence as intentional (bucket C)
+- fix(security): route notification escaping through the complete resolver (bucket D)
+- refactor(security): rename sanitizers to honest names (bucket B, split — low-risk half)
+- fix(security): tell the truth about input normalizers + add the missing XSS sink test
+- docs(nav): group developer guides by intent, fold modal guides into features, surface 22 orphaned docs
+- docs: reorganize by reader intent — add start-here/ and incidents/, dissolve guides/ (Option A)
+
+
 ## [2.338] - 2026-07-28
 - fix(sw): precache storagePersistence.js so the test:sw offline-boot drift guard passes (module was on the boot graph but missing from BOOT_CRITICAL since v2.328-era)
 
