@@ -95,6 +95,10 @@ Two rules that keep this from rotting:
 2. **Add the doc to `_sidebar.md` in the same commit.** An unlisted doc is an invisible doc,
    and a listed-but-deleted doc is a broken nav link.
 
+Both rules are enforced — `npm run validate:docs` fails on broken relative links, docs
+missing from `_sidebar.md`, and root `CLAUDE.md` paths that no longer resolve. It runs in
+CI, so a doc filed in the wrong place (or not filed at all) is caught before merge.
+
 > This rule exists because `developer-guides/` accumulated four different document types
 > until finding anything required already knowing its filename. See
 > [DOCS_REORG_PLAN.md](../future-work/DOCS_REORG_PLAN.md).

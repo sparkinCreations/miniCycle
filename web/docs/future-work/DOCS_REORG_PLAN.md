@@ -253,17 +253,25 @@ the single biggest reason to keep Option B's blast radius small and to sequence 
 4. **Docsify aliases** can soft-redirect old sidebar URLs if any are bookmarked.
 5. **Verify:** open the docsify site, click every sidebar entry once.
 
-### Proposed: make the sweep a gate, not a ritual
+### ✅ Shipped: the sweep is now a gate, not a ritual
 
 Step 3 is a one-time manual check — exactly the discipline that lapses, which is how the rot
 this plan fixes accumulated in the first place. The repo already gates on `validate:html`,
 `validate:csp`, and `validate:di`.
 
-Add a `validate:docs` script in the same zero-dependency style that fails on:
+`npm run validate:docs` ([scripts/validate-docs.py](../../scripts/validate-docs.py)) fails on:
 
 - relative links in `docs/**/*.md` pointing at a nonexistent file
 - markdown files absent from `_sidebar.md` (orphans)
-- paths referenced by either `CLAUDE.md` that no longer resolve
+- `web/docs/...` paths in the repo-root `CLAUDE.md` that no longer resolve
+
+`archive/` and `vendor/` are excluded (historical snapshots may point at the world as it
+was). Source citations like `gamesManager.js:124` and paths outside the repo are recognised
+as non-file links rather than reported as broken.
+
+Runs in CI as the *Docs Validation* job in `performance.yml` — pure stdlib, no Node, no
+network, well under a second. Verified by injecting one of each fault type and confirming
+all three are reported with exit 1.
 
 This is the durable half of the plan. Without it, a future reorg re-derives the same problem.
 
@@ -287,6 +295,8 @@ This is the durable half of the plan. Without it, a future reorg re-derives the 
 - [x] Option B (split `developer-guides/`) — folder dissolved
 - [x] Broken links swept (60 → 4 non-link artifacts)
 
+- [x] `validate:docs` added and passing in CI (`scripts/validate-docs.py`,
+      `performance.yml` → *Docs Validation* job)
+
 **Still open:**
-- [ ] `validate:docs` added and passing in CI *(proposed — the only durable half)*
 - [ ] Move this plan to `archive/`

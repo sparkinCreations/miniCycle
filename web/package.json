@@ -25,6 +25,7 @@
     "validate:csp": "python3 scripts/validate-csp.py",
     "check:dupes": "bash scripts/check-duplicates.sh",
     "clean:dupes": "bash scripts/check-duplicates.sh --fix",
+    "validate:docs": "python3 scripts/validate-docs.py",
     "validate:html": "python3 scripts/validate-html.py",
     "validate:html:dist": "python3 scripts/validate-html.py --dist",
     "samples": "./scripts/generate-sample-manifest.sh",
