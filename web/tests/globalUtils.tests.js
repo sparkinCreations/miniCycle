@@ -3,7 +3,7 @@
  * Test functions for module-test-suite.html
  */
 
-export function runGlobalUtilsTests(resultsDiv) {
+export async function runGlobalUtilsTests(resultsDiv) {
     resultsDiv.innerHTML = '<h2>🛠️ GlobalUtils Tests</h2><h3>Running tests...</h3>';
 
     let passed = { count: 0 };
@@ -362,15 +362,17 @@ export function runGlobalUtilsTests(resultsDiv) {
 
     resultsDiv.innerHTML += '<h4 class="test-section">⚡ Performance</h4>';
 
-    test('debounce delays function execution', () => {
-        let called = false;
-        const debouncedFn = GlobalUtils.debounce(() => { called = true; }, 50);
+    await test('debounce delays execution then fires exactly once', async () => {
+        let calls = 0;
+        const debouncedFn = GlobalUtils.debounce(() => { calls++; }, 30);
 
         debouncedFn();
+        debouncedFn();   // rapid second call — debounce should collapse both into one
 
-        if (called) {
-            throw new Error('Function should not be called immediately');
-        }
+        if (calls !== 0) throw new Error('should not fire immediately');
+        await new Promise(r => setTimeout(r, 70));
+        // Old test only checked "not immediate" — a debounce that NEVER fired would pass.
+        if (calls !== 1) throw new Error(`should fire exactly once after the delay, fired ${calls}×`);
     });
 
     test('throttle limits function calls', () => {
@@ -430,12 +432,21 @@ export function runGlobalUtilsTests(resultsDiv) {
         }
     });
 
-    test('isElementInViewport detects visible elements', () => {
-        const element = document.getElementById('test-element');
-        const isVisible = GlobalUtils.isElementInViewport(element);
-
-        if (typeof isVisible !== 'boolean') {
-            throw new Error('Should return boolean');
+    test('isElementInViewport returns true on-screen and false off-screen', () => {
+        const onScreen = document.createElement('div');
+        onScreen.style.cssText = 'position:fixed;top:10px;left:10px;width:20px;height:20px;';
+        const offScreen = document.createElement('div');
+        offScreen.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:20px;height:20px;';
+        document.body.appendChild(onScreen);
+        document.body.appendChild(offScreen);
+        try {
+            // Old test only asserted the RETURN was a boolean; the true/false result (the
+            // actual detection behavior) was never checked.
+            if (GlobalUtils.isElementInViewport(onScreen) !== true) throw new Error('on-screen element should be in viewport');
+            if (GlobalUtils.isElementInViewport(offScreen) !== false) throw new Error('off-screen element should not be in viewport');
+        } finally {
+            onScreen.remove();
+            offScreen.remove();
         }
     });
 

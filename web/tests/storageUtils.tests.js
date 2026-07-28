@@ -56,11 +56,13 @@ export async function runStorageUtilsTests(resultsDiv) {
         }
     });
 
-    await test('formatBytes formats KB', () => {
-        const result = formatBytes(1500);
-        if (!result.toLowerCase().includes('kb') && !result.includes('1.')) {
-            throw new Error(`Expected KB format, got "${result}"`);
-        }
+    await test('formatBytes formats bytes/KB/MB with correct units', () => {
+        // Source: i===0 → "N B"; i===1 → "N KB" (rounded); else "N.NN MB". The old check
+        // (`includes('kb') || includes('1.')`) would pass "1.5 bytes" (wrong unit) too.
+        if (formatBytes(0) !== '0 B') throw new Error(`0 → "${formatBytes(0)}"`);
+        if (formatBytes(512) !== '512 B') throw new Error(`512 → "${formatBytes(512)}"`);
+        if (formatBytes(1500) !== '1 KB') throw new Error(`1500 → "${formatBytes(1500)}" (expected "1 KB")`);
+        if (formatBytes(5 * 1024 * 1024) !== '5.00 MB') throw new Error(`5MB → "${formatBytes(5 * 1024 * 1024)}"`);
     });
 
     await test('formatBytes formats MB', () => {
