@@ -118,48 +118,43 @@ export async function runDataSanitizerTests(resultsDiv) {
     });
 
     await test('sanitizeImportedData handles invalid input without crashing', () => {
-        // Should not crash on non-object input
-        try {
-            sanitizeImportedData({});
-        } catch (e) {
-            // Some implementations may throw on malformed input — that's acceptable
-        }
+        // An unrecognized shape ({}) matches no sanitize branch — it must return the object
+        // WITHOUT throwing. The old test wrapped the call in try/catch and asserted nothing.
+        const result = sanitizeImportedData({});
+        if (result === undefined) throw new Error('should return the (untouched) input');
     });
 
-    await test('sanitizeImportedData preserves valid task structure', () => {
-        const data = {
-            metadata: { version: '2.5', schemaVersion: '2.5' },
-            settings: {},
-            data: {
-                cycles: {
-                    'cycle-1': {
-                        metadata: { title: 'Test' },
-                        tasks: [
-                            { id: 'task-1', text: 'Valid task', completed: true, priority: true }
-                        ]
-                    }
-                }
-            },
+    await test('sanitizeImportedData preserves valid task fields while sanitizing text', () => {
+        // Must use the BACKUP shape {schemaVersion, miniCycleData}. The old test passed
+        // Schema-2.5 STATE shape, which matches NO sanitize branch — so nothing ran and it
+        // only asserted input == input (a tautology).
+        const stateData = {
+            data: { cycles: { 'cycle-1': { title: 'Test', tasks: [
+                { id: 'task-1', text: '  Valid task  ', completed: true, priority: true }
+            ] } } },
             appState: { activeCycleId: 'cycle-1' }
         };
+        const backupData = { schemaVersion: '2.5', miniCycleData: JSON.stringify(stateData) };
 
-        const result = sanitizeImportedData(data);
-        const task = result.data.cycles['cycle-1'].tasks[0];
+        const result = sanitizeImportedData(backupData);
+        const task = JSON.parse(result.miniCycleData).data.cycles['cycle-1'].tasks[0];
+
+        // The injected sanitizeInput actually ran (mock strips tags + trims) → text is trimmed.
+        if (task.text !== 'Valid task') throw new Error(`text should be sanitized/trimmed, got '${task.text}'`);
+        // Non-text fields survive sanitization.
         if (task.id !== 'task-1') throw new Error('Task ID should be preserved');
         if (task.completed !== true) throw new Error('Completed status should be preserved');
+        if (task.priority !== true) throw new Error('Priority should be preserved');
     });
 
-    await test('sanitizeImportedData handles missing cycles gracefully', () => {
-        const data = {
-            metadata: { version: '2.5', schemaVersion: '2.5' },
-            settings: {},
-            data: { cycles: {} },
-            appState: {}
-        };
-
-        // Should not throw
-        const result = sanitizeImportedData(data);
-        if (!result) throw new Error('Should handle empty cycles');
+    await test('sanitizeImportedData handles empty cycles gracefully', () => {
+        const backupData = { schemaVersion: '2.5', miniCycleData: JSON.stringify({ data: { cycles: {} }, appState: {} }) };
+        const result = sanitizeImportedData(backupData);
+        // The Schema-2.5 branch runs with no cycles to sanitize; the payload round-trips intact.
+        const sanitized = JSON.parse(result.miniCycleData);
+        if (!sanitized.data || typeof sanitized.data.cycles !== 'object') {
+            throw new Error('empty-cycles payload should round-trip through sanitization');
+        }
     });
 
     // ============================================

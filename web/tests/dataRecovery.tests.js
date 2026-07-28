@@ -105,10 +105,11 @@ export async function runDataRecoveryTests(resultsDiv) {
         assert(store.getItem(newKey) === 'd', 'newest kept');
     });
 
-    await test('backupCorruptedData: returns null when storage unavailable', () => {
-        assert(backupCorruptedData('x', null) === null || typeof backupCorruptedData('x', null) === 'string',
-            'no-throw with null storage');
-        // With an explicit non-storage, it should fail gracefully (no throw).
+    await test('backupCorruptedData: returns null when storage is broken', () => {
+        // A storage whose access throws must be handled gracefully → null, no throw. The old
+        // first assertion (`=== null || typeof === 'string'`) was a tautology — the fn only
+        // ever returns null or a string — and `null` storage falls back to real localStorage,
+        // so it isn't actually "unavailable"; only the broken-storage case tests the name.
         const broken = { get length() { throw new Error('boom'); }, setItem() {}, removeItem() {}, key() {} };
         assert(backupCorruptedData('x', broken) === null, 'broken storage → null, no throw');
     });
