@@ -153,20 +153,45 @@ export class AchievementsManager {
     /**
      * Trigger reward for a milestone.
      * @private
-     * @returns {boolean} true if this showed its own notification (so the caller
-     *   should NOT also show the generic "Achievement Unlocked" one). Game rewards
-     *   return false here because their notification is fired separately by
-     *   cycleCompletion.handleMilestoneUnlocks, not by this method.
+     * @returns {boolean} true if the reward already has a user-visible
+     *   notification (so the caller should NOT also show the generic
+     *   "Achievement Unlocked" one).
      */
     _triggerReward(milestone, unlockedVia) {
         if (!milestone.reward) return false;
 
         switch (milestone.rewardType) {
-            case 'game':
+            case 'game': {
+                // ONE toast per game unlock (the actionable Open-Games one).
+                // unlockMiniGame() sets the single "task-order-game" feature
+                // flag; cycleCompletion.handleMilestoneUnlocks also unlocks +
+                // toasts it at the 100-cycle threshold — the same threshold
+                // this milestone fires at. Checking wasUnlocked BEFORE our
+                // unlock makes this order-independent: whichever path unlocks
+                // first shows the toast, the other stays silent (its gate sees
+                // the flag already set). Returning true suppresses the generic
+                // "Achievement Unlocked" so the user never gets two
+                // notifications for one unlock (same fix as the theme path).
+                const state = this.deps.AppState?.get?.();
+                const wasUnlocked = (state?.settings?.unlockedFeatures || []).includes('task-order-game');
                 if (this.deps.unlockMiniGame) {
                     this.deps.unlockMiniGame(milestone.reward);
                 }
-                return false;
+                if (!wasUnlocked) {
+                    this.deps.showNotification(
+                        `🎮 ${getLabel('notify.gameUnlocked')}`,
+                        'success',
+                        6000,
+                        {
+                            actionButton: {
+                                label: getLabel('action.openGamesModal'),
+                                onClick: () => this.deps.getElementById(DOM_IDS.OPEN_GAMES_PANEL)?.click()
+                            }
+                        }
+                    );
+                }
+                return true;
+            }
             case 'vocab-theme': {
                 const wasNew = this.deps.vocabThemeManager?.unlockThemeFromAchievement?.(milestone.reward);
                 if (wasNew) {
