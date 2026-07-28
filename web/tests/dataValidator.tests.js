@@ -52,15 +52,14 @@ export async function runDataValidatorTests(resultsDiv, isPartOfSuite = false) {
         }
     }
 
-    // Mock sanitizeInput function (mimics globalUtils behavior)
+    // Faithful mock — mirrors GlobalUtils.normalizeText (trim + clamp only).
+    // It must NOT escape or strip: normalizeText does neither, by design —
+    // escaping happens at the render sink (textContent / escapeHtml), not here.
+    // An escaping mock here previously made two XSS assertions pass that would
+    // fail against the real sanitizer (see TEST_SUITE_AUDIT Round 2, finding 1).
     function mockSanitizeInput(input, maxLength = 500) {
         if (typeof input !== 'string') return '';
-        let sanitized = input
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#x27;');
-        return sanitized.substring(0, maxLength);
+        return input.trim().substring(0, maxLength);
     }
 
     async function test(name, testFn) {
@@ -231,10 +230,15 @@ export async function runDataValidatorTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
-    await test('validateCycleName sanitizes HTML', () => {
-        const result = DataValidator.validateCycleName('<script>alert(1)</script>');
-        if (result.includes('<script>')) {
-            throw new Error('Should sanitize HTML tags');
+    await test('validateCycleName passes HTML through unchanged (escaping happens at render)', () => {
+        // The sanitizer is normalizeText: trim + clamp ONLY. It never escapes or
+        // strips — XSS protection lives at the render sink (textContent), and
+        // taskDOMPatch.tests.js asserts that sink. This pins the pass-through so
+        // an "improved" over-capable mock can't sneak the old fiction back in.
+        const payload = '<script>alert(1)</script>';
+        const result = DataValidator.validateCycleName(payload);
+        if (result !== payload) {
+            throw new Error(`expected pass-through, got '${result}'`);
         }
     });
 
@@ -298,10 +302,12 @@ export async function runDataValidatorTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
-    await test('validateTaskText sanitizes HTML', () => {
-        const result = DataValidator.validateTaskText('<img src=x onerror=alert(1)>');
-        if (result.includes('<img')) {
-            throw new Error('Should sanitize HTML tags');
+    await test('validateTaskText passes HTML through unchanged (escaping happens at render)', () => {
+        // Same contract as validateCycleName above: trim + clamp, no escaping.
+        const payload = '<img src=x onerror=alert(1)>';
+        const result = DataValidator.validateTaskText(payload);
+        if (result !== payload) {
+            throw new Error(`expected pass-through, got '${result}'`);
         }
     });
 
@@ -473,14 +479,17 @@ export async function runDataValidatorTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
-    await test('validateTask sanitizes task text', () => {
+    await test('validateTask runs text through the sanitizer (trim, no escaping)', () => {
+        // Whitespace proves the sanitizer actually ran (normalizeText trims);
+        // the surviving <b> pins that it does NOT escape/strip — that happens
+        // at the render sink, not here.
         const task = {
             id: 'task-1',
-            text: '<b>Bold</b> task'
+            text: '  <b>Bold</b> task  '
         };
         const result = DataValidator.validateTask(task);
-        if (result.text.includes('<b>')) {
-            throw new Error('Should sanitize task text');
+        if (result.text !== '<b>Bold</b> task') {
+            throw new Error(`expected trimmed pass-through, got '${result.text}'`);
         }
     });
 
@@ -529,13 +538,14 @@ export async function runDataValidatorTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
-    await test('validateCycleData validates title', () => {
+    await test('validateCycleData runs title through the sanitizer (trim, no escaping)', () => {
         const cycleData = {
-            title: '<script>bad</script>'
+            title: '  <script>bad</script>  '
         };
         const result = DataValidator.validateCycleData(cycleData);
-        if (result.title.includes('<script>')) {
-            throw new Error('Should sanitize title');
+        // Trimmed = sanitizer ran; tags intact = no escaping (render-sink concern).
+        if (result.title !== '<script>bad</script>') {
+            throw new Error(`expected trimmed pass-through, got '${result.title}'`);
         }
     });
 
@@ -556,15 +566,17 @@ export async function runDataValidatorTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
-    await test('validateCycleData validates each task', () => {
+    await test('validateCycleData validates each task (nested text is sanitized)', () => {
         const cycleData = {
             tasks: [
-                { id: 'task-1', text: '<b>Task</b>' }
+                { id: 'task-1', text: '  <b>Task</b>  ' }
             ]
         };
         const result = DataValidator.validateCycleData(cycleData);
-        if (result.tasks[0].text.includes('<b>')) {
-            throw new Error('Should validate each task');
+        // The trim proves validateTask ran on the nested task; the intact <b>
+        // pins pass-through (no escaping at the validation layer).
+        if (result.tasks[0].text !== '<b>Task</b>') {
+            throw new Error(`expected trimmed pass-through, got '${result.tasks[0].text}'`);
         }
     });
 
@@ -745,15 +757,17 @@ export async function runDataValidatorTests(resultsDiv, isPartOfSuite = false) {
             data: {
                 cycles: {
                     'cycle-1': {
-                        title: '<script>bad</script>',
+                        title: '  <script>bad</script>  ',
                         tasks: []
                     }
                 }
             }
         };
         const result = DataValidator.validateImportedData(importedData);
-        if (result.data.cycles['cycle-1'].title.includes('<script>')) {
-            throw new Error('Should validate each cycle');
+        // Trim proves validateCycleData ran on the nested cycle; intact tags pin
+        // pass-through (escaping is a render-sink concern, not validation's).
+        if (result.data.cycles['cycle-1'].title !== '<script>bad</script>') {
+            throw new Error(`expected trimmed pass-through, got '${result.data.cycles['cycle-1'].title}'`);
         }
     });
 

@@ -103,17 +103,24 @@ export function createMockNotification(log = false) {
 
 /**
  * Creates a mock sanitizeInput function
- * @param {boolean} strict - If true, strips all HTML (default: true)
+ * Mock for GlobalUtils.normalizeText / sanitizeInput.
+ *
+ * Default is FAITHFUL: trim + clamp only, exactly like normalizeText — which
+ * has never escaped or stripped HTML (escaping happens at the render sink).
+ * Pass { strip: true } ONLY when the code under test genuinely receives a
+ * stripping sanitizer; a stripping mock makes XSS assertions pass that would
+ * fail in production (TEST_SUITE_AUDIT Round 2, finding 2 — a mock may never
+ * be more capable than the implementation it replaces).
+ *
+ * @param {Object} [options]
+ * @param {boolean} [options.strip=false] - Opt-in HTML stripping (non-faithful)
  * @returns {Function} Mock sanitize function
  */
-export function createMockSanitizeInput(strict = true) {
-    return (input) => {
+export function createMockSanitizeInput({ strip = false } = {}) {
+    return (input, maxLength = 100) => {
         if (typeof input !== 'string') return '';
-        if (strict) {
-            // Strip HTML tags
-            return input.replace(/<[^>]*>/g, '').trim();
-        }
-        return input.trim();
+        const base = strip ? input.replace(/<[^>]*>/g, '') : input;
+        return base.trim().substring(0, maxLength);
     };
 }
 
