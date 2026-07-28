@@ -5,6 +5,8 @@
 > **Reviewer:** Claude AI (Opus 4.5)
 > **Codebase:** Vanilla JavaScript PWA - Zero frameworks, zero build tools
 
+> **📝 Correction (2026-07-27, v2.336):** Two input-sanitization claims in this report were later found inaccurate and corrected in place. `sanitizeInput()` (since renamed `normalizeText()`, with `sanitizeInput()` kept as a deprecated alias) *normalizes* text — trim + length-clamp — it does **not** escape or strip HTML. XSS safety comes from render-sink escaping (`textContent` / `escapeHtml()`), not from input sanitization. See the SECURITY.md v2.336 input-normalizer audit. The *Security (XSS) 9/10* score below (which credited "import sanitization") should be read with that correction in mind. The rest of the report is preserved as its original December 2025 snapshot.
+
 ---
 
 ## Executive Summary
