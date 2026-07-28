@@ -1,3 +1,7 @@
+## [2.338] - 2026-07-28
+- fix(sw): precache storagePersistence.js so the test:sw offline-boot drift guard passes (module was on the boot graph but missing from BOOT_CRITICAL since v2.328-era)
+
+
 ## [2.337] - 2026-07-28
 - chore: sync package-lock version field to match package.json (2.336)
 - docs(review): date the correction to the Dec 2025 code review (don't edit history silently)
