@@ -594,20 +594,38 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         mockDeps.AppGlobalState.isInitializing = false;
         setUndoRedoManagerDependencies(mockDeps);
 
-        // Capture two states
-        const state1 = mockDeps.AppState.get();
-        await captureStateSnapshot(state1);
+        // Capture the initial (uncompleted) state.
+        await captureStateSnapshot(mockDeps.AppState.get());
 
         await new Promise(resolve => setTimeout(resolve, 350));
 
-        state1.data.cycles['Test Cycle'].tasks[0].completed = true;
-        await captureStateSnapshot(state1);
+        // Advance the live state via update() — the mock's get() returns a fresh deep copy
+        // each call, so mutating a previously-returned object would NOT change what undo reads.
+        await mockDeps.AppState.update(state => {
+            state.data.cycles['Test Cycle'].tasks[0].completed = true;
+        });
+        await captureStateSnapshot(mockDeps.AppState.get());
 
-        // Undo
+        // Just before undo, the live (displaced) state has completed === true.
         await performStateBasedUndo();
 
-        if (mockDeps.AppGlobalState.activeRedoStack.length !== 1) {
-            throw new Error('Current state should be moved to redoStack');
+        // The redoStack must hold exactly the state that was current BEFORE the undo
+        // (undoRedoManager.js:1098 pushes currentSnapshot), so a later redo can restore
+        // it. The old assertion checked only length — it would pass even if a blank or
+        // wrong-content snapshot were pushed.
+        const redo = mockDeps.AppGlobalState.activeRedoStack;
+        if (redo.length !== 1) {
+            throw new Error(`redoStack should hold exactly the displaced snapshot, got length ${redo.length}`);
+        }
+        if (redo[0].activeCycleId !== 'Test Cycle') {
+            throw new Error(`moved snapshot lost its cycle id: ${redo[0].activeCycleId}`);
+        }
+        if (redo[0].tasks[0].completed !== true) {
+            throw new Error('redoStack snapshot should carry the pre-undo (completed) task state');
+        }
+        // ...and the live state was actually rolled back to the earlier (uncompleted) snapshot.
+        if (mockDeps.AppState.get().data.cycles['Test Cycle'].tasks[0].completed !== false) {
+            throw new Error('undo should have restored the earlier uncompleted state');
         }
     });
 
@@ -749,24 +767,38 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         mockDeps.AppGlobalState.isInitializing = false;
         setUndoRedoManagerDependencies(mockDeps);
 
-        // Setup: capture two states and undo
-        const state1 = mockDeps.AppState.get();
-        await captureStateSnapshot(state1);
+        // Setup: capture two states and undo. Use update() (not direct mutation) so the
+        // mock's internal state actually advances — get() hands back a fresh deep copy.
+        await captureStateSnapshot(mockDeps.AppState.get());
 
         await new Promise(resolve => setTimeout(resolve, 350));
 
-        state1.data.cycles['Test Cycle'].tasks[0].completed = true;
-        await captureStateSnapshot(state1);
+        await mockDeps.AppState.update(state => {
+            state.data.cycles['Test Cycle'].tasks[0].completed = true;
+        });
+        await captureStateSnapshot(mockDeps.AppState.get());
 
-        await performStateBasedUndo();
+        await performStateBasedUndo();  // live state is now completed === false
 
         const undoStackBefore = mockDeps.AppGlobalState.activeUndoStack.length;
 
         // Redo
         await performStateBasedRedo();
 
-        if (mockDeps.AppGlobalState.activeUndoStack.length <= undoStackBefore) {
-            throw new Error('Redo should move snapshot to undoStack');
+        // Redo pushes exactly one snapshot — the state that was current BEFORE the redo,
+        // i.e. the post-undo (uncompleted) state (undoRedoManager.js:1306) — so a
+        // subsequent undo can return to it. The old assertion (`length <= before` inverted)
+        // only proved the count grew, not what was pushed.
+        const undo = mockDeps.AppGlobalState.activeUndoStack;
+        if (undo.length !== undoStackBefore + 1) {
+            throw new Error(`redo should push exactly one snapshot onto undoStack (was ${undoStackBefore}, now ${undo.length})`);
+        }
+        if (undo.at(-1).tasks[0].completed !== false) {
+            throw new Error('undoStack top should carry the pre-redo (uncompleted) task state');
+        }
+        // ...and the live state was actually advanced to the redone (completed) snapshot.
+        if (mockDeps.AppState.get().data.cycles['Test Cycle'].tasks[0].completed !== true) {
+            throw new Error('redo should have restored the completed state');
         }
     });
 
