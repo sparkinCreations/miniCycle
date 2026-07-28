@@ -43,13 +43,20 @@ export async function runBackupRestoreManagerTests(resultsDiv) {
     // ============================================
     resultsDiv.innerHTML += '<h4 class="test-section">⚙️ DI Setup</h4>';
 
-    await test('setBackupRestoreManagerDependencies accepts mock dependencies', () => {
+    await test('injected AppState is used by neutralizeAppState', () => {
+        // Prove DI takes effect (not just no-throw): neutralizeAppState mutates the
+        // injected AppState to stop auto-save during destructive operations.
+        const appState = { data: { cycles: {} }, isDirty: true, isInitialized: true };
         mod.setBackupRestoreManagerDependencies({
-            AppState: { get: () => ({ settings: {} }), update: () => {}, isReady: () => true },
+            AppState: appState,
             showNotification: () => {},
             showConfirmationModal: () => {},
             safeAddEventListener: () => {}
         });
+        mod.neutralizeAppState();
+        if (appState.data !== null) throw new Error('neutralizeAppState should null the injected AppState.data');
+        if (appState.isDirty !== false) throw new Error('neutralizeAppState should clear isDirty');
+        if (appState.isInitialized !== false) throw new Error('neutralizeAppState should clear isInitialized');
     });
 
     await test('setBackupRestoreManagerDependencies accepts an object without throwing', () => {
@@ -65,6 +72,76 @@ export async function runBackupRestoreManagerTests(resultsDiv) {
             mod.setBackupRestoreManagerDependencies(null);
         } catch (e) {
             // Acceptable to throw on null — should not crash the module
+        }
+    });
+
+    // ============================================
+    resultsDiv.innerHTML += '<h4 class="test-section">🏭 Factory Reset</h4>';
+
+    await test('factory reset: cancel keeps data; confirm clears miniCycle localStorage keys + notifies', async () => {
+        // Stub the destructive browser globals so the reset does NOT unregister the real
+        // service worker or delete real caches / IndexedDB for this shared test origin.
+        // localStorage IS cleared, but createProtectedTest snapshots + restores it.
+        const origSWGetRegs = navigator.serviceWorker && navigator.serviceWorker.getRegistrations;
+        const origCachesKeys = (typeof window.caches !== 'undefined') && window.caches.keys;
+        const origIdbDelete = indexedDB.deleteDatabase;
+        if (origSWGetRegs) navigator.serviceWorker.getRegistrations = async () => [];
+        if (origCachesKeys) window.caches.keys = async () => [];
+        indexedDB.deleteDatabase = () => {
+            const req = {};
+            // Source assigns req.onsuccess synchronously after this returns; fire it next tick.
+            setTimeout(() => { if (req.onsuccess) req.onsuccess({}); }, 0);
+            return req;
+        };
+
+        // Seed: two miniCycle-matching keys + one unrelated (negative control).
+        localStorage.setItem('miniCycleData', JSON.stringify({ x: 1 }));
+        localStorage.setItem('miniCycle_backup_test', 'b');
+        localStorage.setItem('unrelatedKey', 'keep-me');
+
+        const resetBtn = document.createElement('button');
+        resetBtn.id = 'factory-reset';   // DOM_IDS.FACTORY_RESET
+        document.body.appendChild(resetBtn);
+
+        const notifications = [];
+        let confirmValue = false;
+        let confirmPromise = null;
+        let confirmOpts = null;
+
+        mod.setBackupRestoreManagerDependencies({
+            AppState: { isReady: () => true, reload: () => {}, data: { cycles: {} } },
+            showNotification: (msg, type) => { notifications.push({ msg: String(msg), type }); },
+            showConfirmationModal: (opts) => { confirmOpts = opts; confirmPromise = opts.callback(confirmValue); },
+            safeAddEventListener: (el, ev, fn) => el.addEventListener(ev, fn),
+            appInit: { runInitialSetup: async () => {} },
+            closeAllModals: () => {}, hideMainMenu: () => {},
+            showLoader: () => {}, hideLoader: () => {}
+        });
+
+        try {
+            mod.setupFactoryResetButton();   // guard is fresh on this cache-busted import
+
+            // --- Cancel path: data must survive, and the confirmation is destructive-flagged ---
+            confirmValue = false;
+            resetBtn.click();
+            await confirmPromise;
+            if (confirmOpts.destructive !== true) throw new Error('factory-reset confirmation should be destructive:true');
+            if (localStorage.getItem('miniCycleData') === null) throw new Error('cancel must NOT clear data');
+            if (!notifications.some(n => n.type === 'info')) throw new Error('cancel should surface an info (cancelled) notification');
+
+            // --- Confirm path: miniCycle-matching keys cleared, unrelated preserved, success notified ---
+            confirmValue = true;
+            resetBtn.click();
+            await confirmPromise;
+            if (localStorage.getItem('miniCycleData') !== null) throw new Error('confirm should remove miniCycleData');
+            if (localStorage.getItem('miniCycle_backup_test') !== null) throw new Error('confirm should remove miniCycle_backup_* keys');
+            if (localStorage.getItem('unrelatedKey') !== 'keep-me') throw new Error('unrelated keys must be preserved');
+            if (!notifications.some(n => n.type === 'success')) throw new Error('confirm should surface the completion (success) notification');
+        } finally {
+            resetBtn.remove();
+            if (origSWGetRegs) navigator.serviceWorker.getRegistrations = origSWGetRegs;
+            if (origCachesKeys) window.caches.keys = origCachesKeys;
+            indexedDB.deleteDatabase = origIdbDelete;
         }
     });
 
