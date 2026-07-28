@@ -23,7 +23,6 @@
   * [Accessibility](project-info/ACCESSIBILITY.md)
   * [App Reviews](project-info/APP_REVIEWS.md)
   * [Copyright & Authorship](project-info/COPYRIGHT_AUTHORSHIP_STATEMENT.md)
-  * [Developer Profile](DEVELOPER_PROFILE.md)
 
 * **Working on Code** _(how-to — followed while working)_
   * [Making Code Changes](working-on-code/MAKING_CODE_CHANGES.md)

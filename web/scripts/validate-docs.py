@@ -67,13 +67,53 @@ LINK_RE = re.compile(r'\[[^\]]*\]\(([^)]+)\)')
 NON_FILE_LINK = re.compile(r'(:\d+$)|(^\.\./\.\./\.\./)|(^[a-z]+$)')
 
 
+def tracked_paths():
+    """
+    Absolute paths of every git-tracked file, or None if git is unavailable.
+
+    WHY THIS MATTERS: this script validates the WORKING TREE, but CI validates a
+    fresh checkout — which contains tracked files only. A link to a gitignored
+    file (e.g. the private docs/DEVELOPER_PROFILE.md) therefore passes locally
+    and fails in CI. That exact mismatch shipped once and turned a contributor's
+    PR red. Treating untracked files as absent makes local match CI.
+    """
+    try:
+        import subprocess
+        out = subprocess.run(['git', 'ls-files', '-z'], cwd=REPO,
+                             capture_output=True, text=True, timeout=30)
+        if out.returncode != 0:
+            return None
+        return {os.path.join(REPO, p) for p in out.stdout.split('\0') if p}
+    except Exception:
+        return None
+
+
+TRACKED = None  # populated in main()
+
+
+def exists_for_ci(path):
+    """On disk AND committed. Untracked files do not exist as far as CI cares."""
+    if not os.path.exists(path):
+        return False
+    # Directories are not git objects — `git ls-files` lists files only. A dir
+    # that exists on disk is reproduced in a checkout if anything inside it is
+    # tracked, which the per-file checks already cover.
+    if os.path.isdir(path):
+        return True
+    if TRACKED is None:
+        return True
+    return os.path.abspath(path) in TRACKED
+
+
 def md_files(root):
-    """Every .md under root, skipping SKIP_DIRS."""
+    """Every tracked .md under root, skipping SKIP_DIRS."""
     for dirpath, dirnames, filenames in os.walk(root):
         dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
         for fn in sorted(filenames):
             if fn.endswith('.md'):
-                yield os.path.join(dirpath, fn)
+                p = os.path.join(dirpath, fn)
+                if exists_for_ci(p):
+                    yield p
 
 
 def rel(path):
@@ -82,7 +122,7 @@ def rel(path):
 
 def check_links(list_mode):
     """Every relative markdown link in docs/ must resolve on disk."""
-    broken, ignored = [], []
+    broken, ignored, untracked = [], [], []
     for path in md_files(DOCS):
         try:
             text = open(path, encoding='utf-8').read()
@@ -90,14 +130,17 @@ def check_links(list_mode):
             continue
         for m in LINK_RE.finditer(text):
             raw = m.group(1).split('#')[0].strip()
-            if not raw or raw.startswith(('http://', 'https://', 'mailto:', '//', 'data:', '#')):
+            # '/' is docsify's home link, not a path.
+            if not raw or raw == '/' or raw.startswith(('http://', 'https://', 'mailto:', '//', 'data:', '#')):
                 continue
             target = urllib.parse.unquote(raw)
             resolved = os.path.normpath(os.path.join(os.path.dirname(path), target))
-            if os.path.exists(resolved):
+            if exists_for_ci(resolved):
                 continue
             if NON_FILE_LINK.search(target):
                 ignored.append((rel(path), target))
+            elif os.path.exists(resolved):
+                untracked.append((rel(path), target))
             else:
                 broken.append((rel(path), target))
 
@@ -105,13 +148,18 @@ def check_links(list_mode):
         print('❌ Broken relative links (%d):' % len(broken))
         for src, target in broken:
             print('     %s  ->  %s' % (src, target))
-    else:
-        print('✅ Relative links      all resolve')
+    if untracked:
+        print('❌ Links to files that exist locally but are NOT committed (%d):' % len(untracked))
+        for src, target in untracked:
+            print('     %s  ->  %s' % (src, target))
+        print('     ^ gitignored/untracked — these 404 in CI and in production.')
+    if not broken and not untracked:
+        print('✅ Relative links      all resolve (and are committed)')
     if ignored and list_mode:
         print('   ⏭  %d non-file link(s) ignored (source citations, external paths):' % len(ignored))
         for src, target in ignored:
             print('        %s  ->  %s' % (src, target))
-    return len(broken)
+    return len(broken) + len(untracked)
 
 
 def check_orphans(list_mode):
@@ -163,6 +211,9 @@ def main():
     ap.add_argument('--list', action='store_true',
                     help='also print ignored non-file links')
     args = ap.parse_args()
+
+    global TRACKED
+    TRACKED = tracked_paths()
 
     if not os.path.isdir(DOCS):
         print('❌ docs/ not found at %s' % DOCS)
