@@ -1,3 +1,94 @@
+## [2.341] - 2026-07-28
+- fix(achievements): one toast per game unlock — no generic stacking
+- fix(a11y): help-window text + Add button now scale cleanly with Font Size
+- test: Round 2 audit remediation — faithful sanitize mocks, real assertions
+- chore(release): update version to 2.340
+- fix(docs): unlink gitignored DEVELOPER_PROFILE from sidebar; validate against tracked files so local matches CI
+- chore(release): update version to 2.339
+- build(docs): publish curated docsify site to dist (filtered sidebar + GitHub link repointing)
+- chore(release): update version to 2.339
+- test(suite): coverage-gap pass wave 15 — quickActions + reminders behavior
+- test(suite): coverage-gap pass wave 14 — clearedTasks + backupReminder logic
+- test(suite): assertion-quality pass wave 13 — factory reset + settingsManager
+- test(suite): assertion-quality pass wave 12 — settingsUIManager + preferencesManager
+- test(suite): assertion-quality pass wave 11 — modalManager + helpWindowManager
+- docs: document all validation gates (VALIDATION_GATES.md) and surface them in CLAUDE.md
+- fix(a11y): recurring button aria-pressed was "[object Object]" with a template
+- build(docs): add validate:docs gate for links, sidebar orphans, and CLAUDE.md routing
+- test(suite): assertion-quality pass wave 10 — testingModal tests real code
+- test(suite): assertion-quality pass wave 9 — accessibility tests real app code
+- test(suite): assertion-quality pass wave 8 — statsPanel cache + stats math
+- docs: dissolve developer-guides/ into working-on-code, architecture, reference (Option B)
+- test(suite): assertion-quality pass wave 7 — recurring + task interactions
+- test(suite): assertion-quality pass wave 6 — undoRedoManager stack moves
+- test(suite): assertion-quality pass wave 5 — utility functions
+- test(suite): assertion-quality pass wave 4 — menuManager/taskCompletion/achievements
+- test(suite): assertion-quality pass wave 3 — boot suites test the module
+- test(suite): assertion-quality pass wave 2 — data sanitizer/recovery/export
+- test(suite): assertion-quality pass wave 1 — green-against-a-bug fixes
+- test(suite): drive the meta-guard grandfather baseline to zero
+- test(suite): remediate vacuous/fictional tests + add meta guards
+- docs(changelog): trim the 2.338 entry to its actual change
+- chore: sync package-lock version field to 2.338
+- chore(release): update version to 2.338
+- fix(sw): precache storagePersistence.js (offline-boot drift guard)
+- chore: sync package-lock version field to 2.337
+- chore(release): update version to 2.337
+- chore: sync package-lock version field to match package.json (2.336)
+- docs(review): date the correction to the Dec 2025 code review (don't edit history silently)
+- test(security): rewrite the XSS suite to assert real protection, not sanitizer theater
+- fix(security): clean-sweep — stop escaping task text at input; correct stale doc claims
+- docs(security): refresh SECURITY.md metadata + record the input-normalizer audit
+- docs(changelog): add the 2.336 entry (multi-platform rebuild)
+- chore(release): update version to 2.336
+- chore(release): update version to 2.335
+- fix(title): restore over-limit truncation warning + DOM sync (dead-code quirk)
+- chore(release): update version to 2.334
+- chore(lint): warn on template-literal → innerHTML writes (XSS regression aid)
+- docs(security): mark the full-app vs Lite import divergence as intentional (bucket C)
+- fix(security): route notification escaping through the complete resolver (bucket D)
+- refactor(security): rename sanitizers to honest names (bucket B, split — low-risk half)
+- fix(security): tell the truth about input normalizers + add the missing XSS sink test
+- docs(nav): group developer guides by intent, fold modal guides into features, surface 22 orphaned docs
+- docs: reorganize by reader intent — add start-here/ and incidents/, dissolve guides/ (Option A)
+- chore(release): update version to 2.333
+- refactor(legal): rename user-manual-styles.css to static-page-styles.css (shared by all 5 static pages)
+- docs(plan): add docs reorg plan (step 5 struck — schema dedupe already landed in 9f2e10da)
+- refactor(dashboard): aggregate tracking storage + replace carousel with grid
+- fix(ui): make empty-state hint aware of input-bar state in both home and focus view
+- fix(undo): arm undo system for Delete All / Uncheck All + drop false 'cannot be undone' warning
+- build(tooling): exclude archive dirs case-insensitively (Archive/ARCHIVE) from dupe scan
+- build(tooling): add check-duplicates.sh to catch iCloud conflict-copy files
+- build(chrome): regenerate full extension at v2.332
+- fix: bundle Task Order mini-game in chrome + mobile shell builds
+- docs(schema): audit Schema 2.5 docs against code + consolidate duplicate
+- docs: register storagePersistence in nav + module-enumeration docs
+- docs: cover today's work across v2.328–2.332
+- chore(release): update version to 2.332
+- feat(storage): request durable (persistent) origin storage
+- chore(release): update version to 2.331
+- docs: drift-review v2 follow-through (§1.3 resolved note, §1.4 stat refresh)
+- fix(migration): check force-mode backup result + cap migration backups
+- fix(state): iOS unload-flush + quantified data-repaired notice
+- docs: ADR-011 (conflict last-write-wins + notify) + mergeStates future-work item
+- build(chrome): regenerate full extension at v2.330
+- chore(release): update version to 2.330
+- docs: add drift-review v2 accuracy correction
+- fix(state): notify subscribers + warn user on concurrent-modification discard
+- chore(release): update version to 2.329
+- docs: add documentation drift review v2 (supersedes review-findings)
+- fix(onboarding): crossfade the first-run use-case ticker (no blank flash)
+- fix(routine): deleting the last routine opens the create dialog, not onboarding
+- chore: remove stale iCloud-duplicate package json (v1.634 snapshot)
+- build(chrome): regenerate full extension at v2.328
+- chore(release): update version to 2.328
+- feat(onboarding): play welcome splash on create and sample first-run picks
+- chore(release): update version to 2.327
+- fix(onboarding): suppress redundant "Back in Home View" toast on first-run exit
+- feat(onboarding): show Home View welcome on the sample first-run path
+- chore: sync package-lock version to match package.json (2.326)
+
+
 ## [2.340] - 2026-07-28
 - fix(docs): unlink gitignored DEVELOPER_PROFILE from sidebar; validate against tracked files so local matches CI
 - chore(release): update version to 2.339
