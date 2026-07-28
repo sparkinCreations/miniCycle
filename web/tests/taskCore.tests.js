@@ -284,18 +284,13 @@ export async function runTaskCoreTests(resultsDiv, isPartOfSuite = false) {
 
     resultsDiv.innerHTML += '<h4 class="test-section">🔌 AppState Integration</h4>';
 
-    await test('integrates with AppState for task operations', async () => {
-        const schemaData = createMockSchemaData();
-        const mockAppState = createMockAppState(schemaData);
-
-        const instance = new TaskCore({
-            AppState: mockAppState,
-            querySelectorAll: () => []
-        });
-
-        await instance.saveCurrentTaskOrder();
-        // Should not throw
-    });
+    // NOTE: former vacuous test 'integrates with AppState for task operations' removed.
+    // It called saveCurrentTaskOrder() and asserted nothing. saveCurrentTaskOrder is a
+    // facade method that no-ops until its sub-module (saveCurrentTaskOrderImpl) is loaded
+    // via the facade's dynamic import, so a real assertion here is order-dependent and
+    // unreliable. The method's real behavior is covered by 'integrates with DOM query
+    // selectors' below, which asserts it reads the task DOM through the injected
+    // querySelectorAll. (Test-suite audit.)
 
     await test('handles AppState not ready gracefully', async () => {
         const mockAppState = {

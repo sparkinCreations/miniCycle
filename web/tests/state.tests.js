@@ -443,8 +443,20 @@ export async function runStateTests(resultsDiv, isPartOfSuite = false) {
         const state = createStateManager();
         state.isDirty = false;
 
-        // Should not throw error
-        state.save();
+        // save() early-returns when !isDirty — assert it does NOT persist. The old test
+        // just called save() and asserted nothing.
+        let wrote = false;
+        const realSet = localStorage.setItem.bind(localStorage);
+        localStorage.setItem = (k, v) => { wrote = true; return realSet(k, v); };
+        try {
+            state.save();
+        } finally {
+            localStorage.setItem = realSet;
+        }
+
+        if (wrote) {
+            throw new Error('save() should not write to localStorage when state is not dirty');
+        }
     });
 
     await test('forceSave triggers immediate save', async () => {

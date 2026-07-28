@@ -62,19 +62,25 @@ export async function runCycleImportManagerTests(resultsDiv) {
         }
     });
 
-    await test('processImportedData rejects invalid JSON string', async () => {
+    await test('processImportedData rejects invalid JSON with an error notification', async () => {
+        let notified = null;
         mod.setCycleImportManagerDependencies({
             AppState: { get: () => ({ settings: {}, data: { cycles: {} } }), update: () => {} },
-            showNotification: () => {},
+            showNotification: (msg, type) => { notified = { msg, type }; },
             safeAddEventListener: () => {}
         });
-        try {
-            await mod.processImportedData('not valid json {{{');
-        } catch (e) {
-            // Expected — invalid JSON should be rejected
-            return;
+
+        await mod.processImportedData('not valid json {{{');
+
+        // Invalid JSON is rejected by surfacing an error notification and returning — it
+        // must NOT be silently swallowed. The old test accepted BOTH throw and no-throw,
+        // so it asserted nothing about the actual rejection behavior.
+        if (!notified) {
+            throw new Error('invalid JSON should surface a notification, not be swallowed');
         }
-        // If it didn't throw, it handled the error internally (also acceptable)
+        if (notified.type !== 'error') {
+            throw new Error(`invalid JSON should notify with type "error", got "${notified.type}"`);
+        }
     });
 
     // ============================================

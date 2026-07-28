@@ -137,20 +137,27 @@ export async function runGamesManagerTests(resultsDiv) {
     });
 
     test('checkGamesUnlock reads from injected AppState', () => {
+        let stateRead = false;
         const mockState = {
             settings: { unlockedFeatures: ['task-order-game'] }
         };
         setGamesManagerDependencies({
             AppState: {
                 isReady: () => true,
-                get: () => mockState
+                get: () => { stateRead = true; return mockState; }
             },
             AppMeta: { version: '1.0.0' }
         });
         const gm = new GamesManager();
 
-        // Should not throw
+        stateRead = false; // ignore any read during construction; test the explicit call
         gm.checkGamesUnlock();
+
+        // checkGamesUnlock reads unlockedFeatures from the injected AppState (get()).
+        // The old test called it and asserted nothing.
+        if (!stateRead) {
+            throw new Error('checkGamesUnlock should read from the injected AppState');
+        }
     });
 
     test('unlockMiniGame handles AppState not ready (DI)', () => {

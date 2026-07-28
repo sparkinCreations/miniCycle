@@ -512,9 +512,9 @@ export async function runCycleCompletionTests(resultsDiv, isPartOfSuite = false)
     // === MILESTONE MESSAGE TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">🎉 Milestone Messages</h4>';
 
-    await test('milestone levels are defined correctly', () => {
-        // The module defines milestone levels: [10, 25, 50, 100, 200, 500, 1000]
-        // This test verifies the milestone system exists and doesn't throw
+    await test('incrementCycleCount increments the active cycle count and global progress', () => {
+        // (Was 'milestone levels are defined correctly', which ran incrementCycleCount and
+        // asserted nothing.) Assert the core effect: both counters advance by exactly one.
         const mockData = createMockData();
         mockData.appState.activeCycleId = 'default';
         mockData.userProgress.cyclesCompleted = 5;
@@ -536,8 +536,14 @@ export async function runCycleCompletionTests(resultsDiv, isPartOfSuite = false)
             updateStatsPanel: () => {}
         });
 
-        // Should complete without error
         incrementCycleCount('default', {});
+
+        if (mockData.data.cycles['default'].cycleCount !== 6) {
+            throw new Error(`cycleCount should increment 5→6, got ${mockData.data.cycles['default'].cycleCount}`);
+        }
+        if (mockData.userProgress.cyclesCompleted !== 6) {
+            throw new Error(`global cyclesCompleted should increment 5→6, got ${mockData.userProgress.cyclesCompleted}`);
+        }
     });
 
     await test('does not show milestone for non-milestone counts', () => {

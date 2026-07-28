@@ -669,10 +669,18 @@ export async function runNotificationsTests(resultsDiv) {
         const notifications = new window.MiniCycleNotifications();
 
         notifications.setupNotificationDragging(container);
+        const observer1 = container._pointerEventsObserver;
         notifications.setupNotificationDragging(container);
+        const observer2 = container._pointerEventsObserver;
 
-        // Should only attach once (flag prevents duplicate)
-        // Test passes if no error thrown
+        // The dedup guard (`if (!container._pointerEventsObserver)`) installs the observer
+        // once and makes the second call a no-op. The old test only checked "no error thrown".
+        if (!observer1) {
+            throw new Error('first setupNotificationDragging should install the pointer-events observer');
+        }
+        if (observer1 !== observer2) {
+            throw new Error('second setupNotificationDragging should be a no-op (observer must not be recreated)');
+        }
     });
 
     await test('setDraggingState() updates state', () => {

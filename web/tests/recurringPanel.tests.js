@@ -1213,7 +1213,7 @@ export async function runRecurringPanelTests(resultsDiv) {
     // ===== INTEGRATION TESTS =====
     resultsDiv.innerHTML += '<h4 class="test-section">🔗 Integration</h4>';
 
-    test('integrates with AppState for panel updates', () => {
+    await test('integrates with AppState for panel updates', async () => {
         const mockState = {
             data: {
                 cycles: {
@@ -1230,22 +1230,25 @@ export async function runRecurringPanelTests(resultsDiv) {
             appState: { activeCycleId: 'cycle-1' }
         };
 
+        let stateRead = false;
         setupPanelDeps({
             AppState: {
-                get: () => mockState,
+                get: () => { stateRead = true; return mockState; },
                 update: (fn) => {},
                 isReady: () => true
             },
-            getElementById: (id) => {
-                if (id === 'recurring-task-list') return { innerHTML: '' };
-                return null;
-            },
+            getElementById: (id) => (id === 'recurring-task-list' ? document.createElement('ul') : null),
             querySelectorAll: () => []
         });
         const panel = new RecurringPanelManager();
 
-        // Should not throw
-        panel.updateRecurringPanel();
+        await panel.updateRecurringPanel();
+
+        // updateRecurringPanel reads the active cycle's recurring templates from the
+        // injected AppState. The old test called it and asserted nothing.
+        if (!stateRead) {
+            throw new Error('updateRecurringPanel should read from the injected AppState');
+        }
     });
 
     test('uses dependency injection for notifications', () => {

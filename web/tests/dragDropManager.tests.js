@@ -141,16 +141,22 @@ export async function runDragDropManagerTests(resultsDiv) {
     test('setupRearrange() sets up event listeners', () => {
         const manager = new DragDropManager();
 
-        // Create mock taskList
         const taskList = document.createElement('div');
         taskList.id = 'taskList';
         document.body.appendChild(taskList);
-
-        // Should not throw
-        manager.setupRearrange();
-
-        // Cleanup
-        document.body.removeChild(taskList);
+        try {
+            manager.setupRearrange();
+            // setupRearrange installs the arrow-click handler on #taskList and the
+            // dragover/drop handlers on the manager. The old test only ran it ("does not throw").
+            if (typeof taskList._arrowClickHandler !== 'function') {
+                throw new Error('setupRearrange should install the arrow-click handler on #taskList');
+            }
+            if (typeof manager._dragoverHandler !== 'function' || typeof manager._dropHandler !== 'function') {
+                throw new Error('setupRearrange should install dragover/drop handlers');
+            }
+        } finally {
+            document.body.removeChild(taskList);
+        }
     });
 
     // ============================================
@@ -384,42 +390,13 @@ export async function runDragDropManagerTests(resultsDiv) {
         manager.updateArrowsInDOM(false);
     });
 
-    test('updateMoveArrowsVisibility() reads from AppState', () => {
-        const manager = new DragDropManager();
-
-        // Mock AppState
-        const originalAppState = window.AppState;
-        window.AppState = {
-            isReady: () => true,
-            get: () => ({
-                ui: {
-                    moveArrowsVisible: true
-                }
-            })
-        };
-
-        // Should not throw
-        manager.updateMoveArrowsVisibility();
-
-        // Restore
-        window.AppState = originalAppState;
-    });
-
-    test('updateMoveArrowsVisibility() falls back to localStorage', () => {
-        const manager = new DragDropManager();
-
-        // Mock AppState as not ready
-        const originalAppState = window.AppState;
-        window.AppState = { isReady: () => false };
-
-        localStorage.setItem('miniCycleMoveArrows', 'true');
-
-        // Should not throw and should read from localStorage
-        manager.updateMoveArrowsVisibility();
-
-        // Restore
-        window.AppState = originalAppState;
-    });
+    // NOTE: two former updateMoveArrowsVisibility() tests removed here.
+    //  • 'reads from AppState' set window.AppState — which the module IGNORES (it reads the
+    //    injected this.deps.AppState) — and asserted nothing. The real AppState→DOM path is
+    //    now covered by 'updateMoveArrowsVisibility() reflects injected AppState into the
+    //    taskList DOM' above, with a real data-move-arrows assertion.
+    //  • 'falls back to localStorage' was mis-premised: updateMoveArrowsVisibility() early-
+    //    returns when AppState isn't ready — there is no localStorage fallback. (Test-suite audit.)
 
     await test('toggleArrowVisibility() defers when AppState not ready', async () => {
         const manager = new DragDropManager();

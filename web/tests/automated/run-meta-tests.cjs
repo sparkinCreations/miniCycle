@@ -45,27 +45,11 @@ const c = {
 // its name. A test that CLAIMS a specific behavior must assert it, not be allowlisted.
 // ---------------------------------------------------------------------------
 const VACUOUS_ALLOWLIST = new Set([
-    // ── GRANDFATHERED BASELINE ─────────────────────────────────────────────────
-    // Pre-existing assertion-free tests that predate this guard and are OUTSIDE the
-    // v2.339 test-suite audit's scope (which fixed a specific set of 15). Each makes a
-    // behavior claim its body doesn't verify (mostly no-throw smoke). They are listed
-    // explicitly — not pattern-accepted — so they stay VISIBLE and can be tightened
-    // opportunistically, while NEW tests with these same shapes are still caught.
-    // Shrink this list over time; do not add to it to silence a newly-written test.
-    'cycleCompletion::milestone levels are defined correctly',
-    'cycleImportManager::processImportedData rejects invalid JSON string',
-    'dragDropManager::setupRearrange() sets up event listeners',
-    'dragDropManager::updateMoveArrowsVisibility() reads from AppState',
-    'dragDropManager::updateMoveArrowsVisibility() falls back to localStorage',
-    'dueDates::remindOverdueTasks skips when autoReset is enabled',
-    'gamesManager::checkGamesUnlock reads from injected AppState',
-    'notifications::setupNotificationDragging() only attaches once',
-    'pullToRefresh::destroy removes indicator',
-    'pullToRefresh::destroy removes event listeners',
-    'recurringPanel::integrates with AppState for panel updates',
-    'state::skips save when not dirty',
-    'taskCore::integrates with AppState for task operations',
-    'taskEvents::setupTaskHoverInteractions adds hover for non-three-dots mode',
+    // Empty. The initial 14-entry grandfathered baseline was driven to zero — every
+    // pre-existing assertion-free test now asserts (or was removed as mis-premised).
+    // Keep this empty: if a NEW test trips CHECK 2, add a real assertion — do NOT
+    // allowlist it. This set exists only as a deliberate, reviewed escape hatch for a
+    // genuine no-throw/no-op smoke test whose NAME cannot express that contract.
 ]);
 
 function walk(dir, out) {

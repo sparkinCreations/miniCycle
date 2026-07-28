@@ -482,17 +482,11 @@ export async function runDueDatesTests(resultsDiv, isPartOfSuite = false) {
             }
         });
 
-        await test('remindOverdueTasks skips when autoReset is enabled', () => {
-            const mockToggle = { checked: true };
-            const instance = new MiniCycleDueDates({
-                loadMiniCycleData: () => ({ reminders: { dueDatesReminders: true } }),
-                querySelectorAll: () => []
-            });
-            instance.toggleAutoReset = mockToggle;
-
-            // Should not throw and should return early
-            instance.remindOverdueTasks();
-        });
+        // NOTE: former test 'remindOverdueTasks skips when autoReset is enabled' removed.
+        // It asserted nothing AND was mis-premised: remindOverdueTasks() has no autoReset
+        // check (it skips only on missing schema data or dueDatesReminders disabled), so
+        // the injected toggleAutoReset was inert. Those real skip paths are covered by the
+        // 'dueDatesReminders disabled' and 'missing schema data' tests below. (Test-suite audit.)
 
         await test('remindOverdueTasks skips when dueDatesReminders disabled', () => {
             const mockToggle = { checked: false };
