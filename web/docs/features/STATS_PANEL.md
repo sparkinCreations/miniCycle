@@ -430,7 +430,7 @@ npm test
 ---
 
 **Related Documentation:**
-- [FEATURE_LIST.md](./FEATURE_LIST.md) - Complete feature overview
+- [FEATURE_LIST.md](../reference/FEATURE_LIST.md) - Complete feature overview
 - [THEME_ARCHITECTURE.md](../architecture/THEME_ARCHITECTURE.md) - Complete theme system docs
-- [VOCAB_THEME_SYSTEM.md](../developer-guides/VOCAB_THEME_SYSTEM.md) - Developer guide for vocabulary themes
-- [API_REFERENCE.md](../developer-guides/API_REFERENCE.md) - Module APIs
+- [VOCAB_THEME_SYSTEM.md](VOCAB_THEME_SYSTEM.md) - Developer guide for vocabulary themes
+- [API_REFERENCE.md](../reference/API_REFERENCE.md) - Module APIs

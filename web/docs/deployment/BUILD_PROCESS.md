@@ -117,6 +117,38 @@ cache-first from the SW regardless of query).
 
 ---
 
+## Docs site (`/docs`)
+
+`docs/` is excluded from the blanket static copy and published by a dedicated pass
+(`copyDocs()` in `build-web.cjs`), so `minicycle.app/docs/` serves the docsify site.
+
+**Withheld from the published copy** — still in the repo, still on GitHub, just not on the
+product domain:
+
+| Withheld | Why |
+|---|---|
+| `archive/` | historical snapshots — large, deliberately stale |
+| `future-work/` | unshipped plans |
+| `incidents/` | internal postmortems |
+| `DEVELOPER_PROFILE.md` | personal |
+
+Two things make a *partial* publish safe, and both are load-bearing:
+
+1. **The sidebar is filtered.** docsify is client-side — it fetches `_sidebar.md` and every
+   `.md` over HTTP at runtime. Copying a subset without filtering nav would render entries
+   that 404. Sections left with no children are dropped entirely.
+2. **Body links into withheld folders are repointed to GitHub.** Prose links (and the odd
+   `../../../LICENSE` that escapes `docs/`) would otherwise dangle. The repo is public, so
+   the reader still lands on the real document. ~65 links per build.
+
+A **build gate** then walks every published `.md` and fails the build on any dead relative
+link — a published nav entry that 404s is worse than no docs site at all.
+
+> **History:** before July 19 2026 Netlify published the raw `web/` tree, so `/docs` worked
+> by accident — the same accident that served `package.json` and `scripts/`. Making the
+> build authoritative ended that, and `/docs` 404'd until this pass was added.
+
+
 ## Gotchas — learned the hard way, do not "simplify" these
 
 1. **esbuild does NOT pass template dynamic imports through.** `` import(`./x.js?v=${V}`) ``

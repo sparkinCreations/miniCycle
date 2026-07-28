@@ -314,7 +314,7 @@ When contributing to miniCycle, follow these security practices:
 - Don't use `eval()`, `Function()`, or string-based `setTimeout/setInterval`
 - Keep inline scripts minimal (currently needed for feature detection only)
 
-See [SECURITY_GUIDE.md](../developer-guides/SECURITY_GUIDE.md) for detailed patterns and examples.
+See [SECURITY_GUIDE.md](../working-on-code/SECURITY_GUIDE.md) for detailed patterns and examples.
 
 ### Error Handling & Resilience
 
@@ -359,7 +359,7 @@ safeJSONStringify(data, defaultValue)
 - 59 total security & error handling tests
 - 100% pass rate
 
-For details, see [Error Handling Documentation](ERROR_HANDLING_AND_TESTING_SUMMARY.md).
+For details, see [Error Handling Documentation](../archive/ERROR_HANDLING_AND_TESTING_SUMMARY.md).
 
 ---
 
@@ -410,7 +410,7 @@ For details, see [Error Handling Documentation](ERROR_HANDLING_AND_TESTING_SUMMA
 - **Impact:** Improved code organization, reduced global namespace pollution
 - **Severity:** Low (architectural improvement, no security impact)
 - **Reporter:** Internal code quality audit
-- **Note:** This namespace approach was later reverted (Nov 2025) as it reorganized globals without eliminating them. See [MODULAR_OVERHAUL_PLAN.md](../future-work/MODULAR_OVERHAUL_PLAN.md) for the actual solution.
+- **Note:** This namespace approach was later reverted (Nov 2025) as it reorganized globals without eliminating them. See [MODULAR_OVERHAUL_PLAN.md](../archive/MODULAR_OVERHAUL_PLAN.md) for the actual solution.
 
 ### v1.356 (2025-11-14)
 

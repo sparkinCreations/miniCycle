@@ -632,7 +632,7 @@ modes.forEach(fromMode => {
 ## Related Documentation
 
 - [USER_GUIDE.md](../user-guides/USER_GUIDE.md) - User-facing mode documentation
-- [SCHEMA_2_5.md](../data-schema/SCHEMA_2_5.md) - Data schema with mode settings
+- [SCHEMA_2_5.md](../reference/SCHEMA_2_5.md) - Data schema with mode settings
 - [TASK_OPTIONS_CUSTOMIZER.md](../features/TASK_OPTIONS_CUSTOMIZER.md) - Button customization system
 - [EVENT_FLOW_PATTERNS.md](./EVENT_FLOW_PATTERNS.md) - UI state management patterns
 

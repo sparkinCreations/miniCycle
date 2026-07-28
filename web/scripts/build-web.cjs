@@ -127,6 +127,147 @@ function copyStatic() {
   }
 }
 
+// ── 2b. docs site (curated) ─────────────────────────────────────────────────
+// docs/ is excluded from the blanket copy above (COPY_EXCLUDE) and published
+// here instead, minus the folders below.
+//
+// HISTORY: before July 19 2026 Netlify published the raw web/ tree, so
+// /docs worked by accident — the same accident that served package.json and
+// scripts/. Making the build authoritative ended that, and /docs 404'd until
+// this pass was added.
+//
+// docsify is CLIENT-SIDE: index.html fetches _sidebar.md and every .md over
+// HTTP at runtime. So a partial publish MUST also filter the sidebar, or the
+// live site renders nav entries that 404. That is what filterSidebar does.
+const DOCS_EXCLUDE_DIRS = new Set([
+  'archive',      // historical snapshots — large, and deliberately stale
+  'future-work',  // unshipped plans
+  'incidents',    // internal postmortems
+]);
+const DOCS_EXCLUDE_FILES = new Set([
+  'DEVELOPER_PROFILE.md',  // personal
+  '.DS_Store',
+]);
+
+function filterSidebar(src) {
+  // Drop link lines pointing into an excluded path, then drop section headers
+  // left with no children. Two passes so an emptied section disappears cleanly.
+  const excluded = (target) => {
+    const clean = decodeURIComponent(target.split('#')[0]).replace(/^\.\//, '');
+    const top = clean.split('/')[0];
+    return DOCS_EXCLUDE_DIRS.has(top) || DOCS_EXCLUDE_FILES.has(clean);
+  };
+  const kept = src.split('\n').filter((line) => {
+    const m = line.match(/\[[^\]]*\]\(([^)]+)\)/);
+    if (!m) return true;
+    if (/^https?:|^mailto:|^\/$/.test(m[1])) return true;
+    return !excluded(m[1]);
+  });
+
+  const out = [];
+  for (let i = 0; i < kept.length; i++) {
+    const line = kept[i];
+    const isHeader = /^\*\s+\*\*/.test(line);
+    if (isHeader) {
+      // keep only if a child link follows before the next header
+      let hasChild = false;
+      for (let j = i + 1; j < kept.length; j++) {
+        if (/^\*\s+\*\*/.test(kept[j])) break;
+        if (/\[[^\]]*\]\([^)]+\)/.test(kept[j])) { hasChild = true; break; }
+      }
+      if (!hasChild) { while (i + 1 < kept.length && !/^\*\s+\*\*/.test(kept[i + 1])) i++; continue; }
+    }
+    out.push(line);
+  }
+  return out.join('\n').replace(/\n{3,}/g, '\n\n');
+}
+
+function copyDocs() {
+  const srcRoot = path.join(WEB, 'docs');
+  if (!fs.existsSync(srcRoot)) { console.log('⏭  docs/ not found — skipping docs publish'); return 0; }
+  const destRoot = path.join(DIST, 'docs');
+  let copied = 0;
+
+  const walkDocs = (dir) => {
+    for (const name of fs.readdirSync(dir)) {
+      const abs = path.join(dir, name);
+      const relative = path.relative(srcRoot, abs).split(path.sep).join('/');
+      const top = relative.split('/')[0];
+      if (fs.statSync(abs).isDirectory()) {
+        if (DOCS_EXCLUDE_DIRS.has(top)) continue;
+        walkDocs(abs);
+      } else {
+        if (DOCS_EXCLUDE_FILES.has(name) || DOCS_EXCLUDE_DIRS.has(top)) continue;
+        const dest = path.join(destRoot, relative);
+        fs.mkdirSync(path.dirname(dest), { recursive: true });
+        fs.copyFileSync(abs, dest);
+        copied++;
+      }
+    }
+  };
+  walkDocs(srcRoot);
+
+  const sidebar = path.join(destRoot, '_sidebar.md');
+  if (fs.existsSync(sidebar)) {
+    fs.writeFileSync(sidebar, filterSidebar(fs.readFileSync(sidebar, 'utf8')));
+  }
+
+  // Body prose still links into withheld folders (and occasionally escapes docs/
+  // entirely, e.g. ../../../LICENSE). Those would 404 on the published site.
+  // The repo is public, so rewrite them — in the dist copy ONLY — to GitHub, and
+  // the reader still reaches the real document instead of a dead end.
+  const rewritten = rewriteEscapingLinks(srcRoot, destRoot);
+
+  // Gate: a published link that 404s is worse than no docs site at all.
+  const broken = [];
+  for (const f of walk(destRoot)) {
+    if (!f.endsWith('.md')) continue;
+    const dir = path.dirname(f);
+    for (const m of fs.readFileSync(f, 'utf8').matchAll(/\[[^\]]*\]\(([^)]+)\)/g)) {
+      const t = m[1];
+      if (/^https?:|^mailto:|^\/$|^#/.test(t)) continue;
+      const target = decodeURIComponent(t.split('#')[0]).trim();
+      if (!target || NON_FILE_DOC_LINK.test(target)) continue;
+      if (!fs.existsSync(path.resolve(dir, target))) {
+        broken.push(path.relative(destRoot, f) + ' -> ' + target);
+      }
+    }
+  }
+  if (broken.length) {
+    fail('published docs have ' + broken.length + ' dead link(s):\n  ' + broken.slice(0, 20).join('\n  '));
+  }
+  return { copied, rewritten };
+}
+
+// Link targets that are not files (source citations, placeholder text in prose).
+const NON_FILE_DOC_LINK = /(:\d+$)|(^[a-z]+$)/;
+const GITHUB_BLOB = 'https://github.com/sparkinCreations/miniCycle/blob/main/';
+
+function rewriteEscapingLinks(srcRoot, destRoot) {
+  const REPO = path.dirname(WEB);
+  let count = 0;
+  for (const f of walk(destRoot)) {
+    if (!f.endsWith('.md')) continue;
+    const relDir = path.dirname(path.relative(destRoot, f));
+    const srcDir = path.join(srcRoot, relDir);   // where this file lives in source
+    const destDir = path.dirname(f);
+    const text = fs.readFileSync(f, 'utf8');
+    const out = text.replace(/\[([^\]]*)\]\(([^)]+)\)/g, (whole, label, link) => {
+      if (/^https?:|^mailto:|^\/$|^#/.test(link)) return whole;
+      const [base, frag] = link.split('#');
+      const target = decodeURIComponent(base).trim();
+      if (!target || NON_FILE_DOC_LINK.test(target)) return whole;
+      if (fs.existsSync(path.resolve(destDir, target))) return whole;   // fine as-is
+      const inSource = path.resolve(srcDir, target);                    // same link, source tree
+      if (!fs.existsSync(inSource)) return whole;                       // genuinely dangling — let the gate report it
+      count++;
+      return `[${label}](${GITHUB_BLOB}${path.relative(REPO, inSource).split(path.sep).join('/')}${frag ? '#' + frag : ''})`;
+    });
+    if (out !== text) fs.writeFileSync(f, out);
+  }
+  return count;
+}
+
 // ── 3. injections into the dist copies ──────────────────────────────────────
 function replaceBetween(file, startMarker, endMarker, generated) {
   const src = fs.readFileSync(file, 'utf8');
@@ -354,6 +495,7 @@ function makeRewritePlugin() {
   });
 
   copyStatic();
+  const docs = copyDocs();
 
   // Module map + built-file lists from the metafile.
   const moduleMap = {};
@@ -393,5 +535,6 @@ function makeRewritePlugin() {
   console.log(`🗺  module map: ${Object.keys(moduleMap).length} entries (appended to version.js + SW)`);
   console.log(`🧷 stable-path shims: ${shimCount} (testing modal)`);
   console.log(`🛰  SW precache regenerated: ${precacheCount} URLs`);
+  console.log(`📖 docs site: ${docs.copied} file(s) published, ${docs.rewritten} link(s) repointed to GitHub (archive/future-work/incidents withheld)`);
   console.log(`✅ dist/ ready in ${((Date.now() - t0) / 1000).toFixed(1)}s`);
 })().catch(e => fail(e.message));

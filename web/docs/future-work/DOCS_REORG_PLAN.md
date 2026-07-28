@@ -1,19 +1,37 @@
 # Documentation Reorganization Plan
 
-**Status:** ✅ **Option A COMPLETE** (July 27, 2026) · 📋 Option B still proposed
+**Status:** ✅ **COMPLETE — Options A and B both shipped** (July 27, 2026)
 **Created:** July 20, 2026
 **Revised:** July 27, 2026 — claims re-verified against the tree; **step 5 struck** (see below); Option B boundaries re-cut.
 **Scope:** `web/docs/` (~238 files — see [PROJECT_STATS.md](../PROJECT_STATS.md))
-**Home:** this file. Move to `archive/` once Option B ships or is dropped.
+**Home:** this file. Ready for `archive/` — see the note below.
 
 > Standing rule: if this document conflicts with the actual state of `docs/`, **the actual state wins**.
 > This plan has already gone stale twice (see the struck step 5 and the `BOOT_PERF_ROADMAP`
 > note below). Re-verify each step against the tree before executing.
 
-> **Why this is still in `future-work/` and not `archive/`:** the original checklist said to
-> archive this plan when complete, but only **Option A** shipped. Option B (splitting the
-> 41-file `developer-guides/`) is deliberately deferred until A settles, so the document is
-> still active work. Move it to `archive/` when Option B ships or is formally dropped.
+> **Option B shipped the same day as A**, so `developer-guides/` no longer exists. What
+> follows is kept as the record of what moved and why — the deviations from the original
+> plan are the useful part. Ready for `archive/`; left here one cycle so the reasoning
+> stays visible while the new layout beds in.
+
+### What Option B changed (July 27, 2026)
+
+- **`developer-guides/` dissolved** — 37 files fanned out: 17 → `working-on-code/`,
+  7 → `architecture/`, 3 → `reference/`, 6 → `features/`, 2 → `archive/`, and the two
+  routers (`INDEX.md`, `DEVELOPER_DOCUMENTATION.md`) promoted to `docs/` root.
+- **`reference/` created** (8 files) — absorbed `data-schema/` entirely (that folder is
+  gone), plus `LABEL_REGISTRY_REFERENCE`, `FEATURE_LIST`, and `minicycle-recurring-guide.md`
+  **retitled** `RECURRING_SYSTEM_REFERENCE.md`.
+- **`CONSTANTS_SYSTEM_GUIDE`, `SECURITY_GUIDE`, `MESSAGING_SURFACES` went to
+  `working-on-code/`, not `reference/`** — per the CLAUDE.md citation test below.
+- `RECURRING_WATCH_FUNCTION.md` → `architecture/` (it is an ADR, as the plan noted).
+- **The two `security/` error-handling docs went to `archive/`, not `working-on-code/`** —
+  both are explicitly `Status: ✅ Complete` snapshots of v1.354/v1.357, not live guidance.
+- Root `CLAUDE.md` rewritten; all 14 doc paths verified resolving.
+- **Broken links across `docs/` went 60 → 4**, and the 4 remaining are not doc links (a path
+  into an external memory dir, a malformed `[count]`, and a `file.js:124` citation).
+  Repairing the pre-existing rot fell out of resolving the moves generically.
 
 ### What Option A actually changed (July 27, 2026)
 
@@ -32,10 +50,11 @@
   nav altogether.
 - Added the new-doc rule to [CONTRIBUTING.md](../project-info/CONTRIBUTING.md).
 
-**Known remaining rot (pre-existing, not caused by these moves):** ~60 broken relative links
-elsewhere in `docs/`, mostly pointing at plans archived in earlier cleanups. Not fixed here
-to keep this change reviewable. This is exactly what the proposed `validate:docs` gate would
-have caught — see [Proposed: make the sweep a gate](#proposed-make-the-sweep-a-gate-not-a-ritual).
+**Pre-existing rot found during A, cleared during B:** ~60 broken relative links elsewhere in
+`docs/`, mostly pointing at plans archived in earlier cleanups. Left alone during A to keep
+that change reviewable; swept in B once link resolution was automated. This is exactly what
+the proposed `validate:docs` gate would have caught years earlier — see
+[Proposed: make the sweep a gate](#proposed-make-the-sweep-a-gate-not-a-ritual).
 
 ---
 
@@ -234,17 +253,25 @@ the single biggest reason to keep Option B's blast radius small and to sequence 
 4. **Docsify aliases** can soft-redirect old sidebar URLs if any are bookmarked.
 5. **Verify:** open the docsify site, click every sidebar entry once.
 
-### Proposed: make the sweep a gate, not a ritual
+### ✅ Shipped: the sweep is now a gate, not a ritual
 
 Step 3 is a one-time manual check — exactly the discipline that lapses, which is how the rot
 this plan fixes accumulated in the first place. The repo already gates on `validate:html`,
 `validate:csp`, and `validate:di`.
 
-Add a `validate:docs` script in the same zero-dependency style that fails on:
+`npm run validate:docs` ([scripts/validate-docs.py](../../scripts/validate-docs.py)) fails on:
 
 - relative links in `docs/**/*.md` pointing at a nonexistent file
 - markdown files absent from `_sidebar.md` (orphans)
-- paths referenced by either `CLAUDE.md` that no longer resolve
+- `web/docs/...` paths in the repo-root `CLAUDE.md` that no longer resolve
+
+`archive/` and `vendor/` are excluded (historical snapshots may point at the world as it
+was). Source citations like `gamesManager.js:124` and paths outside the repo are recognised
+as non-file links rather than reported as broken.
+
+Runs in CI as the *Docs Validation* job in `performance.yml` — pure stdlib, no Node, no
+network, well under a second. Verified by injecting one of each fault type and confirming
+all three are reported with exit 1.
 
 This is the durable half of the plan. Without it, a future reorg re-derives the same problem.
 
@@ -265,8 +292,11 @@ This is the durable half of the plan. Without it, a future reorg re-derives the 
 - [x] `_sidebar.md` and both `CLAUDE.md` routers updated
 - [x] New-doc rule added to `CONTRIBUTING.md`
 
+- [x] Option B (split `developer-guides/`) — folder dissolved
+- [x] Broken links swept (60 → 4 non-link artifacts)
+
+- [x] `validate:docs` added and passing in CI (`scripts/validate-docs.py`,
+      `performance.yml` → *Docs Validation* job)
+
 **Still open:**
-- [ ] Option B (split `developer-guides/`)
-- [ ] `validate:docs` added and passing in CI *(proposed)*
-- [ ] ~60 pre-existing broken links elsewhere in `docs/` swept
-- [ ] This plan moved to `archive/` — only once Option B ships or is dropped
+- [ ] Move this plan to `archive/`

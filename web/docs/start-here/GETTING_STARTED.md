@@ -115,11 +115,11 @@ This is fundamentally different from traditional to-do apps where completed task
 
 ## Next Steps
 
-- **[Architecture Overview](ARCHITECTURE_OVERVIEW.md)** - Understand the system structure
-- **[Module System Guide](MODULE_SYSTEM_GUIDE.md)** - Learn how modules work
-- **[Development Workflow](DEVELOPMENT_WORKFLOW.md)** - Start making changes
-- **[Testing Guide](TESTING_GUIDE.md)** - Run and write tests
+- **[Architecture Overview](../architecture/ARCHITECTURE_OVERVIEW.md)** - Understand the system structure
+- **[Module System Guide](../architecture/MODULE_SYSTEM_GUIDE.md)** - Learn how modules work
+- **[Development Workflow](../working-on-code/DEVELOPMENT_WORKFLOW.md)** - Start making changes
+- **[Testing Guide](../working-on-code/TESTING_GUIDE.md)** - Run and write tests
 
 ---
 
-**Questions?** Check the [Developer Documentation Hub](DEVELOPER_DOCUMENTATION.md) for links to all guides.
+**Questions?** Check the [Developer Documentation Hub](../DEVELOPER_DOCUMENTATION.md) for links to all guides.

@@ -14,7 +14,7 @@ Technical documentation for miniCycle's JSON-based theming system (design only â
 **Related Documents:**
 - [Current theme docs](../architecture/THEME_ARCHITECTURE.md) - **Use this instead**
 - [CSS Refactor Plan](./CSS_REFACTOR_PLAN.md) - Overall CSS architecture
-- [Theme Creation Guide](../guides/THEME_CREATION_GUIDE.md) - User-friendly guide (also outdated)
+- [Theme Creation Guide](THEME_CREATION_GUIDE.md) - User-friendly guide (also outdated)
 
 ---
 

@@ -22,7 +22,7 @@
 | **[PERFORMANCE_TESTING_GUIDE.md](../performance/PERFORMANCE_TESTING_GUIDE.md)** | Complete performance testing reference | Deep dive into optimization |
 | **[../PERFORMANCE_SETUP.md](../performance/PERFORMANCE_SETUP.md)** | Quick start for performance testing | Getting started |
 | **[../tests/PERFORMANCE_TESTING.md](../../tests/PERFORMANCE_TESTING.md)** | Practical testing scenarios | Real-world testing |
-| **[CLAUDE.md](../developer-guides/CLAUDE.md)** | Architecture and development guide | Understanding codebase |
+| **[CLAUDE.md](../working-on-code/CLAUDE.md)** | Architecture and development guide | Understanding codebase |
 
 ---
 
@@ -517,7 +517,7 @@ diff performance-baselines/v1.352.txt performance-baselines/v1.353.txt
 
 - **[PERFORMANCE_TESTING_GUIDE.md](../performance/PERFORMANCE_TESTING_GUIDE.md)** - Complete performance reference
 - **[PERFORMANCE_SETUP.md](../performance/PERFORMANCE_SETUP.md)** - Quick setup guide
-- **[CLAUDE.md](../developer-guides/CLAUDE.md)** - Architecture documentation
+- **[CLAUDE.md](../working-on-code/CLAUDE.md)** - Architecture documentation
 - **[UNDO_REDO_ARCHITECTURE.md](../architecture/UNDO_REDO_ARCHITECTURE.md)** - Undo/redo system
 - **[WHAT_IS_MINICYCLE.md](../start-here/WHAT_IS_MINICYCLE.md)** - Product overview
 

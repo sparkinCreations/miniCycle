@@ -3,7 +3,7 @@
 **Date:** March 15, 2026
 **Status:** Not Started
 **Prerequisite:** DI manifest tightening (Complete — March 2026)
-**Related:** [DI_MIGRATION_COMPLETION_PLAN.md](./DI_MIGRATION_COMPLETION_PLAN.md) (Phase 5, effectively)
+**Related:** [DI_MIGRATION_COMPLETION_PLAN.md](../archive/DI_MIGRATION_COMPLETION_PLAN.md) (Phase 5, effectively)
 
 ---
 

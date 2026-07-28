@@ -502,9 +502,9 @@ web/
 
 ## Related Documentation
 
-- **[LABEL_SYSTEM_INTEGRATION_PLAN.md](./LABEL_SYSTEM_INTEGRATION_PLAN.md)** — Label system migration (complete)
-- **[CONTEXTUAL_THEME_SYSTEM_PLAN.md](./CONTEXTUAL_THEME_SYSTEM_PLAN.md)** — Lens system that i18n builds on
-- **[THEME_ARCHITECTURE.md](./THEME_ARCHITECTURE.md)** — Existing theme system
+- **[LABEL_SYSTEM_INTEGRATION_PLAN.md](../archive/LABEL_SYSTEM_INTEGRATION_PLAN.md)** — Label system migration (complete)
+- **[CONTEXTUAL_THEME_SYSTEM_PLAN.md](../archive/CONTEXTUAL_THEME_SYSTEM_PLAN.md)** — Lens system that i18n builds on
+- **[THEME_ARCHITECTURE.md](../architecture/THEME_ARCHITECTURE.md)** — Existing theme system
 - **[PWA_OFFLINE_ARCHITECTURE.md](../deployment/PWA_OFFLINE_ARCHITECTURE.md)** — Service worker caching and offline boot
 
 ---

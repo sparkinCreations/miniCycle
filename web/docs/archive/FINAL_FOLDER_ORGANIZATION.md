@@ -1067,14 +1067,14 @@ Run tests:
 - **[MULTI_PLATFORM_FOLDER_STRUCTURE.md](./MULTI_PLATFORM_FOLDER_STRUCTURE.md)** - Alternative approaches
 
 ### During Migration
-- **[DEVELOPER_DOCUMENTATION.md](./DEVELOPER_DOCUMENTATION.md)** - Complete dev guide
+- **[DEVELOPER_DOCUMENTATION.md](../DEVELOPER_DOCUMENTATION.md)** - Complete dev guide
 - **[FINAL-MODULE-STRUCTURE.md](./FINAL-MODULE-STRUCTURE.md)** - Module architecture
-- **[TESTING_QUICK_REFERENCE.md](./TESTING_QUICK_REFERENCE.md)** - Testing guide
+- **[TESTING_QUICK_REFERENCE.md](../testing/TESTING_QUICK_REFERENCE.md)** - Testing guide
 
 ### After Migration
 - **[DEPLOYMENT.md](./DEPLOYMENT.md)** - Deployment process (unchanged)
 - **[UPDATE-VERSION-GUIDE.md](./UPDATE-VERSION-GUIDE.md)** - Version management
-- **[CLAUDE.md](./CLAUDE.md)** - AI assistant guide (update this!)
+- **[CLAUDE.md](../working-on-code/CLAUDE.md)** - AI assistant guide (update this!)
 
 ---
 

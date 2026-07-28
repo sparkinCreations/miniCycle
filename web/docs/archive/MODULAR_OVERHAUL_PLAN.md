@@ -84,6 +84,6 @@ const myModule = new MyModule();
 
 ## Documentation
 
-- [CLAUDE.md](../developer-guides/CLAUDE.md) - Main developer guide
-- [DI_PATTERNS.md](../developer-guides/DI_PATTERNS.md) - Complete DI patterns
-- [ARCHITECTURE_OVERVIEW.md](../developer-guides/ARCHITECTURE_OVERVIEW.md) - System architecture
+- [CLAUDE.md](../working-on-code/CLAUDE.md) - Main developer guide
+- [DI_PATTERNS.md](../working-on-code/DI_PATTERNS.md) - Complete DI patterns
+- [ARCHITECTURE_OVERVIEW.md](../architecture/ARCHITECTURE_OVERVIEW.md) - System architecture

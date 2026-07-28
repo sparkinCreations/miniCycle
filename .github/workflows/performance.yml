@@ -86,6 +86,22 @@ jobs:
         working-directory: ./web
         run: python3 scripts/validate-html.py
 
+  docs-validation:
+    name: Docs Validation (links + nav)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      # Same shape as html-validation: pure stdlib, no Node, no network.
+      # Catches the rot the July 2026 reorg had to clean up by hand — broken
+      # relative links, docs unreachable from _sidebar.md, and root CLAUDE.md
+      # pointing at moved files (which fails silently and degrades AI-assisted
+      # work). Runs in well under a second.
+      - name: Validate docs links and navigation
+        working-directory: ./web
+        run: python3 scripts/validate-docs.py
+
   lighthouse:
     name: Lighthouse CI
     runs-on: ubuntu-latest

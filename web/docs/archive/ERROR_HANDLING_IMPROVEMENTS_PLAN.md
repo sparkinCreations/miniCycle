@@ -2,7 +2,7 @@
 
 > 📦 **ARCHIVED (Jun 2026).** Full original 5-phase plan, kept for the detailed Phase 3–5
 > implementation specs. Phases 1–2 are implemented — see
-> [`../developer-guides/ERROR_RECOVERY.md`](../developer-guides/ERROR_RECOVERY.md). The open
+> [`../developer-guides/ERROR_RECOVERY.md`](../working-on-code/ERROR_RECOVERY.md). The open
 > Phase 3–5 remainder lives in [`../future-work/ERROR_HANDLING_PHASES_3_5.md`](../future-work/ERROR_HANDLING_PHASES_3_5.md).
 
 **Date:** December 23, 2025
@@ -1064,8 +1064,8 @@ async editTask(taskId, newText) {
 
 ## Related Documentation
 
-- [ERROR_HANDLING_AND_TESTING_SUMMARY.md](../security/ERROR_HANDLING_AND_TESTING_SUMMARY.md) - Previous improvements
-- [ERROR_HANDLING_IMPROVEMENTS.md](../security/ERROR_HANDLING_IMPROVEMENTS.md) - Implementation details
+- [ERROR_HANDLING_AND_TESTING_SUMMARY.md](ERROR_HANDLING_AND_TESTING_SUMMARY.md) - Previous improvements
+- [ERROR_HANDLING_IMPROVEMENTS.md](ERROR_HANDLING_IMPROVEMENTS.md) - Implementation details
 - [SECURITY.md](../security/SECURITY.md) - Security policy and roadmap
 
 ---

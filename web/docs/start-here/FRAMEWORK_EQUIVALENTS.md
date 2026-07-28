@@ -368,9 +368,9 @@ The trade-off is real: more boilerplate, more files to touch per feature, and pa
 
 ## Further Reading
 
-- [DI Patterns Guide](../developer-guides/DI_PATTERNS.md) — full DI pattern reference
-- [Architecture Overview](../developer-guides/ARCHITECTURE_OVERVIEW.md) — system-level architecture
-- [Label System Architecture](LABEL_SYSTEM_ARCHITECTURE.md) — i18n system deep dive
-- [Event Flow Patterns](EVENT_FLOW_PATTERNS.md) — event delegation and listener lifecycle
-- [CSS Architecture Guide](../developer-guides/CSS_ARCHITECTURE_GUIDE.md) — design token system
-- [Undo/Redo Architecture](UNDO_REDO_ARCHITECTURE.md) — state snapshot system
+- [DI Patterns Guide](../working-on-code/DI_PATTERNS.md) — full DI pattern reference
+- [Architecture Overview](../architecture/ARCHITECTURE_OVERVIEW.md) — system-level architecture
+- [Label System Architecture](../architecture/LABEL_SYSTEM_ARCHITECTURE.md) — i18n system deep dive
+- [Event Flow Patterns](../architecture/EVENT_FLOW_PATTERNS.md) — event delegation and listener lifecycle
+- [CSS Architecture Guide](../architecture/CSS_ARCHITECTURE_GUIDE.md) — design token system
+- [Undo/Redo Architecture](../architecture/UNDO_REDO_ARCHITECTURE.md) — state snapshot system

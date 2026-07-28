@@ -21,7 +21,7 @@
 | **Test Pass Rate** | 100% |
 | **CSS Files** | 44 |
 | **JSDoc Blocks** | 1312 |
-| **Documentation Files** | 235 |
+| **Documentation Files** | 239 |
 | **DI Completion** | 100% |
 | **Custom window.* Globals (modules)** | 0 |
 

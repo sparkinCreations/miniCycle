@@ -186,7 +186,7 @@ Some labels contain `{varName}` placeholders for dynamic content:
 '"{deleted}" deleted. "{active}" is now active.'
 ```
 
-The `{varName}` syntax was chosen for compatibility with ICU MessageFormat and the interpolation function defined in the [Contextual Theme System Plan](../future-work/CONTEXTUAL_THEME_SYSTEM_PLAN.md).
+The `{varName}` syntax was chosen for compatibility with ICU MessageFormat and the interpolation function defined in the [Contextual Theme System Plan](../archive/CONTEXTUAL_THEME_SYSTEM_PLAN.md).
 
 ---
 
@@ -261,7 +261,7 @@ const stats = getLabel('stats.completion', { count: 3, vars: { completed: 3, tot
 
 ## Migration Status
 
-All 6 planned migration tiers are complete. See [Label System Integration Plan](../future-work/LABEL_SYSTEM_INTEGRATION_PLAN.md) for details.
+All 6 planned migration tiers are complete. See [Label System Integration Plan](../archive/LABEL_SYSTEM_INTEGRATION_PLAN.md) for details.
 
 ~39 hardcoded notification strings remain in modules outside the original tier scope (undoRedoManager, pullToRefresh, routineManager, etc.). These can be migrated incrementally as those modules are touched.
 
@@ -269,11 +269,11 @@ All 6 planned migration tiers are complete. See [Label System Integration Plan](
 
 ## Related Documentation
 
-- **[Contextual Theme System Plan](../future-work/CONTEXTUAL_THEME_SYSTEM_PLAN.md)** — Full plan for contextual lenses that override labels
-- **[Label Registry Reference](./LABEL_REGISTRY_REFERENCE.md)** — Complete audit of all 566 keys with source file locations
-- **[Label System Integration Plan](../future-work/LABEL_SYSTEM_INTEGRATION_PLAN.md)** — Migration plan and status
+- **[Contextual Theme System Plan](../archive/CONTEXTUAL_THEME_SYSTEM_PLAN.md)** — Full plan for contextual lenses that override labels
+- **[Label Registry Reference](../reference/LABEL_REGISTRY_REFERENCE.md)** — Complete audit of all 566 keys with source file locations
+- **[Label System Integration Plan](../archive/LABEL_SYSTEM_INTEGRATION_PLAN.md)** — Migration plan and status
 - **[Theme Architecture](./THEME_ARCHITECTURE.md)** — Existing color theme system (separate from labels)
-- **[DI Patterns](../developer-guides/DI_PATTERNS.md)** — Why `defaultLabels.js` doesn't need DI (pure data pattern)
+- **[DI Patterns](../working-on-code/DI_PATTERNS.md)** — Why `defaultLabels.js` doesn't need DI (pure data pattern)
 
 ---
 

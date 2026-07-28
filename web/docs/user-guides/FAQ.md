@@ -591,10 +591,10 @@ It has the core features (routines, three modes, cycle tracking) without advance
 ### Documentation Resources
 
 - **User Manual:** [User Manual](../../legal/user-manual.html) - Complete guide with screenshots
-- **Feature List:** [FEATURE_LIST.md](../features/FEATURE_LIST.md) - All features explained
+- **Feature List:** [FEATURE_LIST.md](../reference/FEATURE_LIST.md) - All features explained
 - **What is miniCycle:** [WHAT_IS_MINICYCLE.md](../start-here/WHAT_IS_MINICYCLE.md) - Core concepts
 - **Changelog:** [CHANGELOG.md](../../CHANGELOG.md) - Version history
-- **All Docs:** [INDEX.md](../developer-guides/INDEX.md) - Documentation index
+- **All Docs:** [INDEX.md](../INDEX.md) - Documentation index
 
 ### Support Channels
 
