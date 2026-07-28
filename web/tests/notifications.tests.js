@@ -801,10 +801,16 @@ export async function runNotificationsTests(resultsDiv) {
             'indefinitely'
         );
 
-        // Check if monthly option has 'selected' class
-        if (!html.includes('data-freq="monthly"') ||
-            !html.includes('selected')) {
-            throw new Error('Selected frequency not marked');
+        // The MONTHLY option specifically must carry the `selected` class — not merely that
+        // a monthly option exists AND some option is selected (both are always true for any
+        // valid frequency). Source: notifications.js:1252-1253 renders
+        // `class="radio-circle ${freq==='monthly'?'selected':''}" data-freq="monthly"`.
+        if (!html.includes('radio-circle selected" data-freq="monthly"')) {
+            throw new Error('Monthly option should be marked selected');
+        }
+        // And a different frequency must NOT be marked (guards against highlighting the wrong one).
+        if (html.includes('radio-circle selected" data-freq="daily"')) {
+            throw new Error('Daily should not be marked selected when monthly is chosen');
         }
     });
 

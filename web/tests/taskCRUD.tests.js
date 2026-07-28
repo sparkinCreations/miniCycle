@@ -61,33 +61,64 @@ export async function runTaskCRUDTests(resultsDiv) {
 
     await test('addTaskImpl rejects empty text', async () => {
         const state = createMockState();
-        const deps = {
-            AppState: createMockAppState(state),
-            sanitizeInput: (t) => t.trim(),
-            validateAndSanitizeTaskInput: (t) => ({ isValid: false, error: 'Empty' }),
-            showNotification: () => {},
-        };
-        setTaskCRUDDependencies(deps);
+        const taskInput = document.createElement('input');
+        taskInput.id = 'taskInput';   // DOM_IDS.TASK_INPUT — the guard flags this on rejection
+        document.body.appendChild(taskInput);
+        try {
+            const deps = {
+                AppState: createMockAppState(state),
+                sanitizeInput: (t) => t.trim(),
+                // Faithful contract: returns the sanitized string, or null when invalid.
+                validateAndSanitizeTaskInput: (t) => (t.trim() ? t.trim() : null),
+                showNotification: () => {},
+            };
+            setTaskCRUDDependencies(deps);
 
-        const result = await addTaskImpl('', {}, deps);
-        // Should return falsy or not add task
-        const tasks = state.data.cycles['cycle-1'].tasks;
-        if (tasks.length > 1) throw new Error('Should not add empty task');
+            // isLoading:true skips the storage-quota/task-limit pre-checks (which early-return
+            // in a unit context) so execution reaches the input-validation guard we're testing.
+            await addTaskImpl('', { isLoading: true }, deps);
+
+            // Empty text → validation returns null → the guard sets aria-invalid and returns
+            // BEFORE adding (taskCRUD.js:264-268). The OLD mock returned a truthy object, so the
+            // guard was never hit — the task was only "not added" because loadTaskContext was
+            // absent, i.e. green even if empty-text validation were deleted.
+            if (taskInput.getAttribute('aria-invalid') !== 'true') {
+                throw new Error('empty input should be flagged aria-invalid by the validation guard');
+            }
+            if (state.data.cycles['cycle-1'].tasks.length !== 1) {
+                throw new Error('empty task should not be added');
+            }
+        } finally {
+            document.body.removeChild(taskInput);
+        }
     });
 
     await test('addTaskImpl rejects whitespace-only text', async () => {
         const state = createMockState();
-        const deps = {
-            AppState: createMockAppState(state),
-            sanitizeInput: (t) => t.trim(),
-            validateAndSanitizeTaskInput: (t) => ({ isValid: false, error: 'Empty' }),
-            showNotification: () => {},
-        };
-        setTaskCRUDDependencies(deps);
+        const taskInput = document.createElement('input');
+        taskInput.id = 'taskInput';
+        document.body.appendChild(taskInput);
+        try {
+            const deps = {
+                AppState: createMockAppState(state),
+                sanitizeInput: (t) => t.trim(),
+                validateAndSanitizeTaskInput: (t) => (t.trim() ? t.trim() : null),
+                showNotification: () => {},
+            };
+            setTaskCRUDDependencies(deps);
 
-        await addTaskImpl('   ', {}, deps);
-        const tasks = state.data.cycles['cycle-1'].tasks;
-        if (tasks.length > 1) throw new Error('Should not add whitespace task');
+            await addTaskImpl('   ', { isLoading: true }, deps);
+
+            // '   '.trim() === '' → validation returns null → same rejection path.
+            if (taskInput.getAttribute('aria-invalid') !== 'true') {
+                throw new Error('whitespace input should be flagged aria-invalid by the validation guard');
+            }
+            if (state.data.cycles['cycle-1'].tasks.length !== 1) {
+                throw new Error('whitespace task should not be added');
+            }
+        } finally {
+            document.body.removeChild(taskInput);
+        }
     });
 
     // ============================================
