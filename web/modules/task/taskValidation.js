@@ -142,16 +142,14 @@ export async function initTaskValidator(dependencies = {}) {
 function validateAndSanitizeTaskInput(taskText) {
     if (!taskValidator) {
         console.warn('⚠️ TaskValidator not initialized - using fallback');
-        // Fallback validation with sanitization
+        // Fallback: normalize only (trim). Do NOT HTML-escape here — task text is
+        // rendered via textContent, so escaping at input would double-encode it
+        // (store literal &lt; / &amp;). XSS safety lives at the render sink. The old
+        // "Fix #43" escaped here, which corrupted task text with entities in this
+        // rare uninitialized-validator path. See the input-normalizer audit
+        // (SECURITY.md v2.336).
         if (typeof taskText !== 'string' || !taskText.trim()) return null;
-        // Fix #43: Add sanitization to fallback path (escape HTML entities)
-        const trimmed = taskText.trim();
-        return trimmed
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#039;');
+        return taskText.trim();
     }
     return taskValidator.validateAndSanitizeTaskInput(taskText);
 }
