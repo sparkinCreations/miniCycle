@@ -956,11 +956,6 @@ export async function runAccessibilityTests(resultsDiv, isPartOfSuite = false) {
         if (prio.getAttribute('aria-pressed') !== 'true') throw new Error('high-priority should be aria-pressed=true');
 
         // recurring reflects the recurring flag → aria-pressed toggles true/false.
-        // NOTE: the template-present path (currentCycle.recurringTemplates[id]) currently
-        // yields a non-boolean aria-pressed because taskButtons.js does
-        // `isActive = hasRecurringTemplate || !!recurring` (the raw template object, not a
-        // boolean). We assert the clean flag path here and flag that quirk separately rather
-        // than pinning the buggy "[object Object]" value.
         const recOn = makeBtn('recurring-btn');
         inst.setupButtonAriaStates(recOn, 'recurring-btn', false, true, false, 't1', {}, false);
         if (recOn.getAttribute('aria-pressed') !== 'true') throw new Error('recurring task should be aria-pressed=true');
@@ -968,6 +963,15 @@ export async function runAccessibilityTests(resultsDiv, isPartOfSuite = false) {
         const recOff = makeBtn('recurring-btn');
         inst.setupButtonAriaStates(recOff, 'recurring-btn', false, false, false, 't1', {}, false);
         if (recOff.getAttribute('aria-pressed') !== 'false') throw new Error('non-recurring task should be aria-pressed=false');
+
+        // Template-present path: a task with a recurringTemplates entry must produce a VALID
+        // boolean aria-pressed, not "[object Object]" (regression guard for the taskButtons.js
+        // `!!hasRecurringTemplate || !!recurring` coercion fix).
+        const recTmpl = makeBtn('recurring-btn');
+        inst.setupButtonAriaStates(recTmpl, 'recurring-btn', false, false, false, 't1', { recurringTemplates: { t1: { id: 't1' } } }, false);
+        if (recTmpl.getAttribute('aria-pressed') !== 'true') {
+            throw new Error(`recurring task with a template should be aria-pressed="true", got "${recTmpl.getAttribute('aria-pressed')}"`);
+        }
 
         // due-date uses aria-expanded (reveals an input), not aria-pressed
         const due = makeBtn('set-due-date');
