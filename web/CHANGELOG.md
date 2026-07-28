@@ -1,3 +1,8 @@
+## [2.338] - 2026-07-28
+- fix(sw): precache storagePersistence.js (offline-boot drift guard)
+- chore: sync package-lock version field to 2.337
+
+
 ## [2.337] - 2026-07-28
 - chore: sync package-lock version field to match package.json (2.336)
 - docs(review): date the correction to the Dec 2025 code review (don't edit history silently)
