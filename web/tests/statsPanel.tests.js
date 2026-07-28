@@ -159,12 +159,20 @@ export async function runStatsPanelTests(resultsDiv) {
         }
     });
 
-    await test('caches DOM elements', () => {
+    await test('caches DOM elements to the real nodes', () => {
         const statsPanel = new StatsPanelManager();
+        const el = statsPanel.elements;
 
-        if (!statsPanel.elements || typeof statsPanel.elements !== 'object') {
-            throw new Error('Elements not cached properly');
-        }
+        // The old check only proved `elements` was an object — it would pass even if
+        // cacheElements() resolved nothing. Assert the cache actually holds the live DOM
+        // nodes it is supposed to drive (unique IDs → identity comparison is exact).
+        if (el.statsPanel !== document.getElementById('stats-panel')) throw new Error('statsPanel node not cached');
+        if (el.taskView !== document.getElementById('task-view')) throw new Error('taskView node not cached');
+        if (el.taskList !== document.getElementById('taskList')) throw new Error('taskList node not cached');
+        if (el.totalTasks !== document.getElementById('total-tasks')) throw new Error('totalTasks node not cached');
+        if (el.completionRate !== document.getElementById('completion-rate')) throw new Error('completionRate node not cached');
+        // dots is a live NodeList captured from the panel markup.
+        if (!el.dots || el.dots.length < 2) throw new Error(`expected the nav dots cached, got length ${el.dots?.length}`);
     });
 
     await test('initializes with correct state', () => {
@@ -240,35 +248,60 @@ export async function runStatsPanelTests(resultsDiv) {
     // === STATS CALCULATION TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">📈 Stats Calculation</h4>';
 
-    // NOTE: Test removed - depends on appInit.markCoreSystemsReady() which doesn't work
-    // reliably in automated batch test environments. The DOM task counting requires
-    // full initialization that can't be mocked in DI-pure tests.
-    // See: TESTING_APPROACH.md for why some tests are removed in batch environments
+    // These previously-removed tests are restored by injecting AppState into the module
+    // deps. Without it, updateStatsPanel() early-returns at `if (!AppState)` and never
+    // writes the counters — which is why the old "handles zero tasks" test passed
+    // trivially (the DOM kept its initial 0 / 0% regardless of the math).
 
-    // NOTE: Test removed - depends on appInit.markCoreSystemsReady() which doesn't work
-    // reliably in automated batch test environments. Completion rate calculation requires
-    // full initialization that can't be mocked in DI-pure tests.
+    await test('counts tasks and computes completion rate from the task DOM', async () => {
+        // Make the module see an AppState so updateStatsPanel runs its math path.
+        setStatsPanelDependencies({ AppState: window.AppState });
+        try {
+            const taskList = document.getElementById('taskList');
+            // 4 tasks, 3 checked → getCachedTaskStats reads document '.task' / '.task input:checked'.
+            taskList.innerHTML = `
+                <div class="task"><input type="checkbox" checked></div>
+                <div class="task"><input type="checkbox" checked></div>
+                <div class="task"><input type="checkbox" checked></div>
+                <div class="task"><input type="checkbox"></div>
+            `;
 
-    // NOTE: Test removed - depends on appInit.markCoreSystemsReady() and complex async
-    // initialization patterns that don't work reliably in automated batch test environments.
-    // The cycle count display requires full initialization that can't be mocked in DI-pure tests.
+            const statsPanel = new StatsPanelManager();  // caches deps incl. injected AppState
+            await statsPanel.updateStatsPanel();
 
-    await test('handles zero tasks gracefully', async () => {
-        const taskList = document.getElementById('taskList');
-        taskList.innerHTML = '';
+            const total = document.getElementById('total-tasks').textContent;
+            const completed = document.getElementById('completed-tasks').textContent;
+            const rate = document.getElementById('completion-rate').textContent;
 
-        const statsPanel = new StatsPanelManager();
-        await statsPanel.updateStatsPanel();
-
-        const totalTasks = document.getElementById('total-tasks');
-        const completionRate = document.getElementById('completion-rate');
-
-        if (totalTasks.textContent !== '0') {
-            throw new Error('Should show 0 total tasks');
+            if (total !== '4') throw new Error(`total-tasks should be 4, got "${total}"`);
+            if (completed !== '3') throw new Error(`completed-tasks should be 3, got "${completed}"`);
+            // Source: ((completed/total)*100).toFixed(1) + "%" → 75.0%
+            if (rate !== '75.0%') throw new Error(`completion-rate should be 75.0%, got "${rate}"`);
+        } finally {
+            setStatsPanelDependencies({ AppState: null });  // don't leak into later tests
         }
+    });
 
-        if (completionRate.textContent !== '0%') {
-            throw new Error('Should show 0% completion rate');
+    await test('handles zero tasks gracefully (real 0% branch)', async () => {
+        setStatsPanelDependencies({ AppState: window.AppState });
+        try {
+            const taskList = document.getElementById('taskList');
+            taskList.innerHTML = '';
+
+            const statsPanel = new StatsPanelManager();
+            await statsPanel.updateStatsPanel();
+
+            const totalTasks = document.getElementById('total-tasks');
+            const completedTasks = document.getElementById('completed-tasks');
+            const completionRate = document.getElementById('completion-rate');
+
+            // With AppState present, updateStatsPanel actually writes these — the totalTasks>0
+            // ternary must resolve to "0%", not divide-by-zero.
+            if (totalTasks.textContent !== '0') throw new Error(`Should show 0 total tasks, got "${totalTasks.textContent}"`);
+            if (completedTasks.textContent !== '0') throw new Error(`Should show 0 completed, got "${completedTasks.textContent}"`);
+            if (completionRate.textContent !== '0%') throw new Error(`Should show 0% completion rate, got "${completionRate.textContent}"`);
+        } finally {
+            setStatsPanelDependencies({ AppState: null });
         }
     });
 
