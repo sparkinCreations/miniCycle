@@ -356,15 +356,19 @@ export async function runCycleCompletionTests(resultsDiv, isPartOfSuite = false)
     // === MILESTONE UNLOCK TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">🏆 Milestone Unlocks</h4>';
 
-    await test('unlocks Dark Ocean theme at 5 global cycles', () => {
+    await test('surfaces a newly unlocked vocab theme on cycle complete (Dark Ocean)', () => {
+        // Rewritten. The old test ('unlocks Dark Ocean theme at 5 global cycles') injected
+        // `unlockDarkOceanTheme` and asserted NOTHING — and incrementCycleCount never calls
+        // that dep (the string appears nowhere in cycleCompletion.js). Its own comment even
+        // admitted the unlock "sees 4, not 5". The REAL path: incrementCycleCount snapshots
+        // unlocked theme IDs, runs the vocab-theme manager's checkThemeUnlocks(), diffs, and
+        // for anything newly unlocked calls renderVocabThemes() + a themeUnlocked notification.
+        // The 5-cycle THRESHOLD itself lives in vocabThemeManager (covered by its own tests);
+        // this asserts cycleCompletion's wiring surfaces a theme unlocked during the cycle.
         const mockData = createMockData();
         mockData.appState.activeCycleId = 'default';
-        mockData.userProgress.cyclesCompleted = 4; // Will become 5 after increment
-        mockData.data.cycles['default'] = {
-            title: 'Default Cycle',
-            cycleCount: 0,
-            tasks: []
-        };
+        mockData.userProgress.cyclesCompleted = 4; // becomes 5 after increment
+        mockData.data.cycles['default'] = { title: 'Default Cycle', cycleCount: 0, tasks: [] };
 
         const mockAppState = {
             isReady: () => true,
@@ -372,17 +376,39 @@ export async function runCycleCompletionTests(resultsDiv, isPartOfSuite = false)
             update: (fn) => { fn(mockData); return mockData; }
         };
 
+        // Faithful vocabThemeManager: nothing unlocked until checkThemeUnlocks() runs,
+        // then 'dark-ocean' is unlocked (simulating the 5-cycle threshold vtm owns).
+        let unlocked = [];
+        const vocabThemeManager = {
+            init: () => {},
+            getUnlockedThemeIds: () => unlocked.slice(),
+            checkThemeUnlocks: () => { unlocked = ['dark-ocean']; },
+            getThemeDefinition: (id) => id === 'dark-ocean'
+                ? { name: 'Dark Ocean', icons: { celebrate: '🌊' } }
+                : null
+        };
+
+        const notifications = [];
+        let vocabThemesRendered = false;
         setCycleCompletionDependencies({
             AppState: mockAppState,
-            showNotification: () => {},
+            showNotification: (msg) => { notifications.push(msg); },
             updateStatsPanel: () => {},
-            unlockDarkOceanTheme: () => { darkOceanUnlocked = true; }
+            checkAchievements: () => {},
+            vocabThemeManager,
+            renderVocabThemes: () => { vocabThemesRendered = true; }
         });
 
         incrementCycleCount('default', {});
 
-        // Note: The unlock is based on global cycles BEFORE increment
-        // With 4 global cycles, the unlock check sees 4, not 5
+        // combined.size > 0 (a newly unlocked theme detected) triggers BOTH the themes
+        // refresh and a per-theme unlock notification ("{name} theme unlocked!").
+        if (!vocabThemesRendered) {
+            throw new Error('a newly unlocked vocab theme should trigger renderVocabThemes()');
+        }
+        if (!notifications.some(m => typeof m === 'string' && m.includes('Dark Ocean'))) {
+            throw new Error('the newly unlocked "Dark Ocean" theme should be surfaced via a themeUnlocked notification');
+        }
     });
 
     await test('calls checkAchievements at 50 global cycles for theme unlocks', () => {

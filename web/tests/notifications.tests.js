@@ -626,14 +626,24 @@ export async function runNotificationsTests(resultsDiv) {
         notification.className = 'notification';
         container.appendChild(notification);
 
+        // Record every event type registered on the notification. setupAutoRemove
+        // attaches its listeners via addEventListener (through the injected
+        // safeAddEventListener, which forwards to element.addEventListener), so a
+        // recording wrapper captures them. The old test checked `.onmouseenter`/
+        // `.onmouseleave` — always null since listeners aren't attached as properties —
+        // and left its only branch empty, so it verified nothing.
+        const registered = [];
+        const realAdd = notification.addEventListener.bind(notification);
+        notification.addEventListener = (type, handler, options) => {
+            registered.push(type);
+            return realAdd(type, handler, options);
+        };
+
         const notifications = new window.MiniCycleNotifications();
         notifications.setupAutoRemove(notification, 3000);
 
-        // Check if event listeners are attached by checking internal state
-        // (This is a simplified test - in real scenarios you'd test actual behavior)
-        if (!notification.onmouseenter && !notification.onmouseleave) {
-            // Listeners are attached via addEventListener, not as properties
-            // So we just verify the function runs without error
+        if (!registered.includes('mouseenter') || !registered.includes('mouseleave')) {
+            throw new Error(`hover listeners not attached — registered: [${registered.join(', ')}]`);
         }
     });
 

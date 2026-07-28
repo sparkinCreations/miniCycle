@@ -365,6 +365,7 @@ export async function runStressTests(resultsDiv) {
         container.id = 'stress-container';
         document.body.appendChild(container);
 
+        let created = 0;
         try {
             for (let round = 0; round < 10; round++) {
                 // Create 200 elements
@@ -373,13 +374,23 @@ export async function runStressTests(resultsDiv) {
                     el.className = 'stress-task';
                     el.innerHTML = `<span>Task ${i}</span><button>X</button>`;
                     container.appendChild(el);
+                    created++;
                 }
 
                 // Remove all
                 container.innerHTML = '';
+                if (container.childElementCount !== 0) {
+                    throw new Error(`container should be empty after clearing round ${round}, has ${container.childElementCount}`);
+                }
             }
         } finally {
             container.remove();
+        }
+
+        // Assert the churn actually ran (10 rounds × 200) and each clear emptied the
+        // container. The old test created/destroyed elements and asserted nothing.
+        if (created !== 2000) {
+            throw new Error(`expected 2000 elements created across the churn, got ${created}`);
         }
     });
 

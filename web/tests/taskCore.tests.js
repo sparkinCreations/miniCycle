@@ -443,12 +443,20 @@ export async function runTaskCoreTests(resultsDiv, isPartOfSuite = false) {
         taskList.appendChild(task1);
 
         const schemaData = createMockSchemaData();
+        // Spy on the injected querySelectorAll so we can assert saveCurrentTaskOrder
+        // actually reads the task DOM through it (the "integrates with DOM query
+        // selectors" claim). The old test called saveCurrentTaskOrder and asserted nothing.
+        let selectorUsed = null;
         const instance = new TaskCore({
             AppState: createMockAppState(schemaData),
-            querySelectorAll: (selector) => document.querySelectorAll(selector)
+            querySelectorAll: (selector) => { selectorUsed = selector; return document.querySelectorAll(selector); }
         });
 
         await instance.saveCurrentTaskOrder();
+
+        if (!selectorUsed) {
+            throw new Error('saveCurrentTaskOrder should read the task DOM via the injected querySelectorAll');
+        }
 
         document.body.removeChild(taskList);
     });

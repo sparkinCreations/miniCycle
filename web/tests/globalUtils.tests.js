@@ -9,7 +9,7 @@ export function runGlobalUtilsTests(resultsDiv) {
     let passed = { count: 0 };
     let total = { count: 0 };
 
-    function test(name, testFn) {
+    async function test(name, testFn) {
         total.count++;
 
         // 🔒 SAVE REAL APP DATA before test runs
@@ -23,7 +23,12 @@ export function runGlobalUtilsTests(resultsDiv) {
         });
 
         try {
-            testFn();
+            // Await async test bodies so their assertions are observed: a floating
+            // promise would report ✅ before the body runs (see the menuManager fix).
+            const result = testFn();
+            if (result instanceof Promise) {
+                await result;
+            }
             resultsDiv.innerHTML += `<div class="result pass">✅ ${name}</div>`;
             passed.count++;
         } catch (error) {

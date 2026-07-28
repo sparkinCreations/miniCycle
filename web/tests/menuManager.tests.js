@@ -154,7 +154,7 @@ export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
     // This populates module-level variables that are otherwise only set via initMenuManager at runtime.
     await initMenuManager(createMockDeps());
 
-    function test(name, testFn) {
+    async function test(name, testFn) {
         total.count++;
         try {
             // Reset environment before each test
@@ -163,7 +163,15 @@ export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
             // Reset DOM state
             document.body.className = '';
 
-            testFn();
+            // Await async test bodies so their assertions are actually observed.
+            // Without this, an async testFn() returns a floating promise: the try
+            // block reaches passed.count++ and reports ✅ before the body runs, and
+            // any throw inside becomes an unhandled rejection this catch never sees.
+            // Async call sites therefore MUST use `await test(...)`.
+            const result = testFn();
+            if (result instanceof Promise) {
+                await result;
+            }
             resultsDiv.innerHTML += `<div class="result pass">✅ ${name}</div>`;
             passed.count++;
         } catch (error) {
@@ -379,7 +387,7 @@ export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
     // === CRITICAL OPERATIONS TESTS ===
     resultsDiv.innerHTML += '<h4>🔴 Critical Operations (DI)</h4>';
 
-    test('clearAllTasks unchecks all tasks (DI)', async () => {
+    await test('clearAllTasks unchecks all tasks (DI)', async () => {
         let updatedCycle = null;
         const mockFlattenedData = {
             cycles: {
@@ -416,7 +424,7 @@ export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
-    test('deleteAllTasks removes all tasks (DI)', async () => {
+    await test('deleteAllTasks removes all tasks (DI)', async () => {
         let updatedCycle = null;
         const mockFlattenedData = {
             cycles: {

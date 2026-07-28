@@ -549,37 +549,11 @@ export async function runAppInitTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
-    await test('runCompleteInitialSetup accepts activeCycle parameter', async () => {
-        // Set up mock dependencies
-        let capturedCycleId = null;
-        setAppInitDependencies({
-            loadMiniCycleData: () => ({
-                cycles: { 'test-123': { title: 'Test', autoReset: false, deleteCheckedTasks: false, tasks: [] } },
-                activeCycle: 'test-123',
-                reminders: { enabled: false },
-                settings: { darkMode: false }
-            }),
-            loadMiniCycle: () => async () => { capturedCycleId = 'loaded'; },
-            updateReminderButtons: () => null,
-            updateDueDateVisibility: () => null,
-            checkOverdueTasks: () => null,
-            organizeCompletedTasks: () => null,
-            startReminders: () => {},
-            updateThemeColor: () => {},
-            getElementById: () => null,
-            addBodyClass: () => {},
-            removeBodyClass: () => {},
-            getMiniCycleState: () => null
-        });
-
-        await appInit.runCompleteInitialSetup('test-123', null, {
-            cycles: { 'test-123': { title: 'Test', autoReset: false, deleteCheckedTasks: false } },
-            reminders: { enabled: false },
-            settings: { darkMode: false }
-        });
-
-        // Should complete without error
-    });
+    // NOTE: former vacuous test 'runCompleteInitialSetup accepts activeCycle parameter'
+    // removed — it drove runCompleteInitialSetup with an activeCycle and asserted nothing
+    // (its captured `capturedCycleId` was never checked). The real behavior is covered by
+    // 'runCompleteInitialSetup applies cycle title to DOM' below, which asserts an
+    // observable effect of the same call path. (Test-suite audit.)
 
     await test('runCompleteInitialSetup applies cycle title to DOM', async () => {
         let appliedTitle = null;

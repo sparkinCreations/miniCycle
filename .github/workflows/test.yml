@@ -87,6 +87,13 @@ jobs:
       working-directory: ./web
       run: npm run test:sw
 
+    # Test-suite meta guards (static, no server): every local test() harness must
+    # await async bodies, and every test must assert (or declare no-throw in its
+    # name). Stops assertion-free / silently-skipped tests from creeping back in.
+    - name: Run test-suite meta guards
+      working-directory: ./web
+      run: npm run test:meta
+
     # End-to-end user journey on the REAL app: add tasks → reload (persistence) →
     # complete a cycle (count++ + reset) → offline reload (boot + data intact).
     # Spawns its own server (port 8079) + uses the chromium installed above.
