@@ -87,111 +87,43 @@ export async function runFeatureBootTests(resultsDiv) {
         }
     });
 
-    // ===== OBJECT PATTERN TESTS =====
-    resultsDiv.innerHTML += '<h4 class="test-section">🔗 Object Pattern</h4>';
+    // ===== createDepsContainer (real featureBoot export) =====
+    // Replaced a cluster of "object pattern" / "async pattern" tests that asserted JS
+    // object/async LANGUAGE semantics on local literals and never called featureBoot.
+    resultsDiv.innerHTML += '<h4 class="test-section">🔗 createDepsContainer</h4>';
 
-    await test('Plain object works as container', () => {
-        const deps = {
-            utils: {},
-            core: {},
-            features: {}
-        };
+    const loadFeatureBoot = () => import(((globalThis.__MC_MODULE_MAP || {})['/modules/boot/featureBoot.js'] || '../modules/boot/featureBoot.js') + '?v=' + Date.now());
+    const EXPECTED_NS = ['utils', 'labels', 'features', 'ui', 'core', 'task', 'cycle', 'recurring', 'progress', 'storage', 'testing', 'plugins'];
 
-        if (Object.keys(deps).length !== 3) {
-            throw new Error('Container should have 3 namespaces');
+    await test('createDepsContainer returns all expected namespaces as empty objects', async () => {
+        const { createDepsContainer } = await loadFeatureBoot();
+        const deps = createDepsContainer();
+        for (const ns of EXPECTED_NS) {
+            if (typeof deps[ns] !== 'object' || deps[ns] === null) throw new Error(`missing/invalid namespace: ${ns}`);
+            if (Object.keys(deps[ns]).length !== 0) throw new Error(`namespace ${ns} should start empty`);
+        }
+        if (Object.keys(deps).length !== EXPECTED_NS.length) {
+            throw new Error(`expected ${EXPECTED_NS.length} namespaces, got ${Object.keys(deps).length}`);
         }
     });
 
-    await test('Namespaces are independent', () => {
-        const deps = {
-            utils: {},
-            core: {}
-        };
-
-        deps.utils.value = 'A';
-        deps.core.value = 'B';
-
-        if (deps.utils.value === deps.core.value) {
-            throw new Error('Namespaces should be independent');
-        }
-    });
-
-    await test('Functions can be stored', () => {
-        const deps = { utils: {} };
-
+    await test('createDepsContainer namespaces hold values independently', async () => {
+        const { createDepsContainer } = await loadFeatureBoot();
+        const deps = createDepsContainer();
         deps.utils.sanitize = (s) => s.trim();
-
-        if (typeof deps.utils.sanitize !== 'function') {
-            throw new Error('Should store function');
-        }
-        if (deps.utils.sanitize('  x  ') !== 'x') {
-            throw new Error('Function should work');
-        }
+        deps.core.AppState = { isReady: () => true };
+        if (deps.utils.sanitize('  x  ') !== 'x') throw new Error('stored function should work through the container');
+        if (!deps.core.AppState.isReady()) throw new Error('stored object should work through the container');
+        if (deps.core.sanitize !== undefined) throw new Error('namespaces should not bleed into each other');
     });
 
-    await test('Objects can be stored', () => {
-        const deps = { core: {} };
-
-        deps.core.AppState = {
-            isReady: () => true,
-            data: {}
-        };
-
-        if (!deps.core.AppState.isReady()) {
-            throw new Error('Should store object with methods');
-        }
-    });
-
-    await test('New containers are independent', () => {
-        function makeContainer() {
-            return { utils: {}, core: {} };
-        }
-
-        const c1 = makeContainer();
-        const c2 = makeContainer();
-
-        c1.utils.x = 1;
-
-        if (c2.utils.x !== undefined) {
-            throw new Error('Containers should be independent');
-        }
-    });
-
-    // ===== ASYNC PATTERN TESTS =====
-    resultsDiv.innerHTML += '<h4 class="test-section">⚡ Async Patterns</h4>';
-
-    await test('Async functions return promises', async () => {
-        async function mockBoot() {
-            await new Promise(r => setTimeout(r, 1));
-            return { ok: true };
-        }
-
-        const result = mockBoot();
-        if (!(result instanceof Promise)) {
-            throw new Error('Should return Promise');
-        }
-
-        const resolved = await result;
-        if (!resolved.ok) {
-            throw new Error('Should resolve successfully');
-        }
-    });
-
-    await test('Boot errors can be caught', async () => {
-        async function failingBoot() {
-            throw new Error('Boot failed');
-        }
-
-        let caught = false;
-        try {
-            await failingBoot();
-        } catch (e) {
-            caught = true;
-        }
-
-        if (!caught) {
-            throw new Error('Should catch boot errors');
-        }
+    await test('createDepsContainer returns a fresh independent instance each call', async () => {
+        const { createDepsContainer } = await loadFeatureBoot();
+        const a = createDepsContainer();
+        const b = createDepsContainer();
+        a.utils.marker = 1;
+        if (b.utils.marker !== undefined) throw new Error('separate containers must not share namespace state');
+        if (a.utils === b.utils) throw new Error('namespace objects must be distinct per container');
     });
 
     // Summary
