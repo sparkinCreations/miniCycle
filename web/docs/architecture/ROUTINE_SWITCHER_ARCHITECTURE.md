@@ -643,8 +643,8 @@ _scheduleIdleSave() {
 
 - [USER_GUIDE.md](../user-guides/USER_GUIDE.md) - User-facing switcher documentation
 - [MODE_MANAGER_ARCHITECTURE.md](./MODE_MANAGER_ARCHITECTURE.md) - Mode system architecture
-- [SCHEMA_2_5.md](../data-schema/SCHEMA_2_5.md) - Data schema with cycle fields
-- [DI_PATTERNS.md](../developer-guides/DI_PATTERNS.md) - Dependency injection patterns
+- [SCHEMA_2_5.md](../reference/SCHEMA_2_5.md) - Data schema with cycle fields
+- [DI_PATTERNS.md](../working-on-code/DI_PATTERNS.md) - Dependency injection patterns
 
 ---
 

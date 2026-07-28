@@ -1117,7 +1117,7 @@ python3 create_mcyc.py
 
 **Sample Files:**
 - `examples/sample-routines/*.mcyc` - Sample routines (auto-discovered via `manifest.json`)
-- See [Sample Routines Guide](../developer-guides/SAMPLE_ROUTINES.md) for adding new samples
+- See [Sample Routines Guide](../features/SAMPLE_ROUTINES.md) for adding new samples
 
 **Documentation:**
 - `WHAT_IS_MINICYCLE.md` - App overview

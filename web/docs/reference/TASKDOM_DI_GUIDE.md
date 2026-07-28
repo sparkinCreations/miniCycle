@@ -236,6 +236,6 @@ window.addTask(text);
 
 ## Related Documentation
 
-- [MODULAR_OVERHAUL_PLAN.md](../future-work/MODULAR_OVERHAUL_PLAN.md) - Full DI refactoring plan
+- [MODULAR_OVERHAUL_PLAN.md](../archive/MODULAR_OVERHAUL_PLAN.md) - Full DI refactoring plan
 - [UPDATE-VERSION-GUIDE.md](../deployment/UPDATE-VERSION-GUIDE.md) - Version injection via AppMeta
-- [MODULE_SYSTEM_GUIDE.md](./MODULE_SYSTEM_GUIDE.md) - General module patterns
+- [MODULE_SYSTEM_GUIDE.md](../architecture/MODULE_SYSTEM_GUIDE.md) - General module patterns

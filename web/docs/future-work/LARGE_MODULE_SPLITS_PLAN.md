@@ -3,7 +3,7 @@
 **Date:** March 15, 2026
 **Updated:** July 7, 2026 — god-module audit: added statsPanel (Priority 2), orchestrator assessment, false-positive list; refreshed line counts
 **Status:** Not Started
-**Related:** [DI_MIGRATION_COMPLETION_PLAN.md](./DI_MIGRATION_COMPLETION_PLAN.md), [ENFORCE_REQUIRES_ROLLOUT_PLAN.md](./ENFORCE_REQUIRES_ROLLOUT_PLAN.md)
+**Related:** [DI_MIGRATION_COMPLETION_PLAN.md](../archive/DI_MIGRATION_COMPLETION_PLAN.md), [ENFORCE_REQUIRES_ROLLOUT_PLAN.md](./ENFORCE_REQUIRES_ROLLOUT_PLAN.md)
 
 ---
 

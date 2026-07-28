@@ -2,7 +2,7 @@
 
 **Last Updated**: December 20, 2025
 
-> **For current version, test counts, and metrics, see [PROJECT_STATS.md](../PROJECT_STATS.md).**
+> **For current version, test counts, and metrics, see [PROJECT_STATS.md](PROJECT_STATS.md).**
 
 ---
 
@@ -11,29 +11,29 @@
 miniCycle is a **routine manager** that helps users build and maintain repeatable routines. Tasks persist and cycle (reset) rather than being deleted when completed.
 
 **Before contributing, read:**
-1. [WHAT_IS_MINICYCLE.md](../start-here/WHAT_IS_MINICYCLE.md) - Product vision
-2. [CLAUDE.md](CLAUDE.md) - Quick onboarding for AI assistants
+1. [WHAT_IS_MINICYCLE.md](start-here/WHAT_IS_MINICYCLE.md) - Product vision
+2. [CLAUDE.md](working-on-code/CLAUDE.md) - Quick onboarding for AI assistants
 
 ---
 
 ## Quick Navigation
 
 ### Getting Started
-- **[Getting Started Guide](../start-here/GETTING_STARTED.md)** - Get running in 2 minutes
-- **[CLAUDE.md](CLAUDE.md)** - Essential guidance for AI assistants
+- **[Getting Started Guide](start-here/GETTING_STARTED.md)** - Get running in 2 minutes
+- **[CLAUDE.md](working-on-code/CLAUDE.md)** - Essential guidance for AI assistants
 
 ### Architecture
-- **[DEPENDENCY_MAP.md](../architecture/DEPENDENCY_MAP.md)** - Actual module dependencies and global usage
-- **[APPINIT_EXPLAINED.md](../architecture/APPINIT_EXPLAINED.md)** - 2-phase initialization system
-- **[DATA_SCHEMA_GUIDE.md](DATA_SCHEMA_GUIDE.md)** - Schema 2.5 structure
+- **[DEPENDENCY_MAP.md](architecture/DEPENDENCY_MAP.md)** - Actual module dependencies and global usage
+- **[APPINIT_EXPLAINED.md](architecture/APPINIT_EXPLAINED.md)** - 2-phase initialization system
+- **[DATA_SCHEMA_GUIDE.md](reference/DATA_SCHEMA_GUIDE.md)** - Schema 2.5 structure
 
 ### Development
-- **[DEVELOPMENT_WORKFLOW.md](DEVELOPMENT_WORKFLOW.md)** - Making changes, testing, deployment
-- **[TESTING_GUIDE.md](TESTING_GUIDE.md)** - Running and writing tests
-- **[SECURITY_GUIDE.md](SECURITY_GUIDE.md)** - XSS prevention and security patterns
+- **[DEVELOPMENT_WORKFLOW.md](working-on-code/DEVELOPMENT_WORKFLOW.md)** - Making changes, testing, deployment
+- **[TESTING_GUIDE.md](working-on-code/TESTING_GUIDE.md)** - Running and writing tests
+- **[SECURITY_GUIDE.md](working-on-code/SECURITY_GUIDE.md)** - XSS prevention and security patterns
 
 ### Future Work
-- **[MODULAR_OVERHAUL_PLAN.md](../future-work/MODULAR_OVERHAUL_PLAN.md)** - Plan for true modularization
+- **[MODULAR_OVERHAUL_PLAN.md](archive/MODULAR_OVERHAUL_PLAN.md)** - Plan for true modularization
 
 ---
 
@@ -41,7 +41,7 @@ miniCycle is a **routine manager** that helps users build and maintain repeatabl
 
 ### Current State
 
-> **For current metrics (module counts, test counts, line counts), see [PROJECT_STATS.md](../PROJECT_STATS.md).**
+> **For current metrics (module counts, test counts, line counts), see [PROJECT_STATS.md](PROJECT_STATS.md).**
 
 | Achievement | Status |
 |-------------|--------|
@@ -57,7 +57,7 @@ miniCycle is a **routine manager** that helps users build and maintain repeatabl
 - `modules/boot/featureBoot.js` - DI wiring hub
 - `modules/boot/uiBoot.js` - UI handlers
 
-> See [PROJECT_STATS.md](../PROJECT_STATS.md) for current line counts.
+> See [PROJECT_STATS.md](PROJECT_STATS.md) for current line counts.
 
 ### The Architecture
 
@@ -86,7 +86,7 @@ const _deps = new Proxy({}, {
 - ✅ Dependencies are explicit and injected
 - ✅ Boot files split for AI-assisted debugging
 
-See [ARCHITECTURE_OVERVIEW.md](./ARCHITECTURE_OVERVIEW.md) for detailed patterns.
+See [ARCHITECTURE_OVERVIEW.md](architecture/ARCHITECTURE_OVERVIEW.md) for detailed patterns.
 
 ---
 
@@ -178,8 +178,8 @@ http://localhost:8080/tests/module-test-suite.html # Tests
 
 ### Before You Start
 
-1. **Understand the product** - Read [WHAT_IS_MINICYCLE.md](../start-here/WHAT_IS_MINICYCLE.md)
-2. **Understand the architecture** - Read [DEPENDENCY_MAP.md](../architecture/DEPENDENCY_MAP.md)
+1. **Understand the product** - Read [WHAT_IS_MINICYCLE.md](start-here/WHAT_IS_MINICYCLE.md)
+2. **Understand the architecture** - Read [DEPENDENCY_MAP.md](architecture/DEPENDENCY_MAP.md)
 3. **Run the tests** - `npm test`
 
 ### Adding Features
@@ -230,11 +230,11 @@ The DI overhaul is **complete**. miniCycle now uses pure dependency injection wi
 
 **Achieved:**
 - Custom DI framework (`diBase.js`) with `required()`, `optional()`, `createDIModule()`
-- Boot orchestrator (`moduleLoader.js`) wires all modules (see [PROJECT_STATS.md](../PROJECT_STATS.md) for count)
+- Boot orchestrator (`moduleLoader.js`) wires all modules (see [PROJECT_STATS.md](PROJECT_STATS.md) for count)
 - Zero custom `window.*` globals in modules
-- Tests can inject pure mocks (see [PROJECT_STATS.md](../PROJECT_STATS.md) for test count)
+- Tests can inject pure mocks (see [PROJECT_STATS.md](PROJECT_STATS.md) for test count)
 
-See [DI_PATTERNS.md](./DI_PATTERNS.md) for the current DI architecture.
+See [DI_PATTERNS.md](working-on-code/DI_PATTERNS.md) for the current DI architecture.
 
 ### Completed (Historical)
 
@@ -247,32 +247,32 @@ See [DI_PATTERNS.md](./DI_PATTERNS.md) for the current DI architecture.
 ## Documentation Map
 
 ### Core Docs (Start Here)
-- [WHAT_IS_MINICYCLE.md](../start-here/WHAT_IS_MINICYCLE.md) - Product vision
-- [CLAUDE.md](CLAUDE.md) - AI assistant guide
-- [DEPENDENCY_MAP.md](../architecture/DEPENDENCY_MAP.md) - Actual architecture
+- [WHAT_IS_MINICYCLE.md](start-here/WHAT_IS_MINICYCLE.md) - Product vision
+- [CLAUDE.md](working-on-code/CLAUDE.md) - AI assistant guide
+- [DEPENDENCY_MAP.md](architecture/DEPENDENCY_MAP.md) - Actual architecture
 
 ### Development Guides
-- [GETTING_STARTED.md](../start-here/GETTING_STARTED.md) - Quick start
-- [DEVELOPMENT_WORKFLOW.md](DEVELOPMENT_WORKFLOW.md) - How to make changes
-- [TESTING_GUIDE.md](TESTING_GUIDE.md) - Testing practices
-- [SECURITY_GUIDE.md](SECURITY_GUIDE.md) - Security patterns
+- [GETTING_STARTED.md](start-here/GETTING_STARTED.md) - Quick start
+- [DEVELOPMENT_WORKFLOW.md](working-on-code/DEVELOPMENT_WORKFLOW.md) - How to make changes
+- [TESTING_GUIDE.md](working-on-code/TESTING_GUIDE.md) - Testing practices
+- [SECURITY_GUIDE.md](working-on-code/SECURITY_GUIDE.md) - Security patterns
 
 ### Architecture
-- [APPINIT_EXPLAINED.md](../architecture/APPINIT_EXPLAINED.md) - Initialization
-- [DATA_SCHEMA_GUIDE.md](DATA_SCHEMA_GUIDE.md) - Data structure
-- [UNDO_REDO_ARCHITECTURE.md](../architecture/UNDO_REDO_ARCHITECTURE.md) - Undo system
+- [APPINIT_EXPLAINED.md](architecture/APPINIT_EXPLAINED.md) - Initialization
+- [DATA_SCHEMA_GUIDE.md](reference/DATA_SCHEMA_GUIDE.md) - Data structure
+- [UNDO_REDO_ARCHITECTURE.md](architecture/UNDO_REDO_ARCHITECTURE.md) - Undo system
 
 ### Features
-- [minicycle-recurring-guide.md](../features/minicycle-recurring-guide.md) - Recurring tasks
-- [TASK_OPTIONS_CUSTOMIZER.md](../features/TASK_OPTIONS_CUSTOMIZER.md) - Per-cycle buttons
-- [HISTORY_SYSTEM.md](HISTORY_SYSTEM.md) - History event logging and adding new event types
+- [minicycle-recurring-guide.md](reference/RECURRING_SYSTEM_REFERENCE.md) - Recurring tasks
+- [TASK_OPTIONS_CUSTOMIZER.md](features/TASK_OPTIONS_CUSTOMIZER.md) - Per-cycle buttons
+- [HISTORY_SYSTEM.md](architecture/HISTORY_SYSTEM.md) - History event logging and adding new event types
 
 ### Completed Plans (Archive)
-- [MODULAR_OVERHAUL_PLAN.md](../archive/MODULAR_OVERHAUL_PLAN.md) - ✅ Completed Dec 2025
+- [MODULAR_OVERHAUL_PLAN.md](archive/MODULAR_OVERHAUL_PLAN.md) - ✅ Completed Dec 2025
 
 ### Archive
 Historical docs moved to `docs/archive/` for reference.
 
 ---
 
-**Questions?** Start with [CLAUDE.md](CLAUDE.md) or browse the guides above.
+**Questions?** Start with [CLAUDE.md](working-on-code/CLAUDE.md) or browse the guides above.

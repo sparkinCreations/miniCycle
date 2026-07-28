@@ -245,10 +245,10 @@ If you discover a security vulnerability:
 
 ### Documentation Files
 
-- **[CLAUDE.md](../CLAUDE.md)** - Architecture overview for AI assistants
+- **[CLAUDE.md](CLAUDE.md)** - Architecture overview for AI assistants
 - **[FOLDER_STRUCTURE.md](../start-here/FOLDER_STRUCTURE.md)** - Complete organization documentation
 - **[DRAG_DROP_ARCHITECTURE.md](../architecture/DRAG_DROP_ARCHITECTURE.md)** - Drag & drop code deep dive
-- **[SAFARI_DRAGDROP_FIX.md](../architecture/SAFARI_DRAGDROP_FIX.md)** - Safari desktop compatibility fix
+- **[SAFARI_DRAGDROP_FIX.md](../archive/SAFARI_DRAGDROP_FIX.md)** - Safari desktop compatibility fix
 - **[legal/user-manual.html](../../legal/user-manual.html)** - End-user documentation
 
 ### Code Organization
@@ -339,9 +339,9 @@ This comprehensive guide covers:
 ## Next Steps
 
 - **[Getting Started](../start-here/GETTING_STARTED.md)** - Quick start guide
-- **[Architecture Overview](ARCHITECTURE_OVERVIEW.md)** - Understand the system
+- **[Architecture Overview](../architecture/ARCHITECTURE_OVERVIEW.md)** - Understand the system
 - **[Development Workflow](DEVELOPMENT_WORKFLOW.md)** - Start making changes
 
 ---
 
-**Questions?** Check the [Developer Documentation Hub](DEVELOPER_DOCUMENTATION.md) for links to all guides.
+**Questions?** Check the [Developer Documentation Hub](../DEVELOPER_DOCUMENTATION.md) for links to all guides.

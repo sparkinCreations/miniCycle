@@ -459,7 +459,7 @@ taskList.addEventListener('click', (e) => {
 
 **Files to touch:** 1 file + 1 command
 
-> For full details, see [SAMPLE_ROUTINES.md](./SAMPLE_ROUTINES.md).
+> For full details, see [SAMPLE_ROUTINES.md](../features/SAMPLE_ROUTINES.md).
 
 ### Step 1: Create the .mcyc file
 
@@ -499,7 +499,7 @@ The script scans all `.mcyc` files, extracts title + emoji, and writes `manifest
 
 - [MAKING_CODE_CHANGES.md](./MAKING_CODE_CHANGES.md) — Deep dive on the dependency wiring pipeline
 - [DI_PATTERNS.md](./DI_PATTERNS.md) — DI primitives and the three constructor patterns
-- [MODULE_LOADER_GUIDE.md](./MODULE_LOADER_GUIDE.md) — Manifest format and phase system
+- [MODULE_LOADER_GUIDE.md](../architecture/MODULE_LOADER_GUIDE.md) — Manifest format and phase system
 - [CONSTANTS_SYSTEM_GUIDE.md](./CONSTANTS_SYSTEM_GUIDE.md) — All constant groups and naming rules
 - [EVENT_LISTENER_GUIDE.md](./EVENT_LISTENER_GUIDE.md) — Detailed listener management patterns
-- [SAMPLE_ROUTINES.md](./SAMPLE_ROUTINES.md) — Full sample routines system documentation
+- [SAMPLE_ROUTINES.md](../features/SAMPLE_ROUTINES.md) — Full sample routines system documentation

@@ -815,9 +815,9 @@ function backfillTaskOptionButtons(state) {
 
 ## Related Documentation
 
-- [SCHEMA_2_5.md](../data-schema/SCHEMA_2_5.md) - Data schema details
-- [CLAUDE.md](../developer-guides/CLAUDE.md) - Architecture overview
-- [TASK_OPTIONS_CUSTOMIZER_PLAN.md](../future-work/TASK_OPTIONS_CUSTOMIZER_PLAN.md) - Original planning doc
+- [SCHEMA_2_5.md](../reference/SCHEMA_2_5.md) - Data schema details
+- [CLAUDE.md](../working-on-code/CLAUDE.md) - Architecture overview
+- [TASK_OPTIONS_CUSTOMIZER_PLAN.md](../archive/TASK_OPTIONS_CUSTOMIZER_PLAN.md) - Original planning doc
 - [FOLDER_STRUCTURE.md](../start-here/FOLDER_STRUCTURE.md) - Module organization
 
 ---

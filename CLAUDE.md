@@ -1,23 +1,23 @@
 # CLAUDE.md — miniCycle Implementation Rules
 
 > This file is the **short operational summary** — auto-loaded by Claude Code every session.
-> For the detailed reference, see `web/docs/developer-guides/CLAUDE.md`.
+> For the detailed reference, see `web/docs/working-on-code/CLAUDE.md`.
 > If either doc conflicts with the actual code, **the code wins**.
 
 ## Before Non-Trivial Changes — Read These First
 
 Auto-loaded `CLAUDE.md` covers the high-level rules; the specifics that prevent silent-failure bugs and cleanup oversights live in dedicated guides. **Read the relevant guide(s) before starting** if your change matches the description:
 
-- **Wiring a shared function across modules** → `web/docs/developer-guides/MAKING_CODE_CHANGES.md` (the 4-step DI pipeline; missing any layer = silent `undefined`)
-- **Adding new constants / IDs / classes / selectors** → `web/docs/developer-guides/CONSTANTS_SYSTEM_GUIDE.md` (when to use `DOM_IDS` vs `DOM_CLASSES` vs `DOM_SELECTORS`, naming conventions)
-- **Adding a new module or DI dependency** → `web/docs/developer-guides/DI_PATTERNS.md` and `web/docs/developer-guides/MODULE_LOADER_GUIDE.md`
-- **Building a modal, menu, or any element with event listeners** → `web/docs/developer-guides/HOW_TO_ADD_COOKBOOK.md` (modal a11y checklist, listener cleanup, focus management)
-- **Adding/changing user-facing strings** → `web/docs/developer-guides/CODING_STANDARDS.md` §Label System (emoji-separation rule, interpolation, `LENS_SENSITIVE_KEYS`)
-- **Deciding *where* a user-facing message belongs** (help window vs empty state vs notification vs modal) → `web/docs/developer-guides/MESSAGING_SURFACES.md`
-- **Modifying anything in or near the 4 facade modules** (`settingsManager`, `taskCore`, `taskDOM`, `preferencesManager`) → `web/docs/developer-guides/HIDDEN_CODEBASE_INSIGHTS.md` (dynamic-import sub-module pattern; do NOT add their sub-modules to manifests)
-- **Touching event handlers, AppState updates, or async UI** → `web/docs/developer-guides/EVENT_LISTENER_GUIDE.md` and `web/docs/developer-guides/ASYNC_UI_PATTERNS.md`
+- **Wiring a shared function across modules** → `web/docs/working-on-code/MAKING_CODE_CHANGES.md` (the 4-step DI pipeline; missing any layer = silent `undefined`)
+- **Adding new constants / IDs / classes / selectors** → `web/docs/working-on-code/CONSTANTS_SYSTEM_GUIDE.md` (when to use `DOM_IDS` vs `DOM_CLASSES` vs `DOM_SELECTORS`, naming conventions)
+- **Adding a new module or DI dependency** → `web/docs/working-on-code/DI_PATTERNS.md` and `web/docs/architecture/MODULE_LOADER_GUIDE.md`
+- **Building a modal, menu, or any element with event listeners** → `web/docs/working-on-code/HOW_TO_ADD_COOKBOOK.md` (modal a11y checklist, listener cleanup, focus management)
+- **Adding/changing user-facing strings** → `web/docs/working-on-code/CODING_STANDARDS.md` §Label System (emoji-separation rule, interpolation, `LENS_SENSITIVE_KEYS`)
+- **Deciding *where* a user-facing message belongs** (help window vs empty state vs notification vs modal) → `web/docs/working-on-code/MESSAGING_SURFACES.md`
+- **Modifying anything in or near the 4 facade modules** (`settingsManager`, `taskCore`, `taskDOM`, `preferencesManager`) → `web/docs/working-on-code/HIDDEN_CODEBASE_INSIGHTS.md` (dynamic-import sub-module pattern; do NOT add their sub-modules to manifests)
+- **Touching event handlers, AppState updates, or async UI** → `web/docs/working-on-code/EVENT_LISTENER_GUIDE.md` and `web/docs/working-on-code/ASYNC_UI_PATTERNS.md`
 
-When in doubt about *where* a doc lives, check `web/docs/developer-guides/INDEX.md`.
+When in doubt about *where* a doc lives, check `web/docs/INDEX.md`.
 
 ## What is miniCycle?
 

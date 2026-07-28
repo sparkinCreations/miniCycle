@@ -295,6 +295,6 @@ The following modules still have hardcoded notification strings outside the orig
 ## Related Documentation
 
 - **[Label System Architecture](../architecture/LABEL_SYSTEM_ARCHITECTURE.md)** — Architecture overview and module design
-- **[Label Registry Reference](../architecture/LABEL_REGISTRY_REFERENCE.md)** — Complete audit of all 566 keys with source locations
+- **[Label Registry Reference](../reference/LABEL_REGISTRY_REFERENCE.md)** — Complete audit of all 566 keys with source locations
 - **[Contextual Theme System Plan](./CONTEXTUAL_THEME_SYSTEM_PLAN.md)** — The feature this infrastructure enables
-- **[DI Patterns](../developer-guides/DI_PATTERNS.md)** — How `labelResolver.js` will wire dependencies
+- **[DI Patterns](../working-on-code/DI_PATTERNS.md)** — How `labelResolver.js` will wire dependencies

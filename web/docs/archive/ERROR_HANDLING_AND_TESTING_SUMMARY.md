@@ -9,8 +9,8 @@
 > - Test counts and module counts may have changed in later versions
 > - **Recovery hardening shipped Jun 2026** (ERROR_HANDLING plan Phases 1–2): optional-module load
 >   failures now surface a one-time degraded-mode notice, and corrupted `miniCycleData` is salvaged
->   (and backed up) before any reset. See [ERROR_RECOVERY.md](../developer-guides/ERROR_RECOVERY.md).
-> - Refer to [CLAUDE.md](../developer-guides/CLAUDE.md) for current architecture patterns
+>   (and backed up) before any reset. See [ERROR_RECOVERY.md](../working-on-code/ERROR_RECOVERY.md).
+> - Refer to [CLAUDE.md](../working-on-code/CLAUDE.md) for current architecture patterns
 
 ---
 

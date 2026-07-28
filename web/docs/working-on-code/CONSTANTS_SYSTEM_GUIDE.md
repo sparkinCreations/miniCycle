@@ -391,6 +391,6 @@ const resolvedColor = task.priorityColor ?? COLORS.PRIORITY_DEFAULT;
 
 ## See Also
 
-- [CSS Architecture Guide](./CSS_ARCHITECTURE_GUIDE.md) — Design tokens and theming
+- [CSS Architecture Guide](../architecture/CSS_ARCHITECTURE_GUIDE.md) — Design tokens and theming
 - [CODING_STANDARDS.md](./CODING_STANDARDS.md) — General coding conventions
 - [MAKING_CODE_CHANGES.md](./MAKING_CODE_CHANGES.md) — DI wiring workflow

@@ -3,7 +3,7 @@
 > Carved out of the original 5-phase **Error Handling Improvements Plan** (Dec 2025).
 >
 > **Phases 1–2 shipped (Jun 2026)** — feature-availability tracking + data-corruption recovery.
-> See [ERROR_RECOVERY.md](../developer-guides/ERROR_RECOVERY.md) for the implemented behavior, and
+> See [ERROR_RECOVERY.md](../working-on-code/ERROR_RECOVERY.md) for the implemented behavior, and
 > [`../archive/ERROR_HANDLING_IMPROVEMENTS_PLAN.md`](../archive/ERROR_HANDLING_IMPROVEMENTS_PLAN.md)
 > for the full original plan including the detailed Phase 3–5 implementation specs.
 >

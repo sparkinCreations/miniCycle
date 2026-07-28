@@ -27,7 +27,7 @@ You should read this if you're about to:
 - Debug why a function is `undefined` at runtime
 - Understand why a change you made "should work" but doesn't
 
-This guide does **not** cover creating entirely new modules (see [MODULE_LOADER_GUIDE.md](./MODULE_LOADER_GUIDE.md)) or the DI primitives themselves (see [DI_PATTERNS.md](./DI_PATTERNS.md)). It covers the practical workflow of making a change touch all the right files.
+This guide does **not** cover creating entirely new modules (see [MODULE_LOADER_GUIDE.md](../architecture/MODULE_LOADER_GUIDE.md)) or the DI primitives themselves (see [DI_PATTERNS.md](./DI_PATTERNS.md)). It covers the practical workflow of making a change touch all the right files.
 
 ---
 
@@ -440,7 +440,7 @@ _subModules.initAllToggles?.();          // delegates to settingsUIManager
 ## See Also
 
 - [DI_PATTERNS.md](./DI_PATTERNS.md) — DI primitives, `Object.defineProperties`, instance getter pattern
-- [MODULE_LOADER_GUIDE.md](./MODULE_LOADER_GUIDE.md) — Creating new modules, manifest format, phase system
+- [MODULE_LOADER_GUIDE.md](../architecture/MODULE_LOADER_GUIDE.md) — Creating new modules, manifest format, phase system
 - [DEVELOPMENT_WORKFLOW.md](./DEVELOPMENT_WORKFLOW.md) — Dev server, testing, version management
-- [TASKDOM_DI_GUIDE.md](./TASKDOM_DI_GUIDE.md) — Task DOM module-specific DI patterns
+- [TASKDOM_DI_GUIDE.md](../reference/TASKDOM_DI_GUIDE.md) — Task DOM module-specific DI patterns
 - [HIDDEN_CODEBASE_INSIGHTS.md](./HIDDEN_CODEBASE_INSIGHTS.md) — Non-obvious codebase behaviors

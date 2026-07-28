@@ -77,7 +77,7 @@ modules/
  └── other/       ← Plugins, experimental
 ```
 
-For deeper understanding, see [DEPENDENCY_MAP.md](../architecture/DEPENDENCY_MAP.md) and [DI_PATTERNS.md](DI_PATTERNS.md).
+For deeper understanding, see [DEPENDENCY_MAP.md](../architecture/DEPENDENCY_MAP.md) and [DI_PATTERNS.md](../working-on-code/DI_PATTERNS.md).
 
 ---
 
@@ -155,7 +155,7 @@ button.setAttribute('aria-label', getLabel('action.addTaskAria'));
 
 If a label key doesn't exist yet, **add it to `modules/labels/defaultLabels.js` first**, then use it. Never inline emojis or icons (`📝`, `⋯`) into label text — pass them as `vars` for interpolation.
 
-→ Deep dive: [`CODING_STANDARDS.md`](CODING_STANDARDS.md) §Label System
+→ Deep dive: [`CODING_STANDARDS.md`](../working-on-code/CODING_STANDARDS.md) §Label System
 
 #### 2. Use constants from `constants.js`, never hardcoded selectors / classes / IDs
 
@@ -169,7 +169,7 @@ element.querySelector(DOM_SELECTORS.TASK_TEXT);              // not '.task-text'
 
 Same rule for timing values (`UI_TIMEOUTS.NOTIFICATION_BRIEF`), z-index (`Z_INDEX.MODAL`), and limits (`LIMITS.MAX_TASKS`). If the constant doesn't exist yet, add it before using.
 
-→ Deep dive: [`CONSTANTS_SYSTEM_GUIDE.md`](CONSTANTS_SYSTEM_GUIDE.md)
+→ Deep dive: [`CONSTANTS_SYSTEM_GUIDE.md`](../working-on-code/CONSTANTS_SYSTEM_GUIDE.md)
 
 #### 3. Wire shared functions through the 4-step DI pipeline
 
@@ -190,7 +190,7 @@ const di = createDIModule('MyModule', {
 this.deps.clearAllTasks?.();
 ```
 
-→ Deep dive: [`MAKING_CODE_CHANGES.md`](MAKING_CODE_CHANGES.md)
+→ Deep dive: [`MAKING_CODE_CHANGES.md`](../working-on-code/MAKING_CODE_CHANGES.md)
 
 #### 4. Clean up every event listener you add
 
@@ -205,7 +205,7 @@ this._element.addEventListener('click', this._clickHandler);
 this._element.removeEventListener('click', this._clickHandler);
 ```
 
-→ Deep dive: [`EVENT_LISTENER_GUIDE.md`](EVENT_LISTENER_GUIDE.md) and the modal checklist in [`HOW_TO_ADD_COOKBOOK.md`](HOW_TO_ADD_COOKBOOK.md)
+→ Deep dive: [`EVENT_LISTENER_GUIDE.md`](../working-on-code/EVENT_LISTENER_GUIDE.md) and the modal checklist in [`HOW_TO_ADD_COOKBOOK.md`](../working-on-code/HOW_TO_ADD_COOKBOOK.md)
 
 #### 5. Update state via `AppState.update(state => …)`, never directly
 
@@ -217,11 +217,11 @@ this.deps.AppState.update(state => {
 
 Direct mutation (`state.data.cycles[id].tasks = []`) skips the undo system, the debounced save, and the change notifications. **Always go through `update`.** Variables declared `inside` the callback are scoped to the callback — declare them in the outer scope first if you need to read them after.
 
-→ Deep dive: [`developer-guides/CLAUDE.md`](CLAUDE.md) §State Management
+→ Deep dive: [`working-on-code/CLAUDE.md`](../working-on-code/CLAUDE.md) §State Management
 
 #### Bonus: Where does this user-facing message belong?
 
-If you're adding a string but aren't sure whether it's a notification, a modal, an empty-state hint, or a help-window message, see [`MESSAGING_SURFACES.md`](MESSAGING_SURFACES.md) — it has a decision tree.
+If you're adding a string but aren't sure whether it's a notification, a modal, an empty-state hint, or a help-window message, see [`MESSAGING_SURFACES.md`](../working-on-code/MESSAGING_SURFACES.md) — it has a decision tree.
 
 ### Add or update tests
 
@@ -354,8 +354,8 @@ const state = _deps.AppState.get()
 
 ## Getting Help
 
-- **Read the docs** — The [Developer Documentation Hub](DEVELOPER_DOCUMENTATION.md) links to everything
-- **Check CLAUDE.md** — The [AI assistant guide](CLAUDE.md) has a concise summary of patterns and rules
+- **Read the docs** — The [Developer Documentation Hub](../DEVELOPER_DOCUMENTATION.md) links to everything
+- **Check CLAUDE.md** — The [AI assistant guide](../working-on-code/CLAUDE.md) has a concise summary of patterns and rules
 - **Open an issue** — If you're stuck, ask in a GitHub issue before spending hours debugging
 - **Check the archive** — The [docs archive](../archive/README.md) has historical context on past design decisions
 
@@ -367,8 +367,8 @@ const state = _deps.AppState.get()
 |----------|---------|
 | [WHAT_IS_MINICYCLE.md](../start-here/WHAT_IS_MINICYCLE.md) | Understand the product |
 | [DEPENDENCY_MAP.md](../architecture/DEPENDENCY_MAP.md) | See actual module dependencies |
-| [DI_PATTERNS.md](DI_PATTERNS.md) | DI best practices and examples |
-| [MODULE_SYSTEM_GUIDE.md](MODULE_SYSTEM_GUIDE.md) | How the module system works |
+| [DI_PATTERNS.md](../working-on-code/DI_PATTERNS.md) | DI best practices and examples |
+| [MODULE_SYSTEM_GUIDE.md](../architecture/MODULE_SYSTEM_GUIDE.md) | How the module system works |
 | [TESTING_QUICK_REFERENCE.md](../testing/TESTING_QUICK_REFERENCE.md) | Running and writing tests |
 | [CONTRIBUTING.md](../project-info/CONTRIBUTING.md) | Full contribution guidelines |
 | [PROJECT_STATS.md](../PROJECT_STATS.md) | Current metrics (module count, test count, etc.) |

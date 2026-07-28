@@ -861,6 +861,6 @@ window.exportDebugData()                 // Debug package
 **✅ MODULARIZATION & BOOT SPLIT COMPLETE!**
 - See [PROJECT_STATS.md](../PROJECT_STATS.md) for current metrics
 
-**Architecture:** See [BOOT_FILE_SPLIT_PLAN.md](../future-work/BOOT_FILE_SPLIT_PLAN.md) for boot file structure details.
+**Architecture:** See [BOOT_FILE_SPLIT_PLAN.md](../archive/BOOT_FILE_SPLIT_PLAN.md) for boot file structure details.
 
 **Questions?** Check console, use testing modal, review code comments!

@@ -191,7 +191,7 @@ The DI overhaul is complete. All modules use the DI-Pure pattern with:
 - `required()` and `optional()` markers
 - Zero `|| window.*` fallbacks
 
-See [DI_PATTERNS.md](./DI_PATTERNS.md) for current best practices.
+See [DI_PATTERNS.md](../working-on-code/DI_PATTERNS.md) for current best practices.
 
 ---
 
@@ -235,7 +235,7 @@ new Module({
 
 ## Future: True Modularity
 
-See [MODULAR_OVERHAUL_PLAN.md](../future-work/MODULAR_OVERHAUL_PLAN.md) for the plan to transform these patterns:
+See [MODULAR_OVERHAUL_PLAN.md](../archive/MODULAR_OVERHAUL_PLAN.md) for the plan to transform these patterns:
 
 **Current:**
 ```javascript
@@ -286,7 +286,7 @@ The difference: no fallback to globals. Dependencies are required and explicit.
 
 ## Next Steps
 
-- **[TASKDOM_DI_GUIDE.md](./TASKDOM_DI_GUIDE.md)** - How to use DI-pure modules
+- **[TASKDOM_DI_GUIDE.md](../reference/TASKDOM_DI_GUIDE.md)** - How to use DI-pure modules
 - **[DEPENDENCY_MAP.md](../architecture/DEPENDENCY_MAP.md)** - See actual dependencies
-- **[MODULAR_OVERHAUL_PLAN.md](../future-work/MODULAR_OVERHAUL_PLAN.md)** - Plan for true decoupling
-- **[DEVELOPMENT_WORKFLOW.md](DEVELOPMENT_WORKFLOW.md)** - How to work with current code
+- **[MODULAR_OVERHAUL_PLAN.md](../archive/MODULAR_OVERHAUL_PLAN.md)** - Plan for true decoupling
+- **[DEVELOPMENT_WORKFLOW.md](../working-on-code/DEVELOPMENT_WORKFLOW.md)** - How to work with current code

@@ -537,5 +537,5 @@ These are pure utilities or static configuration with no dependencies:
 ## Related Documentation
 
 - [CLAUDE.md](./CLAUDE.md) - Main developer guide
-- [ARCHITECTURE_OVERVIEW.md](./ARCHITECTURE_OVERVIEW.md) - System architecture
-- [TASKDOM_DI_GUIDE.md](./TASKDOM_DI_GUIDE.md) - Detailed DI implementation example
+- [ARCHITECTURE_OVERVIEW.md](../architecture/ARCHITECTURE_OVERVIEW.md) - System architecture
+- [TASKDOM_DI_GUIDE.md](../reference/TASKDOM_DI_GUIDE.md) - Detailed DI implementation example

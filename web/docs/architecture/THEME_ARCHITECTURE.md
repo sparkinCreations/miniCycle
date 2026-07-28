@@ -139,7 +139,7 @@ Static HTML strings (like the "Add task" button label) are hardcoded in the HTML
 
 ### Live Refresh on Routine Switch/Creation
 
-When a routine is created or switched to, the routine modules (`routineManager`, `routineSwitcher`, `routineLoader`) call `this.deps.refreshThemeLabels()` to update the UI with the new routine's theme. This dependency must be wired through all three DI layers (definition, constructor, manifest `optionalDeps`) — see [VOCAB_THEME_SYSTEM.md pitfall #4](../developer-guides/VOCAB_THEME_SYSTEM.md#4-refreshthemelabels-must-be-wired-in-three-places-fixed-feb-2026).
+When a routine is created or switched to, the routine modules (`routineManager`, `routineSwitcher`, `routineLoader`) call `this.deps.refreshThemeLabels()` to update the UI with the new routine's theme. This dependency must be wired through all three DI layers (definition, constructor, manifest `optionalDeps`) — see [VOCAB_THEME_SYSTEM.md pitfall #4](../features/VOCAB_THEME_SYSTEM.md#4-refreshthemelabels-must-be-wired-in-three-places-fixed-feb-2026).
 
 `_refreshLiveLensLabels()` also unconditionally calls `renderVocabThemes()` to keep the Themes modal's radio buttons in sync with the active routine's theme. This ensures the modal always shows the correct selected theme regardless of which code path opens it.
 
@@ -246,6 +246,6 @@ Vocabulary themes are stored in the routine's data (`state.data.cycles[cycleId].
 
 ## Related Documentation
 
-- [VOCAB_THEME_SYSTEM.md](../developer-guides/VOCAB_THEME_SYSTEM.md) — Full developer guide including pitfalls
+- [VOCAB_THEME_SYSTEM.md](../features/VOCAB_THEME_SYSTEM.md) — Full developer guide including pitfalls
 - [LABEL_SYSTEM_ARCHITECTURE.md](LABEL_SYSTEM_ARCHITECTURE.md) — How `getLabel()` and `defaultLabels.js` work
-- [FEATURE_LIST.md](../features/FEATURE_LIST.md) — User-facing feature overview
+- [FEATURE_LIST.md](../reference/FEATURE_LIST.md) — User-facing feature overview

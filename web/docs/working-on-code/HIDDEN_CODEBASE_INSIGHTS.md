@@ -764,9 +764,9 @@ Your codebase is more sophisticated than you probably give yourself credit for. 
 
 ## Related Documentation
 
-- **Code Review:** [COMPREHENSIVE_CODE_REVIEW_DEC_2025.md](./COMPREHENSIVE_CODE_REVIEW_DEC_2025.md)
+- **Code Review:** [COMPREHENSIVE_CODE_REVIEW_DEC_2025.md](../archive/COMPREHENSIVE_CODE_REVIEW_DEC_2025.md)
 - **DI Patterns:** [DI_PATTERNS.md](./DI_PATTERNS.md)
-- **Architecture:** [ARCHITECTURE_OVERVIEW.md](./ARCHITECTURE_OVERVIEW.md)
+- **Architecture:** [ARCHITECTURE_OVERVIEW.md](../architecture/ARCHITECTURE_OVERVIEW.md)
 
 ---
 

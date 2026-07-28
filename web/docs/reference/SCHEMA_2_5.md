@@ -458,6 +458,6 @@ This schema structure is also used in `.mcyc` file exports/imports, ensuring con
 ## Related Documentation
 
 - [MCYC_FILE_FORMAT.md](./MCYC_FILE_FORMAT.md) - File import/export format
-- [DATA_SCHEMA_GUIDE.md](../developer-guides/DATA_SCHEMA_GUIDE.md) - Schema guide with data flow
+- [DATA_SCHEMA_GUIDE.md](DATA_SCHEMA_GUIDE.md) - Schema guide with data flow
 - [types.js](../../modules/core/types.js) - Canonical JSDoc type definitions
-- [minicycle-recurring-guide.md](../features/minicycle-recurring-guide.md) - Recurring task implementation
+- [minicycle-recurring-guide.md](RECURRING_SYSTEM_REFERENCE.md) - Recurring task implementation

@@ -541,6 +541,6 @@ miniCycle is a routine manager that resets tasks automatically when you finish t
 
 **Ready to start?** Visit [minicycleapp.com](https://minicycleapp.com)
 
-**Questions?** Check out the [User Guide](USER_GUIDE.md) or [FAQ](FAQ.md)
+**Questions?** Check out the [User Guide](../user-guides/USER_GUIDE.md) or [FAQ](../user-guides/FAQ.md)
 
-**For Developers:** See [Developer Documentation](../developer-guides/DEVELOPER_DOCUMENTATION.md)
+**For Developers:** See [Developer Documentation](../DEVELOPER_DOCUMENTATION.md)

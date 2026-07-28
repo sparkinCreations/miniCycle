@@ -121,7 +121,7 @@ invariants:
 
 - the routine **title clears the fixed header** (never creeps under the mode-selector row)
 - `#task-view` / `#stats-panel` **clear the nav dots** (help window + Complete button never overlap them)
-- the measured layout variables are **actually published** — `--header-total-height` / `--nav-dots-clearance` are non-empty (0 = the measurement silently failed and the layout fell back to the wrong hardcoded guess; see [CSS_ARCHITECTURE_GUIDE.md](./CSS_ARCHITECTURE_GUIDE.md) → *Measured chrome → CSS variables*)
+- the measured layout variables are **actually published** — `--header-total-height` / `--nav-dots-clearance` are non-empty (0 = the measurement silently failed and the layout fell back to the wrong hardcoded guess; see [CSS_ARCHITECTURE_GUIDE.md](../architecture/CSS_ARCHITECTURE_GUIDE.md) → *Measured chrome → CSS variables*)
 
 **Run it after any change to the header, task-view, stats-panel, or `headerLayoutManager`.**
 
@@ -433,8 +433,8 @@ Current module test coverage (see [PROJECT_STATS.md](../PROJECT_STATS.md) for to
 - **[Testing Modal](../testing/TESTING_MODAL.md)** - Run tests from within the app
 - **[Security Guide](SECURITY_GUIDE.md)** - Security best practices
 - **[Development Workflow](DEVELOPMENT_WORKFLOW.md)** - Making changes
-- **[API Reference](API_REFERENCE.md)** - Browse available functions
+- **[API Reference](../reference/API_REFERENCE.md)** - Browse available functions
 
 ---
 
-**Questions?** Check the [Developer Documentation Hub](DEVELOPER_DOCUMENTATION.md) for links to all guides.
+**Questions?** Check the [Developer Documentation Hub](../DEVELOPER_DOCUMENTATION.md) for links to all guides.

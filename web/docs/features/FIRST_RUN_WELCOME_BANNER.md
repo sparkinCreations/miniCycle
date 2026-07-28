@@ -831,7 +831,7 @@ modules/core/constants.js
 ## Related Docs
 
 - [First-Run Welcome Animation](FIRST_RUN_WELCOME_ANIMATION.md) — the typewriter splash that plays before/with the banner
-- [Constants System Guide](CONSTANTS_SYSTEM_GUIDE.md) — where `DOM_IDS`, `DOM_CLASSES`, `EVENTS` come from
-- [DI Patterns](DI_PATTERNS.md) — the `createDIModule` pattern `onboardingManager` uses
-- [Event Listener Guide](EVENT_LISTENER_GUIDE.md) — how the banner's listeners are tracked and cleaned up
-- [CSS Architecture Guide](CSS_ARCHITECTURE_GUIDE.md) — where component CSS lives and how it's imported
+- [Constants System Guide](../working-on-code/CONSTANTS_SYSTEM_GUIDE.md) — where `DOM_IDS`, `DOM_CLASSES`, `EVENTS` come from
+- [DI Patterns](../working-on-code/DI_PATTERNS.md) — the `createDIModule` pattern `onboardingManager` uses
+- [Event Listener Guide](../working-on-code/EVENT_LISTENER_GUIDE.md) — how the banner's listeners are tracked and cleaned up
+- [CSS Architecture Guide](../architecture/CSS_ARCHITECTURE_GUIDE.md) — where component CSS lives and how it's imported

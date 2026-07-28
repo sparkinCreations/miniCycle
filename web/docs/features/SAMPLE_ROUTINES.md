@@ -376,6 +376,6 @@ When a sample `.mcyc` file is loaded, it passes through two validation layers:
 
 ## See Also
 
-- [MCYC File Format](../data-schema/MCYC_FILE_FORMAT.md) -- full .mcyc schema reference
-- [HOW_TO_ADD_COOKBOOK.md](./HOW_TO_ADD_COOKBOOK.md) -- quick checklist for adding a new sample routine
+- [MCYC File Format](../reference/MCYC_FILE_FORMAT.md) -- full .mcyc schema reference
+- [HOW_TO_ADD_COOKBOOK.md](../working-on-code/HOW_TO_ADD_COOKBOOK.md) -- quick checklist for adding a new sample routine
 - [Update Version Guide](../deployment/UPDATE-VERSION-GUIDE.md) -- version updater documentation

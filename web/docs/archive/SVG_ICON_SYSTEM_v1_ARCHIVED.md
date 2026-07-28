@@ -8,7 +8,7 @@
 > `DOMParser` successfully — modern `appendChild` auto-adopts cross-document nodes.
 > It also documents only the `taskButtons.js` (`TASK_ICONS`) path, not the primary
 > `icons.js` (`ICONS` + `FA_MAP`) registry that converts every `fa-*` class.
-> Kept for historical context only. **Current doc:** [`../developer-guides/SVG_ICON_SYSTEM.md`](../developer-guides/SVG_ICON_SYSTEM.md).
+> Kept for historical context only. **Current doc:** [`../developer-guides/SVG_ICON_SYSTEM.md`](../features/SVG_ICON_SYSTEM.md).
 
 ---
 

@@ -208,7 +208,7 @@ Recorded so a future reader doesn't re-raise them.
 | No framework / no build | **ADR-001**, amended by **ADR-010** (deploy-time bundling, 2026-07-14) |
 | Boot retry / fallback philosophy | **ADR-005** |
 | Storage budget, buffer, quota gates, 150-task cap, storage bar | `features/STORAGE_MANAGEMENT.md` |
-| Corruption salvage ladder + raw-bytes snapshot | `developer-guides/ERROR_RECOVERY.md` |
+| Corruption salvage ladder + raw-bytes snapshot | `working-on-code/ERROR_RECOVERY.md` |
 | Strict-mode rollout plan (`ENFORCE_REQUIRES` @ `moduleLoader.js:148`) | `future-work/ENFORCE_REQUIRES_ROLLOUT_PLAN.md` (Step 1 shipped 2026-06-30) |
 | 1000ms conflict-detection window | `HIDDEN_CODEBASE_INSIGHTS.md` §5.5 |
 | Backup responsibility, data-loss liability, "as is" | `legal/terms.html` |

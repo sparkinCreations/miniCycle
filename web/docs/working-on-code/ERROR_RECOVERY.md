@@ -95,4 +95,4 @@ the testing or import surfaces; it's the verbatim pre-reset string.
 ## See also
 
 - [`../archive/ERROR_HANDLING_IMPROVEMENTS_PLAN.md`](../archive/ERROR_HANDLING_IMPROVEMENTS_PLAN.md) — full 5-phase plan (Phases 3–5 still open)
-- [`../security/ERROR_HANDLING_AND_TESTING_SUMMARY.md`](../security/ERROR_HANDLING_AND_TESTING_SUMMARY.md) — broader error-handling foundation
+- [`../security/ERROR_HANDLING_AND_TESTING_SUMMARY.md`](../archive/ERROR_HANDLING_AND_TESTING_SUMMARY.md) — broader error-handling foundation

@@ -362,7 +362,7 @@ All timing variables are automatically set to `0ms` under `prefers-reduced-motio
 
 ## Z-Index Layers
 
-Defined in both CSS (`--z-*` variables) and JS (`Z_INDEX` constants). See the [Constants System Guide](./CONSTANTS_SYSTEM_GUIDE.md#z_index--stacking-layers) for the full table.
+Defined in both CSS (`--z-*` variables) and JS (`Z_INDEX` constants). See the [Constants System Guide](../working-on-code/CONSTANTS_SYSTEM_GUIDE.md#z_index--stacking-layers) for the full table.
 
 **Rule:** Never hardcode z-index numbers. Use `var(--z-modal)` in CSS or `Z_INDEX.MODAL` in JS.
 
@@ -541,6 +541,6 @@ Key responsive behavior:
 
 ## See Also
 
-- [CONSTANTS_SYSTEM_GUIDE.md](./CONSTANTS_SYSTEM_GUIDE.md) — Z-index JS constants and all constant groups
-- [VOCAB_THEME_SYSTEM.md](./VOCAB_THEME_SYSTEM.md) — Vocabulary theme system details
-- [CODING_STANDARDS.md](./CODING_STANDARDS.md) — General coding conventions
+- [CONSTANTS_SYSTEM_GUIDE.md](../working-on-code/CONSTANTS_SYSTEM_GUIDE.md) — Z-index JS constants and all constant groups
+- [VOCAB_THEME_SYSTEM.md](../features/VOCAB_THEME_SYSTEM.md) — Vocabulary theme system details
+- [CODING_STANDARDS.md](../working-on-code/CODING_STANDARDS.md) — General coding conventions

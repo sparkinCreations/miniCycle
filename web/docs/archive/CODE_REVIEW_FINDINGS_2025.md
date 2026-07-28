@@ -2224,7 +2224,7 @@ After implementing fixes, verify:
 
 **Security:**
 - [SECURITY.md](../security/SECURITY.md) - Security policy and features
-- [ERROR_HANDLING_AND_TESTING_SUMMARY.md](../security/ERROR_HANDLING_AND_TESTING_SUMMARY.md) - Error handling system
+- [ERROR_HANDLING_AND_TESTING_SUMMARY.md](ERROR_HANDLING_AND_TESTING_SUMMARY.md) - Error handling system
 
 **Architecture:**
 - [UNDO_REDO_ARCHITECTURE.md](../architecture/UNDO_REDO_ARCHITECTURE.md) - Undo system design

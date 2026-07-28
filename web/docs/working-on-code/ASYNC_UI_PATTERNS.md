@@ -262,7 +262,7 @@ When working with async state and UI:
 
 ## Related Documentation
 
-- [Architecture Overview](./ARCHITECTURE_OVERVIEW.md)
-- [Module System Guide](./MODULE_SYSTEM_GUIDE.md)
-- [AppInit System](./APPINIT_SYSTEM.md)
-- [Data Schema Guide](./DATA_SCHEMA_GUIDE.md)
+- [Architecture Overview](../architecture/ARCHITECTURE_OVERVIEW.md)
+- [Module System Guide](../architecture/MODULE_SYSTEM_GUIDE.md)
+- [AppInit System](../architecture/APPINIT_SYSTEM.md)
+- [Data Schema Guide](../reference/DATA_SCHEMA_GUIDE.md)

@@ -628,7 +628,7 @@ npm start
 
 - [NAMESPACE_ARCHITECTURE.md](./NAMESPACE_ARCHITECTURE.md) - Complete namespace architecture
 - [CHANGELOG.md](../../CHANGELOG.md) - Version history
-- [TESTING_GUIDE.md](../developer-guides/TESTING_GUIDE.md) - Testing system
+- [TESTING_GUIDE.md](../working-on-code/TESTING_GUIDE.md) - Testing system
 
 ---
 

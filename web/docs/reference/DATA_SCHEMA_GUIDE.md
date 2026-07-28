@@ -234,9 +234,9 @@ function addTask(taskText) {
 ## Next Steps
 
 - **[API Reference](API_REFERENCE.md)** - Browse available functions and modules
-- **[Development Workflow](DEVELOPMENT_WORKFLOW.md)** - Start making changes
-- **[Architecture Overview](ARCHITECTURE_OVERVIEW.md)** - Understand the system structure
+- **[Development Workflow](../working-on-code/DEVELOPMENT_WORKFLOW.md)** - Start making changes
+- **[Architecture Overview](../architecture/ARCHITECTURE_OVERVIEW.md)** - Understand the system structure
 
 ---
 
-**Questions?** Check the [Developer Documentation Hub](DEVELOPER_DOCUMENTATION.md) for links to all guides.
+**Questions?** Check the [Developer Documentation Hub](../DEVELOPER_DOCUMENTATION.md) for links to all guides.

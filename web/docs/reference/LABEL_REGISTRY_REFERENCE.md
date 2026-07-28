@@ -2,7 +2,7 @@
 
 **Status:** Audit Complete
 **Purpose:** Catalog of all user-facing strings for centralized label management
-**Related:** [CONTEXTUAL_THEME_SYSTEM_PLAN.md](./CONTEXTUAL_THEME_SYSTEM_PLAN.md)
+**Related:** [CONTEXTUAL_THEME_SYSTEM_PLAN.md](../archive/CONTEXTUAL_THEME_SYSTEM_PLAN.md)
 
 ---
 

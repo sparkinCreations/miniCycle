@@ -400,10 +400,10 @@ Split `testing-modal.js` into:
 
 ## Related Documentation
 
-- **Hidden Insights:** [HIDDEN_CODEBASE_INSIGHTS.md](./HIDDEN_CODEBASE_INSIGHTS.md)
-- **DI Patterns:** [DI_PATTERNS.md](./DI_PATTERNS.md)
-- **Architecture:** [ARCHITECTURE_OVERVIEW.md](./ARCHITECTURE_OVERVIEW.md)
-- **Testing:** [TESTING_GUIDE.md](./TESTING_GUIDE.md)
+- **Hidden Insights:** [HIDDEN_CODEBASE_INSIGHTS.md](../working-on-code/HIDDEN_CODEBASE_INSIGHTS.md)
+- **DI Patterns:** [DI_PATTERNS.md](../working-on-code/DI_PATTERNS.md)
+- **Architecture:** [ARCHITECTURE_OVERVIEW.md](../architecture/ARCHITECTURE_OVERVIEW.md)
+- **Testing:** [TESTING_GUIDE.md](../working-on-code/TESTING_GUIDE.md)
 
 ---
 

@@ -317,7 +317,7 @@ Create tasks that automatically appear on a schedule.
 | Prompt Modals | Text input dialogs | `ui/modalManager.js` |
 | Task Options Modal | Right-click/button for task actions | `ui/taskUI.js` |
 | Feedback Modal | Written feedback via Web3Forms, with optional star rating | `ui/modalManager.js` |
-| UX Star Rating | 1–5 stars + quick tags inside the feedback modal, local rating history — see [UX_RATINGS.md](UX_RATINGS.md) | `features/uxRatings.js` |
+| UX Star Rating | 1–5 stars + quick tags inside the feedback modal, local rating history — see [UX_RATINGS.md](../features/UX_RATINGS.md) | `features/uxRatings.js` |
 
 ### Notifications
 | Feature | Description | Module |
@@ -542,9 +542,9 @@ A **static, frozen fallback** for older devices (ES5 compatible).
 - **User Guide:** [USER_GUIDE.md](../user-guides/USER_GUIDE.md)
 - **Quick Reference:** [QUICK_REFERENCE.md](../user-guides/QUICK_REFERENCE.md)
 - **FAQ:** [FAQ.md](../user-guides/FAQ.md)
-- **Task Options Customizer:** [TASK_OPTIONS_CUSTOMIZER.md](./TASK_OPTIONS_CUSTOMIZER.md)
-- **Recurring Tasks Guide:** [minicycle-recurring-guide.md](./minicycle-recurring-guide.md)
-- **Architecture Overview:** [ARCHITECTURE_OVERVIEW.md](../developer-guides/ARCHITECTURE_OVERVIEW.md)
+- **Task Options Customizer:** [TASK_OPTIONS_CUSTOMIZER.md](../features/TASK_OPTIONS_CUSTOMIZER.md)
+- **Recurring Tasks Guide:** [minicycle-recurring-guide.md](RECURRING_SYSTEM_REFERENCE.md)
+- **Architecture Overview:** [ARCHITECTURE_OVERVIEW.md](../architecture/ARCHITECTURE_OVERVIEW.md)
 - **Folder Structure:** [FOLDER_STRUCTURE.md](../start-here/FOLDER_STRUCTURE.md)
 
 ---

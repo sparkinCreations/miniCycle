@@ -190,7 +190,7 @@ origin is untouched, so the next app load is clean with no recovery step.
 
 ## Related Documentation
 
-- **[TESTING_GUIDE.md](../developer-guides/TESTING_GUIDE.md)** — Writing and running tests
+- **[TESTING_GUIDE.md](../working-on-code/TESTING_GUIDE.md)** — Writing and running tests
 - **[TESTING_README.md](./TESTING_README.md)** — Testing overview
 - **[CSP_AND_HTACCESS_GUIDE.md](../security/CSP_AND_HTACCESS_GUIDE.md)** — Framing headers for the test origin
 

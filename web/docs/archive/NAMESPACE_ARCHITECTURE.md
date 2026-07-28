@@ -1748,17 +1748,17 @@ open http://localhost:8080/miniCycle.html
 ## Related Documentation
 
 ### Core Architecture
-- [DEVELOPER_DOCUMENTATION.md](../developer-guides/DEVELOPER_DOCUMENTATION.md) - Main developer hub
-- [ARCHITECTURE_OVERVIEW.md](../developer-guides/ARCHITECTURE_OVERVIEW.md) - System architecture
-- [MODULE_SYSTEM_GUIDE.md](../developer-guides/MODULE_SYSTEM_GUIDE.md) - Module patterns
+- [DEVELOPER_DOCUMENTATION.md](../DEVELOPER_DOCUMENTATION.md) - Main developer hub
+- [ARCHITECTURE_OVERVIEW.md](../architecture/ARCHITECTURE_OVERVIEW.md) - System architecture
+- [MODULE_SYSTEM_GUIDE.md](../architecture/MODULE_SYSTEM_GUIDE.md) - Module patterns
 
 ### Implementation Details
 - [APPINIT_EXPLAINED.md](../architecture/APPINIT_EXPLAINED.md) - 2-phase initialization
-- [DATA_SCHEMA_GUIDE.md](../developer-guides/DATA_SCHEMA_GUIDE.md) - Schema structure
-- [API_REFERENCE.md](../developer-guides/API_REFERENCE.md) - Complete API docs
+- [DATA_SCHEMA_GUIDE.md](../reference/DATA_SCHEMA_GUIDE.md) - Schema structure
+- [API_REFERENCE.md](../reference/API_REFERENCE.md) - Complete API docs
 
 ### Testing & Quality
-- [TESTING_GUIDE.md](../developer-guides/TESTING_GUIDE.md) - Testing system
+- [TESTING_GUIDE.md](../working-on-code/TESTING_GUIDE.md) - Testing system
 - [TESTING_QUICK_REFERENCE.md](../testing/TESTING_QUICK_REFERENCE.md) - Test patterns
 - [CODE_REVIEW_FINDINGS_2025.md](./CODE_REVIEW_FINDINGS_2025.md) - Code review insights
 

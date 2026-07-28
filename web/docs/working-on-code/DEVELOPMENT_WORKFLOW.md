@@ -376,9 +376,9 @@ exportDebugData();
 ## Next Steps
 
 - **[Testing Guide](TESTING_GUIDE.md)** - Run and write tests
-- **[API Reference](API_REFERENCE.md)** - Browse available functions
+- **[API Reference](../reference/API_REFERENCE.md)** - Browse available functions
 - **[Security Guide](SECURITY_GUIDE.md)** - Security best practices
 
 ---
 
-**Questions?** Check the [Developer Documentation Hub](DEVELOPER_DOCUMENTATION.md) for links to all guides.
+**Questions?** Check the [Developer Documentation Hub](../DEVELOPER_DOCUMENTATION.md) for links to all guides.

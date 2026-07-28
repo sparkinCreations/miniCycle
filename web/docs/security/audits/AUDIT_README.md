@@ -38,7 +38,7 @@
 - `modules/testing/testing-modal.js` - Protected all operations
 
 **For Complete Implementation Details:**
-See [ERROR_HANDLING_AND_TESTING_SUMMARY.md](../ERROR_HANDLING_AND_TESTING_SUMMARY.md)
+See [ERROR_HANDLING_AND_TESTING_SUMMARY.md](../../archive/ERROR_HANDLING_AND_TESTING_SUMMARY.md)
 
 ---
 

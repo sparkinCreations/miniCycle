@@ -394,10 +394,10 @@ If `init()` is awaited before `markCoreSystemsReady()` is called in the boot seq
 
 ## Next Steps
 
-- **[Data Schema Guide](DATA_SCHEMA_GUIDE.md)** - Understand Schema 2.5 structure
-- **[API Reference](API_REFERENCE.md)** - Browse available functions
+- **[Data Schema Guide](../reference/DATA_SCHEMA_GUIDE.md)** - Understand Schema 2.5 structure
+- **[API Reference](../reference/API_REFERENCE.md)** - Browse available functions
 - **[Module System Guide](MODULE_SYSTEM_GUIDE.md)** - Review module patterns
 
 ---
 
-**Questions?** Check the [Developer Documentation Hub](DEVELOPER_DOCUMENTATION.md) for links to all guides.
+**Questions?** Check the [Developer Documentation Hub](../DEVELOPER_DOCUMENTATION.md) for links to all guides.

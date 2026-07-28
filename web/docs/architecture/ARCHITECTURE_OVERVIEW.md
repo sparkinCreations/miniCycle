@@ -129,7 +129,7 @@ miniCycle-main.js (entrypoint)
 - All UI setup consolidated into single `initUIBoot()` entrypoint
 - DI wiring happens in `featureBoot.js`, not orchestrator
 
-See [DI_PATTERNS.md](./DI_PATTERNS.md) for complete patterns and examples.
+See [DI_PATTERNS.md](../working-on-code/DI_PATTERNS.md) for complete patterns and examples.
 
 ---
 
@@ -226,7 +226,11 @@ web/
 │       └── ...
 │
 └── docs/                             # Documentation
-    ├── developer-guides/             # Developer docs
+    ├── start-here/                  # Onboarding path (read 1→7)
+    ├── working-on-code/             # How-to guides
+    ├── architecture/                # Why it is built this way
+    ├── reference/                   # Lookup (API, schema, labels)
+    ├── incidents/                   # Postmortems
     ├── architecture/                 # Architecture docs
     └── user-guides/                  # User documentation
 ```
@@ -680,9 +684,9 @@ this.deps.AppState.update(state => {
 
 - **[Module System Guide](MODULE_SYSTEM_GUIDE.md)** - Learn the 4 module patterns
 - **[AppInit System](APPINIT_SYSTEM.md)** - Understand 2-phase initialization
-- **[Data Schema Guide](DATA_SCHEMA_GUIDE.md)** - Explore Schema 2.5 structure
-- **[API Reference](API_REFERENCE.md)** - Browse available functions and modules
+- **[Data Schema Guide](../reference/DATA_SCHEMA_GUIDE.md)** - Explore Schema 2.5 structure
+- **[API Reference](../reference/API_REFERENCE.md)** - Browse available functions and modules
 
 ---
 
-**Questions?** Check the [Developer Documentation Hub](DEVELOPER_DOCUMENTATION.md) for links to all guides.
+**Questions?** Check the [Developer Documentation Hub](../DEVELOPER_DOCUMENTATION.md) for links to all guides.

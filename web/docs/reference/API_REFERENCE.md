@@ -315,10 +315,10 @@ clearedTasks.resetClearedTasks(cycleId);
 
 ## Next Steps
 
-- **[Development Workflow](DEVELOPMENT_WORKFLOW.md)** - Start making changes
-- **[Testing Guide](TESTING_GUIDE.md)** - Run and write tests
-- **[Module System Guide](MODULE_SYSTEM_GUIDE.md)** - Learn module patterns
+- **[Development Workflow](../working-on-code/DEVELOPMENT_WORKFLOW.md)** - Start making changes
+- **[Testing Guide](../working-on-code/TESTING_GUIDE.md)** - Run and write tests
+- **[Module System Guide](../architecture/MODULE_SYSTEM_GUIDE.md)** - Learn module patterns
 
 ---
 
-**Questions?** Check the [Developer Documentation Hub](DEVELOPER_DOCUMENTATION.md) for links to all guides.
+**Questions?** Check the [Developer Documentation Hub](../DEVELOPER_DOCUMENTATION.md) for links to all guides.

@@ -843,8 +843,8 @@ console.log(JSON.parse(cache));
 ## Related Documentation
 
 - **[TESTING_QUICK_REFERENCE.md](../testing/TESTING_QUICK_REFERENCE.md)** - Test suite guide
-- **[DEVELOPER_DOCUMENTATION.md](../developer-guides/DEVELOPER_DOCUMENTATION.md)** - Overall architecture
-- **[SCHEMA_2_5.md](../data-schema/SCHEMA_2_5.md)** - Data structure details
+- **[DEVELOPER_DOCUMENTATION.md](../DEVELOPER_DOCUMENTATION.md)** - Overall architecture
+- **[SCHEMA_2_5.md](../reference/SCHEMA_2_5.md)** - Data structure details
 
 ---
 

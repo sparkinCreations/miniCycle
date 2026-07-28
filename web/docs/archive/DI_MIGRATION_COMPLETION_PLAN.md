@@ -5,7 +5,7 @@
 **Prerequisite:** Grouped APIs Refactor (Complete)
 **Goal:** Complete the DI infrastructure migration for zero boilerplate, automatic load ordering, and clean consumer APIs
 
-> **✅ This plan has been fully implemented.** All 103 modules now use `createDIModule()` from `diBase.js`. The boot orchestrator (`moduleLoader.js`) handles automatic wiring. See [DI_PATTERNS.md](../developer-guides/DI_PATTERNS.md) for the current architecture.
+> **✅ This plan has been fully implemented.** All 103 modules now use `createDIModule()` from `diBase.js`. The boot orchestrator (`moduleLoader.js`) handles automatic wiring. See [DI_PATTERNS.md](../working-on-code/DI_PATTERNS.md) for the current architecture.
 
 ---
 

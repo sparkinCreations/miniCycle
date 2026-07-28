@@ -77,11 +77,16 @@ doc, answer *learn / do / why / lookup / incident / plan* and file it accordingl
 | If the reader is asking… | Put it in | Test |
 |---|---|---|
 | "I'm new — teach me" | `docs/start-here/` | Read once, in order |
-| "I need to change code" | `docs/developer-guides/` | Task-oriented, followed while working |
+| "I need to change code" | `docs/working-on-code/` | Task-oriented, followed while working |
 | "Why is it built this way?" | `docs/architecture/` | Explanation, decision rationale |
-| "What is the exact value/API/key?" | `docs/data-schema/`, `docs/developer-guides/` | Looked up, never read cover-to-cover |
+| "What is the exact value/API/key?" | `docs/reference/` | Looked up, never read cover-to-cover |
 | "What happened and what did we learn?" | `docs/incidents/` | Dated postmortem |
 | "What might we build?" | `docs/future-work/` | Active plans only; done → `docs/archive/` |
+
+**Tie-breaker for how-to vs. reference:** if the repo-root `CLAUDE.md` tells you to read it
+*before doing X*, it belongs in `working-on-code/` no matter how lookup-ish the prose reads.
+That is why `CONSTANTS_SYSTEM_GUIDE`, `SECURITY_GUIDE`, and `MESSAGING_SURFACES` live there
+rather than in `reference/`.
 
 Two rules that keep this from rotting:
 
@@ -225,7 +230,7 @@ open http://localhost:8080/tests/module-test-suite.html
 
 - Schema version is tracked in AppState (currently 2.5)
 - Always bump `schemaVersion` and include backward transformation logic
-- See [SCHEMA_2_5.md](../data-schema/SCHEMA_2_5.md) for the current data structure
+- See [SCHEMA_2_5.md](../reference/SCHEMA_2_5.md) for the current data structure
 
 ---
 
@@ -237,7 +242,7 @@ open http://localhost:8080/tests/module-test-suite.html
 - Use **`AppState.update()`** to modify data, not direct object mutation.
 - Add `@pattern` and `@version` in module headers.
 - See [DEPENDENCY_MAP.md](../architecture/DEPENDENCY_MAP.md) to understand actual module dependencies.
-- Check [DI_PATTERNS.md](../developer-guides/DI_PATTERNS.md) for DI best practices.
+- Check [DI_PATTERNS.md](../working-on-code/DI_PATTERNS.md) for DI best practices.
 
 ---
 

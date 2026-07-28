@@ -442,4 +442,4 @@ They're defined in the schema but not yet implemented. Stay tuned!
 
 ---
 
-**Questions?** Open an issue on GitHub or check the [Theme Architecture](./future-work/THEME_ARCHITECTURE.md) doc for technical details.
+**Questions?** Open an issue on GitHub or check the [Theme Architecture](../architecture/THEME_ARCHITECTURE.md) doc for technical details.
