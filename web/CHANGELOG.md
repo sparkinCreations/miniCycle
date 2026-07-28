@@ -1,3 +1,12 @@
+## [2.337] - 2026-07-28
+- chore: sync package-lock version field to match package.json (2.336)
+- docs(review): date the correction to the Dec 2025 code review (don't edit history silently)
+- test(security): rewrite the XSS suite to assert real protection, not sanitizer theater
+- fix(security): clean-sweep — stop escaping task text at input; correct stale doc claims
+- docs(security): refresh SECURITY.md metadata + record the input-normalizer audit
+- docs(changelog): add the 2.336 entry (multi-platform rebuild)
+
+
 ## [2.336] - 2026-07-27
 - build(release): rebuild Chrome, Android, and iOS web payloads so every shell ships the input-sanitizer fixes (Android versionCode 12→13, iOS build 4→5)
 

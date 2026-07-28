@@ -5,7 +5,7 @@
 > This file contains metrics that change frequently (version, counts, etc.).
 > All other documentation should reference this file instead of hardcoding these values.
 
-**Last Updated**: July 27, 2026
+**Last Updated**: July 28, 2026
 
 ---
 
@@ -13,11 +13,11 @@
 
 | Metric | Value |
 |--------|-------|
-| **App Version** | 2.336 |
+| **App Version** | 2.337 |
 | **Lite Version** | 2.092 (frozen) |
 | **Schema Version** | 2.5 |
 | **Total Modules** | 133 |
-| **Total Tests** | 3106 |
+| **Total Tests** | 3096 |
 | **Test Pass Rate** | 100% |
 | **CSS Files** | 44 |
 | **JSDoc Blocks** | 1312 |
@@ -67,7 +67,7 @@
 
 | Category | Tests |
 |----------|-------|
-| Total Tests | 3106 |
+| Total Tests | 3096 |
 | Test Files | 124 |
 | Pass Rate | 100% |
 | Platforms Tested | Mac, iPad, iPhone |
