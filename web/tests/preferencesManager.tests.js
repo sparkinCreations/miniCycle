@@ -43,20 +43,29 @@ export async function runPreferencesManagerTests(resultsDiv) {
         mod.setPreferencesManagerDependencies({});
     });
 
-    await test('setPreferencesManagerDependencies accepts mock dependencies', () => {
+    await test('injected AppState is actually used by saveColor', () => {
+        // Prove the DI wiring takes effect: saveColor writes through the injected AppState.update.
+        const captured = { settings: {} };
         mod.setPreferencesManagerDependencies({
-            AppState: { get: () => ({ settings: {} }), update: () => {} },
+            AppState: { get: () => captured, update: (fn) => fn(captured) },
             showNotification: () => {},
             safeAddEventListener: () => {}
         });
+        new mod.PreferencesManager().saveColor('appBg', '#abcdef');
+        if (captured.settings.customColors?.appBg !== '#abcdef') {
+            throw new Error('saveColor should persist the color through the injected AppState.update');
+        }
     });
 
     // ============================================
     resultsDiv.innerHTML += '<h4 class="test-section">🏗️ Class Instantiation</h4>';
 
-    await test('PreferencesManager can be instantiated', () => {
+    await test('constructor initializes the documented default state', () => {
         const instance = new mod.PreferencesManager();
-        if (!instance) throw new Error('Failed to create instance');
+        if (instance._initialized !== false) throw new Error('_initialized should start false');
+        if (instance.modal !== null) throw new Error('modal should start null');
+        if (!Array.isArray(instance.undoStack) || instance.undoStack.length !== 0) throw new Error('undoStack should start as an empty array');
+        if (typeof instance.maxUndoSteps !== 'number' || instance.maxUndoSteps <= 0) throw new Error('maxUndoSteps should be a positive number');
     });
 
     await test('Instance has init method', () => {
@@ -64,37 +73,74 @@ export async function runPreferencesManagerTests(resultsDiv) {
         if (typeof instance.init !== 'function') throw new Error('Missing init method');
     });
 
-    await test('Instance has applyCustomColors method', () => {
-        const instance = new mod.PreferencesManager();
-        if (typeof instance.applyCustomColors !== 'function') throw new Error('Missing applyCustomColors method');
+    await test('applyCustomColors writes the saved color to a root CSS var', () => {
+        const body = document.body;
+        const root = document.documentElement;
+        const hadDark = body.classList.contains('dark-mode');
+        const prevVocab = root.dataset.vocabTheme;
+        // Force the default-theme path so applyCustomColors applies vars (source:1509).
+        body.classList.remove('dark-mode', 'theme-dark-ocean', 'theme-golden-glow');
+        delete root.dataset.vocabTheme;
+        mod.setPreferencesManagerDependencies({
+            AppState: { get: () => ({ settings: { customColors: { appBg: '#123456' } } }), update: () => {} }
+        });
+        try {
+            new mod.PreferencesManager().applyCustomColors();
+            // appBg is non-translucent → the raw hex is set on --pref-app-bg (COLOR_MAP).
+            if (root.style.getPropertyValue('--pref-app-bg') !== '#123456') {
+                throw new Error(`--pref-app-bg should be #123456, got "${root.style.getPropertyValue('--pref-app-bg')}"`);
+            }
+        } finally {
+            root.style.removeProperty('--pref-app-bg');
+            if (hadDark) body.classList.add('dark-mode');
+            if (prevVocab !== undefined) root.dataset.vocabTheme = prevVocab;
+        }
     });
 
-    await test('Instance has isDefaultTheme method', () => {
-        const instance = new mod.PreferencesManager();
-        if (typeof instance.isDefaultTheme !== 'function') throw new Error('Missing isDefaultTheme method');
+    await test('isDefaultTheme returns true on a clean body and false under a theme class', () => {
+        const body = document.body;
+        const hadDark = body.classList.contains('dark-mode');
+        const prevVocab = document.documentElement.dataset.vocabTheme;
+        body.classList.remove('dark-mode', 'theme-dark-ocean', 'theme-golden-glow');
+        delete document.documentElement.dataset.vocabTheme;
+        mod.setPreferencesManagerDependencies({ AppState: { get: () => ({ settings: {} }), update: () => {} } });
+        try {
+            const instance = new mod.PreferencesManager();
+            if (instance.isDefaultTheme() !== true) throw new Error('clean body should be the default theme');
+            body.classList.add('dark-mode');
+            if (instance.isDefaultTheme() !== false) throw new Error('dark-mode should NOT be the default theme');
+        } finally {
+            body.classList.remove('dark-mode');
+            if (hadDark) body.classList.add('dark-mode');
+            if (prevVocab !== undefined) document.documentElement.dataset.vocabTheme = prevVocab;
+        }
     });
 
-    await test('Instance has removeCustomColors method', () => {
-        const instance = new mod.PreferencesManager();
-        if (typeof instance.removeCustomColors !== 'function') throw new Error('Missing removeCustomColors method');
+    await test('removeCustomColors clears the root CSS vars it manages', () => {
+        const root = document.documentElement;
+        root.style.setProperty('--pref-app-bg', '#123456');
+        mod.setPreferencesManagerDependencies({ AppState: { get: () => ({ settings: {} }), update: () => {} } });
+        try {
+            new mod.PreferencesManager().removeCustomColors();
+            if (root.style.getPropertyValue('--pref-app-bg') !== '') {
+                throw new Error('removeCustomColors should remove --pref-app-bg');
+            }
+        } finally {
+            root.style.removeProperty('--pref-app-bg');
+        }
     });
 
     // ============================================
     resultsDiv.innerHTML += '<h4 class="test-section">⚠️ Error Handling</h4>';
 
-    await test('Constructor does not throw with no arguments', () => {
-        try {
-            new mod.PreferencesManager();
-        } catch (e) {
-            throw new Error('Constructor should not throw: ' + e.message);
-        }
-    });
-
-    await test('setPreferencesManagerDependencies handles null gracefully', () => {
-        try {
-            mod.setPreferencesManagerDependencies(null);
-        } catch (e) {
-            // Acceptable to throw on null — just should not crash the module
+    await test('setPreferencesManagerDependencies(null) preserves previously injected deps', () => {
+        // diBase treats a null dependency object as a no-op — it must NOT wipe prior wiring.
+        const captured = { settings: {} };
+        mod.setPreferencesManagerDependencies({ AppState: { get: () => captured, update: (fn) => fn(captured) } });
+        mod.setPreferencesManagerDependencies(null);
+        new mod.PreferencesManager().saveColor('appBg', '#010203');
+        if (captured.settings.customColors?.appBg !== '#010203') {
+            throw new Error('a null DI call should not clear the previously injected AppState');
         }
     });
 
