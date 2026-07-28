@@ -774,11 +774,8 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
         const dl = mockDownloadEnvironment();
         try {
             // Should handle gracefully — missing tasks, autoReset, etc.
-            instance.exportMiniCycleData({ name: 'test', title: 'Test' }, 'Test');
-            // The facade fires the async exporter without returning its promise;
-            // the legacy download path runs synchronously (no picker, not native),
-            // but yield a macrotask so any microtask prefix settles.
-            await new Promise(r => setTimeout(r, 0));
+            // The facade returns the exporter's promise — await completion directly.
+            await instance.exportMiniCycleData({ name: 'test', title: 'Test' }, 'Test');
 
             if (!dl.tracked.blobCreated) throw new Error('export should create a blob even with missing fields');
             if (!dl.tracked.linkCreated) throw new Error('export should create a download link');
@@ -803,11 +800,10 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
                 id: `task-${i}`, text: `Task ${i}`, completed: false
             }));
 
-            instance.exportMiniCycleData({
+            await instance.exportMiniCycleData({
                 name: 'large-test', title: 'Large Test', tasks: largeTasks,
                 autoReset: true, cycleCount: 0, deleteCheckedTasks: false
             }, 'Large Test');
-            await new Promise(r => setTimeout(r, 0)); // see note in the missing-data test
 
             if (!dl.tracked.blobCreated) throw new Error('large export should create a blob');
             if (!dl.tracked.linkCreated) throw new Error('large export should create a download link');

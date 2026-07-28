@@ -181,7 +181,7 @@ export class AchievementsManager {
                     this.deps.showNotification(
                         `🎮 ${getLabel('notify.gameUnlocked')}`,
                         'success',
-                        6000,
+                        UI_TIMEOUTS.NOTIFICATION_EXTRA_LONG,
                         {
                             actionButton: {
                                 label: getLabel('action.openGamesModal'),

@@ -15,7 +15,8 @@
 
 import {
     setupTestEnvironment,
-    createMockData
+    createMockData,
+    createMockSanitizeInput
 } from './testHelpers.js';
 
 import {
@@ -52,15 +53,12 @@ export async function runDataValidatorTests(resultsDiv, isPartOfSuite = false) {
         }
     }
 
-    // Faithful mock — mirrors GlobalUtils.normalizeText (trim + clamp only).
-    // It must NOT escape or strip: normalizeText does neither, by design —
-    // escaping happens at the render sink (textContent / escapeHtml), not here.
-    // An escaping mock here previously made two XSS assertions pass that would
-    // fail against the real sanitizer (see TEST_SUITE_AUDIT Round 2, finding 1).
-    function mockSanitizeInput(input, maxLength = 500) {
-        if (typeof input !== 'string') return '';
-        return input.trim().substring(0, maxLength);
-    }
+    // Canonical faithful mock from testHelpers (trim + clamp, like normalizeText —
+    // it never escapes or strips; escaping happens at the render sink). Shared so
+    // this file can't drift back into the over-capable-mock fiction the Round 2
+    // audit removed. DataValidator always passes explicit maxLength (100/500),
+    // so the helper's default clamp is never in play here.
+    const mockSanitizeInput = createMockSanitizeInput();
 
     async function test(name, testFn) {
         total.count++;
