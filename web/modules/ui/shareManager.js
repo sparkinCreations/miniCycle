@@ -149,9 +149,12 @@ export function setupShareRoutineButton() {
             reminders: cycle.reminders || null,
             autoUncheckDaily: cycle.autoUncheckDaily || null,
             createdAt: cycle.createdAt || null,
-            theme: cycle.theme || 'classic',
-            history: cycle.history || null,
-            clearedTasks: cycle.clearedTasks || null
+            theme: cycle.theme || 'classic'
+            // Privacy: history and clearedTasks are deliberately NOT shared.
+            // Sharing a routine sends the recipient the routine's *structure* —
+            // not the sender's event log or up to 500 cleared task names.
+            // Export-for-backup (cycleExportManager) keeps both; that file is
+            // for the owner's own restore, not for another person.
         };
 
         const cycleName = cycle.title || activeCycle;
