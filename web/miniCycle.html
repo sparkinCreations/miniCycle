@@ -703,6 +703,11 @@ if ('serviceWorker' in navigator) {
       // ✅ Check cooldown to prevent perpetual reload loops
       if (!canReloadSafely()) {
         console.log('⏳ Skipping reload due to cooldown');
+        // Don't leave the user silently on the old build — the new SW already
+        // controls the page, so until a refresh happens they're running stale
+        // code with no signal (drift-review C-21). Non-blocking nudge; any
+        // refresh (pull-to-refresh, tab reopen) completes the update.
+        showNotification('🆕 Update ready — refresh to finish applying it.', 'info', 8000);
         return;
       }
       refreshing = true;
