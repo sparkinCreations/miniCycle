@@ -30,9 +30,6 @@ const TOAST_LABEL_MAP = {
 // Storage utilities - dynamically loaded to avoid ES module cache issues
 let getObjectSizeBytes, formatBytes;
 
-// Undo manager utilities
-let getUndoCacheSizeBytes;
-
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
 // ============================================================================
@@ -536,11 +533,12 @@ export class HelpWindowManager {
                 cycleCount = currentCycle?.cycleCount || 0;
                 clearedTasksCount = currentCycle?.clearedTasks?.totalCleared || 0;
                 isToDoMode = currentCycle?.deleteCheckedTasks === true;
-                // Calculate routine size including undo history (~ indicates estimate)
+                // Routine size = routine data only (~ indicates estimate).
+                // Undo cache deliberately excluded — it's a separate transient
+                // store, and including it made this figure disagree with the
+                // manual's 1–5 KB claim (drift-review C-09).
                 if (currentCycle) {
-                    const cycleDataSize = getObjectSizeBytes(currentCycle);
-                    const undoSize = getUndoCacheSizeBytes();
-                    routineSize = `~${formatBytes(cycleDataSize + undoSize)}`;
+                    routineSize = `~${formatBytes(getObjectSizeBytes(currentCycle))}`;
                 }
             }
         } else if (typeof _deps.loadMiniCycleData === 'function') {
@@ -551,11 +549,12 @@ export class HelpWindowManager {
                 cycleCount = currentCycle?.cycleCount || 0;
                 clearedTasksCount = currentCycle?.clearedTasks?.totalCleared || 0;
                 isToDoMode = currentCycle?.deleteCheckedTasks === true;
-                // Calculate routine size including undo history (~ indicates estimate)
+                // Routine size = routine data only (~ indicates estimate).
+                // Undo cache deliberately excluded — it's a separate transient
+                // store, and including it made this figure disagree with the
+                // manual's 1–5 KB claim (drift-review C-09).
                 if (currentCycle) {
-                    const cycleDataSize = getObjectSizeBytes(currentCycle);
-                    const undoSize = getUndoCacheSizeBytes();
-                    routineSize = `~${formatBytes(cycleDataSize + undoSize)}`;
+                    routineSize = `~${formatBytes(getObjectSizeBytes(currentCycle))}`;
                 }
             }
         }
@@ -750,10 +749,6 @@ export async function initHelpWindowManager(dependencies = {}) {
     const storageUtils = await import(`../utils/storageUtils.js?v=${version}`);
     getObjectSizeBytes = storageUtils.getObjectSizeBytes;
     formatBytes = storageUtils.formatBytes;
-
-    // Import undo manager utilities
-    const undoManager = await import(`./undoRedoManager.js?v=${version}`);
-    getUndoCacheSizeBytes = undoManager.getUndoCacheSizeBytes;
 
     // Set dependencies
     if (dependencies && Object.keys(dependencies).length > 0) {

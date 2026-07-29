@@ -540,8 +540,10 @@ class MiniCycleState {
 
         if (immediate) {
             // ✅ Synchronous save() — a quick refresh right after an immediate update
-            //    still flushes (no async hop before the write).
-            this.save();
+            //    still flushes (no async hop before the write). Return save()'s
+            //    result so forceSave()'s await keeps working if save() ever
+            //    becomes async (drift-review C-11).
+            return this.save();
         } else {
             // ✅ For normal saves, use debounce delay
             this.saveTimeout = setTimeout(() => {

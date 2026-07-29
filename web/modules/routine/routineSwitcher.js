@@ -2003,15 +2003,16 @@ export class RoutineSwitcher {
         leftSide.appendChild(emojiSpan);
         leftSide.appendChild(titleSpan);
 
-        // Right side: size estimate
+        // Right side: size estimate. Routine data only — undo cache is a
+        // separate, transient store and inflating this figure with it made
+        // "routine size" disagree with the manual's 1–5 KB claim
+        // (drift-review C-09; also sidesteps the stale-undoSizeBytes drift, C-10).
         const isActiveCycle = cycleKey === activeCycleId;
         const cycleDataSize = getObjectSizeBytes(cycleData);
-        const undoSize = isActiveCycle ? getUndoCacheSizeBytes() : (cycleData.undoSizeBytes || 0);
-        const totalSize = cycleDataSize + undoSize;
 
         const sizeSpan = document.createElement("span");
         sizeSpan.className = "cycle-item-size";
-        sizeSpan.textContent = `~${formatBytes(totalSize)}`;
+        sizeSpan.textContent = `~${formatBytes(cycleDataSize)}`;
 
         // Current routine badge
         if (isActiveCycle) {
