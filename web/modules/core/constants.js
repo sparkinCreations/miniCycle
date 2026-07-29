@@ -235,6 +235,7 @@ export const FREQUENCY_MS = Object.freeze({
  */
 export const LIMITS = Object.freeze({
     UNDO_STACK: 20,                // Max items in undo/redo stack
+    UNDO_CACHE_MAX_BYTES: 1000000, // Byte cap on the localStorage undo cache (~1MB of the ~5MB quota shared with main state); oldest snapshots shed first
     TASKS_PER_CYCLE: 150,          // Max tasks per cycle/routine
     DYNAMIC_CACHE_ENTRIES: 100,    // Max entries in service worker dynamic cache
     NORMALIZATION_CACHE: 50,       // Max entries in recurring settings normalization cache

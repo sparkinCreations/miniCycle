@@ -54,11 +54,31 @@ function saveToUndoCache(cycleId, undoStack, redoStack) {
   try {
     const cacheData = {
       cycleId,
-      undoStack: undoStack || [],
-      redoStack: redoStack || [],
+      undoStack: (undoStack || []).slice(),
+      redoStack: (redoStack || []).slice(),
       timestamp: Date.now()
     };
-    localStorage.setItem(UNDO_CACHE_KEY, JSON.stringify(cacheData));
+    let serialized = JSON.stringify(cacheData);
+    // Byte cap alongside the UNDO_LIMIT count cap (drift-review C-08): large
+    // routines × 20 full-state snapshots could otherwise grow toward the ~5MB
+    // localStorage quota shared with main app state. Shed oldest undo entries
+    // (index 0) first, then redo entries, until under the cap.
+    while (serialized.length > LIMITS.UNDO_CACHE_MAX_BYTES &&
+           (cacheData.undoStack.length > 1 || cacheData.redoStack.length > 0)) {
+      if (cacheData.undoStack.length > 1) {
+        cacheData.undoStack.shift();
+      } else {
+        cacheData.redoStack.shift();
+      }
+      serialized = JSON.stringify(cacheData);
+    }
+    if (serialized.length > LIMITS.UNDO_CACHE_MAX_BYTES) {
+      // Even a single snapshot exceeds the cap — skip the write rather than
+      // risk evicting quota needed by the main state save.
+      console.warn('⚠️ Undo cache exceeds byte cap even after shedding — skipping cache write');
+      return;
+    }
+    localStorage.setItem(UNDO_CACHE_KEY, serialized);
   } catch (e) {
     // Graceful degradation - cache is optional
     console.warn('⚠️ Failed to save undo cache:', e.message);
@@ -276,23 +296,19 @@ const di = createDIModule('UndoRedoManager', {
   refreshTaskViewLayout: optional(null)  // () => void — reconciles drag positions after undo/redo restores state.settings.taskViewLayout
 });
 
+// Module-level state: whether the AppState.update wrapper is installed (the
+// single snapshot source). Plain variable, NOT a DI dep — it used to live on
+// the _deps Proxy, which made the DI validator report it as an
+// accessed-but-resolvable-nowhere dependency (drift-review C-24).
+let _wrapperActive = false;
+
 // Late-binding deps via Proxy (standard: _deps with underscore prefix)
-// Note: wrapperActive is a mutable instance property, not a DI dep
-/** @type {{wrapperActive: boolean, appInit: Object|null, AppState: Object|null, refreshUIFromState: Function|null, AppGlobalState: Object|null, getElementById: Function|null, safeAddEventListener: Function|null, showNotification: Function|null, UIOrchestrator: Object|null}} */
-const _deps = new Proxy({ wrapperActive: false }, {
+/** @type {{appInit: Object|null, AppState: Object|null, refreshUIFromState: Function|null, AppGlobalState: Object|null, getElementById: Function|null, safeAddEventListener: Function|null, showNotification: Function|null, UIOrchestrator: Object|null}} */
+const _deps = new Proxy({}, {
   get(target, prop) {
-    // wrapperActive is a mutable instance property, not a DI dep
-    if (prop === 'wrapperActive') {
-      return target.wrapperActive;
-    }
     return di.resolve()[prop];
   },
-  set(target, prop, value) {
-    // Allow setting wrapperActive
-    if (prop === 'wrapperActive') {
-      target.wrapperActive = value;
-      return true;
-    }
+  set() {
     return false;
   }
 });
@@ -328,6 +344,7 @@ let _handleUndoRedoKeydown = null;
 // anonymous listener would accumulate across boot retries and let a torn-down
 // instance still write history on unload).
 let _beforeunloadHandler = null;
+let _visibilityFlushHandler = null;
 
 // ============ UI INITIALIZATION ============
 
@@ -466,7 +483,7 @@ export function wrapAppStateForUndo(appInit) {
 
     globalState.wrappedAppStateUpdate = true;
     globalState.useUpdateWrapper = true;  // wrapper becomes single snapshot source
-    _deps.wrapperActive = true;  // update internal flag
+    _wrapperActive = true;  // update internal flag
 
     return true;
   } catch (e) {
@@ -486,14 +503,14 @@ export function setupStateBasedUndoRedo() {
   }
 
   // Skip installing when wrapper is active
-  if (_deps.wrapperActive) {
+  if (_wrapperActive) {
     return;
   }
 
   try {
     _deps.AppState.subscribe('undo-system', (newState, oldState) => {
       // Runtime guard if wrapper activates later
-      if (_deps.wrapperActive) return;
+      if (_wrapperActive) return;
 
       // Skip during cycle switches
       if (_deps.AppGlobalState.isSwitchingCycles) return;
@@ -1704,8 +1721,18 @@ export async function initUndoSystemForApp() {
 
     // 5. Set up page unload handler to force immediate save. Store the reference
     //    and drop any prior one first so re-init (boot retry) can't stack handlers.
+    //    beforeunload alone is unreliable on iOS — frequently NOT fired when the
+    //    app is backgrounded or swiped away — so also flush on pagehide and on
+    //    visibilitychange→hidden, the events that DO fire there. Same trio
+    //    appState uses for its debounced-save flush. The handler is idempotent
+    //    (timers cleared, cache overwritten with same data), so firing on both
+    //    hidden and unload is safe.
     if (_beforeunloadHandler) {
       window.removeEventListener('beforeunload', _beforeunloadHandler);
+      window.removeEventListener('pagehide', _beforeunloadHandler);
+    }
+    if (_visibilityFlushHandler) {
+      document.removeEventListener('visibilitychange', _visibilityFlushHandler);
     }
     _beforeunloadHandler = () => {
       // Flush EVERY pending debounced write synchronously (not just the active
@@ -1756,7 +1783,12 @@ export async function initUndoSystemForApp() {
         }
       }
     };
+    _visibilityFlushHandler = () => {
+      if (document.visibilityState === 'hidden') _beforeunloadHandler?.();
+    };
     window.addEventListener('beforeunload', _beforeunloadHandler);
+    window.addEventListener('pagehide', _beforeunloadHandler);
+    document.addEventListener('visibilitychange', _visibilityFlushHandler);
 
   } catch (e) {
     // ✅ FIX #5: Error boundary for undo system initialization
@@ -2115,11 +2147,16 @@ function destroyUndoRedoManager() {
     document.removeEventListener('keydown', _handleUndoRedoKeydown);
     _handleUndoRedoKeydown = null;
   }
-  // Remove the unload handler so retries don't stack listeners (and a torn-down
+  // Remove the unload handlers so retries don't stack listeners (and a torn-down
   // instance can't still write history on unload).
   if (_beforeunloadHandler) {
     window.removeEventListener('beforeunload', _beforeunloadHandler);
+    window.removeEventListener('pagehide', _beforeunloadHandler);
     _beforeunloadHandler = null;
+  }
+  if (_visibilityFlushHandler) {
+    document.removeEventListener('visibilitychange', _visibilityFlushHandler);
+    _visibilityFlushHandler = null;
   }
   // Cancel any pending debounced writes so they don't fire after teardown.
   dbWriteTimers.forEach(entry => clearTimeout(entry.timer));
