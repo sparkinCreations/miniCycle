@@ -97,7 +97,15 @@ input[type="text"]:focus-visible {
 #addTaskBtn {
     padding: var(--space-2) var(--space-4);
     font-size: var(--font-size-xs);
-    height: 30px;
+    /* min-height (not height): at larger accessibility font sizes the label
+       (--font-size-xs) plus the vertical padding exceeds a fixed 30px box and
+       the "Add" text rode low / overflowed the pill. Letting the button grow
+       keeps the label centered; the row centers all children so the input
+       pill stays balanced. Same fix pattern as the mode selector. */
+    min-height: var(--space-7-5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
     flex-shrink: 0; /* Don't shrink the button */
     background: rgba(0, 0, 0, 0.8);
     color: var(--color-white);

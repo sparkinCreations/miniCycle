@@ -359,10 +359,11 @@ export class SettingsManager {
      * Export cycle data as a downloadable JSON file.
      * @param {Object} data - The cycle data to export
      * @param {string} name - The filename for the exported file
-     * @returns {void}
+     * @returns {Promise<void>|undefined} The exporter's promise so callers can
+     *   await completion (undefined if sub-modules aren't loaded yet)
      */
     exportMiniCycleData(data, name) {
-        _subModules?.exportMiniCycleData?.(data, name);
+        return _subModules?.exportMiniCycleData?.(data, name);
     }
 
     /**
@@ -521,9 +522,10 @@ export function setupExportButton() { _subModules?.setupExportButton?.(); }
  * Export cycle data as a downloadable JSON file.
  * @param {Object} data - The cycle data to export
  * @param {string} name - The filename for the exported file
- * @returns {void}
+ * @returns {Promise<void>|undefined} The exporter's promise (undefined if
+ *   sub-modules aren't loaded yet)
  */
-export function exportMiniCycleData(data, name) { _subModules?.exportMiniCycleData?.(data, name); }
+export function exportMiniCycleData(data, name) { return _subModules?.exportMiniCycleData?.(data, name); }
 
 /**
  * Initialize the import buttons for uploading cycle data.

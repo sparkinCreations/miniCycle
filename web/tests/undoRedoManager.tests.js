@@ -1676,12 +1676,20 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         }
     });
 
-    await test('onCycleRenamed handles IndexedDB key update', async () => {
+    await test('onCycleRenamed migrates the active undo-tracking id', async () => {
         const mockDeps = createMockDependencies();
+        // Simulate the renamed cycle being the one whose undo history is loaded.
+        mockDeps.AppGlobalState.activeCycleIdForUndo = 'old-id';
         setUndoRedoManagerDependencies(mockDeps);
 
-        // Should not throw (might not have IndexedDB in test env)
+        // The IndexedDB record migration may no-op in the test env, but the
+        // in-memory tracking id must follow the rename either way (the error
+        // path updates it too — that's the contract).
         await onCycleRenamed('old-id', 'new-id');
+
+        if (mockDeps.AppGlobalState.activeCycleIdForUndo !== 'new-id') {
+            throw new Error(`activeCycleIdForUndo should be 'new-id', got '${mockDeps.AppGlobalState.activeCycleIdForUndo}'`);
+        }
     });
 
     // === 10. INDEXEDDB PERSISTENCE (4 tests) ===

@@ -102,18 +102,24 @@ export function createMockNotification(log = false) {
 }
 
 /**
- * Creates a mock sanitizeInput function
- * @param {boolean} strict - If true, strips all HTML (default: true)
+ * Mock for GlobalUtils.normalizeText / sanitizeInput.
+ *
+ * FAITHFUL by design: trim + clamp only, exactly like normalizeText — which
+ * has never escaped or stripped HTML (escaping happens at the render sink).
+ * There is deliberately NO stripping option: production has no stripping
+ * sanitizer to mimic, an over-capable mock makes XSS assertions pass that
+ * would fail in production (TEST_SUITE_AUDIT Round 2, finding 2), and a
+ * single-pass tag-strip regex is itself bypassable (CodeQL
+ * js/incomplete-multi-character-sanitization — flagged on PR #16). If a
+ * genuine stripping sanitizer ever exists in production, mock THAT function
+ * specifically rather than re-adding an option here.
+ *
  * @returns {Function} Mock sanitize function
  */
-export function createMockSanitizeInput(strict = true) {
-    return (input) => {
+export function createMockSanitizeInput() {
+    return (input, maxLength = 100) => {
         if (typeof input !== 'string') return '';
-        if (strict) {
-            // Strip HTML tags
-            return input.replace(/<[^>]*>/g, '').trim();
-        }
-        return input.trim();
+        return input.trim().substring(0, maxLength);
     };
 }
 

@@ -153,6 +153,154 @@ export async function runAchievementsManagerTests(resultsDiv) {
         if (result.length > 0) throw new Error('Should not re-unlock already unlocked');
     });
 
+    // ── game reward: ONE toast per unlock (no generic stacking) ──────────────
+    // The game milestone and cycleCompletion's 100-cycle path unlock the same
+    // "task-order-game" flag. Whoever unlocks first shows the actionable
+    // Open-Games toast; the other must stay silent — and the generic
+    // "Achievement Unlocked" must never stack a second notification on it.
+    function gameMgr(stateOverrides, captured) {
+        const preUnlocked = ['milestone-5', 'milestone-25', 'milestone-50', 'milestone-75']
+            .map(id => ({ milestoneId: id, unlockedAt: Date.now() }));
+        const deps = {
+            AppState: createMockAppState({
+                achievements: { unlocked: preUnlocked, seen: {} },
+                ...stateOverrides
+            }),
+            appInit: createMockAppInit(),
+            showNotification: (msg, type, dur, opts) => captured.push({ msg, opts }),
+            unlockMiniGame: () => { captured.unlockCalls = (captured.unlockCalls || 0) + 1; },
+            logHistoryEvent: () => {},
+            vocabThemeManager: { unlockThemeFromAchievement: () => false },
+            getElementById: () => null,
+            querySelector: () => null,
+            querySelectorAll: () => [],
+            getBody: () => document.body,
+            getActiveElement: () => document.activeElement,
+        };
+        const inst = new AchievementsManager(deps);
+        inst.milestones = mgr.milestones;
+        return inst;
+    }
+
+    await test('game milestone fires exactly ONE actionable toast when game not yet unlocked', () => {
+        const captured = [];
+        const m = gameMgr({ settings: { unlockedThemes: ['classic'] } }, captured);
+        const result = m.checkAchievements(100, 0);
+        if (!result.some(a => a.milestone.id === 'milestone-100')) {
+            throw new Error('milestone-100 should unlock at 100 cycles');
+        }
+        if (captured.length !== 1) {
+            throw new Error(`expected exactly 1 notification, got ${captured.length}: ${JSON.stringify(captured.map(c => c.msg))}`);
+        }
+        if (!captured[0].msg.includes('🎮') || !captured[0].opts?.actionButton) {
+            throw new Error(`expected the actionable game toast, got '${captured[0].msg}'`);
+        }
+    });
+
+    await test('game milestone stays silent when the game was already unlocked (cycleCompletion toasted)', () => {
+        const captured = [];
+        const m = gameMgr({
+            settings: { unlockedThemes: ['classic'], unlockedFeatures: ['task-order-game'] }
+        }, captured);
+        const result = m.checkAchievements(100, 0);
+        if (!result.some(a => a.milestone.id === 'milestone-100')) {
+            throw new Error('milestone-100 should still unlock at 100 cycles');
+        }
+        if (captured.length !== 0) {
+            throw new Error(`expected NO notifications (cycleCompletion owns the toast), got: ${JSON.stringify(captured.map(c => c.msg))}`);
+        }
+        if (!captured.unlockCalls) {
+            throw new Error('unlockMiniGame should still be called (idempotent)');
+        }
+    });
+
+    // ── cross-module integration: the REAL 100-cycle production sequence ────
+    // incrementCycleCount → handleMilestoneUnlocks (game toast + unlock) →
+    // deps.checkAchievements → the REAL AchievementsManager's game reward path,
+    // all sharing one state. The unit tests above simulate cycleCompletion's
+    // prior unlock via the feature flag; this drives the genuine two-module
+    // race in production order and pins "exactly one toast" end-to-end.
+    await test('cross-module: 100th cycle completion yields exactly ONE game toast end-to-end', async () => {
+        const { incrementCycleCount, initCycleCompletion } =
+            await import('../modules/progress/cycleCompletion.js');
+
+        const captured = [];
+        const state = {
+            metadata: { lastModified: Date.now() },
+            // Celebration flags pre-set so the 100-cycle overlay setTimeout
+            // doesn't fire after the test; unlockedFeatures starts empty —
+            // that's the coupling surface both modules race on.
+            settings: { unlockedThemes: ['classic'], unlockedFeatures: [] },
+            data: { cycles: { 'default': { title: 'Default', cycleCount: 5, tasks: [] } } },
+            appState: { activeCycleId: 'default' },
+            userProgress: {
+                cyclesCompleted: 99, totalTasksCompleted: 0, rewardMilestones: [],
+                firstCycleCelebrated: true, celebrated100Cycles: true, celebrated500Cycles: true
+            },
+            achievements: {
+                unlocked: ['milestone-5', 'milestone-25', 'milestone-50', 'milestone-75']
+                    .map(id => ({ milestoneId: id, unlockedAt: Date.now() })),
+                seen: {}
+            }
+        };
+        const sharedAppState = {
+            isReady: () => true,
+            get: () => state,
+            update: (fn) => { fn(state); },
+            subscribe: () => () => {}
+        };
+        // Mirrors gamesManager.unlockMiniGame: sets the ONE shared feature flag.
+        const unlockMiniGame = () => {
+            if (!state.settings.unlockedFeatures.includes('task-order-game')) {
+                state.settings.unlockedFeatures.push('task-order-game');
+            }
+        };
+        const showNotification = (msg, type, dur, opts) => captured.push({ msg, opts });
+
+        const achMgr = new AchievementsManager({
+            AppState: sharedAppState,
+            appInit: createMockAppInit(),
+            showNotification,
+            unlockMiniGame,
+            logHistoryEvent: () => {},
+            vocabThemeManager: { unlockThemeFromAchievement: () => false },
+            getElementById: () => null,
+            querySelector: () => null,
+            querySelectorAll: () => [],
+            getBody: () => document.body,
+            getActiveElement: () => document.activeElement,
+        });
+        achMgr.milestones = mgr.milestones;
+
+        await initCycleCompletion({
+            AppState: sharedAppState,
+            showNotification,
+            unlockMiniGame,
+            updateStatsPanel: () => {},
+            checkAchievements: (cycles, tasks) => achMgr.checkAchievements(cycles, tasks),
+        });
+
+        // 99 → 100: both unlock paths fire, in production order.
+        incrementCycleCount('default', {});
+
+        if (state.userProgress.cyclesCompleted !== 100) {
+            throw new Error(`expected 100 cycles, got ${state.userProgress.cyclesCompleted}`);
+        }
+        if (!state.settings.unlockedFeatures.includes('task-order-game')) {
+            throw new Error('game feature flag should be set after the 100th cycle');
+        }
+        const gameToasts = captured.filter(c => c.msg.includes('🎮'));
+        if (gameToasts.length !== 1) {
+            throw new Error(`expected exactly 1 game toast across both modules, got ${gameToasts.length}: ${JSON.stringify(captured.map(c => c.msg))}`);
+        }
+        if (!gameToasts[0].opts?.actionButton) {
+            throw new Error('the single game toast must carry the Open Games action button');
+        }
+        if (captured.some(c => /achievement unlocked/i.test(c.msg))) {
+            throw new Error(`generic "Achievement Unlocked" must be suppressed, got: ${JSON.stringify(captured.map(c => c.msg))}`);
+        }
+    });
+
     await test('checkAchievements returns empty for 0 progress', () => {
         const m = freshMgr();
         const result = m.checkAchievements(0, 0);

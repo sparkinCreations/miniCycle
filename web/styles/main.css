@@ -9,25 +9,25 @@
    ============================================================================= */
 
 /* Design tokens and CSS custom properties */
-@import url('./base/variables.css?v=2.340');
+@import './base/variables.css?v=2.341';
 
 /* Theme overrides — CSS-native [data-theme] attribute selectors */
-@import url('./themes/themes.css?v=2.340');
+@import './themes/themes.css?v=2.341';
 
 /* CSS reset and normalization */
-@import url('./base/reset.css?v=2.340');
+@import './base/reset.css?v=2.341';
 
 /* Background patterns, images, and theme overlays */
-@import url('./base/background.css?v=2.340');
+@import './base/background.css?v=2.341';
 
 /* Typography - fonts, sizes, line heights */
-@import url('./base/typography.css?v=2.340');
+@import './base/typography.css?v=2.341';
 
 /* Keyframe animations (deduplicated) */
-@import url('./base/animations.css?v=2.340');
+@import './base/animations.css?v=2.341';
 
 /* Accessibility overrides - high contrast, reduced motion, font size */
-@import url('./base/accessibility.css?v=2.340');
+@import './base/accessibility.css?v=2.341';
 
 
 /* =============================================================================
@@ -35,13 +35,13 @@
    ============================================================================= */
 
 /* Main app container and structure */
-@import url('./layout/app-container.css?v=2.340');
+@import './layout/app-container.css?v=2.341';
 
 /* Header and navigation */
-@import url('./layout/header.css?v=2.340');
+@import './layout/header.css?v=2.341';
 
 /* iOS safe areas and notch handling */
-@import url('./layout/safe-areas.css?v=2.340');
+@import './layout/safe-areas.css?v=2.341';
 
 
 /* =============================================================================
@@ -49,91 +49,91 @@
    ============================================================================= */
 
 /* Task input field */
-@import url('./components/task-input.css?v=2.340');
+@import './components/task-input.css?v=2.341';
 
 /* Task list and items */
-@import url('./components/task-list.css?v=2.340');
+@import './components/task-list.css?v=2.341';
 
 /* Task view layout (desktop drag-customize sub-wrapper) */
-@import url('./components/task-view-layout.css?v=2.340');
+@import './components/task-view-layout.css?v=2.341';
 
 /* Task action buttons and options */
-@import url('./components/task-options.css?v=2.340');
+@import './components/task-options.css?v=2.341';
 
 /* Generic button styles */
-@import url('./components/buttons.css?v=2.340');
+@import './components/buttons.css?v=2.341';
 
 /* SVG icons (replaces Font Awesome) */
-@import url('./components/icons.css?v=2.340');
+@import './components/icons.css?v=2.341';
 
 /* Modal dialogs */
-@import url('./components/modals.css?v=2.340');
+@import './components/modals.css?v=2.341';
 
 /* Theme customizer modal (themes + preferences + color picker) */
-@import url('./components/themes-modal.css?v=2.340');
+@import './components/themes-modal.css?v=2.341';
 
 /* Toast notifications */
-@import url('./components/notifications.css?v=2.340');
+@import './components/notifications.css?v=2.341';
 
 /* Statistics panel */
-@import url('./components/stats-panel.css?v=2.340');
+@import './components/stats-panel.css?v=2.341';
 
 /* Focus task panel (one task at a time) */
-@import url('./components/focus-task-panel.css?v=2.340');
+@import './components/focus-task-panel.css?v=2.341';
 
 /* Progress indicators */
-@import url('./components/progress-bar.css?v=2.340');
+@import './components/progress-bar.css?v=2.341';
 
 /* Form elements - inputs, selects, checkboxes */
-@import url('./components/forms.css?v=2.340');
+@import './components/forms.css?v=2.341';
 
 /* Settings panel */
-@import url('./components/settings.css?v=2.340');
+@import './components/settings.css?v=2.341';
 
 /* Mode selector (Auto/Manual/Todo) */
-@import url('./components/mode-selector.css?v=2.340');
+@import './components/mode-selector.css?v=2.341';
 
 /* Routine switcher */
-@import url('./components/routine-switcher.css?v=2.340');
+@import './components/routine-switcher.css?v=2.341';
 
 /* Games panel */
-@import url('./components/games.css?v=2.340');
+@import './components/games.css?v=2.341';
 
 /* Onboarding screens */
-@import url('./components/onboarding.css?v=2.340');
+@import './components/onboarding.css?v=2.341';
 
 /* First-run welcome banner (focus-first initial launch) */
-@import url('./components/first-run-welcome.css?v=2.340');
+@import './components/first-run-welcome.css?v=2.341';
 
 /* Guided tour overlay */
-@import url('./components/guided-tour.css?v=2.340');
+@import './components/guided-tour.css?v=2.341';
 
 /* Focus mode (hides chrome for distraction-free view) */
-@import url('./components/focus-mode.css?v=2.340');
+@import './components/focus-mode.css?v=2.341';
 
 /* Recurring tasks panel */
-@import url('./components/recurring.css?v=2.340');
+@import './components/recurring.css?v=2.341';
 
 /* History modal */
-@import url('./components/history.css?v=2.340');
+@import './components/history.css?v=2.341';
 
 /* Achievements modal */
-@import url('./components/achievements.css?v=2.340');
+@import './components/achievements.css?v=2.341';
 
 /* Storage usage display */
-@import url('./components/storage.css?v=2.340');
+@import './components/storage.css?v=2.341';
 
 /* Testing modal UI (drag handle, results, runner, backup, JSON tree) */
-@import url('./components/testing.css?v=2.340');
+@import './components/testing.css?v=2.341';
 
 /* Footer and copyright */
-@import url('./components/footer.css?v=2.340');
+@import './components/footer.css?v=2.341';
 
 /* Menu container and slide arrows */
-@import url('./components/menu.css?v=2.340');
+@import './components/menu.css?v=2.341';
 
 /* Quick actions panel */
-@import url('./components/quick-actions.css?v=2.340');
+@import './components/quick-actions.css?v=2.341';
 
 
 /* =============================================================================
@@ -141,10 +141,10 @@
    ============================================================================= */
 
 /* Utility classes and helpers */
-@import url('./utilities/helpers.css?v=2.340');
+@import './utilities/helpers.css?v=2.341';
 
 /* Responsive utilities and media queries */
-@import url('./utilities/responsive.css?v=2.340');
+@import './utilities/responsive.css?v=2.341';
 
 
 /* =============================================================================
@@ -152,7 +152,7 @@
    These styles modify components when body.dark-mode is active
    ============================================================================= */
 
-@import url('./utilities/dark-mode.css?v=2.340');
+@import './utilities/dark-mode.css?v=2.341';
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -226,14 +226,20 @@
         font-size: calc(var(--font-size-base) * 0.82);
     }
 
-    /* Help window — already shrinks to xs at 480px in buttons.css; nudge
-       padding tighter + smaller text on top of that. */
+    /* Help window — already shrinks to xs at 480px in buttons.css; keep the
+       tighter padding, but size the TEXT on the token, not an em shrink.
+       0.85em on the already-xs container landed at 11.05px — fractional,
+       under the 12px readability floor, and visually "stuck small" when the
+       accessibility Font Size grows. xs keeps the small-phone compaction
+       (h4 still drops from base) while following the Font Size setting on
+       the integer scale: 12px stock, 13px with the phone base bump, 16px at
+       the largest setting. */
     .help-window {
         padding: var(--space-1) var(--space-2);
     }
     .help-window h4,
     .help-window p {
-        font-size: 0.85em;
+        font-size: var(--font-size-xs);
     }
 
     /* Progress bar — slimmer (12px → 8px). */

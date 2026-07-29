@@ -774,7 +774,14 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
         const dl = mockDownloadEnvironment();
         try {
             // Should handle gracefully — missing tasks, autoReset, etc.
-            instance.exportMiniCycleData({ name: 'test', title: 'Test' }, 'Test');
+            // The facade returns the exporter's promise — await completion directly.
+            await instance.exportMiniCycleData({ name: 'test', title: 'Test' }, 'Test');
+
+            if (!dl.tracked.blobCreated) throw new Error('export should create a blob even with missing fields');
+            if (!dl.tracked.linkCreated) throw new Error('export should create a download link');
+            if (dl.tracked.filename !== 'Test.mcyc') {
+                throw new Error(`expected filename 'Test.mcyc', got '${dl.tracked.filename}'`);
+            }
         } finally {
             dl.restore();
         }
@@ -793,10 +800,17 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
                 id: `task-${i}`, text: `Task ${i}`, completed: false
             }));
 
-            instance.exportMiniCycleData({
+            await instance.exportMiniCycleData({
                 name: 'large-test', title: 'Large Test', tasks: largeTasks,
                 autoReset: true, cycleCount: 0, deleteCheckedTasks: false
             }, 'Large Test');
+
+            if (!dl.tracked.blobCreated) throw new Error('large export should create a blob');
+            if (!dl.tracked.linkCreated) throw new Error('large export should create a download link');
+            // Non-alphanumerics in the cycle name become underscores.
+            if (dl.tracked.filename !== 'Large_Test.mcyc') {
+                throw new Error(`expected filename 'Large_Test.mcyc', got '${dl.tracked.filename}'`);
+            }
         } finally {
             dl.restore();
         }
