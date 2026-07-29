@@ -198,8 +198,12 @@ export class TaskDOMManager {
             updateMoveArrowsVisibility: resolvedDeps.updateMoveArrowsVisibility || null,
 
             // Drag and drop / task interactions (for TaskUtils)
-            enableDragAndDropOnTask: resolvedDeps.enableDragAndDropOnTask || null,
-            remindOverdueTasks: resolvedDeps.remindOverdueTasks || null
+            // NOTE: remindOverdueTasks was removed here (drift-review C-24): no
+            // manifest/depMappings route ever provided it, so the forward was
+            // always null and TaskUtils' guarded call never ran. Wiring it to
+            // dueDatesManager.remindOverdueTasks would be a BEHAVIOR change
+            // (overdue nudge 1s after every task add) — decide deliberately.
+            enableDragAndDropOnTask: resolvedDeps.enableDragAndDropOnTask || null
         };
 
         // Internal state
@@ -292,7 +296,6 @@ export class TaskDOMManager {
                     get AppState() { return instanceDeps.AppState; },
                     get loadMiniCycleData() { return instanceDeps.loadMiniCycleData; },
                     get generateId() { return instanceDeps.generateId; },
-                    get remindOverdueTasks() { return instanceDeps.remindOverdueTasks; },
                     get enableDragAndDropOnTask() { return instanceDeps.enableDragAndDropOnTask; },
                     get updateMoveArrowsVisibility() { return instanceDeps.updateMoveArrowsVisibility; },
                     get saveTaskToSchema25() { return instanceDeps.saveTaskToSchema25; }
@@ -1186,7 +1189,6 @@ export class TaskDOMManager {
 
         // Setup final interactions (delegated to TaskUtils)
         TaskUtils.setupFinalTaskInteractions(taskItem, isLoading, {
-            remindOverdueTasks: this.deps.remindOverdueTasks,
             enableDragAndDropOnTask: this.deps.enableDragAndDropOnTask,
             updateMoveArrowsVisibility: this.deps.updateMoveArrowsVisibility
         });

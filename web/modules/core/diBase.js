@@ -10,7 +10,7 @@
  * PATTERNS PROVIDED:
  * 1. createDIModule() - Factory for module-level DI with validation
  * 2. lazy() - Lazy getter wrapper for cross-module dependencies
- * 3. required() - Marker for required dependencies (throws if missing)
+ * 3. required() - Marker for required dependencies (warns and resolves to null if missing — it does NOT throw)
  * 4. optional() - Marker for optional dependencies with defaults
  *
  * USAGE:
@@ -57,8 +57,8 @@ const OPTIONAL = Symbol('optional');
  * @returns {Object} Required marker
  * @example
  * const di = createDIModule('MyModule', {
- *     AppState: required(),        // Must be injected
- *     loadData: required()         // Must be injected
+ *     AppState: required(),        // Should be injected — warns and resolves null if missing
+ *     loadData: required()         // Should be injected — warns and resolves null if missing
  * });
  */
 export function required() {

@@ -249,11 +249,7 @@ export class ClearedTasksManager {
      */
     _pruneOldEntries(clearedTasks) {
         const cutoff = Date.now() - (PRUNE_DAYS * 24 * 60 * 60 * 1000);
-        const originalLength = clearedTasks.entries.length;
-
         clearedTasks.entries = clearedTasks.entries.filter(e => e.clearedAt > cutoff);
-
-        const pruned = originalLength - clearedTasks.entries.length;
     }
 
     // ========================================================================

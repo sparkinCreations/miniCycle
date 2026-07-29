@@ -36,6 +36,10 @@ jobs:
         working-directory: ./web
         run: npm run lint
 
+      - name: Validate DI declarations (gated July 2026)
+        working-directory: ./web
+        run: npm run validate:di
+
   test:
     runs-on: ubuntu-latest
 

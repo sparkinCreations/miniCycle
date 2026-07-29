@@ -26,12 +26,10 @@ const di = createDIModule('TaskUI', {
     // For refreshTaskListUI
     loadMiniCycleData: optional(null),
     addTask: optional(null),
-    updateRecurringButtonVisibility: optional(null),
     getElementById: optional(null),
 
     // For checkCompleteAllButton
     getTaskList: optional(null),
-    getCompleteAllButton: optional(null),
 
     // For touch detection
     isTouchDevice: optional(null),
@@ -44,7 +42,7 @@ const di = createDIModule('TaskUI', {
 });
 
 // Late-binding deps via Proxy
-/** @type {{loadMiniCycleData: Function|null, addTask: Function|null, updateRecurringButtonVisibility: Function|null, getElementById: Function|null, getTaskList: Function|null, getCompleteAllButton: Function|null, isTouchDevice: Function|null, taskToAddTaskOptions: Function|null}} */
+/** @type {{loadMiniCycleData: Function|null, addTask: Function|null, getElementById: Function|null, getTaskList: Function|null, isTouchDevice: Function|null, taskToAddTaskOptions: Function|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];
@@ -220,11 +218,10 @@ export async function refreshTaskListUI() {
         await addTask(task.text, options);
     }
 
-    const updateRecurringButtonVisibility = _deps.updateRecurringButtonVisibility;
-    if (typeof updateRecurringButtonVisibility === 'function') {
-        updateRecurringButtonVisibility();
-    }
-
+    // NOTE: an updateRecurringButtonVisibility call used to sit here, but the dep
+    // was resolvable nowhere (no manifest/depMappings route) so it never ran —
+    // verified harmless (drift-review C-24): recurring visibility is refreshed by
+    // recurringIntegration and modeManager on their own events.
 }
 
 /**
@@ -323,10 +320,13 @@ export function hideTaskOptions(event) {
  */
 export function checkCompleteAllButton() {
     const getTaskList = _deps.getTaskList;
-    const getCompleteAllButton = _deps.getCompleteAllButton;
 
     const taskList = typeof getTaskList === 'function' ? getTaskList() : document.getElementById(DOM_IDS.TASK_LIST);
-    const completeAllButton = typeof getCompleteAllButton === 'function' ? getCompleteAllButton() : document.getElementById(DOM_IDS.COMPLETE_ALL);
+    // getCompleteAllButton was a dead DI dep (resolvable nowhere — the DOM
+    // fallback always ran). Use the CORE_DEP DOM helper directly instead.
+    const completeAllButton = typeof _deps.getElementById === 'function'
+        ? _deps.getElementById(DOM_IDS.COMPLETE_ALL)
+        : document.getElementById(DOM_IDS.COMPLETE_ALL);
 
     if (!taskList || !completeAllButton) {
         // Elements should exist after DOMContentLoaded - warn if missing

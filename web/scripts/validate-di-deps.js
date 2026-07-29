@@ -30,10 +30,14 @@
  * sub-modules (no manifest, wired via wireSubModuleDependencies) are out of scope.
  *
  * Usage:
- *   node scripts/validate-di-deps.js          # human report; exit 1 if 🔴 found
+ *   node scripts/validate-di-deps.js          # human report
  *   node scripts/validate-di-deps.js --json    # machine-readable
  *
- * @version 1.0
+ * Exit 1 (gated) if: any 🔴 used-but-undeclared, any ⚪ resolvable-nowhere not
+ * covered by RUNTIME_WIRED, or 🟡 declared-but-unused exceeds UNUSED_BASELINE
+ * (ratchet — may only go down). 🟠 facade forward-through remains advisory.
+ *
+ * @version 1.1
  */
 
 import fs from 'fs';
@@ -51,6 +55,22 @@ const JSON_OUT = process.argv.includes('--json');
 // them, so they legitimately touch deps they only pass through. Reported apart
 // from the simple-module findings to keep the high-confidence list clean.
 const FACADES = new Set(['settingsManager', 'taskCore', 'taskDOM', 'preferencesManager']);
+
+// Deps wired at RUNTIME outside the loader (no manifest/depMappings route), so
+// the static scan can't see their provider. Every entry must name the wiring
+// call site. Adding here requires that call site to actually exist — this is an
+// exemption list, not a mute button.
+//   consoleCapture:appendToTestResults — wired by testing-modal-debug.js
+//     setupConsoleCaptureButtons() via consoleCapture.setTestResultsAppender()
+//     (instance method; a static import there would split the module under ?v=).
+const RUNTIME_WIRED = new Set([
+    'consoleCapture:appendToTestResults',
+]);
+
+// Ratchet baseline for 🟡 declared-but-unused: the count may go DOWN freely but
+// any increase fails the run. Lower this number whenever cleanup shrinks it —
+// never raise it to make a failure go away without a removal elsewhere.
+const UNUSED_BASELINE = 100;
 
 const { MODULE_MANIFESTS, CORE_DEPS } = await import(
     pathToFileURL(path.join(bootDir, 'moduleManifests.js')).href
@@ -151,7 +171,8 @@ for (const [name, manifest] of Object.entries(MODULE_MANIFESTS)) {
     const usedButUndeclared = [...accessed]
         .filter(d => !declared.has(d) && !core.has(d) && known.has(d)).sort();
     const resolvableNowhere = [...accessed]
-        .filter(d => !declared.has(d) && !core.has(d) && !known.has(d)).sort();
+        .filter(d => !declared.has(d) && !core.has(d) && !known.has(d)
+            && !RUNTIME_WIRED.has(`${name}:${d}`)).sort();
     const declaredButUnused = [...declared]
         .filter(d => !accessed.has(d) && !core.has(d)).sort();
 
@@ -170,11 +191,21 @@ const totalFacadeUndeclared = facades.reduce((a, r) => a + r.usedButUndeclared.l
 const totalUnused = results.reduce((a, r) => a + r.declaredButUnused.length, 0);
 const totalNowhere = results.reduce((a, r) => a + r.resolvableNowhere.length, 0);
 
+// Gated metrics (exit 1):
+//   🔴 totalUndeclared  — must be 0 (always the hard gate)
+//   ⚪ totalNowhere     — must be 0 (gated since drift-review C-23; the 5
+//                         standing items were cleared, so any new one is a
+//                         freshly-introduced dead dep — fix it or, if genuinely
+//                         runtime-wired, add it to RUNTIME_WIRED with its call site)
+//   🟡 totalUnused      — ratchet: must not exceed UNUSED_BASELINE
+const unusedRegression = totalUnused > UNUSED_BASELINE;
+const failed = totalUndeclared > 0 || totalNowhere > 0 || unusedRegression;
+
 if (JSON_OUT) {
     console.log(JSON.stringify(
-        { totalUndeclared, totalFacadeUndeclared, totalUnused, totalNowhere, results, scanFailures },
+        { totalUndeclared, totalFacadeUndeclared, totalUnused, unusedBaseline: UNUSED_BASELINE, totalNowhere, results, scanFailures },
         null, 2));
-    process.exit(totalUndeclared > 0 ? 1 : 0);
+    process.exit(failed ? 1 : 0);
 }
 
 const undeclared = simple.filter(r => r.usedButUndeclared.length);
@@ -205,9 +236,17 @@ for (const r of unusedModules) {
 
 const nowhereModules = results.filter(r => r.resolvableNowhere.length);
 if (nowhereModules.length) {
-    console.log(`\n⚪ ACCESSED-BUT-RESOLVABLE-NOWHERE — no manifest/depMappings/core source (${totalNowhere})`);
-    console.log(`   A dead DI-contract dep (fallback always runs) or a local property.\n`);
+    console.log(`\n⚪ ACCESSED-BUT-RESOLVABLE-NOWHERE — no manifest/depMappings/core source (${totalNowhere}) — GATED, must be 0`);
+    console.log(`   A dead DI-contract dep (fallback always runs) or a local property.`);
+    console.log(`   Fix the access, or if it's genuinely wired at runtime, add it to`);
+    console.log(`   RUNTIME_WIRED in this script with its wiring call site.\n`);
     for (const r of nowhereModules) console.log(`   ${r.name}: ${r.resolvableNowhere.join(', ')}`);
+}
+
+if (unusedRegression) {
+    console.log(`\n❌ UNUSED-DECLARATION RATCHET: ${totalUnused} > baseline ${UNUSED_BASELINE}.`);
+    console.log(`   A new dead declaration was added. Remove it (or, after real cleanup,`);
+    console.log(`   lower UNUSED_BASELINE — never raise it).`);
 }
 
 if (scanFailures.length) {
@@ -216,4 +255,4 @@ if (scanFailures.length) {
 }
 console.log('');
 
-process.exit(totalUndeclared > 0 ? 1 : 0);
+process.exit(failed ? 1 : 0);

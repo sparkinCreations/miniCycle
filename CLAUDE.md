@@ -41,7 +41,7 @@ npm run build:web  # esbuild release bundle → web/dist/ (what Netlify runs; de
 npm run validate:csp   # inline-script CSP hashes — HARD pre-push gate (blocks release)
 npm run validate:html  # W3C validity (CI)
 npm run validate:docs  # docs links, sidebar orphans, and THIS file's doc paths (CI)
-npm run validate:di    # DI declarations — advisory, always exits 0; run as a before/after diff
+npm run validate:di    # DI declarations — gated (undeclared=0, nowhere=0, unused ratchet) since Jul 2026; runs in CI
 ```
 
 `validate:docs` checks that every `web/docs/…md` path in this file still resolves. A stale

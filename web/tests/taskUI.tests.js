@@ -60,10 +60,8 @@ export async function runTaskUITests(resultsDiv, isPartOfSuite = false) {
                 activeCycle: 'test-cycle'
             }),
             addTask: () => {},
-            updateRecurringButtonVisibility: () => {},
             getElementById: (id) => document.getElementById(id),
             getTaskList: () => document.getElementById('taskList'),
-            getCompleteAllButton: () => document.getElementById('completeAll'),
             isTouchDevice: () => false,
             // Mock taskToAddTaskOptions - converts task to addTask options
             taskToAddTaskOptions: (task) => ({
@@ -560,20 +558,16 @@ export async function runTaskUITests(resultsDiv, isPartOfSuite = false) {
         // If we get here without error, test passes
     });
 
-    await test('refreshTaskListUI calls updateRecurringButtonVisibility', async () => {
+    // NOTE (drift-review C-24): the 'refreshTaskListUI calls
+    // updateRecurringButtonVisibility' test was removed along with the dep —
+    // it was resolvable nowhere in production (no manifest/depMappings route),
+    // so the call the test asserted never ran outside this mock harness.
+    await test('refreshTaskListUI completes without recurring-visibility dep', async () => {
         createTestDOM();
-
-        let updateCalled = false;
-        setTaskUIDependencies({
-            ...createMockDeps(),
-            updateRecurringButtonVisibility: () => { updateCalled = true; }
-        });
-
+        setTaskUIDependencies(createMockDeps());
         await refreshTaskListUI();
-
-        if (!updateCalled) {
-            throw new Error('updateRecurringButtonVisibility should be called');
-        }
+        // Reaching here without a throw is the assertion: the function no
+        // longer depends on updateRecurringButtonVisibility being wired.
     });
 
     // Final cleanup

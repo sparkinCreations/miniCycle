@@ -16,11 +16,11 @@
 | **CSP coverage** | `npm run validate:csp` | `update-version.sh` (pre-push) | 🔴 **Blocks the release** |
 | **HTML validity** | `npm run validate:html` | CI — `performance.yml` | 🔴 Fails CI |
 | **Docs links + nav** | `npm run validate:docs` | CI — `performance.yml` | 🔴 Fails CI |
-| **Lint** | `npm run lint` | CI — `test.yml` | 🔴 Fails CI |
+| **Lint** | `npm run lint` | CI — `test.yml` | 🔴 Fails CI on any error, or on warnings above the `--max-warnings` ratchet in `package.json` (lower it after cleanup; never raise it) |
 | **Module tests** | `npm test` | CI — `test.yml` | 🔴 Fails CI |
 | **Real-app gates** | `npm run test:layout` · `test:sw` · `test:journey` | CI — `test.yml` | 🔴 Fails CI |
 | **Performance** | `npm run perf` | CI — `performance.yml` | 🔴 Fails CI |
-| **DI declarations** | `npm run validate:di` | ❌ nothing — manual only | 🟡 Advisory (always exits 0) |
+| **DI declarations** | `npm run validate:di` | CI — `test.yml` | 🟡 Partially gated (undeclared=0, nowhere=0, unused ratchet; facade advisory) |
 
 ---
 
@@ -75,17 +75,25 @@ folder a new doc belongs in.
 months — 60 broken links, 9 dead sidebar entries, and 22 unreachable docs including 7 of the
 12 guides the root `CLAUDE.md` mandates reading. Nothing checked, so nothing surfaced.
 
-## 🟡 `validate:di` — advisory, not a gate
+## 🟡 `validate:di` — partially gated (July 2026)
 
 **Checks:** module DI declarations against actual usage — deps accessed but not declared in
 `moduleManifests.js`, declared but never used, and accessed-but-resolvable-nowhere.
 
-**Always exits 0**, so it can never fail CI, and it currently reports a standing set of
-findings (notably `taskDOM`, plus known facade false-positives). Treat it as a report to
-read when touching DI wiring, not a pass/fail signal.
+**Gated (exit 1) since the July 2026 drift review** (C-23), which cleared the standing
+findings first:
 
-**The useful way to run it** is as a *diff* — capture output before your change and after,
-and look only at what you added:
+- 🔴 **used-but-undeclared** — must be 0 (was already the hard gate)
+- ⚪ **resolvable-nowhere** — must be 0. The 5 standing items were cleared, so any new one
+  is a freshly-introduced dead dep. Genuinely runtime-wired deps (no static route the
+  scanner can see) go in `RUNTIME_WIRED` in `scripts/validate-di-deps.js` **with their
+  wiring call site named** — it's an exemption list, not a mute button.
+- 🟡 **declared-but-unused** — ratchet: must not exceed `UNUSED_BASELINE` in the script.
+  Lower the baseline after real cleanup; never raise it.
+- 🟠 **facade forward-through** — still advisory (facades legitimately forward deps).
+
+**The diff workflow is still the best review habit** when touching DI wiring — capture
+output before your change and after, and look only at what you added:
 
 ```bash
 npm run validate:di > /tmp/di-before.txt
