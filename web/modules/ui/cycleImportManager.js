@@ -99,6 +99,40 @@ function normalizeImportedText(input, maxLength = 100) {
     return cleaned.trim().substring(0, maxLength);
 }
 
+// History event detail keys the renderer actually reads (historyManager's
+// detail-text branches). Import drops everything else — this closes the one
+// unbounded object in an otherwise strict import allowlist (drift-review C-15).
+// Display-only _* keys (_eventIcon, _eventLabel, _cycleNoun, _taskNoun) are
+// regenerated from getLabel()/icon maps at render time and are never imported.
+const HISTORY_DETAIL_NUMBER_KEYS = ['cycleCount', 'tasksCleared', 'count'];
+const HISTORY_DETAIL_STRING_KEYS = ['achievementId', 'achievementName', 'oldName', 'newName', 'taskName', 'themeName', 'priorityColor'];
+
+/**
+ * Reduce an imported history event's details to the allowlisted, type-checked
+ * key set. Unknown keys and wrong-typed values are dropped.
+ * @param {*} details - Raw details object from the imported file
+ * @returns {Object} Sanitized details
+ */
+function sanitizeHistoryDetails(details) {
+    if (!details || typeof details !== 'object') return {};
+    const safe = {};
+    for (const k of HISTORY_DETAIL_NUMBER_KEYS) {
+        // eslint-disable-next-line security/detect-object-injection -- k iterates the hardcoded allowlist above, never user input
+        if (typeof details[k] === 'number' && Number.isFinite(details[k])) safe[k] = details[k];
+    }
+    for (const k of HISTORY_DETAIL_STRING_KEYS) {
+        // eslint-disable-next-line security/detect-object-injection -- k iterates the hardcoded allowlist above, never user input
+        if (typeof details[k] === 'string') safe[k] = normalizeImportedText(details[k], MAX_TASK_TEXT_LENGTH);
+    }
+    if (Array.isArray(details.taskNames)) {
+        safe.taskNames = details.taskNames
+            .filter(n => typeof n === 'string')
+            .slice(0, 50)
+            .map(n => normalizeImportedText(n, MAX_TASK_TEXT_LENGTH));
+    }
+    return safe;
+}
+
 /**
  * DI injects DataValidator as a lazy accessor function (see depMappings in
  * moduleLoader.js), not the class itself. Unwrap it; tolerate a direct class
@@ -702,19 +736,11 @@ export async function processImportedData(fileContent) {
         const events = Array.isArray(h.events)
             ? h.events.filter(e => e && typeof e === 'object' && typeof e.type === 'string')
                 .slice(0, maxEvents)
-                .map(e => {
-                    const details = (e.details && typeof e.details === 'object') ? { ...e.details } : {};
-                    // Strip display-only fields — renderer regenerates these from getLabel()/icons maps
-                    delete details._eventIcon;
-                    delete details._eventLabel;
-                    delete details._cycleNoun;
-                    delete details._taskNoun;
-                    return {
-                        type: normalizeImportedText(e.type, 50),
-                        timestamp: typeof e.timestamp === 'number' ? e.timestamp : Date.now(),
-                        details
-                    };
-                })
+                .map(e => ({
+                    type: normalizeImportedText(e.type, 50),
+                    timestamp: typeof e.timestamp === 'number' ? e.timestamp : Date.now(),
+                    details: sanitizeHistoryDetails(e.details)
+                }))
             : [];
         safeHistory = { events, maxEvents };
     }
@@ -727,9 +753,36 @@ export async function processImportedData(fileContent) {
             ? ct.entries.filter(e => e && typeof e === 'object')
                 .slice(0, 500)
                 .map(e => ({
-                    text: normalizeImportedText(e.text || '', MAX_TASK_TEXT_LENGTH),
+                    // Canonical field is taskText (clearedTasksManager._buildClearedEntry);
+                    // this mapping used to read `e.text` — a key real entries never have —
+                    // so round-tripped cleared history rendered blank. Accept `text` too
+                    // for files written by the old (broken) mapping.
+                    taskText: normalizeImportedText(e.taskText || e.text || '', MAX_TASK_TEXT_LENGTH),
                     clearedAt: typeof e.clearedAt === 'number' ? e.clearedAt : Date.now(),
-                    ...(e.id ? { id: normalizeImportedText(String(e.id), 100) } : {})
+                    ...(e.id ? { id: normalizeImportedText(String(e.id), 100) } : {}),
+                    // Round-trip fidelity (drift-review C-14): preserve the fields
+                    // _buildClearedEntry() records — validated the same way the task
+                    // path above validates its equivalents — so Recreate after an
+                    // export→import yields the task with due date, priority, and
+                    // recurring settings intact, exactly as the manual promises.
+                    wasHighPriority: e.wasHighPriority === true,
+                    hadDueDate: e.hadDueDate === true,
+                    dueDate: typeof e.dueDate === 'string' ? e.dueDate : null,
+                    priorityColor: typeof e.priorityColor === 'string'
+                        ? normalizeImportedText(e.priorityColor, 50)
+                        : null,
+                    remindersEnabled: e.remindersEnabled === true,
+                    deleteWhenComplete: e.deleteWhenComplete === true,
+                    deleteWhenCompleteSettings: (e.deleteWhenCompleteSettings && typeof e.deleteWhenCompleteSettings === 'object')
+                        ? { cycle: e.deleteWhenCompleteSettings.cycle === true, todo: e.deleteWhenCompleteSettings.todo !== false }
+                        : null,
+                    recurring: e.recurring === true,
+                    recurringSettings: (e.recurring === true && e.recurringSettings && typeof e.recurringSettings === 'object')
+                        ? e.recurringSettings
+                        : null,
+                    clearedInMode: typeof e.clearedInMode === 'string'
+                        ? normalizeImportedText(e.clearedInMode, 30)
+                        : null
                 }))
             : [];
         safeClearedTasks = {
