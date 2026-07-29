@@ -1385,7 +1385,9 @@ export class StatsPanelManager {
                 if (unlockedIds.length > 0) {
                     themeUnlockMessage.textContent = unlockedIds.map(id => {
                         const def = vtm.getThemeDefinition(id);
-                        const icon = def?.icons?.celebrate ?? '✅';
+                        // badge (not celebrate) so the list matches the badge row
+                        // and the manual — 💪 Fitness, 📚 Scholar (drift-review B-03)
+                        const icon = def?.icons?.badge ?? def?.icons?.celebrate ?? '✅';
                         return `${icon} ${def.name}`;
                     }).join('\n');
                     themeUnlockMessage.classList.toggle(DOM_CLASSES.UNLOCKED_MESSAGE, true);
@@ -1405,7 +1407,7 @@ export class StatsPanelManager {
             if (vtm) {
                 if (nextVocabTheme) {
                     const cyclesNeeded = Math.max(0, nextVocabTheme.unlockAt.cycles - globalCyclesCompleted);
-                    const nextIcon = nextVocabTheme.icons?.celebrate ?? '';
+                    const nextIcon = nextVocabTheme.icons?.badge ?? nextVocabTheme.icons?.celebrate ?? '';
                     const cycleWord = getLabel('noun.cycle', { count: cyclesNeeded });
                     const themeUnlockText = getLabel('unlock.nextThemeUnlock', { vars: { name: nextVocabTheme.name, count: cyclesNeeded, cycleWord } });
                     goldenUnlockMessage.textContent = nextIcon ? `${nextIcon} ${themeUnlockText}` : themeUnlockText;
@@ -1429,7 +1431,9 @@ export class StatsPanelManager {
                 gameUnlockMessage.textContent = "";
                 gameUnlockMessage.classList.remove(DOM_CLASSES.UNLOCKED_MESSAGE, DOM_CLASSES.VISIBLE);
             } else if (milestoneUnlocks.taskOrderGame) {
-                gameUnlockMessage.textContent = `${getIcon('game')} ${getLabel('unlock.gameUnlocked')} ${getIcon('unlocked')}`;
+                // No trailing padlock icon — "unlocked!" followed by any lock glyph
+                // reads as still-locked (drift-review B-02).
+                gameUnlockMessage.textContent = `${getIcon('game')} ${getLabel('unlock.gameUnlocked')}`;
                 gameUnlockMessage.classList.toggle(DOM_CLASSES.UNLOCKED_MESSAGE, true);
                 gameUnlockMessage.classList.toggle(DOM_CLASSES.VISIBLE, expanded);
             } else {

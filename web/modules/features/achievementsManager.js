@@ -661,6 +661,7 @@ export class AchievementsManager {
         if (!isUnlocked) {
             progressHtml = `
                 <div class="badge-detail-progress">
+                    <p class="badge-detail-progress-header badge-detail-secondary">${getLabel('achievement.remainingToUnlock')}</p>
                     <div class="achievement-progress-bar">
                         <div class="achievement-progress-fill ${cyclesHigher ? 'achievement-progress-fill--cycles' : 'achievement-progress-fill--tasks'}" style="width: ${Math.max(cycleProgress, taskProgress)}%;"></div>
                         <div class="achievement-progress-fill ${cyclesHigher ? 'achievement-progress-fill--tasks' : 'achievement-progress-fill--cycles'}" style="width: ${Math.min(cycleProgress, taskProgress)}%;"></div>
