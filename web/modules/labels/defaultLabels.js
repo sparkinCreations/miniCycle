@@ -630,7 +630,7 @@ export const DEFAULT_LABELS = deepFreeze({
 
         // Storage (additional)
         storageAccessError:      'Storage access error. Some data may not load.',
-        storageFull:             'Storage full — changes are kept in memory but may be lost on refresh. Try removing unused routines.',
+        storageFull:             'Storage full — recent changes exist only in memory and will be lost when this tab closes. Export a backup now, then remove unused routines.',
 
         // State/data notifications
         dataCorrupted:           'Data was corrupted and has been reset. Your previous data could not be recovered.',

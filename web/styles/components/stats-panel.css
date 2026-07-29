@@ -52,6 +52,23 @@ body:not(.focus-mode) #stats-panel {
     max-height: min(var(--stats-panel-max-vh), calc(100dvh - var(--header-total-height, var(--header-height-fallback)) - var(--nav-dots-clearance, var(--nav-dots-clearance-fallback)) - var(--space-6)));
 }
 
+/* Sticky panel title (drift-review B-05): the h2 used to scroll with the
+   content and get sliced in half against the card's rounded top edge once the
+   panel grew tall enough to scroll (e.g. Milestone Rewards expanded with all
+   themes unlocked). Pin it to the top of the scrollport, bleeding over the
+   panel's padding so scrolled content passes under it, with the panel's own
+   background (inherit — tracks the dark-mode direct override too). */
+.stats-panel > h2 {
+    position: sticky;
+    top: 0;
+    z-index: var(--z-content);
+    align-self: stretch;
+    margin: calc(-1 * var(--space-5)) calc(-1 * var(--space-6)) 0;
+    padding: var(--space-5) var(--space-6) var(--space-2);
+    background: inherit;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
 /* =============================================================================
    STATS PANEL VISIBILITY STATES
    ============================================================================= */

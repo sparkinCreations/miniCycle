@@ -702,8 +702,8 @@ export class AchievementsManager {
                     <div id="badge-coin" class="badge-coin ${isUnlocked ? '' : 'badge-coin--locked'}" data-milestone="${milestone}" ${rewardAttr ? `data-reward="${rewardAttr}"` : ''}>
                         <span class="badge-coin-emoji">${tierConfig.emoji}</span>
                     </div>
+                    ${dragHintHtml}
                 </div>
-                ${dragHintHtml}
 
                 <h3 class="badge-detail-name">${tierConfig.name}</h3>
                 <p class="badge-detail-threshold badge-detail-secondary">
