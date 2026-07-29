@@ -24,12 +24,15 @@ The CLAUDE.md check is the highest-value one. A stale path there fails **silentl
 — no error, no broken page — it just routes an AI session to a file that no longer
 exists and quietly degrades every change made afterward.
 
-THREE CHECKS
-------------
+FOUR CHECKS
+-----------
 1. Broken relative links   — every `[text](path)` in docs/ must resolve on disk.
 2. Sidebar orphans         — every .md must be reachable from `_sidebar.md`.
 3. CLAUDE.md routing       — every `web/docs/...md` path in the root CLAUDE.md
                              must resolve.
+4. Public surfaces         — manual version-stamp freshness + forbidden
+                             terminology on pages/ and legal/ (drift-review
+                             item 18; see docs/DRIFT_AUDIT_CHECKLIST.md).
 
 Zero dependencies (stdlib only), matching validate-html.py / validate-csp.py.
 
@@ -206,6 +209,82 @@ def check_claude_md(list_mode):
     return len(missing)
 
 
+def check_public_surfaces(list_mode):
+    """Public-surface drift checks (drift-review item 18, July 2026).
+
+    The July 2026 external drift review found every copy finding lived on the
+    public surfaces (pages/, legal/) that nothing watched. Two of its finding
+    classes are mechanically checkable:
+
+    1. Manual version-stamp freshness — legal/user-manual.html carries a
+       "(vX.YYY)" stamp that silently went 134 minor versions stale (v2.206 vs
+       v2.340). Normal between-release drift is a handful of versions, so fail
+       only when it falls more than STALE_TOLERANCE minor versions behind
+       version.js — loose enough not to nag every release, tight enough that it
+       can never rot for months again.
+
+    2. Terminology — the feature is "Focus View" everywhere user-facing; the
+       marketing page shipped "Focus Mode" for months (A-04). Forbidden spellings
+       are checked case-sensitively on public surfaces only (pages/, legal/), so
+       code identifiers like `focusMode`/`focus-mode` never false-positive.
+    """
+    errors = 0
+    STALE_TOLERANCE = 30
+
+    # -- 1. manual version stamp vs version.js --------------------------------
+    manual = os.path.join(WEB, 'legal', 'user-manual.html')
+    version_js = os.path.join(WEB, 'version.js')
+    if os.path.isfile(manual) and os.path.isfile(version_js):
+        vj = open(version_js, encoding='utf-8').read()
+        app_m = re.search(r"APP_VERSION\s*=\s*'(\d+)\.(\d+)'", vj)
+        stamp_m = re.search(r'class="last-updated">[^<]*\(v(\d+)\.(\d+)\)',
+                            open(manual, encoding='utf-8').read())
+        if not stamp_m:
+            print('❌ Manual stamp        legal/user-manual.html has no '
+                  '"Last updated: ... (vX.YYY)" stamp')
+            errors += 1
+        elif app_m:
+            app_major, app_minor = int(app_m.group(1)), int(app_m.group(2))
+            st_major, st_minor = int(stamp_m.group(1)), int(stamp_m.group(2))
+            behind = (app_major - st_major) * 1000 + (app_minor - st_minor)
+            if behind > STALE_TOLERANCE:
+                print('❌ Manual stamp        v%d.%d is %d minor version(s) behind '
+                      'app v%d.%d (tolerance %d) — refresh the stamp in '
+                      'legal/user-manual.html'
+                      % (st_major, st_minor, behind, app_major, app_minor,
+                         STALE_TOLERANCE))
+                errors += 1
+            else:
+                print('✅ Manual stamp        v%d.%d within %d minor version(s) of '
+                      'app v%d.%d' % (st_major, st_minor, STALE_TOLERANCE,
+                                      app_major, app_minor))
+
+    # -- 2. forbidden terminology on public surfaces ---------------------------
+    # (term, canonical replacement) — case-sensitive, user-facing spellings only.
+    forbidden = [('Focus Mode', 'Focus View')]
+    surface_files = []
+    for d in ('pages', 'legal'):
+        droot = os.path.join(WEB, d)
+        if os.path.isdir(droot):
+            for base, _dirs, files in os.walk(droot):
+                surface_files += [os.path.join(base, f) for f in files
+                                  if f.endswith('.html')]
+    term_hits = 0
+    for f in surface_files:
+        text = open(f, encoding='utf-8', errors='replace').read()
+        for term, canonical in forbidden:
+            for i, line in enumerate(text.splitlines(), 1):
+                if term in line:
+                    print('❌ Terminology         %s:%d uses "%s" — canonical term '
+                          'is "%s"' % (os.path.relpath(f, WEB), i, term, canonical))
+                    term_hits += 1
+    if not term_hits:
+        print('✅ Terminology         %d public page(s) use canonical terms'
+              % len(surface_files))
+    errors += term_hits
+    return errors
+
+
 def main():
     ap = argparse.ArgumentParser(description='Validate docs/ links and navigation.')
     ap.add_argument('--list', action='store_true',
@@ -226,6 +305,7 @@ def main():
     errors = check_links(args.list)
     errors += check_orphans(args.list)
     errors += check_claude_md(args.list)
+    errors += check_public_surfaces(args.list)
 
     print()
     if errors:

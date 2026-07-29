@@ -1,6 +1,10 @@
 # Doc Drift Audit Checklist
 
-Purpose: Track documentation that appears out of sync with the current zero-globals + strict DI architecture.
+Purpose: Track documentation that appears out of sync with the current code — both
+developer docs (vs the zero-globals + strict DI architecture) and **public surfaces**
+(vs actual app behavior). The July 2026 external drift review found that every one of
+its copy findings lived on public surfaces this checklist didn't cover; the Public
+Surfaces section below closes that gap.
 
 ## Status Legend
 - [ ] Not reviewed
@@ -36,7 +40,42 @@ Purpose: Track documentation that appears out of sync with the current zero-glob
 - [x] docs/architecture/APPINIT_EXPLAINED.md
   - Reviewed: content is accurate and uses DI patterns correctly. Tone is approachable, not conversational/AI-like. No rewrite needed.
 
+## Public Surfaces (added July 2026 — drift-review item 18)
+
+The surfaces users read, measured against what the app actually does. Same discipline
+as above: **confirm current code behavior in `modules/` before editing claims** — and
+in this direction, prefer fixing the copy to match the code unless the code is wrong.
+
+- [x] pages/learn_more.html
+  - July 2026: "Completed tasks are deleted" → recoverable-for-90-days (verified `PRUNE_DAYS`);
+    "always recoverable" → export/restore wording; Focus Mode → Focus View; removed
+    "streaks maintained" (feature removed).
+- [ ] pages/product.html
+  - A-10 (open): sells effort claims; consider swapping one assertion for one piece of
+    evidence (test counts, validators) for the audience that clicks through to GitHub.
+- [x] legal/user-manual.html
+  - July 2026: "restore any task" → "recreate… with due date, priority, and recurring
+    settings intact"; version stamp refreshed. **Stamp goes stale every release** —
+    `validate:docs` now fails if it falls more than 30 minor versions behind `version.js`.
+- [x] legal/privacy.html
+  - July 2026: self-reference URL verified correct. Privacy claims are load-bearing —
+    re-verify against `shareManager`/tracker code whenever export/share/analytics change.
+- [x] In-app strings (modules/labels/, modal headers, status lines)
+  - July 2026: tapToOpen wording aligned with manual; trailing padlock dropped from
+    game-unlocked; "Remaining to unlock" header added to locked badge dialog; Milestone
+    Rewards icons aligned with badge row (theme `badge` icons).
+
+### Terminology register
+Canonical terms the public surfaces must use:
+- **Focus View** (never "Focus Mode") — everywhere user-facing. **Enforced by
+  `validate:docs`** (case-sensitive scan of pages/ and legal/).
+- Badge icons: 🔥 5 / 💪 25 / 📚 50 / 🧹 75 / 👑 100 — lists naming these milestones use
+  the badge-row emoji, not theme celebrate icons (🏆/🎓). Manual review — themes.js
+  legitimately uses the celebrate icons elsewhere, so this one isn't mechanically checked.
+
 ## Verification Steps (when updating)
 - [ ] Confirm current code behavior in `modules/` before editing doc claims.
 - [ ] Add explicit "legacy pattern" callouts when keeping old examples.
 - [ ] Update any doc cross-links that reference changed patterns.
+- [ ] For public surfaces: verify every behavioral claim (retention windows, limits,
+      recoverability) against the constant or code path that implements it.
