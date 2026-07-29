@@ -1,3 +1,22 @@
+## [2.342] - 2026-07-29
+- fix(ui): sticky stats title, drag-hint under coin, stronger storage-full copy
+- feat(sw): update-ready nudge when reload cooldown suppresses refresh
+- docs: public-surface drift checks in checklist and validate-docs
+- chore(di): clear nowhere-deps, gate validate:di, add lint ratchet
+- fix(copy): drift-review copy corrections (learn_more, manual, labels, stats)
+- fix(state): immediate save returns result; routine size excludes undo cache
+- fix(undo): iOS unload-flush trio, cache byte cap, wrapperActive off _deps
+- fix(import): cleared-task round-trip fidelity + history details allowlist
+- fix(privacy): share payload no longer includes history or cleared tasks
+- test(achievements): cross-module integration — one game toast end-to-end
+- fix: address CodeRabbit review on #16 — six fixes, three skips
+- fix(tests): drop the strip option from createMockSanitizeInput entirely
+- chore(release): update version to 2.341
+- fix(achievements): one toast per game unlock — no generic stacking
+- fix(a11y): help-window text + Add button now scale cleanly with Font Size
+- test: Round 2 audit remediation — faithful sanitize mocks, real assertions
+
+
 ## [2.341] - 2026-07-28
 - fix(achievements): one toast per game unlock — no generic stacking
 - fix(a11y): help-window text + Add button now scale cleanly with Font Size
