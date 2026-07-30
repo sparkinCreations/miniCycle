@@ -470,7 +470,7 @@
   var forcedFull = (location.search.indexOf('mode=full') !== -1);
   try {
     forcedFull = forcedFull || localStorage.getItem('miniCycleForceFullVersion') === 'true';
-  } catch(e){}
+  } catch(e){ /* storage unavailable — keep the URL-derived value */ }
 
   window.__FeatureGateNeedsLite = needsLite;
   window.__FeatureGateReasons = reasons;
@@ -1207,7 +1207,7 @@ window.installApp = () => {
           }, 400);
         }, 4000);
       })
-      .catch(function() {});
+      .catch(function() { /* boot tips are decorative — a failed fetch just shows none */ });
   })();
   </script>
 
@@ -1255,7 +1255,7 @@ window.installApp = () => {
     try { raw = localStorage.getItem('miniCycleData'); } catch (e) { return; }
     if (raw) {
       var choiceMade = false, onboardingDone = false;
-      try { choiceMade = localStorage.getItem('miniCycle_firstRunChoiceMade') === '1'; } catch (e) {}
+      try { choiceMade = localStorage.getItem('miniCycle_firstRunChoiceMade') === '1'; } catch (e) { /* storage unavailable — treat as not chosen */ }
       try {
         var parsed = JSON.parse(raw);
         onboardingDone = !!(parsed && parsed.settings && parsed.settings.onboardingCompleted);
@@ -1272,7 +1272,7 @@ window.installApp = () => {
     loader.setAttribute('data-awaiting-choice', 'true');
     choice.hidden = false;
     if (bottomBar) bottomBar.hidden = false;
-    try { performance.mark('mc:firstrun:choiceShown'); } catch (e) {}
+    try { performance.mark('mc:firstrun:choiceShown'); } catch (e) { /* Performance API unavailable — marks are diagnostics only */ }
 
     // Rotating use-case line (under the tagline) — same rhythm as the bottom
     // tips: fade out, swap, fade in. Stops once the screen is dismissed.
@@ -1317,12 +1317,12 @@ window.installApp = () => {
       var btn = e.target && e.target.closest ? e.target.closest('.first-run-btn') : null;
       if (!btn || btn.disabled) return;
       var value = btn.getAttribute('data-choice');
-      try { sessionStorage.setItem('miniCycle_firstRunChoice', value); } catch (err) {}
+      try { sessionStorage.setItem('miniCycle_firstRunChoice', value); } catch (err) { /* storage unavailable — same-tab routing degrades gracefully */ }
       // Durable flag (survives relaunch) so a reload after choosing doesn't
       // re-show the choice screen — the gate above reads it. sessionStorage
       // handles same-tab routing; localStorage handles the cross-launch gate.
-      try { localStorage.setItem('miniCycle_firstRunChoiceMade', '1'); } catch (err) {}
-      try { performance.mark('mc:firstrun:choiceTapped'); } catch (err) {}
+      try { localStorage.setItem('miniCycle_firstRunChoiceMade', '1'); } catch (err) { /* storage unavailable — worst case the choice screen re-shows */ }
+      try { performance.mark('mc:firstrun:choiceTapped'); } catch (err) { /* Performance API unavailable — marks are diagnostics only */ }
 
       // Button takeover: the tapped button becomes the progress surface.
       var btns = choice.querySelectorAll('.first-run-btn');
@@ -1333,7 +1333,7 @@ window.installApp = () => {
       loader.setAttribute('data-awaiting-choice', 'false');
       try {
         document.dispatchEvent(new CustomEvent('firstrun:choice', { detail: { choice: value } }));
-      } catch (err) {}
+      } catch (err) { /* CustomEvent constructor unsupported — boot proceeds without the signal */ }
     });
 
     // Restore-from-backup (pairs with the error screen's backup button).
@@ -1349,7 +1349,7 @@ window.installApp = () => {
         var reader = new FileReader();
         reader.onload = function () {
           var parsed = null;
-          try { parsed = JSON.parse(reader.result); } catch (err) {}
+          try { parsed = JSON.parse(reader.result); } catch (err) { /* invalid JSON — the null check below shows the error */ }
           if (!parsed || parsed.type !== 'miniCycle-backup' || !parsed.keys || !parsed.keys.miniCycleData) {
             alert('That file is not a valid miniCycle backup.');
             restoreFile.value = '';
@@ -2413,8 +2413,8 @@ document.addEventListener('DOMContentLoaded', function () {
           swSpan.textContent = evt.data.version || 'Unknown';
         }
       };
-      try { reg.active.postMessage({ type: 'GET_VERSION' }, [ch.port2]); } catch (e) {}
-    }).catch(function(){});
+      try { reg.active.postMessage({ type: 'GET_VERSION' }, [ch.port2]); } catch (e) { /* SW channel unavailable — version display stays 'Unknown' */ }
+    }).catch(function(){ /* no active SW — this only feeds the version display */ });
   }
 
   // Wire "Check for Updates" buttons (settings + main menu).

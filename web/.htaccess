@@ -30,18 +30,18 @@
             'sha256-9oUJeQk/LnW7VxfSmRqGw4lXWmtMuImBkFhmgZ7Ba24=' \
             'sha256-WSp59MtTWFmuS0HmN4+K9vuOY8c/2axiUsdE8iasRSc=' \
             'sha256-4+Try4BCJl5RqrE2z8ON18rf30QjL9aCI3JCAtsTyvQ=' \
-            'sha256-+6526Rf5+lTxqDrYYOqJKAcOUAOI90/BdtCzCPsLCek=' \
+            'sha256-E7NyTfGtZY6pIvMjFald4WeE2qeqFMUURrZHFRfaTuU=' \
             'sha256-tJ3g8aTO6gUnLKPoRQlUelKAr9Zl/QXEvGrAGZ6Cry0=' \
-            'sha256-L48rSzQZDz0xm1+gznsZQdu6UuyrnapUIVm3MtKxJtg=' \
-            'sha256-wrm7cA6uwFJojl2ajGfvoYIjfXIO9gUA18tRBFxGEN0=' \
-            'sha256-P6CBWOB36C+wEB4kKaP18V1Ru+ooW+5lIvMW1c8UeYM=' \
+            'sha256-bsQnxWPJvOL8lrDJj0Td7Wi6H1klK2MgA3/lMOxjmEQ=' \
+            'sha256-+i9aaBiLnGHKJTsoAGCbIZUY+M7FxRn5P48/di6MKOA=' \
+            'sha256-CicEbIPNk0+rCHo6rhXiQN3oT5ds6OCjAW/XaAPmYgQ=' \
             'sha256-TvxHZOVivrxcPviI9Cd4f1swAF6ZVYzwtIGENftY0+E=' \
             'sha256-vGZuMd1H/FTwm86koTe5wsQY3mvTLKnbF+b8y6E6ELI=' \
             'sha256-HoVNOC42cKVHDxrnLY25aAvmKNrxd0QbgTdu4G7p9Vk=' \
             'sha256-ZmCo1D8qlgnCgO2lPu9go7bFumJyHt4sEttY02PYpQ8=' \
             'sha256-h+r8SXgnpMvpkOBx8UvUXtwr8qr+Jw6l0RYQo66Ga1s=' \
             'sha256-QpkPeUhcvkEgamsLQnX7k8hY+gb4DX1E+xrcb23bhJo=' \
-            'sha256-XYfJaUAtKZN+z7Y91QP9C2lcTsF/mtN5QDwzQ6xePTE='; \
+            'sha256-VoNs0uGHLnT/Tl9N6OAofXiowlMh0+aa/ih2Pkxj2xI='; \
         style-src 'self' 'unsafe-inline'; \
         font-src 'self'; \
         img-src 'self' data: blob:; \

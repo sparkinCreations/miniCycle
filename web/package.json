@@ -23,6 +23,7 @@
     "lint": "eslint modules/ service-worker.js miniCycle-main.js --max-warnings=1075",
     "lint:fix": "eslint modules/ --fix",
     "validate:di": "node scripts/validate-di-deps.js",
+    "validate:inline": "python3 scripts/validate-inline.py",
     "validate:csp": "python3 scripts/validate-csp.py",
     "check:dupes": "bash scripts/check-duplicates.sh",
     "clean:dupes": "bash scripts/check-duplicates.sh --fix",

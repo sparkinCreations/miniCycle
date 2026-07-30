@@ -21,6 +21,7 @@
 | **Real-app gates** | `npm run test:layout` · `test:sw` · `test:journey` | CI — `test.yml` | 🔴 Fails CI |
 | **Performance** | `npm run perf` | CI — `performance.yml` | 🔴 Fails CI |
 | **DI declarations** | `npm run validate:di` | CI — `test.yml` | 🟡 Partially gated (undeclared=0, nowhere=0, unused ratchet; facade advisory) |
+| **Inline scripts** | `npm run validate:inline` | CI — `test.yml` | 🔴 Fails CI — empty catch blocks in miniCycle.html inline scripts must carry an intent comment (ESLint's `no-empty` can't see the file — drift-review D-01) |
 
 ---
 
