@@ -1186,7 +1186,7 @@ async function startOrchestrator() {
     }
 
     // Show initial progress immediately
-    updateLoaderProgress(getLabel('boot.connecting'), 2);
+    updateLoaderProgress(getLabel('boot.gettingReady'), 2);
 
     // Wait for SW to be ready before importing modules
     await waitForServiceWorker();

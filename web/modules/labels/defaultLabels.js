@@ -1920,7 +1920,10 @@ export const DEFAULT_LABELS = deepFreeze({
 
     boot: {
         loadingApp:       'Loading miniCycle...',
-        connecting:       'Connecting...',
+        // First visible boot beat (2%). NOT "Connecting..." — this is a
+        // local-only app whose launch screen must not imply a server
+        // (drift-review D-06).
+        gettingReady:     'Getting ready...',
         loadingModules:   'Loading modules...',
         checkingUpdates:  'Checking for updates...',
         loadingCore:      'Loading core...',
