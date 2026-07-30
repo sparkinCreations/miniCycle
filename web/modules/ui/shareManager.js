@@ -12,6 +12,7 @@ import { createDIModule, required, optional } from '../core/diBase.js';
 import { DOM_IDS, APP_URL, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { isNativeApp, shareRoutineFileNative, shareTextNative } from '../platform/capacitorBridge.js';
+import { buildMcycPayload } from '../utils/mcycPayload.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -114,48 +115,11 @@ export function setupShareRoutineButton() {
             return;
         }
 
-        // Build .mcyc payload (same structure as cycleExportManager)
-        const miniCycleData = {
-            name: activeCycle,
-            title: cycle.title || 'New Routine',
-            tasks: cycle.tasks.map(task => {
-                const settings = task.recurringSettings
-                    ? structuredClone(task.recurringSettings)
-                    : {};
-
-                if (task.recurring && !settings.specificTime && !settings.defaultRecurTime) {
-                    settings.defaultRecurTime = new Date().toISOString();
-                }
-
-                return {
-                    id: task.id || `task-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-                    text: task.text || '',
-                    completed: task.completed || false,
-                    dueDate: task.dueDate || null,
-                    highPriority: task.highPriority || false,
-                    remindersEnabled: task.remindersEnabled || false,
-                    recurring: task.recurring || false,
-                    recurringSettings: settings,
-                    deleteWhenComplete: task.deleteWhenComplete,
-                    deleteWhenCompleteSettings: task.deleteWhenCompleteSettings || { cycle: false, todo: true },
-                    schemaVersion: task.schemaVersion || 2
-                };
-            }),
-            autoReset: cycle.autoReset || false,
-            cycleCount: cycle.cycleCount || 0,
-            deleteCheckedTasks: cycle.deleteCheckedTasks || false,
-            taskOptionButtons: cycle.taskOptionButtons || null,
-            recurringTemplates: cycle.recurringTemplates || {},
-            reminders: cycle.reminders || null,
-            autoUncheckDaily: cycle.autoUncheckDaily || null,
-            createdAt: cycle.createdAt || null,
-            theme: cycle.theme || 'classic'
-            // Privacy: history and clearedTasks are deliberately NOT shared.
-            // Sharing a routine sends the recipient the routine's *structure* —
-            // not the sender's event log or up to 500 cleared task names.
-            // Export-for-backup (cycleExportManager) keeps both; that file is
-            // for the owner's own restore, not for another person.
-        };
+        // Privacy: includeHistory false — sharing a routine sends the
+        // recipient the routine's *structure*, not the sender's event log or
+        // up to 500 cleared task names (drift-review C-06). Backup paths pass
+        // true; that file is for the owner's own restore, not another person.
+        const miniCycleData = buildMcycPayload(activeCycle, cycle, { includeHistory: false });
 
         const cycleName = cycle.title || activeCycle;
         const fileName = `${cycleName.replace(/[^a-z0-9]/gi, '_')}.mcyc.json`;

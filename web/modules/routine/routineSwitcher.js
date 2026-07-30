@@ -25,6 +25,7 @@ import { createDIModule, optional } from '../core/diBase.js';
 import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, APP_VERSION } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
+import { buildMcycPayload } from '../utils/mcycPayload.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -527,48 +528,21 @@ export class RoutineSwitcher {
     }
 
     /**
-     * Build export payload from cycle data (matches cycleExportManager format)
+     * Build export payload from cycle data via the single shared builder
+     * (drift-review D-02 — this used to be a third hand-rolled copy that had
+     * silently dropped priorityColor AND autoUncheckDaily).
+     *
+     * includeHistory is true for now — this is the "download routine" path and
+     * whether it should carry history (backup semantics) or strip it (share
+     * semantics, like shareManager) is an open product decision. Flipping it
+     * is a one-word change here.
      * @param {string} cycleKey - The cycle key/ID
      * @param {Object} cycle - The cycle data from AppState
      * @returns {Object} Export-ready data object
      * @private
      */
     _buildExportPayload(cycleKey, cycle) {
-        return {
-            name: cycleKey,
-            title: cycle.title || "New Routine",
-            tasks: (cycle.tasks || []).map(task => {
-                const settings = task.recurringSettings
-                    ? structuredClone(task.recurringSettings)
-                    : {};
-                if (task.recurring && !settings.specificTime && !settings.defaultRecurTime) {
-                    settings.defaultRecurTime = new Date().toISOString();
-                }
-                return {
-                    id: task.id,
-                    text: task.text || "",
-                    completed: task.completed || false,
-                    dueDate: task.dueDate || null,
-                    highPriority: task.highPriority || false,
-                    remindersEnabled: task.remindersEnabled || false,
-                    recurring: task.recurring || false,
-                    recurringSettings: settings,
-                    deleteWhenComplete: task.deleteWhenComplete,
-                    deleteWhenCompleteSettings: task.deleteWhenCompleteSettings || { cycle: false, todo: true },
-                    schemaVersion: task.schemaVersion || 2
-                };
-            }),
-            autoReset: cycle.autoReset || false,
-            cycleCount: cycle.cycleCount || 0,
-            deleteCheckedTasks: cycle.deleteCheckedTasks || false,
-            taskOptionButtons: cycle.taskOptionButtons || null,
-            recurringTemplates: cycle.recurringTemplates || {},
-            reminders: cycle.reminders || null,
-            createdAt: cycle.createdAt || null,
-            theme: cycle.theme || 'classic',
-            history: cycle.history || null,
-            clearedTasks: cycle.clearedTasks || null
-        };
+        return buildMcycPayload(cycleKey, cycle, { includeHistory: true });
     }
 
     /**

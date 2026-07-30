@@ -1,0 +1,75 @@
+/**
+ * mcycPayload.js — the single builder for .mcyc routine payloads.
+ *
+ * Drift-review D-02: there were THREE hand-rolled copies of this payload
+ * (shareManager, cycleExportManager, routineSwitcher) and they had already
+ * diverged twice — C-06 (the history/clearedTasks privacy strip reached only
+ * shareManager) and priorityColor (present only in cycleExportManager, so
+ * share and switcher-download round-trips silently dropped custom priority
+ * colors). One builder, one shape; call sites choose only includeHistory.
+ *
+ * Pure data transform — no DI, no side effects, no manifest entry needed.
+ * Safe to import statically from manifest modules and facade sub-modules
+ * alike (duplicate module instances would be harmless, and bare relative
+ * imports resolve to a single URL anyway).
+ */
+
+/**
+ * Build a .mcyc export/share payload from a cycle record.
+ * @param {string} cycleKey - Storage key of the cycle
+ * @param {Object} cycle - Cycle record from state.data.cycles[cycleKey]
+ * @param {Object} options
+ * @param {boolean} options.includeHistory - Include history + clearedTasks.
+ *   true  = backup-for-self semantics (Settings export, routine download);
+ *   false = share-with-others semantics (shareManager) — never send the
+ *           owner's event log or cleared-task names to another person (C-06).
+ * @returns {Object} JSON-serializable .mcyc payload
+ */
+export function buildMcycPayload(cycleKey, cycle, { includeHistory }) {
+    const payload = {
+        name: cycleKey,
+        title: cycle.title || 'New Routine',
+        tasks: (cycle.tasks || []).map(task => {
+            // Clone to avoid mutating live cycle data
+            const settings = task.recurringSettings
+                ? structuredClone(task.recurringSettings)
+                : {};
+
+            // Add fallback time if task is recurring and doesn't use specificTime
+            if (task.recurring && !settings.specificTime && !settings.defaultRecurTime) {
+                settings.defaultRecurTime = new Date().toISOString();
+            }
+
+            return {
+                id: task.id || `task-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+                text: task.text || '',
+                completed: task.completed || false,
+                dueDate: task.dueDate || null,
+                highPriority: task.highPriority || false,
+                priorityColor: task.priorityColor || null,
+                remindersEnabled: task.remindersEnabled || false,
+                recurring: task.recurring || false,
+                recurringSettings: settings,
+                deleteWhenComplete: task.deleteWhenComplete,
+                deleteWhenCompleteSettings: task.deleteWhenCompleteSettings || { cycle: false, todo: true },
+                schemaVersion: task.schemaVersion || 2
+            };
+        }),
+        autoReset: cycle.autoReset || false,
+        cycleCount: cycle.cycleCount || 0,
+        deleteCheckedTasks: cycle.deleteCheckedTasks || false,
+        taskOptionButtons: cycle.taskOptionButtons || null,
+        recurringTemplates: cycle.recurringTemplates || {},
+        reminders: cycle.reminders || null,
+        autoUncheckDaily: cycle.autoUncheckDaily || null,
+        createdAt: cycle.createdAt || null,
+        theme: cycle.theme || 'classic'
+    };
+
+    if (includeHistory) {
+        payload.history = cycle.history || null;
+        payload.clearedTasks = cycle.clearedTasks || null;
+    }
+
+    return payload;
+}
