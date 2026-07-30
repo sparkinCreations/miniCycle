@@ -1,3 +1,11 @@
+## [2.343] - 2026-07-30
+- test(taskUI): real assertion in refresh test (meta guard)
+- chore(lint): inline-script empty-catch gate + intent comments (D-01)
+- refactor(export): single .mcyc payload builder for share/export/download (D-02)
+- fix(boot): launch screen says Getting ready, not Connecting (D-06)
+- fix(undo): byte cap counts UTF-16 bytes like storageUtils (C-27)
+
+
 ## [2.342] - 2026-07-29
 - fix(ui): sticky stats title, drag-hint under coin, stronger storage-full copy
 - feat(sw): update-ready nudge when reload cooldown suppresses refresh

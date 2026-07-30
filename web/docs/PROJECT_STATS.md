@@ -5,7 +5,7 @@
 > This file contains metrics that change frequently (version, counts, etc.).
 > All other documentation should reference this file instead of hardcoding these values.
 
-**Last Updated**: July 29, 2026
+**Last Updated**: July 30, 2026
 
 ---
 
@@ -13,14 +13,14 @@
 
 | Metric | Value |
 |--------|-------|
-| **App Version** | 2.342 |
+| **App Version** | 2.343 |
 | **Lite Version** | 2.092 (frozen) |
 | **Schema Version** | 2.5 |
-| **Total Modules** | 133 |
-| **Total Tests** | 3103 |
+| **Total Modules** | 134 |
+| **Total Tests** | 3112 |
 | **Test Pass Rate** | 100% |
 | **CSS Files** | 44 |
-| **JSDoc Blocks** | 1313 |
+| **JSDoc Blocks** | 1315 |
 | **Documentation Files** | 239 |
 | **DI Completion** | 100% |
 | **Custom window.* Globals (modules)** | 0 |
@@ -40,13 +40,13 @@
 | `recurring/` | 16 | Recurring task scheduling, panel, activation |
 | `ui/` | 37 | Modals, menus, settings, onboarding, gestures |
 | `features/` | 9 | Themes, stats, achievements, history, reminders |
-| `utils/` | 18 | Notifications, device detection, utilities |
+| `utils/` | 19 | Notifications, device detection, utilities |
 | `labels/` | 3 | Default labels + label resolver |
 | `storage/` | 2 | Backup manager (IndexedDB), storage persistence (eviction protection) |
 | `progress/` | 1 | Cycle completion tracking |
 | `testing/` | 9 | Test infrastructure |
 | `other/` | 3 | Plugins, experimental |
-| **Total** | **133** | |
+| **Total** | **134** | |
 
 ---
 
@@ -67,8 +67,8 @@
 
 | Category | Tests |
 |----------|-------|
-| Total Tests | 3103 |
-| Test Files | 124 |
+| Total Tests | 3112 |
+| Test Files | 125 |
 | Pass Rate | 100% |
 | Platforms Tested | Mac, iPad, iPhone |
 
