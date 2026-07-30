@@ -1020,6 +1020,19 @@ export async function finalizeUI(options) {
   // non-blocking notice — so a silently-missing feature doesn't go unnoticed.
   featureAvailability.showDegradedModeWarning(getShowNotification());
 
+  // Origin hygiene (docs-subdomain move, Jul 2026): Docsify's search plugin
+  // used to store a multi-MB full-text index in THIS origin's localStorage
+  // when the docs lived at minicycle.app/docs. The docs now live on their own
+  // origin (docs.minicycle.app), so docsify.* keys here are permanent orphans
+  // squatting on the ~5MB quota that user routines compete for — one user
+  // measured 4.28MB used with ~55KB of routines. Deleting is safe: Docsify
+  // transparently re-indexes if it ever runs on this origin again.
+  try {
+    for (const key of Object.keys(localStorage)) {
+      if (key.startsWith('docsify.')) localStorage.removeItem(key);
+    }
+  } catch { /* storage unavailable — nothing to clean */ }
+
 }
 
 // ============================================================================

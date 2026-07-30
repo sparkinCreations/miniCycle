@@ -32,6 +32,35 @@
   status = 301
   force = true
 
+# ═══════════════════════════════════════════════════════════════════════════
+# DOCS SUBDOMAIN (docs.minicycle.app) — same Netlify site, own ORIGIN.
+#
+# WHY (Jul 2026): the docs ran only under minicycle.app/docs, and Docsify's
+# search plugin stores a multi-MB full-text index in localStorage — on the
+# APP's origin, where it competed with user routines for the same ~5MB quota.
+# The storage meter honestly reported it, and under pressure the quota gate
+# can block routine imports. A separate origin gives the docs their own
+# quota — the same isolation pattern as test.minicycle.app.
+#
+# ONE-TIME SETUP (Netlify UI + DNS, cannot be done from this file):
+#   1. Netlify site → Domain management → add alias "docs.minicycle.app"
+#   2. DNS: CNAME docs → this site's *.netlify.app hostname
+# The rewrite below is inert until that alias resolves.
+# force = true: the subdomain must beat same-path static files (e.g. "/").
+[[redirects]]
+  from = "https://docs.minicycle.app/*"
+  to = "/docs/:splat"
+  status = 200
+  force = true
+
+# STEP 2 — uncomment ONLY after docs.minicycle.app resolves, then ship.
+# Uncommenting earlier would redirect /docs to a dead host.
+# [[redirects]]
+#   from = "https://minicycle.app/docs/*"
+#   to = "https://docs.minicycle.app/:splat"
+#   status = 301
+#   force = true
+
 # Headers for security and performance
 [[headers]]
   for = "/*"
