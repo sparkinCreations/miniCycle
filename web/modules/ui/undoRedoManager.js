@@ -63,7 +63,10 @@ function saveToUndoCache(cycleId, undoStack, redoStack) {
     // routines × 20 full-state snapshots could otherwise grow toward the ~5MB
     // localStorage quota shared with main app state. Shed oldest undo entries
     // (index 0) first, then redo entries, until under the cap.
-    while (serialized.length > LIMITS.UNDO_CACHE_MAX_BYTES &&
+    // localStorage stores UTF-16, so actual bytes = string length × 2 — the
+    // same convention storageUtils uses to meter the quota (drift-review C-27;
+    // comparing raw length to a _BYTES constant silently doubled the budget).
+    while (serialized.length * 2 > LIMITS.UNDO_CACHE_MAX_BYTES &&
            (cacheData.undoStack.length > 1 || cacheData.redoStack.length > 0)) {
       if (cacheData.undoStack.length > 1) {
         cacheData.undoStack.shift();
@@ -72,7 +75,7 @@ function saveToUndoCache(cycleId, undoStack, redoStack) {
       }
       serialized = JSON.stringify(cacheData);
     }
-    if (serialized.length > LIMITS.UNDO_CACHE_MAX_BYTES) {
+    if (serialized.length * 2 > LIMITS.UNDO_CACHE_MAX_BYTES) {
       // Even a single snapshot exceeds the cap — skip the write rather than
       // risk evicting quota needed by the main state save.
       console.warn('⚠️ Undo cache exceeds byte cap even after shedding — skipping cache write');
