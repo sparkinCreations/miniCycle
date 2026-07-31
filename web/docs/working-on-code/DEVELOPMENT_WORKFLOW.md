@@ -185,7 +185,7 @@ npm run preview:dist  # serve dist on :8081 — check on a FRESH origin/incognit
 - Official: [minicycleapp.com](https://minicycleapp.com) → redirects to minicycle.app/pages/product.html
 - Full App: [minicycle.app/miniCycle.html](https://minicycle.app/miniCycle.html)
 - Lite Version: [minicycle.app/lite/miniCycle-lite.html](https://minicycle.app/lite/miniCycle-lite.html)
-- Documentation: [minicycle.app/docs](https://minicycle.app/docs)
+- Documentation: [docs.minicycle.app](https://docs.minicycle.app)
 - Tests: [minicycle.app/tests/module-test-suite.html](https://minicycle.app/tests/module-test-suite.html)
 
 ---

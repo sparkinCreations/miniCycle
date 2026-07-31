@@ -156,7 +156,7 @@ Historical documents and outdated guides are preserved in:
 - Redirects to: [minicycle.app/pages/product.html](https://minicycle.app/pages/product.html)
 - Full App: [minicycle.app/miniCycle.html](https://minicycle.app/miniCycle.html)
 - Lite Version: [minicycle.app/lite/miniCycle-lite.html](https://minicycle.app/lite/miniCycle-lite.html)
-- Documentation: [minicycle.app/docs](https://minicycle.app/docs)
+- Documentation: [docs.minicycle.app](https://docs.minicycle.app)
 - Tests: [minicycle.app/tests/module-test-suite.html](https://minicycle.app/tests/module-test-suite.html)
 
 See **[DEPLOYMENT.md](./deployment/DEPLOYMENT.md)** for complete deployment information.

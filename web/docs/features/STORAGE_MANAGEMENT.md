@@ -104,7 +104,7 @@ The quota gates below govern **user-initiated** growth. Several system writers s
 | Corrupted-data snapshots (`miniCycleData_corrupted_<ts>`) | 3 | `LIMITS.MAX_CORRUPT_BACKUPS` |
 | Migration backups (`pre_migration_backup_`, `migration_backup_`) | 2 per prefix | `LIMITS.MAX_MIGRATION_BACKUPS` (v2.331) |
 | Auto-migration backups (`auto_migration_backup_`) | 5 | via `miniCycleBackupIndex` |
-| Undo cache | 20 snapshots | `LIMITS.UNDO_STACK` |
+| Undo cache | 20 snapshots **and** ~1MB byte cap (sheds oldest; real bytes = length×2, matching the quota meter's UTF-16 convention) | `LIMITS.UNDO_STACK` + `LIMITS.UNDO_CACHE_MAX_BYTES` (v2.343) |
 
 ## User-Facing Features
 
@@ -127,9 +127,11 @@ Located in the "Switch miniCycle" modal, the storage bar shows:
 
 **One-time 75% Warning:** When storage first exceeds 75%, a toast notification appears: *"Storage is getting tight. Export old routines to free up space."* This only shows once per session to avoid notification fatigue.
 
+**Co-tenant note (July 2026):** the meter counts *all* localStorage on the app origin — which is correct, since that's the quota routines compete for. The docs site's search index used to live on the same origin and could silently consume multiple MB; docs now run on their own origin (`docs.minicycle.app`), and boot sweeps any orphaned `docsify.*` keys.
+
 ### Routine Sizes
 
-Each routine in the switch modal displays its estimated size (e.g., "~45.2 KB"). The "~" prefix indicates these are estimates based on JSON serialization. This helps users identify which routines are consuming the most space.
+Each routine in the switch modal displays its estimated size (e.g., "~3 KB"). The "~" prefix indicates these are estimates based on JSON serialization. **Since v2.342 the figure is routine data only** — the undo cache is deliberately excluded (it's a separate, transient store; including it made "routine size" disagree with the manual's 1–5 KB guidance). Typical routines are a few KB.
 
 ### Help Window
 

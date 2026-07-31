@@ -131,6 +131,13 @@ Each snapshot captures **complete cycle state** at a point in time:
 
 **Key:** `__miniCycle_undoCache__`
 
+**Byte-capped** (July 2026, drift-review C-08/C-27): besides the 20-snapshot
+count cap, `saveToUndoCache()` enforces `LIMITS.UNDO_CACHE_MAX_BYTES` (~1MB of
+real storage — compared as `serialized.length * 2`, the same UTF-16 convention
+`storageUtils` uses to meter the quota). Over the cap it sheds oldest undo
+entries first, then redo entries; if a single snapshot alone exceeds the cap it
+skips the cache write entirely rather than evict quota the main state save needs.
+
 Stores only the **active cycle's** undo/redo stacks for instant boot:
 
 ```javascript
@@ -374,7 +381,7 @@ Signatures are cached on snapshot objects (`_sig` property) to avoid recomputing
 **3-second debounce** on IndexedDB writes:
 - Multiple snapshots → Single database write
 - Reduces I/O overhead
-- Force-saves on page unload (beforeunload handler)
+- Force-saves on page unload/hide (`beforeunload` + `pagehide` + `visibilitychange→hidden` — the trio, because iOS frequently skips `beforeunload`)
 
 ---
 
@@ -394,7 +401,7 @@ Signatures are cached on snapshot objects (`_sig` property) to avoid recomputing
 4. **Background:** Initialize IndexedDB connection
 5. **Background:** If cache miss, load from IndexedDB and update stacks
 6. **Background:** Update localStorage cache for next boot
-7. Set up `beforeunload` handler for force-save (both cache + IndexedDB)
+7. Set up unload flush handlers for force-save (both cache + IndexedDB) — one handler bound to `beforeunload`, `pagehide`, and `visibilitychange→hidden` (July 2026: upgraded from `beforeunload` alone, which iOS frequently skips)
 
 **Boot Performance:**
 - **With cache (typical):** <1ms for undo system initialization
@@ -520,7 +527,11 @@ If IndexedDB is unavailable (private browsing, browser limitations):
 
 ### Force-Save on Page Unload
 
-A `beforeunload` handler ensures unsaved changes are written:
+An unload handler ensures unsaved changes are written. It is registered on
+**three** events — `beforeunload`, `pagehide`, and `visibilitychange → hidden` —
+because `beforeunload` frequently does NOT fire on iOS when the app is
+backgrounded or swiped away (same trio as AppState's debounced-save flush). The
+handler is idempotent, so firing on both hide and unload is safe:
 
 ```javascript
 window.addEventListener('beforeunload', () => {

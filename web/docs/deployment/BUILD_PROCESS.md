@@ -38,8 +38,13 @@ The fix and current contract:
 - **Repo-root `netlify.toml`** pins `base = "web"`, `publish = "dist"`, and the build
   command with `npm install --include=dev` (esbuild is a devDependency — survives a
   `NODE_ENV=production` site setting). **This file is the build authority. Do not delete it.**
-- **`web/netlify.toml`** keeps headers/redirects (update-version.sh's CSP stage writes it);
-  the build copies it into `dist/` where it keeps being processed from the deploy files.
+- **`web/netlify.toml`** keeps headers (update-version.sh's CSP stage writes it); the
+  build copies it into `dist/` where its `[[headers]]` keep being processed from the
+  deploy files. **Its `[[redirects]]` are NOT processed** (July 31 2026 discovery, docs
+  subdomain rollout): redirect rules only take effect from **`web/_redirects`**, which
+  is the redirect authority — the toml's minicycleapp.com rules only ever worked via
+  their `_redirects` duplicates. New redirects go in `_redirects`, forced (`!`) if they
+  must beat static files, and **above** the root/SPA catch-all rules (first match wins).
 - A source→dist flip (or any change to what gets published) **requires a version+cache
   bump**: at the same version, the new SW precaches different bytes into the SAME cache
   namespace non-atomically, with no version signal for the heal machinery to detect.
@@ -117,10 +122,15 @@ cache-first from the SW regardless of query).
 
 ---
 
-## Docs site (`/docs`)
+## Docs site (`docs.minicycle.app`)
 
 `docs/` is excluded from the blanket static copy and published by a dedicated pass
-(`copyDocs()` in `build-web.cjs`), so `minicycle.app/docs/` serves the docsify site.
+(`copyDocs()` in `build-web.cjs`). Since July 31 2026 the docsify site is served on
+**its own origin, `docs.minicycle.app`** (a host rewrite in `_redirects` maps the
+subdomain onto `/docs/`; old `minicycle.app/docs/*` URLs 301 there). The move exists
+for storage isolation: docsify's search plugin stores a multi-MB full-text index in
+`localStorage`, and on the app origin it competed with user routines for the same
+~5MB quota. The app additionally sweeps orphaned `docsify.*` keys at boot (uiBoot).
 
 **Withheld from the published copy** — still in the repo, still on GitHub, just not on the
 product domain:

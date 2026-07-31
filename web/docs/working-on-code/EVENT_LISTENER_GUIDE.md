@@ -63,7 +63,7 @@ These implement `destroy()` for comprehensive teardown, called automatically by 
 
 | Module | What it cleans up |
 |--------|-------------------|
-| `core/appState.js` | `beforeunload` listener |
+| `core/appState.js` | unload flush trio (`beforeunload` + `pagehide` + `visibilitychange→hidden`) |
 | `task/dragDropManager.js` | Drag state + document/window listeners |
 | `task/taskDOM.js` | Hover listeners on all tasks |
 | `features/dueDates.js` | Document change listener |

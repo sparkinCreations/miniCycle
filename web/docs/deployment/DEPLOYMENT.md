@@ -22,7 +22,7 @@ All content is hosted at **minicycle.app** via **Netlify**:
 | **Product Page** | [minicycle.app/product.html](https://minicycle.app/product.html) |
 | **Full App** | [minicycle.app/miniCycle.html](https://minicycle.app/miniCycle.html) |
 | **Lite Version** | [minicycle.app/miniCycle-lite.html](https://minicycle.app/miniCycle-lite.html) ⚠️ Static fallback, not maintained |
-| **Documentation** | [minicycle.app/docs](https://minicycle.app/docs) |
+| **Documentation** | [docs.minicycle.app](https://docs.minicycle.app) |
 
 ---
 

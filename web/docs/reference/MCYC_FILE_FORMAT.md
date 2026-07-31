@@ -1,7 +1,7 @@
 # .mcyc File Format Documentation
 
 **Schema Version:** 2.5
-**Last Updated:** April 2026
+**Last Updated:** July 2026
 
 ---
 
@@ -42,6 +42,12 @@ A `.mcyc` (miniCycle) file is a **JSON-formatted file** that stores miniCycle ro
 ---
 
 ## Creating .mcyc Files
+
+The app writes `.mcyc` files from three places — **Share** (main menu), **Export**
+(Settings), and **Download** (routine switcher). Since v2.343 all three use one
+payload builder (`modules/utils/mcycPayload.js`); they differ in exactly one way:
+Share **excludes** `history` and `clearedTasks` (privacy — see Security & Privacy
+below), while Export and Download include them (backup semantics).
 
 ### Method 1: Export from miniCycle (Recommended)
 
@@ -249,7 +255,11 @@ When using the complete format, each cycle is stored in `data.cycles`:
 
 ### History Object (v1.685+)
 
-Per-routine history tracking. Travels with .mcyc exports.
+Per-routine history tracking. Travels with **backup** exports (Settings → Export,
+routine download) — **deliberately stripped from Share** (v2.342+, privacy: a
+shared routine carries its structure, not the owner's event log). On import,
+each event's `details` object is reduced to an **allowlist** of the keys the
+history renderer actually reads (v2.343); unknown keys are dropped.
 
 ```json
 {
@@ -275,16 +285,28 @@ Per-routine history tracking. Travels with .mcyc exports.
 
 ### Cleared Tasks Object (v1.685+)
 
-Per-routine tracking of cleared tasks in To-Do mode. Travels with .mcyc exports.
+Per-routine tracking of cleared tasks in To-Do mode. Travels with **backup**
+exports (Settings → Export, routine download) — **deliberately stripped from
+Share** (v2.342+, privacy: a shared routine must not carry the owner's cleared
+task names).
 
 ```json
 {
   "entries": [
     {
       "id": "clr-1704567890123-xyz98",
-      "text": "Buy groceries",
+      "taskText": "Buy groceries",
       "clearedAt": 1704567890123,
-      "priority": "high"
+      "wasHighPriority": true,
+      "hadDueDate": false,
+      "dueDate": null,
+      "priorityColor": "#dc3545",
+      "remindersEnabled": false,
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": { "cycle": false, "todo": true },
+      "recurring": false,
+      "recurringSettings": null,
+      "clearedInMode": "todo"
     }
   ],
   "totalCleared": 147,
@@ -292,11 +314,19 @@ Per-routine tracking of cleared tasks in To-Do mode. Travels with .mcyc exports.
 }
 ```
 
+**⚠️ Field-name trap:** a cleared entry's text lives in **`taskText`** — *not*
+`text`, which is the field on live tasks. An earlier version of this spec showed
+`text` here, and the importer written against that shape rendered round-tripped
+cleared history blank (fixed v2.342; the importer still accepts `text` as a
+legacy alias when reading old files).
+
 **Properties:**
 
 | Property | Type | Description |
 |----------|------|-------------|
 | `entries` | array | Recent cleared tasks (auto-pruned after 90 days) |
+| `taskText` | string | The cleared task's text (see trap above) |
+| `wasHighPriority` / `hadDueDate` / `dueDate` / `priorityColor` / `remindersEnabled` / `deleteWhenComplete` / `deleteWhenCompleteSettings` / `recurring` / `recurringSettings` / `clearedInMode` | various | Full metadata `_buildClearedEntry()` records, so **Recreate** rebuilds the task with settings intact. Since v2.342 the importer preserves all of these (validated) rather than dropping them |
 | `totalCleared` | number | Lifetime count of cleared tasks (persists through prune) |
 | `autoPruneEnabled` | boolean | Whether to auto-remove entries older than 90 days |
 
@@ -1107,8 +1137,12 @@ python3 create_mcyc.py
 - ✅ Stored locally in browser
 
 **Sharing:**
-- ⚠️ Review content before sharing
-- ⚠️ Remove sensitive information
+- ✅ Since v2.342, files created via **Share** automatically exclude `history`
+  and `clearedTasks` — a shared routine carries its *structure* (tasks, settings,
+  recurring templates), never the owner's event log or cleared-task names
+- ⚠️ **Backup files are different**: Export and Download keep history and cleared
+  tasks (they exist for your own restore) — review before handing one to someone else
+- ⚠️ Task text itself always travels — review content before sharing
 - ⚠️ Use descriptive but generic names
 
 ---
@@ -1132,10 +1166,10 @@ python3 create_mcyc.py
 
 ## Version
 
-**Document Version:** 1.3
+**Document Version:** 1.4
 **Schema Version:** 2.5
 
-**Last Updated:** April 2026
+**Last Updated:** July 2026
 
 ---
 
