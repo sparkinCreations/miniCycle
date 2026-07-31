@@ -45,21 +45,12 @@
 # ONE-TIME SETUP (Netlify UI + DNS, cannot be done from this file):
 #   1. Netlify site → Domain management → add alias "docs.minicycle.app"
 #   2. DNS: CNAME docs → this site's *.netlify.app hostname
-# The rewrite below is inert until that alias resolves.
-# force = true: the subdomain must beat same-path static files (e.g. "/").
-[[redirects]]
-  from = "https://docs.minicycle.app/*"
-  to = "/docs/:splat"
-  status = 200
-  force = true
-
-# STEP 2 (activated Jul 31 2026 — docs.minicycle.app confirmed resolving and
-# serving via the existing Netlify alias): old docs URLs move to the subdomain.
-[[redirects]]
-  from = "https://minicycle.app/docs/*"
-  to = "https://docs.minicycle.app/:splat"
-  status = 301
-  force = true
+# THE ACTUAL RULES LIVE IN `_redirects` (v2.344 lesson): Netlify processes
+# the _redirects file with precedence, and this deploy-file netlify.toml's
+# [[redirects]] section turned out not to be consulted at all (its [[headers]]
+# ARE — verified via live CSP). The docs rules were moved to _redirects,
+# placed ABOVE the root/catch-all rules and forced (200!/301!) so they beat
+# static-file shadowing and the host-agnostic fallbacks.
 
 # Headers for security and performance
 [[headers]]

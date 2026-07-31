@@ -2,6 +2,13 @@
 https://minicycleapp.com/*  https://minicycle.app/pages/product.html  301!
 https://www.minicycleapp.com/*  https://minicycle.app/pages/product.html  301!
 
+# Docs subdomain (own origin — Docsify's multi-MB localStorage search index
+# must not share the app origin's ~5MB quota; see netlify.toml DOCS SUBDOMAIN
+# block for the full story). Forced: must beat static files and the
+# host-agnostic root/catch-all rules below for the docs host.
+https://docs.minicycle.app/*  /docs/:splat  200!
+https://minicycle.app/docs/*  https://docs.minicycle.app/:splat  301!
+
 # Legacy URL redirects (preserve old links)
 /privacy.html           /legal/privacy.html           301
 /terms.html             /legal/terms.html             301
