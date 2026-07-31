@@ -1,3 +1,8 @@
+## [2.344] - 2026-07-31
+- feat(storage): activate docs 301 — subdomain DNS confirmed live
+- feat(storage): docs move to own origin; boot sweeps orphaned docsify index
+
+
 ## [2.343] - 2026-07-30
 - test(taskUI): real assertion in refresh test (meta guard)
 - chore(lint): inline-script empty-catch gate + intent comments (D-01)

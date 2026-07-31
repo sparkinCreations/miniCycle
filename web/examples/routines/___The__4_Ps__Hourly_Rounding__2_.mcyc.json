@@ -1,0 +1,158 @@
+{
+  "name": "📋 The \"4 Ps\" Hourly Rounding (2)",
+  "title": "📋 The \"4 Ps\" Hourly Rounding (2)",
+  "tasks": [
+    {
+      "id": "task-4ps-001",
+      "text": "Intro: Safety check",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": true,
+      "priorityColor": "#28a745",
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-4ps-002",
+      "text": "Pain: 0–10? Meds needed?",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": true,
+      "priorityColor": "#dc3545",
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-4ps-003",
+      "text": "Personal needs: Restroom?",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": true,
+      "priorityColor": "#dc3545",
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-4ps-004",
+      "text": "Position: Reposition/comfort",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": true,
+      "priorityColor": "#dc3545",
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-4ps-005",
+      "text": "Call light in reach",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": true,
+      "priorityColor": "#28a745",
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-4ps-006",
+      "text": "Phone/water/glasses near",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": true,
+      "priorityColor": "#dc3545",
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-4ps-007",
+      "text": "Trash can nearby",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": true,
+      "priorityColor": "#28a745",
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-4ps-008",
+      "text": "Closing: Anything else?",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": true,
+      "priorityColor": "#facc15",
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    }
+  ],
+  "autoReset": true,
+  "cycleCount": 0,
+  "deleteCheckedTasks": false,
+  "taskOptionButtons": null,
+  "recurringTemplates": {},
+  "reminders": {
+    "enabled": false,
+    "indefinite": false,
+    "dueDatesReminders": false,
+    "repeatCount": 0,
+    "frequencyValue": 30,
+    "frequencyUnit": "minutes"
+  },
+  "autoUncheckDaily": null,
+  "createdAt": 1785429348776,
+  "theme": "classic"
+}

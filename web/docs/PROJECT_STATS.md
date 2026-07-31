@@ -5,7 +5,7 @@
 > This file contains metrics that change frequently (version, counts, etc.).
 > All other documentation should reference this file instead of hardcoding these values.
 
-**Last Updated**: July 30, 2026
+**Last Updated**: July 31, 2026
 
 ---
 
@@ -13,7 +13,7 @@
 
 | Metric | Value |
 |--------|-------|
-| **App Version** | 2.343 |
+| **App Version** | 2.344 |
 | **Lite Version** | 2.092 (frozen) |
 | **Schema Version** | 2.5 |
 | **Total Modules** | 134 |
@@ -58,8 +58,8 @@
 | `modules/boot/orchestrator.js` | ~1219 | Sequence control + boot UI + early coordination |
 | `modules/boot/coreBoot.js` | ~785 | Core state & init |
 | `modules/boot/featureBoot.js` | ~617 | DI wiring hub |
-| `modules/boot/uiBoot.js` | ~1173 | UI handlers |
-| **Total** | **~3843** | |
+| `modules/boot/uiBoot.js` | ~1186 | UI handlers |
+| **Total** | **~3856** | |
 
 ---
 
