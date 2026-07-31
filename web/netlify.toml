@@ -53,13 +53,13 @@
   status = 200
   force = true
 
-# STEP 2 — uncomment ONLY after docs.minicycle.app resolves, then ship.
-# Uncommenting earlier would redirect /docs to a dead host.
-# [[redirects]]
-#   from = "https://minicycle.app/docs/*"
-#   to = "https://docs.minicycle.app/:splat"
-#   status = 301
-#   force = true
+# STEP 2 (activated Jul 31 2026 — docs.minicycle.app confirmed resolving and
+# serving via the existing Netlify alias): old docs URLs move to the subdomain.
+[[redirects]]
+  from = "https://minicycle.app/docs/*"
+  to = "https://docs.minicycle.app/:splat"
+  status = 301
+  force = true
 
 # Headers for security and performance
 [[headers]]
