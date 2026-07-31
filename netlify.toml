@@ -10,10 +10,11 @@
 # and source-only files (package.json, scripts/, docs/) were publicly served.
 #
 # This root file pins the build settings; a netlify.toml always overrides the
-# site's UI settings. Headers/redirects intentionally STAY in web/netlify.toml
-# (kept current by update-version.sh's CSP stage) — the build copies it into
-# dist/, so it continues to be processed from the deployed files exactly as it
-# is today.
+# site's UI settings. HEADERS stay in web/netlify.toml (kept current by
+# update-version.sh's CSP stage) — the build copies it into dist/ and its
+# [[headers]] ARE processed from the deployed files (verified via live CSP).
+# REDIRECTS are different (v2.344 lesson): the deploy-file toml's [[redirects]]
+# section is NOT consulted — web/_redirects is the redirect authority.
 #
 # --include=dev: esbuild lives in devDependencies; this keeps the build working
 # even if the site sets NODE_ENV=production (which would otherwise prune it).
