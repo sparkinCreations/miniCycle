@@ -48,8 +48,13 @@ in this direction, prefer fixing the copy to match the code unless the code is w
 
 - [x] pages/learn_more.html
   - July 2026: "Completed tasks are deleted" → recoverable-for-90-days (verified `PRUNE_DAYS`);
-    "always recoverable" → export/restore wording; Focus Mode → Focus View; removed
-    "streaks maintained" (feature removed).
+    Focus Mode → Focus View; removed "streaks maintained" (feature removed).
+  - July 31 (A-06b): Backup & Restore card rewritten AGAIN — the first rewrite (from the
+    later-withdrawn A-06) framed backups as manual export, hiding the three automatic
+    tiers backupManager actually keeps (10 daily / 5 session / 50 manual, all restorable
+    in-app). Copy now leads with the automatic backups, verified against
+    `modules/storage/backupManager.js` constants. Lesson: a suggested-copy fix inherits
+    the finding's errors — verify the claim, not just the wording.
 - [ ] pages/product.html
   - A-10 (open): sells effort claims; consider swapping one assertion for one piece of
     evidence (test counts, validators) for the audience that clicks through to GitHub.
