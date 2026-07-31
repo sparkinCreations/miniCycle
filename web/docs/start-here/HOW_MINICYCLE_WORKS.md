@@ -52,8 +52,11 @@ almost nothing:
 
 - `import(...)` = "go load and run another file." Here, the *orchestrator*.
 - `try / catch` = a safety net; if the orchestrator can't even load, at least log why.
-- A version tag (`?v=...`) on imports forces browsers to fetch fresh code after an
-  update instead of showing a stale cached copy ("cache busting").
+- **Cache busting** — making browsers fetch fresh code after an update instead of a
+  stale cached copy — works differently per environment: in **development**, imports
+  carry a version tag (`?v=...`); in **production**, the build renames every file by
+  its content hash (`/build/miniCycle-main-AB12CD34.js`), so a changed file *is* a
+  new URL and can be cached forever.
 
 **Takeaway:** one entry point whose only job is to fetch the manager and hand off.
 
@@ -108,10 +111,18 @@ At boot, the app builds one working unit (an *instance*) from that blueprint. A
 blueprint specifies what the machine **holds** (`this.data` — your routines) and
 what it can **do** (its *methods* — its buttons). The three that matter:
 
-- **`get()`** — "show me the current truth." Returns the current data. Read-only.
+- **`get()`** — "show me the current truth." Returns the current data. Read-only
+  *by convention* — it hands back the live record, and nothing physically stops a
+  module from editing it directly. That's exactly why the update()-only rule below
+  is a **rule**, and why the project's validators police the module wiring so hard.
 - **`update()`** — "change the truth, safely." The *only* correct way to change
   data (details in Part 4).
 - **`save()`** — "write the truth to the device" so it survives a refresh/close.
+  Beyond that live record, the app also keeps **automatic backups** in a separate,
+  much larger store (IndexedDB): the last **10 daily** snapshots, **5 session**
+  snapshots, and up to **50 named** backups — all restorable in-app, no exported
+  file needed. File export exists for the cases backups can't cover (device loss,
+  clearing browser data).
 
 **Why `update()` instead of editing data directly?** Editing the record directly
 *"skips the undo system, the debounced save, and the change notifications."* Going
@@ -150,7 +161,10 @@ async update(updateFn, immediate = false) {
    Example: `AppState.update(state => { state.data.cycles[id].tasks.push(task); })`.
 3. **Save** (`scheduleSave`) — **debounced**: normal saves wait ~600ms and *batch*
    (rapid changes collapse into one save); urgent ones (`immediate = true`) save
-   instantly. A `beforeunload` flush guarantees the last change is written on close.
+   instantly. A pending save is **flushed on close** by three handlers —
+   `beforeunload`, `pagehide`, and `visibilitychange → hidden` — three, because iOS
+   frequently *skips* `beforeunload` when an app is backgrounded or swiped away.
+   A change made moments before closing is still written.
 4. **Ring the bell** (`notifyListeners`) — the elegant part. Parts of the app can
    **subscribe** ("call me when the data changes"). AppState keeps that list and,
    on every change, calls everyone on it — so the screen **redraws automatically**.
@@ -279,15 +293,20 @@ both" — the name is the historical key; the `id` is the newer stable identifie
 ```javascript
 {
   id: "task-xyz",
-  taskText: "Make coffee",
+  text: "Make coffee",
   completed: false,            // ← the checkbox
   highPriority: true,
+  priorityColor: "#8b1a1a",    // custom priority color (null = theme default)
   dueDate: null,
   remindersEnabled: false,
   recurring: false,
   recurringSettings: { ... },  // repeat rules, if recurring
 }
 ```
+
+*(Naming trap worth knowing: a **task's** text lives in `text`, but a **cleared-task
+entry's** text lives in `taskText`. The July 2026 review found an import bug caused
+by exactly this mix-up — round-tripped cleared history rendered blank.)*
 
 So checking a task = navigating `data.cycles[activeId].tasks`, finding the one whose
 `id` matches, and flipping `completed`. The paths you see in code
@@ -299,6 +318,15 @@ to the current shape** (backing it up first). This is what lets the app *evolve*
 data — e.g. introduce the stable `id` alongside the legacy name-key — without
 breaking existing users.
 
+**Routines can also leave the record** as `.mcyc` files (share, backup export, or
+download from the routine switcher). Since v2.343 all three paths use **one payload
+builder** (`modules/utils/mcycPayload.js`) with a single knob: `includeHistory`.
+Sharing sets it **false** — a shared routine carries its *structure* (tasks, settings,
+recurring templates), never the owner's event history or cleared-task names, which is
+a privacy decision. Backup export keeps everything. On the way back in, import
+**rebuilds** every field through a strict allowlist (type-checked, clamped, text
+normalized) rather than trusting the file — see `cycleImportManager.js`.
+
 **Takeaway:** one nested record; routines live in `data.cycles`; each task is an
 object with a `completed` flag; `schemaVersion` enables safe upgrades over time.
 
@@ -309,8 +337,10 @@ object with a `completed` flag; `schemaVersion` enables safe upgrades over time.
 This is what makes miniCycle *miniCycle*: finish every task in a routine and, instead
 of the tasks vanishing (a to-do app), they **reset** so the routine runs again.
 
-1. **Detect completion.** After each task completes, `checkCompleteAllButton` asks
-   *"are they ALL done now?"* If not — nothing special. If yes — the sequence fires.
+1. **Detect completion.** After each task completes, `checkMiniCycle()` (in
+   `modules/progress/cycleCompletion.js`) asks *"are they ALL done now?"* If not —
+   nothing special. If yes — the sequence fires. (Two handlers can both call it per
+   click, so a guard flag prevents a double celebration.)
 2. **Count it** (`incrementCycleCount` in `modules/progress/cycleCompletion.js`):
    ```javascript
    AppState.update(state => {
@@ -321,10 +351,12 @@ of the tasks vanishing (a to-do app), they **reset** so the routine runs again.
    }, true);  // ← immediate save: completing a cycle is a milestone, don't risk losing it
    ```
    Two counts: per-routine (`cycleCount`) and global lifetime (`cyclesCompleted`).
-3. **Rewards ripple.** Milestone overlays at 1, 100, 500 cycles, guarded so each
-   fires once. Two careful details: a `!firstCycleCelebrated` flag (so *migrated*
-   users don't wrongly get the "first cycle!" party) and `>= 100` not `=== 100`
-   (so a backup restore past the threshold still triggers once).
+3. **Rewards ripple.** A first-cycle celebration, then milestone overlays at
+   10, 25, 50, 100, 200, 500, and 1000 cycles, guarded so each fires once.
+   (Vocabulary themes unlock on their own schedule — 5/25/50/75 cycles — and the
+   Whack-a-Order game at 100.) Two careful details: a `!firstCycleCelebrated` flag
+   (so *migrated* users don't wrongly get the "first cycle!" party) and `>=` not
+   `===` threshold checks (so a backup restore past a threshold still triggers once).
 4. **Reset the tasks** (`modules/task/taskCycleReset.js`):
    ```javascript
    cycle.tasks.forEach(task => { task.completed = false; });  // all back to unchecked
@@ -368,7 +400,7 @@ tasks: a fresh one will be stamped later.)
 - **Watcher** (`recurringWatcher.js`) — the *background heartbeat*. It runs on a
   timer (`setInterval`), waking repeatedly to ask *"is anything past its due
   timestamp? If so, stamp it and compute the new next-due."* Clever detail: it
-  **changes its own pulse rate** — every ~30 seconds when you have templates
+  **changes its own pulse rate** — every ~15 seconds when you have templates
   (responsive), slowing to every ~2 hours when you have none (saves battery).
 
 **The sharpest decision — system vs. user changes.** When the watcher spawns a task,
@@ -434,6 +466,9 @@ so it can be safely upgraded as the app evolves.
 | Recurring — when's next | `modules/recurring/recurringCalculators.js` |
 | Recurring — the watcher | `modules/recurring/recurringWatcher.js` |
 | Recurring — the UI panel | `modules/recurring/recurringPanel.js` (+ helpers) |
+| .mcyc payload (share/export/download) | `modules/utils/mcycPayload.js` |
+| .mcyc import (allowlist rebuild) | `modules/ui/cycleImportManager.js` |
+| Automatic backups (3 tiers) | `modules/storage/backupManager.js` |
 
 ---
 
