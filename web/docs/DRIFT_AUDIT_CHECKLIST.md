@@ -65,10 +65,25 @@ in this direction, prefer fixing the copy to match the code unless the code is w
 - [x] legal/privacy.html
   - July 2026: self-reference URL verified correct. Privacy claims are load-bearing —
     re-verify against `shareManager`/tracker code whenever export/share/analytics change.
+  - Aug 2026 (A-02 close-out): stored-data list now names custom background images and
+    automatic backups (both IndexedDB residents, verified against `preferencesBgImage`/
+    `backupManager`); "browser localStorage" → "your browser's built-in storage" so the
+    plain-English framing stays accurate across both layers.
 - [x] In-app strings (modules/labels/, modal headers, status lines)
   - July 2026: tapToOpen wording aligned with manual; trailing padlock dropped from
     game-unlocked; "Remaining to unlock" header added to locked badge dialog; Milestone
     Rewards icons aligned with badge row (theme `badge` icons).
+
+### Closed review items (author verdicts, Aug 2026)
+- **B-06** (❮ overlapping ⋯ in Focus View stats): CLOSED — external artifact. The ❮ in
+  the review screenshot was a tucked picture-in-picture YouTube tab on the reviewer's
+  device, not app UI (the app contains no video elements; the overlap was never
+  reproducible at any viewport).
+- **B-07** (light task-controls strip in dark mode): INTENTIONAL — author-confirmed
+  design. `body.dark-mode` deliberately leaves the + / mode / folder strip light.
+  Do not re-flag.
+- **D-11** (add "why 2,471 lines" block to miniCycle.html banner): WONTFIX — author
+  call, unnecessary.
 
 ### Terminology register
 Canonical terms the public surfaces must use:
