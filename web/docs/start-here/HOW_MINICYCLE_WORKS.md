@@ -321,9 +321,10 @@ breaking existing users.
 **Routines can also leave the record** as `.mcyc` files (share, backup export, or
 download from the routine switcher). Since v2.343 all three paths use **one payload
 builder** (`modules/utils/mcycPayload.js`) with a single knob: `includeHistory`.
-Sharing sets it **false** — a shared routine carries its *structure* (tasks, settings,
-recurring templates), never the owner's event history or cleared-task names, which is
-a privacy decision. Backup export keeps everything. On the way back in, import
+**Share asks the sender** which they want (v2.345): "Routine Only" — structure
+(tasks, settings, recurring templates) without the owner's event history or
+cleared-task names — or "Include Full History". Backup export and download always
+keep everything. On the way back in, import
 **rebuilds** every field through a strict allowlist (type-checked, clamped, text
 normalized) rather than trusting the file — see `cycleImportManager.js`.
 

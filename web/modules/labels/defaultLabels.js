@@ -931,6 +931,14 @@ export const DEFAULT_LABELS = deepFreeze({
         importAsTemplateDesc:     'Start fresh — all progress reset',
         importWithProgress:       'Import with Progress',
         importWithProgressDesc:   'Keep cycle count, completed tasks, and due dates',
+        // Share-side mirror of the import pair (C-06 follow-up): the SENDER
+        // chooses what leaves the device.
+        shareModeTitle:           'Share Routine',
+        shareModeMessage:         'How do you want to share "{name}"?',
+        shareRoutineOnly:         'Routine Only',
+        shareRoutineOnlyDesc:     'Tasks and settings — no history or cleared-task records. Best for sharing with others.',
+        shareWithHistory:         'Include Full History',
+        shareWithHistoryDesc:     'Also sends this routine\'s cycle history and cleared-task records from your device',
         orStartFromSample:        'or start from a sample',
         chooseSample:             'Choose a Sample',
         autoUncheckTimeTitle:     'Auto-uncheck time for "{name}"',

@@ -197,10 +197,12 @@ When restoring full backups (via Developer Tools):
    - Only share cycles meant for collaboration
    - Remove personal tasks first
    - Consider separate work/personal cycles
-   - Since v2.342, **Share** automatically strips the routine's event history and
-     cleared-task names from the file (a shared routine carries structure, not the
-     owner's activity log). **Export/Download files keep both** — they're backup
-     artifacts; don't hand them to others without reviewing
+   - Since v2.345, **Share asks the sender** at share time: "Routine Only"
+     (structure — no event history or cleared-task names) or "Include Full
+     History". Routine-only is listed first; choose it unless the recipient
+     genuinely needs your track record. (v2.342–v2.344 stripped unconditionally.)
+     **Export/Download files always keep both** — they're backup artifacts; don't
+     hand them to others without reviewing
 
 4. **Receiving .mcyc files:**
    - Only import from trusted sources

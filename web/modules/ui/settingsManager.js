@@ -252,6 +252,7 @@ function wireSubModuleDependencies(dependencies) {
         loadMiniCycleData: dependencies.loadMiniCycleData,
         showNotification: dependencies.showNotification,
         showConfirmationModal: dependencies.showConfirmationModal,
+        showChoiceModal: dependencies.showChoiceModal,
         safeAddEventListener: dependencies.safeAddEventListener,
         hideMainMenu: dependencies.hideMainMenu
     });

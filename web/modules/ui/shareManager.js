@@ -22,6 +22,7 @@ const di = createDIModule('ShareManager', {
     loadMiniCycleData: required(),
     showNotification: required(),
     showConfirmationModal: optional(null),
+    showChoiceModal: optional(null),
     safeAddEventListener: required(),
     hideMainMenu: optional(null)
 });
@@ -115,11 +116,31 @@ export function setupShareRoutineButton() {
             return;
         }
 
-        // Privacy: includeHistory false — sharing a routine sends the
-        // recipient the routine's *structure*, not the sender's event log or
-        // up to 500 cleared task names (drift-review C-06). Backup paths pass
-        // true; that file is for the owner's own restore, not another person.
-        const miniCycleData = buildMcycPayload(activeCycle, cycle, { includeHistory: false });
+        // The SENDER chooses what leaves the device (C-06 follow-up): the
+        // routine's structure alone, or structure + history. Mirrors the
+        // import side's Template / With-Progress pair. Routine-only is listed
+        // first (and is the fallback when the modal dep is unavailable):
+        // history is the owner's activity log — up to 500 cleared-task names
+        // with timestamps — which most shares shouldn't carry.
+        let includeHistory = false;
+        if (typeof _deps.showChoiceModal === 'function') {
+            const choice = await new Promise((resolve) => {
+                _deps.showChoiceModal({
+                    title: getLabel('modal.shareModeTitle'),
+                    message: getLabel('modal.shareModeMessage', { vars: { name: cycle.title || activeCycle } }),
+                    choices: [
+                        { text: getLabel('modal.shareRoutineOnly'), value: 'routine', description: getLabel('modal.shareRoutineOnlyDesc') },
+                        { text: getLabel('modal.shareWithHistory'), value: 'history', description: getLabel('modal.shareWithHistoryDesc') }
+                    ],
+                    cancelText: getLabel('button.cancel'),
+                    callback: resolve
+                });
+            });
+            if (choice === null) return; // cancelled — don't share
+            includeHistory = (choice === 'history');
+        }
+
+        const miniCycleData = buildMcycPayload(activeCycle, cycle, { includeHistory });
 
         const cycleName = cycle.title || activeCycle;
         const fileName = `${cycleName.replace(/[^a-z0-9]/gi, '_')}.mcyc.json`;

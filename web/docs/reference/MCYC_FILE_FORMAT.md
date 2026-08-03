@@ -46,8 +46,10 @@ A `.mcyc` (miniCycle) file is a **JSON-formatted file** that stores miniCycle ro
 The app writes `.mcyc` files from three places — **Share** (main menu), **Export**
 (Settings), and **Download** (routine switcher). Since v2.343 all three use one
 payload builder (`modules/utils/mcycPayload.js`); they differ in exactly one way:
-Share **excludes** `history` and `clearedTasks` (privacy — see Security & Privacy
-below), while Export and Download include them (backup semantics).
+whether `history` and `clearedTasks` are included. **Share asks the sender** at
+share time ("Routine Only" vs "Include Full History", v2.345 — routine-only listed
+first; see Security & Privacy below). Export and Download always include them
+(backup semantics).
 
 ### Method 1: Export from miniCycle (Recommended)
 
@@ -256,8 +258,9 @@ When using the complete format, each cycle is stored in `data.cycles`:
 ### History Object (v1.685+)
 
 Per-routine history tracking. Travels with **backup** exports (Settings → Export,
-routine download) — **deliberately stripped from Share** (v2.342+, privacy: a
-shared routine carries its structure, not the owner's event log). On import,
+routine download). On Share it's the **sender's choice** at share time (v2.345;
+v2.342–v2.344 stripped it unconditionally — privacy: a shared routine usually
+carries its structure, not the owner's event log). On import,
 each event's `details` object is reduced to an **allowlist** of the keys the
 history renderer actually reads (v2.343); unknown keys are dropped.
 
@@ -286,9 +289,9 @@ history renderer actually reads (v2.343); unknown keys are dropped.
 ### Cleared Tasks Object (v1.685+)
 
 Per-routine tracking of cleared tasks in To-Do mode. Travels with **backup**
-exports (Settings → Export, routine download) — **deliberately stripped from
-Share** (v2.342+, privacy: a shared routine must not carry the owner's cleared
-task names).
+exports (Settings → Export, routine download). On Share it's the **sender's
+choice** at share time (v2.345; v2.342–v2.344 stripped it unconditionally —
+privacy: a shared routine usually shouldn't carry the owner's cleared task names).
 
 ```json
 {
@@ -1137,9 +1140,11 @@ python3 create_mcyc.py
 - ✅ Stored locally in browser
 
 **Sharing:**
-- ✅ Since v2.342, files created via **Share** automatically exclude `history`
-  and `clearedTasks` — a shared routine carries its *structure* (tasks, settings,
-  recurring templates), never the owner's event log or cleared-task names
+- ✅ Since v2.345, **Share asks the sender** what leaves the device: "Routine
+  Only" (structure — tasks, settings, recurring templates) or "Include Full
+  History" (also the event log + cleared-task records). Routine-only is listed
+  first and is the fallback default. (v2.342–v2.344 stripped unconditionally;
+  before v2.342 shares silently included everything)
 - ⚠️ **Backup files are different**: Export and Download keep history and cleared
   tasks (they exist for your own restore) — review before handing one to someone else
 - ⚠️ Task text itself always travels — review content before sharing
