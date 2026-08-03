@@ -160,7 +160,7 @@ export const DEFAULT_LABELS = deepFreeze({
         recurringTask:            'Recurring Task',
         setDueDate:               'Set Due Date',
         taskReminders:            'Task Reminders',
-        changesApply:             'Changes apply immediately when checked or double-tapped',
+        changesApply:             { touch: 'Changes apply immediately when checked or double-tapped', pointer: 'Changes apply immediately when checked or double-clicked' },
         resetDefault:             'Reset to Default',
         customizeLabel:           'Add/Remove Buttons',
         customizeDescription:     'Always visible — opens this panel',
@@ -262,7 +262,7 @@ export const DEFAULT_LABELS = deepFreeze({
         selectPreview:      'Select a routine to preview',
         doubleClickEnlarge: 'Double click to enlarge',
         doubleTapEnlarge:   'Double tap to expand',
-        tapToOpen:          'Double-tap a routine to open it immediately',
+        tapToOpen:          { touch: 'Double-tap a routine to open it immediately', pointer: 'Double-click a routine to open it immediately' },
         themePickerTitle:   'Themes',
         selectFirst:        'Select a routine first to change its theme.',
         modified:            'Modified',
@@ -319,7 +319,7 @@ export const DEFAULT_LABELS = deepFreeze({
         dragToSpin:      'drag to spin',
         badgeTooltip:    '{name}: {cycles} cycles OR {tasks} cleared tasks',
         badgeUnlocks:    'Unlocks {reward}',
-        badgeTapHint:    'Tap or click a badge or title to see more info',
+        badgeTapHint:    { touch: 'Tap a badge or title to see more info', pointer: 'Click a badge or title to see more info' },
         threshold:       '{cycles} cycles or {tasks} cleared tasks',
         description:     'Complete {cycles} cycles or {tasks} cleared tasks',
         progressNote:    'Only completed cycles and cleared tasks in To-Do mode count towards achievements',
@@ -546,8 +546,8 @@ export const DEFAULT_LABELS = deepFreeze({
         taskOptionDisabled:      '{option} disabled',
         taskOptionsReset:        'Task options reset to defaults',
         threeDotsDisabledTip:    'Long press a task to access options',
-        menuSectionsTip:         'Tap any section header to expand it',
-        routinePreviewTip:       'Double-click to expand',
+        menuSectionsTip:         { touch: 'Tap any section header to expand it', pointer: 'Click any section header to expand it' },
+        routinePreviewTip:       { touch: 'Double-tap to expand', pointer: 'Double-click to expand' },
         appStateNotReady:        'AppState not ready.',
         onboardingReset:         'Onboarding will show again next time you open the app.',
 
@@ -951,7 +951,7 @@ export const DEFAULT_LABELS = deepFreeze({
 
     banner: {
         autoUncheckDaily:        'All tasks auto-uncheck daily at {time}',
-        autoUncheckDailyAria:    'Auto-uncheck enabled. Tap to change time.'
+        autoUncheckDailyAria:    { touch: 'Auto-uncheck enabled. Tap to change time.', pointer: 'Auto-uncheck enabled. Click to change time.' }
     },
 
     empty: {
@@ -961,7 +961,7 @@ export const DEFAULT_LABELS = deepFreeze({
         // the ⋯ menu there would tell the user to HIDE the very bar they need.
         noTasksHint:          'Press the + button to show the task bar to add a task or create a new routine',
         noTasksHintVisible:   'Type your first task in the bar above and press Add',
-        noTasksHintFocus:     'Open the {menuIcon} menu at the top and tap {showHide} to start adding tasks',
+        noTasksHintFocus:     { touch: 'Open the {menuIcon} menu at the top and tap {showHide} to start adding tasks', pointer: 'Open the {menuIcon} menu at the top and click {showHide} to start adding tasks' },
         noTasksHintFocusVisible: 'Type your first task in the bar above and press Add',
         // Shown once, right after a brand-new user picks "Create My First Routine"
         // and names an empty routine — friendlier than the generic hint above.
@@ -1015,7 +1015,7 @@ export const DEFAULT_LABELS = deepFreeze({
         addTasksToRecurring:  'Add {count} Tasks to Recurring',
         selectAll:            'Select All',
         deselectAll:          'Deselect All',
-        panelHint:            'Tap a recurring task to see its schedule or change settings',
+        panelHint:            { touch: 'Tap a recurring task to see its schedule or change settings', pointer: 'Click a recurring task to see its schedule or change settings' },
         settingsTitle:        'Recurring Settings',
         specificTimeOfDay:    'Choose specific time of day',
         specificMinute:       'Choose specific minute of each hour',
@@ -1261,14 +1261,14 @@ export const DEFAULT_LABELS = deepFreeze({
         step2:           'View a timeline of completed cycles and cleared tasks.',
         step3:           'Track your achievement badges and milestones as you build consistency.',
         step4:           'Your total cycles across all routines and progress toward the next milestone.',
-        complete:        'That\'s your Stats Panel! Swipe right or tap the arrow to return to your tasks.'
+        complete:        { touch: 'That\'s your Stats Panel! Swipe right or tap the arrow to return to your tasks.', pointer: 'That\'s your Stats Panel! Click the arrow to return to your tasks.' }
     },
 
     prefsTour: {
         welcomeMessage:  'First time here? Take a quick tour of the personalization options!',
         startButton:     'Start Tour',
         step1:           'See your changes in real time as you customize colors and styles.',
-        step2:           'Try a preset theme with one tap — or save your own custom presets.',
+        step2:           { touch: 'Try a preset theme with one tap — or save your own custom presets.', pointer: 'Try a preset theme with one click — or save your own custom presets.' },
         step3:           'Expand any section to fine-tune individual colors and options.',
         step4:           'Made a mistake? Undo your last change or reset everything to defaults.',
         complete:        'You\'re all set to personalize! Explore the sections at your own pace.'
@@ -1278,7 +1278,7 @@ export const DEFAULT_LABELS = deepFreeze({
         welcomeMessage:  'First time here? Take a quick tour of the task button options!',
         startButton:     'Start Tour',
         step1:           'Toggle buttons on or off for this routine. Changes apply right away.',
-        step2:           'Hover or tap any option to see what it does before toggling.',
+        step2:           { touch: 'Tap any option to see what it does before toggling.', pointer: 'Hover over any option to see what it does before toggling.' },
         step3:           'Global options affect all your routines, not just this one.',
         step4:           'Reset everything back to defaults if you change your mind.',
         complete:        'You\'re all set! Customize your task buttons however you like.'
@@ -1309,31 +1309,31 @@ export const DEFAULT_LABELS = deepFreeze({
     routineSwitcherTour: {
         welcomeMessage:  'First time here? Take a quick tour of the routine switcher!',
         startButton:     'Start Tour',
-        step1:           'Browse all your saved routines here — tap one to select it.',
+        step1:           { touch: 'Browse all your saved routines here — tap one to select it.', pointer: 'Browse all your saved routines here — click one to select it.' },
         step2:           'Search by name to quickly find a routine.',
         step3:           'Duplicate, rename, delete, or download the selected routine.',
         step4:           'Import a routine file or open the selected routine.',
-        complete:        'You\'re all set! Select a routine and tap Open to switch.'
+        complete:        { touch: 'You\'re all set! Select a routine and tap Open to switch.', pointer: 'You\'re all set! Select a routine and click Open to switch.' }
     },
 
     recurringListTour: {
         welcomeMessage:  'First time here? Take a quick tour of recurring tasks!',
         startButton:     'Start Tour',
-        step1:           'Tap any recurring task to view or change its schedule.',
+        step1:           { touch: 'Tap any recurring task to view or change its schedule.', pointer: 'Click any recurring task to view or change its schedule.' },
         step2:           'Remove a task from the recurring list.',
         step3:           'Add any task from your routine to repeat automatically.',
-        complete:        'You\'re all set! Tap a task to manage its recurring schedule.'
+        complete:        { touch: 'You\'re all set! Tap a task to manage its recurring schedule.', pointer: 'You\'re all set! Click a task to manage its recurring schedule.' }
     },
 
     recurringSettingsTour: {
         welcomeMessage:  'First time editing a schedule? Take a quick tour!',
         startButton:     'Start Tour',
-        step1:           'Tap a task to see its current schedule. Checked tasks will receive the new settings when you apply.',
+        step1:           { touch: 'Tap a task to see its current schedule. Checked tasks will receive the new settings when you apply.', pointer: 'Click a task to see its current schedule. Checked tasks will receive the new settings when you apply.' },
         step2:           'This summary shows the schedule for the selected task.',
         step3:           'Choose how often this task repeats — daily, weekly, monthly, and more.',
         step4:           'Expand advanced options for fine-tuned scheduling.',
         step5:           'Apply your changes — only checked tasks will be updated.',
-        complete:        'You\'re all set! Select tasks, customize the schedule, and tap Apply.'
+        complete:        { touch: 'You\'re all set! Select tasks, customize the schedule, and tap Apply.', pointer: 'You\'re all set! Select tasks, customize the schedule, and click Apply.' }
     },
 
     achievementsTour: {
@@ -1350,7 +1350,7 @@ export const DEFAULT_LABELS = deepFreeze({
         startButton:     'Start Tour',
         step1:           'Your routine events are logged here — cycle completions, task clears, and more.',
         step2:           'Switch to the Cleared Tasks tab to see tasks that were removed.',
-        step3:           'Clear all history events, or tap Recreate Tasks to bring back cleared items.',
+        step3:           { touch: 'Clear all history events, or tap Recreate Tasks to bring back cleared items.', pointer: 'Clear all history events, or click Recreate Tasks to bring back cleared items.' },
         step4:           'Reset your routine\'s cycle count and progress from here.',
         complete:        'You\'re all set! Review your history and recover cleared tasks anytime.'
     },
@@ -1359,7 +1359,7 @@ export const DEFAULT_LABELS = deepFreeze({
         welcomeMessage:  'First time viewing cleared tasks? Take a quick tour!',
         startButton:     'Start Tour',
         step1:           'Each entry shows when a task was cleared, its priority, due date, and mode.',
-        step2:           'Tap Recreate Tasks to select items and add them back to your routine.',
+        step2:           { touch: 'Tap Recreate Tasks to select items and add them back to your routine.', pointer: 'Click Recreate Tasks to select items and add them back to your routine.' },
         step3:           'Switch back to Events to see your routine\'s activity log.',
         complete:        'You\'re all set! Recover any cleared task with Recreate Tasks.'
     },
@@ -1371,7 +1371,7 @@ export const DEFAULT_LABELS = deepFreeze({
         step2:           'Manage tasks in bulk, set up reminders, and customize task option buttons.',
         step3:           'Unlock themes and mini-games as you complete more cycles!',
         step4:           'Personalize colors, layout, and app settings to make it yours.',
-        complete:        'That\'s the menu! Tap any section header to expand it.'
+        complete:        { touch: 'That\'s the menu! Tap any section header to expand it.', pointer: 'That\'s the menu! Click any section header to expand it.' }
     },
 
     // ========================================================================
@@ -1586,7 +1586,7 @@ export const DEFAULT_LABELS = deepFreeze({
         // slide 6 explains how to graduate from focus view to main view.
         // `|` is a paragraph break in messages, a line break in titles.
         titleCelebration:    'First Cycle Complete!',
-        messageCelebration:  'Long press or click and drag tasks to rearrange.|Swipe left for stats and achievements 📊',
+        messageCelebration:  { touch: 'Long press and drag tasks to rearrange.|Swipe left for stats and achievements 📊', pointer: 'Click and drag tasks to rearrange.|Click Stats below for stats and achievements 📊' },
         // Slide-6 view names interpolated from the canonical labels
         // (focusMode.enter for "Focus View", homeView.name for "Home View")
         // so a future rename in one place propagates everywhere automatically.
@@ -1810,7 +1810,7 @@ export const DEFAULT_LABELS = deepFreeze({
         permissionUnsupported:       'Browser notifications are not supported on this device',
         permissionTestFailed:        'Permission was granted but the test notification failed. Your browser may be blocking notifications.',
         browserNotificationsDisabled: 'Browser notifications disabled',
-        configureTooltip:'Click to configure reminder settings',
+        configureTooltip:{ touch: 'Tap to configure reminder settings', pointer: 'Click to configure reminder settings' },
         indefinitely:    'Remind Indefinitely?',
         count:           'Number of Times:',
         every:           'Every:',
@@ -2044,7 +2044,7 @@ export const DEFAULT_LABELS = deepFreeze({
         step2Task3:  'Drink water',
         step2TryIt:  'Try it yourself!',
         step2Choice: 'Try completing cycles yourself, or continue to the next step.',
-        step2ActiveHint: 'Try tapping or clicking all tasks to complete cycles. Continue to the next step when you\'re ready.',
+        step2ActiveHint: { touch: 'Try tapping all tasks to complete cycles. Continue to the next step when you\'re ready.', pointer: 'Try clicking all tasks to complete cycles. Continue to the next step when you\'re ready.' },
         step2CycleComplete: 'Cycle complete!',
         step2Cycles: 'Cycles',
         step3Title:  'You\'re All Set!',
@@ -2100,8 +2100,8 @@ export const DEFAULT_LABELS = deepFreeze({
     help: {
         welcome:           'Welcome to miniCycle!',
         modeAutoShort:     'Tasks automatically reset when all are completed.',
-        modeManualShort:   'Tasks only reset when you click the Complete Cycle button.',
-        modeTodoShort:     'Completed tasks are removed when you click Clear Completed.',
+        modeManualShort:   { touch: 'Tasks only reset when you tap the Complete Cycle button.', pointer: 'Tasks only reset when you click the Complete Cycle button.' },
+        modeTodoShort:     { touch: 'Completed tasks are removed when you tap Clear Completed.', pointer: 'Completed tasks are removed when you click Clear Completed.' },
         cycleComplete:     'Cycle Complete! Tasks reset.',
         tasksCleared:      '{count} {taskWord} cleared!',
         addFirstTask:      'Add your first task to get started!',

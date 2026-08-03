@@ -386,6 +386,12 @@ showNotification(getLabel('notify.taskDeleted', { vars: { name: taskName } }), '
 // Pluralized noun
 const taskWord = getLabel('noun.task', { count: tasks.length });
 
+// Device-variant wording (Aug 2026): strings naming the input verb adapt
+// automatically — define as { touch: '…tap…', pointer: '…click…' } in
+// defaultLabels.js; getLabel() picks the variant. NEVER hand-roll
+// isMobile ternaries or paired -Tap/-Click keys at call sites.
+getLabel('switcher.tapToOpen');  // 'Double-tap…' on touch, 'Double-click…' on desktop
+
 // With fallback
 const label = getLabelOrFallback('custom.key', 'Default text');
 ```

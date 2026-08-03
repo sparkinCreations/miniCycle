@@ -32,7 +32,7 @@ modules/labels/
 - `LABELS_VERSION` — Version constant
 
 **labelResolver.js** exports:
-- `getLabel(key, options)` — Main resolver with pluralization and interpolation
+- `getLabel(key, options)` — Main resolver with pluralization, device variants (`{ touch, pointer }`), and interpolation
 - `getLabelOrFallback(key, fallback, options)` — Fallback wrapper
 - `hasLabel(key)` — Check if key exists
 - `isLensSensitive(key)` — Check if key is contextual-lens-sensitive
@@ -94,6 +94,7 @@ export const DEFAULT_LABELS = deepFreeze({
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
 | Nouns | `{ one, other }` objects | Future resolver needs to detect and handle pluralization |
+| Device-variant wording | `{ touch, pointer }` objects | Aug 2026: strings that name the input verb ("tap" vs "click", "swipe" vs "click the arrow") adapt to the primary input. Resolver unwraps the variant BEFORE pluralization/interpolation, so a variant may itself be a plural object or interpolation string. Signal: DI `isTouchDevice` override (tests) → `matchMedia('(pointer: coarse)')` → `ontouchstart`. Prefer this over ad-hoc `isMobile` ternaries or paired keys at call sites |
 | Everything else | Flat strings | Simple lookup, no unnecessary nesting |
 | Template variables | `{varName}` syntax | Matches ICU MessageFormat, compatible with future `interpolate()` |
 | Key depth | Max 2 levels (category.key) | 3rd level only for noun plurals. Keeps access simple |
