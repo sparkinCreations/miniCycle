@@ -1,3 +1,12 @@
+## [2.345] - 2026-08-03
+- feat(share): sender chooses Routine Only vs Include Full History
+- docs: sweep drift from v2.342-v2.344 (flush trio, mcyc spec, redirects authority, storage caps, docs URLs)
+- docs: HOW_MINICYCLE_WORKS re-verified against v2.344 (flush trio, milestones, .mcyc, backups)
+- fix(copy): backup card sells the automatic tiers (A-06b)
+- docs(deploy): root toml comment — _redirects is the redirect authority
+- fix(deploy): docs subdomain rules move to _redirects (toml redirects unprocessed)
+
+
 ## [2.344] - 2026-07-31
 - feat(storage): activate docs 301 — subdomain DNS confirmed live
 - feat(storage): docs move to own origin; boot sweeps orphaned docsify index
