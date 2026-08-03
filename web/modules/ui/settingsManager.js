@@ -160,7 +160,8 @@ async function loadSubModules(version) {
         // Share
         setShareManagerDependencies: shareModule.setShareManagerDependencies,
         setupShareRoutineButton: shareModule.setupShareRoutineButton,
-        setupShareAppButton: shareModule.setupShareAppButton
+        setupShareAppButton: shareModule.setupShareAppButton,
+        shareCurrentRoutine: shareModule.shareCurrentRoutine
     };
 
     return _subModules;
@@ -592,6 +593,15 @@ export function _resetForTesting() { _subModules?._resetForTesting?.(); }
  * @returns {void}
  */
 export function setupShareRoutineButton() { _subModules?.setupShareRoutineButton?.(); }
+
+/**
+ * Run the share-routine flow directly (chooser → payload → share/download).
+ * For callers with their own user gesture (e.g. Quick Actions) — invoking this
+ * instead of clicking the main-menu button preserves user activation for
+ * navigator.share(). Delegates to the shareManager sub-module.
+ * @returns {Promise<void>|undefined}
+ */
+export function shareCurrentRoutine() { return _subModules?.shareCurrentRoutine?.(); }
 
 /**
  * Initialize the share app button for sharing the app link via Web Share API.

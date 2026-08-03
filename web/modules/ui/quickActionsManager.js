@@ -216,6 +216,7 @@ const di = createDIModule('QuickActionsManager', {
     showStatsPanel: required(),
     showTaskView: optional(null),
     switchMiniCycle: optional(null),
+    shareCurrentRoutine: optional(null),
     recurringPanel: required(),
     hideMainMenu: required(),
     isDebug: optional(() => false),
@@ -896,6 +897,29 @@ export class QuickActionsManager {
                 }
                 case 'shareRoutine': {
                     this.deps.hideMainMenu?.();
+                    // Call the share flow DIRECTLY (Aug 2026 gesture fix): the old
+                    // path clicked the main-menu Share button inside a setTimeout —
+                    // a programmatic click carries no user activation, so
+                    // navigator.share() rejected and Quick Actions shares always
+                    // fell into the download fallback on gesture-enforcing
+                    // browsers (iOS Safari). The direct call runs in the user's
+                    // actual tap, and the share chooser's own button click
+                    // re-arms activation for the share sheet.
+                    if (typeof this.deps.shareCurrentRoutine === 'function') {
+                        try {
+                            // async flow — catch rejections too, not just sync throws
+                            Promise.resolve(this.deps.shareCurrentRoutine()).catch((err) => {
+                                console.error(`⚡ Quick action '${actionId}' failed:`, err);
+                                this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
+                            });
+                        } catch (err) {
+                            console.error(`⚡ Quick action '${actionId}' failed:`, err);
+                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
+                        }
+                        break;
+                    }
+                    // Fallback if the dep isn't wired: legacy button-click path
+                    // (works, but loses activation — share sheet may become download).
                     setTimeout(() => {
                         try {
                             const btn = document.getElementById(DOM_IDS.SHARE_ROUTINE);

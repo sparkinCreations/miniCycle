@@ -1186,6 +1186,7 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         completedTasksManager: () => deps.ui?.completedTasksManager,
         updateStatsPanel: (...args) => deps.ui?.updateStatsPanel?.(...args),
         exportMiniCycleData: (...args) => deps.ui?.exportMiniCycleData?.(...args),
+        shareCurrentRoutine: (...args) => deps.ui?.shareCurrentRoutine?.(...args),
         startGuidedTour: (...args) => deps.ui?.startGuidedTour?.(...args),
         markTourWelcomeShown: (...args) => deps.ui?.markTourWelcomeShown?.(...args),
         // Provided by taskUI module (api: 'ui' — registered under deps.ui, not deps.task)

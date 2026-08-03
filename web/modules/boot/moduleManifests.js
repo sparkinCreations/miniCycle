@@ -408,7 +408,7 @@ export const MODULE_MANIFESTS = {
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState', 'showNotification', 'getModal'],
         optionalDeps: ['clearAllUndoHistory', 'loadMiniCycle', 'showLoader', 'hideLoader', 'closeAllModals', 'hasActiveNotifications', 'hideMainMenu', 'BackupManager', 'DataValidator', 'calculateNextOccurrence', 'disableDebug', 'enableDebug', 'isDebug', 'handleTaskListMovement', 'organizeCompletedTasks', 'onCycleCreated', 'performSchema25Migration', 'refreshTaskListUI', 'resetDefaultRecurringSettings', 'setupDarkModeToggle', 'setupQuickDarkToggle', 'showConfirmationModal', 'showPromptModal', 'showSettingsTourNotification', 'startGuidedTour', 'toggleHoverTaskOptions', 'updateCompletedTasksCount', 'updateHelpWindow', 'updateMoveArrowsVisibility', 'updateStatsPanel'],
-        provides: ['syncCurrentSettingsToStorage', 'exportMiniCycleData', 'downloadBackupFile'],
+        provides: ['syncCurrentSettingsToStorage', 'exportMiniCycleData', 'downloadBackupFile', 'shareCurrentRoutine'],
         provideInstance: 'settingsManager',
         api: 'ui',
         after: ['menuManager', 'themeManager', 'undoRedoManager']
@@ -524,7 +524,7 @@ export const MODULE_MANIFESTS = {
         path: '../ui/quickActionsManager.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState', 'showNotification', 'getModal'],
-        optionalDeps: ['hideMainMenu', 'isDebug', 'recurringPanel', 'showStatsPanel', 'showTaskView', 'switchMiniCycle'],
+        optionalDeps: ['hideMainMenu', 'isDebug', 'recurringPanel', 'showStatsPanel', 'showTaskView', 'switchMiniCycle', 'shareCurrentRoutine'],
         provides: ['trackAction'],
         provideInstance: 'quickActionsManager',
         api: 'ui',
