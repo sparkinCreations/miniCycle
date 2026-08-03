@@ -1261,7 +1261,7 @@ export const DEFAULT_LABELS = deepFreeze({
         step2:           'View a timeline of completed cycles and cleared tasks.',
         step3:           'Track your achievement badges and milestones as you build consistency.',
         step4:           'Your total cycles across all routines and progress toward the next milestone.',
-        complete:        { touch: 'That\'s your Stats Panel! Swipe right or tap the arrow to return to your tasks.', pointer: 'That\'s your Stats Panel! Click the arrow to return to your tasks.' }
+        complete:        { touch: 'That\'s your Stats Panel! Swipe right or tap the arrow to return to your tasks.', pointer: 'That\'s your Stats Panel! Click and drag right to return to your tasks.' }
     },
 
     prefsTour: {
@@ -1586,7 +1586,7 @@ export const DEFAULT_LABELS = deepFreeze({
         // slide 6 explains how to graduate from focus view to main view.
         // `|` is a paragraph break in messages, a line break in titles.
         titleCelebration:    'First Cycle Complete!',
-        messageCelebration:  { touch: 'Long press and drag tasks to rearrange.|Swipe left for stats and achievements 📊', pointer: 'Click and drag tasks to rearrange.|Click Stats below for stats and achievements 📊' },
+        messageCelebration:  { touch: 'Long press and drag tasks to rearrange.|Swipe left for stats and achievements 📊', pointer: 'Click and drag tasks to rearrange.|Click and drag left for stats and achievements 📊' },
         // Slide-6 view names interpolated from the canonical labels
         // (focusMode.enter for "Focus View", homeView.name for "Home View")
         // so a future rename in one place propagates everywhere automatically.
