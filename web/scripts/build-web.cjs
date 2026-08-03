@@ -101,10 +101,14 @@ function collectEntries() {
     for (const m of src.matchAll(concatRe)) addResolved(m[1], path.dirname(f), rel(f));
   }
 
-  // (c) the HTML entrypoints — the module entry plus the classic deferred
-  // SW-registration script (extracted from the inline <head> block, Aug 2026).
+  // (c) the HTML entrypoint. NOTE: boot-sw.js is deliberately NOT in this
+  // list — it is a CLASSIC (non-module) deferred script, and the shared ESM
+  // pass would break it: keepNames injects a helper that `splitting` dedupes
+  // into a shared chunk, making every entry start with a static `import` —
+  // which a classic <script> cannot parse (v2.346 incident: SyntaxError killed
+  // SW registration in production). It gets its own self-contained IIFE pass
+  // below (buildBootSw).
   entries.add(path.join(WEB, 'miniCycle-main.js'));
-  entries.add(path.join(WEB, 'boot-sw.js'));
 
   if (misses.length) fail('unresolvable dynamic import specifiers:\n  ' + misses.join('\n  '));
   return [...entries].sort();
@@ -371,6 +375,10 @@ function emitShims(moduleMap, exportsByHashed) {
   // The app itself never fetches these files (the module map bypasses them).
   let count = 0;
   for (const [srcPath, hashed] of Object.entries(moduleMap)) {
+    // boot-sw.js is a classic script built by its own IIFE pass — its stable
+    // path keeps the RAW source copy (works as a classic script), not an ESM
+    // shim that would break any classic loader of './boot-sw.js'.
+    if (srcPath === '/boot-sw.js') continue;
     const names = (exportsByHashed[hashed] || []).filter(n => n !== 'default');
     const hasDefault = (exportsByHashed[hashed] || []).includes('default');
     const dest = path.join(DIST, srcPath.slice(1));
@@ -524,6 +532,40 @@ function makeRewritePlugin() {
   for (const e of jsEntries) {
     const key = '/' + rel(e);
     if (!moduleMap[key]) fail(`no map entry for ${key}`);
+  }
+
+  // ── boot-sw.js: separate SELF-CONTAINED IIFE pass ─────────────────────────
+  // Classic deferred script loaded by a plain <script> tag: it must have ZERO
+  // static imports, so it cannot share the ESM/splitting pipeline (see the
+  // collectEntries note; v2.346 incident). bundle+iife emits one standalone
+  // file; its hash goes into the module map so rewriteHtml swaps the tag, and
+  // into builtJs so injectSw precaches it.
+  const bootSwResult = await esbuild.build({
+    entryPoints: [path.join(WEB, 'boot-sw.js')],
+    outdir: DIST,
+    outbase: WEB,
+    bundle: true,
+    format: 'iife',
+    minify: true,
+    sourcemap: true,
+    target: ['es2020'],
+    entryNames: 'build/[name]-[hash]',
+    metafile: true,
+  });
+  for (const [outPath, meta] of Object.entries(bootSwResult.metafile.outputs)) {
+    if (!meta.entryPoint || !outPath.endsWith('.js')) continue;
+    const outRel = rel(path.resolve(outPath)).replace(/^dist\//, '');
+    moduleMap['/boot-sw.js'] = '/' + outRel;
+    builtJs.push(outRel);
+  }
+  if (!moduleMap['/boot-sw.js']) fail('boot-sw IIFE pass produced no output');
+  // Parse gate: the artifact must be loadable by a CLASSIC script tag — fail
+  // the build if any static import/export leaked in (the exact v2.346 bug).
+  {
+    const bootSwOut = fs.readFileSync(path.join(DIST, moduleMap['/boot-sw.js'].slice(1)), 'utf8');
+    if (/^\s*(import|export)[\s{]/m.test(bootSwOut)) {
+      fail('boot-sw hashed output contains module syntax — would SyntaxError as a classic script');
+    }
   }
 
   appendMapToVersionJs(moduleMap);
