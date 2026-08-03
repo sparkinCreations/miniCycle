@@ -1,18 +1,21 @@
 /**
- * miniCycle Stats Panel Module
+ * miniCycle Stats Panel Facade (DI-Pure)
  *
- * Full-featured stats panel with multi-platform gesture support.
- * Provides statistics, milestone tracking, and theme unlock management.
- *
- * Features:
- * - Multi-platform swipe detection (touch, mouse, wheel, pointer)
- * - View switching between task view and stats panel
- * - Real-time stats calculation and display
- * - Theme and game unlock milestone tracking
- * - Navigation dot updates
- * - Collapsible section preferences (persisted in AppState)
+ * Orchestrates the stats panel: real-time stats calculation and display,
+ * milestone tracking, and collapsible section preferences (persisted in
+ * AppState). Gesture/view mechanics and unlock-reward messaging live in
+ * facade-style sub-modules loaded via dynamic versioned imports in init()
+ * (D-03 split, Aug 2026) — do NOT add them to moduleManifests.js:
+ * - statsPanelGestures.js — swipe/drag/wheel/keyboard handling, PanelCarousel,
+ *   Task↔Stats view switching, nav dots, a11y view announcements
+ * - statsPanelRewards.js — theme/game unlock messaging, milestone toggle,
+ *   themes dialog
+ * Sub-modules reach this manager's deps via a back-reference (`this.m`):
+ * `this.m.dependencies` / `this.m.rawDeps` (scanned by validate:di through
+ * FACADE_SUB_FILES). `initPromise` resolves once sub-modules are live.
  *
  * @module features/statsPanel
+ * @pattern Facade
  * @version 1.395
  * @see {@link module:core/appState} - State management for preferences
  */

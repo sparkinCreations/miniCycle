@@ -14,7 +14,7 @@
  * only those ownership rewrites.
  */
 import { getLabel, getIcon } from '../labels/labelResolver.js';
-import { DOM_CLASSES, UI_TIMEOUTS } from '../core/constants.js';
+import { DOM_CLASSES, DOM_IDS, UI_TIMEOUTS } from '../core/constants.js';
 import { PanelCarousel } from '../ui/panelCarousel.js';
 
 export class StatsPanelGestures {
@@ -284,7 +284,7 @@ export class StatsPanelGestures {
                 element: focusTaskPanel,
                 dot: dotFor('focus-task-panel'),
                 isEnabled: () => {
-                    const body = document.body;
+                    const body = this.m.rawDeps.getBody();
                     return body.classList.contains(DOM_CLASSES.FOCUS_MODE)
                         && !body.classList.contains(DOM_CLASSES.FIRST_RUN_WELCOME_ACTIVE);
                 },
@@ -417,7 +417,7 @@ export class StatsPanelGestures {
         const panel = this.m.elements.statsPanel;
         if (!panel) return;
 
-        const banner = document.getElementById('first-run-welcome');
+        const banner = this.m.rawDeps.getElementById(DOM_IDS.FIRST_RUN_WELCOME);
         if (!banner) {
             panel.style.removeProperty('--first-run-welcome-stats-shift');
             return;
