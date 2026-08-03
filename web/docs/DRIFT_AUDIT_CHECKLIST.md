@@ -55,9 +55,11 @@ in this direction, prefer fixing the copy to match the code unless the code is w
     in-app). Copy now leads with the automatic backups, verified against
     `modules/storage/backupManager.js` constants. Lesson: a suggested-copy fix inherits
     the finding's errors — verify the claim, not just the wording.
-- [ ] pages/product.html
-  - A-10 (open): sells effort claims; consider swapping one assertion for one piece of
-    evidence (test counts, validators) for the audience that clicks through to GitHub.
+- [x] pages/product.html
+  - Aug 2026 (A-10 close-out): founder-story sublead now grounds one effort assertion
+    in verifiable evidence — "3,000+ automated tests" (round-down of PROJECT_STATS'
+    auto-counted 3,112, so the claim stays true as the suite grows). Rest of the
+    effort framing kept deliberately — it's correct for the primary audience.
 - [x] legal/user-manual.html
   - July 2026: "restore any task" → "recreate… with due date, priority, and recurring
     settings intact"; version stamp refreshed. **Stamp goes stale every release** —
