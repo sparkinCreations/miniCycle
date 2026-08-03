@@ -21,8 +21,8 @@
  *                              path imports keep working on production.
  *   dist/service-worker.js   — precache lists + MODULE_MAP injected between
  *                              marker comments.
- *   dist/miniCycle.html      — byte-identical EXCEPT attribute rewrites (main.js
- *                              script src + main.css hrefs → hashed URLs).
+ *   dist/miniCycle.html      — byte-identical EXCEPT attribute rewrites (main.js +
+ *                              boot-sw.js script src + main.css hrefs → hashed URLs).
  *                              Inline script CONTENT untouched → CSP hashes valid.
  *
  * Design invariants (do not break):
@@ -101,8 +101,10 @@ function collectEntries() {
     for (const m of src.matchAll(concatRe)) addResolved(m[1], path.dirname(f), rel(f));
   }
 
-  // (c) the HTML entrypoint
+  // (c) the HTML entrypoints — the module entry plus the classic deferred
+  // SW-registration script (extracted from the inline <head> block, Aug 2026).
   entries.add(path.join(WEB, 'miniCycle-main.js'));
+  entries.add(path.join(WEB, 'boot-sw.js'));
 
   if (misses.length) fail('unresolvable dynamic import specifiers:\n  ' + misses.join('\n  '));
   return [...entries].sort();
@@ -315,11 +317,14 @@ function rewriteHtml(moduleMap, cssBundle) {
   let html = fs.readFileSync(p, 'utf8');
   const mainHashed = moduleMap['/miniCycle-main.js'];
   if (!mainHashed) fail('module map has no entry for /miniCycle-main.js');
+  const swBootHashed = moduleMap['/boot-sw.js'];
+  if (!swBootHashed) fail('module map has no entry for /boot-sw.js');
 
   // ATTRIBUTE rewrites only — inline script content must stay byte-identical
   // (CSP hashes cover inline content, not attributes).
   const before = html;
   html = html.replace(/src="miniCycle-main\.js\?v=[0-9.]+"/, `src="${mainHashed}"`);
+  html = html.replace(/src="boot-sw\.js\?v=[0-9.]+"/, `src="${swBootHashed}"`);
   html = html.replace(/styles\/main\.css\?v=[0-9.]+/g, cssBundle);
   // Drop preload hints for main.css's @import children — the bundle inlines
   // them, so these would fetch dead weight. (Whole-element removal: CSP hashes

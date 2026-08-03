@@ -133,7 +133,7 @@ Users see updates within 60 seconds of deployment.
 
 ### 7. Immediate Version Freshness Check (`verifyVersionFresh()`)
 
-An inline script in `miniCycle.html` runs immediately at boot, on every focus/visibility change, on `pageshow`, and on the `app:verifyVersion` event:
+A script loaded by `miniCycle.html` (**`boot-sw.js`**, external + `defer` since Aug 2026 — previously a 612-line inline block) runs at boot, on every focus/visibility change, on `pageshow`, and on the `app:verifyVersion` event:
 
 ```javascript
 // Fetches version.js with cache-buster — bypasses SW cache entirely
@@ -301,7 +301,8 @@ Open the app offline and look for these console messages:
 |---|---|
 | `version.js` | Single source of truth for APP_VERSION and CACHE_VERSION |
 | `service-worker.js` | Caching strategies, precache list, offline fast-path |
-| `miniCycle.html` | SW registration, update UI, boot failsafe, `getBuildVersion()`, `verifyVersionFresh()`, `checkForUpdates()` |
+| `boot-sw.js` | SW registration, update UI, `verifyVersionFresh()`, `checkForUpdates()`, PWA install (extracted from miniCycle.html Aug 2026; loaded `defer` at end of `<head>`) |
+| `miniCycle.html` | boot failsafes (inline, deliberately), `getBuildVersion()`, the `boot-sw.js` tag |
 | `modules/ui/modalManager.js` | About modal — shows the build version (`getBuildVersion()`) |
 | `modules/ui/pullToRefresh.js` | `defaultRefresh` dispatches `app:verifyVersion` to heal stale builds |
 | `modules/boot/orchestrator.js` | Boot sequence, retry logic, `vParam` calculation |

@@ -25,6 +25,7 @@ export default [
                 console: 'readonly',
                 localStorage: 'readonly',
                 sessionStorage: 'readonly',
+                MessageChannel: 'readonly',
                 fetch: 'readonly',
                 setTimeout: 'readonly',
                 setInterval: 'readonly',
