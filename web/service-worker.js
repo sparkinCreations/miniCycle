@@ -126,6 +126,7 @@ var BOOT_CRITICAL = [
   './styles/main.css',
   // Entrypoint and boot chain
   './miniCycle-main.js',
+  './boot-sw.js',
   './modules/boot/orchestrator.js',
   './modules/boot/coreBoot.js',
   './modules/boot/featureBoot.js',
@@ -145,6 +146,7 @@ var BOOT_CRITICAL = [
   './modules/core/types.js',
   // Utils - ALL utility modules
   './modules/utils/globalUtils.js',
+  './modules/utils/mcycPayload.js',
   './modules/utils/featureAvailability.js',
   './modules/utils/dataRecovery.js',
   './modules/utils/errorHandler.js',
@@ -404,7 +406,7 @@ self.addEventListener('install', function (event) {
 
       // Verify boot-critical files are cached — if these are missing, offline boot fails
       var criticalFiles = [
-        './version.js', './miniCycle-main.js',
+        './version.js', './miniCycle-main.js', './boot-sw.js',
         './modules/boot/orchestrator.js', './modules/boot/coreBoot.js',
         './modules/boot/featureBoot.js', './modules/boot/uiBoot.js',
         './modules/boot/moduleLoader.js', './modules/core/appInit.js'
