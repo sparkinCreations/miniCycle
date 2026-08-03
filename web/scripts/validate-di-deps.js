@@ -27,7 +27,9 @@
  *                             or a local property the parse caught)
  *
  * Manifest-driven: only files with a MODULE_MANIFESTS entry are scanned. Facade
- * sub-modules (no manifest, wired via wireSubModuleDependencies) are out of scope.
+ * sub-modules (no manifest, wired via wireSubModuleDependencies) are out of scope,
+ * except those listed in FACADE_SUB_FILES, whose manager-back-reference accesses
+ * count toward the owning facade's usage.
  *
  * Usage:
  *   node scripts/validate-di-deps.js          # human report
@@ -51,10 +53,32 @@ const bootDir = path.join(webRoot, 'modules', 'boot');
 
 const JSON_OUT = process.argv.includes('--json');
 
-// The 4 facade modules dynamically import sub-modules and forward `this.deps` to
+// The facade modules dynamically import sub-modules and forward their deps to
 // them, so they legitimately touch deps they only pass through. Reported apart
 // from the simple-module findings to keep the high-confidence list clean.
-const FACADES = new Set(['settingsManager', 'taskCore', 'taskDOM', 'preferencesManager']);
+const FACADES = new Set(['settingsManager', 'taskCore', 'taskDOM', 'preferencesManager', 'statsPanel']);
+
+// Facade sub-modules that reach the facade's deps through a manager back-
+// reference (`this.m.dependencies.X` / `this.m.rawDeps.X`) instead of their
+// own this.deps. Scanned as part of the facade's usage surface so deps used
+// only from a sub-module don't read as dead. Paths are bootDir-relative,
+// like manifest paths. (The 4 older facades wire sub-modules their own way —
+// add them here only when their access shape is machine-recognizable.)
+const FACADE_SUB_FILES = {
+    statsPanel: [
+        '../features/statsPanelGestures.js',
+        '../features/statsPanelRewards.js',
+    ],
+};
+
+/** Collect dep names a facade sub-module reaches via its manager back-reference. */
+function collectSubModuleAccessed(src) {
+    const found = new Set();
+    for (const m of src.matchAll(/this\.m\.(?:dependencies|rawDeps)\??\.([A-Za-z$][\w$]*)/g)) {
+        if (!m[1].startsWith('_')) found.add(m[1]);
+    }
+    return found;
+}
 
 // Deps wired at RUNTIME outside the loader (no manifest/depMappings route), so
 // the static scan can't see their provider. Every entry must name the wiring
@@ -70,7 +94,7 @@ const RUNTIME_WIRED = new Set([
 // Ratchet baseline for 🟡 declared-but-unused: the count may go DOWN freely but
 // any increase fails the run. Lower this number whenever cleanup shrinks it —
 // never raise it to make a failure go away without a removal elsewhere.
-const UNUSED_BASELINE = 100;
+const UNUSED_BASELINE = 99;
 
 const { MODULE_MANIFESTS, CORE_DEPS } = await import(
     pathToFileURL(path.join(bootDir, 'moduleManifests.js')).href
@@ -167,6 +191,16 @@ for (const [name, manifest] of Object.entries(MODULE_MANIFESTS)) {
         ...(manifest.lazyRequires || []),
     ]);
     const accessed = collectAccessed(src);
+
+    // Fold in usage from facade sub-modules (deps reached via `this.m.…`).
+    for (const subPath of FACADE_SUB_FILES[name] || []) {
+        try {
+            const subSrc = stripComments(fs.readFileSync(path.resolve(bootDir, subPath), 'utf8'));
+            for (const d of collectSubModuleAccessed(subSrc)) accessed.add(d);
+        } catch (e) {
+            scanFailures.push({ name: `${name} (sub: ${subPath})`, path: subPath, error: e.code || String(e) });
+        }
+    }
 
     const usedButUndeclared = [...accessed]
         .filter(d => !declared.has(d) && !core.has(d) && known.has(d)).sort();

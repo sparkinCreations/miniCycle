@@ -48,6 +48,7 @@ const ALL_MODULES = [
     'modalRegistry', 'modalUtils', 'panelVisibilityHelpers', 'gesturePanelManager',
     'titleManager', 'headerLayoutManager', 'featureAvailability', 'dataRecovery', 'uiOrchestrator', 'preferencesBgImage', 'preferencesPresets',
     'taskDOMPatch', 'debugMode', 'iconInit', 'icons', 'keyboardNav', 'mcycPayload', 'nameUtils', 'bootSw',
+    'statsPanelGestures', 'statsPanelRewards',
     'recurringPanelEvents', 'recurringPanelForm', 'recurringPanelGrids',
     'recurringPanelSetup', 'recurringPanelSummary', 'recurringSettings',
     'recurringSettingsApplicator', 'recurringWatcher', 'uxRatings', 'panelCarousel', 'focusTaskPanel'

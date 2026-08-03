@@ -191,8 +191,9 @@ export async function runStatsPanelTests(resultsDiv) {
     // === VIEW SWITCHING TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">👁️ View Switching</h4>';
 
-    await test('shows task view correctly', () => {
+    await test('shows task view correctly', async () => {
         const statsPanel = new StatsPanelManager();
+        await statsPanel.initPromise;  // D-03: view methods live in the gestures sub-module
         statsPanel.showTaskView();
 
         const taskView = document.getElementById('task-view');
@@ -211,8 +212,9 @@ export async function runStatsPanelTests(resultsDiv) {
         }
     });
 
-    await test('shows stats panel correctly', () => {
+    await test('shows stats panel correctly', async () => {
         const statsPanel = new StatsPanelManager();
+        await statsPanel.initPromise;
         statsPanel.showStatsPanel();
 
         const taskView = document.getElementById('task-view');
@@ -231,8 +233,9 @@ export async function runStatsPanelTests(resultsDiv) {
         }
     });
 
-    await test('toggles between views', () => {
+    await test('toggles between views', async () => {
         const statsPanel = new StatsPanelManager();
+        await statsPanel.initPromise;
 
         statsPanel.showStatsPanel();
         if (!statsPanel.isStatsVisible()) {
@@ -361,7 +364,7 @@ export async function runStatsPanelTests(resultsDiv) {
     // === THEME UNLOCK TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">🎨 Theme Unlock</h4>';
 
-    await test('displays correct theme unlock messages', () => {
+    await test('displays correct theme unlock messages', async () => {
         // Inject vocabThemeManager via module-level DI (constructor doesn't merge deps)
         const mockVtm = {
             getUnlockedThemeIds: () => ['classic'],
@@ -370,9 +373,10 @@ export async function runStatsPanelTests(resultsDiv) {
         };
         setStatsPanelDependencies({ vocabThemeManager: mockVtm });
         const statsPanel = new StatsPanelManager();
+        await statsPanel.initPromise;  // D-03: rewards sub-module loads async
         const milestoneUnlocks = { taskOrderGame: false };
 
-        statsPanel.updateThemeMessages(3, milestoneUnlocks);
+        statsPanel._rewards.updateThemeMessages(3, milestoneUnlocks);
 
         const goldenMessage = document.getElementById('golden-unlock-message');
         if (!goldenMessage.textContent.includes('2') || !goldenMessage.textContent.includes('Habit Tracker')) {
@@ -382,7 +386,7 @@ export async function runStatsPanelTests(resultsDiv) {
         setStatsPanelDependencies({ vocabThemeManager: null });
     });
 
-    await test('shows unlocked message for completed milestones', () => {
+    await test('shows unlocked message for completed milestones', async () => {
         // Inject vtm with Habit Tracker unlocked (5 cycles met)
         const mockVtm = {
             getUnlockedThemeIds: () => ['classic', 'habit-tracker'],
@@ -396,9 +400,10 @@ export async function runStatsPanelTests(resultsDiv) {
         };
         setStatsPanelDependencies({ vocabThemeManager: mockVtm });
         const statsPanel = new StatsPanelManager();
+        await statsPanel.initPromise;
         const milestoneUnlocks = { taskOrderGame: false };
 
-        statsPanel.updateThemeMessages(10, milestoneUnlocks);
+        statsPanel._rewards.updateThemeMessages(10, milestoneUnlocks);
 
         const themeMessage = document.getElementById('theme-unlock-message');
         if (!themeMessage.textContent.includes('Habit Tracker')) {
@@ -411,7 +416,7 @@ export async function runStatsPanelTests(resultsDiv) {
         setStatsPanelDependencies({ vocabThemeManager: null });
     });
 
-    await test('shows next vocab theme when some are unlocked', () => {
+    await test('shows next vocab theme when some are unlocked', async () => {
         // Inject vtm — Habit Tracker unlocked, Fitness is next
         const mockVtm = {
             getUnlockedThemeIds: () => ['classic', 'habit-tracker'],
@@ -420,9 +425,10 @@ export async function runStatsPanelTests(resultsDiv) {
         };
         setStatsPanelDependencies({ vocabThemeManager: mockVtm });
         const statsPanel = new StatsPanelManager();
+        await statsPanel.initPromise;
         const milestoneUnlocks = { taskOrderGame: false };
 
-        statsPanel.updateThemeMessages(10, milestoneUnlocks);
+        statsPanel._rewards.updateThemeMessages(10, milestoneUnlocks);
 
         const goldenMessage = document.getElementById('golden-unlock-message');
         if (!goldenMessage.textContent.includes('Fitness')) {
@@ -434,11 +440,12 @@ export async function runStatsPanelTests(resultsDiv) {
     // === NAVIGATION TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">🎯 Navigation</h4>';
 
-    await test('updates navigation dots correctly', () => {
+    await test('updates navigation dots correctly', async () => {
         const statsPanel = new StatsPanelManager();
+        await statsPanel.initPromise;
 
         statsPanel.showTaskView();
-        statsPanel.updateNavDots();
+        statsPanel._gestures.updateNavDots();
 
         const dots = document.querySelectorAll('.dot');
         if (!dots[0].classList.contains('active')) {
@@ -450,15 +457,16 @@ export async function runStatsPanelTests(resultsDiv) {
         }
     });
 
-    await test('handles dot clicks', () => {
+    await test('handles dot clicks', async () => {
         const statsPanel = new StatsPanelManager();
+        await statsPanel.initPromise;
 
-        statsPanel.handleDotClick(1);
+        statsPanel._gestures.handleDotClick(1);
         if (!statsPanel.isStatsVisible()) {
             throw new Error('Clicking second dot should show stats');
         }
 
-        statsPanel.handleDotClick(0);
+        statsPanel._gestures.handleDotClick(0);
         if (statsPanel.isStatsVisible()) {
             throw new Error('Clicking first dot should show tasks');
         }
@@ -508,8 +516,9 @@ export async function runStatsPanelTests(resultsDiv) {
         }
     });
 
-    await test('isStatsVisible returns correct value', () => {
+    await test('isStatsVisible returns correct value', async () => {
         const statsPanel = new StatsPanelManager();
+        await statsPanel.initPromise;
 
         if (statsPanel.isStatsVisible() !== false) {
             throw new Error('Should initially return false');

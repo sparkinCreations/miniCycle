@@ -122,6 +122,7 @@
   * [Service Worker Stale Cache](incidents/INCIDENT_service-worker-stale-cache.md)
   * [Stale Cache Fix #3](incidents/FIX_3_STALE_CACHE.md)
   * [Undo/Redo Rollback UI Refresh](incidents/BUG_undo-redo-rollback-ui-refresh.md)
+  * [boot-sw Classic-Script ESM Break (v2.346)](incidents/INCIDENT_boot-sw-classic-script-esm.md)
 
 * **Deployment & Updates**
   * [Deployment Guide](deployment/DEPLOYMENT.md)

@@ -198,6 +198,8 @@ var BOOT_CRITICAL = [
   // Features
   './modules/features/themeManager.js',
   './modules/features/statsPanel.js',
+  './modules/features/statsPanelGestures.js',
+  './modules/features/statsPanelRewards.js',
   './modules/features/achievementsManager.js',
   './modules/features/dueDates.js',
   './modules/features/reminders.js',

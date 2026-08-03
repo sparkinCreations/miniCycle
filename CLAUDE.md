@@ -14,7 +14,7 @@ Auto-loaded `CLAUDE.md` covers the high-level rules; the specifics that prevent 
 - **Building a modal, menu, or any element with event listeners** → `web/docs/working-on-code/HOW_TO_ADD_COOKBOOK.md` (modal a11y checklist, listener cleanup, focus management)
 - **Adding/changing user-facing strings** → `web/docs/working-on-code/CODING_STANDARDS.md` §Label System (emoji-separation rule, interpolation, `LENS_SENSITIVE_KEYS`)
 - **Deciding *where* a user-facing message belongs** (help window vs empty state vs notification vs modal) → `web/docs/working-on-code/MESSAGING_SURFACES.md`
-- **Modifying anything in or near the 4 facade modules** (`settingsManager`, `taskCore`, `taskDOM`, `preferencesManager`) → `web/docs/working-on-code/HIDDEN_CODEBASE_INSIGHTS.md` (dynamic-import sub-module pattern; do NOT add their sub-modules to manifests)
+- **Modifying anything in or near the 5 facade modules** (`settingsManager`, `taskCore`, `taskDOM`, `preferencesManager`, `statsPanel`) → `web/docs/working-on-code/HIDDEN_CODEBASE_INSIGHTS.md` (dynamic-import sub-module pattern; do NOT add their sub-modules to manifests)
 - **Touching event handlers, AppState updates, or async UI** → `web/docs/working-on-code/EVENT_LISTENER_GUIDE.md` and `web/docs/working-on-code/ASYNC_UI_PATTERNS.md`
 
 When in doubt about *where* a doc lives, check `web/docs/INDEX.md`.
@@ -350,7 +350,7 @@ which regenerates them in `netlify.toml`.
 
 ## HIDDEN SUB-MODULE FACADE PATTERN
 
-Four facade modules dynamically import their sub-modules during `init()` instead of declaring them in `moduleManifests.js`. This is **intentional** — do NOT add these sub-modules to the manifest (it would cause duplicate initialization).
+Five facade modules dynamically import their sub-modules during `init()` instead of declaring them in `moduleManifests.js`. This is **intentional** — do NOT add these sub-modules to the manifest (it would cause duplicate initialization).
 
 | Facade | Sub-Modules |
 |--------|-------------|
@@ -358,8 +358,9 @@ Four facade modules dynamically import their sub-modules during `init()` instead
 | `taskCore` | taskCRUD, taskCompletion, taskCycleReset |
 | `taskDOM` | taskValidation, taskUtils, taskRenderer, taskEvents |
 | `preferencesManager` | preferencesBgImage, preferencesPresets |
+| `statsPanel` | statsPanelGestures, statsPanelRewards |
 
-**Why:** Sub-modules are tightly coupled to their facade. Dynamic imports with `?v=${APP_VERSION}` cache busting ensure fresh loads. The facade wires DI to each sub-module via its own `wireSubModuleDependencies()`.
+**Why:** Sub-modules are tightly coupled to their facade. Dynamic imports with `?v=${APP_VERSION}` cache busting ensure fresh loads. The facade wires DI to each sub-module via its own `wireSubModuleDependencies()` — except `statsPanel`, whose sub-modules hold a back-reference to the manager (`this.m`) and reach its deps via `this.m.dependencies` / `this.m.rawDeps` (`validate:di` scans those files via `FACADE_SUB_FILES`).
 
 **Testing note:** Tests for sub-modules import them directly with `?v=${cacheBuster}`. The facade's `init()` may create a singleton — tests that need fresh instances should use the sub-module's exported class/functions directly, not through the facade.
 

@@ -29,7 +29,7 @@ import { recordActionUsage } from '../ui/actionUsage.js';
 // Pure utility class (no side effects/module state) — safe static import.
 // Owns the ordered panel registry; statsPanel registers its panels into it.
 // See docs/future-work/FOCUS_TASK_VIEW_PLAN.md Phase 0.
-import { PanelCarousel } from '../ui/panelCarousel.js';
+// PanelCarousel is now imported by statsPanelGestures.js (D-03 split).
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -58,7 +58,6 @@ const di = createDIModule('StatsPanel', {
     clearedTasksManager: optional(null),
     achievementsManager: optional(null),
     getModal: optional(null),
-    trackAction: optional(null),
     gesturePanelManager: optional(null),
     // Vocabulary theme system (Phase 2)
     vocabThemeManager: optional(null),
@@ -130,7 +129,8 @@ export class StatsPanelManager {
         this.elements = {};
 
         // Timers
-        this.wheelTimeout = null;
+        this._gestures = null;   // statsPanelGestures.js instance (D-03 split)
+        this._rewards = null;    // statsPanelRewards.js instance (D-03 split)
         this._pendingTimers = [];
 
         // Task stats cache (performance optimization)
@@ -143,12 +143,14 @@ export class StatsPanelManager {
         // ✅ Cache DOM elements synchronously (needed for tests)
         this.cacheElements();
 
-        // ✅ Build the panel carousel from the cached elements (synchronous,
-        // like cacheElements — tests construct instances directly)
-        this._setupCarousel();
+        // NOTE (D-03 split): the panel carousel is now built by the gestures
+        // sub-module right after it loads in init() — see _loadSubModules().
+        // It is no longer synchronous in the constructor.
 
-        // ✅ Start async initialization (waits for core)
-        this.init();
+        // ✅ Start async initialization (waits for core). The promise is
+        // exposed so tests (and any eager caller) can await sub-module load —
+        // gesture/reward methods are live only after it resolves (D-03 split).
+        this.initPromise = this.init();
     }
 
     /**
@@ -189,12 +191,44 @@ export class StatsPanelManager {
     /**
      * Initialize the stats panel manager
      */
+    /**
+     * Raw module-scope DI proxy — bridge for the D-03 sub-modules, whose code
+     * used `_deps.X` when it lived in this file. The cached `this.dependencies`
+     * is a curated subset and deliberately NOT a substitute (consumer-surface
+     * rule: the proxy resolves every declared dep, the cache only some).
+     */
+    get rawDeps() { return _deps; }
+
+    /** Dynamically-loaded MILESTONES config (module-scope) for sub-modules. */
+    get MILESTONES() { return MILESTONES; }
+
+    /**
+     * Load the facade-style sub-modules (D-03 split). Dynamic import with
+     * ?v= cache-busting — same pattern as settingsManager/taskDOM. These are
+     * deliberately NOT in moduleManifests.js.
+     */
+    async _loadSubModules() {
+        if (this._gestures) return;
+        const [gMod, rMod] = await Promise.all([
+            import(`./statsPanelGestures.js?v=${APP_VERSION}`),
+            import(`./statsPanelRewards.js?v=${APP_VERSION}`)
+        ]);
+        this._gestures = new gMod.StatsPanelGestures(this);
+        this._rewards = new rMod.StatsPanelRewards(this);
+        // Build the panel carousel as soon as its owner exists (this used to
+        // be synchronous in the constructor, pre-split).
+        this._gestures._setupCarousel();
+    }
+
     async init() {
         // ✅ Wait for core systems to be ready (AppState + data) - DI-pure
         const appInitModule = this.dependencies.appInit;
         if (appInitModule?.waitForCore) {
             await appInitModule.waitForCore();
         }
+
+        // Load facade-style sub-modules BEFORE anything binds their handlers.
+        await this._loadSubModules();
 
         this.setupEventListeners();
         this.initView();
@@ -369,21 +403,21 @@ export class StatsPanelManager {
 
         // Bind methods to preserve 'this' context
         this.boundHandlers = {
-            handleTouchStart: this.handleTouchStart.bind(this),
-            handleTouchMove: this.handleTouchMove.bind(this),
-            handleTouchEnd: this.handleTouchEnd.bind(this),
-            handleWheel: this.handleWheel.bind(this),
-            handleMouseDown: this.handleMouseDown.bind(this),
-            handleMouseMove: this.handleMouseMove.bind(this),
-            handleMouseUp: this.handleMouseUp.bind(this),
-            handlePointerDown: this.handlePointerDown.bind(this),
-            handlePointerMove: this.handlePointerMove.bind(this),
-            handlePointerUp: this.handlePointerUp.bind(this),
-            handleKeydown: this.handleKeydown.bind(this),
+            handleTouchStart: this._gestures.handleTouchStart.bind(this._gestures),
+            handleTouchMove: this._gestures.handleTouchMove.bind(this._gestures),
+            handleTouchEnd: this._gestures.handleTouchEnd.bind(this._gestures),
+            handleWheel: this._gestures.handleWheel.bind(this._gestures),
+            handleMouseDown: this._gestures.handleMouseDown.bind(this._gestures),
+            handleMouseMove: this._gestures.handleMouseMove.bind(this._gestures),
+            handleMouseUp: this._gestures.handleMouseUp.bind(this._gestures),
+            handlePointerDown: this._gestures.handlePointerDown.bind(this._gestures),
+            handlePointerMove: this._gestures.handlePointerMove.bind(this._gestures),
+            handlePointerUp: this._gestures.handlePointerUp.bind(this._gestures),
+            handleKeydown: this._gestures.handleKeydown.bind(this._gestures),
             handleTaskListChange: this.handleTaskListChange.bind(this),
             handleAddTaskClick: this.handleAddTaskClick.bind(this),
-            handleDotClick: this.handleDotClick.bind(this),
-            handleNavPillClick: this.handleNavPillClick.bind(this),
+            handleDotClick: this._gestures.handleDotClick.bind(this._gestures),
+            handleNavPillClick: this._gestures.handleNavPillClick.bind(this._gestures),
             // UI event handlers
             handleSlideLeftClick: () => this.showTaskView(),
             handleSlideRightClick: () => {
@@ -399,10 +433,10 @@ export class StatsPanelManager {
             },
             // Theme event handlers
             handleCurrentRoutineToggle: () => this.handleCurrentRoutineToggle(),
-            handleThemeToggleClick: () => this.handleThemeToggleClick(),
+            handleThemeToggleClick: () => this._rewards.handleThemeToggleClick(),
             handleQuickDarkToggle: () => this.handleQuickDarkToggle(),
-            handleOpenThemesPanel: () => this.openThemesPanel(),
-            handleCloseThemesPanel: () => this.closeThemesPanel()
+            handleOpenThemesPanel: () => this._rewards.openThemesPanel(),
+            handleCloseThemesPanel: () => this._rewards.closeThemesPanel()
         };
 
         // NOTE: Gesture events (touch, mouse, wheel, pointer, keyboard) are now
@@ -449,8 +483,8 @@ export class StatsPanelManager {
             this.boundHandlers.handleDotClickWithStop = (event) => {
                 event.stopPropagation();
                 const panelId = event.currentTarget?.getAttribute('aria-controls');
-                if (panelId && this.carousel?.goTo(panelId)) return;
-                this.handleNavPillClick();
+                if (panelId && this._gestures?.carousel?.goTo(panelId)) return;
+                this._gestures.handleNavPillClick();
             };
         }
         this.elements.dots.forEach((dot) => {
@@ -558,465 +592,24 @@ export class StatsPanelManager {
     // 📱 TOUCH EVENT HANDLERS
     // ==========================================
 
-    handleTouchStart(event) {
-        if (this.dependencies.isDraggingNotification()) return;
-        if (this.dependencies.isOverlayActive()) return;
+    // ═══════════════════════════════════════════════════════════════════════
+    // SUB-MODULES (D-03 split, Aug 2026) — facade-style, loaded in init().
+    // View navigation/gestures → statsPanelGestures.js (this._gestures)
+    // Theme/milestone rewards  → statsPanelRewards.js  (this._rewards)
+    // Public API delegates below; everything else is called on the sub-module.
+    // ═══════════════════════════════════════════════════════════════════════
 
-        // Exclude interactive elements (match mouse handler)
-        if (
-            event.target.closest("button, input, select, textarea, .task-options, .notification, a[href], .quick-actions-window, .quick-actions-header") ||
-            ['BUTTON', 'INPUT', 'SELECT', 'TEXTAREA'].includes(event.target.tagName)
-        ) {
-            return;
-        }
+    showTaskView() { return this._gestures?.showTaskView(); }
 
-        this.state.startX = event.touches[0].clientX;
-        this.state.isSwiping = true;
-    }
+    showStatsPanel() { return this._gestures?.showStatsPanel(); }
 
-    handleTouchMove(event) {
-        if (!this.state.isSwiping || this.dependencies.isDraggingNotification()) return;
-        if (this.dependencies.isOverlayActive()) return;
-        
-        const moveX = event.touches[0].clientX;
-        const difference = this.state.startX - moveX;
-
-        if (difference > this.config.TOUCH_SWIPE_THRESHOLD && !this.state.isStatsVisible) {
-            this.state.isStatsVisible = true;
-            this.showStatsPanel();
-            this.state.isSwiping = false;
-        }
-
-        if (difference < -this.config.TOUCH_SWIPE_THRESHOLD && this.state.isStatsVisible) {
-            this.state.isStatsVisible = false;
-            this.showTaskView();
-            this.state.isSwiping = false;
-        }
-    }
-
-    handleTouchEnd() {
-        this.state.isSwiping = false;
-    }
-
-    // ==========================================
-    // 🖱️ MOUSE EVENT HANDLERS
-    // ==========================================
-
-    handleMouseDown(event) {
-        if (this.dependencies.isOverlayActive()) return;
-
-        // Exclude interactive elements
-        if (
-            this.dependencies.isDraggingNotification() ||
-            event.target.closest("button, input, select, textarea, .task-options, .notification, a[href], .quick-actions-window, .quick-actions-header") ||
-            ['BUTTON', 'INPUT', 'SELECT', 'TEXTAREA'].includes(event.target.tagName)
-        ) {
-            return;
-        }
-
-        this.state.isMouseDragging = false;
-        this.state.mouseStartX = event.clientX;
-        _deps.getBody().style.userSelect = "none";
-    }
-
-    handleMouseMove(event) {
-        if (this.state.mouseStartX === 0) return;
-
-        const deltaX = event.clientX - this.state.mouseStartX;
-        const absDelta = Math.abs(deltaX);
-
-        // Start dragging after threshold is met
-        if (!this.state.isMouseDragging && absDelta > this.config.MOUSE_DRAG_START_THRESHOLD) {
-            this.state.isMouseDragging = true;
-        }
-
-        if (this.state.isMouseDragging && absDelta > this.config.MOUSE_DRAG_THRESHOLD) {
-            // Left drag (negative deltaX) = show stats panel
-            if (deltaX < -this.config.MOUSE_DRAG_THRESHOLD && !this.state.isStatsVisible) {
-                this.state.isStatsVisible = true;
-                this.showStatsPanel();
-                this.resetMouseDrag();
-            }
-            // Right drag (positive deltaX) = show task view  
-            else if (deltaX > this.config.MOUSE_DRAG_THRESHOLD && this.state.isStatsVisible) {
-                this.state.isStatsVisible = false;
-                this.showTaskView();
-                this.resetMouseDrag();
-            }
-        }
-    }
-
-    handleMouseUp() {
-        this.resetMouseDrag();
-    }
-
-    resetMouseDrag() {
-        this.state.isMouseDragging = false;
-        this.state.mouseStartX = 0;
-        const body = _deps.getBody();
-        body.style.cursor = "";
-        body.style.userSelect = "";
-    }
-
-    // ==========================================
-    // 🛞 WHEEL EVENT HANDLERS
-    // ==========================================
-
-    handleWheel(event) {
-        if (this.dependencies.isOverlayActive()) return;
-
-        // Only handle horizontal scrolling
-        if (Math.abs(event.deltaX) < 10) return;
-        
-        // Prevent default horizontal scrolling
-        if (Math.abs(event.deltaX) > Math.abs(event.deltaY)) {
-            event.preventDefault();
-        }
-        
-        this.state.wheelDeltaX += event.deltaX;
-        
-        // Clear previous timeout
-        if (this.wheelTimeout) {
-            clearTimeout(this.wheelTimeout);
-        }
-        
-        // Check if we've reached the swipe threshold
-        if (this.state.wheelDeltaX > this.config.SWIPE_THRESHOLD) {
-            if (!this.state.isStatsVisible) {
-                this.state.isStatsVisible = true;
-                this.showStatsPanel();
-            }
-            this.state.wheelDeltaX = 0;
-        } else if (this.state.wheelDeltaX < -this.config.SWIPE_THRESHOLD) {
-            if (this.state.isStatsVisible) {
-                this.state.isStatsVisible = false;
-                this.showTaskView();
-            }
-            this.state.wheelDeltaX = 0;
-        }
-        
-        // Reset wheel tracking after a delay
-        this.wheelTimeout = setTimeout(() => {
-            this.state.wheelDeltaX = 0;
-        }, this.config.WHEEL_RESET_DELAY);
-    }
-
-    // ==========================================
-    // 👆 POINTER EVENT HANDLERS
-    // ==========================================
-
-    handlePointerDown(event) {
-        // Only track if it's a touch or pen input
-        if (event.pointerType === "touch" || event.pointerType === "pen") {
-            if (this.dependencies.isDraggingNotification()) return;
-            if (this.dependencies.isOverlayActive()) return;
-
-            // Exclude interactive elements (match mouse handler)
-            if (
-                event.target.closest("button, input, select, textarea, .task-options, .notification, a[href], .quick-actions-window, .quick-actions-header") ||
-                ['BUTTON', 'INPUT', 'SELECT', 'TEXTAREA'].includes(event.target.tagName)
-            ) {
-                return;
-            }
-
-            this.state.isPointerSwiping = true;
-            this.state.pointerStartX = event.clientX;
-        }
-    }
-
-    handlePointerMove(event) {
-        if (!this.state.isPointerSwiping || event.pointerType === "mouse") return;
-        
-        const moveX = event.clientX;
-        const difference = this.state.pointerStartX - moveX;
-        
-        if (Math.abs(difference) > this.config.TOUCH_SWIPE_THRESHOLD) {
-            if (difference > this.config.TOUCH_SWIPE_THRESHOLD && !this.state.isStatsVisible) {
-                this.state.isStatsVisible = true;
-                this.showStatsPanel();
-                this.state.isPointerSwiping = false;
-            } else if (difference < -this.config.TOUCH_SWIPE_THRESHOLD && this.state.isStatsVisible) {
-                this.state.isStatsVisible = false;
-                this.showTaskView();
-                this.state.isPointerSwiping = false;
-            }
-        }
-    }
-
-    handlePointerUp() {
-        this.state.isPointerSwiping = false;
-    }
-
-    // ==========================================
-    // ⌨️ KEYBOARD EVENT HANDLERS
-    // ==========================================
-
-    handleKeydown(event) {
-        if (!event.shiftKey) return;
-
-        if (event.key === "ArrowRight" && !this.state.isStatsVisible) {
-            event.preventDefault();
-            this.showStatsPanel();
-            this.dependencies.showNotification(`${getIcon('keyboard')} ${getLabel('notify.keyboardStatsOpened')}`, "info", UI_TIMEOUTS.NOTIFICATION_BRIEF);
-        } else if (event.key === "ArrowLeft" && this.state.isStatsVisible) {
-            event.preventDefault();
-            this.showTaskView();
-            this.dependencies.showNotification(`${getIcon('keyboard')} ${getLabel('notify.keyboardTaskOpened')}`, "info", UI_TIMEOUTS.NOTIFICATION_BRIEF);
-        }
-
-        // Shift+Tab for quick toggle (only when nothing is focused — preserve normal tab navigation)
-        if (event.key === "Tab") {
-            const activeEl = _deps.getActiveElement();
-            const hasFocusedElement = activeEl && activeEl !== _deps.getBody();
-            if (hasFocusedElement || this.dependencies.isOverlayActive()) return;
-
-            event.preventDefault();
-            if (this.state.isStatsVisible) {
-                this.showTaskView();
-                this.dependencies.showNotification(`${getIcon('keyboard')} ${getLabel('notify.quickToggleTask')}`, "info", UI_TIMEOUTS.NOTIFICATION_BRIEF);
-            } else {
-                this.showStatsPanel();
-                this.dependencies.showNotification(`${getIcon('keyboard')} ${getLabel('notify.quickToggleStats')}`, "info", UI_TIMEOUTS.NOTIFICATION_BRIEF);
-            }
-        }
-    }
-
-    // ==========================================
-    // 🎛️ VIEW MANAGEMENT
-    // ==========================================
-
-    /**
-     * Show the task view and hide stats panel
-     */
-    /**
-     * Build the panel carousel from cached elements. Panel order here IS the
-     * swipe order (index 0 = leftmost). Generic switching (SHOW/HIDE classes,
-     * inert, nav-dot state) lives in PanelCarousel; the onShow callbacks below
-     * carry the panel-specific side effects that used to live inline in
-     * showTaskView()/showStatsPanel().
-     */
-    _setupCarousel() {
-        this.carousel = null;
-        const { taskView, statsPanel, focusTaskPanel } = this.elements;
-        if (!taskView || !statsPanel) return; // show* methods warn, as before
-
-        // Dots are matched to panels by aria-controls, not array position —
-        // the focus-task dot only exists in newer markup and test fixtures
-        // may omit it entirely.
-        const dotFor = (panelId) =>
-            Array.from(this.elements.dots || []).find(d => d.getAttribute('aria-controls') === panelId) || null;
-
-        this.carousel = new PanelCarousel();
-
-        // Index 0 — focus task panel (one task at a time). Focus-view-only
-        // AND gated behind onboarding (plan D8): the lazy isEnabled check
-        // makes it unreachable by swipe/keyboard the moment either gate
-        // closes, with no event wiring to focusMode/onboardingManager.
-        if (focusTaskPanel) {
-            this.carousel.register({
-                id: 'focus-task-panel',
-                element: focusTaskPanel,
-                dot: dotFor('focus-task-panel'),
-                isEnabled: () => {
-                    const body = document.body;
-                    return body.classList.contains(DOM_CLASSES.FOCUS_MODE)
-                        && !body.classList.contains(DOM_CLASSES.FIRST_RUN_WELCOME_ACTIVE);
-                },
-                onShow: () => this._onFocusTaskShown(),
-                onHide: () => this._onFocusTaskHidden()
-            });
-        }
-
-        this.carousel.register({
-            id: 'task-view',
-            element: taskView,
-            dot: dotFor('task-view'),
-            onShow: () => this._onTaskViewShown()
-        });
-        this.carousel.register({
-            id: 'stats-panel',
-            element: statsPanel,
-            dot: dotFor('stats-panel'),
-            onShow: () => this._onStatsPanelShown()
-        });
-    }
-
-    /** Panel-specific side effects when the focus task panel becomes active. */
-    _onFocusTaskShown() {
-        // Leftmost panel — both slide arrows point at panels to the right of
-        // the pair they serve; hide them entirely here.
-        [this.elements.slideRight, this.elements.slideLeft].forEach(arrow => {
-            if (!arrow) return;
-            arrow.classList.add(DOM_CLASSES.HIDE);
-            arrow.classList.remove(DOM_CLASSES.SHOW);
-            arrow.tabIndex = -1;
-        });
-        this.state.isStatsVisible = false;
-        this._syncGestureManager(false);
-        this.announceViewChange(getLabel('accessibility.focusTaskPanelOpened'));
-    }
-
-    /** Leaving the focus task panel — reset its ‹ › browse override (D2). */
-    _onFocusTaskHidden() {
-        const ftp = _deps.focusTaskPanel;
-        const instance = typeof ftp === 'function' ? ftp() : ftp;
-        instance?.clearOverride?.();
-    }
-
-    /** Panel-specific side effects when the task view becomes active. */
-    _onTaskViewShown() {
-        if (this.elements.slideRight) {
-            this.elements.slideRight.classList.add(DOM_CLASSES.SHOW);
-            this.elements.slideRight.classList.remove(DOM_CLASSES.HIDE);
-            this.elements.slideRight.tabIndex = 0;
-        }
-        if (this.elements.slideLeft) {
-            this.elements.slideLeft.classList.add(DOM_CLASSES.HIDE);
-            this.elements.slideLeft.classList.remove(DOM_CLASSES.SHOW);
-            this.elements.slideLeft.tabIndex = -1;
-        }
-
-        this.state.isStatsVisible = false;
-        this._syncGestureManager(false);
-        this.announceViewChange(getLabel('accessibility.taskViewOpened'));
-    }
-
-    /** Panel-specific side effects when the stats panel becomes active. */
-    _onStatsPanelShown() {
-        if (this.elements.slideRight) {
-            this.elements.slideRight.classList.add(DOM_CLASSES.HIDE);
-            this.elements.slideRight.classList.remove(DOM_CLASSES.SHOW);
-            this.elements.slideRight.tabIndex = -1;
-        }
-        if (this.elements.slideLeft) {
-            this.elements.slideLeft.classList.add(DOM_CLASSES.SHOW);
-            this.elements.slideLeft.classList.remove(DOM_CLASSES.HIDE);
-            this.elements.slideLeft.tabIndex = 0;
-        }
-
-        this.state.isStatsVisible = true;
-        this._syncGestureManager(true);
-        this.announceViewChange(getLabel('accessibility.statsPanelOpened'));
-        this._maybeShowStatsTour();
-
-        // After the panel becomes visible, check whether the first-run
-        // welcome banner overlaps its natural top edge. If so, set a
-        // panel-specific shift so the panel slides clear of the banner
-        // (its own shift, computed independently of task-view's because
-        // the panel sits at a different natural position).
-        requestAnimationFrame(() => this._measureWelcomeBannerOverlapForStats());
-    }
-
-    showTaskView() {
-        if (!this.carousel) {
-            console.warn('⚠️ Cannot switch to task view - missing required elements');
-            return;
-        }
-        this.carousel.goTo('task-view');
-    }
-
-    /**
-     * Show the stats panel and hide task view
-     */
-    showStatsPanel() {
-        if (!this.carousel) {
-            console.warn('⚠️ Cannot switch to stats panel - missing required elements');
-            return;
-        }
-        this.carousel.goTo('stats-panel');
-    }
-
-    /**
-     * Move the panel carousel by direction (+1 next / -1 previous).
-     * Public DI surface for gesturePanelManager's onNavigate wiring.
-     * @param {number} direction
-     * @returns {{id:string, index:number}|null|undefined} New panel, null when
-     *          clamped, or undefined when the carousel isn't available (lets
-     *          the gesture manager fall back to its legacy binary path).
-     */
-    navigatePanels(direction) {
-        if (!this.carousel) return undefined;
-        return this.carousel.navigate(direction);
-    }
-
-    /**
-     * Measure whether the first-run welcome banner overlaps the stats
-     * panel's natural top, and set --first-run-welcome-stats-shift on
-     * the panel by exactly the overlap amount + a small gap. Defaults
-     * to 0 (variable removed) when the banner isn't active or when the
-     * panel sits naturally below the banner already.
-     * @private
-     */
-    _measureWelcomeBannerOverlapForStats() {
-        const panel = this.elements.statsPanel;
-        if (!panel) return;
-
-        const banner = document.getElementById('first-run-welcome');
-        if (!banner) {
-            panel.style.removeProperty('--first-run-welcome-stats-shift');
-            return;
-        }
-
-        const bannerBottom = banner.getBoundingClientRect().bottom;
-
-        // Compute the panel's natural top edge from CSS, not from
-        // getBoundingClientRect. Reading the rect mid-transition (the
-        // 400ms slide-in animation) would return a partial position and
-        // backtracking via the current shift would drift the value
-        // cumulatively on every open-close cycle. getComputedStyle.top is
-        // the CSS-resolved `top` (47% or 51% mobile), unaffected by
-        // transforms; combined with offsetHeight (the rendered height)
-        // and the existing translateY(-50%), the natural top edge is:
-        //     naturalTop = topPx - height/2
-        const computed = getComputedStyle(panel);
-        const topPx = parseFloat(computed.top) || 0;
-        const height = panel.offsetHeight;
-        const naturalTop = topPx - height / 2;
-
-        const GAP_PX = 3;
-        const requiredShift = Math.max(0, bannerBottom - naturalTop + GAP_PX);
-
-        if (requiredShift > 0) {
-            panel.style.setProperty('--first-run-welcome-stats-shift', `${requiredShift}px`);
-        } else {
-            panel.style.removeProperty('--first-run-welcome-stats-shift');
-        }
-    }
-
-    /**
-     * Trigger stats panel tour notification on first open.
-     * The tour manager handles the state check internally.
-     * @private
-     */
-    _maybeShowStatsTour() {
-        _deps.showStatsTourNotification?.();
-    }
-
-    /**
-     * Sync gesture panel manager state when view changes externally
-     * @param {boolean} isVisible - Whether stats panel is visible
-     * @returns {void}
-     * @private
-     */
-    _syncGestureManager(isVisible) {
-        const gpm = _deps.gesturePanelManager;
-        // gesturePanelManager may be a getter function that returns the instance
-        const instance = typeof gpm === 'function' ? gpm() : gpm;
-        if (instance?.syncStatsVisibility) {
-            instance.syncStatsVisibility(isVisible);
-        }
-    }
-
-    /**
-     * Initialize the view state
-     */
     initView() {
         // Start with task view visible, stats panel hidden from tab order.
         // initTo() writes ONLY inert + dot state (no SHOW/HIDE classes, no
         // callbacks) — boot markup already renders the initial view, and
         // writing classes here would change first-paint CSS selector matches.
-        if (this.carousel) {
-            this.carousel.initTo('task-view');
+        if (this._gestures?.carousel) {
+            this._gestures.carousel.initTo('task-view');
         } else if (this.elements.statsPanel) {
             this.elements.statsPanel.inert = true;
         }
@@ -1026,7 +619,7 @@ export class StatsPanelManager {
             this.elements.slideLeft.tabIndex = -1;
         }
 
-        this.updateNavDots();
+        this._gestures?.updateNavDots();
     }
 
     // ==========================================
@@ -1235,7 +828,7 @@ export class StatsPanelManager {
         if (achievementsManager?.updateBadges) {
             achievementsManager.updateBadges(globalCyclesCompleted, globalTasksCleared);
         }
-        this.updateThemeUnlockStatus(globalCyclesCompleted);
+        this._rewards?.updateThemeUnlockStatus(globalCyclesCompleted);
 
         // Update feature buttons (History, Cleared Tasks, Achievements)
         this.updateFeatureButtons();
@@ -1243,48 +836,6 @@ export class StatsPanelManager {
     }
     /**
      * Announce view changes for screen readers
-     */
-    announceViewChange(message) {
-        if (this.elements.liveRegion) {
-            this.elements.liveRegion.textContent = message;
-        }
-    }
-
-    /**
-     * Update navigation dots
-     */
-    updateNavDots() {
-        if (this.carousel) {
-            this.carousel.refreshDots();
-            return;
-        }
-        // Legacy fallback (elements missing at construction)
-        const statsVisible = this.elements.statsPanel?.classList.contains(DOM_CLASSES.SHOW);
-        this.elements.dots.forEach((dot, index) => {
-            dot.classList.toggle(DOM_CLASSES.ACTIVE, index === 0 ? !statsVisible : statsVisible);
-        });
-    }
-
-    /**
-     * Handle navigation dot clicks (legacy - kept for potential direct calls)
-     */
-    handleDotClick(index) {
-        this.carousel?.goTo(index);
-    }
-
-    /**
-     * Handle navigation pill container click — advances to the next panel,
-     * wrapping at the end (with two panels this is exactly the old toggle).
-     */
-    handleNavPillClick() {
-        this.carousel?.cycleNext();
-    }
-
-    // NOTE: Badge UI methods (initBadgeTooltips, showBadgeDetail, hideBadgeDetail, updateBadges)
-    // have been extracted to achievementsManager.js for better separation of concerns
-
-    /**
-     * Handle task list changes
      */
     handleTaskListChange() {
         this.invalidateTaskStatsCache();
@@ -1310,221 +861,6 @@ export class StatsPanelManager {
      * Update theme unlock status messages based on GLOBAL cycles completed
      * @param {number} globalCyclesCompleted - Total cycles across all routines
      * @returns {void}
-     */
-    updateThemeUnlockStatus(globalCyclesCompleted) {
-
-        let unlockedThemes = [];
-        let unlockedFeatures = [];
-
-        // ✅ Use state-based data access - DI-pure
-        const AppState = this.dependencies.AppState;
-        if (AppState?.isReady?.()) {
-            const currentState = AppState.get();
-            if (currentState) {
-                unlockedThemes = currentState.settings.unlockedThemes || [];
-                unlockedFeatures = currentState.settings.unlockedFeatures || [];
-            }
-        } else {
-            console.warn('⚠️ AppState not ready - using fallback data access');
-
-            // Fallback to old method if state not ready
-            const schemaData = this.dependencies.loadMiniCycleData();
-            if (schemaData) {
-                const { settings } = schemaData;
-                unlockedThemes = settings.unlockedThemes || [];
-                unlockedFeatures = settings.unlockedFeatures || [];
-            }
-        }
-
-        // Convert to milestone format
-        const milestoneUnlocks = {
-            taskOrderGame: unlockedFeatures.includes("task-order-game")
-        };
-
-        this.updateThemeMessages(globalCyclesCompleted, milestoneUnlocks);
-        // Unlock awarding is handled by cycleCompletion.js - statsPanel is read-only
-
-    }
-
-    /**
-     * Update theme unlock messages based on current mode
-     * Shows cycle-based text in Cycle mode, task-based text in To-Do mode
-     * @param {number} globalCyclesCompleted - Total cycles across all routines
-     * @param {Object} milestoneUnlocks - Current unlock status
-     * @returns {void}
-     */
-    updateThemeMessages(globalCyclesCompleted, milestoneUnlocks) {
-        const { themeUnlockMessage, goldenUnlockMessage, gameUnlockMessage } = this.elements;
-
-        // Get total tasks cleared and current mode from state
-        let totalTasksCleared = 0;
-        let isToDoMode = false;
-        const AppState = this.dependencies.AppState;
-        if (AppState?.isReady?.()) {
-            const state = AppState.get();
-            totalTasksCleared = state?.userProgress?.totalTasksCompleted || 0;
-            // Check current mode from active cycle
-            const activeCycleId = state?.appState?.activeCycleId;
-            const currentCycle = activeCycleId ? state?.data?.cycles?.[activeCycleId] : null;
-            isToDoMode = currentCycle?.deleteCheckedTasks || false;
-        }
-
-        // Resolve vtm once — shared across all three message blocks
-        const vtm = this.dependencies.vocabThemeManager;
-        const nextVocabTheme = vtm ? vtm.getNextLockedTheme(globalCyclesCompleted) : null;
-        const allVocabUnlocked = vtm ? !nextVocabTheme : false;
-
-        // All unlocked vocabulary theme rewards (excludes 'classic' — always available by default)
-        // Updates immediately after checkThemeUnlocks() writes to state before updateStatsPanel() runs
-        const expanded = this._milestonesExpanded;
-
-        if (themeUnlockMessage) {
-            if (vtm) {
-                const unlockedIds = vtm.getUnlockedThemeIds()
-                    .filter(id => id !== 'classic' && vtm.getThemeDefinition(id) !== null);
-                if (unlockedIds.length > 0) {
-                    themeUnlockMessage.textContent = unlockedIds.map(id => {
-                        const def = vtm.getThemeDefinition(id);
-                        // badge (not celebrate) so the list matches the badge row
-                        // and the manual — 💪 Fitness, 📚 Scholar (drift-review B-03)
-                        const icon = def?.icons?.badge ?? def?.icons?.celebrate ?? '✅';
-                        return `${icon} ${def.name}`;
-                    }).join('\n');
-                    themeUnlockMessage.classList.toggle(DOM_CLASSES.UNLOCKED_MESSAGE, true);
-                    themeUnlockMessage.classList.toggle(DOM_CLASSES.VISIBLE, expanded);
-                } else {
-                    themeUnlockMessage.textContent = "";
-                    themeUnlockMessage.classList.remove(DOM_CLASSES.UNLOCKED_MESSAGE, DOM_CLASSES.VISIBLE);
-                }
-            } else {
-                themeUnlockMessage.textContent = "";
-                themeUnlockMessage.classList.remove(DOM_CLASSES.UNLOCKED_MESSAGE, DOM_CLASSES.VISIBLE);
-            }
-        }
-
-        // Next vocabulary theme to unlock (with emoji)
-        if (goldenUnlockMessage) {
-            if (vtm) {
-                if (nextVocabTheme) {
-                    const cyclesNeeded = Math.max(0, nextVocabTheme.unlockAt.cycles - globalCyclesCompleted);
-                    const nextIcon = nextVocabTheme.icons?.badge ?? nextVocabTheme.icons?.celebrate ?? '';
-                    const cycleWord = getLabel('noun.cycle', { count: cyclesNeeded });
-                    const themeUnlockText = getLabel('unlock.nextThemeUnlock', { vars: { name: nextVocabTheme.name, count: cyclesNeeded, cycleWord } });
-                    goldenUnlockMessage.textContent = nextIcon ? `${nextIcon} ${themeUnlockText}` : themeUnlockText;
-                    goldenUnlockMessage.classList.remove(DOM_CLASSES.UNLOCKED_MESSAGE);
-                    goldenUnlockMessage.classList.toggle(DOM_CLASSES.VISIBLE, expanded);
-                } else {
-                    goldenUnlockMessage.textContent = getLabel('unlock.allThemesUnlocked');
-                    goldenUnlockMessage.classList.toggle(DOM_CLASSES.UNLOCKED_MESSAGE, true);
-                    goldenUnlockMessage.classList.toggle(DOM_CLASSES.VISIBLE, expanded);
-                }
-            } else {
-                goldenUnlockMessage.textContent = "";
-                goldenUnlockMessage.classList.remove(DOM_CLASSES.UNLOCKED_MESSAGE, DOM_CLASSES.VISIBLE);
-            }
-        }
-
-        // Task Order Game — only shown once all vocab themes are unlocked
-        if (gameUnlockMessage) {
-            if (!allVocabUnlocked) {
-                // Still vocab themes to unlock — hide game message entirely
-                gameUnlockMessage.textContent = "";
-                gameUnlockMessage.classList.remove(DOM_CLASSES.UNLOCKED_MESSAGE, DOM_CLASSES.VISIBLE);
-            } else if (milestoneUnlocks.taskOrderGame) {
-                // No trailing padlock icon — "unlocked!" followed by any lock glyph
-                // reads as still-locked (drift-review B-02).
-                gameUnlockMessage.textContent = `${getIcon('game')} ${getLabel('unlock.gameUnlocked')}`;
-                gameUnlockMessage.classList.toggle(DOM_CLASSES.UNLOCKED_MESSAGE, true);
-                gameUnlockMessage.classList.toggle(DOM_CLASSES.VISIBLE, expanded);
-            } else {
-                if (isToDoMode) {
-                    const tasksNeeded = Math.max(0, 500 - totalTasksCleared);
-                    const taskWord = getLabel('noun.task', { count: tasksNeeded });
-                    gameUnlockMessage.textContent = `${getIcon('locked')} ${getLabel('unlock.game', { vars: { count: tasksNeeded, taskWord } })}`;
-                } else {
-                    const cyclesNeeded = Math.max(0, 100 - globalCyclesCompleted);
-                    const cycleWord = getLabel('noun.cycle', { count: cyclesNeeded });
-                    gameUnlockMessage.textContent = `${getIcon('locked')} ${getLabel('unlock.gameCycles', { vars: { count: cyclesNeeded, cycleWord } })}`;
-                }
-                gameUnlockMessage.classList.remove(DOM_CLASSES.UNLOCKED_MESSAGE);
-                gameUnlockMessage.classList.toggle(DOM_CLASSES.VISIBLE, expanded);
-            }
-        }
-    }
-
-    /**
-     * Unlock themes if user is eligible based on GLOBAL cycles completed
-     * @param {number} globalCyclesCompleted - Total cycles across all routines
-     * @param {Object} milestoneUnlocks - Current unlock status
-     * @returns {Promise<void>}
-     */
-    async unlockThemesIfEligible(globalCyclesCompleted, milestoneUnlocks) {
-        // ✅ Use AppState only (no localStorage fallback) - DI-pure
-        const AppState = this.dependencies.AppState;
-        if (!AppState?.isReady?.()) {
-            console.error('❌ AppState not ready for unlockThemesIfEligible');
-            return;
-        }
-
-        let needsUpdate = false;
-
-        await AppState.update(state => {
-            // Ensure arrays exist
-            if (!state.settings) state.settings = {};
-            if (!state.settings.unlockedThemes) state.settings.unlockedThemes = [];
-            if (!state.settings.unlockedFeatures) state.settings.unlockedFeatures = [];
-            if (!state.userProgress) state.userProgress = {};
-            if (!state.userProgress.rewardMilestones) state.userProgress.rewardMilestones = [];
-
-            // Unlock Task Order Game at 100 GLOBAL cycles
-            if (globalCyclesCompleted >= MILESTONES.TASK_ORDER_GAME && !milestoneUnlocks.taskOrderGame) {
-                if (!state.settings.unlockedFeatures.includes("task-order-game")) {
-                    state.settings.unlockedFeatures.push("task-order-game");
-                    state.userProgress.rewardMilestones.push("task-order-game-100");
-                    needsUpdate = true;
-                }
-            }
-        }, true); // Fix #35: needsUpdate evaluated before callback - always save immediately
-
-    }
-
-    /**
-     * Handle theme toggle click
-     */
-    handleThemeToggleClick() {
-        const { themeUnlockMessage, goldenUnlockMessage, gameUnlockMessage, themeUnlockStatus } = this.elements;
-        if (!themeUnlockMessage) return;
-
-        // Flip expanded state — use _milestonesExpanded as single source of truth
-        const newExpanded = !this._milestonesExpanded;
-        this._milestonesExpanded = newExpanded;
-
-        // Show only elements that have content; always hide when collapsing
-        const applyVisible = (el) => {
-            if (!el) return;
-            if (newExpanded && el.textContent) {
-                el.classList.add(DOM_CLASSES.VISIBLE);
-            } else {
-                el.classList.remove(DOM_CLASSES.VISIBLE);
-            }
-        };
-
-        applyVisible(themeUnlockMessage);
-        applyVisible(goldenUnlockMessage);
-        applyVisible(gameUnlockMessage);
-
-        // Update toggle arrow and ARIA
-        const toggleIcon = themeUnlockStatus?.querySelector(DOM_SELECTORS.TOGGLE_ICON);
-        if (toggleIcon) toggleIcon.textContent = newExpanded ? "▲" : "▼";
-
-        const clickableHeader = themeUnlockStatus?.querySelector(DOM_SELECTORS.CLICKABLE);
-        if (clickableHeader) clickableHeader.setAttribute('aria-expanded', String(newExpanded));
-
-        this.saveCollapsiblePreference('milestonesExpanded', newExpanded);
-    }
-
-    /**
-     * Handle Current Routine toggle click
      */
     handleCurrentRoutineToggle() {
         const { currentCycleDoughnutContainer, currentCycleProgressText,
@@ -1681,31 +1017,6 @@ export class StatsPanelManager {
     /**
      * Open themes panel
      */
-    openThemesPanel() {
-        if (this.elements.themesModal) {
-            this.elements.themesModal._previousFocus = _deps.getActiveElement();
-            if (!this.elements.themesModal.open) this.elements.themesModal.showModal();
-            this.dependencies.hideMainMenu();
-        }
-    }
-
-    /**
-     * Close themes panel
-     */
-    closeThemesPanel() {
-        if (this.elements.themesModal?.open) {
-            this.elements.themesModal.close();
-            this.elements.themesModal._previousFocus?.focus({ focusVisible: false });
-        }
-    }
-
-    // ==========================================
-    // 📜 HISTORY & ACHIEVEMENTS MODAL METHODS
-    // ==========================================
-
-    /**
-     * Open the history modal
-     */
     openHistoryModal() {
         const historyManager = this.dependencies.historyManager;
         if (historyManager?.openModal) {
@@ -1826,9 +1137,8 @@ export class StatsPanelManager {
      */
     destroy() {
 
-        // Release the panel carousel (no listeners of its own — registry only)
-        this.carousel?.destroy();
-        this.carousel = null;
+        // Release gesture-owned resources (carousel + wheel timeout) — D-03 split
+        this._gestures?.destroy();
 
         // Remove feature button listeners
         if (this._historyClickHandler && this.elements.historyBtn) {
@@ -1898,10 +1208,7 @@ export class StatsPanelManager {
         }
 
         // Clear timers
-        if (this.wheelTimeout) {
-            clearTimeout(this.wheelTimeout);
-            this.wheelTimeout = null;
-        }
+
         for (const id of this._pendingTimers) {
             clearTimeout(id);
         }

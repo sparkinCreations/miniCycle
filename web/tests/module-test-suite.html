@@ -382,6 +382,8 @@
             <option value="deviceDetection">DeviceDetection</option>
             <option value="routineLoader">RoutineLoader</option>
             <option value="statsPanel">StatsPanel</option>
+            <option value="statsPanelGestures">🖐️ StatsPanel Gestures</option>
+            <option value="statsPanelRewards">🏆 StatsPanel Rewards</option>
             <option value="consoleCapture">ConsoleCapture</option>
             <option value="state">State</option>
             <option value="recurringCore">RecurringCore</option>
@@ -544,6 +546,8 @@
         const { runDeviceDetectionTests } = await import(`./deviceDetection.tests.js?v=${cacheBuster}`);
         const { runRoutineLoaderTests } = await import(`./routineLoader.tests.js?v=${cacheBuster}`);
         const { runStatsPanelTests } = await import(`./statsPanel.tests.js?v=${cacheBuster}`);
+        const { runStatsPanelGesturesTests } = await import(`./statsPanelGestures.tests.js?v=${cacheBuster}`);
+        const { runStatsPanelRewardsTests } = await import(`./statsPanelRewards.tests.js?v=${cacheBuster}`);
         const { runConsoleCaptureTests } = await import(`./consoleCapture.tests.js?v=${cacheBuster}`);
         const { runStateTests } = await import(`./state.tests.js?v=${cacheBuster}`);
         const { runRecurringCoreTests } = await import(`./recurringCore.tests.js?v=${cacheBuster}`);
@@ -1870,7 +1874,7 @@
                     await import(`../modules/features/uxRatings.js?v=${cacheBuster}`);
                     currentModule = 'uxRatings';
                     resultsDiv.innerHTML = '<p>✅ UXRatings loaded. Click "Run Tests" to begin.</p>';
-                } else if (['diWiring','orchestrator','moduleLoader','moduleManifests','modalTemplates','appContext','dataAccess','appGlobalState','migrationFacade','types','modalRegistry','modalUtils','panelVisibilityHelpers','gesturePanelManager','titleManager','headerLayoutManager','featureAvailability','dataRecovery','uiOrchestrator','preferencesBgImage','preferencesPresets','taskDOMPatch','debugMode','iconInit','icons','keyboardNav','mcycPayload','bootSw','nameUtils','panelCarousel','focusTaskPanel','recurringPanelEvents','recurringPanelForm','recurringPanelGrids','recurringPanelSetup','recurringPanelSummary','recurringSettings','recurringSettingsApplicator','recurringWatcher'].includes(moduleName)) {
+                } else if (['diWiring','orchestrator','moduleLoader','moduleManifests','modalTemplates','appContext','dataAccess','appGlobalState','migrationFacade','types','modalRegistry','modalUtils','panelVisibilityHelpers','gesturePanelManager','titleManager','headerLayoutManager','featureAvailability','dataRecovery','uiOrchestrator','preferencesBgImage','preferencesPresets','taskDOMPatch','debugMode','iconInit','icons','keyboardNav','mcycPayload','bootSw','nameUtils','panelCarousel','focusTaskPanel','recurringPanelEvents','recurringPanelForm','recurringPanelGrids','recurringPanelSetup','recurringPanelSummary','recurringSettings','recurringSettingsApplicator','recurringWatcher','statsPanelGestures','statsPanelRewards'].includes(moduleName)) {
                     const pathMap = {
                         diWiring: '../modules/boot/moduleLoader.js',
                         orchestrator: '../modules/boot/orchestrator.js',
@@ -1900,6 +1904,8 @@
                         keyboardNav: '../modules/utils/keyboardNav.js',
                         mcycPayload: '../modules/utils/mcycPayload.js',
                         bootSw: '../boot-sw.js',
+                        statsPanelGestures: '../modules/features/statsPanelGestures.js',
+                        statsPanelRewards: '../modules/features/statsPanelRewards.js',
                         nameUtils: '../modules/utils/nameUtils.js',
                         panelCarousel: '../modules/ui/panelCarousel.js',
                         focusTaskPanel: '../modules/ui/focusTaskPanel.js',
@@ -2170,6 +2176,8 @@
             } else if (currentModule === 'keyboardNav') { await runKeyboardNavTests(resultsDiv);
             } else if (currentModule === 'mcycPayload') { await runMcycPayloadTests(resultsDiv);
             } else if (currentModule === 'bootSw') { await runBootSwTests(resultsDiv);
+            } else if (currentModule === 'statsPanelGestures') { await runStatsPanelGesturesTests(resultsDiv);
+            } else if (currentModule === 'statsPanelRewards') { await runStatsPanelRewardsTests(resultsDiv);
             } else if (currentModule === 'nameUtils') { await runNameUtilsTests(resultsDiv);
             } else if (currentModule === 'panelCarousel') { await runPanelCarouselTests(resultsDiv);
             } else if (currentModule === 'focusTaskPanel') { await runFocusTaskPanelTests(resultsDiv);
@@ -2385,6 +2393,8 @@
                 { name: 'DeviceDetection', key: 'deviceDetection', runFn: runDeviceDetectionTests, importPath: '../modules/utils/deviceDetection.js' },
                 { name: 'RoutineLoader', key: 'routineLoader', runFn: runRoutineLoaderTests, importPath: '../modules/routine/routineLoader.js' },
                 { name: 'StatsPanel', key: 'statsPanel', runFn: runStatsPanelTests, importPath: '../modules/features/statsPanel.js' },
+                { name: 'StatsPanelGestures', key: 'statsPanelGestures', runFn: runStatsPanelGesturesTests, importPath: '../modules/features/statsPanelGestures.js' },
+                { name: 'StatsPanelRewards', key: 'statsPanelRewards', runFn: runStatsPanelRewardsTests, importPath: '../modules/features/statsPanelRewards.js' },
                 { name: 'ConsoleCapture', key: 'consoleCapture', runFn: runConsoleCaptureTests, importPath: '../modules/utils/consoleCapture.js' },
                 { name: 'State', key: 'state', runFn: runStateTests, importPath: '../modules/core/appState.js' },
                 { name: 'RecurringCore', key: 'recurringCore', runFn: runRecurringCoreTests, importPath: '../modules/recurring/recurringCore.js' },
