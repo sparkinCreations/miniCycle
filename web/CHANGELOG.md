@@ -1,3 +1,7 @@
+## [2.347] - 2026-08-03
+- fix(build): boot-sw gets self-contained IIFE pass — classic script cannot import chunks
+
+
 ## [2.346] - 2026-08-03
 - test(boot-sw): 6-test suite for the extracted SW script
 - refactor(html): extract SW registration to boot-sw.js (deferred external)
