@@ -1,3 +1,14 @@
+## [2.346] - 2026-08-03
+- test(boot-sw): 6-test suite for the extracted SW script
+- refactor(html): extract SW registration to boot-sw.js (deferred external)
+- fix(sw): precache mcycPayload module (missed in D-02, caught by test:sw)
+- fix(labels): pointer variants use click-drag, not a nonexistent arrow
+- feat(labels): device-variant wording — tap vs click adapts app-wide
+- fix(share): Quick Actions invokes share flow directly, preserving user gesture
+- feat(product): ground one effort claim in the test count (A-10)
+- docs(privacy): name background images + auto backups in stored-data list (A-02)
+
+
 ## [2.345] - 2026-08-03
 - feat(share): sender chooses Routine Only vs Include Full History
 - docs: sweep drift from v2.342-v2.344 (flush trio, mcyc spec, redirects authority, storage caps, docs URLs)
