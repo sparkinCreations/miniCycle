@@ -1,3 +1,9 @@
+## [2.348] - 2026-08-03
+- refactor(statsPanel): review pass — DI DOM helpers in gestures, facade header
+- refactor(statsPanel): split gestures + rewards into facade sub-modules (D-03)
+- docs(incident): v2.346 boot-sw classic-script ESM breakage
+
+
 ## [2.347] - 2026-08-03
 - fix(build): boot-sw gets self-contained IIFE pass — classic script cannot import chunks
 
