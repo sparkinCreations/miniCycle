@@ -1,3 +1,7 @@
+## [2.353] - 2026-08-04
+- docs(recurring): correct stale 30s interval references to 15s
+
+
 ## [2.352] - 2026-08-04
 - fix(recurring): enforce untilDate in calculator, oversleep catch-up in watcher
 
