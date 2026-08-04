@@ -1,3 +1,7 @@
+## [2.355] - 2026-08-04
+- fix(recurring): blocked spawns no longer consume occurrences; boot comment/signature cleanup
+
+
 ## [2.354] - 2026-08-04
 - refactor(undo): drop orphaned undoSizeBytes plumbing, cover settings objects in snapshot signature
 
