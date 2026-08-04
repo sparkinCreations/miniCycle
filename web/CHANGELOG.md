@@ -1,3 +1,7 @@
+## [2.351] - 2026-08-04
+- fix(migration): restore-path delete guard, truthful cycle stat, dead-code cleanup
+
+
 ## [2.350] - 2026-08-04
 - fix(sw): verify boot-critical precache against actual list, not stable paths
 - chore(lint): zero-slack warning ratchet + var-aware innerHTML rule wording
