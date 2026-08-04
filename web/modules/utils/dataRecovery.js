@@ -45,7 +45,45 @@ export function attemptJsonSalvage(jsonString) {
         // eslint-disable-next-line no-control-regex
         { name: 'remove-control-chars', fn: (str) => JSON.parse(str.replace(/[\x00-\x1F\x7F]/g, '')) },
 
-        // 3. Repair truncation by closing any unbalanced brackets/braces.
+        // 3. Repair truncation MID-STRING — the common case, which the plain
+        //    bracket-closer below can't touch: close the unterminated string
+        //    literal, strip any dangling partial member, then balance brackets
+        //    counting only brackets OUTSIDE strings (a task named "step {1}"
+        //    otherwise skews the count). Tried before close-brackets so the
+        //    string-aware repair wins when both would parse.
+        {
+            name: 'close-string-and-brackets',
+            fn: (str) => {
+                let inString = false;
+                let escaped = false;
+                // Stack, not counters: truncation inside a nested object needs
+                // INTERLEAVED closers (`}` for the task object, then `]` for the
+                // tasks array, then the outer `}`s) — unwinding the stack emits
+                // them in the right order, which append-all-]-then-all-} cannot.
+                const stack = [];
+                for (const ch of str) {
+                    if (escaped) { escaped = false; continue; }
+                    if (inString && ch === '\\') { escaped = true; continue; }
+                    if (ch === '"') { inString = !inString; continue; }
+                    if (inString) continue;
+                    if (ch === '{' || ch === '[') stack.push(ch);
+                    else if (ch === '}' || ch === ']') stack.pop();
+                }
+                let fixed = str;
+                if (inString) fixed += '"';
+                // Truncation can leave a dangling `"key":` or trailing comma
+                // that no amount of closers makes parseable — strip it.
+                fixed = fixed.replace(/,\s*$/, '').replace(/"[^"]*"\s*:\s*$/, '').replace(/,\s*$/, '');
+                while (stack.length) {
+                    fixed += stack.pop() === '{' ? '}' : ']';
+                }
+                return JSON.parse(fixed);
+            }
+        },
+
+        // 4. Repair truncation by closing any unbalanced brackets/braces
+        //    (naive count — kept as last resort for corruption the string-aware
+        //    pass mis-models, e.g. corrupted quote characters themselves).
         {
             name: 'close-brackets',
             fn: (str) => {
