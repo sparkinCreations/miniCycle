@@ -49,7 +49,11 @@ function showConfirmationModal(options) {
 if ('serviceWorker' in navigator) {
   let refreshing;
 
-  // ✅ RELOAD COOLDOWN: Prevent perpetual reload loops when multiple tabs are open
+  // ✅ RELOAD COOLDOWN: prevent rapid reload loops WITHIN A TAB. sessionStorage
+  // is per-tab, so this does NOT coordinate across tabs (each tab has its own
+  // cooldown clock) — with several tabs open, each may reload once on a new SW
+  // taking control, which is the intended behavior; the cooldown only stops a
+  // single tab from reloading repeatedly.
   const RELOAD_COOLDOWN_MS = 10000; // 10 seconds cooldown between reloads
   const RELOAD_COOLDOWN_KEY = 'miniCycle_lastReload';
 
@@ -193,8 +197,17 @@ if ('serviceWorker' in navigator) {
       newWorker.addEventListener('statechange', () => {
         if (newWorker.state === 'installed') {
           if (navigator.serviceWorker.controller) {
-            console.log('🆕 New app version available!');
-            showUpdateAvailable(registration);
+            // Updates are deliberately automatic: the SW calls skipWaiting()
+            // unconditionally on install, so a worker never sits in `waiting`
+            // and a consent prompt here would be theater — the controllerchange
+            // auto-reload below fires regardless of what the user answers (with
+            // the cooldown + "refresh to finish" nudge as the fallback). A
+            // "Prepare Update" confirmation modal lived here until v2.350
+            // promising "you'll be asked again before the page reloads", which
+            // was never true. Data is safe across the reload via AppState's
+            // flush trio; only uncommitted input in an open field is lost.
+            console.log('🆕 New app version installed — activating');
+            showNotification('🆕 Updating miniCycle — the app will refresh in a moment…', 'info', 4000);
           } else {
             console.log('📱 App cached for offline use');
             showAppCachedNotification();
@@ -299,41 +312,16 @@ if ('serviceWorker' in navigator) {
     }
   });
   
-  // ✅ Function to show update notification using your confirmation modal
-  function showUpdateAvailable(registration) {
-    // First show a notification
-    showNotification('🆕 New app version available!', 'info', 5000);
+  // (showUpdateAvailable / updateServiceWorker removed in v2.350: the
+  // "Prepare Update" consent modal was unreachable-by-design dead code —
+  // skipWaiting() means registration.waiting is null by the time a user could
+  // click, so its SKIP_WAITING message no-oped and its promises were false.
+  // The heal path (applyPendingUpdate) and the testing modal keep their own
+  // direct SKIP_WAITING senders for the rare states where `waiting` exists.)
 
-    // Then show confirmation modal after a brief delay
-    setTimeout(() => {
-      showConfirmationModal({
-        title: "🚀 App Update Available!",
-        message: `A new version of miniCycle is ready to install!\n\n✨ New features and improvements\n🐛 Bug fixes and performance enhancements\n🔒 Latest security updates\n\nDon't worry: After clicking "Prepare Update", you'll be asked again before the page reloads. Your work is safe!`,
-        confirmText: "✅ Prepare Update",
-        cancelText: "Maybe Later",
-        callback: (confirmed) => {
-          if (confirmed) {
-            updateServiceWorker(registration);
-            showNotification('⏳ Preparing update in background...', 'info', 3000);
-          } else {
-            showNotification('ℹ️ Update postponed - you can install it anytime from Settings', 'info', 6000);
-          }
-        }
-      });
-    }, 1000);
-  }
-  
   // ✅ Function to show app cached notification
   function showAppCachedNotification() {
     showNotification('📱 miniCycle is now available offline!', 'success', 4000);
-  }
-  
-  // ✅ Function to update service worker
-  function updateServiceWorker(registration) {
-    if (!registration.waiting) return;
-
-    // Tell the waiting service worker to take control
-    registration.waiting.postMessage({ type: 'SKIP_WAITING' });
   }
 
 } else {
