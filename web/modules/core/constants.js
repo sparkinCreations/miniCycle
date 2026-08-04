@@ -64,6 +64,7 @@ export const BOOT_TIMEOUTS = Object.freeze({
                            // raised phase budgets and the HTML load-timeout lite fallback
     RETRY_DELAY: 2000,     // 2s delay before boot retry (iOS needs time to restart killed SW)
     SW_SPINUP_GRACE: 2000, // 2s extra wait for iOS to spin up a killed SW when offline (waitForServiceWorker catch path)
+    SW_READY_WAIT: 8000,   // Cap on waiting for navigator.serviceWorker.ready at boot — always the long value because navigator.onLine lies on iOS (was a dead 3s parameter floored to 8s)
     IDB_OPERATION: 3000,   // 3s timeout for IndexedDB ops during boot recovery; raised from
                            // 1s — old/slow devices were timing out test-mode/backup checks
     VERSION_GATE: 1500     // 1.5s cap on the pre-boot server-version check (orchestrator

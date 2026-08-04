@@ -254,7 +254,11 @@ export async function runRecurringWatcherTests(resultsDiv) {
     // ── Task limit enforcement ────────────────────────────────────────────────
     resultsDiv.innerHTML += '<h4 class="test-section">🚧 Task Limit</h4>';
 
-    await test('catchUp blocks spawn when cycle already at task limit', async () => {
+    await test('catchUp blocks spawn when cycle already at task limit — WITHOUT consuming the occurrence', async () => {
+        // Boot-review tally correction: a blocked spawn used to advance the
+        // template anyway (occurrenceCount++, nextScheduledOccurrence moved
+        // on) — the user silently lost the occurrence, and finite-count
+        // templates burned toward exhaustion on tasks that never existed.
         const { LIMITS } = await import(`../modules/core/constants.js?v=${cacheBuster}`);
         const limit = LIMITS.TASKS_PER_CYCLE;
         // Fill cycle to the limit with unrelated tasks
@@ -264,8 +268,54 @@ export async function runRecurringWatcherTests(resultsDiv) {
         const r = await mod.catchUpMissedRecurringTasks();
         eq(r.added, 0, 'no task added at limit');
         eq(r.blocked, 1, 'one task reported blocked');
-        // template timestamps still update even though task was blocked
-        eq(as.get().data.cycles.c1.recurringTemplates.t1.occurrenceCount, 1, 'template still advanced');
+        const t = as.get().data.cycles.c1.recurringTemplates.t1;
+        eq(t.occurrenceCount, 0, 'blocked spawn must NOT consume an occurrence');
+        eq(t.nextScheduledOccurrence, NOW - 1000, 'blocked occurrence stays due for retry');
+        eq(r.updated, 0, 'no template update committed for a blocked spawn');
+    });
+
+    await test('blocked occurrence is delivered once space frees up', async () => {
+        const { LIMITS } = await import(`../modules/core/constants.js?v=${cacheBuster}`);
+        const limit = LIMITS.TASKS_PER_CYCLE;
+        const fullTasks = Array.from({ length: limit }, (_, i) => ({ id: 'x' + i, text: 'x' }));
+        const as = cycleState({ t1: dueTemplate('t1') }, fullTasks);
+        mod.setRecurringWatcherDependencies(makeDeps({ AppState: as }));
+
+        await mod.catchUpMissedRecurringTasks();          // blocked
+        as.get().data.cycles.c1.tasks.pop();              // user deletes a task
+        const r2 = await mod.catchUpMissedRecurringTasks();
+        eq(r2.added, 1, 'previously blocked occurrence delivered');
+        eq(as.get().data.cycles.c1.recurringTemplates.t1.occurrenceCount, 1, 'occurrence consumed on actual delivery');
+    });
+
+    await test('task-limit notification fires once per blocked era, resets on successful spawn', async () => {
+        const { LIMITS } = await import(`../modules/core/constants.js?v=${cacheBuster}`);
+        const limit = LIMITS.TASKS_PER_CYCLE;
+        const fullTasks = Array.from({ length: limit }, (_, i) => ({ id: 'x' + i, text: 'x' }));
+        const as = cycleState({ t1: dueTemplate('t1') }, fullTasks);
+        const limitMessages = [];
+        mod.resetWatcherState();
+        mod.setRecurringWatcherDependencies(makeDeps({
+            AppState: as,
+            showNotification: (msg, type) => { if (type === 'warning') limitMessages.push(msg); }
+        }));
+
+        await mod.catchUpMissedRecurringTasks();  // blocked → notifies
+        await mod.catchUpMissedRecurringTasks();  // still blocked → once-per-era guard mutes
+        eq(limitMessages.length, 1, 'repeat block in the same era must not re-notify');
+
+        as.get().data.cycles.c1.tasks.pop();      // space frees
+        await mod.catchUpMissedRecurringTasks();  // delivered → era resets
+        // Simulate the next occurrence coming due after the user completed the
+        // spawned task (instance auto-deletes) and the cycle refilled to the
+        // limit — a NEW block must notify again.
+        const cyc = as.get().data.cycles.c1;
+        cyc.tasks = cyc.tasks.filter(t => t.id !== 't1');
+        cyc.tasks.push({ id: 'y', text: 'y' });
+        cyc.recurringTemplates.t1.nextScheduledOccurrence = NOW - 500;
+        await mod.catchUpMissedRecurringTasks();
+        eq(limitMessages.length, 2, 'new blocked era after a successful spawn notifies again');
+        mod.resetWatcherState();
     });
 
     // ── Interval / setup state ────────────────────────────────────────────────

@@ -152,7 +152,9 @@ function showTaskLimitNotification(blockedCount) {
 }
 
 /**
- * Reset the task limit notification flag (e.g., when tasks are deleted)
+ * Reset the task limit notification flag. Called when a recurring spawn
+ * SUCCEEDS (space freed up — a future block is news again), so the
+ * once-per-era guard in showTaskLimitNotification doesn't mute forever.
  */
 function resetTaskLimitNotification() {
     _taskLimitNotificationShown = false;
@@ -326,7 +328,19 @@ async function recreateDueTasks(activeCycleId, templates, taskList, now, extraEl
     const limitCheck = checkTaskLimit(taskList.length, tasksToAdd.length);
     const tasksToActuallyAdd = tasksToAdd.slice(0, limitCheck.allowed);
 
-    if (tasksToActuallyAdd.length > 0 || Object.keys(templateUpdates).length > 0) {
+    // A BLOCKED spawn must not consume its occurrence (boot-review tally
+    // correction): only templates whose task actually made it in get their
+    // occurrenceCount/nextScheduledOccurrence advanced. Blocked templates stay
+    // due and retry on later ticks/catch-ups until space frees up — previously
+    // they advanced anyway, silently losing the occurrence (and burning
+    // finite-count templates toward exhaustion on tasks that never existed).
+    const addedIds = new Set(tasksToActuallyAdd.map(t => t.id));
+    const committedUpdates = {};
+    Object.entries(templateUpdates).forEach(([templateId, updatedTemplate]) => {
+        if (addedIds.has(templateId)) committedUpdates[templateId] = updatedTemplate;
+    });
+
+    if (tasksToActuallyAdd.length > 0) {
         assertInjected('updateAppState', Deps.updateAppState);
 
         await commitSystemUpdate(draft => {
@@ -334,24 +348,32 @@ async function recreateDueTasks(activeCycleId, templates, taskList, now, extraEl
             tasksToActuallyAdd.forEach(taskData => {
                 cycle.tasks.push({ ...taskData, dateCreated: now.toISOString() });
             });
-            Object.entries(templateUpdates).forEach(([templateId, updatedTemplate]) => {
+            Object.entries(committedUpdates).forEach(([templateId, updatedTemplate]) => {
                 cycle.recurringTemplates[templateId] = updatedTemplate;
             });
         }, true); // Immediate save
 
-        if (tasksToActuallyAdd.length > 0) {
-            // Refresh DOM on the next tick
-            setTimeout(() => { Deps.refreshUIFromState?.(); }, 0);
-        }
-        if (limitCheck.blocked > 0) {
-            showTaskLimitNotification(limitCheck.blocked);
-        }
-        notifyExhaustedTemplates(templateUpdates);
+        // Refresh DOM on the next tick
+        setTimeout(() => { Deps.refreshUIFromState?.(); }, 0);
+        notifyExhaustedTemplates(committedUpdates);
+
+        // A successful spawn means space freed up — end the "blocked era" so
+        // the next block (if any) notifies again.
+        resetTaskLimitNotification();
+    }
+
+    // Blocked templates now retry every tick, so the limit notification leans
+    // on showTaskLimitNotification's once-per-era guard — without it the watch
+    // would nag every 15 seconds until the user deletes a task. (Outside the
+    // commit guard: when EVERYTHING is blocked there is no commit, but the
+    // user still needs to hear it once.)
+    if (limitCheck.blocked > 0) {
+        showTaskLimitNotification(limitCheck.blocked);
     }
 
     return {
         added: tasksToActuallyAdd.length,
-        updated: Object.keys(templateUpdates).length,
+        updated: Object.keys(committedUpdates).length,
         blocked: limitCheck.blocked
     };
 }
@@ -639,6 +661,7 @@ export function resetWatcherState() {
     _watcherIntervalId = null;
     _currentIntervalMs = null;
     _lastWatchTickMs = null;
+    _taskLimitNotificationShown = false;
     if (_visibilityChangeHandler) {
         document.removeEventListener("visibilitychange", _visibilityChangeHandler);
         _visibilityChangeHandler = null;
