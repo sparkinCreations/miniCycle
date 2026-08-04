@@ -1,3 +1,7 @@
+## [2.357] - 2026-08-04
+- fix(recurring): normalize imported settings, isolate watcher ticks, salvage escape edge
+
+
 ## [2.356] - 2026-08-04
 - docs: mark optional schema fields as optional in DATA_SCHEMA_GUIDE
 - fix(import): strict field validation; string-aware salvage; behavioral tests
