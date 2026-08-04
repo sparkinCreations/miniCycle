@@ -1,3 +1,9 @@
+## [2.350] - 2026-08-04
+- fix(sw): verify boot-critical precache against actual list, not stable paths
+- chore(lint): zero-slack warning ratchet + var-aware innerHTML rule wording
+- fix(lint): keep duplicate-routine remap under the warning ratchet
+
+
 ## [2.349] - 2026-08-04
 - fix(data-integrity): review-pass fixes across storage, migration, and task flows
 - chore: sync package-lock.json version with package.json (2.348)
