@@ -1,3 +1,26 @@
+## [2.349] - 2026-08-04
+- fix(data-integrity): review-pass fixes across storage, migration, and task flows
+- chore: sync package-lock.json version with package.json (2.348)
+- chore(release): update version to 2.348
+- refactor(statsPanel): review pass — DI DOM helpers in gestures, facade header
+- refactor(statsPanel): split gestures + rewards into facade sub-modules (D-03)
+- docs(incident): v2.346 boot-sw classic-script ESM breakage
+- chore(release): update version to 2.347
+- fix(build): boot-sw gets self-contained IIFE pass — classic script cannot import chunks
+- chore(release): update version to 2.346
+- test(boot-sw): 6-test suite for the extracted SW script
+- refactor(html): extract SW registration to boot-sw.js (deferred external)
+- fix(sw): precache mcycPayload module (missed in D-02, caught by test:sw)
+- fix(labels): pointer variants use click-drag, not a nonexistent arrow
+- feat(labels): device-variant wording — tap vs click adapts app-wide
+- fix(share): Quick Actions invokes share flow directly, preserving user gesture
+- feat(product): ground one effort claim in the test count (A-10)
+- docs(privacy): name background images + auto backups in stored-data list (A-02)
+- chore(release): update version to 2.345
+- feat(share): sender chooses Routine Only vs Include Full History
+- docs: sweep drift from v2.342-v2.344 (flush trio, mcyc spec, redirects authority, storage caps, docs URLs)
+
+
 ## [2.348] - 2026-08-03
 - refactor(statsPanel): review pass — DI DOM helpers in gestures, facade header
 - refactor(statsPanel): split gestures + rewards into facade sub-modules (D-03)
