@@ -493,6 +493,35 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         }
     });
 
+    await test('buildSnapshotSignature differs when only per-task settings objects change', async () => {
+        // Undo/redo review finding: the signature captured dwc/r as booleans
+        // but not the settings OBJECTS — an edit touching only those would
+        // dedup-skip its snapshot and fall outside undo history.
+        const base = (settings) => ({
+            activeCycleId: 'Test',
+            tasks: [{
+                id: 'task-1', text: 'Task 1', completed: false,
+                recurring: true, deleteWhenComplete: true,
+                ...settings
+            }],
+            title: 'Test Cycle',
+            autoReset: true,
+            deleteCheckedTasks: false
+        });
+
+        const sigA = buildSnapshotSignature(base({ recurringSettings: { frequency: 'daily' } }));
+        const sigB = buildSnapshotSignature(base({ recurringSettings: { frequency: 'weekly' } }));
+        if (sigA === sigB) {
+            throw new Error('recurringSettings-only change must alter the signature');
+        }
+
+        const sigC = buildSnapshotSignature(base({ deleteWhenCompleteSettings: { mode: 'x' } }));
+        const sigD = buildSnapshotSignature(base({ deleteWhenCompleteSettings: { mode: 'y' } }));
+        if (sigC === sigD) {
+            throw new Error('deleteWhenCompleteSettings-only change must alter the signature');
+        }
+    });
+
     await test('buildSnapshotSignature handles null input', async () => {
         const sig = buildSnapshotSignature(null);
 

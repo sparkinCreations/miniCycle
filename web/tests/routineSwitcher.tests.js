@@ -54,7 +54,7 @@ export async function runRoutineSwitcherTests(resultsDiv, isPartOfSuite = false)
         getModal: () => document.querySelector('.mini-cycle-switch-modal')
     });
 
-    // Initialize RoutineSwitcher to trigger dynamic imports (loads getObjectSizeBytes, getUndoCacheCycleId, etc.)
+    // Initialize RoutineSwitcher to trigger dynamic imports (loads getObjectSizeBytes, name utils, etc.)
     // This populates module-level variables that are otherwise only set via initRoutineSwitcher at runtime.
     await initRoutineSwitcher({
         safeAddEventListener: env.deps.safeAddEventListener,

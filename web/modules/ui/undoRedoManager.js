@@ -128,37 +128,6 @@ function loadFromUndoCache(expectedCycleId) {
   }
 }
 
-/**
- * Get the size in bytes of the undo cache for the active routine
- * Reads directly from localStorage - synchronous and fast
- * @returns {number} Size in bytes, or 0 if no cache exists
- */
-export function getUndoCacheSizeBytes() {
-  try {
-    const cached = localStorage.getItem(UNDO_CACHE_KEY);
-    if (!cached) return 0;
-    // Return the actual string length (approximately bytes in UTF-8 for ASCII)
-    return cached.length;
-  } catch (e) {
-    console.warn('⚠️ Failed to get undo cache size:', e.message);
-    return 0;
-  }
-}
-
-/**
- * Get the cycle ID that the current undo cache belongs to
- * @returns {string|null} The cycle ID or null if no cache
- */
-export function getUndoCacheCycleId() {
-  try {
-    const cached = localStorage.getItem(UNDO_CACHE_KEY);
-    if (!cached) return null;
-    const data = JSON.parse(cached);
-    return data.cycleId || null;
-  } catch (e) {
-    return null;
-  }
-}
 
 /**
  * Validate a single snapshot belongs to the expected cycle
@@ -677,7 +646,12 @@ export function buildSnapshotSignature(s) {
     c: s.activeCycleId,
     t: (s.tasks || []).map(t => ({
       id: t.id, txt: t.text, c: !!t.completed, p: !!t.highPriority, d: t.dueDate || null,
-      r: !!t.recurring, re: !!t.remindersEnabled, dwc: !!t.deleteWhenComplete, pc: t.priorityColor || null
+      r: !!t.recurring, re: !!t.remindersEnabled, dwc: !!t.deleteWhenComplete, pc: t.priorityColor || null,
+      // Settings OBJECTS, not just their booleans — an edit touching only
+      // these would otherwise dedup-skip its snapshot (same class of bug as
+      // the taskViewLayout omission below).
+      rs: t.recurringSettings ? JSON.stringify(t.recurringSettings) : null,
+      dws: t.deleteWhenCompleteSettings ? JSON.stringify(t.deleteWhenCompleteSettings) : null
     })),
     ti: s.title || '',
     ar: !!s.autoReset,
@@ -2107,7 +2081,7 @@ export async function clearAllUndoHistoryFromIndexedDB() {
  * Called by the Settings "Clear Undo History" button.
  *
  * Sets isPerformingUndoRedo guard so any AppState.update() calls that follow
- * (e.g., zeroing undoSizeBytes) don't immediately recapture a new snapshot
+ * don't immediately recapture a new snapshot
  * and repopulate the cache we just cleared.
  */
 export async function clearAllUndoHistory() {
@@ -2133,7 +2107,7 @@ export async function clearAllUndoHistory() {
   updateUndoRedoButtons();
 
   // 5. Release guard after a macrotask so caller's synchronous AppState.update()
-  //    (e.g., zeroing undoSizeBytes) doesn't recapture a snapshot
+  //    doesn't recapture a snapshot
   if (_deps.AppGlobalState) {
     setTimeout(() => {
       _deps.AppGlobalState.isPerformingUndoRedo = false;

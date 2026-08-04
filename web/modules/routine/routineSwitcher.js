@@ -39,7 +39,6 @@ let adjustStorageEstimate, resetStorageEstimate, updateStorageBarUIEstimated;
 let getUniqueCycleName;
 
 // Undo manager utilities
-let getUndoCacheSizeBytes, getUndoCacheCycleId;
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -1174,17 +1173,12 @@ export class RoutineSwitcher {
         this.deps.AppState.update(state => {
             const oldCycleId = state.appState.activeCycleId;
 
-            // ✅ Save lastModified and undoSizeBytes to the OLD cycle before switching
-            // This captures when the user last worked on that routine and its undo storage footprint
+            // ✅ Save lastModified to the OLD cycle before switching — captures
+            // when the user last worked on that routine. (undoSizeBytes is no
+            // longer written: drift-review C-09 removed its only reader, the
+            // routine-size display; stale values in stored data are ignored.)
             if (oldCycleId && state.data.cycles[oldCycleId]) {
                 state.data.cycles[oldCycleId].lastModified = state.metadata.lastModified || Date.now();
-
-                // Save undo size if the cache belongs to this cycle
-                const undoCacheCycleId = getUndoCacheCycleId();
-                if (undoCacheCycleId === oldCycleId) {
-                    state.data.cycles[oldCycleId].undoSizeBytes = getUndoCacheSizeBytes();
-                }
-
             }
 
             state.appState.activeCycleId = cycleKey;
@@ -2521,11 +2515,6 @@ export async function initRoutineSwitcher(dependencies) {
     // Import name utilities
     const nameUtils = await import(`../utils/nameUtils.js?v=${version}`);
     getUniqueCycleName = nameUtils.getUniqueCycleName;
-
-    // Import undo manager utilities
-    const undoManager = await import(`../ui/undoRedoManager.js?v=${version}`);
-    getUndoCacheSizeBytes = undoManager.getUndoCacheSizeBytes;
-    getUndoCacheCycleId = undoManager.getUndoCacheCycleId;
 
     // Now create the instance
     routineSwitcher = new RoutineSwitcher(dependencies);

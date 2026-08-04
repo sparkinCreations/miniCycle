@@ -936,15 +936,8 @@ export function setupClearUndoHistoryButton() {
 
         const doClear = async () => {
             await _deps.clearAllUndoHistory?.();
-            // Zero stored undo sizes on all routines so switcher shows correct data
-            const AppState = _deps.AppState?.();
-            if (AppState?.isReady?.()) {
-                AppState.update(state => {
-                    Object.values(state.data?.cycles ?? {}).forEach(cycle => {
-                        cycle.undoSizeBytes = 0;
-                    });
-                }, false);
-            }
+            // (No undoSizeBytes zeroing anymore — the field lost its only
+            // reader in drift-review C-09 and is no longer written anywhere.)
             _deps.updateHelpWindow?.();
             _deps.showNotification?.(getLabel('notify.undoHistoryCleared'), 'success');
         };

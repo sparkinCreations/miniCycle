@@ -1,6 +1,6 @@
 # Undo/Redo System Architecture
 
-**Module:** `modules/ui/undoRedoManager.js` (~1,800 lines)
+**Module:** `modules/ui/undoRedoManager.js` (line/method counts: see `docs/PROJECT_STATS.md`)
 **Version:** See [PROJECT_STATS.md](../PROJECT_STATS.md)
 **Test Coverage:** 76/76 tests passing (100%)
 **Status:** Production-ready, localStorage cache + IndexedDB persistence
@@ -107,6 +107,10 @@ Each snapshot captures **complete cycle state** at a point in time:
   autoReset: boolean,              // Auto-cycle mode
   deleteCheckedTasks: boolean,     // To-do mode
   cycleCount: number,              // Number of completed cycles
+  theme: string,                   // Vocabulary theme active on this cycle ('classic' default)
+  clearedTasks: object|null,       // Deep cloned cleared-tasks store (To-do mode)
+  taskViewLayout: object|null,     // Global drag layout (state.settings) captured per snapshot
+                                   // so undo restores the layout active at capture time
   timestamp: number,               // When snapshot was captured
   _sig: string                     // Cached signature for fast comparison
 }
@@ -444,7 +448,7 @@ Signatures are cached on snapshot objects (`_sig` property) to avoid recomputing
 **Action — clears all three tiers with guards against snapshot recapture:**
 
 1. **Cancel pending IndexedDB write** — clears `dbWriteTimeout` to prevent a debounced write from re-saving old data after the clear
-2. **Set `isPerformingUndoRedo` guard** — blocks the AppState wrapper from capturing new snapshots during cleanup (the caller's `AppState.update()` to zero `undoSizeBytes` would otherwise trigger a fresh snapshot)
+2. **Set `isPerformingUndoRedo` guard** — blocks the AppState wrapper from capturing new snapshots during cleanup (historically the caller's `AppState.update()` to zero `undoSizeBytes` re-captured into the just-cleared cache; that zeroing was removed once the field lost its last reader, but the guard stays as protection for any caller that mutates state right after clearing)
 3. **Clear in-memory stacks** — empties `activeUndoStack` and `activeRedoStack` in AppGlobalState
 4. **Reset dedup trackers** — sets `lastSnapshotSignature = null` and `lastSnapshotTs = 0` so the next real user action gets captured fresh
 5. **Clear localStorage cache** — calls `clearUndoCache()` to remove `__miniCycle_undoCache__`
@@ -453,7 +457,7 @@ Signatures are cached on snapshot objects (`_sig` property) to avoid recomputing
 8. **Release guard** — uses `setTimeout(0)` to clear `isPerformingUndoRedo` after the caller's synchronous `AppState.update()` has completed
 
 **Why the guard is needed:**
-The settings button handler calls `clearAllUndoHistory()` then immediately calls `AppState.update()` to zero out `undoSizeBytes` in cycle state. Without the `isPerformingUndoRedo` guard, the AppState wrapper would treat that update as a user action and capture a fresh snapshot into the just-cleared cache — defeating the clear.
+Historically, the settings button handler called `clearAllUndoHistory()` then immediately called `AppState.update()` to zero out `undoSizeBytes` in cycle state — and without the `isPerformingUndoRedo` guard, the AppState wrapper treated that update as a user action and captured a fresh snapshot into the just-cleared cache, defeating the clear. The `undoSizeBytes` field has since been removed entirely (its only reader, the routine-size display, dropped it in drift-review C-09), but the guard remains: any caller that mutates state immediately after clearing gets the same protection.
 
 ### Factory Reset
 
