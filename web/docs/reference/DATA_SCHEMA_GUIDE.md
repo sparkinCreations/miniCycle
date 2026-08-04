@@ -48,7 +48,8 @@
                 autoReset: true,             // Auto-cycle mode
                 deleteCheckedTasks: false,
                 createdAt: 1696723400000,    // Creation timestamp
-                lastModified: 1696723445123, // Last modification timestamp
+                lastModified: 1696723445123, // OPTIONAL — absent until first edit
+                                             // (previews fall back to createdAt)
                 tasks: [
                     {
                         id: "task-xyz789",
@@ -114,7 +115,9 @@
         // Mode is NOT stored here — derived from the cycle's autoReset/deleteCheckedTasks.
     },
 
-    ui: {
+    ui: {                                    // ⚠️ OPTIONAL — created on demand, not part of
+                                             // the minimal valid shape (validateSchema25Structure
+                                             // requires only schemaVersion, data.cycles, appState)
         moveArrowsVisible: false,
         activeTaskId: null                   // Task ID whose options panel is open
     },
