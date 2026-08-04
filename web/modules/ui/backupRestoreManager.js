@@ -203,8 +203,14 @@ export function downloadBackupFile(options = {}) {
         return false;
     }
 
-    const miniCycleData = localStorage.getItem(STORAGE_KEYS.DATA);
-    if (!miniCycleData) {
+    // Flush any pending debounced save so the file reflects what the user sees.
+    // save()/forceSave() write synchronously, so the localStorage read below is
+    // guaranteed fresh once this returns.
+    try { AppState.forceSave?.(); } catch (flushError) {
+        console.warn('⚠️ Could not flush pending save before backup:', flushError);
+    }
+
+    if (!localStorage.getItem(STORAGE_KEYS.DATA)) {
         console.error('Schema 2.5 data not found in localStorage');
         _deps.showNotification?.(getLabel('notify.backupNoData'), 'error');
         return false;
@@ -213,6 +219,17 @@ export function downloadBackupFile(options = {}) {
     const defaultName = `mini-cycle-backup-${new Date().toISOString().slice(0, 10)}`;
 
     const createAndDownload = (fileName) => {
+        // Read at download time, not click time — the name prompt can sit open
+        // for minutes, and edits made meanwhile belong in the backup. Flush again
+        // so nothing is stuck behind the debounce.
+        try { AppState.forceSave?.(); } catch (flushError) {
+            console.warn('⚠️ Could not flush pending save before backup:', flushError);
+        }
+        const miniCycleData = localStorage.getItem(STORAGE_KEYS.DATA);
+        if (!miniCycleData) {
+            _deps.showNotification?.(getLabel('notify.backupNoData'), 'error');
+            return;
+        }
         const currentState = AppState.get();
         const liteStorage = collectLiteStorageSnapshot();
         const backupData = {
@@ -472,11 +489,24 @@ async function processRestoreData(fileContent) {
                 // Handle Schema 2.5 backup
                 if (backupData.schemaVersion === "2.5" && backupData.miniCycleData) {
 
-                    // Validate miniCycleData is valid JSON before writing
+                    // Validate miniCycleData is valid JSON AND structurally Schema 2.5
+                    // before writing. Parse-only validation let any JSON through —
+                    // e.g. a file without a metadata block boots "successfully" and
+                    // then every AppState.update() fails. Reject the file up front:
+                    // the UX must be "file rejected", not "restored, then recovery".
                     try {
-                        JSON.parse(backupData.miniCycleData);
+                        const parsedRestore = JSON.parse(backupData.miniCycleData);
+                        const structurallyValid = parsedRestore &&
+                            parsedRestore.schemaVersion === "2.5" &&
+                            parsedRestore.data &&
+                            typeof parsedRestore.data.cycles === 'object' &&
+                            parsedRestore.appState &&
+                            typeof parsedRestore.appState === 'object';
+                        if (!structurallyValid) {
+                            throw new Error('not a Schema 2.5 state object');
+                        }
                     } catch (dataErr) {
-                        console.error('miniCycleData is not valid JSON:', dataErr.message);
+                        console.error('miniCycleData failed validation:', dataErr.message);
                         _deps.showNotification?.(getLabel('notify.backupCorruptData'), "error", UI_TIMEOUTS.NOTIFICATION_EXTENDED);
                         resolve();
                         return;
@@ -502,24 +532,32 @@ async function processRestoreData(fileContent) {
                         return;
                     }
 
-                    // Remove existing Schema 2.5 data so migration will run
-                    localStorage.removeItem(STORAGE_KEYS.DATA);
-
-                    // Restore legacy keys (validate JSON strings before writing to localStorage)
-                    if (typeof backupData.miniCycleStorage === 'string') {
-                        try { JSON.parse(backupData.miniCycleStorage); } catch {
-                            console.error('Invalid legacy miniCycleStorage data');
-                            _deps.showNotification?.(getLabel('notify.backupCorruptData'), 'error', UI_TIMEOUTS.NOTIFICATION_EXTENDED);
-                            resolve();
-                            return;
-                        }
-                        localStorage.setItem(STORAGE_KEYS.LEGACY_DATA, backupData.miniCycleStorage);
-                    } else {
+                    // Validate the legacy payload BEFORE touching current data —
+                    // the old order removed Schema 2.5 data first, so a corrupt
+                    // legacy backup left the user with NO data at all.
+                    if (typeof backupData.miniCycleStorage !== 'string') {
                         console.error('Legacy backup missing miniCycleStorage string');
                         _deps.showNotification?.(getLabel('notify.backupInvalidLegacy'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
                         resolve();
                         return;
                     }
+                    try { JSON.parse(backupData.miniCycleStorage); } catch {
+                        console.error('Invalid legacy miniCycleStorage data');
+                        _deps.showNotification?.(getLabel('notify.backupCorruptData'), 'error', UI_TIMEOUTS.NOTIFICATION_EXTENDED);
+                        resolve();
+                        return;
+                    }
+
+                    // Capture current data for rollback: if the migration below
+                    // fails, restoring it beats rebooting into auto-created empty
+                    // state (which would also permanently orphan the legacy keys —
+                    // next boot would see valid 2.5 data and never migrate them).
+                    const previousSchema25Data = localStorage.getItem(STORAGE_KEYS.DATA);
+
+                    // Remove existing Schema 2.5 data so migration will run
+                    localStorage.removeItem(STORAGE_KEYS.DATA);
+
+                    localStorage.setItem(STORAGE_KEYS.LEGACY_DATA, backupData.miniCycleStorage);
                     localStorage.setItem(STORAGE_KEYS.LAST_USED, backupData.lastUsedMiniCycle || "");
 
                     if (backupData.miniCycleReminders) {
@@ -547,6 +585,17 @@ async function processRestoreData(fileContent) {
                         if (migrationResults.success) {
                             _deps.showNotification?.("✅ " + getLabel('notify.backupLegacyRestored'), "success", UI_TIMEOUTS.NOTIFICATION_EXTENDED);
                         } else {
+                            // Roll back to the pre-restore data — without this the
+                            // reload auto-creates empty 2.5 state and the restored
+                            // legacy keys are never migrated on any future boot.
+                            if (previousSchema25Data) {
+                                try {
+                                    localStorage.setItem(STORAGE_KEYS.DATA, previousSchema25Data);
+                                    console.warn('↩️ Legacy restore migration failed — previous data restored');
+                                } catch (rollbackError) {
+                                    console.error('❌ Could not roll back previous data after failed migration:', rollbackError);
+                                }
+                            }
                             _deps.showNotification?.(getLabel('notify.backupMigrationFailed'), "error", UI_TIMEOUTS.NOTIFICATION_EXTENDED);
                         }
 

@@ -1191,16 +1191,21 @@ self.addEventListener('fetch', function (event) {
                 credentials: request.credentials,
                 cache: 'no-cache'
               });
-              // Background fetch to update cache (only when online)
-              fetch(freshRequest).then(function (res) {
-                if (res && res.status === 200) {
-                  return caches.open(DYNAMIC_CACHE).then(function (cache) {
-                    return safeCachePut(cache, cacheRequest, res.clone()).then(function() {
-                      trimCache(DYNAMIC_CACHE, MAX_DYNAMIC_ENTRIES);
+              // Background fetch to update cache (only when online).
+              // waitUntil() for the same reason as the §7-nav revalidation: a
+              // floating promise gets cancelled when the SW is terminated after
+              // responding, so the refreshed copy silently never landed in cache.
+              event.waitUntil(
+                fetch(freshRequest).then(function (res) {
+                  if (res && res.status === 200) {
+                    return caches.open(DYNAMIC_CACHE).then(function (cache) {
+                      return safeCachePut(cache, cacheRequest, res.clone()).then(function() {
+                        trimCache(DYNAMIC_CACHE, MAX_DYNAMIC_ENTRIES);
+                      });
                     });
-                  });
-                }
-              }).catch(function () { /* cache write is best-effort */ });
+                  }
+                }).catch(function () { /* cache write is best-effort */ })
+              );
             }
             return cached;
           }

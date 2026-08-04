@@ -236,7 +236,10 @@ export class TaskUtils {
             throw new Error('No active cycle found');
         }
 
-        const assignedTaskId = taskId || (generateId ? generateId() : `task-${Date.now()}-${Math.floor(Math.random() * 1000)}`);
+        // Fallback suffix entropy matches generateHashId — a 0-999 suffix collides
+        // easily for tasks created in the same millisecond, and colliding ids make
+        // find-by-id flows (reorder, edit, delete) target the wrong task.
+        const assignedTaskId = taskId || (generateId ? generateId() : `task-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`);
 
         return {
             taskTextTrimmed,

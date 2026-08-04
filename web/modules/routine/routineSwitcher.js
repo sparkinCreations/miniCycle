@@ -594,13 +594,45 @@ export class RoutineSwitcher {
         delete copiedCycle.lastModified; // Show "Created" until actual changes are made
         copiedCycle.cycleCount = 0; // Reset cycle count for the copy
 
-        // ✅ Generate new IDs for all tasks to avoid conflicts
+        // Fresh history for a fresh routine — the clone otherwise inherits the
+        // original's full event log (cycle completions that never happened here).
+        // clearedTasks entries reset too, but autoPrune is a preference and travels.
+        delete copiedCycle.history;
+        if (copiedCycle.clearedTasks && typeof copiedCycle.clearedTasks === 'object') {
+            copiedCycle.clearedTasks = {
+                ...copiedCycle.clearedTasks,
+                entries: [],
+                totalCleared: 0
+            };
+        }
+
+        // ✅ Generate new IDs for all tasks to avoid conflicts — and remap
+        // recurringTemplates in lockstep. The map is keyed by task id and each
+        // template carries its task's id; leaving it un-remapped severed every
+        // taskId↔template link in the copy (watcher spawned duplicates, deleting
+        // a copied recurring task couldn't remove its template, template edits
+        // never synced).
         if (Array.isArray(copiedCycle.tasks)) {
             const now = Date.now();
-            copiedCycle.tasks = copiedCycle.tasks.map((task, index) => ({
-                ...task,
-                id: `task-${now}-${index}-${Math.floor(Math.random() * 10000)}` // Fix #74: add index to prevent collision
-            }));
+            const idRemap = {};
+            copiedCycle.tasks = copiedCycle.tasks.map((task, index) => {
+                const newId = `task-${now}-${index}-${Math.floor(Math.random() * 10000)}`; // Fix #74: add index to prevent collision
+                if (task.id) idRemap[task.id] = newId;
+                return { ...task, id: newId };
+            });
+
+            if (copiedCycle.recurringTemplates && typeof copiedCycle.recurringTemplates === 'object') {
+                const remappedTemplates = {};
+                Object.entries(copiedCycle.recurringTemplates).forEach(([oldId, template], templateIndex) => {
+                    if (!template || typeof template !== 'object') return;
+                    // A template without a live task instance is normal (deleted
+                    // instance pending recreation) — keep it, under a fresh id so
+                    // the copy never shares ids with the original routine.
+                    const newId = idRemap[oldId] || `task-${now}-t${templateIndex}-${Math.floor(Math.random() * 10000)}`;
+                    remappedTemplates[newId] = { ...template, id: newId };
+                });
+                copiedCycle.recurringTemplates = remappedTemplates;
+            }
         }
 
         // ✅ Update through state system
@@ -1247,9 +1279,14 @@ export class RoutineSwitcher {
                 continue;
             }
 
-            // Generate ID if missing
+            // Generate ID if missing. Suffix entropy matches the main generator
+            // (globalUtils generateHashId): this loop runs synchronously, so every
+            // repaired task shares the same millisecond — a 0-999 suffix had ~17%
+            // birthday-collision odds at 20 tasks, and a collision makes
+            // drag-reorder silently drop a task (find-by-id resolves both to the
+            // first match).
             if (!task.id || typeof task.id !== 'string') {
-                task.id = `task-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+                task.id = `task-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
                 console.warn(`⚠️ Generated missing task ID: ${task.id}`);
                 repaired = true;
             }

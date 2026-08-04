@@ -490,7 +490,10 @@ export async function runAppStateTests(resultsDiv, isPartOfSuite = false) {
         // Newer data appears in storage from "another tab" — diff well over the 1s
         // CONCURRENT_MOD_CONFLICT threshold, with a marker to detect adoption.
         const storedTs = ourTs + 5000;
+        // Must be structurally valid Schema 2.5 — save() now refuses to adopt
+        // malformed stored data (a real tab write always carries schemaVersion).
         localStorage.setItem('miniCycleData', JSON.stringify({
+            schemaVersion: "2.5",
             metadata: { lastModified: storedTs },
             settings: { theme: 'from-other-tab' },
             data: { cycles: {} },
@@ -523,6 +526,38 @@ export async function runAppStateTests(resultsDiv, isPartOfSuite = false) {
         }
 
         stateManager.unsubscribe('conflict-test', listener);
+    });
+
+    await test('save conflict path never adopts malformed stored data (overwrites it instead)', async () => {
+        // Companion to the adoption test above: a newer-timestamped but structurally
+        // invalid write in storage (corrupt tab, partial write) must NOT replace valid
+        // in-memory state — save() proceeds and overwrites the bad data.
+        const stateManager = createStateManager();
+        await stateManager.init();
+
+        const ourTs = 1000000;
+        if (!stateManager.data.metadata) stateManager.data.metadata = {};
+        stateManager.data.metadata.lastModified = ourTs;
+        stateManager.data.settings.theme = 'ours-and-valid';
+
+        // Newer but missing schemaVersion → fails validateSchema25Structure.
+        localStorage.setItem('miniCycleData', JSON.stringify({
+            metadata: { lastModified: ourTs + 5000 },
+            settings: { theme: 'corrupt-newer' },
+            data: { cycles: {} },
+            appState: { activeCycleId: null }
+        }));
+
+        stateManager.isDirty = true;
+        stateManager.save();
+
+        if (stateManager.data.settings.theme !== 'ours-and-valid') {
+            throw new Error('malformed stored data must never be adopted');
+        }
+        const persisted = JSON.parse(localStorage.getItem('miniCycleData'));
+        if (persisted.settings.theme !== 'ours-and-valid') {
+            throw new Error('save should proceed and overwrite the malformed stored data');
+        }
     });
 
     await test('flushes a pending save on pagehide and visibilitychange→hidden (iOS unload safety)', async () => {

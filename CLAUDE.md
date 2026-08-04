@@ -244,7 +244,7 @@ element.innerHTML = `<span class="icon">${ICONS['check']}</span>`;
 element.innerHTML = userInput;
 ```
 
-The only safe innerHTML sources are: `ICONS` constant, `getLabel()` output, and hardcoded HTML templates. If you need to display user text inside HTML, escape it first or use `textContent`.
+The only safe innerHTML sources are: `ICONS` constant, **var-free** `getLabel()` output, and hardcoded HTML templates. `getLabel()` with `vars` is NOT innerHTML-safe when any var can carry user text — `interpolate()` does not escape (and must not: notification/modal sinks escape the whole message, so escaping in the label would double-escape). If you need to display user text inside HTML, escape it first or use `textContent`.
 
 ### 8. Always Use CSS Variables for Theming
 
