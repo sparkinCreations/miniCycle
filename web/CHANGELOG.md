@@ -1,3 +1,7 @@
+## [2.354] - 2026-08-04
+- refactor(undo): drop orphaned undoSizeBytes plumbing, cover settings objects in snapshot signature
+
+
 ## [2.353] - 2026-08-04
 - docs(recurring): correct stale 30s interval references to 15s
 
