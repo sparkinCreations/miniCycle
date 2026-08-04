@@ -8,7 +8,7 @@ The watch recurring function implements offline-first recurring task scheduling 
 
 ### Core Architecture
 
-- **Polling Interval**: Checks every 30 seconds for due tasks
+- **Polling Interval**: Checks every 15 seconds for due tasks while recurring templates exist (`INTERVALS.RECURRING_WATCHER`); drops to a 2-hour idle cadence when none do (`INTERVALS.RECURRING_WATCHER_IDLE`)
 - **Local Storage**: Persists recurring task schedules across browser sessions
 - **Client-Side Calculation**: Computes next occurrence times locally
 - **Cross-Platform Input Handling**: Adapts UI interactions based on device capabilities
@@ -18,10 +18,11 @@ The watch recurring function implements offline-first recurring task scheduling 
 #### 1. Task Scheduling Engine
 
 ```javascript
-// Checks for due recurring tasks every 30 seconds
+// Checks for due recurring tasks every 15 seconds (values live in
+// core/constants.js — INTERVALS.RECURRING_WATCHER / RECURRING_WATCHER_IDLE)
 setInterval(() => {
     checkRecurringTasks();
-}, 30000);
+}, INTERVALS.RECURRING_WATCHER); // 15000ms active / 7200000ms idle
 ```
 
 #### 2. Occurrence Calculation
@@ -99,17 +100,33 @@ function scheduleNextOccurrence(task) {
 
 ### Efficiency Analysis
 
-- **CPU Impact**: Minimal - single check every 30 seconds
+- **CPU Impact**: Minimal - single check every 15 seconds (and only a 2-hour heartbeat when no recurring templates exist)
 - **Battery Usage**: Negligible compared to typical web app operations
 - **Memory Footprint**: Lower than managing multiple timeout objects
 - **Network Usage**: Zero - completely offline operation
 
-### 30-Second Interval Justification
+### 15-Second Interval Justification
 
 - Provides reasonable responsiveness for task scheduling
-- Balances system efficiency with user expectations
+- Guarantees multiple ticks inside every clock minute, so exact-minute
+  pattern matching (specific-time tasks) cannot miss its window while the
+  app is awake
+- Balances system efficiency with user expectations — and costs nothing
+  when idle, since the watcher switches to a 2-hour cadence whenever no
+  recurring templates exist
 - Appropriate granularity for task management workflows
-- Significantly better than 1-minute+ intervals for user experience
+
+### Sleep/Freeze Recovery (v2.352)
+
+Polling has one structural blind spot: timers do not tick while a device
+sleeps or a tab is frozen, and a visible→visible sleep fires no
+`visibilitychange` to trigger catch-up. The watcher therefore measures the
+gap between its own ticks — when a tick arrives more than
+`LIMITS.RECURRING_OVERSLEEP_FACTOR` (2×) beyond the expected cadence, that
+tick delegates wholesale to `catchUpMissedRecurringTasks()`, which trusts
+stored timestamps rather than re-matching the clock and notifies the user
+about the missed task. Precise-minute spawning is preserved in the normal
+case; the seam only opens the trusted catch-up path.
 
 ## Date Calculation Reliability
 
@@ -187,6 +204,6 @@ The polling approach handles various browser implementations consistently:
 
 ## Conclusion
 
-While timeout-based scheduling appears more elegant theoretically, the polling approach provides superior reliability in real-world web application environments. The 30-second interval represents an optimal balance between responsiveness and efficiency, while the offline-first architecture ensures consistent behavior across diverse browser and device scenarios.
+While timeout-based scheduling appears more elegant theoretically, the polling approach provides superior reliability in real-world web application environments. The 15-second active interval (with a 2-hour idle fallback and oversleep-triggered catch-up) represents an optimal balance between responsiveness and efficiency, while the offline-first architecture ensures consistent behavior across diverse browser and device scenarios.
 
 The implementation prioritizes user reliability over theoretical performance optimization, resulting in a robust recurring task system that functions consistently regardless of browser behavior, device state, or network connectivity.

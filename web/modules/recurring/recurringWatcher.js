@@ -163,7 +163,7 @@ function resetTaskLimitNotification() {
 // ============================================================================
 
 /**
- * Switch the watcher interval (active 30s vs idle 2h)
+ * Switch the watcher interval (active 15s vs idle 2h — INTERVALS.RECURRING_WATCHER / _IDLE)
  * @param {boolean} hasTemplates - Whether recurring templates exist
  * @returns {void}
  */
@@ -191,7 +191,7 @@ function switchInterval(hasTemplates) {
 }
 
 /**
- * Restart the watcher at active interval (30s)
+ * Restart the watcher at active interval (15s)
  * Call this when a recurring template is created
  */
 export function restartRecurringWatcher() {
@@ -245,7 +245,7 @@ function buildTemplateUpdate(template, nowMs, calculateNextOccurrence) {
 }
 
 // ============================================================================
-// SHARED RECREATION ENGINE (used by both catch-up and the 30s watch)
+// SHARED RECREATION ENGINE (used by both catch-up and the 15s watch)
 // ============================================================================
 
 /**
@@ -258,7 +258,7 @@ function buildTemplateUpdate(template, nowMs, calculateNextOccurrence) {
  * mutated — only the spawned instance is overridden.
  *
  * This is the single source of truth for the recreated-instance shape, shared by both the
- * wake-time catch-up and the 30s watcher (the only two paths that recreate a due task).
+ * wake-time catch-up and the 15s watcher (the only two paths that recreate a due task).
  * NOTE: activation (recurringActivation.js) and template-build (recurringSettingsApplicator.js)
  * intentionally build DIFFERENT shapes (different source object / preference-derived
  * deleteWhenComplete) and must NOT be folded in here.
@@ -295,7 +295,7 @@ function buildRecurringInstance(template) {
  * report them (catch-up) or ignore them (watch).
  *
  * Eligibility shared by both callers: task not already present, has a next occurrence, count
- * not exhausted, and the occurrence is due (now ≥ nextScheduledOccurrence). The 30s watch
+ * not exhausted, and the occurrence is due (now ≥ nextScheduledOccurrence). The 15s watch
  * adds one extra gate via `extraEligibility` (re-validates the recurrence pattern); catch-up
  * passes none — a missed-while-closed occurrence is trusted without re-matching the pattern.
  *
@@ -440,7 +440,7 @@ export async function catchUpMissedRecurringTasks() {
 
 /**
  * Watch recurring tasks and recreate them when due
- * Runs as part of the 30-second interval check
+ * Runs as part of the 15-second interval check
  *
  * Applies the same RECREATION SAFETY POLICY as catchUpMissedRecurringTasks:
  * recreated instances always have deleteWhenComplete=true regardless of the
@@ -557,7 +557,7 @@ function notifyExhaustedTemplates(templateUpdates) {
 
 /**
  * Setup the recurring task watcher interval
- * Checks every 30 seconds for tasks that need to be recreated
+ * Checks every 15 seconds for tasks that need to be recreated (2h idle when no templates)
  */
 export async function setupRecurringWatcher() {
     // Idempotency guard

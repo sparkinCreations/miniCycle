@@ -123,7 +123,7 @@ Create tasks that automatically appear on a schedule.
 ### Recurring System
 | Feature | Description | Module |
 |---------|-------------|--------|
-| Watch Function | Polls every 30 seconds for due recurring tasks | `recurring/recurringWatcher.js` |
+| Watch Function | Polls every 15 seconds for due recurring tasks (2h idle when no templates) | `recurring/recurringWatcher.js` |
 | Offline Catch-Up | Catches up on missed tasks after device sleep/offline | `recurring/recurringWatcher.js` |
 | DST-Safe Calculations | Handles timezone and daylight saving edge cases | `recurring/recurringDateUtils.js` |
 | Recurring Panel | Dedicated UI for managing recurring settings | `recurring/recurringPanel.js` |

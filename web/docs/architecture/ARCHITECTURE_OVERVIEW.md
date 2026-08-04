@@ -468,7 +468,7 @@ const template = {
     }
 };
 
-// 2. Every 30 seconds, the watcher checks:
+// 2. Every 15 seconds, the watcher checks:
 setInterval(() => {
     const now = new Date();
     if (isRecurringTaskDue(template, now)) {

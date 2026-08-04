@@ -183,7 +183,7 @@ function isRecurringTaskDue(template, now = new Date()) {
     }
 }
 
-// Auto-generates live tasks every 30 seconds
+// Auto-generates live tasks every 15 seconds
 // Templates persist, live tasks reset with cycle
 ```
 
@@ -804,7 +804,7 @@ window.exportDebugData()                 // Debug package
 
 1. **Task Cycling** - Tasks reset, don't delete (habit formation)
 2. **AppState** - Centralized state with 600ms debounced saves
-3. **Recurring Tasks** - Template-based, checked every 30s, ONE task per catch-up (cycle-based, not project-based)
+3. **Recurring Tasks** - Template-based, checked every 15s, ONE task per catch-up (cycle-based, not project-based)
 4. **Undo/Redo** - State snapshots with max 50 history
 5. **Modules** - 4 patterns: Static, Simple, Resilient, Strict Injection
 6. **Schema 2.5** - Current data format with auto-migration

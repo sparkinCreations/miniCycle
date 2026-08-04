@@ -822,7 +822,7 @@ Share your themes or use themes from others:
 
 **Solutions:**
 1. Check system time - ensure clock is correct
-2. Wait 30 seconds - recurring system polls every 30s
+2. Wait 15 seconds - recurring system polls every 15s
 3. Refresh page - forces re-check
 4. Verify schedule in task settings (Edit Recurring)
 

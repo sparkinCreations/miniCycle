@@ -268,10 +268,10 @@ export async function initRecurringModules(options = {}) {
         });
 
         // ============================================
-        // STEP 3: Setup recurring watcher (30-second interval) — panel UI deferred
+        // STEP 3: Setup recurring watcher (15s active interval, INTERVALS.RECURRING_WATCHER) — panel UI deferred
         // ============================================
 
-        // Initialize the watcher - will start checking every 30 seconds
+        // Initialize the watcher - will start checking every 15 seconds (2h idle when no templates)
         await coreFunctions.setupRecurringWatcher();
 
         // ============================================

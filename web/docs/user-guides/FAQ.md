@@ -356,8 +356,8 @@ This keeps your data 100% under your control.
    - Ensure device clock is accurate
    - Recurring tasks use system time
 
-3. **Wait 30 seconds**
-   - Recurring system polls every 30 seconds
+3. **Wait 15 seconds**
+   - Recurring system polls every 15 seconds
    - Give it a moment after schedule time
 
 4. **Refresh page**

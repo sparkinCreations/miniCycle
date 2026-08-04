@@ -889,7 +889,7 @@ await db.put('cycles', data, 'main');
 
 **Symptoms:**
 - High calculation time (>10ms for 100 tasks)
-- Watch function causing lag every 30s
+- Watch function causing lag every 15s
 - Date calculations slow
 
 **Causes:**
