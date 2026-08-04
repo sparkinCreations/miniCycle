@@ -122,14 +122,21 @@ export default [
 
             // XSS regression aid (input-normalizer audit): flag any
             // `el.innerHTML = `...${x}...`` write for triage. Interpolate ONLY
-            // escapeHtml() output, getLabel(), or static constants into an
-            // innerHTML template — never raw user/import text. `warn` (not
-            // `error`) because ~57 pre-existing, reviewed-safe sites predate the
-            // rule; the goal is to surface any NEW site for review. If a flagged
-            // site is safe, add an eslint-disable-next-line with a short reason.
+            // escapeHtml() output, VAR-FREE getLabel(), or static constants into
+            // an innerHTML template — never raw user/import text. getLabel() with
+            // vars is NOT innerHTML-safe when any var can carry user text:
+            // interpolate() does not escape (deliberately — escaping at the
+            // source would double-escape at sinks that escape whole messages and
+            // render literal entities in textContent/aria sinks), so escape each
+            // user-content var before passing it (see taskOptionsCustomizer's
+            // `vars: { name: escapeHtml(cycleTitle) }`). `warn` (not `error`)
+            // because ~57 pre-existing, reviewed-safe sites predate the rule; the
+            // goal is to surface any NEW site for review. If a flagged site is
+            // safe, add an eslint-disable-next-line with a short reason. Matches
+            // CLAUDE.md §7 ("Always Use textContent for User Data").
             'no-restricted-syntax': ['warn', {
                 selector: "AssignmentExpression[left.property.name='innerHTML'][right.type='TemplateLiteral']",
-                message: 'Template literal assigned to innerHTML — interpolate only escapeHtml() output, getLabel(), or static constants, never raw user/import text. If this site is safe, add an eslint-disable-next-line with a reason.'
+                message: 'Template literal assigned to innerHTML — interpolate only escapeHtml() output, getLabel() whose vars carry no user text (escape such vars first), or static constants — never raw user/import text. If this site is safe, add an eslint-disable-next-line with a reason.'
             }],
 
             // SonarJS rules (code quality)
