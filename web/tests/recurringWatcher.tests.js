@@ -319,6 +319,75 @@ export async function runRecurringWatcherTests(resultsDiv) {
         eq(mod.isWatcherInitialized(), false, 'still uninitialized');
     });
 
+    // ── End-date semantics (recurring review Findings A & B) ─────────────────
+    resultsDiv.innerHTML += '<h4 class="test-section">🧟 End-date resurrection loop (Finding A)</h4>';
+
+    // Wire the REAL calculator so the test exercises the actual
+    // catch-up → spawn → recalculate loop, not a mock's answer.
+    const calcMod = await import(`../modules/recurring/recurringCalculators.js?v=${cacheBuster}`);
+    const dateUtils = await import(`../modules/recurring/recurringDateUtils.js?v=${cacheBuster}`);
+    calcMod.setDateUtils(dateUtils);
+    calcMod.setNormalizer((s) => s);
+
+    await test('catchUp delivers the final owed pre-end occurrence, then STOPS (no zombie)', async () => {
+        // Routine ended Aug 9; the Aug 9 occurrence came due but the user never
+        // opened the app. Opening on Aug 10: that one is still owed and must
+        // spawn — but the template must then be finished, not rescheduled past
+        // the end date.
+        const now = new Date(2026, 7, 10, 12, 0, 0).getTime();       // Aug 10, noon
+        const owed = new Date(2026, 7, 9, 9, 0, 0).getTime();        // Aug 9, 9:00 — pre-end
+        const template = {
+            id: 't1', text: 'T-t1',
+            nextScheduledOccurrence: owed,
+            occurrenceCount: 3,
+            recurringSettings: { frequency: 'daily', indefinitely: false, untilDate: '2026-08-09' }
+        };
+        const as = cycleState({ t1: template }, []);
+        mod.setRecurringWatcherDependencies(makeDeps({
+            AppState: as,
+            now: () => now,
+            calculateNextOccurrence: calcMod.calculateNextOccurrence
+        }));
+
+        // Session 1: the owed final occurrence spawns — correct.
+        const r1 = await mod.catchUpMissedRecurringTasks();
+        eq(r1.added, 1, 'final owed occurrence delivered');
+        const t = as.get().data.cycles.c1.recurringTemplates.t1;
+        eq(t.nextScheduledOccurrence, null, 'template finished — nothing scheduled past the end date');
+
+        // User completes the task (recreated instances auto-delete on completion).
+        as.get().data.cycles.c1.tasks.length = 0;
+
+        // Session 2: nothing is owed anymore — the routine ended.
+        const r2 = await mod.catchUpMissedRecurringTasks();
+        eq(r2.added, 0, 'no zombie respawn after the routine ended');
+    });
+
+    resultsDiv.innerHTML += '<h4 class="test-section">😴 Oversleep gap (Finding B)</h4>';
+
+    await test('watch delivers a spawn missed during device sleep despite pattern mismatch', async () => {
+        // Lid closed at 8:58, scheduled for 9:00, wake at 9:20: polls resume but
+        // the exact-minute pattern check answers "no" until tomorrow, and a
+        // visible→visible sleep fires no visibilitychange to trigger catch-up.
+        // An oversleeping watcher must fall back to trusting the timestamp.
+        let clock = NOW;
+        const template = dueTemplate('t1', { nextScheduledOccurrence: NOW + 120_000 }); // due at +2min
+        const as = cycleState({ t1: template }, []);
+        mod.resetWatcherState();
+        mod.setRecurringWatcherDependencies(makeDeps({
+            AppState: as,
+            now: () => clock,
+            shouldRecreateRecurringTask: () => false // "is it 9:00 right now?" → no
+        }));
+
+        await mod.watchRecurringTasks();             // normal tick — nothing due yet
+        eq(as.get().data.cycles.c1.tasks.length, 0, 'nothing due at first tick');
+
+        clock = NOW + 20 * 60_000;                   // wake 20 minutes later
+        await mod.watchRecurringTasks();             // overslept tick
+        eq(as.get().data.cycles.c1.tasks.length, 1, 'missed occurrence delivered on wake');
+    });
+
     // cleanup global singleton state
     mod.resetWatcherState();
 

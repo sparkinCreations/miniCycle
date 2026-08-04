@@ -106,6 +106,7 @@ async function commitSystemUpdate(producer, immediate) {
 let _recurringWatcherInitialized = false;
 let _watcherIntervalId = null;
 let _currentIntervalMs = null;
+let _lastWatchTickMs = null;
 let _taskLimitNotificationShown = false; // Prevent notification spam
 let _visibilityChangeHandler = null; // Stored for cleanup
 
@@ -487,7 +488,25 @@ export async function watchRecurringTasks() {
     assertInjected('now', Deps.now);
     const now = new Date(Deps.now());
 
-    // The 30s watch re-validates the recurrence pattern (slow path) before recreating, so a
+    // OVERSLEEP DETECTION (recurring review Finding B): the pattern gate below
+    // requires the current time to MATCH the schedule (exact minute for timed
+    // tasks) — correct for a live 15s cadence, but timers don't tick through
+    // device sleep or a frozen tab. If the polls resume after the scheduled
+    // minute, every tick answers "not now" until the next day, and a
+    // visible→visible sleep fires no visibilitychange to trigger catch-up.
+    // When the gap since the last tick shows we overslept, delegate this tick
+    // to catch-up, which trusts the timestamp (and tells the user).
+    const nowMsForGap = now.getTime();
+    const expectedGapMs = _currentIntervalMs || INTERVALS.RECURRING_WATCHER;
+    const overslept = _lastWatchTickMs !== null
+        && (nowMsForGap - _lastWatchTickMs) > expectedGapMs * LIMITS.RECURRING_OVERSLEEP_FACTOR;
+    _lastWatchTickMs = nowMsForGap;
+    if (overslept) {
+        await catchUpMissedRecurringTasks();
+        return;
+    }
+
+    // The 15s watch re-validates the recurrence pattern (slow path) before recreating, so a
     // task only spawns when it genuinely matches now. Recreation is silent (no notification).
     assertInjected('shouldRecreateRecurringTask', Deps.shouldRecreateRecurringTask);
     await recreateDueTasks(
@@ -509,14 +528,26 @@ function notifyExhaustedTemplates(templateUpdates) {
     Object.values(templateUpdates).forEach(updated => {
         if (updated.nextScheduledOccurrence !== null) return;
         const settings = updated.recurringSettings;
-        if (!settings || settings.indefinitely !== false || !settings.count) return;
-        if ((updated.occurrenceCount ?? 0) < settings.count) return;
+        if (!settings) return;
 
-        Deps.showNotification?.(
-            `${getIcon('recurring')} ${getLabel('notify.recurringCountFinished', { vars: { taskName: updated.text, count: settings.count } })}`,
-            'info',
-            UI_TIMEOUTS.NOTIFICATION_LONG
-        );
+        const countFinished = settings.indefinitely === false && settings.count
+            && (updated.occurrenceCount ?? 0) >= settings.count;
+
+        if (countFinished) {
+            Deps.showNotification?.(
+                `${getIcon('recurring')} ${getLabel('notify.recurringCountFinished', { vars: { taskName: updated.text, count: settings.count } })}`,
+                'info',
+                UI_TIMEOUTS.NOTIFICATION_LONG
+            );
+        } else if (settings.untilDate) {
+            // Null next without a reached count = the calculator clamped at the
+            // end date: this spawn was the routine's final occurrence.
+            Deps.showNotification?.(
+                `${getIcon('recurring')} ${getLabel('notify.recurringEndDateFinished', { vars: { taskName: updated.text } })}`,
+                'info',
+                UI_TIMEOUTS.NOTIFICATION_LONG
+            );
+        }
     });
 }
 
@@ -607,6 +638,7 @@ export function resetWatcherState() {
     _recurringWatcherInitialized = false;
     _watcherIntervalId = null;
     _currentIntervalMs = null;
+    _lastWatchTickMs = null;
     if (_visibilityChangeHandler) {
         document.removeEventListener("visibilitychange", _visibilityChangeHandler);
         _visibilityChangeHandler = null;

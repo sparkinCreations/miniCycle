@@ -410,6 +410,7 @@ export const DEFAULT_LABELS = deepFreeze({
         recurringAdded:         'Added {count} {taskWord} to recurring (daily by default)',
         recurringMissedAdded:   'Added {count} missed recurring {taskWord}',
         recurringCountFinished: '"{taskName}" has completed all {count} scheduled occurrences',
+        recurringEndDateFinished: '"{taskName}" reached its end date — final occurrence delivered',
         recurringLimitBlocked:  '{count} recurring {taskWord} couldn\'t spawn — task list full ({limit} limit). Complete or delete tasks to allow more.',
         recurringAddFailed:     'Failed to add tasks',
         recurringDefaultSaved:  'Default recurring settings saved!',

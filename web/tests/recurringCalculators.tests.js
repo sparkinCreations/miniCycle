@@ -147,6 +147,53 @@ export async function runRecurringCalculatorsTests(resultsDiv) {
     });
 
     // ============================================
+    resultsDiv.innerHTML += '<h4 class="test-section">🏁 End date (untilDate) clamp</h4>';
+
+    // Recurring review Finding A: the calculator must never schedule an
+    // occurrence past settings.untilDate — an unclamped next occurrence past
+    // the end date makes catch-up (which trusts timestamps and skips the
+    // matcher) resurrect the task every session, forever.
+    await test('calculateNextOccurrence returns null when next would land past untilDate', () => {
+        // From the end date itself: daily-no-time schedules start of TOMORROW,
+        // which is past end-of-day on the untilDate.
+        const from = new Date(2026, 7, 9, 12, 0, 0); // Aug 9 2026, noon (local)
+        const result = calculateNextOccurrence(
+            { frequency: 'daily', indefinitely: false, untilDate: '2026-08-09' },
+            from.getTime()
+        );
+        if (result !== null) {
+            throw new Error(`Expected null past end date, got ${new Date(result)}`);
+        }
+    });
+
+    await test('calculateNextOccurrence keeps the final pre-end occurrence scheduled', () => {
+        // From the day BEFORE the end date: next daily occurrence lands ON the
+        // untilDate (start of day), inside the end-of-day boundary — still owed.
+        const from = new Date(2026, 7, 8, 12, 0, 0); // Aug 8 2026, noon (local)
+        const result = calculateNextOccurrence(
+            { frequency: 'daily', indefinitely: false, untilDate: '2026-08-09' },
+            from.getTime()
+        );
+        const expected = new Date(2026, 7, 9, 0, 0, 0, 0).getTime();
+        if (result !== expected) {
+            throw new Error(`Expected ${new Date(expected)}, got ${result === null ? 'null' : new Date(result)}`);
+        }
+    });
+
+    await test('calculateNextOccurrences preview stops at untilDate', () => {
+        const from = new Date(2026, 7, 7, 12, 0, 0); // Aug 7 2026 — 2 days left
+        const result = calculateNextOccurrences(
+            { frequency: 'daily', indefinitely: false, untilDate: '2026-08-09' },
+            5,
+            from.getTime()
+        );
+        // Only Aug 8 and Aug 9 remain before the end date.
+        if (result.length !== 2) {
+            throw new Error(`Preview should stop at the end date (expected 2 occurrences, got ${result.length})`);
+        }
+    });
+
+    // ============================================
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;
     if (passed.count === total.count) {

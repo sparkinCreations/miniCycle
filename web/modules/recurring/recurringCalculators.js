@@ -524,7 +524,44 @@ export function calculateNextOccurrence(settings, fromTime = Date.now()) {
         return null;
     }
 
+    let next;
     try {
+        next = computeUnclampedNext(settings, from);
+    } catch (error) {
+        console.error('calculateNextOccurrence: Calculation failed:', error);
+        // Fallback: 24 hours from now
+        next = from.getTime() + (24 * 60 * 60 * 1000);
+    }
+
+    if (next === null) return null;
+
+    // END DATE ENFORCEMENT (recurring review Finding A): never schedule an
+    // occurrence past settings.untilDate. The matcher already refuses to recur
+    // past the end date, but catch-up trusts nextScheduledOccurrence WITHOUT
+    // re-matching the pattern — so an unclamped timestamp here resurrected
+    // ended routines on every app open. Clamping at the source lets the final
+    // pre-end occurrence stay owed while nothing schedules beyond it.
+    // Invalid untilDate = don't recur (matcher parity).
+    if (settings.untilDate) {
+        const end = getDateUtils().parseDateAsLocal(settings.untilDate);
+        if (!end) return null;
+        end.setHours(23, 59, 59, 999); // end date is inclusive (end of day)
+        if (next > end.getTime()) return null;
+    }
+
+    return next;
+}
+
+/**
+ * Frequency dispatch for calculateNextOccurrence. Settings are already
+ * normalized and `from` validated by the caller; end-date clamping happens in
+ * the caller, not here.
+ * @param {Object} settings - Normalized recurring settings
+ * @param {Date} from - Base time
+ * @returns {number|null} Raw next-occurrence timestamp (may lie past untilDate)
+ */
+function computeUnclampedNext(settings, from) {
+    {
         // SPECIFIC DATES OVERRIDE ALL OTHER SETTINGS
         if (settings.specificDates?.enabled && settings.specificDates?.dates?.length > 0) {
             const next = calculateNextSpecificDate(
@@ -566,10 +603,6 @@ export function calculateNextOccurrence(settings, fromTime = Date.now()) {
                 return calculateNextDaily(null, from);
         }
 
-    } catch (error) {
-        console.error('calculateNextOccurrence: Calculation failed:', error);
-        // Fallback: 24 hours from now
-        return from.getTime() + (24 * 60 * 60 * 1000);
     }
 }
 
