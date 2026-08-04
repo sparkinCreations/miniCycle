@@ -1,3 +1,24 @@
+## [2.356] - 2026-08-04
+- docs: mark optional schema fields as optional in DATA_SCHEMA_GUIDE
+- fix(import): strict field validation; string-aware salvage; behavioral tests
+- fix(update-flow): remove unreachable consent modal, honest auto-update UX
+- fix(resilience): heal loop-guard, imported-id hardening, breaker scope
+- docs: correct cycle-keying and import-sanitization claims
+- chore(release): update version to 2.355
+- fix(recurring): blocked spawns no longer consume occurrences; boot comment/signature cleanup
+- chore(release): update version to 2.354
+- refactor(undo): drop orphaned undoSizeBytes plumbing, cover settings objects in snapshot signature
+- chore(release): update version to 2.353
+- docs(recurring): correct stale 30s interval references to 15s
+- chore(release): update version to 2.352
+- fix(recurring): enforce untilDate in calculator, oversleep catch-up in watcher
+- chore(release): update version to 2.351
+- fix(migration): restore-path delete guard, truthful cycle stat, dead-code cleanup
+- chore(release): update version to 2.350
+- fix(sw): verify boot-critical precache against actual list, not stable paths
+- chore(lint): zero-slack warning ratchet + var-aware innerHTML rule wording
+
+
 ## [2.355] - 2026-08-04
 - fix(recurring): blocked spawns no longer consume occurrences; boot comment/signature cleanup
 
