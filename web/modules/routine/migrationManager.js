@@ -21,7 +21,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { Z_INDEX, UI_TIMEOUTS, DOM_CLASSES, LIMITS } from '../core/constants.js';
+import { Z_INDEX, UI_TIMEOUTS, DOM_CLASSES, LIMITS, APP_VERSION } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 // Pure date math (no DI, no side effects) — statically imported like
 // dataRecovery in appState.js, so migration can schedule rebuilt templates.
@@ -108,7 +108,7 @@ export function createInitialSchema25Data() {
             migratedFrom: null,
             migrationDate: null,
             totalCyclesCreated: 0,
-            totalTasksCompleted: 0,
+            totalCyclesCompleted: 0,
             schemaVersion: "2.5"
         },
         settings: {
@@ -182,7 +182,7 @@ const SCHEMA_2_5_TARGET = {
         migratedFrom: null,
         migrationDate: null,
         totalCyclesCreated: 0,
-        totalTasksCompleted: 0,
+        totalCyclesCompleted: 0,
         schemaVersion: "2.5"
     },
     settings: {
@@ -361,12 +361,13 @@ export function simulateMigrationToSchema25(dryRun = true) {
         newData.metadata.migrationDate = _deps.now();
         newData.metadata.totalCyclesCreated = Object.keys(oldCycles).length;
 
-        // Calculate total completed tasks
+        // Sum completed CYCLES (legacy cycleCount) — legacy data has no
+        // per-task completion history, so a task total is not derivable.
         let totalCompleted = 0;
         Object.values(oldCycles).forEach(cycle => {
             totalCompleted += cycle.cycleCount || 0;
         });
-        newData.metadata.totalTasksCompleted = totalCompleted;
+        newData.metadata.totalCyclesCompleted = totalCompleted;
 
         // 4. Populate settings
         newData.settings.theme = currentTheme;
@@ -987,7 +988,7 @@ async function performAutoMigration(options = {}) {
         const migrationInfo = {
             completed: _deps.now(),
             backupKey: backupResult.backupKey,
-            version: '1.395',
+            version: APP_VERSION,
             autoMigrated: true,
             dataFixesApplied: fixResult.fixedCount || 0,
             migrationSummary: {
@@ -1061,7 +1062,7 @@ function createMinimalSchema25() {
             migratedFrom: "force_migration",
             migrationDate: _deps.now(),
             totalCyclesCreated: 1,
-            totalTasksCompleted: 0,
+            totalCyclesCompleted: 0,
             schemaVersion: "2.5"
         },
         settings: {
@@ -1140,8 +1141,6 @@ async function handleMigrationFailure(reason, backupKey) {
 
         // Step 1: Try to restore from backup if available
         if (backupKey) {
-            const backupExists = !!_deps.storage.getItem(backupKey);
-
             try {
                 await restoreFromAutomaticBackup(backupKey);
             } catch (restoreError) {
@@ -1238,14 +1237,6 @@ function ensureLegacyDataAccess() {
             const parsedData = JSON.parse(legacyStorage);
 
             if (typeof parsedData === 'object' && parsedData !== null) {
-
-                // Additional validation
-                const cycleKeys = Object.keys(parsedData);
-
-                if (cycleKeys.length > 0) {
-                    const firstCycle = parsedData[cycleKeys[0]];
-                }
-
                 return true;
             } else {
                 console.error('❌ Legacy data is not a valid object');
@@ -1371,16 +1362,20 @@ async function createAutomaticMigrationBackup() {
                 size: JSON.stringify(backupData).length
             });
 
-            // Keep only last 5 automatic backups to prevent storage bloat
-            const autoBackups = backupIndex.filter(b => b.type === 'auto_migration');
+            // Keep only the newest auto backups to prevent storage bloat.
+            // Trim until under the cap (a single-entry trim converged by only
+            // one per run if cleanup ever failed and the index overgrew).
+            const autoBackups = backupIndex
+                .filter(b => b.type === 'auto_migration')
+                .sort((a, b) => a.created - b.created);
 
-            if (autoBackups.length > 5) {
-                const oldestAutoBackup = autoBackups.sort((a, b) => a.created - b.created)[0];
+            while (autoBackups.length > LIMITS.MAX_AUTO_MIGRATION_BACKUPS) {
+                const oldestAutoBackup = autoBackups.shift();
 
                 try {
                     _deps.storage.removeItem(oldestAutoBackup.key);
                     const index = backupIndex.findIndex(b => b.key === oldestAutoBackup.key);
-                    backupIndex.splice(index, 1);
+                    if (index !== -1) backupIndex.splice(index, 1);
                 } catch (cleanupError) {
                     console.warn('⚠️ Failed to cleanup old backup:', cleanupError);
                     console.warn('🔧 Cleanup error details:', cleanupError.message);
@@ -1505,10 +1500,27 @@ async function restoreFromAutomaticBackup(backupKey) {
             console.warn('⚠️ No settings found in backup');
         }
 
-        // Remove any Schema 2.5 data that might have been created
+        // Remove any Schema 2.5 data the failed migration may have written.
+        // INVARIANT: this restore path only runs when migration failed, and
+        // migration is gated by checkMigrationNeeded — so valid 2.5 data cannot
+        // legitimately exist here; anything present is a partial artifact of the
+        // failed run. The guard enforces what the ordering only implies: if a
+        // future caller reaches this with VALID 2.5 data, refuse to delete it.
         try {
-            const schema25Existed = !!_deps.storage.getItem('miniCycleData');
-            _deps.storage.removeItem('miniCycleData');
+            let validSchema25 = false;
+            const existing = _deps.storage.getItem('miniCycleData');
+            if (existing) {
+                try {
+                    validSchema25 = JSON.parse(existing).schemaVersion === '2.5';
+                } catch (parseError) {
+                    // Corrupt/partial artifact — safe to remove below.
+                }
+            }
+            if (validSchema25) {
+                console.error('🚫 restoreFromAutomaticBackup: valid Schema 2.5 data present — refusing to delete it (caller violated the migration-gated ordering invariant)');
+            } else {
+                _deps.storage.removeItem('miniCycleData');
+            }
         } catch (removeError) {
             console.warn('⚠️ Failed to remove Schema 2.5 data:', removeError);
             // Continue anyway

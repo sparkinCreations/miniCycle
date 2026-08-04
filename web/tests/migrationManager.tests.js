@@ -87,7 +87,7 @@ export async function runMigrationManagerTests(resultsDiv, isPartOfSuite = false
                 migratedFrom: null,
                 migrationDate: null,
                 totalCyclesCreated: 0,
-                totalTasksCompleted: 0,
+                totalCyclesCompleted: 0,
                 schemaVersion: "2.5"
             },
             settings: {
