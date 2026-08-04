@@ -1,3 +1,7 @@
+## [2.352] - 2026-08-04
+- fix(recurring): enforce untilDate in calculator, oversleep catch-up in watcher
+
+
 ## [2.351] - 2026-08-04
 - fix(migration): restore-path delete guard, truthful cycle stat, dead-code cleanup
 
