@@ -406,17 +406,24 @@ self.addEventListener('install', function (event) {
         console.warn('⚠️ Precache had ' + result.fail + ' failures:', result.failed.join(', '));
       }
 
-      // Verify boot-critical files are cached — if these are missing, offline boot fails
-      var criticalFiles = [
-        './version.js', './miniCycle-main.js', './boot-sw.js',
-        './modules/boot/orchestrator.js', './modules/boot/coreBoot.js',
-        './modules/boot/featureBoot.js', './modules/boot/uiBoot.js',
-        './modules/boot/moduleLoader.js', './modules/core/appInit.js'
+      // Verify boot-critical files are cached — if these are missing, offline
+      // boot fails. The URLs are resolved from the ACTUAL precache list (dev =
+      // stable paths, built = hashed /build/ URLs): a hardcoded stable-path
+      // list here made every post-hashing prod install log a false CRITICAL,
+      // since stable module paths are intentionally not precached anymore.
+      const criticalPatterns = [
+        'version.js', 'miniCycle-main', 'boot-sw',
+        'orchestrator', 'coreBoot', 'featureBoot', 'uiBoot',
+        'moduleLoader', 'appInit'
       ];
       return caches.open(STATIC_CACHE).then(function(verifyCache) {
-        return Promise.all(criticalFiles.map(function(file) {
-          return verifyCache.match(file).then(function(found) {
-            return found ? null : file;
+        return Promise.all(criticalPatterns.map(function(pattern) {
+          const url = precacheList.find(function(u) { return u.indexOf(pattern) !== -1; }) || null;
+          // Pattern absent from the precache list at all = the build dropped
+          // the file — as fatal for offline boot as a cache miss.
+          if (!url) return Promise.resolve(pattern + ' (not in precache list)');
+          return verifyCache.match(url).then(function(found) {
+            return found ? null : url;
           });
         }));
       }).then(function(results) {
