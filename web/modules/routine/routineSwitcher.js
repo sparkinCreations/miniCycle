@@ -614,24 +614,26 @@ export class RoutineSwitcher {
         // never synced).
         if (Array.isArray(copiedCycle.tasks)) {
             const now = Date.now();
-            const idRemap = {};
+            const idRemap = new Map();
             copiedCycle.tasks = copiedCycle.tasks.map((task, index) => {
                 const newId = `task-${now}-${index}-${Math.floor(Math.random() * 10000)}`; // Fix #74: add index to prevent collision
-                if (task.id) idRemap[task.id] = newId;
+                if (task.id) idRemap.set(task.id, newId);
                 return { ...task, id: newId };
             });
 
             if (copiedCycle.recurringTemplates && typeof copiedCycle.recurringTemplates === 'object') {
-                const remappedTemplates = {};
-                Object.entries(copiedCycle.recurringTemplates).forEach(([oldId, template], templateIndex) => {
-                    if (!template || typeof template !== 'object') return;
-                    // A template without a live task instance is normal (deleted
-                    // instance pending recreation) — keep it, under a fresh id so
-                    // the copy never shares ids with the original routine.
-                    const newId = idRemap[oldId] || `task-${now}-t${templateIndex}-${Math.floor(Math.random() * 10000)}`;
-                    remappedTemplates[newId] = { ...template, id: newId };
-                });
-                copiedCycle.recurringTemplates = remappedTemplates;
+                copiedCycle.recurringTemplates = Object.fromEntries(
+                    Object.entries(copiedCycle.recurringTemplates)
+                        .filter(([, template]) => template && typeof template === 'object')
+                        .map(([oldId, template], templateIndex) => {
+                            // A template without a live task instance is normal
+                            // (deleted instance pending recreation) — keep it,
+                            // under a fresh id so the copy never shares ids with
+                            // the original routine.
+                            const newId = idRemap.get(oldId) || `task-${now}-t${templateIndex}-${Math.floor(Math.random() * 10000)}`;
+                            return [newId, { ...template, id: newId }];
+                        })
+                );
             }
         }
 
