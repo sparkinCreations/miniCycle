@@ -673,6 +673,16 @@ export function checkMiniCycle(options = {}) {
                         console.warn('⚠️ AutoReset disabled during delay, aborting reset');
                         return;
                     }
+                    // Completion must still hold: unchecking a task inside the 1s
+                    // window otherwise fired the reset anyway — unchecking
+                    // everything, wiping due dates, and incrementing cycleCount
+                    // for a cycle that was never completed.
+                    const currentTasks = currentCycleData?.tasks;
+                    if (Array.isArray(currentTasks) && currentTasks.length > 0 &&
+                        !currentTasks.every(task => task?.completed)) {
+                        console.warn('⚠️ Task unchecked during auto-reset delay, aborting reset');
+                        return;
+                    }
                 }
 
                 deps.resetTasks?.();

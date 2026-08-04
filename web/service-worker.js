@@ -31,9 +31,9 @@
 // §1 VERSION IDENTITY (update-version.sh rewrites the three vars below — keep
 //    their exact `var NAME = …` shapes) + the build-injected module map.
 // ═══════════════════════════════════════════════════════════════════════════
-var APP_VERSION = '2.348';
-var CACHE_VERSION = 'v1191';
-var CACHE_VERSION_NUMBER = 1191; // Numeric version matching version.js (for synthetic fallback)
+var APP_VERSION = '2.349';
+var CACHE_VERSION = 'v1192';
+var CACHE_VERSION_NUMBER = 1192; // Numeric version matching version.js (for synthetic fallback)
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -1191,16 +1191,21 @@ self.addEventListener('fetch', function (event) {
                 credentials: request.credentials,
                 cache: 'no-cache'
               });
-              // Background fetch to update cache (only when online)
-              fetch(freshRequest).then(function (res) {
-                if (res && res.status === 200) {
-                  return caches.open(DYNAMIC_CACHE).then(function (cache) {
-                    return safeCachePut(cache, cacheRequest, res.clone()).then(function() {
-                      trimCache(DYNAMIC_CACHE, MAX_DYNAMIC_ENTRIES);
+              // Background fetch to update cache (only when online).
+              // waitUntil() for the same reason as the §7-nav revalidation: a
+              // floating promise gets cancelled when the SW is terminated after
+              // responding, so the refreshed copy silently never landed in cache.
+              event.waitUntil(
+                fetch(freshRequest).then(function (res) {
+                  if (res && res.status === 200) {
+                    return caches.open(DYNAMIC_CACHE).then(function (cache) {
+                      return safeCachePut(cache, cacheRequest, res.clone()).then(function() {
+                        trimCache(DYNAMIC_CACHE, MAX_DYNAMIC_ENTRIES);
+                      });
                     });
-                  });
-                }
-              }).catch(function () { /* cache write is best-effort */ });
+                  }
+                }).catch(function () { /* cache write is best-effort */ })
+              );
             }
             return cached;
           }

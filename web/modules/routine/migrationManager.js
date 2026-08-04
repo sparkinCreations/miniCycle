@@ -23,6 +23,9 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { Z_INDEX, UI_TIMEOUTS, DOM_CLASSES, LIMITS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+// Pure date math (no DI, no side effects) — statically imported like
+// dataRecovery in appState.js, so migration can schedule rebuilt templates.
+import { calculateNextOccurrence } from '../recurring/recurringCalculators.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -253,9 +256,22 @@ export function checkMigrationNeeded() {
 
     const currentData = _deps.storage.getItem("miniCycleData");
     if (currentData) {
-        const parsed = JSON.parse(currentData);
-        if (parsed.schemaVersion === "2.5") {
-            return { needed: false, currentVersion: "2.5" };
+        try {
+            const parsed = JSON.parse(currentData);
+            if (parsed.schemaVersion === "2.5") {
+                return { needed: false, currentVersion: "2.5" };
+            }
+        } catch (parseError) {
+            // Corrupt miniCycleData must not throw out of detection: this runs in
+            // the Phase 3 boot path OUTSIDE the caller's try, so an unguarded parse
+            // turned any corruption into a boot-failure loop — while AppState's
+            // corruption-recovery modal (which handles exactly this) sat unreachable
+            // downstream. Report "no migration needed" rather than falling through:
+            // migrating stale legacy keys OVER corrupt-but-salvageable 2.5 data would
+            // trade a repairable state for an old one. AppState owns repair (its
+            // salvage also persists the repaired string back to storage now).
+            console.warn('⚠️ checkMigrationNeeded: miniCycleData is corrupt — deferring to AppState recovery:', parseError?.message || parseError);
+            return { needed: false, currentVersion: "corrupt" };
         }
     }
 
@@ -304,17 +320,36 @@ export function simulateMigrationToSchema25(dryRun = true) {
     };
 
     try {
+        // Secondary keys parse individually with per-key fallbacks: the user's
+        // tasks must never be hostage to a corrupt prefs string. Before this, ONE
+        // bad byte in e.g. miniCycleReminders failed the whole migration, and the
+        // production force path then wrote an EMPTY cycle over perfectly valid
+        // task data. Only miniCycleStorage (the tasks) stays strict below.
+        const safeParseKey = (key, fallback) => {
+            const raw = _deps.storage.getItem(key);
+            if (raw == null) return fallback;
+            try {
+                const parsed = JSON.parse(raw);
+                return parsed == null ? fallback : parsed;
+            } catch (keyError) {
+                results.warnings.push(`⚠️ Ignoring corrupt "${key}" (${keyError.message}) — using defaults`);
+                return fallback;
+            }
+        };
+
         // 1. Gather existing data
         const oldCycles = JSON.parse(_deps.storage.getItem("miniCycleStorage") || "{}");
         const lastUsed = _deps.storage.getItem("lastUsedMiniCycle");
-        const reminders = JSON.parse(_deps.storage.getItem("miniCycleReminders") || "{}");
-        const milestones = JSON.parse(_deps.storage.getItem("milestoneUnlocks") || "{}");
+        const reminders = safeParseKey("miniCycleReminders", {});
+        const milestones = safeParseKey("milestoneUnlocks", {});
         const moveArrows = _deps.storage.getItem("miniCycleMoveArrows") === "true";
         const threeDots = _deps.storage.getItem("miniCycleThreeDots") === "true";
-        const alwaysRecurring = JSON.parse(_deps.storage.getItem("miniCycleAlwaysShowRecurring")) || false;
+        const alwaysRecurring = safeParseKey("miniCycleAlwaysShowRecurring", false) === true;
         const darkModeEnabled = _deps.storage.getItem("darkModeEnabled") === "true";
         const currentTheme = _deps.storage.getItem("currentTheme") || null;
-        const notifPosition = JSON.parse(_deps.storage.getItem("miniCycleNotificationPosition") || "{}");
+        const notifPosition = safeParseKey("miniCycleNotificationPosition", {});
+        const defaultRecurring = safeParseKey("miniCycleDefaultRecurring", null);
+        const onboardingDone = !!_deps.storage.getItem("miniCycleOnboarding");
 
         // 2. Create new schema structure
         const newData = JSON.parse(JSON.stringify(SCHEMA_2_5_TARGET));
@@ -337,6 +372,14 @@ export function simulateMigrationToSchema25(dryRun = true) {
         newData.settings.theme = currentTheme;
         newData.settings.darkMode = darkModeEnabled;
         newData.settings.alwaysShowRecurring = alwaysRecurring;
+        // Previously read-then-dropped legacy prefs (threeDots/moveArrows were
+        // gathered above but never written; the others weren't even read):
+        newData.settings.showThreeDots = threeDots;
+        newData.settings.showMoveArrows = moveArrows;
+        newData.settings.onboardingCompleted = onboardingDone;
+        if (defaultRecurring && typeof defaultRecurring === 'object' && !Array.isArray(defaultRecurring)) {
+            newData.settings.defaultRecurringSettings = defaultRecurring;
+        }
 
         // Unlocked themes from milestones
         if (milestones.darkOcean) newData.settings.unlockedThemes.push("dark-ocean");
@@ -352,6 +395,64 @@ export function simulateMigrationToSchema25(dryRun = true) {
         // 5. Migrate cycles
         newData.data.cycles = oldCycles;
         newData.appState.activeCycleId = lastUsed;
+
+        // 5b. Rebuild recurringTemplates from recurring tasks. The wholesale copy
+        // above preserves an embedded recurringTemplates map when the legacy data
+        // has one, but mid-era legacy cycles carried recurrence ON the tasks —
+        // without a rebuild those tasks display as recurring yet never re-spawn
+        // (recurringWatcher only spawns from templates; nothing else builds them
+        // at boot — only the .mcyc import path did). Also normalizes the mid-era
+        // object form of task.recurring into boolean + recurringSettings, which
+        // routineLoader would otherwise coerce to `true` and silently discard.
+        let templatesRebuilt = 0;
+        Object.values(newData.data.cycles).forEach(cycle => {
+            if (!cycle || !Array.isArray(cycle.tasks)) return;
+            if (!cycle.recurringTemplates || typeof cycle.recurringTemplates !== 'object') {
+                cycle.recurringTemplates = {};
+            }
+            cycle.tasks.forEach((task, taskIndex) => {
+                if (!task || typeof task !== 'object' || !task.recurring) return;
+
+                // Mid-era format stored the settings object IN task.recurring
+                if (typeof task.recurring === 'object') {
+                    if (!task.recurringSettings || typeof task.recurringSettings !== 'object' || Object.keys(task.recurringSettings).length === 0) {
+                        task.recurringSettings = task.recurring;
+                    }
+                    task.recurring = true;
+                }
+
+                if (!task.recurringSettings || typeof task.recurringSettings !== 'object') return;
+                if (!task.id) {
+                    // routineLoader backfills ids only at load time — too late to key a template
+                    task.id = `task-migrated-${_deps.now()}-${taskIndex}-${Math.random().toString(36).slice(2, 11)}`;
+                }
+                if (cycle.recurringTemplates[task.id]) return; // embedded template wins
+
+                let nextOccurrence = null;
+                try {
+                    nextOccurrence = calculateNextOccurrence(task.recurringSettings, _deps.now());
+                } catch (occurrenceError) {
+                    console.warn(`⚠️ Could not schedule rebuilt template for "${task.text}":`, occurrenceError?.message || occurrenceError);
+                }
+                // Same shape the .mcyc import path builds (cycleImportManager)
+                cycle.recurringTemplates[task.id] = {
+                    id: task.id,
+                    text: task.text,
+                    dueDate: task.dueDate || null,
+                    highPriority: task.highPriority || false,
+                    priorityColor: task.priorityColor || null,
+                    remindersEnabled: task.remindersEnabled || false,
+                    recurring: true,
+                    recurringSettings: JSON.parse(JSON.stringify(task.recurringSettings)),
+                    nextScheduledOccurrence: nextOccurrence,
+                    schemaVersion: 2
+                };
+                templatesRebuilt++;
+            });
+        });
+        if (templatesRebuilt > 0) {
+            results.changes.push(`🔁 Rebuilt ${templatesRebuilt} recurring template(s) from legacy recurring tasks`);
+        }
 
         // 6. Migrate reminders
         newData.customReminders = {
@@ -928,6 +1029,30 @@ function createMinimalSchema25() {
     assertInjected('showNotification', _deps.showNotification);
     assertInjected('now', _deps.now);
 
+    // Last-ditch salvage: if the legacy task data itself still parses, carry it
+    // into the minimal structure instead of an empty cycle. Writing an empty
+    // "Default Cycle" while valid miniCycleStorage exists made the user's data
+    // permanently invisible — next boot sees schemaVersion 2.5 and reports
+    // migration not needed forever, with recovery only via the hidden testing
+    // modal. (The failure that lands here can be a secondary-key problem, not
+    // the tasks — see the per-key parsing note in simulateMigrationToSchema25.)
+    let salvagedCycles = null;
+    let salvagedActiveCycleId = null;
+    try {
+        const rawLegacyCycles = _deps.storage.getItem("miniCycleStorage");
+        if (rawLegacyCycles) {
+            const parsedCycles = JSON.parse(rawLegacyCycles);
+            if (parsedCycles && typeof parsedCycles === 'object' && !Array.isArray(parsedCycles) && Object.keys(parsedCycles).length > 0) {
+                salvagedCycles = parsedCycles;
+                const lastUsed = _deps.storage.getItem("lastUsedMiniCycle");
+                salvagedActiveCycleId = (lastUsed && parsedCycles[lastUsed]) ? lastUsed : Object.keys(parsedCycles)[0];
+                console.warn(`♻️ createMinimalSchema25: salvaged ${Object.keys(parsedCycles).length} legacy cycle(s) into minimal structure`);
+            }
+        }
+    } catch (salvageError) {
+        console.warn('⚠️ createMinimalSchema25: legacy cycles unsalvageable, falling back to empty cycle:', salvageError?.message || salvageError);
+    }
+
     const minimalData = {
         schemaVersion: "2.5",
         metadata: {
@@ -951,7 +1076,7 @@ function createMinimalSchema25() {
             notificationPositionModified: false
         },
         data: {
-            cycles: {
+            cycles: salvagedCycles || {
                 "Default Cycle": {
                     id: "default_cycle",
                     title: "Default Cycle",
@@ -965,7 +1090,7 @@ function createMinimalSchema25() {
             }
         },
         appState: {
-            activeCycleId: "Default Cycle"
+            activeCycleId: salvagedCycles ? salvagedActiveCycleId : "Default Cycle"
         },
         userProgress: {
             rewardMilestones: []

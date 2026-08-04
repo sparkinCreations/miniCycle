@@ -805,6 +805,21 @@ export function markAllTasksCompleteImpl(cycleData, taskList, resetTasksFn, deps
 
     const checkMiniCycle = deps.checkMiniCycle || _deps.checkMiniCycle;
 
+    // Persist completion to state, not just the DOM. Programmatic .checked
+    // writes fire no change event, so without this the completions existed only
+    // on screen until the reset ran — a reload (or an aborted reset) in that
+    // window dropped them, and state readers (stats, Clear Completed, the new
+    // auto-reset completion guard) disagreed with the visible checkboxes.
+    const AppState = deps.AppState || _deps.AppState;
+    if (AppState?.isReady?.()) {
+        AppState.update(state => {
+            const cycle = state.data?.cycles?.[state.appState?.activeCycleId];
+            if (cycle?.tasks) {
+                cycle.tasks.forEach(task => { task.completed = true; });
+            }
+        });
+    }
+
     taskList.querySelectorAll(".task input").forEach(task => task.checked = true);
 
     if (typeof checkMiniCycle === 'function') {
