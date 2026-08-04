@@ -70,6 +70,11 @@ export function attemptJsonSalvage(jsonString) {
                     else if (ch === '}' || ch === ']') stack.pop();
                 }
                 let fixed = str;
+                // Truncation ON a backslash: `escaped` is still true, so the
+                // closing quote appended below would itself be escaped and the
+                // string would stay unterminated — strip the dangling backslash
+                // first. (escaped can only be true while inString.)
+                if (escaped) fixed = fixed.slice(0, -1);
                 if (inString) fixed += '"';
                 // Truncation can leave a dangling `"key":` or trailing comma
                 // that no amount of closers makes parseable — strip it.

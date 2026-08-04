@@ -260,7 +260,9 @@ if ('serviceWorker' in navigator) {
     // Check for updates every 60 seconds
     setInterval(() => {
       if (!document.hidden && registration) {
-        console.log('⏰ Periodic update check...');
+        // debug, not log: this fires every 60s for the life of every session —
+        // the console.warn on failure below is the line that carries signal.
+        console.debug('⏰ Periodic update check...');
         registration.update().catch(err => {
           console.warn('Periodic update check failed:', err);
         });
