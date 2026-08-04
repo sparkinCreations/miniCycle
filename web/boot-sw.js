@@ -115,13 +115,16 @@ if ('serviceWorker' in navigator) {
         console.warn(`🔄 VERSION MISMATCH: ${reason}`);
 
         // Loop guard: if we already healed for this server version THIS session
-        // and the build is STILL stale, stop reloading (the cache can't refresh
-        // right now — e.g. flaky network). sessionStorage clears on a full app
+        // and a mismatch STILL persists, stop reloading (the cache can't refresh
+        // right now — e.g. flaky network, or a CDN edge serving inconsistent
+        // version.js). Covers BOTH mismatch kinds: gating on buildStale alone
+        // let a versionJsStale-only mismatch re-heal (full cache delete + SW
+        // unregister) on every check. sessionStorage clears on a full app
         // close, so a fresh launch retries. Keyed on server version so a newer
         // deploy still triggers a heal.
         try {
-          if (buildStale && sessionStorage.getItem('__miniCycle_buildHeal') === serverVersion) {
-            console.warn('⚠️ Build still stale after a heal attempt this session — not reloading again');
+          if (sessionStorage.getItem('__miniCycle_buildHeal') === serverVersion) {
+            console.warn('⚠️ Version still mismatched after a heal attempt this session — not reloading again');
             return;
           }
           sessionStorage.setItem('__miniCycle_buildHeal', serverVersion);

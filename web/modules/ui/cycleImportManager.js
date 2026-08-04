@@ -65,6 +65,12 @@ const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10MB limit
 const MAX_TASK_COUNT = LIMITS.TASKS_PER_CYCLE; // Use centralized limit (150)
 const MAX_TASK_TEXT_LENGTH = LIMITS.TASK_CHARACTER;
 const MAX_CYCLE_NAME_LENGTH = LIMITS.CYCLE_NAME_CHARACTER;
+// Imported task ids land in DATA_SELECTORS.taskById() selectors and key the
+// recurringTemplates map, so accept them only in this safe shape; anything
+// else (quotes, brackets, oversized) is regenerated. Kept permissive enough
+// that every id the app itself generates (task-<ts>-..., legacy repairs)
+// round-trips, so the template-metadata merge below still matches by id.
+const SAFE_IMPORTED_TASK_ID = /^[A-Za-z0-9._:-]{1,64}$/;
 
 // ============================================================================
 // FALLBACK IMPORT-TEXT NORMALIZATION (when DataValidator not available)
@@ -546,7 +552,9 @@ export async function processImportedData(fileContent) {
         const sanitizedText = normalizeImportedText(task.text || "", MAX_TASK_TEXT_LENGTH);
 
         const taskData = {
-            id: task.id || `task-${importTimestamp}-${index}`,
+            id: (typeof task.id === 'string' && SAFE_IMPORTED_TASK_ID.test(task.id))
+                ? task.id
+                : `task-${importTimestamp}-${index}`,
             text: sanitizedText,
             completed: task.completed || false,
             dueDate: task.dueDate || null,

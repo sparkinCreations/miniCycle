@@ -1620,9 +1620,12 @@ export const DOM_SELECTORS = Object.freeze({
  * @constant {Object}
  */
 export const DATA_SELECTORS = Object.freeze({
-    taskById: (id) => `.task[data-task-id="${id}"]`,
-    recurringTaskById: (id) => `.recurring-task-item[data-task-id="${id}"]`,
-    elementByTaskId: (id) => `[data-task-id="${id}"]`,
+    // CSS.escape like cycleByKey below: task ids can originate from imported
+    // .mcyc files and legacy-data repairs, and an unescaped quote or bracket
+    // in an id turns querySelector into a thrown DOMException at every call site.
+    taskById: (id) => `.task[data-task-id="${CSS.escape(id)}"]`,
+    recurringTaskById: (id) => `.recurring-task-item[data-task-id="${CSS.escape(id)}"]`,
+    elementByTaskId: (id) => `[data-task-id="${CSS.escape(id)}"]`,
     TASK_ID_ELEMENT: '[data-task-id]',
     menuSectionByName: (name) => `.menu-section[data-section="${name}"]`,
     settingsSectionByName: (name) => `.settings-section[data-section="${name}"]`,
