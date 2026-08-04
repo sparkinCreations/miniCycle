@@ -31,9 +31,9 @@
 // §1 VERSION IDENTITY (update-version.sh rewrites the three vars below — keep
 //    their exact `var NAME = …` shapes) + the build-injected module map.
 // ═══════════════════════════════════════════════════════════════════════════
-var APP_VERSION = '2.355';
-var CACHE_VERSION = 'v1198';
-var CACHE_VERSION_NUMBER = 1198; // Numeric version matching version.js (for synthetic fallback)
+var APP_VERSION = '2.356';
+var CACHE_VERSION = 'v1199';
+var CACHE_VERSION_NUMBER = 1199; // Numeric version matching version.js (for synthetic fallback)
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -530,8 +530,8 @@ function fromScope(path) {
 // iOS can reopen a backgrounded PWA OFFLINE while navigator.onLine still
 // returns true ("the lie"). Without protection, every network-first module
 // would wait out its timeout — the documented boot death spiral. Instead the
-// FIRST failed app-code fetch trips this flag and subsequent un-versioned
-// module requests serve straight from cache: at most ONE file pays the
+// FIRST failed app-code fetch trips this flag and subsequent §7b app-code
+// requests serve straight from cache: at most ONE file pays the
 // timeout. Re-armed on any successful network response and at the start of
 // every navigation (a fresh page load is a fresh chance to reach the network).
 var _appCodeNetworkDown = false;
@@ -961,8 +961,9 @@ self.addEventListener('fetch', function (event) {
     //         what remains is version.js and DORMANT CLIENTS — devices waking
     //         up with months-old ?v= requests get served fresh code here so
     //         the page-side heal can converge them. Low traffic, high value.
-    // iOS guard: un-versioned module fetches ride the _appCodeNetworkDown
-    // breaker (§6) so an offline "online" device pays ONE timeout, not 100.
+    // iOS guard: ALL §7b fetches (un-versioned modules AND ?v= mismatches)
+    // ride the _appCodeNetworkDown breaker (§6) so an offline "online"
+    // device pays ONE timeout, not 100.
     // CSS @imports carry ?v= in dev, so a deploy bumps them into this path too.
     // ═══════════════════════════════════════════════════════════════════════
     var needsNetworkFirst = versionMismatch || staticImportWithoutVersion;
@@ -981,8 +982,11 @@ self.addEventListener('fetch', function (event) {
       // Serve from cache with no network attempt when the device is honestly
       // offline, OR when the app-code circuit breaker has tripped (network is
       // down even though navigator.onLine may be lying) — either way the network
-      // would only burn the timeout.
-      if (!self.navigator.onLine || (_appCodeNetworkDown && staticImportWithoutVersion)) {
+      // would only burn the timeout. The breaker covers BOTH §7b populations:
+      // scoping it to un-versioned module fetches left version-mismatched
+      // requests (dormant pre-hash clients after a deploy) paying the 3s
+      // timeout per file on an offline-but-"online" iOS device.
+      if (!self.navigator.onLine || _appCodeNetworkDown) {
         event.respondWith(
           caches.match(cacheRequest).then(function(cached) {
             if (cached) {
@@ -1056,7 +1060,7 @@ self.addEventListener('fetch', function (event) {
             return res;
           })
           .catch(function (error) {
-            // Trip the breaker so the remaining un-versioned modules skip the
+            // Trip the breaker so the remaining §7b app-code fetches skip the
             // network attempt and serve straight from cache (one file pays the
             // timeout, not all of them).
             _appCodeNetworkDown = true;

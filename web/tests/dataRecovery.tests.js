@@ -70,8 +70,36 @@ export async function runDataRecoveryTests(resultsDiv) {
         const truncated = '{"data":{"cycles":{"c1":{"tasks":[]}';
         const result = attemptJsonSalvage(truncated);
         assert(result !== null, 'should repair truncation');
-        assert(result.strategy === 'close-brackets', `got ${result?.strategy}`);
+        // The string-aware strategy runs first and handles this case; the
+        // naive 'close-brackets' remains as last resort.
+        assert(result.strategy === 'close-string-and-brackets', `got ${result?.strategy}`);
         assert(Array.isArray(result.data.data.cycles.c1.tasks), 'tasks array recovered');
+    });
+
+    await test('attemptJsonSalvage: repairs truncation MID-STRING (the common case)', () => {
+        const truncated = '{"data":{"cycles":{"c1":{"tasks":[{"id":"t1","text":"buy mi';
+        const result = attemptJsonSalvage(truncated);
+        assert(result !== null, 'mid-string truncation should salvage');
+        assert(result.strategy === 'close-string-and-brackets', `got ${result?.strategy}`);
+        const task = result.data.data.cycles.c1.tasks[0];
+        assert(task && task.id === 't1', 'task id recovered');
+        assert(task.text === 'buy mi', `partial text preserved, got ${task?.text}`);
+    });
+
+    await test('attemptJsonSalvage: braces inside task text do not skew the repair', () => {
+        const truncated = '{"data":{"cycles":{"c1":{"tasks":[{"id":"t1","text":"step {1} of {2}"}]}';
+        const result = attemptJsonSalvage(truncated);
+        assert(result !== null, 'should salvage despite braces in string');
+        const task = result.data.data.cycles.c1.tasks[0];
+        assert(task && task.text === 'step {1} of {2}', `in-string braces preserved, got ${task?.text}`);
+    });
+
+    await test('attemptJsonSalvage: strips a dangling partial member before closing', () => {
+        const truncated = '{"data":{"cycles":{"c1":{"tasks":[],"cycleCount":';
+        const result = attemptJsonSalvage(truncated);
+        assert(result !== null, 'dangling key truncation should salvage');
+        assert(Array.isArray(result.data.data.cycles.c1.tasks), 'tasks survive');
+        assert(!('cycleCount' in result.data.data.cycles.c1), 'partial member dropped, not corrupted');
     });
 
     await test('attemptJsonSalvage: returns null for unrecoverable garbage', () => {

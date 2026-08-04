@@ -65,6 +65,26 @@ const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10MB limit
 const MAX_TASK_COUNT = LIMITS.TASKS_PER_CYCLE; // Use centralized limit (150)
 const MAX_TASK_TEXT_LENGTH = LIMITS.TASK_CHARACTER;
 const MAX_CYCLE_NAME_LENGTH = LIMITS.CYCLE_NAME_CHARACTER;
+// Imported task ids land in DATA_SELECTORS.taskById() selectors and key the
+// recurringTemplates map, so accept them only in this safe shape; anything
+// else (quotes, brackets, oversized) is regenerated. Kept permissive enough
+// that every id the app itself generates (task-<ts>-..., legacy repairs)
+// round-trips, so the template-metadata merge below still matches by id.
+const SAFE_IMPORTED_TASK_ID = /^[A-Za-z0-9._:-]{1,64}$/;
+
+/**
+ * Validate an imported date string: ISO YYYY-MM-DD with optional time, and a
+ * real calendar date. Mirrors dataSanitizer's validateDateString (private
+ * there) — an unvalidated dueDate renders "Invalid Date" in the task list.
+ * @param {*} dateValue
+ * @returns {string|null}
+ */
+function validateImportedDate(dateValue) {
+    if (typeof dateValue !== 'string') return null;
+    // eslint-disable-next-line security/detect-unsafe-regex -- anchored ISO 8601 pattern, input is length-limited by file caps
+    if (!/^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2}(\.\d{1,3})?)?([+-]\d{2}:?\d{2}|Z)?)?$/.test(dateValue)) return null;
+    return Number.isNaN(new Date(dateValue).getTime()) ? null : dateValue;
+}
 
 // ============================================================================
 // FALLBACK IMPORT-TEXT NORMALIZATION (when DataValidator not available)
@@ -545,23 +565,36 @@ export async function processImportedData(fileContent) {
         // Security: Always sanitize task text, with or without DataValidator
         const sanitizedText = normalizeImportedText(task.text || "", MAX_TASK_TEXT_LENGTH);
 
+        // Strict field validation (matches the C-14 style used for newer fields):
+        // `|| false` preserved truthy junk ("yes" stayed a string), dueDate went
+        // unvalidated (rendering "Invalid Date"), and priorityColor passed
+        // through unnormalized in this path while history entries validate it.
+        const highPriority = task.highPriority === true;
+        const validColor = (typeof task.priorityColor === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(task.priorityColor))
+            ? task.priorityColor : null;
         const taskData = {
-            id: task.id || `task-${importTimestamp}-${index}`,
+            id: (typeof task.id === 'string' && SAFE_IMPORTED_TASK_ID.test(task.id))
+                ? task.id
+                : `task-${importTimestamp}-${index}`,
             text: sanitizedText,
-            completed: task.completed || false,
-            dueDate: task.dueDate || null,
-            highPriority: task.highPriority || false,
-            priorityColor: task.priorityColor || (task.highPriority ? COLORS.PRIORITY_DEFAULT : null),
-            remindersEnabled: task.remindersEnabled || false,
-            recurring: task.recurring || false,
+            completed: task.completed === true,
+            dueDate: validateImportedDate(task.dueDate),
+            highPriority,
+            priorityColor: validColor || (highPriority ? COLORS.PRIORITY_DEFAULT : null),
+            remindersEnabled: task.remindersEnabled === true,
+            recurring: task.recurring === true,
             recurringSettings: safeSettings,
-            // Default deleteWhenComplete to true if not explicitly set
+            // Default deleteWhenComplete to true unless explicitly false —
             // Recurring tasks: always delete (cycle: true, todo: true)
             // Non-recurring tasks: respect mode (cycle: false, todo: true)
-            deleteWhenComplete: task.deleteWhenComplete ?? true,
-            deleteWhenCompleteSettings: task.deleteWhenCompleteSettings ||
-                (task.recurring ? { cycle: true, todo: true } : { cycle: false, todo: true }),
-            schemaVersion: task.schemaVersion || 2
+            deleteWhenComplete: task.deleteWhenComplete !== false,
+            deleteWhenCompleteSettings:
+                (task.deleteWhenCompleteSettings &&
+                 typeof task.deleteWhenCompleteSettings.cycle === 'boolean' &&
+                 typeof task.deleteWhenCompleteSettings.todo === 'boolean')
+                    ? task.deleteWhenCompleteSettings
+                    : (task.recurring === true ? { cycle: true, todo: true } : { cycle: false, todo: true }),
+            schemaVersion: 2
         };
 
         // Validate task structure (DataValidator provides additional validation if available)
@@ -738,7 +771,7 @@ export async function processImportedData(fileContent) {
                 .slice(0, maxEvents)
                 .map(e => ({
                     type: normalizeImportedText(e.type, 50),
-                    timestamp: typeof e.timestamp === 'number' ? e.timestamp : Date.now(),
+                    timestamp: Number.isFinite(e.timestamp) ? e.timestamp : Date.now(),
                     details: sanitizeHistoryDetails(e.details)
                 }))
             : [];

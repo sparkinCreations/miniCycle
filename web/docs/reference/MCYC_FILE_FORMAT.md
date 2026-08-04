@@ -241,7 +241,7 @@ When using the complete format, each cycle is stored in `data.cycles`:
 
 | Property | Type | Required | Description |
 |----------|------|----------|-------------|
-| `id` | string | **Yes** | Unique cycle ID (matches key in `cycles` object) |
+| `id` | string | **Yes** | Internal cycle ID. **Not** the `cycles` map key — cycles are keyed by **title** (creation, rename, duplication, and import all write `cycles[title]`), and this field is currently not read by the app |
 | `title` | string | **Yes** | Display name |
 | `tasks` | array | **Yes** | Array of task objects |
 | `autoReset` | boolean | No | Auto-reset behavior |
@@ -786,7 +786,7 @@ When importing `.mcyc` files, miniCycle applies several layers of validation and
 - **JSON validation:** Files that are not valid JSON are rejected with a clear error message
 - **File size limit:** Maximum 10 MB per file
 - **Task count limit:** Excess tasks beyond 150 are truncated (not rejected)
-- **Text sanitization:** All task text and cycle names are stripped of HTML and enforced to length limits
+- **Text sanitization:** All task text and cycle names are trimmed and enforced to length limits at import. HTML is **not** stripped or escaped here — XSS safety lives at the render sinks (`textContent` for user data; `escapeHtml()` before any innerHTML interpolation), which escape imported text wherever it is displayed
 - **Field allowlisting:** `taskOptionButtons` and `reminders` are sanitized to only allow known keys with expected types — unknown fields are stripped
 - **Storage quota check:** Import is blocked if insufficient localStorage space is available
 - **Recurring template security:** Only safe metadata fields (`id`, `createdAt`, `updatedAt`) are kept from imported templates; all text comes from the sanitized source
