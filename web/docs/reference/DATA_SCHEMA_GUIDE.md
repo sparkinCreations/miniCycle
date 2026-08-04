@@ -35,7 +35,12 @@
 
     data: {
         cycles: {
-            "cycle-abc123": {
+            // ⚠️ Cycles are keyed by TITLE, not by id — creation, rename,
+            // duplication, and import all write `cycles[title]`. Titles are
+            // therefore unique (getUniqueCycleName), and renaming rekeys the
+            // map entry. The `id` field is internal metadata and does NOT
+            // match the key (no code currently reads it).
+            "Morning Routine": {
                 id: "cycle-abc123",
                 name: "Morning Routine",
                 title: "Morning Routine",    // Legacy field
@@ -102,7 +107,9 @@
     },
 
     appState: {
-        activeCycleId: "cycle-abc123",
+        activeCycleId: "Morning Routine",    // ⚠️ Holds the active cycle's TITLE
+                                             // (the cycles-map key), not the id
+                                             // field — the name is a legacy artifact.
         overdueTaskStates: {}                // {[taskId]: boolean}
         // Mode is NOT stored here — derived from the cycle's autoReset/deleteCheckedTasks.
     },
