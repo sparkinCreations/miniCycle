@@ -343,7 +343,7 @@ export const MODULE_MANIFESTS = {
         path: '../routine/modeManager.js',
         phase: PHASES.CYCLE,
         requires: ['appInit', 'AppState', 'showNotification', 'switchMiniCycle', 'createNewMiniCycle'],
-        optionalDeps: ['checkCompleteAllButton', 'checkMiniCycle', 'createTaskButtonContainer', 'helpWindowManager', 'recurringCore', 'setupDueDateButtonInteraction', 'showTaskView', 'statsPanelManager', 'syncAllTasksWithMode'],
+        optionalDeps: ['checkCompleteAllButton', 'checkMiniCycle', 'captureStateSnapshot', 'isPerformingUndoRedo', 'createTaskButtonContainer', 'helpWindowManager', 'recurringCore', 'setupDueDateButtonInteraction', 'showTaskView', 'statsPanelManager', 'syncAllTasksWithMode'],
         provides: ['setupModeSelector', 'refreshTaskButtonsForModeChange', 'updateCycleModeDescription', 'syncModeFromToggles'],
         api: 'cycle',
         provideInstance: 'modeManager',

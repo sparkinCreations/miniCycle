@@ -543,13 +543,15 @@ export async function resetTasksImpl(deps = {}) {
 
         const { activeCycle, cycles } = context;
 
-        // Step 2: Capture undo snapshot BEFORE modifications
-        if (typeof mergedDeps.captureStateSnapshot === 'function' && !mergedDeps.isPerformingUndoRedo()) {
-            const currentState = mergedDeps.AppState?.get?.();
-            if (currentState) {
-                mergedDeps.captureStateSnapshot(currentState);
-            }
-        }
+        // (Former Step 2 — pre-reset snapshot — removed in v2.362.) resetTasks
+        // is an EFFECT EXECUTOR, never a gesture origin: every caller reaches it
+        // from a gesture that already captured at its own boundary — the
+        // checkbox handler (taskCompletion), Complete All (executeCompleteAll),
+        // or a mode switch (modeManager). Capturing here as well double-counted
+        // the checkbox flow (restoring the all-completed intermediate on first
+        // Undo); and once FIX #8 raised the global isResetting flag, this
+        // capture was dead code anyway. The invariant is now uniform:
+        // gestures capture, executors don't.
 
         // Step 3: Animate progress bar fill (delegated to cycleCompletion)
         if (typeof mergedDeps.animateProgressBarFill === 'function') {
@@ -914,7 +916,11 @@ export async function handleCompleteAllTasksImpl(resetTasksFn, deps = {}) {
             updateProgressBar: deps.updateProgressBar || _deps.updateProgressBar,
             updateStatsPanel: deps.updateStatsPanel || _deps.updateStatsPanel,
             checkCompleteAllButton: deps.checkCompleteAllButton || _deps.checkCompleteAllButton,
-            showClearAnimation: deps.showClearAnimation || _deps.showClearAnimation
+            showClearAnimation: deps.showClearAnimation || _deps.showClearAnimation,
+            // Forward so executeCompleteAll can take the gesture-boundary snapshot
+            captureStateSnapshot: deps.captureStateSnapshot || _deps.captureStateSnapshot,
+            isPerformingUndoRedo: deps.isPerformingUndoRedo || _deps.isPerformingUndoRedo,
+            AppGlobalState: deps.AppGlobalState || _deps.AppGlobalState
         };
 
         // Step 1: Get context
@@ -977,10 +983,24 @@ export async function handleCompleteAllTasksImpl(resetTasksFn, deps = {}) {
  * @returns {Promise<void>}
  */
 async function executeCompleteAll(activeCycle, cycleData, taskList, resetTasksFn, deps) {
+    // Gesture-boundary undo snapshot (v2.362): Complete All and Clear Completed
+    // are user gestures, so they capture ONE snapshot at entry — here, before
+    // any mutation. Everything downstream (mark-all, the delete, the delayed
+    // reset) is an EFFECT of this gesture and must not capture (the reset
+    // executor no longer does — Step 2 was removed). Without this, both
+    // batch ops ran with ZERO snapshots: the isResetting guard blocked the
+    // reset's own capture, and neither impl captured, so Undo jumped past the
+    // whole batch into the user's previous unrelated action.
+    const captureStateSnapshot = deps.captureStateSnapshot || _deps.captureStateSnapshot;
+    const isPerformingUndoRedo = deps.isPerformingUndoRedo || _deps.isPerformingUndoRedo || (() => false);
+    if (typeof captureStateSnapshot === 'function' && !isPerformingUndoRedo()) {
+        const preBatchState = (deps.AppState || _deps.AppState)?.get?.();
+        if (preBatchState) captureStateSnapshot(preBatchState);
+    }
+
     // FIX #8's guard names BOTH batch operations — "(reset, complete all)" —
-    // but only the reset path ever raised the flag. Without this, Clear
-    // Completed (To-Do mode) stacked a snapshot per internal update. The
-    // delayed reset in cycle mode re-raises the flag itself when it fires.
+    // and now that the gesture snapshot is taken above, raising the flag keeps
+    // every downstream effect (including the delayed reset) out of undo history.
     setResettingFlag(true, deps);
     try {
         if (cycleData.deleteCheckedTasks) {

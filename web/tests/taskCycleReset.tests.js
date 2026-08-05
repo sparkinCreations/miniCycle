@@ -140,6 +140,105 @@ export async function runTaskCycleResetTests(resultsDiv) {
     });
 
     // ============================================
+    resultsDiv.innerHTML += '<h4 class="test-section">↩️ Undo snapshot at gesture boundary (v2.362)</h4>';
+
+    // Invariant: a batch gesture captures EXACTLY ONE snapshot, at its entry —
+    // never zero (Undo would jump past the batch) and never two (Undo would
+    // restore a mid-batch intermediate). The reset executor must NOT capture.
+    function makeCompleteAllHarness(deleteCheckedTasks) {
+        const taskList = document.createElement('ul');
+        ['A', 'B'].forEach(id => {
+            const li = document.createElement('li');
+            li.className = 'task';
+            li.dataset.taskId = id;
+            const cb = document.createElement('input');
+            cb.type = 'checkbox';
+            li.appendChild(cb);
+            taskList.appendChild(li);
+        });
+        document.body.appendChild(taskList);
+
+        const stateObj = {
+            appState: { activeCycleId: 'c1' },
+            metadata: { lastModified: 0 },
+            data: { cycles: { c1: {
+                deleteCheckedTasks,
+                autoReset: !deleteCheckedTasks,
+                tasks: [
+                    { id: 'A', text: 'A', completed: true, deleteWhenComplete: true },
+                    { id: 'B', text: 'B', completed: true, deleteWhenComplete: true }
+                ],
+                recurringTemplates: {}
+            } } },
+            userProgress: {}
+        };
+        let snapshotCount = 0;
+        const deps = {
+            AppState: {
+                isReady: () => true,
+                get: () => stateObj,
+                update: async (producer) => { producer(stateObj); return stateObj; }
+            },
+            captureStateSnapshot: () => { snapshotCount++; },
+            isPerformingUndoRedo: () => false,
+            querySelector: (sel) => sel.includes('task-list') || sel.includes('taskList') ? taskList : taskList.querySelector(sel),
+            checkMiniCycle: () => {}
+        };
+        return { taskList, stateObj, deps, snapshots: () => snapshotCount };
+    }
+
+    await test('Complete All (To-Do / Clear Completed) captures exactly one snapshot', async () => {
+        const h = makeCompleteAllHarness(true);
+        try {
+            await mod.handleCompleteAllTasksImpl(() => {}, h.deps);
+            if (h.snapshots() !== 1) throw new Error(`expected exactly 1 snapshot, got ${h.snapshots()}`);
+        } finally {
+            mod.clearAllTimeouts();
+            h.taskList.remove();
+        }
+    });
+
+    await test('Complete All (cycle mode) captures exactly one snapshot — not zero, not per-effect', async () => {
+        const h = makeCompleteAllHarness(false);
+        try {
+            await mod.handleCompleteAllTasksImpl(() => {}, h.deps);
+            if (h.snapshots() !== 1) throw new Error(`expected exactly 1 snapshot, got ${h.snapshots()}`);
+        } finally {
+            mod.clearAllTimeouts();
+            h.taskList.remove();
+        }
+    });
+
+    await test('resetTasksImpl (effect executor) captures NO snapshot of its own', async () => {
+        const taskList = document.createElement('ul');
+        document.body.appendChild(taskList);
+        const stateObj = {
+            appState: { activeCycleId: 'c1' },
+            metadata: { lastModified: 0 },
+            data: { cycles: { c1: { autoReset: true, tasks: [{ id: 'A', completed: true }], recurringTemplates: {} } } },
+            settings: {}, userProgress: {}
+        };
+        let snapshotCount = 0;
+        const deps = {
+            AppState: { isReady: () => true, get: () => stateObj, update: async (p) => { p(stateObj); return stateObj; } },
+            captureStateSnapshot: () => { snapshotCount++; },
+            isPerformingUndoRedo: () => false,
+            querySelector: () => taskList,
+            querySelectorAll: () => [],
+            checkMiniCycle: () => {},
+            incrementCycleCount: () => {}
+        };
+        try {
+            await mod.resetTasksImpl(deps);
+            // The executor delegates capture to the gesture that called it.
+            if (snapshotCount !== 0) throw new Error(`reset executor must not capture; got ${snapshotCount}`);
+        } finally {
+            mod.clearAllTimeouts();
+            taskList.remove();
+        }
+    });
+
+    // ============================================
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;
     if (passed.count === total.count) {
