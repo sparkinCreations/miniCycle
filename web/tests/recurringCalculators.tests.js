@@ -194,6 +194,46 @@ export async function runRecurringCalculatorsTests(resultsDiv) {
     });
 
     // ============================================
+    resultsDiv.innerHTML += '<h4 class="test-section">📅 Sparse-month/leap-year scans (v2.359 regressions)</h4>';
+
+    await test('monthly on the 31st skips months without a 31st (Jan 31 → Mar 31, not Feb 1)', () => {
+        const settings = { frequency: 'monthly', monthly: { useSpecificDays: true, days: [31] } };
+        const from = new Date(2026, 0, 31, 12, 0); // after Jan 31's occurrence
+        const next = new Date(calculateNextOccurrence(settings, from.getTime()));
+        if (next.getMonth() !== 2 || next.getDate() !== 31) {
+            throw new Error(`expected Mar 31 2026, got ${next.toDateString()}`);
+        }
+    });
+
+    await test('monthly on the 30th skips February (Jan 30 → Mar 30)', () => {
+        const settings = { frequency: 'monthly', monthly: { useSpecificDays: true, days: [30] } };
+        const from = new Date(2026, 0, 30, 12, 0);
+        const next = new Date(calculateNextOccurrence(settings, from.getTime()));
+        if (next.getMonth() !== 2 || next.getDate() !== 30) {
+            throw new Error(`expected Mar 30 2026, got ${next.toDateString()}`);
+        }
+    });
+
+    await test('yearly Feb 29 lands on the next leap year (2026 → Feb 29 2028)', () => {
+        const settings = { frequency: 'yearly', yearly: { months: [2], useSpecificDays: true, applyDaysToAll: true, daysByMonth: { all: [29] } } };
+        const from = new Date(2026, 2, 15); // March 2026 — Feb already passed
+        const next = new Date(calculateNextOccurrence(settings, from.getTime()));
+        if (next.getFullYear() !== 2028 || next.getMonth() !== 1 || next.getDate() !== 29) {
+            throw new Error(`expected Feb 29 2028, got ${next.toDateString()}`);
+        }
+    });
+
+    await test('yearly scan checks ALL target months, not just the first (Feb 29 + Jun 10 → Jun 10 next year)', () => {
+        const settings = { frequency: 'yearly', yearly: { months: [2, 6], useSpecificDays: true, applyDaysToAll: false, daysByMonth: { 2: [29], 6: [10] } } };
+        const from = new Date(2026, 6, 1); // July 2026 — both months passed
+        const next = new Date(calculateNextOccurrence(settings, from.getTime()));
+        // 2027: Feb 29 invalid, but Jun 10 exists — must not skip to 2028
+        if (next.getFullYear() !== 2027 || next.getMonth() !== 5 || next.getDate() !== 10) {
+            throw new Error(`expected Jun 10 2027, got ${next.toDateString()}`);
+        }
+    });
+
+    // ============================================
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;
     if (passed.count === total.count) {

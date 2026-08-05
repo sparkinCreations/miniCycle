@@ -7,7 +7,8 @@
  *   - includeHistory flag controls history/clearedTasks presence
  *   - priorityColor and autoUncheckDaily survive the trip (the two fields
  *     the old copies dropped)
- *   - recurring defaultRecurTime fallback
+ *   - retired defaultRecurTime is stripped from exports (even from legacy
+ *     stored settings that still carry it)
  *   - live cycle data is never mutated
  *   - defaults for missing fields, id generation fallback
  */
@@ -83,11 +84,16 @@ export async function runMcycPayloadTests(resultsDiv) {
         // made every export/import round trip asymmetric on a dead field.
         const cycle = makeCycle();
         cycle.tasks[0].recurring = true;
-        cycle.tasks[0].recurringSettings = { frequency: 'daily' };
+        // Legacy fixture: stored settings from pre-2.358 versions CARRY the
+        // field — the builder must actively strip it, not merely stop writing
+        // it (a clone passthrough alone keeps it circulating in .mcyc files).
+        cycle.tasks[0].recurringSettings = { frequency: 'daily', defaultRecurTime: '2025-01-01T09:00:00.000Z' };
         const payload = buildMcycPayload('my-cycle', cycle, { includeHistory: false });
         const settings = payload.tasks[0].recurringSettings;
-        if ('defaultRecurTime' in settings) throw new Error('retired field must not be written into exports');
+        if ('defaultRecurTime' in settings) throw new Error('retired field must be stripped even from legacy stored settings');
         if (settings.frequency !== 'daily') throw new Error('existing settings should be preserved');
+        // The strip must act on the clone only — live stored data is untouched
+        if (!('defaultRecurTime' in cycle.tasks[0].recurringSettings)) throw new Error('builder must not mutate live cycle data');
     });
 
     await test('live cycle data is not mutated by the build', () => {

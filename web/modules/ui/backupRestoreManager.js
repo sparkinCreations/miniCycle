@@ -11,6 +11,10 @@
 import { createDIModule, required, optional } from '../core/diBase.js';
 import { UI_TIMEOUTS, DOM_IDS, DOM_CLASSES, STORAGE_KEYS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+// Pure, DI-free module (same known-acceptable dual-instance pattern as
+// appState's static import of it) — shared payload validation with the
+// testing modal's IndexedDB restore.
+import { validateSchema25PayloadString } from '../utils/dataRecovery.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -489,24 +493,13 @@ async function processRestoreData(fileContent) {
                 // Handle Schema 2.5 backup
                 if (backupData.schemaVersion === "2.5" && backupData.miniCycleData) {
 
-                    // Validate miniCycleData is valid JSON AND structurally Schema 2.5
-                    // before writing. Parse-only validation let any JSON through —
-                    // e.g. a file without a metadata block boots "successfully" and
-                    // then every AppState.update() fails. Reject the file up front:
-                    // the UX must be "file rejected", not "restored, then recovery".
-                    try {
-                        const parsedRestore = JSON.parse(backupData.miniCycleData);
-                        const structurallyValid = parsedRestore &&
-                            parsedRestore.schemaVersion === "2.5" &&
-                            parsedRestore.data &&
-                            typeof parsedRestore.data.cycles === 'object' &&
-                            parsedRestore.appState &&
-                            typeof parsedRestore.appState === 'object';
-                        if (!structurallyValid) {
-                            throw new Error('not a Schema 2.5 state object');
-                        }
-                    } catch (dataErr) {
-                        console.error('miniCycleData failed validation:', dataErr.message);
+                    // Structural validation (shared with the testing modal's IDB
+                    // restore) — includes the `metadata` check the earlier inline
+                    // version cited as motivation but didn't actually test. Reject
+                    // the file up front: "file rejected", not "restored, then
+                    // recovery mode".
+                    if (!validateSchema25PayloadString(backupData.miniCycleData)) {
+                        console.error('miniCycleData failed structural validation');
                         _deps.showNotification?.(getLabel('notify.backupCorruptData'), "error", UI_TIMEOUTS.NOTIFICATION_EXTENDED);
                         resolve();
                         return;

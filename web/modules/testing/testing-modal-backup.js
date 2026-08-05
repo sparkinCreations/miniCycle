@@ -16,6 +16,9 @@ import {
 } from './testing-modal-core.js';
 import { DOM_SELECTORS, DOM_CLASSES, STORAGE_KEYS, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+// Pure, DI-free — shared with the production file-restore path so the testing
+// modal's IDB restore applies the SAME structural validation before writing.
+import { validateSchema25PayloadString } from '../utils/dataRecovery.js';
 
 const LITE_STORAGE_KEYS = Object.freeze([
     STORAGE_KEYS.LITE_DATA,
@@ -448,6 +451,12 @@ export async function restoreFromBackup() {
                         const isSchema25 = restoredData.schemaVersion === '2.5' || restoredData.schemaVersion === 2.5;
 
                         if (isPortableSchema25) {
+                            // Same structural gate as the production file-restore
+                            // path — a version-string match alone let ANY payload
+                            // reach localStorage.
+                            if (!validateSchema25PayloadString(restoredData.miniCycleData)) {
+                                throw new Error('Backup payload failed Schema 2.5 structural validation — not restored');
+                            }
                             localStorage.setItem(STORAGE_KEYS.DATA, restoredData.miniCycleData);
                             appendToTestResults(`Restored Schema 2.5 data to localStorage\n`);
                             const liteKeysRestored = restoreLiteStorageSnapshot(deps, restoredData.liteStorage);

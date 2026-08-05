@@ -304,45 +304,41 @@ export function calculateNextMonthly(monthlySettings, timeSettings, from) {
             }
         }
 
-        // No valid date found this month - try next month
-        let nextMonth = currentMonth + 1;
-        let nextYear = currentYear;
+        // No valid date this month — scan forward for the FIRST month that
+        // actually contains one of the target days (bounded at 24; any real
+        // day 1–31 matches within 12 months). The old code checked exactly ONE
+        // month ahead and, when that month lacked the day, fired on the 1st of
+        // that month instead — "monthly on the 31st" from Jan 31 fired Feb 1.
+        for (let offset = 1; offset <= 24; offset++) {
+            // Date constructor normalizes month overflow, handling year rollover
+            const scanDate = new Date(currentYear, currentMonth + offset, 1);
+            const scanYear = scanDate.getFullYear();
+            const scanMonth = scanDate.getMonth();
 
-        if (nextMonth > 11) {
-            nextMonth = 0;
-            nextYear++;
-        }
+            const candidates = [];
+            for (const day of targetDays) {
+                if (getDateUtils().isValidDate(scanYear, scanMonth, day)) {
+                    candidates.push(new Date(scanYear, scanMonth, day));
+                }
+            }
+            if (includeLastDay) {
+                const lastDay = getDateUtils().getDaysInMonth(scanMonth, scanYear);
+                if (!candidates.some(d => d.getDate() === lastDay)) {
+                    candidates.push(new Date(scanYear, scanMonth, lastDay));
+                }
+            }
 
-        const nextMonthDates = [];
-
-        // Add specific days for next month
-        for (const day of targetDays) {
-            if (getDateUtils().isValidDate(nextYear, nextMonth, day)) {
-                const testDate = new Date(nextYear, nextMonth, day);
-                nextMonthDates.push(testDate);
+            if (candidates.length > 0) {
+                candidates.sort((a, b) => a - b);
+                getDateUtils().applyTimeToDate(candidates[0], timeSettings);
+                return candidates[0].getTime();
             }
         }
 
-        // Add last day for next month if enabled
-        if (includeLastDay) {
-            const lastDay = getDateUtils().getDaysInMonth(nextMonth, nextYear);
-            const lastDayDate = new Date(nextYear, nextMonth, lastDay);
-            if (!nextMonthDates.some(d => d.getDate() === lastDay)) {
-                nextMonthDates.push(lastDayDate);
-            }
-        }
-
-        // Sort and return first date
-        nextMonthDates.sort((a, b) => a - b);
-
-        if (nextMonthDates.length > 0) {
-            const firstDate = nextMonthDates[0];
-            getDateUtils().applyTimeToDate(firstDate, timeSettings);
-            return firstDate.getTime();
-        }
-
-        // Fallback: first day of next month
-        const fallback = new Date(nextYear, nextMonth, 1);
+        // Unreachable for real day values (1–31 always exists within 12
+        // months); retained for out-of-range days so the function terminates
+        // with SOME schedule rather than throwing inside the spawn tick.
+        const fallback = new Date(currentYear, currentMonth + 1, 1);
         getDateUtils().applyTimeToDate(fallback, timeSettings);
         return fallback.getTime();
     }
@@ -414,32 +410,41 @@ export function calculateNextYearly(yearlySettings, timeSettings, from) {
         }
     }
 
-    // No occurrence found this year - try next year
-    const nextYear = currentYear + 1;
-    const firstMonth = sortedMonths[0];
-    const days = getDaysForMonth(firstMonth);
+    // No occurrence this year — scan forward year by year for the first year
+    // containing a valid occurrence, checking ALL target months in each year
+    // (bounded at 8 years: Feb 29 recurs on the leap cycle, and even across a
+    // skipped century leap year the widest gap is 8). The old code checked only
+    // the FIRST target month of the single next year and, when the day didn't
+    // exist there (Feb 29 in a non-leap year), fell back to "1 year from now" —
+    // a date matching neither the requested month nor day.
+    for (let yearOffset = 1; yearOffset <= 8; yearOffset++) {
+        const scanYear = currentYear + yearOffset;
 
-    if (days.length === 0) {
-        // First day of first month next year
-        const nextDate = new Date(nextYear, firstMonth - 1, 1);
-        getDateUtils().applyTimeToDate(nextDate, timeSettings);
-        return nextDate.getTime();
-    } else {
-        // First valid day in first month next year
-        const sortedDays = [...days].sort((a, b) => a - b);
+        for (const month of sortedMonths) {
+            const days = getDaysForMonth(month);
 
-        for (const day of sortedDays) {
-            if (getDateUtils().isValidDate(nextYear, firstMonth - 1, day)) {
-                const nextDate = new Date(nextYear, firstMonth - 1, day);
-                getDateUtils().applyTimeToDate(nextDate, timeSettings);
-                return nextDate.getTime();
+            if (days.length === 0) {
+                // No specific days - first day of month
+                const testDate = new Date(scanYear, month - 1, 1);
+                getDateUtils().applyTimeToDate(testDate, timeSettings);
+                return testDate.getTime();
+            }
+
+            const sortedDays = [...days].sort((a, b) => a - b);
+            for (const day of sortedDays) {
+                if (getDateUtils().isValidDate(scanYear, month - 1, day)) {
+                    const testDate = new Date(scanYear, month - 1, day);
+                    getDateUtils().applyTimeToDate(testDate, timeSettings);
+                    return testDate.getTime();
+                }
             }
         }
     }
 
-    // Fallback: 1 year from now
+    // Unreachable for real month/day values; retained for garbage input so
+    // the function terminates with SOME schedule rather than throwing.
     const fallback = getDateUtils().cloneDate(from);
-    fallback.setFullYear(nextYear);
+    fallback.setFullYear(currentYear + 1);
     getDateUtils().applyTimeToDate(fallback, timeSettings);
     return fallback.getTime();
 }
