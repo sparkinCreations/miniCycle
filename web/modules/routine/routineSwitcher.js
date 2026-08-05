@@ -1317,11 +1317,8 @@ export class RoutineSwitcher {
                 repaired = true;
             }
 
-            // Default deleteWhenComplete settings
-            if (task.deleteWhenComplete === undefined) {
-                task.deleteWhenComplete = undefined;
-                // Don't mark as repaired - this is optional
-            }
+            // (deleteWhenComplete is optional — undefined is a valid state; a
+            // dead self-assignment lived here until v2.365.)
             if (!task.deleteWhenCompleteSettings || typeof task.deleteWhenCompleteSettings !== 'object') {
                 task.deleteWhenCompleteSettings = { cycle: false, todo: true };
                 repaired = true;

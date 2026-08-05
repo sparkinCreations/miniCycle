@@ -188,12 +188,29 @@ function sanitizeSnapshot(snapshot) {
 }
 
 /**
+ * Relabel snapshots for a renamed cycle. Snapshots embed the cycle identity
+ * twice — activeCycleId (the cycles-map key) and title (equal to the key in
+ * this app) — so a rename must rewrite BOTH in every snapshot of both stacks,
+ * or validateSnapshot discards the history and Undo restores the old title.
+ * @param {Array} snapshots - Snapshots to relabel
+ * @param {string} newCycleId - The new cycle id (= new title)
+ * @returns {Array} New array with relabeled snapshot copies
+ */
+function relabelSnapshotsForCycle(snapshots, newCycleId) {
+  return (snapshots || []).map(snap =>
+    (snap && typeof snap === 'object')
+      ? { ...snap, activeCycleId: newCycleId, title: newCycleId }
+      : snap
+  );
+}
+
+/**
  * Filter snapshots to only include those belonging to the specified cycle
  * @param {Array} snapshots - Array of snapshots to filter
  * @param {string} cycleId - The cycle ID to filter for
  * @returns {Array} Filtered array of valid snapshots
  */
-function filterValidSnapshots(snapshots, cycleId) {
+export function filterValidSnapshots(snapshots, cycleId) {
   if (!Array.isArray(snapshots)) return [];
   if (!cycleId) return [];
 
@@ -1624,17 +1641,28 @@ export async function onCycleRenamed(oldCycleId, newCycleId) {
     // Migrate in IndexedDB
     await renameUndoStackInIndexedDB(oldCycleId, newCycleId);
 
-    // Update in-memory tracking
+    // Update in-memory tracking AND relabel the live stacks — they hold the
+    // same stale-id snapshots the IDB migration rewrites; without this, a
+    // rename → Undo in the same session restores the old title into the new
+    // key, and the next persist re-saves stale ids over the migrated record.
     if (_deps.AppGlobalState.activeCycleIdForUndo === oldCycleId) {
       _deps.AppGlobalState.activeCycleIdForUndo = newCycleId;
+      _deps.AppGlobalState.activeUndoStack =
+        relabelSnapshotsForCycle(_deps.AppGlobalState.activeUndoStack, newCycleId);
+      _deps.AppGlobalState.activeRedoStack =
+        relabelSnapshotsForCycle(_deps.AppGlobalState.activeRedoStack, newCycleId);
     }
   } catch (e) {
     // ✅ FIX #5: Error boundary for cycle rename
     console.error('❌ Failed to rename undo stack:', e);
 
-    // Still update in-memory tracking even if IndexedDB fails
+    // Still update in-memory tracking (and relabel) even if IndexedDB fails
     if (_deps.AppGlobalState.activeCycleIdForUndo === oldCycleId) {
       _deps.AppGlobalState.activeCycleIdForUndo = newCycleId;
+      _deps.AppGlobalState.activeUndoStack =
+        relabelSnapshotsForCycle(_deps.AppGlobalState.activeUndoStack, newCycleId);
+      _deps.AppGlobalState.activeRedoStack =
+        relabelSnapshotsForCycle(_deps.AppGlobalState.activeRedoStack, newCycleId);
     }
 
     // Don't notify user - this is an internal operation
@@ -1682,8 +1710,11 @@ export async function initUndoSystemForApp() {
     dbReady.then(async () => {
       if (!cached) {
         const loaded = await loadUndoStackFromIndexedDB(activeCycleId);
-        _deps.AppGlobalState.activeUndoStack = loaded.undoStack || [];
-        _deps.AppGlobalState.activeRedoStack = loaded.redoStack || [];
+        // Filter like every other load path — this was the one unfiltered
+        // entry point, where stale-id snapshots (e.g. from a pre-fix rename)
+        // survived into the live stacks and could restore a stale title.
+        _deps.AppGlobalState.activeUndoStack = filterValidSnapshots(loaded.undoStack || [], activeCycleId);
+        _deps.AppGlobalState.activeRedoStack = filterValidSnapshots(loaded.redoStack || [], activeCycleId);
         updateUndoRedoButtons();
 
         // Update cache for next boot
@@ -2022,10 +2053,17 @@ export async function renameUndoStackInIndexedDB(oldCycleId, newCycleId) {
     const transaction = undoDB.transaction(["undoStacks"], "readwrite");
     const objectStore = transaction.objectStore("undoStacks");
 
+    // Relabel every snapshot, not just the storage key — snapshots embed
+    // activeCycleId and title (key=title in this app). A verbatim copy left
+    // each one carrying the OLD id, so validateSnapshot's strict-equality
+    // check rejected the entire migrated history on the next filtered load
+    // (silent total wipe), and any snapshot that DID survive an unfiltered
+    // path would restore the old title into the renamed cycle on Undo,
+    // breaking the key=title invariant.
     const newData = {
       cycleId: newCycleId,
-      undoStack: oldData.undoStack,
-      redoStack: oldData.redoStack,
+      undoStack: relabelSnapshotsForCycle(oldData.undoStack, newCycleId),
+      redoStack: relabelSnapshotsForCycle(oldData.redoStack, newCycleId),
       lastUpdated: Date.now(),
       version: APP_VERSION
     };
