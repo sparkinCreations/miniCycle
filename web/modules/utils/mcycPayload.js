@@ -35,9 +35,14 @@ export function buildMcycPayload(cycleKey, cycle, { includeHistory }) {
                 ? structuredClone(task.recurringSettings)
                 : {};
 
-            // (defaultRecurTime is no longer written into exports — dead field,
-            // zero readers, and import-side normalization strips it anyway,
-            // which made every export/import round trip asymmetric.)
+            // defaultRecurTime retired in v2.358 (writers but zero readers;
+            // import-side normalization strips it). Deleting — not just
+            // no-longer-writing — because STORED settings from every earlier
+            // version still carry the field, and a clone passthrough would
+            // keep circulating it in shared .mcyc files for years. Stored
+            // data itself converges naturally (the applicator normalizes it
+            // away on any settings re-apply); no migration for a dead field.
+            delete settings.defaultRecurTime;
 
             return {
                 id: task.id || `task-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
