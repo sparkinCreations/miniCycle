@@ -11,6 +11,10 @@
 import { createDIModule, required, optional } from '../core/diBase.js';
 import { LIMITS, COLORS, DOM_SELECTORS, Z_INDEX, APP_VERSION, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+// Pure normalizer (no DI, no side effects) — statically imported like
+// recurringCalculators in migrationManager, so imported settings get the same
+// enumerated shape every other write path emits.
+import { normalizeRecurringSettings } from '../recurring/recurringSettings.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -557,9 +561,25 @@ export async function processImportedData(fileContent) {
     // Validate and sanitize all task data
     const importTimestamp = Date.now();
     const mappedTasks = importedData.tasks.map((task, index) => {
-        const safeSettings = task.recurringSettings || {};
-        if (task.recurring && !safeSettings.specificTime && !safeSettings.defaultRecurTime) {
-            safeSettings.defaultRecurTime = new Date().toISOString();
+        // Normalize to the enumerated shape every other write path emits
+        // (panel / activation / applicator) — import was the only writer
+        // skipping normalizeRecurringSettings, silently violating the invariant
+        // the watcher and matcher rely on. Unknown keys are dropped, including
+        // the vestigial defaultRecurTime this block used to invent (no reader
+        // anywhere consumes it). Then filter value-level poison the shape
+        // normalizer passes through: specificDates entries must be real ISO
+        // dates — a garbage entry that becomes "next" throws inside the 15s
+        // spawn tick — and are capped to a sane count.
+        const safeSettings = normalizeRecurringSettings(
+            (task.recurringSettings && typeof task.recurringSettings === 'object') ? task.recurringSettings : {}
+        );
+        if (safeSettings.specificDates.dates.length > 0) {
+            safeSettings.specificDates.dates = safeSettings.specificDates.dates
+                .filter(d => validateImportedDate(d) !== null)
+                .slice(0, LIMITS.IMPORT_MAX_SPECIFIC_DATES);
+            if (safeSettings.specificDates.dates.length === 0) {
+                safeSettings.specificDates.enabled = false;
+            }
         }
 
         // Security: Always sanitize task text, with or without DataValidator

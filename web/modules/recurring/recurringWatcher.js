@@ -185,9 +185,14 @@ function switchInterval(hasTemplates) {
         _watcherIntervalId = null;
     }
 
-    // Start new interval
+    // Start new interval. The tick is async — without the catch, any rejection
+    // becomes an unhandled-rejection per tick with no isolation.
     if (Deps.setInterval) {
-        _watcherIntervalId = Deps.setInterval(() => watchRecurringTasks(), targetInterval);
+        _watcherIntervalId = Deps.setInterval(() => {
+            watchRecurringTasks().catch((tickError) => {
+                console.warn('⚠️ Recurring watcher tick failed:', tickError?.message || tickError);
+            });
+        }, targetInterval);
         _currentIntervalMs = targetInterval;
     }
 }
@@ -314,14 +319,24 @@ async function recreateDueTasks(activeCycleId, templates, taskList, now, extraEl
     const templateUpdates = {};
 
     Object.values(templates).forEach(template => {
-        if (taskList.some(t => t.id === template.id)) return;        // already exists
-        if (template.nextScheduledOccurrence == null) return;        // finished / exhausted
-        if (isCountExhausted(template)) return;                      // count limit reached
-        if (nowMs < template.nextScheduledOccurrence) return;        // not due yet
-        if (extraEligibility && !extraEligibility(template)) return; // watch: pattern re-validation
+        // Per-template isolation: one template with poisoned settings (bad
+        // date leaf, malformed pattern) must not halt spawning for EVERY
+        // template on every tick — eligibility re-validation and
+        // calculateNextOccurrence both evaluate template data and can throw.
+        // The bad template is skipped (and stays due for a later retry after
+        // repair); the rest of the fleet keeps spawning.
+        try {
+            if (taskList.some(t => t.id === template.id)) return;        // already exists
+            if (template.nextScheduledOccurrence == null) return;        // finished / exhausted
+            if (isCountExhausted(template)) return;                      // count limit reached
+            if (nowMs < template.nextScheduledOccurrence) return;        // not due yet
+            if (extraEligibility && !extraEligibility(template)) return; // watch: pattern re-validation
 
-        tasksToAdd.push(buildRecurringInstance(template));
-        templateUpdates[template.id] = buildTemplateUpdate(template, nowMs, Deps.calculateNextOccurrence);
+            tasksToAdd.push(buildRecurringInstance(template));
+            templateUpdates[template.id] = buildTemplateUpdate(template, nowMs, Deps.calculateNextOccurrence);
+        } catch (templateError) {
+            console.warn(`⚠️ Skipping recurring template "${template?.text || template?.id}" — evaluation failed:`, templateError?.message || templateError);
+        }
     });
 
     // Only add tasks up to the limit (templates are NOT deleted — they just won't spawn)

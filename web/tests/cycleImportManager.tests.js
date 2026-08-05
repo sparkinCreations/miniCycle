@@ -218,6 +218,30 @@ export async function runCycleImportManagerTests(resultsDiv) {
         if (tpl.text !== 'Water plants') throw new Error('template text must come from the sanitized task');
     });
 
+    await test('imported recurringSettings are normalized; garbage specificDates filtered', async () => {
+        const { state } = await runImport({
+            name: 'Norm Recurring',
+            tasks: [{
+                id: 'nr1', text: 'Water plants', recurring: true,
+                recurringSettings: {
+                    frequency: 'daily',
+                    __unknownKey: 'must be dropped',
+                    defaultRecurTime: 'vestigial — no reader consumes this',
+                    specificDates: { enabled: true, dates: ['2026-06-15', 'garbage-date', '2026-99-99'] }
+                }
+            }]
+        });
+        const t = importedCycle(state).tasks[0];
+        const rs = t.recurringSettings;
+        if ('__unknownKey' in rs || 'defaultRecurTime' in rs) throw new Error('unknown keys must be dropped by normalization');
+        if (!('weekly' in rs) || !('monthly' in rs)) throw new Error('normalized shape must be fully enumerated');
+        const dates = rs.specificDates.dates;
+        if (dates.length !== 1 || dates[0] !== '2026-06-15') throw new Error(`garbage dates must be filtered, got ${JSON.stringify(dates)}`);
+        // The rebuilt template must carry the same normalized settings
+        const tpl = importedCycle(state).recurringTemplates['nr1'];
+        if (!tpl || 'defaultRecurTime' in tpl.recurringSettings) throw new Error('template must be built from normalized settings');
+    });
+
     await test('importing over an existing routine name creates a unique title, not an overwrite', async () => {
         const seeded = { 'My Routine': { id: 'x', title: 'My Routine', tasks: [], recurringTemplates: {} } };
         const { state } = await runImport(

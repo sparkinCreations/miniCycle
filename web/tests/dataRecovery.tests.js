@@ -94,6 +94,14 @@ export async function runDataRecoveryTests(resultsDiv) {
         assert(task && task.text === 'step {1} of {2}', `in-string braces preserved, got ${task?.text}`);
     });
 
+    await test('attemptJsonSalvage: repairs truncation ON a backslash (dangling escape)', () => {
+        const truncated = '{"data":{"cycles":{"c1":{"tasks":[{"id":"t1","text":"line1\\';
+        const result = attemptJsonSalvage(truncated);
+        assert(result !== null, 'dangling-escape truncation should salvage');
+        const task = result.data.data.cycles.c1.tasks[0];
+        assert(task && task.text === 'line1', `text recovered without the dangling backslash, got ${task?.text}`);
+    });
+
     await test('attemptJsonSalvage: strips a dangling partial member before closing', () => {
         const truncated = '{"data":{"cycles":{"c1":{"tasks":[],"cycleCount":';
         const result = attemptJsonSalvage(truncated);
