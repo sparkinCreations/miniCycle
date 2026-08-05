@@ -1,7 +1,7 @@
 # Getting Started with miniCycle
 
-**Version**: 1.516
-**Last Updated**: December 20, 2025
+**Version**: see [PROJECT_STATS.md](../PROJECT_STATS.md) for the current app version
+**Last Updated**: August 5, 2026
 
 ---
 
@@ -60,16 +60,13 @@ This is invaluable for testing touch interactions, Safari-specific behavior, and
 **Example: Add a custom notification**
 
 ```javascript
-// Open modules/boot/orchestrator.js and add this function anywhere
+// Open modules/boot/orchestrator.js and find the end of runBootSequence().
+// Add this after boot completes — `deps` is in scope there, and there are
+// no bare globals in this codebase (strict DI):
 
-function showWelcomeMessage() {
-    showNotification('👋 Welcome to miniCycle!', 'success', 3000);
-}
-
-// Call it when app loads
-document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(showWelcomeMessage, 1000);
-});
+setTimeout(() => {
+    deps.utils.showNotification('👋 Welcome to miniCycle!', 'success', 3000);
+}, 1000);
 ```
 
 Refresh the page and see your notification appear!

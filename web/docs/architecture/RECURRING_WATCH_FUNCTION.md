@@ -21,7 +21,7 @@ The watch recurring function implements offline-first recurring task scheduling 
 // Checks for due recurring tasks every 15 seconds (values live in
 // core/constants.js — INTERVALS.RECURRING_WATCHER / RECURRING_WATCHER_IDLE)
 setInterval(() => {
-    checkRecurringTasks();
+    watchRecurringTasks();
 }, INTERVALS.RECURRING_WATCHER); // 15000ms active / 7200000ms idle
 ```
 

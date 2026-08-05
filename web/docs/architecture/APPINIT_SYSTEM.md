@@ -1,7 +1,6 @@
 # AppInit - 2-Phase Initialization System
 
-**Version**: 1.391
-**Last Updated**: December 4, 2025
+**Last Updated**: August 2026 (see [PROJECT_STATS.md](../PROJECT_STATS.md) for current app version)
 
 ---
 
@@ -232,17 +231,9 @@ appInit.getStatus()
 }
 */
 
-// Print formatted status
-appInit.printStatus()
-/* Console output:
-📊 miniCycle AppInit Status: {
-  ✅ Core Systems Ready: true
-  ✅ App Ready: true
-  🔌 Plugins: 2
-  ⏱️ Timings: { core: 145ms, app: 89ms, total: 234ms }
-  📦 Loaded Plugins: [...]
-}
-*/
+// Note: printStatus() exists but its console output was stripped during
+// logging cleanup — it's currently a no-op. Use getStatus() and inspect
+// the returned object instead.
 ```
 
 ---

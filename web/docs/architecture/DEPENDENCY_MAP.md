@@ -1,21 +1,21 @@
 # miniCycle Dependency Map
 
 > **Generated:** November 2025
-> **Updated:** March 7, 2026
+> **Updated:** August 5, 2026
 > **Purpose:** Document actual module dependencies for debugging, maintenance, and feature development
 
 > **Note:** This map reflects architecture as of December 2025. Infrastructure globals (APP_VERSION for service worker, window.onerror for error handling) are intentional exceptions to the "no window.*" rule.
 
 ## Executive Summary
 
-The miniCycle codebase has modules across 12 directories (see [PROJECT_STATS.md](../PROJECT_STATS.md) for current counts). All modules use strict dependency injection via `appContext.js` and the `deps` container pattern.
+The miniCycle codebase has modules across 14 directories (see [PROJECT_STATS.md](../PROJECT_STATS.md) for current counts). All modules use strict dependency injection via `appContext.js` and the `deps` container pattern.
 
 **No custom business logic is exposed on `window.*`** (exceptions: version/service-worker infrastructure, browser API event handlers).
 
 ### Key Numbers
 | Metric | Before (Nov 2025) | Current | Target | Progress |
 |--------|-------------------|---------|--------|----------|
-| Total modules | 43 | **133** _(live count in [PROJECT_STATS.md](../PROJECT_STATS.md))_ | — | — |
+| Total modules | 43 | **136** _(live count in [PROJECT_STATS.md](../PROJECT_STATS.md))_ | — | — |
 | Custom `window.*` globals (business logic) | ~68 | **0** | 0 | **100%** ✅ |
 | `window.*` fallbacks in modules | ~748 | **0** | 0 | **100%** ✅ |
 | Modules with DI setters (`set*Dependencies`) | 0 | **40+** | All stateful | **Exceeded** |
@@ -28,25 +28,28 @@ The miniCycle codebase has modules across 12 directories (see [PROJECT_STATS.md]
 - `document.documentElement.dataset.appBooted` - Boot completion flag
 
 ### Module Distribution
+_(as of Aug 2026 — live counts in [PROJECT_STATS.md](../PROJECT_STATS.md))_
+
 | Directory | Count |
 |-----------|-------|
-| ui/ | 22 |
-| recurring/ | 15 |
-| task/ | 12 |
-| utils/ | 12 |
-| testing/ | 10 |
+| ui/ | 37 |
+| utils/ | 19 |
+| recurring/ | 16 |
+| task/ | 13 |
+| features/ | 11 |
 | core/ | 9 |
+| testing/ | 9 |
 | boot/ | 7 |
 | routine/ | 5 |
-| features/ | 5 |
 | labels/ | 3 |
 | other/ | 3 |
-| progress/ | 1 |
 | storage/ | 2 |
+| progress/ | 1 |
+| platform/ | 1 |
 
 > **Modular overhaul complete (December 2025).** All modules use strict DI.
 >
-> **Last verified:** January 5, 2026
+> **Last verified:** August 5, 2026
 
 ---
 
@@ -55,7 +58,7 @@ The miniCycle codebase has modules across 12 directories (see [PROJECT_STATS.md]
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                   appContext.js (centralized registry)       │
-│    getAppState(), getTaskApi(), getCycleApi(), getUiApi()   │
+│   getStateApi(), getTaskApi(), getCycleApi(), getUiApi()    │
 ├─────────────────────────────────────────────────────────────┤
 │                                                              │
 │  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐        │
@@ -102,11 +105,11 @@ orchestrator.js (sequence controller)
 ┌─────────────────────────────────────────────────────────────┐
 │ Phase 2: featureBoot.js - Feature Modules (DI wiring)       │
 ├─────────────────────────────────────────────────────────────┤
-│ For each module:                                            │
-│   1. Import module                                          │
-│   2. Call setXDependencies() with deps container            │
-│   3. Create instance                                        │
-│   4. Store in deps container                                │
+│ moduleLoader reads moduleManifests.js and, for each module: │
+│   1. Import module (phase order, honoring after/before)     │
+│   2. Build its deps from requires/optionalDeps/lazyRequires │
+│   3. Call its init function with those deps                 │
+│   4. Register provides/provideInstance in deps container    │
 │                                                             │
 │ Modules: taskCore, routineManager, recurringCore,           │
 │          modalManager, settingsManager, undoRedoManager...  │
@@ -127,6 +130,10 @@ orchestrator.js (sequence controller)
 
 ## Module Dependency Details
 
+> **Authoritative source:** each module's `requires` / `optionalDeps` /
+> `lazyRequires` in `modules/boot/moduleManifests.js`. The lists below are a
+> curated snapshot for orientation, not an exhaustive inventory.
+
 ### Tier 1: Foundation (Everything depends on these)
 
 #### `modules/core/appState.js`
@@ -141,16 +148,19 @@ Used by:    20+ modules (via getAppState() or DI)
 ```
 Exports:    appInit object with waitForCore(), waitForApp()
 Consumes:   none
-Imports:    none
+Imports:    diBase.js, constants.js, labelResolver.js
 Used by:    15+ modules (via waitForCore/waitForApp)
 ```
 
 #### `modules/core/constants.js`
 ```
-Exports:    DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS, DEFAULT_RECURRING_DELETE_SETTINGS
+Exports:    DOM_IDS, DOM_CLASSES, DOM_SELECTORS, DATA_SELECTORS, Z_INDEX,
+            UI_TIMEOUTS, BOOT_TIMEOUTS, INTERVALS, LIMITS, COLORS,
+            STORAGE_KEYS, EVENTS, MILESTONES, GESTURE, BREAKPOINTS,
+            DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS, DEFAULT_RECURRING_DELETE_SETTINGS, ...
 Consumes:   none
 Imports:    none
-Used by:    Multiple modules via direct import
+Used by:    Most modules via direct import (central home for all tunable values)
 ```
 
 ---
@@ -172,7 +182,8 @@ Note:       Has _validateDependencies() method, uses deps.* pattern
 
 #### `modules/routine/routineLoader.js`
 ```
-Exports:    RoutineLoader class, setRoutineLoaderDependencies()
+Exports:    loadMiniCycle(), renderTasksToDOM(), and related functions
+            (no class), setRoutineLoaderDependencies()
 Imports:    appInit, constants.js
 Dependencies (strict DI):
   - AppState, loadMiniCycleData, addTask, updateThemeColor
@@ -224,8 +235,10 @@ Dependencies (strict DI):
 
 #### `modules/task/taskDOM.js`
 ```
-Exports:    TaskDOMManager, TaskValidator, TaskUtils, TaskRenderer, TaskEvents
-           setTaskDOMDependencies()
+Exports:    TaskDOMManager (facade) + grouped functions,
+           setTaskDOMManagerDependencies()
+Sub-modules: taskValidation, taskUtils, taskRenderer, taskEvents
+           (dynamically imported by the facade — NOT in moduleManifests.js)
 Imports:    appInit, constants.js
 
 TaskRenderer Dependencies (strict DI):
@@ -253,7 +266,7 @@ Dependencies (strict DI via setRecurringCoreDependencies):
 
 #### `modules/features/dueDates.js`
 ```
-Exports:    DueDates class, setDueDatesDependencies()
+Exports:    MiniCycleDueDates class, setDueDatesDependencies()
 Imports:    appInit
 Dependencies (strict DI):
   - AppState
@@ -261,7 +274,7 @@ Dependencies (strict DI):
 
 #### `modules/features/reminders.js`
 ```
-Exports:    Reminders class, setRemindersDependencies()
+Exports:    MiniCycleReminders class, setRemindersDependencies()
 Imports:    appInit
 Dependencies (strict DI):
   - AppState, showNotification
@@ -269,7 +282,9 @@ Dependencies (strict DI):
 
 #### `modules/ui/undoRedoManager.js`
 ```
-Exports:    UndoRedoManager class, setUndoRedoManagerDependencies()
+Exports:    performStateBasedUndo(), performStateBasedRedo(),
+            captureStateSnapshot(), initUndoRedoManager(), and related
+            functions (no class), setUndoRedoManagerDependencies()
 Imports:    appInit
 Dependencies (strict DI via setUndoRedoManagerDependencies):
   - AppState, refreshUIFromState, AppGlobalState
@@ -328,9 +343,9 @@ Imports:    none
 
 #### `modules/utils/notifications.js`
 ```
-Exports:    showNotification function, setNotificationsDependencies()
+Exports:    MiniCycleNotifications class, EducationalTipManager,
+            setNotificationsDependencies()
 Consumes:   DOM
-Imports:    none
 ```
 
 ---
@@ -358,12 +373,12 @@ These modules are endpoints - they use other modules but nothing uses them:
 ### appContext.js Getters (Preferred)
 ```javascript
 import {
-  getAppState, getShowNotification,
-  getTaskApi, getCycleApi, getUiApi, getStateApi
+  state, task, cycle, ui,           // typed accessors
+  getStateApi, getTaskApi, getCycleApi, getUiApi  // getter-style aliases
 } from '../core/appContext.js';
 
 // Usage
-const AppState = getAppState();
+const AppState = state().AppState;   // or getStateApi().AppState
 const taskApi = getTaskApi();
 taskApi.add('New task');
 ```
@@ -411,29 +426,30 @@ UI modules react to state changes
 
 All modules now use strict DI with no `window.*` fallbacks. The patterns below are the current standard:
 
-### Pattern 1: Module-level setter with Object.defineProperties (standard)
+### Pattern 1: diBase createDIModule (standard)
 ```javascript
-let _deps = {};
+import { createDIModule, required, optional } from '../core/diBase.js';
 
-export function setModuleDependencies(dependencies) {
-    // Preserves lazy getters for late resolution
-    const descriptors = Object.getOwnPropertyDescriptors(dependencies);
-    Object.defineProperties(_deps, descriptors);
-}
+const di = createDIModule('MyModule', {
+    AppState: required(),
+    showNotification: optional(null),
+});
+
+export const setMyModuleDependencies = di.setDependencies;
 
 class MyModule {
     constructor(dependencies = {}) {
-        const mergedDeps = { ..._deps, ...dependencies };
-        if (!mergedDeps.AppState) throw new Error('AppState required');
+        // NEVER spread deps ({ ...deps }) — that evaluates lazy getters
+        const resolved = di.resolve(dependencies);
         this.deps = {
-            AppState: mergedDeps.AppState,  // No fallback
-            showNotification: mergedDeps.showNotification
+            AppState: resolved.AppState,  // No fallback
+            showNotification: resolved.showNotification
         };
     }
 }
 ```
 **Used by:** Most modules (taskCore, routineManager, recurringCore, etc.)
-**Key:** Uses `Object.defineProperties` to preserve lazy getters during wiring.
+**Key:** `di.setDependencies` uses `Object.defineProperties` internally to preserve lazy getters during wiring. A handful of Phase 1 boot modules still use a plain `let _deps = {}` + `Object.defineProperties` setter for startup-order reasons — do not use that for new modules.
 
 ### Pattern 2: Deferred getter objects (late-bound dependencies)
 ```javascript
@@ -462,7 +478,7 @@ export async function initModalManager(dependencies = {}) {
 ## Common Debugging Scenarios
 
 ### "Feature X doesn't work"
-1. Check if dependencies were wired: Look in `featureBoot.js` for `setXDependencies()` call
+1. Check if dependencies were declared: look at the module's manifest entry in `moduleManifests.js` (`requires`/`optionalDeps`/`lazyRequires`) and run `npm run validate:di`
 2. Check initialization order in console logs
 3. Verify `appInit.waitForCore()` was awaited before accessing state
 
@@ -472,9 +488,9 @@ export async function initModalManager(dependencies = {}) {
 3. Look for save errors in console
 
 ### "Module Y can't find Module Z"
-1. Check `featureBoot.js` wiring order - Z must be wired before Y uses it
+1. Check load order in `moduleManifests.js` — Z's phase/`after` must put it before Y (or declare the dep in Y's `optionalDeps`/`lazyRequires` for cross-phase use)
 2. Use deferred getter pattern if Z initializes after Y
-3. Check for typos in dependency names in setter call
+3. Check for typos in dependency names — an undeclared or misspelled dep resolves to `undefined` silently
 
 ### "Circular dependency suspected"
 1. ES6 imports are fine - issue is usually DI wiring order
@@ -490,48 +506,46 @@ export async function initModalManager(dependencies = {}) {
 All goals achieved:
 
 1. ✅ **No fallbacks** - DI required, no `|| window.*` patterns
-2. ✅ **Wire in boot files** - `featureBoot.js` creates and connects all modules
+2. ✅ **Wire in boot files** - moduleLoader creates and connects all modules from `moduleManifests.js` during `featureBoot`
 3. ✅ **No window pollution** - Zero custom `window.*` globals
 4. ✅ **Explicit imports** - Dependencies via appContext.js or direct import
 
 Current pattern (all modules):
 ```javascript
-// All modules follow strict DI
-let _deps = {};
+// All modules follow strict DI via diBase.js
+import { createDIModule, optional } from '../core/diBase.js';
 
-export function setModuleDependencies(dependencies) {
-    const descriptors = Object.getOwnPropertyDescriptors(dependencies);
-    Object.defineProperties(_deps, descriptors);
-}
+const di = createDIModule('TaskCore', {
+    AppState: optional(null),
+    showNotification: optional(null),
+});
+
+export const setTaskCoreDependencies = di.setDependencies;
 
 class TaskCore {
     constructor(dependencies = {}) {
-        const mergedDeps = { ..._deps, ...dependencies };
-        if (!mergedDeps.AppState) throw new Error('AppState required');
+        const resolved = di.resolve(dependencies);  // never { ...deps } spread
         this.deps = {
-            AppState: mergedDeps.AppState,  // No fallback
-            showNotification: mergedDeps.showNotification
+            AppState: resolved.AppState,  // No fallback
+            showNotification: resolved.showNotification
         };
     }
 }
 
-// In featureBoot.js:
-setModuleDependencies({
-    get AppState() { return deps.core.AppState; },
-    showNotification: deps.utils.showNotification
-});
-const taskCore = new TaskCore();
+// Wiring is declarative: the module's entry in moduleManifests.js declares
+// requires/optionalDeps/lazyRequires, and moduleLoader injects them (with
+// lazy getters) during featureBoot.
 ```
 
 ---
 
 ## Maintenance Notes
 
-- **Adding a new feature:** Create module with `set*Dependencies()`, wire in `featureBoot.js`, register in `appContext.js` if needed
+- **Adding a new feature:** Create module with `createDIModule()` (diBase.js), add a manifest entry in `moduleManifests.js`, register in `appContext.js` if needed
 - **Debugging state issues:** Start at AppState, trace through subscribers
 - **Performance issues:** Check for excessive re-renders in state subscribers
 - **Testing:** Mock dependencies via `set*Dependencies()` - no window mocking needed
 
 ---
 
-*This document reflects the actual architecture as of March 7, 2026. All modules use strict DI.*
+*This document reflects the actual architecture as of August 5, 2026. All modules use strict DI.*

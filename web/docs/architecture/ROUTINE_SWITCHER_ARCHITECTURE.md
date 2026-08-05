@@ -3,8 +3,8 @@
 > **Complete guide to miniCycle's routine switcher modal system**
 
 **Version**: See [PROJECT_STATS.md](../PROJECT_STATS.md)
-**Last Updated**: January 17, 2026
-**Module**: `modules/routine/routineSwitcher.js` (~1,676 lines)
+**Last Updated**: August 5, 2026
+**Module**: `modules/routine/routineSwitcher.js` (~2,580 lines)
 **Pattern**: Strict Dependency Injection
 
 ---
@@ -47,6 +47,7 @@ The **Routine Switcher** (`routineSwitcher.js`) manages the modal interface for 
 - Preview panel updates
 - Storage usage display
 - Undo system integration
+- **Vocabulary theme picker** — the 🎨 button (`#switch-theme`) toggles `#theme-picker-row`, which renders a chip per *unlocked* vocabulary theme (locked themes are hidden); selecting a chip calls `vocabThemeManager.setRoutineTheme(cycleKey, themeId)` and applies the theme to that routine
 
 ---
 
@@ -63,7 +64,7 @@ Each routine displays its mode using emojis for quick identification:
 | To-Do Mode | 📋 | `deleteCheckedTasks: true` |
 
 ```javascript
-// Mode detection logic (lines 1517-1526)
+// Mode detection logic
 _getCycleMode(cycleData) {
     if (cycleData.deleteCheckedTasks) {
         return 'todo';
@@ -82,7 +83,7 @@ Each routine shows contextual date information:
 - **Created [date]** - For new routines that haven't been modified yet
 
 ```javascript
-// Date display logic (lines 1089-1101)
+// Date display logic
 const timestamp = cycleData.lastModified || cycleData.createdAt;
 if (timestamp) {
     const date = new Date(timestamp);
@@ -117,22 +118,21 @@ export class RoutineSwitcher {
         // Resolve deps from diBase, with constructor overrides
         const resolvedDeps = di.resolve(dependencies);
 
+        // Store dependencies with instance-bound fallbacks
         this.deps = {
-            AppState: resolvedDeps.AppState,
-            showNotification: resolvedDeps.showNotification,
-            showPromptModal: resolvedDeps.showPromptModal,
-            showConfirmationModal: resolvedDeps.showConfirmationModal,
-            sanitizeInput: resolvedDeps.sanitizeInput,
-            loadMiniCycle: resolvedDeps.loadMiniCycle,
-            safeAddEventListener: resolvedDeps.safeAddEventListener,
-            onCycleRenamed: resolvedDeps.onCycleRenamed,
-            onCycleDeleted: resolvedDeps.onCycleDeleted,
-            onCycleSwitched: resolvedDeps.onCycleSwitched,
-            // ... more deps
+            ...resolvedDeps,
+            showNotification: resolvedDeps.showNotification || this.fallbackNotification.bind(this),
+            showPromptModal: resolvedDeps.showPromptModal || this.fallbackPrompt.bind(this),
+            showConfirmationModal: resolvedDeps.showConfirmationModal || this.fallbackConfirm.bind(this),
+            safeAddEventListener: resolvedDeps.safeAddEventListener
         };
 
         // Instance state
         this._tempRenameData = null;
+        // Source of truth for which routine is selected — the `.selected` DOM
+        // class is only a projection of this field (action handlers read
+        // _getSelectedItem(), never the DOM class)
+        this._selectedCycleKey = null;
         this._sortMode = 'alpha';      // 'alpha', 'recent', 'size'
         this._sortDirection = 'asc';   // 'asc', 'desc'
         this._filterMode = 'all';      // 'all', 'auto', 'manual', 'todo'
@@ -161,6 +161,9 @@ const di = createDIModule('RoutineSwitcher', {
     onCycleRenamed: optional(null),
     onCycleDeleted: optional(null),
     onCycleSwitched: optional(null),
+    vocabThemeManager: optional(null),   // theme picker chips
+    refreshThemeLabels: optional(null),  // re-apply themed labels after switch/create
+    logHistoryEvent: optional(null),
     // ... more deps
 });
 ```
@@ -205,7 +208,7 @@ const di = createDIModule('RoutineSwitcher', {
 ### List Item Structure
 
 ```javascript
-// List item creation (lines 1180-1237)
+// List item creation
 const listItem = document.createElement("div");
 listItem.classList.add("mini-cycle-switch-item");
 listItem.dataset.cycleName = cycleData.title;
@@ -244,7 +247,7 @@ sizeSpan.textContent = `~${formatBytes(cycleSize)}`;
 ### Sort Implementation
 
 ```javascript
-// Sort cycles (lines 1459-1487)
+// Sort cycles
 _sortCycles(cycleEntries) {
     const isAsc = this._sortDirection === 'asc';
 
@@ -305,7 +308,7 @@ sortAlpha._sortHandler = () => {
 ### Filter Implementation
 
 ```javascript
-// Filter cycles (lines 1533-1541)
+// Filter cycles
 _filterCycles(cycleEntries) {
     if (this._filterMode === 'all') {
         return cycleEntries;
@@ -341,7 +344,8 @@ if (filteredCycles.length === 0) {
    - Reset cycleCount to 0
    - New createdAt timestamp
    - Removed lastModified (shows "Created" until edited)
-   - New unique IDs for all tasks
+   - Removed history (fresh routine gets a fresh event log) and reset clearedTasks entries/totalCleared (autoPrune preference travels)
+   - New unique IDs for all tasks, with `recurringTemplates` remapped in lockstep (the map is keyed by task ID — leaving it un-remapped would sever every task↔template link in the copy)
 4. List refreshes with new item selected
 5. New item enters inline edit mode
 6. User can rename immediately or press Escape
@@ -350,7 +354,7 @@ if (filteredCycles.length === 0) {
 ### Implementation
 
 ```javascript
-// Duplicate method (lines 508-606)
+// Duplicate method
 duplicateMiniCycle() {
     // Generate unique name
     const baseName = `${originalCycle.title} Copy`;
@@ -363,12 +367,23 @@ duplicateMiniCycle() {
     delete copiedCycle.lastModified;  // Show "Created" until actual changes
     copiedCycle.cycleCount = 0;
 
-    // Generate new IDs for all tasks
+    // Fresh history + cleared-tasks counters for the copy
+    delete copiedCycle.history;
+    if (copiedCycle.clearedTasks) {
+        copiedCycle.clearedTasks = { ...copiedCycle.clearedTasks, entries: [], totalCleared: 0 };
+    }
+
+    // Generate new IDs for all tasks (index prevents collisions),
+    // remembering old→new so recurringTemplates can be remapped in lockstep
     if (Array.isArray(copiedCycle.tasks)) {
-        copiedCycle.tasks = copiedCycle.tasks.map(task => ({
-            ...task,
-            id: `task-${Date.now()}-${Math.floor(Math.random() * 10000)}`
-        }));
+        const now = Date.now();
+        const idRemap = new Map();
+        copiedCycle.tasks = copiedCycle.tasks.map((task, index) => {
+            const newId = `task-${now}-${index}-${Math.floor(Math.random() * 10000)}`;
+            if (task.id) idRemap.set(task.id, newId);
+            return { ...task, id: newId };
+        });
+        // ... recurringTemplates re-keyed via idRemap
     }
 
     // Save to state
@@ -391,24 +406,25 @@ duplicateMiniCycle() {
 
 ## Inline Editing
 
-Both **Rename** and **Duplicate** use inline editing for a seamless experience.
+Both **Rename** and **Duplicate** use inline editing for a seamless experience. On touch devices, `_startInlineEdit()` delegates to a modal dialog instead (`_editRoutineModal`, same `.miniCycle-prompt-dialog` pattern as routine creation). Both paths commit through the shared `_commitRename()`.
 
 ### Edit Flow
 
 ```
 1. User clicks Rename or Duplicate button
 2. _startInlineEdit() called on selected item
+   (touch devices: _editRoutineModal() dialog instead)
 3. Title span hidden, input element inserted
 4. Input focused with all text selected
 5. User types new name
-6. On Enter or blur: _finishInlineEdit() saves
+6. On Enter or blur: commit via _commitRename()
 7. On Escape: original name restored
 ```
 
 ### Implementation
 
 ```javascript
-// Start inline edit (lines 613-653)
+// Start inline edit
 _startInlineEdit(listItem, cycleKey) {
     const titleSpan = listItem.querySelector('.cycle-item-title');
     const currentName = titleSpan.textContent;
@@ -433,19 +449,15 @@ _startInlineEdit(listItem, cycleKey) {
     });
 }
 
-// Finish inline edit (lines 662-731)
-_finishInlineEdit(listItem, oldKey, input, titleSpan) {
-    const newName = this.deps.sanitizeInput(input.value.trim());
-
-    input.remove();
-    titleSpan.style.display = '';
-
+// Commit a rename (shared by inline edit and the mobile modal)
+_commitRename(oldKey, rawNewName, oldName) {
+    const newName = this.deps.sanitizeInput(rawNewName.trim());
     if (!newName || newName === oldName) return;
 
-    // Handle name collision
+    // Handle name collision (excluding self)
     const { name: uniqueName, wasModified } = getUniqueCycleName(newName, cycles);
 
-    // Update state
+    // Update state (cycle key = title, so the map key migrates)
     this.deps.AppState.update(state => {
         const cycleData = state.data.cycles[oldKey];
         state.data.cycles[uniqueName] = { ...cycleData, title: uniqueName };
@@ -456,8 +468,12 @@ _finishInlineEdit(listItem, oldKey, input, titleSpan) {
         }
     }, true);
 
-    // Notify undo system
+    // Notify undo system — relabels snapshots (activeCycleId + title) in both
+    // IndexedDB and the live stacks, so undo history survives the rename
     this.deps.onCycleRenamed?.(oldKey, uniqueName);
+
+    // Re-apply theme labels/colors in case the active routine was renamed
+    this.deps.refreshThemeLabels?.();
 }
 ```
 
@@ -483,7 +499,7 @@ _finishInlineEdit(listItem, oldKey, input, titleSpan) {
 ### Display Logic
 
 ```javascript
-// In updatePreview() (lines 1089-1101)
+// In updatePreview()
 const timestamp = cycleData.lastModified || cycleData.createdAt;
 const label = cycleData.lastModified ? 'Modified' : 'Created';
 dateDisplay.textContent = `${label}: ${formattedDate}`;
@@ -498,7 +514,7 @@ dateDisplay.textContent = `${label}: ${formattedDate}`;
 Before switching to a routine, data is validated and repaired:
 
 ```javascript
-// Validate and repair (lines 866-986)
+// Validate and repair
 _validateAndRepairCycleData(cycleKey) {
     const cycle = structuredClone(originalCycle);
     let repaired = false;

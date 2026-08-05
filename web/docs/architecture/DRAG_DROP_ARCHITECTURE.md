@@ -2,9 +2,9 @@
 ## Custom Implementation for miniCycle Task Rearrangement
 
 **Author:** miniCycle Team
-**Last Updated:** March 2026
+**Last Updated:** August 2026
 **Status:** Production Ready
-**Test Coverage:** 76 tests (100% passing)
+**Test Coverage:** 40 tests (100% passing)
 
 ---
 
@@ -151,7 +151,7 @@ then `touchcancel` (taking over the touch). Without this flag, `touchcancel` wou
 `this.draggedTask`, breaking the subsequent `dragover` and `drop` handlers.
 
 #### 3. **AppState (Persistent)**
-**Location:** `utilities/state.js`
+**Location:** `modules/core/appState.js`
 
 **Relevant State:**
 ```javascript
@@ -380,8 +380,8 @@ state.ui.moveArrowsVisible = true; // or false
 
 **Update Pattern:**
 ```javascript
-// Arrow button click or drag drop
-window.AppState.update(state => {
+// Arrow button click or drag drop (AppState via DI — this._getAppState())
+AppState.update(state => {
   const tasks = state.data.cycles[activeCycleId].tasks;
 
   // Reorder tasks (splice + insert)
@@ -616,7 +616,7 @@ This section provides line-by-line explanations of the core implementation detai
 
 ### enableDragAndDrop(): The Closure Pattern
 
-**Location:** `dragDropManager.js:135-297`
+**Location:** `modules/task/dragDropManager.js`
 
 #### Why Closures?
 
@@ -946,7 +946,7 @@ Without the `_nativeDragActive` guard, the iOS flow breaks:
 
 ### Mouse Drag: Desktop Implementation
 
-#### dragstart Handler (Lines 273-291)
+#### dragstart Handler
 
 ```javascript
 taskElement.addEventListener("dragstart", (event) => {
@@ -985,11 +985,11 @@ taskElement.addEventListener("dragstart", (event) => {
 
 ### handleRearrange(): The Insertion Algorithm
 
-**Location:** `dragDropManager.js:304-357`
+**Location:** `modules/task/dragDropManager.js`
 
 This is the most complex method. It determines WHERE to insert the dragged task.
 
-#### Entry Checks (Lines 305-313)
+#### Entry Checks
 
 ```javascript
 handleRearrange(target, event) {
@@ -1032,7 +1032,7 @@ handleRearrange(target, event) {
 **Undo snapshots** are captured once in `saveDragReorder()` (on drop/touchend), not during
 the drag. This keeps the undo stack clean — one snapshot per reorder operation.
 
-#### Edge Cases: First and Last Tasks (Lines 328-343)
+#### Edge Cases: First and Last Tasks
 
 ```javascript
         // Detect special positions
@@ -1080,7 +1080,7 @@ Without special handling:
 - Dragging to last position might not append to end
 ```
 
-#### Insertion Logic: Upper vs Lower Half (Lines 345-356)
+#### Insertion Logic: Upper vs Lower Half
 
 ```javascript
         // Determine insertion point based on mouse/touch position
@@ -1148,11 +1148,11 @@ With 1/3:
 
 ### handleArrowClick(): Array Splice Logic
 
-**Location:** `dragDropManager.js:363-415`
+**Location:** `modules/task/dragDropManager.js`
 
 This method reorders tasks via arrow buttons (▲▼).
 
-#### Finding the Task (Lines 365-379)
+#### Finding the Task
 
 ```javascript
 handleArrowClick(button) {
@@ -1179,7 +1179,7 @@ handleArrowClick(button) {
             //         Can't go above last position
         }
 
-        // Line 379: No movement needed?
+        No movement needed?
         if (newIndex === currentIndex) return;
 ```
 
@@ -1204,7 +1204,7 @@ currentIndex = 4;
 newIndex = Math.min(4, 4 + 1) = Math.min(4, 5) = 4;  // Stay at 4
 ```
 
-#### AppState Update (Lines 382-398)
+#### AppState Update
 
 ```javascript
         // Check if AppState is ready (via DI, not window.*)
@@ -1291,15 +1291,15 @@ const [task] = tasks.splice(currentIndex, 1);  // Remove
 tasks.splice(newIndex, 0, task);                // Insert
 ```
 
-#### UI Refresh (Lines 400-406)
+#### UI Refresh
 
 ```javascript
-            // Line 401: Trigger full UI re-render from state
+            Trigger full UI re-render from state
             this.deps.refreshUIFromState();
             //  This reads the updated AppState and re-renders the task list
             //  Result: Tasks appear in new order on screen
 
-            // Line 404: Update undo/redo button states
+            Update undo/redo button states
             this.deps.updateUndoRedoButtons();
             //  Undo button: Enable (we just added to undo stack)
             //  Redo stack: Clear (new action clears redo)
@@ -1317,7 +1317,7 @@ tasks.splice(newIndex, 0, task);                // Insert
 
 ### Event Delegation: Why We Use It
 
-**Location:** `dragDropManager.js:79-89`
+**Location:** `modules/task/dragDropManager.js`
 
 #### The Problem
 
@@ -1380,7 +1380,7 @@ if (event.target.matches('.move-up')) {
 
 ### requestAnimationFrame: 60fps Drag
 
-**Location:** `dragDropManager.js:92-100`
+**Location:** `modules/task/dragDropManager.js`
 
 ```javascript
 document.addEventListener("dragover", (event) => {
@@ -1431,7 +1431,7 @@ document.addEventListener("dragover", (event) => {
 
 ### Cleanup: Why It Matters
 
-**Location:** `dragDropManager.js:420-435`
+**Location:** `modules/task/dragDropManager.js`
 
 ```javascript
 cleanupDragState() {
@@ -1488,7 +1488,7 @@ cleanupDragState() {
 
 ### Drop Handler: The Save Operation
 
-**Location:** `dragDropManager.js:103-123`
+**Location:** `modules/task/dragDropManager.js`
 
 ```javascript
 // Setup in setupRearrange() — document-level handler (event delegation)
@@ -1576,21 +1576,19 @@ saveDragReorder() {
 ### File Structure
 
 ```
-utilities/task/
-└── dragDropManager.js         Main implementation (707 lines)
+modules/task/
+└── dragDropManager.js         Main implementation (~1,100 lines)
 
-modules/boot/orchestrator.js            Integration point
+modules/boot/ (moduleLoader + featureBoot)   Integration point
   ├── initDragDropManager()     Initialize with dependencies
-  ├── setupFinalTaskInteractions()  Enable drag on tasks
-  └── renderTasks()             Restore arrow visibility
+  └── renderTasks()             Enables drag per task + restores arrow visibility
 
 tests/
-├── dragDropManager.tests.js   Test suite (45 tests)
-└── DRAGDROP_TESTS_SUMMARY.md  Test documentation
+└── dragDropManager.tests.js   Test suite (40 tests)
 
 docs/
-├── DRAG_DROP_ARCHITECTURE.md   This document
-└── SAFARI_DRAGDROP_FIX.md     Safari-specific fix docs
+├── architecture/DRAG_DROP_ARCHITECTURE.md   This document
+└── archive/SAFARI_DRAGDROP_FIX.md           Safari-specific fix docs (historical)
 ```
 
 ---
@@ -1640,85 +1638,83 @@ class DragDropManager {
 
 ```javascript
 // 1. App initialization starts
-modules/boot/orchestrator.js → init()
+modules/boot/orchestrator.js → coreBoot → featureBoot
 
-// 2. Wait for core systems
-appInit.waitForCore() // AppState + data ready
+// 2. moduleLoader loads the dragDropManager manifest entry
+//    (phase TASK_MANAGEMENT — requires appInit, AppState, showNotification;
+//     optionalDeps include captureStateSnapshot, refreshUIFromState,
+//     revealTaskButtons/hideTaskButtons, updateUndoRedoButtons, ...)
+const dragDropManager = await initDragDropManager(dependencies); // DI-wired, no window.*
 
-// 3. Initialize DragDropManager (Phase 2)
-const dragDropManager = await initDragDropManager({
-  saveCurrentTaskOrder: window.saveCurrentTaskOrder,
-  autoSave: window.autoSave,
-  // ... 13 dependencies
-});
+// 3. init() waits for core, then sets up event delegation
+await appInit.waitForCore();
+this.setupRearrange();
 
-// 4. Setup event delegation
-dragDropManager.setupRearrange()
+// 4. Enable drag on existing tasks
+renderTasks() // Calls enableDragAndDropOnTask() for each task
 
-// 5. Enable drag on existing tasks
-renderTasks() // Calls enableDragAndDrop() for each task
-
-// 6. Enable drag on new tasks
-addTask() → finalizeTaskCreation() → enableDragAndDrop()
+// 5. Enable drag on new tasks
+addTask() → finalizeTaskCreation() → enableDragAndDropOnTask()
 ```
 
 ---
 
 ### Dependency Injection Pattern
 
-**Philosophy:** Resilient Constructor Pattern
+**Philosophy:** Strict DI via `diBase.js`, with optional calls guarded by `?.()`
 
 ```javascript
-// Accepts dependencies but doesn't require them
+// Deps resolved from the createDIModule manifest, with constructor overrides
 constructor(dependencies = {}) {
+  const resolvedDeps = di.resolve(dependencies);
+
+  // Note: saveCurrentTaskOrder and autoSave were removed — state-first pattern
   this.deps = {
-    saveCurrentTaskOrder: dependencies.saveCurrentTaskOrder || this.fallbackSave,
-    showNotification: dependencies.showNotification || this.fallbackNotification,
-    // ... graceful fallbacks
+    AppState: resolvedDeps.AppState,
+    captureStateSnapshot: resolvedDeps.captureStateSnapshot,
+    refreshUIFromState: resolvedDeps.refreshUIFromState,
+    showNotification: resolvedDeps.showNotification || this.fallbackNotification,
+    // ... all other deps via DI (no window.* fallbacks)
   };
 }
 
-// Fallback methods log warnings
-fallbackSave() {
-  console.warn('⚠️ saveCurrentTaskOrder not available - task order may not persist');
-}
-
+// The one remaining fallback logs instead of notifying
 fallbackNotification(message, type) {
   console.log(`[DragDrop] ${message}`);
 }
 ```
 
 **Benefits:**
-- Works even if dependencies missing
-- Helpful warnings for debugging
-- Easier to test (can inject mocks)
-- More resilient to initialization timing issues
+- Optional deps degrade gracefully (`this.deps.updateStatsPanel?.()`)
+- Easier to test (can inject mocks via constructor overrides)
+- DI-pure: no `window.*` globals, wiring declared in `moduleManifests.js`
 
 ---
 
 ## 🧪 Testing Strategy
 
-### Test Coverage: 76 Tests
+### Test Coverage: 40 Tests
 
 **Location:** `tests/dragDropManager.tests.js`
 
 ### Test Categories
 
-| Category | Tests | Coverage |
-|----------|-------|----------|
-| Module Loading | 5 | Class definition, exports, globals |
-| Initialization | 8 | Constructor, init, setup |
-| Core Functionality | 5 | Drag enable, cleanup |
-| Arrow Buttons | 6 | Click handling, reordering |
-| Arrow Visibility | 8 | Toggle, update, DOM |
-| Rearrangement Logic | 4 | Logic, debouncing, timing |
-| Fallback Methods | 12 | Resilient constructor |
-| Global Functions | 5 | Window exports |
-| Integration | 3 | AppState, AppGlobalState |
-| Error Handling | 5 | Graceful degradation |
-| Touch/Mobile | 3 | Touch detection |
-| **Safari Compatibility** | **6** | **webkitUserDrag, image timing** |
-| **TOTAL** | **76** | **Comprehensive coverage** |
+| Category | Coverage |
+|----------|----------|
+| Module Loading | Class definition, exports |
+| Initialization | Constructor, init, setup |
+| Core Functionality | Drag enable, cleanup |
+| Arrow Buttons | Click handling, reordering |
+| Arrow Visibility | Toggle, update, DOM |
+| Rearrangement Logic | Logic, debouncing, timing |
+| DI Dependency Tests | Injection, optional-dep degradation |
+| Global Functions | Module-level exports |
+| Integration | AppState integration |
+| Error Handling | Graceful degradation |
+| Touch/Mobile | Touch detection |
+| **Safari Compatibility** | **webkitUserDrag, image timing** |
+
+**TOTAL: 40 tests** (run `tests/dragDropManager.tests.js` for the live per-section breakdown)
 
 ---
 
@@ -1812,17 +1808,17 @@ open http://localhost:8080/tests/module-test-suite.html
 ```
 🔄 DragDropManager Tests
 
-📦 Module Loading (5 tests)
+📦 Module Loading
 ✅ DragDropManager class is defined
 ✅ DragDropManager class is exported
 ...
 
-🍎 Safari Compatibility (6 tests)
+🍎 Safari Compatibility
 ✅ sets webkitUserDrag property for Safari compatibility
 ✅ sets draggable attribute required by Safari
 ...
 
-Results: 76/45 tests passed (100%)
+Results: 40/40 tests passed (100%)
 ```
 
 #### Automated Testing
@@ -1837,7 +1833,7 @@ node tests/automated/run-browser-tests.cjs
 **Result:**
 ```
 🧪 Testing dragDropManager...
-   ✅ Results: 76/45 tests passed (100%)
+   ✅ Results: 40/40 tests passed (100%)
 ```
 
 ---
@@ -1875,7 +1871,7 @@ console.log({
 1. ✅ Verify `webkitUserDrag = "element"` is set
 2. ✅ Check drag image created outside event handler
 3. ✅ Run Safari compatibility tests
-4. ✅ Review `docs/SAFARI_DRAGDROP_FIX.md`
+4. ✅ Review `docs/archive/SAFARI_DRAGDROP_FIX.md` (historical)
 
 ---
 
@@ -1950,7 +1946,7 @@ console.log({
 1. ✅ Verify AppState is initialized
 2. ✅ Check `state.ui.moveArrowsVisible` is boolean
 3. ✅ Ensure `updateArrowsInDOM()` is called after state change
-4. ✅ Review arrow visibility logic in `dragDropManager.js:399-433`
+4. ✅ Review arrow visibility logic (`updateArrowsInDOM()` in `dragDropManager.js`)
 
 ---
 
@@ -2170,10 +2166,9 @@ if ('vibrate' in navigator) {
 - [Can I Use: -webkit-user-drag](https://caniuse.com/webkit-user-drag)
 
 ### miniCycle Documentation
-- `docs/SAFARI_DRAGDROP_FIX.md` - Safari desktop fix
-- `tests/DRAGDROP_TESTS_SUMMARY.md` - Test documentation
+- `docs/archive/SAFARI_DRAGDROP_FIX.md` - Safari desktop fix (historical)
 - `docs/CLAUDE.md` - Development guidance
-- `tests/dragDropManager.tests.js` - 76 comprehensive tests
+- `tests/dragDropManager.tests.js` - 40 comprehensive tests
 
 ---
 
@@ -2197,7 +2192,7 @@ Safari desktop requires special handling that's not obvious:
 ### 3. Performance Matters
 Small optimizations compound:
 - 75ms debouncing = smooth drag
-- 500ms snapshot interval = manageable undo stack
+- One undo snapshot per reorder gesture = manageable undo stack
 - requestAnimationFrame = 60fps experience
 - Event delegation = lower memory
 
@@ -2252,7 +2247,6 @@ When adding new drag-related functionality:
 
 - [ ] Update `dragDropManager.js` with new code
 - [ ] Add tests to `dragDropManager.tests.js`
-- [ ] Update test count in `DRAGDROP_TESTS_SUMMARY.md`
 - [ ] Run tests on Safari Desktop (don't skip this!)
 - [ ] Check performance with Chrome DevTools Performance tab
 - [ ] Verify undo/redo still works
@@ -2269,13 +2263,13 @@ When adding new drag-related functionality:
 If something in this document is unclear:
 1. Check inline comments in `dragDropManager.js`
 2. Review tests in `dragDropManager.tests.js` (tests are documentation)
-3. Read `SAFARI_DRAGDROP_FIX.md` for Safari-specific issues
+3. Read `docs/archive/SAFARI_DRAGDROP_FIX.md` for Safari-specific issues (historical)
 4. Search this document (comprehensive index)
 5. Check git history for implementation context
 
 ---
 
 **Document Version:** 1.1
-**Last Updated:** March 2026
+**Last Updated:** August 2026
 **Maintained By:** miniCycle Team
 **License:** Part of miniCycle project

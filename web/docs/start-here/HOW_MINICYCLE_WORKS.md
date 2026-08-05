@@ -14,7 +14,7 @@ which hands off to a **manager** that boots the app in **three ordered phases**.
 At the center sits **AppState**, the single official record of everything (your
 routines, tasks, settings). Every part of the app **reads** that record and
 **changes it through one controlled door** (`update()`), which automatically
-**saves** the change and **tells the screen to redraw**. Your ~130 code files
+**saves** the change and **tells the screen to redraw**. Your 130+ code files
 (*modules*) are wired together by a system where each module **declares what it
 needs** and gets it **delivered**. The signature behavior — completing a whole
 routine so it **resets** instead of disappearing — and the **recurring** system
@@ -85,8 +85,9 @@ staff the kitchen before the power is on.
 **Why the boot file looks scary:** roughly 80% of it is *failure handling*, not the
 core logic. It expects boot to sometimes fail (bad network, stale cache), and on
 failure it **cleans up the half-finished attempt** (the "zombie") and **retries**.
-If retries still fail, an 8-second fallback sends the user to the simpler "lite"
-version so they get *something*. The simple 3-step core is wrapped in a robust
+If retries still fail, HTML-level failsafes (a 16-second late-boot check and a
+60-second load timeout) send the user to the simpler "lite" version so they get
+*something*. The simple 3-step core is wrapped in a robust
 safety system — that's why it's long.
 
 **Takeaway:** three ordered phases (foundation → features → interaction), forced by
@@ -209,14 +210,14 @@ change through `update()` → touch up visuals → ripple. Learn one, read them 
 
 ---
 
-## Part 6 — How 130 modules get wired (dependency injection)
+## Part 6 — How 130+ modules get wired (dependency injection)
 
 **Analogy:** A film crew has a *call sheet*. Each member lists what they *require*
 (a generator, a gaffer) and what they *provide*. Production reads all of them,
 works out who must be ready before whom, and makes sure each person arrives to
 find their equipment already set up. Nobody scavenges.
 
-**The problem:** ~130 modules, most needing things from others. Two hard parts:
+**The problem:** 130+ modules, most needing things from others. Two hard parts:
 figuring out the correct **startup order**, and **delivering** each module's needs.
 
 **The call sheet** is `modules/boot/moduleManifests.js`. Each entry declares:
@@ -430,7 +431,7 @@ Browser opens miniCycle.html
         └─ hands off to the manager: orchestrator.js
              └─ boots in 3 phases:
                   Phase 1: build AppState (the single record) + migrate old data
-                  Phase 2: load & WIRE ~130 modules (declare needs → get injected)
+                  Phase 2: load & WIRE 130+ modules (declare needs → get injected)
                   Phase 3: wire up buttons & gestures
 
 Once running, everything is the same loop:

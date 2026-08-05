@@ -167,7 +167,7 @@ element.classList.add(DOM_CLASSES.HIDDEN);                   // not 'hidden'
 element.querySelector(DOM_SELECTORS.TASK_TEXT);              // not '.task-text'
 ```
 
-Same rule for timing values (`UI_TIMEOUTS.NOTIFICATION_BRIEF`), z-index (`Z_INDEX.MODAL`), and limits (`LIMITS.MAX_TASKS`). If the constant doesn't exist yet, add it before using.
+Same rule for timing values (`UI_TIMEOUTS.NOTIFICATION_BRIEF`), z-index (`Z_INDEX.MODAL`), and limits (`LIMITS.TASKS_PER_CYCLE`). If the constant doesn't exist yet, add it before using.
 
 → Deep dive: [`CONSTANTS_SYSTEM_GUIDE.md`](../working-on-code/CONSTANTS_SYSTEM_GUIDE.md)
 

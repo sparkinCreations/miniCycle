@@ -23,9 +23,9 @@ Events are stored newest-first in the active routine's `history.events` array. E
 | File | Role |
 |------|------|
 | `modules/features/historyManager.js` | `HistoryManager` class — logging, modal UI, rendering |
-| `modules/task/taskCRUD.js` | Logs `task_added`, `task_deleted`, `task_edited` events |
+| `modules/task/taskCRUD.js` | Logs `task_added`, `task_deleted`, `task_edited`, and task priority events |
 | `modules/progress/cycleCompletion.js` | Logs `cycle_completed` events |
-| `modules/task/taskCycleReset.js` | Logs `tasks_cleared` and `cycle_reset` events |
+| `modules/task/taskCycleReset.js` | Logs `tasks_cleared`, `recurring_tasks_removed`, and `tasks_removed_on_reset` events |
 | `modules/features/achievementsManager.js` | Logs `achievement_unlocked` events |
 | `modules/labels/defaultLabels.js` | Label keys under `history.*` |
 | `modules/boot/moduleManifests.js` | `taskCore` declares `logHistoryEvent` in `optionalDeps` |
@@ -35,13 +35,21 @@ Events are stored newest-first in the active routine's `history.events` array. E
 
 | Type | Icon | Source Module | Details |
 |------|------|---------------|---------|
-| `cycle_completed` | `🔄` | cycleCompletion.js | `{ cycleCount }` |
+| `cycle_completed` | `🔄` | cycleCompletion.js | `{ cycleCount, cycleName }` |
 | `tasks_cleared` | `✓` | taskCycleReset.js | `{ tasksCleared }` |
-| `cycle_reset` | `🔁` | taskCycleReset.js | `{}` |
-| `achievement_unlocked` | `🏆` | achievementsManager.js | `{ achievementId, achievementName }` |
+| `recurring_tasks_removed` | `🔁` | taskCycleReset.js | `{ count, taskNames }` |
+| `tasks_removed_on_reset` | `🧹` | taskCycleReset.js | `{ count, taskNames }` |
+| `achievement_unlocked` | `🏆` | achievementsManager.js | `{ achievementId, achievementName, unlockedVia }` |
 | `task_added` | `➕` | taskCRUD.js | `{ taskName }` |
 | `task_deleted` | `🗑️` | taskCRUD.js | `{ taskName }` |
 | `task_edited` | `✏️` | taskCRUD.js | `{ oldName, newName }` |
+| `task_priority_set` | `⚠️` | taskCRUD.js | `{ taskName, priorityColor }` |
+| `task_priority_removed` | `➖` | taskCRUD.js | `{ taskName }` |
+| `task_priority_color_changed` | `🎨` | taskCRUD.js | `{ taskName, priorityColor }` |
+| `theme_changed` | `🎨` | themeManager.js / routineSwitcher.js | `{ themeName, themeId }` |
+| `undo` / `redo` | fallback `📌` | undoRedoManager.js | `{ description }` |
+
+(`cycle_reset` still has an icon/label mapping in `_renderEvent()` for legacy stored events, but no module logs it anymore.)
 
 ---
 
@@ -131,7 +139,9 @@ if (event.details.cycleCount !== undefined)        → "Cycle #N"
 else if (event.details.tasksCleared !== undefined)  → "N task(s)"
 else if (event.details.achievementId)               → achievement name
 else if (event.details.oldName !== undefined)        → "old → new"  (edit events)
-else if (event.details.taskName !== undefined)       → task name    (add/delete events)
+else if (event.details.taskName !== undefined)       → task name    (add/delete/priority events)
+else if (event.details.taskNames !== undefined)      → "N task(s): name, name"  (bulk removal events)
+else if (event.details.themeName !== undefined)      → theme name   (theme_changed)
 ```
 
 `oldName` is checked before `taskName` because edit events could have both. If your new event type uses a unique detail key, add it in the appropriate position.

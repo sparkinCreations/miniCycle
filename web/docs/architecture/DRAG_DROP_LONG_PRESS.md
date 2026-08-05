@@ -219,18 +219,15 @@ The system degrades gracefully when advanced features aren't supported:
 
 ### Unified Event System
 
+In practice miniCycle splits by subsystem: **task drag/reorder** (`dragDropManager.js`) uses separate touch events (`touchstart`/`touchmove`/`touchend`/`touchcancel`) plus the HTML5 Drag and Drop API — not Pointer Events — while **panel swipe gestures** (`gesturePanelManager.js`) use Pointer Events (`pointerdown`/`pointermove`/`pointerup`):
+
 ```javascript
-// Unified pointer events where supported
-if (window.PointerEvent) {
-    element.addEventListener('pointerdown', handleStart);
-    element.addEventListener('pointermove', handleMove);
-    element.addEventListener('pointerup', handleEnd);
-} else {
-    // Fallback to separate touch/mouse events
-    element.addEventListener('touchstart', handleTouchStart);
-    element.addEventListener('mousedown', handleMouseStart);
-    // ... additional handlers
-}
+// gesturePanelManager.js — panel swipes use pointer events
+safeAdd(document, "pointerdown", this.boundHandlers.handlePointerDown);
+
+// dragDropManager.js — task drags use touch + HTML5 DnD events
+safeAdd(taskElement, "touchstart", taskElement._touchstartHandler, { passive: false });
+safeAdd(taskElement, "dragstart", taskElement._dragstartHandler);
 ```
 
 ### Timing Considerations

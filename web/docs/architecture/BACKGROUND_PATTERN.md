@@ -1,8 +1,18 @@
 # Background Pattern System
 
-**Last Updated:** January 17, 2026
+**Last Updated:** August 5, 2026
 
 The stationery-themed background pattern in miniCycle (pencils, notebooks, coffee cups, etc.).
+
+> **Where it lives now:** the default pattern is a plain, readable SVG file at
+> `assets/images/pattern.svg`, referenced by `styles/base/background.css`
+> (`body::before` — position:fixed so it stays locked in place on mobile
+> touch-drag). A URL-encoded copy of the same pattern lives in
+> `generatePatternSvg()` in `modules/ui/preferencesManager.js` — used when the
+> user customizes pattern color/opacity in Personalization. Each non-classic
+> vocab theme also has its own pattern file (`pattern-habit-tracker.svg`,
+> `pattern-fitness.svg`, `pattern-scholar.svg`, `pattern-cleaning.svg`),
+> selected via `html[data-vocab-theme="..."]` rules in `background.css`.
 
 ---
 
@@ -10,14 +20,19 @@ The stationery-themed background pattern in miniCycle (pencils, notebooks, coffe
 
 ### Change the pattern opacity (visibility)
 
-**File:** `styles/base/background.css`
+**File:** `assets/images/pattern.svg`
 
-1. Search for `rgba(255,255,255,0.07)`
+1. Find the `stroke='rgba(255,255,255,0.07)'` on the outer `<g>` group
 2. Change `0.07` to your desired value:
    - `0.05` = more subtle
    - `0.07` = current (7% white)
    - `0.10` = more visible
-3. **Update both occurrences** (lines ~25 and ~36)
+3. **Also update the template** in `generatePatternSvg()`
+   (`modules/ui/preferencesManager.js`) if the shapes change — otherwise the
+   user-customized pattern drifts from the default one. (Users can also set
+   pattern color/opacity themselves in Personalization; the default opacity for
+   that path is `DEFAULT_PATTERN_OPACITY` in `preferencesManager.js`.)
+4. Dark mode additionally dims the pattern via `body.dark-mode::before { opacity: 0.45; }` in `background.css`
 
 ### Turn off the pattern
 
@@ -34,6 +49,8 @@ In code, the `body.no-bg-pattern` class hides it.
    - `300px 300px` = more dense/repetitive
    - `500px 500px` = more spread out
 3. Keep both values equal for square tiles
+4. **Update both occurrences** (the base `body::before` rule and the
+   `body.custom-pattern` rule)
 
 ---
 
@@ -43,12 +60,14 @@ In code, the `body.no-bg-pattern` class hides it.
 |---------|--------------------|--------------------|
 | Pencil | Upper-left | Hexagonal pencil with wood grain |
 | Paperclip | Upper-right | Curved wire paperclip |
-| Spiral Notebook | Upper-center | Notebook with binding holes and ruled lines |
-| Pen | Right-middle | Pen with clip and grip texture |
-| Highlighter | Left-middle | Highlighter with cap |
-| Book | Center-bottom | Open book with spine and page lines |
+| Notepad (spiral) | Upper-center | Notepad with binding holes and ruled lines |
+| Crayon/Pen | Right-middle | Pen-like crayon with clip and grip texture |
+| Eraser/Highlighter | Left-middle | Capped stick (labeled "Eraser" in the SVG) |
+| Notebook | Center-bottom | Open notebook with spine and page lines |
 | Checkbox | Lower-right | Checked checkbox |
-| Coffee Cup | Lower-left | Cup with saucer and steam |
+| Coffee mug | Lower-left | Cup with saucer and steam |
+
+(Names in parentheses match the `<!-- comments -->` inside `pattern.svg`.)
 
 ### Visual Layout
 
@@ -74,34 +93,16 @@ In code, the `body.no-bg-pattern` class hides it.
 
 ## How to Edit the Pattern
 
-The pattern is an SVG stored as a URL-encoded string. Here's the workflow:
+The default pattern is a plain SVG file — no encoding workflow needed.
 
-### Step 1: Decode the SVG
+### Step 1: Edit `assets/images/pattern.svg`
 
-The pattern in `background.css` looks like this (unreadable):
-```
-url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org...
-```
-
-**To decode it:**
-
-Open browser console and paste:
-```javascript
-// Copy the encoded string (everything after "data:image/svg+xml," and before the closing ")
-const encoded = `%3Csvg xmlns=...%3E`;  // paste here
-console.log(decodeURIComponent(encoded));
-```
-
-Or use an online tool like [urlencoder.org](https://www.urlencoder.org/).
-
-### Step 2: Edit the SVG
-
-Once decoded, you'll see readable SVG:
+It's readable XML:
 ```xml
-<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'>
-  <g fill='none' stroke='rgba(255,255,255,0.07)' ...>
-    <!-- Pencil -->
-    <g transform='rotate(-12 20 28)'>
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+  <g fill="none" stroke="rgba(255,255,255,0.07)" ...>
+    <!-- Pencil (top-left) -->
+    <g transform="rotate(-12 20 28)">
       ...
     </g>
     <!-- More elements -->
@@ -111,18 +112,20 @@ Once decoded, you'll see readable SVG:
 
 Each element is inside a `<g>` tag with a `transform` that positions it.
 
-### Step 3: Re-encode the SVG
+### Step 2: Keep the custom-color template in sync
 
-After editing:
-```javascript
-const svg = `<svg>...</svg>`;  // your edited SVG
-console.log(encodeURIComponent(svg));
-```
+`generatePatternSvg()` in `modules/ui/preferencesManager.js` contains an inline
+copy of the same SVG (single-quoted attributes, `encodeURIComponent`-ed at
+runtime). It's used when the user picks a custom pattern color/opacity in
+Personalization. If you change shapes in `pattern.svg`, mirror the change in
+this template — otherwise the customized pattern won't match the default one.
 
-### Step 4: Update background.css
+### Step 3: Consider the per-theme patterns
 
-1. Replace the old encoded string with your new one
-2. **Update BOTH occurrences** (lines ~25 and ~36)
+The vocab themes each ship their own tile (`pattern-habit-tracker.svg`,
+`pattern-fitness.svg`, `pattern-scholar.svg`, `pattern-cleaning.svg` in
+`assets/images/`). Structural changes (tile size, stroke conventions) should
+usually be applied to all of them.
 
 ---
 
@@ -242,7 +245,7 @@ Each element below shows the decoded SVG code. Copy and modify as needed.
 
 ## Adding a New Element
 
-1. **Decode** the existing SVG (see workflow above)
+1. **Open** `assets/images/pattern.svg`
 2. **Create** your element inside a `<g>` tag:
    ```xml
    <g transform='rotate(ANGLE X Y)'>
@@ -251,7 +254,7 @@ Each element below shows the decoded SVG code. Copy and modify as needed.
    ```
 3. **Position** it by choosing X, Y coordinates that don't overlap existing elements (see layout diagram above)
 4. **Rotate** it slightly (5-20 degrees) for visual variety
-5. **Re-encode** and update both occurrences in background.css
+5. **Mirror** the addition into the `generatePatternSvg()` template in `modules/ui/preferencesManager.js` (and the per-theme pattern SVGs if applicable)
 
 ### Transform Explained
 
@@ -264,9 +267,10 @@ Each element below shows the decoded SVG code. Copy and modify as needed.
 
 ---
 
-## Full Decoded SVG
+## Full SVG
 
-Copy this for major edits:
+The canonical source is `assets/images/pattern.svg` — edit it directly. The
+copy below is kept for reference (shapes as of Aug 2026):
 
 ```xml
 <svg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'>
@@ -358,29 +362,35 @@ Copy this for major edits:
 
 | Problem | Solution |
 |---------|----------|
-| Pattern not showing | Check if `body.no-bg-pattern` class is set, or if a background image overrides it |
-| Pattern looks broken after edit | Make sure you updated **both** occurrences in background.css |
-| Encoding errors | Check for unescaped `<`, `>`, or `#` characters |
+| Pattern not showing | Check if `body.no-bg-pattern` class is set, or if a background image overrides it (`body.has-bg-image` hides the pattern) |
+| Custom-colored pattern doesn't match default | The `generatePatternSvg()` template in `preferencesManager.js` is out of sync with `pattern.svg` |
+| Encoding errors (custom-color path) | The template is `encodeURIComponent`-ed at runtime — keep single-quoted attributes, avoid raw `#` in colors inside the template string |
 | Elements overlapping | Adjust the X, Y values in the transform |
 
 ---
 
 ## Technical Details
 
-### Why inline SVG?
+### Why an external SVG file?
 
-- No extra HTTP request (loads with CSS)
-- Only ~3-4KB
+- Only ~3-4KB, cached like any static asset
+- Readable/editable in place (no encode/decode workflow)
 - Browser tiles it efficiently via GPU
-- Single parse, then cached
+- Lives on `body::before` (position:fixed) so it stays locked in place during mobile touch-drag
+
+The custom-color path (Personalization) still uses an inline
+`data:image/svg+xml` URL — it has to, since the color/opacity are generated at
+runtime and applied via the `--custom-pattern-bg` variable.
 
 ### File locations
 
 | What | Where |
 |------|-------|
-| Pattern definition | `styles/base/background.css` (lines ~25 and ~36) |
-| Pattern toggle | `modules/ui/preferencesManager.js` |
-| User docs | `docs/features/FEATURE_LIST.md` |
+| Default pattern SVG | `assets/images/pattern.svg` |
+| Per-theme pattern SVGs | `assets/images/pattern-{habit-tracker,fitness,scholar,cleaning}.svg` |
+| CSS rules (tiling, theme switching, dark-mode dimming) | `styles/base/background.css` |
+| Custom color/opacity template + toggle | `modules/ui/preferencesManager.js` (`generatePatternSvg()`) |
+| User docs | `docs/reference/FEATURE_LIST.md` |
 
 ### Global SVG properties
 

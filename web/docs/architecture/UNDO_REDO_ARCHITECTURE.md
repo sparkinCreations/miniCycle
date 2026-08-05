@@ -2,7 +2,7 @@
 
 **Module:** `modules/ui/undoRedoManager.js` (line/method counts: see `docs/PROJECT_STATS.md`)
 **Version:** See [PROJECT_STATS.md](../PROJECT_STATS.md)
-**Test Coverage:** 76/76 tests passing (100%)
+**Test Coverage:** 83 tests passing (100%)
 **Status:** Production-ready, localStorage cache + IndexedDB persistence
 
 ---
@@ -20,7 +20,7 @@ miniCycle's undo/redo system is a **per-cycle, state-based snapshot system** wit
 - ✅ **Dual-write architecture** - localStorage (instant) + IndexedDB (persistent)
 - ✅ **Full state snapshots** - Complete cycle state, not deltas
 - ✅ **Smart deduplication** - Prevents duplicate snapshots
-- ✅ **Throttled capture** - 300ms minimum interval between snapshots
+- ✅ **Throttled capture** - 300ms minimum interval between *identical* snapshots (distinct states always capture)
 - ✅ **Debounced IndexedDB writes** - Batches writes every 3 seconds
 - ✅ **Graceful degradation** - Works in-memory if storage unavailable
 - ✅ **Rollback on failure** - Automatic recovery from failed operations
@@ -39,13 +39,16 @@ miniCycle's undo/redo system is a **per-cycle, state-based snapshot system** wit
                      │
                      ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                 AppState Subscription                       │
-│         (Detects changes, triggers snapshot)                │
+│         AppState.update Wrapper (wrapAppStateForUndo)       │
+│   (Captures pre-update state at gesture entry — one         │
+│    snapshot per gesture; subscription is legacy fallback)   │
 │                                                             │
 │  • Skip if initializing                                    │
 │  • Skip if switching cycles                                │
 │  • Skip if performing undo/redo                            │
-│  • Skip if within 300ms throttle window                    │
+│  • Skip if batch resetting (isResetting)                   │
+│  • Skip if system mutation (recurring watcher)             │
+│  • Skip identical snapshot within 300ms throttle window    │
 └────────────────────┬────────────────────────────────────────┘
                      │
                      ▼
@@ -127,7 +130,7 @@ Each snapshot captures **complete cycle state** at a point in time:
   undoStack: Snapshot[],           // Array of up to 20 snapshots
   redoStack: Snapshot[],           // Array of redo snapshots
   lastUpdated: number,             // Timestamp of last save
-  version: string                  // App version (e.g., "1.356")
+  version: string                  // App version (APP_VERSION, e.g., "2.366")
 }
 ```
 
@@ -184,13 +187,13 @@ Stored in `AppGlobalState` (accessed via DI, not window.*):
 
 ### 1. Snapshot Capture
 
-**Triggered by:** AppState subscription on cycle data changes
+**Triggered by:** `AppState.update` wrapper (`wrapAppStateForUndo`) — captures the **pre-update** state once at gesture entry, so each user gesture yields exactly one snapshot (batch executors like cycle reset never capture mid-flight; `setupStateBasedUndoRedo`'s subscription is a fallback used only when the wrapper isn't active)
 **Function:** `captureStateSnapshot(state)`
-**Throttle:** 300ms minimum interval
+**Throttle:** 300ms minimum interval between identical snapshots
 **Limit:** 20 snapshots per cycle (oldest discarded)
 
 **Logic Flow:**
-1. Check if should skip (initializing, switching, within throttle window)
+1. Check if should skip (initializing, switching cycles, batch reset `isResetting`, system mutation `isSystemMutation`)
 2. Extract current cycle state
 3. Create deep clones of tasks and templates
 4. Build compact signature for comparison
@@ -213,6 +216,8 @@ Stored in `AppGlobalState` (accessed via DI, not window.*):
 - Initial app load
 - Cycle switches
 - Undo/redo operations themselves
+- Batch operations (cycle reset, complete-all — `isResetting` flag)
+- System-driven mutations (recurring watcher recreations — `isSystemMutation` flag)
 - Changes to other cycles (only active cycle)
 
 ### 2. Undo Operation
@@ -332,9 +337,14 @@ function filterValidSnapshots(snapshots, cycleId) {
 
 ### When Validation Occurs
 
+All four load paths filter through `filterValidSnapshots()`:
+
 1. **On cycle switch** - Loaded stacks are validated before populating in-memory state
 2. **On cache load** - localStorage cache is validated before use
-3. **On snapshot capture** - Cycle mismatch self-heals by calling `onCycleSwitched()` to re-target the correct cycle
+3. **On boot cache-miss** - The background IndexedDB load at boot is filtered too (this was the one unfiltered entry point until v2.365 — stale-id snapshots could survive into the live stacks)
+4. **On IndexedDB load** - `loadUndoStackFromIndexedDB()` filters both stacks against the expected cycle ID
+
+Additionally, **on snapshot capture** a cycle mismatch self-heals by calling `onCycleSwitched()` to re-target the correct cycle, and **on restore** `sanitizeSnapshot()` clamps numeric fields, validates task entries, and normalizes theme IDs before the snapshot is applied.
 
 ### Why Validation Matters
 
@@ -352,20 +362,29 @@ Without validation, these issues could occur:
 To avoid storing duplicate snapshots, each snapshot gets a compact signature:
 
 ```javascript
-function buildSnapshotSignature(snapshot) {
+function buildSnapshotSignature(s) {
   return JSON.stringify({
-    c: snapshot.activeCycleId,
-    t: snapshot.tasks.map(t => ({
-      id: t.id,
-      txt: t.text,
-      c: !!t.completed,
-      p: !!t.highPriority,
-      d: t.dueDate || null
+    c: s.activeCycleId,
+    t: (s.tasks || []).map(t => ({
+      id: t.id, txt: t.text, c: !!t.completed, p: !!t.highPriority, d: t.dueDate || null,
+      r: !!t.recurring, re: !!t.remindersEnabled, dwc: !!t.deleteWhenComplete, pc: t.priorityColor || null,
+      // Settings OBJECTS, not just their booleans — an edit touching only
+      // these would otherwise dedup-skip its snapshot
+      rs: t.recurringSettings ? JSON.stringify(t.recurringSettings) : null,
+      dws: t.deleteWhenCompleteSettings ? JSON.stringify(t.deleteWhenCompleteSettings) : null
     })),
-    ti: snapshot.title || '',
-    ar: !!snapshot.autoReset,
-    dc: !!snapshot.deleteCheckedTasks,
-    cc: snapshot.cycleCount || 0
+    ti: s.title || '',
+    ar: !!s.autoReset,
+    dc: !!s.deleteCheckedTasks,
+    cc: s.cycleCount || 0,
+    th: s.theme || 'classic',
+    rt: Object.keys(s.recurringTemplates || {}).sort().map(k => ({
+      id: k, rs: JSON.stringify(s.recurringTemplates[k]?.recurringSettings || {})
+    })),
+    ct: s.clearedTasks?.totalCleared || 0,
+    // Task view layout — without this, a layout-only change (drag-end or
+    // dock-back) would dedup against the previous snapshot and never push
+    tvl: JSON.stringify(s.taskViewLayout?.positions || {})
   });
 }
 ```
@@ -375,10 +394,10 @@ Signatures are cached on snapshot objects (`_sig` property) to avoid recomputing
 
 ### Throttling Strategy
 
-**300ms minimum interval** between snapshots prevents spam:
-- Rapid task completions → Only last state captured
-- Drag reordering → Only final position captured
-- Batch operations → Single snapshot
+**300ms minimum interval** between *identical* snapshots prevents spam — a snapshot is skipped only when its signature matches `lastSnapshotSignature` AND it arrives within the window. Distinct states always capture (one snapshot per gesture, via the `AppState.update` wrapper):
+- Repeated identical state updates → Only first captured
+- Consecutive identical stack-top → Deduped via cached `_sig` comparison
+- Batch operations (cycle reset, complete-all) → No mid-flight snapshots (`isResetting` guard); the gesture-entry snapshot is the single undo point
 
 ### Debounced IndexedDB Writes
 
@@ -433,11 +452,12 @@ Signatures are cached on snapshot objects (`_sig` property) to avoid recomputing
 **Function:** `onCycleRenamed(oldCycleId, newCycleId)`
 **Called by:** `routineSwitcher` when cycle renamed
 
-**Action:**
-- Load undo history under old key
-- Save under new key
-- Delete old key
-- Update in-memory tracking
+**Action — history survives renames:**
+- Cancel any pending debounced write for the OLD id (otherwise it fires after migration and recreates a stale record)
+- Migrate the IndexedDB entry to the new key, with every snapshot **relabeled** via `relabelSnapshotsForCycle()` — rewrites `activeCycleId` AND `title` to the new id (cycle key = title in this app) and strips the cached `_sig` (it embeds the old id/title, so carrying it forward would make the first post-rename capture push a duplicate)
+- Relabel the live in-memory stacks the same way and update `activeCycleIdForUndo`
+
+Without the relabel, `validateSnapshot()` would discard the whole history on the next load (wrong cycleId), and a rename → Undo in the same session would restore the old title.
 
 ### Clear Undo History (Settings Button)
 
@@ -555,46 +575,46 @@ window.addEventListener('beforeunload', () => {
 
 ## Testing Strategy
 
-**Test Suite:** `tests/undoRedoManager.tests.js` (73 tests, 100% passing)
+**Test Suite:** `tests/undoRedoManager.tests.js` (83 tests, 100% passing)
 
 ### Test Categories
 
-1. **Initialization Tests** (7 tests)
+1. **Initialization Tests**
    - Module creation and dependency injection
    - Button initialization
    - IndexedDB setup
 
-2. **Snapshot Capture Tests** (12 tests)
+2. **Snapshot Capture Tests**
    - Basic snapshot creation
    - Deduplication
    - Throttling
    - Stack size limits
 
-3. **Undo/Redo Operations** (15 tests)
+3. **Undo/Redo Operations**
    - Basic undo/redo
    - Multiple operations
    - Duplicate skipping
    - Stack boundaries
    - Error handling
 
-4. **Cycle Lifecycle Tests** (10 tests)
+4. **Cycle Lifecycle Tests**
    - Cycle switching
    - Cycle creation
    - Cycle deletion
-   - Cycle rename
+   - Cycle rename (relabeling)
 
-5. **IndexedDB Persistence Tests** (12 tests)
+5. **IndexedDB Persistence Tests**
    - Save/load operations
    - Cycle-specific storage
    - Database cleanup
    - Migration operations
 
-6. **Change Detection Tests** (8 tests)
+6. **Change Detection Tests**
    - Signature generation
    - Description generation
    - Comparison accuracy
 
-7. **Integration Tests** (9 tests)
+7. **Integration Tests**
    - AppState integration
    - UI updates
    - Keyboard shortcuts
@@ -863,7 +883,7 @@ console.log(JSON.parse(cache));
 
 ---
 
-**Last Updated:** March 7, 2026
+**Last Updated:** August 5, 2026
 **Module Version:** See [PROJECT_STATS.md](../PROJECT_STATS.md)
-**Test Status:** 76/76 passing ✅
+**Test Status:** 83/83 passing ✅
 **Architecture:** localStorage cache + IndexedDB dual-write, per-cycle isolation with validation

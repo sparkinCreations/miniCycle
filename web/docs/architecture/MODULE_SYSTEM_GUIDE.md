@@ -1,6 +1,6 @@
 # Module System Guide
 
-**Last Updated**: December 2025
+**Last Updated**: August 2026
 
 ---
 
@@ -80,7 +80,7 @@ window.showNotification = (msg, type, dur) => notifications.show(msg, type, dur)
 **Accepts dependencies with fallbacks.** This is where the "DI theater" happens.
 
 ```javascript
-// modules/ui/statsPanel.js
+// modules/features/statsPanel.js (as it looked pre-DI)
 export class StatsPanelManager {
     constructor(dependencies = {}) {
         this.deps = {
@@ -152,32 +152,39 @@ setRoutineLoaderDependencies({
 
 ```javascript
 // modules/task/taskCore.js
+import { createDIModule, optional } from '../core/diBase.js';
+
+const di = createDIModule('TaskCore', {
+    appInit: optional(null),
+    AppState: optional(null),
+    showNotification: optional(null),
+    // ... etc
+});
+
+export const setTaskCoreDependencies = di.setDependencies;
+
 export class TaskCore {
     constructor(dependencies = {}) {
-        const mergedDeps = { ...moduleDeps, ...dependencies };
+        // Resolve deps from diBase, with constructor overrides
+        // (NEVER `{ ...deps }` spread — it evaluates lazy getters immediately)
+        const resolvedDeps = di.resolve(dependencies);
 
         // Version via DI, not window.APP_VERSION
-        this.version = mergedDeps.AppMeta?.version;
+        this.version = resolvedDeps.AppMeta?.version;
 
-        // NO window.* fallbacks - only injected deps or null
+        // NO window.* fallbacks - only injected deps or local fallbacks
         this.deps = {
-            AppState: mergedDeps.AppState || null,
-            AppGlobalState: mergedDeps.AppGlobalState || null,
-            safeJSONParse: mergedDeps.safeJSONParse || ((str, fb) => { try { return JSON.parse(str); } catch { return fb; } }),
-            showNotification: mergedDeps.showNotification || this.fallbackNotification,
+            AppState: resolvedDeps.AppState || null,
+            sanitizeInput: resolvedDeps.sanitizeInput || ((text) => text),
+            showNotification: resolvedDeps.showNotification || this.fallbackNotification,
             // ... etc
         };
     }
 }
 
-// In featureBoot/moduleLoader - wiring hub (DI-only)
-const taskCore = await initTaskCore({
-    AppState: deps.core.AppState,
-    AppGlobalState: deps.core.AppGlobalState,
-    AppMeta: deps.core.AppMeta,
-    safeJSONParse: deps.utils.GlobalUtils.safeJSONParse,
-    showNotification: deps.utils.showNotification,
-});
+// Wiring happens declaratively: the module's manifest entry in
+// moduleManifests.js declares requires/optionalDeps/lazyRequires,
+// and moduleLoader injects them during featureBoot (Phase 2).
 ```
 
 **Status:** ✅ Fully testable in isolation. No window mocking needed.
@@ -233,9 +240,9 @@ new Module({
 
 ---
 
-## Future: True Modularity
+## True Modularity (Completed)
 
-See [MODULAR_OVERHAUL_PLAN.md](../archive/MODULAR_OVERHAUL_PLAN.md) for the plan to transform these patterns:
+See [MODULAR_OVERHAUL_PLAN.md](../archive/MODULAR_OVERHAUL_PLAN.md) for the (now-completed) plan that transformed these patterns:
 
 **Current:**
 ```javascript
@@ -256,9 +263,13 @@ The difference: no fallback to globals. Dependencies are required and explicit.
 
 ---
 
-## Existing Modules by Pattern
+## Modules by Pattern (Historical)
 
-### DI-Pure ✅ (Target Pattern)
+> All of these modules are DI-Pure today. This list records which pattern each
+> used *before* the migration, as a reference for recognizing old code in
+> archives, diffs, and blog posts.
+
+### First DI-Pure Migrations
 - `modules/task/taskDOM.js` - TaskDOMManager (Dec 2025)
 - `modules/task/taskCore.js` - TaskCore (Dec 2025)
 
@@ -271,13 +282,13 @@ The difference: no fallback to globals. Dependencies are required and explicit.
 - `modules/utils/notifications.js` - Notification system
 - `modules/utils/deviceDetection.js` - Device detection
 
-### Resilient Constructor (Legacy)
-- `modules/ui/statsPanel.js` - Statistics panel
+### Formerly Resilient Constructor
+- `modules/features/statsPanel.js` - Statistics panel
 - `modules/ui/settingsManager.js` - Settings UI
 - `modules/ui/modalManager.js` - Modal coordination
 - Most UI modules
 
-### Strict Injection (Legacy)
+### Formerly Strict Injection
 - `modules/routine/routineLoader.js` - Routine loading
 - `modules/recurring/recurringCore.js` - Recurring logic
 - `modules/ui/undoRedoManager.js` - Undo/redo system

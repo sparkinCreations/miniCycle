@@ -20,8 +20,9 @@ miniCycle Lite is a frozen, static version of the app that provides core routine
 ```
 lite/
 ├── miniCycle-lite.html          # Single HTML entry point (inline scripts)
-├── miniCycle-lite-scripts.js    # All JS logic (~4,200 lines, ES5)
-└── miniCycle-lite-styles.css    # All styles (~5,200 lines)
+├── miniCycle-lite-scripts.js    # All JS logic (~4,400 lines, ES5)
+├── miniCycle-lite-styles.css    # All styles (~5,800 lines)
+└── miniCycle-lite-polish.css    # Visual polish layer (loaded after main styles)
 
 web/
 ├── manifest-lite.json           # PWA manifest for lite version
@@ -60,7 +61,8 @@ Lite uses its own key namespace — completely independent from the full version
 
 | Key | Value | Purpose |
 |-----|-------|---------|
-| `miniCycleLite` | `{ tasks: [], cycleCount }` | Task list and cycle count |
+| `miniCycleLite` | `{ title, tasks: [], autoReset, cycleCount, lastSaved }` | Task list and cycle count |
+| `miniCycleLiteCount` | Number | Cycle count source read when saving `miniCycleLite` |
 | `miniCycleLiteMode` | `auto-cycle` / `manual-cycle` / `todo-mode` | Current mode |
 | `miniCycleLiteTheme` | `default` / `dark` | Theme preference |
 | `miniCycleLiteCycles` | Number | Lifetime cycles completed |
@@ -69,6 +71,7 @@ Lite uses its own key namespace — completely independent from the full version
 | `miniCycleLite_celebratedBadges` | JSON array | Cycle milestones already celebrated |
 | `miniCycleLite_celebratedClearedBadges` | JSON array | Cleared-task milestones celebrated |
 | `miniCycleLiteNotifications` | `'off'` or absent | Notification toggle (absent = on) |
+| `miniCycleLiteFocusMode` | Flag | Focus mode (expanded/collapsed view) state |
 
 ## Full Version Redirect System
 
@@ -80,8 +83,9 @@ When the full version can't boot, it redirects to lite with URL parameters expla
 |-----------------|---------|---------|
 | `feature-gate` | Browser lacks required APIs (IndexedDB, Fetch, Promise, etc.) | Immediate |
 | `load-timeout` | Full app didn't finish loading | 60 seconds |
-| `fallback` | Feature gate flagged the device but boot script ran as backup | 8 seconds |
-| `no-boot` | No boot activity detected at all | 8 seconds |
+| `fallback` | Feature gate flagged the device but boot script ran as backup | 16 seconds |
+| `no-boot` | No boot activity detected at all | 16 seconds |
+| `choice-slow` | User tapped "Taking a while? Try the Lite version" on the first-run/loading screen | User-initiated |
 
 ### URL Pattern
 
@@ -171,12 +175,12 @@ The lite version has 4 inline `<script>` blocks in the HTML. Their SHA-256 hashe
 
 ### Current Lite Script Hashes
 
-| Hash | Script (line in HTML) | Purpose |
-|------|----------------------|---------|
-| `sha256-vGZuMd1H...` | Line 79 | Service Worker & PWA helpers |
-| `sha256-HoVNOC42...` | Line 631 | Toast notification system (`showNotification`) |
-| `sha256-ZmCo1D8q...` | Line 712 | Update prompt modal (`showUpdatePromptLite`) |
-| `sha256-h+r8SXgn...` | Line 770 | FontAwesome fallback icons |
+| Hash | Script (line in HTML, approx.) | Purpose |
+|------|-------------------------------|---------|
+| `sha256-vGZuMd1H...` | Line ~81 | Service Worker & PWA helpers |
+| `sha256-HoVNOC42...` | Line ~646 | Toast notification system (`showNotification`) |
+| `sha256-ZmCo1D8q...` | Line ~730 | Update prompt modal (`showUpdatePromptLite`) |
+| `sha256-h+r8SXgn...` | Line ~788 | FontAwesome fallback icons |
 
 **If any inline script content changes (even whitespace), the hash must be recomputed:**
 
@@ -197,8 +201,9 @@ for match in re.findall(r'<script>(.*?)</script>', content, re.DOTALL):
 - Task priority toggle (high priority indicator)
 - Three cycle modes (Auto, Manual, To-Do)
 - Progress bar
-- Stats panel with cycle/cleared badges (milestones at 5, 10, 25, 50, 100)
+- Stats panel with cycle/cleared badges (milestones at 5, 10, 25, 50)
 - Undo/redo (4-item stack)
+- Focus mode (expand/collapse task view)
 - Dark mode
 - Swipe navigation between task view and stats
 - Navigation dots

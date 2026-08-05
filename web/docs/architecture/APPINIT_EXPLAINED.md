@@ -19,8 +19,8 @@ If your code needs the full UI, you wait at the **App Ready** door.
 
 ## Where It Lives
 
-- Module: `modules/core/appInit.js`
-- Created in: `modules/boot/coreBoot.js`
+- Module: `modules/core/appInit.js` (exports the `appInit` singleton)
+- Loaded and configured in: `modules/boot/coreBoot.js`
 - Injected via DI and `appContext` (no `window.*` globals)
 
 ---

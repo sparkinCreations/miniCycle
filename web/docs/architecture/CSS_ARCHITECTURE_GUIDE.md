@@ -1,6 +1,6 @@
 # CSS Architecture Guide
 
-**Last Updated:** March 2026
+**Last Updated:** August 2026
 **Status:** Complete reference for the CSS design system
 
 > miniCycle uses a token-based CSS architecture built on `styles/base/variables.css`. All colors, spacing, typography, timing, and z-index values are CSS custom properties. This guide explains the system and how to extend it.
@@ -49,6 +49,7 @@ styles/
 │   ├── task-list.css        # Task items, completed state
 │   ├── task-input.css       # Task input area
 │   ├── task-options.css     # Per-task option buttons
+│   ├── task-view-layout.css # Task view band-centering layout
 │   ├── menu.css             # Slide-out menu
 │   ├── settings.css         # Settings modal
 │   ├── stats-panel.css      # Stats panel, charts
@@ -56,10 +57,15 @@ styles/
 │   ├── recurring.css        # Recurring panel, settings
 │   ├── themes-modal.css     # Theme picker modal
 │   ├── onboarding.css       # Onboarding wizard
+│   ├── first-run-welcome.css # First-run choice/welcome screen
+│   ├── guided-tour.css      # Guided tour overlay
 │   ├── quick-actions.css    # Quick action buttons
 │   ├── focus-mode.css       # Focus mode overlay
+│   ├── focus-task-panel.css # Focus task panel
 │   ├── mode-selector.css    # Cycle/Todo mode toggle
 │   ├── progress-bar.css     # Progress indicators
+│   ├── history.css          # History modal
+│   ├── achievements.css     # Achievements panel
 │   ├── footer.css           # Footer area
 │   ├── games.css            # Games panel
 │   ├── icons.css            # Icon sizing
@@ -78,7 +84,7 @@ styles/
 └── main.css                 # Imports all stylesheets
 ```
 
-**38 CSS files** organized by layer: base → components → layout → themes → utilities.
+**44 CSS files** (live count in [PROJECT_STATS.md](../PROJECT_STATS.md)) organized by layer: base → components → layout → themes → utilities.
 
 ---
 
@@ -100,7 +106,7 @@ no `@import`s — it must paint immediately.
 
 ### Tier 2 — async main stylesheet (`main.css`)
 
-`main.css` is the master aggregator: a chain of ~38 `@import`s pulling in every other
+`main.css` is the master aggregator: a chain of ~42 `@import`s pulling in every other
 stylesheet (variables, reset, layout, components, accessibility, …). Because `@import`s
 are fetched as a **sequential waterfall**, making `main.css` render-blocking would
 noticeably delay first paint — so it loads **asynchronously**:

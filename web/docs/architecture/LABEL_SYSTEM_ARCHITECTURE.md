@@ -1,8 +1,8 @@
 # Label System Architecture
 
-**Status:** Phase 2 Complete (Resolver + Tier 1-6 Migration)
-**Modules:** `modules/labels/defaultLabels.js`, `modules/labels/labelResolver.js`
-**Last Updated:** February 2026
+**Status:** Phase 3 Complete — lens system shipped as the Vocabulary Theme System (`modules/labels/themes.js`)
+**Modules:** `modules/labels/defaultLabels.js`, `modules/labels/labelResolver.js`, `modules/labels/themes.js`
+**Last Updated:** August 2026
 
 ---
 
@@ -12,27 +12,29 @@ The Label System centralizes all user-facing strings in miniCycle into a single 
 
 This serves two purposes:
 1. **Single source of truth** — one place to find, audit, or change any user-facing string
-2. **Foundation for Contextual Lenses** — the future lens system overrides specific keys to reframe the app's vocabulary (e.g., "task" becomes "habit" in the Habit Tracker lens)
+2. **Foundation for Contextual Lenses** — shipped as the **Vocabulary Theme System**: per-routine themes override lens-sensitive keys to reframe the app's vocabulary (e.g., "task" becomes "habit" in the Habit Tracker theme)
 
 ---
 
 ## Architecture
 
-### Current State (Phase 2 Complete)
+### Current State (Phase 3 Complete)
 
 ```
 modules/labels/
-├── defaultLabels.js      ← Pure data module, 566 keys across 32 categories
-└── labelResolver.js      ← getLabel() function with DI, pluralization, interpolation
+├── defaultLabels.js      ← Pure data module, ~1,575 keys across 58 categories
+├── labelResolver.js      ← getLabel() function with DI, pluralization, interpolation
+└── themes.js             ← Vocabulary Theme System: THEME_DEFINITIONS + vocabThemeManager
 ```
 
 **defaultLabels.js** exports:
-- `DEFAULT_LABELS` — Frozen object with 566 keys across 32 categories
-- `LENS_SENSITIVE_KEYS` — Frozen Set of ~142 dot-path strings identifying which keys a contextual lens can override
+- `DEFAULT_LABELS` — Frozen object with ~1,575 keys across 58 categories
+- `LENS_SENSITIVE_KEYS` — Frozen Set of ~498 dot-path strings identifying which keys a vocabulary theme can override
 - `LABELS_VERSION` — Version constant
 
 **labelResolver.js** exports:
-- `getLabel(key, options)` — Main resolver with pluralization, device variants (`{ touch, pointer }`), and interpolation
+- `getLabel(key, options)` — Main resolver with theme-override lookup, pluralization, device variants (`{ touch, pointer }`), and interpolation
+- `getIcon(key)` — Icon lookup (theme-aware)
 - `getLabelOrFallback(key, fallback, options)` — Fallback wrapper
 - `hasLabel(key)` — Check if key exists
 - `isLensSensitive(key)` — Check if key is contextual-lens-sensitive
@@ -42,17 +44,16 @@ modules/labels/
 - `getCategoryLabels(category, options)` — Get all labels in a category as object
 - `getLabelDiagnostics()` — Diagnostics (version, counts, lens-sensitive keys)
 
-### Future State (Phase 3 — Contextual Lenses)
+### Phase 3 — Shipped as the Vocabulary Theme System
 
-```
-modules/labels/
-├── defaultLabels.js      ← Default values (current)
-├── labelResolver.js      ← Resolver (current)
-└── lenses/
-    ├── habitTracker.js   ← Override map: "task" → "habit", "cycle" → "streak"
-    ├── fitnessTracker.js ← Override map: "task" → "exercise", "cycle" → "workout"
-    └── custom.js         ← User-defined overrides (unlocked at 50 cycles)
-```
+Instead of the originally planned `lenses/` directory, contextual lenses shipped as **vocabulary themes** in a single module, `modules/labels/themes.js`:
+
+- `THEME_DEFINITIONS` — 5 themes (Classic / Habit Tracker / Fitness / Scholar / Cleaning) with per-key label override maps and `colorPreset` objects
+- `vocabThemeManager` — singleton that resolves the active routine's theme
+- Themes unlock at 0/5/25/50/75 completed cycles; the active theme is stored **per routine** at `state.data.cycles[cycleId].theme`
+- `getLabel()` checks the active theme's overrides first (via the resolver's `getActiveLens`/`getRoutineLens` DI hooks), then falls back to `DEFAULT_LABELS`
+
+See [VOCAB_THEME_SYSTEM.md](../features/VOCAB_THEME_SYSTEM.md) for the full guide.
 
 ---
 
@@ -101,48 +102,62 @@ export const DEFAULT_LABELS = deepFreeze({
 | Sub-qualifiers | Flattened into camelCase | `action.addTask.placeholder` → `action.addTaskPlaceholder` |
 | Freezing | `deepFreeze()` at all levels | Immutability guarantee, matches `constants.js` convention |
 
-### Categories (32 total)
+### Categories (58 total)
+
+Counts drift as features land — run `getLabelDiagnostics()` for live numbers. Snapshot (Aug 2026):
 
 | Category | Keys | Description |
 |----------|------|-------------|
-| `noun` | 4 | Core nouns (task, cycle, routine) with pluralization |
-| `mode` | 13 | Mode labels and descriptions |
-| `action` | 21 | Task action labels, placeholders, tooltips |
-| `taskOption` | 10 | Per-task option button ARIA labels |
-| `taskOptions` | 13 | Task Options Customizer modal text |
-| `routine` | 6 | Routine CRUD action labels |
-| `switcher` | 10 | Routine Switcher modal labels |
-| `stats` | 12 | Stats panel text and progress templates |
-| `notify` | 109 | All notification messages (success, error, warning, info) |
-| `modal` | 10 | Confirmation modal titles, messages, buttons |
-| `empty` | 6 | Empty state messages and hints |
-| `recurring` | 11 | Recurring panel labels and form text |
-| `freq` | 6 | Frequency labels (Hourly, Daily, Weekly, etc.) |
-| `menu` | 13 | Menu section headers and button labels |
-| `settings` | 15 | Settings modal toggles, sections, buttons |
-| `undo` | 4 | Undo/redo button labels and state descriptions |
-| `button` | 8 | Universal button labels (Save, Cancel, Close, etc.) |
-| `nav` | 8 | Navigation tabs, arrows, layout labels |
-| `quickAction` | 7 | Quick Actions panel labels and view titles |
-| `unlock` | 3 | Theme/game unlock progress messages |
-| `about` | 4 | About modal text |
-| `prefs` | 24 | Personalization modal labels |
-| `preset` | 10 | Quick theme preset names and descriptions |
-| `reminders` | 5 | Reminders modal form labels |
+| `noun` | 5 | Core nouns (task, cycle, routine) with pluralization |
+| `mode` | 18 | Mode labels and descriptions |
+| `action` | 36 | Task action labels, placeholders, tooltips |
+| `taskOption` | 13 | Per-task option button ARIA labels |
+| `taskOptions` | 37 | Task Options Customizer modal text |
+| `routine` | 15 | Routine CRUD action labels |
+| `share` | 6 | Share modal text and privacy strip |
+| `switcher` | 45 | Routine Switcher modal labels |
+| `stats` | 18 | Stats panel text and progress templates |
+| `achievement` | 20 | Achievement names and descriptions |
+| `notify` | 419 | All notification messages (success, error, warning, info) |
+| `modal` | 69 | Confirmation modal titles, messages, buttons |
+| `banner` | 2 | Banner messages |
+| `empty` | 20 | Empty state messages and hints |
+| `recurring` | 135 | Recurring panel labels and form text |
+| `freq` | 7 | Frequency labels (Hourly, Daily, Weekly, etc.) |
+| `menu` | 28 | Menu section headers and button labels |
+| `settings` | 44 | Settings modal toggles, sections, buttons |
+| `tour` + 12 per-feature `*Tour` categories | 103 | Guided-tour steps (stats, prefs, task options, reminders, settings, routine switcher, recurring list/settings, achievements, history, cleared tasks, menu) |
+| `undo` | 8 | Undo/redo button labels and state descriptions |
+| `button` | 17 | Universal button labels (Save, Cancel, Close, etc.) |
+| `nav` | 22 | Navigation tabs, arrows, layout labels |
+| `focusTask` / `focusMode` | 39 | Focus mode and focus task view text |
+| `homeView` | 6 | Home view labels |
+| `firstRun` / `firstRunWelcome` | 40 | First-run screen and welcome flow text |
+| `quickAction` | 30 | Quick Actions panel labels and view titles |
+| `unlock` | 10 | Theme/game unlock progress messages |
+| `about` | 5 | About modal text |
+| `prefs` | 88 | Personalization modal labels |
+| `preset` | 18 | Quick theme preset names and descriptions |
+| `reminders` | 18 | Reminders modal form labels |
 | `games` | 3 | Games panel text |
-| `feedback` | 6 | Feedback modal text |
+| `feedback` | 29 | Feedback modal text |
 | `themes` | 2 | Themes panel text |
-| `history` | 3 | History panel labels |
-| `boot` | 14 | Boot sequence status and error messages |
+| `history` | 40 | History panel labels |
+| `boot` | 46 | Boot sequence status and error messages |
 | `meta` | 2 | Page title and meta description |
 | `footer` | 4 | Footer link labels |
-| `onboarding` | 4 | Onboarding flow text |
+| `onboarding` | 24 | Onboarding flow text |
+| `accessibility` | 22 | Accessibility settings text |
+| `pullRefresh` | 3 | Pull-to-refresh status text |
+| `help` | 15 | Help window text |
+| `icons` | 23 | Icon glyph registry (theme-overridable via `getIcon()`) |
+| `test` | 21 | Testing modal text |
 
 ---
 
 ## Lens-Sensitive Keys
 
-Of the 566 total keys, **~142 are lens-sensitive** — meaning a contextual lens can override them to reframe the app's vocabulary.
+Of the ~1,575 total keys, **~498 are lens-sensitive** — meaning a vocabulary theme can override them to reframe the app's vocabulary.
 
 ```javascript
 export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
@@ -152,7 +167,7 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'action.addTask',
     'action.completeCycle',
     'stats.cyclesCompleted',
-    // ... 136 more
+    // ... ~490 more
 ]));
 ```
 
@@ -197,7 +212,7 @@ When adding a new feature with user-facing text:
 
 1. **Add the key(s) to `defaultLabels.js`** in the appropriate category
 2. **If the label is lens-sensitive**, add its dot-path to `LENS_SENSITIVE_KEYS`
-3. **Update the reference** at `docs/architecture/LABEL_REGISTRY_REFERENCE.md`
+3. **Update the reference** at `docs/reference/LABEL_REGISTRY_REFERENCE.md`
 4. **Use `{varName}` syntax** for any dynamic content
 5. **Use `getLabel()` in your module** — import from `labelResolver.js`
 
@@ -251,9 +266,10 @@ const noun = getLabel('noun.task', { count: 3 });            // 'tasks'
 const msg = getLabel('notify.taskRenamed', { vars: { name: 'Buy groceries' } });
                                                              // 'Task renamed to "Buy groceries"'
 
-// Combined pluralization + interpolation
-const stats = getLabel('stats.completion', { count: 3, vars: { completed: 3, total: 5 } });
-                                                             // '3 of 5 Tasks Completed'
+// Combined pluralization + interpolation (vocab-aware nouns passed as vars)
+const stats = getLabel('stats.completion', {
+    vars: { completed: 3, total: 5, taskWord: 'Tasks', cycleWord: 'Cycle' }
+});                                                          // '3 of 5 Tasks Completed This Cycle'
 ```
 
 **Direct import from `defaultLabels.js`** is also available for constants or modules that load before the resolver boots, but `getLabel()` is preferred for all runtime usage.
@@ -264,7 +280,7 @@ const stats = getLabel('stats.completion', { count: 3, vars: { completed: 3, tot
 
 All 6 planned migration tiers are complete. See [Label System Integration Plan](../archive/LABEL_SYSTEM_INTEGRATION_PLAN.md) for details.
 
-~39 hardcoded notification strings remain in modules outside the original tier scope (undoRedoManager, pullToRefresh, routineManager, etc.). These can be migrated incrementally as those modules are touched.
+The hardcoded notification strings that remained outside the original tier scope (undoRedoManager, pullToRefresh, routineManager, etc.) have since been migrated to `getLabel()` — only dev-only debug strings remain hardcoded (not user-facing).
 
 ---
 
@@ -282,9 +298,11 @@ All 6 planned migration tiers are complete. See [Label System Integration Plan](
 
 | File | Purpose |
 |------|---------|
-| `modules/labels/defaultLabels.js` | Label registry (566 keys, 32 categories) |
-| `modules/labels/labelResolver.js` | Label resolver with getLabel(), pluralization, interpolation |
-| `docs/architecture/LABEL_REGISTRY_REFERENCE.md` | Audit with source locations and lens-sensitivity |
-| `docs/future-work/LABEL_SYSTEM_INTEGRATION_PLAN.md` | Migration plan and tier completion status |
-| `docs/future-work/CONTEXTUAL_THEME_SYSTEM_PLAN.md` | Full contextual lens plan |
+| `modules/labels/defaultLabels.js` | Label registry (~1,575 keys, 58 categories) |
+| `modules/labels/labelResolver.js` | Label resolver with getLabel(), theme overrides, pluralization, interpolation |
+| `modules/labels/themes.js` | Vocabulary Theme System (THEME_DEFINITIONS + vocabThemeManager) |
+| `docs/reference/LABEL_REGISTRY_REFERENCE.md` | Audit with source locations and lens-sensitivity |
+| `docs/archive/LABEL_SYSTEM_INTEGRATION_PLAN.md` | Migration plan and tier completion status |
+| `docs/archive/CONTEXTUAL_THEME_SYSTEM_PLAN.md` | Full contextual lens plan |
+| `docs/features/VOCAB_THEME_SYSTEM.md` | Vocabulary theme developer guide |
 | `docs/architecture/LABEL_SYSTEM_ARCHITECTURE.md` | This document |

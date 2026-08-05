@@ -81,17 +81,21 @@ undoRedoManager: {
         'AppState',
         'showNotification',
         'safeAddEventListener',
-        'getElementById',
         'refreshUIFromState'
     ],
     provides: [
         'performStateBasedUndo',
         'performStateBasedRedo',
         'captureStateSnapshot'
+        // ... (see moduleManifests.js for the full current entry)
     ],
     api: 'undo'
 }
 ```
+
+> **Note:** DOM helpers (`getElementById`, `querySelector`, `getBody`, etc.) are
+> framework-level `CORE_DEPS` — they're injected into every module automatically
+> and do **not** need to be declared in `requires`.
 
 And in your module, you just need one init function:
 
@@ -251,7 +255,7 @@ export function initMyModule(dependencies = {}) {
 }
 ```
 
-> **⚠️ Critical:** The init function MUST be named `initModuleName` where `ModuleName` matches your module. For a module called `undoRedoManager`, the function must be `initUndoRedoManager`.
+> **⚠️ Critical:** The init function MUST be named `initModuleName` (or `initializeModuleName`) where `ModuleName` matches your module. For a module called `undoRedoManager`, the function must be `initUndoRedoManager`.
 
 ### Part 4: Module Load Confirmation
 
@@ -652,6 +656,17 @@ myModule: {
     // List of dependencies your module needs
     // These get passed to your init function
     // MUST include everything you access via _deps
+    // (Exception: DOM helpers like getElementById/querySelector/getBody are
+    //  framework-level CORE_DEPS and never need declaring)
+
+    optionalDeps: ['dep3'],
+    // Dependencies that are guarded/conditional or come from a later phase
+    // Still injected when available, but boot doesn't require them
+
+    lazyRequires: ['dep4'],
+    // Later-phase dependencies only called after user interaction
+    // (validate:di checks all three buckets — every _deps access must be
+    //  declared in requires, optionalDeps, or lazyRequires)
 
     provides: ['function1', 'function2'],
     // List of functions/values your module exports
@@ -689,6 +704,10 @@ myModule: {
     // Register the init function's return value as an instance
     // Result: deps.features.myManager = returnedInstance
     // Useful for manager classes with methods
+
+    deferred: true,
+    // If true: module is SKIPPED at boot and loaded on-demand later
+    // (e.g. gamesManager loads on first main-menu open)
 }
 ```
 
@@ -764,7 +783,7 @@ deps.features.doOtherThing = yourOtherFunction
 
 | API Value | Deps Location | Use For |
 |-----------|---------------|---------|
-| `'core'` | `deps.core` | State management, data loading |
+| `'state'` | `deps.core` | State management, data loading |
 | `'task'` | `deps.task` | Task operations |
 | `'cycle'` | `deps.cycle` | Cycle operations |
 | `'ui'` | `deps.ui` | UI managers, modals |
@@ -772,8 +791,10 @@ deps.features.doOtherThing = yourOtherFunction
 | `'features'` | `deps.features` | Feature modules |
 | `'recurring'` | `deps.recurring` | Recurring task system |
 | `'utils'` | `deps.utils` | Utility functions |
+| `'labels'` | `deps.labels` | Label/vocab system |
 | `'testing'` | `deps.testing` | Testing tools |
 | `'storage'` | `deps.storage` | Storage/backup |
+| `'plugins'` | `deps.plugins` | Plugin system |
 | `'progress'` | `deps.progress` | Progress tracking |
 
 ---
@@ -983,15 +1004,15 @@ onboardingManager: {
 
 **How to Avoid:** Search your module for `_deps.` - every property you access needs to be in `requires`.
 
-### Lesson 3: HTML Events Need Listeners in Both Boot Paths
+### Lesson 3: HTML Events Need the featureBoot Event Bridge
 
-**The Bug:** "Check for Updates" button worked in legacy mode but not with moduleLoader.
+**The Bug:** "Check for Updates" button worked in one boot path but not the other (back when two boot paths existed).
 
-**Why It Happened:** The button used CustomEvents (`app:showNotification`), which had listeners set up in `bootFeatures()` but not in `bootFeaturesWithLoader()`.
+**Why It Happened:** The button used CustomEvents (`app:showNotification`), which only had listeners set up in one of the two boot functions. There is now a single boot path — `featureBoot.js` sets up the HTML event bridge (`app:showNotification`, `app:showConfirmationModal`, etc.) — but the lesson stands: HTML-dispatched CustomEvents do nothing unless a bridge listener is registered there.
 
-**The Fix:** Add event listeners to both boot functions:
+**The Fix:** Register the listener in featureBoot's HTML event bridge:
 ```javascript
-// In bootFeaturesWithLoader()
+// In featureBoot.js (HTML event bridge)
 document.addEventListener('app:showNotification', (e) => {
     const { message, type, duration } = e.detail || {};
     deps.utils.showNotification?.(message, type, duration);
@@ -1192,7 +1213,7 @@ moduleName: {
 - [ ] Init returns exports object
 - [ ] Console log at end of file
 - [ ] Manifest entry added
-- [ ] All `_deps.x` usages listed in `requires`
+- [ ] All `_deps.x` usages listed in `requires` (or `optionalDeps` / `lazyRequires`; DOM helpers in `CORE_DEPS` don't need declaring)
 - [ ] Correct `phase` selected
 - [ ] Correct `api` category
 - [ ] `provides` lists all exports
@@ -1211,5 +1232,5 @@ If you're stuck:
 
 ---
 
-*Document Version: 1.1*
-*Last Updated: December 2024*
+*Document Version: 1.2*
+*Last Updated: August 2026*

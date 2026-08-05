@@ -145,7 +145,7 @@ Instead of multiple handlers directly manipulating DOM, all visibility changes r
 
 ```javascript
 /**
- * ✅ ACTUAL IMPLEMENTATION (modules/boot/orchestrator.js:2974-3047)
+ * ✅ ACTUAL IMPLEMENTATION (modules/ui/taskUI.js)
  * TaskOptionsVisibilityController - Centralized controller for task options visibility
  */
 class TaskOptionsVisibilityController {
@@ -154,7 +154,7 @@ class TaskOptionsVisibilityController {
      * @returns {'hover' | 'three-dots'} Current mode
      */
     static getMode() {
-        return document.body.classList.contains("show-three-dots-enabled") ? 'three-dots' : 'hover';
+        return document.body.classList.contains(DOM_CLASSES.SHOW_THREE_DOTS_ENABLED) ? 'three-dots' : 'hover';
     }
 
     /**
@@ -188,24 +188,37 @@ class TaskOptionsVisibilityController {
      * @returns {boolean} Whether the visibility was changed
      */
     static setVisibility(taskItem, visible, caller = 'unknown') {
-        const taskOptions = taskItem.querySelector('.task-options');
+        const taskOptions = taskItem.querySelector(DOM_SELECTORS.TASK_OPTIONS);
         if (!taskOptions) {
-            console.warn(`⚠️ TaskOptionsVisibilityController: No .task-options found for ${caller}`);
+            console.warn(`TaskOptionsVisibilityController: No .task-options found for ${caller}`);
             return false;
         }
 
         // Check if this caller is allowed to change visibility in current mode
         if (!this.canHandle(caller)) {
-            console.log(`⏭️ ${caller}: Skipping visibility change in ${this.getMode()} mode`);
             return false;
         }
 
-        // Apply visibility state
-        taskOptions.style.visibility = visible ? "visible" : "hidden";
-        taskOptions.style.opacity = visible ? "1" : "0";
-        taskOptions.style.pointerEvents = visible ? "auto" : "none";
+        // Clear any inline styles so CSS classes take effect
+        taskOptions.style.visibility = '';
+        taskOptions.style.opacity = '';
+        taskOptions.style.pointerEvents = '';
 
-        console.log(`👁️ ${caller}: visibility → ${visible ? 'visible' : 'hidden'} (mode: ${this.getMode()})`);
+        // Apply visibility state via CSS class toggle
+        if (visible) {
+            taskOptions.classList.remove(DOM_CLASSES.TASK_OPTIONS_FORCE_HIDDEN);
+            taskOptions.classList.add(DOM_CLASSES.TASK_OPTIONS_VISIBLE);
+        } else {
+            taskOptions.classList.remove(DOM_CLASSES.TASK_OPTIONS_VISIBLE);
+            taskOptions.classList.add(DOM_CLASSES.TASK_OPTIONS_FORCE_HIDDEN);
+        }
+
+        // Sync button tabindex so hidden buttons can't steal keyboard focus
+        const buttons = taskOptions.querySelectorAll('button.task-btn');
+        buttons.forEach(btn => {
+            btn.tabIndex = visible ? 0 : -1;
+        });
+
         return true;
     }
 
@@ -243,12 +256,12 @@ threeDotsButton.addEventListener("click", () => {
 });
 ```
 
-**Implementation Locations:**
-- **Controller Class**: `modules/boot/orchestrator.js:2974-3047`
-- **focusin/focusout**: `modules/boot/orchestrator.js:3080, 3090`
-- **mouseenter/mouseleave**: `modules/boot/orchestrator.js:3180, 3204`
-- **three-dots toggle**: `modules/task/taskEvents.js:243-247`
-- **focus handler**: `modules/task/taskEvents.js:360`
+**Implementation Locations** (moved out of orchestrator.js during modularization):
+- **Controller Class**: `modules/ui/taskUI.js` (`TaskOptionsVisibilityController`)
+- **focusin/focusout**: `modules/ui/taskInteractions.js`
+- **mouseenter/mouseleave + hideTaskButtons**: `modules/ui/taskUI.js`
+- **three-dots toggle**: `modules/task/taskEvents.js` (`revealTaskButtons()`)
+- **DI**: the controller is provided by the `taskUI` manifest entry and injected into consumers (e.g. `taskEvents`, `taskInteractions`) via `TaskOptionsVisibilityController` in their deps
 
 **Benefits:**
 - ✅ Single source of truth for visibility logic
@@ -553,14 +566,14 @@ taskItem.addEventListener('focusin', () => {
  * HANDLER RESPONSIBILITY MATRIX
  * ═══════════════════════════════════════════════════════════════════
  *
- * | Event            | Hover Mode | Three-Dots Mode | Location                      |
+ * | Event            | Hover Mode | Three-Dots Mode | Location (current)            |
  * |------------------|------------|-----------------|-------------------------------|
- * | mouseenter       | ✅ Show    | ❌ Skip         | modules/boot/orchestrator.js:3180     |
- * | mouseleave       | ✅ Hide    | ❌ Skip         | modules/boot/orchestrator.js:3204     |
- * | focusin          | ✅ Show    | ❌ Skip (v1.359)| modules/boot/orchestrator.js:3080     |
- * | focusout         | ✅ Hide    | ✅ Hide         | modules/boot/orchestrator.js:3090     |
- * | hideTaskButtons  | ✅ Hide    | ❌ Blocked (v1.360) | modules/boot/orchestrator.js:3112     |
- * | three-dots       | N/A        | ✅ Toggle       | taskEvents.js:208-249         |
+ * | mouseenter       | ✅ Show    | ❌ Skip         | modules/ui/taskUI.js          |
+ * | mouseleave       | ✅ Hide    | ❌ Skip         | modules/ui/taskUI.js          |
+ * | focusin          | ✅ Show    | ❌ Skip (v1.359)| modules/ui/taskInteractions.js|
+ * | focusout         | ✅ Hide    | ✅ Hide         | modules/ui/taskInteractions.js|
+ * | hideTaskButtons  | ✅ Hide    | ❌ Blocked (v1.360) | modules/ui/taskUI.js      |
+ * | three-dots       | N/A        | ✅ Toggle       | modules/task/taskEvents.js    |
  *
  * ═══════════════════════════════════════════════════════════════════
  */
@@ -839,8 +852,9 @@ const isVisible = computedStyle.visibility === "visible";
 
 **Solution:**
 ```javascript
-// ✅ CORRECT: Check inline styles only
-const isVisible = taskOptions.style.visibility === "visible";
+// ✅ CORRECT: Check explicit state, not computed styles.
+// (Current implementation uses a CSS class as the state flag:)
+const isVisible = taskOptions.classList.contains(DOM_CLASSES.TASK_OPTIONS_VISIBLE);
 
 // Or maintain explicit state
 class VisibilityState {
@@ -1103,10 +1117,11 @@ class ModeManager {
 ✅ **TaskOptionsVisibilityController is now live in miniCycle v1.359+**
 
 All task options visibility changes now route through the centralized controller:
-- **Location**: `modules/boot/orchestrator.js:2974-3047`
+- **Location**: `modules/ui/taskUI.js` (`TaskOptionsVisibilityController`, injected into consumers via DI)
 - **Usage**: All 7 handlers (focusin, focusout, mouseenter, mouseleave, three-dots, focus, hideTaskButtons)
 - **Mobile Fix (v1.360)**: `hideTaskButtons()` now uses controller, preventing override of three-dots visibility on mobile
-- **Benefits**: Single source of truth, mode-aware permissions, consistent logging, no race conditions
+- **Current mechanism**: visibility is applied via CSS class toggles (`DOM_CLASSES.TASK_OPTIONS_VISIBLE` / `TASK_OPTIONS_FORCE_HIDDEN`) with button `tabindex` syncing — not inline styles as in the original v1.359 implementation
+- **Benefits**: Single source of truth, mode-aware permissions, no race conditions
 
 **To use in new features:**
 ```javascript
@@ -1138,5 +1153,6 @@ Use mode-aware coordination when:
 ---
 
 **Document History:**
+- v1.2 (Aug 5, 2026): Updated implementation locations (controller now lives in modules/ui/taskUI.js, injected via DI) and documented the CSS-class-based visibility mechanism
 - v1.1 (Nov 15, 2025): Added implementation status - TaskOptionsVisibilityController now live
 - v1.0 (Nov 15, 2025): Initial version based on three-dots debugging session

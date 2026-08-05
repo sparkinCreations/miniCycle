@@ -1,12 +1,12 @@
 # Architecture Overview
 
-**Last Updated**: January 17, 2026
+**Last Updated**: August 5, 2026
 
 ---
 
 ## Table of Contents
 
-1. [Current Stats](#current-stats-december-2025)
+1. [Current Stats](#current-stats)
 2. [Technology Stack](#technology-stack)
 3. [Dependency Injection Architecture](#dependency-injection-architecture)
 4. [Project Structure](#project-structure-simplified)
@@ -65,7 +65,7 @@ Architecture:
 ├─ Strict Dependency Injection
 ├─ Object.defineProperties for lazy getters
 ├─ 2-phase initialization (appInit)
-└─ Boot file split (orchestrator.js is DI wiring hub)
+└─ Boot file split (featureBoot.js is the DI wiring hub)
 ```
 
 ---
@@ -77,41 +77,35 @@ All modules use strict dependency injection. No `|| window.*` fallbacks exist.
 ### The Pattern
 
 ```javascript
-// Every module follows this structure
-let _deps = {};
+// Every module follows this structure (createDIModule from diBase.js)
+import { createDIModule, required, optional } from '../core/diBase.js';
 
-export function setModuleDependencies(dependencies) {
-    // Preserve lazy getters
-    const descriptors = Object.getOwnPropertyDescriptors(dependencies);
-    Object.defineProperties(_deps, descriptors);
-}
+const di = createDIModule('MyModule', {
+    AppState: required(),
+    showNotification: required(),
+    safeAddEventListener: optional(null),
+});
+
+export const setMyModuleDependencies = di.setDependencies;
 
 export class MyModule {
-    constructor(dependencies = {}) {
-        const mergedDeps = { ..._deps, ...dependencies };
-        this.deps = {
-            AppState: mergedDeps.AppState,  // No || window.AppState
-            showNotification: mergedDeps.showNotification || this.fallback
-        };
+    get deps() {
+        return di.resolve();  // Lazy resolution — never spread deps
     }
 }
 ```
 
+A handful of early Phase 1 boot modules still use the legacy `let _deps = {}` +
+`Object.defineProperties` setter pattern for startup-order reasons — do not use it
+for new modules.
+
 ### Wiring Hub
 
-`modules/boot/orchestrator.js` is the **only place** where modules are connected:
-
-```javascript
-// In modules/boot/orchestrator.js (DI wiring hub)
-const { MyModule, setModuleDependencies } = await import('../myModule.js');
-
-setModuleDependencies({
-    get AppState() { return window.AppState; },  // Lazy getter
-    showNotification: deps.utils.showNotification
-});
-
-const myModule = new MyModule();
-```
+`modules/boot/featureBoot.js` is the **only place** where modules are connected —
+it drives `moduleLoader.js`, which reads each module's declared needs from
+`moduleManifests.js` (`requires` / `optionalDeps` / `lazyRequires`) and delivers
+them via the module's `set...Dependencies()` setter. No `window.*` globals are
+involved anywhere in the wiring.
 
 **Boot File Structure (Dec 2025):**
 ```
@@ -138,32 +132,36 @@ See [DI_PATTERNS.md](../working-on-code/DI_PATTERNS.md) for complete patterns an
 ```
 web/
 ├── miniCycle.html                   # Main entry point
-├── miniCycle-main.js                # Entrypoint (~56 lines)
+├── miniCycle-main.js                # Entrypoint (~50 lines)
 ├── service-worker.js                # PWA service worker
 │
-├── styles/                          # Modular CSS (29 files)
+├── styles/                          # Modular CSS (44 files)
 │   ├── main.css                     # Entry point - imports all modules
 │   ├── base/                        # Foundation (variables, reset, typography, animations)
 │   ├── layout/                      # Page structure (app-container, header, safe-areas)
-│   ├── components/                  # UI components (18 files)
+│   ├── components/                  # UI components (29 files)
 │   ├── utilities/                   # Dark mode, helpers, responsive
 │   └── themes/                      # Theme system
 │
-├── modules/                          # 103 ES6 modules (all strict DI)
-│   ├── boot/                        # Boot sequence (Dec 2025 split)
-│   │   ├── orchestrator.js          # Pure sequence controller (~402 lines)
-│   │   ├── coreBoot.js              # Core state & init (~905 lines)
-│   │   ├── featureBoot.js           # Feature loading (~516 lines)
-│   │   └── uiBoot.js                # UI handlers + initUIBoot() (~761 lines)
+├── modules/                          # 136 ES6 modules (all strict DI — see PROJECT_STATS.md)
+│   ├── boot/                        # Boot sequence (7 modules — Dec 2025 split)
+│   │   ├── orchestrator.js          # Sequence control + boot UI + early coordination
+│   │   ├── coreBoot.js              # Core state & init
+│   │   ├── featureBoot.js           # Feature loading + DI wiring hub
+│   │   ├── uiBoot.js                # UI handlers + initUIBoot()
+│   │   ├── moduleLoader.js          # Manifest-driven module loading + DI delivery
+│   │   └── moduleManifests.js       # Per-module dependency declarations
 │   │
-│   ├── core/                        # Core systems (4 modules)
+│   ├── core/                        # Core systems (9 modules)
 │   │   ├── appState.js              # Centralized state management
 │   │   ├── appInit.js               # 2-phase initialization
+│   │   ├── appContext.js            # Grouped context APIs
+│   │   ├── diBase.js                # DI framework (createDIModule)
 │   │   └── constants.js             # App constants
 │   │
-│   ├── task/                        # Task system (7 modules)
-│   │   ├── taskCore.js              # Task CRUD & business logic
-│   │   ├── taskDOM.js               # Task DOM coordination
+│   ├── task/                        # Task system (13 modules)
+│   │   ├── taskCore.js              # Task CRUD & business logic (facade)
+│   │   ├── taskDOM.js               # Task DOM coordination (facade)
 │   │   ├── taskRenderer.js          # Task element creation (runtime renders)
 │   │   ├── taskEvents.js            # Event handling
 │   │   ├── taskValidation.js        # Input validation
@@ -177,12 +175,18 @@ web/
 │   │   ├── modeManager.js           # Auto/Manual/To-Do modes
 │   │   └── migrationManager.js      # Schema migration
 │   │
-│   ├── recurring/                   # Recurring tasks (3 modules)
+│   ├── labels/                      # Label system (3 modules)
+│   │   ├── defaultLabels.js         # ~591 label keys
+│   │   ├── labelResolver.js         # getLabel() with pluralization/interpolation
+│   │   └── themes.js                # Vocabulary theme system (per-routine labels + colors)
+│   │
+│   ├── recurring/                   # Recurring tasks (16 modules)
 │   │   ├── recurringCore.js         # Recurring logic
+│   │   ├── recurringWatcher.js      # Scheduled spawn checks
 │   │   ├── recurringPanel.js        # Recurring UI
 │   │   └── recurringIntegration.js  # Integration layer
 │   │
-│   ├── ui/                          # UI modules (21 modules)
+│   ├── ui/                          # UI modules (37 modules)
 │   │   ├── modalManager.js          # Modal management
 │   │   ├── menuManager.js           # Main menu
 │   │   ├── settingsManager.js       # Settings panel
@@ -194,7 +198,7 @@ web/
 │   │   ├── helpWindowManager.js     # Help system
 │   │   └── gesturePanelManager.js   # Multi-platform gesture handling
 │   │
-│   ├── features/                    # Optional features (7 modules)
+│   ├── features/                    # Optional features (11 modules)
 │   │   ├── themeManager.js          # Theme management + modal
 │   │   ├── statsPanel.js            # Statistics panel
 │   │   ├── achievementsManager.js   # Achievement tracking + badge UI
@@ -203,7 +207,7 @@ web/
 │   │   ├── reminders.js             # Reminder system
 │   │   └── dueDates.js              # Due date management
 │   │
-│   ├── utils/                       # Utilities (5 modules)
+│   ├── utils/                       # Utilities (19 modules)
 │   │   ├── globalUtils.js           # Core utilities
 │   │   ├── notifications.js         # Toast notifications
 │   │   ├── deviceDetection.js       # Platform detection
@@ -217,7 +221,7 @@ web/
 │   ├── progress/                    # Progress (1 module)
 │   │   └── cycleCompletion.js       # Completion tracking
 │   │
-│   ├── testing/                     # Testing (5 modules)
+│   ├── testing/                     # Testing (9 modules)
 │   │   ├── testing-modal.js         # Test runner UI
 │   │   └── ...
 │   │
@@ -231,7 +235,6 @@ web/
     ├── architecture/                # Why it is built this way
     ├── reference/                   # Lookup (API, schema, labels)
     ├── incidents/                   # Postmortems
-    ├── architecture/                 # Architecture docs
     └── user-guides/                  # User documentation
 ```
 
@@ -241,14 +244,14 @@ web/
 
 ### 1. Task Cycling System
 
-**The Heart of miniCycle** - Defined in `modules/routine/`
+**The Heart of miniCycle** - Auto-reset logic lives in `modules/progress/cycleCompletion.js`
 
 ```javascript
-// From modules/boot/orchestrator.js (real code)
+// Simplified from modules/progress/cycleCompletion.js
 
 // When user checks off the last task:
 function checkForAutoReset() {
-    const currentState = window.AppState?.get();
+    const currentState = this.deps.AppState.get();
     const activeCycleId = currentState.appState?.activeCycleId;
     const currentCycle = currentState.data?.cycles?.[activeCycleId];
 
@@ -260,20 +263,17 @@ function checkForAutoReset() {
     // All tasks completed AND auto-reset is enabled?
     if (tasks.length > 0 && completedCount === tasks.length && currentCycle.autoReset) {
         // 🎉 Reset all tasks!
-        tasks.forEach(task => task.completed = false);
+        this.deps.AppState.update(state => {
+            const cycle = state.data.cycles[activeCycleId];
+            cycle.tasks.forEach(task => task.completed = false);
 
-        // Increment cycle count (for stats/achievements)
-        currentCycle.cycleCount = (currentCycle.cycleCount || 0) + 1;
-
-        // Save and notify
-        window.AppState.update(state => {
-            state.data.cycles[activeCycleId] = currentCycle;
+            // Increment cycle count (for stats/achievements)
+            cycle.cycleCount = (cycle.cycleCount || 0) + 1;
         }, true);
 
-        showNotification('🎉 Cycle completed! Starting fresh.', 'success', 3000);
+        this.deps.showNotification(getLabel('notify.cycleComplete'), 'success');
 
-        // Update UI
-        refreshUIFromState();
+        // UI re-renders from state via subscribers
     }
 }
 ```
@@ -290,7 +290,7 @@ function checkForAutoReset() {
 **The Brain of the App - Accessed via Dependency Injection**
 
 ```javascript
-// From modules/core/appState.js
+// Simplified from modules/core/appState.js
 
 class MiniCycleState {
     constructor(dependencies = {}) {
@@ -303,7 +303,7 @@ class MiniCycleState {
         this.isDirty = false;
         this.saveTimeout = null;
         this.listeners = new Map();
-        this.SAVE_DELAY = 600;
+        this.SAVE_DELAY = DEBOUNCE.STATE_SAVE;  // 600ms, from constants.js
     }
 
     get() {
@@ -377,21 +377,22 @@ class MyModule {
 }
 ```
 
-**Wiring in modules/boot/orchestrator.js:**
+**Wiring in modules/boot/coreBoot.js:**
 
 ```javascript
-// AppState is created and wired in the boot orchestrator
-const { createStateManager } = await import('../core/appState.js');
-window.AppState = createStateManager({
-    showNotification: deps.utils.showNotification,
+// AppState is created in Phase 1 (coreBoot.js) — no window.* exposure
+const { createStateManager } = await import(withV('../core/appState.js'));
+AppState = createStateManager({
+    showNotification,
     storage: localStorage,
-    createInitialData: createInitialSchema25Data
+    createInitialData: migrationMod.createInitialSchema25Data,
+    AppMeta: deps.core.AppMeta
 });
+deps.core.AppState = AppState;                     // shared deps container
+appContextMod.setContextValue('AppState', AppState); // appContext.state().AppState
 
-// Passed to modules via DI
-setMyModuleDependencies({
-    get AppState() { return window.AppState; }  // Lazy getter
-});
+// From there, moduleLoader delivers AppState to every module that declares
+// it in moduleManifests.js — as a lazy getter, via set...Dependencies()
 ```
 
 ---
@@ -401,10 +402,11 @@ setMyModuleDependencies({
 **Automatic Task Generation**
 
 ```javascript
-// From utilities/recurringCore.js (real code)
+// Simplified illustration — the real matcher is shouldTaskRecurNow() in
+// modules/recurring/recurringMatcher.js (re-exported via recurringCore.js)
 
 // Check if a recurring task is due right now
-export function isRecurringTaskDue(template, now = new Date()) {
+function isRecurringTaskDue(template, now = new Date()) {
     const settings = template.recurringSettings;
     if (!settings || !settings.frequency) return false;
 
@@ -477,7 +479,7 @@ setInterval(() => {
         addTaskToCurrentCycle(liveTask);
         showNotification('💊 Time to take medication!', 'info');
     }
-}, 30000);
+}, INTERVALS.RECURRING_WATCHER);  // 15s when templates exist (2h idle)
 
 // 3. When cycle resets, recurring tasks are deleted
 //    But templates remain, so they'll regenerate next time they're due
@@ -499,7 +501,7 @@ The undo/redo system is implemented in `modules/ui/undoRedoManager.js` and provi
 - ✅ **Throttled capture** - 300ms minimum interval between snapshots
 - ✅ **Debounced writes** - Batches IndexedDB writes every 3 seconds
 - ✅ **Lifecycle integration** - Handles cycle switching, creation, deletion, rename
-- ✅ **73/73 tests passing** - Comprehensive test coverage
+- ✅ **Comprehensive test coverage** - see [PROJECT_STATS.md](../PROJECT_STATS.md)
 
 **What triggers snapshots:**
 - Task additions/deletions
@@ -546,7 +548,7 @@ The task options customizer (`modules/ui/taskOptionsCustomizer.js`) enables per-
 - ✅ **Enhanced reminders** - Start/stop reminders when checkbox changes (v1.372+)
 - ✅ **Bidirectional sync** - Global settings sync between customizer, settings panel, and reminders modal
 - ✅ **Backward compatible** - Fallback defaults for cycles without settings
-- ✅ **29/29 tests passing** - Comprehensive test coverage
+- ✅ **Comprehensive test coverage** - see [PROJECT_STATS.md](../PROJECT_STATS.md)
 
 **Global vs Cycle Philosophy:**
 

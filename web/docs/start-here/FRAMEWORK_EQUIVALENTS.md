@@ -1,6 +1,6 @@
 # Framework Equivalents — What miniCycle Builds by Hand
 
-**Last Updated:** March 2026
+**Last Updated:** August 2026
 
 This document maps miniCycle's hand-built architecture to the established frameworks and libraries that solve the same problems. Every pattern listed here was built from scratch in vanilla JavaScript — not because frameworks don't exist, but to understand the problems they solve at a foundational level.
 
@@ -60,7 +60,7 @@ export class RecurringPanel {
 Modules need to reference each other without circular imports, without global variables, and without knowing when their dependencies will be available. Angular's injector resolves this with a container that manages creation order. miniCycle's `Object.defineProperties` with lazy getters solves the same timing problem — dependencies are declared early but resolved late, only when actually accessed.
 
 ### What miniCycle adds
-A manifest-based wiring layer in `featureBoot.js` where module dependencies are declared and connected. This is analogous to Angular's `NgModule` providers array or Spring's component scanning — a central place that defines what provides what.
+A manifest-based wiring layer — dependencies are declared in `moduleManifests.js` and connected by `moduleLoader.js` during `featureBoot.js`. This is analogous to Angular's `NgModule` providers array or Spring's component scanning — a central place that defines what provides what.
 
 ---
 
@@ -149,7 +149,7 @@ Theme-aware resolution via `LENS_SENSITIVE_KEYS` — a set of keys that vocabula
 - **Spring Boot**: `@PostConstruct`, application context initialization phases
 
 ### What miniCycle builds
-A 4-phase boot sequence in `modules/boot/`:
+A 3-phase boot sequence in `modules/boot/`:
 
 ```
 orchestrator.js (sequence control + boot UI + early coordination)
@@ -265,7 +265,7 @@ Event listeners in long-lived apps leak memory if not cleaned up, duplicate if a
 ### What miniCycle builds
 A token-based design system in `styles/base/variables.css`:
 
-- CSS custom properties for spacing (`--space-1` through `--space-8`), colors, typography, z-index, transitions
+- CSS custom properties for spacing (`--space-1` through `--space-12`), colors, typography, z-index, transitions
 - CSS files organized by component (see [PROJECT_STATS.md](../PROJECT_STATS.md) for counts)
 - Dark mode via `prefers-color-scheme` and manual toggle
 - Reduced motion support via `prefers-reduced-motion` (timing variables auto-disable)
@@ -304,10 +304,10 @@ Hardcoded values (colors, spacing, z-indexes) create inconsistency and make them
 ### What miniCycle builds
 A hand-written service worker (`service-worker.js`) with:
 
-- Network-first strategy with stale-while-revalidate fallback
+- Tiered caching strategies per request type: cache-first navigation with background revalidation (staleness healed page-side by `verifyVersionFresh()`), immutable cache-first for content-hashed `/build/` assets, network-first on version mismatch, stale-while-revalidate for the rest
 - Versioned cache management (`CACHE_VERSION` in `version.js`)
 - Graceful offline support — full app functionality without network
-- Lite version redirect as 8-second boot failsafe
+- Lite version redirect failsafes in the HTML (16-second late-boot check + 60-second load timeout)
 
 ### The problem both solve
 Web apps need to work offline, cache assets efficiently, and update gracefully. Workbox provides this through configurable strategies. miniCycle's service worker implements the same caching strategies manually — understanding exactly when network requests happen, when caches are used, and how updates propagate.
@@ -341,7 +341,7 @@ Code needs automated verification. The approach differs — React Testing Librar
 | Dependency injection | Angular DI, InversifyJS | `createDIModule()` with lazy getters | `diBase.js`, `featureBoot.js` |
 | State management | Redux, Zustand, Pinia | `AppState.update(producer)` | `appState.js` |
 | i18n / string management | i18next, react-intl | `getLabel()` with theme-aware resolution | `defaultLabels.js`, `labelResolver.js` |
-| Component lifecycle | React hooks, Angular lifecycle | 4-phase boot + `appInit.waitForCore()` | `orchestrator.js`, `appInit.js` |
+| Component lifecycle | React hooks, Angular lifecycle | 3-phase boot + `appInit.waitForCore()` | `orchestrator.js`, `appInit.js` |
 | Routing / view state | React Router, Vue Router | Mode manager state machine | `modeManager.js` |
 | Event management | React synthetic events | `safeAddEventListener` + delegation | Per-module, `globalUtils.js` |
 | Design tokens / theming | Tailwind, Styled Components | CSS custom properties | `variables.css` |

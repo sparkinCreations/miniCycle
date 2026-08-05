@@ -4,8 +4,8 @@
 >
 > **For current app version, see [PROJECT_STATS.md](../PROJECT_STATS.md).**
 
-**Last Updated**: January 18, 2026
-**Module**: `modules/routine/modeManager.js` (633 lines)
+**Last Updated**: August 5, 2026
+**Module**: `modules/routine/modeManager.js` (line counts: see [PROJECT_STATS.md](../PROJECT_STATS.md))
 **Pattern**: Resilient Constructor 🛡️
 
 ---
@@ -32,7 +32,7 @@ The **Mode Manager** (`modeManager.js`) controls miniCycle's three fundamental o
 ### Core Responsibility
 
 **Mode Manager coordinates:**
-- Mode selection UI (desktop and mobile selectors)
+- Mode selection UI (the `#mode-selector` dropdown)
 - Toggle state synchronization (autoReset, deleteCheckedTasks)
 - Task button visibility based on current mode
 - Mode persistence and restoration after reload
@@ -116,30 +116,44 @@ Prior to v1.372, switching modes required a page reload. The Mode Manager now:
 ### Class Structure
 
 ```javascript
-export class ModeManager {
-    constructor(dependencies = {}) {
-        // Dependency injection for testability
-        this.deps = {
-            getAppState: dependencies.getAppState || (() => window.AppState),
-            loadMiniCycleData: dependencies.loadMiniCycleData,
-            createTaskButtonContainer: dependencies.createTaskButtonContainer,
-            setupDueDateButtonInteraction: dependencies.setupDueDateButtonInteraction,
-            checkCompleteAllButton: dependencies.checkCompleteAllButton,
-            showNotification: dependencies.showNotification,
-            helpWindowManager: dependencies.helpWindowManager,
-            getElementById: dependencies.getElementById || ((id) => document.getElementById(id)),
-            querySelectorAll: dependencies.querySelectorAll || ((sel) => document.querySelectorAll(sel))
-        };
+import { createDIModule, optional } from '../core/diBase.js';
 
-        // Debounce timer for refresh operations
+const di = createDIModule('ModeManager', {
+    appInit: optional(null),
+    AppState: optional(null),
+    createTaskButtonContainer: optional(null),
+    setupDueDateButtonInteraction: optional(null),
+    checkCompleteAllButton: optional(null),
+    showNotification: optional(null),
+    helpWindowManager: optional(null),
+    recurringCore: optional(null),
+    getElementById: optional((id) => document.getElementById(id)),
+    querySelectorAll: optional((sel) => document.querySelectorAll(sel)),
+    getBody: optional(() => document.body),
+    captureStateSnapshot: optional(null),  // Gesture-boundary undo snapshot before a mode switch triggers auto-reset
+    // ... (see modeManager.js for the full declaration)
+});
+
+export function setModeManagerDependencies(dependencies) {
+    di.setDependencies(dependencies);
+}
+
+export class ModeManager {
+    constructor(_dependencies = {}) {
+        // Dependencies arg accepted for API parity but ignored — instance reads
+        // from the live `di.resolve()` via the `deps` getter.
         this.refreshDebounceTimer = null;
-        this.isInitialized = false;
+        this._initialized = false;
     }
 
     async init() {
-        await appInit.waitForCore();
-        setTimeout(() => this.setupModeSelector(), 200);
-        this.isInitialized = true;
+        await this.deps.appInit?.waitForCore();
+        setTimeout(() => {
+            this.setupModeSelector();
+            this.setupDeleteCheckedTasksModeListener();
+        }, 200);
+        this.setupVisibilityChangeListener();
+        this._initialized = true;
     }
 }
 ```
@@ -152,13 +166,15 @@ Converts mode identifier to friendly display name.
 ```javascript
 getModeName(mode) {
     const modeNames = {
-        'auto-cycle': 'Auto Cycle ↻',
-        'manual-cycle': 'Manual Cycle ✋',
-        'todo-mode': 'To-Do Mode 📋'
+        'auto-cycle': getLabel('mode.auto') + ' ' + getLabel('mode.autoEmoji'),
+        'manual-cycle': getLabel('mode.manual') + ' ' + getLabel('mode.manualEmoji'),
+        'todo-mode': getLabel('mode.todo') + ' ' + getLabel('mode.todoEmoji')
     };
-    return modeNames[mode] || 'Auto Cycle ↻';
+    return modeNames[mode] || getLabel('mode.auto') + ' ' + getLabel('mode.autoEmoji');
 }
 ```
+
+(Vocabulary themes can override the `mode.*` labels, so the display name follows the active routine's theme.)
 
 #### `syncModeFromToggles()`
 Reads toggle states and updates mode selectors accordingly.
@@ -184,9 +200,9 @@ Updates all task buttons when mode changes (debounced to 150ms).
 
 #### `setupModeSelector()`
 Main initialization function that:
-1. Attaches event listeners to both desktop and mobile selectors
+1. Attaches event listeners to the `#mode-selector` dropdown and the two mode toggles
 2. Syncs toggles from mode selector changes
-3. Updates storage when settings change
+3. Updates storage when settings change (awaited BEFORE UI sync)
 4. Triggers UI refresh
 5. Shows notifications
 
@@ -254,37 +270,42 @@ showNotification("Switched to ...")
 
 ## Mode Switching Flow
 
-### Desktop Mode Selector Change
+### Mode Selector Change
 
 ```javascript
-modeSelector.addEventListener('change', (e) => {
-    const selectedMode = e.target.value;
-
-    // 1. Sync toggles from mode
-    syncTogglesFromMode(selectedMode);
+modeSelector._changeHandler = async (e) => {
+    // 1. Sync toggles from mode (awaits storage update, then UI sync)
+    await syncTogglesFromMode(e.target.value);
 
     // 2. Update mode description
-    updateCycleModeDescription();
+    this.updateCycleModeDescription();
 
     // 3. Check complete button visibility
-    checkCompleteAllButton();
+    this.deps.checkCompleteAllButton?.();
 
     // 4. Refresh task buttons
-    refreshTaskButtonsForModeChange();
+    this.refreshTaskButtonsForModeChange();
 
-    // 5. Update recurring buttons
+    // 5. Update recurring buttons (DI-pure, no window.*)
     setTimeout(() => {
-        window.recurringCore?.updateRecurringButtonVisibility();
+        this.deps.recurringCore?.updateRecurringButtonVisibility();
     }, 100);
 
-    // 6. Show notification
-    showNotification(`Switched to ${getModeName(selectedMode)}`);
-});
+    // 6. If switching to auto-cycle, check whether the cycle should complete
+    //    (with a gesture-boundary undo snapshot first)
+    if (e.target.value === 'auto-cycle') {
+        setTimeout(() => this._checkCycleWithSnapshot(), 150);
+    }
+
+    // 7. Show notification
+    this.deps.showNotification?.(
+        getLabel('notify.modeSwitched', { vars: { mode: this.getModeName(e.target.value) } }),
+        'success', UI_TIMEOUTS.NOTIFICATION_SHORT
+    );
+};
 ```
 
-### Mobile Mode Selector Change
-
-Identical flow to desktop, but uses `#mobile-mode-selector` element.
+There is a single mode selector element (`#mode-selector`) — no separate mobile selector.
 
 ### Toggle Change (Direct)
 
@@ -326,31 +347,31 @@ async refreshTaskButtonsForModeChange() {
 
     // Debounce to 150ms
     this.refreshDebounceTimer = setTimeout(async () => {
-        await appInit.waitForCore();
+        await this.deps.appInit?.waitForCore();
 
-        const tasks = this.deps.querySelectorAll('.task');
+        const tasks = this.deps.querySelectorAll(DOM_SELECTORS.TASK);
         if (tasks.length === 0) return;
 
         let successCount = 0;
         let failureCount = 0;
 
         // Get current mode
-        const toggleAutoReset = this.deps.getElementById('toggleAutoReset');
-        const deleteCheckedTasks = this.deps.getElementById('deleteCheckedTasks');
+        const toggleAutoReset = this.deps.getElementById(DOM_IDS.TOGGLE_AUTO_RESET);
+        const deleteCheckedTasks = this.deps.getElementById(DOM_IDS.DELETE_CHECKED_TASKS);
         const autoResetEnabled = toggleAutoReset?.checked || false;
         const deleteCheckedEnabled = deleteCheckedTasks?.checked || false;
 
         // Get current cycle (required for recurring handler)
-        const AppState = this.deps.getAppState();
-        const currentState = AppState?.get();
+        const currentState = this.deps.AppState?.get();
         const activeCycleId = currentState?.appState?.activeCycleId;
         const currentCycle = currentState?.data?.cycles?.[activeCycleId];
+        if (!currentCycle) return;
 
         tasks.forEach(task => {
             const taskId = task.dataset.taskId;
-            const oldButtonContainer = task.querySelector('.task-options');
+            const oldButtonContainer = task.querySelector(DOM_SELECTORS.TASK_OPTIONS);
             if (!oldButtonContainer) {
-                failureCount++;
+                // Buttons not yet rendered — normal during initial load, skip silently
                 return;
             }
 
@@ -359,13 +380,13 @@ async refreshTaskButtonsForModeChange() {
                 autoResetEnabled,
                 deleteCheckedEnabled,
                 settings: currentState?.settings || {},
-                remindersEnabled: task.querySelector('.enable-task-reminders')?.classList.contains('reminder-active') || false,
+                remindersEnabled: task.querySelector(DOM_SELECTORS.ENABLE_TASK_REMINDERS)?.classList.contains(DOM_CLASSES.REMINDER_ACTIVE) || false,
                 remindersEnabledGlobal: currentState?.reminders?.enabled || false,
                 assignedTaskId: taskId,
                 currentCycle,        // ✅ Required for recurring button handler
                 activeCycle: activeCycleId,
-                recurring: task.classList.contains('recurring'),
-                highPriority: task.classList.contains('high-priority')
+                recurring: task.classList.contains(DOM_CLASSES.RECURRING),
+                highPriority: task.classList.contains(DOM_CLASSES.HIGH_PRIORITY)
             };
 
             // Create new button container
@@ -375,21 +396,20 @@ async refreshTaskButtonsForModeChange() {
                 return;
             }
 
-            // Preserve visibility state
-            const wasVisible = oldButtonContainer.style.visibility === 'visible' ||
-                             oldButtonContainer.style.opacity === '1';
+            // Preserve visibility state (class-based, not inline styles)
+            const wasVisible = oldButtonContainer.classList.contains(DOM_CLASSES.TASK_OPTIONS_VISIBLE);
             if (wasVisible) {
-                newButtonContainer.style.visibility = 'visible';
-                newButtonContainer.style.opacity = '1';
+                newButtonContainer.classList.add(DOM_CLASSES.TASK_OPTIONS_VISIBLE);
+                newButtonContainer.classList.remove(DOM_CLASSES.TASK_OPTIONS_FORCE_HIDDEN);
             }
 
             // Replace old with new
             oldButtonContainer.replaceWith(newButtonContainer);
 
             // ✅ CRITICAL: Re-attach due date listener
-            const dueDateInput = task.querySelector('.due-date');
+            const dueDateInput = task.querySelector(DOM_SELECTORS.DUE_DATE);
             if (dueDateInput && this.deps.setupDueDateButtonInteraction) {
-                const dueDateButton = newButtonContainer.querySelector('.set-due-date');
+                const dueDateButton = newButtonContainer.querySelector(DOM_SELECTORS.SET_DUE_DATE);
                 if (dueDateButton) {
                     delete dueDateButton.dataset.listenerAttached;
                 }
@@ -399,11 +419,14 @@ async refreshTaskButtonsForModeChange() {
             successCount++;
         });
 
-        // Summary logging
-        if (failureCount > 0) {
-            console.warn(`⚠️ ModeManager: Failed to refresh ${failureCount} task button(s), succeeded: ${successCount}`);
-        } else {
-            console.log(`✅ ModeManager: Task button refresh complete (${successCount} tasks)`);
+        // After a successful pass, sync delete-when-complete button visuals
+        if (successCount > 0 && this.deps.syncAllTasksWithMode && currentCycle?.tasks) {
+            const currentMode = deleteCheckedEnabled ? 'todo' : 'cycle';
+            const tasksData = {};
+            currentCycle.tasks.forEach(t => { tasksData[t.id] = t; });
+            this.deps.syncAllTasksWithMode(currentMode, tasksData, {
+                DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS: this.deps.DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS
+            });
         }
     }, 150); // 150ms debounce
 }
@@ -416,7 +439,7 @@ async refreshTaskButtonsForModeChange() {
 ### Mode → Toggles
 
 ```javascript
-function syncTogglesFromMode(selectedMode) {
+const syncTogglesFromMode = async (selectedMode) => {
     switch(selectedMode) {
         case 'auto-cycle':
             toggleAutoReset.checked = true;
@@ -432,17 +455,22 @@ function syncTogglesFromMode(selectedMode) {
             break;
     }
 
-    // Keep both selectors in sync
+    // Keep the selector in sync
     modeSelector.value = selectedMode;
-    mobileModeSelector.value = selectedMode;
-}
+
+    // Update storage FIRST (must await), then trigger change events and UI sync
+    await this.updateStorageFromToggles();
+    toggleAutoReset.dispatchEvent(new Event('change'));
+    deleteCheckedTasks.dispatchEvent(new Event('change'));
+    await this.syncModeFromToggles();
+};
 ```
 
 ### Toggles → Mode
 
 ```javascript
 async syncModeFromToggles() {
-    const AppState = this.deps.getAppState();
+    const AppState = this.deps.AppState;
     const currentState = AppState?.get();
     const activeCycle = currentState?.appState?.activeCycleId;
     const currentCycle = currentState?.data?.cycles?.[activeCycle];
@@ -469,13 +497,13 @@ async syncModeFromToggles() {
         mode = 'manual-cycle';
     }
 
-    // Update both selectors
+    // Update selector
     modeSelector.value = mode;
-    mobileModeSelector.value = mode;
 
-    // Update body class
-    document.body.className = document.body.className.replace(/\b(auto-cycle-mode|manual-cycle-mode|todo-mode)\b/g, '');
-    document.body.classList.add(mode + '-mode');
+    // Update body class (via DI DOM helper, not document.body)
+    const body = this.deps.getBody();
+    body.className = body.className.replace(/\b(auto-cycle-mode|manual-cycle-mode|todo-mode)\b/g, '');
+    body.classList.add(mode + '-mode');
 }
 ```
 
@@ -486,15 +514,12 @@ async syncModeFromToggles() {
 ### Initialization Sequence
 
 ```javascript
-// 1. Module loaded
+// 1. Module loaded (DI-pure — no window.* export)
 export async function initModeManager(dependencies = {}) {
     const manager = new ModeManager(dependencies);
 
-    // 2. Wait for core (AppState ready)
+    // 2. Wait for core (AppState ready) and set up selector + listeners
     await manager.init();
-
-    // 3. Export globally
-    window.modeManager = manager;
 
     return manager;
 }
@@ -509,13 +534,13 @@ if (modeToRestore) {
     sessionStorage.removeItem('restoreModeAfterReload');
 
     setTimeout(() => {
-        modeSelector.value = modeToRestore;
-        mobileModeSelector.value = modeToRestore;
+        const freshModeSelector = this.deps.getElementById(DOM_IDS.MODE_SELECTOR);
+        if (freshModeSelector) freshModeSelector.value = modeToRestore;
         this.syncModeFromToggles();
         this.updateCycleModeDescription();
 
         if (this.deps.showNotification) {
-            this.deps.showNotification(`✅ Switched to ${this.getModeName(modeToRestore)}`, 'success', 3000);
+            this.deps.showNotification(getLabel('notify.modeSwitched', { vars: { mode: this.getModeName(modeToRestore) } }), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
         }
     }, 500);
 }
@@ -562,7 +587,7 @@ Recurring buttons didn't update immediately when switching to/from to-do mode.
 **Solution:**
 ```javascript
 setTimeout(() => {
-    window.recurringCore?.updateRecurringButtonVisibility();
+    this.deps.recurringCore?.updateRecurringButtonVisibility();
 }, 100);
 ```
 

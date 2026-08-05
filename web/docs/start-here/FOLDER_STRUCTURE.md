@@ -1,6 +1,6 @@
 # miniCycle Folder Structure
 
-**Last Updated:** January 9, 2026
+**Last Updated:** August 5, 2026
 **Status:** All modules use strict DI | Boot files split (Dec 2025) | CSS modularized (Jan 2026)
 
 > **For current module counts and line counts, see [PROJECT_STATS.md](../PROJECT_STATS.md).**
@@ -79,22 +79,24 @@ The monolithic 8,000+ line `miniCycle-styles.css` was refactored into 30 focused
 web/
 │
 ├── 📄 miniCycle.html                    # Main PWA entry point
-├── 📄 miniCycle-main.js                 # Entrypoint (~56 lines) - loads orchestrator
+├── 📄 miniCycle-main.js                 # Entrypoint (~50 lines) - loads orchestrator
 ├── 📄 service-worker.js                 # PWA service worker
 │
-├── 📁 styles/                           # Modular CSS architecture (31 files)
+├── 📁 styles/                           # Modular CSS architecture (see PROJECT_STATS.md for count)
 │   ├── main.css                         # Entry point - imports all modules
 │   ├── base/                            # Foundation styles
 │   │   ├── variables.css                # CSS custom properties & theme variables
 │   │   ├── reset.css                    # CSS reset & normalization
+│   │   ├── critical.css                 # Critical above-the-fold styles
 │   │   ├── background.css               # Background patterns, images & overlays
 │   │   ├── typography.css               # Font styles & text utilities
+│   │   ├── accessibility.css            # High contrast & accessibility styles
 │   │   └── animations.css               # Keyframe animations
 │   ├── layout/                          # Page structure
 │   │   ├── app-container.css            # Main app container & views
 │   │   ├── header.css                   # Header & navigation bar
 │   │   └── safe-areas.css               # iOS safe area handling
-│   ├── components/                      # UI components (18 files)
+│   ├── components/                      # UI components (29 files)
 │   │   ├── task-list.css                # Task items & list container
 │   │   ├── task-input.css               # Task input field
 │   │   ├── task-options.css             # Task option buttons
@@ -112,13 +114,27 @@ web/
 │   │   ├── forms.css                    # Form elements
 │   │   ├── footer.css                   # Footer styles
 │   │   ├── storage.css                  # Storage indicator
-│   │   └── games.css                    # Mini-games UI
+│   │   ├── games.css                    # Mini-games UI
+│   │   ├── achievements.css             # Achievements/badges UI
+│   │   ├── first-run-welcome.css        # First-run welcome screen
+│   │   ├── focus-mode.css               # Focus mode chrome hiding
+│   │   ├── focus-task-panel.css         # One-task-at-a-time focus panel
+│   │   ├── guided-tour.css              # Guided tour spotlight overlay
+│   │   ├── history.css                  # History modal
+│   │   ├── icons.css                    # Inline SVG icon styles
+│   │   ├── quick-actions.css            # Quick actions panel
+│   │   ├── task-view-layout.css         # Desktop drag-customize layout
+│   │   ├── testing.css                  # Testing modal
+│   │   └── themes-modal.css             # Themes modal
 │   ├── utilities/                       # Utility styles
 │   │   ├── dark-mode.css                # Dark mode overrides
 │   │   ├── helpers.css                  # Helper classes & navigation dots
 │   │   └── responsive.css               # Media queries
 │   └── themes/                          # Theme system
-│       └── theme-manager.js             # Dynamic theme application
+│       ├── themes.css                   # Color theme styles
+│       ├── theme-manager.js             # Dynamic theme application
+│       ├── theme-schema.json            # Theme definition schema
+│       └── definitions/                 # Theme definition files
 ├── 📄 version.js                        # Single source of truth for versions
 ├── 📄 manifest.json                     # PWA manifest (full version)
 ├── 📄 manifest-lite.json                # PWA manifest (lite version)
@@ -132,6 +148,7 @@ web/
 │   │   ├── featureBoot.js               # DI wiring hub
 │   │   ├── moduleLoader.js              # Dynamic module loader
 │   │   ├── moduleManifests.js           # Module dependency manifests
+│   │   ├── modalTemplates.js            # HTML templates for large modals
 │   │   └── uiBoot.js                    # UI event handlers
 │   ├── core/                            # AppState, appInit, appContext, DI base, constants
 │   ├── task/                            # Task CRUD, DOM, events, drag-drop, validation
@@ -139,12 +156,14 @@ web/
 │   ├── recurring/                       # Recurring task scheduling, panel, activation
 │   ├── ui/                              # Modals, menus, settings, onboarding, gestures
 │   ├── features/                        # Themes, stats, achievements, history, reminders
-│   ├── labels/                          # Label system (566 keys, resolver)
+│   ├── labels/                          # Label system (all user-facing strings + resolver)
 │   │   ├── defaultLabels.js             # Pure data: all user-facing strings
-│   │   └── labelResolver.js             # getLabel() with pluralization & interpolation
+│   │   ├── labelResolver.js             # getLabel() with pluralization & interpolation
+│   │   └── themes.js                    # Vocabulary theme definitions & manager
 │   ├── utils/                           # Notifications, device detection, utilities
 │   ├── storage/                         # Backup manager, storage persistence
 │   ├── progress/                        # Cycle completion tracking
+│   ├── platform/                        # capacitorBridge (native shell; no-op on web)
 │   ├── testing/                         # Test infrastructure
 │   └── other/                           # Plugins, experimental
 │
@@ -166,7 +185,7 @@ web/
 │   ├── miniCycle-lite-scripts.js        # ES5 compatible - intentionally not updated
 │   └── miniCycle-lite-styles.css        # Simplified styles for older browsers
 │
-├── 📁 miniCycleGames/                   # Hidden mini-games
+├── 📁 games/                            # Hidden mini-games
 │   ├── miniCycle-taskOrder.html         # Whack-a-Order game (unlocks at 100 cycles)
 │   ├── miniCycle-taskScramble.html
 │   └── miniCycle-taskGame.html
@@ -176,15 +195,15 @@ web/
 │   ├── README.md                        # Documentation hub
 │   ├── _sidebar.md                      # Navigation sidebar
 │   ├── DEVELOPER_DOCUMENTATION.md       # Complete dev guide
-│   ├── FOLDER_STRUCTURE.md              # This file!
-│   ├── CLAUDE.md                        # AI assistant guide
+│   ├── start-here/FOLDER_STRUCTURE.md   # This file!
+│   ├── working-on-code/CLAUDE.md        # AI assistant guide
 │   ├── [architecture docs]
 │   └── archive/                         # Historical/completed docs
 │
 ├── 📁 tests/                            # Test suite (see PROJECT_STATS.md for counts)
 │   ├── module-test-suite.html           # Browser test runner
 │   ├── automated/                       # Playwright automation
-│   ├── [33 module test files]
+│   ├── [module test files — see PROJECT_STATS.md]
 │   └── MODULE_TEMPLATE.tests.js         # Template for new tests
 │
 ├── 📁 assets/                           # Static assets
@@ -192,8 +211,8 @@ web/
 │   └── videos/                          # Tutorial videos
 │
 ├── 📁 scripts/                          # Build & utility scripts
-│   ├── version.js                       # Version sync (symlink to root)
 │   ├── update-version.sh                # Automated version updater
+│   ├── build-web.cjs                    # esbuild release bundler (Netlify runs this)
 │   └── backup/                          # Timestamped backups
 │
 ├── 📁 examples/                         # Example code & references
@@ -226,7 +245,7 @@ web/
 **Structure:**
 - `base/` - Foundation (variables, reset, background, typography, animations)
 - `layout/` - Page structure (app container, header, safe areas)
-- `components/` - UI components (18 files for specific features)
+- `components/` - UI components (29 files for specific features)
 - `utilities/` - Dark mode, helpers, responsive breakpoints
 - `themes/` - Dynamic theme system
 
@@ -310,17 +329,18 @@ web/
 
 ## Modules Organization
 
-The `/modules/` directory contains 91 ES6 modules organized into 12 logical groups. **All modules use strict dependency injection with no `|| window.*` fallbacks.**
+The `/modules/` directory contains 136 ES6 modules organized into 14 logical groups (see [PROJECT_STATS.md](../PROJECT_STATS.md) for live counts). **All modules use strict dependency injection with no `|| window.*` fallbacks.**
 
-### `boot/` - Boot Sequence Modules (6 modules)
+### `boot/` - Boot Sequence Modules (7 modules)
 **Purpose:** Application boot orchestration split into focused files
 **When to add here:** Only boot-related code (initialization, DI wiring, UI setup)
 
-- `orchestrator.js` - DI wiring hub, coordinates boot sequence
+- `orchestrator.js` - Pure sequence controller: boot UI, retries, early coordination
 - `coreBoot.js` - Core state, AppState, migration
 - `featureBoot.js` - Feature module loading and DI wiring
 - `moduleLoader.js` - Dynamic module loader with dependency resolution
 - `moduleManifests.js` - Module dependency manifests and metadata
+- `modalTemplates.js` - HTML templates for large modals, injected at boot
 - `uiBoot.js` - UI event handlers, loader helpers, device detection
 
 **Philosophy:** Split from monolithic `miniCycle-scripts.js` for better debuggability. Each file can be uploaded independently for AI-assisted debugging.
@@ -336,7 +356,7 @@ miniCycle-main.js (entrypoint)
 
 ---
 
-### `core/` - Essential System Modules (8 modules)
+### `core/` - Essential System Modules (9 modules)
 **Purpose:** Foundation modules required for app initialization
 **When to add here:** Never. Core is frozen - critical infrastructure only.
 
@@ -345,32 +365,36 @@ miniCycle-main.js (entrypoint)
 - `appGlobalState.js` - Global runtime state and feature flags
 - `appContext.js` - Centralized module registry for cross-module access
 - `constants.js` - Application constants
-- `dataAccess.js` - Data access layer abstractions
+- `dataAccess.js` - Legacy data access wrapper (new code uses AppState directly)
 - `diBase.js` - Dependency injection base utilities
 - `migrationFacade.js` - Schema migration facade
+- `types.js` - Central JSDoc type definitions for Schema 2.5
 
 **Philosophy:** Core modules are special - they initialize before everything else and are dependency-injected into other modules.
 
 ---
 
-### `task/` - Task Management System (10 modules)
+### `task/` - Task Management System (13 modules)
 **Purpose:** Everything related to individual task lifecycle
 **When to add here:** Task creation, validation, rendering, events, drag-drop
 
 - `taskCore.js` - CRUD operations and business logic
 - `taskCRUD.js` - Task create, read, update, delete operations
 - `taskDOM.js` - DOM coordination and composition
+- `taskDOMPatch.js` - DOM patching without full re-renders
 - `taskRenderer.js` - DOM element creation and rendering
+- `taskButtons.js` - Task button containers and individual buttons
 - `taskEvents.js` - Event handling (clicks, inputs, focus)
 - `taskCompletion.js` - Task completion logic
 - `taskCycleReset.js` - Cycle reset and task state management
+- `dailyResetManager.js` - Per-routine "Auto-uncheck Daily" soft reset
 - `taskValidation.js` - Input validation and sanitization
 - `taskUtils.js` - Helper functions and utilities
 - `dragDropManager.js` - Drag & drop with Safari compatibility
 
 **Philosophy:** Task system split by responsibility, not by implementation detail. DOM coordination (`taskDOM.js`) orchestrates rendering (`taskRenderer.js`) and events (`taskEvents.js`).
 
-**Reasoning:** A 3,000-line monolith was impossible to test. Ten focused modules each have clear contracts and 100% test coverage.
+**Reasoning:** A 3,000-line monolith was impossible to test. Focused modules each have clear contracts and 100% test coverage.
 
 ---
 
@@ -378,11 +402,11 @@ miniCycle-main.js (entrypoint)
 **Purpose:** Routine lifecycle from creation to switching to migration
 **When to add here:** Routine operations, mode changes, data migration
 
-- `routineLoader.js` (273 lines) - Data loading and file import/export
-- `routineManager.js` (445 lines) - Routine creation and management
-- `routineSwitcher.js` (677 lines) - Routine switching with modal UI
-- `modeManager.js` (380 lines) - Auto/Manual/Todo mode management
-- `migrationManager.js` (850 lines) - Schema migrations and data upgrades
+- `routineLoader.js` - Data loading and file import/export
+- `routineManager.js` - Routine creation and management
+- `routineSwitcher.js` - Routine switching with modal UI
+- `modeManager.js` - Auto/Manual/Todo mode management
+- `migrationManager.js` - Schema migrations and data upgrades
 
 **Philosophy:** Routines are first-class entities with complex state machines. Each module handles one phase of the routine lifecycle.
 
@@ -390,12 +414,13 @@ miniCycle-main.js (entrypoint)
 
 ---
 
-### `recurring/` - Recurring Tasks System (15 modules)
+### `recurring/` - Recurring Tasks System (16 modules)
 **Purpose:** Template-based recurring task generation
 **When to add here:** Recurring logic, scheduling, UI
 
 - `recurringCore.js` - Business logic and scheduling
 - `recurringActivation.js` - Recurring task activation logic
+- `recurringBoot.js` - Lightweight boot-time recurring UI helpers (heavy panel deferred)
 - `recurringCalculators.js` - Date calculation utilities
 - `recurringDateUtils.js` - Date parsing and formatting
 - `recurringIntegration.js` - Integration with task system
@@ -416,16 +441,23 @@ miniCycle-main.js (entrypoint)
 
 ---
 
-### `ui/` - UI Coordination (21 modules)
+### `ui/` - UI Coordination (37 modules)
 **Purpose:** Application-level UI that coordinates multiple systems
 **When to add here:** Modals, menus, settings, onboarding, undo/redo, customization
 
 - `modalManager.js` - Modal lifecycle and stacking
+- `modalRegistry.js` - Centralized modal element lookup with caching
+- `modalUtils.js` - Pure modal backdrop utilities
 - `menuManager.js` - Settings menu and navigation
 - `settingsManager.js` - Settings panel and persistence
 - `settingsUIManager.js` - Settings UI components
+- `preferencesManager.js` - Personalization modal (colors, backgrounds)
+- `preferencesBgImage.js` - Background image preferences (facade sub-module)
+- `preferencesPresets.js` - Color preset preferences (facade sub-module)
+- `shareManager.js` - Routine sharing (.mcyc)
 - `onboardingManager.js` - First-time user experience
-- `undoRedoManager.js` - Per-cycle undo/redo with IndexedDB
+- `guidedTourManager.js` - Opt-in guided tour with spotlight overlay
+- `undoRedoManager.js` - Per-cycle undo/redo
 - `gamesManager.js` - Mini-game unlock and panel
 - `taskOptionsCustomizer.js` - Per-cycle button visibility customization
 - `backupRestoreManager.js` - Backup and restore functionality
@@ -437,10 +469,19 @@ miniCycle-main.js (entrypoint)
 - `taskInteractions.js` - Task interaction handlers
 - `taskSearch.js` - Task search functionality
 - `taskUI.js` - Task UI utilities
+- `taskViewLayoutManager.js` - Desktop drag-customize for the Task View region
 - `titleManager.js` - Page title management
 - `uiEffects.js` - UI animations and effects
 - `uiOrchestrator.js` - UI coordination and orchestration
 - `gesturePanelManager.js` - Multi-platform gesture handling for panel navigation
+- `panelCarousel.js` - Ordered, indexed main-view panel carousel
+- `panelVisibilityHelpers.js` - Shared Help Window / Quick Actions visibility logic
+- `focusMode.js` - Distraction-free view (hides UI chrome)
+- `focusTaskPanel.js` - One-task-at-a-time card for focus view
+- `quickActionsManager.js` - Quick actions panel with switchable views
+- `actionUsage.js` - Quick Actions usage tracking (recent/frequent)
+- `headerLayoutManager.js` - Measures fixed chrome, publishes CSS custom properties
+- `notificationDialogHost.js` - Keeps notifications interactive over native dialogs
 
 **Philosophy:** UI modules don't contain business logic - they coordinate other modules and present data.
 
@@ -448,17 +489,21 @@ miniCycle-main.js (entrypoint)
 
 ---
 
-### `features/` - Optional/Pluggable Features (7 modules)
+### `features/` - Optional/Pluggable Features (11 modules)
 **Purpose:** Features that enhance core experience but aren't required
 **When to add here:** New optional features that can be disabled
 
-- `dueDates.js` (233 lines) - Task due date management
-- `reminders.js` (621 lines) - Custom reminder system
-- `themeManager.js` (950 lines) - Dynamic theming with unlockables
-- `statsPanel.js` (1,841 lines) - Statistics panel and view switching
-- `achievementsManager.js` (1,018 lines) - Achievement/badge system with OR-based unlocking
-- `historyManager.js` (984 lines) - Per-routine activity logging and history modal
-- `clearedTasksManager.js` (675 lines) - Cleared task tracking (To-Do mode + cycle reset auto-removes)
+- `dueDates.js` - Task due date management
+- `reminders.js` - Custom reminder system
+- `themeManager.js` - Dynamic theming with unlockables
+- `statsPanel.js` - Statistics panel and view switching
+- `statsPanelGestures.js` - Stats panel gesture handling (facade sub-module)
+- `statsPanelRewards.js` - Stats panel rewards/unlocks (facade sub-module)
+- `achievementsManager.js` - Achievement/badge system with OR-based unlocking
+- `historyManager.js` - Per-routine activity logging and history modal
+- `clearedTasksManager.js` - Cleared task tracking (To-Do mode + cycle reset auto-removes)
+- `backupReminder.js` - Periodic backup reminder prompts
+- `uxRatings.js` - Star rating inside the feedback modal
 
 **Philosophy:** Features should be optional and independently testable. The app works without them.
 
@@ -466,20 +511,21 @@ miniCycle-main.js (entrypoint)
 
 ---
 
-### `labels/` - Label System (2 modules)
+### `labels/` - Label System (3 modules)
 **Purpose:** Centralized user-facing string management
-**When to add here:** Label data, resolver logic, future contextual lenses
+**When to add here:** Label data, resolver logic, vocabulary themes
 
-- `defaultLabels.js` (566 keys) - Pure data module with all user-facing strings across 32 categories
+- `defaultLabels.js` - Pure data module with all user-facing strings, organized by category
 - `labelResolver.js` - `getLabel()` function with DI, pluralization, and interpolation
+- `themes.js` - Vocabulary theme definitions + manager (per-routine label/color overrides)
 
-**Philosophy:** Centralizing strings enables future contextual lenses (e.g., "task" becomes "habit" in a Habit Tracker lens) and provides a single source of truth for all user-facing text.
+**Philosophy:** Centralizing strings enables contextual lenses (e.g., "task" becomes "workout" in the Fitness vocabulary theme) and provides a single source of truth for all user-facing text.
 
-**Reasoning:** `defaultLabels.js` is a pure data module (no DI, no imports) — importable anywhere at any boot phase. `labelResolver.js` has DI wiring for future lens support.
+**Reasoning:** `defaultLabels.js` is a pure data module (no DI, no imports) — importable anywhere at any boot phase. `labelResolver.js` has DI wiring for theme-aware resolution.
 
 ---
 
-### `utils/` - Shared Utilities (10 modules)
+### `utils/` - Shared Utilities (19 modules)
 **Purpose:** Reusable utilities with no business logic dependencies
 **When to add here:** Pure functions, platform detection, logging, validation
 
@@ -489,10 +535,19 @@ miniCycle-main.js (entrypoint)
 - `consoleCapture.js` - Console logging for debugging
 - `dataSanitizer.js` - Data sanitization utilities
 - `dataValidator.js` - Data validation utilities
+- `dataRecovery.js` - Best-effort salvage of corrupted localStorage data
 - `debugMode.js` - Debug mode utilities
 - `errorHandler.js` - Error handling utilities
+- `featureAvailability.js` - Tracks optional modules that failed to load
 - `nameUtils.js` - Name/string utilities
 - `storageUtils.js` - localStorage utilities and quota management
+- `mcycPayload.js` - Single payload builder for .mcyc share/export/download
+- `icons.js` - Inline SVG icon registry
+- `iconInit.js` - Icon replacement on page load
+- `keyboardNav.js` - Roving-tabindex keyboard navigation helpers
+- `dialogClose.js` - Animated dialog close utility
+- `popoverUtils.js` - Popover utilities
+- `liteVersion.js` - Single entry point for navigating to the lite version
 
 **Philosophy:** Utils are stateless, dependency-free, and reusable across modules.
 
@@ -500,13 +555,13 @@ miniCycle-main.js (entrypoint)
 
 ---
 
-### `testing/` - Testing Infrastructure (3 modules)
+### `testing/` - Testing Infrastructure (9 modules)
 **Purpose:** Test-related modules that shouldn't pollute production modules
 **When to add here:** Test helpers, mocks, test UI
 
 - `testing-modal.js` - In-app testing modal
 - `testing-modal-integration.js` - Test runner integration
-- `automated-tests-fix.js` - Test automation fixes
+- `testing-modal-core.js`, `testing-modal-ui.js`, `testing-modal-analysis.js`, `testing-modal-backup.js`, `testing-modal-debug.js`, `testing-modal-diagnostics.js`, `testing-modal-storage-viewer.js` - Testing modal sub-modules
 
 **Philosophy:** Testing is important enough to deserve its own space.
 
@@ -532,6 +587,16 @@ miniCycle-main.js (entrypoint)
 - `cycleCompletion.js` - Cycle completion logic and animations
 
 **Philosophy:** Progress tracking deserves isolation for clear responsibility.
+
+---
+
+### `platform/` - Native Platform Bridge (1 module)
+**Purpose:** Native shell integration for the Capacitor (iOS/Android) builds
+**When to add here:** Platform-specific bridging code
+
+- `capacitorBridge.js` - Capacitor native shell bridge (no-op on web)
+
+**Philosophy:** Platform-specific code is isolated so the web app stays platform-agnostic.
 
 ---
 
@@ -571,9 +636,9 @@ miniCycle-main.js (entrypoint)
 **Docs:** Markdown explaining concepts
 **Reason:** "Show me an example routine" vs "Explain how recurring tasks work" are different needs.
 
-### Why `miniCycleGames/` instead of `games/`?
-**Namespacing:** Consistent with `miniCycle.html`, `miniCycle-main.js`
-**Reason:** If we add other games or features, the naming convention is established.
+### Why `games/` for the mini-games?
+**Naming:** The folder is `games/`; the game files themselves keep the `miniCycle-` prefix (`miniCycle-taskOrder.html`, etc.), consistent with `miniCycle.html`, `miniCycle-main.js`.
+**Reason:** Short folder name, namespaced filenames — the naming convention is established if we add more games.
 
 ---
 
@@ -666,9 +731,9 @@ miniCycle-main.js (entrypoint)
 - **Git:** `git log --oneline --all` and search for relevant commits
 
 ### "I want to deploy"
-- **Production:** Push to `main`, Netlify auto-deploys `web/` folder
+- **Production:** Push to `main`, Netlify builds and publishes the bundled `web/dist/` (root `netlify.toml` is the build authority)
 - **Testing:** Netlify deploy previews for all pull requests
-- **Version:** Run `./update-version.sh` before deploying
+- **Version:** App-code changes ship via `./scripts/update-version.sh --auto --push` (version + cache bump + CSP hashes) — see [BUILD_PROCESS.md](../deployment/BUILD_PROCESS.md)
 
 ---
 
@@ -779,11 +844,11 @@ When desktop or mobile development starts:
 4. Maintain URL compatibility with redirects
 
 ### Build Process Addition
-If we add a build step (Vite, Rollup, etc.):
-1. Keep source in current structure
-2. Output to `dist/` or `build/`
-3. Update Netlify to deploy build folder
-4. Maintain dev server for unbundled development
+This happened (v2.294, Jul 2026 — esbuild, deploy-time only):
+1. Source kept in current structure
+2. Output goes to `web/dist/` (content-hashed under `/build/` since v2.301)
+3. Netlify publishes the build folder (root `netlify.toml`)
+4. Dev server still serves unbundled source — development never needs the build
 
 ### Code Splitting
 To reduce initial bundle size:

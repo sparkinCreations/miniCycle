@@ -1,6 +1,6 @@
 # miniCycle - Developer Documentation Hub
 
-**Last Updated**: December 20, 2025
+**Last Updated**: August 5, 2026
 
 > **For current version, test counts, and metrics, see [PROJECT_STATS.md](PROJECT_STATS.md).**
 
@@ -52,7 +52,7 @@ miniCycle is a **routine manager** that helps users build and maintain repeatabl
 
 **Boot File Structure:**
 - `miniCycle-main.js` - Entrypoint
-- `modules/boot/orchestrator.js` - Pure sequence controller
+- `modules/boot/orchestrator.js` - Sequence control + boot UI + early coordination
 - `modules/boot/coreBoot.js` - Core state & init
 - `modules/boot/featureBoot.js` - DI wiring hub
 - `modules/boot/uiBoot.js` - UI handlers
@@ -72,9 +72,13 @@ const di = createDIModule('MyModule', {
     showNotification: optional(null)
 })
 
-const _deps = new Proxy({}, {
-    get(_, prop) { return di.resolve()[prop] }
-})
+export const setMyModuleDependencies = di.setDependencies;
+
+export class MyModule {
+    get deps() {
+        return di.resolve()  // Lazy resolution — never spread deps
+    }
+}
 
 // Wiring is handled automatically by moduleLoader.js
 // via the manifest in moduleManifests.js
@@ -131,14 +135,18 @@ await appInit.waitForApp();
 ```javascript
 {
   schemaVersion: "2.5",   // document version is a STRING (per-task version is the number 2)
-  cycles: {
-    [cycleId]: {
-      name: string,
-      tasks: Task[],
-      cycleCount: number,
-      autoReset: boolean,
-      deleteCheckedTasks: boolean,
-      taskOptionButtons: { /* visibility settings */ }
+  metadata: { lastModified, ... },
+  data: {
+    cycles: {
+      [cycleId]: {
+        name: string,
+        tasks: Task[],
+        cycleCount: number,
+        autoReset: boolean,
+        deleteCheckedTasks: boolean,
+        recurringTemplates: { /* keyed by taskId */ },
+        taskOptionButtons: { /* visibility settings */ }
+      }
     }
   },
   appState: { activeCycleId: string },
@@ -160,8 +168,8 @@ npm run test:layout          # Real-app layout-overlap regression gate
 npm run test:sw              # Real-app offline boot + precache-drift gate
 npm run test:journey         # Real-app end-to-end user journey gate
 
-# Version Management
-./update-version.sh          # Update version numbers
+# Version Management (run from web/)
+./scripts/update-version.sh --auto --push --changelog  # Version + cache bump + CSP hashes + tag + push
 
 # Access Points
 http://localhost:8080/miniCycle.html           # Full app
@@ -193,7 +201,9 @@ http://localhost:8080/tests/module-test-suite.html # Tests
 
 **Accessing DOM safely:**
 ```javascript
-const element = document.getElementById('my-element');
+import { DOM_IDS } from '../core/constants.js';
+
+const element = document.getElementById(DOM_IDS.TASK_LIST);  // never hardcode selectors
 if (element) {
     // Safe to use
 }
@@ -230,7 +240,7 @@ The DI overhaul is **complete**. miniCycle now uses pure dependency injection wi
 
 **Achieved:**
 - Custom DI framework (`diBase.js`) with `required()`, `optional()`, `createDIModule()`
-- Boot orchestrator (`moduleLoader.js`) wires all modules (see [PROJECT_STATS.md](PROJECT_STATS.md) for count)
+- Module loader (`moduleLoader.js`, driven by `featureBoot.js`) wires all modules (see [PROJECT_STATS.md](PROJECT_STATS.md) for count)
 - Zero custom `window.*` globals in modules
 - Tests can inject pure mocks (see [PROJECT_STATS.md](PROJECT_STATS.md) for test count)
 

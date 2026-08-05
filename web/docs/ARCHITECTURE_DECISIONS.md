@@ -179,8 +179,8 @@ tear down the partial ("zombie") attempt and **retry**; if it still fails, fall 
 to the lite version.
 
 Timeouts (from `constants.js`): Phase 1 = 15s, Phase 2 = 30s (largest phase, 40+
-modules), Phase 3 = 15s, pre-boot version gate = 1.5s. In the HTML shell, an
-**8-second** late fallback and a **60-second** hard load-timeout both redirect to
+modules), Phase 3 = 15s, pre-boot version gate = 1.5s. In the HTML shell, a
+**16-second** late fallback and a **60-second** hard load-timeout both redirect to
 lite as last resorts.
 
 **Why.**
@@ -335,6 +335,10 @@ Netlify runs `scripts/build-web.cjs` (esbuild) on every deploy and publishes `we
 the service-worker precache list generated from the build output instead of hand-maintained.
 Ship rule: app-code changes reach users only via `update-version.sh` (a bare push to `main`
 deploys but leaves existing users' service workers on the old build).
+
+*(Update: since v2.301 the stable-path entries are gone — all output is fully content-hashed
+under `/build/`, with the module map riding `version.js` and `?v=` reduced to dev-only. See
+`deployment/BUILD_PROCESS.md`.)*
 
 **Why.**
 - Measured cold-load cost (July 2026, r/website feedback + own baselines): the unbundled deploy

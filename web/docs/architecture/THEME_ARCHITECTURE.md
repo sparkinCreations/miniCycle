@@ -1,6 +1,6 @@
 # Theme Architecture for miniCycle
 
-**Last Updated**: February 24, 2026
+**Last Updated**: August 5, 2026
 **Status**: Production — describes the actual implemented system
 
 > For current version metrics see [PROJECT_STATS.md](../PROJECT_STATS.md).
@@ -41,7 +41,7 @@ Themes are unlocked globally (based on total cycle count across all routines), b
 |------|------|
 | `modules/labels/themes.js` | `THEME_DEFINITIONS` — labels, icons, colorPreset per theme. `VocabThemeManager` singleton. |
 | `modules/labels/labelResolver.js` | `getLabel()` — checks active theme before falling back to `DEFAULT_LABELS` |
-| `modules/labels/defaultLabels.js` | Fallback strings for every key (566 keys) |
+| `modules/labels/defaultLabels.js` | Fallback strings for every key (~1,575 keys) |
 | `modules/features/themeManager.js` | `refreshThemeLabels()` — DOM updates on boot + theme change |
 | `modules/progress/cycleCompletion.js` | Detects newly unlocked themes on cycle completion, calls `renderVocabThemes()` |
 
@@ -74,24 +74,25 @@ Each theme definition in `modules/labels/themes.js` has:
 ```javascript
 const THEME_DEFINITIONS = {
   'habit-tracker': {
+    id: 'habit-tracker',
     name: 'Habit Tracker',
-    icon: '🔁',
-    unlockCycles: 5,
+    description: 'Build streaks, track habits',
+    unlockAt: { cycles: 5 },        // null = always available (Classic only)
     labels: {
-      // Overrides for specific label keys
+      // Overrides for specific label keys (nouns keep { one, other } shape)
       'action.addTask':    'Add habit',
-      'noun.task':         'habit',
-      'noun.cycle':        'streak',
+      'noun.task':         { one: 'habit',  other: 'habits'  },
+      'noun.cycle':        { one: 'streak', other: 'streaks' },
       // ... other overrides
     },
     colorPreset: {
-      bgStart:     '#2d8653',
-      bgEnd:       '#45b37a',
-      headerBg:    '#1e6e42',
-      modalBg:     'rgba(30, 80, 50, 0.85)',  // Glass background for modals
-      modalText:   '#e8f5e9',                  // Text color for modals
-      modalBorder: 'rgba(255, 255, 255, 0.12)', // Border color for modals
-      // ... other color values
+      appBg:      'linear-gradient(160deg, #c87132 0%, #5c2800 100%)',
+      taskListBg: 'rgba(255, 225, 195, 0.5)',
+      taskBg:     '#ffd0a0',
+      taskText:   '#3d1a00',
+      modalBg:    'rgba(255, 225, 195, 0.82)',  // Glass background for modals
+      modalText:  '#3d1a00',                     // Text color for modals
+      // ... other color slots (titleBg, checkboxBg, progressBar, stats*, celebration*, ...)
     }
   },
   // ... other themes
@@ -105,14 +106,15 @@ Keys not present in a theme's `labels` object fall through to `DEFAULT_LABELS` a
 Each non-classic theme includes a `colorPreset` object that is applied as `--pref-*` CSS variables when that routine is active. This gives each vocabulary theme its own visual identity on top of the label changes.
 
 ```javascript
-// Applied by themeManager.js when vocab theme is activated:
-root.style.setProperty('--pref-bg-start',    preset.bgStart);
-root.style.setProperty('--pref-bg-end',      preset.bgEnd);
-root.style.setProperty('--pref-header-bg',   preset.headerBg);
-root.style.setProperty('--pref-modal-bg',    preset.modalBg);
-root.style.setProperty('--pref-modal-text',  preset.modalText);
-root.style.setProperty('--pref-modal-border', preset.modalBorder);
-// ...
+// Applied by themeManager.js when vocab theme is activated
+// (colorPreset key → CSS variable mapping lives at the top of themeManager.js):
+root.style.setProperty('--pref-app-bg',        preset.appBg);
+root.style.setProperty('--pref-task-list-bg',  preset.taskListBg);
+root.style.setProperty('--pref-task-bg',       preset.taskBg);
+root.style.setProperty('--pref-task-text',     preset.taskText);
+root.style.setProperty('--pref-modal-bg',      preset.modalBg);
+root.style.setProperty('--pref-modal-text',    preset.modalText);
+// ... one --pref-* variable per colorPreset slot
 ```
 
 When the Classic theme is active, color presets are reverted to the user's custom colors (or defaults) via `applyCustomColors()`.
@@ -155,23 +157,22 @@ Color themes are the traditional app-wide palette presets. They change the app g
 
 ### Available Presets
 
-Six built-in Quick Color presets (Classic Blue, Midnight, Coral, Sage, Lavender, Slate) plus full custom color support.
+Nine built-in Quick Color presets (`QUICK_PRESETS` in `modules/ui/preferencesPresets.js`: Default, Warm, Cool, Forest, Monochrome, Professional, Golden Glow, Dark Ocean, Berry) plus full custom color support.
 
 ### How It Works
 
-```javascript
-// themeManager.js applies a CSS class
-document.body.classList.add('theme-midnight');
+Quick presets don't use a CSS class — selecting one fills the custom-color set and applies it via `applyCustomColors()`, which sets `--pref-*` variables directly:
 
-// CSS picks up the class
-body.theme-midnight {
-  --pref-bg-start: #1a1a2e;
-  --pref-bg-end:   #16213e;
-  /* ... */
-}
+```javascript
+// preferencesPresets.js → preferencesManager.applyCustomColors()
+root.style.setProperty('--pref-app-bg',       colors.appBg);
+root.style.setProperty('--pref-task-list-bg', colors.taskListBg);
+// ... one --pref-* variable per color slot
 ```
 
-Custom colors set `--pref-*` variables directly (no class). The Personalization modal provides the color pickers.
+Custom colors set the same `--pref-*` variables. The Personalization modal provides the color pickers.
+
+A separate legacy pair of **unlockable color themes** (Dark Ocean, Golden Glow) is managed by `themeManager.js` as a CSS class on `<body>` (`theme-dark-ocean` / `theme-golden-glow`); their unlock state lives in `state.settings.unlockedThemes`.
 
 ### Interaction with Vocabulary Themes
 
@@ -201,9 +202,9 @@ The vocabulary theme system requires **no build process**. Labels and color pres
 All three theming layers communicate with CSS through `--pref-*` variables defined in `styles/base/variables.css`. Modules set these variables via JavaScript; CSS consumes them. No inline styles, no class-name gymnastics.
 
 ```css
-/* styles/layout/header.css */
-header {
-  background: var(--pref-header-bg, var(--color-primary));
+/* styles/base/background.css */
+body {
+  background: var(--pref-app-bg, var(--theme-bg-gradient));
 }
 ```
 
@@ -220,18 +221,19 @@ Vocabulary themes are stored in the routine's data (`state.data.cycles[cycleId].
 1. **Add to `THEME_DEFINITIONS`** in `modules/labels/themes.js`:
    ```javascript
    'my-theme': {
+     id: 'my-theme',
      name: 'My Theme',
-     icon: '🌿',
-     unlockCycles: 150,
+     description: 'What this theme reframes the app as',
+     unlockAt: { cycles: 150 },
      labels: {
        'action.addTask': 'Add item',
        // ... only keys you want to override
      },
      colorPreset: {
-       bgStart:  '#2a5',
-       bgEnd:    '#1a4',
-       headerBg: '#194',
-       // ...
+       appBg:      'linear-gradient(160deg, #2a5 0%, #1a4 100%)',
+       taskListBg: 'rgba(240, 253, 244, 0.55)',
+       taskBg:     '#e0f5e8',
+       // ... (see VOCAB_THEME_CSS_VARS at the top of themeManager.js for all slots)
      }
    }
    ```
