@@ -1,3 +1,7 @@
+## [2.361] - 2026-08-05
+- refactor(state): one-door migration — task add, reset recurring removal, recurring toggle
+
+
 ## [2.360] - 2026-08-05
 - fix(undo+ui): revive FIX #8 batch flag, system-mark daily fires, dead scan branch, escaping stragglers
 
