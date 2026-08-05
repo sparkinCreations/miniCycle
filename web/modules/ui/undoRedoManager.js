@@ -197,11 +197,16 @@ function sanitizeSnapshot(snapshot) {
  * @returns {Array} New array with relabeled snapshot copies
  */
 function relabelSnapshotsForCycle(snapshots, newCycleId) {
-  return (snapshots || []).map(snap =>
-    (snap && typeof snap === 'object')
-      ? { ...snap, activeCycleId: newCycleId, title: newCycleId }
-      : snap
-  );
+  return (snapshots || []).map(snap => {
+    if (!snap || typeof snap !== 'object') return snap;
+    const relabeled = { ...snap, activeCycleId: newCycleId, title: newCycleId };
+    // The cached signature embeds the OLD id/title (c/ti fields), so carrying
+    // it forward makes the first post-rename capture mismatch the stack top by
+    // construction and push a duplicate. Both consumers (capture dedup,
+    // snapshot comparator) lazily recompute when _sig is absent.
+    delete relabeled._sig;
+    return relabeled;
+  });
 }
 
 /**

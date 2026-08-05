@@ -1731,7 +1731,10 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         // wrote the old title into the renamed cycle (key=title break).
         mockDeps.AppGlobalState.activeUndoStack = [
             { activeCycleId: 'Old Name', title: 'Old Name', tasks: [{ id: 't1', text: 'a' }], timestamp: 1 },
-            { activeCycleId: 'Old Name', title: 'Old Name', tasks: [], timestamp: 2 }
+            // _sig cached pre-rename: relabel must strip it, or post-rename
+            // dedup compares fresh signatures against this stale string and
+            // pushes duplicates.
+            { activeCycleId: 'Old Name', title: 'Old Name', tasks: [], timestamp: 2, _sig: 'stale-pre-rename-sig' }
         ];
         mockDeps.AppGlobalState.activeRedoStack = [
             { activeCycleId: 'Old Name', title: 'Old Name', tasks: [], timestamp: 3 }
@@ -1745,6 +1748,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         for (const snap of all) {
             if (snap.activeCycleId !== 'New Name') throw new Error(`snapshot activeCycleId not relabeled: ${snap.activeCycleId}`);
             if (snap.title !== 'New Name') throw new Error(`snapshot title not relabeled: ${snap.title}`);
+            if ('_sig' in snap) throw new Error('stale cached _sig must be stripped by relabel');
         }
         // The relabeled snapshots must pass the strict validation that was
         // discarding them — this is the wipe-on-next-load regression guard.
