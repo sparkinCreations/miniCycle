@@ -54,7 +54,8 @@ path here fails **silently** — it routes to a missing file and degrades every 
 the **repo-root `netlify.toml`** (the build authority; do not delete it — `web/netlify.toml`
 is headers/redirects only, and its [build] block is NOT read). Since v2.301 the build is
 fully content-hashed (`/build/` tree + module map; `?v=` is dev-only).
-App-code changes must ship via `./scripts/update-version.sh --auto --push --changelog`
+App-code changes must ship via `cd web && ./scripts/update-version.sh --auto --push --changelog`
+(the script lives at `web/scripts/` and must run from `web/`)
 (version + cache bump + CSP hashes + tag + push). A bare `git push` of app code creates a
 **half-dark deploy** — and post-hashing, a potentially corrupt one (same-name cache
 overwritten non-atomically with no version signal). Docs-only pushes are fine.
