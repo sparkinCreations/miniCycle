@@ -1,3 +1,12 @@
+## [2.367] - 2026-08-05
+- fix(task): remove duplicate completion pipeline from delegated click handler
+- docs: staleness audit — sync architecture and start-here docs with v2.366 code
+- chore(release): update version to 2.366
+- fix(undo): strip stale cached _sig when relabeling snapshots on rename
+- ci: auto-tag release commits merged to main without a tag
+- docs: correct release script path in CLAUDE.md (runs from web/)
+
+
 ## [2.366] - 2026-08-05
 - fix(undo): strip stale cached _sig when relabeling snapshots on rename
 - ci: auto-tag release commits merged to main without a tag
