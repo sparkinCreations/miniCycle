@@ -35,10 +35,9 @@ export function buildMcycPayload(cycleKey, cycle, { includeHistory }) {
                 ? structuredClone(task.recurringSettings)
                 : {};
 
-            // Add fallback time if task is recurring and doesn't use specificTime
-            if (task.recurring && !settings.specificTime && !settings.defaultRecurTime) {
-                settings.defaultRecurTime = new Date().toISOString();
-            }
+            // (defaultRecurTime is no longer written into exports — dead field,
+            // zero readers, and import-side normalization strips it anyway,
+            // which made every export/import round trip asymmetric.)
 
             return {
                 id: task.id || `task-${Date.now()}-${Math.floor(Math.random() * 1000)}`,

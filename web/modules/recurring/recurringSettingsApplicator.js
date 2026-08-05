@@ -80,10 +80,8 @@ export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
 
         const settings = _deps.normalizeRecurringSettings(buildSettingsFromPanel());
 
-        // Set defaultRecurTime if not using specific time
-        if (!settings.specificTime && !settings.defaultRecurTime) {
-            settings.defaultRecurTime = new Date().toISOString();
-        }
+        // (defaultRecurTime write-if-absent retired in v2.358 — the field had
+        // writers but zero readers anywhere; normalization drops it on import.)
 
         // Read ALL DOM state before entering AppState callback
         // (DOM queries must not happen inside state producers)

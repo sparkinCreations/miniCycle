@@ -13,7 +13,13 @@ import { LIMITS, COLORS, DOM_SELECTORS, Z_INDEX, APP_VERSION, UI_TIMEOUTS } from
 import { getLabel } from '../labels/labelResolver.js';
 // Pure normalizer (no DI, no side effects) — statically imported like
 // recurringCalculators in migrationManager, so imported settings get the same
-// enumerated shape every other write path emits.
+// enumerated shape every other write path emits. KNOWN-ACCEPTABLE dual
+// instance: this module loads via the settingsManager facade's ?v= dynamic
+// import, so this static import resolves to a second unversioned copy of
+// recurringSettings.js (the situation recurringMatcher.js deliberately avoids
+// via setNormalizer). Safe here because only the pure function is used — the
+// matcher's concern is memo-cache identity shared with recurringCore, which
+// import doesn't need; the cost is one duplicate cache, nothing behavioral.
 import { normalizeRecurringSettings } from '../recurring/recurringSettings.js';
 
 // ============================================================================

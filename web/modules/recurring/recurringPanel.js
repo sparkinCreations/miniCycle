@@ -1319,10 +1319,8 @@ export class RecurringPanelManager {
             // Build settings from the panel input
             const settings = this.buildRecurringSettingsFromPanel();
 
-            // Simulate fallback default time (for preview only)
-            if (!settings.useSpecificTime && !settings.defaultRecurTime) {
-                settings.defaultRecurTime = new Date().toISOString();
-            }
+            // (A defaultRecurTime fallback was written here until v2.358 —
+            // retired: nothing ever read the field, including the summary builder.)
 
             // Generate summary text using the shared utility
             const summaryText = this.deps.buildRecurringSummary(settings);
