@@ -1215,28 +1215,33 @@ async setDefaultPosition(notificationContainer) {
     // fallback here which only handled < and > (missing quotes/ampersand).
     const escape = getEscapeHtml(this.deps);
     const escapedTaskText = escape(taskText);
+    // Task ids are constrained at every current source, but interpolating them
+    // raw into HTML attributes re-makes the trust assumption the v2.359 import
+    // hardening retired. Escaping is round-trip safe: HTML parsing decodes the
+    // entities, so the DOM attribute equals the raw id and dataset lookups match.
+    const safeTaskId = escape(assignedTaskId);
 
     return `
       <div class="main-notification-content"
-           data-task-id="${assignedTaskId}">
+           data-task-id="${safeTaskId}">
 
         ${educationalTipHTML}
 
         ${taskText ? `<div class="recurring-task-name">"${escapedTaskText}"</div>` : ''}
 
-        <span id="${DOM_IDS.notificationCurrentSettings(assignedTaskId)}">
+        <span id="${escape(DOM_IDS.notificationCurrentSettings(assignedTaskId))}">
           🔁 ${getLabel('notify.recurringStatus', { vars: { frequency: '<strong>' + frequency + '</strong>', pattern } })}
         </span><br>
 
         <button class="show-quick-actions"
-                data-task-id="${assignedTaskId}">
+                data-task-id="${safeTaskId}">
           ${getLabel('notify.changeSettings')}
         </button>
 
         <div class="quick-recurring-container"
-             data-task-id="${assignedTaskId}">
+             data-task-id="${safeTaskId}">
 
-          <div class="quick-recurring-options" data-task-id="${assignedTaskId}" role="radiogroup" aria-label="${getLabel('freq.frequency')}">
+          <div class="quick-recurring-options" data-task-id="${safeTaskId}" role="radiogroup" aria-label="${getLabel('freq.frequency')}">
             <div class="quick-option" role="radio" tabindex="${frequency === 'hourly' ? '0' : '-1'}" aria-checked="${frequency === 'hourly'}" data-freq="hourly">
               <span class="radio-circle ${frequency === 'hourly' ? 'selected' : ''}" data-freq="hourly" aria-hidden="true"></span>
               <span class="option-label">${getLabel('freq.hourly')}</span>
@@ -1256,8 +1261,8 @@ async setDefaultPosition(notificationContainer) {
           </div>
 
           <div class="quick-actions">
-            <button class="apply-quick-recurring" data-task-id="${assignedTaskId}">${getLabel('button.apply')}</button>
-            <button class="open-recurring-settings" data-task-id="${assignedTaskId}">⚙ ${getLabel('notify.moreOptions')}</button>
+            <button class="apply-quick-recurring" data-task-id="${safeTaskId}">${getLabel('button.apply')}</button>
+            <button class="open-recurring-settings" data-task-id="${safeTaskId}">⚙ ${getLabel('notify.moreOptions')}</button>
           </div>
         </div>
 
@@ -1266,7 +1271,7 @@ async setDefaultPosition(notificationContainer) {
                 aria-label="${getLabel('notify.showTip')}">💡</button>
 
         <button class="close-btn"
-                data-task-id="${assignedTaskId}"
+                data-task-id="${safeTaskId}"
                 title="${getLabel('button.close')}"
                 aria-label="${getLabel('notify.closeNotification')}">✖</button>
       </div>

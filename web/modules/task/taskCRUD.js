@@ -279,6 +279,17 @@ export async function addTaskImpl(taskText, options = {}, deps = {}) {
             return;
         }
 
+        // Capture undo snapshot BEFORE the task is committed — adds had no
+        // explicit pre-add capture (edit/delete/priority all have one), so the
+        // next capture happened after the push and Undo-after-add was
+        // off-by-one: it couldn't remove the task it should have.
+        if (!isLoading) {
+            const AppStateForSnap = deps.AppState || _deps.AppState;
+            const captureStateSnapshot = deps.captureStateSnapshot || _deps.captureStateSnapshot;
+            const preAddState = AppStateForSnap?.get?.();
+            if (preAddState) safeCaptureSnapshot(captureStateSnapshot, preAddState, 'task add');
+        }
+
         // Create or update task data
         const createDataFn = deps.createOrUpdateTaskData || _deps.createOrUpdateTaskData;
         const taskData = createDataFn?.(taskContext);

@@ -866,9 +866,16 @@ export class TaskDOMManager {
 
             // Note: autoSave removed - handleTaskCompletionChange already updates AppState
 
-            // Logo animation - scan effect in to-do mode, background flash otherwise
+            // Logo animation - scan effect in to-do mode, background flash otherwise.
+            // Mode is DERIVED from the active cycle's deleteCheckedTasks (same
+            // pattern as the completion handler below) — the previous code read
+            // AppState.getState() (method doesn't exist) and settings.isToDoMode
+            // (field doesn't exist), so optional chaining silently yielded
+            // undefined and the to-do scan branch never fired.
             if (checkbox.checked) {
-                const isToDoMode = this.deps.AppState?.getState?.()?.settings?.isToDoMode;
+                const logoState = this.deps.AppState?.get?.();
+                const logoCycle = logoState?.data?.cycles?.[logoState?.appState?.activeCycleId];
+                const isToDoMode = logoCycle?.deleteCheckedTasks === true;
                 if (isToDoMode && typeof this.deps.triggerLogoScan === 'function') {
                     this.deps.triggerLogoScan(500);
                 } else if (typeof this.deps.triggerLogoBackground === 'function') {
@@ -976,7 +983,12 @@ export class TaskDOMManager {
             const isCurrentlyRecurring = !!hasRecurringTemplate || isButtonActive;
             const isNowRecurring = !isCurrentlyRecurring;
 
-            task.recurring = isNowRecurring;
+            // One-door migration (v2.361): no pre-producer write to the live
+            // task — activateTaskRecurringState / deactivateTaskRecurringState
+            // set task.recurring inside their producers (the activation/
+            // deactivation handlers below), which is the single door. The old
+            // `task.recurring = isNowRecurring` here only "worked" via
+            // get()-aliasing and never marked state dirty itself.
             button.classList.toggle(DOM_CLASSES.ACTIVE, isNowRecurring);
             button.setAttribute("aria-pressed", isNowRecurring.toString());
 
