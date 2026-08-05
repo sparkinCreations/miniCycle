@@ -175,6 +175,33 @@ export function validateRecoveredData(data) {
 }
 
 /**
+ * Structural validation for a Schema 2.5 payload STRING (the value stored at
+ * STORAGE_KEYS.DATA / carried in backup files as `miniCycleData`). Shared by
+ * the file-restore path (backupRestoreManager) and the testing modal's
+ * IndexedDB restore so both reject malformed payloads BEFORE writing to
+ * localStorage — the UX contract is "file rejected", not "restored, then
+ * recovery mode". Requires `metadata` deliberately: every app-generated
+ * payload carries it, so its absence marks a hand-made file (AppState's
+ * _ensureMetadata would heal it at boot, but rejecting up front honors the
+ * contract).
+ * @param {string} payloadString - Raw JSON string to validate
+ * @returns {boolean}
+ */
+export function validateSchema25PayloadString(payloadString) {
+    if (typeof payloadString !== 'string') return false;
+    try {
+        const parsed = JSON.parse(payloadString);
+        return !!(parsed &&
+            parsed.schemaVersion === "2.5" &&
+            parsed.metadata && typeof parsed.metadata === 'object' &&
+            parsed.data && typeof parsed.data.cycles === 'object' &&
+            parsed.appState && typeof parsed.appState === 'object');
+    } catch {
+        return false;
+    }
+}
+
+/**
  * Full synchronous recovery pass: back up the corrupted string, then attempt salvage.
  * Notifications and the final adopt/reject decision are the caller's responsibility.
  * @param {string} corruptedString - The raw corrupted string from storage
