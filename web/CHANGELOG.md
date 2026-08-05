@@ -1,3 +1,7 @@
+## [2.363] - 2026-08-05
+- fix(complete): restore cycle-mode Complete button (v2.360 regression)
+
+
 ## [2.362] - 2026-08-05
 - fix(undo): one snapshot per gesture — capture at gesture entry, never in the reset executor
 
