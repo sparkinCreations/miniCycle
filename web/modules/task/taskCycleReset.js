@@ -988,9 +988,7 @@ async function executeCompleteAll(activeCycle, cycleData, taskList, resetTasksFn
     // any mutation. Everything downstream (mark-all, the delete, the delayed
     // reset) is an EFFECT of this gesture and must not capture (the reset
     // executor no longer does — Step 2 was removed). Without this, both
-    // batch ops ran with ZERO snapshots: the isResetting guard blocked the
-    // reset's own capture, and neither impl captured, so Undo jumped past the
-    // whole batch into the user's previous unrelated action.
+    // batch ops ran with ZERO snapshots and Undo jumped past the whole batch.
     const captureStateSnapshot = deps.captureStateSnapshot || _deps.captureStateSnapshot;
     const isPerformingUndoRedo = deps.isPerformingUndoRedo || _deps.isPerformingUndoRedo || (() => false);
     if (typeof captureStateSnapshot === 'function' && !isPerformingUndoRedo()) {
@@ -998,20 +996,19 @@ async function executeCompleteAll(activeCycle, cycleData, taskList, resetTasksFn
         if (preBatchState) captureStateSnapshot(preBatchState);
     }
 
-    // FIX #8's guard names BOTH batch operations — "(reset, complete all)" —
-    // and now that the gesture snapshot is taken above, raising the flag keeps
-    // every downstream effect (including the delayed reset) out of undo history.
-    setResettingFlag(true, deps);
-    try {
-        if (cycleData.deleteCheckedTasks) {
-            // To-Do mode: delete completed tasks
-            await deleteCompletedTasksImpl(activeCycle, cycleData, taskList, deps);
-        } else {
-            // Cycle mode: mark all complete and trigger reset
-            markAllTasksCompleteImpl(cycleData, taskList, resetTasksFn, deps);
-        }
-    } finally {
-        setResettingFlag(false, deps);
+    // Do NOT raise isResetting here. v2.360 wrapped this in setResettingFlag(true)
+    // to keep downstream effects out of undo — but v2.362 removed the only
+    // downstream capturer (the reset's Step 2), so the flag no longer suppresses
+    // anything AND it tripped markAllTasksCompleteImpl's own `if (isResetting)
+    // return` guard, silently killing cycle-mode Complete entirely (v2.360–2.361
+    // regression). Concurrent-click protection already lives at
+    // handleCompleteAllTasksImpl's entry guard; the reset raises its own flag.
+    if (cycleData.deleteCheckedTasks) {
+        // To-Do mode: delete completed tasks
+        await deleteCompletedTasksImpl(activeCycle, cycleData, taskList, deps);
+    } else {
+        // Cycle mode: mark all complete and trigger reset
+        markAllTasksCompleteImpl(cycleData, taskList, resetTasksFn, deps);
     }
 }
 

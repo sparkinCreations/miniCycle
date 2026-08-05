@@ -187,10 +187,14 @@ export async function runTaskCycleResetTests(resultsDiv) {
         return { taskList, stateObj, deps, snapshots: () => snapshotCount };
     }
 
-    await test('Complete All (To-Do / Clear Completed) captures exactly one snapshot', async () => {
+    await test('Complete All (To-Do / Clear Completed) actually deletes completed tasks AND captures one snapshot', async () => {
         const h = makeCompleteAllHarness(true);
         try {
             await mod.handleCompleteAllTasksImpl(() => {}, h.deps);
+            // EFFECT first: completed tasks must be gone (regression guard — a
+            // snapshot-count-only test missed cycle-mode Complete doing nothing).
+            const remaining = h.stateObj.data.cycles.c1.tasks.map(t => t.id);
+            if (remaining.length !== 0) throw new Error(`completed tasks should be deleted, still have [${remaining}]`);
             if (h.snapshots() !== 1) throw new Error(`expected exactly 1 snapshot, got ${h.snapshots()}`);
         } finally {
             mod.clearAllTimeouts();
@@ -198,10 +202,17 @@ export async function runTaskCycleResetTests(resultsDiv) {
         }
     });
 
-    await test('Complete All (cycle mode) captures exactly one snapshot — not zero, not per-effect', async () => {
+    await test('Complete All (cycle mode) actually marks tasks complete AND captures one snapshot', async () => {
         const h = makeCompleteAllHarness(false);
+        // Start uncompleted so "did it run" is observable
+        h.stateObj.data.cycles.c1.tasks.forEach(t => { t.completed = false; });
+        let reset = false;
         try {
-            await mod.handleCompleteAllTasksImpl(() => {}, h.deps);
+            await mod.handleCompleteAllTasksImpl(() => { reset = true; }, h.deps);
+            // EFFECT: markAllTasksComplete must have run (this is exactly what the
+            // isResetting-guard regression silently killed).
+            const allComplete = h.stateObj.data.cycles.c1.tasks.every(t => t.completed === true);
+            if (!allComplete) throw new Error('cycle-mode Complete must mark all tasks completed');
             if (h.snapshots() !== 1) throw new Error(`expected exactly 1 snapshot, got ${h.snapshots()}`);
         } finally {
             mod.clearAllTimeouts();
