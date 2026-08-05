@@ -1,3 +1,10 @@
+## [2.364] - 2026-08-05
+- fix(undo): close Clear Completed two-snapshot leak; make the test see the wrapper
+- docs: remove one-off release-notes draft
+- content(product): add July 2026 to the What's New timeline
+- docs: add user-facing release notes draft for v2.363 (pending review)
+
+
 ## [2.363] - 2026-08-05
 - fix(complete): restore cycle-mode Complete button (v2.360 regression)
 
