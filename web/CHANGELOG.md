@@ -1,3 +1,9 @@
+## [2.366] - 2026-08-05
+- fix(undo): strip stale cached _sig when relabeling snapshots on rename
+- ci: auto-tag release commits merged to main without a tag
+- docs: correct release script path in CLAUDE.md (runs from web/)
+
+
 ## [2.365] - 2026-08-05
 - fix(undo): relabel snapshots on cycle rename so history survives
 - chore: sync package-lock.json version with package.json (2.364)
