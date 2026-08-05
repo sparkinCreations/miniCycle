@@ -1,3 +1,7 @@
+## [2.359] - 2026-08-05
+- fix(recurring+backup): sparse-month/leap-year scans, shared restore validation, real backup versions
+
+
 ## [2.358] - 2026-08-05
 - chore(recurring): retire dead defaultRecurTime field; document known dual-instance import
 
