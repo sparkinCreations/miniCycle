@@ -1,3 +1,7 @@
+## [2.358] - 2026-08-05
+- chore(recurring): retire dead defaultRecurTime field; document known dual-instance import
+
+
 ## [2.357] - 2026-08-04
 - fix(recurring): normalize imported settings, isolate watcher ticks, salvage escape edge
 
