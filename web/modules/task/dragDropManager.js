@@ -7,7 +7,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -683,7 +683,9 @@ export class DragDropManager {
                 // Use rAF to ensure the browser has completed layout before focusing
                 if (taskId) {
                     requestAnimationFrame(() => {
-                        const movedTask = document.querySelector(`[data-task-id="${taskId}"]`);
+                        // Escaped builder, not an inline template — an id with a
+                        // quote/bracket would throw DOMException here otherwise.
+                        const movedTask = document.querySelector(DATA_SELECTORS.elementByTaskId(taskId));
                         if (!movedTask) return;
 
                         // Ensure task options are visible on the moved task

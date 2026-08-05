@@ -37,6 +37,7 @@ const di = createDIModule('DailyResetManager', {
     showNotification: required(),
     safeAddEventListener: optional(null),
     loadMiniCycle: optional(null),
+    AppGlobalState: optional(null),  // System-mutation flag: keeps background fires out of undo
     getElementById: optional((id) => document.getElementById(id)),
     getBody: optional(() => document.body)
 });
@@ -106,6 +107,28 @@ export class DailyResetManager {
         this._bannerHandler = null;
         this._lastSyncedCycleId = null;
         this.initialized = false;
+    }
+
+    /**
+     * State write for BACKGROUND fires — same pattern as the recurring
+     * watcher's commitSystemUpdate (§1.2): raises AppGlobalState.isSystemMutation
+     * around the update so undo snapshots skip it. Plain update() here put
+     * scheduled unchecks into the undo stack — Undo after a daily fire
+     * re-checked the system-cleared tasks. User-initiated settings writes
+     * (setEnabled/setTime) stay on plain update() deliberately.
+     * @param {Function} producer - AppState update producer
+     * @param {boolean} [immediate] - Immediate-save flag
+     * @returns {Promise<*>}
+     */
+    async _commitSystemUpdate(producer, immediate) {
+        const gs = this.deps.AppGlobalState;
+        const prev = gs ? gs.isSystemMutation : undefined;
+        if (gs) gs.isSystemMutation = true;
+        try {
+            return await this.deps.AppState.update(producer, immediate);
+        } finally {
+            if (gs) gs.isSystemMutation = prev === true;
+        }
     }
 
     get deps() {
@@ -190,7 +213,7 @@ export class DailyResetManager {
         // For the active cycle we clear pendingNotification immediately AND show
         // the toast (user is watching). For inactive cycles we set the flag and
         // defer the toast to the next view trigger.
-        this.deps.AppState.update(s => {
+        this._commitSystemUpdate(s => {
             for (const { cycleId, isActive } of fired) {
                 const cycle = s.data.cycles[cycleId];
                 if (!cycle) continue;
@@ -232,7 +255,7 @@ export class DailyResetManager {
         const name = cycle?.title || cycleId;
 
         // Clear the flag atomically with showing the toast
-        this.deps.AppState.update(st => {
+        this._commitSystemUpdate(st => {
             const c = st.data.cycles[cycleId];
             if (c?.autoUncheckDaily) {
                 c.autoUncheckDaily.pendingNotification = false;

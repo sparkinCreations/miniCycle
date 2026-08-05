@@ -60,6 +60,7 @@ import { getLabel } from '../labels/labelResolver.js';
 const di = createDIModule('TaskCycleReset', {
     appInit: optional(null),
     AppState: optional(null),
+    AppGlobalState: optional(null),  // FIX #8: batch-operation flag for undo snapshot guard
     loadMiniCycleData: optional(null),
     autoSave: optional(null),
     isPerformingUndoRedo: optional(null),
@@ -115,6 +116,19 @@ export function setTaskCycleResetDependencies(dependencies) {
 
 // Track active state to prevent concurrent resets
 let isResetting = false;
+
+// FIX #8 completion (v2.360): mirror the reset flag into
+// AppGlobalState.isResetting — undoRedoManager's batch-operation guard reads
+// the GLOBAL flag, which was declared and checked but never SET anywhere (the
+// setter was lost in the taskCore extraction; only this module-local existed).
+// Result: snapshots WERE captured during resets and Complete All — the first
+// Undo after completing a cycle appeared to do nothing, and Clear Completed
+// stacked multiple snapshots.
+function setResettingFlag(value, deps = {}) {
+    isResetting = value;
+    const gs = deps.AppGlobalState || _deps.AppGlobalState;
+    if (gs) gs.isResetting = value;
+}
 const activeTimeouts = new Set();
 
 /**
@@ -477,7 +491,7 @@ function moveCompletedTasksBack(context, deps) {
 export async function resetTasksImpl(deps = {}) {
     try {
         if (isResetting) return;
-        isResetting = true;
+        setResettingFlag(true, deps);
 
         // Merge deps with module-level deps
         const mergedDeps = {
@@ -506,7 +520,7 @@ export async function resetTasksImpl(deps = {}) {
         // Step 1: Get and validate context
         const context = getResetContext(mergedDeps);
         if (!context) {
-            isResetting = false;
+            setResettingFlag(false, deps);
             return;
         }
 
@@ -539,7 +553,7 @@ export async function resetTasksImpl(deps = {}) {
         // Step 4: Perform core data reset
         const result = resetTasksData(context, mergedDeps);
         if (result.aborted) {
-            isResetting = false;
+            setResettingFlag(false, deps);
             return;
         }
 
@@ -589,12 +603,12 @@ export async function resetTasksImpl(deps = {}) {
         }, TASK_TIMEOUTS.POST_RESET_CLEANUP));
 
         trackTimeout(setTimeout(() => {
-            isResetting = false;
+            setResettingFlag(false, deps);
         }, TASK_TIMEOUTS.RESET_LOCK_RELEASE));
 
     } catch (error) {
         console.warn('Reset tasks failed:', error);
-        isResetting = false;
+        setResettingFlag(false, deps);
         _deps.showNotification?.(getLabel('notify.taskResetFailed'), 'warning');
     }
 }
@@ -946,12 +960,21 @@ export async function handleCompleteAllTasksImpl(resetTasksFn, deps = {}) {
  * @returns {Promise<void>}
  */
 async function executeCompleteAll(activeCycle, cycleData, taskList, resetTasksFn, deps) {
-    if (cycleData.deleteCheckedTasks) {
-        // To-Do mode: delete completed tasks
-        await deleteCompletedTasksImpl(activeCycle, cycleData, taskList, deps);
-    } else {
-        // Cycle mode: mark all complete and trigger reset
-        markAllTasksCompleteImpl(cycleData, taskList, resetTasksFn, deps);
+    // FIX #8's guard names BOTH batch operations — "(reset, complete all)" —
+    // but only the reset path ever raised the flag. Without this, Clear
+    // Completed (To-Do mode) stacked a snapshot per internal update. The
+    // delayed reset in cycle mode re-raises the flag itself when it fires.
+    setResettingFlag(true, deps);
+    try {
+        if (cycleData.deleteCheckedTasks) {
+            // To-Do mode: delete completed tasks
+            await deleteCompletedTasksImpl(activeCycle, cycleData, taskList, deps);
+        } else {
+            // Cycle mode: mark all complete and trigger reset
+            markAllTasksCompleteImpl(cycleData, taskList, resetTasksFn, deps);
+        }
+    } finally {
+        setResettingFlag(false, deps);
     }
 }
 

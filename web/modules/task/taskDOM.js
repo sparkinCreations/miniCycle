@@ -866,9 +866,16 @@ export class TaskDOMManager {
 
             // Note: autoSave removed - handleTaskCompletionChange already updates AppState
 
-            // Logo animation - scan effect in to-do mode, background flash otherwise
+            // Logo animation - scan effect in to-do mode, background flash otherwise.
+            // Mode is DERIVED from the active cycle's deleteCheckedTasks (same
+            // pattern as the completion handler below) — the previous code read
+            // AppState.getState() (method doesn't exist) and settings.isToDoMode
+            // (field doesn't exist), so optional chaining silently yielded
+            // undefined and the to-do scan branch never fired.
             if (checkbox.checked) {
-                const isToDoMode = this.deps.AppState?.getState?.()?.settings?.isToDoMode;
+                const logoState = this.deps.AppState?.get?.();
+                const logoCycle = logoState?.data?.cycles?.[logoState?.appState?.activeCycleId];
+                const isToDoMode = logoCycle?.deleteCheckedTasks === true;
                 if (isToDoMode && typeof this.deps.triggerLogoScan === 'function') {
                     this.deps.triggerLogoScan(500);
                 } else if (typeof this.deps.triggerLogoBackground === 'function') {
