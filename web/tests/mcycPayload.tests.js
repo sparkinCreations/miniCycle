@@ -77,13 +77,16 @@ export async function runMcycPayloadTests(resultsDiv) {
         if (payload.autoUncheckDaily?.time !== '04:00') throw new Error('autoUncheckDaily lost');
     });
 
-    await test('recurring task without times gets a defaultRecurTime fallback', () => {
+    await test('exports do NOT carry the retired defaultRecurTime field', () => {
+        // defaultRecurTime was retired in v2.358: it had writers but zero
+        // readers, and import-side normalization strips it — so exporting it
+        // made every export/import round trip asymmetric on a dead field.
         const cycle = makeCycle();
         cycle.tasks[0].recurring = true;
         cycle.tasks[0].recurringSettings = { frequency: 'daily' };
         const payload = buildMcycPayload('my-cycle', cycle, { includeHistory: false });
         const settings = payload.tasks[0].recurringSettings;
-        if (!settings.defaultRecurTime) throw new Error('defaultRecurTime fallback missing');
+        if ('defaultRecurTime' in settings) throw new Error('retired field must not be written into exports');
         if (settings.frequency !== 'daily') throw new Error('existing settings should be preserved');
     });
 

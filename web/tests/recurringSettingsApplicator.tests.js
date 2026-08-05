@@ -241,9 +241,10 @@ export async function runRecurringSettingsApplicatorTests(resultsDiv) {
         if (!deps._watcherRestarted) throw new Error('watcher not restarted');
     });
 
-    await test('sets defaultRecurTime when no specific time provided', async () => {
-        // normalizeRecurringSettings passthrough keeps no specificTime/defaultRecurTime,
-        // so applicator must inject defaultRecurTime before writing the template.
+    await test('does NOT inject the retired defaultRecurTime field', async () => {
+        // defaultRecurTime was retired in v2.358: writers existed but zero
+        // readers ever consumed it. The applicator must leave normalized
+        // settings untouched instead of re-adding the dead field.
         const appState = makeAppState({
             appState: { activeCycleId: 'c1' },
             data: { cycles: { c1: { tasks: [{ id: 't1', text: 'x' }], recurringTemplates: {} } } },
@@ -254,12 +255,12 @@ export async function runRecurringSettingsApplicatorTests(resultsDiv) {
         const deps = makeDeps({
             AppState: appState,
             querySelectorAll: () => [cb],
-            // capture what normalize returns (we add defaultRecurTime onto it)
             normalizeRecurringSettings: (s) => { capturedSettings = { ...s }; return capturedSettings; }
         });
         mod.setRecurringSettingsApplicatorDependencies(deps);
         await mod.applyRecurringSettings(makePanel(), () => ({ frequency: 'daily' }));
-        if (!capturedSettings.defaultRecurTime) throw new Error('defaultRecurTime not injected');
+        if (capturedSettings === null) throw new Error('normalize was never called');
+        if ('defaultRecurTime' in capturedSettings) throw new Error('retired field must not be injected');
     });
 
     // ── Error path ────────────────────────────────────────────────────────────
