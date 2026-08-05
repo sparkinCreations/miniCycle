@@ -1,3 +1,7 @@
+## [2.362] - 2026-08-05
+- fix(undo): one snapshot per gesture — capture at gesture entry, never in the reset executor
+
+
 ## [2.361] - 2026-08-05
 - refactor(state): one-door migration — task add, reset recurring removal, recurring toggle
 
