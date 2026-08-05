@@ -66,6 +66,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         onCycleCreated,
         onCycleDeleted,
         onCycleRenamed,
+        filterValidSnapshots,
         initUndoSystemForApp,
         initUndoIndexedDB,
         saveUndoStackToIndexedDB,
@@ -1719,6 +1720,38 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         if (mockDeps.AppGlobalState.activeCycleIdForUndo !== 'new-id') {
             throw new Error(`activeCycleIdForUndo should be 'new-id', got '${mockDeps.AppGlobalState.activeCycleIdForUndo}'`);
         }
+    });
+
+    await test('onCycleRenamed relabels in-memory snapshots so history survives the rename', async () => {
+        const mockDeps = createMockDependencies();
+        mockDeps.AppGlobalState.activeCycleIdForUndo = 'Old Name';
+        // Live stacks carry snapshots stamped with the OLD id/title — exactly
+        // what the pre-fix code left untouched, so validateSnapshot discarded
+        // the whole history on the next filtered load, and an in-session Undo
+        // wrote the old title into the renamed cycle (key=title break).
+        mockDeps.AppGlobalState.activeUndoStack = [
+            { activeCycleId: 'Old Name', title: 'Old Name', tasks: [{ id: 't1', text: 'a' }], timestamp: 1 },
+            { activeCycleId: 'Old Name', title: 'Old Name', tasks: [], timestamp: 2 }
+        ];
+        mockDeps.AppGlobalState.activeRedoStack = [
+            { activeCycleId: 'Old Name', title: 'Old Name', tasks: [], timestamp: 3 }
+        ];
+        setUndoRedoManagerDependencies(mockDeps);
+
+        await onCycleRenamed('Old Name', 'New Name');
+
+        const all = [...mockDeps.AppGlobalState.activeUndoStack, ...mockDeps.AppGlobalState.activeRedoStack];
+        if (all.length !== 3) throw new Error(`stacks must be preserved, got ${all.length} snapshots`);
+        for (const snap of all) {
+            if (snap.activeCycleId !== 'New Name') throw new Error(`snapshot activeCycleId not relabeled: ${snap.activeCycleId}`);
+            if (snap.title !== 'New Name') throw new Error(`snapshot title not relabeled: ${snap.title}`);
+        }
+        // The relabeled snapshots must pass the strict validation that was
+        // discarding them — this is the wipe-on-next-load regression guard.
+        const kept = filterValidSnapshots(all, 'New Name');
+        if (kept.length !== 3) throw new Error(`relabeled snapshots must survive filterValidSnapshots, kept ${kept.length}/3`);
+        // Task contents untouched
+        if (mockDeps.AppGlobalState.activeUndoStack[0].tasks[0].text !== 'a') throw new Error('snapshot contents must be preserved');
     });
 
     // === 10. INDEXEDDB PERSISTENCE (4 tests) ===

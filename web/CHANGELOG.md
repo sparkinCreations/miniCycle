@@ -1,3 +1,8 @@
+## [2.365] - 2026-08-05
+- fix(undo): relabel snapshots on cycle rename so history survives
+- chore: sync package-lock.json version with package.json (2.364)
+
+
 ## [2.364] - 2026-08-05
 - fix(undo): close Clear Completed two-snapshot leak; make the test see the wrapper
 - docs: remove one-off release-notes draft
