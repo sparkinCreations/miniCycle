@@ -260,12 +260,21 @@ export class TaskUtils {
     }
 
     /**
-     * Create or update task data in the cycle
+     * Create or update task data in the cycle.
+     *
+     * One-door migration (v2.361): creation now happens INSIDE an
+     * AppState.update() producer — previously this pushed the task and its
+     * recurring template into the live objects loadTaskContext handed back
+     * (aliases of AppState state when ready, a stale localStorage COPY when
+     * not) and then "persisted" via a wholesale self-assignment. That worked
+     * only by aliasing, could clobber newer state with the stale copy in the
+     * not-ready window, and never marked state dirty by itself.
      * @param {Object} taskContext - Task context from loadTaskContext
-     * @param {Function} saveTaskToSchema25 - Function to save task
+     * @param {Function} saveTaskToSchema25 - Legacy fallback persister (used only when AppState unavailable)
+     * @param {Object} [AppState] - State manager; when ready, creation commits through its producer
      * @returns {Object} - Task data object
      */
-    static createOrUpdateTaskData(taskContext, saveTaskToSchema25) {
+    static createOrUpdateTaskData(taskContext, saveTaskToSchema25, AppState) {
         const {
             cycleTasks, assignedTaskId, taskTextTrimmed, completed, dueDate,
             highPriority, priorityColor, remindersEnabled, recurring, recurringSettings,
@@ -305,39 +314,57 @@ export class TaskUtils {
                 schemaVersion: 2
             };
 
-            // Only push to cycle data if NOT loading (prevents duplicate tasks)
+            // Recurring template (built pure; committed alongside the task below)
+            const templateData = (recurring && recurringSettings) ? {
+                id: assignedTaskId,
+                text: taskTextTrimmed,
+                recurring: true,
+                recurringSettings: structuredClone(recurringSettings),
+                highPriority: highPriority || false,
+                priorityColor: priorityColor || (highPriority ? COLORS.PRIORITY_DEFAULT : null),
+                dueDate: dueDate || null,
+                remindersEnabled: remindersEnabled || false,
+                deleteWhenComplete: true, // Recurring tasks always auto-remove
+                deleteWhenCompleteSettings: { ...DEFAULT_RECURRING_DELETE_SETTINGS },
+                lastTriggeredTimestamp: null,
+                schemaVersion: 2
+            } : null;
+
+            // Only commit if NOT loading (prevents duplicate tasks — the load
+            // path renders tasks that already exist in state)
             if (!isLoading) {
-                currentCycle.tasks.push(existingTask);
-            }
-
-            // Handle recurring template creation
-            if (recurring && recurringSettings) {
-
-                if (!currentCycle.recurringTemplates) {
-                    currentCycle.recurringTemplates = {};
+                if (AppState?.isReady?.()) {
+                    // Single door: push task + template inside the producer.
+                    // Finding the cycle in the DRAFT (not via the context refs)
+                    // means a stale not-ready-window copy can never clobber state.
+                    AppState.update(state => {
+                        const cycle = state?.data?.cycles?.[activeCycle];
+                        if (!cycle) {
+                            console.warn('⚠️ Active cycle vanished before task commit:', activeCycle);
+                            return;
+                        }
+                        cycle.tasks.push(existingTask);
+                        if (templateData) {
+                            if (!cycle.recurringTemplates) cycle.recurringTemplates = {};
+                            cycle.recurringTemplates[assignedTaskId] = templateData;
+                        }
+                        state.metadata.lastModified = Date.now();
+                    }, true); // immediate save - required for stats panel to read correct data
+                } else if (saveTaskToSchema25) {
+                    // Legacy fallback (AppState unavailable — early boot/tests):
+                    // mutate the context refs and persist wholesale, as before.
+                    currentCycle.tasks.push(existingTask);
+                    if (templateData) {
+                        if (!currentCycle.recurringTemplates) currentCycle.recurringTemplates = {};
+                        currentCycle.recurringTemplates[assignedTaskId] = templateData;
+                    }
+                    saveTaskToSchema25(activeCycle, currentCycle);
+                } else {
+                    console.warn('⚠️ Neither AppState nor saveTaskToSchema25 available - task not persisted');
                 }
-
-                currentCycle.recurringTemplates[assignedTaskId] = {
-                    id: assignedTaskId,
-                    text: taskTextTrimmed,
-                    recurring: true,
-                    recurringSettings: structuredClone(recurringSettings),
-                    highPriority: highPriority || false,
-                    priorityColor: priorityColor || (highPriority ? COLORS.PRIORITY_DEFAULT : null),
-                    dueDate: dueDate || null,
-                    remindersEnabled: remindersEnabled || false,
-                    deleteWhenComplete: true, // Recurring tasks always auto-remove
-                    deleteWhenCompleteSettings: { ...DEFAULT_RECURRING_DELETE_SETTINGS },
-                    lastTriggeredTimestamp: null,
-                    schemaVersion: 2
-                };
-            }
-
-            // Only save to AppState if NOT loading from saved data
-            if (!isLoading && saveTaskToSchema25) {
-                saveTaskToSchema25(activeCycle, currentCycle);
-            } else if (!isLoading) {
-                console.warn('⚠️ saveTaskToSchema25 not available - task not persisted');
+            } else if (templateData && !currentCycle.recurringTemplates?.[assignedTaskId]) {
+                // Load path renders from state — templates already exist there.
+                // (Kept as a no-op guard: never create templates while loading.)
             }
         }
 
@@ -457,7 +484,9 @@ function setupFinalTaskInteractions(taskItem, isLoading) {
 
 function createOrUpdateTaskData(taskContext) {
     const saveTaskToSchema25 = _deps.saveTaskToSchema25;
-    return TaskUtils.createOrUpdateTaskData(taskContext, saveTaskToSchema25);
+    // AppState enables the producer path (one-door creation); the save fn is
+    // only the legacy fallback for when AppState isn't ready.
+    return TaskUtils.createOrUpdateTaskData(taskContext, saveTaskToSchema25, _deps.AppState);
 }
 
 // ============================================

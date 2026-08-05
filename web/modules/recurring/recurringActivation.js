@@ -158,14 +158,16 @@ export async function handleRecurringTaskActivation(task, taskContext, button = 
         time: null
     };
 
-    // Use existing settings if task was previously recurring, otherwise use defaults
-    if (!task.recurringSettings || Object.keys(task.recurringSettings).length === 0) {
-        task.recurringSettings = Deps.normalizeRecurringSettings(structuredClone(defaultSettings));
-    } else {
-        task.recurringSettings = Deps.normalizeRecurringSettings(structuredClone(task.recurringSettings));
-    }
-
-    task.schemaVersion = 2;
+    // Use existing settings if task was previously recurring, otherwise defaults.
+    // One-door migration (v2.361): computed into a LOCAL — the old code wrote
+    // task.recurringSettings/task.schemaVersion onto the live get() object as a
+    // scratch carrier before the producer ran; activateTaskRecurringState sets
+    // both properly on the draft, so the pre-producer writes were aliasing-only.
+    const normalizedSettings = Deps.normalizeRecurringSettings(structuredClone(
+        (task.recurringSettings && Object.keys(task.recurringSettings).length > 0)
+            ? task.recurringSettings
+            : defaultSettings
+    ));
 
     // Commit state FIRST (single source of truth), then sync DOM
     assertInjected('updateAppState', Deps.updateAppState);
@@ -181,14 +183,14 @@ export async function handleRecurringTaskActivation(task, taskContext, button = 
         activateTaskRecurringState(
             currentCycleInState,
             assignedTaskId,
-            task.recurringSettings,
+            normalizedSettings,
             Deps.calculateNextOccurrence
         );
     }, true);
 
     // Update DOM AFTER state is committed (prevents desync if state update fails)
     if (taskItem) {
-        taskItem.setAttribute(DATA_SELECTORS.ATTR_RECURRING_SETTINGS, JSON.stringify(task.recurringSettings));
+        taskItem.setAttribute(DATA_SELECTORS.ATTR_RECURRING_SETTINGS, JSON.stringify(normalizedSettings));
         taskItem.classList.add(DOM_CLASSES.RECURRING);
     }
 
@@ -207,8 +209,8 @@ export async function handleRecurringTaskActivation(task, taskContext, button = 
     }
 
     // Show notification
-    const frequency = task.recurringSettings?.frequency || 'daily';
-    const pattern = task.recurringSettings?.indefinitely ? getLabel('recurring.patternIndefinitely') : getLabel('recurring.patternLimited');
+    const frequency = normalizedSettings?.frequency || 'daily';
+    const pattern = normalizedSettings?.indefinitely ? getLabel('recurring.patternIndefinitely') : getLabel('recurring.patternLimited');
 
     if (Deps.notifications?.createRecurringNotificationWithTip) {
         const notificationContent = Deps.notifications.createRecurringNotificationWithTip(assignedTaskId, frequency, pattern, task.text);
@@ -464,15 +466,22 @@ export async function deleteRecurringTemplate(taskId) {
 }
 
 /**
- * Remove recurring tasks from cycle during reset.
- * Mutates a transient cycleData object; caller is responsible for persistence via AppState.update().
+ * PLAN the recurring-task removal for a cycle reset: performs the DOM effects
+ * (element removal / checkbox unchecks) and computes the state changes, but
+ * does NOT touch state. One-door migration (v2.361): this function previously
+ * spliced tasks, flipped flags, and advanced templates directly on the LIVE
+ * AppState object the caller handed in — while its docstring claimed the
+ * argument was "not a live AppState reference". The caller applies the
+ * returned plan inside its reset producer, so the mutations are dirty-marked,
+ * listener-visible, and undo-consistent.
+ *
  * @param {Array} taskElements - Array of task DOM elements
- * @param {Object} cycleData - Transient cycle data snapshot (not a live AppState reference)
- * @returns {void}
+ * @param {Object} cycleData - Current cycle data (READ ONLY here)
+ * @returns {{removedIds: string[], keptIds: string[], templateUpdates: Object}}
+ *   templateUpdates maps taskId → { nextScheduledOccurrence, lastTriggeredTimestamp }
  */
 export function removeRecurringTasksFromCycle(taskElements, cycleData) {
-    let removedCount = 0;
-    let keptCount = 0;
+    const plan = { removedIds: [], keptIds: [], templateUpdates: {} };
 
     taskElements.forEach(taskEl => {
         const taskId = taskEl.dataset.taskId;
@@ -485,43 +494,35 @@ export function removeRecurringTasksFromCycle(taskElements, cycleData) {
             if (!shouldDelete) {
                 const checkbox = taskEl.querySelector(DOM_SELECTORS.TASK_CHECKBOX);
                 if (checkbox) checkbox.checked = false;
-                if (task) task.completed = false;
-                keptCount++;
+                plan.keptIds.push(taskId);
                 return;
             }
 
-            // Remove from DOM
+            // Remove from DOM (state removal happens in the caller's producer)
             taskEl.remove();
-            removedCount++;
+            plan.removedIds.push(taskId);
 
-            // Remove from tasks array only
-            if (cycleData.tasks) {
-                const taskIndex = cycleData.tasks.findIndex(t => t.id === taskId);
-                if (taskIndex !== -1) {
-                    cycleData.tasks.splice(taskIndex, 1);
-                }
-            }
-
-            // Recalculate nextScheduledOccurrence
-            if (cycleData.recurringTemplates && cycleData.recurringTemplates[taskId]) {
+            // Compute the template advance here (calculation lives with the
+            // recurring domain); the producer applies the plain values.
+            if (cycleData?.recurringTemplates?.[taskId]) {
                 const template = cycleData.recurringTemplates[taskId];
-
-                const nextOccurrence = Deps.calculateNextOccurrence(
-                    template.recurringSettings,
-                    Date.now()
-                );
-
-                template.nextScheduledOccurrence = nextOccurrence;
-                template.lastTriggeredTimestamp = null;
+                plan.templateUpdates[taskId] = {
+                    nextScheduledOccurrence: Deps.calculateNextOccurrence(
+                        template.recurringSettings,
+                        Date.now()
+                    ),
+                    lastTriggeredTimestamp: null
+                };
             }
         }
     });
 
     // Update progress bar
-    if (removedCount > 0 && Deps.updateProgressBar) {
+    if (plan.removedIds.length > 0 && Deps.updateProgressBar) {
         Deps.updateProgressBar();
     }
 
+    return plan;
 }
 
 /**

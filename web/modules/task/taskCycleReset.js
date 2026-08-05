@@ -302,10 +302,12 @@ function resetTasksData(context, deps) {
         }
     });
 
-    // Remove recurring tasks
-    if (typeof removeRecurringTasksFromCycle === 'function') {
-        removeRecurringTasksFromCycle(taskElements, freshCycleData);
-    }
+    // Plan the recurring-task removal: DOM effects happen now, state changes
+    // are returned as a plan and applied inside the producer below (one-door
+    // migration v2.361 — previously this mutated live state directly).
+    const recurringPlan = (typeof removeRecurringTasksFromCycle === 'function')
+        ? (removeRecurringTasksFromCycle(taskElements, freshCycleData) || { removedIds: [], keptIds: [], templateUpdates: {} })
+        : { removedIds: [], keptIds: [], templateUpdates: {} };
 
     // Process non-recurring tasks
     const tasksToDelete = [];
@@ -379,9 +381,24 @@ function resetTasksData(context, deps) {
         AppState.update(state => {
             const cycle = state?.data?.cycles?.[currentActiveCycle];
             if (cycle) {
-                if (tasksToDelete.length > 0) {
-                    cycle.tasks = cycle.tasks.filter(t => !tasksToDelete.includes(t.id));
+                // Apply the recurring-removal plan (state side of what the
+                // DOM already shows): remove spawned recurring instances,
+                // uncheck kept ones, advance their templates.
+                const removedIdSet = new Set(recurringPlan.removedIds);
+                if (removedIdSet.size > 0 || tasksToDelete.length > 0) {
+                    cycle.tasks = cycle.tasks.filter(t => !removedIdSet.has(t.id) && !tasksToDelete.includes(t.id));
                 }
+                recurringPlan.keptIds.forEach(keptId => {
+                    const keptTask = cycle.tasks.find(t => t.id === keptId);
+                    if (keptTask) keptTask.completed = false;
+                });
+                Object.entries(recurringPlan.templateUpdates).forEach(([templateId, upd]) => {
+                    const template = cycle.recurringTemplates?.[templateId];
+                    if (template) {
+                        template.nextScheduledOccurrence = upd.nextScheduledOccurrence;
+                        template.lastTriggeredTimestamp = upd.lastTriggeredTimestamp;
+                    }
+                });
                 cycle.tasks.forEach(task => {
                     if (!task.recurring) {
                         task.completed = false;

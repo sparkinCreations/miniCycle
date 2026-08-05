@@ -100,27 +100,29 @@ export async function runRecurringActivationTests(resultsDiv) {
     // ============================================
     resultsDiv.innerHTML += '<h4 class="test-section">🧹 removeRecurringTasksFromCycle</h4>';
 
-    await test('removeRecurringTasksFromCycle removes a completed recurring task from the array + DOM', () => {
+    await test('removeRecurringTasksFromCycle PLANS removal (DOM removed, state untouched, plan returned)', () => {
         const el = document.createElement('div');
         el.className = 'recurring';           // DOM_CLASSES.RECURRING
         el.dataset.taskId = 'task-1';
         el.innerHTML = '<input type="checkbox" checked>';
         document.body.appendChild(el);
 
-        // deleteWhenComplete !== false → the task should be removed. No template present,
-        // so calculateNextOccurrence is never called (kept out of deps intentionally).
+        // One-door contract (v2.361): DOM effects happen here, but the tasks
+        // array is READ ONLY — the caller applies the returned plan inside its
+        // reset producer. The old direct-splice contract mutated live AppState.
         const cycle = {
             tasks: [{ id: 'task-1', deleteWhenComplete: true }, { id: 'task-2' }],
             recurringTemplates: {}
         };
-        removeRecurringTasksFromCycle([el], cycle);
+        const plan = removeRecurringTasksFromCycle([el], cycle);
 
-        if (cycle.tasks.find(t => t.id === 'task-1')) throw new Error('recurring task should be spliced from array');
-        if (!cycle.tasks.find(t => t.id === 'task-2')) throw new Error('non-recurring task should remain');
+        if (!cycle.tasks.find(t => t.id === 'task-1')) throw new Error('state must NOT be mutated here — the producer applies the plan');
+        if (!plan || !plan.removedIds.includes('task-1')) throw new Error('plan.removedIds should contain the recurring task');
+        if (plan.removedIds.includes('task-2')) throw new Error('non-recurring task must not be planned for removal');
         if (document.body.contains(el)) throw new Error('recurring task element should be removed from DOM');
     });
 
-    await test('removeRecurringTasksFromCycle keeps a recurring task flagged deleteWhenComplete=false', () => {
+    await test('removeRecurringTasksFromCycle plans a KEEP for deleteWhenComplete=false (checkbox unchecked, state untouched)', () => {
         const el = document.createElement('div');
         el.className = 'recurring';
         el.dataset.taskId = 'task-1';
@@ -131,13 +133,14 @@ export async function runRecurringActivationTests(resultsDiv) {
             tasks: [{ id: 'task-1', deleteWhenComplete: false, completed: true }],
             recurringTemplates: {}
         };
-        removeRecurringTasksFromCycle([el], cycle);
+        const plan = removeRecurringTasksFromCycle([el], cycle);
 
         const task = cycle.tasks.find(t => t.id === 'task-1');
         if (!task) throw new Error('kept task should remain in the array');
-        if (task.completed !== false) throw new Error('kept task should be un-completed for the next cycle');
+        if (task.completed !== true) throw new Error('state must NOT be mutated here — the producer un-completes kept tasks');
+        if (!plan.keptIds.includes('task-1')) throw new Error('plan.keptIds should contain the kept task');
         const cb = el.querySelector('input[type="checkbox"]');
-        if (cb.checked !== false) throw new Error('kept task checkbox should be unchecked');
+        if (cb.checked !== false) throw new Error('kept task checkbox should be unchecked (DOM effect stays here)');
         el.remove();
     });
 

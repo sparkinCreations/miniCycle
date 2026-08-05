@@ -983,7 +983,12 @@ export class TaskDOMManager {
             const isCurrentlyRecurring = !!hasRecurringTemplate || isButtonActive;
             const isNowRecurring = !isCurrentlyRecurring;
 
-            task.recurring = isNowRecurring;
+            // One-door migration (v2.361): no pre-producer write to the live
+            // task — activateTaskRecurringState / deactivateTaskRecurringState
+            // set task.recurring inside their producers (the activation/
+            // deactivation handlers below), which is the single door. The old
+            // `task.recurring = isNowRecurring` here only "worked" via
+            // get()-aliasing and never marked state dirty itself.
             button.classList.toggle(DOM_CLASSES.ACTIVE, isNowRecurring);
             button.setAttribute("aria-pressed", isNowRecurring.toString());
 
