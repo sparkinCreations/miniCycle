@@ -359,9 +359,7 @@ export class TaskDOMManager {
                     TaskOptionsVisibilityController: this.deps.TaskOptionsVisibilityController,
                     showTaskOptions: this.deps.showTaskOptions,
                     hideTaskOptions: this.deps.hideTaskOptions,
-                    attachKeyboardTaskOptionToggle: this.deps.attachKeyboardTaskOptionToggle,
-                    triggerLogoBackground: this.deps.triggerLogoBackground,
-                    triggerLogoScan: this.deps.triggerLogoScan
+                    attachKeyboardTaskOptionToggle: this.deps.attachKeyboardTaskOptionToggle
                 });
 
                 // ✅ CRITICAL: Initialize event delegation for task clicks

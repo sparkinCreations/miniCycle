@@ -299,6 +299,64 @@ export async function runTaskEventsTests(resultsDiv) {
         taskList.remove();
     });
 
+    await test('task click delegates completion to the change handler — no duplicate pipeline calls', () => {
+        // The checkbox's own change handler (taskDOM.createTaskCheckbox) owns the
+        // full completion pipeline. The delegated click handler must ONLY
+        // toggle + dispatch change — until v2.367 it also re-ran checkMiniCycle
+        // and fired a second logo flash on top of the change handler's animation.
+        const existingTaskList = document.getElementById('taskList');
+        if (existingTaskList) existingTaskList.remove();
+
+        const taskList = document.createElement('ul');
+        taskList.id = 'taskList';
+        document.body.appendChild(taskList);
+
+        // Spies wired via module-level DI: if the click handler ever regains
+        // direct pipeline calls, these counters catch it.
+        let checkMiniCycleCalls = 0;
+        let logoCalls = 0;
+        setTaskEventsDependencies({
+            checkMiniCycle: () => { checkMiniCycleCalls++; },
+            triggerLogoBackground: () => { logoCalls++; },
+            triggerLogoScan: () => { logoCalls++; }
+        });
+
+        const deps = createMockDependencies();
+        const events = new TaskEvents(deps);
+
+        const taskItem = createMockTaskItem();
+        const checkbox = taskItem.querySelector("input[type='checkbox']");
+        taskList.appendChild(taskItem);
+
+        // Stand-in for the taskDOM change handler pipeline
+        let changeEvents = 0;
+        checkbox.addEventListener('change', () => { changeEvents++; });
+
+        events.initEventDelegation();
+        taskItem.querySelector('.task-text').click();
+
+        if (!checkbox.checked) throw new Error('click must toggle the checkbox');
+        if (changeEvents !== 1) throw new Error(`change handler must fire exactly once, got ${changeEvents}`);
+        if (checkMiniCycleCalls !== 0) throw new Error('click handler must not call checkMiniCycle directly (change handler owns it)');
+        if (logoCalls !== 0) throw new Error('click handler must not trigger logo animation directly (change handler owns it)');
+
+        // Hygiene: clear spies so they can't leak into later tests
+        setTaskEventsDependencies({ checkMiniCycle: null, triggerLogoBackground: null, triggerLogoScan: null });
+        taskList.remove();
+    });
+
+    await test('constructor-injected AppState resolves through deps getter', () => {
+        // The facade passes AppState via the constructor; module-level DI is not
+        // wired in production. Until v2.367 the constructor dropped it, so
+        // this.deps.AppState was silently null and the activeTaskId state
+        // update in toggleTaskOptions never ran.
+        const marker = { isReady: () => true, get: () => ({}), update: () => {} };
+        const events = new TaskEvents({ AppState: marker });
+        if (events.deps.AppState !== marker) {
+            throw new Error('deps.AppState must resolve to the constructor-injected instance');
+        }
+    });
+
     await test('setupPriorityButtonState marks high priority', () => {
         const deps = createMockDependencies();
         const events = new TaskEvents(deps);
