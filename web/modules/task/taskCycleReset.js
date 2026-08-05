@@ -832,9 +832,11 @@ export async function deleteCompletedTasksImpl(activeCycleId, cycleData, taskLis
  * @returns {void}
  */
 export function markAllTasksCompleteImpl(cycleData, taskList, resetTasksFn, deps = {}) {
-    if (isResetting) {
-        return;
-    }
+    // NOTE: no `if (isResetting) return` guard here. It was redundant with
+    // handleCompleteAllTasksImpl's entry guard (the only live caller path), and
+    // once executeCompleteAll raises the batch flag around this call, the guard
+    // would bail every time — the v2.360 regression that silently killed
+    // cycle-mode Complete. Concurrent-click protection stays at the entry guard.
 
     const checkMiniCycle = deps.checkMiniCycle || _deps.checkMiniCycle;
 
@@ -996,19 +998,32 @@ async function executeCompleteAll(activeCycle, cycleData, taskList, resetTasksFn
         if (preBatchState) captureStateSnapshot(preBatchState);
     }
 
-    // Do NOT raise isResetting here. v2.360 wrapped this in setResettingFlag(true)
-    // to keep downstream effects out of undo — but v2.362 removed the only
-    // downstream capturer (the reset's Step 2), so the flag no longer suppresses
-    // anything AND it tripped markAllTasksCompleteImpl's own `if (isResetting)
-    // return` guard, silently killing cycle-mode Complete entirely (v2.360–2.361
-    // regression). Concurrent-click protection already lives at
-    // handleCompleteAllTasksImpl's entry guard; the reset raises its own flag.
-    if (cycleData.deleteCheckedTasks) {
-        // To-Do mode: delete completed tasks
-        await deleteCompletedTasksImpl(activeCycle, cycleData, taskList, deps);
-    } else {
-        // Cycle mode: mark all complete and trigger reset
-        markAllTasksCompleteImpl(cycleData, taskList, resetTasksFn, deps);
+    // Raise isResetting around the WHOLE batch so the undo wrapper
+    // (wrapAppStateForUndo — captures before EVERY AppState.update, gated by
+    // this flag via captureStateSnapshot) stays suppressed for the batch's
+    // internal updates. Without it the To-Do path leaked a second snapshot:
+    // Clear Completed does two updates — record-cleared (bumps
+    // clearedTasks.totalCleared) then delete — and the snapshot signature
+    // includes that count (`ct`), so the wrapper's pre-delete capture had a
+    // DIFFERENT signature from the gesture capture, dodged dedup, and pushed a
+    // phantom intermediate (first Undo restored the tasks but kept the cleared
+    // records). v2.363 removed this flag to fix a DIFFERENT bug — that
+    // markAllTasksCompleteImpl bailed on `if (isResetting) return` — but that
+    // guard is redundant (handleCompleteAllTasksImpl's entry guard is the real
+    // concurrent-click protection) and has now been removed, so the flag is
+    // safe to restore. The delayed reset fires after this finally clears the
+    // flag and raises its own.
+    setResettingFlag(true, deps);
+    try {
+        if (cycleData.deleteCheckedTasks) {
+            // To-Do mode: delete completed tasks
+            await deleteCompletedTasksImpl(activeCycle, cycleData, taskList, deps);
+        } else {
+            // Cycle mode: mark all complete and trigger reset
+            markAllTasksCompleteImpl(cycleData, taskList, resetTasksFn, deps);
+        }
+    } finally {
+        setResettingFlag(false, deps);
     }
 }
 

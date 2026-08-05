@@ -8,6 +8,10 @@ import { setupTestEnvironment, createProtectedTest } from './testHelpers.js';
 export async function runTaskCycleResetTests(resultsDiv) {
     const cacheBuster = window.testCacheBuster || Date.now();
     const mod = await import(`../modules/task/taskCycleReset.js?v=${cacheBuster}`);
+    // Real signature builder so the snapshot-dedup test mirrors production
+    // (a bare counter mock can't see the update-wrapper's captures — the exact
+    // blind spot that let the Clear Completed two-snapshot leak ship).
+    const { buildSnapshotSignature } = await import(`../modules/ui/undoRedoManager.js?v=${cacheBuster}`);
 
     resultsDiv.innerHTML = '<h2>TaskCycleReset Tests</h2><h3>Running tests...</h3>';
     let passed = { count: 0 }, total = { count: 0 };
@@ -142,9 +146,13 @@ export async function runTaskCycleResetTests(resultsDiv) {
     // ============================================
     resultsDiv.innerHTML += '<h4 class="test-section">↩️ Undo snapshot at gesture boundary (v2.362)</h4>';
 
-    // Invariant: a batch gesture captures EXACTLY ONE snapshot, at its entry —
-    // never zero (Undo would jump past the batch) and never two (Undo would
-    // restore a mid-batch intermediate). The reset executor must NOT capture.
+    // Invariant: a batch gesture captures EXACTLY ONE snapshot — never zero
+    // (Undo jumps past the batch) and never two (Undo lands on a mid-batch
+    // phantom). The harness mirrors PRODUCTION: an update-wrapper captures
+    // before every AppState.update (like wrapAppStateForUndo), gated by the
+    // shared flags object and deduped by the REAL buildSnapshotSignature.
+    // A bare counter mock — the old harness — could not see the wrapper's
+    // captures and so missed the Clear Completed two-snapshot leak entirely.
     function makeCompleteAllHarness(deleteCheckedTasks) {
         const taskList = document.createElement('ul');
         ['A', 'B'].forEach(id => {
@@ -162,55 +170,105 @@ export async function runTaskCycleResetTests(resultsDiv) {
             appState: { activeCycleId: 'c1' },
             metadata: { lastModified: 0 },
             data: { cycles: { c1: {
+                title: 'C1',
                 deleteCheckedTasks,
                 autoReset: !deleteCheckedTasks,
+                cycleCount: 0,
                 tasks: [
                     { id: 'A', text: 'A', completed: true, deleteWhenComplete: true },
                     { id: 'B', text: 'B', completed: true, deleteWhenComplete: true }
                 ],
-                recurringTemplates: {}
+                recurringTemplates: {},
+                clearedTasks: { entries: [], totalCleared: 0, autoPruneEnabled: true }
             } } },
             userProgress: {}
         };
-        let snapshotCount = 0;
-        const deps = {
-            AppState: {
-                isReady: () => true,
-                get: () => stateObj,
-                update: async (producer) => { producer(stateObj); return stateObj; }
-            },
-            captureStateSnapshot: () => { snapshotCount++; },
-            isPerformingUndoRedo: () => false,
-            querySelector: (sel) => sel.includes('task-list') || sel.includes('taskList') ? taskList : taskList.querySelector(sel),
-            checkMiniCycle: () => {}
+
+        // Shared flags object — setResettingFlag / system-mutation write here,
+        // and the faithful capture reads here, exactly as AppGlobalState does.
+        const flags = { isResetting: false, isSystemMutation: false, isPerformingUndoRedo: false };
+        const stack = [];
+
+        // Faithful captureStateSnapshot: flag-gated + real-signature dedup.
+        const capture = (raw) => {
+            if (flags.isResetting || flags.isSystemMutation || flags.isPerformingUndoRedo) return;
+            const cid = raw?.appState?.activeCycleId;
+            const cyc = raw?.data?.cycles?.[cid];
+            if (!cyc) return;
+            const snap = {
+                activeCycleId: cid,
+                tasks: structuredClone(cyc.tasks || []),
+                title: cyc.title || '',
+                autoReset: cyc.autoReset,
+                deleteCheckedTasks: cyc.deleteCheckedTasks,
+                cycleCount: cyc.cycleCount || 0,
+                theme: cyc.theme || 'classic',
+                recurringTemplates: structuredClone(cyc.recurringTemplates || {}),
+                clearedTasks: cyc.clearedTasks ? structuredClone(cyc.clearedTasks) : null
+            };
+            const sig = buildSnapshotSignature(snap);
+            if (stack.length && stack[stack.length - 1].sig === sig) return; // dedup
+            stack.push({ sig });
         };
-        return { taskList, stateObj, deps, snapshots: () => snapshotCount };
+
+        const AppState = {
+            isReady: () => true,
+            get: () => stateObj,
+            // The wrapper: capture BEFORE running the producer, like production.
+            update: async (producer) => { capture(stateObj); producer(stateObj); return stateObj; }
+        };
+
+        const deps = {
+            AppState,
+            AppGlobalState: flags,
+            captureStateSnapshot: capture,
+            isPerformingUndoRedo: () => false,
+            querySelector: (sel) => (sel.includes('task-list') || sel.includes('taskList')) ? taskList : taskList.querySelector(sel),
+            checkMiniCycle: () => {},
+            // Mirror clearedTasksManager.recordMultipleClearedTasks: its OWN
+            // AppState.update bumping totalCleared is the second update whose
+            // post-record signature differs from the gesture capture.
+            recordMultipleClearedTasks: (records) => {
+                AppState.update(s => {
+                    const c = s.data.cycles.c1;
+                    if (!c.clearedTasks) c.clearedTasks = { entries: [], totalCleared: 0, autoPruneEnabled: true };
+                    c.clearedTasks.totalCleared += records.length;
+                    c.clearedTasks.entries.unshift(...records.map(r => ({ ...r, id: 'clr-' + r.text })));
+                }, true);
+            }
+        };
+        return { taskList, stateObj, deps, flags, snapshots: () => stack.length };
     }
 
-    await test('Complete All (To-Do / Clear Completed) actually deletes completed tasks AND captures one snapshot', async () => {
+    await test('Clear Completed (To-Do) deletes tasks AND captures exactly one snapshot (no phantom intermediate)', async () => {
         const h = makeCompleteAllHarness(true);
+        // recordMultipleClearedTasks is read from module _deps, not passed deps.
+        mod.setTaskCycleResetDependencies({
+            AppState: h.deps.AppState,
+            AppGlobalState: h.flags,
+            captureStateSnapshot: h.deps.captureStateSnapshot,
+            recordMultipleClearedTasks: h.deps.recordMultipleClearedTasks
+        });
         try {
             await mod.handleCompleteAllTasksImpl(() => {}, h.deps);
-            // EFFECT first: completed tasks must be gone (regression guard — a
-            // snapshot-count-only test missed cycle-mode Complete doing nothing).
             const remaining = h.stateObj.data.cycles.c1.tasks.map(t => t.id);
             if (remaining.length !== 0) throw new Error(`completed tasks should be deleted, still have [${remaining}]`);
-            if (h.snapshots() !== 1) throw new Error(`expected exactly 1 snapshot, got ${h.snapshots()}`);
+            // The record→delete sequence must NOT leak a second snapshot. Pre-fix
+            // this was 2 (gesture + post-record phantom) because the signature's
+            // clearedTasks count (ct) differs across the two updates.
+            if (h.snapshots() !== 1) throw new Error(`expected exactly 1 snapshot, got ${h.snapshots()} (phantom intermediate leak)`);
         } finally {
             mod.clearAllTimeouts();
+            mod.setTaskCycleResetDependencies({ recordMultipleClearedTasks: null });
             h.taskList.remove();
         }
     });
 
-    await test('Complete All (cycle mode) actually marks tasks complete AND captures one snapshot', async () => {
+    await test('Complete All (cycle mode) marks tasks complete AND captures exactly one snapshot', async () => {
         const h = makeCompleteAllHarness(false);
-        // Start uncompleted so "did it run" is observable
         h.stateObj.data.cycles.c1.tasks.forEach(t => { t.completed = false; });
-        let reset = false;
         try {
-            await mod.handleCompleteAllTasksImpl(() => { reset = true; }, h.deps);
-            // EFFECT: markAllTasksComplete must have run (this is exactly what the
-            // isResetting-guard regression silently killed).
+            await mod.handleCompleteAllTasksImpl(() => {}, h.deps);
             const allComplete = h.stateObj.data.cycles.c1.tasks.every(t => t.completed === true);
             if (!allComplete) throw new Error('cycle-mode Complete must mark all tasks completed');
             if (h.snapshots() !== 1) throw new Error(`expected exactly 1 snapshot, got ${h.snapshots()}`);
