@@ -1,3 +1,7 @@
+## [2.360] - 2026-08-05
+- fix(undo+ui): revive FIX #8 batch flag, system-mark daily fires, dead scan branch, escaping stragglers
+
+
 ## [2.359] - 2026-08-05
 - fix(recurring+backup): sparse-month/leap-year scans, shared restore validation, real backup versions
 
