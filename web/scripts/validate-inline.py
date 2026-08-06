@@ -87,7 +87,93 @@ def main():
         return 1
 
     print('✅ Inline scripts       every empty catch in miniCycle.html carries an intent comment (%d checked)' % checked)
+
+    gate_errors = validate_pre_gate_contract(html)
+    if gate_errors:
+        print('❌ pre-gate contract violation(s) in miniCycle.html:')
+        for msg in gate_errors:
+            print('     %s' % msg)
+        return 1
+    print('✅ Pre-gate contract    gate floor includes no-globalthis; pre-gate blocks are ES5-clean with guarded globalThis reads')
     return 0
+
+
+# ── Pre-gate runtime-floor contract (drift-review Lite-path finding, Aug 2026) ─
+#
+# The feature gate redirects old browsers to Lite, but its floor must match
+# the BUILD TARGET (es2020), not just ES2015 — browsers with Promise+fetch but
+# no globalThis passed the gate, hit bare globalThis reads in pre-gate blocks,
+# and white-screened instead of getting Lite. Three invariants, enforced here
+# so the fix can't silently regress:
+#
+#   1. The gate block must test  typeof globalThis === 'undefined'  and push
+#      the 'no-globalthis' reason.
+#   2. No pre-gate inline script may read globalThis without a same-line
+#      typeof guard (forced-full users bypass the gate on old browsers).
+#   3. No pre-gate inline script may contain post-ES5 syntax (arrows,
+#      const/let, template literals, optional chaining) — one modern token
+#      kills the whole block on the browsers the gate exists to catch.
+
+MODERN_TOKENS = [
+    (re.compile(r'=>'), 'arrow function'),
+    (re.compile(r'\bconst\s'), 'const'),
+    (re.compile(r'\blet\s'), 'let'),
+    (re.compile(r'`'), 'template literal'),
+    (re.compile(r'\?\.'), 'optional chaining'),
+]
+
+
+def strip_js_noise(script):
+    """Blank out JS comments and string literals (length-preserving) so the
+    modern-token scan only sees code. Ellipses in log strings and backticks
+    in comments must not false-positive."""
+    def blank(m):
+        return re.sub(r'[^\n]', ' ', m.group(0))
+    out = re.sub(r'/\*.*?\*/', blank, script, flags=re.DOTALL)
+    out = re.sub(r'//[^\n]*', blank, out)
+    out = re.sub(r"'(?:[^'\\\n]|\\.)*'", blank, out)
+    out = re.sub(r'"(?:[^"\\\n]|\\.)*"', blank, out)
+    return out
+
+
+def validate_pre_gate_contract(html):
+    errors = []
+    gate_start = html.find('__FeatureGateNeedsLite')
+    if gate_start == -1:
+        return ['feature gate not found (no __FeatureGateNeedsLite in miniCycle.html)']
+
+    # Invariant 1: gate floor matches the build target.
+    gate_region = html[max(0, gate_start - 2000):gate_start]
+    if "typeof globalThis === 'undefined'" not in gate_region or 'no-globalthis' not in gate_region:
+        errors.append("gate block must test typeof globalThis === 'undefined' and push 'no-globalthis' (es2020 floor)")
+
+    for sm in SCRIPT_RE.finditer(html):
+        if sm.start() >= gate_start:
+            break  # gate block and below — contract covers pre-gate only
+        script = sm.group(1)
+        base_line = html[:sm.start(1)].count('\n') + 1
+        code = strip_js_noise(script)
+
+        # Invariant 2: guarded globalThis reads only. A bare use is legal only
+        # AFTER a typeof guard on the same line (the `typeof globalThis !==
+        # 'undefined' && globalThis.X` and `typeof ... ? globalThis : {}`
+        # patterns) — a bare use BEFORE the guard still throws.
+        for i, line in enumerate(code.split('\n')):
+            if 'globalThis' not in line:
+                continue
+            guard = line.find('typeof globalThis')
+            bare_before_guard = (guard == -1) or ('globalThis' in line[:guard])
+            if bare_before_guard:
+                errors.append('miniCycle.html:%d  bare globalThis read in pre-gate block (guard with typeof globalThis first)' % (base_line + i))
+
+        # Invariant 3: ES5-only syntax.
+        for tok_re, name in MODERN_TOKENS:
+            m = tok_re.search(code)
+            if m:
+                line = base_line + code[:m.start()].count('\n')
+                errors.append('miniCycle.html:%d  post-ES5 syntax in pre-gate block: %s' % (line, name))
+
+    return errors
 
 
 if __name__ == '__main__':

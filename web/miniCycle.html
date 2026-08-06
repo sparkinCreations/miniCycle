@@ -278,7 +278,10 @@
     history.replaceState(null, '', cleanUrl);
   }
 
-  var currentVersion = globalThis.APP_VERSION || 'unknown';
+  // Guarded like the block at ~line 168: forced-full users on pre-es2020
+  // browsers bypass the feature gate, and a bare globalThis read would kill
+  // this whole block with a ReferenceError.
+  var currentVersion = (typeof globalThis !== 'undefined' && globalThis.APP_VERSION) || 'unknown';
   var lastSeenVersion = localStorage.getItem('__miniCycle_lastVersion');
   var justCleared = sessionStorage.getItem('__miniCycle_justCleared');
 
@@ -329,11 +332,14 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 <script>
 (function() {
-  var v = globalThis.APP_VERSION || 'dev-local';
+  // Guarded like the block at ~line 168 (see version-check block note):
+  // forced-full users on pre-es2020 browsers bypass the feature gate.
+  var g = typeof globalThis !== 'undefined' ? globalThis : {};
+  var v = g.APP_VERSION || 'dev-local';
   // Bundled dist: version.js also sets __MC_MODULE_MAP (source path → hashed
   // URL). Preload the hashed URL BARE so it matches the exact URL the boot
   // chain imports; dev has no map and keeps the ?v= form.
-  var map = globalThis.__MC_MODULE_MAP || null;
+  var map = g.__MC_MODULE_MAP || null;
   var modules = [
     './miniCycle-main.js',
     './modules/boot/orchestrator.js',
@@ -465,6 +471,19 @@
     needsLite = true;
     if (!w.Promise) reasons.push('no-promise');
     if (!w.fetch)   reasons.push('no-fetch');
+  }
+
+  // The gate's floor must match the BUILD TARGET (es2020), not just ES2015.
+  // globalThis is the latest-arriving es2020 feature in every engine
+  // (Chrome 71, Firefox 65, Safari 12.1) — later than ES modules in all
+  // three — so this one check also covers the no-module band. Without it,
+  // browsers with Promise+fetch but no globalThis passed the gate, then
+  // version.js and the pre-gate version-check/modulepreload blocks threw
+  // ReferenceError and the es2020 modules white-screened (drift-review
+  // Lite-path finding, Aug 2026).
+  if (typeof globalThis === 'undefined') {
+    needsLite = true;
+    reasons.push('no-globalthis');
   }
 
   // localStorage test
