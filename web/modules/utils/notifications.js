@@ -81,6 +81,33 @@ function _safeAddEventListener(element, event, handler, options) {
 }
 
 /**
+ * Single-settle contract for modal dialogs. Returns { settle, disposers }.
+ *
+ * settle(result) runs AT MOST ONCE: it runs every registered disposer, tears
+ * down the overlay, then invokes callback(result). Every exit path of a modal
+ * (buttons, ESC→cancel, backdrop click, keyboard handlers) must funnel through
+ * settle — never call the callback or remove the overlay directly.
+ *
+ * Register a disposer for EVERY timer/listener the modal creates outside the
+ * overlay itself (overlay-attached listeners are exempt: they die with it).
+ * Hand-enumerated cleanup is how the confirmation modal's armed-Enter timer
+ * once escaped cancellation and fired callback(true) after dismissal (v2.377).
+ */
+function createModalSettler(overlay, callback) {
+  let settled = false;
+  const disposers = [];
+  const settle = (result) => {
+    if (settled) return;
+    settled = true;
+    disposers.forEach(d => d());
+    overlay.close();
+    overlay.remove();
+    callback(result);
+  };
+  return { settle, disposers };
+}
+
+/**
  * Simple hash function for generating stable IDs from strings
  * Used as fallback when generateHashId is not injected via DI
  */
@@ -1679,24 +1706,10 @@ async setDefaultPosition(notificationContainer) {
     const confirmBtn = modal.querySelector(DOM_SELECTORS.BTN_CONFIRM);
     const cancelBtn = modal.querySelector(DOM_SELECTORS.BTN_CANCEL);
 
-    setTimeout(() => cancelBtn.focus({ focusVisible: false }), UI_TIMEOUTS.FOCUS_NEXT_TICK);
+    const { settle, disposers } = createModalSettler(overlay, callback);
 
-    // Single-settle contract: every exit path (buttons, ESC→cancel, delayed
-    // Enter handler) funnels through settle(), which runs at most once and
-    // disposes every resource this modal created before invoking the callback.
-    // Any new timer/listener MUST register a disposer here — cleanup that
-    // hand-enumerates resources is how the armed-Enter timer once escaped
-    // cancellation and fired callback(true) after dismissal.
-    let settled = false;
-    const disposers = [];
-    const settle = (result) => {
-      if (settled) return;
-      settled = true;
-      disposers.forEach(d => d());
-      overlay.close();
-      overlay.remove();
-      callback(result);
-    };
+    const focusTimer = setTimeout(() => cancelBtn.focus({ focusVisible: false }), UI_TIMEOUTS.FOCUS_NEXT_TICK);
+    disposers.push(() => clearTimeout(focusTimer));
 
     // For non-destructive modals, Enter anywhere confirms (armed after a delay
     // to avoid catching the same keypress that opened the modal). For
@@ -1789,41 +1802,33 @@ async setDefaultPosition(notificationContainer) {
     const cancelBtn = modal.querySelector(DOM_SELECTORS.BTN_CANCEL);
     const choiceBtns = modal.querySelectorAll(DOM_SELECTORS.BTN_CHOICE);
 
+    const { settle, disposers } = createModalSettler(overlay, callback);
+
     // Focus first choice button
     if (choiceBtns.length > 0) {
-      setTimeout(() => choiceBtns[0].focus({ focusVisible: false }), UI_TIMEOUTS.FOCUS_NEXT_TICK);
+      const focusTimer = setTimeout(() => choiceBtns[0].focus({ focusVisible: false }), UI_TIMEOUTS.FOCUS_NEXT_TICK);
+      disposers.push(() => clearTimeout(focusTimer));
     }
-
-    const cleanup = () => {
-      overlay.close();
-      overlay.remove();
-    };
 
     // Handle Escape / dialog cancel
     overlay.addEventListener('cancel', (e) => {
       e.preventDefault();
-      cancelBtn.click();
+      settle(null);
     });
 
     // Backdrop click-to-close (clicking outside the modal box)
     overlay.addEventListener('click', (e) => {
       if (e.target === overlay) {
-        cancelBtn.click();
+        settle(null);
       }
     });
 
     // Wire choice buttons
     choiceBtns.forEach(btn => {
-      btn.onclick = () => {
-        cleanup();
-        callback(btn.dataset.choiceValue);
-      };
+      btn.onclick = () => settle(btn.dataset.choiceValue);
     });
 
-    cancelBtn.onclick = () => {
-      cleanup();
-      callback(null);
-    };
+    cancelBtn.onclick = () => settle(null);
   }
 
   /**
@@ -1874,44 +1879,45 @@ async setDefaultPosition(notificationContainer) {
     const cancelBtn = overlay.querySelector(DOM_SELECTORS.MINI_CYCLE_BTN_CANCEL);
     const confirmBtn = overlay.querySelector(DOM_SELECTORS.MINI_CYCLE_BTN_CONFIRM);
 
-    setTimeout(() => input.focus({ focusVisible: false }), UI_TIMEOUTS.FOCUS_DELAY_SHORT);
+    const { settle, disposers } = createModalSettler(overlay, callback);
 
-    cancelBtn._clickHandler = () => {
-      overlay.close();
-      overlay.remove();
-      callback(null);
-    };
-    _safeAddEventListener(cancelBtn, "click", cancelBtn._clickHandler);
+    const focusTimer = setTimeout(() => input.focus({ focusVisible: false }), UI_TIMEOUTS.FOCUS_DELAY_SHORT);
+    disposers.push(() => clearTimeout(focusTimer));
 
-    confirmBtn._clickHandler = () => {
+    // Validation gate before settling — a required-but-empty value keeps the
+    // modal open (deliberately does NOT settle, so the user can try again).
+    const submit = () => {
       const value = input.value.trim();
       if (required && !value) {
         input.classList.add(DOM_CLASSES.MINICYCLE_INPUT_ERROR);
         input.focus();
         return;
       }
-      overlay.close();
-      overlay.remove();
-      callback(value);
+      settle(value);
     };
+
+    cancelBtn._clickHandler = () => settle(null);
+    _safeAddEventListener(cancelBtn, "click", cancelBtn._clickHandler);
+
+    confirmBtn._clickHandler = submit;
     _safeAddEventListener(confirmBtn, "click", confirmBtn._clickHandler);
 
     overlay.addEventListener('cancel', (e) => {
       e.preventDefault();
-      cancelBtn.click();
+      settle(null);
     });
 
     // Backdrop click-to-close (clicking outside the prompt box)
     overlay.addEventListener('click', (e) => {
       if (e.target === overlay) {
-        cancelBtn.click();
+        settle(null);
       }
     });
 
     overlay._keydownHandler = (e) => {
       if (e.key === "Enter") {
         e.preventDefault();
-        confirmBtn.click();
+        submit();
       }
     };
     _safeAddEventListener(input, "keydown", overlay._keydownHandler);

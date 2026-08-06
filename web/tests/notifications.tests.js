@@ -575,6 +575,77 @@ export async function runNotificationsTests(resultsDiv) {
         }
     });
 
+    await test('showChoiceModal() settles once: cancel after choice is inert', () => {
+        setupMockGlobals();
+        const notifications = new window.MiniCycleNotifications();
+        const results = [];
+
+        notifications.showChoiceModal({
+            title: 'Test',
+            choices: [{ text: 'Option A', value: 'a' }],
+            callback: (choice) => results.push(choice)
+        });
+
+        const dialog = document.querySelector('.mini-modal-dialog');
+        const cancelBtn = dialog.querySelector('.btn-cancel');
+        dialog.querySelector('.btn-choice').click();
+        // Pre-contract, a held reference to the detached cancel button could
+        // still fire callback(null) as a second, contradictory answer.
+        cancelBtn.click();
+
+        if (results.length !== 1 || results[0] !== 'a') {
+            throw new Error(`callback must fire exactly once with 'a', got [${results}]`);
+        }
+    });
+
+    await test('showPromptModal() settles once: cancel after confirm is inert', () => {
+        setupMockGlobals();
+        const notifications = new window.MiniCycleNotifications();
+        const results = [];
+
+        notifications.showPromptModal({
+            title: 'Test',
+            defaultValue: 'hello',
+            callback: (value) => results.push(value)
+        });
+
+        const dialog = document.querySelector('.miniCycle-prompt-dialog');
+        const cancelBtn = dialog.querySelector('.miniCycle-btn-cancel');
+        dialog.querySelector('.miniCycle-btn-confirm').click();
+        cancelBtn.click();
+
+        if (results.length !== 1 || results[0] !== 'hello') {
+            throw new Error(`callback must fire exactly once with 'hello', got [${results}]`);
+        }
+    });
+
+    await test('showPromptModal() required-empty does not settle; retry still works', () => {
+        setupMockGlobals();
+        const notifications = new window.MiniCycleNotifications();
+        const results = [];
+
+        notifications.showPromptModal({
+            title: 'Test',
+            required: true,
+            callback: (value) => results.push(value)
+        });
+
+        const dialog = document.querySelector('.miniCycle-prompt-dialog');
+        const input = dialog.querySelector('.miniCycle-prompt-input');
+        const confirmBtn = dialog.querySelector('.miniCycle-btn-confirm');
+
+        confirmBtn.click(); // empty + required → must NOT settle
+        if (results.length !== 0) {
+            throw new Error(`empty required submit must not fire callback, got [${results}]`);
+        }
+
+        input.value = 'second try';
+        confirmBtn.click();
+        if (results.length !== 1 || results[0] !== 'second try') {
+            throw new Error(`retry must settle with the value, got [${results}]`);
+        }
+    });
+
     await test('showPromptModal() creates prompt', () => {
         setupMockGlobals();
         const notifications = new window.MiniCycleNotifications();
