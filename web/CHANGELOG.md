@@ -1,3 +1,8 @@
+## [2.378] - 2026-08-06
+- fix(recurring): allowlist imported weekOfMonth ordinal/day at the normalizer
+- refactor(modal): extract createModalSettler; adopt single-settle in choice and prompt modals
+
+
 ## [2.377] - 2026-08-06
 - fix(modal): single-settle contract for confirmation modal; disposer registry kills armed-Enter leak
 - docs: capture Aug 2026 review fault lines; drop dead namespace validator
