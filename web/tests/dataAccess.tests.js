@@ -26,6 +26,10 @@ export async function runDataAccessTests(resultsDiv) {
             get: () => st,
             update: async (updater, immediate) => {
                 if (typeof updater === 'function') updater(st);
+                // Faithful to the real AppState.update: metadata is stamped
+                // AFTER the producer runs, on every call (appState.js). The
+                // in-producer stamps were removed as dead (review F-002/F-003).
+                st.metadata.lastModified = Date.now();
                 makeAppState._lastImmediate = immediate;
                 return st;
             },
@@ -182,7 +186,10 @@ export async function runDataAccessTests(resultsDiv) {
         const ok = await updateCycleData('cycle-NOPE', () => { producerRan = true; });
         if (ok !== true) throw new Error('expected true (update wrapper succeeded)');
         if (producerRan) throw new Error('producer must not run for a missing cycle');
-        if (as.get().metadata.lastModified !== 'old') throw new Error('lastModified must not change for missing cycle');
+        // NOTE: lastModified still bumps — AppState.update stamps on every
+        // call, cycle match or not. (The old assertion that it stayed 'old'
+        // only ever held against the unfaithful mock.)
+        if (as.get().metadata.lastModified === 'old') throw new Error('update wrapper must still have run (and stamped)');
     });
 
     await test('returns false and swallows error when producer throws', async () => {

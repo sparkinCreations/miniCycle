@@ -952,7 +952,13 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
             AppState: {
                 isReady: () => true,
                 get: () => mockData,
-                update: (updateFn) => { updateFn(mockData); }
+                // Faithful to the real AppState.update: stamps metadata AFTER
+                // the producer (the in-producer stamp was removed as dead —
+                // review F-002/F-003).
+                update: (updateFn) => {
+                    updateFn(mockData);
+                    mockData.metadata.lastModified = Date.now();
+                }
             },
             sanitizeInput: (input) => input.trim()
         });
