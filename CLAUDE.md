@@ -36,6 +36,23 @@ npm run lint       # ESLint with security + SonarJS plugins
 npm run build:web  # esbuild release bundle → web/dist/ (what Netlify runs; dev never needs it)
 ```
 
+**`npm test` is NOT the full test set.** CI (`test.yml`) runs four more suites, each of
+which spawns its own server on its own port — no `npm start` needed:
+
+```bash
+npm run test:sw       # offline boot + PRECACHE DRIFT GUARD (see below)
+npm run test:layout   # panel-overlap + measured-var publish guard, 7 viewports
+npm run test:meta     # static: every test must assert and await its async body
+npm run test:journey  # end-to-end user journeys on the real app
+```
+
+**Adding a new module file? Run `test:sw`.** Its precache drift guard fails when a module
+in the boot graph is missing from `BOOT_CRITICAL` in `service-worker.js` (or a stylesheet
+from `CSS_FILES`). A *static* import from anything already boot-critical makes the new file
+boot-critical too — leave it out and offline boot goes to the network for it. This is not
+covered by `npm test` or any `validate:*` gate (Aug 2026: `styleValidators.js` shipped
+green through all of them and failed CI here).
+
 **Validation gates** — full reference: `web/docs/working-on-code/VALIDATION_GATES.md`
 
 ```bash
