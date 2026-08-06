@@ -28,6 +28,22 @@ import { LIMITS } from '../core/constants.js';
 const normalizationCache = new Map();
 const MAX_NORMALIZATION_CACHE_SIZE = LIMITS.NORMALIZATION_CACHE;
 
+// The complete set of frequency values the app understands: the recur-frequency
+// dropdown options (modalTemplates.js) and the calculator switch cases
+// (recurringCalculators.js). NOT 'specificDates' — that's a nested toggle
+// (settings.specificDates.enabled), checked before the frequency switch, never
+// a frequency value itself.
+//
+// SECURITY (notifications-review, Aug 2026): frequency reaches an UNESCAPED
+// HTML sink — the recurring notification's status line renders
+// '<strong>' + frequency + '</strong>' via getLabel (no var escaping) under
+// { trusted: true }. Imports normalize through here, so an unconstrained
+// value from a hostile .mcyc file was a stored-XSS vector. Anything off this
+// list is coerced to 'daily'.
+const VALID_FREQUENCIES = new Set([
+    'hourly', 'daily', 'weekly', 'biweekly', 'monthly', 'yearly'
+]);
+
 /**
  * Normalize recurring settings with all required fields
  * Uses memoization to avoid creating objects on every call
@@ -49,7 +65,7 @@ export function normalizeRecurringSettings(settings = {}) {
             : JSON.parse(JSON.stringify(cached));
     } else {
         normalized = {
-            frequency: settings.frequency || "daily",
+            frequency: VALID_FREQUENCIES.has(settings.frequency) ? settings.frequency : "daily",
             indefinitely: settings.indefinitely !== false,
             count: settings.count ?? null,
             untilDate: settings.untilDate || null,

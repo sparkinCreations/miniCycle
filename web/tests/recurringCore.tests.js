@@ -898,16 +898,22 @@ export async function runRecurringCoreTests(resultsDiv) {
         }
     });
 
-    test('handles undefined frequency', () => {
-        const settings = normalizeRecurringSettings({
-            frequency: 'invalid'
-        });
-        const testDate = new Date(2025, 0, 15);
-
-        const result = shouldTaskRecurNow(settings, testDate);
-
-        if (result) {
-            throw new Error('Should not trigger with invalid frequency');
+    test('coerces an invalid frequency to daily (security: no off-list value survives normalization)', () => {
+        // v2.373: normalizeRecurringSettings allowlists frequency (the value
+        // reaches an HTML sink, so an unconstrained import was a stored-XSS
+        // vector). An off-list value can no longer persist — it becomes the
+        // safe default 'daily'. This deliberately replaces the old
+        // "invalid frequency doesn't recur" behavior: normalized settings can
+        // no longer HOLD an invalid frequency, so that state is unreachable.
+        // No legitimate frequency is affected — the allowlist is exactly the
+        // six dropdown/calculator values.
+        const settings = normalizeRecurringSettings({ frequency: 'invalid' });
+        if (settings.frequency !== 'daily') {
+            throw new Error(`invalid frequency must coerce to 'daily', got '${settings.frequency}'`);
+        }
+        // And the coerced 'daily' setting recurs normally (no time constraint).
+        if (!shouldTaskRecurNow(settings, new Date(2025, 0, 15))) {
+            throw new Error('coerced daily settings should recur');
         }
     });
 

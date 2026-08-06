@@ -47,6 +47,20 @@ export async function runRecurringSettingsTests(resultsDiv) {
         eq(normalize({}).frequency, 'daily', 'default freq');
     });
 
+    // Security (notifications-review): frequency reaches an unescaped HTML sink
+    // and imports normalize through here — an off-list value must be coerced to
+    // 'daily', never passed through.
+    await test('rejects an XSS payload frequency, coercing to "daily"', () => {
+        eq(normalize({ frequency: '<img src=x onerror=alert(1)>' }).frequency, 'daily', 'XSS freq coerced');
+        eq(normalize({ frequency: 'totally-made-up' }).frequency, 'daily', 'unknown freq coerced');
+    });
+
+    await test('all six canonical frequencies pass through unchanged', () => {
+        for (const f of ['hourly', 'daily', 'weekly', 'biweekly', 'monthly', 'yearly']) {
+            eq(normalize({ frequency: f }).frequency, f, `${f} preserved`);
+        }
+    });
+
     await test('indefinitely defaults to true', () => {
         eq(normalize({}).indefinitely, true, 'default indefinitely');
     });

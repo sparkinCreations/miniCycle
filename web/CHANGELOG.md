@@ -1,3 +1,13 @@
+## [2.374] - 2026-08-06
+- docs(security): guard the load-bearing escapeHtml in taskOptionsCustomizer
+
+
+## [2.373] - 2026-08-06
+- fix(security): validate recurring frequency + escape it at the notification sink
+- ci: scan full history for release tags, not first-parent
+- test: update settingsManager filename assertions to v2.372 contract
+
+
 ## [2.372] - 2026-08-06
 - fix(export): keep Unicode routine titles in .mcyc filenames
 - docs: refresh user-manual version stamp to v2.371
