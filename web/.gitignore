@@ -38,3 +38,8 @@ backup/
 # Ignore subdirectories in docs/archive (keep files only)
 docs/archive/*/
 dist/
+
+# Lighthouse CI run artifacts (lhci autorun writes these locally; the release
+# script stages with `git add -A`, so without this they ride into release commits
+# — 106k lines landed in v2.376 that way).
+.lighthouseci/

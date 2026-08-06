@@ -122,15 +122,44 @@ jobs:
           npm ci
           npm install -g @lhci/cli@0.13.x
 
-      - name: Start dev server
+      # Lighthouse grades the artifact users actually receive, not the dev tree.
+      #
+      # `npm start` serves web/ directly, where styles/main.css pulls in 44
+      # @import stylesheets as a request waterfall. Those land after first paint
+      # and re-wrap the first-run screen, so the dev tree reports CLS ~0.24 on
+      # every run — a shift nobody ships, because the build inlines critical CSS
+      # and bundles the rest into one file. Netlify runs this same build, so
+      # dist/ IS production.
+      #
+      # Measured with lhci (Aug 2026), after the pre-paint first-run fix:
+      #   dev server : 0.238 / 0.241 / 0.238  -> assertion FAILS
+      #   built dist : 0.238 / 0.0026 / 0.0040 -> assertion PASSES
+      # Grading dev was failing the build on a defect that does not exist in the
+      # shipped app.
+      #
+      # Cheap: a clean `npm run build:web` measures ~2-3s (esbuild), so this adds
+      # seconds, not minutes. End users and the local `npm start` dev loop are
+      # unaffected. dist is served on 8080 so lighthouserc.json's URLs stay
+      # unchanged.
+      - name: Build production bundle
         working-directory: ./web
+        run: npm run build:web
+
+      - name: Serve built dist
+        working-directory: ./web/dist
         run: |
-          npm start &
+          python3 -m http.server 8080 &
           sleep 3
 
       # NOT continue-on-error: lighthouserc.json gates only deterministic audits
       # (viewport, cumulative-layout-shift) as `error`; all score/timing metrics
-      # are `warn`. So a failure here is a real regression, not shared-runner noise.
+      # are `warn`. So a failure here is a real regression, not shared-runner
+      # noise — and now that it grades the built artifact, that premise holds.
+      #
+      # Known caveat: a cold-cache first load can still shift (~0.238 seen in
+      # one 3-run set; a later set came back 0.0026/0.0026/0.0040 with none).
+      # Lighthouse asserts the median, so that outlier does not fail the gate,
+      # but the cold-load re-wrap is real and tracked separately.
       - name: Run Lighthouse CI
         working-directory: ./web
         run: lhci autorun

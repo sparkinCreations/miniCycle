@@ -299,6 +299,22 @@ export function getLensSensitiveKeys() {
  * Interpolate variables into a template string
  * Supports: {varName} simple substitution
  *
+ * SECURITY — this does NOT HTML-escape vars (String() only), and that is
+ * deliberate: some callers pass intentional HTML (e.g. a '<strong>'-wrapped
+ * value) and escaping here would double-encode it into visible tags. The
+ * escaping responsibility therefore sits at the SINK: notification/modal
+ * wrappers escape by default (only { trusted: true } / trustedHTML skips it),
+ * and the few raw innerHTML sinks that interpolate a getLabel result with
+ * user-controlled vars pre-escape those vars themselves.
+ *
+ * A full audit (Aug 2026, notifications-review) cross-checked every
+ * `getLabel(..., { vars })` whose output reaches innerHTML across all 27
+ * modules that combine the two: the only live stored-XSS was the recurring
+ * frequency (fixed at both the normalizer and the sink); every other sink is
+ * textContent/setAttribute, an app-constant var, or pre-escaped. The class is
+ * closed. If you add a NEW getLabel-vars → innerHTML sink with user data,
+ * escape the var at that sink — do not add escaping here.
+ *
  * @param {string} template - Template string with {varName} placeholders
  * @param {Object} vars - Variable values
  * @returns {string} Interpolated string

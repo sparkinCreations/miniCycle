@@ -123,20 +123,20 @@ body.app-loading #undo-redo-buttons {
    Revealed by the inline controller in miniCycle.html; reuses the splash
    background/logo/tips. The centered loading text + bar are replaced by the
    tagline + three frosted-pill buttons and a thin bottom progress strip. */
-#app-loader.first-run-mode .loader-text,
-#app-loader.first-run-mode .loader-bar-container {
+html.mc-first-run #app-loader .loader-text,
+html.mc-first-run #app-loader .loader-bar-container {
   display: none;
 }
 /* Top-anchor the header (logo + brand + tagline) near the top; the choice
    container then fills the rest of the height so the buttons can center in it. */
-#app-loader.first-run-mode {
+html.mc-first-run #app-loader {
   justify-content: flex-start;
   padding-top: 8vh;
 }
 /* Soft scrim behind the header text so white is legible over the LIGHT areas of
    the photo (the clipboard paper). Concentrated near the top now that the brand
    sits there; transparent edges keep the airy look. Buttons are white cards. */
-#app-loader.first-run-mode::before {
+html.mc-first-run #app-loader::before {
   content: '';
   position: absolute;
   inset: 0;
@@ -146,15 +146,15 @@ body.app-loading #undo-redo-buttons {
 }
 /* Raise the text block above the scrim (these are static flex items; the tip,
    status, and bottom bar are already position:absolute so sit above it). */
-#app-loader.first-run-mode .loader-logo,
-#app-loader.first-run-mode .first-run-choice {
+html.mc-first-run #app-loader .loader-logo,
+html.mc-first-run #app-loader .first-run-choice {
   position: relative;
   z-index: 1;
 }
 /* In choice mode the tip is demoted to a small, quiet strip just above the
    bottom progress bar — the buttons and tagline own the screen. (Its top-15%
    pin also collided with the centered column on short/wide viewports.) */
-#app-loader.first-run-mode .loader-tip {
+html.mc-first-run #app-loader .loader-tip {
   top: auto;
   bottom: 26px;
   width: auto;
@@ -163,10 +163,10 @@ body.app-loading #undo-redo-buttons {
   font-size: var(--font-size-sm, 13px);
   background: rgba(0, 0, 0, 0.18);
 }
-#app-loader.first-run-mode .loader-tip.visible {
+html.mc-first-run #app-loader .loader-tip.visible {
   opacity: 0.7;
 }
-#app-loader.first-run-mode .loader-tip-header {
+html.mc-first-run #app-loader .loader-tip-header {
   display: none;
 }
 .first-run-choice {
@@ -180,7 +180,7 @@ body.app-loading #undo-redo-buttons {
 /* In choice mode the container fills the height below the logo so the actions
    group can vertically center in the leftover space (brand + tagline stay at the
    top of this zone, right under the logo). */
-#app-loader.first-run-mode .first-run-choice {
+html.mc-first-run #app-loader .first-run-choice {
   flex: 1 1 auto;
   margin-top: 14px;
   min-height: 0;
@@ -195,6 +195,15 @@ body.app-loading #undo-redo-buttons {
   margin-top: auto;
   margin-bottom: auto;
 }
+/* Hidden by DEFAULT and revealed by the pre-paint `mc-first-run` class on
+   <html> (set by the head's first-run reader). Previously the markup carried
+   `hidden` and JS removed it in the body — that reveal landed AFTER first
+   paint and was the app's single largest layout shift (Lighthouse attributed
+   0.204 of a 0.238 CLS to #first-run-choice). Deciding pre-paint means the
+   screen is either laid out from the very first frame or never rendered at
+   all; nothing moves either way. Keep the [hidden] rule too, so any JS that
+   sets the attribute later still hides it. */
+html:not(.mc-first-run) .first-run-choice,
 .first-run-choice[hidden] {
   display: none;
 }
@@ -392,6 +401,8 @@ html[data-app-loaded="true"] .first-run-lite {
   height: 3px;
   background: rgba(255, 255, 255, 0.15);
 }
+/* Same pre-paint treatment as .first-run-choice above. */
+html:not(.mc-first-run) .first-run-bottom-bar,
 .first-run-bottom-bar[hidden] {
   display: none;
 }
@@ -400,7 +411,7 @@ html[data-app-loaded="true"] .first-run-lite {
 .first-run-status {
   display: none;
 }
-#app-loader.first-run-mode .first-run-status {
+html.mc-first-run #app-loader .first-run-status {
   display: block;
   position: absolute;
   right: 14px;
