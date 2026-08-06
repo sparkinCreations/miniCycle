@@ -8,6 +8,7 @@
 
 - [miniCycle Lite Review](#minicycle-lite--full-app-review)
 - [miniCycle Full Version Review](#minicycle-full-version--complete-app-review)
+- [Focused Review: Offline · No-Build · Vanilla · No-Framework · Routine Manager](#minicycle--focused-review-offline--no-build--vanilla--no-framework--routine-manager)
 
 ---
 
@@ -468,3 +469,150 @@ miniCycle's full version is a remarkably ambitious vanilla JS application. The a
 The feature depth is the standout: a 15-module recurring task system, 20-level persistent undo/redo with transaction diffs, 17-color live-preview customization, drag-and-drop with both desktop and mobile paths, task search with filter/sort chips, and a full plugin system. The three cycle modes deliver on the "routine manager, not a todo app" identity — tasks persist and reset, which is the entire point.
 
 The main gaps are in testing coverage (54% modules) and some accumulated technical debt (4 listener leaks, 2 non-standard DI modules). The lack of a build step is both a strength (simplicity, no toolchain) and a weakness (36 CSS imports, manual version strings, disabled modulepreload). But for a zero-dependency PWA with this feature density, the engineering quality is impressive.
+
+---
+---
+
+# miniCycle — Focused Review: Offline · No-Build · Vanilla · No-Framework · Routine Manager
+
+## Overview
+
+This review evaluates miniCycle against the five qualities that define its stated product identity: works fully offline, requires no build step, is written in plain web standards, depends on no framework, and solves the **routine manager** problem rather than the generic todo problem. Each criterion is scored independently, then combined into an overall rating.
+
+---
+
+## 1. Offline Capability — **9.5 / 10**
+
+**Strengths:**
+- Comprehensive service worker precaches 100+ files (HTML, JS modules, CSS, fonts, icons) — the app opens instantly with no network
+- Multi-layer cache strategy: network-first for boot-critical paths (ensures fresh code on reconnect), cache-first with stale-while-revalidate for assets
+- Navigation Preload shaves 50–100 ms off first-load on mobile by parallelising SW startup and the network request
+- Boot failure failsafe: two consecutive load failures automatically clear all caches, unregister service workers, and hard-reload — preventing a user from ever being stuck on a broken cached version
+- 60-second timeout with automatic fallback to the Lite version ensures the app is always usable, even on flaky connections
+- Periodic SW update checks (every 60 seconds + on focus/visibility restore) keep users on the latest version without forcing a reload
+- All state persisted to localStorage + IndexedDB — zero data loss when going offline mid-session
+- Offline fallback page serves the correct shell (Lite or full) based on the requested URL
+- IndexedDB auto/manual/session backups with retention policies mean data survives unexpected crashes
+
+**Weaknesses:**
+- Feedback form submissions silently fail when offline — no queuing or background sync
+- No `modulepreload` hints (disabled due to a duplicate-instance bug) means module loading is slightly slower on first visit behind a slow connection
+
+**Verdict:** The offline story is close to best-in-class for a PWA of this complexity. Users who install miniCycle can realistically never touch a network after the first load and lose nothing.
+
+---
+
+## 2. Zero-Build Developer Experience — **8.5 / 10**
+
+**Strengths:**
+- `npm start` is a Python HTTP server — any static file server works; no Webpack, Vite, Rollup, Parcel, or Babel involved
+- No transpilation: ES6 modules run natively in modern browsers, exactly as authored
+- No runtime npm dependencies — `node_modules` is test-only (Playwright); production ships nothing from it
+- Adding a feature means editing a `.js` or `.css` file and refreshing the browser — the feedback loop is as fast as it gets
+- `version.js` is the single source of truth for `APP_VERSION` and `CACHE_VERSION` — updating the app version is a one-line change
+- The module loader uses a declarative manifest pattern with versioned dynamic `import()` for cache busting — no build tool required for module graph management
+- `jsconfig.json` provides IDE type checking without a compiler
+
+**Weaknesses:**
+- 36 CSS `@import` statements produce a loading waterfall — a bundler would collapse these to one request, but one was deliberately not used
+- Manual version string update is error-prone; a build step would automate this from `package.json`
+- `modulepreload` hints are disabled (duplicate module instance bug), so the browser cannot speculatively fetch the full module graph — a bundler would eliminate this class of problem entirely
+- No dead-code elimination: unused code paths in large modules ship to every client
+
+**Verdict:** The zero-build constraint is honoured completely. The developer experience is refreshingly simple and the tradeoffs (waterfall loading, manual versioning) are known and documented. For a personal PWA, the simplicity is the right call.
+
+---
+
+## 3. Vanilla Web Standards — **9.5 / 10**
+
+**Strengths:**
+- ES6 modules (`type="module"`) with native browser resolution — no import maps, no shimming
+- CSS Custom Properties for every design token (spacing, colour, radius, z-index, timing) — the entire theme system is pure CSS variables, not JS-in-CSS
+- `<dialog>` element for all modals — no DIV-based overlay hacks; native focus trap, `::backdrop`, `close` event, `showModal()` / `close()` API
+- `requestAnimationFrame` for UI coalescing, `requestIdleCallback` for non-critical saves — scheduling handled by platform APIs
+- `IntersectionObserver`, `MutationObserver`, `ResizeObserver` — no polling fallbacks in the full version
+- Service Worker API, Cache API, IndexedDB — all PWA features use platform-native APIs directly
+- File System / File Handling API (`launchQueue`) for `.mcyc` import — standard PWA extension
+- Canvas API for background image compression — no image processing library
+- Web Share API, Notifications API — no third-party wrappers
+- CSS Grid and Flexbox for all layout — no float hacks, no grid library
+- `env(safe-area-inset-*)` for Dynamic Island / notch handling — platform CSS, not JS
+- `prefers-reduced-motion`, `prefers-color-scheme`, `prefers-contrast: high`, `hover: none`, `pointer: fine` — comprehensive use of CSS media features
+- `aria-*` attributes, `role`, `tabindex` — native browser accessibility, no JS-driven ARIA polyfills
+- Self-hosted woff2 fonts — no CDN dependency at runtime
+
+**Weaknesses:**
+- `contenteditable` title editing is functional but less ergonomic than a native `<input>` — it requires extra sanitization attention
+- Some complex selector chains in dark mode and high-contrast CSS would benefit from CSS nesting (now available in modern browsers)
+
+**Verdict:** miniCycle is a reference-quality example of what modern vanilla web standards can achieve. Every feature maps to a native browser API. There is no abstraction layer between the app and the platform.
+
+---
+
+## 4. Framework-Free Architecture — **9.5 / 10**
+
+**Strengths:**
+- Zero framework runtime: no React, Vue, Angular, Svelte, Solid, Lit, Alpine, jQuery, or any UI library
+- The custom `diBase.js` DI framework is ~100 lines — not a framework import, but a pattern implementation authored in the same codebase
+- `AppState.update(producer)` is ~50 lines of state management — not Redux or MobX, but a focused solution for this app's exact needs
+- `UIOrchestrator` (frame-budget coalescing, priority ordering) is a custom implementation — no virtual DOM, no reconciler, no diffing library
+- The label system (566 keys, pluralization, interpolation) is ~150 lines — no i18n library needed
+- Module loading, DI wiring, boot sequencing, plugin system — all authored from first principles
+- No dependency on component libraries, icon sets (SVG icons are inlined), animation libraries, or utility libraries (lodash, etc.)
+- Architecture patterns (DI, state management, event bus, plugin system) are recognizable from frameworks but remain shallow enough to read in one sitting
+
+**Weaknesses:**
+- The custom DI, state, and orchestration layers add cognitive overhead for new contributors unfamiliar with the patterns — a documented framework would provide a familiar mental model
+- 2 modules use non-standard DI patterns (Proxy-based in gamesManager, default fallbacks in taskSearch), which reduces pattern consistency
+- The plugin system (`MiniCyclePlugin` base class, EventBus) adds surface area that is currently only exercised internally
+
+**Verdict:** No framework is a genuine design choice here, not an oversight. The custom implementations are lean and purpose-built, and the result is a codebase with zero runtime dependency risk. The tradeoff is that the patterns must be learned rather than recognized.
+
+---
+
+## 5. Routine Manager Identity — **9.5 / 10**
+
+**Strengths:**
+- The three cycle modes are the defining feature of the product identity:
+  - **Auto-Cycle**: all tasks reset automatically when the last one is checked — the pure routine loop
+  - **Manual Cycle**: user controls when the cycle resets — for routines that don't complete in a single session
+  - **To-Do Mode**: completed tasks are deleted permanently — a deliberate escape hatch for non-repeating work
+- Tasks are *persistent by default* — they survive app restart, reopen, and reinstall; completion is a transient state
+- **Cycle count** is the primary metric of progress — not streaks, not due dates, but how many times you completed your routine
+- Gamification (5 milestone tiers at 5/25/50/75/100 cycles, theme unlocks, game unlock) directly rewards routine consistency, not task volume
+- **Multiple routines**: create, switch, rename, duplicate, and search routines — covering morning routine, evening routine, work routine, workout routine independently
+- **Recurring tasks** (15 modules): hourly/daily/weekly/biweekly/monthly/yearly/specific-date with time-of-day granularity — tasks that belong on a routine because they recur on a schedule
+- Completed tasks collapse into a separate section, keeping the active routine uncluttered
+- `.mcyc` file format lets you share routines with others — sharing the *routine*, not the completion state
+- Routine-level history tracks when each cycle was completed — longitudinal routine visibility
+- **No due date required on tasks** — this is a deliberate product choice; routines are not deadline-driven
+
+**Weaknesses:**
+- No collaborative routines — the app is single-user by design (no cloud sync, no shared state)
+- No task notes or descriptions — task names carry all the context (500-char limit)
+- One unlockable game — the gamification could go deeper to further reward long-term routine building
+
+**Verdict:** miniCycle's identity as a routine manager (not a todo app) is consistently expressed throughout the product. The cycle mechanic, persistence model, and gamification system all reinforce the same thesis: *build the habit, track the streak, own the routine.*
+
+---
+
+## Overall Score — **9.3 / 10**
+
+| Criterion | Score |
+|---|---|
+| Offline Capability | 9.5 |
+| Zero-Build Developer Experience | 8.5 |
+| Vanilla Web Standards | 9.5 |
+| Framework-Free Architecture | 9.5 |
+| Routine Manager Identity | 9.5 |
+| **Overall** | **9.3** |
+
+---
+
+## Focused Review Summary
+
+Evaluated against its own stated identity — offline, no-build, vanilla, no-framework, routine manager — miniCycle scores 9.3 out of 10. The weakest criterion is Zero-Build DX (8.5), and the gap is entirely structural: 36 CSS `@import` waterfall, manual version strings, and disabled `modulepreload` are inherent costs of refusing a build step at this scale. These are known, accepted, and documented tradeoffs — not oversights.
+
+The four remaining criteria all score 9.5. The offline implementation is comprehensive, multi-layered, and resilient. The vanilla standards usage is exemplary — every feature maps to a native browser API with no abstraction tax. The framework-free architecture is genuinely zero-dependency at runtime while still delivering DI, state management, and UI orchestration. And the routine manager identity is the clearest of the five: the cycle mechanic, persistence model, and gamification are all in service of the same idea.
+
+For developers evaluating modern vanilla web capabilities, miniCycle is a strong existence proof: you can build a sophisticated, accessible, offline-first PWA with 108 modules, full gamification, recurring scheduling, and deep customization — without React, without a bundler, without a cloud backend.
