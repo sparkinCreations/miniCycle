@@ -71,6 +71,34 @@ fires on a date the user never selected.
 **Check:** every fallback in `recurringCalculators.js` scans forward for a
 period that actually contains the target.
 
+### Date-only strings parse as UTC
+
+`new Date("2026-08-06")` is UTC midnight per spec, which is the *previous local
+day* in every negative UTC offset. Any such value compared or displayed with
+`new Date()` is a one-day bug across the Americas. Use `parseDateAsLocal()` from
+`recurringDateUtils.js` — it already existed and the recurring subsystem already
+used it; the due-date paths just never adopted it, which is why the bug survived.
+
+**Grep from the PRODUCERS, not the call sites** — that is what makes this
+tractable: `<input type="date">` (its `.value` is always `YYYY-MM-DD`) and
+`.toISOString().split('T')[0]`. Timestamps and full ISO datetimes carry time
+information and are safe; `toISOString()` output is unambiguous.
+
+**Precedent:** tasks marked overdue a day early, due-date reminders firing a day
+early, and wrong dates on the task, in history, and in cleared tasks — six sites,
+Aug 2026.
+
+### Long timers silently fire immediately
+
+`setTimeout` stores its delay as a signed 32-bit int, so anything above
+2,147,483,647 ms (~24.8 days) overflows and runs **now**. If the handler
+reschedules itself, that is a loop rather than one misfire.
+
+**Check:** any `setTimeout` whose delay is user-configurable or derived from a
+stored timestamp. Clamp to `LIMITS.MAX_TIMEOUT_MS` and re-arm.
+**Precedent:** a "every 30 days" reminder became an unbounded notification loop
+(the frequency input offered Days with no `max`).
+
 ## What consistently holds up
 
 Not everything needs re-review. These were checked and found sound: corruption
