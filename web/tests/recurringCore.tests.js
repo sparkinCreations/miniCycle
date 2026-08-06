@@ -1787,7 +1787,13 @@ export async function runRecurringCoreTests(resultsDiv) {
     test('preserves recurringSettings when toggling OFF then ON', () => {
         const originalSettings = normalizeRecurringSettings({
             frequency: 'weekly',
-            weekly: { days: [2, 4] }, // Tuesday and Thursday
+            // Weekday NAMES, matching the panel (el.dataset.day) and the
+            // calculator (toLocaleDateString weekday:'short'). This fixture
+            // previously held [2, 4] with a "Tuesday and Thursday" comment —
+            // numeric indices are not a format the app has ever used, so those
+            // days could never have matched and the task would silently never
+            // fire on them. The Aug 2026 member filter surfaced it.
+            weekly: { days: ['Tue', 'Thu'] },
             indefinitely: true,
             time: { hour: 9, minute: 30, military: true }
         });

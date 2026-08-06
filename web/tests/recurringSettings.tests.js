@@ -79,6 +79,45 @@ export async function runRecurringSettingsTests(resultsDiv) {
         eq(wom(3, 'Tue').ordinal, '3', 'numeric ordinal stringified and preserved');
     });
 
+    // The rest of that same class: every selection array reaches date math, and
+    // an out-of-range member degenerates the schedule silently. Membership is
+    // filtered; element TYPE is deliberately untouched so stored numeric
+    // strings from older versions keep working.
+    await test('filters out-of-range members from every selection array', () => {
+        const m = normalize({ frequency: 'monthly', monthly: { useSpecificDays: true, days: [0, 15, 32, 99, 'x'] } });
+        eq(JSON.stringify(m.monthly.days), JSON.stringify([15]), 'monthly.days filtered to valid');
+
+        const y = normalize({ frequency: 'yearly', yearly: { months: [0, 6, 13, 'x'] } });
+        eq(JSON.stringify(y.yearly.months), JSON.stringify([6]), 'yearly.months filtered to valid');
+
+        const w = normalize({ frequency: 'monthly', weekly: { days: ['Mon', 'Funday', 'Sat'] } });
+        eq(JSON.stringify(w.weekly.days), JSON.stringify(['Mon', 'Sat']), 'weekly.days filtered to valid');
+
+        const b = normalize({ frequency: 'monthly', biweekly: { week1: ['Wed', 'Nope'], week2: ['Bogus'] } });
+        eq(JSON.stringify(b.biweekly.week1), JSON.stringify(['Wed']), 'biweekly.week1 filtered');
+        eq(b.biweekly.week2.length, 0, 'biweekly.week2 emptied');
+    });
+
+    await test('numeric strings survive filtering (older stored data keeps working)', () => {
+        const m = normalize({ frequency: 'monthly', monthly: { useSpecificDays: true, days: ['15', 15] } });
+        eq(m.monthly.days.length, 2, 'both string and number forms kept');
+        eq(m.monthly.days[0], '15', 'string element type preserved, not coerced');
+    });
+
+    await test('filters unparsable specificDates but keeps real ones', () => {
+        const r = normalize({ specificDates: { enabled: true, dates: ['2026-06-01', 'not-a-date', '', null] } });
+        eq(JSON.stringify(r.specificDates.dates), JSON.stringify(['2026-06-01']), 'only the parsable date survives');
+    });
+
+    await test('filters daysByMonth buckets and rejects bogus month keys', () => {
+        const r = normalize({
+            frequency: 'yearly',
+            yearly: { months: [6], useSpecificDays: true, applyDaysToAll: true, daysByMonth: { all: [10, 99], 13: [5] } }
+        });
+        eq(JSON.stringify(r.yearly.daysByMonth.all), JSON.stringify([10]), 'day 99 filtered from the all bucket');
+        eq('13' in r.yearly.daysByMonth, false, 'bogus month-13 bucket dropped');
+    });
+
     await test('indefinitely defaults to true', () => {
         eq(normalize({}).indefinitely, true, 'default indefinitely');
     });
