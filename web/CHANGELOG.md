@@ -1,3 +1,7 @@
+## [2.381] - 2026-08-06
+- fix(validator): build legacy dueDate from LOCAL calendar components
+
+
 ## [2.380] - 2026-08-06
 - fix(dates): parse date-only due dates as LOCAL midnight, not UTC
 - fix(reminders): clamp long intervals below the 32-bit setTimeout ceiling
