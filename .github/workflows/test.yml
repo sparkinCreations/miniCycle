@@ -40,6 +40,10 @@ jobs:
         working-directory: ./web
         run: npm run validate:di
 
+      - name: Validate legacy-read ratchet (loadMiniCycleData may only shrink)
+        working-directory: ./web
+        run: npm run validate:legacy
+
       - name: Validate inline scripts (empty-catch intent comments)
         working-directory: ./web
         run: npm run validate:inline

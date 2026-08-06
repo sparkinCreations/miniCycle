@@ -87,7 +87,12 @@ export function loadMiniCycleData() {
                 };
             }
         } catch (error) {
-            console.warn('⚠️ AppState read failed, falling back to localStorage:', error);
+            // Loud on purpose (review F-004): this fallback reads AROUND the
+            // state manager, and because saves are debounced the stored copy
+            // can be up to one SAVE_DELAY window behind in-memory state. An
+            // AppState read throwing is itself a bug worth surfacing — don't
+            // let the fallback make it look routine.
+            console.error('❌ AppState read failed — falling back to DIRECT localStorage read (may be up to one debounce window stale):', error);
         }
     }
 

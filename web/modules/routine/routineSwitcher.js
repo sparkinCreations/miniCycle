@@ -47,7 +47,6 @@ let getUniqueCycleName;
 const di = createDIModule('RoutineSwitcher', {
     AppState: optional(null),
     AppMeta: optional(null),
-    loadMiniCycleData: optional(() => null),
     showNotification: optional(null),
     hideMainMenu: optional(() => {}),
     showPromptModal: optional(null),
