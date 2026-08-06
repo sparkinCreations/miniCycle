@@ -70,7 +70,27 @@ jobs:
               continue
             fi
             git tag -a "$tag" -m "Release $tag" "$sha"
-            git push origin "$tag"
-            echo "Tagged $tag -> $sha"
+            # A tag whose commit predates the LAST change to this workflow file
+            # carries an older .github/workflows/ tree, and GitHub refuses to
+            # let GITHUB_TOKEN (a GitHub App) create a ref pointing at a
+            # "different workflow file" — the push is rejected with a
+            # workflows-permission error. That only affects BACKFILL of tags
+            # older than the workflow's own last edit; every future release
+            # commit is at/after this file, so its tag pushes fine. Warn and
+            # continue instead of failing the whole run (which used to abort
+            # the backfill on the first old tag and leave a red X), so newer
+            # pushable tags still land. Push the historical backlog by hand
+            # (a normal user push is not subject to the App restriction).
+            if git push origin "$tag" 2>/tmp/tagpush.err; then
+              echo "Tagged $tag -> $sha"
+            else
+              if grep -q "workflow" /tmp/tagpush.err; then
+                echo "::warning::Could not push $tag — GITHUB_TOKEN cannot tag a commit whose workflow-file tree differs (backfill of a pre-workflow-edit release). Push it manually: git push origin $tag"
+              else
+                echo "::warning::Could not push $tag: $(cat /tmp/tagpush.err)"
+              fi
+              git tag -d "$tag" >/dev/null 2>&1 || true
+              continue
+            fi
           done
           echo "Done — existing tags untouched; new tags listed above."
