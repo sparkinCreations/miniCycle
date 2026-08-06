@@ -252,6 +252,67 @@ export async function runHistoryManagerTests(resultsDiv) {
     });
 
     // ============================================
+    // 🎨 EVENT RENDERING (features-review finding: priority branches were
+    // shadowed by the generic taskName branch and unreachable)
+    // ============================================
+    resultsDiv.innerHTML += '<h4 class="test-section">🎨 Event Rendering</h4>';
+
+    await test('task_priority_set renders the priority-color dot', () => {
+        setHistoryManagerDependencies({
+            AppState: createMockAppState(),
+            appInit: createMockAppInit(),
+            showNotification: () => {},
+        });
+        const mgr = new HistoryManager();
+        const html = mgr._renderEvent({
+            type: 'task_priority_set',
+            timestamp: 1723000000000,
+            details: { taskName: 'Water plants', priorityColor: '#ff8800' }
+        });
+        if (!html.includes('history-priority-dot')) {
+            throw new Error('priority_set must render the priority dot (branch was unreachable below the generic taskName branch)');
+        }
+        if (!html.includes('#ff8800')) {
+            throw new Error('the logged priorityColor must reach the dot');
+        }
+        if (!html.includes('Water plants')) throw new Error('task name must render');
+    });
+
+    await test('task_priority_removed renders the name without a dot', () => {
+        setHistoryManagerDependencies({
+            AppState: createMockAppState(),
+            appInit: createMockAppInit(),
+            showNotification: () => {},
+        });
+        const mgr = new HistoryManager();
+        const html = mgr._renderEvent({
+            type: 'task_priority_removed',
+            timestamp: 1723000000000,
+            details: { taskName: 'Water plants', priorityColor: '#ff8800' }
+        });
+        if (html.includes('history-priority-dot')) {
+            throw new Error('priority_removed must not render a dot');
+        }
+        if (!html.includes('Water plants')) throw new Error('task name must render');
+    });
+
+    await test('priority dot rejects a non-hex color (falls back to default)', () => {
+        setHistoryManagerDependencies({
+            AppState: createMockAppState(),
+            appInit: createMockAppInit(),
+            showNotification: () => {},
+        });
+        const mgr = new HistoryManager();
+        const html = mgr._renderEvent({
+            type: 'task_priority_set',
+            timestamp: 1723000000000,
+            details: { taskName: 'x', priorityColor: 'red;background:url(evil)' }
+        });
+        if (html.includes('url(evil)')) throw new Error('non-hex color must not reach the style attribute');
+        if (!html.includes('history-priority-dot')) throw new Error('dot still renders with the default color');
+    });
+
+    // ============================================
     // 📊 RESULTS
     // ============================================
     const percentage = Math.round((passed.count / total.count) * 100);
