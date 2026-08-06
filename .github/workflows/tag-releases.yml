@@ -41,10 +41,16 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # First-parent only: a release commit reaches main either directly or via
-          # a PR merge; first-parent history of main sees both, and --grep keeps
-          # the scan cheap even over full history.
-          git log --first-parent --format='%H %s' \
+          # FULL history of main, not --first-parent: first-parent sees only
+          # merge commits and direct pushes, NOT the commits INSIDE a merged
+          # PR branch — which is exactly where cloud-session release commits
+          # live. That blind spot silently skipped v2.367–v2.372 while the
+          # workflow reported success (found Aug 2026; the original comment
+          # claimed first-parent "sees both", which was wrong). --grep keeps
+          # the full-history scan cheap. Newest-first order means the current
+          # release tags first; an older duplicate of the same version hits
+          # the exists-check below and warns instead of retagging.
+          git log --format='%H %s' \
               --grep='^chore(release): update version to ' main |
           while read -r sha subject; do
             # Extract X.Y[.Z] right after "to " — some historical subjects carry
