@@ -1,3 +1,7 @@
+## [2.382] - 2026-08-06
+- fix(dates): guard parseDateAsLocal against non-string input
+
+
 ## [2.381] - 2026-08-06
 - fix(validator): build legacy dueDate from LOCAL calendar components
 
