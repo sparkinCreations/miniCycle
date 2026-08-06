@@ -1,3 +1,10 @@
+## [2.377] - 2026-08-06
+- fix(modal): single-settle contract for confirmation modal; disposer registry kills armed-Enter leak
+- docs: capture Aug 2026 review fault lines; drop dead namespace validator
+- chore: untrack Lighthouse CI artifacts and gitignore them
+- ci(lighthouse): grade the built dist, not the dev tree
+
+
 ## [2.376] - 2026-08-06
 - perf(boot): decide first-run pre-paint to remove its layout shift
 
