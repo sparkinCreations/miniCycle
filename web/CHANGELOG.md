@@ -1,3 +1,8 @@
+## [2.372] - 2026-08-06
+- fix(export): keep Unicode routine titles in .mcyc filenames
+- docs: refresh user-manual version stamp to v2.371
+
+
 ## [2.371] - 2026-08-06
 - fix(features): stats from state not DOM; unshadow history priority branches
 - Add focused app review: Offline · No-Build · Vanilla · No-Framework · Routine Manager

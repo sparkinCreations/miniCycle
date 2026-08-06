@@ -409,11 +409,12 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
                 autoReset: true, cycleCount: 0, deleteCheckedTasks: false
             }, 'My Cycle!');
 
-            // Source: cycleName.replace(/[^a-z0-9]/gi, '_') + '.mcyc'. The space and '!' both
-            // become '_', so 'My Cycle!' → 'My_Cycle_.mcyc'. The old check only verified the
-            // extension and would pass even if sanitization were removed entirely.
-            if (dl.tracked.filename !== 'My_Cycle_.mcyc') {
-                throw new Error(`filename should be sanitized to "My_Cycle_.mcyc", got "${dl.tracked.filename}"`);
+            // Source: buildMcycFilename(cycleName) + '.mcyc' (v2.372: Unicode-
+            // preserving — only path-illegal chars become underscores, so the
+            // space and '!' both SURVIVE). buildMcycFilename's own edge cases
+            // are pinned in mcycPayload.tests.js; this checks the wiring.
+            if (dl.tracked.filename !== 'My Cycle!.mcyc') {
+                throw new Error(`filename should be "My Cycle!.mcyc" (legal chars survive), got "${dl.tracked.filename}"`);
             }
         } finally {
             dl.restore();
@@ -807,9 +808,9 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
 
             if (!dl.tracked.blobCreated) throw new Error('large export should create a blob');
             if (!dl.tracked.linkCreated) throw new Error('large export should create a download link');
-            // Non-alphanumerics in the cycle name become underscores.
-            if (dl.tracked.filename !== 'Large_Test.mcyc') {
-                throw new Error(`expected filename 'Large_Test.mcyc', got '${dl.tracked.filename}'`);
+            // v2.372: buildMcycFilename keeps legal characters — spaces survive.
+            if (dl.tracked.filename !== 'Large Test.mcyc') {
+                throw new Error(`expected filename 'Large Test.mcyc', got '${dl.tracked.filename}'`);
             }
         } finally {
             dl.restore();
