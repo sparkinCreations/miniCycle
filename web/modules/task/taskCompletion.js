@@ -273,7 +273,6 @@ export function saveTaskToSchema25Impl(activeCycle, currentCycle, deps = {}) {
             AppState.update(state => {
                 if (state?.data?.cycles) {
                     state.data.cycles[activeCycle] = currentCycle;
-                    state.metadata.lastModified = Date.now();
                 }
             }, true); // immediate save - required for stats panel to read correct data
         } catch (error) {

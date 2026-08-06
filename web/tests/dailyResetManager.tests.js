@@ -135,17 +135,17 @@ export async function runDailyResetManagerTests(resultsDiv) {
     // =========================================================
     resultsDiv.innerHTML += '<h4 class="test-section">🔁 checkAllRoutines</h4>';
 
-    await test('Disabled routine never fires', () => {
+    await test('Disabled routine never fires', async () => {
         const cycles = {
             a: { tasks: [{ completed: true }, { completed: true }], autoUncheckDaily: { enabled: false, hour: 0, minute: 0 } }
         };
         const { manager, getState, updates } = makeManager({ state: makeMockState({ cycles, activeCycleId: 'a' }) });
-        manager.checkAllRoutines();
+        await manager.checkAllRoutines();
         if (updates.length !== 0) throw new Error('Should not have updated state');
         if (!getState().data.cycles.a.tasks[0].completed) throw new Error('Task should remain checked');
     });
 
-    await test('Enabled routine with future trigger time does not fire', () => {
+    await test('Enabled routine with future trigger time does not fire', async () => {
         // Set trigger to 23:59 — almost certainly future-of-now during test run
         const cycles = {
             a: { tasks: [{ completed: true }], autoUncheckDaily: { enabled: true, hour: 23, minute: 59 } }
@@ -154,38 +154,38 @@ export async function runDailyResetManagerTests(resultsDiv) {
         // Skip if test happens to run at 23:59 (extremely unlikely)
         const now = new Date();
         if (now.getHours() === 23 && now.getMinutes() >= 58) return;
-        manager.checkAllRoutines();
+        await manager.checkAllRoutines();
         if (!getState().data.cycles.a.tasks[0].completed) throw new Error('Should not have unchecked future-time routine');
     });
 
-    await test('Enabled routine fires when trigger time has passed today', () => {
+    await test('Enabled routine fires when trigger time has passed today', async () => {
         const cycles = {
             a: { tasks: [{ completed: true }, { completed: true }], autoUncheckDaily: { enabled: true, hour: 0, minute: 0 } }
         };
         const { manager, getState } = makeManager({ state: makeMockState({ cycles, activeCycleId: 'a' }) });
-        manager.checkAllRoutines();
+        await manager.checkAllRoutines();
         const cycle = getState().data.cycles.a;
         if (cycle.tasks.some(t => t.completed)) throw new Error('All tasks should be unchecked');
         if (cycle.autoUncheckDaily.lastResetDate !== todayLocal()) throw new Error('lastResetDate not set');
     });
 
-    await test('Active cycle fire clears pendingNotification immediately', () => {
+    await test('Active cycle fire clears pendingNotification immediately', async () => {
         const cycles = { a: { tasks: [{ completed: true }], autoUncheckDaily: { enabled: true, hour: 0, minute: 0 } } };
         const { manager, getState, notifications } = makeManager({ state: makeMockState({ cycles, activeCycleId: 'a' }) });
-        manager.checkAllRoutines();
+        await manager.checkAllRoutines();
         if (getState().data.cycles.a.autoUncheckDaily.pendingNotification !== false) {
             throw new Error('pendingNotification should be false for active cycle');
         }
         if (notifications.length !== 1) throw new Error('Should have shown one notification');
     });
 
-    await test('Inactive cycle fire defers pendingNotification', () => {
+    await test('Inactive cycle fire defers pendingNotification', async () => {
         const cycles = {
             a: { tasks: [{ completed: true }], autoUncheckDaily: { enabled: true, hour: 0, minute: 0 } },
             b: { tasks: [{ completed: true }], autoUncheckDaily: { enabled: true, hour: 0, minute: 0 } }
         };
         const { manager, getState, notifications } = makeManager({ state: makeMockState({ cycles, activeCycleId: 'b' }) });
-        manager.checkAllRoutines();
+        await manager.checkAllRoutines();
         // a is inactive — pending should be true; b is active — pending should be false
         if (getState().data.cycles.a.autoUncheckDaily.pendingNotification !== true) {
             throw new Error('Inactive cycle pendingNotification should be true');
@@ -197,16 +197,16 @@ export async function runDailyResetManagerTests(resultsDiv) {
         if (notifications.length !== 1) throw new Error(`Expected 1 notification, got ${notifications.length}`);
     });
 
-    await test('Same-day re-check does not fire again (idempotent)', () => {
+    await test('Same-day re-check does not fire again (idempotent)', async () => {
         const cycles = {
             a: { tasks: [{ completed: false }], autoUncheckDaily: { enabled: true, hour: 0, minute: 0, lastResetDate: todayLocal() } }
         };
         const { manager, updates } = makeManager({ state: makeMockState({ cycles, activeCycleId: 'a' }) });
-        manager.checkAllRoutines();
+        await manager.checkAllRoutines();
         if (updates.length !== 0) throw new Error('Should not fire if already fired today');
     });
 
-    await test('Multi-routine: only due routines fire', () => {
+    await test('Multi-routine: only due routines fire', async () => {
         const today = todayLocal();
         const cycles = {
             a: { tasks: [{ completed: true }], autoUncheckDaily: { enabled: true, hour: 0, minute: 0 } },
@@ -214,7 +214,7 @@ export async function runDailyResetManagerTests(resultsDiv) {
             c: { tasks: [{ completed: true }], autoUncheckDaily: { enabled: false, hour: 0, minute: 0 } }
         };
         const { manager, getState } = makeManager({ state: makeMockState({ cycles, activeCycleId: 'a' }) });
-        manager.checkAllRoutines();
+        await manager.checkAllRoutines();
         if (getState().data.cycles.a.tasks[0].completed) throw new Error('a should fire');
         if (!getState().data.cycles.b.tasks[0].completed) throw new Error('b already fired today, should be unchanged');
         if (!getState().data.cycles.c.tasks[0].completed) throw new Error('c is disabled, should be unchanged');
@@ -257,7 +257,7 @@ export async function runDailyResetManagerTests(resultsDiv) {
         if (notifications.length !== 1) throw new Error(`Expected exactly one (enabled) notification, got ${notifications.length}`);
     });
 
-    await test('setEnabled(true) with already-passed trigger does NOT uncheck tasks (first fire waits for next occurrence)', () => {
+    await test('setEnabled(true) with already-passed trigger does NOT uncheck tasks (first fire waits for next occurrence)', async () => {
         // Fresh list, default 12:00 AM trigger — always in the past at enable time.
         const cycles = { a: { tasks: [{ completed: true }, { completed: false }], autoUncheckDaily: undefined } };
         const { manager, getState } = makeManager({ state: makeMockState({ cycles, activeCycleId: 'a' }) });
@@ -268,7 +268,7 @@ export async function runDailyResetManagerTests(resultsDiv) {
             throw new Error('lastResetDate should be stamped today so the first fire is tomorrow');
         }
         // And a follow-up check must not fire either (idempotency guard holds)
-        manager.checkAllRoutines();
+        await manager.checkAllRoutines();
         if (!getState().data.cycles.a.tasks[0].completed) throw new Error('Follow-up check unchecked tasks same-day');
     });
 
@@ -323,16 +323,16 @@ export async function runDailyResetManagerTests(resultsDiv) {
     // =========================================================
     resultsDiv.innerHTML += '<h4 class="test-section">🛡️ Defensive</h4>';
 
-    await test('checkAllRoutines tolerates empty state', () => {
+    await test('checkAllRoutines tolerates empty state', async () => {
         const { manager } = makeManager({ state: { data: null, appState: {}, settings: {}, metadata: {} } });
         // Should not throw
-        manager.checkAllRoutines();
+        await manager.checkAllRoutines();
     });
 
-    await test('Routine without autoUncheckDaily field is ignored', () => {
+    await test('Routine without autoUncheckDaily field is ignored', async () => {
         const cycles = { a: { tasks: [{ completed: true }] } };
         const { manager, getState } = makeManager({ state: makeMockState({ cycles, activeCycleId: 'a' }) });
-        manager.checkAllRoutines();
+        await manager.checkAllRoutines();
         if (!getState().data.cycles.a.tasks[0].completed) throw new Error('Should not have unchecked');
     });
 

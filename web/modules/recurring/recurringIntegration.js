@@ -28,7 +28,6 @@ import {
 const di = createDIModule('RecurringIntegration', {
     appInit: optional(null),
     AppState: optional(null),
-    AppGlobalState: optional(null),  // CORE_DEP — forwarded to the watcher so it can suppress undo during system recreations (§1.2)
     loadMiniCycleData: optional(null),
     showNotification: optional(null),
     showNotificationWithTip: optional(null),
@@ -137,7 +136,7 @@ export async function initRecurringModules(options = {}) {
                     deleteTemplate: coreFunctions.deleteRecurringTemplate,
                     buildRecurringSummary: buildRecurringSummaryFromSettings,
                     formatNextOccurrence: coreFunctions.formatNextOccurrence,
-                    updateAppState: (updateFn, immediate) => deps.AppState?.update(updateFn, immediate),
+                    updateAppState: (updateFn, immediate, options) => deps.AppState?.update(updateFn, immediate, options),
                     showConfirmationModal: (options) => deps.notifications?.showConfirmationModal(options),
                     getElementById: (id) => document.getElementById(id),
                     querySelector: (selector) => document.querySelector(selector),
@@ -182,14 +181,11 @@ export async function initRecurringModules(options = {}) {
 
             // State management (required) - DI-pure (pass AppState directly)
             AppState: deps.AppState,
-            // Forwarded so the watcher can flag system-driven recreations and keep them
-            // out of undo history (§1.2). Spreads through to setRecurringWatcherDependencies.
-            AppGlobalState: deps.AppGlobalState,
-            updateAppState: (updateFn, immediate = false) => {
+            updateAppState: (updateFn, immediate = false, options) => {
                 if (!deps.AppState) {
                     throw new Error('AppState not available');
                 }
-                return deps.AppState.update(updateFn, immediate);
+                return deps.AppState.update(updateFn, immediate, options);
             },
 
             // Data operations (legacy - for backwards compatibility)
@@ -262,7 +258,7 @@ export async function initRecurringModules(options = {}) {
             querySelectorAll: (selector) => document.querySelectorAll(selector),
             normalizeRecurringSettings: coreFunctions.normalizeRecurringSettings,
             calculateNextOccurrence: coreFunctions.calculateNextOccurrence,
-            updateAppState: (updateFn, immediate) => deps.AppState?.update(updateFn, immediate),
+            updateAppState: (updateFn, immediate, options) => deps.AppState?.update(updateFn, immediate, options),
             syncRecurringStateToDOM: deps.syncRecurringStateToDOM,
             restartRecurringWatcher: coreFunctions.restartRecurringWatcher
         });

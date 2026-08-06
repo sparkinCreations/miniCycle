@@ -232,7 +232,6 @@ export class RoutineManager {
                         };
 
                         state.appState.activeCycleId = finalTitle;
-                        state.metadata.lastModified = Date.now();
                         state.metadata.totalCyclesCreated++;
                     }, true);
 
@@ -355,7 +354,6 @@ export class RoutineManager {
             };
 
             state.appState.activeCycleId = finalTitle;
-            state.metadata.lastModified = Date.now();
             state.metadata.totalCyclesCreated++;
         }, true); // immediate save
 
@@ -427,7 +425,6 @@ export class RoutineManager {
                     };
 
                     state.appState.activeCycleId = storageKey;
-                    state.metadata.lastModified = Date.now();
                     state.metadata.totalCyclesCreated++;
 
                     finalResult = { storageKey, finalTitle };
@@ -559,7 +556,6 @@ export class RoutineManager {
                 };
 
                 state.appState.activeCycleId = finalTitle;
-                state.metadata.lastModified = Date.now();
                 state.metadata.totalCyclesCreated++;
             }, true);
 

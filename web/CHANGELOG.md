@@ -1,3 +1,11 @@
+## [2.368] - 2026-08-06
+- fix(state): per-call system-mutation option + once-per-episode quota notification
+- build: gate on dynamic imports that survive the rewrite pass unrewritten
+- fix(state): remove 26 dead lastModified stamps inside update() producers
+- chore(release): bump package-lock.json alongside package.json in update-version.sh
+- chore: sync package-lock.json version with package.json (2.367)
+
+
 ## [2.367] - 2026-08-05
 - fix(task): remove duplicate completion pipeline from delegated click handler
 - docs: staleness audit — sync architecture and start-here docs with v2.366 code

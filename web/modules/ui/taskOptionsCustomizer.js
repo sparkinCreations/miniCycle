@@ -779,7 +779,6 @@ export class TaskOptionsCustomizer {
                 state.data.cycles[cycleId].reminders.enabled = newRemindersEnabled;
             }
 
-            state.metadata.lastModified = Date.now();
         }, true); // immediate save
 
         // ✅ Post-update side effects (DOM syncing)

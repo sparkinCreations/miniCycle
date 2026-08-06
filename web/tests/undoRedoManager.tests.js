@@ -67,6 +67,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         onCycleDeleted,
         onCycleRenamed,
         filterValidSnapshots,
+        wrapAppStateForUndo,
         initUndoSystemForApp,
         initUndoIndexedDB,
         saveUndoStackToIndexedDB,
@@ -2103,6 +2104,40 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         if (deps.AppGlobalState.activeUndoStack.length !== 0) {
             throw new Error(`undo stack not restored: expected 0, got ${deps.AppGlobalState.activeUndoStack.length}`);
         }
+    });
+
+    // === WRAPPER SYSTEM-OPTION (review F-005) ===
+    // Runs LAST: wrapAppStateForUndo flips the module-internal _wrapperActive
+    // latch, which makes setupStateBasedUndoRedo a no-op — installing it any
+    // earlier would break the state-subscription tests above.
+    // System intent travels WITH the call as { system: true } — the wrapper
+    // must skip its snapshot for that call only, so a user update interleaving
+    // during a system commit still gets captured (the shared isSystemMutation
+    // flag mis-tagged those).
+    await test('undo wrapper skips snapshot for system:true updates only (review F-005)', async () => {
+        const mockDeps = createMockDependencies();
+        mockDeps.AppGlobalState.isInitializing = false;
+        mockDeps.AppGlobalState.wrappedAppStateUpdate = false;
+        let committed = 0;
+        mockDeps.AppState.update = (producer, immediate) => { committed++; return Promise.resolve(); };
+        setUndoRedoManagerDependencies(mockDeps);
+
+        const installed = wrapAppStateForUndo({ isCoreReady: () => true });
+        if (!installed) throw new Error('wrapper must install');
+
+        // System call: wrapper must NOT capture
+        await mockDeps.AppState.update(() => {}, false, { system: true });
+        if (mockDeps.AppGlobalState.activeUndoStack.length !== 0) {
+            throw new Error('system update must not enter undo history');
+        }
+
+        // Plain call: wrapper must capture
+        await mockDeps.AppState.update(() => {}, false);
+        await new Promise(r => setTimeout(r, 0)); // capture is fire-and-forget async
+        if (mockDeps.AppGlobalState.activeUndoStack.length !== 1) {
+            throw new Error('plain update must be captured into undo history');
+        }
+        if (committed !== 2) throw new Error('both updates must reach the underlying update');
     });
 
     // === SUMMARY ===

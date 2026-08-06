@@ -116,6 +116,8 @@
 # Manifests & package:
 # • manifest.json                 - version field
 # • package.json                  - version field
+# • package-lock.json             - top-level + root-package version fields (kept in
+#                                   sync so npm install stops regenerating the drift)
 #
 # Documentation:
 # • docs/PROJECT_STATS.md         - App Version + auto-counted metrics (modules, tests, test files,
@@ -1131,6 +1133,36 @@ if [ "$LITE_ONLY" = false ] && should_update "package.json"; then
     elif backup_file "package.json"; then
         do_sed "package.json" "s/\"version\": \"[0-9.]*\"/\"version\": \"$NEW_VERSION\"/g"
         echo "✅ Updated package.json"
+    else
+        STAGE5_SUCCESS=false
+    fi
+fi
+
+# Package-lock.json rides along with package.json — kept in sync so npm install
+# doesn't regenerate the version drift on every fresh checkout. A blanket sed is
+# NOT safe here (the lockfile has a "version" field for every dependency), so
+# node edits only the two fields that mirror package.json: the top-level version
+# and packages[""].version. npm serializes lockfiles as 2-space JSON + trailing
+# newline, which JSON.stringify reproduces byte-for-byte.
+if [ "$LITE_ONLY" = false ] && should_update "package.json"; then
+    if [ "$DRY_RUN" = true ]; then
+        echo "   Would update: package-lock.json"
+    elif [ ! -f "package-lock.json" ]; then
+        echo "⏭️  Skipping package-lock.json (not found)"
+    elif backup_file "package-lock.json"; then
+        if node -e '
+            const fs = require("fs");
+            const f = "package-lock.json";
+            const lock = JSON.parse(fs.readFileSync(f, "utf8"));
+            lock.version = process.argv[1];
+            if (lock.packages && lock.packages[""]) lock.packages[""].version = process.argv[1];
+            fs.writeFileSync(f, JSON.stringify(lock, null, 2) + "\n");
+        ' "$NEW_VERSION"; then
+            echo "✅ Updated package-lock.json"
+        else
+            echo "⚠️  Failed to update package-lock.json"
+            STAGE5_SUCCESS=false
+        fi
     else
         STAGE5_SUCCESS=false
     fi

@@ -534,6 +534,37 @@ function makeRewritePlugin() {
     if (!moduleMap[key]) fail(`no map entry for ${key}`);
   }
 
+  // Gate: no source-relative dynamic import may survive the rewrite pass.
+  // makeRewritePlugin rewrites by regex over source text; a shape those
+  // patterns miss falls through silently. Fully-analyzable misses self-heal —
+  // esbuild resolves them (query suffix included) into shared code-split
+  // chunks, single-instance. The dangerous class is NON-analyzable shapes
+  // (e.g. a literal with .concat(), template-adjacent expressions): esbuild
+  // leaves them verbatim, and at runtime they resolve to a stable-path shim —
+  // which forwards its ?v= query onto the hashed URL and yields a SECOND
+  // module instance (the v2.313 failure class). The collectEntries specifier
+  // scan only checks that import targets exist, not that call sites were
+  // rewritten, so this scans the BUILT output: rewritten imports carry
+  // root-absolute '/...' fallbacks, and esbuild's own code-split imports end
+  // in -[HASH8].js — any other relative literal opening an import(...) is a
+  // missed site. (Specifiers that are pure variables are invisible to any
+  // static scan; the withV/manifest pattern covers those by construction.)
+  {
+    const survivors = [];
+    const dynRelRe = /import\(\s*[`'"]((?:\.\.?\/)[^`'"]*)/g;
+    for (const f of builtJs) {
+      const src = fs.readFileSync(path.join(DIST, f), 'utf8');
+      for (const m of src.matchAll(dynRelRe)) {
+        const spec = m[1];
+        if (/-[A-Z0-9]{8}\.js$/.test(spec.split('?')[0])) continue; // esbuild-emitted hashed output
+        survivors.push(`${f}: import("${spec}…")`);
+      }
+    }
+    if (survivors.length) {
+      fail('dynamic import site(s) survived the rewrite pass unrewritten — each would load a second module instance via the stable-path shims:\n  ' + survivors.join('\n  '));
+    }
+  }
+
   // ── boot-sw.js: separate SELF-CONTAINED IIFE pass ─────────────────────────
   // Classic deferred script loaded by a plain <script> tag: it must have ZERO
   // static imports, so it cannot share the ESM/splitting pipeline (see the

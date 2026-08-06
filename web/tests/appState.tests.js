@@ -460,6 +460,52 @@ export async function runAppStateTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
+    // Review F-001: a full store used to stack a new PERSISTENT warning on
+    // every debounced save. Quota now notifies once per episode, keeps isDirty
+    // set (the data truly wasn't written), and re-arms after a successful save.
+    await test('quota exhaustion notifies once per episode and re-arms on recovery (review F-001)', async () => {
+        resetStateManager();
+        const warnings = [];
+        let failWrites = false;
+        const quotaStorage = {
+            getItem: (k) => localStorage.getItem(k),
+            setItem: (k, v) => {
+                if (failWrites) {
+                    const e = new Error('quota');
+                    e.name = 'QuotaExceededError';
+                    throw e;
+                }
+                localStorage.setItem(k, v);
+            },
+            removeItem: (k) => localStorage.removeItem(k)
+        };
+        const sm = createStateManager({
+            storage: quotaStorage,
+            showNotification: (msg, type) => { if (type === 'warning') warnings.push(msg); }
+        });
+        await sm.init();
+
+        failWrites = true;
+        sm.data.settings.theme = 'quota-test';
+        sm.isDirty = true;
+        sm.save();
+        sm.isDirty = true;
+        sm.save(); // second failing save in the SAME episode
+        if (warnings.length !== 1) throw new Error(`expected 1 quota warning across the episode, got ${warnings.length}`);
+        if (!sm.isDirty) throw new Error('isDirty must stay set — the data was not written');
+
+        failWrites = false;
+        sm.isDirty = true;
+        sm.save(); // store recovered — episode over, notifier re-armed
+
+        failWrites = true;
+        sm.isDirty = true;
+        sm.save(); // NEW episode must notify again
+        if (warnings.length !== 2) throw new Error(`a later quota episode must notify again, got ${warnings.length}`);
+
+        resetStateManager(); // don't leak the throwing storage into later tests
+    });
+
     await test('save clears isDirty flag', async () => {
         const stateManager = createStateManager();
         await stateManager.init();

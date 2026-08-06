@@ -588,7 +588,6 @@ export class MenuManager {
 
                     // ✅ Set as active cycle using the title as key
                     state.appState.activeCycleId = finalCycleName;
-                    state.metadata.lastModified = Date.now();
                     state.metadata.totalCyclesCreated++;
 
                 }, true); // immediate save

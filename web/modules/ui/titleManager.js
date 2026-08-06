@@ -193,7 +193,6 @@ async function handleMiniCycleTitleBlur() {
             state.appState.activeCycleId = finalTitle;
         }
 
-        state.metadata.lastModified = Date.now();
     }, false); // deferred save - don't block UI
 
     // ✅ Schedule idle-time save for durability

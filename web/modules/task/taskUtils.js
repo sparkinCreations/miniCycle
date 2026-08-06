@@ -348,7 +348,6 @@ export class TaskUtils {
                             if (!cycle.recurringTemplates) cycle.recurringTemplates = {};
                             cycle.recurringTemplates[assignedTaskId] = templateData;
                         }
-                        state.metadata.lastModified = Date.now();
                     }, true); // immediate save - required for stats panel to read correct data
                 } else if (saveTaskToSchema25) {
                     // Legacy fallback (AppState unavailable — early boot/tests):

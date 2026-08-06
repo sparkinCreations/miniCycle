@@ -105,7 +105,7 @@ export const AppGlobalState = {
 
   // Undo/redo state
   isResetting: false,
-  isSystemMutation: false,     // Block snapshots during system-driven mutations (e.g. recurring watcher recreations)
+  isSystemMutation: false,     // Legacy/test fallback: captureStateSnapshot honors it, but system mutations now pass { system: true } through AppState.update instead (review F-005)
   undoSnapshot: null,
   redoSnapshot: null,
   activeUndoStack: [],      // Per-cycle undo stack

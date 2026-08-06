@@ -98,6 +98,11 @@ class MiniCycleState {
         this.version = mergedDeps.AppMeta?.version;
         this.isInitialized = false; // ✅ Add this flag
         this._initPromise = null; // ✅ FIX #1: Track in-flight initialization
+        // One notification per quota episode: without this, every debounced
+        // save during a full-store episode stacks another PERSISTENT warning
+        // while the user keeps working (review F-001). Reset on successful
+        // save so a later episode notifies again.
+        this._quotaNotified = false;
         this._savingIndicatorTimeout = null; // For hiding indicator after save
         this._persistenceListenersRegistered = false; // Guard against duplicate global listeners on re-init
         // Per-tab identity for concurrent-modification detection: timestamps alone
@@ -116,6 +121,31 @@ class MiniCycleState {
             }
             indicator.classList.add(DOM_CLASSES.VISIBLE);
         }
+    }
+
+    // Quota-exceeded handling for save(): returns true when the error was a
+    // quota error and has been handled (caller should stop, NOT rethrow).
+    // isDirty and saveTimeout deliberately stay set — the data was NOT
+    // written, and retrying into a full store won't succeed on its own; the
+    // label directs the user to export a backup and free space. Notifies once
+    // per episode (review F-001: every debounced save used to stack another
+    // PERSISTENT warning); save() re-arms the notifier on the next success.
+    _handleQuotaError(storageError) {
+        const isQuota = storageError?.name === 'QuotaExceededError' ||
+            storageError?.code === 22 ||
+            storageError?.code === 1014;
+        if (!isQuota) return false;
+        console.warn('⚠️ localStorage quota exceeded — continuing with in-memory state', storageError);
+        if (!this._quotaNotified) {
+            this._quotaNotified = true;
+            this.deps.showNotification(
+                getLabel('notify.storageFull'),
+                'warning',
+                UI_TIMEOUTS.NOTIFICATION_PERSISTENT
+            );
+        }
+        this._hideSavingIndicator();
+        return true;
     }
 
     // ✅ Hide saving indicator with brief delay (so it's visible even on fast saves)
@@ -717,22 +747,12 @@ class MiniCycleState {
             try {
                 this.deps.storage.setItem(STORAGE_KEYS.DATA, JSON.stringify(this.data));
             } catch (storageError) {
-                if (storageError?.name === 'QuotaExceededError' ||
-                    storageError?.code === 22 ||
-                    storageError?.code === 1014) {
-                    console.warn('⚠️ localStorage quota exceeded — continuing with in-memory state', storageError);
-                    this.deps.showNotification(
-                        getLabel('notify.storageFull'),
-                        'warning',
-                        UI_TIMEOUTS.NOTIFICATION_PERSISTENT
-                    );
-                    this._hideSavingIndicator();
-                    return;
-                }
+                if (this._handleQuotaError(storageError)) return;
                 throw storageError;
             }
             this.isDirty = false;
             this.saveTimeout = null;
+            this._quotaNotified = false; // store writable again — next episode re-notifies
 
             this._hideSavingIndicator();
         } catch (error) {
