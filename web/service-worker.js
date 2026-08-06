@@ -161,6 +161,7 @@ var BOOT_CRITICAL = [
   './modules/utils/nameUtils.js',
   './modules/utils/storageUtils.js',
   './modules/utils/keyboardNav.js',
+  './modules/utils/styleValidators.js',
   // Task modules - ALL task functionality
   './modules/task/taskCore.js',
   './modules/task/taskDOM.js',
