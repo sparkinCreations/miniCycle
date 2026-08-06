@@ -72,7 +72,11 @@ if (total > CEILING) {
 }
 
 if (total < CEILING) {
-  console.log(`✂️  Count dropped below the ceiling — lower CEILING to ${total} in scripts/validate-legacy-reads.js to lock in the progress.`);
+  // Failing here too makes the ratchet one-way: a pass at 171 with the
+  // ceiling still at 172 would let a later change quietly restore a legacy
+  // reference. Lowering CEILING in the same commit locks the progress in.
+  console.error(`✂️  Count dropped below the ceiling — lower CEILING to ${total} in scripts/validate-legacy-reads.js in this same change to lock in the progress.`);
+  process.exit(1);
 }
 
 console.log('✅ legacy-read gate passed');
