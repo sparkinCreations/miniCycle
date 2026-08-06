@@ -1235,7 +1235,11 @@
                     </div>
                     <div id="every-row">
                         <label for="frequencyValue">Every:</label>
-                        <input type="number" id="frequencyValue" name="frequencyValue" min="1" value="1" />
+                        <!-- max=365 is UX guidance only (the largest sensible "every N"
+                             for any unit); the real protection against long intervals is
+                             the setTimeout clamp in reminders.js scheduleNextReminder,
+                             which also covers values restored from saved state. -->
+                        <input type="number" id="frequencyValue" name="frequencyValue" min="1" max="365" value="1" />
                         <select id="frequencyUnit" aria-label="Frequency unit">
                             <option value="minutes">Minutes</option>
                             <option value="hours">Hours</option>

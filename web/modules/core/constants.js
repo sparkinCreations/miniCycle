@@ -235,6 +235,7 @@ export const FREQUENCY_MS = Object.freeze({
  * @constant {Object}
  */
 export const LIMITS = Object.freeze({
+    MAX_TIMEOUT_MS: 2147483647,    // Largest setTimeout delay (~24.8 days). Above this the delay overflows a signed 32-bit int and the timer fires IMMEDIATELY — clamp and re-arm for anything longer (reminders.js scheduleNextReminder)
     UNDO_STACK: 20,                // Max items in undo/redo stack
     UNDO_CACHE_MAX_BYTES: 1000000, // Byte cap on the localStorage undo cache (~1MB of the ~5MB quota shared with main state); oldest snapshots shed first. REAL bytes: consumers compare string length × 2 (UTF-16), matching storageUtils' quota metering
     TASKS_PER_CYCLE: 150,          // Max tasks per cycle/routine
