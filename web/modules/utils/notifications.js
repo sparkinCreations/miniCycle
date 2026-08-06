@@ -1230,7 +1230,7 @@ async setDefaultPosition(notificationContainer) {
         ${taskText ? `<div class="recurring-task-name">"${escapedTaskText}"</div>` : ''}
 
         <span id="${escape(DOM_IDS.notificationCurrentSettings(assignedTaskId))}">
-          🔁 ${getLabel('notify.recurringStatus', { vars: { frequency: '<strong>' + frequency + '</strong>', pattern } })}
+          🔁 ${getLabel('notify.recurringStatus', { vars: { frequency: '<strong>' + escape(frequency) + '</strong>', pattern: escape(pattern) } })}
         </span><br>
 
         <button class="show-quick-actions"

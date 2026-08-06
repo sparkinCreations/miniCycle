@@ -814,6 +814,24 @@ export async function runNotificationsTests(resultsDiv) {
         }
     });
 
+    // Security (notifications-review): the status line renders frequency into
+    // HTML (rendered { trusted: true }), so a hostile frequency that survived
+    // normalization must still be escaped at the sink — defense in depth.
+    await test('createRecurringNotificationWithTip() escapes a hostile frequency', () => {
+        const notifications = new window.MiniCycleNotifications();
+        const html = notifications.createRecurringNotificationWithTip(
+            'task-123',
+            '<img src=x onerror=alert(1)>',
+            'indefinitely'
+        );
+        if (html.includes('<img src=x onerror=alert(1)>')) {
+            throw new Error('raw <img> payload reached the notification HTML — frequency not escaped at the sink');
+        }
+        if (!html.includes('&lt;img')) {
+            throw new Error('escaped frequency should appear as an HTML entity');
+        }
+    });
+
     // Summary
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;
