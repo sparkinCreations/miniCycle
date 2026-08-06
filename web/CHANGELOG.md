@@ -1,3 +1,15 @@
+## [2.379] - 2026-08-06
+- fix(recurring): filter every selection array at the normalizer
+- chore(release): update version to 2.378
+- fix(recurring): allowlist imported weekOfMonth ordinal/day at the normalizer
+- refactor(modal): extract createModalSettler; adopt single-settle in choice and prompt modals
+- chore(release): update version to 2.377
+- fix(modal): single-settle contract for confirmation modal; disposer registry kills armed-Enter leak
+- docs: capture Aug 2026 review fault lines; drop dead namespace validator
+- chore: untrack Lighthouse CI artifacts and gitignore them
+- ci(lighthouse): grade the built dist, not the dev tree
+
+
 ## [2.378] - 2026-08-06
 - fix(recurring): allowlist imported weekOfMonth ordinal/day at the normalizer
 - refactor(modal): extract createModalSettler; adopt single-settle in choice and prompt modals
