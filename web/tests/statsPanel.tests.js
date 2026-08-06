@@ -256,18 +256,32 @@ export async function runStatsPanelTests(resultsDiv) {
     // writes the counters — which is why the old "handles zero tasks" test passed
     // trivially (the DOM kept its initial 0 / 0% regardless of the math).
 
-    await test('counts tasks and computes completion rate from the task DOM', async () => {
-        // Make the module see an AppState so updateStatsPanel runs its math path.
-        setStatsPanelDependencies({ AppState: window.AppState });
+    // Task counts must come from STATE, not the DOM (features-review finding:
+    // the old DOM-count path saw only rendered tasks and its TTL cache was
+    // never invalidated externally). State says 4 tasks / 3 completed while
+    // the DOM is left EMPTY — if the numbers land, they came from state.
+    const statsMockState = (tasks) => ({
+        data: { cycles: { c1: { tasks, cycleCount: 0, deleteCheckedTasks: false } } },
+        appState: { activeCycleId: 'c1' },
+        userProgress: { cyclesCompleted: 0, totalTasksCompleted: 0 },
+        settings: {}
+    });
+    const statsMockAppState = (tasks) => ({
+        isReady: () => true,
+        get: () => statsMockState(tasks),
+        update: () => {}
+    });
+
+    await test('counts tasks and computes completion rate from STATE (DOM empty)', async () => {
+        setStatsPanelDependencies({ AppState: statsMockAppState([
+            { id: 't1', text: 'a', completed: true },
+            { id: 't2', text: 'b', completed: true },
+            { id: 't3', text: 'c', completed: true },
+            { id: 't4', text: 'd', completed: false }
+        ]) });
         try {
             const taskList = document.getElementById('taskList');
-            // 4 tasks, 3 checked → getCachedTaskStats reads document '.task' / '.task input:checked'.
-            taskList.innerHTML = `
-                <div class="task"><input type="checkbox" checked></div>
-                <div class="task"><input type="checkbox" checked></div>
-                <div class="task"><input type="checkbox" checked></div>
-                <div class="task"><input type="checkbox"></div>
-            `;
+            taskList.innerHTML = ''; // deliberately empty — DOM must be ignored
 
             const statsPanel = new StatsPanelManager();  // caches deps incl. injected AppState
             await statsPanel.updateStatsPanel();
@@ -276,8 +290,8 @@ export async function runStatsPanelTests(resultsDiv) {
             const completed = document.getElementById('completed-tasks').textContent;
             const rate = document.getElementById('completion-rate').textContent;
 
-            if (total !== '4') throw new Error(`total-tasks should be 4, got "${total}"`);
-            if (completed !== '3') throw new Error(`completed-tasks should be 3, got "${completed}"`);
+            if (total !== '4') throw new Error(`total-tasks should be 4 (from state), got "${total}"`);
+            if (completed !== '3') throw new Error(`completed-tasks should be 3 (from state), got "${completed}"`);
             // Source: ((completed/total)*100).toFixed(1) + "%" → 75.0%
             if (rate !== '75.0%') throw new Error(`completion-rate should be 75.0%, got "${rate}"`);
         } finally {
@@ -286,7 +300,7 @@ export async function runStatsPanelTests(resultsDiv) {
     });
 
     await test('handles zero tasks gracefully (real 0% branch)', async () => {
-        setStatsPanelDependencies({ AppState: window.AppState });
+        setStatsPanelDependencies({ AppState: statsMockAppState([]) });
         try {
             const taskList = document.getElementById('taskList');
             taskList.innerHTML = '';

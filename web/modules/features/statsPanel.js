@@ -26,7 +26,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { GESTURE, UI_TIMEOUTS, CHART, INTERVALS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION } from '../core/constants.js';
+import { GESTURE, UI_TIMEOUTS, CHART, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION } from '../core/constants.js';
 import { getLabel, getIcon } from '../labels/labelResolver.js';
 import { recordActionUsage } from '../ui/actionUsage.js';
 // Pure utility class (no side effects/module state) — safe static import.
@@ -137,8 +137,6 @@ export class StatsPanelManager {
         this._pendingTimers = [];
 
         // Task stats cache (performance optimization)
-        this._taskStatsCache = null;
-        this._taskStatsCacheTime = 0;
 
         // Event handler bindings (for proper removal)
         this.boundHandlers = {};
@@ -634,10 +632,6 @@ export class StatsPanelManager {
      */
     async updateStatsPanel() {
 
-        // ✅ Always invalidate cache when explicitly updating stats
-        // This fixes stale data when tasks are moved between lists (completed dropdown)
-        this.invalidateTaskStatsCache();
-
         // ✅ Wait for core systems (AppState + data) to be ready - DI-pure
         const appInitModule = this.dependencies.appInit;
         if (appInitModule?.waitForCore) {
@@ -660,12 +654,6 @@ export class StatsPanelManager {
             MILESTONES = constantsMod.MILESTONES;
         }
 
-        // Calculate current stats (using cached DOM queries for performance)
-        const taskStats = this.getCachedTaskStats();
-        const totalTasks = taskStats.total;
-        const completedTasks = taskStats.completed;
-        const taskCompletionRate = totalTasks > 0 ? ((completedTasks / totalTasks) * 100).toFixed(1) + "%" : "0%";
-
         let perCycleCount = 0;
         let globalCyclesCompleted = 0;
         let globalTasksCleared = 0;
@@ -687,6 +675,15 @@ export class StatsPanelManager {
             // ✅ Get global tasks cleared (in To-Do mode) across all routines
             globalTasksCleared = userProgress?.totalTasksCompleted || 0;
         }
+
+        // Task counts come from STATE, not the DOM. The DOM held only the
+        // active routine's currently rendered tasks (silently wrong counts
+        // mid-render or when filtered), and its TTL cache was invalidated
+        // only from inside this module (features-review finding, Aug 2026).
+        const stateTasks = Array.isArray(activeCycleData?.tasks) ? activeCycleData.tasks : [];
+        const totalTasks = stateTasks.length;
+        const completedTasks = stateTasks.filter(t => t?.completed === true).length;
+        const taskCompletionRate = totalTasks > 0 ? ((completedTasks / totalTasks) * 100).toFixed(1) + "%" : "0%";
 
         // ✅ Detect mode: deleteCheckedTasks = true means To-Do mode
         const isToDoMode = activeCycleData?.deleteCheckedTasks === true;
@@ -841,7 +838,6 @@ export class StatsPanelManager {
      * Announce view changes for screen readers
      */
     handleTaskListChange() {
-        this.invalidateTaskStatsCache();
         this.updateStatsPanel();
     }
 
@@ -849,9 +845,8 @@ export class StatsPanelManager {
      * Handle add task button clicks
      */
     handleAddTaskClick() {
-        // Small delay to allow DOM to update
+        // Small delay so the add-task flow's state update lands first
         this._pendingTimers.push(setTimeout(() => {
-            this.invalidateTaskStatsCache();
             this.updateStatsPanel();
         }, UI_TIMEOUTS.STATS_UPDATE_DELAY));
     }
@@ -1091,35 +1086,6 @@ export class StatsPanelManager {
     // ==========================================
     // 🛠️ UTILITY METHODS
     // ==========================================
-
-    /**
-     * Get cached task statistics (avoids repeated DOM queries)
-     * Cache invalidates after 5 seconds or when manually invalidated
-     * @returns {{ total: number, completed: number }}
-     */
-    getCachedTaskStats() {
-        const now = Date.now();
-        const CACHE_TTL = INTERVALS.STATS_CACHE_TTL; // 5 seconds
-
-        if (!this._taskStatsCache || this._taskStatsCacheTime < now - CACHE_TTL) {
-            const tasks = _deps.querySelectorAll(DOM_SELECTORS.TASK);
-            const checked = _deps.querySelectorAll(DOM_SELECTORS.TASK_INPUT_CHECKED);
-            this._taskStatsCache = {
-                total: tasks.length,
-                completed: checked.length
-            };
-            this._taskStatsCacheTime = now;
-        }
-
-        return this._taskStatsCache;
-    }
-
-    /**
-     * Invalidate task stats cache (call when tasks are modified)
-     */
-    invalidateTaskStatsCache() {
-        this._taskStatsCacheTime = 0;
-    }
 
     /**
      * Get current state

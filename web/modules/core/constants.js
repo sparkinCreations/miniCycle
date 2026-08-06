@@ -209,7 +209,6 @@ export const DEBOUNCE = Object.freeze({
 export const INTERVALS = Object.freeze({
     RECURRING_WATCHER: 15000,           // 15s - Recurring task watcher check interval (active)
     RECURRING_WATCHER_IDLE: 7200000,    // 2h - Recurring watcher interval when no templates exist
-    STATS_CACHE_TTL: 5000,              // 5s - Task stats cache time-to-live
     BACKUP_DAILY: 86400000,             // 24h - Default daily auto-backup interval
     BACKUP_SESSION_MIN: 300000,         // 5min - Minimum gap between auto-backups within a single session
     BACKUP_TEST_MIN: 300000             // 5min - Minimum gap before re-running backup integrity tests
