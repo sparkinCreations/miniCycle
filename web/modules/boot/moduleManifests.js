@@ -329,7 +329,7 @@ export const MODULE_MANIFESTS = {
         path: '../task/dailyResetManager.js',
         phase: PHASES.RECURRING,
         requires: ['AppState', 'showNotification'],
-        optionalDeps: ['safeAddEventListener', 'loadMiniCycle', 'AppGlobalState'],
+        optionalDeps: ['safeAddEventListener', 'loadMiniCycle'],
         provides: ['dailyResetManager'],
         provideInstance: 'dailyResetManager',
         api: 'task',

@@ -33,7 +33,6 @@ import { getIcon, getLabel } from '../labels/labelResolver.js';
 const di = createDIModule('RecurringWatcher', {
     appInit: optional(null),
     AppState: optional(null),
-    AppGlobalState: optional(null),  // For undo suppression during system recreations (§1.2)
     updateAppState: optional(null),
     showNotification: optional(null),
     refreshUIFromState: optional(null),
@@ -76,27 +75,21 @@ function assertInjected(name, value) {
  *
  * Recurring recreations (and wake-time catch-up) are SYSTEM actions, not user
  * actions. The undo wrapper snapshots every AppState.update during normal operation;
- * to keep these out of the undo stack we raise AppGlobalState.isSystemMutation for the
- * duration of the commit — captureStateSnapshot() skips capture while it is set.
+ * passing { system: true } tells the wrapper to skip the snapshot for THIS call.
  * Without it, a user's next Undo removes the system-created task, which then silently
  * reappears on the next tick. See docs/future-work/ARCHITECTURE REVIEW FINDINGS.md §1.2.
  *
- * Falls back to a plain update if AppGlobalState wasn't injected (no suppression, but
- * never breaks the commit) — preserves the prior flag value for safe re-entrancy.
+ * The intent travels with the call rather than via the shared
+ * AppGlobalState.isSystemMutation flag — the flag guarded an await window, so a
+ * user update interleaving mid-commit was mis-tagged as system and silently lost
+ * its undo snapshot (review F-005).
  *
  * @param {Function} producer - AppState update producer
  * @param {boolean} immediate - Immediate-save flag passed through to updateAppState
  * @returns {Promise<*>}
  */
 async function commitSystemUpdate(producer, immediate) {
-    const gs = Deps.AppGlobalState;
-    const prev = gs ? gs.isSystemMutation : undefined;
-    if (gs) gs.isSystemMutation = true;
-    try {
-        return await Deps.updateAppState(producer, immediate);
-    } finally {
-        if (gs) gs.isSystemMutation = prev === true;
-    }
+    return await Deps.updateAppState(producer, immediate, { system: true });
 }
 
 // ============================================================================

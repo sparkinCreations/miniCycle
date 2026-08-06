@@ -37,7 +37,6 @@ const di = createDIModule('DailyResetManager', {
     showNotification: required(),
     safeAddEventListener: optional(null),
     loadMiniCycle: optional(null),
-    AppGlobalState: optional(null),  // System-mutation flag: keeps background fires out of undo
     getElementById: optional((id) => document.getElementById(id)),
     getBody: optional(() => document.body)
 });
@@ -111,24 +110,20 @@ export class DailyResetManager {
 
     /**
      * State write for BACKGROUND fires — same pattern as the recurring
-     * watcher's commitSystemUpdate (§1.2): raises AppGlobalState.isSystemMutation
-     * around the update so undo snapshots skip it. Plain update() here put
+     * watcher's commitSystemUpdate (§1.2): passes { system: true } so the undo
+     * wrapper skips the snapshot for this call. Plain update() here put
      * scheduled unchecks into the undo stack — Undo after a daily fire
      * re-checked the system-cleared tasks. User-initiated settings writes
      * (setEnabled/setTime) stay on plain update() deliberately.
+     * (Intent travels with the call, not via the shared isSystemMutation
+     * flag — the flag guarded an await window and could mis-tag an
+     * interleaving user update; review F-005.)
      * @param {Function} producer - AppState update producer
      * @param {boolean} [immediate] - Immediate-save flag
      * @returns {Promise<*>}
      */
     async _commitSystemUpdate(producer, immediate) {
-        const gs = this.deps.AppGlobalState;
-        const prev = gs ? gs.isSystemMutation : undefined;
-        if (gs) gs.isSystemMutation = true;
-        try {
-            return await this.deps.AppState.update(producer, immediate);
-        } finally {
-            if (gs) gs.isSystemMutation = prev === true;
-        }
+        return await this.deps.AppState.update(producer, immediate, { system: true });
     }
 
     get deps() {
@@ -184,8 +179,11 @@ export class DailyResetManager {
      * Iterate every cycle in state, fire reset for any whose configured
      * trigger time has passed today and hasn't fired yet today.
      * Atomic: state mutations all happen in one AppState.update producer.
+     * Async so the commit is awaited before post-update side effects run
+     * (UI refresh + toasts must see committed state); callers (ticker,
+     * init, wake) remain fire-and-forget.
      */
-    checkAllRoutines() {
+    async checkAllRoutines() {
         const state = this.deps.AppState?.get?.();
         if (!state?.data?.cycles) return;
 
@@ -213,18 +211,24 @@ export class DailyResetManager {
         // For the active cycle we clear pendingNotification immediately AND show
         // the toast (user is watching). For inactive cycles we set the flag and
         // defer the toast to the next view trigger.
-        this._commitSystemUpdate(s => {
-            for (const { cycleId, isActive } of fired) {
-                const cycle = s.data.cycles[cycleId];
-                if (!cycle) continue;
-                if (Array.isArray(cycle.tasks)) {
-                    cycle.tasks.forEach(t => { t.completed = false; });
+        try {
+            await this._commitSystemUpdate(s => {
+                for (const { cycleId, isActive } of fired) {
+                    const cycle = s.data.cycles[cycleId];
+                    if (!cycle) continue;
+                    if (Array.isArray(cycle.tasks)) {
+                        cycle.tasks.forEach(t => { t.completed = false; });
+                    }
+                    cycle.autoUncheckDaily = cycle.autoUncheckDaily || {};
+                    cycle.autoUncheckDaily.lastResetDate = today;
+                    cycle.autoUncheckDaily.pendingNotification = !isActive;
                 }
-                cycle.autoUncheckDaily = cycle.autoUncheckDaily || {};
-                cycle.autoUncheckDaily.lastResetDate = today;
-                cycle.autoUncheckDaily.pendingNotification = !isActive;
-            }
-        }, true);
+            }, true);
+        } catch (e) {
+            // Commit failed — nothing was unchecked, so don't refresh or toast.
+            console.error('❌ Daily auto-uncheck commit failed:', e);
+            return;
+        }
 
         // Post-update side effects: refresh DOM for active cycle, notify if active.
         for (const { name, hour, minute, isActive } of fired) {

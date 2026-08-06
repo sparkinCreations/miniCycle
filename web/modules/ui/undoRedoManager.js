@@ -459,10 +459,18 @@ export function wrapAppStateForUndo(appInit) {
       : null;
 
     // Not async - snapshot capture is synchronous, just pass through the Promise
-    AppState.update = (producer, immediate) => {
+    AppState.update = (producer, immediate, options) => {
       try {
+        // System-driven mutations (recurring watcher recreations, daily
+        // auto-uncheck) pass { system: true } so the no-snapshot intent
+        // travels WITH the call. The older mechanism — raising the shared
+        // AppGlobalState.isSystemMutation flag around an awaited update —
+        // could mis-tag a user update that interleaved during the await
+        // window (review F-005); captureStateSnapshot still honors the flag
+        // as a fallback, but the option is the primary mechanism.
+        const isSystemCall = options?.system === true;
         // Capture snapshot before update (if core ready and not during undo/redo)
-        if (appInit?.isCoreReady?.() && !globalState?.isPerformingUndoRedo && boundGet) {
+        if (!isSystemCall && appInit?.isCoreReady?.() && !globalState?.isPerformingUndoRedo && boundGet) {
           const prev = boundGet();
           if (prev) {
             captureStateSnapshot(prev);
@@ -572,6 +580,10 @@ export function captureStateSnapshot(state) {
   // puts a system-created task at the top of the undo stack, so the user's next Undo
   // removes the recurring task (which then silently reappears on the next tick).
   // See docs/future-work/ARCHITECTURE REVIEW FINDINGS.md §1.2.
+  // NOTE: the primary mechanism is now the { system: true } option on
+  // AppState.update, checked in the wrapper before this function is even
+  // called; this ambient-flag check remains as a fallback for direct callers
+  // and tests (review F-005).
   if (_deps.AppGlobalState.isSystemMutation) {
     return;
   }

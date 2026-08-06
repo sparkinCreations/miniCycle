@@ -168,21 +168,20 @@ export async function runRecurringWatcherTests(resultsDiv) {
         eq(r.added, 1, 'exactly one task for many misses');
     });
 
-    // Regression — ARCH REVIEW FINDINGS §1.2: the watcher must commit recreations as a
-    // SYSTEM mutation so they never land in undo history. Verify it raises
-    // AppGlobalState.isSystemMutation during the commit and clears it afterward (the undo
-    // wrapper's captureStateSnapshot skips capture while that flag is set).
-    await test('catchUp raises/clears isSystemMutation around its commit (review 1.2)', async () => {
-        const AppGlobalState = { isSystemMutation: false };
-        let flagDuringUpdate = null;
+    // Regression — ARCH REVIEW FINDINGS §1.2 + review F-005: the watcher must commit
+    // recreations as a SYSTEM mutation so they never land in undo history. The intent
+    // travels WITH the call as { system: true } (the undo wrapper skips its snapshot
+    // for that call), replacing the shared isSystemMutation flag — which guarded an
+    // await window and could mis-tag an interleaving user update.
+    await test('catchUp passes system:true through its commit (review 1.2 / F-005)', async () => {
         let updateCalled = false;
+        let optionsSeen = null;
         const as = cycleState({ t1: dueTemplate('t1') }, []);
         mod.setRecurringWatcherDependencies(makeDeps({
             AppState: as,
-            AppGlobalState,
-            updateAppState: async (producer) => {
+            updateAppState: async (producer, immediate, options) => {
                 updateCalled = true;
-                flagDuringUpdate = AppGlobalState.isSystemMutation; // must be TRUE mid-commit
+                optionsSeen = options;
                 return as.update(producer, true);
             }
         }));
@@ -191,8 +190,7 @@ export async function runRecurringWatcherTests(resultsDiv) {
 
         eq(r.added, 1, 'a recreation occurred');
         if (!updateCalled) throw new Error('expected the watcher to commit via updateAppState');
-        if (flagDuringUpdate !== true) throw new Error('isSystemMutation must be TRUE during the watcher commit');
-        if (AppGlobalState.isSystemMutation !== false) throw new Error('isSystemMutation must be cleared after the commit');
+        if (optionsSeen?.system !== true) throw new Error('commit must carry { system: true } so the undo wrapper skips its snapshot');
     });
 
     // ── Count enforcement ─────────────────────────────────────────────────────
