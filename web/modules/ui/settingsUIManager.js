@@ -19,8 +19,9 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, UI_TIMEOUTS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, UI_TIMEOUTS, FONT_SIZE } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { isValidHex, normalizeFontSize } from '../utils/styleValidators.js';
 import { loadPanelVisibility } from './panelVisibilityHelpers.js';
 import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
 import { isClickOnNotification } from './modalUtils.js';
@@ -1207,10 +1208,14 @@ export function setupFontSizeSelect() {
     if (!select) return;
 
     const schemaData = _deps.loadMiniCycleData?.();
-    const savedSize = schemaData?.settings?.fontSize || '16';
+    const savedSize = schemaData?.settings?.fontSize || String(FONT_SIZE.DEFAULT_PX);
     select.value = savedSize;
-    if (savedSize !== '16') {
-        document.documentElement.style.setProperty('--font-size-base', `${savedSize}px`);
+    // Validate before it reaches setProperty — settings.fontSize is a plain
+    // string in state, and this reads it back rather than reading the <select>.
+    // Only a non-default size gets an inline override (see routineLoader).
+    const size = normalizeFontSize(savedSize);
+    if (size !== null && size !== FONT_SIZE.DEFAULT_PX) {
+        document.documentElement.style.setProperty('--font-size-base', `${size}px`);
     }
 
     select._changeHandler = async () => {
@@ -1225,14 +1230,14 @@ export function setupFontSizeSelect() {
         } else {
             console.error('AppState not ready - setting not saved');
             _deps.showNotification?.(getLabel('notify.settingSaveFailed'), 'error');
-            select.value = '16';
+            select.value = String(FONT_SIZE.DEFAULT_PX);
             return;
         }
 
         // Selecting "16" (Default) must hand control back to the stylesheet, not
         // pin an inline 16px — otherwise the max-width:480px media query (17px on
         // phones) can never apply once the user has touched this control.
-        if (size !== '16') {
+        if (size !== String(FONT_SIZE.DEFAULT_PX)) {
             document.documentElement.style.setProperty('--font-size-base', `${size}px`);
         } else {
             document.documentElement.style.removeProperty('--font-size-base');
@@ -1305,9 +1310,11 @@ export function applyPriorityColor() {
     const schemaData = _deps.loadMiniCycleData?.();
     if (!schemaData) return;
 
-    // 1. Global default
+    // 1. Global default — validated here rather than trusted from upstream.
+    // The per-task copy is hex-checked on import (cycleImportManager) and again
+    // in historyManager; this global copy was checked nowhere.
     const globalColor = schemaData.settings?.priorityColor;
-    if (globalColor) {
+    if (isValidHex(globalColor)) {
         document.documentElement.style.setProperty('--priority-color', globalColor);
     }
 

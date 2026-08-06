@@ -55,6 +55,42 @@ export async function runRecurringDateUtilsTests(resultsDiv) {
             throw new Error('Should be midnight local');
         }
     });
+    await test('returns null for non-strings without hitting the catch', () => {
+        // Non-strings always resolved to null, but used to do so by throwing
+        // inside the try and logging a stack trace. The type guard must handle
+        // them before the try — so assert on console.error, not just the
+        // return value (a null-only check passes with the guard deleted).
+        const originalError = console.error;
+        let errorCalls = 0;
+        console.error = () => { errorCalls++; };
+        try {
+            for (const bad of [null, undefined, 0, 20260315, {}, [], true]) {
+                const result = parseDateAsLocal(bad);
+                if (result !== null) {
+                    throw new Error(`Expected null for ${JSON.stringify(bad)}, got ${result}`);
+                }
+            }
+        } finally {
+            console.error = originalError;
+        }
+        if (errorCalls !== 0) {
+            throw new Error(`Non-strings should not log; console.error called ${errorCalls}x`);
+        }
+    });
+    await test('still returns null and logs for unparsable strings', () => {
+        // The guard must not swallow the existing invalid-string path.
+        const originalError = console.error;
+        let errorCalls = 0;
+        console.error = () => { errorCalls++; };
+        let result;
+        try {
+            result = parseDateAsLocal('not-a-date');
+        } finally {
+            console.error = originalError;
+        }
+        if (result !== null) throw new Error(`Expected null, got ${result}`);
+        if (errorCalls === 0) throw new Error('Invalid date string should still log');
+    });
 
     // ============================================
     resultsDiv.innerHTML += '<h4 class="test-section">📆 getDaysInMonth</h4>';

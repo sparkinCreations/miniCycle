@@ -13,14 +13,14 @@
 
 | Metric | Value |
 |--------|-------|
-| **App Version** | 2.381 |
+| **App Version** | 2.384 |
 | **Lite Version** | 2.092 (frozen) |
 | **Schema Version** | 2.5 |
-| **Total Modules** | 136 |
-| **Total Tests** | 3213 |
+| **Total Modules** | 137 |
+| **Total Tests** | 3234 |
 | **Test Pass Rate** | 100% |
 | **CSS Files** | 44 |
-| **JSDoc Blocks** | 1324 |
+| **JSDoc Blocks** | 1328 |
 | **Documentation Files** | 238 |
 | **DI Completion** | 100% |
 | **Custom window.* Globals (modules)** | 0 |
@@ -40,13 +40,13 @@
 | `recurring/` | 16 | Recurring task scheduling, panel, activation |
 | `ui/` | 37 | Modals, menus, settings, onboarding, gestures |
 | `features/` | 11 | Themes, stats, achievements, history, reminders |
-| `utils/` | 19 | Notifications, device detection, utilities |
+| `utils/` | 20 | Notifications, device detection, utilities |
 | `labels/` | 3 | Default labels + label resolver |
 | `storage/` | 2 | Backup manager (IndexedDB), storage persistence (eviction protection) |
 | `progress/` | 1 | Cycle completion tracking |
 | `testing/` | 9 | Test infrastructure |
 | `other/` | 3 | Plugins, experimental |
-| **Total** | **136** | |
+| **Total** | **137** | |
 
 ---
 
@@ -67,8 +67,8 @@
 
 | Category | Tests |
 |----------|-------|
-| Total Tests | 3213 |
-| Test Files | 128 |
+| Total Tests | 3234 |
+| Test Files | 129 |
 | Pass Rate | 100% |
 | Platforms Tested | Mac, iPad, iPhone |
 

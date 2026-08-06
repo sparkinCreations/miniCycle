@@ -21,6 +21,7 @@ import { getLabel } from '../labels/labelResolver.js';
 // matcher's concern is memo-cache identity shared with recurringCore, which
 // import doesn't need; the cost is one duplicate cache, nothing behavioral.
 import { normalizeRecurringSettings } from '../recurring/recurringSettings.js';
+import { isValidHex } from '../utils/styleValidators.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -596,8 +597,7 @@ export async function processImportedData(fileContent) {
         // unvalidated (rendering "Invalid Date"), and priorityColor passed
         // through unnormalized in this path while history entries validate it.
         const highPriority = task.highPriority === true;
-        const validColor = (typeof task.priorityColor === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(task.priorityColor))
-            ? task.priorityColor : null;
+        const validColor = isValidHex(task.priorityColor) ? task.priorityColor : null;
         const taskData = {
             id: (typeof task.id === 'string' && SAFE_IMPORTED_TASK_ID.test(task.id))
                 ? task.id

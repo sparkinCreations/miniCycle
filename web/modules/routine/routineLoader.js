@@ -18,8 +18,9 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS, COLORS, DOM_IDS, DOM_CLASSES } from '../core/constants.js';
+import { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS, COLORS, DOM_IDS, DOM_CLASSES, FONT_SIZE } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { normalizeFontSize } from '../utils/styleValidators.js';
 // NOTE: taskToAddTaskOptions injected via DI to avoid duplicate module loading
 
 // ============================================================================
@@ -428,8 +429,11 @@ function applyThemeSettings(settings) {
   // stylesheet (the max-width:480px media query bumps the base to 17px on phones).
   // Unconditionally writing an inline '16px' here — as this did before — beats the
   // media query at every specificity and killed any CSS-level responsive default.
-  if (settings.fontSize && settings.fontSize !== '16') {
-    document.documentElement.style.setProperty('--font-size-base', `${settings.fontSize}px`);
+  // Validated before it reaches setProperty: settings.fontSize is a plain
+  // stored string, and this applies it on every routine load.
+  const fontSize = normalizeFontSize(settings.fontSize);
+  if (fontSize !== null && fontSize !== FONT_SIZE.DEFAULT_PX) {
+    document.documentElement.style.setProperty('--font-size-base', `${fontSize}px`);
   } else {
     document.documentElement.style.removeProperty('--font-size-base');
   }
