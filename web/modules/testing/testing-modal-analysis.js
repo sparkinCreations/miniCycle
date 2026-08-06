@@ -14,6 +14,9 @@ import {
 } from './testing-modal-core.js';
 import { STORAGE_KEYS, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+// Local-midnight parse: date-only dueDates read as UTC midnight counted an
+// extra task as overdue in negative UTC offsets.
+import { parseDateAsLocal } from '../recurring/recurringDateUtils.js';
 
 // ==========================================
 // BUTTON SETUP
@@ -102,7 +105,7 @@ export function runFullAnalysis() {
             if (task.highPriority) highPriorityTasks++;
             if (task.dueDate) {
                 tasksWithDueDates++;
-                if (new Date(task.dueDate) < today) overdueTasks++;
+                if ((parseDateAsLocal(task.dueDate) || new Date(task.dueDate)) < today) overdueTasks++;
             }
             if (task.remindersEnabled) tasksWithReminders++;
             if (task.deleteWhenComplete || task.deleteWhenCompleteSettings?.todo) {

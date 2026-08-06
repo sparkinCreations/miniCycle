@@ -13,6 +13,9 @@ import { COLORS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
 import { isClickOnNotification } from '../ui/modalUtils.js';
+// Local-midnight parse for date-only "YYYY-MM-DD" dueDates — new Date() reads
+// them as UTC midnight, showing the previous day in negative UTC offsets.
+import { parseDateAsLocal } from '../recurring/recurringDateUtils.js';
 
 // ============================================================================
 // CONSTANTS
@@ -724,7 +727,7 @@ export class ClearedTasksManager {
                     ">
                         <span>${dateStr} ${timeStr}</span>
                         ${entry.wasHighPriority ? (() => { const safeColor = /^#[0-9a-fA-F]{3,8}$/.test(entry.priorityColor) ? entry.priorityColor : COLORS.PRIORITY_DEFAULT; return `<span style="color: var(--danger-color, #dc3545); display: inline-flex; align-items: center; gap: 3px;">${getLabel('history.highPriority')} <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${safeColor};vertical-align:middle;" aria-hidden="true"></span></span>`; })() : ''}
-                        ${entry.dueDate ? `<span style="color: var(--color-blue-medium, #3498db);">${getLabel('history.hasDueDate')} ${new Date(entry.dueDate).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>` : ''}
+                        ${entry.dueDate ? `<span style="color: var(--color-blue-medium, #3498db);">${getLabel('history.hasDueDate')} ${(parseDateAsLocal(entry.dueDate) || new Date(entry.dueDate)).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>` : ''}
                         ${entry.remindersEnabled ? `<span style="color: var(--color-orange, #e67e22);">${getLabel('history.hasReminders')}</span>` : ''}
                         ${entry.recurring ? `<span style="color: var(--color-game-primary, #27ae60);">${getLabel('history.isRecurring')}</span>` : ''}
                         ${entry.clearedInMode ? `<span style="color: var(--color-gray-400, #a3a3a3);">${entry.clearedInMode === 'todo' ? getLabel('history.clearedInToDoMode') : getLabel('history.clearedInCycleMode')}</span>` : ''}

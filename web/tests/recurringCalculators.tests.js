@@ -254,6 +254,77 @@ export async function runRecurringCalculatorsTests(resultsDiv) {
         }
     });
 
+    // The rest of the same class as the ordinal-5 case above. Each of these
+    // reached date math unvalidated and degenerated silently; each is now
+    // filtered at the normalizer, so bad members fall through to the SAME
+    // sensible-default branches that empty selections already use.
+    // (Values below are the pre-fix results, measured from Feb 10 2026.)
+    await test('imported out-of-range monthly.days normalizes away, never degenerating to 1st-of-month', async () => {
+        // days:[99] passed isValidDate for no month, so the 24-month scan found
+        // nothing and the fallback fired "1st of next month" — Mar 1 2026.
+        const settingsMod = await import(`../modules/recurring/recurringSettings.js?v=${cacheBuster}`);
+        const normalized = settingsMod.normalizeRecurringSettings({
+            frequency: 'monthly',
+            monthly: { useSpecificDays: true, days: [99] }
+        });
+        if (normalized.monthly.days.includes(99)) {
+            throw new Error('day 99 must be filtered out of monthly.days');
+        }
+        const from = new Date(2026, 1, 10);
+        const next = new Date(calculateNextOccurrence(normalized, from.getTime()));
+        if (next.getMonth() === 2 && next.getDate() === 1) {
+            throw new Error('degenerated to the 1st-of-next-month fallback');
+        }
+        // A valid day is still honoured exactly.
+        const ok = settingsMod.normalizeRecurringSettings({
+            frequency: 'monthly', monthly: { useSpecificDays: true, days: [15] }
+        });
+        const okNext = new Date(calculateNextOccurrence(ok, from.getTime()));
+        if (okNext.getMonth() !== 1 || okNext.getDate() !== 15) {
+            throw new Error(`valid day 15 must still give Feb 15, got ${okNext.toDateString()}`);
+        }
+    });
+
+    await test('imported month 13 normalizes away, never overflowing into the next year', async () => {
+        // yearly.months:[13] built new Date(y, 12, 1) — month index 12 overflows
+        // to January of the FOLLOWING year (Jan 1 2027).
+        const settingsMod = await import(`../modules/recurring/recurringSettings.js?v=${cacheBuster}`);
+        const normalized = settingsMod.normalizeRecurringSettings({
+            frequency: 'yearly',
+            yearly: { months: [13], useSpecificDays: false }
+        });
+        if (normalized.yearly.months.includes(13)) {
+            throw new Error('month 13 must be filtered out of yearly.months');
+        }
+        const from = new Date(2026, 1, 10);
+        const next = new Date(calculateNextOccurrence(normalized, from.getTime()));
+        if (next.getFullYear() === 2027 && next.getMonth() === 0 && next.getDate() === 1) {
+            throw new Error('degenerated to the Jan-1-next-year month overflow');
+        }
+    });
+
+    await test('imported unparsable specificDates normalize away, never scheduling the epoch', async () => {
+        // A garbage date string produced an Invalid Date whose getTime() fed
+        // through as 0 — Jan 1 1970, permanently in the PAST, so the recurring
+        // watcher would see the task as due on every single tick.
+        const settingsMod = await import(`../modules/recurring/recurringSettings.js?v=${cacheBuster}`);
+        const normalized = settingsMod.normalizeRecurringSettings({
+            frequency: 'daily',
+            specificDates: { enabled: true, dates: ['not-a-date'] }
+        });
+        if (normalized.specificDates.dates.length !== 0) {
+            throw new Error('unparsable date must be filtered out');
+        }
+        const from = new Date(2026, 1, 10);
+        const next = new Date(calculateNextOccurrence(normalized, from.getTime()));
+        if (next.getTime() <= from.getTime()) {
+            throw new Error(`next occurrence must be in the future, got ${next.toDateString()}`);
+        }
+        if (next.getFullYear() === 1970) {
+            throw new Error('degenerated to the epoch');
+        }
+    });
+
     // ============================================
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;

@@ -18,6 +18,9 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { COLORS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS } from '../core/constants.js';
 import { ICONS } from '../utils/icons.js';
+// Local-midnight parse for date-only "YYYY-MM-DD" values — new Date() treats
+// them as UTC midnight, displaying the previous day in negative UTC offsets.
+import { parseDateAsLocal } from '../recurring/recurringDateUtils.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -171,8 +174,8 @@ export class TaskDOMPatch {
         const dueDateSpan = taskElement.querySelector(DOM_SELECTORS.DUE_DATE);
         if (dueDateSpan) {
             if (taskData.dueDate) {
-                const date = new Date(taskData.dueDate);
-                dueDateSpan.textContent = date.toLocaleDateString();
+                const date = parseDateAsLocal(taskData.dueDate);
+                dueDateSpan.textContent = date ? date.toLocaleDateString() : taskData.dueDate;
                 dueDateSpan.classList.remove(DOM_CLASSES.HIDDEN);
             } else {
                 dueDateSpan.textContent = '';

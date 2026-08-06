@@ -793,6 +793,39 @@ export async function runDataValidatorTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
+    await test('validateTask converts a legacy numeric dueDate using LOCAL calendar components', () => {
+        // A timestamp is an instant; the date the user picked is the one on
+        // THEIR calendar. toISOString() renders the UTC date, which shifts in
+        // both directions: 21:00 in New York migrated forward a day, 00:30 in
+        // Tokyo backward a day. Building from local components is offset-proof,
+        // so this assertion holds in every timezone (including CI's UTC).
+        const evening = new Date(2026, 7, 6, 21, 0); // Aug 6 2026, 9 PM local
+        const out = DataValidator.validateTask({ id: 'task-legacy-1', text: 'legacy', dueDate: evening.getTime() });
+        if (out.dueDate !== '2026-08-06') {
+            throw new Error(`expected the LOCAL date 2026-08-06, got ${out.dueDate}`);
+        }
+
+        const earlyMorning = new Date(2026, 7, 6, 0, 30); // Aug 6 2026, 12:30 AM local
+        const out2 = DataValidator.validateTask({ id: 'task-legacy-2', text: 'legacy', dueDate: earlyMorning.getTime() });
+        if (out2.dueDate !== '2026-08-06') {
+            throw new Error(`expected the LOCAL date 2026-08-06, got ${out2.dueDate}`);
+        }
+    });
+
+    await test('validateTask still rejects an unusable dueDate timestamp', () => {
+        // id/text supplied so the throw can only come from the timestamp —
+        // without them this passes on the missing-id error instead.
+        let message = '';
+        try {
+            DataValidator.validateTask({ id: 'task-bad-ts', text: 'bad', dueDate: NaN });
+        } catch (e) {
+            message = e.message;
+        }
+        if (!message.includes('timestamp')) {
+            throw new Error(`expected the timestamp error, got: ${message || '(no throw)'}`);
+        }
+    });
+
     // === SUMMARY ===
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;

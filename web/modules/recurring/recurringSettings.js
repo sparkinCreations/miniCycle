@@ -53,6 +53,50 @@ const VALID_FREQUENCIES = new Set([
 const VALID_ORDINALS = new Set(['1', '2', '3', '4', 'last']);
 const VALID_WEEK_DAYS = new Set(['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']);
 
+// ── Array-member filters — the rest of the same class ────────────────────────
+// The weekOfMonth note above generalizes: EVERY selection array below reaches
+// date math, and an out-of-range member degenerates the schedule silently
+// rather than erroring. Verified by running the real normalizer through the
+// real calculator from Feb 10 2026 (Aug 2026 sweep):
+//   monthly.days [99]        -> Mar 1 2026   (the 1st-of-month degeneration,
+//                                             identical to ordinal '5')
+//   yearly.months [13]       -> Jan 1 2027   (month index overflows the year)
+//   yearly daysByMonth [99]  -> Feb 10 2027  (wrong month AND wrong day)
+//   weekly.days ['Funday']   -> Feb 17 2026  (silent "next week, same day")
+//   biweekly.week1 ['Funday']-> Feb 24 2026  (silent "two weeks on")
+//   specificDates ['zzz']    -> Jan 1 1970   (epoch: permanently in the PAST,
+//                                             so the watcher sees it as due
+//                                             on every tick)
+// The panel can produce none of these — it emits parseInt'd numbers and
+// <select> weekday names — but the .mcyc importer is a second producer for the
+// same schema. Filter membership only; element TYPE is left alone so stored
+// numeric strings from older versions keep working exactly as before.
+const inRange = (v, min, max) => {
+    const n = Number(v);
+    return Number.isInteger(n) && n >= min && n <= max;
+};
+const keepDayNumbers = (arr) => (Array.isArray(arr) ? arr.filter(d => inRange(d, 1, 31)) : []);
+const keepMonthNumbers = (arr) => (Array.isArray(arr) ? arr.filter(m => inRange(m, 1, 12)) : []);
+const keepWeekDays = (arr) => (Array.isArray(arr) ? arr.filter(d => VALID_WEEK_DAYS.has(d)) : []);
+// Date.parse rejects garbage, but `new Date(null)` is the epoch — a valid time —
+// so null/empty must be excluded explicitly before parsing.
+const keepParsableDates = (arr) => (Array.isArray(arr)
+    ? arr.filter(d => (typeof d === 'string' || typeof d === 'number')
+        && String(d).trim() !== ''
+        && !Number.isNaN(new Date(d).getTime()))
+    : []);
+// daysByMonth is { all: [days] } or { '1'..'12': [days] } — filter each bucket.
+// Built via entries/fromEntries rather than indexed writes so the security
+// linter's object-injection rule stays satisfied without a disable comment.
+const keepDaysByMonth = (obj) => {
+    if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return {};
+    return Object.fromEntries(
+        Object.entries(obj)
+            .filter(([key]) => key === 'all' || inRange(key, 1, 12))
+            .map(([key, days]) => [key, keepDayNumbers(days)])
+    );
+};
+
 /**
  * Normalize recurring settings with all required fields
  * Uses memoization to avoid creating objects on every call
@@ -83,7 +127,7 @@ export function normalizeRecurringSettings(settings = {}) {
 
             specificDates: {
                 enabled: settings.specificDates?.enabled || false,
-                dates: Array.isArray(settings.specificDates?.dates) ? settings.specificDates.dates : []
+                dates: keepParsableDates(settings.specificDates?.dates)
             },
 
             hourly: {
@@ -92,12 +136,12 @@ export function normalizeRecurringSettings(settings = {}) {
             },
 
             weekly: {
-                days: Array.isArray(settings.weekly?.days) ? settings.weekly.days : []
+                days: keepWeekDays(settings.weekly?.days)
             },
 
             biweekly: {
-                week1: Array.isArray(settings.biweekly?.week1) ? settings.biweekly.week1 : [],
-                week2: Array.isArray(settings.biweekly?.week2) ? settings.biweekly.week2 : [],
+                week1: keepWeekDays(settings.biweekly?.week1),
+                week2: keepWeekDays(settings.biweekly?.week2),
                 referenceDate: settings.biweekly?.referenceDate || null
             },
 
@@ -108,7 +152,7 @@ export function normalizeRecurringSettings(settings = {}) {
                     settings.monthly?.useWeekOfMonth ||
                     false
                 ),
-                days: Array.isArray(settings.monthly?.days) ? settings.monthly.days : [],
+                days: keepDayNumbers(settings.monthly?.days),
                 lastDay: settings.monthly?.lastDay || false,
                 useWeekOfMonth: settings.monthly?.useWeekOfMonth || false,
                 weekOfMonth: settings.monthly?.weekOfMonth ? {
@@ -120,10 +164,10 @@ export function normalizeRecurringSettings(settings = {}) {
             },
 
             yearly: {
-                months: Array.isArray(settings.yearly?.months) ? settings.yearly.months : [],
+                months: keepMonthNumbers(settings.yearly?.months),
                 useSpecificDays: settings.yearly?.useSpecificDays || false,
                 applyDaysToAll: settings.yearly?.applyDaysToAll !== false,
-                daysByMonth: settings.yearly?.daysByMonth || {}
+                daysByMonth: keepDaysByMonth(settings.yearly?.daysByMonth)
             }
         };
 

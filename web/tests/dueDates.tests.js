@@ -572,6 +572,51 @@ export async function runDueDatesTests(resultsDiv, isPartOfSuite = false) {
             instance.remindOverdueTasks();
         });
 
+        await test('a task due TODAY is not marked overdue (local-midnight date parsing)', async () => {
+            // Regression guard for the UTC date-only parse. <input type="date">.value
+            // is "YYYY-MM-DD", and new Date() reads that as UTC midnight — which in
+            // any negative UTC offset is the PREVIOUS local day, so a task due today
+            // was flagged overdue across the Americas. parseDateAsLocal fixes it.
+            //
+            // NOTE: CI runs in UTC, where local and UTC midnight coincide and this
+            // assertion passes either way. Its teeth are in negative-offset zones;
+            // verified failing against the old code under TZ=America/New_York.
+            // Build today's date from LOCAL components (toISOString would re-introduce
+            // the very UTC shift under test).
+            const now = new Date();
+            const todayLocal = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+            const instance = new MiniCycleDueDates({
+                loadMiniCycleData: () => JSON.parse(localStorage.getItem('miniCycleData')).data,
+                querySelectorAll: () => [],
+                AppState: createMockAppStateForDueDates()
+            });
+
+            const taskDiv = document.createElement('div');
+            taskDiv.classList.add('task');
+            taskDiv.dataset.taskId = 'due-today-task';
+            const taskText = document.createElement('span');
+            taskText.classList.add('task-text');
+            taskText.textContent = 'Due Today';
+            const dueDateInput = document.createElement('input');
+            dueDateInput.type = 'date';
+            dueDateInput.classList.add('due-date');
+            dueDateInput.value = todayLocal;
+            taskDiv.appendChild(taskText);
+            taskDiv.appendChild(dueDateInput);
+            testContainer.appendChild(taskDiv);
+
+            await instance.checkOverdueTasks(taskDiv);
+
+            if (taskDiv.classList.contains('overdue-task')) {
+                throw new Error('a task due today must not carry the overdue class');
+            }
+            const savedData = JSON.parse(localStorage.getItem('miniCycleData'));
+            if (savedData.appState.overdueTaskStates?.['due-today-task']) {
+                throw new Error('a task due today must not be tracked as overdue');
+            }
+        });
+
         // === SUMMARY ===
         const percentage = Math.round((passed.count / total.count) * 100);
         resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;

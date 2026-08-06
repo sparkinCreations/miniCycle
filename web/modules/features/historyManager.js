@@ -12,6 +12,9 @@ import { COLORS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.j
 import { getLabel, getIcon } from '../labels/labelResolver.js';
 import { handleVerticalArrowNav, handleHorizontalArrowNav } from '../utils/keyboardNav.js';
 import { isClickOnNotification } from '../ui/modalUtils.js';
+// Local-midnight parse for date-only "YYYY-MM-DD" dueDates — new Date() reads
+// them as UTC midnight, showing the previous day in negative UTC offsets.
+import { parseDateAsLocal } from '../recurring/recurringDateUtils.js';
 
 // ============================================================================
 // CONSTANTS
@@ -703,7 +706,7 @@ export class HistoryManager {
                     <div class="cleared-entry-metadata">
                         <span>${dateStr} ${timeStr}</span>
                         ${entry.wasHighPriority ? (() => { const safeColor = /^#[0-9a-fA-F]{3,8}$/.test(entry.priorityColor) ? entry.priorityColor : ''; return `<span class="cleared-entry-priority">${getLabel('history.highPriority')} <span class="history-priority-dot" style="background:${safeColor || 'var(--color-error)'};" aria-hidden="true"></span></span>`; })() : ''}
-                        ${entry.dueDate ? `<span class="cleared-entry-due-date">${getLabel('history.hasDueDate')} ${new Date(entry.dueDate).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>` : ''}
+                        ${entry.dueDate ? `<span class="cleared-entry-due-date">${getLabel('history.hasDueDate')} ${(parseDateAsLocal(entry.dueDate) || new Date(entry.dueDate)).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>` : ''}
                         ${entry.remindersEnabled ? `<span class="cleared-entry-reminders">${getLabel('history.hasReminders')}</span>` : ''}
                         ${entry.recurring ? `<span class="cleared-entry-recurring">${getLabel('history.isRecurring')}</span>` : ''}
                         ${entry.clearedInMode ? `<span class="cleared-entry-mode">${entry.clearedInMode === 'todo' ? getLabel('history.clearedInToDoMode') : getLabel('history.clearedInCycleMode')}</span>` : ''}

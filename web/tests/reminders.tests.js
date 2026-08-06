@@ -293,6 +293,56 @@ export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
             }
         });
 
+        await test('scheduleNextReminder clamps long intervals below the 32-bit setTimeout ceiling', async () => {
+            // setTimeout stores its delay as a signed 32-bit int: >2,147,483,647 ms
+            // (~24.8 days) overflows and fires IMMEDIATELY. The frequency input
+            // offers Days with no max, so "every 30 days" overflowed — and since
+            // the handler reschedules, each immediate fire armed another: a
+            // notification loop, unbounded when `indefinite` is set.
+            const MAX_TIMEOUT_MS = 2147483647;
+            const { instance } = wireReminders({
+                loadMiniCycleData: () => ({ reminders: { enabled: true, indefinite: true, frequencyValue: 30, frequencyUnit: 'days', nextReminderTime: Date.now() - 1000 } })
+            });
+            const origSetTimeout = window.setTimeout;
+            let capturedDelay = null;
+            let handler = null;
+            window.setTimeout = (fn, delay) => { capturedDelay = delay; handler = fn; return 424242; };
+            try {
+                await instance.scheduleNextReminder();
+                // 30 days = 2,592,000,000 ms — above the ceiling, so it must be clamped.
+                if (capturedDelay > MAX_TIMEOUT_MS) {
+                    throw new Error(`delay ${capturedDelay} exceeds the 32-bit ceiling and would fire immediately`);
+                }
+                if (capturedDelay !== MAX_TIMEOUT_MS) {
+                    throw new Error(`expected the clamp value ${MAX_TIMEOUT_MS}, got ${capturedDelay}`);
+                }
+                // And when that clamped timer expires early, the handler must
+                // re-arm rather than notify — the target time has not arrived.
+                let sent = 0;
+                instance.sendReminderNotificationIfNeeded = async () => { sent++; };
+                await handler();
+                if (sent !== 0) throw new Error('clamped timer must re-arm, not send a notification early');
+            } finally {
+                window.setTimeout = origSetTimeout;
+            }
+        });
+
+        await test('scheduleNextReminder leaves sub-ceiling intervals exact', async () => {
+            // 7 days = 604,800,000 ms — comfortably under the ceiling, must pass through.
+            const { instance } = wireReminders({
+                loadMiniCycleData: () => ({ reminders: { enabled: true, frequencyValue: 7, frequencyUnit: 'days', nextReminderTime: Date.now() - 1000 } })
+            });
+            const origSetTimeout = window.setTimeout;
+            let capturedDelay = null;
+            window.setTimeout = (fn, delay) => { capturedDelay = delay; return 1; };
+            try {
+                await instance.scheduleNextReminder();
+                if (capturedDelay !== 604800000) throw new Error(`expected exact 604800000, got ${capturedDelay}`);
+            } finally {
+                window.setTimeout = origSetTimeout;
+            }
+        });
+
         // === TOGGLE / PER-TASK STATE ===
         resultsDiv.innerHTML += '<h4>🔔 Toggle & Per-Task State</h4>';
 
