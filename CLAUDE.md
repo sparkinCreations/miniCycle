@@ -16,6 +16,7 @@ Auto-loaded `CLAUDE.md` covers the high-level rules; the specifics that prevent 
 - **Deciding *where* a user-facing message belongs** (help window vs empty state vs notification vs modal) → `web/docs/working-on-code/MESSAGING_SURFACES.md`
 - **Modifying anything in or near the 5 facade modules** (`settingsManager`, `taskCore`, `taskDOM`, `preferencesManager`, `statsPanel`) → `web/docs/working-on-code/HIDDEN_CODEBASE_INSIGHTS.md` (dynamic-import sub-module pattern; do NOT add their sub-modules to manifests)
 - **Touching event handlers, AppState updates, or async UI** → `web/docs/working-on-code/EVENT_LISTENER_GUIDE.md` and `web/docs/working-on-code/ASYNC_UI_PATTERNS.md`
+- **Reviewing or refactoring anything** → `web/docs/reference/REVIEW_PATTERNS.md` — known fault lines; check these before reviewing or refactoring
 
 When in doubt about *where* a doc lives, check `web/docs/INDEX.md`.
 
@@ -346,6 +347,10 @@ which regenerates them in `netlify.toml`.
 10. **Using plain _deps instead of diBase.js** — The project has a DI framework. Use it (except Phase 1 boot modules — see rule #1 above).
 11. **Adding listeners in a loop without tracking them** — Use WeakMap or store references for cleanup.
 12. **Assuming a modal's close handler cleans everything up** — It usually only handles escape key. Clean up ALL handlers.
+13. **Mutating the object returned by `AppState.get()`** — it is a live reference, not a copy. Build changes locally and commit them inside `AppState.update()`. Mutating first means the undo wrapper's snapshot captures the *post*-change state, so Undo restores the wrong thing (Aug 2026 review: task add, cycle-reset recurring removal, recurring toggle).
+14. **Deriving state from the DOM** — never count tasks or read completion via `querySelectorAll`, `.checked`, or input values. The DOM holds only the *active* routine's *currently rendered* tasks, so anything filtered, collapsed, or mid-render silently yields wrong numbers with no error. Read from `state.data.cycles[cycleId].tasks`.
+15. **Fixing a bug in one place without grepping for its copies** — before closing a fix, search for the same pattern elsewhere. Nearly every finding in the Aug 2026 review was newer hardened code sitting beside an older unhardened copy of the same logic (`getState?.()` fixed in taskDOM but missed in taskEvents; `CSS.escape` on one selector builder but not its neighbour).
+16. **Adding a specific `else if` below a general one** — a later branch that re-tests a condition an earlier branch already catches is dead code. Put type-specific branches *above* the generic field check (Aug 2026: the history priority-colour dot never rendered).
 
 ---
 
