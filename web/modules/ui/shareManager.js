@@ -12,7 +12,7 @@ import { createDIModule, required, optional } from '../core/diBase.js';
 import { DOM_IDS, APP_URL, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { isNativeApp, shareRoutineFileNative, shareTextNative } from '../platform/capacitorBridge.js';
-import { buildMcycPayload } from '../utils/mcycPayload.js';
+import { buildMcycPayload, buildMcycFilename } from '../utils/mcycPayload.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -158,7 +158,11 @@ export async function shareCurrentRoutine() {
     const miniCycleData = buildMcycPayload(activeCycle, cycle, { includeHistory });
 
     const cycleName = cycle.title || activeCycle;
-    const fileName = `${cycleName.replace(/[^a-z0-9]/gi, '_')}.mcyc.json`;
+    // Share targets (messaging apps, share sheets) reject or mangle unknown
+    // extensions, so the share path appends .json while the download path
+    // uses bare .mcyc. Import accepts both (cycleImportManager fileInput
+    // accept list). Deliberate — do not "consolidate" these two.
+    const fileName = `${buildMcycFilename(cycleName)}.mcyc.json`;
     const dataStr = JSON.stringify(miniCycleData, null, 2);
     const dataBlob = new Blob([dataStr], { type: 'application/json' });
     const file = new File([dataBlob], fileName, { type: 'application/json' });

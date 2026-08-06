@@ -77,3 +77,30 @@ export function buildMcycPayload(cycleKey, cycle, { includeHistory }) {
 
     return payload;
 }
+
+/**
+ * Build a filesystem-safe filename stem from a routine title.
+ *
+ * Keeps Unicode: modern filesystems and every target browser handle it, and
+ * the old ASCII-only sanitize turned every non-Latin title into pure
+ * underscores — a Japanese and a Russian routine exported to identical
+ * indistinguishable names (export-review finding, Aug 2026). Strips only what
+ * is actually illegal in a filename: path separators/reserved punctuation,
+ * control characters, and trailing dots/spaces (Windows rejects those).
+ *
+ * Shared by BOTH export paths (cycleExportManager download, shareManager
+ * share sheet) so their sanitization can't diverge again — same reasoning as
+ * buildMcycPayload above.
+ *
+ * @param {string} cycleName - Routine title (may be empty/undefined)
+ * @returns {string} Non-empty filename stem; 'routine' when nothing printable survives
+ */
+export function buildMcycFilename(cycleName) {
+    const cleaned = String(cycleName || '')
+        .replace(/[/\\:*?"<>|]/g, '_')         // path-illegal
+        .replace(/[\u0000-\u001F\u007F]/g, '')  // control chars
+        .replace(/[.\s]+$/, '')                // trailing dots/spaces
+        .trim();
+    // A name of pure separators/underscores is worse than a generic one.
+    return /[^\s_]/.test(cleaned) ? cleaned : 'routine';
+}

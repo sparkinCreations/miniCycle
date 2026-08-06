@@ -16,7 +16,7 @@ import { createProtectedTest } from './testHelpers.js';
 
 export async function runMcycPayloadTests(resultsDiv) {
     const cacheBuster = window.testCacheBuster || Date.now();
-    const { buildMcycPayload } = await import(`../modules/utils/mcycPayload.js?v=${cacheBuster}`);
+    const { buildMcycPayload, buildMcycFilename } = await import(`../modules/utils/mcycPayload.js?v=${cacheBuster}`);
 
     resultsDiv.innerHTML = '<h2>McycPayload Tests</h2><h3>Running tests...</h3>';
     let passed = { count: 0 }, total = { count: 0 };
@@ -122,6 +122,29 @@ export async function runMcycPayloadTests(resultsDiv) {
         if (!payload.tasks[0].id || !payload.tasks[0].id.startsWith('task-')) {
             throw new Error('missing task id should be generated');
         }
+    });
+
+    // Filename sanitization (export-review finding: the old ASCII-only
+    // sanitize turned every non-Latin title into pure underscores)
+    await test('buildMcycFilename keeps non-Latin titles distinguishable', () => {
+        const jp = buildMcycFilename('朝のルーティン');
+        const ru = buildMcycFilename('Тренировка');
+        if (jp !== '朝のルーティン') throw new Error(`Japanese title must survive, got "${jp}"`);
+        if (ru !== 'Тренировка') throw new Error(`Cyrillic title must survive, got "${ru}"`);
+        if (jp === ru) throw new Error('distinct titles must produce distinct filenames');
+    });
+
+    await test('buildMcycFilename strips path-illegal chars and Windows trailing dots', () => {
+        if (buildMcycFilename('a/b:c') !== 'a_b_c') throw new Error('path-illegal chars must become underscores');
+        if (buildMcycFilename('done...') !== 'done') throw new Error('trailing dots must be stripped (Windows)');
+        if (buildMcycFilename('Morning Routine') !== 'Morning Routine') throw new Error('interior spaces are legal and must survive');
+    });
+
+    await test('buildMcycFilename falls back to "routine" when nothing printable survives', () => {
+        if (buildMcycFilename('???') !== 'routine') throw new Error('punctuation-only title must fall back');
+        if (buildMcycFilename('') !== 'routine') throw new Error('empty title must fall back');
+        if (buildMcycFilename(undefined) !== 'routine') throw new Error('undefined title must fall back');
+        if (buildMcycFilename('  .. ') !== 'routine') throw new Error('whitespace/dots-only title must fall back');
     });
 
     // Results

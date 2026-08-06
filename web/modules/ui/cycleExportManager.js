@@ -12,7 +12,7 @@ import { createDIModule, required, optional } from '../core/diBase.js';
 import { DOM_IDS, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { isNativeApp, shareRoutineFileNative } from '../platform/capacitorBridge.js';
-import { buildMcycPayload } from '../utils/mcycPayload.js';
+import { buildMcycPayload, buildMcycFilename } from '../utils/mcycPayload.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -64,7 +64,7 @@ export async function exportMiniCycleData(miniCycleData, cycleName) {
     try {
         const dataStr = JSON.stringify(miniCycleData, null, 2);
         const dataBlob = new Blob([dataStr], { type: "application/json" });
-        const sanitizedName = cycleName.replace(/[^a-z0-9]/gi, '_');
+        const sanitizedName = buildMcycFilename(cycleName);
 
         // Native (Capacitor) path — route through the Android share sheet, which
         // lets the user save to Files/Drive or send the .mcyc elsewhere. The web
