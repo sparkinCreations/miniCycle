@@ -1,3 +1,7 @@
+## [2.376] - 2026-08-06
+- perf(boot): decide first-run pre-paint to remove its layout shift
+
+
 ## [2.375] - 2026-08-06
 - ci: tolerate tag-push rejection on pre-workflow-edit backfill; document getLabel escape contract
 - test: update recurringCore invalid-frequency test to the v2.373 coercion contract
