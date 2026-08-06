@@ -77,6 +77,7 @@
   * [Label Registry Reference](reference/LABEL_REGISTRY_REFERENCE.md)
   * [Recurring System Reference](reference/RECURRING_SYSTEM_REFERENCE.md)
   * [TaskDOM DI Guide](reference/TASKDOM_DI_GUIDE.md)
+  * [Review Patterns](reference/REVIEW_PATTERNS.md)
   * [Drift Audit Checklist](DRIFT_AUDIT_CHECKLIST.md)
   * [Documentation Index](INDEX.md)
   * [Developer Documentation](DEVELOPER_DOCUMENTATION.md)
