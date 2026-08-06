@@ -548,6 +548,33 @@ export async function runNotificationsTests(resultsDiv) {
         }
     });
 
+    await test('showConfirmationModal() dismissed before Enter-arm delay: callback fires once, later Enter is inert', async () => {
+        setupMockGlobals();
+        const notifications = new window.MiniCycleNotifications();
+        const results = [];
+
+        notifications.showConfirmationModal({
+            title: 'Test',
+            destructive: false,
+            callback: (confirmed) => results.push(confirmed)
+        });
+
+        // Dismiss inside the arm window — before the delayed Enter-anywhere
+        // handler attaches. Pre-fix, the un-cancelled arm timer attached the
+        // handler anyway; a later Enter then fired callback(true) with no
+        // modal on screen (results became [false, true]).
+        const dialog = document.querySelector('.mini-modal-dialog');
+        dialog.querySelector('.btn-cancel').click();
+
+        await new Promise(r => setTimeout(r, 180)); // let the arm timer fire if it leaked
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+        await new Promise(r => setTimeout(r, 20));
+
+        if (results.length !== 1 || results[0] !== false) {
+            throw new Error(`callback must fire exactly once with false, got [${results}]`);
+        }
+    });
+
     await test('showPromptModal() creates prompt', () => {
         setupMockGlobals();
         const notifications = new window.MiniCycleNotifications();

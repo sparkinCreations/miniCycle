@@ -100,6 +100,7 @@ export const UI_TIMEOUTS = Object.freeze({
     STATS_UPDATE_DELAY: 100,       // 100ms - Stats panel update delay
     WHEEL_RESET_DELAY: 15,         // 15ms - Mouse wheel reset delay
     FOCUS_NEXT_TICK: 20,           // 20ms - Focus a control just after a dialog/modal renders
+    MODAL_ENTER_ARM_DELAY: 100,    // 100ms - Arm the Enter-anywhere confirm handler after a modal opens (avoids catching the opening keypress)
     IDLE_CALLBACK_FALLBACK: 100,   // 100ms - setTimeout fallback where requestIdleCallback is unavailable
     TRANSITION_FALLBACK: 300,      // 300ms - Safety fallback when a CSS transitionend never fires (fast transitions)
     EDIT_OVERLAY_REMOVE: 500,      // 500ms - Edit-focus overlay removal fallback (matches its CSS transition)

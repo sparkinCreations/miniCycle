@@ -1681,43 +1681,50 @@ async setDefaultPosition(notificationContainer) {
 
     setTimeout(() => cancelBtn.focus({ focusVisible: false }), UI_TIMEOUTS.FOCUS_NEXT_TICK);
 
-    let handleKeydown = null;
-
-    const cleanup = () => {
-      if (handleKeydown) document.removeEventListener("keydown", handleKeydown);
+    // Single-settle contract: every exit path (buttons, ESC→cancel, delayed
+    // Enter handler) funnels through settle(), which runs at most once and
+    // disposes every resource this modal created before invoking the callback.
+    // Any new timer/listener MUST register a disposer here — cleanup that
+    // hand-enumerates resources is how the armed-Enter timer once escaped
+    // cancellation and fired callback(true) after dismissal.
+    let settled = false;
+    const disposers = [];
+    const settle = (result) => {
+      if (settled) return;
+      settled = true;
+      disposers.forEach(d => d());
       overlay.close();
       overlay.remove();
+      callback(result);
     };
 
-    // For non-destructive modals, Enter anywhere confirms (after a delay to avoid
-    // catching the same keypress that opened the modal). For destructive modals,
-    // skip this — user must explicitly Tab to Confirm and press Enter.
+    // For non-destructive modals, Enter anywhere confirms (armed after a delay
+    // to avoid catching the same keypress that opened the modal). For
+    // destructive modals, skip this — user must explicitly Tab to Confirm and
+    // press Enter.
     if (!destructive) {
-      handleKeydown = (e) => {
+      const handleKeydown = (e) => {
         if (e.key === "Enter") {
           e.preventDefault();
-          confirmBtn.click();
+          settle(true);
         }
       };
-      setTimeout(() => {
+      const keydownTimer = setTimeout(() => {
         _safeAddEventListener(document, "keydown", handleKeydown);
-      }, 100);
+      }, UI_TIMEOUTS.MODAL_ENTER_ARM_DELAY);
+      disposers.push(() => {
+        clearTimeout(keydownTimer);
+        document.removeEventListener("keydown", handleKeydown);
+      });
     }
 
     overlay.addEventListener('cancel', (e) => {
       e.preventDefault();
-      cancelBtn.click();
+      settle(false);
     });
 
-    confirmBtn.onclick = () => {
-      cleanup();
-      callback(true);
-    };
-
-    cancelBtn.onclick = () => {
-      cleanup();
-      callback(false);
-    };
+    confirmBtn.onclick = () => settle(true);
+    cancelBtn.onclick = () => settle(false);
   }
 
   /**
