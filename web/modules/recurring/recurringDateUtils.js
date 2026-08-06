@@ -33,10 +33,23 @@ export function convert12To24(hour, meridiem) {
 
 /**
  * Parse date string as local date (not UTC)
+ *
+ * Use this instead of `new Date(dateStr)` for YYYY-MM-DD values: the spec
+ * parses date-only strings as UTC midnight, which is the *previous local day*
+ * in every negative UTC offset.
+ *
  * @param {string} dateStr - Date string in YYYY-MM-DD format
- * @returns {Date} Parsed date object
+ * @returns {Date|null} Parsed date object, or null if dateStr is not a
+ *   parsable date string
  */
 export function parseDateAsLocal(dateStr) {
+    // Non-strings already resolved to null via the catch below (.split throws),
+    // but that made every null cost a thrown exception plus a stack-trace
+    // console.error. Check the type up front so the contract is explicit and
+    // control flow doesn't run through the exception path.
+    if (typeof dateStr !== 'string') {
+        return null;
+    }
 
     try {
         const [year, month, day] = dateStr.split("-").map(Number);
