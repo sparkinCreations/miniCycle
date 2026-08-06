@@ -11,6 +11,7 @@
 
 import { DOM_IDS, DOM_SELECTORS, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { isValidHex } from '../utils/styleValidators.js';
 
 // ============================================================================
 // PRESET VALIDATION
@@ -47,8 +48,6 @@ const VALID_PRESET_KEYS = new Set([
     ...Object.keys(PRESET_NUMBER_KEYS)
 ]);
 
-/** Validate a hex color string (#RGB, #RRGGBB, or #RRGGBBAA) */
-const isValidHex = (v) => typeof v === 'string' && /^#[0-9A-Fa-f]{3,8}$/.test(v);
 
 /**
  * Sanitize a preset colors object: strip unknown keys, validate types.

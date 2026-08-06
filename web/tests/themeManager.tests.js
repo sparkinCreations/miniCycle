@@ -375,6 +375,136 @@ export async function runThemeManagerTests(resultsDiv) {
         btn.remove();
     });
 
+    // ===== SETTINGS WRITES GO THROUGH THE PRODUCER =====
+
+    resultsDiv.innerHTML += '<h4 class="test-section">💾 Settings writes (producer)</h4>';
+
+    // These use an AppState mock whose update() records the producer but never
+    // RUNS it. That is what gives the tests teeth: if a writer mutates the
+    // object returned by get() before calling update — the old
+    // loadSchemaData → mutate → saveSchemaData shim — the value appears in
+    // state anyway. Only a real producer-based write leaves it untouched here.
+    function makeInertAppState() {
+        const state = { settings: { theme: 'default', darkMode: false } };
+        const calls = [];
+        return {
+            state,
+            calls,
+            AppState: {
+                isReady: () => true,
+                get: () => state,
+                update: (producer, immediate) => {
+                    calls.push({ producer, immediate });
+                    return Promise.resolve();
+                }
+            }
+        };
+    }
+
+    async function withInertAppState(fn) {
+        const harness = makeInertAppState();
+        setThemeManagerDependencies({ AppState: harness.AppState });
+        try {
+            await fn(harness);
+        } finally {
+            setThemeManagerDependencies({ AppState: env.AppState });
+        }
+    }
+
+    await test('saveThemeToStorage writes only via AppState.update', async () => {
+        await withInertAppState(async (h) => {
+            const tm = new ThemeManager();
+            await tm.saveThemeToStorage('dark-ocean');
+
+            if (h.calls.length !== 1) {
+                throw new Error(`Expected exactly 1 update call, got ${h.calls.length}`);
+            }
+            if (h.state.settings.theme !== 'default') {
+                throw new Error(
+                    `State was mutated outside the producer (theme = ${h.state.settings.theme})`
+                );
+            }
+            // Now run the captured producer — it must apply the change.
+            h.calls[0].producer(h.state);
+            if (h.state.settings.theme !== 'dark-ocean') {
+                throw new Error(`Producer did not set theme, got ${h.state.settings.theme}`);
+            }
+            if (h.calls[0].immediate !== true) {
+                throw new Error('Theme write should be an immediate save');
+            }
+        });
+    });
+
+    await test('saveThemeToStorage falls back to "default" for empty input', async () => {
+        await withInertAppState(async (h) => {
+            const tm = new ThemeManager();
+            await tm.saveThemeToStorage('');
+            h.calls[0].producer(h.state);
+            if (h.state.settings.theme !== 'default') {
+                throw new Error(`Expected 'default', got ${h.state.settings.theme}`);
+            }
+        });
+    });
+
+    await test('saveDarkModeToStorage writes only via AppState.update', async () => {
+        await withInertAppState(async (h) => {
+            const tm = new ThemeManager();
+            await tm.saveDarkModeToStorage(true);
+
+            if (h.calls.length !== 1) {
+                throw new Error(`Expected exactly 1 update call, got ${h.calls.length}`);
+            }
+            if (h.state.settings.darkMode !== false) {
+                throw new Error('State was mutated outside the producer');
+            }
+            h.calls[0].producer(h.state);
+            if (h.state.settings.darkMode !== true) {
+                throw new Error('Producer did not set darkMode');
+            }
+        });
+    });
+
+    await test('settings producer creates state.settings when absent', async () => {
+        await withInertAppState(async (h) => {
+            const tm = new ThemeManager();
+            await tm.saveThemeToStorage('golden-glow');
+            const bare = {};
+            h.calls[0].producer(bare);
+            if (bare.settings?.theme !== 'golden-glow') {
+                throw new Error('Producer should create settings when missing');
+            }
+        });
+    });
+
+    await test('writers survive a missing AppState without throwing', async () => {
+        setThemeManagerDependencies({ AppState: null });
+        try {
+            const tm = new ThemeManager();
+            await tm.saveThemeToStorage('dark-ocean');
+            await tm.saveDarkModeToStorage(true);
+        } finally {
+            setThemeManagerDependencies({ AppState: env.AppState });
+        }
+    });
+
+    await test('whole-state writer and dead unlock fallback are gone', async () => {
+        // saveSchemaData did Object.assign(state, data) — a whole-state
+        // overwrite that could pair with loadSchemaData's detached
+        // localStorage fallback. unlockThemeFallback was its last mutating
+        // caller and had no callers of its own.
+        const tm = new ThemeManager();
+        if (typeof tm.saveSchemaData !== 'undefined') {
+            throw new Error('saveSchemaData should have been removed');
+        }
+        if (typeof tm.unlockThemeFallback !== 'undefined') {
+            throw new Error('unlockThemeFallback should have been removed');
+        }
+        // loadSchemaData stays — it still has read-only callers.
+        if (typeof tm.loadSchemaData !== 'function') {
+            throw new Error('loadSchemaData should still exist for readers');
+        }
+    });
+
     // Summary
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;

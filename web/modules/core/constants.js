@@ -227,6 +227,28 @@ export const FREQUENCY_MS = Object.freeze({
 });
 
 // ============================================================================
+// FONT SIZE
+// ============================================================================
+
+/**
+ * Base font size bounds, in pixels.
+ *
+ * DEFAULT_PX is the "no inline override" value: when the stored setting equals
+ * it, consumers must REMOVE the inline --font-size-base rather than write it,
+ * so the stylesheet's responsive default (the max-width:480px bump) can win.
+ *
+ * MIN_PX/MAX_PX bound what may reach setProperty. The <select> only offers
+ * 14/16/18/20, but the stored value is just a string in state — the range is
+ * the validation floor for anything that reads it back.
+ * @constant {Object}
+ */
+export const FONT_SIZE = Object.freeze({
+    DEFAULT_PX: 16,
+    MIN_PX: 10,
+    MAX_PX: 32
+});
+
+// ============================================================================
 // SIZE LIMITS
 // ============================================================================
 

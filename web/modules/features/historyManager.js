@@ -15,6 +15,7 @@ import { isClickOnNotification } from '../ui/modalUtils.js';
 // Local-midnight parse for date-only "YYYY-MM-DD" dueDates — new Date() reads
 // them as UTC midnight, showing the previous day in negative UTC offsets.
 import { parseDateAsLocal } from '../recurring/recurringDateUtils.js';
+import { isValidHex } from '../utils/styleValidators.js';
 
 // ============================================================================
 // CONSTANTS
@@ -705,7 +706,7 @@ export class HistoryManager {
                     <div class="cleared-entry-text">${this._escapeHtml(entry.taskText)}</div>
                     <div class="cleared-entry-metadata">
                         <span>${dateStr} ${timeStr}</span>
-                        ${entry.wasHighPriority ? (() => { const safeColor = /^#[0-9a-fA-F]{3,8}$/.test(entry.priorityColor) ? entry.priorityColor : ''; return `<span class="cleared-entry-priority">${getLabel('history.highPriority')} <span class="history-priority-dot" style="background:${safeColor || 'var(--color-error)'};" aria-hidden="true"></span></span>`; })() : ''}
+                        ${entry.wasHighPriority ? (() => { const safeColor = isValidHex(entry.priorityColor) ? entry.priorityColor : ''; return `<span class="cleared-entry-priority">${getLabel('history.highPriority')} <span class="history-priority-dot" style="background:${safeColor || 'var(--color-error)'};" aria-hidden="true"></span></span>`; })() : ''}
                         ${entry.dueDate ? `<span class="cleared-entry-due-date">${getLabel('history.hasDueDate')} ${(parseDateAsLocal(entry.dueDate) || new Date(entry.dueDate)).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>` : ''}
                         ${entry.remindersEnabled ? `<span class="cleared-entry-reminders">${getLabel('history.hasReminders')}</span>` : ''}
                         ${entry.recurring ? `<span class="cleared-entry-recurring">${getLabel('history.isRecurring')}</span>` : ''}
@@ -818,7 +819,7 @@ export class HistoryManager {
                 // is unreachable for events that carry it. Until v2.371 these
                 // two sat below it and the priority dot never rendered
                 // (features-review finding, Aug 2026).
-                const safeColor = /^#[0-9a-fA-F]{3,8}$/.test(event.details.priorityColor)
+                const safeColor = isValidHex(event.details.priorityColor)
                     ? event.details.priorityColor : COLORS.PRIORITY_DEFAULT;
                 detailText = `${this._escapeHtml(event.details.taskName)} <span class="history-priority-dot" style="background:${safeColor};" aria-hidden="true"></span>`;
             } else if (event.type === 'task_priority_removed' && event.details.taskName !== undefined) {
