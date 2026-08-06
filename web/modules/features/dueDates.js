@@ -567,7 +567,6 @@ export class MiniCycleDueDates {
             if (s.customReminders) {
                 s.customReminders.dueDatesReminders = true;
             }
-            s.metadata.lastModified = Date.now();
         }, true);
 
         // Sync the checkbox UI if the reminders modal is open

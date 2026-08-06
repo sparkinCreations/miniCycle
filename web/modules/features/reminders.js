@@ -1003,7 +1003,6 @@ export class MiniCycleReminders {
                         if (state.customReminders) {
                             state.customReminders.dueDatesReminders = dueDatesReminders.checked;
                         }
-                        state.metadata.lastModified = Date.now();
                     }, true); // immediate save
                 } else {
                     console.error('❌ AppState not ready for dueDatesReminders toggle - setting not saved');

@@ -655,7 +655,6 @@ export class DragDropManager {
                             // Remove task from current position and insert at new position
                             const [movedTask] = tasks.splice(currentIndex, 1);
                             tasks.splice(newIndex, 0, movedTask);
-                            state.metadata.lastModified = Date.now();
                         }
                     }
                     // Set activeTaskId so rendering restores task options (state-driven UI)
@@ -771,7 +770,6 @@ export class DragDropManager {
                         // Preserve tasks not in DOM (e.g., completed tasks in dropdown)
                         const missingTasks = tasks.filter(t => !newTaskOrder.includes(t.id));
                         state.data.cycles[activeCycleId].tasks = [...reorderedTasks, ...missingTasks];
-                        state.metadata.lastModified = Date.now();
                     }
                 }
             }, true); // immediate save
@@ -929,7 +927,6 @@ export class DragDropManager {
             AppState.update(state => {
                 if (!state.ui) state.ui = {};
                 state.ui.moveArrowsVisible = newVisibility;
-                state.metadata.lastModified = Date.now();
             }, true); // immediate save
 
             // Update DOM to reflect new state

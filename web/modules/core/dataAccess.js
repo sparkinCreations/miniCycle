@@ -230,7 +230,6 @@ export async function updateCycleData(cycleId, updateFn, immediate = true) {
         await AppState.update(state => {
             if (state.data?.cycles?.[cycleId]) {
                 updateFn(state.data.cycles[cycleId]);
-                state.metadata.lastModified = new Date().toISOString();
             }
         }, immediate);
         return true;

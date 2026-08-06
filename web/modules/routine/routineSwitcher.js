@@ -411,7 +411,6 @@ export class RoutineSwitcher {
                         }
                     }
 
-                    state.metadata.lastModified = Date.now();
                 }, true); // immediate save
 
                 // ✅ Update storage estimate (subtract deleted routine size)
@@ -639,7 +638,6 @@ export class RoutineSwitcher {
         // ✅ Update through state system
         this.deps.AppState.update(state => {
             state.data.cycles[uniqueName] = copiedCycle;
-            state.metadata.lastModified = Date.now();
             state.metadata.totalCyclesCreated = (state.metadata.totalCyclesCreated || 0) + 1;
         }, true); // immediate save
 
@@ -926,7 +924,6 @@ export class RoutineSwitcher {
                 state.appState.activeCycleId = uniqueName;
             }
 
-            state.metadata.lastModified = Date.now();
         }, true);
 
         // Notify undo system of cycle rename
@@ -1182,7 +1179,6 @@ export class RoutineSwitcher {
             }
 
             state.appState.activeCycleId = cycleKey;
-            state.metadata.lastModified = Date.now();
 
             // Track last accessed time for "Recently Used" in routine switcher
             if (state.data.cycles[cycleKey]) {
@@ -1361,7 +1357,6 @@ export class RoutineSwitcher {
         if (repaired) {
             this.deps.AppState.update(state => {
                 state.data.cycles[cycleKey] = cycle;
-                state.metadata.lastModified = Date.now();
             }, true);
         }
 

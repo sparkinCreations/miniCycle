@@ -543,7 +543,6 @@ export class VocabThemeManager {
         this.deps.AppState.update(state => {
             if (state.data?.cycles?.[routineId]) {
                 state.data.cycles[routineId].theme = themeId;
-                state.metadata.lastModified = Date.now();
             }
         }, true);
 
@@ -564,7 +563,6 @@ export class VocabThemeManager {
         this.deps.AppState.update(state => {
             if (!state.settings) state.settings = {};
             state.settings.defaultTheme = themeId;
-            state.metadata.lastModified = Date.now();
         }, true);
     }
 
@@ -591,7 +589,6 @@ export class VocabThemeManager {
         this.deps.AppState.update(s => {
             if (!s.settings) s.settings = {};
             s.settings.unlockedThemes = Array.from(currentUnlocked);
-            s.metadata.lastModified = Date.now();
         }, false);
 
         return true;
@@ -633,7 +630,6 @@ export class VocabThemeManager {
             this.deps.AppState.update(state => {
                 if (!state.settings) state.settings = {};
                 state.settings.unlockedThemes = Array.from(currentUnlocked);
-                state.metadata.lastModified = Date.now();
             }, false);
         }
 
@@ -725,7 +721,6 @@ export class VocabThemeManager {
             this.deps.AppState.update(s => {
                 if (!s.settings) s.settings = {};
                 s.settings.unlockedThemes = Array.from(currentUnlocked);
-                s.metadata.lastModified = Date.now();
             }, false);
         }
 

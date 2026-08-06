@@ -871,7 +871,6 @@ export async function processImportedData(fileContent) {
         };
 
         state.appState.activeCycleId = finalCycleTitle;
-        state.metadata.lastModified = Date.now();
         state.metadata.totalCyclesCreated++;
     }, true); // immediate save
 
