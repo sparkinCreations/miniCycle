@@ -1,3 +1,8 @@
+## [2.370] - 2026-08-06
+- fix(boot): raise the Lite feature gate's floor to the es2020 build target
+- chore(legacy): make the ratchet strictly one-way (fail below ceiling too)
+
+
 ## [2.369] - 2026-08-06
 - chore(legacy): F-004 ratchet gate, loud stale-fallback, first tail migrations
 - test: make AppState.update mocks stamp metadata like production
