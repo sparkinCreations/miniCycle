@@ -233,6 +233,27 @@ export async function runRecurringCalculatorsTests(resultsDiv) {
         }
     });
 
+    await test('imported ordinal-5 weekOfMonth normalizes away, never degenerating to 1st-of-month', async () => {
+        // End-to-end through the REAL normalizer: an imported '5th Monday'
+        // (unproducible by the panel) used to survive normalization; the
+        // calculator rejects ordinals > 4 for EVERY month, so the recurrence
+        // degenerated to "1st of next month" — Feb 1 2026 evaluated to
+        // Mar 1 2026, a Sunday. Post-allowlist it coerces to '1' → Feb 2.
+        const settingsMod = await import(`../modules/recurring/recurringSettings.js?v=${cacheBuster}`);
+        const normalized = settingsMod.normalizeRecurringSettings({
+            frequency: 'monthly',
+            monthly: { useWeekOfMonth: true, weekOfMonth: { ordinal: '5', day: 'Mon' } }
+        });
+        const from = new Date(2026, 1, 1); // Feb 1 2026, a Sunday
+        const next = new Date(calculateNextOccurrence(normalized, from.getTime()));
+        if (next.getDay() !== 1) {
+            throw new Error(`must land on a Monday, got ${next.toDateString()}`);
+        }
+        if (next.getMonth() !== 1 || next.getDate() !== 2) {
+            throw new Error(`expected Feb 2 2026 (1st Monday), got ${next.toDateString()}`);
+        }
+    });
+
     // ============================================
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;

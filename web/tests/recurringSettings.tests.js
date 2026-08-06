@@ -61,6 +61,24 @@ export async function runRecurringSettingsTests(resultsDiv) {
         }
     });
 
+    // Security (recurring-panel review): same import door as frequency — the
+    // panel's selects only emit valid values, but imports are a second producer.
+    // An off-list ordinal (e.g. '5') makes calculateNthWeekdayOfMonth return
+    // null for EVERY month, degenerating the recurrence to "1st of next month".
+    await test('rejects off-list weekOfMonth ordinal and day, coercing to defaults', () => {
+        const wom = (o, d) => normalize({
+            frequency: 'monthly',
+            monthly: { useWeekOfMonth: true, weekOfMonth: { ordinal: o, day: d } }
+        }).monthly.weekOfMonth;
+
+        eq(wom('5', 'Mon').ordinal, '1', "ordinal '5' coerced");
+        eq(wom('<img src=x>', 'Mon').ordinal, '1', 'hostile ordinal coerced');
+        eq(wom('2', 'Funday').day, 'Mon', 'unknown day coerced');
+        eq(wom('2', 'Mon').ordinal, '2', 'valid ordinal preserved');
+        eq(wom('last', 'Sat').ordinal, 'last', "'last' preserved");
+        eq(wom(3, 'Tue').ordinal, '3', 'numeric ordinal stringified and preserved');
+    });
+
     await test('indefinitely defaults to true', () => {
         eq(normalize({}).indefinitely, true, 'default indefinitely');
     });

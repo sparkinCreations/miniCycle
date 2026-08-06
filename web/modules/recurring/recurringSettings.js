@@ -44,6 +44,15 @@ const VALID_FREQUENCIES = new Set([
     'hourly', 'daily', 'weekly', 'biweekly', 'monthly', 'yearly'
 ]);
 
+// weekOfMonth allowlists — same import door as frequency above. The panel's
+// selects can only produce these, but imports are a second producer for the
+// same schema: an unconstrained ordinal (e.g. '5') or day makes
+// calculateNthWeekdayOfMonth return null for EVERY month, degenerating the
+// recurrence to "1st of next month" — a date the user never picked.
+// VALID_WEEK_DAYS mirrors WEEKDAY_MAP in recurringDateUtils.js.
+const VALID_ORDINALS = new Set(['1', '2', '3', '4', 'last']);
+const VALID_WEEK_DAYS = new Set(['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']);
+
 /**
  * Normalize recurring settings with all required fields
  * Uses memoization to avoid creating objects on every call
@@ -103,8 +112,10 @@ export function normalizeRecurringSettings(settings = {}) {
                 lastDay: settings.monthly?.lastDay || false,
                 useWeekOfMonth: settings.monthly?.useWeekOfMonth || false,
                 weekOfMonth: settings.monthly?.weekOfMonth ? {
-                    ordinal: settings.monthly.weekOfMonth.ordinal || "1",
-                    day: settings.monthly.weekOfMonth.day || "Mon"
+                    ordinal: VALID_ORDINALS.has(String(settings.monthly.weekOfMonth.ordinal))
+                        ? String(settings.monthly.weekOfMonth.ordinal) : "1",
+                    day: VALID_WEEK_DAYS.has(settings.monthly.weekOfMonth.day)
+                        ? settings.monthly.weekOfMonth.day : "Mon"
                 } : null
             },
 

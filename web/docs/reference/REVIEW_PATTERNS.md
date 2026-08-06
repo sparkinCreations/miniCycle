@@ -30,7 +30,14 @@ added upstream that nobody validates.
 only the ones the author was thinking about? `getLabel(..., { vars })` does not
 escape; see CLAUDE.md rule 7. `{ trusted: true }` and `trustedHTML` bypass all
 escaping — enumerate every caller when auditing.
-**Precedent:** stored XSS via `recurringSettings.frequency` (v2.373).
+**Check:** "the UI can't produce this value" retracts nothing — the panel and the
+`.mcyc` importer are two producers for the same schema, and only one is
+constrained by a `<select>`. When judging whether a bad value is reachable,
+check every producer, and prefer allowlisting at the normalizer over trusting
+any of them.
+**Precedent:** stored XSS via `recurringSettings.frequency` (v2.373); wrong
+recurrence dates via imported `weekOfMonth.ordinal: '5'` — a finding first
+retracted on UI-can't-produce-it grounds, then un-retracted via the import path.
 
 ## 4. Duplicated logic drifting apart
 
