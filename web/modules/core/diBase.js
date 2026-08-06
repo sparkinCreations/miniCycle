@@ -20,7 +20,7 @@
  * const di = createDIModule('TaskCore', {
  *     // Required deps - will warn if missing
  *     AppState: required(),
- *     loadMiniCycleData: required(),
+ *     GlobalUtils: required(),
  *     showNotification: required(),
  *
  *     // Optional deps - uses provided default

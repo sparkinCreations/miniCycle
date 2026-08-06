@@ -34,15 +34,11 @@ export class StatsPanelRewards {
                 unlockedFeatures = currentState.settings.unlockedFeatures || [];
             }
         } else {
-            console.warn('⚠️ AppState not ready - using fallback data access');
-
-            // Fallback to old method if state not ready
-            const schemaData = this.m.dependencies.loadMiniCycleData();
-            if (schemaData) {
-                const { settings } = schemaData;
-                unlockedThemes = settings.unlockedThemes || [];
-                unlockedFeatures = settings.unlockedFeatures || [];
-            }
+            // AppState only — same convention as the rest of this module. The
+            // stats panel renders post-boot, so not-ready just means empty
+            // unlock lists this render; the legacy data-access fallback was
+            // retired here (review F-004 migration).
+            console.warn('⚠️ AppState not ready - rendering rewards with empty unlock data');
         }
 
         // Convert to milestone format

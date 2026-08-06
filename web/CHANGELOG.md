@@ -1,3 +1,8 @@
+## [2.369] - 2026-08-06
+- chore(legacy): F-004 ratchet gate, loud stale-fallback, first tail migrations
+- test: make AppState.update mocks stamp metadata like production
+
+
 ## [2.368] - 2026-08-06
 - fix(state): per-call system-mutation option + once-per-episode quota notification
 - build: gate on dynamic imports that survive the rewrite pass unrewritten
