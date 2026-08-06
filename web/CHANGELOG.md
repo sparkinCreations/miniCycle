@@ -1,3 +1,14 @@
+## [2.375] - 2026-08-06
+- ci: tolerate tag-push rejection on pre-workflow-edit backfill; document getLabel escape contract
+- test: update recurringCore invalid-frequency test to the v2.373 coercion contract
+- chore(release): update version to 2.374
+- docs(security): guard the load-bearing escapeHtml in taskOptionsCustomizer
+- chore(release): update version to 2.373
+- fix(security): validate recurring frequency + escape it at the notification sink
+- ci: scan full history for release tags, not first-parent
+- test: update settingsManager filename assertions to v2.372 contract
+
+
 ## [2.374] - 2026-08-06
 - docs(security): guard the load-bearing escapeHtml in taskOptionsCustomizer
 
