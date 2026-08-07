@@ -1,3 +1,8 @@
+## [2.391] - 2026-08-07
+- fix(gestures): warn once when onNavigate is wired but returns undefined
+- fix(gestures): axis-dominance on swipe and wheel; keyboard guards for Shift+Arrow
+
+
 ## [2.390] - 2026-08-07
 - fix(ui): auto-cycle has no button — stop telling users to press one
 - chore(release): update version to 2.389
