@@ -689,7 +689,8 @@ export class ThemeManager {
      * with no optional chaining, swallowed by its catch — so it would have
      * failed silently had anything called it.
      *
-     * It was also the third live-state mutator in this file; see _saveSetting.
+     * It was also the third live-state mutator in this file; the other two,
+     * saveThemeToStorage and saveDarkModeToStorage, are now producers.
      */
 
     // ===== THEME PANEL FUNCTIONS =====
@@ -1102,9 +1103,10 @@ export class ThemeManager {
      *
      * A whole-state writer — it did Object.assign(state, data) inside the
      * producer, replacing every top-level key from whatever object it was
-     * handed. Its last three callers now write single keys through
-     * _saveSetting (theme, darkMode) or were deleted outright
-     * (unlockThemeFallback), leaving it with none.
+     * handed. Its last three callers either write single keys through their
+     * own AppState.update() producer now (saveThemeToStorage,
+     * saveDarkModeToStorage) or were deleted outright (unlockThemeFallback),
+     * leaving it with none.
      *
      * Deleted rather than left @deprecated because the deprecation notice had
      * not stopped anything: the hazard is that a caller pairs it with
