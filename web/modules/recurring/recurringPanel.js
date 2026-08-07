@@ -23,7 +23,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS, DATA_SELECTORS, DOM_CLASSES, UI_TIMEOUTS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DATA_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, LIMITS } from '../core/constants.js';
 import { ICONS } from '../utils/icons.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { handleHorizontalArrowNav } from '../utils/keyboardNav.js';
@@ -34,6 +34,7 @@ import {
     updateRecurringButtonVisibility as bootUpdateButtonVisibility,
     updateRecurringInfoLink as bootUpdateInfoLink
 } from './recurringBoot.js';
+import { formatLocalDate } from './recurringDateUtils.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -459,8 +460,15 @@ export class RecurringPanelManager {
             input.setAttribute("aria-label", isFirst ? getLabel('recurring.firstSpecificDate') : getLabel('recurring.specificDate', { vars: { index: index + 1 } }));
             input.required = true;
 
+            // Assign `value` from a locally-formatted string, NOT `valueAsDate`.
+            // valueAsDate is a UTC setter: it renders the instant's UTC calendar
+            // day. getTomorrow() is local, so in any negative offset an evening
+            // "tomorrow" is already the day after in UTC, and the input defaulted
+            // TWO days out. Measured Aug 2026: wrong from 20:00 EDT / 17:00 PDT
+            // onward, silent, and a user who accepts the default schedules the
+            // recurrence a day late.
             try {
-                input.valueAsDate = this.getTomorrow();
+                input.value = formatLocalDate(this.getTomorrow()) ?? '';
             } catch (error) {
                 console.warn("⚠️ Could not set default date:", error);
             }
@@ -472,7 +480,8 @@ export class RecurringPanelManager {
             this.deps.safeAddEventListener(input, "change", () => {
                 if (isFirst && !input.value) {
                     try {
-                        input.valueAsDate = this.getTomorrow();
+                        // Same UTC hazard as the default above — local format only.
+                        input.value = formatLocalDate(this.getTomorrow()) ?? '';
                     } catch (error) {
                         console.warn("⚠️ Could not reset date:", error);
                     }
@@ -553,6 +562,18 @@ export class RecurringPanelManager {
         });
 
         this.deps.safeAddEventListener(addBtn, "click", () => {
+            // Refuse past the cap and say so, rather than adding silently.
+            // The .mcyc importer truncates to the same LIMITS.MAX_SPECIFIC_DATES;
+            // before this the panel had no cap at all, so the two producers for
+            // the same field disagreed (REVIEW_PATTERNS.md §4).
+            if (list.children.length >= LIMITS.MAX_SPECIFIC_DATES) {
+                this.deps.showNotification(
+                    getLabel('notify.specificDatesLimit', { vars: { limit: LIMITS.MAX_SPECIFIC_DATES } }),
+                    'info',
+                    UI_TIMEOUTS.NOTIFICATION_SHORT
+                );
+                return;
+            }
             createDateInput(false);
         });
 

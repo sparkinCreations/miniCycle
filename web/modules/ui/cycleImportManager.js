@@ -583,7 +583,7 @@ export async function processImportedData(fileContent) {
         if (safeSettings.specificDates.dates.length > 0) {
             safeSettings.specificDates.dates = safeSettings.specificDates.dates
                 .filter(d => validateImportedDate(d) !== null)
-                .slice(0, LIMITS.IMPORT_MAX_SPECIFIC_DATES);
+                .slice(0, LIMITS.MAX_SPECIFIC_DATES);
             if (safeSettings.specificDates.dates.length === 0) {
                 safeSettings.specificDates.enabled = false;
             }

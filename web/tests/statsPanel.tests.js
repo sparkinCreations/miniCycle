@@ -604,6 +604,55 @@ export async function runStatsPanelTests(resultsDiv) {
         await statsPanel.updateStatsPanel();
     });
 
+    // === CAROUSEL NAVIGATION DELEGATE ===
+    // moduleLoader wires gesturePanelManager's onNavigate to
+    // statsPanelManager.navigatePanels(). gesturePanelManager reads an
+    // `undefined` result as "carousel not available" and falls back to its
+    // legacy BINARY task<->stats path — so a missing delegate here does not
+    // throw, it silently reverts every gesture to two-panel behavior. That is
+    // exactly what shipped: the focus task panel could not be reached by
+    // swipe, and swiping out of it skipped the task view and landed on stats.
+
+    await test('exposes navigatePanels (moduleLoader wires onNavigate to it)', () => {
+        const statsPanel = new StatsPanelManager();
+        if (typeof statsPanel.navigatePanels !== 'function') {
+            throw new Error(
+                'navigatePanels is declared in this module\'s manifest `provides` and consumed by ' +
+                'moduleLoader; without the delegate gestures fall back to the legacy binary path'
+            );
+        }
+    });
+
+    await test('navigatePanels forwards direction and returns the carousel result', async () => {
+        const statsPanel = new StatsPanelManager();
+        await new Promise(resolve => setTimeout(resolve, 200));
+
+        const seen = [];
+        const landed = { id: 'focus-task-panel', index: 0 };
+        statsPanel._gestures = { navigatePanels: (d) => { seen.push(d); return landed; } };
+
+        const result = statsPanel.navigatePanels(-1);
+        if (seen.length !== 1 || seen[0] !== -1) {
+            throw new Error(`Expected direction -1 forwarded once, got ${JSON.stringify(seen)}`);
+        }
+        // Must return the result, NOT undefined — undefined is the signal that
+        // makes gesturePanelManager abandon the carousel.
+        if (result !== landed) {
+            throw new Error(`Expected the carousel result to be returned, got ${JSON.stringify(result)}`);
+        }
+    });
+
+    await test('navigatePanels returns undefined when the sub-module is absent', async () => {
+        // Deliberate: no sub-module means no carousel, so gesturePanelManager
+        // SHOULD fall back to its legacy path rather than treat it as a clamp.
+        const statsPanel = new StatsPanelManager();
+        await new Promise(resolve => setTimeout(resolve, 200));
+        statsPanel._gestures = null;
+        if (statsPanel.navigatePanels(1) !== undefined) {
+            throw new Error('Expected undefined (fall back), not null (clamped)');
+        }
+    });
+
     // === RESULTS SUMMARY ===
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;

@@ -604,6 +604,31 @@ export class StatsPanelManager {
 
     showStatsPanel() { return this._gestures?.showStatsPanel(); }
 
+    /**
+     * Indexed carousel navigation (+1 next / -1 previous).
+     *
+     * moduleLoader wires gesturePanelManager's onNavigate to
+     * `statsPanelManager.navigatePanels(...)`, and the manifest has always
+     * declared it in this module's `provides` — but the delegate was missing
+     * here, so the optional call resolved to `undefined`. gesturePanelManager
+     * reads undefined as "carousel not available" and falls back to its legacy
+     * BINARY task↔stats path, which silently disabled every three-panel
+     * gesture: you could not swipe into the focus task panel at all (only the
+     * button opened it), and swiping out of it jumped straight to stats
+     * instead of stepping back to the task view.
+     *
+     * The fallback is why this never threw — it degraded to the old two-panel
+     * behavior, which looks correct until a third panel exists.
+     *
+     * Returning undefined when _gestures is absent is deliberate and matches
+     * that contract: no sub-module means no carousel, so the legacy path is
+     * the right behavior.
+     *
+     * @param {number} direction
+     * @returns {{id:string, index:number}|null|undefined}
+     */
+    navigatePanels(direction) { return this._gestures?.navigatePanels(direction); }
+
     initView() {
         // Start with task view visible, stats panel hidden from tab order.
         // initTo() writes ONLY inert + dot state (no SHOW/HIDE classes, no

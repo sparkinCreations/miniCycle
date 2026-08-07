@@ -28,6 +28,7 @@
 import { createDIModule, required, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { formatLocalDate } from '../recurring/recurringDateUtils.js';
 
 const TICK_INTERVAL_MS = 60_000;
 const APPSTATE_SUBSCRIBER_KEY = 'dailyResetManager';
@@ -49,10 +50,7 @@ export const setDailyResetManagerDependencies = di.setDependencies;
 
 /** Local-date YYYY-MM-DD. Avoids UTC timezone bugs around midnight. */
 function todayLocal(now = new Date()) {
-    const y = now.getFullYear();
-    const m = String(now.getMonth() + 1).padStart(2, '0');
-    const d = String(now.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
+    return formatLocalDate(now);
 }
 
 /** Returns timestamp (ms) for `today @ hour:minute` in local time. */
