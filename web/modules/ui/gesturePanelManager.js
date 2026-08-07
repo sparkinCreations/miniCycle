@@ -93,6 +93,9 @@ export class GesturePanelManager {
         // Initialization flag
         this._eventListenersInitialized = false;
 
+        // One-shot guard so the dead-onNavigate warning doesn't spam every swipe
+        this._warnedDeadNavigate = false;
+
     }
 
     /**
@@ -476,6 +479,15 @@ export class GesturePanelManager {
                     this.state.isStatsVisible = result.id === 'stats-panel';
                 }
                 return result;
+            }
+            // Wired but not answering — the truthy-closure trap above. Falling
+            // back is correct, but this state is NOT normal: it silently
+            // demotes a 3-panel carousel to 2-panel behavior, which is exactly
+            // how the v2.388 regression (statsPanel never forwarded
+            // navigatePanels) survived. Warn once so the next one is visible.
+            if (!this._warnedDeadNavigate) {
+                this._warnedDeadNavigate = true;
+                console.warn('⚠️ gesturePanelManager: onNavigate is wired but returned undefined — carousel unavailable, using legacy 2-panel fallback.');
             }
         }
 

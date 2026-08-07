@@ -113,6 +113,48 @@ export async function runGesturePanelManagerTests(resultsDiv) {
         if (m.isStatsVisible() !== false) throw new Error('isStatsVisible should be false');
     });
 
+    await test('wired-but-dead onNavigate falls back AND warns exactly once', () => {
+        let shown = 0;
+        const warnings = [];
+        const originalWarn = console.warn;
+        console.warn = (msg) => warnings.push(String(msg));
+        try {
+            // The truthy-closure trap: onNavigate IS a function but its inner
+            // path is dead, so it returns undefined. Falling back keeps
+            // gestures alive (correct), but silence is how the v2.388
+            // three-panel regression went unnoticed.
+            const m = makeManager({
+                onNavigate: () => undefined,
+                onShowStatsPanel: () => { shown++; },
+                onShowTaskView: () => {}
+            });
+            m._navigate(1);
+            m._navigate(1);
+            m._navigate(-1);
+            if (shown !== 1) throw new Error('legacy fallback did not run');
+            const dead = warnings.filter(w => w.includes('onNavigate is wired but returned undefined'));
+            if (dead.length !== 1) throw new Error(`expected exactly 1 warning, got ${dead.length}`);
+        } finally {
+            console.warn = originalWarn;
+        }
+    });
+
+    await test('a healthy onNavigate never triggers the dead-wiring warning', () => {
+        const warnings = [];
+        const originalWarn = console.warn;
+        console.warn = (msg) => warnings.push(String(msg));
+        try {
+            const m = makeManager({ onNavigate: () => ({ id: 'stats-panel', index: 1 }) });
+            m._navigate(1);
+            if (warnings.some(w => w.includes('onNavigate is wired but returned undefined'))) {
+                throw new Error('warned on a healthy carousel');
+            }
+            if (m.isStatsVisible() !== true) throw new Error('carousel result not applied');
+        } finally {
+            console.warn = originalWarn;
+        }
+    });
+
     await test('missing callbacks do not throw (optional deps default to null)', () => {
         const m = makeManager(); // no callbacks
         m._triggerShowStatsPanel();
