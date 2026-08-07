@@ -60,7 +60,7 @@ import { getLabel } from '../labels/labelResolver.js';
 const di = createDIModule('TaskCycleReset', {
     appInit: optional(null),
     AppState: optional(null),
-    AppGlobalState: optional(null),  // FIX #8: batch-operation flag for undo snapshot guard
+    AppGlobalState: optional(null),  // batch-operation flag for undo snapshot guard
     loadMiniCycleData: optional(null),
     autoSave: optional(null),
     isPerformingUndoRedo: optional(null),
@@ -117,7 +117,7 @@ export function setTaskCycleResetDependencies(dependencies) {
 // Track active state to prevent concurrent resets
 let isResetting = false;
 
-// FIX #8 completion (v2.360): mirror the reset flag into
+// v2.360: mirror the reset flag into
 // AppGlobalState.isResetting — undoRedoManager's batch-operation guard reads
 // the GLOBAL flag, which was declared and checked but never SET anywhere (the
 // setter was lost in the taskCore extraction; only this module-local existed).
@@ -549,7 +549,7 @@ export async function resetTasksImpl(deps = {}) {
         // checkbox handler (taskCompletion), Complete All (executeCompleteAll),
         // or a mode switch (modeManager). Capturing here as well double-counted
         // the checkbox flow (restoring the all-completed intermediate on first
-        // Undo); and once FIX #8 raised the global isResetting flag, this
+        // Undo); and once the global isResetting flag was raised, this
         // capture was dead code anyway. The invariant is now uniform:
         // gestures capture, executors don't.
 

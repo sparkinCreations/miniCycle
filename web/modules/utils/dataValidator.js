@@ -2,7 +2,7 @@
  * 🛡️ Data Validator
  * Validates data at the data layer boundary
  *
- * ✅ FIX #12: Ensures all data is validated before storage,
+ * Ensures all data is validated before storage,
  * preventing malicious/invalid data from import/export bypass
  *
  * @module utils/dataValidator

@@ -350,7 +350,7 @@ export class MiniCycleNotifications {
     // Pass getter function to EducationalTipManager for live deps access
     this.educationalTips = new EducationalTipManager(() => this.deps);
     this.isDraggingNotification = false;
-    this._activeListeners = new WeakMap(); // ✅ FIX #2: Track cleanup functions per notification
+    this._activeListeners = new WeakMap(); // Track cleanup functions per notification
 
     // Store instance reference for late dep updates
     _notificationsInstance = this;
@@ -488,7 +488,7 @@ export class MiniCycleNotifications {
         : `<div class="notification-content">${escapedMessage}</div>
            <button class="close-btn" title="${getLabel('button.close')}" aria-label="${getLabel('notify.closeNotification')}">✖</button>`;
 
-      // ✅ FIX #7: Track cleanup function for timeouts
+      // Track cleanup function for timeouts
       let cleanupTimeouts = null;
       let notificationRemoved = false;
 
@@ -704,7 +704,7 @@ export class MiniCycleNotifications {
 
       notificationContainer.appendChild(notification);
 
-      // ✅ FIX #7: Track cleanup function for timeouts
+      // Track cleanup function for timeouts
       let cleanupTimeouts = null;
       let notificationRemoved = false;
 
@@ -875,7 +875,7 @@ async setDefaultPosition(notificationContainer) {
     let touchPaused = false;
     let remaining = duration;
     let removeTimeout;
-    let removeDelayTimeout; // ✅ FIX #7: Track fade-out delay timeout
+    let removeDelayTimeout; // Track fade-out delay timeout
     let touchResumeTimeout;
     let startTime = Date.now();
 
@@ -962,7 +962,7 @@ async setDefaultPosition(notificationContainer) {
       }, UI_TIMEOUTS.NOTIFICATION_RESUME_MIN);
     }, { passive: true });
 
-    // ✅ FIX #7: Return cleanup function to clear all timeouts
+    // Return cleanup function to clear all timeouts
     return () => {
       if (removeTimeout) clearTimeout(removeTimeout);
       if (removeDelayTimeout) clearTimeout(removeDelayTimeout);
@@ -1047,7 +1047,7 @@ async setDefaultPosition(notificationContainer) {
       }
     };
 
-    // ✅ FIX #2: Track cleanup functions for this notification
+    // Track cleanup functions for this notification
     const cleanupFunctions = [];
 
     // Unified pointer-based drag (mouse + touch + pen).
@@ -1154,7 +1154,7 @@ async setDefaultPosition(notificationContainer) {
       _safeAddEventListener(notificationContainer, "pointerup", endDrag);
       _safeAddEventListener(notificationContainer, "pointercancel", endDrag);
 
-      // FIX #2: Store cleanup for forced cleanup on notification removal
+      // Store cleanup for forced cleanup on notification removal
       cleanupFunctions.push(() => {
         notificationContainer.removeEventListener("pointermove", onPointerMove);
         notificationContainer.removeEventListener("pointerup", endDrag);
@@ -1168,7 +1168,7 @@ async setDefaultPosition(notificationContainer) {
       notificationContainer.removeEventListener("pointerdown", pointerDownHandler);
     });
 
-    // ✅ FIX #2: Watch for notification removal and cleanup listeners
+    // Watch for notification removal and cleanup listeners
     const cleanup = () => {
       // Clear any pending throttled save
       if (pendingSave) {

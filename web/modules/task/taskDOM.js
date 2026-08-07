@@ -1154,7 +1154,7 @@ export class TaskDOMManager {
         const { completed } = taskContext;
         const { shouldSave, isLoading, deferAppend, targetContainer } = options;
 
-        // ✅ FIX #6: Support batched DOM operations
+        // Support batched DOM operations
         const container = targetContainer || taskList;
 
         // Safety check: ensure container exists and is a DOM element

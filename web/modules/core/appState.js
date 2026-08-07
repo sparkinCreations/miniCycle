@@ -88,7 +88,6 @@ class MiniCycleState {
             addWindowListener: mergedDeps.addWindowListener || ((evt, fn) => window.addEventListener(evt, fn))
         };
 
-        // Your existing properties
         this.data = null;
         this.isDirty = false;
         this.saveTimeout = null;
@@ -96,8 +95,8 @@ class MiniCycleState {
         this.SAVE_DELAY = DEBOUNCE.STATE_SAVE; // Debounce for faster persistence
         // Instance version - uses injected AppMeta (no hardcoded fallback)
         this.version = mergedDeps.AppMeta?.version;
-        this.isInitialized = false; // ✅ Add this flag
-        this._initPromise = null; // ✅ FIX #1: Track in-flight initialization
+        this.isInitialized = false; // Guards against re-initialization
+        this._initPromise = null; // Track in-flight initialization to prevent duplicate init
         // One notification per quota episode: without this, every debounced
         // save during a full-store episode stacks another PERSISTENT warning
         // while the user keeps working (review F-001). Reset on successful
@@ -278,7 +277,7 @@ class MiniCycleState {
         }
     }
 
-    // ✅ FIX #1: Internal initialization method (called only once)
+    // Internal initialization method (called only once)
     async _initializeInternal() {
 
         try {
@@ -602,7 +601,6 @@ class MiniCycleState {
             await this.init();
         }
         
-        // Your existing update logic stays the same
         if (!this.data) {
             console.warn('⚠️ State not ready for updates');
             return;
@@ -677,7 +675,7 @@ class MiniCycleState {
         this._showSavingIndicator();
 
         try {
-            // ✅ FIX #4: Check for concurrent modifications before saving
+            // Check for concurrent modifications before saving
             const currentStored = this.deps.storage.getItem(STORAGE_KEYS.DATA);
             if (currentStored) {
                 try {

@@ -107,7 +107,7 @@ async function handleMiniCycleTitleBlur() {
     const showNotification = _deps.showNotification;
     const GlobalUtils = _deps.GlobalUtils;
 
-    // ✅ FIX #1: Load data once at the start
+    // Load data once at the start — repeated reads mid-function can observe a mid-save state
     const schemaData = loadMiniCycleData?.();
     if (!schemaData) {
         console.error('Schema 2.5 data required for title update');
@@ -139,7 +139,7 @@ async function handleMiniCycleTitleBlur() {
         return;
     }
 
-    // ✅ FIX #2: Enforce character limit — the title was clamped above, so reflect
+    // Enforce character limit — the title was clamped above, so reflect
     // that in the visible <h1> (it would otherwise keep the over-long text) and
     // warn the user.
     if (rawTitle.length > maxLength) {

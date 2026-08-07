@@ -570,7 +570,7 @@ export function captureStateSnapshot(state) {
     return;
   }
 
-  // ✅ FIX #8: Don't capture snapshots during batch operations (reset, complete all)
+  // Don't capture snapshots during batch operations (reset, complete all)
   if (_deps.AppGlobalState.isResetting) {
     return;
   }
@@ -1592,7 +1592,7 @@ export async function onCycleCreated(cycleId) {
     _deps.AppGlobalState.activeRedoStack = [];
     updateUndoRedoButtons();
   } catch (e) {
-    // ✅ FIX #5: Error boundary for cycle creation
+    // Error boundary for cycle creation
     console.error('❌ Failed to initialize undo stack for new cycle:', e);
 
     // Still set up empty stacks in memory even if IndexedDB fails
@@ -1628,7 +1628,7 @@ export async function onCycleDeleted(cycleId) {
       updateUndoRedoButtons();
     }
   } catch (e) {
-    // ✅ FIX #5: Error boundary for cycle deletion
+    // Error boundary for cycle deletion
     console.error('❌ Failed to delete undo stack:', e);
 
     // Still clean up memory even if IndexedDB fails
@@ -1670,7 +1670,7 @@ export async function onCycleRenamed(oldCycleId, newCycleId) {
         relabelSnapshotsForCycle(_deps.AppGlobalState.activeRedoStack, newCycleId);
     }
   } catch (e) {
-    // ✅ FIX #5: Error boundary for cycle rename
+    // Error boundary for cycle rename
     console.error('❌ Failed to rename undo stack:', e);
 
     // Still update in-memory tracking (and relabel) even if IndexedDB fails
@@ -1816,7 +1816,7 @@ export async function initUndoSystemForApp() {
     document.addEventListener('visibilitychange', _visibilityFlushHandler);
 
   } catch (e) {
-    // ✅ FIX #5: Error boundary for undo system initialization
+    // Error boundary for undo system initialization
     console.error('❌ Undo system initialization failed:', e);
 
     // Initialize with empty stacks to ensure app still works
@@ -2039,7 +2039,8 @@ export async function deleteUndoStackFromIndexedDB(cycleId) {
     const objectStore = transaction.objectStore("undoStacks");
     const request = objectStore.delete(cycleId);
 
-    // ✅ FIX #11: Properly await IndexedDB operation
+    // Wrap the callback-based request so callers actually await completion
+    // and failures reach the error boundary
     await new Promise((resolve, reject) => {
       request.onsuccess = () => {
         resolve();
@@ -2085,7 +2086,8 @@ export async function renameUndoStackInIndexedDB(oldCycleId, newCycleId) {
       version: APP_VERSION
     };
 
-    // ✅ FIX #11: Properly await IndexedDB operations
+    // Wrap the callback-based request so callers actually await completion
+    // and failures reach the error boundary
     const putRequest = objectStore.put(newData);
     await new Promise((resolve, reject) => {
       putRequest.onsuccess = () => resolve();
@@ -2115,7 +2117,8 @@ export async function clearAllUndoHistoryFromIndexedDB() {
     const objectStore = transaction.objectStore("undoStacks");
     const request = objectStore.clear();
 
-    // ✅ FIX #11: Properly await IndexedDB operation
+    // Wrap the callback-based request so callers actually await completion
+    // and failures reach the error boundary
     await new Promise((resolve, reject) => {
       request.onsuccess = () => {
         resolve();
