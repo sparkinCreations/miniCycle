@@ -1285,6 +1285,66 @@ export async function runRecurringPanelTests(resultsDiv) {
         }
     });
 
+    // ===== SPECIFIC-DATES CAP =====
+    // The .mcyc importer truncates specificDates to LIMITS.MAX_SPECIFIC_DATES.
+    // The Add button had no cap, so the two producers for the same field
+    // disagreed. It now refuses past the cap AND says why — a silent no-op
+    // would read as a broken button.
+
+    /**
+     * Build the DOM setupSpecificDatesPanel() needs, seed the list with
+     * `seedCount` rows, run setup, click Add, and report what happened.
+     */
+    async function clickAddWithListSize(seedCount) {
+        const { LIMITS } = await import(`../modules/core/constants.js?v=${window.testCacheBuster || Date.now()}`);
+        const ids = ['recur-specific-dates', 'specific-dates-panel', 'specific-date-time-options',
+                     'add-specific-date', 'specific-date-list'];
+        const made = ids.map((id) => {
+            const el = document.createElement(id === 'add-specific-date' ? 'button' : 'div');
+            el.id = id;
+            document.body.appendChild(el);
+            return el;
+        });
+        const [checkbox, , , addBtn, list] = made;
+        checkbox.checked = false;
+
+        for (let i = 0; i < seedCount; i++) {
+            list.appendChild(document.createElement('div'));
+        }
+
+        const notifications = [];
+        try {
+            setupPanelDeps({ showNotification: (msg) => { notifications.push(msg); return msg; } });
+            const panel = new RecurringPanelManager();
+            panel.setupSpecificDatesPanel();
+            const before = list.children.length;
+            addBtn.click();
+            return { before, after: list.children.length, notifications, max: LIMITS.MAX_SPECIFIC_DATES };
+        } finally {
+            made.forEach((el) => el.remove());
+        }
+    }
+
+    await test('Add button appends a date row below the cap', async () => {
+        const r = await clickAddWithListSize(2);
+        if (r.after !== r.before + 1) {
+            throw new Error(`Expected a row to be added (${r.before} -> ${r.after})`);
+        }
+    });
+
+    await test('Add button refuses at the cap and explains why', async () => {
+        const r = await clickAddWithListSize(366);
+        if (r.after !== r.before) {
+            throw new Error(`Expected no row added at the cap (${r.before} -> ${r.after})`);
+        }
+        if (r.notifications.length === 0) {
+            throw new Error('Refusing silently reads as a broken button — expected a notification');
+        }
+        if (!String(r.notifications[0]).includes(String(r.max))) {
+            throw new Error(`Notification should state the limit ${r.max}, got: ${r.notifications[0]}`);
+        }
+    });
+
     // ===== RESULTS SUMMARY =====
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;

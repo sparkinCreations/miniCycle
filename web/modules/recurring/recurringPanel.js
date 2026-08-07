@@ -23,7 +23,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS, DATA_SELECTORS, DOM_CLASSES, UI_TIMEOUTS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DATA_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, LIMITS } from '../core/constants.js';
 import { ICONS } from '../utils/icons.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { handleHorizontalArrowNav } from '../utils/keyboardNav.js';
@@ -562,6 +562,18 @@ export class RecurringPanelManager {
         });
 
         this.deps.safeAddEventListener(addBtn, "click", () => {
+            // Refuse past the cap and say so, rather than adding silently.
+            // The .mcyc importer truncates to the same LIMITS.MAX_SPECIFIC_DATES;
+            // before this the panel had no cap at all, so the two producers for
+            // the same field disagreed (REVIEW_PATTERNS.md §4).
+            if (list.children.length >= LIMITS.MAX_SPECIFIC_DATES) {
+                this.deps.showNotification(
+                    getLabel('notify.specificDatesLimit', { vars: { limit: LIMITS.MAX_SPECIFIC_DATES } }),
+                    'info',
+                    UI_TIMEOUTS.NOTIFICATION_SHORT
+                );
+                return;
+            }
             createDateInput(false);
         });
 

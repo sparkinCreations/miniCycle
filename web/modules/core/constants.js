@@ -261,7 +261,7 @@ export const LIMITS = Object.freeze({
     UNDO_STACK: 20,                // Max items in undo/redo stack
     UNDO_CACHE_MAX_BYTES: 1000000, // Byte cap on the localStorage undo cache (~1MB of the ~5MB quota shared with main state); oldest snapshots shed first. REAL bytes: consumers compare string length × 2 (UTF-16), matching storageUtils' quota metering
     TASKS_PER_CYCLE: 150,          // Max tasks per cycle/routine
-    IMPORT_MAX_SPECIFIC_DATES: 366, // Max specificDates entries kept per imported recurring task (a year of dailies)
+    MAX_SPECIFIC_DATES: 366,       // Max specificDates entries per recurring task (a year of dailies). Shared by BOTH producers — the .mcyc importer (which truncates) and the panel's Add button (which refuses and notifies). Was import-only, so the panel had no cap at all and the two disagreed
     DYNAMIC_CACHE_ENTRIES: 100,    // Max entries in service worker dynamic cache
     NORMALIZATION_CACHE: 50,       // Max entries in recurring settings normalization cache
     ERROR_LOG: 50,                 // Max errors to keep in error log
