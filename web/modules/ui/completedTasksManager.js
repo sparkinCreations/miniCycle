@@ -22,6 +22,7 @@
 
 import { createDIModule, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -32,6 +33,7 @@ const di = createDIModule('CompletedTasksManager', {
     getElementById: optional((id) => document.getElementById(id)),
     querySelector: optional((sel) => document.querySelector(sel)),
     getActiveElement: optional(() => document.activeElement),
+    getBody: optional(() => document.body),
     safeAddEventListener: optional((el, evt, fn) => { el?.removeEventListener(evt, fn); el?.addEventListener(evt, fn); })
 });
 
@@ -263,6 +265,65 @@ export class CompletedTasksManager {
             completedSection.classList.remove(DOM_CLASSES.SHOW);
         } else {
             completedSection.classList.add(DOM_CLASSES.SHOW);
+        }
+
+        this._refreshAllCompleteState();
+    }
+
+    /**
+     * Signal "this routine has tasks and every one is complete" to CSS, and fill
+     * the empty state's completion copy.
+     *
+     * Why this exists: moveToCompleted() takes finished tasks OUT of #taskList,
+     * so completing the last one leaves the list `:empty` and CSS shows
+     * #empty-state — whose default copy is first-run onboarding ("No tasks yet
+     * / press + to add a task"). Someone who just finished their whole routine
+     * was being told they had nothing.
+     *
+     * Read from AppState, NEVER the DOM (CLAUDE.md mistake 14). The rendered
+     * list genuinely cannot tell the two cases apart: "all complete, moved to
+     * the dropdown" and "brand new routine" are both an empty #taskList. State
+     * distinguishes them, and it also keeps To-Do mode honest — there
+     * deleteCheckedTasks REMOVES finished tasks, so the routine really does
+     * have zero tasks and the onboarding copy is the correct message.
+     * @private
+     */
+    _refreshAllCompleteState() {
+        const body = this.deps.getBody?.();
+        if (!body) return;
+
+        const AppState = this.deps.AppState;
+        if (!AppState?.isReady?.()) {
+            // Unknown, not false — leave whatever is there rather than flashing
+            // onboarding copy at someone mid-boot.
+            return;
+        }
+
+        const state = AppState.get();
+        const activeId = state?.appState?.activeCycleId;
+        const cycle = activeId ? state?.data?.cycles?.[activeId] : null;
+        const tasks = Array.isArray(cycle?.tasks) ? cycle.tasks : [];
+        const allComplete = tasks.length > 0 && tasks.every(t => t.completed);
+
+        body.classList.toggle(DOM_CLASSES.ALL_TASKS_COMPLETE, allComplete);
+        if (!allComplete) return;
+
+        // Reuses the focus panel's labels rather than adding parallel `empty.*`
+        // ones: focusTask.allDone is already overridden by every vocab theme
+        // ("All habits complete!", "All exercises complete!"), so a second copy
+        // would need five theme overrides of its own and drift from this one.
+        const emptyState = this.deps.getElementById(DOM_IDS.EMPTY_STATE);
+        if (!emptyState) return;
+
+        const text = emptyState.querySelector(DOM_SELECTORS.EMPTY_STATE_ALLDONE_TEXT);
+        if (text) text.textContent = getLabel('focusTask.allDone');
+
+        const hint = emptyState.querySelector(DOM_SELECTORS.EMPTY_STATE_ALLDONE_HINT);
+        if (hint) {
+            // To-Do mode clears finished tasks; cycle modes reset them.
+            hint.textContent = getLabel(cycle?.deleteCheckedTasks
+                ? 'focusTask.allDoneHintTodo'
+                : 'focusTask.allDoneHintCycle');
         }
     }
 

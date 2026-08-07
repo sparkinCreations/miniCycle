@@ -231,6 +231,113 @@ export async function runStatsPanelGesturesTests(resultsDiv) {
         if (g.wheelTimeout !== null) throw new Error('destroy should clear the wheel timeout');
     });
 
+    // ── panel persistence + boot restore ────────────────────────────────────
+    // Focus mode already survives a reload (settings.focusModeActive) but the
+    // panel within it did not — initView() hardcodes 'task-view', so refreshing
+    // while working one task at a time dumped the user back on the routine list.
+
+    const { EVENTS } = await import(`../modules/core/constants.js?v=${cacheBuster}`);
+
+    /** Manager whose AppState records update() producers against a real object. */
+    const makeStateManager = (settings = {}, ready = true) => {
+        const state = { settings };
+        const m = makeManager();
+        m.rawDeps.AppState = {
+            isReady: () => ready,
+            get: () => state,
+            update: (fn) => { fn(state); }
+        };
+        m._state = state;
+        return m;
+    };
+
+    const fireFocusRestore = (restoring) =>
+        document.dispatchEvent(new CustomEvent(EVENTS.FOCUS_MODE_ACTIVATED, { detail: { restoring } }));
+
+    await test('_persistActivePanel records the active panel in settings', () => {
+        const m = makeStateManager();
+        const g = new StatsPanelGestures(m);
+        g._persistActivePanel('focus-task-panel');
+        if (m._state.settings.activePanelId !== 'focus-task-panel') {
+            throw new Error(`Expected the panel id to persist, got ${m._state.settings.activePanelId}`);
+        }
+    });
+
+    await test('_persistActivePanel skips a write when the value is unchanged', () => {
+        // Fires on every swipe; a redundant write would churn state and its
+        // listeners for no reason.
+        const m = makeStateManager({ activePanelId: 'stats-panel' });
+        const g = new StatsPanelGestures(m);
+        let updates = 0;
+        m.rawDeps.AppState.update = () => { updates++; };
+        g._persistActivePanel('stats-panel');
+        if (updates !== 0) throw new Error(`Expected no write for an unchanged value, got ${updates}`);
+    });
+
+    await test('restores the focus task panel when the app boots INTO focus mode', () => {
+        const m = makeStateManager({ activePanelId: 'focus-task-panel' });
+        const g = new StatsPanelGestures(m);
+        const car = mockCarousel();
+        g.carousel = car;
+        g._setupPanelRestore();
+        try {
+            fireFocusRestore(true);
+            const went = car.calls.find(c => c[0] === 'goTo');
+            if (!went) throw new Error('Expected the remembered panel to be restored');
+            if (went[1] !== 'focus-task-panel') throw new Error(`Restored the wrong panel: ${went[1]}`);
+        } finally {
+            g.destroy();
+        }
+    });
+
+    await test('does NOT restore on a mid-session focus-mode toggle', () => {
+        // Switching focus mode on is not a request to jump to the task panel.
+        const m = makeStateManager({ activePanelId: 'focus-task-panel' });
+        const g = new StatsPanelGestures(m);
+        const car = mockCarousel();
+        g.carousel = car;
+        g._setupPanelRestore();
+        try {
+            fireFocusRestore(false);
+            document.dispatchEvent(new CustomEvent(EVENTS.FOCUS_MODE_ACTIVATED)); // no detail at all
+            if (car.calls.some(c => c[0] === 'goTo')) {
+                throw new Error('A user toggle must not move the view');
+            }
+        } finally {
+            g.destroy();
+        }
+    });
+
+    await test('does not restore a remembered panel other than the focus task panel', () => {
+        const m = makeStateManager({ activePanelId: 'stats-panel' });
+        const g = new StatsPanelGestures(m);
+        const car = mockCarousel();
+        g.carousel = car;
+        g._setupPanelRestore();
+        try {
+            fireFocusRestore(true);
+            if (car.calls.some(c => c[0] === 'goTo')) {
+                throw new Error('Stats is a glance surface — booting into it would surprise');
+            }
+        } finally {
+            g.destroy();
+        }
+    });
+
+    await test('destroy() removes the focus-mode listener', () => {
+        const m = makeStateManager({ activePanelId: 'focus-task-panel' });
+        const g = new StatsPanelGestures(m);
+        const car = mockCarousel();
+        g.carousel = car;
+        g._setupPanelRestore();
+        g.destroy();
+        g.carousel = car; // destroy() nulls it; restore so a leaked listener would show
+        fireFocusRestore(true);
+        if (car.calls.some(c => c[0] === 'goTo')) {
+            throw new Error('Listener outlived destroy()');
+        }
+    });
+
     // Final summary
     const allPassed = passed.count === total.count;
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed</h3>`;

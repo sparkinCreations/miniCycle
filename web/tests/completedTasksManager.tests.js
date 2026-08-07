@@ -793,6 +793,108 @@ export async function runCompletedTasksManagerTests(resultsDiv, isPartOfSuite = 
         }
     });
 
+    // === ALL-TASKS-COMPLETE EMPTY STATE ===
+    // moveToCompleted() takes finished tasks OUT of #taskList, so completing the
+    // last one leaves the list :empty and CSS shows #empty-state — whose default
+    // copy is first-run onboarding. body.all-tasks-complete swaps in a
+    // completion message instead. It MUST be derived from AppState: an empty
+    // #taskList looks identical whether the routine was just finished or is
+    // brand new.
+
+    /** Build the empty-state markup updateCount() writes into. */
+    function addEmptyStateDOM() {
+        const es = document.createElement('div');
+        es.id = 'empty-state';
+        es.innerHTML = `
+            <div class="empty-state-text">No tasks yet</div>
+            <div class="empty-state-alldone-text"></div>
+            <div class="empty-state-alldone-hint"></div>
+        `;
+        document.getElementById('test-completed-tasks-container').appendChild(es);
+        return es;
+    }
+
+    /** State whose active cycle carries `tasks`, plus mode flags. */
+    function stateWithTasks(tasks, cycleOverrides = {}) {
+        return {
+            settings: { completedTasksExpanded: false, showCompletedDropdown: true },
+            appState: { activeCycleId: 'Routine A' },
+            data: { cycles: { 'Routine A': { title: 'Routine A', tasks, ...cycleOverrides } } }
+        };
+    }
+
+    function runUpdateCount(state, ready = true) {
+        createTestDOM();
+        const es = addEmptyStateDOM();
+        document.body.classList.remove('all-tasks-complete');
+        setCompletedTasksManagerDependencies(createMockDeps({
+            AppState: { isReady: () => ready, get: () => state, update: () => {} }
+        }));
+        new CompletedTasksManager().updateCount();
+        return {
+            hasClass: document.body.classList.contains('all-tasks-complete'),
+            text: es.querySelector('.empty-state-alldone-text').textContent,
+            hint: es.querySelector('.empty-state-alldone-hint').textContent
+        };
+    }
+
+    await test('flags all-complete when every task in the routine is done', () => {
+        const r = runUpdateCount(stateWithTasks([
+            { id: 'a', text: 'A', completed: true },
+            { id: 'b', text: 'B', completed: true }
+        ]));
+        if (!r.hasClass) throw new Error('body should carry all-tasks-complete');
+        if (!r.text) throw new Error('completion text should be filled from a label');
+        document.body.classList.remove('all-tasks-complete');
+    });
+
+    await test('does NOT flag all-complete when the routine has no tasks', () => {
+        // The genuine empty case — To-Do mode deletes finished tasks, so the
+        // onboarding copy is correct here and must not be replaced.
+        const r = runUpdateCount(stateWithTasks([]));
+        if (r.hasClass) throw new Error('an empty routine is not "all complete"');
+    });
+
+    await test('does NOT flag all-complete when a task is still open', () => {
+        const r = runUpdateCount(stateWithTasks([
+            { id: 'a', text: 'A', completed: true },
+            { id: 'b', text: 'B', completed: false }
+        ]));
+        if (r.hasClass) throw new Error('one incomplete task means not all complete');
+    });
+
+    await test('hint names the cycle button in cycle mode', () => {
+        const r = runUpdateCount(stateWithTasks(
+            [{ id: 'a', text: 'A', completed: true }], { deleteCheckedTasks: false }
+        ));
+        if (!/cycle/i.test(r.hint)) throw new Error(`Expected a cycle hint, got: ${r.hint}`);
+        document.body.classList.remove('all-tasks-complete');
+    });
+
+    await test('hint names the clear button in To-Do mode', () => {
+        const r = runUpdateCount(stateWithTasks(
+            [{ id: 'a', text: 'A', completed: true }], { deleteCheckedTasks: true }
+        ));
+        if (!/clear/i.test(r.hint)) throw new Error(`Expected a clear hint, got: ${r.hint}`);
+        if (/cycle/i.test(r.hint)) throw new Error('To-Do mode must not mention the cycle button');
+        document.body.classList.remove('all-tasks-complete');
+    });
+
+    await test('leaves the flag alone when AppState is not ready', () => {
+        // Unknown is not false — flipping it off mid-boot would flash onboarding
+        // copy at someone who has tasks.
+        document.body.classList.add('all-tasks-complete');
+        createTestDOM();
+        addEmptyStateDOM();
+        setCompletedTasksManagerDependencies(createMockDeps({
+            AppState: { isReady: () => false, get: () => null, update: () => {} }
+        }));
+        new CompletedTasksManager().updateCount();
+        const stillSet = document.body.classList.contains('all-tasks-complete');
+        document.body.classList.remove('all-tasks-complete');
+        if (!stillSet) throw new Error('should not clear the flag while state is unknown');
+    });
+
     // === SUMMARY ===
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;

@@ -1704,6 +1704,14 @@
                  runtime by focusMode.js. -->
             <div class="empty-state-hint">Press the <strong>+</strong> button to show the task bar to add a task or create a new routine</div>
             <div class="empty-state-hint-visible">Type your first task in the bar above and press Add</div>
+            <!-- Completion variant: replaces the text + hint above when the routine
+                 HAS tasks and all of them are complete. With the completed-tasks
+                 dropdown on, finished tasks move out of #taskList, so the list is
+                 :empty and the onboarding copy above would tell someone who just
+                 finished their routine that they have no tasks. Filled at runtime
+                 by completedTasksManager.updateCount(); re-themed by themeManager. -->
+            <div class="empty-state-alldone-text">All tasks complete!</div>
+            <div class="empty-state-alldone-hint">Use the cycle button to start again</div>
         </div>
 
         <!-- Recurring Info Link - shown when recurring templates exist -->

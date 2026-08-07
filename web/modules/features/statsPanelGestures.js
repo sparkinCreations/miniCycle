@@ -14,7 +14,7 @@
  * only those ownership rewrites.
  */
 import { getLabel, getIcon } from '../labels/labelResolver.js';
-import { DOM_CLASSES, DOM_IDS, UI_TIMEOUTS } from '../core/constants.js';
+import { DOM_CLASSES, DOM_IDS, UI_TIMEOUTS, EVENTS } from '../core/constants.js';
 import { PanelCarousel } from '../ui/panelCarousel.js';
 
 export class StatsPanelGestures {
@@ -274,6 +274,14 @@ export class StatsPanelGestures {
 
         this.carousel = new PanelCarousel();
 
+        // Every onShow also records the panel, from ONE place — three separate
+        // persist calls would be three chances for a new panel to forget.
+        // ctx.id comes from the carousel, so this stays correct as panels change.
+        const withPersist = (sideEffects) => (ctx) => {
+            sideEffects(ctx);
+            this._persistActivePanel(ctx?.id);
+        };
+
         // Index 0 — focus task panel (one task at a time). Focus-view-only
         // AND gated behind onboarding (plan D8): the lazy isEnabled check
         // makes it unreachable by swipe/keyboard the moment either gate
@@ -288,7 +296,7 @@ export class StatsPanelGestures {
                     return body.classList.contains(DOM_CLASSES.FOCUS_MODE)
                         && !body.classList.contains(DOM_CLASSES.FIRST_RUN_WELCOME_ACTIVE);
                 },
-                onShow: () => this._onFocusTaskShown(),
+                onShow: withPersist(() => this._onFocusTaskShown()),
                 onHide: () => this._onFocusTaskHidden()
             });
         }
@@ -297,13 +305,70 @@ export class StatsPanelGestures {
             id: 'task-view',
             element: taskView,
             dot: dotFor('task-view'),
-            onShow: () => this._onTaskViewShown()
+            onShow: withPersist(() => this._onTaskViewShown())
         });
         this.carousel.register({
             id: 'stats-panel',
             element: statsPanel,
             dot: dotFor('stats-panel'),
-            onShow: () => this._onStatsPanelShown()
+            onShow: withPersist(() => this._onStatsPanelShown())
+        });
+
+        this._setupPanelRestore();
+    }
+
+    /**
+     * Remember which panel the user was on, and put them back there when the app
+     * boots straight into focus mode.
+     *
+     * Focus mode itself already survives a reload (state.settings.focusModeActive),
+     * but the panel within it did not — initView() hardcodes 'task-view', so a
+     * refresh while working through tasks one at a time dropped the user back to
+     * the routine list. Half-restored session.
+     *
+     * Scope is deliberately narrow: ONLY the focus task panel is restored.
+     * - It is gated behind focus mode, so it can only ever restore for someone
+     *   who deliberately left the app in that mode.
+     * - Restoring 'stats-panel' would change the landing surface for everyone,
+     *   which is a bigger behavioral change than the problem calls for. Stats is
+     *   a glance surface; opening the app into it would be surprising.
+     * The persisted value is general, so widening this later is a one-line change.
+     * @private
+     */
+    _setupPanelRestore() {
+        this._onFocusModeActivated = (event) => {
+            // `restoring` is true only for the boot-time restore of persisted
+            // focus mode. A mid-session toggle must not yank the view.
+            if (!event?.detail?.restoring) return;
+
+            const saved = this.m.rawDeps.AppState?.get?.()?.settings?.activePanelId;
+            if (saved !== 'focus-task-panel') return;
+
+            // goTo() re-checks the panel's isEnabled gate and returns null if it
+            // is unavailable, so a stale value can never strand the user outside
+            // focus mode — they simply stay on the task view.
+            this.carousel?.goTo(saved);
+        };
+        document.addEventListener(EVENTS.FOCUS_MODE_ACTIVATED, this._onFocusModeActivated);
+    }
+
+    /**
+     * Persist the active panel. Debounced (not immediate) — this fires on every
+     * swipe and does not need to hit disk synchronously.
+     *
+     * Does not create an undo entry: buildSnapshotSignature covers per-cycle data
+     * plus settings.taskViewLayout, so a change to settings.activePanelId leaves
+     * the signature identical and the dedup check skips it.
+     * @private
+     */
+    _persistActivePanel(id) {
+        if (!id) return;
+        const AppState = this.m.rawDeps.AppState;
+        if (!AppState?.isReady?.()) return;
+        if (AppState.get()?.settings?.activePanelId === id) return; // no-op write
+        AppState.update(state => {
+            if (!state.settings) state.settings = {};
+            state.settings.activePanelId = id;
         });
     }
 
@@ -527,6 +592,10 @@ export class StatsPanelGestures {
         if (this.wheelTimeout) {
             clearTimeout(this.wheelTimeout);
             this.wheelTimeout = null;
+        }
+        if (this._onFocusModeActivated) {
+            document.removeEventListener(EVENTS.FOCUS_MODE_ACTIVATED, this._onFocusModeActivated);
+            this._onFocusModeActivated = null;
         }
     }
 }
