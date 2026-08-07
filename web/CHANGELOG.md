@@ -1,3 +1,7 @@
+## [2.386] - 2026-08-07
+- fix(recurring): specific-date default landed two days out in the Americas
+
+
 ## [2.385] - 2026-08-07
 - fix(settings): mark the two irreversible resets as destructive confirmations
 - test(runner): fix cold-start flake that failed `integration` in CI
