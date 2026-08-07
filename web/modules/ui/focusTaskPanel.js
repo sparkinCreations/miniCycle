@@ -429,7 +429,7 @@ export class FocusTaskPanel {
         const dx = touch.clientX - this._touch.startX;
         const dy = touch.clientY - this._touch.startY;
         if (Math.abs(dy) < GESTURE.VERTICAL_SWIPE) return;
-        if (Math.abs(dy) < Math.abs(dx) * 1.5) return; // not vertical enough
+        if (Math.abs(dy) < Math.abs(dx) * GESTURE.AXIS_DOMINANCE_RATIO) return; // not vertical enough
         this._touch.tracking = false; // consume — one step per gesture
         this._step(dy < 0 ? 1 : -1);
     }

@@ -319,7 +319,8 @@ export const GESTURE = Object.freeze({
     MOUSE_DRAG_START: 20,          // Minimum distance to start mouse drag
     TOUCH_SWIPE: 50,               // Minimum distance for touch swipe
     VERTICAL_SWIPE: 60,            // Minimum vertical distance for the focus task panel's swipe-to-skip (higher than TOUCH_SWIPE to avoid scroll-intent misfires)
-    WHEEL_SCROLL_MIN: 10           // Minimum wheel scroll to trigger action
+    WHEEL_SCROLL_MIN: 10,          // Minimum wheel scroll to trigger action
+    AXIS_DOMINANCE_RATIO: 1.5      // A swipe must exceed the OTHER axis by this factor to count — without it, a thumb arcing during a scroll reads as a sideways swipe
 });
 
 // ============================================================================

@@ -63,6 +63,7 @@ export class GesturePanelManager {
         // State management
         this.state = {
             startX: 0,
+            startY: 0,
             isSwiping: false,
             isStatsVisible: false,
             isMouseDragging: false,
@@ -78,7 +79,9 @@ export class GesturePanelManager {
             MOUSE_DRAG_THRESHOLD: GESTURE.MOUSE_DRAG_THRESHOLD,
             WHEEL_RESET_DELAY: UI_TIMEOUTS.WHEEL_RESET_DELAY,
             TOUCH_SWIPE_THRESHOLD: GESTURE.TOUCH_SWIPE,
-            MOUSE_DRAG_START_THRESHOLD: GESTURE.MOUSE_DRAG_START
+            MOUSE_DRAG_START_THRESHOLD: GESTURE.MOUSE_DRAG_START,
+            WHEEL_SCROLL_MIN: GESTURE.WHEEL_SCROLL_MIN,
+            AXIS_DOMINANCE_RATIO: GESTURE.AXIS_DOMINANCE_RATIO
         };
 
         // Timers
@@ -199,6 +202,7 @@ export class GesturePanelManager {
         }
 
         this.state.startX = event.touches[0].clientX;
+        this.state.startY = event.touches[0].clientY;
         this.state.isSwiping = true;
     }
 
@@ -208,6 +212,13 @@ export class GesturePanelManager {
 
         const moveX = event.touches[0].clientX;
         const difference = this.state.startX - moveX;
+
+        // Require horizontal intent before consuming the gesture. Scrolling a
+        // long task list arcs the thumb sideways; without this, that drift hit
+        // TOUCH_SWIPE (50px) and flipped panels mid-scroll. Same rule the focus
+        // task panel applies on its axis.
+        const verticalDrift = Math.abs(event.touches[0].clientY - this.state.startY);
+        if (Math.abs(difference) < verticalDrift * this.config.AXIS_DOMINANCE_RATIO) return;
 
         // Left swipe = next panel, right swipe = previous. The gesture is only
         // consumed when a move actually happened — a clamped swipe at either
@@ -287,12 +298,13 @@ export class GesturePanelManager {
         if (this.deps.isOverlayActive()) return;
 
         // Only handle horizontal scrolling
-        if (Math.abs(event.deltaX) < 10) return;
+        if (Math.abs(event.deltaX) < this.config.WHEEL_SCROLL_MIN) return;
 
-        // Prevent default horizontal scrolling
-        if (Math.abs(event.deltaX) > Math.abs(event.deltaY)) {
-            event.preventDefault();
-        }
+        // Horizontal intent gates BOTH preventDefault and accumulation — when
+        // it only gated preventDefault, sideways drift during a vertical
+        // trackpad scroll still crept toward the threshold.
+        if (Math.abs(event.deltaX) <= Math.abs(event.deltaY)) return;
+        event.preventDefault();
 
         this.state.wheelDeltaX += event.deltaX;
 
@@ -383,6 +395,23 @@ export class GesturePanelManager {
 
     handleKeydown(event) {
         if (!event.shiftKey) return;
+
+        // Overlay guard, hoisted: every other handler opens with this, and the
+        // Shift+Tab branch below already had it — the arrow branches did not,
+        // so Shift+Arrow navigated panels behind an open modal.
+        if (this.deps.isOverlayActive()) return;
+
+        // Shift+Arrow is the standard text-selection shortcut — never steal it
+        // from an editable field. Mirrors the exclusion the touch/mouse/pointer
+        // handlers already carry; keyboard was the only path missing it, and
+        // the one where typing in a field is the normal case.
+        const target = event.target;
+        if (
+            target?.closest?.("input, textarea, select, [contenteditable]") ||
+            ['INPUT', 'TEXTAREA', 'SELECT'].includes(target?.tagName)
+        ) {
+            return;
+        }
 
         const showNotification = this.deps.showNotification || (() => {});
 

@@ -27,7 +27,7 @@ export async function runGesturePanelManagerTests(resultsDiv) {
     };
 
     // Touch/pointer/mouse event fakes — only the fields the handlers read.
-    const touch = (x) => ({ touches: [{ clientX: x }], target: document.body });
+    const touch = (x, y = 0) => ({ touches: [{ clientX: x, clientY: y }], target: document.body });
     const mouse = (x) => ({ clientX: x, target: document.body });
     const pointer = (x, type = 'touch') => ({ clientX: x, pointerType: type, target: document.body });
 
@@ -159,6 +159,26 @@ export async function runGesturePanelManagerTests(resultsDiv) {
         if (m.isStatsVisible() !== false) throw new Error('stats flag not cleared');
     });
 
+    await test('vertical-dominant drag does NOT flip panels (scroll intent)', () => {
+        let shown = 0;
+        const m = makeManager({ onShowStatsPanel: () => { shown++; } });
+        m.handleTouchStart(touch(300, 0));
+        // 100px sideways but 300px down — a thumb arcing during a list scroll.
+        // Horizontal distance alone clears TOUCH_SWIPE (50), so before the
+        // axis-dominance guard this flipped the panel mid-scroll.
+        m.handleTouchMove(touch(200, 300));
+        if (shown !== 0) throw new Error('scroll-intent drag switched panels');
+        if (m.isStatsVisible() !== false) throw new Error('stats should still be hidden');
+    });
+
+    await test('horizontal-dominant drag with minor vertical drift still swipes', () => {
+        let shown = 0;
+        const m = makeManager({ onShowStatsPanel: () => { shown++; } });
+        m.handleTouchStart(touch(300, 0));
+        m.handleTouchMove(touch(200, 20)); // 100 across, 20 down — clearly sideways
+        if (shown !== 1) throw new Error('a real sideways swipe was rejected');
+    });
+
     await test('touch handlers skip interactive elements (button target)', () => {
         let shown = 0;
         const m = makeManager({ onShowStatsPanel: () => { shown++; } });
@@ -250,6 +270,20 @@ export async function runGesturePanelManagerTests(resultsDiv) {
         m.destroy();
     });
 
+    await test('vertical-dominant wheel does not accumulate toward the threshold', () => {
+        let shown = 0;
+        const m = makeManager({ onShowStatsPanel: () => { shown++; } });
+        // Sideways drift during a vertical trackpad scroll. The dominance check
+        // used to gate only preventDefault, so this drift still crept toward
+        // SWIPE_THRESHOLD (400) — 30 x 15 = 450 would have tripped it.
+        for (let i = 0; i < 30; i++) {
+            m.handleWheel({ deltaX: 15, deltaY: 100, preventDefault() {} });
+        }
+        if (m.getState().wheelDeltaX !== 0) throw new Error(`drift accumulated: ${m.getState().wheelDeltaX}`);
+        if (shown !== 0) throw new Error('vertical scroll drift flipped the panel');
+        m.destroy();
+    });
+
     // ── pointer behavior ──────────────────────────────────────────────────────
     resultsDiv.innerHTML += '<h4 class="test-section">👆 pointer</h4>';
 
@@ -319,6 +353,39 @@ export async function runGesturePanelManagerTests(resultsDiv) {
         const m = makeManager({ onShowStatsPanel: () => { throw new Error('should not fire'); } });
         m.handleKeydown({ shiftKey: false, key: 'ArrowRight', preventDefault() {} });
         // no throw = pass
+    });
+
+    await test('Shift+Arrow inside a text field is left to the browser (text selection)', () => {
+        let shown = 0;
+        const m = makeManager({ onShowStatsPanel: () => { shown++; }, showNotification: () => {} });
+        const input = document.createElement('input');
+        document.body.appendChild(input);
+        let prevented = false;
+        // Shift+Arrow is THE text-selection shortcut. The handler is bound to
+        // document, so without an exclusion it stole every selection keystroke
+        // app-wide and preventDefault()'d it.
+        m.handleKeydown({
+            shiftKey: true, key: 'ArrowRight', target: input,
+            preventDefault() { prevented = true; }
+        });
+        document.body.removeChild(input);
+        if (shown !== 0) throw new Error('navigated panels while typing in a field');
+        if (prevented) throw new Error('swallowed the text-selection keystroke');
+    });
+
+    await test('Shift+Arrow does nothing while an overlay is open', () => {
+        let shown = 0;
+        const m = makeManager({
+            onShowStatsPanel: () => { shown++; },
+            showNotification: () => {},
+            isOverlayActive: () => true
+        });
+        // Every other handler bails on an active overlay, and so does the
+        // Shift+Tab branch — the arrow branches did not, so panels moved behind
+        // an open modal (whose default focus is a button, not an input, so the
+        // interactive-element exclusion above does not cover this).
+        m.handleKeydown({ shiftKey: true, key: 'ArrowRight', target: document.body, preventDefault() {} });
+        if (shown !== 0) throw new Error('navigated panels behind an open overlay');
     });
 
     await test('Shift+Tab toggles to stats when nothing focused', () => {
