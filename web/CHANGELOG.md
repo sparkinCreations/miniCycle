@@ -1,3 +1,9 @@
+## [2.387] - 2026-08-07
+- feat(recurring): cap specific dates at the same limit the importer uses
+- chore(release): update version to 2.386
+- fix(recurring): specific-date default landed two days out in the Americas
+
+
 ## [2.386] - 2026-08-07
 - fix(recurring): specific-date default landed two days out in the Americas
 
