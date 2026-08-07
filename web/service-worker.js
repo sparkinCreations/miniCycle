@@ -31,9 +31,9 @@
 // §1 VERSION IDENTITY (update-version.sh rewrites the three vars below — keep
 //    their exact `var NAME = …` shapes) + the build-injected module map.
 // ═══════════════════════════════════════════════════════════════════════════
-var APP_VERSION = '2.389';
-var CACHE_VERSION = 'v1232';
-var CACHE_VERSION_NUMBER = 1232; // Numeric version matching version.js (for synthetic fallback)
+var APP_VERSION = '2.390';
+var CACHE_VERSION = 'v1233';
+var CACHE_VERSION_NUMBER = 1233; // Numeric version matching version.js (for synthetic fallback)
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -162,6 +162,7 @@ var BOOT_CRITICAL = [
   './modules/utils/storageUtils.js',
   './modules/utils/keyboardNav.js',
   './modules/utils/styleValidators.js',
+  './modules/utils/cycleMode.js',
   // Task modules - ALL task functionality
   './modules/task/taskCore.js',
   './modules/task/taskDOM.js',

@@ -495,6 +495,7 @@
             <option value="bootSw">🛰 Boot SW</option>
             <option value="nameUtils">📛 Name Utils</option>
             <option value="styleValidators">🎨 Style Validators</option>
+            <option value="cycleMode">🔁 Cycle Mode</option>
             <option value="panelCarousel">🎠 Panel Carousel</option>
             <option value="focusTaskPanel">🎯 Focus Task Panel</option>
             <option value="recurringPanelEvents">📅 Recurring Panel Events</option>
@@ -659,6 +660,7 @@
         const { runBootSwTests } = await import(`./bootSw.tests.js?v=${cacheBuster}`);
         const { runNameUtilsTests } = await import(`./nameUtils.tests.js?v=${cacheBuster}`);
         const { runStyleValidatorsTests } = await import(`./styleValidators.tests.js?v=${cacheBuster}`);
+        const { runCycleModeTests } = await import(`./cycleMode.tests.js?v=${cacheBuster}`);
         const { runPanelCarouselTests } = await import(`./panelCarousel.tests.js?v=${cacheBuster}`);
         const { runFocusTaskPanelTests } = await import(`./focusTaskPanel.tests.js?v=${cacheBuster}`);
         const { runRecurringPanelEventsTests } = await import(`./recurringPanelEvents.tests.js?v=${cacheBuster}`);
@@ -1876,7 +1878,7 @@
                     await import(`../modules/features/uxRatings.js?v=${cacheBuster}`);
                     currentModule = 'uxRatings';
                     resultsDiv.innerHTML = '<p>✅ UXRatings loaded. Click "Run Tests" to begin.</p>';
-                } else if (['diWiring','orchestrator','moduleLoader','moduleManifests','modalTemplates','appContext','dataAccess','appGlobalState','migrationFacade','types','modalRegistry','modalUtils','panelVisibilityHelpers','gesturePanelManager','titleManager','headerLayoutManager','featureAvailability','dataRecovery','uiOrchestrator','preferencesBgImage','preferencesPresets','taskDOMPatch','debugMode','iconInit','icons','keyboardNav','mcycPayload','bootSw','nameUtils','styleValidators','panelCarousel','focusTaskPanel','recurringPanelEvents','recurringPanelForm','recurringPanelGrids','recurringPanelSetup','recurringPanelSummary','recurringSettings','recurringSettingsApplicator','recurringWatcher','statsPanelGestures','statsPanelRewards'].includes(moduleName)) {
+                } else if (['diWiring','orchestrator','moduleLoader','moduleManifests','modalTemplates','appContext','dataAccess','appGlobalState','migrationFacade','types','modalRegistry','modalUtils','panelVisibilityHelpers','gesturePanelManager','titleManager','headerLayoutManager','featureAvailability','dataRecovery','uiOrchestrator','preferencesBgImage','preferencesPresets','taskDOMPatch','debugMode','iconInit','icons','keyboardNav','mcycPayload','bootSw','nameUtils','styleValidators','cycleMode','panelCarousel','focusTaskPanel','recurringPanelEvents','recurringPanelForm','recurringPanelGrids','recurringPanelSetup','recurringPanelSummary','recurringSettings','recurringSettingsApplicator','recurringWatcher','statsPanelGestures','statsPanelRewards'].includes(moduleName)) {
                     const pathMap = {
                         diWiring: '../modules/boot/moduleLoader.js',
                         orchestrator: '../modules/boot/orchestrator.js',
@@ -1910,6 +1912,7 @@
                         statsPanelRewards: '../modules/features/statsPanelRewards.js',
                         nameUtils: '../modules/utils/nameUtils.js',
                         styleValidators: '../modules/utils/styleValidators.js',
+                        cycleMode: '../modules/utils/cycleMode.js',
                         panelCarousel: '../modules/ui/panelCarousel.js',
                         focusTaskPanel: '../modules/ui/focusTaskPanel.js',
                         recurringPanelEvents: '../modules/recurring/recurringPanelEvents.js',
@@ -2183,6 +2186,7 @@
             } else if (currentModule === 'statsPanelRewards') { await runStatsPanelRewardsTests(resultsDiv);
             } else if (currentModule === 'nameUtils') { await runNameUtilsTests(resultsDiv);
             } else if (currentModule === 'styleValidators') { await runStyleValidatorsTests(resultsDiv);
+            } else if (currentModule === 'cycleMode') { await runCycleModeTests(resultsDiv);
             } else if (currentModule === 'panelCarousel') { await runPanelCarouselTests(resultsDiv);
             } else if (currentModule === 'focusTaskPanel') { await runFocusTaskPanelTests(resultsDiv);
             } else if (currentModule === 'recurringPanelEvents') { await runRecurringPanelEventsTests(resultsDiv);
@@ -2509,6 +2513,7 @@
                 { name: 'BootSW', key: 'bootSw', runFn: runBootSwTests, importPath: '../boot-sw.js' },
                 { name: 'NameUtils', key: 'nameUtils', runFn: runNameUtilsTests, importPath: '../modules/utils/nameUtils.js' },
                 { name: 'StyleValidators', key: 'styleValidators', runFn: runStyleValidatorsTests, importPath: '../modules/utils/styleValidators.js' },
+                { name: 'CycleMode', key: 'cycleMode', runFn: runCycleModeTests, importPath: '../modules/utils/cycleMode.js' },
                 { name: 'PanelCarousel', key: 'panelCarousel', runFn: runPanelCarouselTests, importPath: '../modules/ui/panelCarousel.js' },
                 { name: 'FocusTaskPanel', key: 'focusTaskPanel', runFn: runFocusTaskPanelTests, importPath: '../modules/ui/focusTaskPanel.js' },
                 { name: 'RecurringPanelEvents', key: 'recurringPanelEvents', runFn: runRecurringPanelEventsTests, importPath: '../modules/recurring/recurringPanelEvents.js' },
