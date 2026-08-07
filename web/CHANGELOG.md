@@ -1,3 +1,7 @@
+## [2.392] - 2026-08-07
+- docs(comments): drop unresolvable FIX #N references and chat residue
+
+
 ## [2.391] - 2026-08-07
 - fix(gestures): warn once when onNavigate is wired but returns undefined
 - fix(gestures): axis-dominance on swipe and wheel; keyboard guards for Shift+Arrow
