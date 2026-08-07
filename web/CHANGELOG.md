@@ -1,3 +1,16 @@
+## [2.385] - 2026-08-07
+- fix(settings): mark the two irreversible resets as destructive confirmations
+- test(runner): fix cold-start flake that failed `integration` in CI
+- docs(theme): fix tombstones naming a helper that never shipped
+- docs: put the four non-npm-test CI suites in the gate checklist
+- chore(release): update version to 2.384
+- fix(sw): precache styleValidators.js
+- chore(release): update version to 2.383
+- refactor(theme,settings): producer-based settings writes; validate style sinks
+- chore(release): update version to 2.382
+- fix(dates): guard parseDateAsLocal against non-string input
+
+
 ## [2.384] - 2026-08-06
 - fix(sw): precache styleValidators.js
 - chore(release): update version to 2.383
