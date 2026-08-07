@@ -893,6 +893,15 @@ export function setupResetAchievementProgressButton() {
                 message: getLabel('modal.resetAchievementsMessage'),
                 confirmText: getLabel('modal.resetAchievementsConfirm'),
                 cancelText: getLabel('button.cancel'),
+                // Irreversible: userProgress and achievements are not in the
+                // undo snapshot (undoRedoManager captures per-cycle data plus
+                // settings.taskViewLayout; its only userProgress touch is a
+                // delta adjustment on cycle-completion undo, with nothing to
+                // restore from). Without this flag Enter anywhere confirms —
+                // see notifications.js, which arms that handler only when
+                // `destructive` is false. Delete All Tasks is RECOVERABLE and
+                // still flagged; these two were the inversion.
+                destructive: true,
                 callback: async (confirmed) => {
                     if (confirmed) {
                         await doReset();
@@ -949,6 +958,11 @@ export function setupClearUndoHistoryButton() {
                 message: getLabel('modal.clearUndoHistoryMessage'),
                 confirmText: getLabel('modal.clearUndoHistoryConfirm'),
                 cancelText: getLabel('button.cancel'),
+                // Irreversible by construction — this wipes the in-memory
+                // stacks, the localStorage cache, and the IndexedDB undo data
+                // for ALL routines, destroying the very mechanism that would
+                // reverse it. Must not be one stray Enter away.
+                destructive: true,
                 callback: async (confirmed) => {
                     if (confirmed) await doClear();
                 }

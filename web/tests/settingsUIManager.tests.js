@@ -179,6 +179,66 @@ export async function runSettingsUIManagerTests(resultsDiv) {
     });
 
     // ============================================
+    // 🚨 Irreversible operations must use the high-friction confirmation
+    //
+    // `destructive: true` does two things in notifications.js: red confirm
+    // button, AND it skips arming the Enter-anywhere handler. Without it, a
+    // stray Enter while the settings panel is open confirms the dialog.
+    //
+    // Both operations below are permanently irreversible — neither
+    // userProgress/achievements nor the undo stores are recoverable once
+    // cleared — so a one-line omission here has no undo path. It regresses
+    // silently, hence these tests.
+    // ============================================
+    resultsDiv.innerHTML += '<h4 class="test-section">🚨 Destructive Confirmations</h4>';
+
+    /** Wire deps, click the button, and return the options showConfirmationModal got. */
+    const captureConfirmOptions = (buttonId, setupFn) => {
+        mod._resetForTesting();
+        const btn = document.createElement('button');
+        btn.id = buttonId;
+        document.body.appendChild(btn);
+        let captured = null;
+        try {
+            mod.setSettingsUIManagerDependencies({
+                loadMiniCycleData: () => ({ settings: {} }),
+                safeAddEventListener: (el, ev, fn) => el.addEventListener(ev, fn),
+                showNotification: () => {},
+                // Capture and never invoke the callback — we are asserting on how
+                // the dialog is CONFIGURED, not on what confirming would do.
+                showConfirmationModal: (options) => { captured = options; }
+            });
+            setupFn();
+            btn.click();
+        } finally {
+            btn.remove();
+        }
+        return captured;
+    };
+
+    await test('Reset Achievement Progress opens a destructive confirmation', () => {
+        const options = captureConfirmOptions('reset-achievement-progress', mod.setupResetAchievementProgressButton);
+        if (!options) throw new Error('showConfirmationModal was never called');
+        if (options.destructive !== true) {
+            throw new Error(
+                'Resetting achievements is irreversible (userProgress/achievements are not restorable ' +
+                `from an undo snapshot) but destructive was ${options.destructive} — Enter anywhere would confirm it`
+            );
+        }
+    });
+
+    await test('Clear Undo History opens a destructive confirmation', () => {
+        const options = captureConfirmOptions('clear-undo-history', mod.setupClearUndoHistoryButton);
+        if (!options) throw new Error('showConfirmationModal was never called');
+        if (options.destructive !== true) {
+            throw new Error(
+                'Clearing undo history destroys the mechanism that would reverse it, but destructive ' +
+                `was ${options.destructive} — Enter anywhere would confirm it`
+            );
+        }
+    });
+
+    // ============================================
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;
     if (passed.count === total.count) {
