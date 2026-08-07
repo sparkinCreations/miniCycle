@@ -128,8 +128,24 @@ function parseArgs() {
 // Get modules to test based on CLI args
 const modules = parseArgs();
 
-async function runModuleTests(page, moduleName) {
+/**
+ * Result-wait budget for a module, in ms.
+ *
+ * Takes the larger of the module's own budget and the cold-start allowance, so
+ * it stays correct no matter which module happens to run first — including when
+ * a single module is named on the CLI, which makes THAT module the cold start.
+ */
+function timeoutFor(moduleName, index) {
+    const moduleBudget = moduleName === 'stress' ? 180000
+        : moduleName === 'taskCore' ? 60000
+        : 45000;
+    const COLD_START_BUDGET = 120000;
+    return index === 0 ? Math.max(moduleBudget, COLD_START_BUDGET) : moduleBudget;
+}
+
+async function runModuleTests(page, moduleName, index = 0) {
     console.log(`\n${colors.cyan}🧪 Testing ${moduleName}...${colors.reset}`);
+    const isColdStart = index === 0;
 
     try {
         // Navigate to test suite with cache buster to force fresh module loads
@@ -142,9 +158,20 @@ async function runModuleTests(page, moduleName) {
         // Select module
         await page.selectOption('#module-select', moduleName);
 
-        // Wait for module to load (taskCore needs extra time for initialization)
-        const loadWait = moduleName === 'taskCore' ? 3000 : 500;
-        await page.waitForTimeout(loadWait);
+        // Wait for the suite to REPORT the module loaded, rather than sleeping a
+        // fixed 500ms and hoping. Every load branch renders 'Click "Run Tests" to
+        // begin.' once its (dynamic) import resolves. Racing that import is how a
+        // Run click gets swallowed: the button fires against a half-initialised
+        // page, no tests start, and the run then burns its whole budget waiting
+        // for a Results line that was never going to appear.
+        // Not every branch is guaranteed to render the phrase, so fall back to
+        // the old fixed sleep instead of failing the module outright.
+        const readyTimeout = isColdStart ? 30000 : 10000;
+        try {
+            await page.waitForSelector('#results:has-text("Click \\"Run Tests\\" to begin")', { timeout: readyTimeout });
+        } catch {
+            await page.waitForTimeout(moduleName === 'taskCore' ? 3000 : 500);
+        }
 
         // Click Run Tests button
         await page.click('#run-tests-btn');
@@ -152,9 +179,30 @@ async function runModuleTests(page, moduleName) {
         // Wait a bit for tests to start
         await page.waitForTimeout(500);
 
-        // Wait for results (increased timeout for heavy test modules)
-        const timeout = moduleName === 'stress' ? 180000 : moduleName === 'taskCore' ? 60000 : 45000;
+        // Wait for results.
+        //
+        // Two independent things make a module slow, and they compound:
+        //   - heavy modules (stress, taskCore) have always needed headroom;
+        //   - POSITION: whatever runs FIRST pays the entire cold start — browser
+        //     just launched, first page load, every app module compiled from
+        //     scratch, OS page cache and V8 code cache both empty.
+        //
+        // Sizing the budget by module name alone is what made `integration`
+        // flake (Aug 2026, PR #40): it is simply first in ALL_MODULES. It timed
+        // out at the 45s wall on a slow CI runner while the SAME COMMIT passed
+        // 3056/3056 on a faster one. Every non-first module finished in ~2s —
+        // a 20x gap that has nothing to do with integration's own 11 tests.
+        const timeout = timeoutFor(moduleName, index);
+        const startedAt = Date.now();
         await page.waitForSelector('h3:has-text("Results:")', { timeout });
+        const elapsed = Date.now() - startedAt;
+
+        // Surface near-misses. Without this a module that creeps up on its
+        // budget looks identical to one that finishes instantly, and the first
+        // sign of trouble is a red CI run needing log archaeology.
+        if (elapsed > timeout * 0.5) {
+            console.log(`   ${colors.yellow}⏱  slow: ${(elapsed / 1000).toFixed(1)}s of a ${(timeout / 1000).toFixed(0)}s budget${colors.reset}`);
+        }
 
         // Extract summary (h3 with "Results:" text)
         const summary = await page.textContent('h3:has-text("Results:")');
@@ -283,7 +331,7 @@ async function runAllTests() {
     const results = [];
 
     // Run tests for each module
-    for (const module of modules) {
+    for (const [moduleIndex, module] of modules.entries()) {
         const page = await context.newPage();
         // Log console messages for debugging
         page.on('console', msg => {
@@ -310,7 +358,7 @@ async function runAllTests() {
         await page.route('**/*', async (route) => {
             await route.continue({ headers: { ...route.request().headers(), 'Cache-Control': 'no-cache' } });
         });
-        const result = await runModuleTests(page, module);
+        const result = await runModuleTests(page, module, moduleIndex);
         results.push(result);
         await page.close();
     }

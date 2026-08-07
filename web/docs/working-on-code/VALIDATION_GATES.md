@@ -5,7 +5,7 @@
 > Every gate here is zero-dependency (Python stdlib or Node already in the project) and
 > runs from `web/`. None of them need a dev server except the test suites.
 
-**Last Updated:** July 28, 2026
+**Last Updated:** August 6, 2026
 
 ---
 
@@ -18,7 +18,7 @@
 | **Docs links + nav** | `npm run validate:docs` | CI — `performance.yml` | 🔴 Fails CI |
 | **Lint** | `npm run lint` | CI — `test.yml` | 🔴 Fails CI on any error, or on warnings above the `--max-warnings` ratchet in `package.json` (lower it after cleanup; never raise it) |
 | **Module tests** | `npm test` | CI — `test.yml` | 🔴 Fails CI |
-| **Real-app gates** | `npm run test:layout` · `test:sw` · `test:journey` | CI — `test.yml` | 🔴 Fails CI |
+| **Real-app gates** | `npm run test:layout` · `test:sw` · `test:meta` · `test:journey` | CI — `test.yml` | 🔴 Fails CI |
 | **Performance** | `npm run perf` | CI — `performance.yml` | 🔴 Fails CI |
 | **DI declarations** | `npm run validate:di` | CI — `test.yml` | 🟡 Partially gated (undeclared=0, nowhere=0, unused ratchet; facade advisory) |
 | **Inline scripts** | `npm run validate:inline` | CI — `test.yml` | 🔴 Fails CI — empty catch blocks in miniCycle.html inline scripts must carry an intent comment (ESLint's `no-empty` can't see the file — drift-review D-01) |
@@ -108,18 +108,51 @@ and after proved the new dependency was declared correctly at every layer.
 
 ---
 
+## 🔴 Real-app gates — the four suites `npm test` doesn't run
+
+`npm test` runs the module suites against `tests/module-test-suite.html`. CI runs four
+more, and each spawns **its own server on its own port** — they need no `npm start`:
+
+| Suite | Guards |
+|-------|--------|
+| `test:sw` | Offline boot (honest offline + lying-`navigator.onLine` circuit breaker) and **precache drift** |
+| `test:layout` | Centred-panel overlap + measured-var (`--header-total-height`) publish guard, across 7 viewports |
+| `test:meta` | Static: every local `test()` harness awaits async bodies; every test asserts (or declares no-throw in its name) |
+| `test:journey` | End-to-end on the real app: add tasks → reload → complete a cycle → offline reload |
+
+### The precache drift guard — run `test:sw` whenever you add a module file
+
+It walks the boot graph and fails if a reachable module is missing from `BOOT_CRITICAL` in
+`service-worker.js`, or an `@import`ed stylesheet from `CSS_FILES`.
+
+**The rule:** a **static** import from anything already boot-critical makes the new file
+boot-critical too. The browser fetches it during boot, so if it isn't precached, an offline
+boot goes to the network for it. `PRECACHE_EXEMPT` is only for genuinely lazy modules —
+dynamic `import()` behind a user interaction.
+
+**Why this needs saying:** nothing else catches it. Adding a module passes `npm test`,
+`lint`, and every `validate:*` gate while leaving offline boot broken.
+
+**Precedent (Aug 2026):** `modules/utils/styleValidators.js` shipped green through the full
+3056-test browser suite and all five `validate:*` gates, then failed CI here — it was a
+static import of `routineLoader.js`, itself `BOOT_CRITICAL`. Fixed in v2.384.
+
+---
+
 ## Running everything locally
 
 ```bash
 cd web
 npm run validate:csp && npm run validate:html && npm run validate:docs && npm run lint
+npm run validate:di && npm run validate:legacy && npm run validate:inline
 ```
 
-The test suites need a server:
+The module suite needs a server; the four real-app suites start their own:
 
 ```bash
 npm start        # separate terminal — port 8080
 npm test
+npm run test:sw && npm run test:layout && npm run test:meta && npm run test:journey
 ```
 
 ## Related
