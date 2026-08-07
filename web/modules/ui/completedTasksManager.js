@@ -23,6 +23,7 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { getAllDoneHintKey } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -320,10 +321,11 @@ export class CompletedTasksManager {
 
         const hint = emptyState.querySelector(DOM_SELECTORS.EMPTY_STATE_ALLDONE_HINT);
         if (hint) {
-            // To-Do mode clears finished tasks; cycle modes reset them.
-            hint.textContent = getLabel(cycle?.deleteCheckedTasks
-                ? 'focusTask.allDoneHintTodo'
-                : 'focusTask.allDoneHintCycle');
+            // Three modes, not two: AUTO-cycle has no complete/cycle button at
+            // all (checkCompleteAllButton hides it), so it must not be told to
+            // press one. Shared with the focus task panel so the two surfaces
+            // cannot disagree.
+            hint.textContent = getLabel(getAllDoneHintKey(cycle));
         }
     }
 

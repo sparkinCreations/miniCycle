@@ -1464,6 +1464,10 @@ export const DEFAULT_LABELS = deepFreeze({
         allDone:          'All tasks complete!',
         allDoneHintCycle: 'Use the cycle button to start again',
         allDoneHintTodo:  'Use the clear button to remove completed tasks',
+        // Auto-cycle has NO button to point at — it is hidden in both the home
+        // view (taskUI.checkCompleteAllButton) and focus mode (CSS). This hint
+        // describes what happens instead of instructing.
+        allDoneHintAuto:  'This routine resets automatically',
         dueLabel:         'Due {date}'
     },
 

@@ -871,6 +871,21 @@ export async function runCompletedTasksManagerTests(resultsDiv, isPartOfSuite = 
         document.body.classList.remove('all-tasks-complete');
     });
 
+    await test('hint does NOT name a button in auto-cycle mode', () => {
+        // Auto-cycle hides the complete/cycle button entirely
+        // (taskUI.checkCompleteAllButton skips it when the body carries
+        // auto-cycle-mode), so pointing at it names a control that is not on
+        // screen. The routine resets itself; the hint says so.
+        const r = runUpdateCount(stateWithTasks(
+            [{ id: 'a', text: 'A', completed: true }], { autoReset: true, deleteCheckedTasks: false }
+        ));
+        if (/button/i.test(r.hint)) {
+            throw new Error(`auto-cycle has no button to press, got: ${r.hint}`);
+        }
+        if (!r.hint) throw new Error('auto-cycle should still get a hint');
+        document.body.classList.remove('all-tasks-complete');
+    });
+
     await test('hint names the clear button in To-Do mode', () => {
         const r = runUpdateCount(stateWithTasks(
             [{ id: 'a', text: 'A', completed: true }], { deleteCheckedTasks: true }

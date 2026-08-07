@@ -26,6 +26,7 @@
 import { createDIModule, required, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_SELECTORS, DATA_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, GESTURE } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { getCycleMode, getAllDoneHintKey } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION
@@ -149,10 +150,7 @@ export class FocusTaskPanel {
 
     /** 'auto' | 'manual' | 'todo' — same flag resolution as routineSwitcher. */
     _getMode() {
-        const { cycle } = this._getActiveCycle();
-        if (cycle?.deleteCheckedTasks) return 'todo';
-        if (cycle?.autoReset) return 'auto';
-        return 'manual';
+        return getCycleMode(this._getActiveCycle().cycle);
     }
 
     // ------------------------------------------------------------------
@@ -183,8 +181,13 @@ export class FocusTaskPanel {
             taskFacing.forEach(el => el.classList.add(DOM_CLASSES.HIDDEN));
             alldone.classList.remove(DOM_CLASSES.HIDDEN);
             alldoneText.textContent = tasks.length ? getLabel('focusTask.allDone') : getLabel('empty.noTasks');
+            // Three modes, not two. The old binary branch sent AUTO-cycle users
+            // to "use the cycle button" — but the floating action button is
+            // hidden by CSS in auto mode, so it named a control that is not on
+            // screen. getAllDoneHintKey() owns the mapping for both this panel
+            // and the home-view empty state.
             alldoneHint.textContent = tasks.length
-                ? getLabel(this._getMode() === 'todo' ? 'focusTask.allDoneHintTodo' : 'focusTask.allDoneHintCycle')
+                ? getLabel(getAllDoneHintKey(this._getActiveCycle().cycle))
                 : '';
             card.classList.remove('focus-task-completed');
             card.style.removeProperty('--focus-task-priority');
