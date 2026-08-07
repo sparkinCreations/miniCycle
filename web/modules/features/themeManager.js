@@ -236,6 +236,12 @@ function _refreshLiveLensLabels() {
         // All four (view × input-bar) hint variants need re-theming, not just the
         // two visible ones — the hidden variants must already be correct by the
         // time CSS swaps them in on a view change or input-bar toggle.
+        // Completion copy — themed like the rest ("All habits complete!" etc.).
+        // Only the text needs re-theming here; its hint is mode-dependent and is
+        // set by completedTasksManager, which knows the mode. Re-themed even
+        // while hidden, same reason as the hint variants below.
+        const emptyAllDone = emptyState.querySelector(DOM_SELECTORS.EMPTY_STATE_ALLDONE_TEXT);
+        if (emptyAllDone) emptyAllDone.textContent = getLabel('focusTask.allDone');
         const emptyHint = emptyState.querySelector(DOM_SELECTORS.EMPTY_STATE_HINT);
         if (emptyHint) emptyHint.textContent = getLabel('empty.noTasksHint');
         const emptyHintVisible = emptyState.querySelector(DOM_SELECTORS.EMPTY_STATE_HINT_VISIBLE);

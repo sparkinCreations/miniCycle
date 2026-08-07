@@ -682,6 +682,14 @@ export const DOM_CLASSES = Object.freeze({
     // Set on <body> whenever the task input bar is showing (see modeManager's
     // _updateTaskInputVisibility — the single choke point for that state).
     INPUT_BAR_VISIBLE: 'input-bar-visible',
+    // Set on <body> when the ACTIVE ROUTINE HAS TASKS AND EVERY ONE IS COMPLETE.
+    // Read from AppState, never from the DOM: with the completed-tasks dropdown
+    // enabled the finished tasks are moved OUT of #taskList, so the list is
+    // literally :empty and the DOM cannot tell "just finished everything" apart
+    // from "brand new routine". CSS uses this to swap the empty state's
+    // onboarding copy for a completion message (task-list.css).
+    // Choke point: completedTasksManager.updateCount().
+    ALL_TASKS_COMPLETE: 'all-tasks-complete',
 
     // ---- Main Menu section headers (icon + label grouping) ----
     MENU_SECTION_LABEL: 'menu-section-label',
@@ -1318,6 +1326,10 @@ export const DOM_SELECTORS = Object.freeze({
     // selector keeps matching exactly one node — existing callers are unaffected.
     EMPTY_STATE_HINT: '.empty-state-hint',
     EMPTY_STATE_HINT_VISIBLE: '.empty-state-hint-visible',
+    // Shown INSTEAD of the text/hint pair above when body carries
+    // DOM_CLASSES.ALL_TASKS_COMPLETE — see task-list.css.
+    EMPTY_STATE_ALLDONE_TEXT: '.empty-state-alldone-text',
+    EMPTY_STATE_ALLDONE_HINT: '.empty-state-alldone-hint',
     TASK_NOT_FOUND: '.task-not-found',
     TASK_BY_ID: '.task[data-task-id]',
     IS_FIRST_TASK: '.is-first-task',
