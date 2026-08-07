@@ -9,7 +9,7 @@ export async function runRecurringDateUtilsTests(resultsDiv) {
     const cacheBuster = window.testCacheBuster || Date.now();
     const mod = await import(`../modules/recurring/recurringDateUtils.js?v=${cacheBuster}`);
     const {
-        convert12To24, parseDateAsLocal, getDaysInMonth, isValidDate,
+        convert12To24, parseDateAsLocal, formatLocalDate, getDaysInMonth, isValidDate,
         getDaysBetween, cloneDate, isLastDayOfMonth, applyTimeToDate,
         WEEKDAY_MAP, calculateNthWeekdayOfMonth
     } = mod;
@@ -90,6 +90,55 @@ export async function runRecurringDateUtilsTests(resultsDiv) {
         }
         if (result !== null) throw new Error(`Expected null, got ${result}`);
         if (errorCalls === 0) throw new Error('Invalid date string should still log');
+    });
+
+    // ============================================
+    resultsDiv.innerHTML += '<h4 class="test-section">📅 formatLocalDate</h4>';
+
+    await test('formats a Date as its LOCAL calendar day', () => {
+        const d = new Date(2026, 7, 6); // Aug 6 2026, local midnight
+        if (formatLocalDate(d) !== '2026-08-06') {
+            throw new Error(`Expected 2026-08-06, got ${formatLocalDate(d)}`);
+        }
+    });
+
+    await test('zero-pads single-digit months and days', () => {
+        if (formatLocalDate(new Date(2026, 0, 5)) !== '2026-01-05') {
+            throw new Error(`Expected 2026-01-05, got ${formatLocalDate(new Date(2026, 0, 5))}`);
+        }
+    });
+
+    await test('late-evening local time keeps the LOCAL day, not the UTC one', () => {
+        // The actual bug this closes. In any negative UTC offset a late-evening
+        // local time is already tomorrow in UTC, so toISOString() (and
+        // input.valueAsDate, which uses the same rule) reports the wrong day.
+        // Measured Aug 2026: from 20:00 EDT onward the recurring specific-date
+        // input defaulted TWO days out.
+        const d = new Date(2026, 7, 6, 23, 30); // Aug 6, 23:30 LOCAL
+        const local = formatLocalDate(d);
+        if (local !== '2026-08-06') {
+            throw new Error(`Expected 2026-08-06, got ${local}`);
+        }
+        // Assert the divergence directly where the runner's zone has one, so
+        // this test carries meaning outside UTC CI rather than silently passing.
+        const utc = d.toISOString().split('T')[0];
+        if (d.getTimezoneOffset() > 0 && utc === local) {
+            throw new Error('expected toISOString to disagree in a negative UTC offset');
+        }
+    });
+
+    await test('round-trips with parseDateAsLocal', () => {
+        const original = '2026-12-31';
+        const round = formatLocalDate(parseDateAsLocal(original));
+        if (round !== original) throw new Error(`Round trip broke: ${original} -> ${round}`);
+    });
+
+    await test('returns null for non-Dates and Invalid Date', () => {
+        for (const bad of [null, undefined, '2026-08-06', 0, {}, [], new Date('nope')]) {
+            if (formatLocalDate(bad) !== null) {
+                throw new Error(`Expected null for ${JSON.stringify(bad)}, got ${formatLocalDate(bad)}`);
+            }
+        }
     });
 
     // ============================================

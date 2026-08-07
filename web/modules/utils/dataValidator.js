@@ -10,6 +10,7 @@
  */
 
 import { createDIModule, required } from '../core/diBase.js';
+import { formatLocalDate } from '../recurring/recurringDateUtils.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -251,10 +252,7 @@ export class DataValidator {
                 if (isNaN(date.getTime())) {
                     throw new TypeError('Task dueDate timestamp is invalid');
                 }
-                const year = date.getFullYear();
-                const month = String(date.getMonth() + 1).padStart(2, '0');
-                const day = String(date.getDate()).padStart(2, '0');
-                task.dueDate = `${year}-${month}-${day}`;
+                task.dueDate = formatLocalDate(date);
             } else {
                 throw new TypeError('Task dueDate must be an ISO date string (YYYY-MM-DD), number timestamp, or null');
             }

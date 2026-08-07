@@ -68,6 +68,32 @@ export function parseDateAsLocal(dateStr) {
     }
 }
 
+/**
+ * Format a Date as a local YYYY-MM-DD string.
+ *
+ * The write-side counterpart to parseDateAsLocal — together they close the
+ * round trip for the date-only strings this app stores. Anything that produces
+ * a YYYY-MM-DD from a Date must go through here.
+ *
+ * Do NOT use toISOString().split('T')[0], and do NOT assign a Date to
+ * `input.valueAsDate`: both render the UTC calendar date. Whenever local time
+ * and UTC are on different days, they disagree — and in negative offsets that
+ * is every evening. Measured Aug 2026: at 20:00 EDT exactly (00:00 UTC),
+ * `valueAsDate = tomorrow` began writing the day AFTER tomorrow.
+ *
+ * @param {Date} date - Date to format (its local calendar day is used)
+ * @returns {string|null} YYYY-MM-DD, or null if date is not a valid Date
+ */
+export function formatLocalDate(date) {
+    if (!(date instanceof Date) || isNaN(date.getTime())) {
+        return null;
+    }
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
 // ============================================
 // DATE ARITHMETIC
 // ============================================

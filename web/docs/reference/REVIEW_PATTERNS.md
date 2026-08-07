@@ -88,6 +88,29 @@ information and are safe; `toISOString()` output is unambiguous.
 early, and wrong dates on the task, in history, and in cleared tasks — six sites,
 Aug 2026.
 
+### …and the write side has the same bug, mirrored
+
+The round trip has two halves and the first fix only closed one. **Writing** a
+`YYYY-MM-DD` from a `Date` renders the *UTC* calendar day via both
+`.toISOString().split('T')[0]` and `input.valueAsDate = d` — the latter is easy
+to miss because it looks like a typed convenience API, not a string conversion.
+In a negative offset an evening local time is already tomorrow in UTC, so the
+written day is one too far. Use `formatLocalDate()` from `recurringDateUtils.js`
+— it is the counterpart to `parseDateAsLocal()` and they close the loop.
+
+**Grep:** `valueAsDate`, `toISOString`, and any hand-rolled
+`getFullYear()/getMonth()/getDate()` triple — the last is how this hid: two
+files had already written that helper privately, one with a comment naming the
+hazard, and neither was shared.
+
+**Also check what feeds the formatter.** A "tomorrow" that carries the current
+clock time is fine until it meets a date-only context; normalize to local
+midnight at the source.
+
+**Precedent:** the recurring specific-date input defaulted TWO days out from
+20:00 EDT / 17:00 PDT onward — silent, and it scheduled the recurrence a day
+late if accepted (Aug 2026). Invisible in CI, which runs in UTC.
+
 ### Long timers silently fire immediately
 
 `setTimeout` stores its delay as a signed 32-bit int, so anything above
