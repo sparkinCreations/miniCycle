@@ -162,8 +162,12 @@
         .hero-chrome .cws-link:hover { opacity: 0.85; }
         .hero-chrome .cws-badge { height: 62px; width: auto; display: block; }
         .trust-text { font-size: 0.95rem; color: #4a5a6a; font-weight: 500; }
-        .hero-learn-more { display: inline-block; margin-top: 0.6rem; font-size: 0.9rem; color: #4a5a6a; text-decoration: none; transition: color 0.2s; }
-        .hero-learn-more:hover { color: var(--color-primary); }
+        /* Its own line, link-coloured and underlined — it used to sit inside the
+           middot run above in the same grey as the trust claims, so it read as a
+           fourth claim rather than an action. min-height keeps the tap target at
+           the 44px floor; the text alone is ~24px. */
+        .hero-learn-more { display: inline-flex; align-items: center; min-height: 44px; margin-top: 0.25rem; font-size: 0.95rem; font-weight: 600; color: var(--color-primary); text-decoration: underline; text-underline-offset: 3px; transition: color 0.2s; }
+        .hero-learn-more:hover { color: var(--color-primary-dark); }
 
         /* Mobile hero: phone-on-desk photo only */
         .hero-desk-photo { display: block; width: 100%; max-width: 320px; margin: 0 auto; border-radius: var(--radius-lg); box-shadow: var(--shadow-elevated); }
@@ -535,7 +539,8 @@
                             <img class="cws-badge" src="../assets/images/external/chrome-web-store-badge.png" alt="Get miniCycle on the Chrome Web Store" width="340" height="96">
                         </a>
                     </div>
-                    <p class="trust-text">Free forever &middot; No account needed &middot; Your data stays on your device &middot; <a href="learn_more.html" class="hero-learn-more">Learn more &#8594;</a></p>
+                    <p class="trust-text">Free forever &middot; No account needed &middot; Your data stays on your device</p>
+                    <a href="learn_more.html" class="hero-learn-more">Learn more &#8594;</a>
                 </div>
                 <div class="hero-desk-photo">
                     <img src="../assets/images/Product/phone-on-desk-updated.png" alt="miniCycle open on a phone, ready for a routine">
