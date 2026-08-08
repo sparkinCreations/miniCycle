@@ -216,7 +216,12 @@ artifact, which is correct here — the bug is in what returning visitors get.
   navigation and version-heal behaviour this defeats; update both if Part 2 lands.
 - [`MODULE_LOADER_GUIDE.md`](../architecture/MODULE_LOADER_GUIDE.md) — module map rides
   `version.js`, so an HTML/`version.js` split is what surfaces as the mismatch warning.
-- Two dead pages with CSP-blocked inline scripts turned up in the same review and are unrelated to
-  caching: `games/miniCycle- taskGame.html` (note the space in the filename) and
-  `games/miniCycle-taskScramble.html`. Neither is linked from anywhere; deleting them is cleaner
-  than adding CSP hashes.
+- Unrelated to caching, but found in the same review: `games/miniCycle- taskGame.html` (note the
+  space in the filename) and `games/miniCycle-taskScramble.html` have inline scripts that are
+  CSP-blocked in production. These are **not dead code** — they are unpromoted siblings of
+  `miniCycle-taskOrder.html`, staged for a future reward tier (all three landed in one commit,
+  Nov 2025; only taskOrder has had its JS extracted). The open question is whether they should be
+  deployed in their current state, not whether to delete them.
+- Also stale, found while checking the above: `robots.txt` still disallows `/miniCycleGames/`, the
+  pre-rename folder path. `_redirects` 301s that to `/games/`, which nothing disallows — so the
+  games folder is crawlable today.
