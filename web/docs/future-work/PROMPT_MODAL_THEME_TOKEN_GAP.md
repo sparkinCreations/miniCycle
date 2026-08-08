@@ -1,0 +1,91 @@
+# `.miniCycle-prompt-box` Sits Outside the Token System (Light Mode)
+
+> **Status:** Open · **Severity:** Low — cosmetic, theme-consistency only ·
+> **Found:** Aug 2026, live browser review of `minicycle.app` v2.396.
+>
+> The charcoal name-entry modal family is **intentional** — see
+> [`REVIEW_PATTERNS.md` § Deliberate designs that read as bugs](../reference/REVIEW_PATTERNS.md).
+> This doc is about a single hardcoded colour inside that otherwise-consistent
+> convention, not about the convention itself.
+
+---
+
+## The gap
+
+`styles/components/onboarding.css:817`:
+
+```css
+.miniCycle-prompt-box {
+    background: rgb(50, 50, 50);   /* ← literal */
+    padding: var(--space-6-25);
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--color-black);
+```
+
+Everything around it is tokenised — `var(--space-6-25)` and `var(--radius-xl)` on
+the very next lines. The sibling confirmation modal resolves through a full
+fallback chain (`styles/components/modals.css:453`):
+
+```css
+.mini-modal-box {
+    background: var(--pref-modal-bg,
+                var(--theme-modal-glass-bg,
+                var(--theme-modal-bg,
+                var(--color-white))));
+```
+
+Dark mode **is** handled correctly (`styles/utilities/dark-mode.css:1618`):
+
+```css
+body.dark-mode .miniCycle-prompt-box {
+    background: var(--dark-surface-primary);
+    border-color: var(--dark-button-hover-bg);
+}
+```
+
+So the gap is narrow: **light mode only**.
+
+## Consequence
+
+Vocabulary themes apply `--pref-*` custom properties to `<html>` when a non-Classic
+theme is active. `.mini-modal-box` picks those up via `--pref-modal-bg`;
+`.miniCycle-prompt-box` cannot. On Fitness / Scholar / Cleaning / Habit Tracker,
+confirmation modals take the theme colour while name-entry modals stay generic
+charcoal.
+
+This is only a defect **if** the prompt family is meant to be themed. Treating it
+as chrome that deliberately sits outside the theme is a defensible choice — the
+charcoal already carries the "you're naming something" signal, and holding it
+constant across themes arguably strengthens that. **Decide the intent first.**
+
+## Fix, if it should be themed
+
+One-line swap preserving the current value as the fallback:
+
+```css
+.miniCycle-prompt-box {
+    background: var(--pref-prompt-bg, rgb(50, 50, 50));
+```
+
+Then add `--pref-prompt-bg` to the `colorPreset` blocks in `THEME_DEFINITIONS`
+(`modules/labels/themes.js`) for any theme that should override it. Themes that
+omit it keep the charcoal automatically. Dark mode already overrides at a higher
+specificity and is unaffected.
+
+Also worth tokenising while in there: `border: 1px solid var(--color-black)` is a
+token but a harsh one against a themed surface.
+
+## Verification
+
+- Classic theme, light mode: prompt modal unchanged (`rgb(50,50,50)`).
+- Non-Classic theme with `--pref-prompt-bg` set: Create New Routine, Duplicate
+  Routine, mobile rename, and preset save/export/import all pick it up — they
+  share the one class.
+- Dark mode: unchanged in every theme.
+
+## Related
+
+- [`REVIEW_PATTERNS.md`](../reference/REVIEW_PATTERNS.md) — why the two modal
+  families exist; read before touching either.
+- [`VOCAB_THEME_SYSTEM.md`](../features/VOCAB_THEME_SYSTEM.md) — how `colorPreset` /
+  `--pref-*` are applied.

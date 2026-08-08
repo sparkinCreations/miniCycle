@@ -128,3 +128,54 @@ Not everything needs re-review. These were checked and found sound: corruption
 recovery, AppState persistence and concurrency, the service-worker caching
 architecture, undo/redo internals, and the escaping in `historyManager` and
 `clearedTasksManager`.
+
+## Deliberate designs that read as bugs
+
+Added Aug 2026 after a live browser review flagged all three of these as defects.
+Each is intentional. **Do not re-flag them** — and note the shared failure mode:
+each was judged in isolation, without checking what family or lifecycle it
+belongs to.
+
+### The charcoal prompt modals are a name-entry family
+
+`.miniCycle-prompt-box` (charcoal) and `.mini-modal-box` (light/glass) are two
+modal languages, not an inconsistency:
+
+| Family | Used for |
+|--------|----------|
+| `.mini-modal-box` | confirmations — e.g. Factory Reset's "Delete Everything" |
+| `.miniCycle-prompt-box` | **naming something** — create, duplicate, rename, save-as |
+
+Every caller of the dark family is a name-entry action: Create New Routine
+(`routineManager.js:680`), Duplicate Routine (`menuManager.js:547`), mobile
+rename (`routineSwitcher.js:765` — its own comment cites the shared pattern),
+preset save/export/import (`preferencesPresets.js`), backup naming
+(`backupRestoreManager.js:276`). The dark treatment means "you're about to name
+something new."
+
+There *is* one real gap inside this otherwise-consistent convention — see
+[`PROMPT_MODAL_THEME_TOKEN_GAP.md`](../future-work/PROMPT_MODAL_THEME_TOKEN_GAP.md).
+
+### The task input bar is setup furniture, not daily furniture
+
+A routine is built once and run many times. After setup the input bar is dead
+weight on every subsequent run, so it is hidden by default and toggled from
+**⋯ → Show/hide input bar**.
+
+The empty state that reads *"Open the ⋯ menu at the top and click Show/hide input
+bar to start adding tasks"* is therefore **the discovery mechanism for the
+toggle**, not a detour around a hidden primary action. Without it a user would
+never learn the bar is toggleable, and would be stuck with it on screen forever.
+Once the bar is shown, the empty state rewrites itself to "Type your first task
+in the bar above and press Add" — the copy is state-aware by design.
+
+### The unpromoted games are staged content
+
+`games/miniCycle- taskGame.html` and `games/miniCycle-taskScramble.html` are not
+dead code. All three games landed in one commit (Nov 2025) as a set; only
+`miniCycle-taskOrder.html` has been promoted (JS extracted, CSP-clean, wired to
+the 100-cycle milestone). The unlock schema is namespaced per-game
+(`unlockedFeatures: ["task-order-game"]`, `rewardType: 'game'`) precisely so
+siblings can be added when the reward ladder grows. Unreferenced is the expected
+state until a tier ships — reachability does not distinguish "abandoned" from
+"not yet scheduled."

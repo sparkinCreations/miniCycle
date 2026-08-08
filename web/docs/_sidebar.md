@@ -151,6 +151,7 @@
   * [Module Deferral Audit](future-work/MODULE_DEFERRAL_AUDIT.md)
   * [Native Dialog Audit & Refactor](future-work/NATIVE_DIALOG_AUDIT_AND_REFACTOR_PLAN.md)
   * [Pretty-URL Cache-Control Fix](future-work/PRETTY_URL_CACHE_CONTROL_FIX.md)
+  * [Prompt Modal Theme Token Gap](future-work/PROMPT_MODAL_THEME_TOKEN_GAP.md)
   * [Recurring Panel Refactor](future-work/RECURRING_PANEL_REFACTOR_PLAN.md)
   * [Recurring Tasks — P3 Follow-ups](future-work/RECURRING_TASKS_P3_FOLLOWUP.md)
   * [Render-Path Unification](future-work/RENDER_PATH_UNIFICATION.md)
