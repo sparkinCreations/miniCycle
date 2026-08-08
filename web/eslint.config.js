@@ -162,5 +162,21 @@ export default [
             'no-var': 'warn',
             'eqeqeq': ['warn', 'smart']
         }
+    },
+    {
+        // service-worker.js declares an ES5-ONLY style contract in its own file
+        // banner ("no const/let, arrows, async/await, optional chaining — this
+        // file must parse on the oldest supported WebViews"). `var` there is
+        // required, not a lapse, so no-var/prefer-const were reporting ~87
+        // warnings for code doing exactly what it must. Left on, they also ate
+        // the entire --max-warnings headroom: any SW edit that added a couple of
+        // `var`s broke CI (v2.394 did — 3 vars + 1 false-positive sink pushed
+        // 1074 → 1078). Scoped off here so the ratchet tracks real drift.
+        // If the ES5 contract is ever lifted, delete this block.
+        files: ['service-worker.js'],
+        rules: {
+            'no-var': 'off',
+            'prefer-const': 'off'
+        }
     }
 ];

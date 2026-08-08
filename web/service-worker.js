@@ -31,9 +31,9 @@
 // §1 VERSION IDENTITY (update-version.sh rewrites the three vars below — keep
 //    their exact `var NAME = …` shapes) + the build-injected module map.
 // ═══════════════════════════════════════════════════════════════════════════
-var APP_VERSION = '2.395';
-var CACHE_VERSION = 'v1238';
-var CACHE_VERSION_NUMBER = 1238; // Numeric version matching version.js (for synthetic fallback)
+var APP_VERSION = '2.396';
+var CACHE_VERSION = 'v1239';
+var CACHE_VERSION_NUMBER = 1239; // Numeric version matching version.js (for synthetic fallback)
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -690,6 +690,11 @@ var FRESH_FIRST_PAGES = ['/pages/dashboard', '/pages/product'];
 
 function isFreshFirstPage(pathname) {
   for (var i = 0; i < FRESH_FIRST_PAGES.length; i++) {
+    // FRESH_FIRST_PAGES is a file-local array of two string literals and `i` is a
+    // loop counter bounded by .length — no user input reaches the index, so there
+    // is no injection surface. (Directive must be the line directly above the code:
+    // a multi-line comment between them retargets it at the comment.)
+    // eslint-disable-next-line security/detect-object-injection
     if (pathname.indexOf(FRESH_FIRST_PAGES[i]) === 0) return true;
   }
   return false;
