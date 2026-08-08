@@ -53,6 +53,30 @@ theme is active. `.mini-modal-box` picks those up via `--pref-modal-bg`;
 confirmation modals take the theme colour while name-entry modals stay generic
 charcoal.
 
+**Verified (Aug 2026, live app).** All four non-Classic vocab themes do set it —
+`modalBg` at `themes.js:127 / 221 / 315 / 409` (warm amber, soft mint, soft
+periwinkle, soft aqua glass), mapped to `--pref-modal-bg` by `themeManager.js:102`.
+That token has 20+ CSS consumers, so it is real and widely honoured;
+`.miniCycle-prompt-box` is the outlier.
+
+### Adjacent finding: Quick Colors never sets `modalBg` at all
+
+The **Quick Colors** presets in Personalization (Default / Warm / Cool / Forest /
+Mono / Pro / Golden / Ocean / Berry) are a separate path from vocab themes. Applying
+*Forest* sets **17** `--pref-*` properties — `appBg`, `taskBg`, `titleBg`,
+`checkboxBg`, `progressBar`, the stats group, `panelText` — and **no
+`--pref-modal-bg`**.
+
+So under a Quick Colors preset **no** modal retints, not even `.mini-modal-box`. The
+visible symptom: apply Forest and the whole app behind turns dark green while the
+Personalization modal you are standing in stays blue-grey.
+
+That may be deliberate — neutral editing chrome is a stable reference while you
+audition colours, and the Live Preview panel already shows the result. But it makes
+three distinct behaviours (vocab themes retint most modals; Quick Colors retints
+none; the prompt family never retints), and that should be a decision rather than an
+accident. Worth settling alongside the fix below.
+
 This is only a defect **if** the prompt family is meant to be themed. Treating it
 as chrome that deliberately sits outside the theme is a defensible choice — the
 charcoal already carries the "you're naming something" signal, and holding it
