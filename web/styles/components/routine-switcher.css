@@ -28,6 +28,15 @@
     transition: all var(--transition-normal) ease;
 }
 
+/* WCAG 2.5.8 tap target via pseudo-element — matches .quick-actions-btn::after.
+   The 25px height is locked to the mode selector, so grow the hit area only:
+   25 + 10 + 10 = 45px tall. Already position:absolute, so it anchors ::after. */
+.routine-switcher-btn::after {
+    content: '';
+    position: absolute;
+    inset: -10px 0;
+}
+
 .routine-switcher-btn:hover {
     background: var(--overlay-white-medium);
     border-color: var(--color-navy-dark);

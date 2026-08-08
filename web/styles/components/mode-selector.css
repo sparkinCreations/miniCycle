@@ -189,6 +189,18 @@ body.dark-mode.todo-mode-mode .mode-selector-wrapper .mode-selector {
     align-items: center;
     justify-content: center;
     transition: all var(--transition-normal) ease;
+    /* Anchors the tap-target pseudo-element below. */
+    position: relative;
+}
+
+/* WCAG 2.5.8 tap target via pseudo-element — same approach as
+   .toggle-switch::after in settings.css. The 25px height above is load-bearing
+   (it keeps this level with the native <select>), so the hit area is grown
+   without touching the visual box: 25 + 10 + 10 = 45px tall. */
+.quick-actions-btn::after {
+    content: '';
+    position: absolute;
+    inset: -10px 0;
 }
 
 .quick-actions-btn:hover {

@@ -245,7 +245,10 @@
     letter-spacing: 0.25em;
     color: var(--color-black);
     margin-top: var(--space-px);
-    opacity: 0.7;
+    /* 0.8, not 0.7: this is 12px/600 text (not WCAG "large"), so it needs
+       4.5:1. Composited over the #4c79ff header, 0.7 gave 3.93:1 and 0.8
+       gives 4.57:1. Keeps the softened look while clearing AA. */
+    opacity: 0.8;
 }
 
 body.dark-mode .app-subtitle {

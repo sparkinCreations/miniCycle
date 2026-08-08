@@ -96,13 +96,18 @@
     color: var(--color-white);
 }
 
+/* --theme-notify-* rather than --theme-success/--theme-info: those resolve to
+   the accent-tuned status colors, which fail AA behind white text
+   (info #17a2b8 = 3.05:1, success #28a745 = 2.9:1). Note the old
+   `var(--theme-info, fallback)` form could never reach its fallback —
+   --theme-info is always defined in variables.css. */
 .notification.success {
-    background: var(--theme-success, var(--color-success));
+    background: var(--theme-notify-success);
     color: var(--color-white);
 }
 
 .notification.info {
-    background: var(--theme-info, var(--color-accent));
+    background: var(--theme-notify-info);
     color: var(--color-white);
 }
 

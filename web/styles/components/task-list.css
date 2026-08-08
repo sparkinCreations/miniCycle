@@ -535,6 +535,18 @@ body.onboarding-active .complete-all-and-help-window-container {
     align-items: center;
     justify-content: center;
     transition: color var(--transition-fast) ease;
+    /* Anchors the tap-target pseudo-element below. */
+    position: relative;
+}
+
+/* WCAG 2.5.8 tap target via pseudo-element — matches .toggle-switch::after in
+   settings.css. The rendered button is ~22px square (14px icon + space-1
+   padding); growing the box itself would push the title row past its 32px
+   min-height, so only the hit area grows: 22 + 11 + 11 = 44px. */
+.task-search-btn::after {
+    content: '';
+    position: absolute;
+    inset: -11px;
 }
 
 .task-search-btn:hover {

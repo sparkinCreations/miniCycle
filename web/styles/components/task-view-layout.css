@@ -152,13 +152,25 @@
     border-radius: var(--radius-sm);
     box-shadow: var(--shadow-sm);
 
-    /* Hidden by default — revealed via hover/focus-within rules below. */
+    /* Hidden by default — revealed via hover/focus-within rules below.
+       visibility:hidden (not opacity alone) so the handle also leaves the
+       accessibility tree and the tab sequence while invisible. _createHandle()
+       sets tabIndex=-1, but that is a single JS code path; this makes the
+       guarantee structural, so a handle created or re-parented by any other
+       route can't become an invisible tab stop. Unlike display:none it keeps
+       layout, so the drag logic can still measure the handle. */
     opacity: 0;
+    visibility: hidden;
     pointer-events: none;
     cursor: grab;
 
-    /* Smooth fade respecting prefers-reduced-motion (transition var auto-zeroes). */
-    transition: opacity var(--transition-fast) ease, background-color var(--transition-fast) ease;
+    /* Smooth fade respecting prefers-reduced-motion (transition var auto-zeroes).
+       visibility is stepped, not eased — it flips at the start of the reveal so
+       the fade-in is visible, and at the END of the fade-out so the handle
+       doesn't vanish mid-transition. */
+    transition: opacity var(--transition-fast) ease,
+                visibility 0s linear var(--transition-fast),
+                background-color var(--transition-fast) ease;
 }
 
 /* Default placement — top-left of the host (good for large containers
@@ -218,6 +230,11 @@
     body:not(.focus-mode) .tvl-handle:hover,
     body:not(.focus-mode) .tvl-handle:focus-visible {
         opacity: 1;
+        /* Pairs with visibility:hidden on the base rule. The 0s delay is
+           dropped here so the handle becomes visible immediately as it fades
+           in, rather than after the transition completes. */
+        visibility: visible;
+        transition-delay: 0s;
         pointer-events: auto;
     }
 
