@@ -681,6 +681,20 @@ function pickShell(urlObj) {
   return 'full';
 }
 
+// Standalone pages that must reflect the deployed version immediately.
+// They do NOT load boot-sw.js, so verifyVersionFresh() never runs for them and
+// a cache-first serve has no way to self-correct. Matching by prefix covers
+// both the .html and the pretty URL, and the page's own scripts alongside it
+// (a fresh page running yesterday's dashboard.js is still yesterday's page).
+var FRESH_FIRST_PAGES = ['/pages/dashboard', '/pages/product'];
+
+function isFreshFirstPage(pathname) {
+  for (var i = 0; i < FRESH_FIRST_PAGES.length; i++) {
+    if (pathname.indexOf(FRESH_FIRST_PAGES[i]) === 0) return true;
+  }
+  return false;
+}
+
 // ============================================================================
 // §7 FETCH ROUTING — see the REQUEST ROUTING MAP in §2 for the branch overview.
 // ============================================================================
@@ -736,9 +750,50 @@ self.addEventListener('fetch', function (event) {
     return;
   }
 
+  // ✅ BYPASS: serverless API — network-only, never cached.
+  // GET /.netlify/functions/track otherwise falls all the way through to the
+  // §7d stale-while-revalidate catch-all, which served the admin dashboard the
+  // PREVIOUS fetch's numbers and wrote an authenticated JSON body into Cache
+  // Storage. Neither the function's `Cache-Control: no-store` nor the caller's
+  // `cache: 'no-store'` prevents that: both govern the HTTP cache, which sits
+  // BELOW this worker — Cache Storage ignores HTTP cache directives by spec.
+  // No respondWith at all, so the browser handles it with normal HTTP
+  // semantics (which do honour no-store).
+  if (url.pathname.indexOf('/.netlify/functions/') === 0) {
+    return;
+  }
+
   var accept = (request.headers && request.headers.get('accept')) || '';
   var isNavigate = request.mode === 'navigate' ||
                    (request.destination === '' && accept.indexOf('text/html') !== -1);
+
+  // ✅ Assets belonging to a network-first page (e.g. /pages/dashboard.js) —
+  // network-first, cache only as an offline fallback. The navigation branch
+  // below handles the HTML; without this its script still came from the §7d
+  // stale-while-revalidate catch-all, so a freshly-served page could run the
+  // previous deploy's code. Mirrors the "/pages/*.js" no-store header rule.
+  if (!isNavigate && isFreshFirstPage(url.pathname)) {
+    event.respondWith(
+      fetchWithTimeout(request, FETCH_TIMEOUT_MS).then(function (fresh) {
+        if (fresh && fresh.status === 200) {
+          var toCache = fresh.clone();
+          event.waitUntil(caches.open(DYNAMIC_CACHE).then(function (cache) {
+            return safeCachePut(cache, request, toCache);
+          }));
+        }
+        return fresh;
+      }).catch(function () {
+        return caches.match(request).then(function (cached) {
+          if (cached) return cached;
+          return new Response('/* offline: not cached */', {
+            status: 503,
+            headers: { 'Content-Type': 'application/javascript' }
+          });
+        });
+      })
+    );
+    return;
+  }
 
   if (isNavigate) {
     // A fresh page load is a fresh chance to reach the network — re-arm the
@@ -778,6 +833,46 @@ self.addEventListener('fetch', function (event) {
           trimCache(DYNAMIC_CACHE, MAX_DYNAMIC_ENTRIES);
         });
       });
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // §7-nav-fresh NETWORK-FIRST PAGES (cache kept only as an offline fallback)
+    // ═══════════════════════════════════════════════════════════════════════
+    // Cache-first is safe for the app shell because boot-sw.js runs
+    // verifyVersionFresh(), which clears caches and reloads when the served
+    // copy is stale. These standalone pages do NOT load boot-sw.js, so they
+    // have no such safety net — a cache-first serve stays stale until a hard
+    // reload. The dashboard additionally renders live analytics, where showing
+    // the previous visit's page is actively wrong.
+    if (isFreshFirstPage(url.pathname)) {
+      event.respondWith(
+        (event.preloadResponse || Promise.resolve(null))
+          .then(function (preloaded) {
+            return preloaded || fetchWithTimeout(request, FETCH_TIMEOUT_MS);
+          })
+          .then(function (fresh) {
+            // Keep an offline copy current, but always serve the network's answer.
+            if (fresh && fresh.status === 200) {
+              cacheNavResponse(fresh);
+            }
+            console.log('🌐 Navigation network-first:', url.pathname);
+            return cleanResponse(fresh);
+          })
+          .catch(function () {
+            // Network unreachable — fall back to whatever we cached last.
+            return caches.match(request).then(function (cached) {
+              if (cached) {
+                console.log('📱 Offline fallback (network-first page):', url.pathname);
+                return cleanResponse(cached);
+              }
+              return new Response('Offline - No cached version available', {
+                status: 503,
+                headers: { 'Content-Type': 'text/plain' }
+              });
+            });
+          })
+      );
+      return;
     }
 
     event.respondWith(
