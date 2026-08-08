@@ -1,3 +1,7 @@
+## [2.393] - 2026-08-08
+- style(product): make hero Learn more read as a link with a 44px tap target
+
+
 ## [2.392] - 2026-08-07
 - docs(comments): drop unresolvable FIX #N references and chat residue
 
