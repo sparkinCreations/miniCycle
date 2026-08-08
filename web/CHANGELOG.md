@@ -1,3 +1,7 @@
+## [2.394] - 2026-08-08
+- fix(sw): network-first for dashboard/product pages, network-only for functions API
+
+
 ## [2.393] - 2026-08-08
 - style(product): make hero Learn more read as a link with a 44px tap target
 
