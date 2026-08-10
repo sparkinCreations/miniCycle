@@ -14,6 +14,8 @@ import {
     createMockAppState
 } from './testHelpers.js';
 
+import { COLORS } from '../modules/core/constants.js';
+
 export async function runTaskUtilsTests(resultsDiv) {
     resultsDiv.innerHTML = '<h2>🛠️ TaskUtils Tests</h2><h3>Running tests...</h3>';
 
@@ -317,6 +319,70 @@ export async function runTaskUtilsTests(resultsDiv) {
 
         if (result[0].highPriority !== true) {
             throw new Error('Should detect high priority');
+        }
+    });
+
+    // A task context shaped like the one loadTaskContext hands over.
+    // isLoading:true returns the built task WITHOUT committing it, so these
+    // assert the exact object that would be persisted.
+    const priorityCtx = (id, highPriority, priorityColor) => ({
+        cycleTasks: [],
+        assignedTaskId: id,
+        taskTextTrimmed: 'a task',
+        completed: false,
+        dueDate: null,
+        highPriority,
+        priorityColor,
+        remindersEnabled: false,
+        recurring: false,
+        recurringSettings: {},
+        currentCycle: { deleteCheckedTasks: false },
+        cycles: {},
+        activeCycle: 'cycle-1',
+        isLoading: true,
+        deleteWhenComplete: undefined,
+        deleteWhenCompleteSettings: null
+    });
+
+    await test('created task persists highPriority as a boolean, never null', () => {
+        // null is what addTaskImpl defaulted to until Aug 2026: it was written
+        // verbatim into the stored task, so every UI-created task was
+        // schema-invalid and routineLoader repaired + re-saved it on next boot.
+        const task = TaskUtils.createOrUpdateTaskData(priorityCtx('t-null', null, null), () => {}, null);
+        if (typeof task.highPriority !== 'boolean') {
+            throw new Error(`schema requires a boolean, got ${JSON.stringify(task.highPriority)}`);
+        }
+        if (task.highPriority !== false) {
+            throw new Error(`expected false, got ${JSON.stringify(task.highPriority)}`);
+        }
+    });
+
+    await test('highPriority coercion does NOT change priority colours', () => {
+        // Guards the constraint on the fix: null and false are both falsy, so
+        // the priorityColor expression must resolve identically either way.
+        const plain = TaskUtils.createOrUpdateTaskData(priorityCtx('t-plain', null, null), () => {}, null);
+        if (plain.priorityColor !== null) {
+            throw new Error(`non-priority task must have no colour, got ${plain.priorityColor}`);
+        }
+
+        const plainFalse = TaskUtils.createOrUpdateTaskData(priorityCtx('t-false', false, null), () => {}, null);
+        if (plainFalse.priorityColor !== plain.priorityColor) {
+            throw new Error('null and false must resolve to the same colour');
+        }
+
+        const priority = TaskUtils.createOrUpdateTaskData(priorityCtx('t-pri', true, null), () => {}, null);
+        if (priority.priorityColor !== COLORS.PRIORITY_DEFAULT) {
+            throw new Error(`priority task must default to ${COLORS.PRIORITY_DEFAULT}, got ${priority.priorityColor}`);
+        }
+
+        const custom = TaskUtils.createOrUpdateTaskData(priorityCtx('t-custom', true, '#ff00ff'), () => {}, null);
+        if (custom.priorityColor !== '#ff00ff') {
+            throw new Error(`an explicit colour must be preserved, got ${custom.priorityColor}`);
+        }
+
+        const customNoPriority = TaskUtils.createOrUpdateTaskData(priorityCtx('t-custom2', false, '#00ff00'), () => {}, null);
+        if (customNoPriority.priorityColor !== '#00ff00') {
+            throw new Error('an explicit colour must survive even without priority');
         }
     });
 

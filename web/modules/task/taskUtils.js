@@ -304,7 +304,11 @@ export class TaskUtils {
                 text: taskTextTrimmed,
                 completed,
                 dueDate,
-                highPriority,
+                // Coerced for the same reason the recurring template below does
+                // it: a caller passing null/undefined would otherwise persist a
+                // non-boolean. The priorityColor line is unaffected — null and
+                // false are both falsy, so the colour resolves identically.
+                highPriority: highPriority || false,
                 priorityColor: priorityColor || (highPriority ? COLORS.PRIORITY_DEFAULT : null),
                 remindersEnabled,
                 recurring,

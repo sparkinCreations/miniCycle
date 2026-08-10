@@ -28,7 +28,7 @@
  * @property {boolean} [completed=false] - Initial completion state
  * @property {boolean} [shouldSave=true] - Whether to persist immediately
  * @property {string|null} [dueDate=null] - Due date in ISO format
- * @property {boolean|null} [highPriority=null] - Priority flag (null uses default)
+ * @property {boolean} [highPriority=false] - Priority flag
  * @property {boolean} [isLoading=false] - Loading from storage (skip animations/limits)
  * @property {boolean} [remindersEnabled=false] - Enable reminders for task
  * @property {boolean} [recurring=false] - Is this a recurring task
@@ -203,7 +203,13 @@ export async function addTaskImpl(taskText, options = {}, deps = {}) {
         completed = false,
         shouldSave = true,
         dueDate = null,
-        highPriority = null,
+        // false, not null: the schema requires a boolean, and a null here was
+        // written straight into the stored task — so every UI-created task was
+        // schema-invalid and got coerced + re-saved by routineLoader's repair
+        // pass on the next boot. `null` was never distinguished from `false`
+        // anywhere (all reads are truthiness or === true), so this is a
+        // shape fix, not a behaviour change.
+        highPriority = false,
         priorityColor = null,
         isLoading = false,
         remindersEnabled = false,
