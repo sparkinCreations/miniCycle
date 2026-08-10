@@ -20,7 +20,7 @@
 | **Module tests** | `npm test` | CI — `test.yml` | 🔴 Fails CI |
 | **Real-app gates** | `npm run test:layout` · `test:sw` · `test:meta` · `test:journey` | CI — `test.yml` | 🔴 Fails CI |
 | **Performance** | `npm run perf` | CI — `performance.yml` | 🔴 Fails CI |
-| **DI declarations** | `npm run validate:di` | CI — `test.yml` | 🟡 Partially gated (undeclared=0, nowhere=0, unused ratchet; facade advisory) |
+| **DI declarations** | `npm run validate:di` | CI — `test.yml` | 🟡 Partially gated (undeclared=0, nowhere=0, undeliverable=0, unused ratchet; facade advisory) |
 | **Inline scripts** | `npm run validate:inline` | CI — `test.yml` | 🔴 Fails CI — empty catch blocks in miniCycle.html inline scripts must carry an intent comment (ESLint's `no-empty` can't see the file — drift-review D-01) |
 
 ---
@@ -79,7 +79,8 @@ months — 60 broken links, 9 dead sidebar entries, and 22 unreachable docs incl
 ## 🟡 `validate:di` — partially gated (July 2026)
 
 **Checks:** module DI declarations against actual usage — deps accessed but not declared in
-`moduleManifests.js`, declared but never used, and accessed-but-resolvable-nowhere.
+`moduleManifests.js`, declared but never used, accessed-but-resolvable-nowhere, and
+declared-but-undeliverable (no loader route can supply it).
 
 **Gated (exit 1) since the July 2026 drift review** (C-23), which cleared the standing
 findings first:
@@ -92,6 +93,17 @@ findings first:
 - 🟡 **declared-but-unused** — ratchet: must not exceed `UNUSED_BASELINE` in the script.
   Lower the baseline after real cleanup; never raise it.
 - 🟠 **facade forward-through** — still advisory (facades legitimately forward deps).
+- 🟣 **declared-but-undeliverable** — must be 0. Gated from introduction (Aug 2026): the
+  count was already 0, so the class was closed at zero cost. This is the **supply** side —
+  every other check above tests the consumer against the "known deps" set, and that set is
+  built *from* the declarations, so declaring a dep certifies itself and none of them can
+  see a dep that nothing actually routes. A manifest `provides` entry is a **claim, not a
+  route**: the fix is a `depMappings` entry (or getter) in `moduleLoader.js`, or
+  `RUNTIME_WIRED` with the call site named.
+  **Precedent:** `clearAllUndoHistory` (Mar 2026) was in undoRedoManager's `provides` *and*
+  settingsManager's `optionalDeps` with no `depMappings` entry — so the Settings "Clear Undo
+  History" button silently did nothing. Verified by reintroducing it: every other gated
+  metric still passed (undeclared 0, nowhere 0, unused at baseline); only this one caught it.
 
 **The diff workflow is still the best review habit** when touching DI wiring — capture
 output before your change and after, and look only at what you added:

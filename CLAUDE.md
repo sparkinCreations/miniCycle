@@ -59,7 +59,7 @@ green through all of them and failed CI here).
 npm run validate:csp   # inline-script CSP hashes — HARD pre-push gate (blocks release)
 npm run validate:html  # W3C validity (CI)
 npm run validate:docs  # docs links, sidebar orphans, and THIS file's doc paths (CI)
-npm run validate:di    # DI declarations — gated (undeclared=0, nowhere=0, unused ratchet) since Jul 2026; runs in CI
+npm run validate:di    # DI declarations — gated (undeclared=0, nowhere=0, undeliverable=0, unused ratchet); runs in CI
 npm run validate:inline # miniCycle.html inline scripts: empty catches need intent comments + pre-gate contract (ES5-only above the feature gate, globalThis reads guarded, gate floor includes no-globalthis) (ESLint can't see the file; CI)
 ```
 

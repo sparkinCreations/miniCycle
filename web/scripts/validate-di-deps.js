@@ -25,6 +25,15 @@
  *   ⚪ resolvable-nowhere   — accessed but provided by no manifest/depMappings/core
  *                             (a dead DI-contract dep whose fallback always runs,
  *                             or a local property the parse caught)
+ *   🟣 declared-but-undeliverable — DECLARED by a consumer, but no loader route
+ *                             can supply it. The supply-side counterpart to the
+ *                             checks above, all of which test the CONSUMER side
+ *                             against `known` — and `known` is built FROM the
+ *                             declarations, so declaring a dep is self-certifying
+ *                             and no other check here can ever see this. That is
+ *                             how clearAllUndoHistory shipped broken (Mar 2026):
+ *                             listed in `provides` AND `optionalDeps`, missing
+ *                             from depMappings, silently undefined at runtime.
  *
  * Manifest-driven: only files with a MODULE_MANIFESTS entry are scanned. Facade
  * sub-modules (no manifest, wired via wireSubModuleDependencies) are out of scope,
@@ -117,20 +126,41 @@ function buildKnownDeps() {
     }
     // Fold in depMappings keys — many real deps are mappable there without
     // appearing in any manifest `provides` (e.g. forwarded sub-module funcs).
-    // Parsed, not eval'd: we only need the top-level key names.
+    for (const n of loaderRoutes()) known.add(n);
+    return known;
+}
+
+/**
+ * Names the LOADER can actually deliver — the supply side.
+ *
+ * Deliberately NOT the same set as buildKnownDeps(): `known` includes every
+ * manifest DECLARATION (provides/requires/optionalDeps/…), which makes
+ * declaring a dep self-certifying. A name is only truly deliverable if the
+ * loader routes it, so this reads the loader alone.
+ *
+ * Parsed, not eval'd: we only need the top-level key names. Two forms live
+ * inside the `depMappings` literal and BOTH count:
+ *   `foo: (...) => …`        plain key
+ *   `get foo() { … }`        lazy getter (missed by a bare `key:` regex —
+ *                            consoleCapture/backupManager/
+ *                            TaskOptionsVisibilityController are all getters)
+ */
+function loaderRoutes() {
+    const routes = new Set();
     try {
         const loaderSrc = fs.readFileSync(path.join(bootDir, 'moduleLoader.js'), 'utf8');
         const start = loaderSrc.indexOf('const depMappings = {');
         const end = loaderSrc.indexOf('\n    };', start);
         if (start !== -1 && end !== -1) {
-            for (const m of loaderSrc.slice(start, end).matchAll(/^        ([A-Za-z_$][\w$]*):/gm)) {
-                known.add(m[1]);
-            }
+            const block = loaderSrc.slice(start, end);
+            for (const m of block.matchAll(/^        ([A-Za-z_$][\w$]*):/gm)) routes.add(m[1]);
+            for (const m of block.matchAll(/^\s*get\s+([A-Za-z_$][\w$]*)\s*\(/gm)) routes.add(m[1]);
         }
     } catch {
-        // loader not found — universe falls back to manifests only
+        // loader not found — supply check degrades to "everything unroutable";
+        // callers guard on routes.size so a missing loader can't fail the gate.
     }
-    return known;
+    return routes;
 }
 
 /** Strip comments so a `this.deps.X` mentioned in a doc-comment isn't counted. */
@@ -170,6 +200,22 @@ function collectAccessed(src) {
 }
 
 const known = buildKnownDeps();
+
+/**
+ * Supply side: names the loader can actually hand to a consumer.
+ *   loader depMappings keys + getters | CORE_DEPS | provideInstance registrations
+ * `provides` is deliberately EXCLUDED — it is a claim, not a route. That is the
+ * whole point of the check below.
+ */
+const routes = loaderRoutes();
+for (const n of core) routes.add(n);
+for (const m of Object.values(MODULE_MANIFESTS)) {
+    if (m && m.provideInstance) routes.add(m.provideInstance);
+}
+// If the loader could not be parsed at all, disable the supply check rather
+// than reporting every declared dep as broken.
+const supplyCheckable = routes.size > core.size;
+
 const results = [];
 const scanFailures = [];
 
@@ -209,11 +255,20 @@ for (const [name, manifest] of Object.entries(MODULE_MANIFESTS)) {
             && !RUNTIME_WIRED.has(`${name}:${d}`)).sort();
     const declaredButUnused = [...declared]
         .filter(d => !accessed.has(d) && !core.has(d)).sort();
+    // Declared by this consumer, but NOTHING in the loader can deliver it.
+    // Silently resolves to undefined at runtime: `?.` no-ops, a direct call
+    // throws. Invisible to every other check here, because declaring the name
+    // is what puts it in `known` (see buildKnownDeps) — the exact shape of the
+    // clearAllUndoHistory bug (Mar 2026): in `provides` AND in `optionalDeps`,
+    // with no depMappings entry, so the Settings button silently did nothing.
+    const undeliverable = !supplyCheckable ? [] : [...declared]
+        .filter(d => !routes.has(d) && !RUNTIME_WIRED.has(`${name}:${d}`)).sort();
 
-    if (usedButUndeclared.length || declaredButUnused.length || resolvableNowhere.length) {
+    if (usedButUndeclared.length || declaredButUnused.length || resolvableNowhere.length
+        || undeliverable.length) {
         results.push({
             name, path: manifest.path, facade: FACADES.has(name),
-            usedButUndeclared, declaredButUnused, resolvableNowhere,
+            usedButUndeclared, declaredButUnused, resolvableNowhere, undeliverable,
         });
     }
 }
@@ -224,6 +279,7 @@ const totalUndeclared = simple.reduce((a, r) => a + r.usedButUndeclared.length, 
 const totalFacadeUndeclared = facades.reduce((a, r) => a + r.usedButUndeclared.length, 0);
 const totalUnused = results.reduce((a, r) => a + r.declaredButUnused.length, 0);
 const totalNowhere = results.reduce((a, r) => a + r.resolvableNowhere.length, 0);
+const totalUndeliverable = results.reduce((a, r) => a + r.undeliverable.length, 0);
 
 // Gated metrics (exit 1):
 //   🔴 totalUndeclared  — must be 0 (always the hard gate)
@@ -231,13 +287,16 @@ const totalNowhere = results.reduce((a, r) => a + r.resolvableNowhere.length, 0)
 //                         standing items were cleared, so any new one is a
 //                         freshly-introduced dead dep — fix it or, if genuinely
 //                         runtime-wired, add it to RUNTIME_WIRED with its call site)
+//   🟣 totalUndeliverable — must be 0 (gated from introduction: the count was
+//                         already 0, so this closes the class at zero cost)
 //   🟡 totalUnused      — ratchet: must not exceed UNUSED_BASELINE
 const unusedRegression = totalUnused > UNUSED_BASELINE;
-const failed = totalUndeclared > 0 || totalNowhere > 0 || unusedRegression;
+const failed = totalUndeclared > 0 || totalNowhere > 0 || totalUndeliverable > 0
+    || unusedRegression;
 
 if (JSON_OUT) {
     console.log(JSON.stringify(
-        { totalUndeclared, totalFacadeUndeclared, totalUnused, unusedBaseline: UNUSED_BASELINE, totalNowhere, results, scanFailures },
+        { totalUndeclared, totalFacadeUndeclared, totalUnused, unusedBaseline: UNUSED_BASELINE, totalNowhere, totalUndeliverable, results, scanFailures },
         null, 2));
     process.exit(failed ? 1 : 0);
 }
@@ -275,6 +334,17 @@ if (nowhereModules.length) {
     console.log(`   Fix the access, or if it's genuinely wired at runtime, add it to`);
     console.log(`   RUNTIME_WIRED in this script with its wiring call site.\n`);
     for (const r of nowhereModules) console.log(`   ${r.name}: ${r.resolvableNowhere.join(', ')}`);
+}
+
+const undeliverableModules = results.filter(r => r.undeliverable.length);
+console.log(`\n🟣 DECLARED-BUT-UNDELIVERABLE — no loader route can supply it (${totalUndeliverable}) — GATED, must be 0`);
+console.log(`   Resolves to undefined at runtime: '?.' silently no-ops, a direct call throws.`);
+console.log(`   A manifest 'provides' entry is a CLAIM, not a route — add a depMappings`);
+console.log(`   entry (or getter) in moduleLoader.js, or RUNTIME_WIRED with its call site.\n`);
+if (!undeliverableModules.length) console.log('   (none)\n');
+for (const r of undeliverableModules) {
+    console.log(`   ${r.name}  (${r.path})`);
+    for (const d of r.undeliverable) console.log(`      • ${d}`);
 }
 
 if (unusedRegression) {
