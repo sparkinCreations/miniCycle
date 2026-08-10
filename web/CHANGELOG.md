@@ -1,3 +1,7 @@
+## [2.401] - 2026-08-10
+- fix(boot): clear waitForCore/waitForApp timeout timers, report readiness
+
+
 ## [2.400] - 2026-08-10
 - fix(state): guard totalCyclesCreated increments, backfill the counter
 - fix(preferences): normalize hex before colour arithmetic; guard the apply boundary
