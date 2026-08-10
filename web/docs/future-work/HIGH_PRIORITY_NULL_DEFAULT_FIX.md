@@ -1,12 +1,24 @@
 # `highPriority: null` on Newly Created Tasks — Fix Plan
 
-> **Status:** Open · **Severity:** Low-impact, high-noise · **Found:** Aug 2026, live production
-> review of `minicycle.app` (v2.396) by driving the real app in a browser.
+> **Status:** ✅ SHIPPED in v2.398 (Aug 2026) · **Severity:** was Low-impact, high-noise ·
+> **Found:** Aug 2026, live production review of `minicycle.app` (v2.396) by driving the real
+> app in a browser.
 >
-> Every task created through the UI is persisted with `highPriority: null` instead of `false`.
-> Nothing breaks visually — the value is truthiness-checked everywhere — but it is **schema-invalid
-> per the project's own validator**, and it forces a repair-and-rewrite of the entire routine on
-> the next boot.
+> **Fixed in two places:** `taskCRUD.js` `addTaskImpl` now defaults `highPriority = false`
+> (was `null`), and `taskUtils.js` `createOrUpdateTaskData` coerces with `highPriority || false`
+> at the write site so any caller passing null/undefined still persists a boolean.
+>
+> **Verified live at v2.398:** a task created with the fixed code persists
+> `highPriority: false` (type `boolean`) and produces **no** repair warning on the next boot,
+> while a task created moments earlier with the pre-fix code still warned and was repaired.
+> `priorityColor` is unchanged — `null` and `false` are both falsy, so the colour expression
+> resolves identically; regression tests pin all four colour cases. The `.mcyc` import path
+> was untouched: it builds tasks with its own code and never calls the creation path.
+>
+> The original finding, for the record: every task created through the UI was persisted with
+> `highPriority: null` instead of `false`. Nothing broke visually — the value is
+> truthiness-checked everywhere — but it was **schema-invalid per the project's own
+> validator**, and forced a repair-and-rewrite of the routine on the next boot.
 
 ---
 
