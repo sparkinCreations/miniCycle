@@ -1,3 +1,15 @@
+## [2.397] - 2026-08-10
+- fix(headers): no-store for pretty URLs — /minicycle was cached for a year
+- refactor(modal): drop the inert focus-restore call, document the native contract
+- fix(modal): clear _previousFocus after close; pin focus-restore contract
+- ci(validate:di): gate declared-but-undeliverable deps at zero
+- docs: verify vocab-theme modalBg, add Quick Colors retint gap
+- docs: first-run splash lockout — graduation contract vs shouldShowOnboarding gate
+- docs: record prompt-modal token gap + deliberate designs that read as bugs
+- docs: correct games-folder note — staged content, not dead code
+- docs: add future-work fix plans for pretty-URL cache-control and highPriority null default
+
+
 ## [2.394] - 2026-08-08
 - fix(sw): network-first for dashboard/product pages, network-only for functions API
 
