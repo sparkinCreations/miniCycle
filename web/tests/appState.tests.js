@@ -958,6 +958,56 @@ export async function runAppStateTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
+    await test('recovered state seeds totalCyclesCreated, so a bare ++ cannot yield NaN', () => {
+        // The bug: metadata built by the recovery paths omitted this field, and
+        // six call sites did `metadata.totalCyclesCreated++`. `undefined++` is
+        // NaN, which JSON.stringify persists as null — schema-invalid for a
+        // field types.js declares as a number.
+        //
+        // This asserts the PRODUCTION object, not a replicated expression: one
+        // caller assigns createMinimalFallbackState()'s result straight to
+        // this.data and returns without passing it through _ensureMetadata, so
+        // the seed has to live here too.
+        const stateManager = createStateManager();
+        const recovered = stateManager.createMinimalFallbackState();
+
+        if (!Number.isFinite(recovered.metadata.totalCyclesCreated)) {
+            throw new Error(`fallback metadata must seed a real number, got ${JSON.stringify(recovered.metadata.totalCyclesCreated)}`);
+        }
+
+        // Even the unguarded form the six sites used must now stay finite.
+        recovered.metadata.totalCyclesCreated++;
+        if (recovered.metadata.totalCyclesCreated !== 1) {
+            throw new Error(`expected 1, got ${recovered.metadata.totalCyclesCreated}`);
+        }
+        // And survive a persist round-trip as a number, not null.
+        const roundTripped = JSON.parse(JSON.stringify(recovered));
+        if (roundTripped.metadata.totalCyclesCreated !== 1) {
+            throw new Error(`persisted as ${JSON.stringify(roundTripped.metadata.totalCyclesCreated)}`);
+        }
+    });
+
+    await test('_ensureMetadata repairs a profile that already stored null', () => {
+        // Backfill must REPAIR existing damage, not merely prevent new damage —
+        // profiles that already went through `undefined++` carry null on disk.
+        // Number.isFinite, not typeof: `typeof NaN === 'number'`.
+        const stateManager = createStateManager();
+        for (const broken of [null, undefined, NaN, 'seven', {}]) {
+            const data = stateManager.createMinimalFallbackState();
+            data.metadata.totalCyclesCreated = broken;
+            const fixed = stateManager._ensureMetadata(data);
+            if (fixed.metadata.totalCyclesCreated !== 0) {
+                throw new Error(`${JSON.stringify(broken)} should normalize to 0, got ${JSON.stringify(fixed.metadata.totalCyclesCreated)}`);
+            }
+        }
+        // A real count must be left alone.
+        const healthy = stateManager.createMinimalFallbackState();
+        healthy.metadata.totalCyclesCreated = 12;
+        if (stateManager._ensureMetadata(healthy).metadata.totalCyclesCreated !== 12) {
+            throw new Error('an existing count must not be reset');
+        }
+    });
+
     // === SUMMARY ===
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;

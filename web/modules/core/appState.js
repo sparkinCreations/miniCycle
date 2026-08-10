@@ -498,13 +498,33 @@ class MiniCycleState {
      * @private
      */
     _ensureMetadata(data) {
-        if (data && typeof data === 'object' && (!data.metadata || typeof data.metadata !== 'object')) {
+        if (!data || typeof data !== 'object') return data;
+
+        if (!data.metadata || typeof data.metadata !== 'object') {
             data.metadata = {
                 createdAt: Date.now(),
                 lastModified: Date.now(),
                 schemaVersion: "2.5"
             };
         }
+
+        // Normalize the counter every writer increments. The FULL initial state
+        // seeds it, but this self-heal and createMinimalFallbackState do not —
+        // so a profile that came through corruption recovery reached
+        // `metadata.totalCyclesCreated++` with the field undefined, which
+        // evaluates to NaN and persists as JSON `null`. types.js declares it
+        // optional with a default; six call sites assumed it wasn't. Both are
+        // true now: those sites are guarded, and this makes the field real for
+        // every reader.
+        //
+        // Number.isFinite, not typeof: `typeof NaN === 'number'`, so a typeof
+        // check would preserve an already-broken NaN. This runs whether the
+        // metadata block was just created or already existed, so it REPAIRS
+        // profiles that already stored null rather than only preventing new ones.
+        if (!Number.isFinite(data.metadata.totalCyclesCreated)) {
+            data.metadata.totalCyclesCreated = 0;
+        }
+
         return data;
     }
 
@@ -557,7 +577,12 @@ class MiniCycleState {
             metadata: {
                 createdAt: Date.now(),
                 lastModified: Date.now(),
-                schemaVersion: "2.5"
+                schemaVersion: "2.5",
+                // Seeded here as well as in _ensureMetadata: one caller of this
+                // function (the corruption-recovery branch in init) assigns the
+                // result straight to this.data and returns WITHOUT passing it
+                // through _ensureMetadata, so the backfill there would miss it.
+                totalCyclesCreated: 0
             },
             settings: {
                 theme: 'default',

@@ -871,7 +871,7 @@ export async function processImportedData(fileContent) {
         };
 
         state.appState.activeCycleId = finalCycleTitle;
-        state.metadata.totalCyclesCreated++;
+        state.metadata.totalCyclesCreated = (state.metadata.totalCyclesCreated || 0) + 1;
     }, true); // immediate save
 
     // Initialize empty undo stacks for the imported cycle and reset the
