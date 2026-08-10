@@ -7,7 +7,8 @@
  * @module testing-modal-diagnostics
  */
 
-import { UI_TIMEOUTS } from '../core/constants.js';
+import { UI_TIMEOUTS, SCHEMA } from '../core/constants.js';
+import { getLocalStorageQuota } from '../utils/storageUtils.js';
 import {
     getDeps,
     showNotification,
@@ -182,25 +183,38 @@ export function validateSchema() {
         const cycles = data.cycles || {};
         const schemaVersion = metadata?.schemaVersion || 'unknown';
 
+        // This used to test `cycle.schemaVersion < 2.5`. CYCLES CARRY NO
+        // schemaVersion — only tasks/templates do (the NUMBER 2), and the
+        // top-level metadata carries the STRING "2.5". So the condition was
+        // always false: "needing migration" was permanently 0 and this tool
+        // always reported "valid" no matter how stale the data was. Check the
+        // two versions that actually exist instead (fixed Aug 2026).
         let totalTasks = 0;
-        let cyclesWithOldFormat = 0;
+        let tasksNeedingMigration = 0;
 
         Object.values(cycles).forEach(cycle => {
-            totalTasks += (cycle.tasks?.length || 0);
-
-            if (cycle.schemaVersion && cycle.schemaVersion < 2.5) {
-                cyclesWithOldFormat++;
-            }
+            const tasks = Array.isArray(cycle.tasks) ? cycle.tasks : [];
+            totalTasks += tasks.length;
+            tasks.forEach(task => {
+                const v = task?.schemaVersion;
+                if (typeof v !== 'number' || v < SCHEMA.CURRENT_TASK) {
+                    tasksNeedingMigration++;
+                }
+            });
         });
 
+        const schemaCurrent = schemaVersion === SCHEMA.CURRENT;
+
         appendToTestResults(`Schema Analysis:\n`);
-        appendToTestResults(`- Current Schema Version: ${schemaVersion}\n`);
+        appendToTestResults(`- Current Schema Version: ${schemaVersion}${schemaCurrent ? '' : ` (expected ${SCHEMA.CURRENT})`}\n`);
         appendToTestResults(`- Total Routines: ${Object.keys(cycles).length}\n`);
         appendToTestResults(`- Total Tasks: ${totalTasks}\n`);
-        appendToTestResults(`- Cycles needing migration: ${cyclesWithOldFormat}\n\n`);
+        appendToTestResults(`- Tasks needing migration: ${tasksNeedingMigration}\n\n`);
 
-        if (cyclesWithOldFormat > 0) {
-            showNotification(`Found ${cyclesWithOldFormat} cycles that may need migration`, "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
+        if (!schemaCurrent) {
+            showNotification(`Schema is ${schemaVersion}, expected ${SCHEMA.CURRENT}`, "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
+        } else if (tasksNeedingMigration > 0) {
+            showNotification(`Found ${tasksNeedingMigration} task(s) that may need migration`, "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
         } else {
             showNotification(getLabel('notify.diagSchemaValid'), "success", UI_TIMEOUTS.NOTIFICATION_LONG);
         }
@@ -220,16 +234,24 @@ export function showAppInfo() {
 
     const state = deps.AppState?.get();
     const metadata = state?.metadata || {};
-    const version = metadata.version || metadata.schemaVersion || "1.371";
-    const buildDate = metadata.lastModified
-        ? new Date(metadata.lastModified).toLocaleDateString()
+    // APP version comes from version.js — the single source of truth, and what
+    // showBootTiming below already uses. This previously read
+    // `metadata.version || metadata.schemaVersion || "1.371"`; metadata has no
+    // `version` field, so it fell through to the SCHEMA version and printed
+    // "Version: 2.5" next to "Schema Version: 2.5" — the same number twice, one
+    // mislabelled, with the real app version shown nowhere. Anyone reporting a
+    // bug from this panel reported the wrong version (fixed Aug 2026).
+    const version = globalThis.APP_VERSION || 'unknown';
+    const dataLastModified = metadata.lastModified
+        ? new Date(metadata.lastModified).toLocaleString()
         : "Unknown";
 
-    appendToTestResults(`- Version: ${version}\n`);
-    appendToTestResults(`- Schema Version: ${metadata.schemaVersion || "2.5"}\n`);
+    appendToTestResults(`- App Version: ${version}\n`);
+    appendToTestResults(`- Cache Version: ${globalThis.CACHE_VERSION || 'unknown'}\n`);
+    appendToTestResults(`- Schema Version: ${metadata.schemaVersion || SCHEMA.CURRENT}\n`);
     appendToTestResults(`- Name: miniCycle\n`);
     appendToTestResults(`- Developer: Sparkin Creations\n`);
-    appendToTestResults(`- Last Modified: ${buildDate}\n`);
+    appendToTestResults(`- Data Last Modified: ${dataLastModified}\n`);
     appendToTestResults(`- User Agent: ${navigator.userAgent}\n\n`);
 
     showNotification(getLabel('notify.diagAppInfo'), "info", UI_TIMEOUTS.NOTIFICATION_SHORT);
@@ -241,14 +263,25 @@ export function showAppInfo() {
 export function showStorageInfo() {
     appendToTestResults("Storage Analysis:\n");
 
-    const storageUsed = JSON.stringify(localStorage).length;
-    const storageLimit = 5 * 1024 * 1024; // 5MB typical limit
+    // Measure the KEYS AND VALUES, not JSON.stringify(localStorage) — that
+    // counted braces, quotes, colons and escape characters as if they were
+    // stored data, inflating the total. Bytes are length × 2 (UTF-16), matching
+    // how storageUtils meters the quota.
+    let storageUsed = 0;
+    for (const key of Object.keys(localStorage)) {
+        storageUsed += (key.length + (localStorage.getItem(key) || '').length) * 2;
+    }
+    // The app's own quota figure rather than an assumed 5MB — storageUtils
+    // probes this lazily and browsers differ. Still labelled "Estimated": this
+    // returns a conservative default until a detection pass has run, so
+    // claiming "detected" would overstate it (fixed Aug 2026).
+    const storageLimit = getLocalStorageQuota();
     const usagePercent = ((storageUsed / storageLimit) * 100).toFixed(2);
 
     appendToTestResults(`- Storage Used: ${(storageUsed / 1024).toFixed(2)} KB\n`);
     appendToTestResults(`- Estimated Limit: ${(storageLimit / 1024 / 1024).toFixed(2)} MB\n`);
     appendToTestResults(`- Usage: ${usagePercent}%\n`);
-    appendToTestResults(`- Available Keys: ${Object.keys(localStorage).length}\n\n`);
+    appendToTestResults(`- Keys Stored: ${Object.keys(localStorage).length}\n\n`);
 
     showNotification(`Storage: ${usagePercent}% used`, "info", UI_TIMEOUTS.NOTIFICATION_LONG);
 }

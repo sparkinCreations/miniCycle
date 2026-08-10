@@ -256,6 +256,19 @@ export const FONT_SIZE = Object.freeze({
  * Size limits for various data structures
  * @constant {Object}
  */
+/**
+ * Schema versions. Two DIFFERENT shapes, easy to conflate:
+ *   CURRENT      — top-level `metadata.schemaVersion`, the STRING "2.5"
+ *   CURRENT_TASK — per-task/template `schemaVersion`, the NUMBER 2
+ * Cycles carry NEITHER — a diagnostic that tested `cycle.schemaVersion` was
+ * therefore dead and always reported "valid" (fixed Aug 2026).
+ * @constant {Object}
+ */
+export const SCHEMA = Object.freeze({
+    CURRENT: '2.5',
+    CURRENT_TASK: 2
+});
+
 export const LIMITS = Object.freeze({
     MAX_TIMEOUT_MS: 2147483647,    // Largest setTimeout delay (~24.8 days). Above this the delay overflows a signed 32-bit int and the timer fires IMMEDIATELY — clamp and re-arm for anything longer (reminders.js scheduleNextReminder)
     UNDO_STACK: 20,                // Max items in undo/redo stack

@@ -162,9 +162,18 @@ export function runFullAnalysis() {
 export function exportDebugData() {
     appendToTestResults("Exporting Debug Package...\n");
 
+    // One timestamp for BOTH the filename and the message below — these were
+    // two separate Date.now() calls, so the "File: ..." line could name a file
+    // that was never written (fixed Aug 2026).
+    const stamp = Date.now();
+    const filename = `minicycle-debug-${stamp}.json`;
+
     const debugData = {
         timestamp: new Date().toISOString(),
-        appVersion: "1.0",
+        // From version.js, not a hardcoded "1.0" — this package is what gets
+        // attached to a bug report, so a wrong version here misdirects triage.
+        appVersion: globalThis.APP_VERSION || 'unknown',
+        cacheVersion: globalThis.CACHE_VERSION || 'unknown',
         userAgent: navigator.userAgent,
         viewport: `${window.innerWidth}x${window.innerHeight}`,
         localStorage: Object.fromEntries(
@@ -180,14 +189,14 @@ export function exportDebugData() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `minicycle-debug-${Date.now()}.json`;
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
     appendToTestResults(`Debug package exported successfully\n`);
-    appendToTestResults(`File: minicycle-debug-${Date.now()}.json\n\n`);
+    appendToTestResults(`File: ${filename}\n\n`);
 
     showNotification(getLabel('notify.debugPackageExported'), "success", UI_TIMEOUTS.NOTIFICATION_LONG);
 }

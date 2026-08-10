@@ -41,17 +41,22 @@ export async function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
     const OUTPUT_ID = 'testing-output';
 
     // Configurable mock AppState — tests swap `mockState` to exercise integrity branches.
+    // Shaped like PRODUCTION data, deliberately. This fixture used to carry
+    // `metadata.version` and a per-cycle `schemaVersion` — neither of which the
+    // app ever writes. Tests asserted on those invented fields and so passed
+    // while the real code was broken: validateSchema's cycle check could never
+    // fire on real data, and showAppInfo silently fell through to the schema
+    // version. Keep this honest to what createInitialSchema25Data produces.
     function cleanState() {
         return {
-            metadata: { version: '2.5-test', schemaVersion: '2.5', lastModified: Date.now() },
+            metadata: { schemaVersion: '2.5', lastModified: Date.now() },
             data: {
                 cycles: {
                     'test-cycle': {
                         title: 'Test Routine',
-                        schemaVersion: 2.5,
                         tasks: [
-                            { id: 't1', text: 'Task one', completed: false },
-                            { id: 't2', text: 'Task two', completed: true }
+                            { id: 't1', text: 'Task one', completed: false, schemaVersion: 2 },
+                            { id: 't2', text: 'Task two', completed: true, schemaVersion: 2 }
                         ]
                     }
                 }
@@ -197,13 +202,39 @@ export async function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
         if (!text.includes('Total Routines: 1')) throw new Error('expected 1 routine');
     });
 
-    await test('validateSchema flags cycles with an old per-cycle schemaVersion', async () => {
-        mockState.data.cycles['test-cycle'].schemaVersion = 2.0;  // < 2.5 → needs migration
+    await test('validateSchema reports a healthy schema as needing no migration', async () => {
+        // Baseline: production-shaped data must come back clean, so the
+        // "flags" tests below prove detection rather than a constant.
         validateSchema();
         await new Promise(r => setTimeout(r, 1000));
-        if (!outputText().includes('Cycles needing migration: 1')) {
-            throw new Error(`expected 1 cycle needing migration, got: "${outputText()}"`);
+        if (!outputText().includes('Tasks needing migration: 0')) {
+            throw new Error(`expected 0 needing migration, got: "${outputText()}"`);
         }
+    });
+
+    await test('validateSchema flags tasks with a missing or outdated schemaVersion', async () => {
+        // The REAL signal. This previously tested `cycle.schemaVersion`, a field
+        // production never writes — so the check could not fire on real data and
+        // the tool always reported "valid". A task with no schemaVersion is what
+        // genuinely-unmigrated data looks like.
+        delete mockState.data.cycles['test-cycle'].tasks[0].schemaVersion;
+        mockState.data.cycles['test-cycle'].tasks[1].schemaVersion = 1;
+        validateSchema();
+        await new Promise(r => setTimeout(r, 1000));
+        if (!outputText().includes('Tasks needing migration: 2')) {
+            throw new Error(`expected 2 tasks needing migration, got: "${outputText()}"`);
+        }
+        mockState = cleanState();
+    });
+
+    await test('validateSchema warns when the top-level schema version is not current', async () => {
+        mockState.metadata.schemaVersion = '2.0';
+        validateSchema();
+        await new Promise(r => setTimeout(r, 1000));
+        if (!outputText().includes('expected 2.5')) {
+            throw new Error(`expected an outdated-schema note, got: "${outputText()}"`);
+        }
+        mockState = cleanState();
     });
 
     // =====================================================
@@ -211,20 +242,33 @@ export async function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
     // =====================================================
     resultsDiv.innerHTML += '<h4>ℹ️ Info Displays</h4>';
 
-    await test('showAppInfo prints version + schema from metadata', () => {
+    await test('showAppInfo reports the REAL app version, not the schema version', () => {
+        // It used to print `metadata.version || metadata.schemaVersion`, and
+        // metadata has no `version` — so it showed "Version: 2.5" beside
+        // "Schema Version: 2.5" and the actual app version appeared nowhere.
+        // Anyone filing a bug from this panel reported the wrong number.
         showAppInfo();
         const text = outputText();
-        if (!text.includes('2.5-test')) throw new Error(`expected metadata version, got: "${text}"`);
+        const appVersion = globalThis.APP_VERSION;
+        if (!appVersion) throw new Error('precondition: APP_VERSION not loaded in this environment');
+        if (!text.includes(`App Version: ${appVersion}`)) {
+            throw new Error(`expected the real app version ${appVersion}, got: "${text}"`);
+        }
         if (!text.includes('Schema Version: 2.5')) throw new Error('expected schema version line');
+        if (text.includes(`App Version: ${mockState.metadata.schemaVersion}`)) {
+            throw new Error('app version must not fall back to the schema version');
+        }
         if (!text.includes('miniCycle')) throw new Error('expected app name');
     });
 
     await test('showStorageInfo prints key count and usage', () => {
         showStorageInfo();
         const text = outputText();
-        if (!text.includes('Available Keys:')) throw new Error('expected key count line');
+        if (!text.includes('Keys Stored:')) throw new Error('expected key count line');
         if (!text.includes('Storage Used:')) throw new Error('expected storage used line');
         if (!/Usage: [\d.]+%/.test(text)) throw new Error(`expected a usage percentage, got: "${text}"`);
+        // Limit must come from the app's quota logic, not a hardcoded 5MB.
+        if (!/Estimated Limit: [\d.]+ MB/.test(text)) throw new Error('expected an estimated limit line');
     });
 
     // =====================================================
