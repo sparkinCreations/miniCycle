@@ -66,7 +66,7 @@ const di = createDIModule('ModalManager', {
     hideMainMenu: optional(null),
     sanitizeInput: optional(null),
     safeAddEventListener: optional(null),
-    waitForCore: optional(() => Promise.resolve()),
+    waitForCore: optional(() => Promise.resolve(false)),
     AppMeta: optional(null),
     getModal: optional(null)
 });
@@ -118,7 +118,7 @@ export class ModalManager {
             hideMainMenu: resolvedDeps.hideMainMenu,
             sanitizeInput: resolvedDeps.sanitizeInput,
             safeAddEventListener: resolvedDeps.safeAddEventListener,
-            waitForCore: resolvedDeps.waitForCore || (() => Promise.resolve())
+            waitForCore: resolvedDeps.waitForCore || (() => Promise.resolve(false))
         };
     }
 

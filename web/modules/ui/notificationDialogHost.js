@@ -39,7 +39,7 @@ import { reshowPopover, isPopoverOpen } from '../utils/popoverUtils.js';
 
 const di = createDIModule('NotificationDialogHost', {
     getBody: optional(() => document.body),
-    waitForCore: optional(() => Promise.resolve())
+    waitForCore: optional(() => Promise.resolve(false))
 });
 
 /**
@@ -65,7 +65,7 @@ export class NotificationDialogHost {
 
         this.deps = {
             getBody: resolved.getBody || (() => document.body),
-            waitForCore: resolved.waitForCore || (() => Promise.resolve())
+            waitForCore: resolved.waitForCore || (() => Promise.resolve(false))
         };
 
         /** @type {HTMLDialogElement[]} Stack of open modal dialogs (topmost last) */

@@ -160,6 +160,48 @@ export async function runAppInitTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
+    await test('waitForCore reports readiness so callers can branch', async () => {
+        // It used to return undefined, so none of the ~56 awaiting callers could
+        // tell a real "core ready" from a timed-out degraded boot. appInit
+        // already guards itself this way internally (runInitialSetup,
+        // runCompleteInitialSetup); external callers had nothing to guard on.
+        if (appInit.coreReady) {
+            const ready = await appInit.waitForCore();
+            if (ready !== true) throw new Error(`ready core should report true, got ${ready}`);
+        }
+        // Timeout path: a fresh instance whose core never arrives must report
+        // false rather than resolving indistinguishably from success.
+        const pending = new (appInit.constructor)();
+        const timedOut = await pending.waitForCore(20);
+        if (timedOut !== false) throw new Error(`timed-out wait should report false, got ${timedOut}`);
+    });
+
+    await test('waitForCore cancels its timeout timer once the race is decided', async () => {
+        // Promise.race settles on the first outcome but does NOT cancel the
+        // loser. Without clearTimeout, every awaiting caller left a live 10s
+        // timer holding a closure and a pending rejection — ~56 of them, right
+        // through the boot window. Count real timers rather than trusting the
+        // implementation: patch setTimeout/clearTimeout for the duration.
+        const realSet = window.setTimeout;
+        const realClear = window.clearTimeout;
+        let created = 0, cleared = 0;
+        window.setTimeout = (...args) => { created++; return realSet(...args); };
+        window.clearTimeout = (id) => { cleared++; return realClear(id); };
+        try {
+            const instance = new (appInit.constructor)();
+            const waiting = instance.waitForCore(5000);
+            await instance.markCoreSystemsReady();   // resolve the race well before 5s
+            await waiting;
+        } finally {
+            window.setTimeout = realSet;
+            window.clearTimeout = realClear;
+        }
+        if (created === 0) throw new Error('precondition: no timer was created');
+        if (cleared < created) {
+            throw new Error(`every timer must be cleared: created ${created}, cleared ${cleared}`);
+        }
+    });
+
     await test('markCoreSystemsReady method exists', () => {
         if (typeof appInit.markCoreSystemsReady !== 'function') {
             throw new Error('markCoreSystemsReady should be a function');

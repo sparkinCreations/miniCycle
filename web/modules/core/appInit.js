@@ -145,7 +145,7 @@ class AppInit {
 
 	async waitForCore(timeoutMs = 10000) {
 		if (this.coreReady) {
-			return;
+			return true;
 		}
 
 		if (!this._corePromise) {
@@ -155,18 +155,31 @@ class AppInit {
 		}
 
 		// Timeout safety: don't hang forever if core never becomes ready
+		let timer;
 		const timeoutPromise = new Promise((_, reject) => {
-			setTimeout(() => {
+			timer = setTimeout(() => {
 				reject(new Error(`waitForCore timed out after ${timeoutMs}ms - core never became ready`));
 			}, timeoutMs);
 		});
 
 		try {
 			await Promise.race([this._corePromise, timeoutPromise]);
+			return true;
 		} catch (err) {
 			console.error('❌', err.message);
 			console.warn('⚠️ Continuing without core ready - some features may not work');
-			// Don't rethrow - allow app to continue in degraded state
+			// Don't rethrow — that would break every awaiting caller at once.
+			// Report it instead: callers that write state can branch on false.
+			// `await waitForCore()` ignoring the value behaves exactly as before.
+			return false;
+		} finally {
+			// Promise.race settles on the FIRST outcome but does not cancel the
+			// loser — without this the timer runs to completion, so every
+			// awaiting caller left a live 10s timer holding a closure and a
+			// pending rejection, right through the boot window that matters.
+			// Verified by execution: races settling at 50ms still fired every
+			// timer afterwards (Aug 2026). Also keeps Node alive in tests.
+			clearTimeout(timer);
 		}
 	}
 
@@ -197,7 +210,7 @@ class AppInit {
 
 	async waitForApp(timeoutMs = 15000) {
 		if (this.appReady) {
-			return;
+			return true;
 		}
 
 		if (!this._appPromise) {
@@ -207,17 +220,23 @@ class AppInit {
 		}
 
 		// Timeout safety: don't hang forever if app never becomes ready
+		let timer;
 		const timeoutPromise = new Promise((_, reject) => {
-			setTimeout(() => {
+			timer = setTimeout(() => {
 				reject(new Error(`waitForApp timed out after ${timeoutMs}ms - app never became ready`));
 			}, timeoutMs);
 		});
 
 		try {
 			await Promise.race([this._appPromise, timeoutPromise]);
+			return true;
 		} catch (err) {
 			console.error('❌', err.message);
 			console.warn('⚠️ Continuing without app ready - some features may not work');
+			return false;
+		} finally {
+			// Same as waitForCore: cancel the losing timer. 15s here.
+			clearTimeout(timer);
 		}
 	}
 
