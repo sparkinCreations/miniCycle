@@ -823,6 +823,66 @@ export async function runAppInitTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
+    await test('runInitialSetup does NOT re-show onboarding after the banner-dismiss graduation', async () => {
+        // Aug 2026 lockout: two paths graduate a user — dismissing the welcome
+        // banner (firstRunWelcomeDismissed) OR exiting Focus View
+        // (onboardingCompleted). Reading only the second stranded anyone who
+        // took the first: they never exit Focus View during the
+        // create-your-own-routine flow, so every reload re-showed onboarding
+        // over their real routines instead of loading them.
+        let onboardingShown = false;
+
+        setAppInitDependencies({
+            loadMiniCycleData: () => ({
+                cycles: { 'Closing Shift Checklist': { title: 'Closing Shift Checklist', tasks: [] } },
+                activeCycle: 'Closing Shift Checklist',
+                reminders: { enabled: false },
+                settings: { onboardingCompleted: false, firstRunWelcomeDismissed: true }
+            }),
+            createInitialSchema25Data: () => {},
+            showCycleCreationModal: () => {},
+            getOnboardingManager: () => ({
+                showOnboarding: () => { onboardingShown = true; },
+                armFirstSessionLifecycle: () => {}
+            }),
+            getMiniCycleState: () => null
+        });
+
+        await appInit.runInitialSetup();
+
+        if (onboardingShown) {
+            throw new Error('an established user who dismissed the welcome banner must not be sent back to onboarding');
+        }
+    });
+
+    await test('runInitialSetup still shows onboarding when BOTH graduation flags are false (Reset Onboarding)', async () => {
+        // Reset Onboarding clears onboardingCompleted AND firstRunWelcomeDismissed,
+        // so the deliberate reset path must survive the fix above.
+        let onboardingShown = false;
+
+        setAppInitDependencies({
+            loadMiniCycleData: () => ({
+                cycles: { 'Closing Shift Checklist': { title: 'Closing Shift Checklist', tasks: [] } },
+                activeCycle: 'Closing Shift Checklist',
+                reminders: { enabled: false },
+                settings: { onboardingCompleted: false, firstRunWelcomeDismissed: false, focusModeActive: false }
+            }),
+            createInitialSchema25Data: () => {},
+            showCycleCreationModal: () => {},
+            getOnboardingManager: () => ({
+                showOnboarding: () => { onboardingShown = true; },
+                armFirstSessionLifecycle: () => {}
+            }),
+            getMiniCycleState: () => null
+        });
+
+        await appInit.runInitialSetup();
+
+        if (!onboardingShown) {
+            throw new Error('Reset Onboarding must still re-show onboarding');
+        }
+    });
+
     await test('runInitialSetup shows cycle creation for existing users without active cycle', async () => {
         let cycleModalShown = false;
 

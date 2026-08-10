@@ -512,13 +512,26 @@
     var raw = null;
     try { raw = localStorage.getItem('miniCycleData'); } catch (e) { return; /* storage unavailable — normal splash */ }
     if (raw) {
-      var choiceMade = false, onboardingDone = false;
+      var choiceMade = false, onboardingDone = false, hasRoutines = false;
       try { choiceMade = localStorage.getItem('miniCycle_firstRunChoiceMade') === '1'; } catch (e) { /* storage unavailable — treat as not chosen */ }
       try {
         var parsed = JSON.parse(raw);
         onboardingDone = !!(parsed && parsed.settings && parsed.settings.onboardingCompleted);
+        // OWNING A ROUTINE is the durable "established user" signal that the
+        // flags above are not. Boot's createInitialSchema25Data writes
+        // data.cycles = {}, so a fresh user who reloads before choosing still
+        // has ZERO cycles and correctly sees this screen — the reason the
+        // comment above rejects bare "data exists" does not apply to cycles.
+        // Anyone WITH a routine has used the app, and every action on this
+        // screen assumes an empty one (its "restore from backup" invites
+        // overwriting live data), so never trap them here because a graduation
+        // flag failed to write — app close mid-flow, crash, PWA kill.
+        // Aug 2026 lockout: 2 routines + 2 completed cycles, shown this screen
+        // on every load with no route back to their own data.
+        var mcCycles = parsed && parsed.data && parsed.data.cycles;
+        hasRoutines = !!(mcCycles && Object.keys(mcCycles).length > 0);
       } catch (e) { onboardingDone = true; } // unparseable → treat as returning, don't trap
-      if (choiceMade || onboardingDone) return; // decided or mid-flow → normal splash
+      if (choiceMade || onboardingDone || hasRoutines) return; // decided, mid-flow, or established → normal splash
     }
 
     document.documentElement.classList.add('mc-first-run');

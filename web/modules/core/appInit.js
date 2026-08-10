@@ -446,7 +446,16 @@ class AppInit {
 		// ✅ FIX: Check onboarding directly from schemaData instead of via AppState
 		// This avoids a race condition where AppState.isReady() returns false on initial load
 		// because data was just created by dataAccess and AppState wasn't re-initialized
-		const hasSeenOnboarding = settings?.onboardingCompleted || false;
+		// Two paths graduate a user, per the contract documented in
+		// onboardingManager (~line 1761): dismissing the welcome banner
+		// (firstRunWelcomeDismissed) OR exiting Focus View (onboardingCompleted).
+		// Reading only the second stranded anyone who took the first: they never
+		// exit Focus View during the create-your-own-routine flow, so the
+		// focus-exit handler never fires, and every reload re-showed onboarding
+		// over their real routines (Aug 2026 lockout).
+		// Safe for "Reset Onboarding" — that handler clears BOTH flags, so a
+		// deliberate reset still re-shows onboarding.
+		const hasSeenOnboarding = !!(settings?.onboardingCompleted || settings?.firstRunWelcomeDismissed);
 		const cycleCount = Object.keys(cycles || {}).length;
 		const hasValidActiveCycle = activeCycle && cycles[activeCycle];
 
