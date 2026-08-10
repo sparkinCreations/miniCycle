@@ -249,6 +249,25 @@ export function scanTestDataCycles(data) {
 }
 
 /**
+ * Build a replacement id for a task the repair pass found without one.
+ *
+ * Must be a STRING in the shape taskUtils generates. This was previously
+ * `Date.now() + Math.floor(Math.random() * 1000) + index` — arithmetic, so it
+ * produced a NUMBER. Real ids are strings, and two subsystems filter on the
+ * type: undoRedoManager's snapshot sanitizer keeps only tasks whose
+ * `typeof id === 'string'`, and the .mcyc importer requires a string matching
+ * /^[A-Za-z0-9._:-]{1,64}$/. A task "repaired" with a numeric id was therefore
+ * schema-shaped but silently dropped from undo history AND from exports —
+ * the repair quietly made it worse (fixed Aug 2026).
+ *
+ * @param {number} index - Task position, for uniqueness within one repair pass
+ * @returns {string} Task id
+ */
+export function generateRepairedTaskId(index) {
+    return `task-${Date.now()}-${index}-${Math.random().toString(36).slice(2, 11)}`;
+}
+
+/**
  * Repair data issues automatically
  */
 export function repairData() {
@@ -344,7 +363,7 @@ export function repairData() {
                     }
 
                     if (task.id === undefined || task.id === null) {
-                        task.id = Date.now() + Math.floor(Math.random() * 1000) + index;
+                        task.id = generateRepairedTaskId(index);
                         repairs.push(`Generated unique ID for task in "${cycle.title}"`);
                     }
 

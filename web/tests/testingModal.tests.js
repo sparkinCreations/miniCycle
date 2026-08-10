@@ -325,6 +325,27 @@ export async function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
         if (found.some(f => f.id === 'id-1786-keep')) throw new Error('a real routine was flagged');
     });
 
+    await test('a repaired task id survives BOTH consumers that filter on id', () => {
+        // The repair used to build ids arithmetically (Date.now() + rand + index),
+        // producing a NUMBER. undoRedoManager's snapshot sanitizer keeps only
+        // tasks with a string id, and the .mcyc importer requires a string
+        // matching its safe-id regex — so a "repaired" task was silently dropped
+        // from undo history and from exports. Both contracts are asserted here.
+        const SAFE_IMPORTED_TASK_ID = /^[A-Za-z0-9._:-]{1,64}$/;   // cycleImportManager.js
+        for (let i = 0; i < 5; i++) {
+            const id = analysis.generateRepairedTaskId(i);
+            if (typeof id !== 'string') {
+                throw new Error(`id must be a string (undo sanitizer drops non-strings), got ${typeof id}`);
+            }
+            if (!SAFE_IMPORTED_TASK_ID.test(id)) {
+                throw new Error(`id must satisfy the importer's safe-id regex, got "${id}"`);
+            }
+        }
+        // Unique within a single repair pass (same millisecond, different index).
+        const ids = new Set([0, 1, 2, 3, 4].map(i => analysis.generateRepairedTaskId(i)));
+        if (ids.size !== 5) throw new Error('generated ids collided within one pass');
+    });
+
     await test('scanTestDataCycles does not mutate the data it scans', () => {
         // The confirmation names what will be deleted, so the scan must be pure.
         const data = { cycles: { 'cycle-main': { id: 'cycle-main', title: 'Main Cycle', tasks: [] } } };
