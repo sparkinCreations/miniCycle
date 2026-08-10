@@ -182,6 +182,45 @@ export async function runModalManagerTests(resultsDiv) {
         }
     });
 
+    await test('closeAllModals returns focus to the opener and clears _previousFocus', async () => {
+        const mm = new ModalManager();
+
+        const trigger = document.createElement('button');
+        trigger.textContent = 'opener';
+        document.body.appendChild(trigger);
+
+        // A real <dialog> with a child: that's the production shape, and it's
+        // what makes animateDialogClose take its async (animation) path.
+        const modal = document.createElement('dialog');
+        modal.id = 'feedback-modal';
+        modal.innerHTML = '<div><button>inside</button></div>';
+        document.body.appendChild(modal);
+
+        trigger.focus();
+        modal._previousFocus = document.activeElement;   // what every open path does
+        modal.showModal();
+
+        mm.closeAllModals();
+
+        // Focus lands when the dialog actually CLOSES, not when closeAllModals
+        // returns — animateDialogClose waits for the closing animation (200ms
+        // fallback). Asserting synchronously here would test the inert window,
+        // where a focus() call outside an open modal dialog is ignored.
+        await new Promise(resolve => setTimeout(resolve, 350));
+
+        const active = document.activeElement;
+        const cleared = modal._previousFocus === null;
+        trigger.remove();
+        modal.remove();
+
+        if (active !== trigger) {
+            throw new Error(`focus should return to the opener, got <${active?.tagName?.toLowerCase()}>`);
+        }
+        if (!cleared) {
+            throw new Error('_previousFocus should be nulled after close (stale ref pins a detached node)');
+        }
+    });
+
     test('closeAllModals hides visible modals', () => {
         const mm = new ModalManager();
 

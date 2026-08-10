@@ -171,7 +171,22 @@ export class ModalManager {
             if (typeof modal.showModal === 'function') {
                 if (modal.open) {
                     animateDialogClose(modal);
+                    // NOTE (verified in-browser, Aug 2026): this focus() call is a
+                    // no-op for modal dialogs. animateDialogClose() is async — it
+                    // waits for the closing animation — so the dialog is still
+                    // open here, and an open modal <dialog> makes the rest of the
+                    // document inert, which makes focus() outside it silently fail.
+                    // Focus still lands correctly because the browser restores it
+                    // natively on dialog close (HTML spec: the "previously focused
+                    // element"). Kept for the non-modal show() path. Do NOT "fix"
+                    // this by deleting the native behaviour it depends on; if you
+                    // want the call to actually do the work, await the close first.
                     modal._previousFocus?.focus({ focusVisible: false });
+                    // Drop the reference either way: a modal can outlive the
+                    // element that opened it (deleting a routine from the switcher
+                    // removes its own trigger), and holding it here pins a detached
+                    // node in memory. Matches guidedTourManager's restore.
+                    modal._previousFocus = null;
                 }
             } else {
                 // Non-dialog elements: use legacy close methods
