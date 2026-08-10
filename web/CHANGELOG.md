@@ -1,3 +1,11 @@
+## [2.399] - 2026-08-10
+- fix(diagnostics): repaired tasks get a string id, not a number
+- fix(diagnostics): report real versions, make schema validation able to fail
+- fix(diagnostics): Repair Corrupted Data can no longer delete a real routine
+- fix(onboarding): stop locking established users behind the first-run chooser
+- docs: mark highPriority null-default fix shipped in v2.398
+
+
 ## [2.398] - 2026-08-10
 - fix(task): persist highPriority as false, not null, on created tasks
 - docs: mark pretty-URL Part 1 shipped in v2.397, Part 2 still open
