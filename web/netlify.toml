@@ -117,6 +117,38 @@
     Pragma = "no-cache"
     Expires = "0"
 
+# The REST of the pretty URLs. Same gap as "/" and "/pages/*" above: an
+# extensionless alias cannot match the "*.html" rule, so it fell through to the
+# "/*" catch-all and was cached for a YEAR. "/minicycle" is the one that matters
+# — it is the "Try Now" / "Try miniCycle Web" target, i.e. the app entry point,
+# so a returning visitor kept running stale HTML against new hashed /build/
+# output. Observed in production at v2.396: the boot logged
+# "VERSION MISMATCH: BUILD (HTML) stale: loaded=2.394, server=2.396", gave up
+# after one heal attempt, and the stale document's inline-script hash was absent
+# from the new CSP allowlist, so the script was blocked and the boot failed.
+# The .html forms were always fine — only the aliases were exposed.
+# Verify with: curl -sI "https://minicycle.app/minicycle?cb=$RANDOM" | grep -i cache-control
+[[headers]]
+  for = "/minicycle"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
+
+[[headers]]
+  for = "/legal/*"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
+
+[[headers]]
+  for = "/blog"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
+
 [[headers]]
   for = "/manifest.json"
   [headers.values]
