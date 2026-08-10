@@ -1,12 +1,27 @@
 # Pretty-URL `Cache-Control` Gap — `/minicycle` Cached for a Year
 
-> **Status:** Open · **Severity:** High — stale app shell after every deploy · **Found:** Aug 2026,
-> live production review of `minicycle.app` by driving the real app in a browser.
+> **Status:** Part 1 SHIPPED in v2.397 (Aug 2026) · Part 2 still open · **Severity:** was
+> High — stale app shell after every deploy · **Found:** Aug 2026, live production review of
+> `minicycle.app` by driving the real app in a browser.
 >
-> `/minicycle` — the URL behind the "Try miniCycle Web" CTA and the "Try Now" nav button — is
-> served with `Cache-Control: public, max-age=31536000`. The app shell is cached for a **year**,
-> so a returning visitor keeps running old HTML against new hashed `/build/` output until that
-> entry is evicted.
+> **Part 1 (headers) is done.** `web/netlify.toml` now carries explicit `no-store` blocks for
+> `/minicycle`, `/legal/*` and `/blog`. Verified in production after the v2.397 deploy:
+>
+> ```
+> /minicycle       cache-control: no-cache,no-store,must-revalidate
+> /legal/privacy   cache-control: no-cache,no-store,must-revalidate
+> /blog            cache-control: no-cache,no-store,must-revalidate
+> ```
+>
+> **Part 2 (service-worker `cache: 'reload'`) remains open** — belt-and-braces against a future
+> header regression. Deferred deliberately: it touches precaching and therefore offline boot,
+> and the redirected-response trap noted in that section needs resolving first. It wants its
+> own release and its own `test:sw` run, not a ride-along.
+>
+> The original finding, for the record: `/minicycle` — the URL behind the "Try miniCycle Web"
+> CTA and the "Try Now" nav button — was served with `Cache-Control: public, max-age=31536000`.
+> The app shell was cached for a **year**, so a returning visitor kept running old HTML against
+> new hashed `/build/` output until that entry was evicted.
 >
 > This is **not a new failure mode**. It is the one already documented in `netlify.toml` on the
 > `for = "/"` rule; the fix was applied to `/` and `/pages/*` and never extended to the rest.
