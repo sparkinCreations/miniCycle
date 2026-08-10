@@ -39,6 +39,40 @@ export function isValidHex(value) {
 }
 
 /**
+ * Expand a hex colour to its full 6-digit `#rrggbb` form.
+ *
+ * WHY THIS EXISTS SEPARATELY FROM isValidHex: that predicate accepts 3–8 hex
+ * digits, which is right for its job (gating a value before it reaches a style
+ * sink — any of those forms is safe). It is NOT enough for callers that do
+ * ARITHMETIC on fixed offsets: `parseInt('#f00'.slice(3, 5), 16)` reads the
+ * empty string and yields NaN, so `#f00` passes validation and still produces
+ * `rgba(240, 0, NaN, 0.8)`. Shorthand reaches storage through the preset
+ * share-code importer, which gates on isValidHex (Aug 2026).
+ *
+ * Returns null for anything unusable, including the 5- and 7-digit strings the
+ * looser predicate lets through — CSS hex colours are 3, 4, 6 or 8 digits only.
+ * Alpha digits are dropped: callers here apply their own alpha.
+ *
+ * @param {*} value - Candidate colour
+ * @returns {string|null} '#rrggbb', or null when not expandable
+ */
+export function normalizeHex(value) {
+    if (!isValidHex(value)) return null;
+    const digits = value.slice(1);
+    switch (digits.length) {
+        case 3: // #rgb
+        case 4: // #rgba — drop the alpha nibble
+            return `#${digits[0]}${digits[0]}${digits[1]}${digits[1]}${digits[2]}${digits[2]}`;
+        case 6: // #rrggbb
+            return `#${digits}`;
+        case 8: // #rrggbbaa — drop the alpha byte
+            return `#${digits.slice(0, 6)}`;
+        default: // 5 or 7 digits: not a real CSS hex colour
+            return null;
+    }
+}
+
+/**
  * Normalize a stored font-size setting to a number of pixels.
  *
  * Accepts the string form the <select> writes ('16') as well as a number.

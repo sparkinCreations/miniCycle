@@ -7,7 +7,7 @@ import { setupTestEnvironment, createProtectedTest } from './testHelpers.js';
 export async function runStyleValidatorsTests(resultsDiv) {
     const cacheBuster = window.testCacheBuster || Date.now();
     const mod = await import(`../modules/utils/styleValidators.js?v=${cacheBuster}`);
-    const { isValidHex, normalizeFontSize } = mod;
+    const { isValidHex, normalizeFontSize, normalizeHex } = mod;
     const { FONT_SIZE } = await import(`../modules/core/constants.js?v=${cacheBuster}`);
 
     resultsDiv.innerHTML = '<h2>StyleValidators Tests</h2><h3>Running tests...</h3>';
@@ -37,6 +37,49 @@ export async function runStyleValidatorsTests(resultsDiv) {
     await test('rejects missing hash, bad length, and non-hex digits', () => {
         for (const v of ['fff', '#ff', '#ffffffffff', '#gggggg', '#ff 000', '']) {
             if (isValidHex(v) !== false) throw new Error(`Expected ${JSON.stringify(v)} to be invalid`);
+        }
+    });
+
+    // ── normalizeHex ─────────────────────────────────────────────────────────
+    resultsDiv.innerHTML += '<h4 class="test-section">🎨 normalizeHex</h4>';
+
+    await test('expands shorthand that isValidHex accepts but 6-digit slicing cannot read', () => {
+        // The reason this function exists. Callers doing parseInt on fixed
+        // offsets read '' for the third channel of '#f00' and produced
+        // rgba(240, 0, NaN, …). Shorthand reaches storage via the preset
+        // share-code importer, which gates on isValidHex.
+        if (normalizeHex('#f00') !== '#ff0000') throw new Error(`#f00 → ${normalizeHex('#f00')}`);
+        if (normalizeHex('#FFF') !== '#FFFFFF') throw new Error(`#FFF → ${normalizeHex('#FFF')}`);
+        if (normalizeHex('#abcd') !== '#aabbcc') throw new Error(`#abcd → ${normalizeHex('#abcd')}`);
+    });
+
+    await test('passes 6-digit through and drops alpha from 8-digit', () => {
+        if (normalizeHex('#ff5e5e') !== '#ff5e5e') throw new Error('6-digit should pass through');
+        if (normalizeHex('#11223344') !== '#112233') throw new Error('8-digit should drop its alpha byte');
+    });
+
+    await test('returns null for 5- and 7-digit strings isValidHex lets through', () => {
+        // isValidHex accepts 3–8 digits, which is correct for its job (gating a
+        // value before a style sink). 5 and 7 are not real CSS hex colours and
+        // must not reach arithmetic.
+        for (const v of ['#12345', '#1234567']) {
+            if (isValidHex(v) !== true) throw new Error(`precondition: isValidHex should accept ${v}`);
+            if (normalizeHex(v) !== null) throw new Error(`${v} should normalize to null, got ${normalizeHex(v)}`);
+        }
+    });
+
+    await test('returns null for non-hex and non-strings', () => {
+        for (const v of ['red', 'fff', '', null, undefined, 42, {}, []]) {
+            if (normalizeHex(v) !== null) throw new Error(`${JSON.stringify(v)} → ${normalizeHex(v)}`);
+        }
+    });
+
+    await test('every normalizeHex result is safe for fixed-offset parseInt', () => {
+        // The contract that matters at the sink: no NaN, ever.
+        for (const v of ['#f00', '#FFF', '#abcd', '#ff5e5e', '#11223344']) {
+            const safe = normalizeHex(v);
+            const parts = [safe.slice(1, 3), safe.slice(3, 5), safe.slice(5, 7)].map(h => parseInt(h, 16));
+            if (parts.some(Number.isNaN)) throw new Error(`${v} → ${safe} → NaN channel`);
         }
     });
 
