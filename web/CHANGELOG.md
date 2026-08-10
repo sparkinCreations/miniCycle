@@ -1,3 +1,8 @@
+## [2.400] - 2026-08-10
+- fix(state): guard totalCyclesCreated increments, backfill the counter
+- fix(preferences): normalize hex before colour arithmetic; guard the apply boundary
+
+
 ## [2.399] - 2026-08-10
 - fix(diagnostics): repaired tasks get a string id, not a number
 - fix(diagnostics): report real versions, make schema validation able to fail
