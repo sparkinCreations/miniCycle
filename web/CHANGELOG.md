@@ -1,3 +1,8 @@
+## [2.398] - 2026-08-10
+- fix(task): persist highPriority as false, not null, on created tasks
+- docs: mark pretty-URL Part 1 shipped in v2.397, Part 2 still open
+
+
 ## [2.397] - 2026-08-10
 - fix(headers): no-store for pretty URLs — /minicycle was cached for a year
 - refactor(modal): drop the inert focus-restore call, document the native contract
