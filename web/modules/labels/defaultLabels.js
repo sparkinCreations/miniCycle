@@ -792,6 +792,8 @@ export const DEFAULT_LABELS = deepFreeze({
         analysisComplete:         'Analysis complete: {routineCount} routines, {taskCount} tasks, {issueCount} issues',
         analysisRepairing:        'Attempting to repair data issues...',
         analysisNoRepairs:        'No repairs needed',
+        analysisRepairCancelled:  'Repair cancelled — nothing was changed',
+        analysisBackupFailed:     'Could not save a backup — repair aborted to protect your data',
         debugPackageExported:     'Debug package exported to downloads',
 
         // Stats panel notifications
@@ -874,6 +876,9 @@ export const DEFAULT_LABELS = deepFreeze({
     // ========================================================================
 
     modal: {
+        repairDataTitle:    'Remove Test Data?',
+        repairDataMessage:  'This will permanently remove {count} routine(s):\n\n{names}\n\nA backup is saved first, so this can be undone from Settings → Restore.',
+        repairDataConfirm:  'Remove',
         resetTasksTitle:    'Complete Cycle with Due Dates',
         resetTasksMessage:  'Completing all tasks will reset them to incomplete status.\n\nAll assigned due dates will be cleared.\n\nProceed?',
         resetTasksConfirm:  'Complete Cycle',

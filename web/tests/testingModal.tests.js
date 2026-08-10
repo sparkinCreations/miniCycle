@@ -22,11 +22,12 @@ export async function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
     // testing-modal-core.js unversioned (`from './testing-modal-core.js'`), so a
     // cache-busted core here would be a DIFFERENT instance than the one they read —
     // our setTestingModalCoreDependencies() would wire deps the sub-modules never see.
-    let core, diagnostics, debug;
+    let core, diagnostics, debug, analysis;
     try {
         core = await import('../modules/testing/testing-modal-core.js');
         diagnostics = await import('../modules/testing/testing-modal-diagnostics.js');
         debug = await import('../modules/testing/testing-modal-debug.js');
+        analysis = await import('../modules/testing/testing-modal-analysis.js');
     } catch (e) {
         resultsDiv.innerHTML = `<h2>Testing Modal Tests</h2><div class="result fail">Failed to import modules/testing/*: ${e.message}</div>`;
         return { passed: 0, total: 1 };
@@ -240,6 +241,51 @@ export async function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
         for (const key of ['state', 'scope', 'version', 'scriptURL', 'updateAvailable', 'error']) {
             if (!(key in info)) throw new Error(`missing key: ${key}`);
         }
+    });
+
+    // --- Repair: test-data detection --------------------------------------------
+    // "Repair Corrupted Data" ships in the Diagnostics modal behind a plain
+    // Settings button, and deletes what this scan returns. Detection used to
+    // include TITLE matching against 'Main Cycle' / 'Test Cycle' / 'Test Routine',
+    // so a user who named a routine "Main Cycle" — plausible in an app built on
+    // cycles — had it deleted with no confirmation and no backup (Aug 2026).
+    await test('scanTestDataCycles never flags a user routine by its NAME', () => {
+        const found = analysis.scanTestDataCycles({
+            cycles: {
+                'id-1786-abc': { id: 'id-1786-abc', title: 'Main Cycle', name: 'Main Cycle', tasks: [] },
+                'id-1786-def': { id: 'id-1786-def', title: 'Test Cycle', tasks: [] },
+                'id-1786-ghi': { id: 'id-1786-ghi', title: 'Test Routine', tasks: [] },
+                'id-1786-jkl': { id: 'id-1786-jkl', title: 'main cycle', tasks: [] }
+            }
+        });
+        if (found.length !== 0) {
+            throw new Error(`user routines flagged as test data: ${found.map(f => f.label).join(', ')}`);
+        }
+    });
+
+    await test('scanTestDataCycles still detects the real fixture by id', () => {
+        // tests/testHelpers.js seeds 'cycle-main' — ids are app-derived, never
+        // user-typed, so matching on them cannot hit a real routine.
+        const found = analysis.scanTestDataCycles({
+            cycles: {
+                'cycle-main': { id: 'cycle-main', title: 'Main Cycle', name: 'Main Cycle', tasks: [] },
+                'test-cycle': { id: 'test-cycle', title: 'Whatever', tasks: [] },
+                'test_cycle': { id: 'test_cycle', title: 'Whatever', tasks: [] },
+                'id-1786-keep': { id: 'id-1786-keep', title: 'My Real Routine', tasks: [] }
+            }
+        });
+        const ids = found.map(f => f.id).sort();
+        if (ids.join(',') !== 'cycle-main,test-cycle,test_cycle') {
+            throw new Error(`expected the 3 fixture ids, got: ${ids.join(',') || '(none)'}`);
+        }
+        if (found.some(f => f.id === 'id-1786-keep')) throw new Error('a real routine was flagged');
+    });
+
+    await test('scanTestDataCycles does not mutate the data it scans', () => {
+        // The confirmation names what will be deleted, so the scan must be pure.
+        const data = { cycles: { 'cycle-main': { id: 'cycle-main', title: 'Main Cycle', tasks: [] } } };
+        analysis.scanTestDataCycles(data);
+        if (Object.keys(data.cycles).length !== 1) throw new Error('scan deleted a cycle');
     });
 
     // --- Cleanup ---------------------------------------------------------------

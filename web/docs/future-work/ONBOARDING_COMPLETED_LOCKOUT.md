@@ -1,7 +1,39 @@
 # First-Run Splash Locks Out Users Who Already Have Routines
 
-> **Status:** Open · **Severity:** High — user cannot reach their own data through the UI ·
-> **Found:** Aug 2026, live browser session on `minicycle.app` v2.396.
+> **Status:** ✅ FIXED (Aug 2026) · **Severity:** was High — user cannot reach their own data
+> through the UI · **Found:** Aug 2026, live browser session on `minicycle.app` v2.396.
+>
+> ### Correction: the gate named below is dead code
+>
+> This doc identifies `onboardingManager.shouldShowOnboarding()` (~line 1807) as the splash
+> gate. **It is not.** That function has **no production callers** — it is referenced only
+> from `tests/`, and `tests/appInit.tests.js` even annotates a mock with *"Not used by current
+> implementation."* Changing it would have fixed nothing. Two other gates do the real work,
+> and both were fixed:
+>
+> **1. The pre-paint inline gate in `miniCycle.html` (~line 500)** — this is what actually
+> renders the chooser, by adding `mc-first-run` to `<html>`. It tested
+> `choiceMade || onboardingDone` and never asked whether the user owns routines. Now also
+> exempts anyone with at least one cycle.
+>
+> *Why "has routines" is safe where the comment there rejects bare "data exists":*
+> `createInitialSchema25Data()` writes `data.cycles = {}` — **empty**. A fresh user who
+> reloads before choosing still has zero cycles and correctly sees the chooser; only a user
+> with a real routine is exempted.
+>
+> **2. `appInit.js` (~line 449)** — a second lockout layer this doc did not mention. Even with
+> the chooser suppressed, `if (!hasSeenOnboarding)` would have shown the legacy welcome modal
+> and `return`ed, skipping normal init. It now honours **both** graduation flags per the
+> contract documented in onboardingManager (~line 1761), which is what fix 1 in this doc
+> proposed — just applied to the gate that runs.
+>
+> **Reset Onboarding is unaffected:** that handler clears `onboardingCompleted` *and*
+> `firstRunWelcomeDismissed` (onboardingManager ~2422/2426), so a deliberate reset still
+> re-shows onboarding. A regression test pins this.
+>
+> **Verified:** the reported state (`onboardingCompleted: false`,
+> `firstRunWelcomeDismissed: true`, routines present) no longer applies `mc-first-run` and the
+> overlay does not appear; the app boots and renders the user's tasks normally.
 >
 > A user with two routines and two completed cycles was shown the first-run chooser
 > ("Create My First Routine / Load a Sample / Learn How Cycles Work") on every load,
