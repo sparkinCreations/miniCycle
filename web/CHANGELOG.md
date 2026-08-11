@@ -1,3 +1,8 @@
+## [2.407] - 2026-08-11
+- fix(lint): restore the warning gate to green and lower the ratchet to 970
+- docs(review): add §0 — verify a finding by running it before acting on it
+
+
 ## [2.406] - 2026-08-11
 - fix(boot): guard post-waitForCore state reads; record why callers must not bail
 
