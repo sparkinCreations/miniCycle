@@ -11,6 +11,17 @@
 import { createDIModule, required, optional } from '../core/diBase.js';
 import { LIMITS, COLORS, DOM_SELECTORS, Z_INDEX, APP_VERSION, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+// Pure normalizer (no DI, no side effects) — statically imported like
+// recurringCalculators in migrationManager, so imported settings get the same
+// enumerated shape every other write path emits. KNOWN-ACCEPTABLE dual
+// instance: this module loads via the settingsManager facade's ?v= dynamic
+// import, so this static import resolves to a second unversioned copy of
+// recurringSettings.js (the situation recurringMatcher.js deliberately avoids
+// via setNormalizer). Safe here because only the pure function is used — the
+// matcher's concern is memo-cache identity shared with recurringCore, which
+// import doesn't need; the cost is one duplicate cache, nothing behavioral.
+import { normalizeRecurringSettings } from '../recurring/recurringSettings.js';
+import { isValidHex } from '../utils/styleValidators.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -65,6 +76,26 @@ const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10MB limit
 const MAX_TASK_COUNT = LIMITS.TASKS_PER_CYCLE; // Use centralized limit (150)
 const MAX_TASK_TEXT_LENGTH = LIMITS.TASK_CHARACTER;
 const MAX_CYCLE_NAME_LENGTH = LIMITS.CYCLE_NAME_CHARACTER;
+// Imported task ids land in DATA_SELECTORS.taskById() selectors and key the
+// recurringTemplates map, so accept them only in this safe shape; anything
+// else (quotes, brackets, oversized) is regenerated. Kept permissive enough
+// that every id the app itself generates (task-<ts>-..., legacy repairs)
+// round-trips, so the template-metadata merge below still matches by id.
+const SAFE_IMPORTED_TASK_ID = /^[A-Za-z0-9._:-]{1,64}$/;
+
+/**
+ * Validate an imported date string: ISO YYYY-MM-DD with optional time, and a
+ * real calendar date. Mirrors dataSanitizer's validateDateString (private
+ * there) — an unvalidated dueDate renders "Invalid Date" in the task list.
+ * @param {*} dateValue
+ * @returns {string|null}
+ */
+function validateImportedDate(dateValue) {
+    if (typeof dateValue !== 'string') return null;
+    // eslint-disable-next-line security/detect-unsafe-regex -- anchored ISO 8601 pattern, input is length-limited by file caps
+    if (!/^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2}(\.\d{1,3})?)?([+-]\d{2}:?\d{2}|Z)?)?$/.test(dateValue)) return null;
+    return Number.isNaN(new Date(dateValue).getTime()) ? null : dateValue;
+}
 
 // ============================================================================
 // FALLBACK IMPORT-TEXT NORMALIZATION (when DataValidator not available)
@@ -97,6 +128,38 @@ function normalizeImportedText(input, maxLength = 100) {
         return code > 0x1F && !(code >= 0x7F && code <= 0x9F);
     }).join('');
     return cleaned.trim().substring(0, maxLength);
+}
+
+// History event detail keys the renderer actually reads (historyManager's
+// detail-text branches). Import drops everything else — this closes the one
+// unbounded object in an otherwise strict import allowlist (drift-review C-15).
+// Display-only _* keys (_eventIcon, _eventLabel, _cycleNoun, _taskNoun) are
+// regenerated from getLabel()/icon maps at render time and are never imported.
+const HISTORY_DETAIL_NUMBER_KEYS = ['cycleCount', 'tasksCleared', 'count'];
+const HISTORY_DETAIL_STRING_KEYS = ['achievementId', 'achievementName', 'oldName', 'newName', 'taskName', 'themeName', 'priorityColor'];
+
+/**
+ * Reduce an imported history event's details to the allowlisted, type-checked
+ * key set. Unknown keys and wrong-typed values are dropped.
+ * @param {*} details - Raw details object from the imported file
+ * @returns {Object} Sanitized details
+ */
+function sanitizeHistoryDetails(details) {
+    if (!details || typeof details !== 'object') return {};
+    const safe = {};
+    for (const k of HISTORY_DETAIL_NUMBER_KEYS) {
+        if (typeof details[k] === 'number' && Number.isFinite(details[k])) safe[k] = details[k];
+    }
+    for (const k of HISTORY_DETAIL_STRING_KEYS) {
+        if (typeof details[k] === 'string') safe[k] = normalizeImportedText(details[k], MAX_TASK_TEXT_LENGTH);
+    }
+    if (Array.isArray(details.taskNames)) {
+        safe.taskNames = details.taskNames
+            .filter(n => typeof n === 'string')
+            .slice(0, 50)
+            .map(n => normalizeImportedText(n, MAX_TASK_TEXT_LENGTH));
+    }
+    return safe;
 }
 
 /**
@@ -503,31 +566,59 @@ export async function processImportedData(fileContent) {
     // Validate and sanitize all task data
     const importTimestamp = Date.now();
     const mappedTasks = importedData.tasks.map((task, index) => {
-        const safeSettings = task.recurringSettings || {};
-        if (task.recurring && !safeSettings.specificTime && !safeSettings.defaultRecurTime) {
-            safeSettings.defaultRecurTime = new Date().toISOString();
+        // Normalize to the enumerated shape every other write path emits
+        // (panel / activation / applicator) — import was the only writer
+        // skipping normalizeRecurringSettings, silently violating the invariant
+        // the watcher and matcher rely on. Unknown keys are dropped, including
+        // the vestigial defaultRecurTime this block used to invent (no reader
+        // anywhere consumes it). Then filter value-level poison the shape
+        // normalizer passes through: specificDates entries must be real ISO
+        // dates — a garbage entry that becomes "next" throws inside the 15s
+        // spawn tick — and are capped to a sane count.
+        const safeSettings = normalizeRecurringSettings(
+            (task.recurringSettings && typeof task.recurringSettings === 'object') ? task.recurringSettings : {}
+        );
+        if (safeSettings.specificDates.dates.length > 0) {
+            safeSettings.specificDates.dates = safeSettings.specificDates.dates
+                .filter(d => validateImportedDate(d) !== null)
+                .slice(0, LIMITS.MAX_SPECIFIC_DATES);
+            if (safeSettings.specificDates.dates.length === 0) {
+                safeSettings.specificDates.enabled = false;
+            }
         }
 
         // Security: Always sanitize task text, with or without DataValidator
         const sanitizedText = normalizeImportedText(task.text || "", MAX_TASK_TEXT_LENGTH);
 
+        // Strict field validation (matches the C-14 style used for newer fields):
+        // `|| false` preserved truthy junk ("yes" stayed a string), dueDate went
+        // unvalidated (rendering "Invalid Date"), and priorityColor passed
+        // through unnormalized in this path while history entries validate it.
+        const highPriority = task.highPriority === true;
+        const validColor = isValidHex(task.priorityColor) ? task.priorityColor : null;
         const taskData = {
-            id: task.id || `task-${importTimestamp}-${index}`,
+            id: (typeof task.id === 'string' && SAFE_IMPORTED_TASK_ID.test(task.id))
+                ? task.id
+                : `task-${importTimestamp}-${index}`,
             text: sanitizedText,
-            completed: task.completed || false,
-            dueDate: task.dueDate || null,
-            highPriority: task.highPriority || false,
-            priorityColor: task.priorityColor || (task.highPriority ? COLORS.PRIORITY_DEFAULT : null),
-            remindersEnabled: task.remindersEnabled || false,
-            recurring: task.recurring || false,
+            completed: task.completed === true,
+            dueDate: validateImportedDate(task.dueDate),
+            highPriority,
+            priorityColor: validColor || (highPriority ? COLORS.PRIORITY_DEFAULT : null),
+            remindersEnabled: task.remindersEnabled === true,
+            recurring: task.recurring === true,
             recurringSettings: safeSettings,
-            // Default deleteWhenComplete to true if not explicitly set
+            // Default deleteWhenComplete to true unless explicitly false —
             // Recurring tasks: always delete (cycle: true, todo: true)
             // Non-recurring tasks: respect mode (cycle: false, todo: true)
-            deleteWhenComplete: task.deleteWhenComplete ?? true,
-            deleteWhenCompleteSettings: task.deleteWhenCompleteSettings ||
-                (task.recurring ? { cycle: true, todo: true } : { cycle: false, todo: true }),
-            schemaVersion: task.schemaVersion || 2
+            deleteWhenComplete: task.deleteWhenComplete !== false,
+            deleteWhenCompleteSettings:
+                (task.deleteWhenCompleteSettings &&
+                 typeof task.deleteWhenCompleteSettings.cycle === 'boolean' &&
+                 typeof task.deleteWhenCompleteSettings.todo === 'boolean')
+                    ? task.deleteWhenCompleteSettings
+                    : (task.recurring === true ? { cycle: true, todo: true } : { cycle: false, todo: true }),
+            schemaVersion: 2
         };
 
         // Validate task structure (DataValidator provides additional validation if available)
@@ -702,19 +793,11 @@ export async function processImportedData(fileContent) {
         const events = Array.isArray(h.events)
             ? h.events.filter(e => e && typeof e === 'object' && typeof e.type === 'string')
                 .slice(0, maxEvents)
-                .map(e => {
-                    const details = (e.details && typeof e.details === 'object') ? { ...e.details } : {};
-                    // Strip display-only fields — renderer regenerates these from getLabel()/icons maps
-                    delete details._eventIcon;
-                    delete details._eventLabel;
-                    delete details._cycleNoun;
-                    delete details._taskNoun;
-                    return {
-                        type: normalizeImportedText(e.type, 50),
-                        timestamp: typeof e.timestamp === 'number' ? e.timestamp : Date.now(),
-                        details
-                    };
-                })
+                .map(e => ({
+                    type: normalizeImportedText(e.type, 50),
+                    timestamp: Number.isFinite(e.timestamp) ? e.timestamp : Date.now(),
+                    details: sanitizeHistoryDetails(e.details)
+                }))
             : [];
         safeHistory = { events, maxEvents };
     }
@@ -727,9 +810,36 @@ export async function processImportedData(fileContent) {
             ? ct.entries.filter(e => e && typeof e === 'object')
                 .slice(0, 500)
                 .map(e => ({
-                    text: normalizeImportedText(e.text || '', MAX_TASK_TEXT_LENGTH),
+                    // Canonical field is taskText (clearedTasksManager._buildClearedEntry);
+                    // this mapping used to read `e.text` — a key real entries never have —
+                    // so round-tripped cleared history rendered blank. Accept `text` too
+                    // for files written by the old (broken) mapping.
+                    taskText: normalizeImportedText(e.taskText || e.text || '', MAX_TASK_TEXT_LENGTH),
                     clearedAt: typeof e.clearedAt === 'number' ? e.clearedAt : Date.now(),
-                    ...(e.id ? { id: normalizeImportedText(String(e.id), 100) } : {})
+                    ...(e.id ? { id: normalizeImportedText(String(e.id), 100) } : {}),
+                    // Round-trip fidelity (drift-review C-14): preserve the fields
+                    // _buildClearedEntry() records — validated the same way the task
+                    // path above validates its equivalents — so Recreate after an
+                    // export→import yields the task with due date, priority, and
+                    // recurring settings intact, exactly as the manual promises.
+                    wasHighPriority: e.wasHighPriority === true,
+                    hadDueDate: e.hadDueDate === true,
+                    dueDate: typeof e.dueDate === 'string' ? e.dueDate : null,
+                    priorityColor: typeof e.priorityColor === 'string'
+                        ? normalizeImportedText(e.priorityColor, 50)
+                        : null,
+                    remindersEnabled: e.remindersEnabled === true,
+                    deleteWhenComplete: e.deleteWhenComplete === true,
+                    deleteWhenCompleteSettings: (e.deleteWhenCompleteSettings && typeof e.deleteWhenCompleteSettings === 'object')
+                        ? { cycle: e.deleteWhenCompleteSettings.cycle === true, todo: e.deleteWhenCompleteSettings.todo !== false }
+                        : null,
+                    recurring: e.recurring === true,
+                    recurringSettings: (e.recurring === true && e.recurringSettings && typeof e.recurringSettings === 'object')
+                        ? e.recurringSettings
+                        : null,
+                    clearedInMode: typeof e.clearedInMode === 'string'
+                        ? normalizeImportedText(e.clearedInMode, 30)
+                        : null
                 }))
             : [];
         safeClearedTasks = {
@@ -759,8 +869,7 @@ export async function processImportedData(fileContent) {
         };
 
         state.appState.activeCycleId = finalCycleTitle;
-        state.metadata.lastModified = Date.now();
-        state.metadata.totalCyclesCreated++;
+        state.metadata.totalCyclesCreated = (state.metadata.totalCyclesCreated || 0) + 1;
     }, true); // immediate save
 
     // Initialize empty undo stacks for the imported cycle and reset the

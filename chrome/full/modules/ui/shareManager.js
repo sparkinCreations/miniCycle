@@ -12,6 +12,7 @@ import { createDIModule, required, optional } from '../core/diBase.js';
 import { DOM_IDS, APP_URL, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { isNativeApp, shareRoutineFileNative, shareTextNative } from '../platform/capacitorBridge.js';
+import { buildMcycPayload, buildMcycFilename } from '../utils/mcycPayload.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -21,6 +22,7 @@ const di = createDIModule('ShareManager', {
     loadMiniCycleData: required(),
     showNotification: required(),
     showConfirmationModal: optional(null),
+    showChoiceModal: optional(null),
     safeAddEventListener: required(),
     hideMainMenu: optional(null)
 });
@@ -97,134 +99,136 @@ export function setupShareRoutineButton() {
     const shareBtn = document.getElementById(DOM_IDS.SHARE_ROUTINE);
     if (!shareBtn) return;
 
-    shareBtn._clickHandler = async () => {
-        const loadMiniCycleData = _deps.loadMiniCycleData;
-        const schemaData = loadMiniCycleData?.();
+    shareBtn._clickHandler = () => shareCurrentRoutine();
 
-        if (!schemaData) {
-            _deps.showNotification?.(getLabel('notify.shareRoutineNoActiveCycle'), 'error');
+    safeAddEventListener(shareBtn, 'click', shareBtn._clickHandler);
+}
+
+/**
+ * Run the share-routine flow directly (chooser → payload → share/download).
+ *
+ * Exported so callers with their own user gesture (e.g. Quick Actions) can
+ * invoke the flow WITHOUT simulating a click on the main-menu button — a
+ * programmatic btn.click() carries no user activation, which made
+ * navigator.share() reject from those paths (Quick Actions gesture fix,
+ * Aug 2026). The chooser modal's own button click re-arms activation for
+ * the share sheet in every path.
+ */
+export async function shareCurrentRoutine() {
+    const loadMiniCycleData = _deps.loadMiniCycleData;
+    const schemaData = loadMiniCycleData?.();
+
+    if (!schemaData) {
+        _deps.showNotification?.(getLabel('notify.shareRoutineNoActiveCycle'), 'error');
+        return;
+    }
+
+    const { cycles, activeCycle } = schemaData;
+    const cycle = cycles[activeCycle];
+
+    if (!activeCycle || !cycle) {
+        _deps.showNotification?.(getLabel('notify.shareRoutineNoActiveCycle'), 'error');
+        return;
+    }
+
+    // The SENDER chooses what leaves the device (C-06 follow-up): the
+    // routine's structure alone, or structure + history. Mirrors the
+    // import side's Template / With-Progress pair. Routine-only is listed
+    // first (and is the fallback when the modal dep is unavailable):
+    // history is the owner's activity log — up to 500 cleared-task names
+    // with timestamps — which most shares shouldn't carry.
+    let includeHistory = false;
+    if (typeof _deps.showChoiceModal === 'function') {
+        const choice = await new Promise((resolve) => {
+            _deps.showChoiceModal({
+                title: getLabel('modal.shareModeTitle'),
+                message: getLabel('modal.shareModeMessage', { vars: { name: cycle.title || activeCycle } }),
+                choices: [
+                    { text: getLabel('modal.shareRoutineOnly'), value: 'routine', description: getLabel('modal.shareRoutineOnlyDesc') },
+                    { text: getLabel('modal.shareWithHistory'), value: 'history', description: getLabel('modal.shareWithHistoryDesc') }
+                ],
+                cancelText: getLabel('button.cancel'),
+                callback: resolve
+            });
+        });
+        if (choice === null) return; // cancelled — don't share
+        includeHistory = (choice === 'history');
+    }
+
+    const miniCycleData = buildMcycPayload(activeCycle, cycle, { includeHistory });
+
+    const cycleName = cycle.title || activeCycle;
+    // Share targets (messaging apps, share sheets) reject or mangle unknown
+    // extensions, so the share path appends .json while the download path
+    // uses bare .mcyc. Import accepts both (cycleImportManager fileInput
+    // accept list). Deliberate — do not "consolidate" these two.
+    const fileName = `${buildMcycFilename(cycleName)}.mcyc.json`;
+    const dataStr = JSON.stringify(miniCycleData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const file = new File([dataBlob], fileName, { type: 'application/json' });
+
+    // Native (Capacitor) path — route through the Android share sheet (which
+    // includes "Save to Files"). The web download fallback doesn't work in the
+    // WebView, so if native takes over we never fall through.
+    if (isNativeApp()) {
+        _deps.hideMainMenu?.();
+        const result = await shareRoutineFileNative({
+            data: dataStr,
+            fileName,
+            title: cycleName,
+            text: `Check out my "${cycleName}" routine on miniCycle!\n${APP_URL}`
+        });
+        if (result.handled) {
+            if (!result.cancelled) {
+                _deps.showNotification?.('✅ ' + getLabel('notify.shareRoutineSuccess'), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
+            }
             return;
         }
+    }
 
-        const { cycles, activeCycle } = schemaData;
-        const cycle = cycles[activeCycle];
-
-        if (!activeCycle || !cycle) {
-            _deps.showNotification?.(getLabel('notify.shareRoutineNoActiveCycle'), 'error');
-            return;
-        }
-
-        // Build .mcyc payload (same structure as cycleExportManager)
-        const miniCycleData = {
-            name: activeCycle,
-            title: cycle.title || 'New Routine',
-            tasks: cycle.tasks.map(task => {
-                const settings = task.recurringSettings
-                    ? structuredClone(task.recurringSettings)
-                    : {};
-
-                if (task.recurring && !settings.specificTime && !settings.defaultRecurTime) {
-                    settings.defaultRecurTime = new Date().toISOString();
-                }
-
-                return {
-                    id: task.id || `task-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-                    text: task.text || '',
-                    completed: task.completed || false,
-                    dueDate: task.dueDate || null,
-                    highPriority: task.highPriority || false,
-                    remindersEnabled: task.remindersEnabled || false,
-                    recurring: task.recurring || false,
-                    recurringSettings: settings,
-                    deleteWhenComplete: task.deleteWhenComplete,
-                    deleteWhenCompleteSettings: task.deleteWhenCompleteSettings || { cycle: false, todo: true },
-                    schemaVersion: task.schemaVersion || 2
-                };
-            }),
-            autoReset: cycle.autoReset || false,
-            cycleCount: cycle.cycleCount || 0,
-            deleteCheckedTasks: cycle.deleteCheckedTasks || false,
-            taskOptionButtons: cycle.taskOptionButtons || null,
-            recurringTemplates: cycle.recurringTemplates || {},
-            reminders: cycle.reminders || null,
-            autoUncheckDaily: cycle.autoUncheckDaily || null,
-            createdAt: cycle.createdAt || null,
-            theme: cycle.theme || 'classic',
-            history: cycle.history || null,
-            clearedTasks: cycle.clearedTasks || null
-        };
-
-        const cycleName = cycle.title || activeCycle;
-        const fileName = `${cycleName.replace(/[^a-z0-9]/gi, '_')}.mcyc.json`;
-        const dataStr = JSON.stringify(miniCycleData, null, 2);
-        const dataBlob = new Blob([dataStr], { type: 'application/json' });
-        const file = new File([dataBlob], fileName, { type: 'application/json' });
-
-        // Native (Capacitor) path — route through the Android share sheet (which
-        // includes "Save to Files"). The web download fallback doesn't work in the
-        // WebView, so if native takes over we never fall through.
-        if (isNativeApp()) {
-            _deps.hideMainMenu?.();
-            const result = await shareRoutineFileNative({
-                data: dataStr,
-                fileName,
+    // Try Web Share API with file
+    // NOTE: navigator.share() must be called BEFORE hideMainMenu() —
+    // the menu close consumes the user activation gesture, causing NotAllowedError.
+    if (navigator.share && navigator.canShare?.({ files: [file] })) {
+        try {
+            await navigator.share({
+                files: [file],
                 title: cycleName,
                 text: `Check out my "${cycleName}" routine on miniCycle!\n${APP_URL}`
             });
-            if (result.handled) {
-                if (!result.cancelled) {
-                    _deps.showNotification?.('✅ ' + getLabel('notify.shareRoutineSuccess'), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
-                }
+            _deps.hideMainMenu?.();
+            _deps.showNotification?.('✅ ' + getLabel('notify.shareRoutineSuccess'), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
+            return; // Success — don't fall through to download
+        } catch (error) {
+            // User dismissed share sheet — silently ignore
+            if (error.name === 'AbortError') {
+                _deps.hideMainMenu?.();
                 return;
             }
+            // NotAllowedError or other failures — fall through to download
+            console.warn('Web Share API unavailable, falling back to download:', error.message);
         }
+    }
 
-        // Try Web Share API with file
-        // NOTE: navigator.share() must be called BEFORE hideMainMenu() —
-        // the menu close consumes the user activation gesture, causing NotAllowedError.
-        if (navigator.share && navigator.canShare?.({ files: [file] })) {
-            try {
-                await navigator.share({
-                    files: [file],
-                    title: cycleName,
-                    text: `Check out my "${cycleName}" routine on miniCycle!\n${APP_URL}`
-                });
-                _deps.hideMainMenu?.();
-                _deps.showNotification?.('✅ ' + getLabel('notify.shareRoutineSuccess'), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
-                return; // Success — don't fall through to download
-            } catch (error) {
-                // User dismissed share sheet — silently ignore
-                if (error.name === 'AbortError') {
-                    _deps.hideMainMenu?.();
-                    return;
-                }
-                // NotAllowedError or other failures — fall through to download
-                console.warn('Web Share API unavailable, falling back to download:', error.message);
+    // Browser doesn't support sharing files — show confirmation dialog offering download
+    _deps.hideMainMenu?.();
+    const showConfirmationModal = _deps.showConfirmationModal;
+    if (showConfirmationModal) {
+        showConfirmationModal({
+            title: getLabel('notify.shareRoutineUnsupportedTitle'),
+            message: getLabel('notify.shareRoutineUnsupportedMessage'),
+            confirmText: getLabel('routine.download'),
+            cancelText: getLabel('button.cancel'),
+            destructive: false,
+            callback: (confirmed) => {
+                if (!confirmed) return;
+                _downloadRoutineFile(dataBlob, fileName);
             }
-        }
-
-        // Browser doesn't support sharing files — show confirmation dialog offering download
-        _deps.hideMainMenu?.();
-        const showConfirmationModal = _deps.showConfirmationModal;
-        if (showConfirmationModal) {
-            showConfirmationModal({
-                title: getLabel('notify.shareRoutineUnsupportedTitle'),
-                message: getLabel('notify.shareRoutineUnsupportedMessage'),
-                confirmText: getLabel('routine.download'),
-                cancelText: getLabel('button.cancel'),
-                destructive: false,
-                callback: (confirmed) => {
-                    if (!confirmed) return;
-                    _downloadRoutineFile(dataBlob, fileName);
-                }
-            });
-        } else {
-            // No modal available — download directly
-            _downloadRoutineFile(dataBlob, fileName);
-        }
-    };
-
-    safeAddEventListener(shareBtn, 'click', shareBtn._clickHandler);
+        });
+    } else {
+        // No modal available — download directly
+        _downloadRoutineFile(dataBlob, fileName);
+    }
 }
 
 // ============================================================================

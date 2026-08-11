@@ -66,7 +66,7 @@ const di = createDIModule('ModalManager', {
     hideMainMenu: optional(null),
     sanitizeInput: optional(null),
     safeAddEventListener: optional(null),
-    waitForCore: optional(() => Promise.resolve()),
+    waitForCore: optional(() => Promise.resolve(false)),
     AppMeta: optional(null),
     getModal: optional(null)
 });
@@ -118,7 +118,7 @@ export class ModalManager {
             hideMainMenu: resolvedDeps.hideMainMenu,
             sanitizeInput: resolvedDeps.sanitizeInput,
             safeAddEventListener: resolvedDeps.safeAddEventListener,
-            waitForCore: resolvedDeps.waitForCore || (() => Promise.resolve())
+            waitForCore: resolvedDeps.waitForCore || (() => Promise.resolve(false))
         };
     }
 
@@ -167,11 +167,27 @@ export class ModalManager {
             const modal = _deps.getModal(name);
             if (!modal) continue;
 
-            // Native <dialog> elements use animated close; restore focus from the dialog that was open
+            // Native <dialog> elements use animated close (focus restore is the browser's)
             if (typeof modal.showModal === 'function') {
                 if (modal.open) {
                     animateDialogClose(modal);
-                    modal._previousFocus?.focus({ focusVisible: false });
+                    // No explicit focus restore here, deliberately. The BROWSER
+                    // returns focus to the previously-focused element when a modal
+                    // <dialog> closes (HTML spec), and every registry modal is
+                    // opened with showModal(). An explicit call at this point could
+                    // not work anyway: animateDialogClose() is async (it waits for
+                    // the closing animation), so the dialog is still open and the
+                    // rest of the document is inert — a focus() here is silently
+                    // ignored (verified in-browser, Aug 2026; a `_previousFocus`
+                    // call lived here until then, doing nothing). If a modal is
+                    // ever opened NON-modally with show(), the native restore does
+                    // not apply and that modal needs its own restore on close.
+                    // Covered by: "closeAllModals returns focus to the opener".
+                    //
+                    // Drop the stored opener: a modal can outlive the element that
+                    // opened it (deleting a routine from the switcher removes its
+                    // own trigger), and holding the reference pins a detached node.
+                    modal._previousFocus = null;
                 }
             } else {
                 // Non-dialog elements: use legacy close methods

@@ -413,6 +413,18 @@ export class MiniCycleConsoleCapture {
         }
     }
 
+    /**
+     * Wire the testing modal's results pane as the output sink. Called by
+     * testing-modal-debug with the instance it already holds via deps —
+     * an instance method (not a module import) so the testing modal never
+     * statically imports this module, which could split it into a second
+     * instance under ?v= cache busting.
+     * @param {Function} fn - appendToTestResults from testing-modal-core
+     */
+    setTestResultsAppender(fn) {
+        di.setDependencies({ appendToTestResults: fn });
+    }
+
     // Helper function to get console capture stats
     getConsoleCaptureStats() {
         return {

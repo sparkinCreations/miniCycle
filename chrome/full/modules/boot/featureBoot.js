@@ -301,10 +301,12 @@ export async function bootFeatures(deps, coreResult) {
       deps.ui.initTaskSearch = taskSearchMod.initTaskSearch;
       deps.ui.updateSearchVisibility = taskSearchMod.updateSearchVisibility;
       deps.ui.resetSearch = taskSearchMod.resetSearch;
+      deps.ui.reapplyActiveFilter = taskSearchMod.reapplyActiveFilter;
 
       // Inject into TaskRenderer for visibility updates on render
       if (deps.task?.taskDOMManager?.renderer?.injectDependency) {
         deps.task.taskDOMManager.renderer.injectDependency('updateSearchVisibility', taskSearchMod.updateSearchVisibility);
+        deps.task.taskDOMManager.renderer.injectDependency('reapplyActiveFilter', taskSearchMod.reapplyActiveFilter);
       }
 
       // Also inject into routineLoader for boot-time rendering
@@ -330,6 +332,7 @@ export async function bootFeatures(deps, coreResult) {
       setTaskCRUDDependencies({
         updateSearchVisibility: taskSearchMod?.updateSearchVisibility,
         getTaskCount: taskSearchMod?.getTaskCount,
+        reapplyActiveFilter: taskSearchMod?.reapplyActiveFilter,
         startReminders: deps.features?.startReminders,
         notifications: deps.utils?.notifications,
         logHistoryEvent: (...args) => deps.features?.historyManager?.logEvent?.(...args)

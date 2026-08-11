@@ -207,7 +207,7 @@
  * @property {string} [migrationDate] - Migration date
  * @property {string} [schemaVersion] - Schema version (duplicate for compatibility)
  * @property {number} [totalCyclesCreated=0] - Total cycles ever created
- * @property {number} [totalTasksCompleted=0] - Total tasks ever completed
+ * @property {number} [totalCyclesCompleted=0] - Sum of cycleCount across migrated legacy cycles (write-only migration stat)
  */
 
 /**

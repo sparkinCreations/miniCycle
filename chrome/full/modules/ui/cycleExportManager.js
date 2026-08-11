@@ -12,6 +12,7 @@ import { createDIModule, required, optional } from '../core/diBase.js';
 import { DOM_IDS, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { isNativeApp, shareRoutineFileNative } from '../platform/capacitorBridge.js';
+import { buildMcycPayload, buildMcycFilename } from '../utils/mcycPayload.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -63,7 +64,7 @@ export async function exportMiniCycleData(miniCycleData, cycleName) {
     try {
         const dataStr = JSON.stringify(miniCycleData, null, 2);
         const dataBlob = new Blob([dataStr], { type: "application/json" });
-        const sanitizedName = cycleName.replace(/[^a-z0-9]/gi, '_');
+        const sanitizedName = buildMcycFilename(cycleName);
 
         // Native (Capacitor) path — route through the Android share sheet, which
         // lets the user save to Files/Drive or send the .mcyc elsewhere. The web
@@ -189,47 +190,9 @@ export function setupExportButton() {
             callback: (confirmed) => {
                 if (!confirmed) return;
 
-                const miniCycleData = {
-                    name: activeCycle,
-                    title: cycle.title || "New Routine",
-                    tasks: cycle.tasks.map(task => {
-                        // Clone to avoid mutating live cycle data
-                        const settings = task.recurringSettings
-                            ? structuredClone(task.recurringSettings)
-                            : {};
-
-                        // Add fallback time if task is recurring and doesn't use specificTime
-                        if (task.recurring && !settings.specificTime && !settings.defaultRecurTime) {
-                            settings.defaultRecurTime = new Date().toISOString();
-                        }
-
-                        return {
-                            id: task.id || `task-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-                            text: task.text || "",
-                            completed: task.completed || false,
-                            dueDate: task.dueDate || null,
-                            highPriority: task.highPriority || false,
-                            priorityColor: task.priorityColor || null,
-                            remindersEnabled: task.remindersEnabled || false,
-                            recurring: task.recurring || false,
-                            recurringSettings: settings,
-                            deleteWhenComplete: task.deleteWhenComplete,
-                            deleteWhenCompleteSettings: task.deleteWhenCompleteSettings || { cycle: false, todo: true },
-                            schemaVersion: task.schemaVersion || 2
-                        };
-                    }),
-                    autoReset: cycle.autoReset || false,
-                    cycleCount: cycle.cycleCount || 0,
-                    deleteCheckedTasks: cycle.deleteCheckedTasks || false,
-                    taskOptionButtons: cycle.taskOptionButtons || null,
-                    recurringTemplates: cycle.recurringTemplates || {},
-                    reminders: cycle.reminders || null,
-                    autoUncheckDaily: cycle.autoUncheckDaily || null,
-                    createdAt: cycle.createdAt || null,
-                    theme: cycle.theme || 'classic',
-                    history: cycle.history || null,
-                    clearedTasks: cycle.clearedTasks || null
-                };
+                // Backup-for-self semantics: includeHistory true — the owner's
+                // own restore should carry the event log and cleared tasks.
+                const miniCycleData = buildMcycPayload(activeCycle, cycle, { includeHistory: true });
 
                 exportMiniCycleData(miniCycleData, cycleName);
             }

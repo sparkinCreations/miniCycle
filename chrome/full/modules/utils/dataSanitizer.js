@@ -1,6 +1,12 @@
 /**
  * Data Sanitizer Module (DI-Pure)
- * Provides XSS protection for imported data
+ *
+ * ⚠️ NOT an XSS layer. This module HARDENS imported data — length-clamps text
+ * (via the injected sanitizeInput, which trims/limits but has NEVER escaped
+ * HTML), validates date formats, whitelists lite-storage keys, and strips
+ * display-only fields. XSS safety in this codebase lives at the RENDER SINKS:
+ * textContent for user data, escapeHtml() before any innerHTML interpolation.
+ * Do not rely on this module to make imported strings HTML-safe.
  *
  * NO window.* globals - all dependencies must be injected
  *
@@ -240,10 +246,11 @@ function sanitizeLiteStorage(backupData) {
 }
 
 /**
- * Sanitize all user-generated content in imported backup data
- * Security fix: Prevent XSS attacks via malicious .mcyc files
+ * Harden all user-generated content in imported backup data: length-clamp
+ * text fields, validate dates, whitelist lite-storage keys. Does NOT escape
+ * HTML — render sinks own XSS safety (see module header).
  * @param {Object} backupData - The parsed backup data object
- * @returns {Object} Sanitized backup data
+ * @returns {Object} Hardened backup data
  */
 export function sanitizeImportedData(backupData) {
 

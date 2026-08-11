@@ -626,7 +626,9 @@ body.onboarding-active .onboarding-placeholder {
     display: block;
     margin: var(--space-3) auto 0;
     padding: var(--space-2) var(--space-5);
-    background: var(--theme-info, var(--color-accent, #007BFF));
+    /* --theme-notify-info, not --theme-info: white onboarding text on the
+       plain info teal (#17a2b8) measured 3.05:1, well under AA. */
+    background: var(--theme-notify-info);
     color: var(--color-white, #fff);
     border: none;
     border-radius: var(--radius-8, 8px);
@@ -813,7 +815,7 @@ dialog.miniCycle-prompt-dialog::backdrop {
 }
 
 .miniCycle-prompt-box {
-    background: rgb(50, 50, 50);
+    background: var(--color-charcoal);
     padding: var(--space-6-25);
     border-radius: var(--radius-xl);
     border: 1px solid var(--color-black);

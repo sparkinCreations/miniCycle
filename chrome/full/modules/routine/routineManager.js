@@ -232,8 +232,7 @@ export class RoutineManager {
                         };
 
                         state.appState.activeCycleId = finalTitle;
-                        state.metadata.lastModified = Date.now();
-                        state.metadata.totalCyclesCreated++;
+                        state.metadata.totalCyclesCreated = (state.metadata.totalCyclesCreated || 0) + 1;
                     }, true);
 
                     if (typeof this.deps.onCycleCreated === 'function') {
@@ -355,8 +354,7 @@ export class RoutineManager {
             };
 
             state.appState.activeCycleId = finalTitle;
-            state.metadata.lastModified = Date.now();
-            state.metadata.totalCyclesCreated++;
+            state.metadata.totalCyclesCreated = (state.metadata.totalCyclesCreated || 0) + 1;
         }, true); // immediate save
 
         // ✅ Notify undo system of new cycle (fallback path)
@@ -427,8 +425,7 @@ export class RoutineManager {
                     };
 
                     state.appState.activeCycleId = storageKey;
-                    state.metadata.lastModified = Date.now();
-                    state.metadata.totalCyclesCreated++;
+                    state.metadata.totalCyclesCreated = (state.metadata.totalCyclesCreated || 0) + 1;
 
                     finalResult = { storageKey, finalTitle };
                 }, true);
@@ -559,8 +556,7 @@ export class RoutineManager {
                 };
 
                 state.appState.activeCycleId = finalTitle;
-                state.metadata.lastModified = Date.now();
-                state.metadata.totalCyclesCreated++;
+                state.metadata.totalCyclesCreated = (state.metadata.totalCyclesCreated || 0) + 1;
             }, true);
 
             // Close dialog if provided

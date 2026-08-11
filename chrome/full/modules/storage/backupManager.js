@@ -14,7 +14,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { STORAGE_KEYS, INTERVALS } from '../core/constants.js';
+import { STORAGE_KEYS, INTERVALS, APP_VERSION } from '../core/constants.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -133,7 +133,12 @@ class BackupManager {
             timestamp,
             data: currentState,
             metadata: {
-                version: currentState.metadata?.version || '1.371',
+                // State metadata never carries `version`, so the old '1.371'
+                // fallback was the ONLY value this field ever got — every backup
+                // ever created claimed that version. Stamp the real app version;
+                // `appVersion` is the field the backup schema docs describe.
+                version: currentState.metadata?.version || APP_VERSION,
+                appVersion: APP_VERSION,
                 schemaVersion: currentState.metadata?.schemaVersion || '2.5',
                 size: calculateBackupSize(currentState, liteStorage),
                 type,
@@ -184,6 +189,11 @@ class BackupManager {
 
             request.onerror = () => {
                 clearTimeout(timeout);
+                // Clear the cached promise (the timeout path already does) — a
+                // rejected promise left here made ONE transient open failure
+                // permanently kill all backups until reload: every later init()
+                // returned the same rejection.
+                this.initPromise = null;
                 console.error('❌ BackupManager: Failed to open IndexedDB', request.error);
                 reject(request.error);
             };
@@ -197,6 +207,17 @@ class BackupManager {
                 clearTimeout(timeout);
                 this.db = request.result;
                 this.isInitialized = true;
+                // Without this, a future DB_VERSION bump hangs behind any stale
+                // tab holding the old connection open (upgrade blocked forever).
+                this.db.onversionchange = () => {
+                    console.warn('⚠️ BackupManager: closing DB connection for version change');
+                    this.db?.close();
+                    this.db = null;
+                    this.isInitialized = false;
+                    // Also drop the cached (resolved) promise, or the next init()
+                    // would hand back the closed connection.
+                    this.initPromise = null;
+                };
                 resolve(this.db);
             };
 

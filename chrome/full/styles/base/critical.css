@@ -123,20 +123,20 @@ body.app-loading #undo-redo-buttons {
    Revealed by the inline controller in miniCycle.html; reuses the splash
    background/logo/tips. The centered loading text + bar are replaced by the
    tagline + three frosted-pill buttons and a thin bottom progress strip. */
-#app-loader.first-run-mode .loader-text,
-#app-loader.first-run-mode .loader-bar-container {
+html.mc-first-run #app-loader .loader-text,
+html.mc-first-run #app-loader .loader-bar-container {
   display: none;
 }
 /* Top-anchor the header (logo + brand + tagline) near the top; the choice
    container then fills the rest of the height so the buttons can center in it. */
-#app-loader.first-run-mode {
+html.mc-first-run #app-loader {
   justify-content: flex-start;
   padding-top: 8vh;
 }
 /* Soft scrim behind the header text so white is legible over the LIGHT areas of
    the photo (the clipboard paper). Concentrated near the top now that the brand
    sits there; transparent edges keep the airy look. Buttons are white cards. */
-#app-loader.first-run-mode::before {
+html.mc-first-run #app-loader::before {
   content: '';
   position: absolute;
   inset: 0;
@@ -146,15 +146,15 @@ body.app-loading #undo-redo-buttons {
 }
 /* Raise the text block above the scrim (these are static flex items; the tip,
    status, and bottom bar are already position:absolute so sit above it). */
-#app-loader.first-run-mode .loader-logo,
-#app-loader.first-run-mode .first-run-choice {
+html.mc-first-run #app-loader .loader-logo,
+html.mc-first-run #app-loader .first-run-choice {
   position: relative;
   z-index: 1;
 }
 /* In choice mode the tip is demoted to a small, quiet strip just above the
    bottom progress bar — the buttons and tagline own the screen. (Its top-15%
    pin also collided with the centered column on short/wide viewports.) */
-#app-loader.first-run-mode .loader-tip {
+html.mc-first-run #app-loader .loader-tip {
   top: auto;
   bottom: 26px;
   width: auto;
@@ -163,10 +163,10 @@ body.app-loading #undo-redo-buttons {
   font-size: var(--font-size-sm, 13px);
   background: rgba(0, 0, 0, 0.18);
 }
-#app-loader.first-run-mode .loader-tip.visible {
+html.mc-first-run #app-loader .loader-tip.visible {
   opacity: 0.7;
 }
-#app-loader.first-run-mode .loader-tip-header {
+html.mc-first-run #app-loader .loader-tip-header {
   display: none;
 }
 .first-run-choice {
@@ -180,7 +180,7 @@ body.app-loading #undo-redo-buttons {
 /* In choice mode the container fills the height below the logo so the actions
    group can vertically center in the leftover space (brand + tagline stay at the
    top of this zone, right under the logo). */
-#app-loader.first-run-mode .first-run-choice {
+html.mc-first-run #app-loader .first-run-choice {
   flex: 1 1 auto;
   margin-top: 14px;
   min-height: 0;
@@ -195,6 +195,15 @@ body.app-loading #undo-redo-buttons {
   margin-top: auto;
   margin-bottom: auto;
 }
+/* Hidden by DEFAULT and revealed by the pre-paint `mc-first-run` class on
+   <html> (set by the head's first-run reader). Previously the markup carried
+   `hidden` and JS removed it in the body — that reveal landed AFTER first
+   paint and was the app's single largest layout shift (Lighthouse attributed
+   0.204 of a 0.238 CLS to #first-run-choice). Deciding pre-paint means the
+   screen is either laid out from the very first frame or never rendered at
+   all; nothing moves either way. Keep the [hidden] rule too, so any JS that
+   sets the attribute later still hides it. */
+html:not(.mc-first-run) .first-run-choice,
 .first-run-choice[hidden] {
   display: none;
 }
@@ -392,6 +401,8 @@ html[data-app-loaded="true"] .first-run-lite {
   height: 3px;
   background: rgba(255, 255, 255, 0.15);
 }
+/* Same pre-paint treatment as .first-run-choice above. */
+html:not(.mc-first-run) .first-run-bottom-bar,
 .first-run-bottom-bar[hidden] {
   display: none;
 }
@@ -400,7 +411,7 @@ html[data-app-loaded="true"] .first-run-lite {
 .first-run-status {
   display: none;
 }
-#app-loader.first-run-mode .first-run-status {
+html.mc-first-run #app-loader .first-run-status {
   display: block;
   position: absolute;
   right: 14px;
@@ -498,10 +509,15 @@ html[data-app-loaded="true"] .first-run-lite {
   opacity: 1;
   transform: translateY(0);
 }
-.notification.error { background-color: #e74c3c; }
-.notification.success { background-color: #27ae60; }
-.notification.info { background-color: #2980b9; }
-.notification.warning { background-color: #f39c12; }
+/* White body text sits on these fills, so each must clear WCAG AA (4.5:1).
+   The previous values did not: error #e74c3c = 3.82:1, success #27ae60 =
+   2.87:1, info #2980b9 = 4.3:1. Literals rather than var() because this sheet
+   is pre-paint and must not depend on variables.css having applied — these
+   mirror --color-notify-* in base/variables.css, keep the two in sync. */
+.notification.error { background-color: #c0392b; }   /* 5.44:1 on white */
+.notification.success { background-color: #1e8449; } /* 4.72:1 on white */
+.notification.info { background-color: #2471a3; }    /* 5.30:1 on white */
+.notification.warning { background-color: #f39c12; } /* black text: 9.58:1 */
 /* .notification.recurring is defined in notifications.css - not needed in critical CSS
    since recurring notifications don't appear on initial page load */
 
@@ -562,7 +578,11 @@ html[data-app-loaded="true"] .first-run-lite {
   font-weight: 600;
   letter-spacing: 0.25em;
   color: #000;
-  opacity: 0.7;
+  /* 0.8, not 0.7: 12px/600 is not WCAG "large" text, so it needs 4.5:1.
+     Composited over the #4c79ff header, 0.7 gave 3.93:1 and 0.8 gives 4.57:1.
+     This sheet loads after main.css, so it wins over layout/header.css —
+     keep the two in sync. */
+  opacity: 0.8;
 }
 .mode-selector-wrapper {
   display: flex;

@@ -354,6 +354,10 @@ export class TaskOptionsCustomizer {
                 <div class="modal-header">
                     <div class="modal-header-text">
                         <h2 id="task-options-customizer-title">+/-&ensp;${getLabel('taskOptions.title')}</h2>
+                        <!-- SECURITY: escapeHtml(cycleTitle) is load-bearing — cycleTitle is a
+                             user-controlled routine title and this getLabel result lands in raw
+                             modal.innerHTML (getLabel does NOT escape vars). Do not remove the
+                             escapeHtml() wrapper (notifications-review audit, Aug 2026). -->
                         <p class="modal-subtitle">${getLabel('taskOptions.subtitle', { vars: { name: escapeHtml(cycleTitle) } })}</p>
                     </div>
                 </div>
@@ -779,7 +783,6 @@ export class TaskOptionsCustomizer {
                 state.data.cycles[cycleId].reminders.enabled = newRemindersEnabled;
             }
 
-            state.metadata.lastModified = Date.now();
         }, true); // immediate save
 
         // ✅ Post-update side effects (DOM syncing)

@@ -36,6 +36,8 @@ const di = createDIModule('ModeManager', {
     getBody: optional(() => document.body),
     safeAddEventListener: optional(null),
     checkMiniCycle: optional(() => {}),
+    captureStateSnapshot: optional(null),  // Gesture-boundary undo snapshot before a mode switch triggers auto-reset
+    isPerformingUndoRedo: optional(() => false),
     refreshTaskListUI: optional(null),
     updateRecurringButtonVisibility: optional(() => {}),
     syncAllTasksWithMode: optional(null),
@@ -76,6 +78,25 @@ export class ModeManager {
      */
     get deps() {
         return di.resolve();
+    }
+
+    /**
+     * Capture a gesture-boundary undo snapshot, then invoke checkMiniCycle.
+     * Switching to auto-cycle can trigger a reset (all tasks already complete);
+     * the reset executor no longer captures (v2.362), so the mode-switch gesture
+     * must take its own snapshot at this boundary — otherwise the reset it
+     * triggers would land in undo history with nothing to revert it. The
+     * snapshot represents pre-reset state (tasks complete), which is exactly
+     * the correct Undo target.
+     * @private
+     */
+    _checkCycleWithSnapshot() {
+        const { captureStateSnapshot, isPerformingUndoRedo, AppState, checkMiniCycle } = this.deps;
+        if (typeof captureStateSnapshot === 'function' && !(isPerformingUndoRedo?.() ?? false)) {
+            const state = AppState?.get?.();
+            if (state) captureStateSnapshot(state);
+        }
+        if (typeof checkMiniCycle === 'function') checkMiniCycle();
     }
 
     /**
@@ -548,7 +569,7 @@ export class ModeManager {
             // ✅ If switching to auto-cycle mode, check if cycle should complete
             if (e.target.value === 'auto-cycle' && this.deps.checkMiniCycle) {
                 setTimeout(() => {
-                    this.deps.checkMiniCycle();
+                    this._checkCycleWithSnapshot();
                 }, 150); // Small delay to ensure UI is updated first
             }
 
@@ -1019,7 +1040,7 @@ export class ModeManager {
 
             // ✅ Only trigger miniCycle reset if AutoReset is enabled
             if (event.target.checked) {
-                self.deps.checkMiniCycle();
+                self._checkCycleWithSnapshot();
             }
 
             // ✅ Only refresh UI on real user interactions, not programmatic mode switches
@@ -1279,9 +1300,7 @@ export class ModeManager {
                 setTimeout(() => {
                     this.validateModeEnforcement();
                     // Check if auto-reset should trigger (all tasks completed in auto-cycle mode)
-                    if (typeof this.deps.checkMiniCycle === 'function') {
-                        this.deps.checkMiniCycle();
-                    }
+                    this._checkCycleWithSnapshot();
                 }, 100);
             }
         };

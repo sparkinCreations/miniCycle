@@ -33,10 +33,23 @@ export function convert12To24(hour, meridiem) {
 
 /**
  * Parse date string as local date (not UTC)
+ *
+ * Use this instead of `new Date(dateStr)` for YYYY-MM-DD values: the spec
+ * parses date-only strings as UTC midnight, which is the *previous local day*
+ * in every negative UTC offset.
+ *
  * @param {string} dateStr - Date string in YYYY-MM-DD format
- * @returns {Date} Parsed date object
+ * @returns {Date|null} Parsed date object, or null if dateStr is not a
+ *   parsable date string
  */
 export function parseDateAsLocal(dateStr) {
+    // Non-strings already resolved to null via the catch below (.split throws),
+    // but that made every null cost a thrown exception plus a stack-trace
+    // console.error. Check the type up front so the contract is explicit and
+    // control flow doesn't run through the exception path.
+    if (typeof dateStr !== 'string') {
+        return null;
+    }
 
     try {
         const [year, month, day] = dateStr.split("-").map(Number);
@@ -53,6 +66,32 @@ export function parseDateAsLocal(dateStr) {
         console.error('❌ Error parsing date:', error);
         return null;
     }
+}
+
+/**
+ * Format a Date as a local YYYY-MM-DD string.
+ *
+ * The write-side counterpart to parseDateAsLocal — together they close the
+ * round trip for the date-only strings this app stores. Anything that produces
+ * a YYYY-MM-DD from a Date must go through here.
+ *
+ * Do NOT use toISOString().split('T')[0], and do NOT assign a Date to
+ * `input.valueAsDate`: both render the UTC calendar date. Whenever local time
+ * and UTC are on different days, they disagree — and in negative offsets that
+ * is every evening. Measured Aug 2026: at 20:00 EDT exactly (00:00 UTC),
+ * `valueAsDate = tomorrow` began writing the day AFTER tomorrow.
+ *
+ * @param {Date} date - Date to format (its local calendar day is used)
+ * @returns {string|null} YYYY-MM-DD, or null if date is not a valid Date
+ */
+export function formatLocalDate(date) {
+    if (!(date instanceof Date) || isNaN(date.getTime())) {
+        return null;
+    }
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
 }
 
 // ============================================

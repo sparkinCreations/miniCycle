@@ -2,7 +2,7 @@
  * 🛡️ Data Validator
  * Validates data at the data layer boundary
  *
- * ✅ FIX #12: Ensures all data is validated before storage,
+ * Ensures all data is validated before storage,
  * preventing malicious/invalid data from import/export bypass
  *
  * @module utils/dataValidator
@@ -10,6 +10,7 @@
  */
 
 import { createDIModule, required } from '../core/diBase.js';
+import { formatLocalDate } from '../recurring/recurringDateUtils.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -228,12 +229,30 @@ export class DataValidator {
                     throw new TypeError('Task dueDate must be an ISO date string (YYYY-MM-DD) or null');
                 }
             } else if (typeof task.dueDate === 'number') {
-                // Accept legacy number timestamps - convert to ISO string
+                // Accept legacy number timestamps - convert to ISO string.
+                //
+                // Build the string from LOCAL components, not toISOString().
+                // A timestamp is an instant; the date the user actually picked
+                // is the one on THEIR calendar. toISOString() renders the UTC
+                // calendar date, which shifts in both directions depending on
+                // the offset sign and time of day — measured Aug 2026 for a
+                // task due Aug 6: 21:00 in New York migrated FORWARD to Aug 7,
+                // 00:30 in Tokyo migrated BACKWARD to Aug 5. This also keeps
+                // the value consistent with everything else in the app, where
+                // YYYY-MM-DD means a local calendar date (see
+                // recurringDateUtils.parseDateAsLocal).
+                //
+                // NOTE: currently unreachable in the app — the sole caller
+                // (cycleImportManager) runs dueDate through validateImportedDate
+                // first, which nulls any non-string. Kept and corrected rather
+                // than deleted because validateTask is an exported validator
+                // whose own error message below advertises number timestamps as
+                // accepted input; it must not assume callers pre-sanitise.
                 const date = new Date(task.dueDate);
                 if (isNaN(date.getTime())) {
                     throw new TypeError('Task dueDate timestamp is invalid');
                 }
-                task.dueDate = date.toISOString().split('T')[0];
+                task.dueDate = formatLocalDate(date);
             } else {
                 throw new TypeError('Task dueDate must be an ISO date string (YYYY-MM-DD), number timestamp, or null');
             }

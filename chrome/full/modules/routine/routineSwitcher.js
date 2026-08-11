@@ -25,6 +25,7 @@ import { createDIModule, optional } from '../core/diBase.js';
 import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, APP_VERSION } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
+import { buildMcycPayload } from '../utils/mcycPayload.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -38,7 +39,6 @@ let adjustStorageEstimate, resetStorageEstimate, updateStorageBarUIEstimated;
 let getUniqueCycleName;
 
 // Undo manager utilities
-let getUndoCacheSizeBytes, getUndoCacheCycleId;
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -47,7 +47,6 @@ let getUndoCacheSizeBytes, getUndoCacheCycleId;
 const di = createDIModule('RoutineSwitcher', {
     AppState: optional(null),
     AppMeta: optional(null),
-    loadMiniCycleData: optional(() => null),
     showNotification: optional(null),
     hideMainMenu: optional(() => {}),
     showPromptModal: optional(null),
@@ -411,7 +410,6 @@ export class RoutineSwitcher {
                         }
                     }
 
-                    state.metadata.lastModified = Date.now();
                 }, true); // immediate save
 
                 // ✅ Update storage estimate (subtract deleted routine size)
@@ -527,48 +525,21 @@ export class RoutineSwitcher {
     }
 
     /**
-     * Build export payload from cycle data (matches cycleExportManager format)
+     * Build export payload from cycle data via the single shared builder
+     * (drift-review D-02 — this used to be a third hand-rolled copy that had
+     * silently dropped priorityColor AND autoUncheckDaily).
+     *
+     * includeHistory is true for now — this is the "download routine" path and
+     * whether it should carry history (backup semantics) or strip it (share
+     * semantics, like shareManager) is an open product decision. Flipping it
+     * is a one-word change here.
      * @param {string} cycleKey - The cycle key/ID
      * @param {Object} cycle - The cycle data from AppState
      * @returns {Object} Export-ready data object
      * @private
      */
     _buildExportPayload(cycleKey, cycle) {
-        return {
-            name: cycleKey,
-            title: cycle.title || "New Routine",
-            tasks: (cycle.tasks || []).map(task => {
-                const settings = task.recurringSettings
-                    ? structuredClone(task.recurringSettings)
-                    : {};
-                if (task.recurring && !settings.specificTime && !settings.defaultRecurTime) {
-                    settings.defaultRecurTime = new Date().toISOString();
-                }
-                return {
-                    id: task.id,
-                    text: task.text || "",
-                    completed: task.completed || false,
-                    dueDate: task.dueDate || null,
-                    highPriority: task.highPriority || false,
-                    remindersEnabled: task.remindersEnabled || false,
-                    recurring: task.recurring || false,
-                    recurringSettings: settings,
-                    deleteWhenComplete: task.deleteWhenComplete,
-                    deleteWhenCompleteSettings: task.deleteWhenCompleteSettings || { cycle: false, todo: true },
-                    schemaVersion: task.schemaVersion || 2
-                };
-            }),
-            autoReset: cycle.autoReset || false,
-            cycleCount: cycle.cycleCount || 0,
-            deleteCheckedTasks: cycle.deleteCheckedTasks || false,
-            taskOptionButtons: cycle.taskOptionButtons || null,
-            recurringTemplates: cycle.recurringTemplates || {},
-            reminders: cycle.reminders || null,
-            createdAt: cycle.createdAt || null,
-            theme: cycle.theme || 'classic',
-            history: cycle.history || null,
-            clearedTasks: cycle.clearedTasks || null
-        };
+        return buildMcycPayload(cycleKey, cycle, { includeHistory: true });
     }
 
     /**
@@ -620,19 +591,52 @@ export class RoutineSwitcher {
         delete copiedCycle.lastModified; // Show "Created" until actual changes are made
         copiedCycle.cycleCount = 0; // Reset cycle count for the copy
 
-        // ✅ Generate new IDs for all tasks to avoid conflicts
+        // Fresh history for a fresh routine — the clone otherwise inherits the
+        // original's full event log (cycle completions that never happened here).
+        // clearedTasks entries reset too, but autoPrune is a preference and travels.
+        delete copiedCycle.history;
+        if (copiedCycle.clearedTasks && typeof copiedCycle.clearedTasks === 'object') {
+            copiedCycle.clearedTasks = {
+                ...copiedCycle.clearedTasks,
+                entries: [],
+                totalCleared: 0
+            };
+        }
+
+        // ✅ Generate new IDs for all tasks to avoid conflicts — and remap
+        // recurringTemplates in lockstep. The map is keyed by task id and each
+        // template carries its task's id; leaving it un-remapped severed every
+        // taskId↔template link in the copy (watcher spawned duplicates, deleting
+        // a copied recurring task couldn't remove its template, template edits
+        // never synced).
         if (Array.isArray(copiedCycle.tasks)) {
             const now = Date.now();
-            copiedCycle.tasks = copiedCycle.tasks.map((task, index) => ({
-                ...task,
-                id: `task-${now}-${index}-${Math.floor(Math.random() * 10000)}` // Fix #74: add index to prevent collision
-            }));
+            const idRemap = new Map();
+            copiedCycle.tasks = copiedCycle.tasks.map((task, index) => {
+                const newId = `task-${now}-${index}-${Math.floor(Math.random() * 10000)}`; // Fix #74: add index to prevent collision
+                if (task.id) idRemap.set(task.id, newId);
+                return { ...task, id: newId };
+            });
+
+            if (copiedCycle.recurringTemplates && typeof copiedCycle.recurringTemplates === 'object') {
+                copiedCycle.recurringTemplates = Object.fromEntries(
+                    Object.entries(copiedCycle.recurringTemplates)
+                        .filter(([, template]) => template && typeof template === 'object')
+                        .map(([oldId, template], templateIndex) => {
+                            // A template without a live task instance is normal
+                            // (deleted instance pending recreation) — keep it,
+                            // under a fresh id so the copy never shares ids with
+                            // the original routine.
+                            const newId = idRemap.get(oldId) || `task-${now}-t${templateIndex}-${Math.floor(Math.random() * 10000)}`;
+                            return [newId, { ...template, id: newId }];
+                        })
+                );
+            }
         }
 
         // ✅ Update through state system
         this.deps.AppState.update(state => {
             state.data.cycles[uniqueName] = copiedCycle;
-            state.metadata.lastModified = Date.now();
             state.metadata.totalCyclesCreated = (state.metadata.totalCyclesCreated || 0) + 1;
         }, true); // immediate save
 
@@ -919,7 +923,6 @@ export class RoutineSwitcher {
                 state.appState.activeCycleId = uniqueName;
             }
 
-            state.metadata.lastModified = Date.now();
         }, true);
 
         // Notify undo system of cycle rename
@@ -1166,21 +1169,15 @@ export class RoutineSwitcher {
         this.deps.AppState.update(state => {
             const oldCycleId = state.appState.activeCycleId;
 
-            // ✅ Save lastModified and undoSizeBytes to the OLD cycle before switching
-            // This captures when the user last worked on that routine and its undo storage footprint
+            // ✅ Save lastModified to the OLD cycle before switching — captures
+            // when the user last worked on that routine. (undoSizeBytes is no
+            // longer written: drift-review C-09 removed its only reader, the
+            // routine-size display; stale values in stored data are ignored.)
             if (oldCycleId && state.data.cycles[oldCycleId]) {
                 state.data.cycles[oldCycleId].lastModified = state.metadata.lastModified || Date.now();
-
-                // Save undo size if the cache belongs to this cycle
-                const undoCacheCycleId = getUndoCacheCycleId();
-                if (undoCacheCycleId === oldCycleId) {
-                    state.data.cycles[oldCycleId].undoSizeBytes = getUndoCacheSizeBytes();
-                }
-
             }
 
             state.appState.activeCycleId = cycleKey;
-            state.metadata.lastModified = Date.now();
 
             // Track last accessed time for "Recently Used" in routine switcher
             if (state.data.cycles[cycleKey]) {
@@ -1273,9 +1270,14 @@ export class RoutineSwitcher {
                 continue;
             }
 
-            // Generate ID if missing
+            // Generate ID if missing. Suffix entropy matches the main generator
+            // (globalUtils generateHashId): this loop runs synchronously, so every
+            // repaired task shares the same millisecond — a 0-999 suffix had ~17%
+            // birthday-collision odds at 20 tasks, and a collision makes
+            // drag-reorder silently drop a task (find-by-id resolves both to the
+            // first match).
             if (!task.id || typeof task.id !== 'string') {
-                task.id = `task-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+                task.id = `task-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
                 console.warn(`⚠️ Generated missing task ID: ${task.id}`);
                 repaired = true;
             }
@@ -1310,11 +1312,8 @@ export class RoutineSwitcher {
                 repaired = true;
             }
 
-            // Default deleteWhenComplete settings
-            if (task.deleteWhenComplete === undefined) {
-                task.deleteWhenComplete = undefined;
-                // Don't mark as repaired - this is optional
-            }
+            // (deleteWhenComplete is optional — undefined is a valid state; a
+            // dead self-assignment lived here until v2.365.)
             if (!task.deleteWhenCompleteSettings || typeof task.deleteWhenCompleteSettings !== 'object') {
                 task.deleteWhenCompleteSettings = { cycle: false, todo: true };
                 repaired = true;
@@ -1357,7 +1356,6 @@ export class RoutineSwitcher {
         if (repaired) {
             this.deps.AppState.update(state => {
                 state.data.cycles[cycleKey] = cycle;
-                state.metadata.lastModified = Date.now();
             }, true);
         }
 
@@ -2003,15 +2001,16 @@ export class RoutineSwitcher {
         leftSide.appendChild(emojiSpan);
         leftSide.appendChild(titleSpan);
 
-        // Right side: size estimate
+        // Right side: size estimate. Routine data only — undo cache is a
+        // separate, transient store and inflating this figure with it made
+        // "routine size" disagree with the manual's 1–5 KB claim
+        // (drift-review C-09; also sidesteps the stale-undoSizeBytes drift, C-10).
         const isActiveCycle = cycleKey === activeCycleId;
         const cycleDataSize = getObjectSizeBytes(cycleData);
-        const undoSize = isActiveCycle ? getUndoCacheSizeBytes() : (cycleData.undoSizeBytes || 0);
-        const totalSize = cycleDataSize + undoSize;
 
         const sizeSpan = document.createElement("span");
         sizeSpan.className = "cycle-item-size";
-        sizeSpan.textContent = `~${formatBytes(totalSize)}`;
+        sizeSpan.textContent = `~${formatBytes(cycleDataSize)}`;
 
         // Current routine badge
         if (isActiveCycle) {
@@ -2507,11 +2506,6 @@ export async function initRoutineSwitcher(dependencies) {
     // Import name utilities
     const nameUtils = await import(`../utils/nameUtils.js?v=${version}`);
     getUniqueCycleName = nameUtils.getUniqueCycleName;
-
-    // Import undo manager utilities
-    const undoManager = await import(`../ui/undoRedoManager.js?v=${version}`);
-    getUndoCacheSizeBytes = undoManager.getUndoCacheSizeBytes;
-    getUndoCacheCycleId = undoManager.getUndoCacheCycleId;
 
     // Now create the instance
     routineSwitcher = new RoutineSwitcher(dependencies);

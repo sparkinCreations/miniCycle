@@ -10,7 +10,7 @@
  * PATTERNS PROVIDED:
  * 1. createDIModule() - Factory for module-level DI with validation
  * 2. lazy() - Lazy getter wrapper for cross-module dependencies
- * 3. required() - Marker for required dependencies (throws if missing)
+ * 3. required() - Marker for required dependencies (warns and resolves to null if missing — it does NOT throw)
  * 4. optional() - Marker for optional dependencies with defaults
  *
  * USAGE:
@@ -20,7 +20,7 @@
  * const di = createDIModule('TaskCore', {
  *     // Required deps - will warn if missing
  *     AppState: required(),
- *     loadMiniCycleData: required(),
+ *     GlobalUtils: required(),
  *     showNotification: required(),
  *
  *     // Optional deps - uses provided default
@@ -57,8 +57,8 @@ const OPTIONAL = Symbol('optional');
  * @returns {Object} Required marker
  * @example
  * const di = createDIModule('MyModule', {
- *     AppState: required(),        // Must be injected
- *     loadData: required()         // Must be injected
+ *     AppState: required(),        // Should be injected — warns and resolves null if missing
+ *     loadData: required()         // Should be injected — warns and resolves null if missing
  * });
  */
 export function required() {
@@ -227,8 +227,51 @@ export function createDIModule(moduleName, schema = {}, options = {}) {
             const resolved = {};
             const missing = [];
 
+            // setDependencies preserves GETTERS on purpose ("for lazy binding"),
+            // and moduleLoader relies on it — `get consoleCapture()`,
+            // `get backupManager()`, `get TaskOptionsVisibilityController()` all
+            // resolve late. Reading `_injected[key]` here would INVOKE the getter
+            // and store its value, then cache the object: a dep that was null at
+            // first resolve stayed null forever, silently cancelling the lazy
+            // binding the setter went to trouble to keep. Verified by execution
+            // (Aug 2026) — masked in practice only because boot calls
+            // setDependencies repeatedly, and each call clears the cache.
+            //
+            // So: carry the getter THROUGH to the resolved object. The cache then
+            // holds live accessors rather than a snapshot, which is what makes
+            // caching safe here at all.
+            const applyMarker = (raw, marker) => {
+                if (marker[REQUIRED]) return raw;
+                if (marker[OPTIONAL]) return raw ?? marker.default;
+                return raw ?? marker;   // plain value in schema (unusual but supported)
+            };
+            // Matches the original `overrides[key] ?? _injected[key]` precedence:
+            // a null/undefined override falls through to the injected value.
+            const hasOverride = (key) => overrides[key] !== undefined && overrides[key] !== null;
+            const liveGetter = (key) => (hasOverride(key)
+                ? null
+                : Object.getOwnPropertyDescriptor(_injected, key)?.get);
+
             // Process schema
             for (const [key, marker] of Object.entries(schema)) {
+                const getter = liveGetter(key);
+
+                if (getter) {
+                    Object.defineProperty(resolved, key, {
+                        get: () => applyMarker(getter.call(_injected), marker),
+                        enumerable: true,
+                        configurable: true
+                    });
+                    // The required-missing report still reflects the value RIGHT
+                    // NOW — a getter that is empty at resolve time is reported,
+                    // exactly as before, but the property can still fill in later.
+                    if (marker[REQUIRED]) {
+                        const current = getter.call(_injected);
+                        if (current === undefined || current === null) missing.push(key);
+                    }
+                    continue;
+                }
+
                 // Priority: override > injected > default
                 const value = overrides[key] ?? _injected[key];
 
@@ -248,10 +291,21 @@ export function createDIModule(moduleName, schema = {}, options = {}) {
             }
 
             // Also include any extra deps not in schema
-            // (for backwards compatibility during migration)
-            for (const [key, value] of Object.entries(_injected)) {
-                if (!(key in resolved)) {
-                    resolved[key] = overrides[key] ?? value;
+            // (for backwards compatibility during migration).
+            // Object.keys, not Object.entries — entries() would invoke every
+            // getter and reintroduce the snapshot this fix removes.
+            for (const key of Object.keys(_injected)) {
+                if (key in resolved) continue;
+                if (hasOverride(key)) { resolved[key] = overrides[key]; continue; }
+                const getter = liveGetter(key);
+                if (getter) {
+                    Object.defineProperty(resolved, key, {
+                        get: () => getter.call(_injected),
+                        enumerable: true,
+                        configurable: true
+                    });
+                } else {
+                    resolved[key] = _injected[key];
                 }
             }
             for (const [key, value] of Object.entries(overrides)) {

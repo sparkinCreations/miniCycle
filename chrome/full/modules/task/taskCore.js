@@ -58,6 +58,7 @@ let _initialized = false;
 const di = createDIModule('TaskCore', {
     appInit: optional(null),
     AppState: optional(null),
+    AppGlobalState: optional(null),  // Passed through to taskCycleReset for the batch-operation flag
     loadMiniCycleData: optional(null),
     autoSave: optional(null),
     sanitizeInput: optional(null),

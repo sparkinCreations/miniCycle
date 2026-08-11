@@ -236,6 +236,12 @@ function _refreshLiveLensLabels() {
         // All four (view × input-bar) hint variants need re-theming, not just the
         // two visible ones — the hidden variants must already be correct by the
         // time CSS swaps them in on a view change or input-bar toggle.
+        // Completion copy — themed like the rest ("All habits complete!" etc.).
+        // Only the text needs re-theming here; its hint is mode-dependent and is
+        // set by completedTasksManager, which knows the mode. Re-themed even
+        // while hidden, same reason as the hint variants below.
+        const emptyAllDone = emptyState.querySelector(DOM_SELECTORS.EMPTY_STATE_ALLDONE_TEXT);
+        if (emptyAllDone) emptyAllDone.textContent = getLabel('focusTask.allDone');
         const emptyHint = emptyState.querySelector(DOM_SELECTORS.EMPTY_STATE_HINT);
         if (emptyHint) emptyHint.textContent = getLabel('empty.noTasksHint');
         const emptyHintVisible = emptyState.querySelector(DOM_SELECTORS.EMPTY_STATE_HINT_VISIBLE);
@@ -680,26 +686,19 @@ export class ThemeManager {
     }
     
     /**
-     * Fallback theme unlock when AppState is not available
+     * REMOVED: unlockThemeFallback()
+     *
+     * Orphaned when theme unlocking moved to VocabThemeManager and the only two
+     * callers (unlockDarkOceanTheme / unlockGoldenGlowTheme above) became
+     * no-ops. It had zero references anywhere in the tree, and carried a latent
+     * throw of its own — `schemaData.settings.unlockedThemes.includes(...)`
+     * with no optional chaining, swallowed by its catch — so it would have
+     * failed silently had anything called it.
+     *
+     * It was also the third live-state mutator in this file; the other two,
+     * saveThemeToStorage and saveDarkModeToStorage, are now producers.
      */
-    unlockThemeFallback(themeKey, themeName) {
-        try {
-            
-            const schemaData = this.loadSchemaData();
-            if (schemaData && !schemaData.settings.unlockedThemes.includes(themeKey)) {
-                schemaData.settings.unlockedThemes.push(themeKey);
-                this.saveSchemaData(schemaData);
-                
-                this.refreshThemeToggles();
-                this.showThemeContainer();
-                this.showThemeButton();
-                
-            }
-        } catch (error) {
-            console.warn(`⚠️ ${themeName} theme fallback unlock failed:`, error.message);
-        }
-    }
-    
+
     // ===== THEME PANEL FUNCTIONS =====
     
     /**
@@ -1106,67 +1105,81 @@ export class ThemeManager {
     }
     
     /**
-     * Save Schema 2.5 data via AppState
-     * @deprecated Use AppState.update() directly instead
+     * REMOVED: saveSchemaData()
+     *
+     * A whole-state writer — it did Object.assign(state, data) inside the
+     * producer, replacing every top-level key from whatever object it was
+     * handed. Its last three callers either write single keys through their
+     * own AppState.update() producer now (saveThemeToStorage,
+     * saveDarkModeToStorage) or were deleted outright (unlockThemeFallback),
+     * leaving it with none.
+     *
+     * Deleted rather than left @deprecated because the deprecation notice had
+     * not stopped anything: the hazard is that a caller pairs it with
+     * loadSchemaData's not-ready fallback, which returns a DETACHED
+     * localStorage parse. saveSchemaData awaited waitForCore() — which can run
+     * migration — and only then assigned, so a stale pre-migration copy could
+     * overwrite freshly migrated state. Write single keys with
+     * AppState.update() instead.
      */
-    async saveSchemaData(data) {
-        // ✅ Wait for core systems to be ready before saving
-        await _deps.appInit?.waitForCore();
 
-        // ✅ Use injected AppState only (no window.* fallback)
-        if (!_deps.AppState?.isReady?.()) {
-            console.error('❌ AppState not injected or not ready for saveSchemaData');
-            return;
-        }
 
-        try {
-            // Replace entire state data (filter dangerous keys to prevent prototype pollution)
-            const safeData = Object.fromEntries(
-                Object.entries(data).filter(([k]) => k !== '__proto__' && k !== 'constructor' && k !== 'prototype')
-            );
-            await _deps.AppState.update(state => {
-                Object.assign(state, safeData);
-            }, true);
-        } catch (error) {
-            console.warn('⚠️ Schema data save failed:', error.message);
-        }
-    }
-    
     /**
      * Save theme to storage
      */
-    saveThemeToStorage(themeName) {
+    /**
+     * Both this and saveDarkModeToStorage below write through the AppState
+     * producer, replacing the old load-mutate-save shim (loadSchemaData →
+     * mutate the returned object → saveSchemaData). Two things were wrong
+     * with that shim:
+     *
+     * 1. loadSchemaData returns AppState.get() — a LIVE reference — so the
+     *    mutation landed before the producer ran, and saveSchemaData's
+     *    Object.assign(state, data) was assigning the object onto itself
+     *    purely to trigger a save. That is REVIEW_PATTERNS.md §1.
+     * 2. Worse, when AppState wasn't ready loadSchemaData fell back to a
+     *    DETACHED localStorage parse. saveSchemaData then awaited
+     *    waitForCore() — which can run migration — before writing, so a stale
+     *    pre-migration whole-state copy could be assigned over freshly
+     *    migrated state. A narrow window (the live caller, applyTheme, passes
+     *    save=false during boot), but a schema downgrade if hit.
+     *
+     * AppState.update awaits init() itself, so there is no not-ready branch to
+     * handle here and nothing is lost if the write lands early.
+     *
+     * Note these are global settings and deliberately NOT in the undo
+     * snapshot — undoRedoManager captures state.settings.taskViewLayout only,
+     * and its `theme` field is the per-cycle VOCAB theme, a different concept.
+     * Changing the colour theme or dark mode has never been undoable.
+     */
+    async saveThemeToStorage(themeName) {
         try {
-            const schemaData = this.loadSchemaData();
-            if (!schemaData) {
-                console.warn('⚠️ Schema 2.5 data required for saveThemeToStorage');
+            if (!_deps.AppState?.update) {
+                console.warn('⚠️ AppState not injected for theme save');
                 return;
             }
-            
-            schemaData.settings = schemaData.settings || {};
-            schemaData.settings.theme = themeName || 'default';
-            this.saveSchemaData(schemaData);
-            
+            await _deps.AppState.update(state => {
+                if (!state.settings) state.settings = {};
+                state.settings.theme = themeName || 'default';
+            }, true);
         } catch (error) {
             console.warn('⚠️ Theme save failed:', error.message);
         }
     }
-    
+
     /**
-     * Save dark mode to storage
+     * Save dark mode to storage (see saveThemeToStorage for the rationale)
      */
-    saveDarkModeToStorage(enabled) {
+    async saveDarkModeToStorage(enabled) {
         try {
-            const schemaData = this.loadSchemaData();
-            if (!schemaData) {
-                console.warn('⚠️ Schema 2.5 data required for saveDarkModeToStorage');
+            if (!_deps.AppState?.update) {
+                console.warn('⚠️ AppState not injected for dark mode save');
                 return;
             }
-            
-            schemaData.settings = schemaData.settings || {};
-            schemaData.settings.darkMode = enabled;
-            this.saveSchemaData(schemaData);
-            
+            await _deps.AppState.update(state => {
+                if (!state.settings) state.settings = {};
+                state.settings.darkMode = enabled;
+            }, true);
         } catch (error) {
             console.warn('⚠️ Dark mode save failed:', error.message);
         }

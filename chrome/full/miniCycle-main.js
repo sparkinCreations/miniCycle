@@ -9,7 +9,8 @@
  * ERROR HANDLING STRATEGY:
  * - This file only catches catastrophic import failures (syntax errors, network)
  * - orchestrator.js handles all runtime boot failures with retry logic
- * - HTML has 8-second timeout fallback to lite version
+ * - HTML has two independent Lite fallbacks, both with begun-booting guards:
+ *   a 16s late fallback (footer script) and a 60s load-timeout failsafe (inline)
  *
  * BOOT FILE STRUCTURE (all in modules/boot/):
  * - miniCycle-main.js (this file) - Entrypoint only
@@ -41,7 +42,7 @@ const APP_VERSION = globalThis.APP_VERSION || 'dev-local';
       timestamp: new Date().toISOString()
     });
 
-    // HTML's 8-second timeout will redirect to lite version
+    // HTML's Lite fallbacks (16s late fallback / 60s load-timeout failsafe) will redirect
     // No need to duplicate error UI here - orchestrator.js has better handling
     // If we got here, orchestrator couldn't even load, so just wait for HTML fallback
   }

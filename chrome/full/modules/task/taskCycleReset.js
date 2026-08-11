@@ -60,6 +60,7 @@ import { getLabel } from '../labels/labelResolver.js';
 const di = createDIModule('TaskCycleReset', {
     appInit: optional(null),
     AppState: optional(null),
+    AppGlobalState: optional(null),  // batch-operation flag for undo snapshot guard
     loadMiniCycleData: optional(null),
     autoSave: optional(null),
     isPerformingUndoRedo: optional(null),
@@ -115,6 +116,19 @@ export function setTaskCycleResetDependencies(dependencies) {
 
 // Track active state to prevent concurrent resets
 let isResetting = false;
+
+// v2.360: mirror the reset flag into
+// AppGlobalState.isResetting — undoRedoManager's batch-operation guard reads
+// the GLOBAL flag, which was declared and checked but never SET anywhere (the
+// setter was lost in the taskCore extraction; only this module-local existed).
+// Result: snapshots WERE captured during resets and Complete All — the first
+// Undo after completing a cycle appeared to do nothing, and Clear Completed
+// stacked multiple snapshots.
+function setResettingFlag(value, deps = {}) {
+    isResetting = value;
+    const gs = deps.AppGlobalState || _deps.AppGlobalState;
+    if (gs) gs.isResetting = value;
+}
 const activeTimeouts = new Set();
 
 /**
@@ -288,10 +302,12 @@ function resetTasksData(context, deps) {
         }
     });
 
-    // Remove recurring tasks
-    if (typeof removeRecurringTasksFromCycle === 'function') {
-        removeRecurringTasksFromCycle(taskElements, freshCycleData);
-    }
+    // Plan the recurring-task removal: DOM effects happen now, state changes
+    // are returned as a plan and applied inside the producer below (one-door
+    // migration v2.361 — previously this mutated live state directly).
+    const recurringPlan = (typeof removeRecurringTasksFromCycle === 'function')
+        ? (removeRecurringTasksFromCycle(taskElements, freshCycleData) || { removedIds: [], keptIds: [], templateUpdates: {} })
+        : { removedIds: [], keptIds: [], templateUpdates: {} };
 
     // Process non-recurring tasks
     const tasksToDelete = [];
@@ -365,9 +381,24 @@ function resetTasksData(context, deps) {
         AppState.update(state => {
             const cycle = state?.data?.cycles?.[currentActiveCycle];
             if (cycle) {
-                if (tasksToDelete.length > 0) {
-                    cycle.tasks = cycle.tasks.filter(t => !tasksToDelete.includes(t.id));
+                // Apply the recurring-removal plan (state side of what the
+                // DOM already shows): remove spawned recurring instances,
+                // uncheck kept ones, advance their templates.
+                const removedIdSet = new Set(recurringPlan.removedIds);
+                if (removedIdSet.size > 0 || tasksToDelete.length > 0) {
+                    cycle.tasks = cycle.tasks.filter(t => !removedIdSet.has(t.id) && !tasksToDelete.includes(t.id));
                 }
+                recurringPlan.keptIds.forEach(keptId => {
+                    const keptTask = cycle.tasks.find(t => t.id === keptId);
+                    if (keptTask) keptTask.completed = false;
+                });
+                Object.entries(recurringPlan.templateUpdates).forEach(([templateId, upd]) => {
+                    const template = cycle.recurringTemplates?.[templateId];
+                    if (template) {
+                        template.nextScheduledOccurrence = upd.nextScheduledOccurrence;
+                        template.lastTriggeredTimestamp = upd.lastTriggeredTimestamp;
+                    }
+                });
                 cycle.tasks.forEach(task => {
                     if (!task.recurring) {
                         task.completed = false;
@@ -477,7 +508,7 @@ function moveCompletedTasksBack(context, deps) {
 export async function resetTasksImpl(deps = {}) {
     try {
         if (isResetting) return;
-        isResetting = true;
+        setResettingFlag(true, deps);
 
         // Merge deps with module-level deps
         const mergedDeps = {
@@ -506,19 +537,21 @@ export async function resetTasksImpl(deps = {}) {
         // Step 1: Get and validate context
         const context = getResetContext(mergedDeps);
         if (!context) {
-            isResetting = false;
+            setResettingFlag(false, deps);
             return;
         }
 
         const { activeCycle, cycles } = context;
 
-        // Step 2: Capture undo snapshot BEFORE modifications
-        if (typeof mergedDeps.captureStateSnapshot === 'function' && !mergedDeps.isPerformingUndoRedo()) {
-            const currentState = mergedDeps.AppState?.get?.();
-            if (currentState) {
-                mergedDeps.captureStateSnapshot(currentState);
-            }
-        }
+        // (Former Step 2 — pre-reset snapshot — removed in v2.362.) resetTasks
+        // is an EFFECT EXECUTOR, never a gesture origin: every caller reaches it
+        // from a gesture that already captured at its own boundary — the
+        // checkbox handler (taskCompletion), Complete All (executeCompleteAll),
+        // or a mode switch (modeManager). Capturing here as well double-counted
+        // the checkbox flow (restoring the all-completed intermediate on first
+        // Undo); and once the global isResetting flag was raised, this
+        // capture was dead code anyway. The invariant is now uniform:
+        // gestures capture, executors don't.
 
         // Step 3: Animate progress bar fill (delegated to cycleCompletion)
         if (typeof mergedDeps.animateProgressBarFill === 'function') {
@@ -539,7 +572,7 @@ export async function resetTasksImpl(deps = {}) {
         // Step 4: Perform core data reset
         const result = resetTasksData(context, mergedDeps);
         if (result.aborted) {
-            isResetting = false;
+            setResettingFlag(false, deps);
             return;
         }
 
@@ -589,12 +622,12 @@ export async function resetTasksImpl(deps = {}) {
         }, TASK_TIMEOUTS.POST_RESET_CLEANUP));
 
         trackTimeout(setTimeout(() => {
-            isResetting = false;
+            setResettingFlag(false, deps);
         }, TASK_TIMEOUTS.RESET_LOCK_RELEASE));
 
     } catch (error) {
         console.warn('Reset tasks failed:', error);
-        isResetting = false;
+        setResettingFlag(false, deps);
         _deps.showNotification?.(getLabel('notify.taskResetFailed'), 'warning');
     }
 }
@@ -799,11 +832,28 @@ export async function deleteCompletedTasksImpl(activeCycleId, cycleData, taskLis
  * @returns {void}
  */
 export function markAllTasksCompleteImpl(cycleData, taskList, resetTasksFn, deps = {}) {
-    if (isResetting) {
-        return;
-    }
+    // NOTE: no `if (isResetting) return` guard here. It was redundant with
+    // handleCompleteAllTasksImpl's entry guard (the only live caller path), and
+    // once executeCompleteAll raises the batch flag around this call, the guard
+    // would bail every time — the v2.360 regression that silently killed
+    // cycle-mode Complete. Concurrent-click protection stays at the entry guard.
 
     const checkMiniCycle = deps.checkMiniCycle || _deps.checkMiniCycle;
+
+    // Persist completion to state, not just the DOM. Programmatic .checked
+    // writes fire no change event, so without this the completions existed only
+    // on screen until the reset ran — a reload (or an aborted reset) in that
+    // window dropped them, and state readers (stats, Clear Completed, the new
+    // auto-reset completion guard) disagreed with the visible checkboxes.
+    const AppState = deps.AppState || _deps.AppState;
+    if (AppState?.isReady?.()) {
+        AppState.update(state => {
+            const cycle = state.data?.cycles?.[state.appState?.activeCycleId];
+            if (cycle?.tasks) {
+                cycle.tasks.forEach(task => { task.completed = true; });
+            }
+        });
+    }
 
     taskList.querySelectorAll(".task input").forEach(task => task.checked = true);
 
@@ -868,7 +918,11 @@ export async function handleCompleteAllTasksImpl(resetTasksFn, deps = {}) {
             updateProgressBar: deps.updateProgressBar || _deps.updateProgressBar,
             updateStatsPanel: deps.updateStatsPanel || _deps.updateStatsPanel,
             checkCompleteAllButton: deps.checkCompleteAllButton || _deps.checkCompleteAllButton,
-            showClearAnimation: deps.showClearAnimation || _deps.showClearAnimation
+            showClearAnimation: deps.showClearAnimation || _deps.showClearAnimation,
+            // Forward so executeCompleteAll can take the gesture-boundary snapshot
+            captureStateSnapshot: deps.captureStateSnapshot || _deps.captureStateSnapshot,
+            isPerformingUndoRedo: deps.isPerformingUndoRedo || _deps.isPerformingUndoRedo,
+            AppGlobalState: deps.AppGlobalState || _deps.AppGlobalState
         };
 
         // Step 1: Get context
@@ -931,12 +985,45 @@ export async function handleCompleteAllTasksImpl(resetTasksFn, deps = {}) {
  * @returns {Promise<void>}
  */
 async function executeCompleteAll(activeCycle, cycleData, taskList, resetTasksFn, deps) {
-    if (cycleData.deleteCheckedTasks) {
-        // To-Do mode: delete completed tasks
-        await deleteCompletedTasksImpl(activeCycle, cycleData, taskList, deps);
-    } else {
-        // Cycle mode: mark all complete and trigger reset
-        markAllTasksCompleteImpl(cycleData, taskList, resetTasksFn, deps);
+    // Gesture-boundary undo snapshot (v2.362): Complete All and Clear Completed
+    // are user gestures, so they capture ONE snapshot at entry — here, before
+    // any mutation. Everything downstream (mark-all, the delete, the delayed
+    // reset) is an EFFECT of this gesture and must not capture (the reset
+    // executor no longer does — Step 2 was removed). Without this, both
+    // batch ops ran with ZERO snapshots and Undo jumped past the whole batch.
+    const captureStateSnapshot = deps.captureStateSnapshot || _deps.captureStateSnapshot;
+    const isPerformingUndoRedo = deps.isPerformingUndoRedo || _deps.isPerformingUndoRedo || (() => false);
+    if (typeof captureStateSnapshot === 'function' && !isPerformingUndoRedo()) {
+        const preBatchState = (deps.AppState || _deps.AppState)?.get?.();
+        if (preBatchState) captureStateSnapshot(preBatchState);
+    }
+
+    // Raise isResetting around the WHOLE batch so the undo wrapper
+    // (wrapAppStateForUndo — captures before EVERY AppState.update, gated by
+    // this flag via captureStateSnapshot) stays suppressed for the batch's
+    // internal updates. Without it the To-Do path leaked a second snapshot:
+    // Clear Completed does two updates — record-cleared (bumps
+    // clearedTasks.totalCleared) then delete — and the snapshot signature
+    // includes that count (`ct`), so the wrapper's pre-delete capture had a
+    // DIFFERENT signature from the gesture capture, dodged dedup, and pushed a
+    // phantom intermediate (first Undo restored the tasks but kept the cleared
+    // records). v2.363 removed this flag to fix a DIFFERENT bug — that
+    // markAllTasksCompleteImpl bailed on `if (isResetting) return` — but that
+    // guard is redundant (handleCompleteAllTasksImpl's entry guard is the real
+    // concurrent-click protection) and has now been removed, so the flag is
+    // safe to restore. The delayed reset fires after this finally clears the
+    // flag and raises its own.
+    setResettingFlag(true, deps);
+    try {
+        if (cycleData.deleteCheckedTasks) {
+            // To-Do mode: delete completed tasks
+            await deleteCompletedTasksImpl(activeCycle, cycleData, taskList, deps);
+        } else {
+            // Cycle mode: mark all complete and trigger reset
+            markAllTasksCompleteImpl(cycleData, taskList, resetTasksFn, deps);
+        }
+    } finally {
+        setResettingFlag(false, deps);
     }
 }
 

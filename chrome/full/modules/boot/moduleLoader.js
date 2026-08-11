@@ -687,6 +687,7 @@ function runPostInitInjections(deps) {
     if (deps.task?.taskDOMManager?.renderer && deps.ui?.updateSearchVisibility) {
         if (typeof deps.task.taskDOMManager.renderer.injectDependency === 'function') {
             deps.task.taskDOMManager.renderer.injectDependency('updateSearchVisibility', deps.ui.updateSearchVisibility);
+            deps.task.taskDOMManager.renderer.injectDependency('reapplyActiveFilter', deps.ui.reapplyActiveFilter);
         }
     }
 
@@ -1186,12 +1187,15 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         completedTasksManager: () => deps.ui?.completedTasksManager,
         updateStatsPanel: (...args) => deps.ui?.updateStatsPanel?.(...args),
         exportMiniCycleData: (...args) => deps.ui?.exportMiniCycleData?.(...args),
+        shareCurrentRoutine: (...args) => deps.ui?.shareCurrentRoutine?.(...args),
         startGuidedTour: (...args) => deps.ui?.startGuidedTour?.(...args),
         markTourWelcomeShown: (...args) => deps.ui?.markTourWelcomeShown?.(...args),
         // Provided by taskUI module (api: 'ui' — registered under deps.ui, not deps.task)
         hideTaskButtons: (...args) => deps.ui?.hideTaskButtons?.(...args),
         // Provided by taskSearch module — toggles search row visibility
         updateSearchVisibility: (...args) => deps.ui?.updateSearchVisibility?.(...args),
+        // Provided by taskSearch module — restores filter/sort after a render
+        reapplyActiveFilter: (...args) => deps.ui?.reapplyActiveFilter?.(...args),
         // Provided by basicPluginSystem module — instance accessor
         pluginManager: () => deps.plugins?.pluginManager,
         // Provided by dataValidator module — utils API category

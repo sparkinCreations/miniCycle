@@ -7,7 +7,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -655,7 +655,6 @@ export class DragDropManager {
                             // Remove task from current position and insert at new position
                             const [movedTask] = tasks.splice(currentIndex, 1);
                             tasks.splice(newIndex, 0, movedTask);
-                            state.metadata.lastModified = Date.now();
                         }
                     }
                     // Set activeTaskId so rendering restores task options (state-driven UI)
@@ -683,7 +682,9 @@ export class DragDropManager {
                 // Use rAF to ensure the browser has completed layout before focusing
                 if (taskId) {
                     requestAnimationFrame(() => {
-                        const movedTask = document.querySelector(`[data-task-id="${taskId}"]`);
+                        // Escaped builder, not an inline template — an id with a
+                        // quote/bracket would throw DOMException here otherwise.
+                        const movedTask = document.querySelector(DATA_SELECTORS.elementByTaskId(taskId));
                         if (!movedTask) return;
 
                         // Ensure task options are visible on the moved task
@@ -769,7 +770,6 @@ export class DragDropManager {
                         // Preserve tasks not in DOM (e.g., completed tasks in dropdown)
                         const missingTasks = tasks.filter(t => !newTaskOrder.includes(t.id));
                         state.data.cycles[activeCycleId].tasks = [...reorderedTasks, ...missingTasks];
-                        state.metadata.lastModified = Date.now();
                     }
                 }
             }, true); // immediate save
@@ -927,7 +927,6 @@ export class DragDropManager {
             AppState.update(state => {
                 if (!state.ui) state.ui = {};
                 state.ui.moveArrowsVisible = newVisibility;
-                state.metadata.lastModified = Date.now();
             }, true); // immediate save
 
             // Update DOM to reflect new state

@@ -45,6 +45,7 @@ const di = createDIModule('TaskRenderer', {
     updateRecurringPanelButtonVisibility: optional(null),
     updateRecurringInfoLink: optional(null),
     updateSearchVisibility: optional(null),  // Task search visibility based on count
+    reapplyActiveFilter: optional(null),  // Restores an active filter/sort after replaceChildren
     AppMeta: optional(null),
     taskToAddTaskOptions: optional(null),  // From taskUtils - injected to avoid duplicate module loading
     revealTaskButtons: optional(null)  // For restoring active task options after render
@@ -283,6 +284,15 @@ export class TaskRenderer {
 
         // Update task search visibility based on count
         this.deps.updateSearchVisibility?.(tasksArray.length);
+
+        // Restore an active search filter/sort. It lives ONLY in the DOM —
+        // inline `display: none` per task, plus node order for sorting — and
+        // the replaceChildren above just discarded both, leaving every task
+        // visible while the search box still shows the user's query.
+        // MUST be after the swap: renderTasks is async and its caller
+        // (uiOrchestrator._fullRender) does not await it, so anything that
+        // re-filters from there runs against the pre-render DOM.
+        this.deps.reapplyActiveFilter?.();
 
     }
 

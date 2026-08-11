@@ -50,7 +50,16 @@
        6. version-mismatch check + cache-clear interstitial
        7. modulepreload injection (map-aware, bare hashed URLs)
        8. pre-paint settings reader (single parse — dark mode / a11y / app bg)
-       9. ES3 feature gate  ← must be last, and alone in its block
+       9. ES3 feature gate  ← must be last of the PRE-GATE sequence, alone in its block
+      10. 60s load-timeout failsafe (INLINE on purpose — a load-failure net
+          must not depend on an external file loading; ES5)
+      11. boot-sw.js (EXTERNAL, defer) — SW registration, update management,
+          PWA install. Extracted Aug 2026: `defer` keeps it off the
+          parse/first-paint path, and external files ride script-src 'self'
+          so edits there no longer force CSP hash regeneration. Its tag must
+          stay AFTER version.js (reads window.APP_VERSION) and keep `defer`
+          (its DOMContentLoaded/load/beforeinstallprompt listeners rely on
+          running post-parse, pre-DCL).
 
      Why: version detection must finish before preloads populate the browser's
      module map with stale content; the settings reader must run before first
@@ -81,7 +90,7 @@
 <!-- ✅ Translucent status bar shows body background-color on iOS -->
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" id="status-bar-style-meta">
 
-<meta name="app-version" content="2.337">
+<meta name="app-version" content="2.409">
 
 <!-- Content Security Policy -->
 <!-- CSP is served via HTTP header in netlify.toml (production) -->
@@ -107,7 +116,7 @@
 <!-- Font Awesome removed - using inline SVG icons instead (see modules/utils/icons.js). fa-* classes are kept as the semantic source and swapped to inline <svg> at runtime by iconInit.js. -->
 <!-- Add cache busting version parameter -->
 <!-- Original CSS (for reference) -->
-<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=2.337"> -->
+<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=2.409"> -->
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
      § BOOT GAUNTLET (head) — ORDERED. DO NOT REARRANGE.
@@ -122,17 +131,17 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- Preload critical CSS files (they load in parallel, not blocking) -->
-<link rel="preload" href="styles/main.css?v=2.337" as="style">
-<link rel="preload" href="styles/base/variables.css?v=2.337" as="style">
-<link rel="preload" href="styles/base/reset.css?v=2.337" as="style">
-<link rel="preload" href="styles/layout/app-container.css?v=2.337" as="style">
-<link rel="preload" href="styles/layout/header.css?v=2.337" as="style">
-<link rel="preload" href="styles/components/task-list.css?v=2.337" as="style">
+<link rel="preload" href="styles/main.css?v=2.409" as="style">
+<link rel="preload" href="styles/base/variables.css?v=2.409" as="style">
+<link rel="preload" href="styles/base/reset.css?v=2.409" as="style">
+<link rel="preload" href="styles/layout/app-container.css?v=2.409" as="style">
+<link rel="preload" href="styles/layout/header.css?v=2.409" as="style">
+<link rel="preload" href="styles/components/task-list.css?v=2.409" as="style">
 
 <!-- Async CSS loading - doesn't block render, app starts with inline critical CSS -->
-<link rel="stylesheet" href="styles/main.css?v=2.337" media="print" id="async-main-css">
+<link rel="stylesheet" href="styles/main.css?v=2.409" media="print" id="async-main-css">
 <script src="ext-boot/01.js"></script>
-<noscript><link rel="stylesheet" href="styles/main.css?v=2.337"></noscript>
+<noscript><link rel="stylesheet" href="styles/main.css?v=2.409"></noscript>
 <!-- [chrome-ext build] removed PWA manifest link -->
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -143,7 +152,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- version.js MUST load synchronously BEFORE modulepreloads to set globalThis.APP_VERSION -->
-<script src="./version.js?v=2.337"></script>
+<script src="./version.js?v=2.409"></script>
 
 <!-- Build version = the version baked into THIS HTML document (the meta tag
      above). It is the honest "what am I actually running" signal. By contrast,
@@ -199,10 +208,33 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 <script src="ext-boot/05.js"></script>
 
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     PRE-PAINT FIRST-RUN READER (ES5 — above the feature gate)
+
+     Decides BEFORE first paint whether the first-run choice screen is shown,
+     and records it as `mc-first-run` on <html> so critical.css can lay the
+     screen out in the very first frame.
+
+     Why it lives here and not in the body controller: the controller ran after
+     #app-loader had already painted, so flipping the screen from hidden to
+     visible reflowed the page — Lighthouse attributed 0.204 of a 0.238 CLS to
+     #first-run-choice, the app's single largest layout shift (Aug 2026). A
+     decision made pre-paint can't shift anything: the screen is either in the
+     first frame or never rendered.
+
+     The pending-restore hand-off moved up with it, and MUST stay ahead of the
+     decision: it writes miniCycleData from sessionStorage, and reading
+     localStorage before that would judge a restoring user by their pre-restore
+     (empty) data and wrongly show them the first-run screen. The body
+     controller keeps all behaviour (choice handlers, use-case rotation,
+     data-awaiting-choice) and now only runs when this class is present.
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<script src="ext-boot/06.js"></script>
+
 <!-- NOTE: version.js and cache clearing script moved BEFORE modulepreload hints (line ~71) -->
 <!-- This ensures version check runs before browser starts prefetching modules -->
 
-<script src="ext-boot/06.js"></script>
+<script src="ext-boot/07.js"></script>
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
      ⛔ END OF THE ES5-ONLY REGION. Everything BELOW this line may use modern
@@ -216,7 +248,8 @@
      to the 16-second late fallback and were logged as 'no-boot' rather than
      'feature-gate'. Keep the gate in its own block. (Fixed Jul 2026.)
      ═══════════════════════════════════════════════════════════════════════════ -->
-<script src="ext-boot/07.js"></script>
+<script src="ext-boot/08.js"></script>
+    <script src="boot-sw.js?v=2.409" defer></script>
 
 
 
@@ -249,7 +282,10 @@
     </div>
     <!-- First-run choice screen (revealed by inline script below when no data exists).
          Strings are baked like the splash text — getLabel isn't available pre-boot. -->
-    <div id="first-run-choice" class="first-run-choice" hidden>
+    <!-- No `hidden` attribute: visibility is decided PRE-PAINT via the
+         `mc-first-run` class on <html> (see the head reader). Adding `hidden`
+         back would reintroduce the post-paint reveal and its layout shift. -->
+    <div id="first-run-choice" class="first-run-choice">
       <div class="first-run-brand">
         <div class="first-run-wordmark">miniCycle</div>
         <div class="first-run-descriptor">Routine Checklist Manager</div>
@@ -280,13 +316,14 @@
     </div>
     <!-- Low-key live boot status (bottom-right); mirrored from updateLoaderProgress(). -->
     <div id="first-run-status" class="first-run-status" aria-hidden="true"></div>
-    <div id="first-run-bottom-bar" class="first-run-bottom-bar" hidden>
+    <!-- Pre-paint visibility, same as #first-run-choice above. -->
+    <div id="first-run-bottom-bar" class="first-run-bottom-bar">
       <div class="first-run-bottom-fill"></div>
     </div>
   </div>
 
   <!-- Loading tips rotation -->
-  <script src="ext-boot/08.js"></script>
+  <script src="ext-boot/09.js"></script>
 
   <!-- First-run choice screen controller (ES5-safe, like the other inline scripts).
        Shows the three-choice screen for brand-new users (no miniCycleData) while
@@ -294,7 +331,7 @@
        while data-awaiting-choice='true' and resumes on the 'firstrun:choice' event.
        If boot fails, orchestrator's showBootError() replaces the loader's content,
        which removes this screen — error UI takes precedence by construction. -->
-  <script src="ext-boot/09.js"></script>
+  <script src="ext-boot/10.js"></script>
 
   <!-- Loading Overlay for Operations -->
   <div id="loading-overlay" class="loading-overlay" role="status" aria-label="Operation in progress">
@@ -683,7 +720,11 @@
                     </div>
                     <div id="every-row">
                         <label for="frequencyValue">Every:</label>
-                        <input type="number" id="frequencyValue" name="frequencyValue" min="1" value="1" />
+                        <!-- max=365 is UX guidance only (the largest sensible "every N"
+                             for any unit); the real protection against long intervals is
+                             the setTimeout clamp in reminders.js scheduleNextReminder,
+                             which also covers values restored from saved state. -->
+                        <input type="number" id="frequencyValue" name="frequencyValue" min="1" max="365" value="1" />
                         <select id="frequencyUnit" aria-label="Frequency unit">
                             <option value="minutes">Minutes</option>
                             <option value="hours">Hours</option>
@@ -1148,6 +1189,14 @@
                  runtime by focusMode.js. -->
             <div class="empty-state-hint">Press the <strong>+</strong> button to show the task bar to add a task or create a new routine</div>
             <div class="empty-state-hint-visible">Type your first task in the bar above and press Add</div>
+            <!-- Completion variant: replaces the text + hint above when the routine
+                 HAS tasks and all of them are complete. With the completed-tasks
+                 dropdown on, finished tasks move out of #taskList, so the list is
+                 :empty and the onboarding copy above would tell someone who just
+                 finished their routine that they have no tasks. Filled at runtime
+                 by completedTasksManager.updateCount(); re-themed by themeManager. -->
+            <div class="empty-state-alldone-text">All tasks complete!</div>
+            <div class="empty-state-alldone-hint">Use the cycle button to start again</div>
         </div>
 
         <!-- Recurring Info Link - shown when recurring templates exist -->
@@ -1316,9 +1365,9 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- Boot File Split (Dec 2025): Load via entrypoint which orchestrates all boot files -->
- <script type="module" src="miniCycle-main.js?v=2.337"></script>
+ <script type="module" src="miniCycle-main.js?v=2.409"></script>
 
-<script src="ext-boot/10.js"></script>
+<script src="ext-boot/11.js"></script>
    <!-- [chrome-ext build] removed inline script: late lite-version fallback redirect -->
 
 

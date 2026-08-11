@@ -780,11 +780,30 @@ export class MiniCycleReminders {
             clearTimeout(this.state.reminderTimeoutId);
         }
 
-        // Schedule the next reminder
-
+        // Schedule the next reminder.
+        //
+        // setTimeout stores its delay as a signed 32-bit int, so anything above
+        // ~24.8 days overflows and fires IMMEDIATELY (Node warns outright:
+        // "does not fit into a 32-bit signed integer. Timeout duration was set
+        // to 1"). The frequency input offers Days with min="1" and no max, so
+        // "every 30 days" — the obvious monthly reminder — overflowed. And
+        // because the fired handler reschedules, each immediate fire armed
+        // another: a notification LOOP, unbounded whenever `indefinite` is set
+        // (the repeatCount short-circuit is the only thing that stops it
+        // otherwise). Verified Aug 2026: 25/30/60 days and 720 hours overflow;
+        // 7 days and 596 hours do not.
+        //
+        // Clamping here rather than at the interval math covers every entry
+        // path, including a nextReminderTime restored from previously-saved
+        // state. nextReminderTime remains the true target; we just re-arm until
+        // the clock actually reaches it.
         this.state.reminderTimeoutId = setTimeout(async () => {
+            if (Date.now() < nextReminderTime) {
+                this.scheduleNextReminder(); // not due yet — re-arm for the remainder
+                return;
+            }
             await this.sendReminderNotificationIfNeeded();
-        }, timeUntilNext);
+        }, Math.min(timeUntilNext, LIMITS.MAX_TIMEOUT_MS));
 
         // Native: mirror the upcoming occurrences as OS-scheduled notifications
         // so they deliver while the app is backgrounded/closed (fire-and-forget;
@@ -1003,7 +1022,6 @@ export class MiniCycleReminders {
                         if (state.customReminders) {
                             state.customReminders.dueDatesReminders = dueDatesReminders.checked;
                         }
-                        state.metadata.lastModified = Date.now();
                     }, true); // immediate save
                 } else {
                     console.error('❌ AppState not ready for dueDatesReminders toggle - setting not saved');

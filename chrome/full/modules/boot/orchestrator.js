@@ -55,6 +55,7 @@ const FALLBACK_BOOT_TIMEOUTS = Object.freeze({
   TOTAL: 60000,
   RETRY_DELAY: 2000,
   SW_SPINUP_GRACE: 2000,
+  SW_READY_WAIT: 8000,
   IDB_OPERATION: 3000,
   VERSION_GATE: 1500
 });
@@ -1126,7 +1127,7 @@ async function initApp() {
 }
 
 // Wait for service worker to be ready (prevents first-load import failures)
-async function waitForServiceWorker(timeoutMs = 3000) {
+async function waitForServiceWorker() {
   // Native (Capacitor) ships every asset bundled locally and registers NO service
   // worker — build-android-www.cjs strips the SW registration from index.html. The
   // Android WebView still exposes navigator.serviceWorker, so `.ready` never resolves
@@ -1137,9 +1138,11 @@ async function waitForServiceWorker(timeoutMs = 3000) {
 
   // iOS kills SW when PWA is backgrounded. It needs more time to restart.
   // ⚠️ navigator.onLine is unreliable on iOS (often returns true when offline),
-  // so always use the longer timeout to give the SW time to spin up.
+  // so always use the longer timeout to give the SW time to spin up. (This was
+  // once a parameter with a 3s default, but the 8s floor always overrode it —
+  // the signature promised a knob that didn't turn, so it's a constant now.)
   const isOffline = !navigator.onLine;
-  const effectiveTimeout = Math.max(timeoutMs, 8000);
+  const effectiveTimeout = (BOOT_TIMEOUTS || FALLBACK_BOOT_TIMEOUTS).SW_READY_WAIT;
 
   try {
     // navigator.serviceWorker.ready can hang on iOS offline — add a timeout
@@ -1186,7 +1189,7 @@ async function startOrchestrator() {
     }
 
     // Show initial progress immediately
-    updateLoaderProgress(getLabel('boot.connecting'), 2);
+    updateLoaderProgress(getLabel('boot.gettingReady'), 2);
 
     // Wait for SW to be ready before importing modules
     await waitForServiceWorker();

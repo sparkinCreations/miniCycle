@@ -30,6 +30,27 @@
   --color-error-bg: rgba(220, 53, 69, 0.25);
   --color-error-bg-dark: rgba(220, 53, 69, 0.35);
   --color-info: #17a2b8;
+
+  /* Notification surface colors — darkened variants of the status palette,
+     chosen so WHITE body text clears WCAG AA (4.5:1). The base --color-*
+     values above are tuned for use as accents/borders on light surfaces and
+     fail badly behind white text (success #28a745 = 2.9:1). Use these only
+     where white text sits directly on the fill. Mirrored as literals in
+     base/critical.css (pre-paint sheet, no var() by design) — keep in sync.
+     Measured against #fff: */
+  --color-notify-error:   #c0392b;    /* 5.44:1 */
+  --color-notify-success: #1e8449;    /* 4.72:1 */
+  --color-notify-info:    #2471a3;    /* 5.30:1 */
+  --color-notify-warning: #f39c12;    /* black text: 9.58:1 */
+
+  /* Theme-overridable aliases. Consumers use these, NOT --theme-info /
+     --theme-success: those stay bright because they're also used as borders,
+     icon fills and text-on-light accents, where the darker fill would look
+     wrong. A theme that overrides a --theme-notify-* owns its own contrast. */
+  --theme-notify-error:   var(--color-notify-error);
+  --theme-notify-success: var(--color-notify-success);
+  --theme-notify-info:    var(--color-notify-info);
+
   /* App-specific action colors */
   --color-complete-btn: #08c352;
   --color-complete-btn-hover: #0ad65a;
@@ -111,6 +132,13 @@
   --color-navy-dark: #0c2091;         /* darker navy border/hover */
   /* Monospace / code viewer background */
   --color-code-bg: #282828;
+  /* Charcoal surface for the name-entry prompt family and select-option hover.
+     A DELIBERATE dark surface (see REVIEW_PATTERNS § Deliberate designs that
+     read as bugs) — it is not a light-mode oversight. Tokenised because the
+     same literal rgb(50,50,50) was hardcoded in two components and had no
+     name to connect them. Do not fold into --color-gray-800 (#262626): that
+     is a different, darker shade. */
+  --color-charcoal: #323232;
 
   /* ═══════════════════════════════════════════════════════════════════════════
      THEME VARIABLES - Backgrounds

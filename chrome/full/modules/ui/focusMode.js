@@ -113,7 +113,7 @@ export class FocusMode {
         // Restore persisted focus mode state
         const state = this.deps.AppState?.get?.();
         if (state?.settings?.focusModeActive) {
-            this.activate(true);
+            this.activate(true, true); // silent + restoring
         }
     }
 
@@ -803,7 +803,18 @@ export class FocusMode {
      * Reparents button to document.body so position:fixed works
      * (escapes #task-view's transform containing block).
      */
-    activate(silent = false) {
+    /**
+     * @param {boolean} [silent=false] - Suppress the "focus mode on" notification
+     * @param {boolean} [restoring=false] - True only for the boot-time restore of
+     *        persisted focusModeActive. Carried on the FOCUS_MODE_ACTIVATED event
+     *        so listeners can tell "the app is coming back up in focus mode" from
+     *        "the user just switched it on" — statsPanelGestures restores the
+     *        remembered panel on the former but must NOT yank the view on the
+     *        latter. Kept separate from `silent` deliberately: they happen to
+     *        coincide today, and inferring intent from an unrelated flag is how
+     *        that quietly stops being true.
+     */
+    activate(silent = false, restoring = false) {
         if (this._active) return;
         this._active = true;
 
@@ -865,7 +876,9 @@ export class FocusMode {
             this.deps.showNotification?.(getLabel('focusMode.activated'), 'info', UI_TIMEOUTS.NOTIFICATION_BRIEF);
         }
 
-        document.dispatchEvent(new CustomEvent(EVENTS.FOCUS_MODE_ACTIVATED));
+        document.dispatchEvent(new CustomEvent(EVENTS.FOCUS_MODE_ACTIVATED, {
+            detail: { restoring }
+        }));
     }
 
     /**

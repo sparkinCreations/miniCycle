@@ -39,10 +39,6 @@ const di = createDIModule('TaskEvents', {
     taskCore: optional(null),
     showNotification: optional(null),
     autoSave: optional(null),
-    enableUndoSystemOnFirstInteraction: optional(null),
-    checkMiniCycle: optional(null),
-    triggerLogoBackground: optional(null),
-    triggerLogoScan: optional(null),
     showTaskOptions: optional(null),
     hideTaskOptions: optional(null),
     TaskOptionsVisibilityController: optional(null),
@@ -52,7 +48,7 @@ const di = createDIModule('TaskEvents', {
 });
 
 // Late-binding deps via Proxy
-/** @type {{AppState: Object|null, taskCore: Object|null, showNotification: Function|null, autoSave: Function|null, enableUndoSystemOnFirstInteraction: Function|null, checkMiniCycle: Function|null, triggerLogoBackground: Function|null, showTaskOptions: Function|null, hideTaskOptions: Function|null, TaskOptionsVisibilityController: Object|null, setupDueDateButtonInteraction: Function|null, attachKeyboardTaskOptionToggle: Function|null, AppMeta: Object|null}} */
+/** @type {{AppState: Object|null, taskCore: Object|null, showNotification: Function|null, autoSave: Function|null, showTaskOptions: Function|null, hideTaskOptions: Function|null, TaskOptionsVisibilityController: Object|null, setupDueDateButtonInteraction: Function|null, attachKeyboardTaskOptionToggle: Function|null, AppMeta: Object|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];
@@ -82,10 +78,16 @@ export class TaskEvents {
             TaskOptionsVisibilityController: dependencies.TaskOptionsVisibilityController,
             showTaskOptions: dependencies.showTaskOptions,
             hideTaskOptions: dependencies.hideTaskOptions,
-            attachKeyboardTaskOptionToggle: dependencies.attachKeyboardTaskOptionToggle,
-            triggerLogoBackground: dependencies.triggerLogoBackground,
-            triggerLogoScan: dependencies.triggerLogoScan
+            attachKeyboardTaskOptionToggle: dependencies.attachKeyboardTaskOptionToggle
         };
+
+        // Constructor-injected AppState, kept OUT of _constructorDeps so the
+        // deps getter's spread can't clobber the module-level fallback with
+        // undefined. The facade passes AppState here; module-level DI
+        // (setTaskEventsDependencies) is only wired by tests — until v2.367
+        // this value was dropped, so this.deps.AppState was silently null in
+        // production and the activeTaskId state update never ran.
+        this._appState = dependencies.AppState || null;
 
         // Instance version - uses injected AppMeta (no hardcoded fallback)
         this.version = dependencies.AppMeta?.version || _deps.AppMeta?.version;
@@ -102,7 +104,7 @@ export class TaskEvents {
     get deps() {
         return {
             // Core modules (prefer constructor-injected, fallback to module-level _deps)
-            AppState: _deps.AppState,
+            AppState: this._appState || _deps.AppState,
             taskCore: this._constructorDeps.taskCore || _deps.taskCore,
 
             // UI update functions
@@ -110,10 +112,6 @@ export class TaskEvents {
             autoSave: _deps.autoSave || this.fallbackAutoSave,
 
             // Task interaction functions (prefer constructor-injected for three-dots menu)
-            enableUndoSystemOnFirstInteraction: _deps.enableUndoSystemOnFirstInteraction,
-            checkMiniCycle: _deps.checkMiniCycle,
-            triggerLogoBackground: this._constructorDeps.triggerLogoBackground || _deps.triggerLogoBackground,
-            triggerLogoScan: this._constructorDeps.triggerLogoScan || _deps.triggerLogoScan,
             showTaskOptions: this._constructorDeps.showTaskOptions || _deps.showTaskOptions,
             hideTaskOptions: this._constructorDeps.hideTaskOptions || _deps.hideTaskOptions,
             TaskOptionsVisibilityController: this._constructorDeps.TaskOptionsVisibilityController || _deps.TaskOptionsVisibilityController,
@@ -158,31 +156,17 @@ export class TaskEvents {
             if (event.target === dueDateInput) return;
             if (event.target.closest(DOM_SELECTORS.TASK_EDIT_INPUT)) return;
 
-            // ✅ Enable undo system on first user interaction (DI-pure)
-            if (typeof this.deps.enableUndoSystemOnFirstInteraction === 'function') {
-                this.deps.enableUndoSystemOnFirstInteraction();
-            }
-
-            // Toggle checkbox
+            // Toggle completion by delegating to the checkbox's own change
+            // handler (taskDOM.createTaskCheckbox) — it owns the FULL pipeline:
+            // undo enable, handleTaskCompletionChange, checkMiniCycle, logo
+            // animation, undo/redo buttons. Same contract as the Enter/Space
+            // togglers in taskDOM. Do NOT re-run pipeline steps after the
+            // dispatch: until v2.367 this handler fired a second logo flash on
+            // top of the change handler's animation (via a dead
+            // AppState.getState()/settings.isToDoMode read — the same
+            // nonexistent-API pattern fixed in taskDOM in v2.361).
             checkbox.checked = !checkbox.checked;
             checkbox.dispatchEvent(new Event("change"));
-
-            // Trigger mini cycle check (DI-pure)
-            if (typeof this.deps.checkMiniCycle === 'function') {
-                this.deps.checkMiniCycle({ lastToggledElement: taskItem });
-            }
-
-            // Note: autoSave removed - handleTaskCompletionChange already updates AppState
-
-            // Logo animation (DI-pure) - scan effect in to-do mode, background flash otherwise
-            if (checkbox.checked) {
-                const isToDoMode = this.deps.AppState?.getState?.()?.settings?.isToDoMode;
-                if (isToDoMode && typeof this.deps.triggerLogoScan === 'function') {
-                    this.deps.triggerLogoScan(500);
-                } else if (typeof this.deps.triggerLogoBackground === 'function') {
-                    this.deps.triggerLogoBackground('green', 300);
-                }
-            }
         };
     }
 

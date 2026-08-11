@@ -153,20 +153,45 @@ export class AchievementsManager {
     /**
      * Trigger reward for a milestone.
      * @private
-     * @returns {boolean} true if this showed its own notification (so the caller
-     *   should NOT also show the generic "Achievement Unlocked" one). Game rewards
-     *   return false here because their notification is fired separately by
-     *   cycleCompletion.handleMilestoneUnlocks, not by this method.
+     * @returns {boolean} true if the reward already has a user-visible
+     *   notification (so the caller should NOT also show the generic
+     *   "Achievement Unlocked" one).
      */
     _triggerReward(milestone, unlockedVia) {
         if (!milestone.reward) return false;
 
         switch (milestone.rewardType) {
-            case 'game':
+            case 'game': {
+                // ONE toast per game unlock (the actionable Open-Games one).
+                // unlockMiniGame() sets the single "task-order-game" feature
+                // flag; cycleCompletion.handleMilestoneUnlocks also unlocks +
+                // toasts it at the 100-cycle threshold — the same threshold
+                // this milestone fires at. Checking wasUnlocked BEFORE our
+                // unlock makes this order-independent: whichever path unlocks
+                // first shows the toast, the other stays silent (its gate sees
+                // the flag already set). Returning true suppresses the generic
+                // "Achievement Unlocked" so the user never gets two
+                // notifications for one unlock (same fix as the theme path).
+                const state = this.deps.AppState?.get?.();
+                const wasUnlocked = (state?.settings?.unlockedFeatures || []).includes('task-order-game');
                 if (this.deps.unlockMiniGame) {
                     this.deps.unlockMiniGame(milestone.reward);
                 }
-                return false;
+                if (!wasUnlocked) {
+                    this.deps.showNotification(
+                        `🎮 ${getLabel('notify.gameUnlocked')}`,
+                        'success',
+                        UI_TIMEOUTS.NOTIFICATION_EXTRA_LONG,
+                        {
+                            actionButton: {
+                                label: getLabel('action.openGamesModal'),
+                                onClick: () => this.deps.getElementById(DOM_IDS.OPEN_GAMES_PANEL)?.click()
+                            }
+                        }
+                    );
+                }
+                return true;
+            }
             case 'vocab-theme': {
                 const wasNew = this.deps.vocabThemeManager?.unlockThemeFromAchievement?.(milestone.reward);
                 if (wasNew) {
@@ -661,6 +686,7 @@ export class AchievementsManager {
         if (!isUnlocked) {
             progressHtml = `
                 <div class="badge-detail-progress">
+                    <p class="badge-detail-progress-header badge-detail-secondary">${getLabel('achievement.remainingToUnlock')}</p>
                     <div class="achievement-progress-bar">
                         <div class="achievement-progress-fill ${cyclesHigher ? 'achievement-progress-fill--cycles' : 'achievement-progress-fill--tasks'}" style="width: ${Math.max(cycleProgress, taskProgress)}%;"></div>
                         <div class="achievement-progress-fill ${cyclesHigher ? 'achievement-progress-fill--tasks' : 'achievement-progress-fill--cycles'}" style="width: ${Math.min(cycleProgress, taskProgress)}%;"></div>
@@ -701,8 +727,8 @@ export class AchievementsManager {
                     <div id="badge-coin" class="badge-coin ${isUnlocked ? '' : 'badge-coin--locked'}" data-milestone="${milestone}" ${rewardAttr ? `data-reward="${rewardAttr}"` : ''}>
                         <span class="badge-coin-emoji">${tierConfig.emoji}</span>
                     </div>
+                    ${dragHintHtml}
                 </div>
-                ${dragHintHtml}
 
                 <h3 class="badge-detail-name">${tierConfig.name}</h3>
                 <p class="badge-detail-threshold badge-detail-secondary">

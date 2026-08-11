@@ -54,11 +54,34 @@ function saveToUndoCache(cycleId, undoStack, redoStack) {
   try {
     const cacheData = {
       cycleId,
-      undoStack: undoStack || [],
-      redoStack: redoStack || [],
+      undoStack: (undoStack || []).slice(),
+      redoStack: (redoStack || []).slice(),
       timestamp: Date.now()
     };
-    localStorage.setItem(UNDO_CACHE_KEY, JSON.stringify(cacheData));
+    let serialized = JSON.stringify(cacheData);
+    // Byte cap alongside the UNDO_LIMIT count cap (drift-review C-08): large
+    // routines × 20 full-state snapshots could otherwise grow toward the ~5MB
+    // localStorage quota shared with main app state. Shed oldest undo entries
+    // (index 0) first, then redo entries, until under the cap.
+    // localStorage stores UTF-16, so actual bytes = string length × 2 — the
+    // same convention storageUtils uses to meter the quota (drift-review C-27;
+    // comparing raw length to LIMITS.UNDO_CACHE_MAX_BYTES silently doubled the budget).
+    while (serialized.length * 2 > LIMITS.UNDO_CACHE_MAX_BYTES &&
+           (cacheData.undoStack.length > 1 || cacheData.redoStack.length > 0)) {
+      if (cacheData.undoStack.length > 1) {
+        cacheData.undoStack.shift();
+      } else {
+        cacheData.redoStack.shift();
+      }
+      serialized = JSON.stringify(cacheData);
+    }
+    if (serialized.length * 2 > LIMITS.UNDO_CACHE_MAX_BYTES) {
+      // Even a single snapshot exceeds the cap — skip the write rather than
+      // risk evicting quota needed by the main state save.
+      console.warn('⚠️ Undo cache exceeds byte cap even after shedding — skipping cache write');
+      return;
+    }
+    localStorage.setItem(UNDO_CACHE_KEY, serialized);
   } catch (e) {
     // Graceful degradation - cache is optional
     console.warn('⚠️ Failed to save undo cache:', e.message);
@@ -105,37 +128,6 @@ function loadFromUndoCache(expectedCycleId) {
   }
 }
 
-/**
- * Get the size in bytes of the undo cache for the active routine
- * Reads directly from localStorage - synchronous and fast
- * @returns {number} Size in bytes, or 0 if no cache exists
- */
-export function getUndoCacheSizeBytes() {
-  try {
-    const cached = localStorage.getItem(UNDO_CACHE_KEY);
-    if (!cached) return 0;
-    // Return the actual string length (approximately bytes in UTF-8 for ASCII)
-    return cached.length;
-  } catch (e) {
-    console.warn('⚠️ Failed to get undo cache size:', e.message);
-    return 0;
-  }
-}
-
-/**
- * Get the cycle ID that the current undo cache belongs to
- * @returns {string|null} The cycle ID or null if no cache
- */
-export function getUndoCacheCycleId() {
-  try {
-    const cached = localStorage.getItem(UNDO_CACHE_KEY);
-    if (!cached) return null;
-    const data = JSON.parse(cached);
-    return data.cycleId || null;
-  } catch (e) {
-    return null;
-  }
-}
 
 /**
  * Validate a single snapshot belongs to the expected cycle
@@ -196,12 +188,34 @@ function sanitizeSnapshot(snapshot) {
 }
 
 /**
+ * Relabel snapshots for a renamed cycle. Snapshots embed the cycle identity
+ * twice — activeCycleId (the cycles-map key) and title (equal to the key in
+ * this app) — so a rename must rewrite BOTH in every snapshot of both stacks,
+ * or validateSnapshot discards the history and Undo restores the old title.
+ * @param {Array} snapshots - Snapshots to relabel
+ * @param {string} newCycleId - The new cycle id (= new title)
+ * @returns {Array} New array with relabeled snapshot copies
+ */
+function relabelSnapshotsForCycle(snapshots, newCycleId) {
+  return (snapshots || []).map(snap => {
+    if (!snap || typeof snap !== 'object') return snap;
+    const relabeled = { ...snap, activeCycleId: newCycleId, title: newCycleId };
+    // The cached signature embeds the OLD id/title (c/ti fields), so carrying
+    // it forward makes the first post-rename capture mismatch the stack top by
+    // construction and push a duplicate. Both consumers (capture dedup,
+    // snapshot comparator) lazily recompute when _sig is absent.
+    delete relabeled._sig;
+    return relabeled;
+  });
+}
+
+/**
  * Filter snapshots to only include those belonging to the specified cycle
  * @param {Array} snapshots - Array of snapshots to filter
  * @param {string} cycleId - The cycle ID to filter for
  * @returns {Array} Filtered array of valid snapshots
  */
-function filterValidSnapshots(snapshots, cycleId) {
+export function filterValidSnapshots(snapshots, cycleId) {
   if (!Array.isArray(snapshots)) return [];
   if (!cycleId) return [];
 
@@ -276,23 +290,19 @@ const di = createDIModule('UndoRedoManager', {
   refreshTaskViewLayout: optional(null)  // () => void — reconciles drag positions after undo/redo restores state.settings.taskViewLayout
 });
 
+// Module-level state: whether the AppState.update wrapper is installed (the
+// single snapshot source). Plain variable, NOT a DI dep — it used to live on
+// the _deps Proxy, which made the DI validator report it as an
+// accessed-but-resolvable-nowhere dependency (drift-review C-24).
+let _wrapperActive = false;
+
 // Late-binding deps via Proxy (standard: _deps with underscore prefix)
-// Note: wrapperActive is a mutable instance property, not a DI dep
-/** @type {{wrapperActive: boolean, appInit: Object|null, AppState: Object|null, refreshUIFromState: Function|null, AppGlobalState: Object|null, getElementById: Function|null, safeAddEventListener: Function|null, showNotification: Function|null, UIOrchestrator: Object|null}} */
-const _deps = new Proxy({ wrapperActive: false }, {
+/** @type {{appInit: Object|null, AppState: Object|null, refreshUIFromState: Function|null, AppGlobalState: Object|null, getElementById: Function|null, safeAddEventListener: Function|null, showNotification: Function|null, UIOrchestrator: Object|null}} */
+const _deps = new Proxy({}, {
   get(target, prop) {
-    // wrapperActive is a mutable instance property, not a DI dep
-    if (prop === 'wrapperActive') {
-      return target.wrapperActive;
-    }
     return di.resolve()[prop];
   },
-  set(target, prop, value) {
-    // Allow setting wrapperActive
-    if (prop === 'wrapperActive') {
-      target.wrapperActive = value;
-      return true;
-    }
+  set() {
     return false;
   }
 });
@@ -328,6 +338,7 @@ let _handleUndoRedoKeydown = null;
 // anonymous listener would accumulate across boot retries and let a torn-down
 // instance still write history on unload).
 let _beforeunloadHandler = null;
+let _visibilityFlushHandler = null;
 
 // ============ UI INITIALIZATION ============
 
@@ -448,10 +459,18 @@ export function wrapAppStateForUndo(appInit) {
       : null;
 
     // Not async - snapshot capture is synchronous, just pass through the Promise
-    AppState.update = (producer, immediate) => {
+    AppState.update = (producer, immediate, options) => {
       try {
+        // System-driven mutations (recurring watcher recreations, daily
+        // auto-uncheck) pass { system: true } so the no-snapshot intent
+        // travels WITH the call. The older mechanism — raising the shared
+        // AppGlobalState.isSystemMutation flag around an awaited update —
+        // could mis-tag a user update that interleaved during the await
+        // window (review F-005); captureStateSnapshot still honors the flag
+        // as a fallback, but the option is the primary mechanism.
+        const isSystemCall = options?.system === true;
         // Capture snapshot before update (if core ready and not during undo/redo)
-        if (appInit?.isCoreReady?.() && !globalState?.isPerformingUndoRedo && boundGet) {
+        if (!isSystemCall && appInit?.isCoreReady?.() && !globalState?.isPerformingUndoRedo && boundGet) {
           const prev = boundGet();
           if (prev) {
             captureStateSnapshot(prev);
@@ -466,7 +485,7 @@ export function wrapAppStateForUndo(appInit) {
 
     globalState.wrappedAppStateUpdate = true;
     globalState.useUpdateWrapper = true;  // wrapper becomes single snapshot source
-    _deps.wrapperActive = true;  // update internal flag
+    _wrapperActive = true;  // update internal flag
 
     return true;
   } catch (e) {
@@ -486,14 +505,14 @@ export function setupStateBasedUndoRedo() {
   }
 
   // Skip installing when wrapper is active
-  if (_deps.wrapperActive) {
+  if (_wrapperActive) {
     return;
   }
 
   try {
     _deps.AppState.subscribe('undo-system', (newState, oldState) => {
       // Runtime guard if wrapper activates later
-      if (_deps.wrapperActive) return;
+      if (_wrapperActive) return;
 
       // Skip during cycle switches
       if (_deps.AppGlobalState.isSwitchingCycles) return;
@@ -551,7 +570,7 @@ export function captureStateSnapshot(state) {
     return;
   }
 
-  // ✅ FIX #8: Don't capture snapshots during batch operations (reset, complete all)
+  // Don't capture snapshots during batch operations (reset, complete all)
   if (_deps.AppGlobalState.isResetting) {
     return;
   }
@@ -561,6 +580,10 @@ export function captureStateSnapshot(state) {
   // puts a system-created task at the top of the undo stack, so the user's next Undo
   // removes the recurring task (which then silently reappears on the next tick).
   // See docs/future-work/ARCHITECTURE REVIEW FINDINGS.md §1.2.
+  // NOTE: the primary mechanism is now the { system: true } option on
+  // AppState.update, checked in the wrapper before this function is even
+  // called; this ambient-flag check remains as a fallback for direct callers
+  // and tests (review F-005).
   if (_deps.AppGlobalState.isSystemMutation) {
     return;
   }
@@ -615,7 +638,10 @@ export function captureStateSnapshot(state) {
   }
 
   // Skip if last on stack is identical (use cached signature if available)
-  const last = _deps.AppGlobalState.activeUndoStack.at(-1);
+  // [length - 1], not .at(-1): Array.prototype.at is es2022 and the build floor
+  // is es2020 — .at() throws TypeError on Safari <= 15.3 (validate:builtins).
+  const stack = _deps.AppGlobalState.activeUndoStack;
+  const last = stack[stack.length - 1];
   if (last) {
     const lastSig = last._sig || buildSnapshotSignature(last);
     if (lastSig === sig) return;
@@ -657,7 +683,12 @@ export function buildSnapshotSignature(s) {
     c: s.activeCycleId,
     t: (s.tasks || []).map(t => ({
       id: t.id, txt: t.text, c: !!t.completed, p: !!t.highPriority, d: t.dueDate || null,
-      r: !!t.recurring, re: !!t.remindersEnabled, dwc: !!t.deleteWhenComplete, pc: t.priorityColor || null
+      r: !!t.recurring, re: !!t.remindersEnabled, dwc: !!t.deleteWhenComplete, pc: t.priorityColor || null,
+      // Settings OBJECTS, not just their booleans — an edit touching only
+      // these would otherwise dedup-skip its snapshot (same class of bug as
+      // the taskViewLayout omission below).
+      rs: t.recurringSettings ? JSON.stringify(t.recurringSettings) : null,
+      dws: t.deleteWhenCompleteSettings ? JSON.stringify(t.deleteWhenCompleteSettings) : null
     })),
     ti: s.title || '',
     ar: !!s.autoReset,
@@ -1564,7 +1595,7 @@ export async function onCycleCreated(cycleId) {
     _deps.AppGlobalState.activeRedoStack = [];
     updateUndoRedoButtons();
   } catch (e) {
-    // ✅ FIX #5: Error boundary for cycle creation
+    // Error boundary for cycle creation
     console.error('❌ Failed to initialize undo stack for new cycle:', e);
 
     // Still set up empty stacks in memory even if IndexedDB fails
@@ -1600,7 +1631,7 @@ export async function onCycleDeleted(cycleId) {
       updateUndoRedoButtons();
     }
   } catch (e) {
-    // ✅ FIX #5: Error boundary for cycle deletion
+    // Error boundary for cycle deletion
     console.error('❌ Failed to delete undo stack:', e);
 
     // Still clean up memory even if IndexedDB fails
@@ -1630,17 +1661,28 @@ export async function onCycleRenamed(oldCycleId, newCycleId) {
     // Migrate in IndexedDB
     await renameUndoStackInIndexedDB(oldCycleId, newCycleId);
 
-    // Update in-memory tracking
+    // Update in-memory tracking AND relabel the live stacks — they hold the
+    // same stale-id snapshots the IDB migration rewrites; without this, a
+    // rename → Undo in the same session restores the old title into the new
+    // key, and the next persist re-saves stale ids over the migrated record.
     if (_deps.AppGlobalState.activeCycleIdForUndo === oldCycleId) {
       _deps.AppGlobalState.activeCycleIdForUndo = newCycleId;
+      _deps.AppGlobalState.activeUndoStack =
+        relabelSnapshotsForCycle(_deps.AppGlobalState.activeUndoStack, newCycleId);
+      _deps.AppGlobalState.activeRedoStack =
+        relabelSnapshotsForCycle(_deps.AppGlobalState.activeRedoStack, newCycleId);
     }
   } catch (e) {
-    // ✅ FIX #5: Error boundary for cycle rename
+    // Error boundary for cycle rename
     console.error('❌ Failed to rename undo stack:', e);
 
-    // Still update in-memory tracking even if IndexedDB fails
+    // Still update in-memory tracking (and relabel) even if IndexedDB fails
     if (_deps.AppGlobalState.activeCycleIdForUndo === oldCycleId) {
       _deps.AppGlobalState.activeCycleIdForUndo = newCycleId;
+      _deps.AppGlobalState.activeUndoStack =
+        relabelSnapshotsForCycle(_deps.AppGlobalState.activeUndoStack, newCycleId);
+      _deps.AppGlobalState.activeRedoStack =
+        relabelSnapshotsForCycle(_deps.AppGlobalState.activeRedoStack, newCycleId);
     }
 
     // Don't notify user - this is an internal operation
@@ -1688,8 +1730,11 @@ export async function initUndoSystemForApp() {
     dbReady.then(async () => {
       if (!cached) {
         const loaded = await loadUndoStackFromIndexedDB(activeCycleId);
-        _deps.AppGlobalState.activeUndoStack = loaded.undoStack || [];
-        _deps.AppGlobalState.activeRedoStack = loaded.redoStack || [];
+        // Filter like every other load path — this was the one unfiltered
+        // entry point, where stale-id snapshots (e.g. from a pre-fix rename)
+        // survived into the live stacks and could restore a stale title.
+        _deps.AppGlobalState.activeUndoStack = filterValidSnapshots(loaded.undoStack || [], activeCycleId);
+        _deps.AppGlobalState.activeRedoStack = filterValidSnapshots(loaded.redoStack || [], activeCycleId);
         updateUndoRedoButtons();
 
         // Update cache for next boot
@@ -1704,8 +1749,18 @@ export async function initUndoSystemForApp() {
 
     // 5. Set up page unload handler to force immediate save. Store the reference
     //    and drop any prior one first so re-init (boot retry) can't stack handlers.
+    //    beforeunload alone is unreliable on iOS — frequently NOT fired when the
+    //    app is backgrounded or swiped away — so also flush on pagehide and on
+    //    visibilitychange→hidden, the events that DO fire there. Same trio
+    //    appState uses for its debounced-save flush. The handler is idempotent
+    //    (timers cleared, cache overwritten with same data), so firing on both
+    //    hidden and unload is safe.
     if (_beforeunloadHandler) {
       window.removeEventListener('beforeunload', _beforeunloadHandler);
+      window.removeEventListener('pagehide', _beforeunloadHandler);
+    }
+    if (_visibilityFlushHandler) {
+      document.removeEventListener('visibilitychange', _visibilityFlushHandler);
     }
     _beforeunloadHandler = () => {
       // Flush EVERY pending debounced write synchronously (not just the active
@@ -1756,10 +1811,15 @@ export async function initUndoSystemForApp() {
         }
       }
     };
+    _visibilityFlushHandler = () => {
+      if (document.visibilityState === 'hidden') _beforeunloadHandler?.();
+    };
     window.addEventListener('beforeunload', _beforeunloadHandler);
+    window.addEventListener('pagehide', _beforeunloadHandler);
+    document.addEventListener('visibilitychange', _visibilityFlushHandler);
 
   } catch (e) {
-    // ✅ FIX #5: Error boundary for undo system initialization
+    // Error boundary for undo system initialization
     console.error('❌ Undo system initialization failed:', e);
 
     // Initialize with empty stacks to ensure app still works
@@ -1982,7 +2042,8 @@ export async function deleteUndoStackFromIndexedDB(cycleId) {
     const objectStore = transaction.objectStore("undoStacks");
     const request = objectStore.delete(cycleId);
 
-    // ✅ FIX #11: Properly await IndexedDB operation
+    // Wrap the callback-based request so callers actually await completion
+    // and failures reach the error boundary
     await new Promise((resolve, reject) => {
       request.onsuccess = () => {
         resolve();
@@ -2013,15 +2074,23 @@ export async function renameUndoStackInIndexedDB(oldCycleId, newCycleId) {
     const transaction = undoDB.transaction(["undoStacks"], "readwrite");
     const objectStore = transaction.objectStore("undoStacks");
 
+    // Relabel every snapshot, not just the storage key — snapshots embed
+    // activeCycleId and title (key=title in this app). A verbatim copy left
+    // each one carrying the OLD id, so validateSnapshot's strict-equality
+    // check rejected the entire migrated history on the next filtered load
+    // (silent total wipe), and any snapshot that DID survive an unfiltered
+    // path would restore the old title into the renamed cycle on Undo,
+    // breaking the key=title invariant.
     const newData = {
       cycleId: newCycleId,
-      undoStack: oldData.undoStack,
-      redoStack: oldData.redoStack,
+      undoStack: relabelSnapshotsForCycle(oldData.undoStack, newCycleId),
+      redoStack: relabelSnapshotsForCycle(oldData.redoStack, newCycleId),
       lastUpdated: Date.now(),
       version: APP_VERSION
     };
 
-    // ✅ FIX #11: Properly await IndexedDB operations
+    // Wrap the callback-based request so callers actually await completion
+    // and failures reach the error boundary
     const putRequest = objectStore.put(newData);
     await new Promise((resolve, reject) => {
       putRequest.onsuccess = () => resolve();
@@ -2051,7 +2120,8 @@ export async function clearAllUndoHistoryFromIndexedDB() {
     const objectStore = transaction.objectStore("undoStacks");
     const request = objectStore.clear();
 
-    // ✅ FIX #11: Properly await IndexedDB operation
+    // Wrap the callback-based request so callers actually await completion
+    // and failures reach the error boundary
     await new Promise((resolve, reject) => {
       request.onsuccess = () => {
         resolve();
@@ -2072,7 +2142,7 @@ export async function clearAllUndoHistoryFromIndexedDB() {
  * Called by the Settings "Clear Undo History" button.
  *
  * Sets isPerformingUndoRedo guard so any AppState.update() calls that follow
- * (e.g., zeroing undoSizeBytes) don't immediately recapture a new snapshot
+ * don't immediately recapture a new snapshot
  * and repopulate the cache we just cleared.
  */
 export async function clearAllUndoHistory() {
@@ -2098,7 +2168,7 @@ export async function clearAllUndoHistory() {
   updateUndoRedoButtons();
 
   // 5. Release guard after a macrotask so caller's synchronous AppState.update()
-  //    (e.g., zeroing undoSizeBytes) doesn't recapture a snapshot
+  //    doesn't recapture a snapshot
   if (_deps.AppGlobalState) {
     setTimeout(() => {
       _deps.AppGlobalState.isPerformingUndoRedo = false;
@@ -2115,11 +2185,16 @@ function destroyUndoRedoManager() {
     document.removeEventListener('keydown', _handleUndoRedoKeydown);
     _handleUndoRedoKeydown = null;
   }
-  // Remove the unload handler so retries don't stack listeners (and a torn-down
+  // Remove the unload handlers so retries don't stack listeners (and a torn-down
   // instance can't still write history on unload).
   if (_beforeunloadHandler) {
     window.removeEventListener('beforeunload', _beforeunloadHandler);
+    window.removeEventListener('pagehide', _beforeunloadHandler);
     _beforeunloadHandler = null;
+  }
+  if (_visibilityFlushHandler) {
+    document.removeEventListener('visibilitychange', _visibilityFlushHandler);
+    _visibilityFlushHandler = null;
   }
   // Cancel any pending debounced writes so they don't fire after teardown.
   dbWriteTimers.forEach(entry => clearTimeout(entry.timer));

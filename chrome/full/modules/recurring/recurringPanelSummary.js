@@ -12,6 +12,7 @@
  */
 
 import { getLabel } from '../labels/labelResolver.js';
+import { parseDateAsLocal } from './recurringDateUtils.js';
 
 // ============================================================================
 // SUMMARY TEXT GENERATION
@@ -34,15 +35,9 @@ export function buildRecurringSummaryFromSettings(settings = {}) {
     const indefinitely = settings.indefinitely ?? true;
     const count = settings.count;
 
-    // Helper function for parsing dates
-    const parseDateAsLocal = (dateStr) => {
-        try {
-            const [year, month, day] = dateStr.split("-").map(Number);
-            return new Date(year, month - 1, day);
-        } catch (error) {
-            return null;
-        }
-    };
+    // Uses the shared parseDateAsLocal from recurringDateUtils (imported above).
+    // A near-identical private copy lived here until Aug 2026 — the same parser
+    // in two places is exactly the drift REVIEW_PATTERNS §4 warns about.
 
     // === SPECIFIC DATES OVERRIDE ===
     if (settings.specificDates?.enabled && settings.specificDates.dates?.length) {

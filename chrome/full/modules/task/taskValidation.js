@@ -6,7 +6,7 @@
  *
  * Features:
  * - Input sanitization via injected sanitizeInput function
- * - Character limit enforcement (100 chars)
+ * - Character limit enforcement (LIMITS.TASK_CHARACTER_INPUT)
  * - Empty/invalid input handling
  * - User notification for validation failures
  *
@@ -18,6 +18,7 @@
 
 import { createDIModule, optional } from '../core/diBase.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { LIMITS } from '../core/constants.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -66,8 +67,12 @@ export class TaskValidator {
             showNotification: resolvedDeps.showNotification || (() => {})
         };
 
-        // Constants
-        this.TASK_LIMIT = 100; // Character limit for tasks
+        // Character limit for text typed into the UI. Named TASK_CHAR_LIMIT, not
+        // TASK_LIMIT: coreBoot has its own TASK_LIMIT meaning tasks-PER-CYCLE
+        // (LIMITS.TASKS_PER_CYCLE, 150), and one name for two unrelated limits
+        // is how the 100-vs-500 divergence went unnoticed. See
+        // LIMITS.TASK_CHARACTER_INPUT for why this is below the storage ceiling.
+        this.TASK_CHAR_LIMIT = LIMITS.TASK_CHARACTER_INPUT;
 
         // Instance version - uses injected AppMeta (no hardcoded fallback)
         this.version = resolvedDeps.AppMeta?.version;
@@ -101,8 +106,8 @@ export class TaskValidator {
         }
 
         // Character limit check
-        if (taskTextTrimmed.length > this.TASK_LIMIT) {
-            this.deps.showNotification?.(getLabel('notify.taskCharLimit', { vars: { limit: this.TASK_LIMIT } }), 'warning');
+        if (taskTextTrimmed.length > this.TASK_CHAR_LIMIT) {
+            this.deps.showNotification?.(getLabel('notify.taskCharLimit', { vars: { limit: this.TASK_CHAR_LIMIT } }), 'warning');
             return null;
         }
 
@@ -149,7 +154,16 @@ function validateAndSanitizeTaskInput(taskText) {
         // rare uninitialized-validator path. See the input-normalizer audit
         // (SECURITY.md v2.336).
         if (typeof taskText !== 'string' || !taskText.trim()) return null;
-        return taskText.trim();
+        // Apply the guarantees that DON'T need an injected dependency. This
+        // fallback previously returned the bare trim, dropping both
+        // sanitizeInput and the character limit — so during the uninitialized
+        // window, unbounded text containing control characters could enter
+        // state. This is the only route by which unvalidated task text reaches
+        // storage, so clamp rather than pass through. Text is preserved (not
+        // rejected) because dropping user input silently is the worse failure.
+        const stripped = taskText.replace(/[\u0000-\u001F\u007F]/g, '').trim();
+        if (!stripped) return null;
+        return stripped.slice(0, LIMITS.TASK_CHARACTER_INPUT);
     }
     return taskValidator.validateAndSanitizeTaskInput(taskText);
 }

@@ -16,6 +16,13 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+// Date-only strings ("YYYY-MM-DD", which is exactly what <input type="date">.value
+// yields) parse as UTC midnight via new Date(). In any negative UTC offset that
+// lands on the PREVIOUS local day, so due dates compared or displayed with
+// new Date() were a day early across the Americas. recurringDateUtils already
+// owned the correct local-midnight parser and the recurring subsystem already
+// used it; the due-date paths simply never adopted it. Pure module, no imports.
+import { parseDateAsLocal } from '../recurring/recurringDateUtils.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -210,10 +217,12 @@ export class MiniCycleDueDates {
                 return;
             }
 
-            const dueDate = new Date(dueDateValue);
+            // parseDateAsLocal already returns LOCAL midnight, so no setHours
+            // on dueDate is needed (or correct); today still needs flooring.
+            const dueDate = parseDateAsLocal(dueDateValue);
+            if (!dueDate) return; // unparsable — leave overdue state untouched
             const today = new Date();
             today.setHours(0, 0, 0, 0);
-            dueDate.setHours(0, 0, 0, 0);
 
             const displayName = taskText || getLabel('notify.dueDateUnnamed');
 
@@ -467,8 +476,10 @@ export class MiniCycleDueDates {
         if (dueDateValue) {
             const today = new Date();
             today.setHours(0, 0, 0, 0);
-            const selectedDate = new Date(dueDateValue);
-            selectedDate.setHours(0, 0, 0, 0);
+            // Local-midnight parse — see the import note; new Date() here fired
+            // the due-soon reminder a day early in negative UTC offsets.
+            const selectedDate = parseDateAsLocal(dueDateValue);
+            if (!selectedDate) return;
 
             // Only show "due soon" if the date is within the next 3 days
             const threeDaysMs = 3 * 24 * 60 * 60 * 1000;
@@ -567,7 +578,6 @@ export class MiniCycleDueDates {
             if (s.customReminders) {
                 s.customReminders.dueDatesReminders = true;
             }
-            s.metadata.lastModified = Date.now();
         }, true);
 
         // Sync the checkbox UI if the reminders modal is open

@@ -6,6 +6,7 @@
  * This module provides getLabel() for resolving user-facing strings from the
  * centralized label registry. It supports:
  * - Noun pluralization ({ one, other } objects)
+ * - Device-variant wording ({ touch, pointer } objects — "tap" vs "click")
  * - Variable interpolation ({varName} syntax)
  * - Future: contextual lens overrides
  *
@@ -29,8 +30,35 @@ const di = createDIModule('LabelResolver', {
     // Future: function that returns the active lens for the current routine
     getActiveLens: optional(null),
     // Future: function that returns a per-routine lens override
-    getRoutineLens: optional(null)
+    getRoutineLens: optional(null),
+    // Override for device-variant resolution ({ touch, pointer } labels).
+    // Injected by tests to force a mode; when absent, the resolver probes the
+    // CSS interaction media query itself (see isTouchPrimary).
+    isTouchDevice: optional(null)
 });
+
+/**
+ * Is the PRIMARY input touch? Drives { touch, pointer } label variants
+ * ("tap" vs "click" wording).
+ *
+ * DI override (isTouchDevice) wins when injected. Fallback is the standard
+ * CSS interaction media query — `(pointer: coarse)` means the primary pointer
+ * is a finger — then the legacy ontouchstart probe. Evaluated per call: it's
+ * cheap, and it tracks DevTools device-mode toggles during development.
+ * @returns {boolean}
+ */
+function isTouchPrimary() {
+    try {
+        const deps = di.resolve();
+        if (typeof deps.isTouchDevice === 'function') return !!deps.isTouchDevice();
+    } catch {
+        // torn-down DI container — fall through to the media query
+    }
+    if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
+        return window.matchMedia('(pointer: coarse)').matches;
+    }
+    return typeof window !== 'undefined' && 'ontouchstart' in window;
+}
 
 /**
  * Set dependencies for the label resolver (e.g., active lens getters)
@@ -131,6 +159,16 @@ export function getLabel(key, options = {}) {
         return key;
     }
 
+    // Device-variant labels: { touch: '…', pointer: '…' } — wording that names
+    // the input verb ("tap" vs "click", "swipe" vs "click the arrow") adapts to
+    // the primary input. Unwrapped BEFORE pluralization/interpolation so a
+    // variant may itself be a plural object or an interpolation string. Themed
+    // overrides may use the same shape (they resolve above, then unwrap here).
+    if (typeof label === 'object' && label !== null && ('touch' in label || 'pointer' in label)) {
+        const picked = isTouchPrimary() ? label.touch : label.pointer;
+        label = picked ?? label.touch ?? label.pointer;
+    }
+
     // Handle noun pluralization: { one: 'task', other: 'tasks' }
     if (typeof label === 'object' && label !== null && ('one' in label || 'other' in label)) {
         const form = count === 1 ? 'one' : 'other';
@@ -143,7 +181,13 @@ export function getLabel(key, options = {}) {
         return interpolate(label, { count, ...vars });
     }
 
-    // Fallback for unexpected types
+    // Fallback for unexpected types. Objects deliberately return the KEY, not
+    // String(label) — an unrecognized object shape would otherwise render as
+    // "[object Object]" in the UI, which is strictly worse than the key.
+    if (typeof label === 'object' && label !== null) {
+        console.warn(`LabelResolver: Unrecognized object shape for key "${key}"`);
+        return key;
+    }
     return String(label);
 }
 
@@ -254,6 +298,22 @@ export function getLensSensitiveKeys() {
 /**
  * Interpolate variables into a template string
  * Supports: {varName} simple substitution
+ *
+ * SECURITY — this does NOT HTML-escape vars (String() only), and that is
+ * deliberate: some callers pass intentional HTML (e.g. a '<strong>'-wrapped
+ * value) and escaping here would double-encode it into visible tags. The
+ * escaping responsibility therefore sits at the SINK: notification/modal
+ * wrappers escape by default (only { trusted: true } / trustedHTML skips it),
+ * and the few raw innerHTML sinks that interpolate a getLabel result with
+ * user-controlled vars pre-escape those vars themselves.
+ *
+ * A full audit (Aug 2026, notifications-review) cross-checked every
+ * `getLabel(..., { vars })` whose output reaches innerHTML across all 27
+ * modules that combine the two: the only live stored-XSS was the recurring
+ * frequency (fixed at both the normalizer and the sink); every other sink is
+ * textContent/setAttribute, an app-constant var, or pre-escaped. The class is
+ * closed. If you add a NEW getLabel-vars → innerHTML sink with user data,
+ * escape the var at that sink — do not add escaping here.
  *
  * @param {string} template - Template string with {varName} placeholders
  * @param {Object} vars - Variable values

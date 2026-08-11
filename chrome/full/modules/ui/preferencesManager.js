@@ -28,6 +28,7 @@ import { updateThemeColor } from '../features/themeManager.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { applyHelpWindowVisibility, applyQuickActionsVisibility, loadPanelVisibility, resetPanelVisibility } from './panelVisibilityHelpers.js';
 import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
+import { normalizeHex } from '../utils/styleValidators.js';
 import { isClickOnNotification } from './modalUtils.js';
 
 // ============================================================================
@@ -86,9 +87,16 @@ const TRANSLUCENT_BG_ALPHA = {
  * @returns {string} rgba string
  */
 function hexToRgba(hex, alpha) {
-    const r = parseInt(hex.slice(1, 3), 16);
-    const g = parseInt(hex.slice(3, 5), 16);
-    const b = parseInt(hex.slice(5, 7), 16);
+    // Normalize FIRST: the fixed slice offsets below assume 6 digits, so a
+    // shorthand like '#f00' read `''` for blue and produced
+    // `rgba(240, 0, NaN, 0.8)` — an invalid declaration the browser silently
+    // drops, leaving the previous value in place rather than the theme default.
+    // Returns null so callers can take their own fallback branch.
+    const safe = normalizeHex(hex);
+    if (!safe) return null;
+    const r = parseInt(safe.slice(1, 3), 16);
+    const g = parseInt(safe.slice(3, 5), 16);
+    const b = parseInt(safe.slice(5, 7), 16);
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
@@ -99,10 +107,16 @@ function hexToRgba(hex, alpha) {
  * @returns {string} - Data URL for the SVG pattern
  */
 function generatePatternSvg(hexColor, opacity = DEFAULT_PATTERN_OPACITY) {
-    // Convert hex to rgba
-    const r = parseInt(hexColor.slice(1, 3), 16);
-    const g = parseInt(hexColor.slice(3, 5), 16);
-    const b = parseInt(hexColor.slice(5, 7), 16);
+    // Fall back to the default rather than emitting NaN. This sink is WORSE
+    // than hexToRgba's when unguarded: the result is a `url("data:image/svg+xml,…")`,
+    // which is a perfectly valid CSS value, so setProperty ACCEPTS it and the
+    // pattern silently renders with no stroke — nothing is rejected and no
+    // fallback branch runs. (Not an injection sink: the SVG is
+    // encodeURIComponent'd and the colour sits inside a quoted attribute.)
+    const safe = normalizeHex(hexColor) || DEFAULT_COLORS.patternColor;
+    const r = parseInt(safe.slice(1, 3), 16);
+    const g = parseInt(safe.slice(3, 5), 16);
+    const b = parseInt(safe.slice(5, 7), 16);
     const rgbaColor = `rgba(${r},${g},${b},${opacity})`;
 
     const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'><g fill='none' stroke='${rgbaColor}' stroke-width='1.2' stroke-linecap='round' stroke-linejoin='round'><g transform='rotate(-12 20 28)'><path d='M15 5 L15 28 L18 32 L21 28 L21 5 L18 2 Z'/><path d='M15 5 L21 5'/><path d='M15.5 7 L20.5 7'/><rect x='15' y='28' width='6' height='2' rx='0.5'/><line x1='18' y1='32' x2='18' y2='35'/><path d='M16 8 L16 26 M18 8 L18 26 M20 8 L20 26' stroke-width='0.5'/></g><g transform='rotate(18 155 22)'><path d='M148 6 C146 6 145 8 145 10 L145 14 C145 18 149 18 149 14 L149 10 C149 8 151 8 151 10 L151 22 C151 26 145 26 145 22 L145 12'/></g><g transform='rotate(-6 95 32)'><rect x='78' y='12' width='28' height='36' rx='2'/><circle cx='82' cy='16' r='1.5'/><circle cx='82' cy='22' r='1.5'/><circle cx='82' cy='28' r='1.5'/><circle cx='82' cy='34' r='1.5'/><circle cx='82' cy='40' r='1.5'/><line x1='86' y1='18' x2='102' y2='18'/><line x1='86' y1='24' x2='102' y2='24'/><line x1='86' y1='30' x2='98' y2='30'/><line x1='86' y1='36' x2='100' y2='36'/><line x1='86' y1='42' x2='94' y2='42'/></g><g transform='rotate(15 175 95)'><path d='M168 70 L168 103 L171 107 L174 103 L174 70 L171 67 Z'/><path d='M168 70 L174 70'/><rect x='168' y='72' width='6' height='4' rx='0.5'/><path d='M167 77 L167 87 M167 82 L165 82' stroke-width='1'/><line x1='171' y1='107' x2='171' y2='111'/></g><g transform='rotate(-18 18 125)'><rect x='8' y='100' width='10' height='32' rx='2'/><rect x='9' y='130' width='8' height='6' rx='1'/><rect x='10' y='132' width='6' height='4'/><path d='M11 104 L11 112 M15 104 L15 112' stroke-width='0.8'/><rect x='8' y='98' width='10' height='3' rx='1'/></g><g transform='rotate(8 90 135)'><path d='M65 115 Q65 112 68 112 L98 112 Q101 112 101 115 L101 145 Q101 148 98 148 L68 148 Q65 148 65 145 Z'/><path d='M65 115 L65 145 Q65 148 68 148' stroke-width='2'/><path d='M68 112 L68 148'/><line x1='72' y1='119' x2='97' y2='119'/><line x1='72' y1='125' x2='97' y2='125'/><line x1='72' y1='131' x2='91' y2='131'/><line x1='72' y1='137' x2='95' y2='137'/></g><g transform='rotate(-8 160 150)'><rect x='148' y='138' width='18' height='18' rx='3'/><rect x='150' y='140' width='14' height='14' rx='2' stroke-width='0.8'/><path d='M153 148 L156 151 L162 143' stroke-width='1.8'/></g><g transform='rotate(5 42 175)'><ellipse cx='42' cy='190' rx='12' ry='3'/><path d='M32 190 L32 173 Q32 168 37 168 L47 168 Q52 168 52 173 L52 190'/><path d='M52 178 Q58 178 58 183 Q58 188 52 186'/><path d='M38 165 Q42 162 46 165' stroke-width='0.8'/><path d='M36 162 Q42 158 48 162' stroke-width='0.8'/><path d='M39 159 Q42 156 45 159' stroke-width='0.8'/></g></g></svg>`;
@@ -1529,8 +1543,17 @@ export class PreferencesManager {
             const alpha = TRANSLUCENT_BG_ALPHA[config.key];
             const useSolid = solidOverrides[config.key];
 
-            if (color) {
-                root.style.setProperty(config.cssVar, (alpha && !useSolid) ? hexToRgba(color, alpha) : color);
+            // Validate HERE, at the boundary where stored values become styles,
+            // rather than trusting every writer. Same reasoning as the
+            // settings.priorityColor fix: the <input type="color"> path is safe,
+            // but the preset share-code importer gates on isValidHex, which
+            // accepts 3-digit shorthand — valid hex that this module's fixed
+            // slice offsets could not read. An unusable value now falls through
+            // to removeProperty (theme default) instead of writing NaN.
+            const safeColor = normalizeHex(color);
+
+            if (safeColor) {
+                root.style.setProperty(config.cssVar, (alpha && !useSolid) ? hexToRgba(safeColor, alpha) : safeColor);
             } else if (useSolid && alpha) {
                 // No custom color but solid toggle is on — override translucent theme default
                 root.style.setProperty(config.cssVar, DEFAULT_COLORS[config.key]);
@@ -1669,17 +1692,21 @@ export class PreferencesManager {
                 color = defaultColor;
             }
 
+            // Same normalization as the live apply path above — `color` here can
+            // come from saved settings, so it carries the same exposure.
+            const safePreviewColor = normalizeHex(color) || defaultColor;
+
             if (config.previewVar) {
                 const alpha = TRANSLUCENT_BG_ALPHA[config.key];
                 const useSolid = solidOverrides[config.key];
-                preview.style.setProperty(config.previewVar, (alpha && !useSolid) ? hexToRgba(color, alpha) : color);
+                preview.style.setProperty(config.previewVar, (alpha && !useSolid) ? hexToRgba(safePreviewColor, alpha) : safePreviewColor);
             }
 
             // Also update the preview section background when app background changes
             if (config.key === 'appBg') {
                 const previewSection = _deps.querySelector(DOM_SELECTORS.PREFERENCES_PREVIEW_SECTION);
                 if (previewSection) {
-                    previewSection.style.setProperty('--preview-section-bg', color);
+                    previewSection.style.setProperty('--preview-section-bg', safePreviewColor);
                 }
             }
         });

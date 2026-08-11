@@ -33,7 +33,6 @@ import { getIcon, getLabel } from '../labels/labelResolver.js';
 const di = createDIModule('RecurringWatcher', {
     appInit: optional(null),
     AppState: optional(null),
-    AppGlobalState: optional(null),  // For undo suppression during system recreations (§1.2)
     updateAppState: optional(null),
     showNotification: optional(null),
     refreshUIFromState: optional(null),
@@ -76,27 +75,21 @@ function assertInjected(name, value) {
  *
  * Recurring recreations (and wake-time catch-up) are SYSTEM actions, not user
  * actions. The undo wrapper snapshots every AppState.update during normal operation;
- * to keep these out of the undo stack we raise AppGlobalState.isSystemMutation for the
- * duration of the commit — captureStateSnapshot() skips capture while it is set.
+ * passing { system: true } tells the wrapper to skip the snapshot for THIS call.
  * Without it, a user's next Undo removes the system-created task, which then silently
  * reappears on the next tick. See docs/future-work/ARCHITECTURE REVIEW FINDINGS.md §1.2.
  *
- * Falls back to a plain update if AppGlobalState wasn't injected (no suppression, but
- * never breaks the commit) — preserves the prior flag value for safe re-entrancy.
+ * The intent travels with the call rather than via the shared
+ * AppGlobalState.isSystemMutation flag — the flag guarded an await window, so a
+ * user update interleaving mid-commit was mis-tagged as system and silently lost
+ * its undo snapshot (review F-005).
  *
  * @param {Function} producer - AppState update producer
  * @param {boolean} immediate - Immediate-save flag passed through to updateAppState
  * @returns {Promise<*>}
  */
 async function commitSystemUpdate(producer, immediate) {
-    const gs = Deps.AppGlobalState;
-    const prev = gs ? gs.isSystemMutation : undefined;
-    if (gs) gs.isSystemMutation = true;
-    try {
-        return await Deps.updateAppState(producer, immediate);
-    } finally {
-        if (gs) gs.isSystemMutation = prev === true;
-    }
+    return await Deps.updateAppState(producer, immediate, { system: true });
 }
 
 // ============================================================================
@@ -106,6 +99,7 @@ async function commitSystemUpdate(producer, immediate) {
 let _recurringWatcherInitialized = false;
 let _watcherIntervalId = null;
 let _currentIntervalMs = null;
+let _lastWatchTickMs = null;
 let _taskLimitNotificationShown = false; // Prevent notification spam
 let _visibilityChangeHandler = null; // Stored for cleanup
 
@@ -151,7 +145,9 @@ function showTaskLimitNotification(blockedCount) {
 }
 
 /**
- * Reset the task limit notification flag (e.g., when tasks are deleted)
+ * Reset the task limit notification flag. Called when a recurring spawn
+ * SUCCEEDS (space freed up — a future block is news again), so the
+ * once-per-era guard in showTaskLimitNotification doesn't mute forever.
  */
 function resetTaskLimitNotification() {
     _taskLimitNotificationShown = false;
@@ -162,7 +158,7 @@ function resetTaskLimitNotification() {
 // ============================================================================
 
 /**
- * Switch the watcher interval (active 30s vs idle 2h)
+ * Switch the watcher interval (active 15s vs idle 2h — INTERVALS.RECURRING_WATCHER / INTERVALS.RECURRING_WATCHER_IDLE)
  * @param {boolean} hasTemplates - Whether recurring templates exist
  * @returns {void}
  */
@@ -182,15 +178,20 @@ function switchInterval(hasTemplates) {
         _watcherIntervalId = null;
     }
 
-    // Start new interval
+    // Start new interval. The tick is async — without the catch, any rejection
+    // becomes an unhandled-rejection per tick with no isolation.
     if (Deps.setInterval) {
-        _watcherIntervalId = Deps.setInterval(() => watchRecurringTasks(), targetInterval);
+        _watcherIntervalId = Deps.setInterval(() => {
+            watchRecurringTasks().catch((tickError) => {
+                console.warn('⚠️ Recurring watcher tick failed:', tickError?.message || tickError);
+            });
+        }, targetInterval);
         _currentIntervalMs = targetInterval;
     }
 }
 
 /**
- * Restart the watcher at active interval (30s)
+ * Restart the watcher at active interval (15s)
  * Call this when a recurring template is created
  */
 export function restartRecurringWatcher() {
@@ -244,7 +245,7 @@ function buildTemplateUpdate(template, nowMs, calculateNextOccurrence) {
 }
 
 // ============================================================================
-// SHARED RECREATION ENGINE (used by both catch-up and the 30s watch)
+// SHARED RECREATION ENGINE (used by both catch-up and the 15s watch)
 // ============================================================================
 
 /**
@@ -257,7 +258,7 @@ function buildTemplateUpdate(template, nowMs, calculateNextOccurrence) {
  * mutated — only the spawned instance is overridden.
  *
  * This is the single source of truth for the recreated-instance shape, shared by both the
- * wake-time catch-up and the 30s watcher (the only two paths that recreate a due task).
+ * wake-time catch-up and the 15s watcher (the only two paths that recreate a due task).
  * NOTE: activation (recurringActivation.js) and template-build (recurringSettingsApplicator.js)
  * intentionally build DIFFERENT shapes (different source object / preference-derived
  * deleteWhenComplete) and must NOT be folded in here.
@@ -294,7 +295,7 @@ function buildRecurringInstance(template) {
  * report them (catch-up) or ignore them (watch).
  *
  * Eligibility shared by both callers: task not already present, has a next occurrence, count
- * not exhausted, and the occurrence is due (now ≥ nextScheduledOccurrence). The 30s watch
+ * not exhausted, and the occurrence is due (now ≥ nextScheduledOccurrence). The 15s watch
  * adds one extra gate via `extraEligibility` (re-validates the recurrence pattern); catch-up
  * passes none — a missed-while-closed occurrence is trusted without re-matching the pattern.
  *
@@ -311,21 +312,43 @@ async function recreateDueTasks(activeCycleId, templates, taskList, now, extraEl
     const templateUpdates = {};
 
     Object.values(templates).forEach(template => {
-        if (taskList.some(t => t.id === template.id)) return;        // already exists
-        if (template.nextScheduledOccurrence == null) return;        // finished / exhausted
-        if (isCountExhausted(template)) return;                      // count limit reached
-        if (nowMs < template.nextScheduledOccurrence) return;        // not due yet
-        if (extraEligibility && !extraEligibility(template)) return; // watch: pattern re-validation
+        // Per-template isolation: one template with poisoned settings (bad
+        // date leaf, malformed pattern) must not halt spawning for EVERY
+        // template on every tick — eligibility re-validation and
+        // calculateNextOccurrence both evaluate template data and can throw.
+        // The bad template is skipped (and stays due for a later retry after
+        // repair); the rest of the fleet keeps spawning.
+        try {
+            if (taskList.some(t => t.id === template.id)) return;        // already exists
+            if (template.nextScheduledOccurrence == null) return;        // finished / exhausted
+            if (isCountExhausted(template)) return;                      // count limit reached
+            if (nowMs < template.nextScheduledOccurrence) return;        // not due yet
+            if (extraEligibility && !extraEligibility(template)) return; // watch: pattern re-validation
 
-        tasksToAdd.push(buildRecurringInstance(template));
-        templateUpdates[template.id] = buildTemplateUpdate(template, nowMs, Deps.calculateNextOccurrence);
+            tasksToAdd.push(buildRecurringInstance(template));
+            templateUpdates[template.id] = buildTemplateUpdate(template, nowMs, Deps.calculateNextOccurrence);
+        } catch (templateError) {
+            console.warn(`⚠️ Skipping recurring template "${template?.text || template?.id}" — evaluation failed:`, templateError?.message || templateError);
+        }
     });
 
     // Only add tasks up to the limit (templates are NOT deleted — they just won't spawn)
     const limitCheck = checkTaskLimit(taskList.length, tasksToAdd.length);
     const tasksToActuallyAdd = tasksToAdd.slice(0, limitCheck.allowed);
 
-    if (tasksToActuallyAdd.length > 0 || Object.keys(templateUpdates).length > 0) {
+    // A BLOCKED spawn must not consume its occurrence (boot-review tally
+    // correction): only templates whose task actually made it in get their
+    // occurrenceCount/nextScheduledOccurrence advanced. Blocked templates stay
+    // due and retry on later ticks/catch-ups until space frees up — previously
+    // they advanced anyway, silently losing the occurrence (and burning
+    // finite-count templates toward exhaustion on tasks that never existed).
+    const addedIds = new Set(tasksToActuallyAdd.map(t => t.id));
+    const committedUpdates = {};
+    Object.entries(templateUpdates).forEach(([templateId, updatedTemplate]) => {
+        if (addedIds.has(templateId)) committedUpdates[templateId] = updatedTemplate;
+    });
+
+    if (tasksToActuallyAdd.length > 0) {
         assertInjected('updateAppState', Deps.updateAppState);
 
         await commitSystemUpdate(draft => {
@@ -333,24 +356,32 @@ async function recreateDueTasks(activeCycleId, templates, taskList, now, extraEl
             tasksToActuallyAdd.forEach(taskData => {
                 cycle.tasks.push({ ...taskData, dateCreated: now.toISOString() });
             });
-            Object.entries(templateUpdates).forEach(([templateId, updatedTemplate]) => {
+            Object.entries(committedUpdates).forEach(([templateId, updatedTemplate]) => {
                 cycle.recurringTemplates[templateId] = updatedTemplate;
             });
         }, true); // Immediate save
 
-        if (tasksToActuallyAdd.length > 0) {
-            // Refresh DOM on the next tick
-            setTimeout(() => { Deps.refreshUIFromState?.(); }, 0);
-        }
-        if (limitCheck.blocked > 0) {
-            showTaskLimitNotification(limitCheck.blocked);
-        }
-        notifyExhaustedTemplates(templateUpdates);
+        // Refresh DOM on the next tick
+        setTimeout(() => { Deps.refreshUIFromState?.(); }, 0);
+        notifyExhaustedTemplates(committedUpdates);
+
+        // A successful spawn means space freed up — end the "blocked era" so
+        // the next block (if any) notifies again.
+        resetTaskLimitNotification();
+    }
+
+    // Blocked templates now retry every tick, so the limit notification leans
+    // on showTaskLimitNotification's once-per-era guard — without it the watch
+    // would nag every 15 seconds until the user deletes a task. (Outside the
+    // commit guard: when EVERYTHING is blocked there is no commit, but the
+    // user still needs to hear it once.)
+    if (limitCheck.blocked > 0) {
+        showTaskLimitNotification(limitCheck.blocked);
     }
 
     return {
         added: tasksToActuallyAdd.length,
-        updated: Object.keys(templateUpdates).length,
+        updated: Object.keys(committedUpdates).length,
         blocked: limitCheck.blocked
     };
 }
@@ -439,7 +470,7 @@ export async function catchUpMissedRecurringTasks() {
 
 /**
  * Watch recurring tasks and recreate them when due
- * Runs as part of the 30-second interval check
+ * Runs as part of the 15-second interval check
  *
  * Applies the same RECREATION SAFETY POLICY as catchUpMissedRecurringTasks:
  * recreated instances always have deleteWhenComplete=true regardless of the
@@ -487,7 +518,25 @@ export async function watchRecurringTasks() {
     assertInjected('now', Deps.now);
     const now = new Date(Deps.now());
 
-    // The 30s watch re-validates the recurrence pattern (slow path) before recreating, so a
+    // OVERSLEEP DETECTION (recurring review Finding B): the pattern gate below
+    // requires the current time to MATCH the schedule (exact minute for timed
+    // tasks) — correct for a live 15s cadence, but timers don't tick through
+    // device sleep or a frozen tab. If the polls resume after the scheduled
+    // minute, every tick answers "not now" until the next day, and a
+    // visible→visible sleep fires no visibilitychange to trigger catch-up.
+    // When the gap since the last tick shows we overslept, delegate this tick
+    // to catch-up, which trusts the timestamp (and tells the user).
+    const nowMsForGap = now.getTime();
+    const expectedGapMs = _currentIntervalMs || INTERVALS.RECURRING_WATCHER;
+    const overslept = _lastWatchTickMs !== null
+        && (nowMsForGap - _lastWatchTickMs) > expectedGapMs * LIMITS.RECURRING_OVERSLEEP_FACTOR;
+    _lastWatchTickMs = nowMsForGap;
+    if (overslept) {
+        await catchUpMissedRecurringTasks();
+        return;
+    }
+
+    // The 15s watch re-validates the recurrence pattern (slow path) before recreating, so a
     // task only spawns when it genuinely matches now. Recreation is silent (no notification).
     assertInjected('shouldRecreateRecurringTask', Deps.shouldRecreateRecurringTask);
     await recreateDueTasks(
@@ -509,14 +558,26 @@ function notifyExhaustedTemplates(templateUpdates) {
     Object.values(templateUpdates).forEach(updated => {
         if (updated.nextScheduledOccurrence !== null) return;
         const settings = updated.recurringSettings;
-        if (!settings || settings.indefinitely !== false || !settings.count) return;
-        if ((updated.occurrenceCount ?? 0) < settings.count) return;
+        if (!settings) return;
 
-        Deps.showNotification?.(
-            `${getIcon('recurring')} ${getLabel('notify.recurringCountFinished', { vars: { taskName: updated.text, count: settings.count } })}`,
-            'info',
-            UI_TIMEOUTS.NOTIFICATION_LONG
-        );
+        const countFinished = settings.indefinitely === false && settings.count
+            && (updated.occurrenceCount ?? 0) >= settings.count;
+
+        if (countFinished) {
+            Deps.showNotification?.(
+                `${getIcon('recurring')} ${getLabel('notify.recurringCountFinished', { vars: { taskName: updated.text, count: settings.count } })}`,
+                'info',
+                UI_TIMEOUTS.NOTIFICATION_LONG
+            );
+        } else if (settings.untilDate) {
+            // Null next without a reached count = the calculator clamped at the
+            // end date: this spawn was the routine's final occurrence.
+            Deps.showNotification?.(
+                `${getIcon('recurring')} ${getLabel('notify.recurringEndDateFinished', { vars: { taskName: updated.text } })}`,
+                'info',
+                UI_TIMEOUTS.NOTIFICATION_LONG
+            );
+        }
     });
 }
 
@@ -526,7 +587,7 @@ function notifyExhaustedTemplates(templateUpdates) {
 
 /**
  * Setup the recurring task watcher interval
- * Checks every 30 seconds for tasks that need to be recreated
+ * Checks every 15 seconds for tasks that need to be recreated (2h idle when no templates)
  */
 export async function setupRecurringWatcher() {
     // Idempotency guard
@@ -607,6 +668,8 @@ export function resetWatcherState() {
     _recurringWatcherInitialized = false;
     _watcherIntervalId = null;
     _currentIntervalMs = null;
+    _lastWatchTickMs = null;
+    _taskLimitNotificationShown = false;
     if (_visibilityChangeHandler) {
         document.removeEventListener("visibilitychange", _visibilityChangeHandler);
         _visibilityChangeHandler = null;

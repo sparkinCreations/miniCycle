@@ -28,7 +28,7 @@
  * @property {boolean} [completed=false] - Initial completion state
  * @property {boolean} [shouldSave=true] - Whether to persist immediately
  * @property {string|null} [dueDate=null] - Due date in ISO format
- * @property {boolean|null} [highPriority=null] - Priority flag (null uses default)
+ * @property {boolean} [highPriority=false] - Priority flag
  * @property {boolean} [isLoading=false] - Loading from storage (skip animations/limits)
  * @property {boolean} [remindersEnabled=false] - Enable reminders for task
  * @property {boolean} [recurring=false] - Is this a recurring task
@@ -75,6 +75,8 @@ const di = createDIModule('TaskCRUD', {
     // Task search visibility
     updateSearchVisibility: optional(null),
     getTaskCount: optional(null),
+    // Restores an active search filter after a task is appended — see addTask
+    reapplyActiveFilter: optional(null),
     // Reminders restart after task deletion
     startReminders: optional(null),
     // Notifications instance for color picker notification
@@ -203,7 +205,13 @@ export async function addTaskImpl(taskText, options = {}, deps = {}) {
         completed = false,
         shouldSave = true,
         dueDate = null,
-        highPriority = null,
+        // false, not null: the schema requires a boolean, and a null here was
+        // written straight into the stored task — so every UI-created task was
+        // schema-invalid and got coerced + re-saved by routineLoader's repair
+        // pass on the next boot. `null` was never distinguished from `false`
+        // anywhere (all reads are truthiness or === true), so this is a
+        // shape fix, not a behaviour change.
+        highPriority = false,
         priorityColor = null,
         isLoading = false,
         remindersEnabled = false,
@@ -279,6 +287,17 @@ export async function addTaskImpl(taskText, options = {}, deps = {}) {
             return;
         }
 
+        // Capture undo snapshot BEFORE the task is committed — adds had no
+        // explicit pre-add capture (edit/delete/priority all have one), so the
+        // next capture happened after the push and Undo-after-add was
+        // off-by-one: it couldn't remove the task it should have.
+        if (!isLoading) {
+            const AppStateForSnap = deps.AppState || _deps.AppState;
+            const captureStateSnapshot = deps.captureStateSnapshot || _deps.captureStateSnapshot;
+            const preAddState = AppStateForSnap?.get?.();
+            if (preAddState) safeCaptureSnapshot(captureStateSnapshot, preAddState, 'task add');
+        }
+
         // Create or update task data
         const createDataFn = deps.createOrUpdateTaskData || _deps.createOrUpdateTaskData;
         const taskData = createDataFn?.(taskContext);
@@ -316,6 +335,11 @@ export async function addTaskImpl(taskText, options = {}, deps = {}) {
 
         // Update search visibility after adding task
         _deps.updateSearchVisibility?.(_deps.getTaskCount?.() ?? 0);
+
+        // A task added while a filter is active is appended straight to the
+        // list — it never goes through the renderer, so nothing has judged it
+        // against the query and it shows up regardless of whether it matches.
+        _deps.reapplyActiveFilter?.();
 
         // Move completed tasks to dropdown (skip during bulk loading — organizeCompletedTasks handles it)
         if (!isLoading && completed && result) {

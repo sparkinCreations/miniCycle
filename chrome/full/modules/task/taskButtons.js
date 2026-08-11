@@ -328,7 +328,10 @@ export class TaskButtons {
 
             if (btnClass === "recurring-btn") {
                 const hasRecurringTemplate = currentCycle?.recurringTemplates?.[assignedTaskId];
-                isActive = hasRecurringTemplate || !!recurring;
+                // Coerce to boolean: hasRecurringTemplate is the template OBJECT, so a bare
+                // `template || !!recurring` left isActive as the object and
+                // isActive.toString() produced the invalid aria-pressed="[object Object]".
+                isActive = !!hasRecurringTemplate || !!recurring;
             } else {
                 isActive = !!highPriority;
             }

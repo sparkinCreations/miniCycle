@@ -28,6 +28,30 @@ export function initMigrationFacade(migrationMod) {
     migrationModule = migrationMod;
 }
 
+
+/**
+ * Guard for the CALLABLE facade methods.
+ *
+ * These used to be `migrationModule?.fn?.()`, which returns undefined when the
+ * facade was never initialized. For most getters that is harmless, but
+ * checkNeeded() answers "does this data need migrating?" — and undefined is
+ * FALSY, i.e. indistinguishable from "no, it's fine". The app would then run on
+ * unmigrated data. For a question whose falsy answer means "all clear",
+ * optional chaining is the wrong failure mode: fail loudly instead (Aug 2026).
+ *
+ * @param {string} method - Facade method name, for the error message
+ * @returns {Object} The initialized migration module
+ */
+function requireModule(method) {
+    if (!migrationModule) {
+        throw new Error(
+            `MigrationFacade.${method}() called before initMigrationFacade() — ` +
+            'refusing to return a falsy result that would read as "no migration needed".'
+        );
+    }
+    return migrationModule;
+}
+
 /**
  * Migration Facade - unified access to all migration functions
  * Reduces 8 window.* globals to 1 importable object
@@ -37,56 +61,56 @@ export const MigrationFacade = {
      * Create initial Schema 2.5 data structure
      */
     createInitialData() {
-        return migrationModule?.createInitialSchema25Data?.();
+        return requireModule('createInitialSchema25Data').createInitialSchema25Data();
     },
 
     /**
      * Check if migration is needed
      */
     checkNeeded() {
-        return migrationModule?.checkMigrationNeeded?.();
+        return requireModule('checkMigrationNeeded').checkMigrationNeeded();
     },
 
     /**
      * Simulate migration without applying changes
      */
     simulate() {
-        return migrationModule?.simulateMigrationToSchema25?.();
+        return requireModule('simulateMigrationToSchema25').simulateMigrationToSchema25();
     },
 
     /**
      * Perform the Schema 2.5 migration
      */
     performMigration() {
-        return migrationModule?.performSchema25Migration?.();
+        return requireModule('performSchema25Migration').performSchema25Migration();
     },
 
     /**
      * Validate all miniCycle tasks (lenient mode)
      */
     validateTasks() {
-        return migrationModule?.validateAllMiniCycleTasksLenient?.();
+        return requireModule('validateAllMiniCycleTasksLenient').validateAllMiniCycleTasksLenient();
     },
 
     /**
      * Fix task validation issues
      */
     fixIssues() {
-        return migrationModule?.fixTaskValidationIssues?.();
+        return requireModule('fixTaskValidationIssues').fixTaskValidationIssues();
     },
 
     /**
      * Initialize app with automatic migration
      */
     initWithAutoMigration() {
-        return migrationModule?.initAppWithAutoMigration?.();
+        return requireModule('initAppWithAutoMigration').initAppWithAutoMigration();
     },
 
     /**
      * Force migration (even if not needed)
      */
     forceMigration() {
-        return migrationModule?.forceAppMigration?.();
+        return requireModule('forceAppMigration').forceAppMigration();
     },
 
     // ========== Direct access to original functions ==========

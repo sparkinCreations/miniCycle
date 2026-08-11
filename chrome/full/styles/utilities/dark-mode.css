@@ -74,9 +74,16 @@ body.dark-mode:not([data-theme]) {
     --dark-text-light: #eaeaea;
     --dark-text-menu: #b1b1b1;
     --dark-text-date: #e3e3e3;
-    --dark-success-bg: #225f2f;
-    --dark-error-bg: #8c1c1c;
-    --dark-notification-bg: #919191;
+    /* Notification fills. All carry white body text, so each must clear
+       WCAG AA (4.5:1) against #fff. --dark-notification-bg was #919191
+       (3.15:1) — it is the fallback for any type without its own rule below,
+       so info and warning notifications (including the first-run Focus View
+       hint) were landing on it. Measured against #fff: */
+    --dark-success-bg: #225f2f;       /* 7.65:1 */
+    --dark-error-bg: #8c1c1c;         /* 9.14:1 */
+    --dark-info-bg: #1a5276;          /* 8.36:1 */
+    --dark-warning-bg: #8a5a00;       /* 5.93:1 */
+    --dark-notification-bg: #6b6b6b;  /* 5.33:1 */
     --dark-checkbox-checked: #5db567;
     --dark-checkbox-border: #40af4d;
     --dark-priority-border: #ff6b6b;
@@ -483,6 +490,19 @@ body.dark-mode .notification.success {
 
 body.dark-mode .notification.error {
     background-color: var(--dark-error-bg);
+}
+
+/* info and warning previously had no dark rule, so both fell through to the
+   generic --dark-notification-bg grey. Warning also needs an explicit fill
+   here because its light-mode rule pairs amber with BLACK text, while the
+   dark base above sets white — the two combined at 3.15:1. */
+body.dark-mode .notification.info {
+    background-color: var(--dark-info-bg);
+}
+
+body.dark-mode .notification.warning {
+    background-color: var(--dark-warning-bg);
+    color: var(--color-white);
 }
 
 /* =============================================================================
@@ -1659,9 +1679,21 @@ body.dark-mode .title-row {
    DARK MODE MINI-CYCLE TITLE
    ============================================================================= */
 
+/* The base rule in components/task-list.css paints the title with the
+   `background` SHORTHAND — two light gradients plus a white-ish border and
+   light inset highlights. `background-color: transparent` only cleared the
+   colour layer, so both gradient IMAGES survived into dark mode and kept
+   painting a pale bar across the top of the task card. `background: none`
+   clears colour and image together, letting .title-row's dark surface show
+   through; the border and insets are re-tinted for the same reason. Text was
+   also pinned to near-black (#1a1a1a) — only legible because the bar had
+   stayed light. */
 body.dark-mode .mini-cycle-title {
-    background-color: transparent;
-    color: #1a1a1a;
+    background: none;
+    color: var(--dark-text-light);
+    border-color: rgba(255, 255, 255, 0.12);
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+    box-shadow: none;
 }
 
 body.dark-mode #mini-cycle-title:focus {

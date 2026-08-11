@@ -39,6 +39,10 @@ export function getTomorrow() {
     try {
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
+        // Local midnight, not "this time tomorrow". Every consumer wants a
+        // calendar day, and carrying the current clock time is what let the
+        // old valueAsDate assignment tip over into the next UTC day.
+        tomorrow.setHours(0, 0, 0, 0);
 
         if (isNaN(tomorrow.getTime()) || tomorrow.getFullYear() > 2100) {
             throw new Error("Invalid date generated");

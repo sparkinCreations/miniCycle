@@ -127,6 +127,51 @@
     display: none;
 }
 
+/* ── Completion variant ──────────────────────────────────────────────────────
+   With the completed-tasks dropdown enabled, finishing every task moves them
+   all out of #taskList — the list becomes :empty and this empty state appears.
+   Without the swap below it would greet someone who just completed their whole
+   routine with first-run onboarding copy ("No tasks yet / press + to add").
+
+   body.all-tasks-complete is set from AppState (routine HAS tasks and all are
+   complete), never from the DOM — the DOM cannot distinguish "just finished"
+   from "brand new". See completedTasksManager.updateCount(). */
+.empty-state-alldone-text,
+.empty-state-alldone-hint {
+    display: none;
+}
+
+.empty-state-alldone-text {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    margin-bottom: var(--space-2-5);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.empty-state-alldone-hint {
+    font-size: var(--font-size-sm);
+    color: rgba(255, 255, 255, 0.7);
+    max-width: 250px;
+    line-height: 1.4;
+}
+
+/* Swap: completion copy in, onboarding copy out. The hint selectors cover all
+   four (view × input-bar) variants, including the two focus-mode ones injected
+   at runtime — otherwise focus mode would show "add your first task" beneath
+   "All tasks complete!". */
+body.all-tasks-complete .empty-state-alldone-text,
+body.all-tasks-complete .empty-state-alldone-hint {
+    display: block;
+}
+
+body.all-tasks-complete .empty-state-text,
+body.all-tasks-complete .empty-state-hint,
+body.all-tasks-complete .empty-state-hint-visible,
+body.all-tasks-complete .empty-state-hint-focus,
+body.all-tasks-complete .empty-state-hint-focus-visible {
+    display: none;
+}
+
 .empty-state-hint strong,
 .empty-state-hint-visible strong {
     background: rgba(255, 255, 255, 0.2);
@@ -490,6 +535,18 @@ body.onboarding-active .complete-all-and-help-window-container {
     align-items: center;
     justify-content: center;
     transition: color var(--transition-fast) ease;
+    /* Anchors the tap-target pseudo-element below. */
+    position: relative;
+}
+
+/* WCAG 2.5.8 tap target via pseudo-element — matches .toggle-switch::after in
+   settings.css. The rendered button is ~22px square (14px icon + space-1
+   padding); growing the box itself would push the title row past its 32px
+   min-height, so only the hit area grows: 22 + 11 + 11 = 44px. */
+.task-search-btn::after {
+    content: '';
+    position: absolute;
+    inset: -11px;
 }
 
 .task-search-btn:hover {

@@ -64,6 +64,7 @@ export const BOOT_TIMEOUTS = Object.freeze({
                            // raised phase budgets and the HTML load-timeout lite fallback
     RETRY_DELAY: 2000,     // 2s delay before boot retry (iOS needs time to restart killed SW)
     SW_SPINUP_GRACE: 2000, // 2s extra wait for iOS to spin up a killed SW when offline (waitForServiceWorker catch path)
+    SW_READY_WAIT: 8000,   // Cap on waiting for navigator.serviceWorker.ready at boot — always the long value because navigator.onLine lies on iOS (was a dead 3s parameter floored to 8s)
     IDB_OPERATION: 3000,   // 3s timeout for IndexedDB ops during boot recovery; raised from
                            // 1s — old/slow devices were timing out test-mode/backup checks
     VERSION_GATE: 1500     // 1.5s cap on the pre-boot server-version check (orchestrator
@@ -99,6 +100,7 @@ export const UI_TIMEOUTS = Object.freeze({
     STATS_UPDATE_DELAY: 100,       // 100ms - Stats panel update delay
     WHEEL_RESET_DELAY: 15,         // 15ms - Mouse wheel reset delay
     FOCUS_NEXT_TICK: 20,           // 20ms - Focus a control just after a dialog/modal renders
+    MODAL_ENTER_ARM_DELAY: 100,    // 100ms - Arm the Enter-anywhere confirm handler after a modal opens (avoids catching the opening keypress)
     IDLE_CALLBACK_FALLBACK: 100,   // 100ms - setTimeout fallback where requestIdleCallback is unavailable
     TRANSITION_FALLBACK: 300,      // 300ms - Safety fallback when a CSS transitionend never fires (fast transitions)
     EDIT_OVERLAY_REMOVE: 500,      // 500ms - Edit-focus overlay removal fallback (matches its CSS transition)
@@ -208,7 +210,6 @@ export const DEBOUNCE = Object.freeze({
 export const INTERVALS = Object.freeze({
     RECURRING_WATCHER: 15000,           // 15s - Recurring task watcher check interval (active)
     RECURRING_WATCHER_IDLE: 7200000,    // 2h - Recurring watcher interval when no templates exist
-    STATS_CACHE_TTL: 5000,              // 5s - Task stats cache time-to-live
     BACKUP_DAILY: 86400000,             // 24h - Default daily auto-backup interval
     BACKUP_SESSION_MIN: 300000,         // 5min - Minimum gap between auto-backups within a single session
     BACKUP_TEST_MIN: 300000             // 5min - Minimum gap before re-running backup integrity tests
@@ -226,6 +227,28 @@ export const FREQUENCY_MS = Object.freeze({
 });
 
 // ============================================================================
+// FONT SIZE
+// ============================================================================
+
+/**
+ * Base font size bounds, in pixels.
+ *
+ * DEFAULT_PX is the "no inline override" value: when the stored setting equals
+ * it, consumers must REMOVE the inline --font-size-base rather than write it,
+ * so the stylesheet's responsive default (the max-width:480px bump) can win.
+ *
+ * MIN_PX/MAX_PX bound what may reach setProperty. The <select> only offers
+ * 14/16/18/20, but the stored value is just a string in state — the range is
+ * the validation floor for anything that reads it back.
+ * @constant {Object}
+ */
+export const FONT_SIZE = Object.freeze({
+    DEFAULT_PX: 16,
+    MIN_PX: 10,
+    MAX_PX: 32
+});
+
+// ============================================================================
 // SIZE LIMITS
 // ============================================================================
 
@@ -233,14 +256,37 @@ export const FREQUENCY_MS = Object.freeze({
  * Size limits for various data structures
  * @constant {Object}
  */
+/**
+ * Schema versions. Two DIFFERENT shapes, easy to conflate:
+ *   CURRENT      — top-level `metadata.schemaVersion`, the STRING "2.5"
+ *   CURRENT_TASK — per-task/template `schemaVersion`, the NUMBER 2
+ * Cycles carry NEITHER — a diagnostic that tested `cycle.schemaVersion` was
+ * therefore dead and always reported "valid" (fixed Aug 2026).
+ * @constant {Object}
+ */
+export const SCHEMA = Object.freeze({
+    CURRENT: '2.5',
+    CURRENT_TASK: 2
+});
+
 export const LIMITS = Object.freeze({
+    MAX_TIMEOUT_MS: 2147483647,    // Largest setTimeout delay (~24.8 days). Above this the delay overflows a signed 32-bit int and the timer fires IMMEDIATELY — clamp and re-arm for anything longer (reminders.js scheduleNextReminder)
     UNDO_STACK: 20,                // Max items in undo/redo stack
+    UNDO_CACHE_MAX_BYTES: 1000000, // Byte cap on the localStorage undo cache (~1MB of the ~5MB quota shared with main state); oldest snapshots shed first. REAL bytes: consumers compare string length × 2 (UTF-16), matching storageUtils' quota metering
     TASKS_PER_CYCLE: 150,          // Max tasks per cycle/routine
+    MAX_SPECIFIC_DATES: 366,       // Max specificDates entries per recurring task (a year of dailies). Shared by BOTH producers — the .mcyc importer (which truncates) and the panel's Add button (which refuses and notifies). Was import-only, so the panel had no cap at all and the two disagreed
     DYNAMIC_CACHE_ENTRIES: 100,    // Max entries in service worker dynamic cache
     NORMALIZATION_CACHE: 50,       // Max entries in recurring settings normalization cache
     ERROR_LOG: 50,                 // Max errors to keep in error log
     MAX_ERRORS_BEFORE_SILENCE: 10, // Max error notifications before silencing
-    TASK_CHARACTER: 500,           // Max characters for task text
+    TASK_CHARACTER: 500,           // Max characters for task text — the STORAGE ceiling, enforced by the .mcyc importer
+    // Max characters accepted from the UI input. DELIBERATELY lower than
+    // TASK_CHARACTER: the importer accepts up to the storage ceiling, so an
+    // imported routine can legitimately hold longer text than a user can type.
+    // These were the same hardcoded-100 vs 500 divergence with no name to tell
+    // them apart (Aug 2026) — raise this to TASK_CHARACTER if the two should
+    // ever agree, rather than re-hardcoding either.
+    TASK_CHARACTER_INPUT: 100,
     CYCLE_NAME_CHARACTER: 100,     // Max characters for cycle name
     RATING_HISTORY: 10,            // Max entries kept in userProgress.uxRatingHistory
     CONSOLE_BUFFER_MAX: 500,       // Max console log entries kept in the in-memory buffer
@@ -250,6 +296,8 @@ export const LIMITS = Object.freeze({
     BACKUP_REMINDER_EVERY_N_TASKS: 100,  // Trigger backup reminder every N cleared tasks (To-Do mode)
     MAX_CORRUPT_BACKUPS: 3,              // Max raw-corrupted-data snapshots kept in localStorage for manual recovery
     MAX_MIGRATION_BACKUPS: 2,            // Max per-prefix migration backups (pre_migration_/migration_) kept; each is a full-dataset copy, created per migration and never otherwise pruned
+    MAX_AUTO_MIGRATION_BACKUPS: 5,       // Max auto_migration_backup_ entries kept in miniCycleBackupIndex (index-managed, separate from the per-prefix cap above)
+    RECURRING_OVERSLEEP_FACTOR: 2,       // Watch tick counts as overslept when the gap since the last tick exceeds this multiple of the expected interval (device sleep / tab freeze) — the tick then delegates to catch-up
     LAYOUT_DRAG_THRESHOLD: 5,             // px - Task View Layout: pointer travel before drag starts (forgive hover jitter)
     LAYOUT_DOCK_GAP: 20,                  // px - Task View Layout: vertical gap between an anchor element and its docked dependent
     NATIVE_REMINDER_SCHEDULE_MAX: 24      // Max future reminder occurrences pre-scheduled as native notifications (iOS caps pending local notifications at 64 app-wide)
@@ -291,7 +339,8 @@ export const GESTURE = Object.freeze({
     MOUSE_DRAG_START: 20,          // Minimum distance to start mouse drag
     TOUCH_SWIPE: 50,               // Minimum distance for touch swipe
     VERTICAL_SWIPE: 60,            // Minimum vertical distance for the focus task panel's swipe-to-skip (higher than TOUCH_SWIPE to avoid scroll-intent misfires)
-    WHEEL_SCROLL_MIN: 10           // Minimum wheel scroll to trigger action
+    WHEEL_SCROLL_MIN: 10,          // Minimum wheel scroll to trigger action
+    AXIS_DOMINANCE_RATIO: 1.5      // A swipe must exceed the OTHER axis by this factor to count — without it, a thumb arcing during a scroll reads as a sideways swipe
 });
 
 // ============================================================================
@@ -654,6 +703,14 @@ export const DOM_CLASSES = Object.freeze({
     // Set on <body> whenever the task input bar is showing (see modeManager's
     // _updateTaskInputVisibility — the single choke point for that state).
     INPUT_BAR_VISIBLE: 'input-bar-visible',
+    // Set on <body> when the ACTIVE ROUTINE HAS TASKS AND EVERY ONE IS COMPLETE.
+    // Read from AppState, never from the DOM: with the completed-tasks dropdown
+    // enabled the finished tasks are moved OUT of #taskList, so the list is
+    // literally :empty and the DOM cannot tell "just finished everything" apart
+    // from "brand new routine". CSS uses this to swap the empty state's
+    // onboarding copy for a completion message (task-list.css).
+    // Choke point: completedTasksManager.updateCount().
+    ALL_TASKS_COMPLETE: 'all-tasks-complete',
 
     // ---- Main Menu section headers (icon + label grouping) ----
     MENU_SECTION_LABEL: 'menu-section-label',
@@ -1290,6 +1347,10 @@ export const DOM_SELECTORS = Object.freeze({
     // selector keeps matching exactly one node — existing callers are unaffected.
     EMPTY_STATE_HINT: '.empty-state-hint',
     EMPTY_STATE_HINT_VISIBLE: '.empty-state-hint-visible',
+    // Shown INSTEAD of the text/hint pair above when body carries
+    // DOM_CLASSES.ALL_TASKS_COMPLETE — see task-list.css.
+    EMPTY_STATE_ALLDONE_TEXT: '.empty-state-alldone-text',
+    EMPTY_STATE_ALLDONE_HINT: '.empty-state-alldone-hint',
     TASK_NOT_FOUND: '.task-not-found',
     TASK_BY_ID: '.task[data-task-id]',
     IS_FIRST_TASK: '.is-first-task',
@@ -1616,9 +1677,12 @@ export const DOM_SELECTORS = Object.freeze({
  * @constant {Object}
  */
 export const DATA_SELECTORS = Object.freeze({
-    taskById: (id) => `.task[data-task-id="${id}"]`,
-    recurringTaskById: (id) => `.recurring-task-item[data-task-id="${id}"]`,
-    elementByTaskId: (id) => `[data-task-id="${id}"]`,
+    // CSS.escape like cycleByKey below: task ids can originate from imported
+    // .mcyc files and legacy-data repairs, and an unescaped quote or bracket
+    // in an id turns querySelector into a thrown DOMException at every call site.
+    taskById: (id) => `.task[data-task-id="${CSS.escape(id)}"]`,
+    recurringTaskById: (id) => `.recurring-task-item[data-task-id="${CSS.escape(id)}"]`,
+    elementByTaskId: (id) => `[data-task-id="${CSS.escape(id)}"]`,
     TASK_ID_ELEMENT: '[data-task-id]',
     menuSectionByName: (name) => `.menu-section[data-section="${name}"]`,
     settingsSectionByName: (name) => `.settings-section[data-section="${name}"]`,

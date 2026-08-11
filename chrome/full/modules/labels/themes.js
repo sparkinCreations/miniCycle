@@ -101,6 +101,7 @@ export const THEME_DEFINITIONS = {
         icons: {
             cycleComplete: '👍',
             celebrate:     '🔥',
+            badge:         '🔥',  // matches the 5-cycle badge in the stats badge row
         },
         colorPreset: {
             appBg:                'linear-gradient(160deg, #c87132 0%, #5c2800 100%)',  // cognac amber → deep mahogany
@@ -194,6 +195,7 @@ export const THEME_DEFINITIONS = {
         icons: {
             cycleComplete: '💪',
             celebrate:     '🏆',
+            badge:         '💪',  // matches the 25-cycle badge in the stats badge row
         },
         colorPreset: {
             appBg:                'linear-gradient(160deg, #22a05e 0%, #0a4a28 100%)',  // bright green → dark forest
@@ -287,6 +289,7 @@ export const THEME_DEFINITIONS = {
         icons: {
             cycleComplete: '📚',
             celebrate:     '🎓',
+            badge:         '📚',  // matches the 50-cycle badge in the stats badge row
         },
         colorPreset: {
             appBg:                'linear-gradient(160deg, #3d35b5 0%, #0d3d4a 100%)',  // slate indigo → deep teal
@@ -380,6 +383,7 @@ export const THEME_DEFINITIONS = {
         icons: {
             cycleComplete: '🧼',
             celebrate:     '🧹',
+            badge:         '🧹',  // matches the 75-cycle badge in the stats badge row
         },
         colorPreset: {
             appBg:                'linear-gradient(160deg, #0d9ecf 0%, #053d50 100%)',  // sky teal → deep ocean
@@ -539,7 +543,6 @@ export class VocabThemeManager {
         this.deps.AppState.update(state => {
             if (state.data?.cycles?.[routineId]) {
                 state.data.cycles[routineId].theme = themeId;
-                state.metadata.lastModified = Date.now();
             }
         }, true);
 
@@ -560,7 +563,6 @@ export class VocabThemeManager {
         this.deps.AppState.update(state => {
             if (!state.settings) state.settings = {};
             state.settings.defaultTheme = themeId;
-            state.metadata.lastModified = Date.now();
         }, true);
     }
 
@@ -587,7 +589,6 @@ export class VocabThemeManager {
         this.deps.AppState.update(s => {
             if (!s.settings) s.settings = {};
             s.settings.unlockedThemes = Array.from(currentUnlocked);
-            s.metadata.lastModified = Date.now();
         }, false);
 
         return true;
@@ -629,7 +630,6 @@ export class VocabThemeManager {
             this.deps.AppState.update(state => {
                 if (!state.settings) state.settings = {};
                 state.settings.unlockedThemes = Array.from(currentUnlocked);
-                state.metadata.lastModified = Date.now();
             }, false);
         }
 
@@ -721,7 +721,6 @@ export class VocabThemeManager {
             this.deps.AppState.update(s => {
                 if (!s.settings) s.settings = {};
                 s.settings.unlockedThemes = Array.from(currentUnlocked);
-                s.metadata.lastModified = Date.now();
             }, false);
         }
 

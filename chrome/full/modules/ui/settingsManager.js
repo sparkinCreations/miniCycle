@@ -160,7 +160,8 @@ async function loadSubModules(version) {
         // Share
         setShareManagerDependencies: shareModule.setShareManagerDependencies,
         setupShareRoutineButton: shareModule.setupShareRoutineButton,
-        setupShareAppButton: shareModule.setupShareAppButton
+        setupShareAppButton: shareModule.setupShareAppButton,
+        shareCurrentRoutine: shareModule.shareCurrentRoutine
     };
 
     return _subModules;
@@ -252,6 +253,7 @@ function wireSubModuleDependencies(dependencies) {
         loadMiniCycleData: dependencies.loadMiniCycleData,
         showNotification: dependencies.showNotification,
         showConfirmationModal: dependencies.showConfirmationModal,
+        showChoiceModal: dependencies.showChoiceModal,
         safeAddEventListener: dependencies.safeAddEventListener,
         hideMainMenu: dependencies.hideMainMenu
     });
@@ -359,10 +361,11 @@ export class SettingsManager {
      * Export cycle data as a downloadable JSON file.
      * @param {Object} data - The cycle data to export
      * @param {string} name - The filename for the exported file
-     * @returns {void}
+     * @returns {Promise<void>|undefined} The exporter's promise so callers can
+     *   await completion (undefined if sub-modules aren't loaded yet)
      */
     exportMiniCycleData(data, name) {
-        _subModules?.exportMiniCycleData?.(data, name);
+        return _subModules?.exportMiniCycleData?.(data, name);
     }
 
     /**
@@ -521,9 +524,10 @@ export function setupExportButton() { _subModules?.setupExportButton?.(); }
  * Export cycle data as a downloadable JSON file.
  * @param {Object} data - The cycle data to export
  * @param {string} name - The filename for the exported file
- * @returns {void}
+ * @returns {Promise<void>|undefined} The exporter's promise (undefined if
+ *   sub-modules aren't loaded yet)
  */
-export function exportMiniCycleData(data, name) { _subModules?.exportMiniCycleData?.(data, name); }
+export function exportMiniCycleData(data, name) { return _subModules?.exportMiniCycleData?.(data, name); }
 
 /**
  * Initialize the import buttons for uploading cycle data.
@@ -589,6 +593,15 @@ export function _resetForTesting() { _subModules?._resetForTesting?.(); }
  * @returns {void}
  */
 export function setupShareRoutineButton() { _subModules?.setupShareRoutineButton?.(); }
+
+/**
+ * Run the share-routine flow directly (chooser → payload → share/download).
+ * For callers with their own user gesture (e.g. Quick Actions) — invoking this
+ * instead of clicking the main-menu button preserves user activation for
+ * navigator.share(). Delegates to the shareManager sub-module.
+ * @returns {Promise<void>|undefined}
+ */
+export function shareCurrentRoutine() { return _subModules?.shareCurrentRoutine?.(); }
 
 /**
  * Initialize the share app button for sharing the app link via Web Share API.

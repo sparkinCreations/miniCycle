@@ -88,7 +88,6 @@ class MiniCycleState {
             addWindowListener: mergedDeps.addWindowListener || ((evt, fn) => window.addEventListener(evt, fn))
         };
 
-        // Your existing properties
         this.data = null;
         this.isDirty = false;
         this.saveTimeout = null;
@@ -96,9 +95,19 @@ class MiniCycleState {
         this.SAVE_DELAY = DEBOUNCE.STATE_SAVE; // Debounce for faster persistence
         // Instance version - uses injected AppMeta (no hardcoded fallback)
         this.version = mergedDeps.AppMeta?.version;
-        this.isInitialized = false; // ✅ Add this flag
-        this._initPromise = null; // ✅ FIX #1: Track in-flight initialization
+        this.isInitialized = false; // Guards against re-initialization
+        this._initPromise = null; // Track in-flight initialization to prevent duplicate init
+        // One notification per quota episode: without this, every debounced
+        // save during a full-store episode stacks another PERSISTENT warning
+        // while the user keeps working (review F-001). Reset on successful
+        // save so a later episode notifies again.
+        this._quotaNotified = false;
         this._savingIndicatorTimeout = null; // For hiding indicator after save
+        this._persistenceListenersRegistered = false; // Guard against duplicate global listeners on re-init
+        // Per-tab identity for concurrent-modification detection: timestamps alone
+        // can't distinguish "another tab saved" from "our own rapid-fire saves",
+        // so every save stamps metadata.lastModifiedBy with this id.
+        this._tabId = `tab-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
     }
 
     // ✅ Show saving indicator (subtle UI feedback)
@@ -111,6 +120,31 @@ class MiniCycleState {
             }
             indicator.classList.add(DOM_CLASSES.VISIBLE);
         }
+    }
+
+    // Quota-exceeded handling for save(): returns true when the error was a
+    // quota error and has been handled (caller should stop, NOT rethrow).
+    // isDirty and saveTimeout deliberately stay set — the data was NOT
+    // written, and retrying into a full store won't succeed on its own; the
+    // label directs the user to export a backup and free space. Notifies once
+    // per episode (review F-001: every debounced save used to stack another
+    // PERSISTENT warning); save() re-arms the notifier on the next success.
+    _handleQuotaError(storageError) {
+        const isQuota = storageError?.name === 'QuotaExceededError' ||
+            storageError?.code === 22 ||
+            storageError?.code === 1014;
+        if (!isQuota) return false;
+        console.warn('⚠️ localStorage quota exceeded — continuing with in-memory state', storageError);
+        if (!this._quotaNotified) {
+            this._quotaNotified = true;
+            this.deps.showNotification(
+                getLabel('notify.storageFull'),
+                'warning',
+                UI_TIMEOUTS.NOTIFICATION_PERSISTENT
+            );
+        }
+        this._hideSavingIndicator();
+        return true;
     }
 
     // ✅ Hide saving indicator with brief delay (so it's visible even on fast saves)
@@ -160,13 +194,17 @@ class MiniCycleState {
                     console.warn('⚠️ Corrupted data in localStorage — attempting recovery', parseError);
                     const recovery = recoverCorruptedData(stored, { storage: this.deps.storage });
                     if (recovery.recovered && this.validateSchema25Structure(recovery.data)) {
-                        this.data = recovery.data;
+                        this.data = this._ensureMetadata(recovery.data);
+                        this._persistRepairedData(this.data);
                         this.isInitialized = true;
+                        this._registerPersistenceListeners();
                         this._notifyDataRepaired(recovery);
                         return this.data;
                     }
                     this.data = this.createMinimalFallbackState();
+                    this._persistRepairedData(this.data);
                     this.isInitialized = true;
+                    this._registerPersistenceListeners();
                     this.deps.showNotification(
                         getLabel('notify.dataCorrupted'),
                         'error',
@@ -175,8 +213,9 @@ class MiniCycleState {
                     return this.data;
                 }
                 if (this.validateSchema25Structure(parsed)) {
-                    this.data = parsed;
+                    this.data = this._ensureMetadata(parsed);
                     this.isInitialized = true;
+                    this._registerPersistenceListeners();
                     return this.data;
                 }
             }
@@ -238,7 +277,7 @@ class MiniCycleState {
         }
     }
 
-    // ✅ FIX #1: Internal initialization method (called only once)
+    // Internal initialization method (called only once)
     async _initializeInternal() {
 
         try {
@@ -261,6 +300,7 @@ class MiniCycleState {
                         const recovery = recoverCorruptedData(stored, { storage: this.deps.storage });
                         if (recovery.recovered && this.validateSchema25Structure(recovery.data)) {
                             existingData = recovery.data;
+                            this._persistRepairedData(existingData);
                             this._notifyDataRepaired(recovery);
                         }
                     }
@@ -270,9 +310,11 @@ class MiniCycleState {
                 const recovery = stored ? recoverCorruptedData(stored, { storage: this.deps.storage }) : { recovered: false };
                 if (recovery.recovered && this.validateSchema25Structure(recovery.data)) {
                     existingData = recovery.data;
+                    this._persistRepairedData(existingData);
                     this._notifyDataRepaired(recovery);
                 } else {
                     existingData = this.createMinimalFallbackState();
+                    this._persistRepairedData(existingData);
                     this.deps.showNotification(
                         getLabel('notify.dataCorruptedReset'),
                         'error',
@@ -283,7 +325,7 @@ class MiniCycleState {
 
             // Use existing data or create initial data
             if (existingData) {
-                this.data = existingData;
+                this.data = this._ensureMetadata(existingData);
 
                 // ✅ Initialize deleteWhenCompleteSettings for existing tasks
                 let tasksInitialized = 0;
@@ -339,78 +381,20 @@ class MiniCycleState {
                     }
                 }
             } else {
-                // ✅ Don't create data if none exists - let the main app handle this
+                // ✅ Don't create data if none exists - let the main app handle this.
+                // Listeners still get registered below: the first-run path adopts data
+                // via reload() (which never registers them), so skipping registration
+                // here left brand-new users' entire first session with no unload flush
+                // and no multi-tab sync — the exact iOS swipe-away loss the flush trio
+                // exists to prevent.
                 this.data = null;
                 this.isInitialized = false;
+                this._registerPersistenceListeners();
                 return null;
             }
 
             this.isInitialized = true;
-
-            // ✅ Flush pending saves on page unload/hide to prevent data loss.
-            // beforeunload is unreliable on iOS — frequently NOT fired when the app
-            // is backgrounded or swiped away — so a checked-final-task-then-swipe can
-            // drop the debounced write on the platform we screenshot most. Also flush
-            // on pagehide and on visibilitychange→hidden, the events that DO fire
-            // there. Same iOS-interruption trio taskViewLayoutManager uses for drag
-            // cleanup. save() writes synchronously (no async hop), so it completes
-            // inside these handlers. (drift-review v2 §1.2)
-            this._flushPendingSave = () => {
-                if (this.saveTimeout) {
-                    clearTimeout(this.saveTimeout);
-                    this.saveTimeout = null;
-                }
-                if (this.isDirty) {
-                    this.save();
-                }
-            };
-            // visibilitychange is a document event; only flush on the hidden edge.
-            this._visibilityFlushHandler = () => {
-                if (document.visibilityState === 'hidden') this._flushPendingSave();
-            };
-            this.deps.addWindowListener('beforeunload', this._flushPendingSave);
-            this.deps.addWindowListener('pagehide', this._flushPendingSave);
-            document.addEventListener('visibilitychange', this._visibilityFlushHandler);
-
-            // ✅ Multi-tab sync: Detect changes from other tabs via storage event
-            this._storageHandler = (event) => {
-                if (event.key !== STORAGE_KEYS.DATA) return;
-                if (!event.newValue) return;
-
-                try {
-                    const externalData = JSON.parse(event.newValue);
-                    const externalTimestamp = externalData?.metadata?.lastModified || 0;
-                    const ourTimestamp = this.data?.metadata?.lastModified || 0;
-
-                    // Only reload if external data is newer
-                    if (externalTimestamp > ourTimestamp) {
-
-                        // If we have unsaved changes, warn user
-                        if (this.isDirty) {
-                            console.warn('⚠️ Multi-tab conflict: Local unsaved changes will be overwritten');
-                            if (this.deps.showNotification) {
-                                this.deps.showNotification(
-                                    getLabel('notify.multiTabConflict'),
-                                    'warning',
-                                    UI_TIMEOUTS.NOTIFICATION_SLOW
-                                );
-                            }
-                        }
-
-                        // Reload state from the new data
-                        this.data = externalData;
-                        this.isDirty = false;
-                        this.lastSavedTimestamp = externalTimestamp;
-
-                        // Notify subscribers of the change
-                        this.notifyListeners();
-
-                    }
-                } catch (error) {
-                    console.warn('⚠️ Multi-tab sync: Failed to parse external data', error);
-                }
-            };
-            this.deps.addWindowListener('storage', this._storageHandler);
+            this._registerPersistenceListeners();
 
             return this.data;
 
@@ -421,7 +405,147 @@ class MiniCycleState {
             throw error;
         }
     }
-    
+
+    /**
+     * Register the unload-flush trio and the multi-tab storage listener.
+     * Idempotent — guarded so re-init (e.g. after neutralizeAppState during a
+     * restore) can't stack duplicate global listeners. destroy() clears the flag.
+     * @private
+     */
+    _registerPersistenceListeners() {
+        if (this._persistenceListenersRegistered) return;
+        this._persistenceListenersRegistered = true;
+
+        // ✅ Flush pending saves on page unload/hide to prevent data loss.
+        // beforeunload is unreliable on iOS — frequently NOT fired when the app
+        // is backgrounded or swiped away — so a checked-final-task-then-swipe can
+        // drop the debounced write on the platform we screenshot most. Also flush
+        // on pagehide and on visibilitychange→hidden, the events that DO fire
+        // there. Same iOS-interruption trio taskViewLayoutManager uses for drag
+        // cleanup. save() writes synchronously (no async hop), so it completes
+        // inside these handlers. (drift-review v2 §1.2)
+        this._flushPendingSave = () => {
+            if (this.saveTimeout) {
+                clearTimeout(this.saveTimeout);
+                this.saveTimeout = null;
+            }
+            if (this.isDirty) {
+                this.save();
+            }
+        };
+        // visibilitychange is a document event; only flush on the hidden edge.
+        this._visibilityFlushHandler = () => {
+            if (document.visibilityState === 'hidden') this._flushPendingSave();
+        };
+        this.deps.addWindowListener('beforeunload', this._flushPendingSave);
+        this.deps.addWindowListener('pagehide', this._flushPendingSave);
+        document.addEventListener('visibilitychange', this._visibilityFlushHandler);
+
+        // ✅ Multi-tab sync: Detect changes from other tabs via storage event
+        this._storageHandler = (event) => {
+            if (event.key !== STORAGE_KEYS.DATA) return;
+            if (!event.newValue) return;
+
+            try {
+                const externalData = JSON.parse(event.newValue);
+                // Never adopt malformed external data — a corrupt write from
+                // another tab would otherwise replace valid in-memory state.
+                if (!this.validateSchema25Structure(externalData)) {
+                    console.warn('⚠️ Multi-tab sync: External data failed schema validation — ignoring');
+                    return;
+                }
+                const externalTimestamp = externalData?.metadata?.lastModified || 0;
+                const ourTimestamp = this.data?.metadata?.lastModified || 0;
+
+                // Only reload if external data is newer
+                if (externalTimestamp > ourTimestamp) {
+
+                    // If we have unsaved changes, warn user
+                    if (this.isDirty) {
+                        console.warn('⚠️ Multi-tab conflict: Local unsaved changes will be overwritten');
+                        if (this.deps.showNotification) {
+                            this.deps.showNotification(
+                                getLabel('notify.multiTabConflict'),
+                                'warning',
+                                UI_TIMEOUTS.NOTIFICATION_SLOW
+                            );
+                        }
+                    }
+
+                    // Reload state from the new data
+                    this.data = this._ensureMetadata(externalData);
+                    this.isDirty = false;
+                    this.lastSavedTimestamp = externalTimestamp;
+
+                    // Notify subscribers of the change
+                    this.notifyListeners();
+
+                }
+            } catch (error) {
+                console.warn('⚠️ Multi-tab sync: Failed to parse external data', error);
+            }
+        };
+        this.deps.addWindowListener('storage', this._storageHandler);
+    }
+
+    /**
+     * Guarantee an adopted state object carries a metadata block. update()
+     * hard-dereferences data.metadata.lastModified, but validateSchema25Structure
+     * doesn't require metadata — so restored/salvaged/external data without it
+     * would make every subsequent update() throw (app becomes read-only).
+     * @param {Schema25Data} data - State object being adopted
+     * @returns {Schema25Data} The same object, metadata guaranteed
+     * @private
+     */
+    _ensureMetadata(data) {
+        if (!data || typeof data !== 'object') return data;
+
+        if (!data.metadata || typeof data.metadata !== 'object') {
+            data.metadata = {
+                createdAt: Date.now(),
+                lastModified: Date.now(),
+                schemaVersion: "2.5"
+            };
+        }
+
+        // Normalize the counter every writer increments. The FULL initial state
+        // seeds it, but this self-heal and createMinimalFallbackState do not —
+        // so a profile that came through corruption recovery reached
+        // `metadata.totalCyclesCreated++` with the field undefined, which
+        // evaluates to NaN and persists as JSON `null`. types.js declares it
+        // optional with a default; six call sites assumed it wasn't. Both are
+        // true now: those sites are guarded, and this makes the field real for
+        // every reader.
+        //
+        // Number.isFinite, not typeof: `typeof NaN === 'number'`, so a typeof
+        // check would preserve an already-broken NaN. This runs whether the
+        // metadata block was just created or already existed, so it REPAIRS
+        // profiles that already stored null rather than only preventing new ones.
+        if (!Number.isFinite(data.metadata.totalCyclesCreated)) {
+            data.metadata.totalCyclesCreated = 0;
+        }
+
+        return data;
+    }
+
+    /**
+     * Persist a successfully salvaged/repaired state back to storage so the
+     * corrupt original doesn't survive to later readers. AppState's recovery is
+     * otherwise in-memory only — checkMigrationNeeded() and any other direct
+     * localStorage reader would still hit the corrupt string and fail boot.
+     * Quota failures are tolerated: the snapshot of the corrupt original was
+     * already taken by recoverCorruptedData.
+     * @param {Schema25Data} data - Repaired state to persist
+     * @private
+     */
+    _persistRepairedData(data) {
+        try {
+            this.deps.storage.setItem(STORAGE_KEYS.DATA, JSON.stringify(data));
+        } catch (persistError) {
+            console.warn('⚠️ Could not persist repaired data (continuing in-memory):', persistError?.message || persistError);
+        }
+    }
+
     /**
      * Validate that data conforms to Schema 2.5 structure
      * @param {Object} data - Data to validate
@@ -453,7 +577,12 @@ class MiniCycleState {
             metadata: {
                 createdAt: Date.now(),
                 lastModified: Date.now(),
-                schemaVersion: "2.5"
+                schemaVersion: "2.5",
+                // Seeded here as well as in _ensureMetadata: one caller of this
+                // function (the corruption-recovery branch in init) assigns the
+                // result straight to this.data and returns WITHOUT passing it
+                // through _ensureMetadata, so the backfill there would miss it.
+                totalCyclesCreated: 0
             },
             settings: {
                 theme: 'default',
@@ -497,7 +626,6 @@ class MiniCycleState {
             await this.init();
         }
         
-        // Your existing update logic stays the same
         if (!this.data) {
             console.warn('⚠️ State not ready for updates');
             return;
@@ -510,7 +638,9 @@ class MiniCycleState {
             const result = updateFn(this.data);
 
             this.isDirty = true;
+            this._ensureMetadata(this.data);
             this.data.metadata.lastModified = Date.now();
+            this.data.metadata.lastModifiedBy = this._tabId;
 
             this.scheduleSave(immediate);
             this.notifyListeners(oldData, this.data);
@@ -540,8 +670,10 @@ class MiniCycleState {
 
         if (immediate) {
             // ✅ Synchronous save() — a quick refresh right after an immediate update
-            //    still flushes (no async hop before the write).
-            this.save();
+            //    still flushes (no async hop before the write). Return save()'s
+            //    result so forceSave()'s await keeps working if save() ever
+            //    becomes async (drift-review C-11).
+            return this.save();
         } else {
             // ✅ For normal saves, use debounce delay
             this.saveTimeout = setTimeout(() => {
@@ -568,7 +700,7 @@ class MiniCycleState {
         this._showSavingIndicator();
 
         try {
-            // ✅ FIX #4: Check for concurrent modifications before saving
+            // Check for concurrent modifications before saving
             const currentStored = this.deps.storage.getItem(STORAGE_KEYS.DATA);
             if (currentStored) {
                 try {
@@ -580,10 +712,20 @@ class MiniCycleState {
                     if (storedTimestamp > ourTimestamp) {
                         const diff = storedTimestamp - ourTimestamp;
 
-                        // ✅ FIX: Only treat as conflict if timestamp diff > threshold
-                        // Differences below threshold are likely rapid-fire saves from same session
-                        // (e.g., arrow click → UI refresh within debounce window)
-                        if (diff > DEBOUNCE.CONCURRENT_MOD_CONFLICT) {
+                        // A real conflict is a newer write from ANOTHER tab. When the
+                        // stored data carries a tab identity, use it directly — two
+                        // actively-editing tabs almost always save within the timestamp
+                        // threshold, so the time window alone silently last-writer-wins.
+                        // The threshold remains as fallback for data without the stamp
+                        // (rapid-fire saves from this session are same-tab and exempt).
+                        const storedTabId = storedData?.metadata?.lastModifiedBy;
+                        const isForeignWrite = storedTabId
+                            ? storedTabId !== this._tabId
+                            : diff > DEBOUNCE.CONCURRENT_MOD_CONFLICT;
+
+                        // Never adopt malformed stored data — overwriting it with our
+                        // valid state is the correct outcome in that case.
+                        if (isForeignWrite && this.validateSchema25Structure(storedData)) {
                             console.warn('⚠️ Real concurrent modification detected!', {
                                 storedTimestamp,
                                 ourTimestamp,
@@ -609,7 +751,7 @@ class MiniCycleState {
                                     UI_TIMEOUTS.NOTIFICATION_SLOW
                                 );
                             }
-                            this.data = storedData;
+                            this.data = this._ensureMetadata(storedData);
                             this.isDirty = false;
                             this.lastSavedTimestamp = storedTimestamp;
                             this._hideSavingIndicator();
@@ -628,22 +770,12 @@ class MiniCycleState {
             try {
                 this.deps.storage.setItem(STORAGE_KEYS.DATA, JSON.stringify(this.data));
             } catch (storageError) {
-                if (storageError?.name === 'QuotaExceededError' ||
-                    storageError?.code === 22 ||
-                    storageError?.code === 1014) {
-                    console.warn('⚠️ localStorage quota exceeded — continuing with in-memory state', storageError);
-                    this.deps.showNotification(
-                        getLabel('notify.storageFull'),
-                        'warning',
-                        UI_TIMEOUTS.NOTIFICATION_PERSISTENT
-                    );
-                    this._hideSavingIndicator();
-                    return;
-                }
+                if (this._handleQuotaError(storageError)) return;
                 throw storageError;
             }
             this.isDirty = false;
             this.saveTimeout = null;
+            this._quotaNotified = false; // store writable again — next episode re-notifies
 
             this._hideSavingIndicator();
         } catch (error) {
@@ -962,6 +1094,7 @@ class MiniCycleState {
         if (this.listeners) {
             this.listeners.clear();
         }
+        this._persistenceListenersRegistered = false;
         this.isInitialized = false;
     }
 }

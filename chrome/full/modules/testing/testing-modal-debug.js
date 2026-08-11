@@ -48,6 +48,13 @@ export function setupDebugButtons() {
 export function setupConsoleCaptureButtons() {
     const deps = getDeps();
 
+    // Route console-capture report output into the testing modal's results pane.
+    // Without this, Show All Captured Logs / Show Migration Errors appended into
+    // a dep that was resolvable nowhere and produced no output (drift-review C-24).
+    if (deps.consoleCapture && typeof deps.consoleCapture.setTestResultsAppender === 'function') {
+        deps.consoleCapture.setTestResultsAppender(appendToTestResults);
+    }
+
     safeAddEventListenerById("enable-auto-capture", "click", () => {
         deps.safeLocalStorageSet("miniCycle_enableAutoConsoleCapture", "true");
         const cc = deps.consoleCapture;

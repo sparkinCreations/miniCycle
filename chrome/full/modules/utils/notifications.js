@@ -81,6 +81,33 @@ function _safeAddEventListener(element, event, handler, options) {
 }
 
 /**
+ * Single-settle contract for modal dialogs. Returns { settle, disposers }.
+ *
+ * settle(result) runs AT MOST ONCE: it runs every registered disposer, tears
+ * down the overlay, then invokes callback(result). Every exit path of a modal
+ * (buttons, ESC→cancel, backdrop click, keyboard handlers) must funnel through
+ * settle — never call the callback or remove the overlay directly.
+ *
+ * Register a disposer for EVERY timer/listener the modal creates outside the
+ * overlay itself (overlay-attached listeners are exempt: they die with it).
+ * Hand-enumerated cleanup is how the confirmation modal's armed-Enter timer
+ * once escaped cancellation and fired callback(true) after dismissal (v2.377).
+ */
+function createModalSettler(overlay, callback) {
+  let settled = false;
+  const disposers = [];
+  const settle = (result) => {
+    if (settled) return;
+    settled = true;
+    disposers.forEach(d => d());
+    overlay.close();
+    overlay.remove();
+    callback(result);
+  };
+  return { settle, disposers };
+}
+
+/**
  * Simple hash function for generating stable IDs from strings
  * Used as fallback when generateHashId is not injected via DI
  */
@@ -323,7 +350,7 @@ export class MiniCycleNotifications {
     // Pass getter function to EducationalTipManager for live deps access
     this.educationalTips = new EducationalTipManager(() => this.deps);
     this.isDraggingNotification = false;
-    this._activeListeners = new WeakMap(); // ✅ FIX #2: Track cleanup functions per notification
+    this._activeListeners = new WeakMap(); // Track cleanup functions per notification
 
     // Store instance reference for late dep updates
     _notificationsInstance = this;
@@ -461,7 +488,7 @@ export class MiniCycleNotifications {
         : `<div class="notification-content">${escapedMessage}</div>
            <button class="close-btn" title="${getLabel('button.close')}" aria-label="${getLabel('notify.closeNotification')}">✖</button>`;
 
-      // ✅ FIX #7: Track cleanup function for timeouts
+      // Track cleanup function for timeouts
       let cleanupTimeouts = null;
       let notificationRemoved = false;
 
@@ -677,7 +704,7 @@ export class MiniCycleNotifications {
 
       notificationContainer.appendChild(notification);
 
-      // ✅ FIX #7: Track cleanup function for timeouts
+      // Track cleanup function for timeouts
       let cleanupTimeouts = null;
       let notificationRemoved = false;
 
@@ -848,7 +875,7 @@ async setDefaultPosition(notificationContainer) {
     let touchPaused = false;
     let remaining = duration;
     let removeTimeout;
-    let removeDelayTimeout; // ✅ FIX #7: Track fade-out delay timeout
+    let removeDelayTimeout; // Track fade-out delay timeout
     let touchResumeTimeout;
     let startTime = Date.now();
 
@@ -935,7 +962,7 @@ async setDefaultPosition(notificationContainer) {
       }, UI_TIMEOUTS.NOTIFICATION_RESUME_MIN);
     }, { passive: true });
 
-    // ✅ FIX #7: Return cleanup function to clear all timeouts
+    // Return cleanup function to clear all timeouts
     return () => {
       if (removeTimeout) clearTimeout(removeTimeout);
       if (removeDelayTimeout) clearTimeout(removeDelayTimeout);
@@ -1020,7 +1047,7 @@ async setDefaultPosition(notificationContainer) {
       }
     };
 
-    // ✅ FIX #2: Track cleanup functions for this notification
+    // Track cleanup functions for this notification
     const cleanupFunctions = [];
 
     // Unified pointer-based drag (mouse + touch + pen).
@@ -1127,7 +1154,7 @@ async setDefaultPosition(notificationContainer) {
       _safeAddEventListener(notificationContainer, "pointerup", endDrag);
       _safeAddEventListener(notificationContainer, "pointercancel", endDrag);
 
-      // FIX #2: Store cleanup for forced cleanup on notification removal
+      // Store cleanup for forced cleanup on notification removal
       cleanupFunctions.push(() => {
         notificationContainer.removeEventListener("pointermove", onPointerMove);
         notificationContainer.removeEventListener("pointerup", endDrag);
@@ -1141,7 +1168,7 @@ async setDefaultPosition(notificationContainer) {
       notificationContainer.removeEventListener("pointerdown", pointerDownHandler);
     });
 
-    // ✅ FIX #2: Watch for notification removal and cleanup listeners
+    // Watch for notification removal and cleanup listeners
     const cleanup = () => {
       // Clear any pending throttled save
       if (pendingSave) {
@@ -1215,28 +1242,33 @@ async setDefaultPosition(notificationContainer) {
     // fallback here which only handled < and > (missing quotes/ampersand).
     const escape = getEscapeHtml(this.deps);
     const escapedTaskText = escape(taskText);
+    // Task ids are constrained at every current source, but interpolating them
+    // raw into HTML attributes re-makes the trust assumption the v2.359 import
+    // hardening retired. Escaping is round-trip safe: HTML parsing decodes the
+    // entities, so the DOM attribute equals the raw id and dataset lookups match.
+    const safeTaskId = escape(assignedTaskId);
 
     return `
       <div class="main-notification-content"
-           data-task-id="${assignedTaskId}">
+           data-task-id="${safeTaskId}">
 
         ${educationalTipHTML}
 
         ${taskText ? `<div class="recurring-task-name">"${escapedTaskText}"</div>` : ''}
 
-        <span id="${DOM_IDS.notificationCurrentSettings(assignedTaskId)}">
-          🔁 ${getLabel('notify.recurringStatus', { vars: { frequency: '<strong>' + frequency + '</strong>', pattern } })}
+        <span id="${escape(DOM_IDS.notificationCurrentSettings(assignedTaskId))}">
+          🔁 ${getLabel('notify.recurringStatus', { vars: { frequency: '<strong>' + escape(frequency) + '</strong>', pattern: escape(pattern) } })}
         </span><br>
 
         <button class="show-quick-actions"
-                data-task-id="${assignedTaskId}">
+                data-task-id="${safeTaskId}">
           ${getLabel('notify.changeSettings')}
         </button>
 
         <div class="quick-recurring-container"
-             data-task-id="${assignedTaskId}">
+             data-task-id="${safeTaskId}">
 
-          <div class="quick-recurring-options" data-task-id="${assignedTaskId}" role="radiogroup" aria-label="${getLabel('freq.frequency')}">
+          <div class="quick-recurring-options" data-task-id="${safeTaskId}" role="radiogroup" aria-label="${getLabel('freq.frequency')}">
             <div class="quick-option" role="radio" tabindex="${frequency === 'hourly' ? '0' : '-1'}" aria-checked="${frequency === 'hourly'}" data-freq="hourly">
               <span class="radio-circle ${frequency === 'hourly' ? 'selected' : ''}" data-freq="hourly" aria-hidden="true"></span>
               <span class="option-label">${getLabel('freq.hourly')}</span>
@@ -1256,8 +1288,8 @@ async setDefaultPosition(notificationContainer) {
           </div>
 
           <div class="quick-actions">
-            <button class="apply-quick-recurring" data-task-id="${assignedTaskId}">${getLabel('button.apply')}</button>
-            <button class="open-recurring-settings" data-task-id="${assignedTaskId}">⚙ ${getLabel('notify.moreOptions')}</button>
+            <button class="apply-quick-recurring" data-task-id="${safeTaskId}">${getLabel('button.apply')}</button>
+            <button class="open-recurring-settings" data-task-id="${safeTaskId}">⚙ ${getLabel('notify.moreOptions')}</button>
           </div>
         </div>
 
@@ -1266,7 +1298,7 @@ async setDefaultPosition(notificationContainer) {
                 aria-label="${getLabel('notify.showTip')}">💡</button>
 
         <button class="close-btn"
-                data-task-id="${assignedTaskId}"
+                data-task-id="${safeTaskId}"
                 title="${getLabel('button.close')}"
                 aria-label="${getLabel('notify.closeNotification')}">✖</button>
       </div>
@@ -1330,7 +1362,7 @@ async setDefaultPosition(notificationContainer) {
         await _deps.appInit?.waitForCore();
 
         const state = this.deps.AppState.get();
-        const activeCycleId = state.appState?.activeCycleId;
+        const activeCycleId = state?.appState?.activeCycleId;
 
         // Apply recurring settings (DI-pure)
         if (this.deps.applyRecurringToTaskSchema25) {
@@ -1364,8 +1396,8 @@ async setDefaultPosition(notificationContainer) {
           return;
         }
         const state = this.deps.AppState.get();
-        const activeCycleId = state.appState?.activeCycleId;
-        const task = state.data?.cycles?.[activeCycleId]?.tasks.find(t => t.id === taskId);
+        const activeCycleId = state?.appState?.activeCycleId;
+        const task = state?.data?.cycles?.[activeCycleId]?.tasks.find(t => t.id === taskId);
 
         let startingFrequency;
         const selectedCircle = notification.querySelector(DOM_SELECTORS.RADIO_CIRCLE_SELECTED);
@@ -1674,45 +1706,38 @@ async setDefaultPosition(notificationContainer) {
     const confirmBtn = modal.querySelector(DOM_SELECTORS.BTN_CONFIRM);
     const cancelBtn = modal.querySelector(DOM_SELECTORS.BTN_CANCEL);
 
-    setTimeout(() => cancelBtn.focus({ focusVisible: false }), UI_TIMEOUTS.FOCUS_NEXT_TICK);
+    const { settle, disposers } = createModalSettler(overlay, callback);
 
-    let handleKeydown = null;
+    const focusTimer = setTimeout(() => cancelBtn.focus({ focusVisible: false }), UI_TIMEOUTS.FOCUS_NEXT_TICK);
+    disposers.push(() => clearTimeout(focusTimer));
 
-    const cleanup = () => {
-      if (handleKeydown) document.removeEventListener("keydown", handleKeydown);
-      overlay.close();
-      overlay.remove();
-    };
-
-    // For non-destructive modals, Enter anywhere confirms (after a delay to avoid
-    // catching the same keypress that opened the modal). For destructive modals,
-    // skip this — user must explicitly Tab to Confirm and press Enter.
+    // For non-destructive modals, Enter anywhere confirms (armed after a delay
+    // to avoid catching the same keypress that opened the modal). For
+    // destructive modals, skip this — user must explicitly Tab to Confirm and
+    // press Enter.
     if (!destructive) {
-      handleKeydown = (e) => {
+      const handleKeydown = (e) => {
         if (e.key === "Enter") {
           e.preventDefault();
-          confirmBtn.click();
+          settle(true);
         }
       };
-      setTimeout(() => {
+      const keydownTimer = setTimeout(() => {
         _safeAddEventListener(document, "keydown", handleKeydown);
-      }, 100);
+      }, UI_TIMEOUTS.MODAL_ENTER_ARM_DELAY);
+      disposers.push(() => {
+        clearTimeout(keydownTimer);
+        document.removeEventListener("keydown", handleKeydown);
+      });
     }
 
     overlay.addEventListener('cancel', (e) => {
       e.preventDefault();
-      cancelBtn.click();
+      settle(false);
     });
 
-    confirmBtn.onclick = () => {
-      cleanup();
-      callback(true);
-    };
-
-    cancelBtn.onclick = () => {
-      cleanup();
-      callback(false);
-    };
+    confirmBtn.onclick = () => settle(true);
+    cancelBtn.onclick = () => settle(false);
   }
 
   /**
@@ -1777,41 +1802,33 @@ async setDefaultPosition(notificationContainer) {
     const cancelBtn = modal.querySelector(DOM_SELECTORS.BTN_CANCEL);
     const choiceBtns = modal.querySelectorAll(DOM_SELECTORS.BTN_CHOICE);
 
+    const { settle, disposers } = createModalSettler(overlay, callback);
+
     // Focus first choice button
     if (choiceBtns.length > 0) {
-      setTimeout(() => choiceBtns[0].focus({ focusVisible: false }), UI_TIMEOUTS.FOCUS_NEXT_TICK);
+      const focusTimer = setTimeout(() => choiceBtns[0].focus({ focusVisible: false }), UI_TIMEOUTS.FOCUS_NEXT_TICK);
+      disposers.push(() => clearTimeout(focusTimer));
     }
-
-    const cleanup = () => {
-      overlay.close();
-      overlay.remove();
-    };
 
     // Handle Escape / dialog cancel
     overlay.addEventListener('cancel', (e) => {
       e.preventDefault();
-      cancelBtn.click();
+      settle(null);
     });
 
     // Backdrop click-to-close (clicking outside the modal box)
     overlay.addEventListener('click', (e) => {
       if (e.target === overlay) {
-        cancelBtn.click();
+        settle(null);
       }
     });
 
     // Wire choice buttons
     choiceBtns.forEach(btn => {
-      btn.onclick = () => {
-        cleanup();
-        callback(btn.dataset.choiceValue);
-      };
+      btn.onclick = () => settle(btn.dataset.choiceValue);
     });
 
-    cancelBtn.onclick = () => {
-      cleanup();
-      callback(null);
-    };
+    cancelBtn.onclick = () => settle(null);
   }
 
   /**
@@ -1862,44 +1879,45 @@ async setDefaultPosition(notificationContainer) {
     const cancelBtn = overlay.querySelector(DOM_SELECTORS.MINI_CYCLE_BTN_CANCEL);
     const confirmBtn = overlay.querySelector(DOM_SELECTORS.MINI_CYCLE_BTN_CONFIRM);
 
-    setTimeout(() => input.focus({ focusVisible: false }), UI_TIMEOUTS.FOCUS_DELAY_SHORT);
+    const { settle, disposers } = createModalSettler(overlay, callback);
 
-    cancelBtn._clickHandler = () => {
-      overlay.close();
-      overlay.remove();
-      callback(null);
-    };
-    _safeAddEventListener(cancelBtn, "click", cancelBtn._clickHandler);
+    const focusTimer = setTimeout(() => input.focus({ focusVisible: false }), UI_TIMEOUTS.FOCUS_DELAY_SHORT);
+    disposers.push(() => clearTimeout(focusTimer));
 
-    confirmBtn._clickHandler = () => {
+    // Validation gate before settling — a required-but-empty value keeps the
+    // modal open (deliberately does NOT settle, so the user can try again).
+    const submit = () => {
       const value = input.value.trim();
       if (required && !value) {
         input.classList.add(DOM_CLASSES.MINICYCLE_INPUT_ERROR);
         input.focus();
         return;
       }
-      overlay.close();
-      overlay.remove();
-      callback(value);
+      settle(value);
     };
+
+    cancelBtn._clickHandler = () => settle(null);
+    _safeAddEventListener(cancelBtn, "click", cancelBtn._clickHandler);
+
+    confirmBtn._clickHandler = submit;
     _safeAddEventListener(confirmBtn, "click", confirmBtn._clickHandler);
 
     overlay.addEventListener('cancel', (e) => {
       e.preventDefault();
-      cancelBtn.click();
+      settle(null);
     });
 
     // Backdrop click-to-close (clicking outside the prompt box)
     overlay.addEventListener('click', (e) => {
       if (e.target === overlay) {
-        cancelBtn.click();
+        settle(null);
       }
     });
 
     overlay._keydownHandler = (e) => {
       if (e.key === "Enter") {
         e.preventDefault();
-        confirmBtn.click();
+        submit();
       }
     };
     _safeAddEventListener(input, "keydown", overlay._keydownHandler);

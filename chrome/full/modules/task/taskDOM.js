@@ -198,8 +198,12 @@ export class TaskDOMManager {
             updateMoveArrowsVisibility: resolvedDeps.updateMoveArrowsVisibility || null,
 
             // Drag and drop / task interactions (for TaskUtils)
-            enableDragAndDropOnTask: resolvedDeps.enableDragAndDropOnTask || null,
-            remindOverdueTasks: resolvedDeps.remindOverdueTasks || null
+            // NOTE: remindOverdueTasks was removed here (drift-review C-24): no
+            // manifest/depMappings route ever provided it, so the forward was
+            // always null and TaskUtils' guarded call never ran. Wiring it to
+            // dueDatesManager.remindOverdueTasks would be a BEHAVIOR change
+            // (overdue nudge 1s after every task add) — decide deliberately.
+            enableDragAndDropOnTask: resolvedDeps.enableDragAndDropOnTask || null
         };
 
         // Internal state
@@ -292,7 +296,6 @@ export class TaskDOMManager {
                     get AppState() { return instanceDeps.AppState; },
                     get loadMiniCycleData() { return instanceDeps.loadMiniCycleData; },
                     get generateId() { return instanceDeps.generateId; },
-                    get remindOverdueTasks() { return instanceDeps.remindOverdueTasks; },
                     get enableDragAndDropOnTask() { return instanceDeps.enableDragAndDropOnTask; },
                     get updateMoveArrowsVisibility() { return instanceDeps.updateMoveArrowsVisibility; },
                     get saveTaskToSchema25() { return instanceDeps.saveTaskToSchema25; }
@@ -356,9 +359,7 @@ export class TaskDOMManager {
                     TaskOptionsVisibilityController: this.deps.TaskOptionsVisibilityController,
                     showTaskOptions: this.deps.showTaskOptions,
                     hideTaskOptions: this.deps.hideTaskOptions,
-                    attachKeyboardTaskOptionToggle: this.deps.attachKeyboardTaskOptionToggle,
-                    triggerLogoBackground: this.deps.triggerLogoBackground,
-                    triggerLogoScan: this.deps.triggerLogoScan
+                    attachKeyboardTaskOptionToggle: this.deps.attachKeyboardTaskOptionToggle
                 });
 
                 // ✅ CRITICAL: Initialize event delegation for task clicks
@@ -863,9 +864,16 @@ export class TaskDOMManager {
 
             // Note: autoSave removed - handleTaskCompletionChange already updates AppState
 
-            // Logo animation - scan effect in to-do mode, background flash otherwise
+            // Logo animation - scan effect in to-do mode, background flash otherwise.
+            // Mode is DERIVED from the active cycle's deleteCheckedTasks (same
+            // pattern as the completion handler below) — the previous code read
+            // AppState.getState() (method doesn't exist) and settings.isToDoMode
+            // (field doesn't exist), so optional chaining silently yielded
+            // undefined and the to-do scan branch never fired.
             if (checkbox.checked) {
-                const isToDoMode = this.deps.AppState?.getState?.()?.settings?.isToDoMode;
+                const logoState = this.deps.AppState?.get?.();
+                const logoCycle = logoState?.data?.cycles?.[logoState?.appState?.activeCycleId];
+                const isToDoMode = logoCycle?.deleteCheckedTasks === true;
                 if (isToDoMode && typeof this.deps.triggerLogoScan === 'function') {
                     this.deps.triggerLogoScan(500);
                 } else if (typeof this.deps.triggerLogoBackground === 'function') {
@@ -973,7 +981,12 @@ export class TaskDOMManager {
             const isCurrentlyRecurring = !!hasRecurringTemplate || isButtonActive;
             const isNowRecurring = !isCurrentlyRecurring;
 
-            task.recurring = isNowRecurring;
+            // One-door migration (v2.361): no pre-producer write to the live
+            // task — activateTaskRecurringState / deactivateTaskRecurringState
+            // set task.recurring inside their producers (the activation/
+            // deactivation handlers below), which is the single door. The old
+            // `task.recurring = isNowRecurring` here only "worked" via
+            // get()-aliasing and never marked state dirty itself.
             button.classList.toggle(DOM_CLASSES.ACTIVE, isNowRecurring);
             button.setAttribute("aria-pressed", isNowRecurring.toString());
 
@@ -1141,7 +1154,7 @@ export class TaskDOMManager {
         const { completed } = taskContext;
         const { shouldSave, isLoading, deferAppend, targetContainer } = options;
 
-        // ✅ FIX #6: Support batched DOM operations
+        // Support batched DOM operations
         const container = targetContainer || taskList;
 
         // Safety check: ensure container exists and is a DOM element
@@ -1186,7 +1199,6 @@ export class TaskDOMManager {
 
         // Setup final interactions (delegated to TaskUtils)
         TaskUtils.setupFinalTaskInteractions(taskItem, isLoading, {
-            remindOverdueTasks: this.deps.remindOverdueTasks,
             enableDragAndDropOnTask: this.deps.enableDragAndDropOnTask,
             updateMoveArrowsVisibility: this.deps.updateMoveArrowsVisibility
         });
