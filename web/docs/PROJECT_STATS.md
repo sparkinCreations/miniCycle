@@ -5,7 +5,7 @@
 > This file contains metrics that change frequently (version, counts, etc.).
 > All other documentation should reference this file instead of hardcoding these values.
 
-**Last Updated**: August 10, 2026
+**Last Updated**: August 11, 2026
 
 ---
 
@@ -13,15 +13,15 @@
 
 | Metric | Value |
 |--------|-------|
-| **App Version** | 2.401 |
+| **App Version** | 2.402 |
 | **Lite Version** | 2.092 (frozen) |
 | **Schema Version** | 2.5 |
 | **Total Modules** | 138 |
-| **Total Tests** | 3303 |
+| **Total Tests** | 3307 |
 | **Test Pass Rate** | 100% |
 | **CSS Files** | 44 |
-| **JSDoc Blocks** | 1336 |
-| **Documentation Files** | 245 |
+| **JSDoc Blocks** | 1337 |
+| **Documentation Files** | 242 |
 | **DI Completion** | 100% |
 | **Custom window.* Globals (modules)** | 0 |
 
@@ -57,9 +57,9 @@
 | `miniCycle-main.js` | ~50 | Entrypoint |
 | `modules/boot/orchestrator.js` | ~1222 | Sequence control + boot UI + early coordination |
 | `modules/boot/coreBoot.js` | ~785 | Core state & init |
-| `modules/boot/featureBoot.js` | ~617 | DI wiring hub |
+| `modules/boot/featureBoot.js` | ~620 | DI wiring hub |
 | `modules/boot/uiBoot.js` | ~1186 | UI handlers |
-| **Total** | **~3860** | |
+| **Total** | **~3863** | |
 
 ---
 
@@ -67,7 +67,7 @@
 
 | Category | Tests |
 |----------|-------|
-| Total Tests | 3303 |
+| Total Tests | 3307 |
 | Test Files | 130 |
 | Pass Rate | 100% |
 | Platforms Tested | Mac, iPad, iPhone |
