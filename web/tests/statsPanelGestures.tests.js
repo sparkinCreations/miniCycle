@@ -34,22 +34,7 @@ export async function runStatsPanelGesturesTests(resultsDiv) {
     // Mirrors the slice of StatsPanelManager the gestures module touches.
     const makeManager = (overrides = {}) => ({
         state: {
-            isStatsVisible: false,
-            isSwiping: false,
-            startX: 0,
-            isMouseDragging: false,
-            mouseStartX: 0,
-            wheelDeltaX: 0,
-            isPointerSwiping: false,
-            pointerStartX: 0
-        },
-        config: {
-            TOUCH_SWIPE_THRESHOLD: 50,
-            MOUSE_DRAG_START_THRESHOLD: 10,
-            MOUSE_DRAG_THRESHOLD: 100,
-            WHEEL_SWIPE_THRESHOLD: 50,
-            WHEEL_RESET_DELAY: 300,
-            POINTER_SWIPE_THRESHOLD: 50
+            isStatsVisible: false
         },
         elements: { statsPanel: null, taskView: null, dots: [] },
         dependencies: {
@@ -74,90 +59,13 @@ export async function runStatsPanelGesturesTests(resultsDiv) {
         };
     };
 
-    const touchEvent = (clientX, target = document.body) => ({
-        target,
-        touches: [{ clientX }]
-    });
+    // NOTE: tests for handleTouchStart/Move/End, handleMouse*, handleWheel,
+    // handlePointer* and handleKeydown were removed with those methods.
+    // gesturePanelManager owns every document-level gesture listener and has
+    // its own suite; the copies here were never attached, and their tests
+    // asserted PRE-axis-fix behaviour (no startY, no AXIS_DOMINANCE_RATIO),
+    // vouching for semantics the app has not had since the D-03 split.
 
-    await test('touch swipe left past threshold shows stats panel', () => {
-        const m = makeManager();
-        const g = new StatsPanelGestures(m);
-        let shown = 0;
-        g.showStatsPanel = () => { shown++; };
-
-        g.handleTouchStart(touchEvent(300));
-        if (!m.state.isSwiping) throw new Error('Touch start should begin a swipe');
-        if (m.state.startX !== 300) throw new Error('Touch start should record startX');
-
-        g.handleTouchMove(touchEvent(200)); // 100px left, threshold 50
-        if (shown !== 1) throw new Error('Left swipe past threshold should show stats');
-        if (!m.state.isStatsVisible) throw new Error('State should flip to stats visible');
-        if (m.state.isSwiping) throw new Error('Swipe should end after triggering');
-    });
-
-    await test('touch swipe right returns to task view', () => {
-        const m = makeManager();
-        m.state.isStatsVisible = true;
-        const g = new StatsPanelGestures(m);
-        let taskShown = 0;
-        g.showTaskView = () => { taskShown++; };
-
-        g.handleTouchStart(touchEvent(100));
-        g.handleTouchMove(touchEvent(200)); // 100px right
-        if (taskShown !== 1) throw new Error('Right swipe should show task view');
-        if (m.state.isStatsVisible) throw new Error('State should flip back to tasks');
-    });
-
-    await test('touch start ignores interactive elements', () => {
-        const m = makeManager();
-        const g = new StatsPanelGestures(m);
-        const button = document.createElement('button');
-        document.body.appendChild(button);
-        try {
-            g.handleTouchStart(touchEvent(300, button));
-            if (m.state.isSwiping) throw new Error('Swipe should not start on a button');
-        } finally {
-            button.remove();
-        }
-    });
-
-    await test('touch start blocked while a notification is dragging', () => {
-        const m = makeManager();
-        m.dependencies.isDraggingNotification = () => true;
-        const g = new StatsPanelGestures(m);
-        g.handleTouchStart(touchEvent(300));
-        if (m.state.isSwiping) throw new Error('Swipe should not start during notification drag');
-    });
-
-    await test('mouse drag left past threshold shows stats panel', () => {
-        const m = makeManager();
-        const g = new StatsPanelGestures(m);
-        let shown = 0;
-        g.showStatsPanel = () => { shown++; };
-
-        g.handleMouseDown({ target: document.body, clientX: 400 });
-        if (m.state.mouseStartX !== 400) throw new Error('Mouse down should record start X');
-
-        g.handleMouseMove({ clientX: 250 }); // -150px, threshold 100
-        if (shown !== 1) throw new Error('Left drag past threshold should show stats');
-        if (!m.state.isStatsVisible) throw new Error('State should flip to stats visible');
-    });
-
-    await test('resetMouseDrag clears drag state and restores text selection', () => {
-        const m = makeManager();
-        const g = new StatsPanelGestures(m);
-        g.handleMouseDown({ target: document.body, clientX: 400 });
-        if (document.body.style.userSelect !== 'none') {
-            throw new Error('Mouse down should disable text selection');
-        }
-        g.handleMouseUp();
-        if (m.state.mouseStartX !== 0 || m.state.isMouseDragging) {
-            throw new Error('Mouse up should reset drag state');
-        }
-        if (document.body.style.userSelect === 'none') {
-            throw new Error('Mouse up should restore text selection');
-        }
-    });
 
     await test('showTaskView and showStatsPanel delegate to the carousel', () => {
         const g = new StatsPanelGestures(makeManager());
@@ -222,13 +130,15 @@ export async function runStatsPanelGesturesTests(resultsDiv) {
         }
     });
 
-    await test('destroy clears carousel and pending wheel timeout', () => {
+    await test('destroy tears down the carousel', () => {
         const g = new StatsPanelGestures(makeManager());
         g.carousel = mockCarousel();
-        g.wheelTimeout = setTimeout(() => {}, 10000);
+        const car = g.carousel;
         g.destroy();
+        if (!car.calls.some(c => c[0] === 'destroy')) {
+            throw new Error('destroy should tear the carousel down, not just drop the reference');
+        }
         if (g.carousel !== null) throw new Error('destroy should drop the carousel');
-        if (g.wheelTimeout !== null) throw new Error('destroy should clear the wheel timeout');
     });
 
     // ── panel persistence + boot restore ────────────────────────────────────

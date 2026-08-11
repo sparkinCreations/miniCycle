@@ -183,8 +183,11 @@ export async function runStatsPanelTests(resultsDiv) {
             throw new Error('Initial state should have stats hidden');
         }
 
-        if (state.isSwiping !== false) {
-            throw new Error('Initial state should not be swiping');
+        // Gesture bookkeeping (isSwiping, mouseStartX, wheelDeltaX, …) is NOT
+        // here — gesturePanelManager owns it. Asserting it back would re-bless
+        // the duplicate this manager used to carry.
+        if ('isSwiping' in state) {
+            throw new Error('Gesture state belongs to gesturePanelManager, not the stats manager');
         }
     });
 

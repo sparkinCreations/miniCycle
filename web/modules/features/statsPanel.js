@@ -26,7 +26,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { GESTURE, UI_TIMEOUTS, CHART, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION } from '../core/constants.js';
+import { UI_TIMEOUTS, CHART, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION } from '../core/constants.js';
 import { getLabel, getIcon } from '../labels/labelResolver.js';
 import { recordActionUsage } from '../ui/actionUsage.js';
 // Pure utility class (no side effects/module state) — safe static import.
@@ -104,25 +104,17 @@ export class StatsPanelManager {
             fallbackOverlayCheck: this.fallbackOverlayCheck.bind(this)
         };
 
-        // State management
+        // State management.
+        //
+        // Only which panel is showing lives here. The swipe/drag/wheel
+        // bookkeeping (startX, isSwiping, mouseStartX, wheelDeltaX, …) and the
+        // gesture thresholds used to be duplicated here too, feeding a second
+        // copy of the handlers that was never attached to anything —
+        // gesturePanelManager owns both the listeners and their own state and
+        // config. Do not re-add them here; a second set of thresholds is a
+        // second set to forget when one changes.
         this.state = {
-            startX: 0,
-            isSwiping: false,
-            isStatsVisible: false,
-            isMouseDragging: false,
-            mouseStartX: 0,
-            wheelDeltaX: 0,
-            isPointerSwiping: false,
-            pointerStartX: 0
-        };
-
-        // Configuration thresholds (from centralized constants.js)
-        this.config = {
-            SWIPE_THRESHOLD: GESTURE.SWIPE_THRESHOLD,
-            MOUSE_DRAG_THRESHOLD: GESTURE.MOUSE_DRAG_THRESHOLD,
-            WHEEL_RESET_DELAY: UI_TIMEOUTS.WHEEL_RESET_DELAY,
-            TOUCH_SWIPE_THRESHOLD: GESTURE.TOUCH_SWIPE,
-            MOUSE_DRAG_START_THRESHOLD: GESTURE.MOUSE_DRAG_START
+            isStatsVisible: false
         };
 
         // Collapsible section state
@@ -402,19 +394,14 @@ export class StatsPanelManager {
         }
         this._eventListenersInitialized = true;
 
-        // Bind methods to preserve 'this' context
+        // Bind methods to preserve 'this' context.
+        //
+        // NOTE: the touch/mouse/pointer/wheel/keydown gesture handlers are NOT
+        // bound here. gesturePanelManager owns every document-level gesture
+        // listener (touchstart/move/end, mousedown/move/up, wheel,
+        // pointerdown/move/up, keydown) and is the only copy that receives real
+        // events. Binding a second, unattached set here made it look wired.
         this.boundHandlers = {
-            handleTouchStart: this._gestures.handleTouchStart.bind(this._gestures),
-            handleTouchMove: this._gestures.handleTouchMove.bind(this._gestures),
-            handleTouchEnd: this._gestures.handleTouchEnd.bind(this._gestures),
-            handleWheel: this._gestures.handleWheel.bind(this._gestures),
-            handleMouseDown: this._gestures.handleMouseDown.bind(this._gestures),
-            handleMouseMove: this._gestures.handleMouseMove.bind(this._gestures),
-            handleMouseUp: this._gestures.handleMouseUp.bind(this._gestures),
-            handlePointerDown: this._gestures.handlePointerDown.bind(this._gestures),
-            handlePointerMove: this._gestures.handlePointerMove.bind(this._gestures),
-            handlePointerUp: this._gestures.handlePointerUp.bind(this._gestures),
-            handleKeydown: this._gestures.handleKeydown.bind(this._gestures),
             handleTaskListChange: this.handleTaskListChange.bind(this),
             handleAddTaskClick: this.handleAddTaskClick.bind(this),
             handleDotClick: this._gestures.handleDotClick.bind(this._gestures),
@@ -1240,8 +1227,7 @@ export class StatsPanelManager {
             name: 'StatsPanelManager',
             version: '1.395',
             state: this.getState(),
-            elements: Object.keys(this.elements).filter(key => this.elements[key]),
-            config: this.config
+            elements: Object.keys(this.elements).filter(key => this.elements[key])
         };
     }
 }

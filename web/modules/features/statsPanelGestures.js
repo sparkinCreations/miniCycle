@@ -6,246 +6,33 @@
  * add it to moduleManifests.js — same rule as the settingsManager/taskDOM
  * sub-modules (see HIDDEN_CODEBASE_INSIGHTS).
  *
- * Owns: touch/mouse/pointer/wheel/keyboard gesture handling, the panel
- * carousel, Task↔Stats view switching, nav dots, and a11y view announcements.
+ * Owns: the panel carousel, Task↔Stats view switching, nav dots, panel
+ * persistence/restore, and a11y view announcements. It does NOT handle raw
+ * gestures — gesturePanelManager owns every document-level touch/mouse/
+ * pointer/wheel/keydown listener and drives this module's show* methods.
  * Shared state (state/config/elements/dependencies) stays OWNED by the
  * manager and is reached via `this.m`; the module-scope DI proxy is reached
  * via `this.m.rawDeps`. Methods were moved VERBATIM from statsPanel.js with
  * only those ownership rewrites.
  */
-import { getLabel, getIcon } from '../labels/labelResolver.js';
-import { DOM_CLASSES, DOM_IDS, UI_TIMEOUTS, EVENTS } from '../core/constants.js';
+import { getLabel } from '../labels/labelResolver.js';
+import { DOM_CLASSES, DOM_IDS, EVENTS } from '../core/constants.js';
 import { PanelCarousel } from '../ui/panelCarousel.js';
 
 export class StatsPanelGestures {
     constructor(manager) {
         this.m = manager;
-        this.wheelTimeout = null;
         this.carousel = null;
     }
 
-    handleTouchStart(event) {
-        if (this.m.dependencies.isDraggingNotification()) return;
-        if (this.m.dependencies.isOverlayActive()) return;
-
-        // Exclude interactive elements (match mouse handler)
-        if (
-            event.target.closest("button, input, select, textarea, .task-options, .notification, a[href], .quick-actions-window, .quick-actions-header") ||
-            ['BUTTON', 'INPUT', 'SELECT', 'TEXTAREA'].includes(event.target.tagName)
-        ) {
-            return;
-        }
-
-        this.m.state.startX = event.touches[0].clientX;
-        this.m.state.isSwiping = true;
-    }
-
-    handleTouchMove(event) {
-        if (!this.m.state.isSwiping || this.m.dependencies.isDraggingNotification()) return;
-        if (this.m.dependencies.isOverlayActive()) return;
-        
-        const moveX = event.touches[0].clientX;
-        const difference = this.m.state.startX - moveX;
-
-        if (difference > this.m.config.TOUCH_SWIPE_THRESHOLD && !this.m.state.isStatsVisible) {
-            this.m.state.isStatsVisible = true;
-            this.showStatsPanel();
-            this.m.state.isSwiping = false;
-        }
-
-        if (difference < -this.m.config.TOUCH_SWIPE_THRESHOLD && this.m.state.isStatsVisible) {
-            this.m.state.isStatsVisible = false;
-            this.showTaskView();
-            this.m.state.isSwiping = false;
-        }
-    }
-
-    handleTouchEnd() {
-        this.m.state.isSwiping = false;
-    }
-
-    // ==========================================
-    // 🖱️ MOUSE EVENT HANDLERS
-    // ==========================================
-
-    handleMouseDown(event) {
-        if (this.m.dependencies.isOverlayActive()) return;
-
-        // Exclude interactive elements
-        if (
-            this.m.dependencies.isDraggingNotification() ||
-            event.target.closest("button, input, select, textarea, .task-options, .notification, a[href], .quick-actions-window, .quick-actions-header") ||
-            ['BUTTON', 'INPUT', 'SELECT', 'TEXTAREA'].includes(event.target.tagName)
-        ) {
-            return;
-        }
-
-        this.m.state.isMouseDragging = false;
-        this.m.state.mouseStartX = event.clientX;
-        this.m.rawDeps.getBody().style.userSelect = "none";
-    }
-
-    handleMouseMove(event) {
-        if (this.m.state.mouseStartX === 0) return;
-
-        const deltaX = event.clientX - this.m.state.mouseStartX;
-        const absDelta = Math.abs(deltaX);
-
-        // Start dragging after threshold is met
-        if (!this.m.state.isMouseDragging && absDelta > this.m.config.MOUSE_DRAG_START_THRESHOLD) {
-            this.m.state.isMouseDragging = true;
-        }
-
-        if (this.m.state.isMouseDragging && absDelta > this.m.config.MOUSE_DRAG_THRESHOLD) {
-            // Left drag (negative deltaX) = show stats panel
-            if (deltaX < -this.m.config.MOUSE_DRAG_THRESHOLD && !this.m.state.isStatsVisible) {
-                this.m.state.isStatsVisible = true;
-                this.showStatsPanel();
-                this.resetMouseDrag();
-            }
-            // Right drag (positive deltaX) = show task view  
-            else if (deltaX > this.m.config.MOUSE_DRAG_THRESHOLD && this.m.state.isStatsVisible) {
-                this.m.state.isStatsVisible = false;
-                this.showTaskView();
-                this.resetMouseDrag();
-            }
-        }
-    }
-
-    handleMouseUp() {
-        this.resetMouseDrag();
-    }
-
-    resetMouseDrag() {
-        this.m.state.isMouseDragging = false;
-        this.m.state.mouseStartX = 0;
-        const body = this.m.rawDeps.getBody();
-        body.style.cursor = "";
-        body.style.userSelect = "";
-    }
-
-    // ==========================================
-    // 🛞 WHEEL EVENT HANDLERS
-    // ==========================================
-
-    handleWheel(event) {
-        if (this.m.dependencies.isOverlayActive()) return;
-
-        // Only handle horizontal scrolling
-        if (Math.abs(event.deltaX) < 10) return;
-        
-        // Prevent default horizontal scrolling
-        if (Math.abs(event.deltaX) > Math.abs(event.deltaY)) {
-            event.preventDefault();
-        }
-        
-        this.m.state.wheelDeltaX += event.deltaX;
-        
-        // Clear previous timeout
-        if (this.wheelTimeout) {
-            clearTimeout(this.wheelTimeout);
-        }
-        
-        // Check if we've reached the swipe threshold
-        if (this.m.state.wheelDeltaX > this.m.config.SWIPE_THRESHOLD) {
-            if (!this.m.state.isStatsVisible) {
-                this.m.state.isStatsVisible = true;
-                this.showStatsPanel();
-            }
-            this.m.state.wheelDeltaX = 0;
-        } else if (this.m.state.wheelDeltaX < -this.m.config.SWIPE_THRESHOLD) {
-            if (this.m.state.isStatsVisible) {
-                this.m.state.isStatsVisible = false;
-                this.showTaskView();
-            }
-            this.m.state.wheelDeltaX = 0;
-        }
-        
-        // Reset wheel tracking after a delay
-        this.wheelTimeout = setTimeout(() => {
-            this.m.state.wheelDeltaX = 0;
-        }, this.m.config.WHEEL_RESET_DELAY);
-    }
-
-    // ==========================================
-    // 👆 POINTER EVENT HANDLERS
-    // ==========================================
-
-    handlePointerDown(event) {
-        // Only track if it's a touch or pen input
-        if (event.pointerType === "touch" || event.pointerType === "pen") {
-            if (this.m.dependencies.isDraggingNotification()) return;
-            if (this.m.dependencies.isOverlayActive()) return;
-
-            // Exclude interactive elements (match mouse handler)
-            if (
-                event.target.closest("button, input, select, textarea, .task-options, .notification, a[href], .quick-actions-window, .quick-actions-header") ||
-                ['BUTTON', 'INPUT', 'SELECT', 'TEXTAREA'].includes(event.target.tagName)
-            ) {
-                return;
-            }
-
-            this.m.state.isPointerSwiping = true;
-            this.m.state.pointerStartX = event.clientX;
-        }
-    }
-
-    handlePointerMove(event) {
-        if (!this.m.state.isPointerSwiping || event.pointerType === "mouse") return;
-        
-        const moveX = event.clientX;
-        const difference = this.m.state.pointerStartX - moveX;
-        
-        if (Math.abs(difference) > this.m.config.TOUCH_SWIPE_THRESHOLD) {
-            if (difference > this.m.config.TOUCH_SWIPE_THRESHOLD && !this.m.state.isStatsVisible) {
-                this.m.state.isStatsVisible = true;
-                this.showStatsPanel();
-                this.m.state.isPointerSwiping = false;
-            } else if (difference < -this.m.config.TOUCH_SWIPE_THRESHOLD && this.m.state.isStatsVisible) {
-                this.m.state.isStatsVisible = false;
-                this.showTaskView();
-                this.m.state.isPointerSwiping = false;
-            }
-        }
-    }
-
-    handlePointerUp() {
-        this.m.state.isPointerSwiping = false;
-    }
-
-    // ==========================================
-    // ⌨️ KEYBOARD EVENT HANDLERS
-    // ==========================================
-
-    handleKeydown(event) {
-        if (!event.shiftKey) return;
-
-        if (event.key === "ArrowRight" && !this.m.state.isStatsVisible) {
-            event.preventDefault();
-            this.showStatsPanel();
-            this.m.dependencies.showNotification(`${getIcon('keyboard')} ${getLabel('notify.keyboardStatsOpened')}`, "info", UI_TIMEOUTS.NOTIFICATION_BRIEF);
-        } else if (event.key === "ArrowLeft" && this.m.state.isStatsVisible) {
-            event.preventDefault();
-            this.showTaskView();
-            this.m.dependencies.showNotification(`${getIcon('keyboard')} ${getLabel('notify.keyboardTaskOpened')}`, "info", UI_TIMEOUTS.NOTIFICATION_BRIEF);
-        }
-
-        // Shift+Tab for quick toggle (only when nothing is focused — preserve normal tab navigation)
-        if (event.key === "Tab") {
-            const activeEl = this.m.rawDeps.getActiveElement();
-            const hasFocusedElement = activeEl && activeEl !== this.m.rawDeps.getBody();
-            if (hasFocusedElement || this.m.dependencies.isOverlayActive()) return;
-
-            event.preventDefault();
-            if (this.m.state.isStatsVisible) {
-                this.showTaskView();
-                this.m.dependencies.showNotification(`${getIcon('keyboard')} ${getLabel('notify.quickToggleTask')}`, "info", UI_TIMEOUTS.NOTIFICATION_BRIEF);
-            } else {
-                this.showStatsPanel();
-                this.m.dependencies.showNotification(`${getIcon('keyboard')} ${getLabel('notify.quickToggleStats')}`, "info", UI_TIMEOUTS.NOTIFICATION_BRIEF);
-            }
-        }
-    }
+    // NOTE: no touch/mouse/pointer/wheel/keydown handlers live here.
+    // gesturePanelManager (modules/ui/gesturePanelManager.js) owns every
+    // document-level gesture listener and is the only copy that ever receives
+    // real events. This module kept a verbatim second copy from the D-03 split
+    // that was never attached — so it silently missed the v2.392 axis-dominance
+    // fix (startX/startY + AXIS_DOMINANCE_RATIO) and drifted for weeks with its
+    // own passing tests. Panel switching below is the live surface; gestures
+    // reach it through the manager.
 
     // ==========================================
     // 🎛️ VIEW MANAGEMENT
@@ -589,10 +376,6 @@ export class StatsPanelGestures {
     destroy() {
         this.carousel?.destroy();
         this.carousel = null;
-        if (this.wheelTimeout) {
-            clearTimeout(this.wheelTimeout);
-            this.wheelTimeout = null;
-        }
         if (this._onFocusModeActivated) {
             document.removeEventListener(EVENTS.FOCUS_MODE_ACTIVATED, this._onFocusModeActivated);
             this._onFocusModeActivated = null;
