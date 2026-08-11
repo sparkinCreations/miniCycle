@@ -218,10 +218,14 @@ def check_public_surfaces(list_mode):
 
     1. Manual version-stamp freshness — legal/user-manual.html carries a
        "(vX.YYY)" stamp that silently went 134 minor versions stale (v2.206 vs
-       v2.340). Normal between-release drift is a handful of versions, so fail
-       only when it falls more than STALE_TOLERANCE minor versions behind
-       version.js — loose enough not to nag every release, tight enough that it
-       can never rot for months again.
+       v2.340). Fail only when it falls more than STALE_TOLERANCE minor
+       versions behind version.js — loose enough not to nag every release,
+       tight enough that it can never rot for months again.
+
+       NOTE ON THE UNIT: the threshold is measured in VERSIONS but the intent
+       is TIME ("months"), so its correctness depends on release cadence. See
+       STALE_TOLERANCE below — the number has to be re-derived whenever the
+       pace changes materially.
 
     2. Terminology — the feature is "Focus View" everywhere user-facing; the
        marketing page shipped "Focus Mode" for months (A-04). Forbidden spellings
@@ -229,7 +233,35 @@ def check_public_surfaces(list_mode):
        code identifiers like `focusMode`/`focus-mode` never false-positive.
     """
     errors = 0
-    STALE_TOLERANCE = 30
+    # Raised 30 -> 250 (Aug 11 2026) because the release pace changed, not
+    # because the manual got harder to maintain.
+    #
+    # Measured from `git log` release commits: 96 releases between Jul 20 and
+    # Aug 11 2026 = ~4.2/day, with the trailing week nearer 6.7/day. At that
+    # cadence the old 30-version window is about FIVE DAYS — so the gate had
+    # stopped meaning "this rotted for months" and started meaning "you shipped
+    # this week", firing on releases that changed nothing user-facing. A gate
+    # that cries wolf gets its number bumped reflexively, which is how a
+    # tripwire quietly becomes decoration.
+    #
+    # 250 versions is roughly 5-8 weeks at the pace above — still "months" in
+    # the sense the check was written for, while staying quiet across a normal
+    # burst of releases.
+    #
+    # RE-DERIVE THIS, do not nudge it. If a failure looks premature, measure the
+    # current cadence first:
+    #   git log --pretty='%ad %s' --date=short \
+    #     | grep -c 'chore(release): update version to'
+    # and only change the number if the pace moved. If the answer is "the
+    # manual really is out of date", the fix is reviewing the manual.
+    #
+    # KNOWN WEAKNESS: versions are a proxy for time. The 134-version rot that
+    # motivated this check happened at a much slower pace and would NOT trip a
+    # 250 threshold today. A date-based check (parse the "August 2026" half of
+    # the stamp, fail past ~90 days) would express the intent directly and be
+    # immune to cadence changes; left as a follow-up rather than folded into a
+    # threshold bump.
+    STALE_TOLERANCE = 250
 
     # -- 1. manual version stamp vs version.js --------------------------------
     manual = os.path.join(WEB, 'legal', 'user-manual.html')
