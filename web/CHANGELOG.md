@@ -1,3 +1,8 @@
+## [2.404] - 2026-08-11
+- fix(di): preserve late-binding getters through resolve; harden validation and facade failure modes
+- ci(validate:comments): gate identifiers named in comments at zero
+
+
 ## [2.403] - 2026-08-11
 - refactor(stats): delete the dead second copy of the gesture handlers
 - docs(renderer): put the search-visibility comment back on its own dep
