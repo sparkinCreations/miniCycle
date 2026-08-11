@@ -1888,6 +1888,19 @@ fi
 echo ""
 
 # ============================================
+# PRE-PLATFORM: SWEEP iCLOUD DUPLICATE CRUFT
+# ============================================
+# iCloud (repo lives under ~/Documents) mints "<name> 2.<ext>" duplicates that
+# broke the v2.273 Android release: a stray "assets 2/" made the payload
+# rebuild throw ENOTEMPTY, the non-fatal stage carried on, and the APK shipped
+# versionName X over an X-1 payload with git status clean. Sweep BEFORE any
+# platform stage so the class can't recur. Deletes only when the original
+# sibling exists; never touches archives. See scripts/sweep-icloud-cruft.cjs.
+if [ "$BUILD_CHROME" = true ] || [ "$BUILD_ANDROID" = true ] || [ "$BUILD_IOS" = true ]; then
+    node scripts/sweep-icloud-cruft.cjs || echo "⚠️  Cruft sweep failed (continuing — builds may hit ENOTEMPTY on duplicates)"
+fi
+
+# ============================================
 # OPTIONAL: REBUILD CHROME (FULL) EXTENSION
 # ============================================
 # Regenerates chrome/full/ from web/ (externalizes inline scripts, strips the
