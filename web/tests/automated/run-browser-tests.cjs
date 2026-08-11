@@ -277,9 +277,25 @@ async function runModuleTests(page, moduleName, index = 0) {
             passedCount: 0,
             failedCount: 1,
             summary: 'Test execution failed',
-            error: error.message
+            error: error.message,
+            // Distinguishes "the page never reported" from every other failure.
+            // ONLY this shape is retried — see RETRY discipline in runAllTests.
+            timedOut: isTimeout(error)
         };
     }
+}
+
+/**
+ * Did this failure come from the module never reporting, rather than from a
+ * test actually failing?
+ *
+ * Playwright raises TimeoutError for waitForSelector/goto expiry. That is an
+ * INFRASTRUCTURE symptom: the page produced no Results line at all, which is
+ * what the runner reports as `0/1`. An assertion failure looks nothing like
+ * this — the module runs, renders `Results: 24/25`, and returns normally.
+ */
+function isTimeout(error) {
+    return error?.name === 'TimeoutError' || /Timeout .* exceeded/i.test(error?.message || '');
 }
 
 async function runAllTests() {
@@ -331,7 +347,9 @@ async function runAllTests() {
     const results = [];
 
     // Run tests for each module
-    for (const [moduleIndex, module] of modules.entries()) {
+    // Page setup, factored out so a retry gets an IDENTICAL fresh page rather
+    // than reusing one whose state may be why the first attempt stalled.
+    const newInstrumentedPage = async () => {
         const page = await context.newPage();
         // Log console messages for debugging
         page.on('console', msg => {
@@ -358,9 +376,46 @@ async function runAllTests() {
         await page.route('**/*', async (route) => {
             await route.continue({ headers: { ...route.request().headers(), 'Cache-Control': 'no-cache' } });
         });
-        const result = await runModuleTests(page, module, moduleIndex);
-        results.push(result);
+        return page;
+    };
+
+    for (const [moduleIndex, module] of modules.entries()) {
+        const page = await newInstrumentedPage();
+        let result = await runModuleTests(page, module, moduleIndex);
         await page.close();
+
+        // RETRY DISCIPLINE — one retry, timeouts ONLY.
+        //
+        // A timeout means the page never rendered a Results line, so no test
+        // actually ran. That is an infrastructure symptom, and it has been
+        // recurring on a DIFFERENT module each run (Aug 2026: modalManager,
+        // dailyResetManager, appGlobalState, migrationFacade,
+        // completedTasksManager, taskValidation, basicPluginSystem,
+        // recurringSettingsApplicator, notificationDialogHost, testingModal —
+        // every one passing standalone). It already cost a red CI run on a
+        // docs-only PR.
+        //
+        // What this deliberately does NOT retry: a module that RAN and had
+        // assertions fail. Those return normally with counts and never reach
+        // here, so a real regression can't be papered over by re-running.
+        //
+        // A retry is never silent. It prints on the spot and is tagged in the
+        // summary, so a module that needs retrying repeatedly is visible as
+        // degradation rather than hidden behind a green run.
+        if (result.timedOut) {
+            console.log(`   ${colors.yellow}🔁 no Results line — retrying once (infrastructure timeout, no test ran)${colors.reset}`);
+            const retryPage = await newInstrumentedPage();
+            // index 0 → the cold-start budget, since a stalled run has no warm
+            // state to inherit and the retry is effectively a fresh start.
+            const retryResult = await runModuleTests(retryPage, module, 0);
+            await retryPage.close();
+            result = { ...retryResult, retried: true, firstAttemptError: result.error };
+            if (retryResult.passed) {
+                console.log(`   ${colors.yellow}🔁 passed on retry — first attempt timed out${colors.reset}`);
+            }
+        }
+
+        results.push(result);
     }
 
     await context.close();
@@ -379,12 +434,29 @@ async function runAllTests() {
 
     results.forEach(r => {
         const status = r.passed ? `${colors.green}✅ PASS${colors.reset}` : `${colors.red}❌ FAIL${colors.reset}`;
-        console.log(`   ${status} ${r.module.padEnd(20)} ${r.passedCount}/${r.passedCount + r.failedCount} tests`);
+        // A retried module is tagged on its own row, so a green run still shows
+        // which module needed a second attempt.
+        const tag = r.retried ? ` ${colors.yellow}🔁 retried${colors.reset}` : '';
+        console.log(`   ${status} ${r.module.padEnd(20)} ${r.passedCount}/${r.passedCount + r.failedCount} tests${tag}`);
         totalPassed += r.passedCount;
         totalFailed += r.failedCount;
     });
 
     console.log(`${colors.blue}${'='.repeat(60)}${colors.reset}`);
+
+    // Call out retries once more after the table. A run that is green ONLY
+    // because of retries is not the same as a healthy one, and the difference
+    // should not require reading 120 rows to notice.
+    const retried = results.filter(r => r.retried);
+    if (retried.length > 0) {
+        console.log(`${colors.yellow}🔁 ${retried.length} module(s) needed a retry after producing no Results line:${colors.reset}`);
+        retried.forEach(r => {
+            const outcome = r.passed ? 'passed on retry' : 'failed again';
+            console.log(`   ${colors.yellow}• ${r.module} — ${outcome} (first attempt: ${r.firstAttemptError || 'timeout'})${colors.reset}`);
+        });
+        console.log(`${colors.yellow}   Retries are for infrastructure stalls only; assertion failures are never retried.${colors.reset}`);
+        console.log(`${colors.blue}${'='.repeat(60)}${colors.reset}`);
+    }
 
     const allPassed = results.every(r => r.passed);
     const totalTests = totalPassed + totalFailed;

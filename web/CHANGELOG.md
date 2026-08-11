@@ -1,3 +1,7 @@
+## [2.402] - 2026-08-11
+- fix(search): an active filter/sort no longer vanishes on re-render
+
+
 ## [2.401] - 2026-08-10
 - fix(boot): clear waitForCore/waitForApp timeout timers, report readiness
 

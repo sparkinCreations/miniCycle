@@ -75,6 +75,8 @@ const di = createDIModule('TaskCRUD', {
     // Task search visibility
     updateSearchVisibility: optional(null),
     getTaskCount: optional(null),
+    // Restores an active search filter after a task is appended — see addTask
+    reapplyActiveFilter: optional(null),
     // Reminders restart after task deletion
     startReminders: optional(null),
     // Notifications instance for color picker notification
@@ -333,6 +335,11 @@ export async function addTaskImpl(taskText, options = {}, deps = {}) {
 
         // Update search visibility after adding task
         _deps.updateSearchVisibility?.(_deps.getTaskCount?.() ?? 0);
+
+        // A task added while a filter is active is appended straight to the
+        // list — it never goes through the renderer, so nothing has judged it
+        // against the query and it shows up regardless of whether it matches.
+        _deps.reapplyActiveFilter?.();
 
         // Move completed tasks to dropdown (skip during bulk loading — organizeCompletedTasks handles it)
         if (!isLoading && completed && result) {
