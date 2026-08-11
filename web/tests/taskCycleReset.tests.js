@@ -307,6 +307,47 @@ export async function runTaskCycleResetTests(resultsDiv) {
         }
     });
 
+    await test('cycle reset re-arms reminders (startReminders fires in post-reset cleanup)', async () => {
+        // Regression guard (Aug 2026 external review #2): the reminder timer
+        // stops itself when it fires with zero incomplete tasks (long window in
+        // Manual Cycle mode: everything checked, cycle not yet completed), and
+        // resetting tasks to incomplete never restarted it — reminders stayed
+        // silent for the whole new cycle. Every reset path (auto cycle AND
+        // manual Complete via markAllTasksCompleteImpl) funnels through
+        // resetTasksImpl's POST_RESET_CLEANUP timeout, so asserting the re-arm
+        // there covers both. startReminders is injected module-level (the
+        // cleanup timeout reads _deps, not the per-call deps).
+        const taskList = document.createElement('ul');
+        document.body.appendChild(taskList);
+        const stateObj = {
+            appState: { activeCycleId: 'c1' },
+            metadata: { lastModified: 0 },
+            data: { cycles: { c1: { autoReset: true, tasks: [{ id: 'A', completed: true }], recurringTemplates: {} } } },
+            settings: {}, userProgress: {}
+        };
+        let reArmed = 0;
+        mod.setTaskCycleResetDependencies({ startReminders: () => { reArmed++; } });
+        const deps = {
+            AppState: { isReady: () => true, get: () => stateObj, update: async (p) => { p(stateObj); return stateObj; } },
+            captureStateSnapshot: () => {},
+            isPerformingUndoRedo: () => false,
+            querySelector: () => taskList,
+            querySelectorAll: () => [],
+            checkMiniCycle: () => {},
+            incrementCycleCount: () => {}
+        };
+        try {
+            await mod.resetTasksImpl(deps);
+            // POST_RESET_CLEANUP is 500ms — wait past it BEFORE clearing timeouts.
+            await new Promise(r => setTimeout(r, 700));
+            if (reArmed === 0) throw new Error('reset must call startReminders in its cleanup phase (reminders stayed dead for the new cycle)');
+        } finally {
+            mod.clearAllTimeouts();
+            mod.setTaskCycleResetDependencies({ startReminders: null });
+            taskList.remove();
+        }
+    });
+
     // ============================================
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;

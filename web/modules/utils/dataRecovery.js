@@ -79,6 +79,23 @@ export function attemptJsonSalvage(jsonString) {
                 // Truncation can leave a dangling `"key":` or trailing comma
                 // that no amount of closers makes parseable — strip it.
                 fixed = fixed.replace(/,\s*$/, '').replace(/"[^"]*"\s*:\s*$/, '').replace(/,\s*$/, '');
+                // Truncation MID-NUMBER (or mid-true/false/null) is the silent
+                // one: `1723200000000` cut to `1723200` still parses after
+                // closers, so the salvage adopts a WRONG value instead of a
+                // missing one (fuzz: 13/971 cut positions). The last bare
+                // literal before the cut is the only member that can be mangled
+                // rather than cleanly absent — drop it. Two cases: mid-object
+                // (leading comma — drop member and comma) and FIRST member of
+                // its object (leading `{` — keep the brace). The second case is
+                // the flagship: metadata.lastModified is the first member of
+                // metadata, and a truncated-small timestamp feeds the multi-tab
+                // adoption comparison. A truncated STRING value needs none of
+                // this — the appended closing quote leaves visibly garbled text
+                // the repair notification already covers. No-op when the input
+                // ends cleanly (`"`, `}`, `]`): the anchors can't match.
+                fixed = fixed
+                    .replace(/,\s*"[^"]*"\s*:\s*(?:-?[\d.eE+]+|true|false|null)\s*$/, '')
+                    .replace(/(\{\s*)"[^"]*"\s*:\s*(?:-?[\d.eE+]+|true|false|null)\s*$/, '$1');
                 while (stack.length) {
                     fixed += stack.pop() === '{' ? '}' : ']';
                 }

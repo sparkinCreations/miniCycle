@@ -110,6 +110,36 @@ export async function runDataRecoveryTests(resultsDiv) {
         assert(!('cycleCount' in result.data.data.cycles.c1), 'partial member dropped, not corrupted');
     });
 
+    await test('attemptJsonSalvage: truncation MID-NUMBER drops the member instead of adopting a wrong value', () => {
+        // Regression guard (Aug 2026 external review #5, fix corrected during
+        // verification): `1723200000000` cut to `1723200` still parses after
+        // bracket repair — the salvage adopted a silently WRONG number instead
+        // of a visibly missing one. Two shapes must both be handled:
+        // comma-preceded members, and the FIRST member of an object (the
+        // reviewer's regex missed that one — and metadata.lastModified, the
+        // most dangerous field to mangle, IS metadata's first member).
+        const commaCase = '{"data":{"cycles":{}},"settings":{"theme":"dark","fontSize":16000';
+        const r1 = attemptJsonSalvage(commaCase);
+        assert(r1 !== null, 'comma-preceded mid-number truncation should still salvage');
+        assert(!('fontSize' in r1.data.settings), `truncated number must be DROPPED, got fontSize=${r1.data.settings.fontSize}`);
+        assert(r1.data.settings.theme === 'dark', 'intact sibling member survives');
+
+        const firstMemberCase = '{"schemaVersion":"2.5","metadata":{"lastModified":1723200';
+        const r2 = attemptJsonSalvage(firstMemberCase);
+        assert(r2 !== null, 'first-member mid-number truncation should still salvage');
+        assert(!('lastModified' in (r2.data.metadata || {})), `first-member truncated number must be DROPPED, got lastModified=${r2.data.metadata?.lastModified}`);
+        assert(r2.data.schemaVersion === '2.5', 'preceding members survive');
+    });
+
+    await test('attemptJsonSalvage: intact trailing number member is NOT stripped', () => {
+        // The mid-number strip must be a no-op on clean input: it only fires
+        // when the string ends in a bare literal (never after `"`, `}`, `]`).
+        const intact = '{"settings":{"fontSize":16},"count":42}';
+        const result = attemptJsonSalvage(intact);
+        assert(result !== null && result.data.settings.fontSize === 16 && result.data.count === 42,
+            'legitimate number members must survive salvage untouched');
+    });
+
     await test('attemptJsonSalvage: returns null for unrecoverable garbage', () => {
         assert(attemptJsonSalvage('not json at all <<<') === null, 'garbage → null');
         assert(attemptJsonSalvage('') === null, 'empty → null');

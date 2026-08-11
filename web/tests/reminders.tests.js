@@ -241,6 +241,56 @@ export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
             if (instance.state.reminderTimeoutId !== null) throw new Error('id should remain null');
         });
 
+        await test('sendReminderNotificationIfNeeded returns (not throws) when schema data is missing', async () => {
+            // Regression guard (Aug 2026 external review #3b): this runs inside a
+            // timer callback, where the old `throw new Error('Schema 2.5 data not
+            // found')` became an unhandled rejection. Must mirror
+            // scheduleNextReminder: log + return.
+            const { instance } = wireReminders({ loadMiniCycleData: () => null });
+            await instance.sendReminderNotificationIfNeeded(); // throws = test fails
+        });
+
+        await test('sendReminderNotificationIfNeeded reads task state from AppState, not the DOM', async () => {
+            // Regression guard (Aug 2026 external review #3a): reminder decisions
+            // used querySelectorAll(TASK) + .reminder-active + .checked — so an
+            // incomplete reminder task that exists in STATE but is not currently
+            // rendered (mid-switch, filtered view, focus mode) read as "nothing
+            // to remind", and the empty branch called stopReminders(), killing
+            // the timer AND the native series. State is the source of truth.
+            const mockAppState = {
+                get: () => ({
+                    appState: { activeCycleId: 'c1' },
+                    data: { cycles: { c1: { tasks: [
+                        { id: 't1', text: 'unrendered but real', remindersEnabled: true, completed: false },
+                        { id: 't2', text: 'done one', remindersEnabled: true, completed: true }
+                    ] } } }
+                })
+            };
+            const { instance, notifications } = wireReminders({
+                AppState: mockAppState,
+                loadMiniCycleData: () => ({ reminders: { enabled: true, indefinite: true, frequencyValue: 30, frequencyUnit: 'minutes', browserNotifications: false } })
+            });
+            // No task DOM exists in the harness — the old DOM-derived code sees
+            // zero tasks here and stops the reminder system.
+            let stopped = false;
+            const realStop = instance.stopReminders.bind(instance);
+            instance.stopReminders = () => { stopped = true; realStop(); };
+
+            await instance.sendReminderNotificationIfNeeded();
+            const stoppedDuringSend = stopped;
+            instance.stopReminders(); // cleanup the timer scheduleNextReminder armed
+
+            if (stoppedDuringSend) {
+                throw new Error('send must NOT stop reminders while an incomplete reminder task exists in state (old DOM read saw zero tasks and killed the timer)');
+            }
+            const remindedForRealTask = notifications.some(n => n.msg?.includes('unrendered but real'));
+            if (!remindedForRealTask) {
+                throw new Error('reminder must fire for the incomplete task that exists in state');
+            }
+            const remindedForDone = notifications.some(n => n.msg?.includes('done one'));
+            if (remindedForDone) throw new Error('completed tasks must not be included in the reminder');
+        });
+
         // === START / SCHEDULE REMINDERS ===
         resultsDiv.innerHTML += '<h4>⏰ startReminders / scheduleNextReminder</h4>';
 

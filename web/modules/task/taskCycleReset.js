@@ -60,6 +60,13 @@ import { getLabel } from '../labels/labelResolver.js';
 const di = createDIModule('TaskCycleReset', {
     appInit: optional(null),
     AppState: optional(null),
+    // Re-arm reminders after a reset: the reminder timer stops itself when it
+    // fires with zero incomplete tasks (long window in Manual Cycle mode), and
+    // resetting tasks to incomplete never restarted it — reminders went silent
+    // for the whole new cycle. Mirrors taskCRUD's re-arm after task deletion.
+    // startReminders is idempotent (clears its own timeout) and self-gating
+    // (no-ops when disabled/exhausted), so unconditional calls are safe.
+    startReminders: optional(null),
     AppGlobalState: optional(null),  // batch-operation flag for undo snapshot guard
     loadMiniCycleData: optional(null),
     autoSave: optional(null),
@@ -149,6 +156,12 @@ export function clearAllTimeouts() {
         clearTimeout(timeoutId);
     }
     activeTimeouts.clear();
+    // Release the reset lock too: the RESET_LOCK_RELEASE timeout we just
+    // cancelled was the only thing that would have cleared it — cancelling
+    // the timeouts without releasing the lock left isResetting stuck true,
+    // so every later resetTasksImpl silently no-oped (hit by the test
+    // harness; the destroy() path had the same exposure).
+    setResettingFlag(false);
 }
 
 /**
@@ -619,6 +632,10 @@ export async function resetTasksImpl(deps = {}) {
             }
             // Note: autoSave removed - resetTasksData already calls AppState.update()
             mergedDeps.updateStatsPanel?.();
+            // Every reset path (auto cycle AND manual Complete via
+            // markAllTasksCompleteImpl → resetTasksFn) funnels through here, so
+            // this single re-arm covers both. See the DI schema note.
+            _deps.startReminders?.();
         }, TASK_TIMEOUTS.POST_RESET_CLEANUP));
 
         trackTimeout(setTimeout(() => {
@@ -819,6 +836,10 @@ export async function deleteCompletedTasksImpl(activeCycleId, cycleData, taskLis
     if (typeof showClearAnimation === 'function') {
         showClearAnimation();
     }
+
+    // The delete-when-complete branch removes tasks without a reset, so the
+    // reminder set changed here too — same re-arm taskCRUD does after deletion.
+    _deps.startReminders?.();
 
     return { deleted: taskIdsToDelete.length };
 }

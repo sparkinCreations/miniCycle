@@ -595,22 +595,29 @@ export class MiniCycleReminders {
             await appInitModule.waitForCore();
         }
 
-        // Schema 2.5 only
+        // Schema 2.5 only. Return, don't throw: this runs inside a timer
+        // callback, where a throw becomes an unhandled rejection — matching
+        // how scheduleNextReminder already handles the same condition.
         const schemaData = this.deps.loadMiniCycleData();
         if (!schemaData) {
             console.error('❌ Schema 2.5 data required for sendReminderNotificationIfNeeded');
-            throw new Error('Schema 2.5 data not found');
+            return;
         }
 
         const { reminders } = schemaData;
         const remindersSettings = reminders || {};
 
-        let tasksWithReminders = [...this.deps.querySelectorAll(DOM_SELECTORS.TASK)]
-            .filter(task => task.querySelector(".enable-task-reminders.reminder-active"));
-
-        let incompleteTasks = tasksWithReminders
-            .filter(task => !task.querySelector("input[type='checkbox']").checked)
-            .map(task => task.querySelector(DOM_SELECTORS.TASK_TEXT).textContent);
+        // Read task state from AppState, never the DOM (CLAUDE.md rule #14):
+        // the DOM holds only the active routine's currently RENDERED tasks, so
+        // render timing, mid-switch states, and filtered/collapsed views all
+        // leaked into reminder decisions when this queried
+        // querySelectorAll(TASK) + .reminder-active + .checked.
+        const AppStateRef = typeof this.deps.AppState === 'function' ? this.deps.AppState() : this.deps.AppState;
+        const state = AppStateRef?.get?.();
+        const activeCycle = state?.data?.cycles?.[state?.appState?.activeCycleId];
+        const incompleteTasks = (activeCycle?.tasks || [])
+            .filter(t => t.remindersEnabled && !t.completed)
+            .map(t => t.text);
 
         if (incompleteTasks.length === 0) {
             this.stopReminders();

@@ -68,10 +68,13 @@ function saveToUndoCache(cycleId, undoStack, redoStack) {
     // comparing raw length to LIMITS.UNDO_CACHE_MAX_BYTES silently doubled the budget).
     while (serialized.length * 2 > LIMITS.UNDO_CACHE_MAX_BYTES &&
            (cacheData.undoStack.length > 1 || cacheData.redoStack.length > 0)) {
-      if (cacheData.undoStack.length > 1) {
-        cacheData.undoStack.shift();
-      } else {
+      // Shed redo FIRST: any new user action invalidates the redo stack anyway,
+      // so under byte pressure it is strictly less valuable than undo depth.
+      // (The old order shed oldest undo while a full redo stack survived.)
+      if (cacheData.redoStack.length > 0) {
         cacheData.redoStack.shift();
+      } else {
+        cacheData.undoStack.shift();
       }
       serialized = JSON.stringify(cacheData);
     }
