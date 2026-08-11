@@ -713,9 +713,7 @@ function isFreshFirstPage(pathname) {
   for (var i = 0; i < FRESH_FIRST_PAGES.length; i++) {
     // FRESH_FIRST_PAGES is a file-local array of two string literals and `i` is a
     // loop counter bounded by .length — no user input reaches the index, so there
-    // is no injection surface. (Directive must be the line directly above the code:
-    // a multi-line comment between them retargets it at the comment.)
-    // eslint-disable-next-line security/detect-object-injection
+    // is no injection surface.
     if (pathname.indexOf(FRESH_FIRST_PAGES[i]) === 0) return true;
   }
   return false;

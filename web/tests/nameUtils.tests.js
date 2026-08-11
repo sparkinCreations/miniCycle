@@ -171,6 +171,59 @@ export async function runNameUtilsTests(resultsDiv) {
         if (r.name !== 'Work & Play (daily) (2)') throw new Error(`got "${r.name}"`);
     });
 
+    // ── Object.prototype key names ───────────────────────────────────────────
+    // Routine names land directly as object keys, so a plain `existingCycles[name]`
+    // read inherits from Object.prototype. These names must be treated as FREE on an
+    // empty cycles object — before the Object.hasOwn fix each was reported as a
+    // collision and silently renamed to "X (2)" with wasModified=true.
+    resultsDiv.innerHTML += '<h4 class="test-section">🧬 getUniqueCycleName — inherited key names</h4>';
+
+    for (const inherited of ['constructor', 'toString', 'valueOf', 'hasOwnProperty', 'isPrototypeOf']) {
+        await test(`"${inherited}" is available on an empty cycles object`, () => {
+            const r = getUniqueCycleName(inherited, {});
+            if (r.name !== inherited || r.wasModified !== false) {
+                throw new Error(`got "${r.name}" / wasModified=${r.wasModified}`);
+            }
+        });
+
+        await test(`cycleNameExists("${inherited}") is false on an empty cycles object`, () => {
+            if (cycleNameExists(inherited, {}) !== false) {
+                throw new Error(`expected false for "${inherited}"`);
+            }
+        });
+
+        await test(`"${inherited}" still collides when genuinely present`, () => {
+            const r = getUniqueCycleName(inherited, { [inherited]: {} });
+            if (r.name !== `${inherited} (2)` || r.wasModified !== true) {
+                throw new Error(`got "${r.name}" / wasModified=${r.wasModified}`);
+            }
+        });
+    }
+
+    await test('"__proto__" is forced to a suffixed name (never used as a raw key)', () => {
+        const r = getUniqueCycleName('__proto__', {});
+        if (r.name !== '__proto__ (2)' || r.wasModified !== true) {
+            throw new Error(`got "${r.name}" / wasModified=${r.wasModified}`);
+        }
+    });
+
+    await test('the "__proto__" result is an own property that survives JSON', () => {
+        // Assigning the raw "__proto__" key sets the prototype instead of creating an
+        // own property: the routine reads back in memory but serialises to {} and is
+        // lost on reload. The suffixed name must behave like any ordinary key.
+        const cycles = {};
+        const { name } = getUniqueCycleName('__proto__', cycles);
+        cycles[name] = { title: 'kept' };
+
+        if (!Object.keys(cycles).includes(name)) {
+            throw new Error(`"${name}" is not an own property: ${JSON.stringify(Object.keys(cycles))}`);
+        }
+        const roundTripped = JSON.parse(JSON.stringify(cycles));
+        if (roundTripped[name]?.title !== 'kept') {
+            throw new Error(`lost on JSON round-trip: ${JSON.stringify(roundTripped)}`);
+        }
+    });
+
     const percentage = total.count ? Math.round((passed.count / total.count) * 100) : 0;
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;
     if (passed.count === total.count) {

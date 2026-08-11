@@ -112,7 +112,45 @@ export default [
         },
         rules: {
             // Security plugin rules
-            'security/detect-object-injection': 'warn',
+
+            // OFF deliberately (Aug 2026) — this rule flags EVERY `obj[variable]`, which is
+            // the codebase's core idiom: cycles keyed by name, tasks and recurringTemplates
+            // keyed by id, labels keyed by key, DI deps keyed by name. It fired 623 times
+            // across 99 of ~136 modules — 64% of all lint warnings, and roughly two-thirds
+            // of every file. A warning that fires nearly everywhere carries no signal: it
+            // buries the ~344 warnings that do mean something, and it made the
+            // --max-warnings ratchet useless as a "what did this change add?" gate.
+            //
+            // Audited before switching off, rather than assumed. Splitting the 626 hits
+            // measured over modules/ by whether they read or write:
+            //   • 526 were READS. A read cannot pollute anything. Zero value.
+            //   • 100 were writes. All were internal — own-property clones
+            //     (`clone[key] = structuredClone(obj[key])`), boot wiring keyed by manifest
+            //     names, dataset keys from constants — or already key-filtered at the trust
+            //     boundary (cycleImportManager's `allowedBtnKeys`, preferencesPresets'
+            //     VALID_PRESET_KEYS, sanitized task ids).
+            //   • The audit did surface one real bug, now fixed in utils/nameUtils.js:
+            //     `existingCycles[name]` truthiness inherited from Object.prototype, so a
+            //     routine named "constructor"/"toString"/"valueOf" was reported as a
+            //     collision and silently renamed. See the isNameTaken() comment there.
+            //
+            // The actual defense against prototype pollution is key sanitization at the
+            // trust boundary, NOT a lint rule on every bracket access: DataValidator
+            // ._checkForPrototypePollution() rejects __proto__/constructor/prototype in
+            // parsed import data (JSON.parse creates __proto__ as an own property, so
+            // Object.keys sees it), and nameUtils.isNameTaken() keeps user-typed names off
+            // the raw __proto__ key. Extend THOSE when adding a new input path.
+            //
+            // If you reach for this rule again, prefer a targeted no-restricted-syntax
+            // selector matching writes with unsanitized keys — reads are pure noise here.
+            //
+            // Knock-on: the --max-warnings ratchet in package.json dropped 970 -> 360.
+            // The 16 warnings of headroom over the actual 344 are DELIBERATE. The old
+            // ceiling sat 3 above the real count, so an incidental no-unused-vars broke
+            // the release gate — that is what kept CI red for four consecutive releases.
+            // Keep a small gap when lowering it after a cleanup; do not pin it to the
+            // exact current count, and never raise it to absorb new warnings.
+            'security/detect-object-injection': 'off',
             'security/detect-non-literal-regexp': 'warn',
             'security/detect-unsafe-regex': 'error',
             'security/detect-buffer-noassert': 'error',

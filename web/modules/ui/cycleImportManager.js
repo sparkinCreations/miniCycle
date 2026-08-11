@@ -148,11 +148,9 @@ function sanitizeHistoryDetails(details) {
     if (!details || typeof details !== 'object') return {};
     const safe = {};
     for (const k of HISTORY_DETAIL_NUMBER_KEYS) {
-        // eslint-disable-next-line security/detect-object-injection -- k iterates the hardcoded allowlist above, never user input
         if (typeof details[k] === 'number' && Number.isFinite(details[k])) safe[k] = details[k];
     }
     for (const k of HISTORY_DETAIL_STRING_KEYS) {
-        // eslint-disable-next-line security/detect-object-injection -- k iterates the hardcoded allowlist above, never user input
         if (typeof details[k] === 'string') safe[k] = normalizeImportedText(details[k], MAX_TASK_TEXT_LENGTH);
     }
     if (Array.isArray(details.taskNames)) {
