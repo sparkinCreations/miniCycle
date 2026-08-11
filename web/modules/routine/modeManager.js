@@ -449,7 +449,16 @@ export class ModeManager {
             modeDetail = getLabel('mode.manualDetail');
         }
 
-        descriptionBox.innerHTML = `<strong>${modeTitle}:</strong><br>${modeDetail}`;
+        // Built with createElement/textContent, not innerHTML: every mode.*Title/
+        // *Detail key used here is in LENS_SENSITIVE_KEYS, so vocabulary themes
+        // can override this text. Theme content is hardcoded today, but if themes
+        // ever become shareable/importable (like .mcyc routines), an interpolated
+        // innerHTML here would turn imported theme text into an XSS sink. Inert
+        // construction now means that roadmap item can't create one.
+        descriptionBox.textContent = '';
+        const modeTitleEl = document.createElement('strong');
+        modeTitleEl.textContent = `${modeTitle}:`;
+        descriptionBox.append(modeTitleEl, document.createElement('br'), modeDetail);
 
         // Sync the mode-radio-group's checked state with the current mode
         // so the radios reflect mode changes from any source (header dropdown,

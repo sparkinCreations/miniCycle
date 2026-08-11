@@ -606,6 +606,68 @@ export async function runAppStateTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
+    await test('cross-tab storage adoption passes adopted state to subscribers (not undefined)', async () => {
+        // Regression guard (Aug 2026 external review, Finding 1): the storage-event
+        // handler adopted newer data from another tab and then called
+        // notifyListeners() with NO arguments — every subscriber received
+        // (undefined, undefined). undoRedoManager guards on newState?.data?.cycles
+        // and silently skipped its snapshot; dailyResetManager compared
+        // newActive !== oldActive on two undefineds and skipped its resync. The
+        // other two adoption sites already passed (oldData, newData); this third
+        // site had missed the same fix. Browser tests can't dispatch a real
+        // cross-tab StorageEvent (same-tab writes don't fire it), so we invoke
+        // the captured handler directly with a synthetic event — exactly the
+        // seam the handler exposes for this purpose.
+        const stateManager = createStateManager();
+        await stateManager.init();
+
+        const ourTs = 1000000;
+        if (!stateManager.data.metadata) stateManager.data.metadata = {};
+        stateManager.data.metadata.lastModified = ourTs;
+        stateManager.data.settings.theme = 'pre-adoption';
+
+        if (typeof stateManager._storageHandler !== 'function') {
+            throw new Error('expected init() to capture _storageHandler for the storage event');
+        }
+
+        const externalData = {
+            schemaVersion: "2.5",
+            metadata: { lastModified: ourTs + 5000 },
+            settings: { theme: 'adopted-from-other-tab' },
+            data: { cycles: {} },
+            appState: { activeCycleId: null }
+        };
+
+        let receivedNew, receivedOld, callCount = 0;
+        const listener = (newState, oldState) => {
+            callCount++;
+            receivedNew = newState;
+            receivedOld = oldState;
+        };
+        stateManager.subscribe('cross-tab-args-test', listener);
+        callCount = 0; // ignore any registration-time invocation
+
+        stateManager._storageHandler({
+            key: 'miniCycleData',
+            newValue: JSON.stringify(externalData)
+        });
+
+        if (stateManager.data.settings.theme !== 'adopted-from-other-tab') {
+            throw new Error('handler should adopt the newer external data');
+        }
+        if (callCount === 0) {
+            throw new Error('adoption must notify subscribers');
+        }
+        if (!receivedNew || receivedNew.settings?.theme !== 'adopted-from-other-tab') {
+            throw new Error(`subscriber must receive the ADOPTED state as newState, got: ${JSON.stringify(receivedNew)?.slice(0, 60)} (this was the bug — bare notifyListeners() delivered undefined)`);
+        }
+        if (!receivedOld || receivedOld.settings?.theme !== 'pre-adoption') {
+            throw new Error('subscriber must receive the pre-adoption state as oldState');
+        }
+
+        stateManager.unsubscribe('cross-tab-args-test', listener);
+    });
+
     await test('flushes a pending save on pagehide and visibilitychange→hidden (iOS unload safety)', async () => {
         // beforeunload is unreliable on iOS (not fired on background/swipe-away), so
         // the debounced save must also flush on pagehide and when the tab is hidden.
