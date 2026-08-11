@@ -191,6 +191,19 @@ export async function debugAppState() {
   const activeCycle = state.appState?.activeCycleId;
   const cycleData = state.data?.cycles?.[activeCycle];
 
+  // Restored Aug 2026. A "Remove console.log statements" pass (23459e5b) stripped
+  // every log line but left the group, the guards and these two assignments — so
+  // this opened an empty console group and closed it. Worse than deleting it:
+  // someone reaching for it mid-incident reads the silence as "state is empty".
+  console.log('schemaVersion :', state.schemaVersion ?? '(none)');
+  console.log('activeCycleId :', activeCycle ?? '(none)');
+  console.log('cycles        :', Object.keys(state.data?.cycles ?? {}).length);
+  console.log('tasks (active):', Array.isArray(cycleData?.tasks) ? cycleData.tasks.length : '(no active cycle)');
+  console.log('cycleCount    :', cycleData?.cycleCount ?? '(n/a)');
+  console.log('lastModified  :', state.metadata?.lastModified
+      ? new Date(state.metadata.lastModified).toLocaleString()
+      : '(none)');
+
   console.groupEnd();
 }
 

@@ -59,13 +59,27 @@ export async function runMigrationFacadeTests(resultsDiv) {
     // ── Uninitialized = safe no-op (optional chaining) ────────────────────────
     resultsDiv.innerHTML += '<h4 class="test-section">🛡️ uninitialized no-op</h4>';
 
-    await test('all facade methods return undefined and do not throw before init', () => {
+    await test('all facade methods THROW before init rather than returning undefined', () => {
+        // This test previously asserted the opposite — that every method returned
+        // undefined and did not throw. That contract is unsafe for this facade:
+        // checkNeeded() answers "does this data need migrating?", and undefined is
+        // FALSY, indistinguishable from "no, it's fine". An uninitialized facade
+        // would therefore report all-clear and the app would run on unmigrated
+        // data. Fail loudly instead (Aug 2026).
         initMigrationFacade(null);
         const methods = ['createInitialData', 'checkNeeded', 'simulate', 'performMigration',
             'validateTasks', 'fixIssues', 'initWithAutoMigration', 'forceMigration'];
         for (const m of methods) {
-            const r = MigrationFacade[m]();
-            if (r !== undefined) throw new Error(`${m}() should be undefined when uninitialized, got ${r}`);
+            let threw = false;
+            try {
+                MigrationFacade[m]();
+            } catch (e) {
+                threw = true;
+                if (!/before initMigrationFacade/.test(e.message)) {
+                    throw new Error(`${m}() threw the wrong error: ${e.message}`);
+                }
+            }
+            if (!threw) throw new Error(`${m}() must throw when uninitialized, not return a falsy value`);
         }
     });
 

@@ -279,7 +279,14 @@ export const LIMITS = Object.freeze({
     NORMALIZATION_CACHE: 50,       // Max entries in recurring settings normalization cache
     ERROR_LOG: 50,                 // Max errors to keep in error log
     MAX_ERRORS_BEFORE_SILENCE: 10, // Max error notifications before silencing
-    TASK_CHARACTER: 500,           // Max characters for task text
+    TASK_CHARACTER: 500,           // Max characters for task text — the STORAGE ceiling, enforced by the .mcyc importer
+    // Max characters accepted from the UI input. DELIBERATELY lower than
+    // TASK_CHARACTER: the importer accepts up to the storage ceiling, so an
+    // imported routine can legitimately hold longer text than a user can type.
+    // These were the same hardcoded-100 vs 500 divergence with no name to tell
+    // them apart (Aug 2026) — raise this to TASK_CHARACTER if the two should
+    // ever agree, rather than re-hardcoding either.
+    TASK_CHARACTER_INPUT: 100,
     CYCLE_NAME_CHARACTER: 100,     // Max characters for cycle name
     RATING_HISTORY: 10,            // Max entries kept in userProgress.uxRatingHistory
     CONSOLE_BUFFER_MAX: 500,       // Max console log entries kept in the in-memory buffer

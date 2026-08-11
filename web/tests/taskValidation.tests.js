@@ -16,6 +16,7 @@ import {
     TaskValidator,
     initTaskValidator
 } from '../modules/task/taskValidation.js';
+import { LIMITS } from '../modules/core/constants.js';
 
 export async function runTaskValidationTests(resultsDiv) {
     resultsDiv.innerHTML = '<h2>🔒 TaskValidation Tests</h2><h3>Setting up mocks...</h3>';
@@ -121,14 +122,34 @@ export async function runTaskValidationTests(resultsDiv) {
     });
 
 
-    await test('has correct TASK_LIMIT constant', () => {
-        const validator = new TaskValidator({
-            sanitizeInput: (input) => input
-        });
+    await test('character limit comes from LIMITS, not a hardcoded number', () => {
+        // Was `TASK_LIMIT = 100` hardcoded here while the .mcyc importer enforced
+        // LIMITS.TASK_CHARACTER (500), and coreBoot had a THIRD TASK_LIMIT meaning
+        // tasks-per-cycle. Pin the source, not the value, so raising the constant
+        // doesn't require editing a magic number in two places.
+        const validator = new TaskValidator({ sanitizeInput: (input) => input });
 
-        if (validator.TASK_LIMIT !== 100) {
-            throw new Error(`Expected TASK_LIMIT 100, got ${validator.TASK_LIMIT}`);
+        if (validator.TASK_CHAR_LIMIT !== LIMITS.TASK_CHARACTER_INPUT) {
+            throw new Error(`expected LIMITS.TASK_CHARACTER_INPUT (${LIMITS.TASK_CHARACTER_INPUT}), got ${validator.TASK_CHAR_LIMIT}`);
         }
+        if (validator.TASK_LIMIT !== undefined) {
+            throw new Error('TASK_LIMIT was renamed to TASK_CHAR_LIMIT — it collided with the per-cycle limit');
+        }
+    });
+
+    await test('uninitialized fallback still clamps length and strips control characters', async () => {
+        // The fallback deliberately does NOT HTML-escape (that corrupted text —
+        // "Fix #43"), but it also used to drop sanitizeInput AND the character
+        // limit, so unbounded text with control chars could reach storage.
+        const mod = await import(`../modules/task/taskValidation.js?v=${window.testCacheBuster || Date.now()}`);
+        const raw = 'a'.repeat(LIMITS.TASK_CHARACTER_INPUT + 50) + '\u0000\u0007 bad';
+        const out = mod.validateAndSanitizeTaskInput(raw);
+
+        if (out === null) throw new Error('valid text must not be dropped by the fallback');
+        if (out.length > LIMITS.TASK_CHARACTER_INPUT) {
+            throw new Error(`fallback must clamp to ${LIMITS.TASK_CHARACTER_INPUT}, got ${out.length}`);
+        }
+        if (/[\u0000-\u001F\u007F]/.test(out)) throw new Error('control characters survived the fallback');
     });
 
     // ============================================
