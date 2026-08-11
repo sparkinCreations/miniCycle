@@ -515,7 +515,7 @@ export const MODULE_MANIFESTS = {
         path: '../ui/taskSearch.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit'],
-        provides: ['initTaskSearch', 'updateSearchVisibility', 'resetSearch'],
+        provides: ['initTaskSearch', 'updateSearchVisibility', 'resetSearch', 'reapplyActiveFilter'],
         api: 'ui',
         after: ['taskDOM']
     },

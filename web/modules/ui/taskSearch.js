@@ -487,6 +487,40 @@ export function getTaskCount() {
 }
 
 /**
+ * Re-apply the active filter/sort after the task list is re-rendered.
+ *
+ * Filtering is implemented as inline `display: none` on each task element and
+ * sorting as DOM node order — both live only in the DOM. taskRenderer rebuilds
+ * the list with `replaceChildren`, so both are discarded, leaving every task
+ * visible in state order while the search box and chips still read as active.
+ * Newly appended tasks have the same problem: they arrive unfiltered.
+ *
+ * Reproduced Aug 2026: filter 4 tasks down to 1, press Undo (the only
+ * cross-module `type: 'full'` request — undoRedoManager), and all 4 come back
+ * while the input still shows the query. Adding a task under an active filter
+ * likewise renders it visible regardless of the query.
+ *
+ * Called from uiOrchestrator._executeTaskUpdates, which is the single point all
+ * update types pass through (full / patch / remove / reorder) — hooking the
+ * renderer alone would miss the append path.
+ */
+export function reapplyActiveFilter() {
+    const deps = di.resolve();
+    const input = deps.getElementById(DOM_IDS.TASK_SEARCH_INPUT);
+    const query = input?.value || '';
+
+    // Read the module's own state, NOT the DOM. The "All" chip ships with
+    // class="filter-chip active" in the markup, so a
+    // `querySelector('.filter-chip.active')` test is ALWAYS true and would
+    // never let this return early — turning the guard into dead code and
+    // running a full DOM pass on every render. Sort is checked too: a
+    // non-default sort is lost by the same mechanism.
+    if (!query && currentFilter === 'all' && currentSort === 'default') return;
+
+    applyFiltersAndSort(query);
+}
+
+/**
  * Reset search state (called when switching routines).
  * Restores original DOM task order and resets all chips to defaults.
  */
