@@ -1,3 +1,7 @@
+## [2.409] - 2026-08-11
+- feat(gates): validate:builtins — no post-es2020 built-ins; fix undo .at(-1) on old Safari
+
+
 ## [2.408] - 2026-08-11
 - fix(names): own-property check for routine names; retire object-injection lint noise
 
