@@ -1220,21 +1220,6 @@ else
             UIBOOT_LINES=$(wc -l < modules/boot/uiBoot.js 2>/dev/null | xargs)
             BOOT_TOTAL=$((MAIN_JS_LINES + ORCH_LINES + COREBOOT_LINES + FEATBOOT_LINES + UIBOOT_LINES))
 
-            # Count modules per directory
-            BOOT_MOD=$(find modules/boot -name "*.js" -type f 2>/dev/null | wc -l | xargs)
-            CORE_MOD=$(find modules/core -name "*.js" -type f 2>/dev/null | wc -l | xargs)
-            TASK_MOD=$(find modules/task -name "*.js" -type f 2>/dev/null | wc -l | xargs)
-            ROUTINE_MOD=$(find modules/routine -name "*.js" -type f 2>/dev/null | wc -l | xargs)
-            RECURRING_MOD=$(find modules/recurring -name "*.js" -type f 2>/dev/null | wc -l | xargs)
-            UI_MOD=$(find modules/ui -name "*.js" -type f 2>/dev/null | wc -l | xargs)
-            FEATURES_MOD=$(find modules/features -name "*.js" -type f 2>/dev/null | wc -l | xargs)
-            UTILS_MOD=$(find modules/utils -name "*.js" -type f 2>/dev/null | wc -l | xargs)
-            LABELS_MOD=$(find modules/labels -name "*.js" -type f 2>/dev/null | wc -l | xargs)
-            STORAGE_MOD=$(find modules/storage -name "*.js" -type f 2>/dev/null | wc -l | xargs)
-            PROGRESS_MOD=$(find modules/progress -name "*.js" -type f 2>/dev/null | wc -l | xargs)
-            TESTING_MOD=$(find modules/testing -name "*.js" -type f 2>/dev/null | wc -l | xargs)
-            OTHER_MOD=$(find modules/other -name "*.js" -type f 2>/dev/null | wc -l | xargs)
-
             echo "   - Modules: $MODULE_COUNT"
             echo "   - Tests: $TEST_COUNT"
             echo "   - Test Files: $TEST_FILE_COUNT"
@@ -1261,20 +1246,37 @@ else
             # Update Total in Module Breakdown table (should match MODULE_COUNT)
             do_sed "$PROJECT_STATS_FILE" "s/| \*\*Total\*\* | \*\*[0-9,]*\*\* |/| **Total** | **$MODULE_COUNT** |/g"
 
-            # Update per-directory module counts
-            do_sed "$PROJECT_STATS_FILE" 's#| `boot/` | [0-9]* |#| `boot/` | '"$BOOT_MOD"' |#g'
-            do_sed "$PROJECT_STATS_FILE" 's#| `core/` | [0-9]* |#| `core/` | '"$CORE_MOD"' |#g'
-            do_sed "$PROJECT_STATS_FILE" 's#| `task/` | [0-9]* |#| `task/` | '"$TASK_MOD"' |#g'
-            do_sed "$PROJECT_STATS_FILE" 's#| `routine/` | [0-9]* |#| `routine/` | '"$ROUTINE_MOD"' |#g'
-            do_sed "$PROJECT_STATS_FILE" 's#| `recurring/` | [0-9]* |#| `recurring/` | '"$RECURRING_MOD"' |#g'
-            do_sed "$PROJECT_STATS_FILE" 's#| `ui/` | [0-9]* |#| `ui/` | '"$UI_MOD"' |#g'
-            do_sed "$PROJECT_STATS_FILE" 's#| `features/` | [0-9]* |#| `features/` | '"$FEATURES_MOD"' |#g'
-            do_sed "$PROJECT_STATS_FILE" 's#| `utils/` | [0-9]* |#| `utils/` | '"$UTILS_MOD"' |#g'
-            do_sed "$PROJECT_STATS_FILE" 's#| `labels/` | [0-9]* |#| `labels/` | '"$LABELS_MOD"' |#g'
-            do_sed "$PROJECT_STATS_FILE" 's#| `storage/` | [0-9]* |#| `storage/` | '"$STORAGE_MOD"' |#g'
-            do_sed "$PROJECT_STATS_FILE" 's#| `progress/` | [0-9]* |#| `progress/` | '"$PROGRESS_MOD"' |#g'
-            do_sed "$PROJECT_STATS_FILE" 's#| `testing/` | [0-9]* |#| `testing/` | '"$TESTING_MOD"' |#g'
-            do_sed "$PROJECT_STATS_FILE" 's#| `other/` | [0-9]* |#| `other/` | '"$OTHER_MOD"' |#g'
+            # Update per-directory module counts.
+            #
+            # DERIVED from modules/*/ , not a hardcoded list. The previous version
+            # named 13 directories explicitly and sed only REWRITES rows that
+            # already exist — so when modules/platform/ was added it was silently
+            # absent from the table, and the per-directory rows summed to one less
+            # than the stated Total for months (found Aug 2026). A new folder now
+            # updates automatically, and one without a row is reported below
+            # instead of vanishing.
+            ROW_SUM=0
+            MISSING_ROWS=""
+            for MODULE_DIR in modules/*/; do
+                DIR_NAME=$(basename "$MODULE_DIR")
+                DIR_COUNT=$(find "$MODULE_DIR" -name "*.js" -type f 2>/dev/null | wc -l | xargs)
+                if grep -q '| `'"$DIR_NAME"'/` |' "$PROJECT_STATS_FILE"; then
+                    do_sed "$PROJECT_STATS_FILE" 's#| `'"$DIR_NAME"'/` | [0-9]* |#| `'"$DIR_NAME"'/` | '"$DIR_COUNT"' |#g'
+                    # Sum only what the TABLE shows, so the gap below is the real
+                    # under-report rather than always zero.
+                    ROW_SUM=$((ROW_SUM + DIR_COUNT))
+                else
+                    MISSING_ROWS="$MISSING_ROWS $DIR_NAME/"
+                fi
+            done
+
+            # The invariant that actually broke: rows must sum to Total Modules.
+            if [ -n "$MISSING_ROWS" ]; then
+                echo "   ⚠️  PROJECT_STATS.md Module Breakdown has NO ROW for:$MISSING_ROWS"
+                echo "      Add the row(s) — until then the table under-reports by $((MODULE_COUNT - ROW_SUM))."
+            elif [ "$ROW_SUM" != "$MODULE_COUNT" ]; then
+                echo "   ⚠️  PROJECT_STATS.md rows sum to $ROW_SUM but Total Modules is $MODULE_COUNT."
+            fi
 
             # Update Test Coverage section
             do_sed "$PROJECT_STATS_FILE" "s/| Total Tests | [0-9,]* |/| Total Tests | $TEST_COUNT |/g"
