@@ -1,3 +1,7 @@
+## [2.411] - 2026-08-11
+- fix(reminders/data/undo): re-arm reminders on reset; state-sourced reminder checks; gate restore on safety backup; drop truncated literals in salvage; record swallowed init failures; shed redo before undo
+
+
 ## [2.410] - 2026-08-11
 - chore(build): sweep iCloud duplicate cruft before platform builds (v2.273 ENOTEMPTY class)
 - fix(state): pass adopted state to subscribers on cross-tab sync; inert mode description; refuse non-array task updates

@@ -498,6 +498,13 @@ export async function initializeModule(name, mod, deps, coreResult) {
                     try {
                         await exportedInstance.init();
                     } catch (initError) {
+                        // Record the failure, don't just log it: a swallowed
+                        // singleton init() (e.g. a dead dailyResetManager timer)
+                        // otherwise looks healthy to App Diagnostics and every
+                        // getStatus-style probe. Deliberately NOT rethrown for
+                        // required modules yet — first find out which modules
+                        // actually flow through this branch in the wild.
+                        featureAvailability.markFailed(name, initError);
                         console.warn(`⚠️ ${name}.${provided}.init() failed:`, initError.message);
                     }
                 }

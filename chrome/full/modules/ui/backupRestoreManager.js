@@ -477,14 +477,42 @@ async function processRestoreData(fileContent) {
                     return;
                 }
 
-                // Create safety backup before restore
+                // Create safety backup before restore. Success must be TRACKED,
+                // not assumed: a throw (IndexedDB unavailable — private mode,
+                // quota) OR a missing BackupManager (DI miss, early call) used
+                // to warn-and-proceed, overwriting current data with no safety
+                // net and no user awareness. safetyBackupOk only flips after
+                // the backup call actually succeeds, which covers both paths.
+                let safetyBackupOk = false;
                 try {
                     const BackupManager = _deps.BackupManager?.();
                     if (BackupManager) {
                         await BackupManager.createManualBackup(`Pre-Restore Safety Backup ${new Date().toLocaleString()}`);
+                        safetyBackupOk = true;
                     }
                 } catch (backupErr) {
                     console.warn('Could not create safety backup:', backupErr);
+                }
+
+                if (!safetyBackupOk) {
+                    // Friction only in the exact scenario where friction is
+                    // protection: make the user explicitly accept restoring
+                    // without a safety net.
+                    const proceedAnyway = await new Promise((confirmResolve) => {
+                        showConfirmationModal({
+                            title: getLabel('modal.restoreNoSafetyBackupTitle'),
+                            message: getLabel('modal.restoreNoSafetyBackupMessage'),
+                            confirmText: getLabel('modal.restoreNoSafetyBackupConfirm'),
+                            cancelText: getLabel('button.cancel'),
+                            destructive: true,
+                            callback: confirmResolve
+                        });
+                    });
+                    if (!proceedAnyway) {
+                        _deps.showNotification?.(getLabel('notify.restoreCancelled'), "info", UI_TIMEOUTS.NOTIFICATION_SHORT);
+                        resolve();
+                        return;
+                    }
                 }
 
                 // Stop AppState from auto-saving

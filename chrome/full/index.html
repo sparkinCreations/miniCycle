@@ -90,7 +90,7 @@
 <!-- ✅ Translucent status bar shows body background-color on iOS -->
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" id="status-bar-style-meta">
 
-<meta name="app-version" content="2.409">
+<meta name="app-version" content="2.411">
 
 <!-- Content Security Policy -->
 <!-- CSP is served via HTTP header in netlify.toml (production) -->
@@ -116,7 +116,7 @@
 <!-- Font Awesome removed - using inline SVG icons instead (see modules/utils/icons.js). fa-* classes are kept as the semantic source and swapped to inline <svg> at runtime by iconInit.js. -->
 <!-- Add cache busting version parameter -->
 <!-- Original CSS (for reference) -->
-<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=2.409"> -->
+<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=2.411"> -->
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
      § BOOT GAUNTLET (head) — ORDERED. DO NOT REARRANGE.
@@ -131,17 +131,17 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- Preload critical CSS files (they load in parallel, not blocking) -->
-<link rel="preload" href="styles/main.css?v=2.409" as="style">
-<link rel="preload" href="styles/base/variables.css?v=2.409" as="style">
-<link rel="preload" href="styles/base/reset.css?v=2.409" as="style">
-<link rel="preload" href="styles/layout/app-container.css?v=2.409" as="style">
-<link rel="preload" href="styles/layout/header.css?v=2.409" as="style">
-<link rel="preload" href="styles/components/task-list.css?v=2.409" as="style">
+<link rel="preload" href="styles/main.css?v=2.411" as="style">
+<link rel="preload" href="styles/base/variables.css?v=2.411" as="style">
+<link rel="preload" href="styles/base/reset.css?v=2.411" as="style">
+<link rel="preload" href="styles/layout/app-container.css?v=2.411" as="style">
+<link rel="preload" href="styles/layout/header.css?v=2.411" as="style">
+<link rel="preload" href="styles/components/task-list.css?v=2.411" as="style">
 
 <!-- Async CSS loading - doesn't block render, app starts with inline critical CSS -->
-<link rel="stylesheet" href="styles/main.css?v=2.409" media="print" id="async-main-css">
+<link rel="stylesheet" href="styles/main.css?v=2.411" media="print" id="async-main-css">
 <script src="ext-boot/01.js"></script>
-<noscript><link rel="stylesheet" href="styles/main.css?v=2.409"></noscript>
+<noscript><link rel="stylesheet" href="styles/main.css?v=2.411"></noscript>
 <!-- [chrome-ext build] removed PWA manifest link -->
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -152,7 +152,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- version.js MUST load synchronously BEFORE modulepreloads to set globalThis.APP_VERSION -->
-<script src="./version.js?v=2.409"></script>
+<script src="./version.js?v=2.411"></script>
 
 <!-- Build version = the version baked into THIS HTML document (the meta tag
      above). It is the honest "what am I actually running" signal. By contrast,
@@ -249,7 +249,7 @@
      'feature-gate'. Keep the gate in its own block. (Fixed Jul 2026.)
      ═══════════════════════════════════════════════════════════════════════════ -->
 <script src="ext-boot/08.js"></script>
-    <script src="boot-sw.js?v=2.409" defer></script>
+    <script src="boot-sw.js?v=2.411" defer></script>
 
 
 
@@ -1365,7 +1365,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- Boot File Split (Dec 2025): Load via entrypoint which orchestrates all boot files -->
- <script type="module" src="miniCycle-main.js?v=2.409"></script>
+ <script type="module" src="miniCycle-main.js?v=2.411"></script>
 
 <script src="ext-boot/11.js"></script>
    <!-- [chrome-ext build] removed inline script: late lite-version fallback redirect -->

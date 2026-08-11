@@ -472,13 +472,22 @@ class MiniCycleState {
                         }
                     }
 
-                    // Reload state from the new data
+                    // Reload state from the new data. Capture the outgoing state
+                    // first: notifyListeners(oldData, newData) delivers these to
+                    // every subscriber as (newState, oldState), and a bare
+                    // notifyListeners() here handed all subscribers
+                    // (undefined, undefined) — undoRedoManager guarded on
+                    // newState?.data?.cycles and silently skipped its snapshot,
+                    // dailyResetManager saw newActive === oldActive (both
+                    // undefined) and skipped its resync. Same failure mode the
+                    // save-conflict adoption site below already documents.
+                    const previousData = this.data;
                     this.data = this._ensureMetadata(externalData);
                     this.isDirty = false;
                     this.lastSavedTimestamp = externalTimestamp;
 
                     // Notify subscribers of the change
-                    this.notifyListeners();
+                    this.notifyListeners(previousData, this.data);
 
                 }
             } catch (error) {
@@ -926,16 +935,20 @@ class MiniCycleState {
      * @deprecated Use update() with direct task manipulation instead
      */
     updateActiveTasks(taskUpdates) {
+        // Refuse non-arrays outright (and before update() runs, so a bad call
+        // doesn't burn a save/notify cycle). The old fallback "repaired" the
+        // input via Object.values(), which writes an arbitrary-ordered,
+        // arbitrary-shaped array into tasks — silent mangling is strictly
+        // worse than refusing on a @deprecated path.
+        if (!Array.isArray(taskUpdates)) {
+            console.warn('updateActiveTasks: taskUpdates must be an array, received:', typeof taskUpdates, '— ignoring call');
+            return;
+        }
         this.update(state => {
             const activeCycle = state.appState.activeCycleId;
             if (activeCycle && state.data.cycles[activeCycle]) {
                 // Fix #1: Use array assignment instead of Object.assign which corrupts arrays
-                if (Array.isArray(taskUpdates)) {
-                    state.data.cycles[activeCycle].tasks = taskUpdates;
-                } else {
-                    console.warn('updateActiveTasks: taskUpdates should be an array, received:', typeof taskUpdates);
-                    state.data.cycles[activeCycle].tasks = Object.values(taskUpdates);
-                }
+                state.data.cycles[activeCycle].tasks = taskUpdates;
             }
         });
     }
