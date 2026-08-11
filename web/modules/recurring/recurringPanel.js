@@ -821,7 +821,7 @@ export class RecurringPanelManager {
             await this.deps.appInit?.waitForCore();
 
             const state = this.deps.AppState.get();
-            const activeCycleId = state.appState?.activeCycleId;
+            const activeCycleId = state?.appState?.activeCycleId;
 
             if (!activeCycleId) {
                 console.warn('⚠️ No active cycle ID found for recurring panel');

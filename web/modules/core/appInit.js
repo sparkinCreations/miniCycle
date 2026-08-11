@@ -169,8 +169,25 @@ class AppInit {
 			console.error('❌', err.message);
 			console.warn('⚠️ Continuing without core ready - some features may not work');
 			// Don't rethrow — that would break every awaiting caller at once.
-			// Report it instead: callers that write state can branch on false.
-			// `await waitForCore()` ignoring the value behaves exactly as before.
+			// Report it instead. `await waitForCore()` ignoring the value behaves
+			// exactly as before.
+			//
+			// CALLER AUDIT (Aug 2026) — why no caller branches on this, and why
+			// adding a bail-on-false would be a REGRESSION rather than a fix:
+			//   • WRITES are already safe. AppState.update() is async and awaits
+			//     its own init() before touching data, so a caller that proceeds
+			//     after `false` still writes correctly. The "lost write" this was
+			//     expected to prevent cannot happen through that path.
+			//   • READS are the real exposure: AppState.get() is synchronous and
+			//     returns null before init. Four post-await sites dereferenced it
+			//     unguarded (recurringPanel, recurringSettingsApplicator,
+			//     notifications ×2) — fixed at the READ site, which is where the
+			//     hazard actually lives.
+			//   • What callers do immediately after awaiting is UI setup —
+			//     attaching listeners, resolving DOM nodes, loading sub-modules.
+			//     Bailing would skip that permanently, turning a transient
+			//     degraded boot into a feature that never works for the session.
+			// So the return value is for DIAGNOSIS, not control flow.
 			return false;
 		} finally {
 			// Promise.race settles on the FIRST outcome but does not cancel the

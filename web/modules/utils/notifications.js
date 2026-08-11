@@ -1362,7 +1362,7 @@ async setDefaultPosition(notificationContainer) {
         await _deps.appInit?.waitForCore();
 
         const state = this.deps.AppState.get();
-        const activeCycleId = state.appState?.activeCycleId;
+        const activeCycleId = state?.appState?.activeCycleId;
 
         // Apply recurring settings (DI-pure)
         if (this.deps.applyRecurringToTaskSchema25) {
@@ -1396,8 +1396,8 @@ async setDefaultPosition(notificationContainer) {
           return;
         }
         const state = this.deps.AppState.get();
-        const activeCycleId = state.appState?.activeCycleId;
-        const task = state.data?.cycles?.[activeCycleId]?.tasks.find(t => t.id === taskId);
+        const activeCycleId = state?.appState?.activeCycleId;
+        const task = state?.data?.cycles?.[activeCycleId]?.tasks.find(t => t.id === taskId);
 
         let startingFrequency;
         const selectedCircle = notification.querySelector(DOM_SELECTORS.RADIO_CIRCLE_SELECTED);

@@ -58,7 +58,7 @@ export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
         await _deps.appInit?.waitForCore();
 
         const state = _deps.AppState.get();
-        const activeCycleId = state.appState?.activeCycleId;
+        const activeCycleId = state?.appState?.activeCycleId;
 
         if (!activeCycleId) {
             _deps.showNotification("⚠ " + getLabel('notify.recurringNoActiveFound'));
