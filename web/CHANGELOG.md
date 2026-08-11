@@ -1,3 +1,8 @@
+## [2.403] - 2026-08-11
+- refactor(stats): delete the dead second copy of the gesture handlers
+- docs(renderer): put the search-visibility comment back on its own dep
+
+
 ## [2.402] - 2026-08-11
 - fix(search): an active filter/sort no longer vanishes on re-render
 
