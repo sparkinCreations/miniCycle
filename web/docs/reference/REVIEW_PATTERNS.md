@@ -4,6 +4,55 @@ Derived from the August 2026 review pass (~40 modules, ~35 findings). These are
 the fault lines that produced repeat findings. A reviewer — human or AI — should
 check these first rather than reading top-to-bottom.
 
+---
+
+## 0. Before acting on a finding — verify it by running it
+
+The fault lines below tell you *where* to look. This section is about not trusting
+your own conclusion once you get there.
+
+**Findings in this codebase are reliably right about the location and unreliably
+right about the mechanism** — and the wrong detail is usually load-bearing, i.e. it
+changes or invalidates the fix. Every one of these was a real finding whose stated
+mechanism did not survive execution (Aug 2026):
+
+| The finding said | Running it showed |
+|---|---|
+| "guard the colour sink with `isValidHex`" | `isValidHex` accepts 3–8 digits; the sinks slice at fixed 6-digit offsets, so `#f00` passes validation and *still* yields `rgba(240,0,NaN)` — the proposed fix would not have closed the path it targeted |
+| "no current route for a bad value" | the preset share-code importer gates on exactly that predicate, so there was one |
+| "the counter is permanently dead" | `null++` is `1` — it self-heals on reload, and nothing reads the field |
+| "450 lines registered and never consumed" | ~20 call sites across `uiBoot`, `coreBoot`, `undoRedoManager` — deleting it would have broken UI boot |
+| "the splash gate is `shouldShowOnboarding()`" | that function has no production callers; the real gates were a pre-paint inline script and `appInit` |
+| "callers should bail when core isn't ready" | `AppState.update()` awaits its own `init()`, so writes were already safe; bailing would have skipped listener setup and broken the feature permanently |
+
+**Check:** run the smallest thing that settles the claim before writing the fix.
+A node one-liner for semantics (`undefined++`, `parseInt('#f00'.slice(3,5),16)`), a
+grep for "nothing uses this", a browser probe for behaviour. Reading the code gets
+you a plausible conclusion; running it gets you the right one.
+
+**Corollary — a passing test is not evidence the behaviour is correct.** Several
+suites here asserted the bug, so code and test agreed with each other. The usual
+cause is a fixture shaped unlike production data:
+
+- `testingModal.tests.js` seeded `metadata.version` and a per-cycle `schemaVersion`
+  — the app writes **neither**. So a test named "flags cycles needing migration"
+  passed by injecting a field nothing creates, while the real check could never fire
+  and the tool always reported "valid".
+- `migrationFacade.tests.js` asserted *"all facade methods return undefined and do
+  not throw before init"* — pinning the unsafe contract exactly, since a falsy
+  `checkNeeded()` reads as "no migration needed".
+- `taskValidation.tests.js` pinned `TASK_LIMIT === 100`, a hardcoded value that had
+  silently diverged from the importer's limit.
+
+**Check:** build fixtures from the real creation path (`createInitialSchema25Data`,
+`createOrUpdateTaskData`) rather than inventing a shape; assert the **source**
+(`x === LIMITS.FOO`) rather than the value; and confirm every new test **fails
+without the fix** — revert, see red with the expected message, restore. A test
+written alongside a fix can easily replicate the fixed expression instead of
+exercising production code, and will then pass on revert while proving nothing.
+
+---
+
 ## 1. Live-state mutation before the producer
 
 `AppState.get()` returns a live reference. Code that mutates it and *then* calls
