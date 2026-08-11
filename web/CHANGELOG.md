@@ -1,3 +1,9 @@
+## [2.410] - 2026-08-11
+- chore(build): sweep iCloud duplicate cruft before platform builds (v2.273 ENOTEMPTY class)
+- fix(state): pass adopted state to subscribers on cross-tab sync; inert mode description; refuse non-array task updates
+- chore(chrome): rebuild extension to v2.409 (was stale at 2.337)
+
+
 ## [2.409] - 2026-08-11
 - feat(gates): validate:builtins — no post-es2020 built-ins; fix undo .at(-1) on old Safari
 
