@@ -5,7 +5,7 @@
 > Every gate here is zero-dependency (Python stdlib or Node already in the project) and
 > runs from `web/`. None of them need a dev server except the test suites.
 
-**Last Updated:** August 6, 2026
+**Last Updated:** August 11, 2026
 
 ---
 
@@ -17,7 +17,7 @@
 | **HTML validity** | `npm run validate:html` | CI — `performance.yml` | 🔴 Fails CI |
 | **Docs links + nav** | `npm run validate:docs` | CI — `performance.yml` | 🔴 Fails CI |
 | **Lint** | `npm run lint` | CI — `test.yml` | 🔴 Fails CI on any error, or on warnings above the `--max-warnings` ratchet in `package.json` (lower it after cleanup; never raise it) |
-| **Module tests** | `npm test` | CI — `test.yml` | 🔴 Fails CI |
+| **Module tests** | `npm test` | CI — `test.yml` | 🔴 Fails CI — stalled modules retry once (see below); assertion failures never do |
 | **Real-app gates** | `npm run test:layout` · `test:sw` · `test:meta` · `test:journey` | CI — `test.yml` | 🔴 Fails CI |
 | **Performance** | `npm run perf` | CI — `performance.yml` | 🔴 Fails CI |
 | **DI declarations** | `npm run validate:di` | CI — `test.yml` | 🟡 Partially gated (undeclared=0, nowhere=0, undeliverable=0, unused ratchet; facade advisory) |
@@ -117,6 +117,33 @@ diff /tmp/di-before.txt /tmp/di-after.txt   # empty = you introduced no new DI f
 
 That is how the July 2026 `menuManager` wiring change was verified — identical output before
 and after proved the new dependency was declared correctly at every layer.
+
+---
+
+## 🔁 `npm test` retries stalls — and only stalls
+
+A module occasionally produces **no Results line at all** and is reported as
+`0/1`. That is not a failing test — it means nothing ran. It has been landing on
+a different module every run (Aug 2026: `modalManager`, `keyboardNav`,
+`taskValidation`, `basicPluginSystem`, `notificationDialogHost` and others, each
+passing standalone), and it once turned a docs-only PR red.
+
+The runner now retries such a module **once**, on a fresh page, with the
+cold-start budget.
+
+**What is never retried:** a module that RAN and had assertions fail. Those
+return normally with counts and never reach the retry path, so a real regression
+cannot be papered over by re-running. The retry is keyed strictly on Playwright's
+`TimeoutError`.
+
+**Retries are never silent.** The module's summary row is tagged `🔁 retried`, and
+a block after the table names each retried module and its first-attempt error. A
+green run that needed retries is visibly different from a healthy one.
+
+**If you see `🔁` in CI:** the run is green and the code is fine, but the
+environment stalled. Repeated retries on the *same* module mean something real —
+that module is genuinely slow or hanging, and its budget or its test setup needs
+looking at, not another retry.
 
 ---
 
