@@ -1,3 +1,7 @@
+## [2.406] - 2026-08-11
+- fix(boot): guard post-waitForCore state reads; record why callers must not bail
+
+
 ## [2.405] - 2026-08-11
 - fix(sw,css): precache bypasses HTTP cache; tokenize the charcoal prompt surface
 - chore(stats): derive the module table from modules/*, add the missing platform row
