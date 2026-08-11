@@ -44,8 +44,8 @@ const di = createDIModule('TaskRenderer', {
     recurringPanel: optional(null),
     updateRecurringPanelButtonVisibility: optional(null),
     updateRecurringInfoLink: optional(null),
-    updateSearchVisibility: optional(null),
-    reapplyActiveFilter: optional(null),  // Task search visibility based on count
+    updateSearchVisibility: optional(null),  // Task search visibility based on count
+    reapplyActiveFilter: optional(null),  // Restores an active filter/sort after replaceChildren
     AppMeta: optional(null),
     taskToAddTaskOptions: optional(null),  // From taskUtils - injected to avoid duplicate module loading
     revealTaskButtons: optional(null)  // For restoring active task options after render
