@@ -1,3 +1,12 @@
+/* eslint-disable security/detect-object-injection --
+ * This file IS a dynamic key/value resolver: every dependency lookup is
+ * `schema[key]`, `_injected[key]`, `overrides[key]` by design. The rule fires 27
+ * times here and every hit is a false positive — the keys come from a module's
+ * own DI schema and from setDependencies() calls made by boot code, never from
+ * user input or storage, so there is no prototype-pollution surface to protect.
+ * Scoped to this file deliberately; the rule stays ON everywhere else, where it
+ * has caught real issues. (Aug 2026 — the alternative was 27 inline disables.)
+ */
 /**
  * @file diBase.js
  * @description Dependency Injection base utilities for miniCycle modules

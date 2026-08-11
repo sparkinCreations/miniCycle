@@ -20,7 +20,7 @@
     "test:journey": "node tests/automated/run-journey-tests.cjs",
     "test:manual": "python3 -m http.server 8080",
     "perf": "node tests/automated/run-performance-benchmarks.cjs",
-    "lint": "eslint modules/ service-worker.js miniCycle-main.js boot-sw.js --max-warnings=990",
+    "lint": "eslint modules/ service-worker.js miniCycle-main.js boot-sw.js --max-warnings=970",
     "lint:fix": "eslint modules/ --fix",
     "validate:di": "node scripts/validate-di-deps.js",
     "validate:legacy": "node scripts/validate-legacy-reads.js",

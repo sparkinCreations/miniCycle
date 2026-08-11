@@ -380,7 +380,7 @@ self.addEventListener('install', function (event) {
   function reloadRequest(url) {
     try {
       return new Request(url, { cache: 'reload' });
-    } catch (e) {
+    } catch {
       return url;   // older engines without the cache option — fall back to the plain URL
     }
   }

@@ -161,7 +161,6 @@ function validateAndSanitizeTaskInput(taskText) {
         // state. This is the only route by which unvalidated task text reaches
         // storage, so clamp rather than pass through. Text is preserved (not
         // rejected) because dropping user input silently is the worse failure.
-        // eslint-disable-next-line no-control-regex -- stripping control chars is the point
         const stripped = taskText.replace(/[\u0000-\u001F\u007F]/g, '').trim();
         if (!stripped) return null;
         return stripped.slice(0, LIMITS.TASK_CHARACTER_INPUT);
