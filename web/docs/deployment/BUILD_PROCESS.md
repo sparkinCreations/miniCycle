@@ -79,7 +79,11 @@ The fix and current contract:
    module the production testing modal imports directly. A dynamic-import specifier scan
    still runs as **validation** (build fails loudly on unresolvable specifiers).
 2. **Bundles with esbuild** — `format: esm`, `splitting: true`, `minify: true`,
-   `keepNames: true`, `sourcemap: true`, target es2020:
+   `keepNames: true`, `sourcemap: true`, target es2020. **The target lowers
+   SYNTAX only — built-ins are never polyfilled**: `Object.hasOwn` or `.at()`
+   ships verbatim and throws on browsers the feature gate admits (floor =
+   `globalThis`, Chrome 71 / Safari 12.1). `npm run validate:builtins` gates
+   this in CI; see `docs/working-on-code/VALIDATION_GATES.md`.
    - **ALL hashed output lands under `dist/build/`**: entries as
      `build/[dir]/[name]-[hash].js`, shared chunks as `build/chunks/chunk-[hash].js`,
      and the CSS bundle as `build/styles/main-[hash].css`. One path prefix drives the

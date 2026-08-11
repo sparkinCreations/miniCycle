@@ -23,6 +23,7 @@
 | **DI declarations** | `npm run validate:di` | CI — `test.yml` | 🟡 Partially gated (undeclared=0, nowhere=0, undeliverable=0, unused ratchet; facade advisory) |
 | **Inline scripts** | `npm run validate:inline` | CI — `test.yml` | 🔴 Fails CI — empty catch blocks in miniCycle.html inline scripts must carry an intent comment (ESLint's `no-empty` can't see the file — drift-review D-01) |
 | **Comment references** | `npm run validate:comments` | CI — `test.yml` | 🔴 Fails CI — an identifier named in a comment must exist somewhere in the code |
+| **ES built-in floor** | `npm run validate:builtins` | CI — `test.yml` | 🔴 Fails CI — no post-es2020 built-ins in shipped code (esbuild transpiles syntax, not built-ins) |
 
 ---
 
@@ -159,6 +160,48 @@ guaranteed:
 **If it fails:** fix the name; or, if the comment describes the past, say so explicitly; or
 add a genuinely external API to `EXTERNAL_APIS` in
 [scripts/validate-comment-refs.js](../../scripts/validate-comment-refs.js).
+
+---
+
+## 🔴 `validate:builtins` — the ES built-in floor (Aug 2026)
+
+**Checks:** no **post-es2020 built-in** appears in shipped code (`modules/` minus
+`testing/`, `service-worker.js`, `miniCycle-main.js`, `boot-sw.js`, `version.js`).
+Three shapes, matched on the acorn AST so comments can never false-positive:
+static methods (`Object.hasOwn`, `Promise.any`, …), globals (`WeakRef`,
+`AggregateError`, …), and prototype methods by name (`.at()`, `.replaceAll()`,
+`.findLast()`, …). Gated at 0 from introduction.
+
+**Why it exists:** the build target is es2020 and the feature gate admits any browser
+with `globalThis` (Chrome 71 / Safari 12.1 / Firefox 65) — but esbuild transpiles
+**syntax, not built-ins**, so a newer built-in ships verbatim and throws `TypeError`
+on browsers the gate deliberately lets in. **No other gate can see this**: lint has no
+target awareness, and Playwright runs modern Chromium, so every test passes.
+`Object.hasOwn` nearly shipped in v2.408 through the whole routine-creation path;
+on its first clean run the gate caught `.at(-1)` in `undoRedoManager`'s snapshot
+capture — undo had been silently broken on Safari ≤ 15.3 since it shipped (the
+wrapper's try/catch swallowed the throw on every capture).
+
+**The tell that prompted it:** the near-miss introduced the *first* use of that
+built-in in ~136 modules. If nothing else in the codebase uses a method, ask why
+before assuming it's fine.
+
+**Special cases:**
+
+- **`structuredClone`** is exempt because `coreBoot.js` installs a Phase-1 polyfill
+  before any other module code runs — and the script **verifies the polyfill still
+  exists**. Delete it and every `structuredClone` call becomes a finding.
+- **`Promise.allSettled`** (backupRestoreManager) *is* es2020 and passes, but arrived
+  later than `globalThis` in every engine (Chrome 76 vs 71) — a known, accepted
+  straggler; it is not boot-critical.
+- **`.with()`** is deliberately not scanned — the name is too generic to flag.
+
+**If it fails:** use the es2020-or-older equivalent
+(`Object.prototype.hasOwnProperty.call` for `Object.hasOwn`, `arr[arr.length - 1]`
+for `.at(-1)`, a `/g`-regex `.replace` for `.replaceAll`). If the call is genuinely
+guarded (`typeof X === 'function'`) or the receiver is a project object whose method
+merely shares the name, append `// es2020-ok: <reason>` to the line — after
+verifying, not before.
 
 ---
 

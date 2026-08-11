@@ -638,7 +638,10 @@ export function captureStateSnapshot(state) {
   }
 
   // Skip if last on stack is identical (use cached signature if available)
-  const last = _deps.AppGlobalState.activeUndoStack.at(-1);
+  // [length - 1], not .at(-1): Array.prototype.at is es2022 and the build floor
+  // is es2020 — .at() throws TypeError on Safari <= 15.3 (validate:builtins).
+  const stack = _deps.AppGlobalState.activeUndoStack;
+  const last = stack[stack.length - 1];
   if (last) {
     const lastSig = last._sig || buildSnapshotSignature(last);
     if (lastSig === sig) return;

@@ -61,6 +61,7 @@ npm run validate:html  # W3C validity (CI)
 npm run validate:docs  # docs links, sidebar orphans, and THIS file's doc paths (CI)
 npm run validate:di    # DI declarations — gated (undeclared=0, nowhere=0, undeliverable=0, unused ratchet); runs in CI
 npm run validate:comments # identifiers named in comments must exist (CI; gated at 0)
+npm run validate:builtins # no post-es2020 built-ins in shipped code — esbuild transpiles syntax, NOT built-ins; Object.hasOwn/.at()/.replaceAll() throw on browsers the feature gate admits (CI; gated at 0)
 npm run validate:inline # miniCycle.html inline scripts: empty catches need intent comments + pre-gate contract (ES5-only above the feature gate, globalThis reads guarded, gate floor includes no-globalthis) (ESLint can't see the file; CI)
 ```
 
@@ -369,6 +370,8 @@ which regenerates them in `netlify.toml`.
 14. **Deriving state from the DOM** — never count tasks or read completion via `querySelectorAll`, `.checked`, or input values. The DOM holds only the *active* routine's *currently rendered* tasks, so anything filtered, collapsed, or mid-render silently yields wrong numbers with no error. Read from `state.data.cycles[cycleId].tasks`.
 15. **Fixing a bug in one place without grepping for its copies** — before closing a fix, search for the same pattern elsewhere. Nearly every finding in the Aug 2026 review was newer hardened code sitting beside an older unhardened copy of the same logic (`getState?.()` fixed in taskDOM but missed in taskEvents; `CSS.escape` on one selector builder but not its neighbour).
 16. **Adding a specific `else if` below a general one** — a later branch that re-tests a condition an earlier branch already catches is dead code. Put type-specific branches *above* the generic field check (Aug 2026: the history priority-colour dot never rendered).
+17. **Using post-es2020 built-ins** (`Object.hasOwn`, `.at()`, `.replaceAll()`, `.findLast()`) — esbuild's `target: es2020` transpiles *syntax*, not built-ins; they ship verbatim and throw on browsers the feature gate admits (Safari ≤ 15.3). Tests can't catch it (Playwright = modern Chromium). `validate:builtins` gates it; use the es2020 equivalent (`Object.prototype.hasOwnProperty.call`, `arr[arr.length - 1]`).
+18. **Truthiness checks on name-keyed plain objects** — `if (map[name])` inherits from `Object.prototype`, so it's truthy for `constructor`/`toString`/`valueOf` on an *empty* map, and `map['__proto__'] = x` sets the prototype (reads back fine, serialises to `{}`, vanishes on reload). Where user text becomes a key, use `Object.prototype.hasOwnProperty.call` or `Object.create(null)` (Aug 2026: `getUniqueCycleName`, then the validate-builtins script itself the same day).
 
 ---
 

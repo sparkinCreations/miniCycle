@@ -120,6 +120,40 @@ fires on a date the user never selected.
 **Check:** every fallback in `recurringCalculators.js` scans forward for a
 period that actually contains the target.
 
+## 8. Post-es2020 built-ins — green tests prove nothing about old browsers
+
+esbuild's `target: ['es2020']` transpiles **syntax, not built-ins**. A newer
+built-in (`Object.hasOwn`, `.at()`, `.replaceAll()`) ships verbatim and throws
+`TypeError` on browsers the feature gate deliberately admits (floor =
+`globalThis`: Chrome 71 / Safari 12.1). Playwright runs modern Chromium, so
+every test passes; lint has no target awareness. `.at(-1)` in undoRedoManager's
+snapshot capture silently broke Undo on Safari ≤ 15.3 for ~10 months — the
+wrapper's try/catch swallowed the throw, 3134/3134 tests green throughout.
+
+**Check:** `npm run validate:builtins` gates this now. The human-review tell:
+a change introducing the **first** use of a built-in in ~136 modules — if
+nothing else in the codebase uses it, ask why before assuming it's fine.
+
+## 9. Bracket lookups on name-keyed maps inherit from Object.prototype
+
+`if (map[name])` on a plain object is truthy for `constructor`, `toString`,
+`valueOf`, `hasOwnProperty` even when the map is **empty** — the lookup walks
+the prototype chain. Anywhere user text becomes an object key (cycles by title,
+labels by key), a truthiness or `in`-style check misfires on those names. And
+`map['__proto__'] = {...}` sets the prototype instead of creating an own
+property: it reads back fine in memory, then **serialises to `{}`** and
+vanishes on reload. Both hit `getUniqueCycleName` (a routine named
+"constructor" was silently renamed on an empty cycles object) — and the same
+bug reappeared **the same day** in the validate-builtins script itself, where
+`PROTO_METHODS['toString']` resolved the inherited native `toString` and
+produced 53 false positives.
+
+**Check:** lookups keyed by user-controlled or method-like names must use
+`Object.prototype.hasOwnProperty.call` (not `Object.hasOwn` — see §8), or the
+map must be created with `Object.create(null)`. Trust-boundary key filtering
+lives in `DataValidator._checkForPrototypePollution()` and
+`nameUtils.isNameTaken()` — extend those for new input paths.
+
 ### Date-only strings parse as UTC
 
 `new Date("2026-08-06")` is UTC midnight per spec, which is the *previous local
