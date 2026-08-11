@@ -1,3 +1,8 @@
+## [2.405] - 2026-08-11
+- fix(sw,css): precache bypasses HTTP cache; tokenize the charcoal prompt surface
+- chore(stats): derive the module table from modules/*, add the missing platform row
+
+
 ## [2.404] - 2026-08-11
 - fix(di): preserve late-binding getters through resolve; harden validation and facade failure modes
 - ci(validate:comments): gate identifiers named in comments at zero
