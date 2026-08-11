@@ -219,7 +219,8 @@ export async function initCoreBoot(deps, versionSuffix = null) {
   deps.core.setAppInitDependencies = setAppInitDependencies;
   deps.core.appInitVersion = APPINIT_VERSION || null;
 
-  // appInit is available via appContext.getAppInit()
+  // appInit is reachable as deps.core.appInit, or from appContext via
+  // createLazyDeps().appInit — a property getter, not an accessor function.
 
   // Log version info
   if (APPINIT_VERSION) {
@@ -305,7 +306,9 @@ export async function initCoreBoot(deps, versionSuffix = null) {
   deps.utils.DEFAULT_TASK_OPTION_BUTTONS = globalUtilsModule.DEFAULT_TASK_OPTION_BUTTONS;
   deps.utils.setGlobalUtilsDependencies = globalUtilsModule.setGlobalUtilsDependencies;
 
-  // ✅ GlobalUtils accessible via deps.utils and appContext.getGlobalUtils() - no window.* exposure
+  // ✅ GlobalUtils is accessible via deps.utils, or from appContext via
+  // createLazyDeps().GlobalUtils — a property getter, not an accessor
+  // function. No window.* exposure.
 
   // ========== Load Migration Manager ==========
   const migrationMod = await import(withV('../routine/migrationManager.js'));
@@ -325,7 +328,7 @@ export async function initCoreBoot(deps, versionSuffix = null) {
 
   // ========== Initialize appContext early ==========
   // This allows modules loaded between initCoreBoot and initAppState
-  // to use appContext getters (e.g., getGlobalUtils())
+  // to use appContext getters (e.g. createLazyDeps().GlobalUtils)
   // ✅ Use version param for cache-busting (like appInit pattern)
   const appContextMod = await import(`../core/appContext.js${vSuffix}`);
   appContextMod.initAppContext({

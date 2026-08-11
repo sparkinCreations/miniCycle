@@ -959,7 +959,7 @@ export class StatsPanelManager {
                 if (currentCycleDoughnutContainer) currentCycleDoughnutContainer.classList.add(DOM_CLASSES.VISIBLE);
                 if (currentCycleProgressText) currentCycleProgressText.classList.add(DOM_CLASSES.VISIBLE);
                 currentRoutineCycleCount.classList.add(DOM_CLASSES.VISIBLE);
-                // Don't add visible to cleared count here - let updateStats() handle it based on content
+                // Don't add visible to cleared count here - let updateStatsPanel() handle it based on content
                 if (routineButtonsContainer) routineButtonsContainer.classList.add(DOM_CLASSES.VISIBLE);
 
                 const toggleIcon = currentRoutineStatus?.querySelector(DOM_SELECTORS.TOGGLE_ICON);

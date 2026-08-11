@@ -65,7 +65,7 @@ function saveToUndoCache(cycleId, undoStack, redoStack) {
     // (index 0) first, then redo entries, until under the cap.
     // localStorage stores UTF-16, so actual bytes = string length × 2 — the
     // same convention storageUtils uses to meter the quota (drift-review C-27;
-    // comparing raw length to a _BYTES constant silently doubled the budget).
+    // comparing raw length to LIMITS.UNDO_CACHE_MAX_BYTES silently doubled the budget).
     while (serialized.length * 2 > LIMITS.UNDO_CACHE_MAX_BYTES &&
            (cacheData.undoStack.length > 1 || cacheData.redoStack.length > 0)) {
       if (cacheData.undoStack.length > 1) {

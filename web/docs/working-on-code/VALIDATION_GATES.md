@@ -22,6 +22,7 @@
 | **Performance** | `npm run perf` | CI — `performance.yml` | 🔴 Fails CI |
 | **DI declarations** | `npm run validate:di` | CI — `test.yml` | 🟡 Partially gated (undeclared=0, nowhere=0, undeliverable=0, unused ratchet; facade advisory) |
 | **Inline scripts** | `npm run validate:inline` | CI — `test.yml` | 🔴 Fails CI — empty catch blocks in miniCycle.html inline scripts must carry an intent comment (ESLint's `no-empty` can't see the file — drift-review D-01) |
+| **Comment references** | `npm run validate:comments` | CI — `test.yml` | 🔴 Fails CI — an identifier named in a comment must exist somewhere in the code |
 
 ---
 
@@ -117,6 +118,47 @@ diff /tmp/di-before.txt /tmp/di-after.txt   # empty = you introduced no new DI f
 
 That is how the July 2026 `menuManager` wiring change was verified — identical output before
 and after proved the new dependency was declared correctly at every layer.
+
+## 🔴 `validate:comments` — the checkable slice of comment rot (Aug 2026)
+
+**Checks:** every identifier a comment names — `` `backticked` ``, `_underscored`, or
+`camelCase()` followed by a call paren — exists somewhere in real code
+(`modules/`, `tests/`, `scripts/`, root JS). Gated at 0 from introduction.
+
+**Why it exists:** docs have `validate:docs`; inline comments had nothing, and they are
+the layer that degrades fastest because they sit next to code that changes. Every instance
+we have actually hit is this one shape — a comment naming something that isn't there:
+
+| found | what it said | reality |
+|-------|--------------|---------|
+| `themeManager` (v2.403) | "see `_saveSetting`" | helper never shipped |
+| `taskRenderer` (v2.403) | comment on the wrong dep | `updateSearchVisibility` had moved |
+| `coreBoot` | "via `appContext.getAppInit()`" | appContext exports no such function |
+| `statsPanel` | "let `updateStats()` handle it" | the function is `updateStatsPanel` |
+
+**What it deliberately cannot do:** tell whether a comment is *true*. A comment can name
+only real identifiers and still describe the wrong behaviour — the modal focus-restore
+comment claimed its branch restored focus when the call was inert. This gate is the
+mechanical slice, not the whole problem.
+
+**Precision over recall.** Bare camelCase without a call paren is *not* scanned — too much
+prose collides with it. Four exemptions, each because a false positive would otherwise be
+guaranteed:
+
+- **JSDoc declaration tags** (`@param`, `@property`, …) declare names rather than reference them
+- **`@example` blocks and indented sample code** are illustrations
+- **Historical notes** — "X was removed in v2.354" deliberately names dead things, and the
+  project writes these on purpose. *But* an imperative pointer overrides the exemption:
+  "see X" / "use X" / "via X" is a claim you can act on now. That distinction is load-bearing
+  — the real `_saveSetting` tombstone read *"It **was** also the third live-state mutator in
+  this file; see `_saveSetting`"*, so a line-level past-tense check alone would have missed it.
+- **`EXTERNAL_APIS`** — browser and third-party names the symbol table cannot know
+  (`valueAsDate`, `timeOrigin`, `smallIcon`). Add with a reason; it is an exemption list,
+  not a mute button.
+
+**If it fails:** fix the name; or, if the comment describes the past, say so explicitly; or
+add a genuinely external API to `EXTERNAL_APIS` in
+[scripts/validate-comment-refs.js](../../scripts/validate-comment-refs.js).
 
 ---
 

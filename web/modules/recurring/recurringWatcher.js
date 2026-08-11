@@ -158,7 +158,7 @@ function resetTaskLimitNotification() {
 // ============================================================================
 
 /**
- * Switch the watcher interval (active 15s vs idle 2h — INTERVALS.RECURRING_WATCHER / _IDLE)
+ * Switch the watcher interval (active 15s vs idle 2h — INTERVALS.RECURRING_WATCHER / INTERVALS.RECURRING_WATCHER_IDLE)
  * @param {boolean} hasTemplates - Whether recurring templates exist
  * @returns {void}
  */

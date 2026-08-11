@@ -24,6 +24,7 @@
     "lint:fix": "eslint modules/ --fix",
     "validate:di": "node scripts/validate-di-deps.js",
     "validate:legacy": "node scripts/validate-legacy-reads.js",
+    "validate:comments": "node scripts/validate-comment-refs.js",
     "validate:inline": "python3 scripts/validate-inline.py",
     "validate:csp": "python3 scripts/validate-csp.py",
     "check:dupes": "bash scripts/check-duplicates.sh",

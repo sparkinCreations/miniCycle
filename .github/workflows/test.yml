@@ -48,6 +48,10 @@ jobs:
         working-directory: ./web
         run: npm run validate:inline
 
+      - name: Validate comment references (named identifiers must exist)
+        working-directory: ./web
+        run: npm run validate:comments
+
   test:
     runs-on: ubuntu-latest
 

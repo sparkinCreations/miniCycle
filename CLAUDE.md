@@ -60,6 +60,7 @@ npm run validate:csp   # inline-script CSP hashes — HARD pre-push gate (blocks
 npm run validate:html  # W3C validity (CI)
 npm run validate:docs  # docs links, sidebar orphans, and THIS file's doc paths (CI)
 npm run validate:di    # DI declarations — gated (undeclared=0, nowhere=0, undeliverable=0, unused ratchet); runs in CI
+npm run validate:comments # identifiers named in comments must exist (CI; gated at 0)
 npm run validate:inline # miniCycle.html inline scripts: empty catches need intent comments + pre-gate contract (ES5-only above the feature gate, globalThis reads guarded, gate floor includes no-globalthis) (ESLint can't see the file; CI)
 ```
 
