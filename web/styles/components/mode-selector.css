@@ -121,7 +121,7 @@
 }
 
 .mode-selector option:hover {
-    background: rgba(50, 50, 50, 1);
+    background: var(--color-charcoal);
 }
 
 .mode-selector option:checked {

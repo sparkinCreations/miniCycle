@@ -364,9 +364,30 @@ self.addEventListener('install', function (event) {
   });
   var precacheList = CORE.concat(BOOT_CRITICAL, normalizedCSS, LITE_SHELL);
 
+  // Precache requests bypass the HTTP cache.
+  //
+  // Belt-and-braces for the pretty-URL header gap (v2.397): a URL served with a
+  // long max-age could otherwise be read from the HTTP cache at install time and
+  // written into the precache, so the SW would inherit staleness the headers were
+  // supposed to prevent. `reload` makes install always hit the network.
+  //
+  // This does NOT change redirect handling — that is a separate axis, and
+  // './miniCycle.html' has 301'd in production since long before this. If an
+  // engine rejects a redirected response, the per-URL slow path below already
+  // isolates it to that one entry instead of failing the whole install.
+  //
+  // Runs once per SW install, not per page load, so the extra network is bounded.
+  function reloadRequest(url) {
+    try {
+      return new Request(url, { cache: 'reload' });
+    } catch (e) {
+      return url;   // older engines without the cache option — fall back to the plain URL
+    }
+  }
+
   function addAllSafe(cache, urls) {
     // 1) Fast path: one shot addAll
-    return cache.addAll(urls).then(function () {
+    return cache.addAll(urls.map(reloadRequest)).then(function () {
       return { ok: urls.length, fail: 0, failed: [] };
     }).catch(function (err) {
       // 2) Slow path: add items one-by-one so one bad URL doesn't kill install
@@ -380,7 +401,7 @@ self.addEventListener('install', function (event) {
         (function (batch) {
           p = p.then(function () {
             return Promise.all(batch.map(function (u) {
-              return cache.add(u).then(function () { ok++; }).catch(function (e) {
+              return cache.add(reloadRequest(u)).then(function () { ok++; }).catch(function (e) {
                 fail++; failed.push({ url: u, error: String(e && e.message || e) });
                 console.warn('❌ Failed to cache:', u, e);
               });

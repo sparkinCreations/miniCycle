@@ -1,6 +1,6 @@
 # `.miniCycle-prompt-box` Sits Outside the Token System (Light Mode)
 
-> **Status:** Open · **Severity:** Low — cosmetic, theme-consistency only ·
+> **Status:** ✅ FIXED (Aug 2026) · **Severity:** was Low — cosmetic, theme-consistency only ·
 > **Found:** Aug 2026, live browser review of `minicycle.app` v2.396.
 >
 > The charcoal name-entry modal family is **intentional** — see

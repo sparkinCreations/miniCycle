@@ -132,6 +132,13 @@
   --color-navy-dark: #0c2091;         /* darker navy border/hover */
   /* Monospace / code viewer background */
   --color-code-bg: #282828;
+  /* Charcoal surface for the name-entry prompt family and select-option hover.
+     A DELIBERATE dark surface (see REVIEW_PATTERNS § Deliberate designs that
+     read as bugs) — it is not a light-mode oversight. Tokenised because the
+     same literal rgb(50,50,50) was hardcoded in two components and had no
+     name to connect them. Do not fold into --color-gray-800 (#262626): that
+     is a different, darker shade. */
+  --color-charcoal: #323232;
 
   /* ═══════════════════════════════════════════════════════════════════════════
      THEME VARIABLES - Backgrounds

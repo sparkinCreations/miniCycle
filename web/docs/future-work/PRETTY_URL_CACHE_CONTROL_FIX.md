@@ -1,6 +1,6 @@
 # Pretty-URL `Cache-Control` Gap — `/minicycle` Cached for a Year
 
-> **Status:** Part 1 SHIPPED in v2.397 (Aug 2026) · Part 2 still open · **Severity:** was
+> **Status:** ✅ BOTH PARTS DONE — Part 1 shipped v2.397, Part 2 Aug 2026 · **Severity:** was
 > High — stale app shell after every deploy · **Found:** Aug 2026, live production review of
 > `minicycle.app` by driving the real app in a browser.
 >
@@ -13,10 +13,17 @@
 > /blog            cache-control: no-cache,no-store,must-revalidate
 > ```
 >
-> **Part 2 (service-worker `cache: 'reload'`) remains open** — belt-and-braces against a future
-> header regression. Deferred deliberately: it touches precaching and therefore offline boot,
-> and the redirected-response trap noted in that section needs resolving first. It wants its
-> own release and its own `test:sw` run, not a ride-along.
+> **Part 2 (service-worker `cache: 'reload'`) is now DONE too.** `addAllSafe` builds each
+> precache entry as `new Request(url, { cache: 'reload' })` on both the fast and slow paths,
+> so install always hits the network and cannot inherit a stale HTTP-cache entry if a header
+> ever regresses. `test:sw` passes (online, honest offline, and lying-`navigator.onLine`).
+>
+> On the redirected-response trap this doc warns about: it is a SEPARATE axis and unchanged
+> by Part 2 — `cache: 'reload'` sets the HTTP cache mode, not redirect handling, and
+> `./miniCycle.html` has 301'd in production since well before this. If an engine rejects a
+> redirected response, the existing per-URL slow path isolates it to that one entry rather
+> than failing the whole install. Note `test:sw` runs on localhost, where that URL does not
+> redirect, so the production redirect path is not covered by it either way.
 >
 > The original finding, for the record: `/minicycle` — the URL behind the "Try miniCycle Web"
 > CTA and the "Try Now" nav button — was served with `Cache-Control: public, max-age=31536000`.
