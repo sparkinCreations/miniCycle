@@ -318,5 +318,5 @@ miniCycle is developed by [sparkinCreations](https://sparkincreations.com).
 
 - **App**: [minicycle.app](https://minicycle.app)
 - **Website**: [sparkincreations.com](https://sparkincreations.com)
-- **TaskCycle Demo**: [taskcycle.app](https://taskcycle.app) — the original 2023 project miniCycle grew out of
+- **TaskCycle Demo**: [taskcycle.app](https://taskcycle.app) — a live demo of the upcoming full TaskCycle
 - **Support**: [Open an issue](https://github.com/sparkinCreations/miniCycle/issues)
