@@ -1772,6 +1772,11 @@
     <!-- Stats Panel (Initially Hidden) -->
     <section id="stats-panel" class="stats-panel" role="tabpanel" aria-labelledby="stats-header" inert>
         <h2 id="stats-header">📊 Stats</h2>
+        <!-- Scroll surface lives HERE, not on the panel: the title above stays
+             pinned because it is outside the scroller (no sticky, no background
+             needed), and this wrapper's top mask fades content out before it
+             reaches the title — see .stats-panel-content in stats-panel.css. -->
+        <div class="stats-panel-content" id="stats-panel-content">
         <div class="current-routine-status" id="current-routine-status">
             <h3 class="clickable" tabindex="0" aria-expanded="true" aria-label="Toggle current routine details">
                 📋 Current Routine <span class="toggle-icon">▼</span>
@@ -1828,6 +1833,7 @@
                 <div id="stats-progress-bar" class="progress-bar" role="progressbar" aria-label="Progress to next milestone" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
             </div>
         </div>
+        </div> <!-- /.stats-panel-content -->
     </section>
 
     

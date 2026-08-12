@@ -17,7 +17,9 @@
     max-width: 400px;
     height: auto;
     max-height: var(--stats-panel-max-vh);
-    overflow-y: auto;
+    /* overflow lives on .stats-panel-content now — the panel itself must NOT
+       scroll, or the pinned title would scroll with it. */
+    overflow: hidden;
     color: var(--theme-stats-text);
     background: var(--theme-stats-bg);
     border: 1px solid var(--theme-stats-border, rgba(255, 255, 255, 0.25));
@@ -52,21 +54,36 @@ body:not(.focus-mode) #stats-panel {
     max-height: min(var(--stats-panel-max-vh), calc(100dvh - var(--header-total-height, var(--header-height-fallback)) - var(--nav-dots-clearance, var(--nav-dots-clearance-fallback)) - var(--space-6)));
 }
 
-/* Sticky panel title (drift-review B-05): the h2 used to scroll with the
-   content and get sliced in half against the card's rounded top edge once the
-   panel grew tall enough to scroll (e.g. Milestone Rewards expanded with all
-   themes unlocked). Pin it to the top of the scrollport, bleeding over the
-   panel's padding so scrolled content passes under it, with the panel's own
-   background (inherit — tracks the dark-mode direct override too). */
+/* Pinned panel title, v2 (Aug 2026, supersedes the sticky B-05 fix): the
+   sticky h2 inherited the panel's glass background — 45% alpha in the default
+   theme — so scrolled content slid VISIBLY through the title bar. Instead the
+   title now sits OUTSIDE the scroller (.stats-panel-content below owns the
+   scroll), so it stays pinned with NO background at all, and the wrapper's top
+   mask dissolves content before it reaches the title. Works over any theme,
+   custom colors, or background image — "faded to nothing" matches everything.
+   (Sticky + a container mask can't coexist: the mask would fade the sticky
+   title too, which is why the title left the scroller.) */
 .stats-panel > h2 {
-    position: sticky;
-    top: 0;
-    z-index: var(--z-content);
+    flex-shrink: 0;
+    margin: 0;
+    padding-bottom: var(--space-2);
+}
+
+/* The scroll surface. min-height: 0 lets a flex child actually shrink and
+   scroll; the mask fades the top ~20px so content melts away under the title
+   instead of being sliced flush. -webkit- prefix required at the gate floor
+   (Safari 12.1 / Chrome 71 ship mask-image prefixed only). */
+.stats-panel-content {
     align-self: stretch;
-    margin: calc(-1 * var(--space-5)) calc(-1 * var(--space-6)) 0;
-    padding: var(--space-5) var(--space-6) var(--space-2);
-    background: inherit;
-    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0, black var(--space-5));
+    mask-image: linear-gradient(to bottom, transparent 0, black var(--space-5));
 }
 
 /* =============================================================================
