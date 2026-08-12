@@ -1,3 +1,8 @@
+## [2.412] - 2026-08-12
+- fix(stats): pin title outside the scroller with a top fade mask — no more show-through on the glass title
+- feat(gates): validate:labels registry gate; fix undo/redo history rendering, stale label, pluralization; scroll-clip padding; manual refresh
+
+
 ## [2.411] - 2026-08-11
 - fix(reminders/data/undo): re-arm reminders on reset; state-sourced reminder checks; gate restore on safety backup; drop truncated literals in salvage; record swallowed init failures; shed redo before undo
 
