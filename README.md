@@ -2,7 +2,7 @@
 
 **Turn Your Routine Into Progress**
 
-**v2.145** — A free, privacy-first routine manager with automatic task cycling, gamification, and offline support. Build consistent habits by completing tasks, watching them reset, and tracking your growth over time.
+A free, privacy-first routine manager with automatic task cycling, gamification, and offline support. Repeatable checklists that reset on completion — not one-and-done to-dos, not a daily habit tracker. Complete your routine, watch it reset, and track your cycles over time.
 
 <p align="center">
   <img src="web/assets/images/screenshots/Example/user-manual/v3/main-view.jpg" alt="Main View" width="200"/>
@@ -55,7 +55,7 @@ Stay motivated with achievements, milestones, unlockable themes, and a mini-game
 - **Achievement Badges** — unlock by reaching cycle and task milestones (5, 25, 50, 75, 100)
 - **Milestone Celebrations** — overlay animations for major achievements
 - **Progress Tracking** — see how close you are to the next unlock
-- **Mini-Game** — Whack-a-Order unlocks at 100 cycles
+- **Mini-Game** — Task Order unlocks at 100 cycles
 
 <p align="center">
   <img src="web/assets/images/screenshots/Example/user-manual/v3/achievements.jpg" alt="Achievements" width="200"/>
@@ -168,21 +168,24 @@ miniCycle is built entirely with vanilla JavaScript — no React, no Vue, no fra
 
 **Zero `window.*` globals.** Every dependency is explicitly injected. If a module needs `document.body`, it receives a `getBody()` helper through DI. This makes every module testable in isolation and makes the dependency graph fully visible.
 
-The result is an app that solves the same problems frameworks solve — but with full visibility into every layer. The next project will use a build system and framework, informed by the deep understanding this one provided.
+The result is an app that solves the same problems frameworks solve — but with full visibility into every layer. The understanding paid off in both directions: miniCycle later gained an esbuild release pipeline (content-hashed bundles) without touching its architecture, and the studio's second app, [MasterMath](https://mastermath.app), ships on React + Vite — framework fluency and from-scratch depth, by way of the same codebase lessons.
 
 ---
 
 ## By the Numbers
 
+All counts are floors — live numbers in [PROJECT_STATS.md](web/docs/PROJECT_STATS.md).
+
 | Metric | Count |
 |--------|-------|
-| JavaScript | ~89,000 lines across 132 modules (see [PROJECT_STATS.md](web/docs/PROJECT_STATS.md) for live counts) |
-| CSS | 22,352 lines across 41 files |
-| Automated Tests | 1,757 tests in 55 test files (100% pass) |
-| DI-Manifested Modules | 51 with 8 load phases |
-| Label Keys | 53 categories with theme-aware resolution |
+| JavaScript | 90,000+ lines across 135+ modules |
+| CSS | 22,000+ lines across 40+ token-based files |
+| Automated Tests | 3,100+ browser tests in 125+ files (100% pass), plus offline-boot, layout, meta, and journey suites |
+| Validation Gates | 9 — CSP hashes, HTML, docs links, DI declarations, legacy-read ratchet, inline-script contracts, comment references, ES built-in floor, label registries |
+| DI-Manifested Modules | 55+ with 8 load phases |
+| Label Keys | 1,600+ across 58 categories with theme-aware resolution |
 | DOM Constants | 200+ (IDs, selectors, classes, z-index) |
-| CSP Hashes | 15+ SHA-256 inline script hashes |
+| CSP Hashes | 20 SHA-256 inline script hashes |
 | Guided Tours | 13 interactive walkthroughs |
 | `window.*` Globals | 0 (strict DI enforcement) |
 
@@ -237,7 +240,8 @@ miniCycle/
 │   └── docs/                       # Developer guides & architecture docs
 ├── chrome/                         # Chrome extension (MV3) — generated from web/ + hand-built lite popup
 ├── mobile/                         # Native mobile builds
-│   └── android/                    # Capacitor app — WebView shell over the byte-identical web app
+│   ├── android/                    # Capacitor app — WebView shell over the byte-identical web app
+│   └── ios/                        # Capacitor app (SPM-based) — same web payload, iOS shell
 ├── desktop/                        # Reserved for a future desktop build
 ├── shared/                         # Reserved for platform-agnostic logic (empty by design)
 ├── .github/workflows/              # CI pipelines (tests + Lighthouse + perf)
@@ -271,7 +275,7 @@ Every user-facing string flows through `getLabel()` with pluralization, interpol
 Token-based design system built on `variables.css` with semantic color palette, spacing scale, typography scale, and z-index layers. Dark mode uses CSS custom property overrides with a `prefers-color-scheme` media query fallback. Reduced motion support auto-disables transitions via `prefers-reduced-motion`. Vocabulary themes apply color presets as `--pref-*` CSS variables at runtime.
 
 #### Service Worker
-Cache-first navigation with a `verifyVersionFresh()` safety net that checks version.js after serving cached content. Handles Safari's `redirected: true` response rejection with a `cleanResponse()` helper. Module assets use versioned URLs (`module.js?v=X`) for cache busting.
+Cache-first navigation with a `verifyVersionFresh()` safety net that checks version.js after serving cached content. Handles Safari's `redirected: true` response rejection with a `cleanResponse()` helper. Release builds are fully content-hashed (`/build/[name]-[hash].js`, immutable caching) — the filename is the version, so stale-cache bugs are structurally impossible; `?v=` query versioning survives only in dev.
 
 #### Security
 - **CSP**: Strict Content Security Policy with 15+ SHA-256 hashes for inline scripts (no `'unsafe-inline'`)
@@ -283,9 +287,10 @@ Cache-first navigation with a `verifyVersionFresh()` safety net that checks vers
 ### CI/CD
 GitHub Actions runs on every push and PR to main/develop:
 
-- **Test Pipeline** (`test.yml`): Node.js 18.x + 20.x matrix, 1,757 Playwright browser tests against Chromium
+- **Test Pipeline** (`test.yml`): Node.js 18.x + 20.x matrix — 3,100+ Playwright browser tests against Chromium, plus offline-boot/precache-drift, layout regression, test-suite meta guards, and end-to-end journey suites
+- **Validation Gates** (`test.yml` + `performance.yml`): DI declarations, legacy-read ratchet, inline-script contracts, comment references, ES built-in floor, label registries, W3C HTML, docs links — all gated at zero; CSP hash coverage gates every release before push
 - **Performance Pipeline** (`performance.yml`): Lighthouse CI audit + performance benchmarks
-- **Linting**: ESLint with `eslint-plugin-security` (unsafe regex, eval, CSRF detection) and `eslint-plugin-sonarjs` (cognitive complexity max 25, duplicate detection)
+- **Linting**: ESLint with `eslint-plugin-security` and `eslint-plugin-sonarjs` under a one-way `--max-warnings` ratchet
 
 ### PWA Capabilities
 - **Standalone display** with window controls overlay support
@@ -295,9 +300,9 @@ GitHub Actions runs on every push and PR to main/develop:
 - **Install prompts**: Automatic detection for iOS Safari, Chrome, Edge
 
 ### Browser Compatibility
-- **Modern**: Chrome, Firefox, Safari, Edge (ES2022+)
+- **Full app**: any browser with `globalThis` — Chrome 71+, Safari 12.1+, Firefox 65+, Edge (es2020 build target; a CI gate blocks newer built-ins from sneaking in)
 - **Mobile**: iOS Safari, Android Chrome (full PWA support)
-- **Legacy**: Static ES5 fallback in `lite/` for older devices
+- **Legacy**: automatic feature-gate redirect to a static ES5 fallback in `lite/` for older devices
 
 ---
 
