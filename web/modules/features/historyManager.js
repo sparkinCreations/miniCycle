@@ -776,7 +776,9 @@ export class HistoryManager {
             'task_priority_set': '⚠️',
             'task_priority_removed': '➖',
             'task_priority_color_changed': '🎨',
-            'theme_changed': '🎨'
+            'theme_changed': '🎨',
+            'undo': '↩️',
+            'redo': '↪️'
         };
 
         const labels = {
@@ -792,7 +794,9 @@ export class HistoryManager {
             'task_priority_set': getLabel('history.taskPrioritySet'),
             'task_priority_removed': getLabel('history.taskPriorityRemoved'),
             'task_priority_color_changed': getLabel('history.taskPriorityColorChanged'),
-            'theme_changed': getLabel('history.themeChanged')
+            'theme_changed': getLabel('history.themeChanged'),
+            'undo': getLabel('history.undo'),
+            'redo': getLabel('history.redo')
         };
 
         const eventDate = new Date(event.timestamp);
@@ -833,6 +837,14 @@ export class HistoryManager {
                 detailText = `${count} ${taskNounPlural}: ${names}`;
             } else if (event.details.themeName !== undefined) {
                 detailText = this._escapeHtml(event.details.themeName);
+            } else if (event.details.description !== undefined) {
+                // undo/redo events carry a human description of what was
+                // un/re-done ("Mode changed", "2 changes"); it was passed by
+                // both call sites but discarded here for lack of a branch.
+                // LAST in the chain on purpose: it is the generic fallback,
+                // and specific branches must stay above it (see the
+                // priority-dot lesson right above).
+                detailText = this._escapeHtml(event.details.description);
             }
         }
 

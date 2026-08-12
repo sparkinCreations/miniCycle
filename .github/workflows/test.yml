@@ -56,6 +56,10 @@ jobs:
         working-directory: ./web
         run: npm run validate:builtins
 
+      - name: Validate label & history-event registries (keys must resolve)
+        working-directory: ./web
+        run: npm run validate:labels
+
   test:
     runs-on: ubuntu-latest
 

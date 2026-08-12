@@ -181,6 +181,16 @@ const AUDIT_UNDECLARED_DEPS = false;
  * When true, modules ONLY receive dependencies declared in `requires`.
  * This is a breaking change - enable only after all modules have complete `requires`.
  * Use AUDIT_UNDECLARED_DEPS=true first to find missing entries.
+ *
+ * Aug 2026 sizing run: the audit Proxy CANNOT size this work as-is — its `get`
+ * trap fires during WIRING (something enumerates the built deps object once
+ * per module), so every key in depMappings gets attributed to whichever module
+ * is being wired (achievementsManager was "accessing" TaskRenderer,
+ * UIOrchestrator, the whole catalog). To make it usable, attribute access at
+ * the consumer's deps-getter (diBase.resolve) or count only accesses after
+ * boot completes. Until then, do NOT flip ENFORCE_REQUIRES from audit data;
+ * static coverage lives in validate:di (gated) and
+ * WARN_ON_UNMAPPED_DECLARED_DEPS below (high-signal, on in dev).
  */
 const ENFORCE_REQUIRES = false;
 

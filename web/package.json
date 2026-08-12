@@ -26,6 +26,7 @@
     "validate:legacy": "node scripts/validate-legacy-reads.js",
     "validate:comments": "node scripts/validate-comment-refs.js",
     "validate:builtins": "node scripts/validate-es-builtins.js",
+    "validate:labels": "node scripts/validate-labels.js",
     "sweep:cruft": "node scripts/sweep-icloud-cruft.cjs",
     "validate:inline": "python3 scripts/validate-inline.py",
     "validate:csp": "python3 scripts/validate-csp.py",

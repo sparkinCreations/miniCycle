@@ -282,7 +282,9 @@ body:not(.show-three-dots-enabled) .task:hover .task-options.task-options-force-
     gap: var(--space-3);
     max-height: 320px;
     overflow-y: auto;
-    padding: var(--space-3-5);
+    /* Asymmetric padding: extra bottom so the next row peeks and signals
+       scrollability ("Task Reminders" was cut flush — Aug 2026 review #4). */
+    padding: var(--space-3-5) var(--space-3-5) var(--space-6);
     background: var(--color-blue-pale-light);
     border-radius: var(--radius-10);
     border: 1px solid var(--border-blue-subtle-hover);

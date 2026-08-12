@@ -828,7 +828,11 @@ function describeChange(fromSnapshot, toSnapshot) {
   if (changes.length === 0) return getLabel('notify.changeGeneric');
   if (changes.length === 1) return changes[0];
   // Compound: show primary change + count
-  return changes[0] + ' + ' + getLabel('notify.changeMultiple', { vars: { count: changes.length - 1 } });
+  // count (top-level) drives {one, other} plural selection; vars.count fills
+  // the {count} placeholder. Without the top-level count the resolver can't
+  // pick a form and every two-change compound rendered "… + 1 changes".
+  const extraCount = changes.length - 1;
+  return changes[0] + ' + ' + getLabel('notify.changeMultiple', { count: extraCount, vars: { count: extraCount } });
 }
 
 /**

@@ -24,6 +24,7 @@
 | **Inline scripts** | `npm run validate:inline` | CI — `test.yml` | 🔴 Fails CI — empty catch blocks in miniCycle.html inline scripts must carry an intent comment (ESLint's `no-empty` can't see the file — drift-review D-01) |
 | **Comment references** | `npm run validate:comments` | CI — `test.yml` | 🔴 Fails CI — an identifier named in a comment must exist somewhere in the code |
 | **ES built-in floor** | `npm run validate:builtins` | CI — `test.yml` | 🔴 Fails CI — no post-es2020 built-ins in shipped code (esbuild transpiles syntax, not built-ins) |
+| **Label registries** | `npm run validate:labels` | CI — `test.yml` | 🔴 Fails CI — every literal `getLabel()` key must resolve in `defaultLabels.js`; every logged history event type must be in historyManager's icon+label maps |
 
 ---
 
@@ -160,6 +161,33 @@ guaranteed:
 **If it fails:** fix the name; or, if the comment describes the past, say so explicitly; or
 add a genuinely external API to `EXTERNAL_APIS` in
 [scripts/validate-comment-refs.js](../../scripts/validate-comment-refs.js).
+
+---
+
+## 🔴 `validate:labels` — the string registries (Aug 2026)
+
+**Checks two mechanical diffs, gated at 0:** every literal `getLabel('a.b.c')` key in
+shipped modules resolves in `DEFAULT_LABELS` (to a string, a `{one, other}` plural
+object, or a `{touch, pointer}` device-variant object), and every event type passed to
+`logHistoryEvent()` — including `?.()`-style DI calls — has entries in BOTH the icon and
+label maps in `historyManager.js`. `LENS_SENSITIVE_KEYS` are cross-checked as a bonus.
+Dynamic keys (`getLabel(\`x.${y}\`)`) are counted and reported, never gated.
+
+**Why it exists:** an Aug 2026 external review found three shipped string bugs —
+unmapped `undo`/`redo` history types rendering `📌 undo`, a stale toggle label, and a
+pluralization miss ("Mode changed + 1 changes") — all living in the one registry class no
+validator covered. A label miss is SILENT in production: the resolver warns to console
+and ships the raw key as UI text. The reviewer's meta-finding ("every valid finding was a
+mechanical diff of two lists") is this gate's design brief.
+
+**Mapped-but-never-logged history types are a warning, not a failure** — stored history
+events outlive the code that wrote them, so a map entry for a retired type still renders
+users' existing data. Never delete one to silence the info line.
+
+**Pedigree note:** the gate's own first draft had 12 false positives (didn't know the
+`{touch, pointer}` label shape) and missed the two real bugs (plain `logHistoryEvent(`
+regex can't see `logHistoryEvent?.(`). Both fixed by cross-examining its first run —
+trust the gate now, but that history is why its output cites file:line for re-checking.
 
 ---
 

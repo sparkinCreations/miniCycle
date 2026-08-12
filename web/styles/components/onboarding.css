@@ -978,6 +978,9 @@ dialog.miniCycle-prompt-dialog::backdrop {
     gap: var(--space-2);
     max-height: 260px;
     overflow-y: auto;
+    /* Bottom padding so a clipped next row peeks above the edge — the cue
+       that the list scrolls (Aug 2026 review #4: rows were cut flush). */
+    padding-bottom: var(--space-6);
 }
 
 .sample-item {

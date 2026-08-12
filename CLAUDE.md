@@ -62,6 +62,7 @@ npm run validate:docs  # docs links, sidebar orphans, and THIS file's doc paths 
 npm run validate:di    # DI declarations — gated (undeclared=0, nowhere=0, undeliverable=0, unused ratchet); runs in CI
 npm run validate:comments # identifiers named in comments must exist (CI; gated at 0)
 npm run validate:builtins # no post-es2020 built-ins in shipped code — esbuild transpiles syntax, NOT built-ins; Object.hasOwn/.at()/.replaceAll() throw on browsers the feature gate admits (CI; gated at 0)
+npm run validate:labels   # every getLabel() key resolves + every logged history event type is mapped — a miss ships the raw key as UI text, silently (CI; gated at 0)
 npm run validate:inline # miniCycle.html inline scripts: empty catches need intent comments + pre-gate contract (ES5-only above the feature gate, globalThis reads guarded, gate floor includes no-globalthis) (ESLint can't see the file; CI)
 ```
 
