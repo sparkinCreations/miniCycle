@@ -1,3 +1,7 @@
+## [2.415] - 2026-08-13
+- refactor(state): delete the unreachable initial-state factory, retarget its tests
+
+
 ## [2.414] - 2026-08-13
 - fix(touch): give touchscreen laptops a tappable affordance without losing hover
 
