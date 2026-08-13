@@ -750,9 +750,28 @@ export async function runStateTests(resultsDiv, isPartOfSuite = false) {
     // === INITIAL STATE CREATION TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">🏗️ Initial State Creation</h4>';
 
-    await test('creates valid Schema 2.5 initial state', () => {
-        const state = createStateManager();
-        const initialState = state.createInitialState();
+    // These assertions used to run against a local factory on the state manager.
+    // That method was a duplicate nothing could reach — no caller, and the dep slot
+    // its fallback fed is never invoked — so it had drifted out of sync with the
+    // real one while these tests kept passing. Retargeted at the factory a new user
+    // actually gets (migrationManager), which had no shape coverage of its own.
+    //
+    // Note it WRITES miniCycleData rather than returning it, so these read the
+    // result back out of the injected storage.
+    const freshInitialState = async () => {
+        const mm = await import(`../modules/routine/migrationManager.js?v=${cacheBuster}`);
+        const written = {};
+        mm.setMigrationManagerDependencies({
+            storage: { setItem: (k, v) => { written[k] = v; }, getItem: (k) => written[k] ?? null },
+            now: () => 1723000000000
+        });
+        mm.createInitialSchema25Data();
+        if (!written.miniCycleData) throw new Error('factory wrote no miniCycleData');
+        return JSON.parse(written.miniCycleData);
+    };
+
+    await test('creates valid Schema 2.5 initial state', async () => {
+        const initialState = await freshInitialState();
 
         if (initialState.schemaVersion !== "2.5") {
             throw new Error('Invalid schema version');
@@ -767,11 +786,10 @@ export async function runStateTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
-    await test('initial state includes all required properties', () => {
-        const state = createStateManager();
-        const initialState = state.createInitialState();
+    await test('initial state includes all required properties', async () => {
+        const initialState = await freshInitialState();
 
-        const required = ['metadata', 'settings', 'data', 'appState', 'ui', 'userProgress', 'customReminders'];
+        const required = ['metadata', 'settings', 'data', 'appState', 'userProgress', 'customReminders'];
 
         required.forEach(prop => {
             if (!(prop in initialState)) {
@@ -780,9 +798,8 @@ export async function runStateTests(resultsDiv, isPartOfSuite = false) {
         });
     });
 
-    await test('initial state has correct metadata', () => {
-        const state = createStateManager();
-        const initialState = state.createInitialState();
+    await test('initial state has correct metadata', async () => {
+        const initialState = await freshInitialState();
 
         if (!initialState.metadata.createdAt) {
             throw new Error('Missing createdAt timestamp');

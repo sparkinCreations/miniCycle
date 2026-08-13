@@ -47,6 +47,7 @@ let _headerEl = null;
 let _navEl = null;
 let _retryRaf = null;
 let _loadHandler = null;
+let _visibilityHandler = null;
 
 /**
  * Measure the fixed header and publish its height to `:root`.
@@ -155,6 +156,22 @@ export function initHeaderLayout() {
         window.addEventListener('orientationchange', _resizeHandler);
     }
 
+    // Re-measure when the app comes back to the foreground. An installed PWA can
+    // be suspended and restored with a DIFFERENT `env(safe-area-inset-top)` than
+    // it had when it went away, and iOS does not reliably deliver a resize or an
+    // observer callback across that transition — so without this the published
+    // vars stay describing the old chrome until the next relaunch. Seven other
+    // modules already take this signal (undoRedoManager, taskViewLayoutManager,
+    // dailyResetManager, dragDropManager, modeManager, recurringWatcher,
+    // appState); `pageshow` is deliberately NOT used — it appears nowhere in this
+    // codebase and would also fire on ordinary load, duplicating _loadHandler.
+    if (!_visibilityHandler) {
+        _visibilityHandler = () => {
+            if (document.visibilityState === 'visible') _measureAll();
+        };
+        document.addEventListener('visibilitychange', _visibilityHandler);
+    }
+
     return !!_headerEl;
 }
 
@@ -167,13 +184,23 @@ function _attachObservers() {
     if (typeof ResizeObserver === 'undefined') return;
     const headerEl = document.querySelector(DOM_SELECTORS.FIXED_HEADER_CONTAINER);
     const navEl = document.getElementById(DOM_IDS.NAV_DOTS);
+    // box: 'border-box' is REQUIRED, not a refinement. ResizeObserver defaults to
+    // content-box, but the header's height moves through PADDING:
+    //   padding: calc(env(safe-area-inset-top, 0px) + 28px) 16px 19px 16px
+    // so anything that changes the top inset — a call banner, hotspot bar, screen
+    // recording, Dynamic Island state — grows the border-box while leaving the
+    // content-box identical, and a content-box observer never fires. Measured with
+    // the observer left on content-box: --header-total-height stayed at 116px
+    // while the header measured 176px. measureHeaderHeight() reads
+    // getBoundingClientRect(), which is border-box, so the observer must watch the
+    // same box the measurement reads or the published var silently goes stale.
     if (headerEl && !_headerObserver) {
         _headerObserver = new ResizeObserver(() => measureHeaderHeight());
-        _headerObserver.observe(headerEl);
+        _headerObserver.observe(headerEl, { box: 'border-box' });
     }
     if (navEl && !_navObserver) {
         _navObserver = new ResizeObserver(() => measureNavDotsClearance());
-        _navObserver.observe(navEl);
+        _navObserver.observe(navEl, { box: 'border-box' });
     }
 }
 
@@ -198,6 +225,10 @@ export function destroyHeaderLayout() {
     if (_loadHandler) {
         window.removeEventListener('load', _loadHandler);
         _loadHandler = null;
+    }
+    if (_visibilityHandler) {
+        document.removeEventListener('visibilitychange', _visibilityHandler);
+        _visibilityHandler = null;
     }
     if (_retryRaf) {
         cancelAnimationFrame(_retryRaf);

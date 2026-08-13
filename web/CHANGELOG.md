@@ -1,3 +1,12 @@
+## [2.416] - 2026-08-13
+- fix(layout): observe the header's border box — a padding-only inset change was invisible
+- fix(layout): re-measure the header on foreground resume (visibilitychange), for a PWA restored with a different safe-area inset
+
+
+## [2.415] - 2026-08-13
+- refactor(state): delete the unreachable initial-state factory, retarget its tests
+
+
 ## [2.414] - 2026-08-13
 - fix(touch): give touchscreen laptops a tappable affordance without losing hover
 

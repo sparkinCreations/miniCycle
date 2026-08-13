@@ -84,7 +84,15 @@ class MiniCycleState {
             showNotification: mergedDeps.showNotification || (() => {}),
             storage: mergedDeps.storage || localStorage,
             loadInitialData: mergedDeps.loadInitialData || (() => null),
-            createInitialData: mergedDeps.createInitialData || (() => this.createInitialState()),
+            // Wired by coreBoot to migrationManager.createInitialSchema25Data, but
+            // nothing in this class ever calls it — and that function writes
+            // miniCycleData to storage rather than returning it, so a caller would
+            // get undefined anyway. Kept as a pass-through so the boot wiring stays
+            // valid. The old local-fallback method it used to point at is gone: a
+            // 114-line duplicate of the initial shape that had already drifted badly
+            // from the real factory (missing unlockedThemes, most tour steps, the
+            // whole accessibility block) and that nothing could reach.
+            createInitialData: mergedDeps.createInitialData || null,
             addWindowListener: mergedDeps.addWindowListener || ((evt, fn) => window.addEventListener(evt, fn))
         };
 
@@ -963,120 +971,6 @@ class MiniCycleState {
         });
     }
 
-    /**
-     * Create a fresh initial state (Schema 2.5)
-     * Used for new users or when no valid data exists
-     * @returns {Schema25Data} Fresh initial state
-     */
-    createInitialState() {
-        return {
-            schemaVersion: "2.5",
-            metadata: {
-                createdAt: Date.now(),
-                lastModified: Date.now(),
-                migratedFrom: null,
-                migrationDate: null,
-                totalCyclesCreated: 0,
-                totalTasksCompleted: 0,
-                schemaVersion: "2.5"
-            },
-            settings: {
-                theme: 'default',
-                darkMode: false,
-                autoSave: true,
-                showThreeDots: false,
-                showTaskInput: false,
-                scrollToNewTask: true,
-                scrollOnLoad: false,
-                showCompletedDropdown: false,
-                completedTasksExpanded: false,
-                onboardingCompleted: false,
-                guidedTourStep: null,
-                statsTourStep: null,
-                prefsTourStep: null,
-                taskOptionsTourStep: null,
-                remindersTourStep: null,
-                menuTourStep: null,
-                settingsTourStep: null,
-                routineSwitcherTourStep: null,
-                recurringListTourStep: null,
-                recurringSettingsTourStep: null,
-                historyTourStep: null,
-                clearedTasksTourStep: null,
-                achievementsTourStep: null,
-                addTaskDiscovered: false,
-                dismissedEducationalTips: {},
-                defaultRecurringSettings: {
-                    frequency: "daily",
-                    indefinitely: true,
-                    time: null
-                },
-                unlockedThemes: [],
-                unlockedFeatures: [],
-                notificationPosition: { x: 0, y: 0 },
-                notificationPositionModified: false,
-                reducedMotion: false,
-                highContrast: false,
-                fontSize: '16',
-                debugMode: false,
-                testingModalResultsHeight: null,
-                modeDescriptionCollapsed: false,
-                customColors: {
-                    appBg: null,
-                    taskListBg: null,
-                    taskBg: null,
-                    taskText: null,
-                    titleBg: null,
-                    titleText: null,
-                    checkboxBg: null,
-                    checkmark: null,
-                    completeBtn: null,
-                    clearBtn: null,
-                    progressBar: null,
-                    statsBg: null,
-                    statsText: null
-                },
-                savedColorPresets: [],
-                menuCollapsedSections: {
-                    routines: false,
-                    tasks: true,
-                    app: true,
-                    rewards: true,
-                    help: true
-                },
-                settingsCollapsedSections: {
-                    display: false,
-                    behavior: true,
-                    data: true,
-                    reset: true,
-                    advanced: true
-                }
-            },
-            data: {
-                cycles: {} // ✅ This matches what autoSaveWithStateModule expects
-            },
-            appState: {
-                activeCycleId: null, // ✅ This matches what autoSaveWithStateModule expects
-                overdueTaskStates: {}
-            },
-            ui: {
-                moveArrowsVisible: false,
-                activeTaskId: null  // Task ID with options currently visible
-            },
-            userProgress: {
-                cyclesCompleted: 0,
-                rewardMilestones: []
-            },
-            customReminders: {
-                enabled: false,
-                indefinite: false,
-                dueDatesReminders: false,
-                repeatCount: 0,
-                frequencyValue: 30,
-                frequencyUnit: "minutes"
-            }
-        };
-    }
 
     /**
      * Tear down this instance: remove global listeners, flush pending saves,
