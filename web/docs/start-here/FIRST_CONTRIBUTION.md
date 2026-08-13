@@ -244,15 +244,39 @@ const mockDeps = {
 
 ## 6. Verify Your Changes
 
-```bash
-# Run the full test suite
-npm test
+`npm test` runs the **module suites only** — it is not the full set. CI also runs
+four real-app suites and eight static gates, so a PR verified with `npm test` alone
+can still go red on checks you never saw locally.
 
-# Check that ALL tests pass (not just yours)
-# Expected output: "All tests passed! (XXXX/XXXX - 100%)"
+```bash
+# Module suites — need a server running
+npm start        # separate terminal, port 8080
+npm test         # expected: "All tests passed! (XXXX/XXXX - 100%)"
+
+# Real-app suites — each starts its own server, no npm start needed
+npm run test:layout
+npm run test:sw
+npm run test:meta
+npm run test:journey
+
+# Static gates — no server needed
+npm run lint
+npm run validate:di
+npm run validate:legacy
+npm run validate:inline
+npm run validate:comments
+npm run validate:builtins
+npm run validate:labels
+npm run validate:docs
 ```
 
-If tests fail, fix them before submitting. The CI pipeline runs the same test suite.
+**Added a new module file?** `npm run test:sw` is the one that matters. Its precache
+drift guard fails when a module in the boot graph is missing from `BOOT_CRITICAL` in
+`service-worker.js` — and nothing else catches it. A new module can pass the entire
+browser suite and every other gate while leaving offline boot broken.
+
+If anything fails, fix it before submitting. CI runs exactly this list.
+Full reference: [`VALIDATION_GATES.md`](../working-on-code/VALIDATION_GATES.md).
 
 ---
 
@@ -276,7 +300,9 @@ Then open a PR on GitHub with:
 - Brief description of what changed and why
 
 ## Test Plan
-- [ ] All existing tests pass (`npm test`)
+- [ ] Module suites pass (`npm test`)
+- [ ] Real-app suites pass (`test:layout`, `test:sw`, `test:meta`, `test:journey`)
+- [ ] Static gates pass (`lint`, `validate:di/legacy/inline/comments/builtins/labels/docs`)
 - [ ] New/updated tests added (if applicable)
 - [ ] Manually tested in browser
 - [ ] Tested on mobile (if touch/gesture related)

@@ -98,11 +98,16 @@ def exists_for_ci(path):
     """On disk AND committed. Untracked files do not exist as far as CI cares."""
     if not os.path.exists(path):
         return False
-    # Directories are not git objects — `git ls-files` lists files only. A dir
-    # that exists on disk is reproduced in a checkout if anything inside it is
-    # tracked, which the per-file checks already cover.
+    # Directories are not git objects — `git ls-files` lists files only — so a dir
+    # is reproduced in a fresh checkout only if something INSIDE it is tracked.
+    # Accepting every dir that exists on disk let a link to a generated or ignored
+    # directory (node_modules/, dist/) pass locally and 404 in CI and on GitHub;
+    # a link straight at a directory is covered by no per-file check.
     if os.path.isdir(path):
-        return True
+        if TRACKED is None:
+            return True
+        prefix = os.path.abspath(path).rstrip(os.sep) + os.sep
+        return any(t.startswith(prefix) for t in TRACKED)
     if TRACKED is None:
         return True
     return os.path.abspath(path) in TRACKED
@@ -160,6 +165,61 @@ def check_links(list_mode):
         print('✅ Relative links      all resolve (and are committed)')
     if ignored and list_mode:
         print('   ⏭  %d non-file link(s) ignored (source citations, external paths):' % len(ignored))
+        for src, target in ignored:
+            print('        %s  ->  %s' % (src, target))
+    return len(broken) + len(untracked)
+
+
+def check_root_links(list_mode):
+    """
+    Every relative markdown link in a REPO-ROOT .md file must resolve on disk.
+
+    check_links() walks web/docs only, and check_claude_md() looks at exactly one
+    root file. That left README.md, CONTRIBUTING.md and friends unchecked — the
+    outward-facing files, where a dead link costs the most and is seen first. A
+    root CONTRIBUTING.md is also the file GitHub surfaces when someone opens an
+    issue or PR, so it is the worst place to rot quietly.
+    """
+    broken, ignored, untracked = [], [], []
+    root_files = sorted(
+        os.path.join(REPO, fn) for fn in os.listdir(REPO)
+        if fn.endswith('.md') and os.path.isfile(os.path.join(REPO, fn))
+    )
+    root_files = [f for f in root_files if exists_for_ci(f)]
+    for path in root_files:
+        try:
+            text = open(path, encoding='utf-8').read()
+        except (OSError, UnicodeDecodeError):
+            continue
+        name = os.path.basename(path)
+        for m in LINK_RE.finditer(text):
+            raw = m.group(1).split('#')[0].strip()
+            if not raw or raw == '/' or raw.startswith(('http://', 'https://', 'mailto:', '//', 'data:', '#')):
+                continue
+            target = urllib.parse.unquote(raw)
+            resolved = os.path.normpath(os.path.join(REPO, target))
+            if exists_for_ci(resolved):
+                continue
+            if NON_FILE_LINK.search(target):
+                ignored.append((name, target))
+            elif os.path.exists(resolved):
+                untracked.append((name, target))
+            else:
+                broken.append((name, target))
+
+    if broken:
+        print('❌ Broken links in root markdown (%d):' % len(broken))
+        for src, target in broken:
+            print('     %s  ->  %s' % (src, target))
+    if untracked:
+        print('❌ Root links to files that exist locally but are NOT committed (%d):' % len(untracked))
+        for src, target in untracked:
+            print('     %s  ->  %s' % (src, target))
+        print('     ^ gitignored/untracked — these 404 in CI and on GitHub.')
+    if not broken and not untracked:
+        print('✅ Root links         all resolve in %d root file(s)' % len(root_files))
+    if ignored and list_mode:
+        print('   ⏭  %d non-file link(s) ignored in root markdown:' % len(ignored))
         for src, target in ignored:
             print('        %s  ->  %s' % (src, target))
     return len(broken) + len(untracked)
@@ -335,6 +395,7 @@ def main():
           '(archive/ and vendor/ excluded)\n' % total)
 
     errors = check_links(args.list)
+    errors += check_root_links(args.list)
     errors += check_orphans(args.list)
     errors += check_claude_md(args.list)
     errors += check_public_surfaces(args.list)
@@ -344,7 +405,8 @@ def main():
         print('❌ FAIL — %d problem(s). See docs/future-work/DOCS_REORG_PLAN.md '
               'for the filing rules.' % errors)
         return 1
-    print('✅ PASS — links resolve, every doc is reachable, CLAUDE.md routing is intact.')
+    print('✅ PASS — links resolve (docs + root), every doc is reachable, '
+          'CLAUDE.md routing is intact.')
     return 0
 
 

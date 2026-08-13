@@ -72,7 +72,8 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         initUndoIndexedDB,
         saveUndoStackToIndexedDB,
         loadUndoStackFromIndexedDB,
-        clearUndoCache
+        clearUndoCache,
+        computeTransactionDiff
     } = await import(`../modules/ui/undoRedoManager.js?v=${cacheBuster}`);
 
     // localStorage cache key (must match module)
@@ -2103,6 +2104,50 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         }
         if (deps.AppGlobalState.activeUndoStack.length !== 0) {
             throw new Error(`undo stack not restored: expected 0, got ${deps.AppGlobalState.activeUndoStack.length}`);
+        }
+    });
+
+    // === DERIVED-FIELD DESCRIPTIONS ===
+    // `task.deleteWhenComplete` is derived from deleteWhenCompleteSettings[mode],
+    // so it moves for BOTH a per-task toggle and a routine mode switch. Naming it
+    // in the label is only correct for the former.
+    resultsDiv.innerHTML += '<h4 class="test-section">🏷️ Change descriptions (derived fields)</h4>';
+
+    const snapOf = (deleteCheckedTasks, tasks) => ({
+        activeCycleId: 'c1', title: 'R', autoReset: true, cycleCount: 0,
+        theme: 'classic', recurringTemplates: {}, clearedTasks: null,
+        deleteCheckedTasks, tasks
+    });
+
+    await test('mode switch is described as "Mode changed", not the per-task control', () => {
+        // Both halves of a mode switch land in ONE snapshot pair: the routine flag
+        // AND every task's derived value. Only the flag is a control the user touched.
+        const settings = { cycle: false, todo: true };
+        const from = snapOf(false, [{ id: 't1', text: 'a', deleteWhenComplete: false, deleteWhenCompleteSettings: { ...settings } }]);
+        const to   = snapOf(true,  [{ id: 't1', text: 'a', deleteWhenComplete: true,  deleteWhenCompleteSettings: { ...settings } }]);
+
+        const desc = computeTransactionDiff(from, to).description;
+        if (!/Mode changed/.test(desc)) {
+            throw new Error(`expected the mode change to be named, got "${desc}"`);
+        }
+        // Assert on the COMPOUND marker, not on the leaked string. When two changes
+        // are recorded, describeChange returns `changes[0] + " + N changes"` — the
+        // second label never appears verbatim, so a `/Clear on complete/` check here
+        // passes even with the bug present (confirmed by reverting the guard).
+        if (desc.includes(' + ')) {
+            throw new Error(`mode switch must be ONE reported change, got compound "${desc}"`);
+        }
+    });
+
+    await test('a real per-task clear-on-complete toggle IS still described', () => {
+        // The guard above must not swallow the genuine case: taskButtons writes
+        // deleteWhenCompleteSettings[mode] alongside the derived value.
+        const from = snapOf(false, [{ id: 't1', text: 'a', deleteWhenComplete: false, deleteWhenCompleteSettings: { cycle: false, todo: true } }]);
+        const to   = snapOf(false, [{ id: 't1', text: 'a', deleteWhenComplete: true,  deleteWhenCompleteSettings: { cycle: true,  todo: true } }]);
+
+        const desc = computeTransactionDiff(from, to).description;
+        if (!/[Rr]emove when complete/.test(desc)) {
+            throw new Error(`a real toggle must still be named, got "${desc}"`);
         }
     });
 

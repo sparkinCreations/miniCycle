@@ -312,6 +312,71 @@ export async function runHistoryManagerTests(resultsDiv) {
         if (!html.includes('history-priority-dot')) throw new Error('dot still renders with the default color');
     });
 
+    await test('undo/redo render a real label, icon and description', () => {
+        // undoRedoManager logs 'undo'/'redo' with { description }. Neither type was in
+        // the icon/label maps, so these rendered as a 📌 next to the raw lowercase
+        // type, and the description — the only informative part — was dropped.
+        setHistoryManagerDependencies({
+            AppState: createMockAppState(),
+            appInit: createMockAppInit(),
+            showNotification: () => {},
+        });
+        const mgr = new HistoryManager();
+        for (const [type, icon] of [['undo', '↩️'], ['redo', '↪️']]) {
+            const html = mgr._renderEvent({
+                type,
+                timestamp: 1723000000000,
+                details: { description: 'Mode changed' }
+            });
+            if (html.includes('>' + type + '<')) {
+                throw new Error(`${type} rendered its raw type as the title`);
+            }
+            if (html.includes('📌')) throw new Error(`${type} fell back to the generic pin icon`);
+            if (!html.includes(icon)) throw new Error(`${type} should render ${icon}`);
+            if (!html.includes('Mode changed')) {
+                throw new Error(`${type} dropped details.description — the only informative part`);
+            }
+        }
+    });
+
+    await test('the description branch stays BELOW the specific ones', () => {
+        // description is the generic fallback in the detail chain. If it ever moves
+        // above the type-specific branches, events that carry both lose the specific
+        // rendering — the same way the priority dot was lost (see the tests above).
+        setHistoryManagerDependencies({
+            AppState: createMockAppState(),
+            appInit: createMockAppInit(),
+            showNotification: () => {},
+        });
+        const mgr = new HistoryManager();
+        const html = mgr._renderEvent({
+            type: 'task_priority_set',
+            timestamp: 1723000000000,
+            details: { taskName: 'Water plants', priorityColor: '#ff8800', description: 'should not win' }
+        });
+        if (html.includes('should not win')) {
+            throw new Error('description outranked the priority-set branch');
+        }
+        if (!html.includes('history-priority-dot')) throw new Error('specific branch must still render');
+    });
+
+    await test('undo/redo descriptions are escaped, not injected', () => {
+        // description comes from describeChange but is rendered into innerHTML —
+        // treat it like any other detail field.
+        setHistoryManagerDependencies({
+            AppState: createMockAppState(),
+            appInit: createMockAppInit(),
+            showNotification: () => {},
+        });
+        const mgr = new HistoryManager();
+        const html = mgr._renderEvent({
+            type: 'undo',
+            timestamp: 1723000000000,
+            details: { description: '<img src=x onerror=alert(1)>' }
+        });
+        if (html.includes('<img')) throw new Error('description must be escaped before it reaches innerHTML');
+    });
+
     // ============================================
     // 📊 RESULTS
     // ============================================

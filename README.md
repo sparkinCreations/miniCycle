@@ -306,6 +306,19 @@ GitHub Actions runs on every push and PR to main/develop:
 
 ---
 
+## Contributing
+
+Contributions are welcome. The license is view-only, so forking requires written
+consent — but that consent is granted on request and is a formality, not a hurdle.
+Open an issue describing what you'd like to work on and you'll get permission to
+fork and submit a pull request.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) to get started, or
+[web/docs/start-here/FIRST_CONTRIBUTION.md](web/docs/start-here/FIRST_CONTRIBUTION.md)
+for a step-by-step walkthrough of your first PR.
+
+---
+
 ## License
 
 This project is source-available under a proprietary license. You may view and study the code, but copying, modifying, distributing, or using it in other projects is not permitted. See [LICENSE](LICENSE) for full terms.
