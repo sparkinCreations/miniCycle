@@ -98,11 +98,16 @@ def exists_for_ci(path):
     """On disk AND committed. Untracked files do not exist as far as CI cares."""
     if not os.path.exists(path):
         return False
-    # Directories are not git objects — `git ls-files` lists files only. A dir
-    # that exists on disk is reproduced in a checkout if anything inside it is
-    # tracked, which the per-file checks already cover.
+    # Directories are not git objects — `git ls-files` lists files only — so a dir
+    # is reproduced in a fresh checkout only if something INSIDE it is tracked.
+    # Accepting every dir that exists on disk let a link to a generated or ignored
+    # directory (node_modules/, dist/) pass locally and 404 in CI and on GitHub;
+    # a link straight at a directory is covered by no per-file check.
     if os.path.isdir(path):
-        return True
+        if TRACKED is None:
+            return True
+        prefix = os.path.abspath(path).rstrip(os.sep) + os.sep
+        return any(t.startswith(prefix) for t in TRACKED)
     if TRACKED is None:
         return True
     return os.path.abspath(path) in TRACKED

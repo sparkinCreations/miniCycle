@@ -1115,6 +1115,35 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
+    await test('syncTasksToMode preserves the OTHER mode\'s valid setting', () => {
+        // Repair used to replace the whole settings object when only the entering
+        // mode's key was missing, so { cycle: true } entering To-Do came back as
+        // { cycle: false, todo: true } — the user's Cycle setting silently reset.
+        const deps = createMockDeps();
+        deps.DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS = { cycle: false, todo: true };
+        setModeManagerDependencies(deps);
+        const mgr = new ModeManager();
+        const cycle = { tasks: [
+            { id: 't1', deleteWhenCompleteSettings: { cycle: true } },          // todo missing
+            { id: 't2', deleteWhenCompleteSettings: { cycle: true, todo: false } } // both valid
+        ] };
+        mgr.syncTasksToMode(cycle, 'todo');
+
+        if (cycle.tasks[0].deleteWhenCompleteSettings.cycle !== true) {
+            throw new Error('repairing the missing todo key wiped a valid cycle:true');
+        }
+        if (cycle.tasks[0].deleteWhenCompleteSettings.todo !== true) {
+            throw new Error('the missing key should take the default');
+        }
+        if (cycle.tasks[1].deleteWhenCompleteSettings.todo !== false ||
+            cycle.tasks[1].deleteWhenCompleteSettings.cycle !== true) {
+            throw new Error('a fully valid settings object must pass through untouched');
+        }
+        if (cycle.tasks[1].deleteWhenComplete !== false) {
+            throw new Error('derived value must come from the entering mode');
+        }
+    });
+
     // === SUMMARY ===
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;

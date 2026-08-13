@@ -374,14 +374,42 @@ export class ModeManager {
         if (!cycle?.tasks) return;
         const DEFAULTS = this.deps.DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS;
         cycle.tasks.forEach(task => {
-            // Initialize or repair settings if missing/incomplete
-            if (!task.deleteWhenCompleteSettings ||
-                typeof task.deleteWhenCompleteSettings !== 'object' ||
-                typeof task.deleteWhenCompleteSettings[currentMode] !== 'boolean') {
-                task.deleteWhenCompleteSettings = { ...DEFAULTS };
-            }
+            // Repair PER KEY, never wholesale. Replacing the whole object when only
+            // the entering mode's key was missing discarded the other mode's valid
+            // value: { cycle: true } entering To-Do became { cycle: false, todo: true },
+            // silently losing the user's Cycle setting until they noticed it had
+            // reset. Keys come from DEFAULTS so a third mode stays covered.
+            const stored = task.deleteWhenCompleteSettings;
+            const valid = stored && typeof stored === 'object';
+            const repaired = {};
+            Object.keys(DEFAULTS).forEach(mode => {
+                repaired[mode] = valid && typeof stored[mode] === 'boolean'
+                    ? stored[mode]
+                    : DEFAULTS[mode];
+            });
+            task.deleteWhenCompleteSettings = repaired;
             // Sync active value from mode-specific setting
-            task.deleteWhenComplete = task.deleteWhenCompleteSettings[currentMode];
+            task.deleteWhenComplete = repaired[currentMode];
+        });
+    }
+
+    /**
+     * True when `cycle` already carries this exact mode transition — the flag and
+     * every task's derived value. Used to skip a redundant persist+notify when the
+     * mode-selector path has already written the same transition.
+     *
+     * @param {Object} cycle          the live cycle (read-only here)
+     * @param {boolean} isToDoMode    the mode being applied
+     * @param {'cycle'|'todo'} currentMode
+     * @returns {boolean}
+     */
+    isModeAlreadyApplied(cycle, isToDoMode, currentMode) {
+        if (!cycle || cycle.deleteCheckedTasks !== isToDoMode) return false;
+        return (cycle.tasks || []).every(task => {
+            const stored = task.deleteWhenCompleteSettings;
+            if (!stored || typeof stored !== 'object') return false;
+            if (typeof stored[currentMode] !== 'boolean') return false;
+            return !!task.deleteWhenComplete === stored[currentMode];
         });
     }
 
@@ -1180,21 +1208,32 @@ export class ModeManager {
                 // Store updated state to avoid race condition
                 let updatedCycle = null;
 
-                await AppState.update(state => {
-                    const cycle = state.data.cycles[activeCycle];
+                // The mode-selector path (syncTogglesFromMode) persists this exact
+                // transition and THEN dispatches a synthetic `change` that lands here.
+                // Re-running the producer changes nothing but still saves and notifies
+                // every subscriber, so detect that and skip straight to the UI sync.
+                // Detection is stateless on purpose: a suppression flag set around the
+                // dispatch would stick if anything threw in between, and a stuck flag
+                // means the real checkbox silently stops persisting — a far worse
+                // failure than one redundant write.
+                if (self.isModeAlreadyApplied(currentCycle, isToDoMode, currentMode)) {
+                    updatedCycle = currentCycle;
+                } else {
+                    await AppState.update(state => {
+                        const cycle = state.data.cycles[activeCycle];
 
-                    // Update mode
-                    cycle.deleteCheckedTasks = isToDoMode;
+                        // Update mode
+                        cycle.deleteCheckedTasks = isToDoMode;
 
-                    // ✅ Sync all tasks' deleteWhenComplete with mode-specific settings.
-                    // Shared with updateStorageFromToggles() — when the mode-selector
-                    // path already ran, this recomputes the same values and the write
-                    // is a no-op, so no second undo step is pushed.
-                    self.syncTasksToMode(cycle, currentMode);
+                        // ✅ Sync all tasks' deleteWhenComplete with mode-specific
+                        // settings. Shared with updateStorageFromToggles() — one
+                        // helper, one copy.
+                        self.syncTasksToMode(cycle, currentMode);
 
-                    // ✅ Capture updated cycle to avoid race condition
-                    updatedCycle = cycle;
-                }, true); // Immediate save
+                        // ✅ Capture updated cycle to avoid race condition
+                        updatedCycle = cycle;
+                    }, true); // Immediate save
+                }
 
                 // ✅ Update UI using centralized DOM sync with captured state
                 const syncAllTasksWithMode = self.deps.syncAllTasksWithMode;
