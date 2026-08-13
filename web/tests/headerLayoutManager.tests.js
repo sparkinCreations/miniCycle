@@ -254,6 +254,65 @@ export async function runHeaderLayoutManagerTests(resultsDiv) {
         assert(readNavVar() === '83px', `expected nav var to stay 83px after destroy, got "${readNavVar()}"`);
     });
 
+    // ---- foreground resume -------------------------------------------------
+
+    resultsDiv.innerHTML += '<h4 class="test-section">👀 Resume re-measure</h4>';
+
+    // Run init with ResizeObserver suppressed, so these assert the RESUME path
+    // specifically. With observers attached the RO would catch the height change
+    // itself and the test would pass whether or not the listener exists.
+    const withoutResizeObserver = async (fn) => {
+        const real = window.ResizeObserver;
+        window.ResizeObserver = undefined;
+        try { return await fn(); }
+        finally { window.ResizeObserver = real; }
+    };
+
+    await test('re-measures when the app returns to the foreground', async () => {
+        // An installed PWA can be suspended and restored with a different
+        // env(safe-area-inset-top) than it had when it went away, and iOS does not
+        // reliably deliver a resize or an observer callback across that transition.
+        // Without a visibilitychange listener the published var keeps describing
+        // the old chrome until relaunch.
+        const el = makeHeader(120);
+        makeNavDots(30, 20);   // both fixtures present so the settle loop exits
+        await withoutResizeObserver(async () => {
+            initHeaderLayout();
+            await new Promise(r => requestAnimationFrame(r));
+            await new Promise(r => requestAnimationFrame(r));
+        });
+        assert(readVar() === '120px', `setup: expected 120px, got "${readVar()}"`);
+
+        el.style.height = '190px';
+        await new Promise(r => requestAnimationFrame(r));
+        assert(readVar() === '120px', 'setup: var moved without a resume signal');
+
+        document.dispatchEvent(new Event('visibilitychange'));
+        await new Promise(r => requestAnimationFrame(r));
+
+        assert(readVar() === '190px',
+            `expected the resume re-measure to publish 190px, got "${readVar()}"`);
+    });
+
+    await test('destroy removes the visibility listener', async () => {
+        const el = makeHeader(120);
+        makeNavDots(30, 20);   // both fixtures present so the settle loop exits
+        await withoutResizeObserver(async () => {
+            initHeaderLayout();
+            await new Promise(r => requestAnimationFrame(r));
+            await new Promise(r => requestAnimationFrame(r));
+        });
+
+        destroyHeaderLayout();
+        el.style.height = '190px';
+        await new Promise(r => requestAnimationFrame(r));
+        document.dispatchEvent(new Event('visibilitychange'));
+        await new Promise(r => requestAnimationFrame(r));
+
+        assert(readVar() === '120px',
+            `listener outlived destroy(): var moved to "${readVar()}"`);
+    });
+
     // ---- summary -----------------------------------------------------------
 
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed</h3>`;

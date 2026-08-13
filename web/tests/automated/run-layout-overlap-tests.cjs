@@ -69,6 +69,10 @@ function measureRoutine() {
     const tv = rect(tvEl);
     return {
         H, navClear, headVar, navLine: Math.round(navLine),
+        // The header's REAL border-box height, to compare the published var
+        // against. getBoundingClientRect() is border-box — the same box
+        // measureHeaderHeight() reads.
+        headerRealHeight: header ? Math.round(header.height) : null,
         headerBottom: header ? Math.round(header.bottom) : null,
         titleTop: title ? Math.round(title.top) : null,
         helpShown, helpBottom: helpRect ? Math.round(helpRect.bottom) : null,
@@ -175,6 +179,18 @@ async function run() {
             record(vp, 'header/nav-dots vars published', r.headVar > 0 && r.navClear > 0,
                 `--header-total-height=${r.headVar} --nav-dots-clearance=${r.navClear} (0 = empty/unpublished)`);
 
+            // "Published" is not the same as "correct". The check above only
+            // catches the EMPTY failure (fixed in ee98acf1); it stays green for a
+            // stale-but-nonzero value — which is exactly what a content-box
+            // ResizeObserver produced when the header's height moved through
+            // padding (env(safe-area-inset-top) changes) and no callback fired.
+            // Assert the published var still DESCRIBES the live header.
+            if (r.headerRealHeight !== null) {
+                record(vp, 'header var matches the live header',
+                    Math.abs(r.headVar - r.headerRealHeight) <= TOL,
+                    `--header-total-height=${r.headVar} but header measures ${r.headerRealHeight}`);
+            }
+
             if (r.titleTop !== null && r.headerBottom !== null) {
                 record(vp, 'title clears header', r.titleTop >= r.headerBottom - TOL,
                     `title.top ${r.titleTop} < header.bottom ${r.headerBottom}`);
@@ -213,6 +229,45 @@ async function run() {
                 const sp = document.getElementById('stats-panel');
                 tv.classList.remove('hide'); tv.classList.add('show');
                 sp.classList.remove('show'); sp.classList.add('hide');
+            });
+        }
+
+        // --- Safe-area inset change (padding-only header growth) --------------
+        // The header's height moves through padding:
+        //   padding: calc(env(safe-area-inset-top, 0px) + 28px) ...
+        // so a call banner / hotspot bar / screen recording grows the BORDER box
+        // while leaving the CONTENT box identical. A default (content-box)
+        // ResizeObserver never fires for that, and --header-total-height silently
+        // keeps describing the old chrome until relaunch. env() cannot be
+        // emulated headlessly, so drive the same geometry directly.
+        {
+            const vp = { name: 'inset-change', width: 390, height: 844 };
+            await page.setViewportSize({ width: vp.width, height: vp.height });
+            console.log(`\n${colors.cyan}▸ ${vp.name} ${vp.width}x${vp.height}${colors.reset}`);
+            await page.waitForTimeout(400);
+            const before = await page.evaluate(measureRoutine);
+
+            const grew = await page.evaluate(async () => {
+                const el = document.querySelector('.fixed-header-container');
+                if (!el) return null;
+                const startPad = parseFloat(getComputedStyle(el).paddingTop) || 0;
+                el.style.paddingTop = `${startPad + 60}px`;   // as if the top inset grew
+                await new Promise(r => setTimeout(r, 500));   // let RO + rAF settle
+                return Math.round(el.getBoundingClientRect().height);
+            });
+
+            if (grew !== null) {
+                const after = await page.evaluate(measureRoutine);
+                record(vp, 'header grew when its padding grew', after.headerRealHeight > before.headerRealHeight,
+                    `header ${before.headerRealHeight} -> ${after.headerRealHeight} (test setup did not take effect)`);
+                record(vp, 'published var tracks a padding-only header change',
+                    Math.abs(after.headVar - after.headerRealHeight) <= TOL,
+                    `--header-total-height=${after.headVar} but header measures ${after.headerRealHeight} `
+                    + `(was ${before.headVar}/${before.headerRealHeight}) — content-box observer missed it`);
+            }
+            await page.evaluate(() => {
+                const el = document.querySelector('.fixed-header-container');
+                if (el) el.style.paddingTop = '';
             });
         }
     } catch (e) {
