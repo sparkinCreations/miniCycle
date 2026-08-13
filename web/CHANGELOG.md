@@ -1,5 +1,6 @@
 ## [2.416] - 2026-08-13
 - fix(layout): observe the header's border box — a padding-only inset change was invisible
+- fix(layout): re-measure the header on foreground resume (visibilitychange), for a PWA restored with a different safe-area inset
 
 
 ## [2.415] - 2026-08-13
