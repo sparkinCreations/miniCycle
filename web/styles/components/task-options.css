@@ -16,6 +16,24 @@
     }
 }
 
+/* HYBRID DEVICES (touchscreen laptops): keep hover working even with three-dots on.
+ *
+ * These machines have BOTH pointer types, and they get the three-dots menu by
+ * default (see isTouchCapable() / migrationManager) because folded into tablet
+ * mode there is no trackpad and the only other path is an unadvertised 500ms
+ * long-press. Without this rule, turning the menu on would take hover AWAY in
+ * laptop mode — trading one broken posture for another. The `any-pointer: coarse`
+ * clause means this matches only machines that have both, so mouse-only desktops
+ * and phones see no change at all.
+ */
+@media (hover: hover) and (pointer: fine) and (any-pointer: coarse) {
+    .task:hover .task-options {
+        visibility: visible;
+        opacity: 1;
+        pointer-events: auto;
+    }
+}
+
 /* Force-hidden utility: replaces inline visibility/opacity/pointer-events triple-write */
 /* Specificity matches hover rule above so no !important needed */
 body:not(.show-three-dots-enabled) .task:hover .task-options.task-options-force-hidden,
