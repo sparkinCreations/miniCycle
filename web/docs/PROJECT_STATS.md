@@ -18,14 +18,14 @@
 
 | Metric | Value |
 |--------|-------|
-| **App Version** | 2.416 |
+| **App Version** | 2.417 |
 | **Lite Version** | 2.092 (frozen) |
 | **Schema Version** | 2.5 |
 | **Total Modules** | 138 |
-| **Total Tests** | 3328 |
+| **Total Tests** | 3393 |
 | **Test Pass Rate** | 100% |
 | **CSS Files** | 44 |
-| **JSDoc Blocks** | 1340 |
+| **JSDoc Blocks** | 1342 |
 | **Documentation Files** | 242 |
 | **DI Completion** | 100% |
 | **Custom window.* Globals (modules)** | 0 |
@@ -73,8 +73,8 @@
 
 | Category | Tests |
 |----------|-------|
-| Total Tests | 3328 |
-| Test Files | 130 |
+| Total Tests | 3393 |
+| Test Files | 131 |
 | Pass Rate | 100% |
 | Platforms Tested | Mac, iPad, iPhone |
 

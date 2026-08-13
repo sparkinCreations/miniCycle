@@ -1,3 +1,15 @@
+## [2.417] - 2026-08-13
+- build(di): declare taskDOM's forward-through deps, teach validate:di _rawDeps
+- refactor(state): one repair+derive for deleteWhenComplete, fixing routineLoader data loss
+- test(taskViewLayoutManager): cover persistence, gates, drag interrupts and teardown
+- build(stats): retire the cross-repo sync, document the metrics pipeline
+- docs(stats): point PROJECT_STATS at the JSON endpoint and the shared counter
+- build(stats): publish dist/stats.json from one shared counter
+- docs(future-work): audit pass — archive 13 shipped plans, correct drifted statuses, extract live residuals
+- docs(changelog): note the resume re-measure in the 2.416 entry
+- docs(changelog): drop 2.415 entries duplicated into the 2.416 section
+
+
 ## [2.416] - 2026-08-13
 - fix(layout): observe the header's border box — a padding-only inset change was invisible
 - fix(layout): re-measure the header on foreground resume (visibilitychange), for a PWA restored with a different safe-area inset
