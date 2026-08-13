@@ -16,6 +16,7 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { syncTaskDeleteWhenComplete } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -373,23 +374,10 @@ export class ModeManager {
     syncTasksToMode(cycle, currentMode) {
         if (!cycle?.tasks) return;
         const DEFAULTS = this.deps.DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS;
+        // Per-key repair + re-derive lives in utils/cycleMode.js — routineLoader and
+        // taskButtons need the identical semantics on load and on un-recurring.
         cycle.tasks.forEach(task => {
-            // Repair PER KEY, never wholesale. Replacing the whole object when only
-            // the entering mode's key was missing discarded the other mode's valid
-            // value: { cycle: true } entering To-Do became { cycle: false, todo: true },
-            // silently losing the user's Cycle setting until they noticed it had
-            // reset. Keys come from DEFAULTS so a third mode stays covered.
-            const stored = task.deleteWhenCompleteSettings;
-            const valid = stored && typeof stored === 'object';
-            const repaired = {};
-            Object.keys(DEFAULTS).forEach(mode => {
-                repaired[mode] = valid && typeof stored[mode] === 'boolean'
-                    ? stored[mode]
-                    : DEFAULTS[mode];
-            });
-            task.deleteWhenCompleteSettings = repaired;
-            // Sync active value from mode-specific setting
-            task.deleteWhenComplete = repaired[currentMode];
+            syncTaskDeleteWhenComplete(task, currentMode, DEFAULTS);
         });
     }
 

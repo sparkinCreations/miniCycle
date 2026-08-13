@@ -21,6 +21,7 @@ import { createDIModule, optional } from '../core/diBase.js';
 import { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS, COLORS, DOM_IDS, DOM_CLASSES, FONT_SIZE } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { normalizeFontSize } from '../utils/styleValidators.js';
+import { syncTaskDeleteWhenComplete } from '../utils/cycleMode.js';
 // NOTE: taskToAddTaskOptions injected via DI to avoid duplicate module loading
 
 // ============================================================================
@@ -306,23 +307,20 @@ function repairAndCleanTasks(currentCycle, cycleKey = 'unknown') {
       console.warn('⚠️ Repaired task with missing schemaVersion:', task.id);
     }
 
-    // ✅ Repair missing/invalid deleteWhenCompleteSettings.
-    // Also repair when the CURRENT mode's value isn't a boolean — otherwise the sync below
-    // derives `undefined` and writes it to task.deleteWhenComplete. Matches modeManager's
-    // stricter guard. See ARCH REVIEW FINDINGS §2.4 (hardening).
-    if (!task.deleteWhenCompleteSettings ||
-        typeof task.deleteWhenCompleteSettings !== 'object' ||
-        typeof task.deleteWhenCompleteSettings[currentMode] !== 'boolean') {
-      task.deleteWhenCompleteSettings = { ...DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS };
-      tasksModified = true;
+    // ✅ Repair deleteWhenCompleteSettings, then ALWAYS re-derive deleteWhenComplete
+    // from the current mode — a cycle loaded after a mode switch must carry the
+    // entering mode's value. Shared with modeManager and taskButtons; see
+    // utils/cycleMode.js. ARCH REVIEW FINDINGS §2.4.
+    //
+    // This repairs PER KEY. It previously replaced the whole settings object, which
+    // threw away the other mode's valid value ({cycle:true, todo:<bad>} loaded in
+    // To-Do became {cycle:false, todo:true}) — the exact data loss modeManager's
+    // copy was hardened against, while this one claimed to match it.
+    const dwcSync = syncTaskDeleteWhenComplete(task, currentMode, DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS);
+    if (dwcSync.repaired) {
       console.warn('⚠️ Repaired task with missing/invalid deleteWhenCompleteSettings:', task.id);
     }
-
-    // ✅ ALWAYS sync deleteWhenComplete with current mode's setting
-    // This ensures correct behavior when loading a cycle after mode switch
-    const expectedValue = task.deleteWhenCompleteSettings[currentMode];
-    if (task.deleteWhenComplete !== expectedValue) {
-      task.deleteWhenComplete = expectedValue;
+    if (dwcSync.changed) {
       tasksModified = true;
     }
   });

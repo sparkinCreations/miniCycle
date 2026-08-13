@@ -7,7 +7,9 @@ import { setupTestEnvironment, createProtectedTest } from './testHelpers.js';
 export async function runCycleModeTests(resultsDiv) {
     const cacheBuster = window.testCacheBuster || Date.now();
     const mod = await import(`../modules/utils/cycleMode.js?v=${cacheBuster}`);
-    const { getCycleMode, getAllDoneHintKey } = mod;
+    const { getCycleMode, getAllDoneHintKey, getDeleteSettingsMode, syncTaskDeleteWhenComplete } = mod;
+    const { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS: DEFAULTS } =
+        await import(`../modules/core/constants.js?v=${cacheBuster}`);
     const { DEFAULT_LABELS } = await import(`../modules/labels/defaultLabels.js?v=${cacheBuster}`);
 
     resultsDiv.innerHTML = '<h2>CycleMode Tests</h2><h3>Running tests...</h3>';
@@ -95,6 +97,106 @@ export async function runCycleModeTests(resultsDiv) {
                 throw new Error(`${key} does not resolve to a label`);
             }
         }
+    });
+
+    // ── getDeleteSettingsMode ────────────────────────────────────────────────
+    resultsDiv.innerHTML += '<h4 class="test-section">🗝️ getDeleteSettingsMode</h4>';
+
+    await test('deleteWhenCompleteSettings is keyed by two modes, not three', () => {
+        // auto and manual routines both RESET rather than delete, so both read
+        // the `cycle` key — the three-way getCycleMode must not leak through.
+        if (getDeleteSettingsMode({ deleteCheckedTasks: true }) !== 'todo') throw new Error('todo');
+        if (getDeleteSettingsMode({ autoReset: true }) !== 'cycle') throw new Error('auto should map to cycle');
+        if (getDeleteSettingsMode({}) !== 'cycle') throw new Error('manual should map to cycle');
+        if (getDeleteSettingsMode(null) !== 'cycle') throw new Error('null should map to cycle');
+    });
+
+    // ── syncTaskDeleteWhenComplete ───────────────────────────────────────────
+    resultsDiv.innerHTML += '<h4 class="test-section">🔄 syncTaskDeleteWhenComplete</h4>';
+
+    await test('derives deleteWhenComplete from the active mode', () => {
+        const task = { deleteWhenCompleteSettings: { cycle: true, todo: false }, deleteWhenComplete: false };
+        syncTaskDeleteWhenComplete(task, 'cycle', DEFAULTS);
+        if (task.deleteWhenComplete !== true) throw new Error('cycle mode value not applied');
+        syncTaskDeleteWhenComplete(task, 'todo', DEFAULTS);
+        if (task.deleteWhenComplete !== false) throw new Error('todo mode value not applied');
+    });
+
+    await test('repairs PER KEY — the other mode\'s valid value survives', () => {
+        // The regression this helper exists to kill: whole-object replacement turned
+        // {cycle:true, todo:<bad>} into {cycle:false, todo:true}, silently discarding
+        // the user's Cycle setting on load.
+        const task = { deleteWhenCompleteSettings: { cycle: true, todo: 'nope' } };
+        const result = syncTaskDeleteWhenComplete(task, 'todo', DEFAULTS);
+        if (task.deleteWhenCompleteSettings.cycle !== true) {
+            throw new Error('the valid cycle value was discarded during repair');
+        }
+        if (task.deleteWhenCompleteSettings.todo !== DEFAULTS.todo) throw new Error('bad key not defaulted');
+        if (!result.repaired) throw new Error('should report repaired');
+    });
+
+    await test('rebuilds a missing settings map from defaults', () => {
+        const task = {};
+        const result = syncTaskDeleteWhenComplete(task, 'cycle', DEFAULTS);
+        if (task.deleteWhenCompleteSettings.cycle !== DEFAULTS.cycle) throw new Error('cycle default');
+        if (task.deleteWhenCompleteSettings.todo !== DEFAULTS.todo) throw new Error('todo default');
+        if (!result.repaired || !result.changed) throw new Error('should report repaired + changed');
+    });
+
+    await test('rebuilds a non-object settings value', () => {
+        for (const bad of ['x', 42, true, null]) {
+            const task = { deleteWhenCompleteSettings: bad };
+            syncTaskDeleteWhenComplete(task, 'cycle', DEFAULTS);
+            if (typeof task.deleteWhenCompleteSettings !== 'object') throw new Error(`not repaired for ${bad}`);
+            if (task.deleteWhenCompleteSettings.todo !== DEFAULTS.todo) throw new Error(`bad rebuild for ${bad}`);
+        }
+    });
+
+    await test('never assigns a non-boolean to deleteWhenComplete', () => {
+        // routineLoader used to derive `undefined` when the active mode's key was
+        // corrupt, then write it straight onto the task.
+        const task = { deleteWhenCompleteSettings: { cycle: undefined, todo: undefined } };
+        syncTaskDeleteWhenComplete(task, 'cycle', DEFAULTS);
+        if (typeof task.deleteWhenComplete !== 'boolean') {
+            throw new Error(`assigned ${typeof task.deleteWhenComplete}`);
+        }
+    });
+
+    await test('is idempotent — a clean task reports no change', () => {
+        // modeManager documents "callers that only touched autoReset pay no cost",
+        // and routineLoader drives its tasksModified flag off this.
+        const task = { deleteWhenCompleteSettings: { cycle: false, todo: true }, deleteWhenComplete: false };
+        const result = syncTaskDeleteWhenComplete(task, 'cycle', DEFAULTS);
+        if (result.changed || result.repaired) throw new Error('clean task should report no change');
+    });
+
+    await test('reports changed (not repaired) when only the derived value was stale', () => {
+        const task = { deleteWhenCompleteSettings: { cycle: false, todo: true }, deleteWhenComplete: true };
+        const result = syncTaskDeleteWhenComplete(task, 'cycle', DEFAULTS);
+        if (result.repaired) throw new Error('settings were valid — should not report repaired');
+        if (!result.changed) throw new Error('stale derived value should report changed');
+        if (task.deleteWhenComplete !== false) throw new Error('value not corrected');
+    });
+
+    await test('drops unknown keys from the settings map', () => {
+        const task = { deleteWhenCompleteSettings: { cycle: true, todo: true, bogus: true } };
+        const result = syncTaskDeleteWhenComplete(task, 'cycle', DEFAULTS);
+        if ('bogus' in task.deleteWhenCompleteSettings) throw new Error('unknown key survived');
+        if (!result.repaired) throw new Error('dropping a key is a rebuild — should report repaired');
+    });
+
+    await test('covers every key in the defaults map, not a hardcoded pair', () => {
+        // A third mode must stay covered without editing this helper.
+        const task = {};
+        syncTaskDeleteWhenComplete(task, 'cycle', { cycle: false, todo: true, someday: true });
+        if (task.deleteWhenCompleteSettings.someday !== true) throw new Error('extra mode not carried');
+    });
+
+    await test('returns safely for a null task or missing defaults', () => {
+        const a = syncTaskDeleteWhenComplete(null, 'cycle', DEFAULTS);
+        if (a.changed || a.repaired) throw new Error('null task should be inert');
+        const b = syncTaskDeleteWhenComplete({}, 'cycle', null);
+        if (b.changed || b.repaired) throw new Error('missing defaults should be inert');
     });
 
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed</h3>`;
