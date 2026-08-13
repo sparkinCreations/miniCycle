@@ -1,3 +1,7 @@
+## [2.414] - 2026-08-13
+- fix(touch): give touchscreen laptops a tappable affordance without losing hover
+
+
 ## [2.413] - 2026-08-13
 - fix(mode): make a routine mode switch one transaction, and one undo step
 - docs(readme): taskcycle.app demos the upcoming TaskCycle, not the 2023 project

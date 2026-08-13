@@ -116,8 +116,16 @@ export function createInitialSchema25Data() {
             darkMode: false,
             alwaysShowRecurring: false,
             autoSave: true,
-            // Match isTouchDevice() logic from deviceDetection.js
-            showThreeDots: !(window.matchMedia?.('(pointer: fine)')?.matches) && (('ontouchstart' in window) || (navigator.maxTouchPoints || 0) > 0),
+            // Mirrors isTouchCapable() in deviceDetection.js — deliberately NOT
+            // isTouchDevice(). That one returns false as soon as a fine pointer
+            // exists, so a touchscreen laptop was treated as mouse-only and started
+            // with no three-dots menu. In laptop mode the CSS hover rule still
+            // reveals options, but folded into tablet mode there is no trackpad to
+            // hover with and the only remaining path is a 500ms long-press nothing
+            // advertises. `any-pointer: coarse` is true whenever a touch pointer is
+            // available, primary or not, which is the question that matters here.
+            showThreeDots: (window.matchMedia?.('(any-pointer: coarse)')?.matches ?? false)
+                || ('ontouchstart' in window) || (navigator.maxTouchPoints || 0) > 0,
             onboardingCompleted: false,
             guidedTourStep: null,
             statsTourStep: null,

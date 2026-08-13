@@ -33,6 +33,7 @@ export async function runDeviceDetectionTests(resultsDiv, isPartOfSuite = false)
     const cacheBuster = window.testCacheBuster || Date.now();
     const module = await import(`../modules/utils/deviceDetection.js?v=${cacheBuster}`);
     DeviceDetectionManager = module.DeviceDetectionManager;
+    const { isTouchDevice, isTouchCapable } = module;
     resultsDiv.innerHTML = '<h2>📱 DeviceDetectionManager Tests</h2><h3>Setting up mocks...</h3>';
 
     // =====================================================
@@ -334,6 +335,72 @@ export async function runDeviceDetectionTests(resultsDiv, isPartOfSuite = false)
             typeof window.reportDeviceCompatibility !== 'function' ||
             typeof window.testDeviceDetection !== 'function') {
             throw new Error('Global functions not properly exposed');
+        }
+    });
+
+    // === TOUCH CAPABILITY vs TOUCH PRIMARY ===
+    resultsDiv.innerHTML += '<h4 class="test-section">✋ Touch capability</h4>';
+
+    // Both functions read matchMedia + the touch APIs; swap them to model a device.
+    const withDevice = ({ pointerFine, anyPointerCoarse, touchEvents, touchPoints }, fn) => {
+        const realMM = window.matchMedia;
+        const realMTP = Object.getOwnPropertyDescriptor(Navigator.prototype, 'maxTouchPoints')
+            || Object.getOwnPropertyDescriptor(navigator, 'maxTouchPoints');
+        const hadTouchStart = 'ontouchstart' in window;
+        window.matchMedia = (q) => ({
+            matches: q.includes('any-pointer: coarse') ? anyPointerCoarse
+                   : q.includes('pointer: fine')      ? pointerFine
+                   : false
+        });
+        Object.defineProperty(navigator, 'maxTouchPoints', { value: touchPoints, configurable: true });
+        if (touchEvents && !hadTouchStart) {
+            Object.defineProperty(window, 'ontouchstart', { value: null, configurable: true });
+        } else if (!touchEvents && hadTouchStart) {
+            delete window.ontouchstart;
+        }
+        try { return fn(); }
+        finally {
+            window.matchMedia = realMM;
+            if (realMTP) Object.defineProperty(navigator, 'maxTouchPoints', realMTP);
+            if (!touchEvents && hadTouchStart) {
+                Object.defineProperty(window, 'ontouchstart', { value: null, configurable: true });
+            } else if (touchEvents && !hadTouchStart) {
+                delete window.ontouchstart;
+            }
+        }
+    };
+
+    const DEVICES = {
+        desktop: { pointerFine: true,  anyPointerCoarse: false, touchEvents: false, touchPoints: 0  },
+        phone:   { pointerFine: false, anyPointerCoarse: true,  touchEvents: true,  touchPoints: 5  },
+        hybrid:  { pointerFine: true,  anyPointerCoarse: true,  touchEvents: true,  touchPoints: 10 }
+    };
+
+    await test('isTouchCapable is TRUE on a touchscreen laptop, isTouchDevice is not', () => {
+        // The whole point of the split. isTouchDevice() answers "is touch PRIMARY"
+        // and returns false the moment a fine pointer exists — correct for its
+        // callers (drag layout, tap-vs-click wording), wrong for "can this machine
+        // be touched at all", which is what the three-dots default needs to know.
+        const primary = withDevice(DEVICES.hybrid, () => isTouchDevice());
+        const capable = withDevice(DEVICES.hybrid, () => isTouchCapable());
+        if (primary !== false) throw new Error('isTouchDevice should stay false on a hybrid (fine pointer present)');
+        if (capable !== true) throw new Error('isTouchCapable must be true on a hybrid — it has a touchscreen');
+    });
+
+    await test('isTouchCapable stays FALSE on a mouse-only desktop', () => {
+        // Guards the blast radius: widening this to plain desktops would put a
+        // three-dots button on every task for users who never asked for one.
+        if (withDevice(DEVICES.desktop, () => isTouchCapable()) !== false) {
+            throw new Error('a mouse-only desktop must not report touch capability');
+        }
+    });
+
+    await test('both report TRUE on a phone', () => {
+        if (withDevice(DEVICES.phone, () => isTouchDevice()) !== true) {
+            throw new Error('isTouchDevice should be true on a phone');
+        }
+        if (withDevice(DEVICES.phone, () => isTouchCapable()) !== true) {
+            throw new Error('isTouchCapable should be true on a phone');
         }
     });
 
