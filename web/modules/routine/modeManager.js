@@ -355,6 +355,37 @@ export class ModeManager {
     }
 
     /**
+     * Point every task's active `deleteWhenComplete` at the given mode's stored
+     * setting. Call this INSIDE an AppState producer — it mutates `cycle` in place.
+     *
+     * `deleteWhenComplete` is derived (`deleteWhenCompleteSettings[mode]`), so it
+     * must move in the SAME transaction as `cycle.deleteCheckedTasks`. When the two
+     * were split across separate writes, one mode switch produced two undo steps,
+     * and the first Undo left To-Do mode showing while every task carried the
+     * cycle-mode value.
+     *
+     * Idempotent: re-running for the mode already in effect changes nothing, so
+     * callers that only touched the autoReset toggle pay no cost.
+     *
+     * @param {Object} cycle - the cycle draft from inside the producer
+     * @param {'cycle'|'todo'} currentMode
+     */
+    syncTasksToMode(cycle, currentMode) {
+        if (!cycle?.tasks) return;
+        const DEFAULTS = this.deps.DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS;
+        cycle.tasks.forEach(task => {
+            // Initialize or repair settings if missing/incomplete
+            if (!task.deleteWhenCompleteSettings ||
+                typeof task.deleteWhenCompleteSettings !== 'object' ||
+                typeof task.deleteWhenCompleteSettings[currentMode] !== 'boolean') {
+                task.deleteWhenCompleteSettings = { ...DEFAULTS };
+            }
+            // Sync active value from mode-specific setting
+            task.deleteWhenComplete = task.deleteWhenCompleteSettings[currentMode];
+        });
+    }
+
+    /**
      * Update storage from toggle states
      * Persists current toggle states to AppState
      */
@@ -381,12 +412,14 @@ export class ModeManager {
         const toggleAutoReset = this.deps.getElementById(DOM_IDS.TOGGLE_AUTO_RESET);
         const deleteCheckedTasks = this.deps.getElementById(DOM_IDS.DELETE_CHECKED_TASKS);
 
-        // ✅ Update through state system
+        // ✅ Update through state system — mode flags AND the per-task values they
+        // derive, in ONE producer, so the whole switch is a single undo step.
         AppState.update(state => {
             const cycle = state.data.cycles[activeCycle];
             if (cycle) {
                 cycle.autoReset = toggleAutoReset.checked;
                 cycle.deleteCheckedTasks = deleteCheckedTasks.checked;
+                this.syncTasksToMode(cycle, deleteCheckedTasks.checked ? 'todo' : 'cycle');
             }
         }, true); // immediate save
 
@@ -1153,20 +1186,11 @@ export class ModeManager {
                     // Update mode
                     cycle.deleteCheckedTasks = isToDoMode;
 
-                    // ✅ Sync all tasks' deleteWhenComplete with mode-specific settings
-                    if (cycle.tasks) {
-                        cycle.tasks.forEach(task => {
-                            // Initialize or repair settings if missing/incomplete
-                            if (!task.deleteWhenCompleteSettings ||
-                                typeof task.deleteWhenCompleteSettings !== 'object' ||
-                                typeof task.deleteWhenCompleteSettings[currentMode] !== 'boolean') {
-                                task.deleteWhenCompleteSettings = { ...DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS };
-                            }
-
-                            // Sync active value from mode-specific setting
-                            task.deleteWhenComplete = task.deleteWhenCompleteSettings[currentMode];
-                        });
-                    }
+                    // ✅ Sync all tasks' deleteWhenComplete with mode-specific settings.
+                    // Shared with updateStorageFromToggles() — when the mode-selector
+                    // path already ran, this recomputes the same values and the write
+                    // is a no-op, so no second undo step is pushed.
+                    self.syncTasksToMode(cycle, currentMode);
 
                     // ✅ Capture updated cycle to avoid race condition
                     updatedCycle = cycle;

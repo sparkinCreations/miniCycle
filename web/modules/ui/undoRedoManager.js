@@ -790,7 +790,14 @@ function describeChange(fromSnapshot, toSnapshot) {
       else if (fromTask.dueDate && !toTask.dueDate) fieldCounts.dueDateRemoved++;
       else fieldCounts.dueDateChanged++;
     }
-    if (!!fromTask.deleteWhenComplete !== !!toTask.deleteWhenComplete) {
+    // `deleteWhenComplete` is DERIVED from deleteWhenCompleteSettings[mode], so it
+    // also moves whenever the routine's mode does. Only count it as a user action
+    // when the stored settings actually changed — the per-task control writes both
+    // (taskButtons.js), a mode switch writes only the derived value. Without this,
+    // switching to To-Do Mode reported a per-task control the user never touched.
+    if (!!fromTask.deleteWhenComplete !== !!toTask.deleteWhenComplete &&
+        JSON.stringify(fromTask.deleteWhenCompleteSettings || null) !==
+        JSON.stringify(toTask.deleteWhenCompleteSettings || null)) {
       fieldCounts.clearToggled++;
     }
   }

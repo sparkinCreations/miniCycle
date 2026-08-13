@@ -1042,6 +1042,79 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
+    // === MODE SWITCH ATOMICITY ===
+    resultsDiv.innerHTML += '<h4 class="test-section">🔀 Mode switch is one transaction</h4>';
+
+    await test('updateStorageFromToggles writes the mode AND the derived task values together', async () => {
+        // `task.deleteWhenComplete` is derived from deleteWhenCompleteSettings[mode].
+        // It used to be written by a SEPARATE update (the checkbox change handler),
+        // so one mode switch produced two undo steps and the first Undo left To-Do
+        // mode showing with every task on the cycle-mode value.
+        const deps = createMockDeps();
+        const writes = [];
+        const state = deps.AppState.get();
+        const cycle = state.data.cycles['cycle-test-123'];
+        cycle.tasks = [
+            { id: 't1', text: 'a', deleteWhenComplete: false, deleteWhenCompleteSettings: { cycle: false, todo: true } },
+            { id: 't2', text: 'b', deleteWhenComplete: false, deleteWhenCompleteSettings: { cycle: false, todo: true } }
+        ];
+        deps.AppState.update = (fn) => {
+            fn(state);
+            writes.push({
+                deleteCheckedTasks: cycle.deleteCheckedTasks,
+                dwc: cycle.tasks.map(t => +!!t.deleteWhenComplete).join('')
+            });
+        };
+        // Toggles as the mode-selector leaves them for To-Do mode.
+        const autoReset = document.createElement('input');
+        autoReset.type = 'checkbox'; autoReset.checked = false;
+        const delChecked = document.createElement('input');
+        delChecked.type = 'checkbox'; delChecked.checked = true;
+        deps.getElementById = (id) => {
+            if (id === 'toggleAutoReset') return autoReset;
+            if (id === 'deleteCheckedTasks') return delChecked;
+            return document.getElementById(id) || document.createElement('div');
+        };
+        deps.appInit = { waitForCore: () => Promise.resolve() };
+        setModeManagerDependencies(deps);
+
+        const mgr = new ModeManager();
+        await mgr.updateStorageFromToggles();
+
+        if (writes.length !== 1) {
+            throw new Error(`expected exactly ONE state write, got ${writes.length}`);
+        }
+        if (writes[0].deleteCheckedTasks !== true) {
+            throw new Error('the write must carry the new mode');
+        }
+        if (writes[0].dwc !== '11') {
+            throw new Error(`the SAME write must carry the derived task values, got "${writes[0].dwc}"`);
+        }
+    });
+
+    await test('syncTasksToMode repairs missing/invalid settings before deriving', async () => {
+        // Without the repair, the derived value becomes `undefined` and is written
+        // onto the task.
+        const deps = createMockDeps();
+        deps.DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS = { cycle: false, todo: true };
+        setModeManagerDependencies(deps);
+        const mgr = new ModeManager();
+        const cycle = { tasks: [
+            { id: 't1', text: 'a' },                                        // no settings at all
+            { id: 't2', text: 'b', deleteWhenCompleteSettings: 'nonsense' }, // wrong type
+            { id: 't3', text: 'c', deleteWhenCompleteSettings: { cycle: false } } // missing todo
+        ] };
+        mgr.syncTasksToMode(cycle, 'todo');
+        cycle.tasks.forEach(t => {
+            if (typeof t.deleteWhenComplete !== 'boolean') {
+                throw new Error(`${t.id} derived a non-boolean: ${t.deleteWhenComplete}`);
+            }
+        });
+        if (cycle.tasks.some(t => t.deleteWhenComplete !== true)) {
+            throw new Error('repaired tasks should take the default todo value (true)');
+        }
+    });
+
     // === SUMMARY ===
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;
