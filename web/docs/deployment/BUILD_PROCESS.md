@@ -163,6 +163,49 @@ link — a published nav entry that 404s is worse than no docs site at all.
 > build authoritative ended that, and `/docs` 404'd until this pass was added.
 
 
+## Public metrics endpoint (`/stats.json`)
+
+`writeStatsJson()` emits **`dist/stats.json`** — a public, CORS-enabled JSON feed of
+project metrics served at `https://minicycle.app/stats.json`. There is no
+`web/stats.json`; it exists only as build output, so it can never drift from the
+artifact it describes.
+
+**One counter, three surfaces.** Every number comes from `scripts/collect-stats.cjs`:
+
+| Surface | Written by | Shows |
+|---|---|---|
+| `docs/PROJECT_STATS.md` | `update-version.sh` Stage 5B | human-readable table |
+| `dist/stats.json` | this build pass | machine-readable JSON |
+| sparkincreations.com | *fetches the endpoint* | homepage figures |
+
+Before August 2026 each of those counted independently, so two public pages could
+report different numbers for the same commit. Add a metric to `collect-stats.cjs`, never
+to a consumer.
+
+**Why the app origin and not `docs.minicycle.app`,** next to `PROJECT_STATS.md` where it
+reads like it belongs: the docs host is a rewrite (`_redirects` maps the subdomain onto
+`/docs/`) standing on a manual Netlify alias and a DNS CNAME, and its rule ordering has
+broken once already (v2.344). A path-specific header's matching across that rewrite can't
+be settled from config — only by deploying and probing. Since a missing
+`Access-Control-Allow-Origin` shows up as a silent fetch failure on *someone else's*
+site, the endpoint sits on the literal, unambiguous path. `PROJECT_STATS.md` links to it
+instead.
+
+Its header block lives in `web/netlify.toml` (`for = "/stats.json"`): CORS plus a
+5-minute cache, because the `/*` catch-all would otherwise pin it for a year and freeze
+consumers on stale figures. It is deliberately **not** in the SW precache — the app
+itself never reads it.
+
+> **Two decisions worth not re-litigating.** `docFiles` counts via `git ls-files`, not
+> `find`: `find` ignores `.gitignore`, so a release cut locally published a different
+> number than one cut from a clean clone (personal files, iCloud `<name> 2.md`
+> duplicates). And the SparkinCreations homepage *fetches* this URL — it used to receive
+> a copied file that needed its own commit and deploy in that repo, which got skipped,
+> leaving the live page on v2.277 figures from July 3 while miniCycle shipped v2.416.
+> Don't reintroduce a local copy as a fallback; a stale fallback reporting old numbers
+> as current is the failure that replaced.
+
+
 ## Gotchas — learned the hard way, do not "simplify" these
 
 1. **esbuild does NOT pass template dynamic imports through.** `` import(`./x.js?v=${V}`) ``

@@ -27,7 +27,8 @@
 5. [Usage Modes](#usage-modes)
 6. [macOS-Specific Intricacies](#macos-specific-intricacies)
 7. [File Update Patterns](#file-update-patterns)
-8. [Backup System](#backup-system)
+8. [Project metrics (Stage 5B)](#project-metrics-stage-5b)
+9. [Backup System](#backup-system)
 9. [Troubleshooting](#troubleshooting)
 10. [Advanced Usage](#advanced-usage)
 
@@ -210,7 +211,8 @@ The `scripts/update-version.sh` script automates version number updates across *
 - **pages/product.html**
 - **manifest.json**
 - **package.json**
-- **docs/PROJECT_STATS.md**
+- **docs/PROJECT_STATS.md** — Stage 5B; every count comes from `scripts/collect-stats.cjs`
+  (see [Project metrics](#project-metrics-stage-5b) below)
 - **Lite files (with `--lite` or `--lite-only`):**
   - **lite/miniCycle-lite.html**
   - **lite/miniCycle-lite-scripts.js**
@@ -672,6 +674,50 @@ Module files no longer carry hardcoded `@version` or `this.version` values. Vers
 - `version.js` sets `globalThis.APP_VERSION`
 - `coreBoot` builds `AppMeta`
 - Modules consume `AppMeta.version` via DI
+
+---
+
+## Project metrics (Stage 5B)
+
+Stage 5B rewrites `docs/PROJECT_STATS.md` in place. It does **not** count anything
+itself — every number comes from `scripts/collect-stats.cjs`, which is also what the
+build uses to emit `dist/stats.json`. **One counter, so the public surfaces cannot
+disagree about the same commit.** If you need a new metric, add it there; never inline a
+`find`/`grep` count into this script again.
+
+```bash
+node scripts/collect-stats.cjs            # JSON to stdout — inspect anytime, no build
+node scripts/collect-stats.cjs --shell    # STATS_*=value lines, what Stage 5B evals
+```
+
+**Auto-counted:** app + lite version, schema version, total modules, per-directory module
+breakdown, total tests, test files, CSS files, JSDoc blocks, doc files, the five boot-file
+line counts and their total, module line total, and the Last Updated date.
+**Still manual:** test pass rate, DI completion, custom `window.*` count, architecture
+milestones.
+
+Two guards worth knowing, both from real breakage:
+
+- **Rows must sum to Total Modules.** `sed` only rewrites table rows that already exist,
+  so when `modules/platform/` was added it was silently absent and the breakdown
+  under-reported for months. The directory list is now derived, and a directory with no
+  row is reported rather than skipped. If you see that warning, add the row by hand once.
+- **Counting failure leaves the file alone.** If `collect-stats.cjs` fails, Stage 5B skips
+  the rewrite instead of writing blanks. These numbers are published on
+  `docs.minicycle.app`; a stale figure beats a wrong one.
+
+**`docFiles` uses `git ls-files`, deliberately.** `find` ignores `.gitignore`, so a
+release cut on a machine holding untracked docs (`DEVELOPER_PROFILE.md`, iCloud
+`<name> 2.md` duplicates) published a different count than one cut from a clean clone.
+Same commit, different public number depending on who ran it. Don't "simplify" it back.
+
+**There is no cross-repo sync any more.** A Stage 5C used to write `stats.json` and
+`STATS.md` into `../../SparkinCreations`, which then needed a separate commit and deploy
+in that repo — a step with nothing enforcing it. It got skipped: the marketing site served
+v2.277 figures from July 3 while miniCycle shipped v2.416, six weeks stale and silent.
+That site now fetches `https://minicycle.app/stats.json` directly, so a miniCycle release
+publishes its numbers with no second action. See
+[BUILD_PROCESS.md](BUILD_PROCESS.md#public-metrics-endpoint-statsjson).
 
 ---
 
@@ -1211,6 +1257,14 @@ cd backup/version_update_[timestamp]
 
 **v5.3**
 - Minor updates
+
+**v5.3** - (August 2026)
+- **Counting extracted to `scripts/collect-stats.cjs`** - one implementation shared with
+  the build's `dist/stats.json`; Stage 5B no longer counts inline
+- **`docFiles` now counts via `git ls-files`** - `find` ignored `.gitignore`, so local and
+  clean-clone releases published different numbers
+- **Stage 5C (SparkinCreations cross-repo sync) retired** - that site fetches
+  `https://minicycle.app/stats.json` instead of receiving a copied file
 
 **v5.2** - (January 2026)
 - **DI-pure module versioning** - Modules receive version via `AppMeta.version` injection
