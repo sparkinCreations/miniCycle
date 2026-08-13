@@ -112,6 +112,17 @@ async function openFresh(browser, baseURL) {
     await context.grantPermissions(['notifications'], { origin: baseURL });
     const page = await context.newPage();
     page.on('pageerror', err => console.log(`   ${colors.yellow}page error: ${err.message}${colors.reset}`));
+    // Surface DI-shaped console warnings. `pageerror` only fires for UNCAUGHT
+    // exceptions, and a starved dependency is not one: `deps.foo?.()` no-ops and
+    // the module logs a warning. That blind spot is why a journey failure reads as
+    // a bare 10s waitForFunction timeout with nothing explaining it — the
+    // "missing dependencies" line the app had already printed never left the page.
+    page.on('console', (msg) => {
+        if (msg.type() !== 'warning' && msg.type() !== 'error') return;
+        const text = msg.text();
+        if (!/missing dep|not injected|undefined|validation failed|is not a function|DI /i.test(text)) return;
+        console.log(`   ${colors.gray}page ${msg.type()}: ${text.slice(0, 240)}${colors.reset}`);
+    });
     await page.goto(`${baseURL}/miniCycle.html`, { waitUntil: 'domcontentloaded', timeout: 20000 });
     await bootApp(page);
     // First run shows a CHOICE screen (create / sample / learn) — it does NOT
