@@ -1197,28 +1197,35 @@ else
             echo "   - Auto-detect lite version"
             echo "   - Update last modified date"
         elif backup_file "$PROJECT_STATS_FILE"; then
-            # Count current metrics
+            # Count current metrics.
+            #
+            # Counting lives in scripts/collect-stats.cjs — ONE implementation
+            # shared with the build (dist/stats.json) and Stage 5C below. It
+            # used to be inline here AND duplicated in 5C, which is two ways for
+            # two public surfaces (docs.minicycle.app, the SparkinCreations
+            # homepage) to disagree about the same repo.
             echo "   📊 Counting metrics..."
-            MODULE_COUNT=$(find modules -name "*.js" -type f 2>/dev/null | wc -l | xargs)
-            TEST_COUNT=$(grep -r "test(" tests --include="*.js" 2>/dev/null | wc -l | xargs)
-            CSS_COUNT=$(find styles -name "*.css" -type f 2>/dev/null | wc -l | xargs)
-            JSDOC_COUNT=$(grep -r "^/\*\*" modules --include="*.js" 2>/dev/null | wc -l | xargs)
-            DOC_COUNT=$(find docs -name "*.md" -type f 2>/dev/null | wc -l | xargs)
+            if ! eval "$(node scripts/collect-stats.cjs --shell)"; then
+                echo "   ⚠️  collect-stats.cjs failed — leaving PROJECT_STATS.md untouched"
+                echo "      (better a stale number than a wrong one; these are published)"
+                STAGE5B_SUCCESS=false
+            else
+            MODULE_COUNT="$STATS_MODULES"
+            TEST_COUNT="$STATS_TESTS"
+            CSS_COUNT="$STATS_CSSFILES"
+            JSDOC_COUNT="$STATS_JSDOCBLOCKS"
+            DOC_COUNT="$STATS_DOCFILES"
             CURRENT_DATE=$(date +"%B %d, %Y")
 
-            # Count test files (.tests.js only)
-            TEST_FILE_COUNT=$(find tests -name "*.tests.js" -type f 2>/dev/null | wc -l | xargs)
+            TEST_FILE_COUNT="$STATS_TESTFILES"
+            LITE_VER="$STATS_LITEVERSION"
 
-            # Detect lite version from source
-            LITE_VER=$(grep -oE "var currentVersion = '[^']*'" lite/miniCycle-lite-scripts.js 2>/dev/null | head -1 | sed "s/.*'\([^']*\)'.*/\1/" || echo "unknown")
-
-            # Count boot file lines
-            MAIN_JS_LINES=$(wc -l < miniCycle-main.js 2>/dev/null | xargs)
-            ORCH_LINES=$(wc -l < modules/boot/orchestrator.js 2>/dev/null | xargs)
-            COREBOOT_LINES=$(wc -l < modules/boot/coreBoot.js 2>/dev/null | xargs)
-            FEATBOOT_LINES=$(wc -l < modules/boot/featureBoot.js 2>/dev/null | xargs)
-            UIBOOT_LINES=$(wc -l < modules/boot/uiBoot.js 2>/dev/null | xargs)
-            BOOT_TOTAL=$((MAIN_JS_LINES + ORCH_LINES + COREBOOT_LINES + FEATBOOT_LINES + UIBOOT_LINES))
+            MAIN_JS_LINES="$STATS_BOOT_MINICYCLE_MAIN"
+            ORCH_LINES="$STATS_BOOT_ORCHESTRATOR"
+            COREBOOT_LINES="$STATS_BOOT_COREBOOT"
+            FEATBOOT_LINES="$STATS_BOOT_FEATUREBOOT"
+            UIBOOT_LINES="$STATS_BOOT_UIBOOT"
+            BOOT_TOTAL="$STATS_BOOTTOTAL"
 
             echo "   - Modules: $MODULE_COUNT"
             echo "   - Tests: $TEST_COUNT"
@@ -1259,7 +1266,12 @@ else
             MISSING_ROWS=""
             for MODULE_DIR in modules/*/; do
                 DIR_NAME=$(basename "$MODULE_DIR")
-                DIR_COUNT=$(find "$MODULE_DIR" -name "*.js" -type f 2>/dev/null | wc -l | xargs)
+                # From collect-stats.cjs (STATS_DIR_<name>); find is the fallback
+                # so an unexpected directory name can't blank the row.
+                eval "DIR_COUNT=\${STATS_DIR_$(printf '%s' "$DIR_NAME" | tr -c 'A-Za-z0-9' '_' | tr 'a-z' 'A-Z'):-}"
+                if [ -z "$DIR_COUNT" ]; then
+                    DIR_COUNT=$(find "$MODULE_DIR" -name "*.js" -type f 2>/dev/null | wc -l | xargs)
+                fi
                 if grep -q '| `'"$DIR_NAME"'/` |' "$PROJECT_STATS_FILE"; then
                     do_sed "$PROJECT_STATS_FILE" 's#| `'"$DIR_NAME"'/` | [0-9]* |#| `'"$DIR_NAME"'/` | '"$DIR_COUNT"' |#g'
                     # Sum only what the TABLE shows, so the gap below is the real
@@ -1291,6 +1303,7 @@ else
             do_sed "$PROJECT_STATS_FILE" "s/| \*\*Total\*\* | \*\*~[0-9,]*\*\* |/| **Total** | **~$BOOT_TOTAL** |/g"
 
             echo "✅ Updated $PROJECT_STATS_FILE with auto-counted metrics"
+            fi   # end collect-stats guard
         else
             echo "⚠️  Failed to update $PROJECT_STATS_FILE"
             STAGE5B_SUCCESS=false
@@ -1337,14 +1350,24 @@ else
     SPARKIN_DATA="$SPARKIN_DIR/assets/data"
 
     if [ -d "$SPARKIN_DIR" ]; then
-        # Count independently of Stage 5B (those vars are local to its branch).
-        SC_MODULES=$(find modules -name "*.js" -type f 2>/dev/null | wc -l | xargs)
-        SC_TESTS=$(grep -r "test(" tests --include="*.js" 2>/dev/null | wc -l | xargs || true)
-        SC_TEST_FILES=$(find tests -name "*.tests.js" -type f 2>/dev/null | wc -l | xargs)
-        SC_LINES=$(find modules -name "*.js" -type f -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1}')
-        SC_DATE=$(date +"%Y-%m-%d")
+        # Same counter as Stage 5B and the build — see scripts/collect-stats.cjs.
+        # This used to recount inline, which meant the homepage and
+        # docs.minicycle.app could report different numbers for one commit.
+        SC_OK=true
+        if ! eval "$(node scripts/collect-stats.cjs --shell)"; then
+            echo "⚠️  collect-stats.cjs failed — skipping the SparkinCreations sync"
+            echo "   (these numbers are published; a stale file beats a wrong one)"
+            SC_OK=false
+        fi
+        SC_MODULES="$STATS_MODULES"
+        SC_TESTS="$STATS_TESTS"
+        SC_TEST_FILES="$STATS_TESTFILES"
+        SC_LINES="$STATS_LINES"
+        SC_DATE="$STATS_GENERATED"
 
-        if [ "$DRY_RUN" = true ]; then
+        if [ "$SC_OK" != true ]; then
+            : # counting failed above — leave the sibling repo untouched
+        elif [ "$DRY_RUN" = true ]; then
             echo "   Would write: $SPARKIN_DATA/stats.json + $SPARKIN_DIR/STATS.md"
             echo "   - version $NEW_VERSION, modules $SC_MODULES, tests $SC_TESTS, testFiles $SC_TEST_FILES, lines $SC_LINES"
         else

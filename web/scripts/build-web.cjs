@@ -188,6 +188,21 @@ function filterSidebar(src) {
   return out.join('\n').replace(/\n{3,}/g, '\n\n');
 }
 
+// ── 2c. stats.json (public metrics endpoint) ────────────────────────────────
+// Generated HERE rather than committed as web/stats.json for two reasons: it
+// can never go stale against the artifact it ships with, and Netlify builds
+// from a clean clone, so the counts are the canonical ones (no local untracked
+// or iCloud-duplicated files inflating them).
+//
+// Consumers fetch https://minicycle.app/stats.json cross-origin, so it needs
+// CORS — that header lives in web/netlify.toml alongside the other route rules.
+function writeStatsJson() {
+  const { collect } = require('./collect-stats.cjs');
+  const stats = collect();
+  fs.writeFileSync(path.join(DIST, 'stats.json'), JSON.stringify(stats, null, 2) + '\n');
+  return stats;
+}
+
 function copyDocs() {
   const srcRoot = path.join(WEB, 'docs');
   if (!fs.existsSync(srcRoot)) { console.log('⏭  docs/ not found — skipping docs publish'); return 0; }
@@ -509,6 +524,7 @@ function makeRewritePlugin() {
 
   copyStatic();
   const docs = copyDocs();
+  const stats = writeStatsJson();
 
   // Module map + built-file lists from the metafile.
   const moduleMap = {};
@@ -614,5 +630,6 @@ function makeRewritePlugin() {
   console.log(`🧷 stable-path shims: ${shimCount} (testing modal)`);
   console.log(`🛰  SW precache regenerated: ${precacheCount} URLs`);
   console.log(`📖 docs site: ${docs.copied} file(s) published, ${docs.rewritten} link(s) repointed to GitHub (archive/future-work/incidents withheld)`);
+  console.log(`📊 stats.json: v${stats.version} · ${stats.modules} modules · ${stats.tests} tests · ${stats.docFiles} docs`);
   console.log(`✅ dist/ ready in ${((Date.now() - t0) / 1000).toFixed(1)}s`);
 })().catch(e => fail(e.message));
