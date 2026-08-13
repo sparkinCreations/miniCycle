@@ -1,5 +1,7 @@
 # `highPriority: null` on Newly Created Tasks — Fix Plan
 
+> **✅ ARCHIVED 2026-08-13** — work verified shipped in the tree at v2.412 (shipped v2.398; all three edits verified). The remaining idea — route creation through `validateTask()` in dev builds — was moved into `docs/future-work/SCHEMA_2_6_PLAN.md`.
+
 > **Status:** ✅ SHIPPED in v2.398 (Aug 2026) · **Severity:** was Low-impact, high-noise ·
 > **Found:** Aug 2026, live production review of `minicycle.app` (v2.396) by driving the real
 > app in a browser.

@@ -1,5 +1,7 @@
 # Render-Path Unification Plan (Completed Dropdown)
 
+> **✅ ARCHIVED 2026-08-13** — work verified shipped in the tree at v2.412. All 3 phases done: `taskRenderer.js:210-244` implements the partitioned render and cites this doc. Note: the "Why DOM order matters" section below remains the only home of that rationale — flagged as a JSDoc-salvage candidate. Live leftovers moved to `docs/future-work/AUDIT_RESIDUALS_2026_08.md`.
+
 ## Context
 
 The completed-tasks dropdown is populated by **two DOM-owning code paths** that don't know about each other:

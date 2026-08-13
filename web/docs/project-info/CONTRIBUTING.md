@@ -103,7 +103,7 @@ project and what a failure means.
 
 > This rule exists because `developer-guides/` accumulated four different document types
 > until finding anything required already knowing its filename. See
-> [DOCS_REORG_PLAN.md](../future-work/DOCS_REORG_PLAN.md).
+> [DOCS_REORG_PLAN.md](../archive/DOCS_REORG_PLAN.md) (completed and archived Aug 2026).
 
 ---
 

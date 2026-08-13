@@ -1,5 +1,7 @@
 # Routine Switcher Modal Refactor Plan
 
+> **✅ ARCHIVED 2026-08-13** — work verified shipped in the tree at v2.412. 6 of 7 phases done; Phase 3 (handler rename to `_on{Event}Handler`) was deliberately dropped as cosmetic churn. The Phase 8+ module-split idea lives on in `docs/future-work/LARGE_MODULE_SPLITS_PLAN.md`.
+
 ## Context
 
 The routine switcher modal (`routineSwitcher.js`, 2,466 lines) was built incrementally over time — features added one at a time without stepping back to consolidate. While fully functional with 22+ features, it has redundant deselection handlers across two files, inconsistent event handler naming, no cleanup on modal close, large monolithic methods, and two separate rename flows. This plan brings it up to par with the rest of the app's quality standards without changing any user-facing behavior.

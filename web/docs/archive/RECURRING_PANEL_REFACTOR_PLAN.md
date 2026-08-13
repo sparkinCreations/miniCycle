@@ -1,5 +1,7 @@
 # Recurring Panel Refactor Plan
 
+> **✅ ARCHIVED 2026-08-13** — work verified shipped in the tree at v2.412, but under a different design: the extraction landed as `recurringPanelSetup.js` with deps-as-parameters, not this doc's `setSetupActions` callback injection (that pattern was never built). 4 of the 12 listed methods were never extracted (`setupSpecificDatesPanel`, `setupBiweeklyDayToggle`, `setupDurationRadioButtons`, `attachRecurringSummaryListeners`). All line counts below are stale. Live leftovers moved to `docs/future-work/AUDIT_RESIDUALS_2026_08.md`.
+
 ## Current State
 
 **Main file:** `recurringPanel.js` (2,252 lines)

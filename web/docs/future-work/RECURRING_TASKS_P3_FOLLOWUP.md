@@ -4,22 +4,26 @@
 > that audit are resolved (Jun 2026); the full audit record is archived at
 > [`../archive/RECURRING_CODE_AUDIT.md`](../archive/RECURRING_CODE_AUDIT.md).
 >
-> What's left are 12 **P3 Low** items — minor polish / latent-risk cleanups, none user-blocking.
+> What's left (re-verified against code, Aug 2026 / v2.412) are 7 live **P3 Low** items —
+> minor polish / latent-risk cleanups, none user-blocking. Original audit numbering kept.
 > Tackle opportunistically when touching the relevant file.
 
 | # | File | Item |
 |---|------|------|
-| 1 | `recurringDateUtils.js:37-38` | Debug `console.log('Parsing date as local:', …)` runs on every parse call |
-| 2 | `recurringDateUtils.js:47` | `parseDateAsLocal` returns `new Date()` (today) on invalid input — hides parse errors; should return `null` |
-| 3 | `recurringWatcher.js:80` | `_taskLimitNotificationShown` set but never reset on routine switch — limit warning won't re-show |
+| 3 | `recurringWatcher.js` | **Narrowed (Aug 2026):** `resetTaskLimitNotification()` now exists (defined near `_taskLimitNotificationShown`, called on spawn and cleared in `resetWatcherState()`) — but nothing resets the flag on a **routine switch**, so the limit warning still won't re-show after switching routines |
 | 4 | `recurringActivation.js:240` | 100ms `setTimeout` for `updatePanelButtonVisibility()` is untracked / not cancelable |
-| 5 | `recurringCore.js:44-63` | `AppState`, `now`, `setInterval` declared `optional(null)` but effectively required — DI validation never fires |
-| 6 | `recurringMatcher.js:14`, `recurringCalculators.js:14`, `recurringPanelForm.js:17` | Plain `let _deps` setter pattern instead of `createDIModule` |
-| 7 | `recurringPanelForm.js:39-53` | Redundant try/catch in `getTomorrow()` — catch does identical work to try |
+| 5 | `recurringCore.js` (~:45-65, the `createDIModule('RecurringCore', …)` manifest) | `AppState`, `now`, `setInterval` declared `optional(null)` but effectively required — DI validation never fires |
+| 6 | `recurringMatcher.js`, `recurringCalculators.js` | **Narrowed (Aug 2026):** `recurringPanelForm.js` now uses `createDIModule` — only these two still use the plain `let _deps` setter. Note: `recurringMatcher.js` carries a **documented rationale** for its bare pattern (recurringCore loads it dynamically with `?v=` cache-busting; a module-level `createDIModule` would split instances — see its header comment), so it may be deliberate. Verify before "fixing" |
 | 8 | `recurringCore.js:89-133` | Public API as `export let X = null` reassigned in `loadSubModules()` — fragile if destructured before load |
 | 9 | `recurringSettings.js:75` | Biweekly `referenceDate` defaults to `new Date().toISOString()` at normalization time — time-dependent week1/week2 |
-| 10 | `recurringPanelSetup.js:318` | Document-level click listener always active, even when the recurring panel is closed |
-| 11 | `recurringPanelEvents.js:26` | Redundant idempotency guards (`state._eventDelegationInitialized` vs `this._eventDelegationInitialized`) |
-| 12 | `recurringPanelSummary.js:23` | `settings.monthly.useSpecificDays = true` mutates the input object — should clone |
+| 12 | `recurringPanelSummary.js:31` | `settings.monthly.useSpecificDays = true` inside `buildRecurringSummaryFromSettings()` (`:28`) mutates the input object — should clone |
 
-> Line numbers are as of the Feb 2026 audit and may have drifted — verify against current code before fixing.
+> Line numbers re-verified Aug 2026 but will drift again — verify against current code before fixing.
+
+## Resolved / stale (removed from the live list, Aug 2026)
+
+- ~~#1 `recurringDateUtils.js` debug `console.log` on every parse~~ — fixed; no longer present.
+- ~~#2 `parseDateAsLocal` returns `new Date()` on invalid input~~ — fixed.
+- ~~#7 redundant try/catch in `getTomorrow()`~~ — fixed; the catch is now a genuine fallback path, not a duplicate of the try.
+- ~~#10 document-level click listener always active in `recurringPanelSetup.js`~~ — **stale finding**: no document-level click listener exists anywhere in `modules/recurring/` (only element-scoped `safeAddEventListener` plus one `visibilitychange`).
+- ~~#11 redundant idempotency guards in `recurringPanelEvents.js`~~ — fixed; only the `state._eventDelegationInitialized` guard remains.

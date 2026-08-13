@@ -1,8 +1,8 @@
 # Schema 2.6 Migration Plan
 
-**Status:** Planned
+**Status:** Planned (premise re-verified Aug 2026: schema is still 2.5 everywhere; zero `activeRoutineId` adoption)
 **Priority:** Medium
-**Estimated Effort:** 2-3 days
+**Estimated Effort:** 2-3 days — **optimistic**: as of v2.412, `activeCycleId` appears in ~104 JS files (modules, tests, scripts). The rename itself is mechanical, but the review/verify pass across that blast radius makes 2-3 days a floor, not an estimate
 **Breaking Changes:** Yes (requires migration)
 
 ---
@@ -200,13 +200,13 @@ if (data.schemaVersion === "2.6") {
 
 ### 2. Update Data Access Patterns
 
-**Files to Update:**
-- `miniCycle-scripts.js` - Main app orchestration
+**Files to Update** (representative — the real surface is ~104 JS files that reference `activeCycleId` as of v2.412):
+- `miniCycle-main.js` - Entrypoint
 - `modules/routine/routineManager.js` - Routine creation/management
 - `modules/routine/routineSwitcher.js` - Routine switching
 - `modules/routine/routineLoader.js` - Data loading/saving
 - `modules/task/taskCore.js` - Task operations
-- `modules/ui/statsPanel.js` - Statistics display
+- `modules/features/statsPanel.js` - Statistics display
 
 **Pattern Changes:**
 ```javascript
@@ -340,7 +340,7 @@ describe('Schema 2.5 → 2.6 Migration', () => {
 - [ ] Verify tests pass
 
 **Afternoon:**
-- [ ] Update cycleLoader.js with migration logic
+- [ ] Update `modules/routine/routineLoader.js` with migration logic
 - [ ] Add schema detection for 2.6
 - [ ] Test migration with sample data
 
@@ -356,14 +356,14 @@ describe('Schema 2.5 → 2.6 Migration', () => {
 - [ ] Run all existing tests
 - [ ] Fix any breaking tests
 - [ ] Add new integration tests
-- [ ] Verify 1623 tests still passing
+- [ ] Verify the full current suite still passes — see [PROJECT_STATS.md](../PROJECT_STATS.md) for the live test count
 
 ### Phase 3: Documentation & Release (Day 3)
 
 **Morning:**
 - [ ] Create SCHEMA_2_6.md documentation
 - [ ] Update all related docs
-- [ ] Update version to 1.360 (or appropriate)
+- [ ] Bump version via `./scripts/update-version.sh` (the only way app code ships)
 - [ ] Create migration announcement
 
 **Afternoon:**
@@ -404,7 +404,7 @@ describe('Schema 2.5 → 2.6 Migration', () => {
 
 - [ ] All existing 2.5 data migrates successfully
 - [ ] Zero data loss during migration
-- [ ] All 1070+ tests passing
+- [ ] The full current suite passing (see [PROJECT_STATS.md](../PROJECT_STATS.md))
 - [ ] New tests for 2.6 added (10+ tests)
 - [ ] Documentation complete and accurate
 - [ ] Manual testing on Mac/iPad/iPhone
@@ -431,6 +431,15 @@ After Schema 2.6, consider:
    - Manual migration triggers
    - Schema validation tools
 
+4. **Dev-build `validateTask()` enforcement** *(carried over from the archived HIGH_PRIORITY_NULL_DEFAULT_FIX.md postmortem)*
+   - Route all task creation through `validateTask()` in dev builds, so field-default drift
+     is caught at creation time rather than discovered downstream
+   - Precedent: the `highPriority: null` bug (fixed v2.398) shipped because a creation path
+     defaulted a field differently from the schema — creation-time validation would have
+     flagged it immediately
+   - Natural companion to a schema bump: whichever schema version is current, the validator
+     enforces its field defaults where objects are born
+
 ---
 
 ## 📝 Notes
@@ -443,6 +452,6 @@ After Schema 2.6, consider:
 
 ---
 
-**Last Updated:** November 14, 2025
+**Last Updated:** August 2026 (file-name/count corrections + blast-radius note + validateTask subsection; plan premise unchanged since November 14, 2025)
 **Author:** Schema Planning Document
 **Status:** Ready for implementation when prioritized

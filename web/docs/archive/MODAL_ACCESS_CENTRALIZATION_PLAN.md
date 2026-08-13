@@ -1,5 +1,7 @@
 # Modal Access Centralization Plan
 
+> **✅ ARCHIVED 2026-08-13** — work verified shipped in the tree at v2.412. All 4 phases done: `modalRegistry.js` exists, consumers migrated, `modalManager` iterates `MODAL_NAMES`, and the routine-switcher + settings modals were converted to `<dialog>`. Two stray direct lookups remain (`uxRatings.js:165`, `quickActionsManager.js:663`). Live leftovers moved to `docs/future-work/AUDIT_RESIDUALS_2026_08.md`.
+
 **Date:** February 1, 2026
 **Status:** 📋 Planned
 **Prerequisite:** DOM constants migration (Complete — `DOM_IDS` / `DOM_SELECTORS` in `constants.js`)

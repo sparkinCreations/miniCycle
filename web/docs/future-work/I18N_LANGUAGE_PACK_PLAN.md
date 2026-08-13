@@ -1,9 +1,17 @@
 # Internationalization (i18n) Language Pack Plan
 
-**Status:** Planned
-**Priority:** Medium (after Contextual Lens System)
-**Prerequisites:** Contextual Lens System (Phase 1-3), stable label key inventory
+**Status:** Planned — strategy intact, mechanics updated Aug 2026 (see note below)
+**Priority:** Medium
+**Prerequisites:** ✅ Lens system — **shipped as the Vocabulary Theme System** (what this plan called the "Contextual Lens System (future)"); stable label key inventory
 **Breaking Changes:** No (additive, backward compatible)
+
+---
+
+> **August 2026 drift note.** The strategy below is unchanged, but three mechanics drifted from the shipped code:
+>
+> 1. **The lens prerequisite is met.** It shipped as the **Vocabulary Theme System**: `modules/labels/themes.js` wires `getActiveLens: () => vocabThemeManager.getActiveTheme()` into the label resolver at module load. See [VOCAB_THEME_SYSTEM.md](../features/VOCAB_THEME_SYSTEM.md).
+> 2. **The shipped resolver uses FLAT full dot-path keys**, not the nested `labels[category][labelKey]` lookup this plan originally sketched — theme overrides resolve as `theme?.labels?.['action.addTask']`. The Resolver Changes sketch below has been rewritten to the flat shape.
+> 3. **The key inventory outgrew the plan ~3.5×**: ~1,587 keys across 58 categories, with ~499 in `LENS_SENSITIVE_KEYS` (as of v2.412 — measure fresh from `modules/labels/defaultLabels.js`; PROJECT_STATS.md does not track label counts). Scale the Phase 2/3 translation estimates accordingly.
 
 ---
 
@@ -17,7 +25,7 @@ Add multi-language support to miniCycle via downloadable language packs. The app
 2. **Language packs are downloaded on demand** — keep the base app lean. Only the active locale is loaded.
 3. **Cached locally** — once downloaded, a language pack is stored in localStorage/service worker cache. Works offline.
 4. **Lens-compatible** — language packs and contextual lenses coexist. Resolution order: `locale + lens → locale + default → English + lens → English default`.
-5. **Label keys are the API contract** — the 450+ keys in `defaultLabels.js` are the stable interface that language packs implement against.
+5. **Label keys are the API contract** — the keys in `defaultLabels.js` (~1,587 across 58 categories as of v2.412) are the stable interface that language packs implement against.
 
 ---
 
@@ -154,40 +162,52 @@ This means:
 
 ### Resolver Changes
 
-The current `getLabel()` function needs minimal changes:
+> **Rewritten Aug 2026 to match the shipped resolver.** Two contracts the original sketch got wrong, both load-bearing:
+>
+> 1. **Flat keys.** The shipped `labelResolver.js` looks up theme (lens) overrides by the FULL dot-path key — `theme?.labels?.['action.addTask']` — not nested `labels.action.addTask`. Only the bundled `DEFAULT_LABELS` is nested by category. Language packs must use the same flat shape as theme overrides.
+> 2. **Device-variant unwrap.** The shipped resolver unwraps `{ touch: …, pointer: … }` labels **BEFORE** pluralization/interpolation, so a variant may itself be a plural object or an interpolation string. Any locale override chain MUST preserve this step, in this position — translated labels may legitimately be device-variant objects too.
+
+The current `getLabel()` function needs changes along these lines:
 
 ```javascript
 export function getLabel(key, options = {}) {
   const { count = 1, vars = {} } = options;
 
-  // Get active locale and lens
+  // Get active locale and lens (lens = vocab theme — shipped system)
   const locale = getActiveLocale();        // 'en' | 'ja' | 'zh' | 'es'
-  const lens = getActiveLens();            // null or lens object
+  const lens = getActiveLens();            // null or vocab theme object
   const langPack = getCachedLanguagePack(); // null if English
 
-  const [category, ...rest] = key.split('.');
-  const labelKey = rest.join('.');
-
-  // Resolution chain: lens+locale → lens → locale → default
+  // Resolution chain: lens+locale → lens → locale → bundled English.
+  // NOTE: lens/pack lookups use the FLAT full dot-path key, matching the
+  // shipped resolver. Only DEFAULT_LABELS is nested by category.
   let label;
 
-  if (lens?.labels?.[locale]?.[category]?.[labelKey]) {
-    label = lens.labels[locale][category][labelKey];
-  } else if (lens?.labels?.[category]?.[labelKey]) {
-    label = lens.labels[category][labelKey];
-  } else if (langPack?.[category]?.[labelKey]) {
-    label = langPack[category][labelKey];
+  if (lens?.labels?.[locale]?.[key] !== undefined) {
+    label = lens.labels[locale][key];            // lens + locale override (flat)
+  } else if (lens?.labels?.[key] !== undefined) {
+    label = lens.labels[key];                    // lens English fallback (flat)
+  } else if (langPack?.labels?.[key] !== undefined) {
+    label = langPack.labels[key];                // locale default (flat)
   } else {
-    label = DEFAULT_LABELS[category]?.[labelKey];
+    const [category, ...rest] = key.split('.');
+    label = DEFAULT_LABELS[category]?.[rest.join('.')];  // bundled English (nested, as shipped)
   }
 
-  if (!label) return key;
+  if (label === undefined) return key;
+
+  // REQUIRED, FIRST (shipped behavior): device-variant unwrap — a label may be
+  // { touch: '…', pointer: '…' }, and the picked variant may itself be a plural
+  // object or interpolation string. This must run before pluralization.
+  if (typeof label === 'object' && label !== null && ('touch' in label || 'pointer' in label)) {
+    label = (isTouchPrimary() ? label.touch : label.pointer) ?? label.touch ?? label.pointer;
+  }
 
   // Pluralization with locale-aware rules
   const pluralRule = langPack?.meta?.pluralRule || 'standard';
-  if (typeof label === 'object' && ('one' in label || 'other' in label)) {
+  if (typeof label === 'object' && label !== null && ('one' in label || 'other' in label)) {
     const form = PLURAL_RULES[pluralRule](count);
-    return interpolate(label[form] || label.other, { count, ...vars });
+    return interpolate(label[form] ?? label.other, { count, ...vars });
   }
 
   if (typeof label === 'string') {
@@ -197,6 +217,8 @@ export function getLabel(key, options = {}) {
   return String(label);
 }
 ```
+
+(The language-pack JSON format above shows nested categories for translator readability — if that format is kept, flatten it to dot-path keys at load/validation time so the runtime lookup shape matches the lens contract.)
 
 ### Storage & Caching
 
@@ -295,6 +317,8 @@ Not needed for initial target languages (Spanish, Chinese, Japanese are all LTR)
 
 ### How Lenses Provide Translations
 
+*(Lenses shipped as the **Vocabulary Theme System** — see the Aug 2026 drift note. The example below uses short illustrative keys; shipped theme overrides key by the flat full dot-path, e.g. `'noun.task'`, `'action.addTask'`.)*
+
 A lens can optionally include locale-specific label overrides:
 
 ```javascript
@@ -390,11 +414,11 @@ The `context` field helps translators understand where the string appears — cr
 
 3. **Create translation template generator script**
 
-### Phase 2: First Language Pack (3-4 days)
+### Phase 2: First Language Pack (3-4 days — budgeted against "450+ keys"; the inventory is now ~1,587 keys as of v2.412, so scale translation effort ~3.5×)
 
 4. **Create Spanish language pack** (`locales/es.json`)
    - Easiest first target: similar plural rules, LTR, large market
-   - Full translation of all 450+ keys
+   - Full translation of the key inventory (~1,587 keys as of v2.412)
    - Native speaker QA
 
 5. **Add language selector to Settings UI**
@@ -406,7 +430,7 @@ The `context` field helps translators understand where the string appears — cr
    - Cache language pack files for offline use
    - Update check on app load
 
-### Phase 3: CJK Languages (4-5 days)
+### Phase 3: CJK Languages (4-5 days — same ~3.5× scaling caveat as Phase 2)
 
 7. **Create Japanese language pack** (`locales/ja.json`)
    - Single plural form (no one/other distinction)
@@ -429,9 +453,9 @@ The `context` field helps translators understand where the string appears — cr
     - Update resolver to check lens+locale combination
     - Backward compatible: existing lenses work unchanged
 
-11. **Translate initial lens set** (Habit Tracker, Fitness)
+11. **Translate initial lens set** (the shipped vocab themes)
     - Spanish, Japanese, Chinese versions of lens-specific labels
-    - Only lens override labels need translation (not the full 450+ set)
+    - Only lens override labels need translation (not the full ~1,587-key set; the ceiling is the ~499 `LENS_SENSITIVE_KEYS` as of v2.412, and actual theme overrides are far fewer)
 
 ### Phase 5: Polish (1-2 days)
 
@@ -503,7 +527,8 @@ web/
 ## Related Documentation
 
 - **[LABEL_SYSTEM_INTEGRATION_PLAN.md](../archive/LABEL_SYSTEM_INTEGRATION_PLAN.md)** — Label system migration (complete)
-- **[CONTEXTUAL_THEME_SYSTEM_PLAN.md](../archive/CONTEXTUAL_THEME_SYSTEM_PLAN.md)** — Lens system that i18n builds on
+- **[VOCAB_THEME_SYSTEM.md](../features/VOCAB_THEME_SYSTEM.md)** — the SHIPPED lens system (Vocabulary Theme System) that i18n builds on
+- **[CONTEXTUAL_THEME_SYSTEM_PLAN.md](../archive/CONTEXTUAL_THEME_SYSTEM_PLAN.md)** — original lens plan (archived; superseded by the shipped system above)
 - **[THEME_ARCHITECTURE.md](../architecture/THEME_ARCHITECTURE.md)** — Existing theme system
 - **[PWA_OFFLINE_ARCHITECTURE.md](../deployment/PWA_OFFLINE_ARCHITECTURE.md)** — Service worker caching and offline boot
 
@@ -511,4 +536,4 @@ web/
 
 **Author:** sparkinCreations
 **Created:** February 2026
-**Last Updated:** February 2026
+**Last Updated:** August 2026 (flat-key resolver rewrite, device-variant requirement, key-count correction, lens-system-shipped update)

@@ -1,8 +1,8 @@
 # Native `<dialog>` Audit & Custom Modal Refactor Plan
 
-**Date:** March 22, 2026
-**Status:** Documented (no action needed yet)
-**Priority:** Low — current implementation works well; this documents trade-offs and a path forward if constraints become blocking
+**Date:** March 22, 2026 (updated Aug 2026)
+**Status:** Documented — the refactor trigger has since been **resolved without a refactor** (see Limitation #1); the one live action item is `aria-describedby` (see Recommendations)
+**Priority:** Low — current implementation works well; the custom-modal plan below is kept for historical context only
 
 ---
 
@@ -60,6 +60,13 @@ miniCycle uses the HTML5 `<dialog>` element with `showModal()` for all modals. T
 | Confirmation dialog | notifications.js | Yes | dialog | N/A (system) | Yes (cleanup fn) | No |
 | Choice dialog | notifications.js | Yes | dialog | N/A (system) | Yes (cleanup fn) | No |
 | Prompt dialog | notifications.js | Yes | dialog | N/A (system) | Yes (cleanup fn) | No |
+| Daily reset overlay | dailyResetManager (`dailyResetManager.js:373`) | — | dialog | — | — | — |
+| Testing integration results | testing-modal-integration (`testing-modal-integration.js:149`, dev-only) | — | dialog | — | — | N/A |
+| Testing backup viewer | testing-modal-backup (`testing-modal-backup.js:285`, dev-only) | — | dialog | — | — | N/A |
+
+> The last three rows were added Aug 2026 — `createElement('dialog')` sites missed by the
+> original March inventory. Their per-column audit (aria, focus restore, cleanup) has not
+> been done; verify when touching those files.
 
 ---
 
@@ -68,22 +75,20 @@ miniCycle uses the HTML5 `<dialog>` element with `showModal()` for all modals. T
 1. **Accessibility is strong** — every modal has `aria-labelledby`, implicit `aria-modal`, native focus trapping, and ESC handling
 2. **Focus management is consistent** — `_previousFocus` save/restore pattern used everywhere
 3. **Listener cleanup is thorough** — three proven patterns (safeAddEventListener, handler storage, cleanup functions)
-4. **Notification guard is comprehensive** — all user-facing modals use `isClickOnNotification()` from `modalUtils.js`
+4. **Notification handling is layered** — `notificationDialogHost.js` re-parents the notification container into the topmost open dialog (primary), with `isClickOnNotification()` from `modalUtils.js` as a defensive backdrop-click fallback
 5. **Dynamic modals properly remove themselves** from the DOM after close
 
 ---
 
 ## Known Limitations of Native `<dialog>`
 
-### 1. Inertness blocks notification interaction (ACCEPTED TRADE-OFF)
+### 1. Inertness blocks notification interaction (✅ RESOLVED — Aug 2026)
 
-**Problem:** `showModal()` makes everything outside the dialog inert. Notifications (displayed via popover in the top layer) are **visible** but **not interactive** — users cannot drag, scroll, or click notification buttons while a modal is open.
+**Problem (historical):** `showModal()` makes everything outside the dialog inert. Notifications (displayed via popover in the top layer) were **visible** but **not interactive** — users could not drag, scroll, or click notification buttons while a modal was open.
 
-**Current workaround:** Coordinate-based click detection in `modalUtils.js` (`isClickOnNotification()`) intercepts backdrop clicks that overlap notifications. If the click lands on a notification's close button (X), it programmatically calls `closeBtn.click()`, which bypasses inertness since it's a synthetic event dispatched from the dialog's own click handler.
+**Resolution:** `modules/ui/notificationDialogHost.js` solved this *inside* the native `<dialog>` architecture: it watches for modal open/close and **re-parents `#notification-container` into the topmost open `<dialog>`**, so notifications live inside the non-inert subtree. Dragging, action buttons, and dismissal all work while a modal is open; the container is restored to its original parent when the last modal closes. No custom modal system was needed — this was the trigger condition for the refactor plan below, and it is now moot.
 
-**What still doesn't work:** Dragging notifications, clicking action buttons within notifications, or any non-close interaction while a modal is open. The user must close the modal first.
-
-**Why this is acceptable:** Notifications are designed to be non-blocking. The most common interaction (dismissing via X) works. Full notification interactivity resumes immediately when the modal closes.
+**Defensive fallback that remains:** the coordinate-based `isClickOnNotification()` in `modalUtils.js` is no longer the workaround — its doc comment (`modalUtils.js:24-40`) now explicitly describes it as a **defensive fallback** for rare races (the host's MutationObserver firing too late between `showModal()` and a backdrop click), legacy non-modal containers still managed through `modalManager` backdrop handlers, and guarding against a backdrop click that overlaps a notification closing the modal.
 
 ### 2. No `aria-describedby` on most modals (MINOR GAP)
 
@@ -101,7 +106,15 @@ Only one `showModal()` dialog can be "top" at a time. If a second modal opens (e
 
 ## Refactor Plan: Custom Modal System (IF NEEDED)
 
-**When to consider this refactor:** Only if future requirements make the notification interaction limitation unacceptable (e.g., notifications with required action buttons that must be clickable while a modal is open) or if modal stacking becomes a frequent pattern.
+> **Rejected/moot (Aug 2026):** the trigger condition — notification interactivity while a
+> modal is open — was resolved without leaving native `<dialog>`, by
+> `notificationDialogHost.js` re-parenting the notification container into the topmost open
+> dialog (see Limitation #1 above). The plan below is **kept for historical context** and as
+> a reference for what a custom modal system would have to reimplement; do not execute it
+> unless a *new* blocking constraint appears (e.g., modal stacking becomes a frequent
+> pattern).
+
+**When to consider this refactor (original framing):** Only if future requirements make the notification interaction limitation unacceptable (e.g., notifications with required action buttons that must be clickable while a modal is open) or if modal stacking becomes a frequent pattern.
 
 ### Phase 1: Custom Modal Wrapper (non-breaking)
 
@@ -158,12 +171,18 @@ With custom modals, notifications could be excluded from the inertness logic —
 
 ## Recommendations
 
-### Do now (no refactor needed)
-- [x] Notification X button works via coordinate-based detection (`modalUtils.js`)
-- [ ] Add `aria-describedby` to complex modals (settings, preferences, recurring) — low effort, improves screen reader experience
+### THE one live action item (Aug 2026 — verified still open)
+- [ ] **Add `aria-describedby` to complex modals** (settings, preferences, recurring) — low
+  effort, improves screen reader experience. Verified Aug 2026: no dialog root in the app
+  carries `aria-describedby` (the only uses are on inputs/tour tooltips, not modal roots).
+  This is the only remaining actionable item in this doc.
 
-### Do if needed
-- [ ] Custom modal system — only if notification interaction becomes a hard requirement
+### Done (no refactor needed)
+- [x] Full notification interactivity while a modal is open — `notificationDialogHost.js` re-parents the container into the topmost dialog
+- [x] Notification X button backdrop-click guard via coordinate-based detection (`modalUtils.js`, now a defensive fallback)
+
+### Do if needed (currently moot)
+- [ ] Custom modal system — trigger condition resolved Aug 2026; only revisit if a new blocking constraint appears
 - [ ] Modal stacking manager — only if multi-modal flows become common
 
 ### Never do

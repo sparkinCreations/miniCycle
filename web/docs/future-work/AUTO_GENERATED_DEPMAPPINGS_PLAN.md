@@ -1,30 +1,20 @@
 # Auto-Generated depMappings Plan
 
 **Date:** April 27, 2026
-**Status:** Not Started
+**Status:** Deferred — mitigated by `npm run validate:di` (see below); revisit only if depMappings maintenance cost grows
 **Related:** [ENFORCE_REQUIRES_ROLLOUT_PLAN.md](./ENFORCE_REQUIRES_ROLLOUT_PLAN.md), [feedback_di_consumer_surface.md](../../../../.claude/projects/-Users-mjaynumberone-Documents-Programs-Code-miniCycle/memory/feedback_di_consumer_surface.md) (memory)
 
 ---
 
-## ⚠️ Accuracy Correction — June 29, 2026
+## ✅ August 2026 — Urgency removed by `validate:di`
 
-Reviewed against current code (post commit `00c727b3`). The **core strategy — derive `depMappings` from manifest `provides` + `api` category — remains feasible**, and the trap, the three incidents, the April audit, and the named special-case entries all check out. But three claims are wrong in ways that change the design and effort. Treat line numbers as June-2026 snapshots. Where this block conflicts with the prose below, **this block wins.**
+**Nothing from this plan was ever built** — no `buildAutoDepMappings`, `depMappingsOverrides`, or `instanceProvides` exists anywhere in the codebase (verified Aug 2026). Meanwhile, **`web/scripts/validate-di-deps.js`** (`npm run validate:di`) shipped in July 2026 — its header cites this very plan — and now **CI-gates the exact silent-failure class this plan was written to kill**: declared-but-undeliverable deps (the `clearAllUndoHistory` March-2026 bug class) are gated at **0**, alongside used-but-undeclared (**0**) and resolvable-nowhere (**0**), plus a ratchet on unused declarations.
 
-**Counts are overstated:**
-- "~370 entries" → **~221** actual (`depMappings` L836–1311). Fix everywhere it appears: intro, the `// ... ~370 more` comment, the Migration-Path before/after, and Decision Criterion #2.
-- "~80 modules × ~5 provides" → **52** modules.
-- Decision Criterion #2 ("crosses ~500, currently ~370") is doubly stale — actual is ~221, so that trigger is much further off than implied.
+That removes most of this plan's urgency. The trap still exists *structurally* — `depMappings` remains a hand-maintained object — but forgetting an entry is now caught statically in CI before it ships, not by a user reporting a dead button. **Re-scope: deferred.** Revisit only if the maintenance cost of the hand-written `depMappings` grows enough to justify the ~12–19h build (the Decision Criteria below now sit *behind* the CI gate as a second line of defense).
 
-**🔴 The instance-vs-call discriminator is broken against the real manifest shape.** The algorithm decides instance-accessor vs call-wrapper via `manifest.provideInstance === provided`. But across all **25** `provideInstance` declarations, the instance name lives *outside* its own `provides` array (e.g. `statsPanel`: `provideInstance: 'statsPanelManager'`, `provides: ['showStatsPanel', …]`; only `vocabThemes` has the name in both). So that test is essentially always false. As written, `buildAutoDepMappings` would **never** emit instance accessors and would silently fail to produce the ~25 instance-name deps that consumers (`historyManager`, `statsPanelManager`, `achievementsManager`, `vocabThemeManager`, …) depend on. Consequences:
-- `provideInstance` must be iterated as a **separate source** of mappings, not tested for membership in `provides`.
-- The "just detect instance vs function by runtime value type" fallback **cannot work**: `depMappings` is built before any instance exists — its closures aren't invoked at build time, and `ensureDepMappingKeys()` (L1628) relies on exactly that. So the `instanceProvides` / `callProvides` manifest hints are **required, not optional.**
-- Several instance deps are **method-binding Proxies** today (`historyManager`, `clearedTasksManager`, `achievementsManager`, `vocabThemeManager`, …) to preserve `this`. A naive `() => deps[cat]?.[name]` breaks them — the generator must reproduce the binding.
+The June-2026 accuracy review that used to live here as a standalone correction block has been folded into the body below (design notes on the instance-vs-call discriminator, override-map sizing, and `findProvidedValue()` appear inline where they matter). One historical caveat worth keeping visible: the `startGuidedTour` incident was actually a missing manifest `lazyRequires` declaration, not a missing `depMappings` entry — auto-generation would **not** have prevented that specific case, so the "auto-gen kills the whole class" framing was always slightly overstated.
 
-**🔴 The override map is bigger than estimated (~60–80, not ~20–30).** Beyond the named special cases, many entries resolve to a **nested sub-API**, not `deps[category][providedName]`: recurring fns via `deps.recurring.core` / `deps.recurring.panel`; completed-tasks/help/gestures via `deps.ui.<manager>.<method>`. Plus multi-source fallbacks (`sanitizeInput`, `removeRecurringTasksFromCycle`, `hideMainMenu` — in addition to the correctly-named `createInitialSchema25Data`), the `deferredInvoke`-based `unlockMiniGame`, and the DOM-helper CORE_DEPS (no provider module — must stay static overrides). All need overrides.
-
-**`findProvidedValue()` does NOT enforce unique `provides` names.** The Risk section claims uniqueness is "already partially done — see `findProvidedValue()`." It isn't: `findProvidedValue()` (L1476) resolves one name against one instance with no cross-module awareness, and nothing else enforces uniqueness (the provider map silently last-write-wins on duplicates). Duplicate-provides detection is **net-new work** — build it into `buildAutoDepMappings` (the pseudocode's warn-and-skip is a start) or manifest validation. Drop the `findProvidedValue()` reference.
-
-**Corroborated (no change needed):** the trap mechanism; the three incidents (commits `228163f0`, `00c727b3`); the April audit remediation; `WARN_ON_UNMAPPED_DECLARED_DEPS` (L162); `closeAllModals` via `createValidatedWrapper` (L997); `isModalOpen` nested access (L999); `createInitialSchema25Data` multi-source (L1026); `getDepsCategoryForModule` (L1450) mapping `api`→category (`state`→core, `undo`→ui, else identity, unknown→features). **One caveat:** the `startGuidedTour` incident was actually a missing manifest `lazyRequires` declaration, not a missing `depMappings` entry — auto-generation would **not** have prevented that specific case (it's a sibling sub-mechanism, so grouping it slightly overstates the "auto-gen kills the whole class" framing).
+> Line-number pins from earlier revisions of this doc have all drifted; anchors below are symbol names — search for them in `modules/boot/moduleLoader.js`.
 
 ---
 
@@ -40,14 +30,14 @@ The proposed approach: **derive `depMappings` from the manifests' `provides` dec
 
 ### The trap exists today
 
-`depMappings` (in [`web/modules/boot/moduleLoader.js`](../../modules/boot/moduleLoader.js)) is a hand-maintained object literal with ~221 entries that look like:
+`depMappings` (in [`web/modules/boot/moduleLoader.js`](../../modules/boot/moduleLoader.js), anchor: `const depMappings`) is a hand-maintained object literal with ~230 entries (as of v2.412) that look like:
 
 ```javascript
 const depMappings = {
     isModalOpen: () => deps.ui?.modalManager?.isModalOpen?.(),
     startGuidedTour: (...args) => deps.ui?.startGuidedTour?.(...args),
     loadMiniCycle: (...args) => deps.cycle?.loadMiniCycle?.(...args),
-    // ... ~221 more
+    // ... ~230 more
 };
 ```
 
@@ -60,12 +50,12 @@ Three of the same bug class hit production code:
 | Date | Dep | Reporter |
 |------|-----|----------|
 | March 2026 | `clearAllUndoHistory` | "Clear Undo History button does nothing" |
-| April 2026 | `startGuidedTour` | "SVG Start Tour button does nothing for 3+ seconds" |
+| April 2026 | `startGuidedTour` | "SVG Start Tour button does nothing for 3+ seconds" — *caveat: this one was a missing manifest `lazyRequires` declaration, not a missing `depMappings` entry; auto-generation would not have prevented it* |
 | April 2026 | `isOverlayActive` | "Swipes work even with onboarding modal open" |
 
 A one-shot audit ([Option 4 from April 2026 session](../../../web/modules/boot/moduleLoader.js)) found **8 HIGH-severity gaps** and **24 MEDIUM-severity dead declarations** in active manifests. Those have been plugged manually (April 2026), but the underlying pattern guarantees more in the future.
 
-A boot-time warning was added (April 2026, the `WARN_ON_UNMAPPED_DECLARED_DEPS` flag in moduleLoader.js) to make new gaps visible at runtime — but that's reactive, not preventative.
+A boot-time warning was added (April 2026, the `WARN_ON_UNMAPPED_DECLARED_DEPS` flag in moduleLoader.js) to make new gaps visible at runtime — but that's reactive, not preventative. Since July 2026, `npm run validate:di` catches the class statically in CI (including the supply-side "declared-but-undeliverable" bucket no runtime warning could see) — see the status section at the top.
 
 ### What auto-generation buys
 
@@ -148,14 +138,21 @@ function buildAutoDepMappings(manifestRegistry, deps) {
 }
 ```
 
+**⚠️ Known flaw in this sketch (June 2026 review — must be fixed before building):** the `manifest.provideInstance === provided` discriminator is broken against the real manifest shape. Across all `provideInstance` declarations (~29 as of v2.412), the instance name lives *outside* its own `provides` array (e.g. `statsPanel`: `provideInstance: 'statsPanelManager'`, `provides: ['showStatsPanel', …]`; essentially only `vocabThemes` has the name in both) — so that test is almost always false and the sketch would silently never emit the ~29 instance-name deps that consumers (`historyManager`, `statsPanelManager`, `achievementsManager`, `vocabThemeManager`, …) depend on. Consequences:
+
+- `provideInstance` must be iterated as a **separate source** of mappings, not tested for membership in `provides`.
+- Runtime type detection ("if the value is a function, wrap it") **cannot work**: `depMappings` is built before any instance exists — its closures aren't invoked at build time, and `ensureDepMappingKeys()` (exported from moduleLoader.js) relies on exactly that. The `instanceProvides` / `callProvides` manifest hints below are therefore **required, not optional**.
+- Several instance deps are **method-binding Proxies** today (`historyManager`, `clearedTasksManager`, `achievementsManager`, `vocabThemeManager`, …) to preserve `this`. A naive `() => deps[cat]?.[name]` breaks them — the generator must reproduce the binding.
+
 ### Override hooks for special cases
 
 A small number of current depMappings entries do non-trivial things — they're not just pass-throughs. Examples:
 
 - **Validated lazy wrappers**: `closeAllModals: createValidatedWrapper(...)` — adds runtime validation
 - **Aliased / nested access**: `isModalOpen: () => deps.ui?.modalManager?.isModalOpen?.()` — calls a method on a nested instance
-- **Multi-source resolution**: `createInitialSchema25Data: () => deps.utils?.X || deps.cycle?.X` — fallback across modules
-- **Special call signatures**: e.g., partial application, default args
+- **Multi-source resolution**: `createInitialSchema25Data` now falls back across **three** sources (`deps.core || deps.utils || deps.cycle` — grown from two since this plan was written; multi-source entries accrete). Others: `sanitizeInput`, `removeRecurringTasksFromCycle`, `hideMainMenu`
+- **Special call signatures**: e.g., partial application, default args, the `deferredInvoke`-based `unlockMiniGame`
+- **No provider module at all**: the DOM-helper CORE_DEPS wrap `document` directly — must stay static overrides
 
 For these, support an **override map** that runs after auto-generation:
 
@@ -170,7 +167,7 @@ const depMappingsOverrides = {
 const depMappings = { ...buildAutoDepMappings(...), ...depMappingsOverrides };
 ```
 
-The override map stays small (~20-30 entries instead of ~370). Overrides win because they're applied last via spread. **(June 2026 correction: the override map is realistically ~60-80 entries, not ~20-30 — nested sub-API resolution, multi-source fallbacks, method-binding Proxies, and instance accessors all need overrides. See correction block at top.)**
+The override map is realistically **~60–80 entries** (June 2026 sizing — not the ~20–30 originally hoped): beyond the named special cases, many entries resolve to a nested sub-API rather than `deps[category][providedName]` (recurring fns via `deps.recurring.core` / `deps.recurring.panel`; completed-tasks/help/gestures via `deps.ui.<manager>.<method>`), and multi-source fallbacks, method-binding Proxies, instance accessors, and the DOM-helper CORE_DEPS all need overrides too. Overrides win because they're applied last via spread.
 
 ### Manifest hint for instance vs function
 
@@ -186,7 +183,7 @@ recurringPanel: {
 }
 ```
 
-Or simpler: detect by inspecting the value type at runtime. If `deps[category][name]` is a function, build a call-wrapper; if it's an object, return it as-is.
+~~Or simpler: detect by inspecting the value type at runtime. If `deps[category][name]` is a function, build a call-wrapper; if it's an object, return it as-is.~~ **This fallback cannot work** (see the flaw note under the Algorithm): `depMappings` is built before any instance exists, so there is no value to inspect. The explicit manifest hints are required.
 
 ---
 
@@ -212,12 +209,12 @@ After all categories are migrated, the hand-written `depMappings` only contains 
 
 ```javascript
 // Before:
-const depMappings = { /* ~221 entries */ };
+const depMappings = { /* ~230 entries (as of v2.412) */ };
 
 // After:
 const depMappings = {
     ...buildAutoDepMappings(manifestRegistry, deps),
-    ...depMappingsOverrides,  // ~60-80 entries for special cases (see correction block) — NOT ~30
+    ...depMappingsOverrides,  // ~60-80 entries for special cases (June 2026 sizing) — NOT ~30
 };
 ```
 
@@ -233,7 +230,7 @@ const depMappings = {
 
 ### Risk: Performance overhead at boot
 
-`buildAutoDepMappings()` walks ~52 modules × ~5 provides each = ~260 iterations. Negligible (<1ms).
+`buildAutoDepMappings()` walks ~57 provider modules (as of v2.412) × ~5 provides each ≈ ~300 iterations. Negligible (<1ms).
 
 ### Risk: Auto-generated entries miss subtle behavior
 
@@ -245,7 +242,7 @@ Some current entries do things the auto-generator wouldn't replicate (e.g., the 
 
 ### Risk: Duplicate `provides` across modules
 
-If two modules declare `provides: ['someName']`, the auto-generator currently picks one and warns. Today's `depMappings` would also be ambiguous in that case. Solve by enforcing unique `provides` names at manifest validation time. **(June 2026 correction: this is NOT yet done — `findProvidedValue()` does not check uniqueness, and the provider map silently last-write-wins on duplicates. Duplicate detection is net-new work. See the correction block at top.)**
+If two modules declare `provides: ['someName']`, the auto-generator currently picks one and warns. Today's `depMappings` would also be ambiguous in that case. Solve by enforcing unique `provides` names at manifest validation time — and note this is **net-new work**: nothing enforces uniqueness today. `findProvidedValue()` (moduleLoader.js) resolves one name against one instance with no cross-module awareness, and the provider map silently last-write-wins on duplicates. Build the check into `buildAutoDepMappings` (the pseudocode's warn-and-skip is a start) or into manifest validation.
 
 ### Tradeoff: Less flexibility for one-off wrappers
 
@@ -268,6 +265,7 @@ Current pattern lets you write any function as a depMapping. Auto-generation for
 
 - ✅ Boot-time warning for unmapped declared deps (`WARN_ON_UNMAPPED_DECLARED_DEPS`) — implemented April 2026
 - ✅ One-shot audit closing existing gaps — completed April 2026
+- ✅ Static CI gate for the bug class (`scripts/validate-di-deps.js`, `npm run validate:di`) — shipped July 2026; gated at undeclared=0, nowhere=0, undeliverable=0 (this is what re-scoped the plan to "deferred")
 - ⚠️ `ENFORCE_REQUIRES` rollout (per [ENFORCE_REQUIRES_ROLLOUT_PLAN.md](./ENFORCE_REQUIRES_ROLLOUT_PLAN.md)) — should happen first OR concurrently. With `ENFORCE_REQUIRES = true` AND auto-generated depMappings, the system is fully self-validating: declared deps must be in `requires`/`optionalDeps`/`lazyRequires`, and they automatically resolve from `provides`.
 
 ---
@@ -276,12 +274,12 @@ Current pattern lets you write any function as a depMapping. Auto-generation for
 
 Start this plan when **any one** of these is true:
 
-1. Another silent-failure bug from a missing `depMappings` entry surfaces in production
-2. The number of manual `depMappings` entries crosses ~500 (currently ~221)
+1. Another silent-failure bug from a missing `depMappings` entry surfaces in production **despite** the `validate:di` CI gate (would indicate a gap in the static parse)
+2. The number of manual `depMappings` entries crosses ~500 (~230 as of v2.412)
 3. ENFORCE_REQUIRES rollout reaches Phase 4 (the architectural cleanup phase)
 4. A new contributor joins and trips on the trap when adding their first cross-module dep
 
-Until then, the boot-time warning + closed gaps from April 2026 should keep the bug class manageable.
+Until then, the CI gate (`npm run validate:di`) + boot-time warning + closed gaps from April 2026 keep the bug class contained.
 
 ---
 
@@ -290,4 +288,5 @@ Until then, the boot-time warning + closed gaps from April 2026 should keep the 
 - Memory: [feedback_di_consumer_surface.md](../../../../.claude/projects/-Users-mjaynumberone-Documents-Programs-Code-miniCycle/memory/feedback_di_consumer_surface.md) — the lessons-learned from prior occurrences
 - Code: [moduleLoader.js depMappings](../../modules/boot/moduleLoader.js) (search for `const depMappings`)
 - Code: [moduleManifests.js](../../modules/boot/moduleManifests.js)
+- Code: [scripts/validate-di-deps.js](../../scripts/validate-di-deps.js) — the shipped static gate that mitigates this plan's bug class (`npm run validate:di`)
 - Plan: [ENFORCE_REQUIRES_ROLLOUT_PLAN.md](./ENFORCE_REQUIRES_ROLLOUT_PLAN.md) — strict mode rollout, complementary to this plan

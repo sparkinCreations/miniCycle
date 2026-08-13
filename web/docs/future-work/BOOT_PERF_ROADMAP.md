@@ -1,8 +1,15 @@
 # Boot Performance Roadmap — Next Targets & Structural Levers
 
-**Status:** PLAN (June 14 2026). Builds on the shipped wins: parallel phase imports (v2.238),
-pre-boot version gate (v2.238), recurring panel deferral (v2.239), and the earlier
-`MODULE_DEFERRAL_AUDIT.md` (testing/games/plugin deferrals).
+**Status:** PLAN, re-scoped Aug 2026. Originally June 14 2026; the structural levers are now
+**closed** per Baseline #3 below — Lever 1 (minify/bundle) shipped via the build pipeline
+(v2.301+, entry-hashed `/build/` tree), and Lever 2 (precache trim) is largely moot under the
+single-fetch immutable precache. **What remains of this doc is solely the module-init /
+deferral backlog** (the Tier A/B/C tables), which is optional and measurement-gated — users
+behind the first-run choice screen can't feel it. Builds on the shipped wins: parallel phase
+imports (v2.238), pre-boot version gate (v2.238), recurring panel deferral (v2.239), and the
+earlier [MODULE_DEFERRAL_AUDIT.md](./MODULE_DEFERRAL_AUDIT.md) (testing/games/plugin/focusTaskPanel
+deferrals). All Tier A/B/C targets below were re-verified still eager as of v2.412 (only 5
+`deferred: true` manifests exist), and the Tier C1 blocker is intact.
 
 ## Baseline — v2.239 on old Android (clean warm run)
 
@@ -50,9 +57,11 @@ optional next to the pipeline.
 
 > **July 2026 addendum:** the structural lever changed — `BUILD_PIPELINE_PLAN.md` (esbuild bundle +
 > content-hashed filenames + generated precache) supersedes `MINIFICATION_PLAN.md` as Lever 1.
-> New zero-risk measurement task before any further deferral: **add per-module `performance.mark`s
-> to `loadModule()`** (currently per-phase `mc:subphase:*` only) so the 17 UI_MANAGERS modules rank
-> by measured cost, not line-count estimates. See `FEEDBACK_TODO_2026_07.md` P0 addendum.
+> ~~New zero-risk measurement task before any further deferral: add per-module `performance.mark`s
+> to `loadModule()`~~ **✅ SHIPPED** — `moduleLoader.js` now emits `mc:module:<name>:import` and
+> `mc:module:<name>:init` measures in `loadPhase`, and the on-demand (`ensureModuleLoaded`) path
+> emits the same `:init` measure. Per-module ranking by measured cost is available today (this is
+> where Baseline #3's "top init costs" numbers come from).
 
 ## Two classes of work
 
@@ -134,9 +143,10 @@ Re-checking the candidates before building (the recurring-Proxy lesson) re-tiere
 |---|---|---|---|---|
 | C1 | **statsPanel** | 1,973 | `uiOrchestrator` hard-`requires: ['updateStatsPanel']` (+ `after: statsPanel`) | move `updateStatsPanel` to `optionalDeps`, verify uiOrchestrator no-ops when absent, then defer to first stats-panel open. Big win but real coupling work. |
 
-### Quick win (no deferral mechanism)
-- **backupReminder** — has a boot job (`checkBackupReminderOnBoot`). Move it to a
-  post-`INTERACTIVE` idle callback instead of inline boot.
+### Quick win (no deferral mechanism) — ✅ DONE
+- **backupReminder** — had a boot job (`checkBackupReminderOnBoot`) inline in boot. Now wrapped
+  in a 3000ms `setTimeout` in `uiBoot.js` (search "BACKUP REMINDER CHECK") — off the critical
+  path as intended, albeit via `setTimeout` rather than `requestIdleCallback`. Goal met.
 
 ### Keep EAGER (do not defer)
 - **undoRedoManager** (2,134) — hot path: `captureStateSnapshot` on every edit; `titleManager`
@@ -148,7 +158,7 @@ Re-checking the candidates before building (the recurring-Proxy lesson) re-tiere
 
 ## Structural levers
 
-### Lever 1 — Minification (terser release step) — highest ceiling, own sub-project
+### Lever 1 — Minification — ✅ CLOSED (shipped as the build pipeline; see Baseline #3)
 - **Why:** ~3.4 MB of unminified ES modules are parsed across ALL phases. Minifying cuts
   parse cost everywhere at once (potentially 30–50%), not one phase. Bonus: obfuscation aligns
   with the proprietary-license intent.
@@ -161,7 +171,7 @@ Re-checking the candidates before building (the recurring-Proxy lesson) re-tiere
 - **Risk:** module-graph breakage, source maps for prod debugging, the `?v=` rewrite. Needs a
   dedicated plan + staged rollout + full test pass. Do NOT bolt on casually.
 
-### Lever 2 — SW precache trim — cold/first/update-load lever
+### Lever 2 — SW precache trim — ✅ CLOSED (largely moot post-pipeline; see Baseline #3)
 - **Why:** `BOOT_CRITICAL` precaches **106 `./modules/*.js`** + ~37 CSS + fonts on install,
   competing with the live boot fetches on first/update load (the ~1059 ms pre-boot window +
   the cold storm). Heavy theme/stock images are **already NOT precached** (verified) — they
@@ -188,15 +198,16 @@ They're all medium-effort facade-defers or init-splits, each worth ~100–250ms 
 per-feature regression risk. That shifts the ROI calculus toward the **structural levers**, which
 help every phase at once with no per-feature regression surface.
 
-1. **backupReminder → idle** (tiny, pure, zero-risk win). Warm-up.
+1. ~~**backupReminder → idle**~~ ✅ DONE (see Quick win above).
 2. **settingsManager facade defer** (A2) — cleanest remaining module win; verify toggle side-effects.
-3. **Lever 2: precache trim** — cheap, complements the deferrals already shipped. Re-measure.
-4. **Lever 1: minification** (terser release step) — **promote this.** Biggest ceiling (~30–50% of
-   ALL parse), no per-feature regression risk, helps every phase. Own plan + staged rollout. This
-   is likely better ROI than chasing more individual module deferrals.
+3. ~~**Lever 2: precache trim**~~ ✅ CLOSED — largely moot under the build pipeline's single-fetch
+   immutable precache (Baseline #3).
+4. ~~**Lever 1: minification**~~ ✅ CLOSED — shipped as the build pipeline (esbuild bundle,
+   content-hashed `/build/` tree, v2.301+). Baseline #3: Imports 34ms = 1% of boot.
 5. **Init-splits, if still justified by measurement:** guidedTourManager (all-tours-seen gate),
    preferencesManager (boot color-apply extraction), focusMode, helpWindowManager, reminders.
-6. **dragDropManager → post-INTERACTIVE idle**; **statsPanel unblock**; **taskSearch untangle** —
+6. **dragDropManager → post-INTERACTIVE idle**; **statsPanel unblock** (C1 — `uiOrchestrator`
+   still hard-`requires` `updateStatsPanel`, verified v2.412); **taskSearch untangle** —
    tail-end, measurement-gated.
 
 Per deferral, the proven gate: device-test the open/trigger paths, and confirm the module

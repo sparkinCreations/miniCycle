@@ -3,7 +3,8 @@
 > **Added to repo July 2026.** The P0 load/startup section is planned in detail in
 > [`BUILD_PIPELINE_PLAN.md`](../archive/BUILD_PIPELINE_PLAN.md) (which supersedes `MINIFICATION_PLAN.md`).
 > i18n items belong to [`I18N_LANGUAGE_PACK_PLAN.md`](./I18N_LANGUAGE_PACK_PLAN.md) — note the
-> flat-vs-nested key advice conflicts with the existing ~591-key nested label system and should be
+> flat-vs-nested key advice conflicts with the existing nested label system (~1,600 keys — see
+> `defaultLabels.js`; module counts in [`../PROJECT_STATS.md`](../PROJECT_STATS.md)) and should be
 > decided there, not adopted reflexively.
 
 Consolidated action list from the r/website "rate my website 0–10" thread and the follow-up DM thread with ExplanationOk2014. Each item notes who raised it so you can weigh the source.
@@ -67,18 +68,18 @@ Multiple people couldn't tell what the app was for before they experienced a cyc
 ## P1 — Code quality / accessibility (from the deeper reviewers)
 
 ### Accessibility (you said you take pride in this — protect it)
-- [ ] **Fix the 19 HTML errors/warnings.** ExplanationOk2014 sent the exact list via the W3C validator (validator.w3.org/nu). You confirmed most were warnings but the errors are real. You called them "genuine accessibility bugs."
-- [ ] **Run the HTML/accessibility validator as part of your release process.** Your own conclusion: features got added over time without re-doing accessibility checks; automating the validator prevents regressions as you keep shipping.
+- [x] **Fix the 19 HTML errors/warnings.** ExplanationOk2014 sent the exact list via the W3C validator (validator.w3.org/nu). You confirmed most were warnings but the errors are real. You called them "genuine accessibility bugs." **✅ DONE — the gating W3C Nu validation in CI (below) passes clean.**
+- [x] **Run the HTML/accessibility validator as part of your release process.** Your own conclusion: features got added over time without re-doing accessibility checks; automating the validator prevents regressions as you keep shipping. **✅ DONE — `scripts/validate-html.py` via `npm run validate:html`, gating CI job `html-validation` in `.github/workflows/performance.yml`.**
 
 ### Resource strings / label system (why_so_sergious — good, standards-based advice)
-Context: he confirmed your `defaultLabels.js` approach is "almost per industry standard" and said "hats off... it shows good engineering ability." These are refinements toward a future i18n layer (you flagged `docs/future-works/I18N_LANGUAGE_PACK_PLAN.md`), not urgent fixes.
+Context: he confirmed your `defaultLabels.js` approach is "almost per industry standard" and said "hats off... it shows good engineering ability." These are refinements toward a future i18n layer (you flagged `docs/future-work/I18N_LANGUAGE_PACK_PLAN.md`), not urgent fixes.
 - [ ] **Move toward per-language files with a main `en.json` fallback** when you build the i18n layer.
 - [ ] **Add a resource-compilation step** so a missing key in one language falls back to the main file (e.g. `es.cmpl.json` generated next to originals, loaded instead).
 - [ ] **Avoid keystrings-as-values;** populate a `Resources` object on page load by language.
 - [ ] **Use flat, descriptive keys, not nested ones** — e.g. `ModalProfileTitle` rather than `modal.profile.title`. Keep the resource object one level deep.
 
 ### Magic values (why_so_sergious)
-- [ ] **Replace the `width - 140` magic value with a named constant.** You located it in the Whack-a-Order mini-game (`games/miniCycle-taskOrder.js`), not the main app. You already said you'd clean it up. Worth a sweep for other magic values in the games, since those predate your `core/constants.js` refactor.
+- [x] **Replace the `width - 140` magic value with a named constant.** You located it in the Whack-a-Order mini-game (`games/miniCycle-taskOrder.js`), not the main app. **✅ DONE — now `var BTN_CLEARANCE_X = 140;` with an explanatory comment at `games/miniCycle-taskOrder.js:36` (games are self-contained pages, local constants by design).** Still worth a sweep for other magic values in the games, since those predate your `core/constants.js` refactor.
 
 ### Icons / SVGs (ExplanationOk2014)
 - [ ] **Optimize inline SVGs with SVGO** (jakearchibald's web tool — paste markup, get minified output, ~30% size savings with no visible difference, and you can fine-tune visually rather than batch-process). His point: better control than reaching for a library.
@@ -110,7 +111,7 @@ Context: he confirmed your `defaultLabels.js` approach is "almost per industry s
 2. **Bundle + minify for release** (esbuild), keeping the unminified dev workflow. Biggest single win.
 3. **CSS: bundle, then carefully purge** dead styles theme-by-theme.
 4. **SVGO pass** on inline SVGs; move stray inline SVGs into the external system.
-5. **Fix the 19 W3C errors** and wire the validator into release.
+5. **Fix the 19 W3C errors** and wire the validator into release. *(✅ done — `validate:html` gates CI)*
 6. **Rework the hero** around the pilot-checklist framing so the concept lands in seconds.
 7. Then revisit the deeper architecture question (bundler vs. module waterfall) with real numbers in hand.
 

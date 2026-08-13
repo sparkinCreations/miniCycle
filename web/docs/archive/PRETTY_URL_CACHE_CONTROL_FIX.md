@@ -1,5 +1,7 @@
 # Pretty-URL `Cache-Control` Gap — `/minicycle` Cached for a Year
 
+> **✅ ARCHIVED 2026-08-13** — work verified shipped in the tree at v2.412. Both parts done: `netlify.toml` pretty-URL no-cache blocks + `service-worker.js` `reloadRequest()` on both precache paths. Three unrelated residuals stay live (netlify.toml `/*` catch-all inversion + missing deploy smoke check; games inline-script CSP; robots.txt stale `/miniCycleGames/` path). Live leftovers moved to `docs/future-work/AUDIT_RESIDUALS_2026_08.md`.
+
 > **Status:** ✅ BOTH PARTS DONE — Part 1 shipped v2.397, Part 2 Aug 2026 · **Severity:** was
 > High — stale app shell after every deploy · **Found:** Aug 2026, live production review of
 > `minicycle.app` by driving the real app in a browser.

@@ -1,5 +1,7 @@
 # Completed Tasks Dropdown Integration Plan
 
+> **✅ ARCHIVED 2026-08-13** — work verified shipped in the tree at v2.412. All 5 phases implemented and manifest-wired; the dropdown is fully integrated with deletion, undo/redo, settings disable, and task addition.
+
 ## Context
 
 The completed tasks dropdown was built as a DOM-level feature (move elements between two lists) without updating the systems that depend on list membership. It's 40% integrated — task completion and routine load work, but task deletion, undo/redo, settings disable, and task addition all break the dropdown in different ways. This plan adds the missing integration points using existing DI wrappers, no new patterns.

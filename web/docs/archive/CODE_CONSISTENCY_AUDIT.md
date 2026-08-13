@@ -1,7 +1,9 @@
 # Code Consistency Audit — DI Patterns, Boot Process & Cross-Cutting Concerns
 
+> **✅ ARCHIVED 2026-08-13** — work verified shipped in the tree at v2.412. All 15 fixes shipped and verified. Note: the module counts (117/62) and all `moduleManifests.js` line references below are a Feb–Jun 2026 snapshot; current counts live in `web/docs/PROJECT_STATS.md`.
+
 **Date:** February 2, 2026
-**Status:** In Progress
+**Status:** ✅ Complete — fixes shipped Jun 2026
 **Overall Score:** 7.5/10
 **Scope:** All 117 modules under `modules/`
 

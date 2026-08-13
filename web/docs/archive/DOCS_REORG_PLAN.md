@@ -1,5 +1,7 @@
 # Documentation Reorganization Plan
 
+> **✅ ARCHIVED 2026-08-13** — work verified shipped in the tree at v2.412. Target tree matches reality 1:1 and the `validate:docs` gate is wired in CI. Final checkbox (move to archive) completed with this move.
+
 **Status:** ✅ **COMPLETE — Options A and B both shipped** (July 27, 2026)
 **Created:** July 20, 2026
 **Revised:** July 27, 2026 — claims re-verified against the tree; **step 5 struck** (see below); Option B boundaries re-cut.
@@ -299,4 +301,4 @@ This is the durable half of the plan. Without it, a future reorg re-derives the 
       `performance.yml` → *Docs Validation* job)
 
 **Still open:**
-- [ ] Move this plan to `archive/`
+- [x] Move this plan to `archive/`

@@ -1,5 +1,7 @@
 # miniCycle — Architecture Review Findings
 
+> **✅ ARCHIVED 2026-08-13** — verified against the tree at v2.412. Outcomes: §1.1 FIXED (`taskCycleReset.js` reads `task.completed`, not DOM); §1.2 FIXED (recurringWatcher `commitSystemUpdate` passes system intent per-call); §2.1 FIXED (`recreateDueTasks` extracted); §2.2 PARTIAL (`buildRecurringInstance` exists but the instance literal is still hand-written in `recurringActivation.js` and `recurringSettingsApplicator.js`); §2.3 FIXED (`buildClearedRecord`); §2.4 NOT DONE (now five `deleteWhenComplete` writers, helper never extracted); §2.5 partial (signature comments added, schema-doc rule missing); §3.3 not done; §4.2 FIXED (watcher tick catch). Live leftovers (§2.2 remainder, §2.4, §2.5 doc note, §3.3 doc note) moved to `docs/future-work/AUDIT_RESIDUALS_2026_08.md`.
+
 **Date:** June 26, 2026
 **Scope:** Source-of-truth model (AppState), persistence & boot, render layer, both
 migration paths, schema 2.5, cleared tasks, the three cycle modes + auto-uncheck,

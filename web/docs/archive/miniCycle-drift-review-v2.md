@@ -1,5 +1,7 @@
 # miniCycle — Documentation Drift Review (v2)
 
+> **✅ ARCHIVED 2026-08-13** — every finding verified shipped in the tree at v2.412: §1.1 conflict-path notify in `appState.js` + ADR-011; §1.2 `pagehide` listeners; §2.1 migration-backup pruning; §2.2 force-mode `backupResult` check; §2.3 salvage notification; §1.3/§1.4 doc fixes. The deferred `mergeStates()` remainder lives in `docs/future-work/APPSTATE_MERGE_STATES.md`. The companion accuracy-correction file (2026-07-25) has been folded inline below as marked "Correction (2026-07-25)" blocks, with its methodology note as Appendix A.
+
 **Reviewed:** commit `094de07` (2026-07-24) · APP_VERSION `2.328`
 **Date:** 2026-07-25
 **Method:** Documentation first (`docs/`, `legal/`, ADRs), then code checked against documented intent.
@@ -67,6 +69,33 @@ The `storage`-event handler ~200 lines earlier handles the same situation correc
 **Related but distinct:** `HIDDEN_CODEBASE_INSIGHTS.md` §5.5 already documents that the 1000ms threshold
 misses conflicts under ~1s. That's the *detection* window. This finding is about what happens *after*
 detection succeeds. Both are real; neither covers the other.
+
+> **Correction (2026-07-25):** sharpened — the conflict discard is an **unfinished spec, not a design
+> choice**. The review framed this as drift against ADR-003's notify guarantee; that's true but
+> understates it. `archive/CODE_REVIEW_FINDINGS_2025.md:905-911` specifies the conflict path as a
+> **merge**:
+>
+> ```js
+> if (current && current.metadata?.lastModified > this.data.metadata.lastModified) {
+>     console.warn('⚠️ Concurrent save detected, merging...');
+>     this.data = this.mergeStates(current, this.data);
+> }
+> ```
+>
+> What shipped (same doc, `:1057-1064`; still current at `appState.js:563-574`) is a **discard**:
+> `this.data = storedData`. `grep -rn "mergeStates" modules/ --include=*.js` → 0 results —
+> `mergeStates()` was never implemented. So the discard is the placeholder branch that stayed, and it
+> additionally skips `notifyListeners()` — the same failure shape recorded in
+> `archive/BUG_undo-redo-rollback-ui-refresh.md` and cited in ADR-003's own Consequences.
+>
+> **Revised framing:** an unimplemented piece of the 2025 AppState spec, which also breaks ADR-003's
+> notify guarantee. Two decisions available — implement `mergeStates()` as specified, or accept
+> last-write-wins and document it as a superseding decision. Either way, notify the user and subscribers.
+>
+> Checked and *not* covered by: `CODE_AUDIT_5` (#5 is notify-before-save-completes, a different issue;
+> #6 listener cleanup is now fixed via `appState.js:898-918`), `HIDDEN_CODEBASE_INSIGHTS` §5.5 (detection
+> window, not post-detection behavior), `future-work/ERROR_HANDLING_PHASES_3_5.md` (atomicity, timeout
+> messages, error context).
 
 ---
 
@@ -194,6 +223,15 @@ changes"* reads like a lost checkbox, not two missing routines, and the message 
 **Fix (copy + UX, not architecture):** compare cycle counts pre/post salvage; if entities were lost, say
 how many and name the backup key.
 
+> **Correction (2026-07-25):** downgraded to a copy issue. The salvage ladder is **completed work with
+> recorded tradeoffs**, not an oversight. `archive/ERROR_HANDLING_IMPROVEMENTS_PLAN.md` marks Phase 2
+> ✅ IMPLEMENTED (Jun 2026) and documents why `dataRecovery.js` stayed pure/synchronous (AppState's load
+> path runs before DI is wired and must not block boot on a prompt) and why `extract-cycles` was dropped.
+> The remaining point is narrow: the disclosure copy. *"Some recent changes may be missing"* reads like a
+> lost checkbox; the measured behavior on a truncated 4-routine dataset was 2 routines lost. Suggest
+> quantifying (`"recovered 2 of 4 routines"`) and naming the `miniCycleData_corrupted_<ts>` key.
+> **Not an architecture finding. Reclassify as UX copy.**
+
 ---
 
 ## 3. Already documented — not findings
@@ -280,3 +318,34 @@ doc-drift tracker, and an accuracy-correction block in `ENFORCE_REQUIRES_ROLLOUT
 your own line numbers as stale and told the reader which anchors to trust. That last one is better
 discipline than most funded teams maintain. It is also why this review is short: most of what an outside
 reviewer would find, you had already found, written down, and scheduled.
+
+---
+
+## Appendix A — Accuracy-correction methodology note (2026-07-25)
+
+*Folded in from `miniCycle-drift-review-v2-accuracy-correction.md` at archive time.*
+
+The correction pass was written after reading `docs/` and `legal/` but **before** reading `docs/archive/`
+(108 files) or the `future-work/` completion lifecycle. Two findings changed on that basis (§1.1
+sharpened, §2.3 downgraded — see the marked Correction blocks above). Coverage at time of writing:
+roughly 8 documents of 340+. Treat §1–§2 as leads to verify, not conclusions.
+
+### Survivors after checking archive + future-work
+
+| Finding | Status |
+|---|---|
+| §1.2 `pagehide` missing from state layer | **Novel.** 0 hits across 232 docs + 108 archive files; `EVENT_LISTENER_AUDIT.md` has no unload coverage |
+| §1.1 conflict discard | **Novel in current form**; partially yours as unimplemented `mergeStates` |
+| §2.1 migration backups never pruned | **Novel.** 0 hits anywhere |
+| §2.2 force-mode `backupResult` unchecked | Not yet checked against archive |
+| §2.3 salvage disclosure | Downgraded — copy only |
+| §1.3, §1.4 doc staleness | Unchanged |
+
+### Note on §3
+
+The "Already documented — not findings" table should be read as the main result of this review, not an
+appendix to it. Extending it: `ERROR_HANDLING_IMPROVEMENTS_PLAN.md` (Phases 1–2 shipped, 3–5 carved out),
+`CODE_AUDIT_5` #6 (listener cleanup, fixed), and the `future-work/ → implemented → archive/` lifecycle
+itself — ARCHIVED banner, status line, what shipped, what was adapted and why, forward pointers to both the
+live guide and the deferred remainder. That lifecycle is why an external review of this codebase yields so
+little. Most of what an outside reader would find already sits somewhere in it.

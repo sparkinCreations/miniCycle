@@ -8,7 +8,11 @@
 data while this context still held unsaved changes. As of **v2.330** that path is **last-write-wins
 + notify**: it adopts the stored data, warns the user, and notifies subscribers so the UI redraws
 honestly (see **ADR-011**). That fixed the real bug — the old code discarded silently *and* left
-the UI rendering ghost edits (drift-review v2 §1.1).
+the UI rendering ghost edits (drift-review v2 §1.1). Since then (current as of **v2.412+**) the
+detection itself was hardened: the primary discriminator is now `isForeignWrite` — a per-tab
+identity stamp (`storedData.metadata.lastModifiedBy !== this._tabId`) — with the timestamp-diff
+threshold (`diff > DEBOUNCE.CONCURRENT_MOD_CONFLICT`) kept only as a fallback for stored data
+without the stamp.
 
 What last-write-wins does **not** do: preserve the losing context's unsaved edits. Those are still
 dropped — now announced, not silent. The 2025 AppState spec
@@ -18,10 +22,12 @@ dropped — now announced, not silent. The 2025 AppState spec
 
 ## What "done" would look like
 
-Replace the last-write-wins branch in `save()` (`appState.js`, the
-`diff > DEBOUNCE.CONCURRENT_MOD_CONFLICT` block) with a real merge that preserves both contexts'
-non-conflicting changes, then still notifies subscribers + warns only on true field-level
-collisions.
+Replace the last-write-wins branch in `save()` — the `isForeignWrite` branch (`appState.js`
+~:730-768; the timestamp-diff comparison is now only its fallback) — with a real merge that
+preserves both contexts' non-conflicting changes, then still notifies subscribers + warns only on
+true field-level collisions. Note the branch already runs a
+`validateSchema25Structure(storedData)` pre-check before adopting stored data — any merge result
+must clear at least that same bar.
 
 ## Why it's hard (and why it's deferred, not done)
 
@@ -57,4 +63,4 @@ Until then, ADR-011's last-write-wins + notify is the accepted behavior.
 
 - Decision of record: `ARCHITECTURE_DECISIONS.md` **ADR-011**
 - The fix that made loss honest: v2.330, `appState.js` conflict path + the storage-event handler it mirrors
-- Origin of the finding: `future-work/miniCycle-drift-review-v2.md` §1.1 + its accuracy correction
+- Origin of the finding: `archive/miniCycle-drift-review-v2.md` §1.1 (correction folded in at archive time, Aug 2026)

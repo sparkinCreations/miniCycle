@@ -1,7 +1,13 @@
 # `.miniCycle-prompt-box` Sits Outside the Token System (Light Mode)
 
-> **Status:** ✅ FIXED (Aug 2026) · **Severity:** was Low — cosmetic, theme-consistency only ·
+> **Status:** ⚠️ PARTIAL — literal tokenized (v2.412 era); theme participation still undecided ·
+> **Severity:** Low — cosmetic, theme-consistency only ·
 > **Found:** Aug 2026, live browser review of `minicycle.app` v2.396.
+>
+> What shipped (commit `94eb35b1`) replaced the raw `rgb(50, 50, 50)` literal with
+> `var(--color-charcoal)` — a **static** token (`#323232`, `variables.css`), not a
+> `--pref-*` theme chain. `--pref-prompt-bg` was never added; the theme-participation
+> decision below is still open.
 >
 > The charcoal name-entry modal family is **intentional** — see
 > [`REVIEW_PATTERNS.md` § Deliberate designs that read as bugs](../reference/REVIEW_PATTERNS.md).
@@ -12,19 +18,20 @@
 
 ## The gap
 
-`styles/components/onboarding.css:817`:
+`styles/components/onboarding.css:818` (post-`94eb35b1`):
 
 ```css
 .miniCycle-prompt-box {
-    background: rgb(50, 50, 50);   /* ← literal */
+    background: var(--color-charcoal);   /* ← static token, resolves to #323232 */
     padding: var(--space-6-25);
     border-radius: var(--radius-xl);
     border: 1px solid var(--color-black);
 ```
 
-Everything around it is tokenised — `var(--space-6-25)` and `var(--radius-xl)` on
-the very next lines. The sibling confirmation modal resolves through a full
-fallback chain (`styles/components/modals.css:453`):
+The raw literal is gone, but the background still resolves to a **static token,
+not a `--pref-*` theme chain** — no vocab theme can retint it. The sibling
+confirmation modal, by contrast, resolves through a full fallback chain
+(`styles/components/modals.css:453`):
 
 ```css
 .mini-modal-box {
@@ -88,7 +95,7 @@ One-line swap preserving the current value as the fallback:
 
 ```css
 .miniCycle-prompt-box {
-    background: var(--pref-prompt-bg, rgb(50, 50, 50));
+    background: var(--pref-prompt-bg, var(--color-charcoal));
 ```
 
 Then add `--pref-prompt-bg` to the `colorPreset` blocks in `THEME_DEFINITIONS`
@@ -101,7 +108,7 @@ token but a harsh one against a themed surface.
 
 ## Verification
 
-- Classic theme, light mode: prompt modal unchanged (`rgb(50,50,50)`).
+- Classic theme, light mode: prompt modal unchanged (`var(--color-charcoal)` → `#323232`).
 - Non-Classic theme with `--pref-prompt-bg` set: Create New Routine, Duplicate
   Routine, mobile rename, and preset save/export/import all pick it up — they
   share the one class.

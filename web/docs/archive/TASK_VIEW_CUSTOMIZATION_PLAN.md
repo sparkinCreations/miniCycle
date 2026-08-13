@@ -1,6 +1,8 @@
 # Task View Customization — Implementation Plan
 
-> Status: Proposed (not yet started)
+> **✅ ARCHIVED 2026-08-13** — work verified shipped in the tree at v2.412 as `web/modules/ui/taskViewLayoutManager.js` (1,327 lines: all 5 draggables, persistence, reset button, plus a dock/snap-target system this plan never anticipated). Correction: the manager reuses the existing `#task-view` tabpanel — no `#task-view-layout` section was created and `DOM_IDS.TASK_VIEW_LAYOUT` does not exist. Two real leftovers: no test file for taskViewLayoutManager (biggest gap) and Phase 4 undo coalescing was never built. Live leftovers moved to `docs/future-work/AUDIT_RESIDUALS_2026_08.md`.
+
+> Status: ✅ Shipped (see banner above)
 > Author: planning session 2026-05-05
 > Reference implementation: `modules/utils/notifications.js` drag system (lines 925–1119)
 

@@ -1,7 +1,7 @@
 # ENFORCE_REQUIRES Rollout Plan
 
 **Date:** March 15, 2026
-**Status:** Not Started
+**Status:** In progress — Step 1 complete (June 2026); Step 2's goal now covered statically by `npm run validate:di`; Steps 3–4 not started (no `STRICT_PHASES` exists anywhere yet, verified Aug 2026)
 **Prerequisite:** DI manifest tightening (Complete — March 2026)
 **Related:** [DI_MIGRATION_COMPLETION_PLAN.md](../archive/DI_MIGRATION_COMPLETION_PLAN.md) (Phase 5, effectively)
 
@@ -11,21 +11,20 @@
 
 This plan was written March 15, 2026 and predates commit `00c727b3` (Apr 27), which rewrote the DI region of `moduleLoader.js`. **The strategy below is still sound** — nothing in the current code blocks it — but the specifics drifted. Treat all line numbers as June-2026 snapshots and prefer the symbol anchors. Where this block conflicts with the prose below, **this block wins.**
 
-**Update — June 30, 2026:** **all of Step 1 is now implemented** — item 2 (`optionalDeps` injection, commit `6c373122`, helper `injectDeclaredDeps`) and item 1 (CORE_DEPS strict-mode injection, commit `ec110544`, helper `injectCoreDeps`). Both helpers run in `buildModuleDependencies()` before the broad `Object.assign` (now at L1440). These additions shifted line numbers below `buildModuleDependencies` substantially — rely on the **symbol anchors**, not the table's numbers, for anything past ~L770.
+**Update — June 30, 2026:** **all of Step 1 is now implemented** — item 2 (`optionalDeps` injection, commit `6c373122`, helper `injectDeclaredDeps`) and item 1 (CORE_DEPS strict-mode injection, commit `ec110544`, helper `injectCoreDeps`). Both helpers run in `buildModuleDependencies()` before the broad `Object.assign` fallback.
 
-**Corrected anchors** (`modules/boot/moduleLoader.js` unless noted):
+**Corrected anchors** (`modules/boot/moduleLoader.js` unless noted). Line numbers rot — every previously pinned number in this doc has drifted at least once (verified Aug 2026) — so anchors below are **symbol names**; search for them.
 
-| Reference in plan | Current location |
+| Reference in plan | Current anchor |
 |---|---|
-| `ENFORCE_REQUIRES` "line 136" | `const ENFORCE_REQUIRES` @ **L148** (L136 is a doc-comment) |
-| `AUDIT_UNDECLARED_DEPS` "line 129" | `const AUDIT_UNDECLARED_DEPS` @ **L141** |
-| `Object.assign(result, depMappings)` "line 1056" | **L1374**, guarded by `if (!ENFORCE_REQUIRES)` @ L1373 |
-| validation suppression "line 1046" | **L1344** (+ a third CORE_DEPS-aware site at L1362) |
-| audit-proxy suppression "line 1079" | **L1397** |
-| `warnedProps` "line 1082" | **L1390** |
-| `CORE_DEPS` "moduleManifests.js line 631+" | **moduleManifests.js L701–731** (28 entries: 6 DOM helpers + `getTaskList`/`getProgressBar`) |
-| function `buildDependencies()` | never existed — the real function is **`buildModuleDependencies()`** @ L771 |
-| "~368 depMappings entries" | **~221** top-level entries (L836–1311); the "~5–20 instead of ~368" benefit is overstated ~60% |
+| `ENFORCE_REQUIRES` "line 136" | `const ENFORCE_REQUIRES` (currently `false`) |
+| `AUDIT_UNDECLARED_DEPS` "line 129" | `const AUDIT_UNDECLARED_DEPS` (currently `false`) |
+| `WARN_ON_UNMAPPED_DECLARED_DEPS` | `const WARN_ON_UNMAPPED_DECLARED_DEPS` (currently `true`) |
+| `Object.assign(result, depMappings)` "line 1056" | inside `buildModuleDependencies()`, guarded by `if (!ENFORCE_REQUIRES)` |
+| validation / audit-proxy suppression, `warnedProps` | inside `buildModuleDependencies()` (CORE_DEPS-aware) |
+| `CORE_DEPS` "moduleManifests.js line 631+" | `export const CORE_DEPS` in **moduleManifests.js** (28 entries as of v2.412: 6 DOM helpers + `getTaskList`/`getProgressBar` + framework deps). Note: two entries are now dual-annotated "from coreBoot; **also a depMappings key**" — `DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS` and `performSchema25Migration`. |
+| function `buildDependencies()` | never existed — the real function is **`buildModuleDependencies()`** |
+| "~368 depMappings entries" | **~230** top-level entries (see `const depMappings` in moduleLoader.js); the "~5–20 instead of ~368" benefit is overstated ~60% |
 
 **Substantive corrections to the rollout:**
 
@@ -33,7 +32,7 @@ This plan was written March 15, 2026 and predates commit `00c727b3` (Apr 27), wh
 
 2. **✅ DONE (June 30, 2026, commit `6c373122`) — `optionalDeps` are now injected.** The original gap: the inline copy loops handled only `requires` and `lazyRequires`, so `optionalDeps` arrived *solely* via the broad `Object.assign(result, depMappings)` that Step 4 deletes — meaning every `optionalDeps`-declared dep would have silently become `undefined` the instant the flag flipped (a wide blast radius, given how heavily modules lean on `optional()`). The fix extracted all three buckets into an exported pure helper, **`injectDeclaredDeps(result, manifest, depMappings, coreResult)`** (injects `requires` + `optionalDeps` + `lazyRequires` identically), called from `buildModuleDependencies()`. It is behavior-neutral under the current `ENFORCE_REQUIRES=false` (the broad assign still overwrites with identical values) and only changes the strict-mode path. A unit test (`tests/moduleLoader.tests.js` → "injects requires, optionalDeps AND lazyRequires") guards it. **This was the single most important gap in the original plan.** (Item 1 above — the CORE_DEPS strict-mode injection — is now also done, so all of Step 1 is complete.)
 
-3. **Step 2 can lean on the existing WARN flag.** `WARN_ON_UNMAPPED_DECLARED_DEPS` (L162, currently `true`; warn block L1355–1369) already surfaces undeclared/unmapped deps at boot with far less noise than the `AUDIT_UNDECLARED_DEPS` Proxy. Prefer extending it over cleaning up the Proxy.
+3. **Step 2 is now largely superseded by static tooling.** `WARN_ON_UNMAPPED_DECLARED_DEPS` (currently `true`) surfaces declared-but-unmapped deps at boot, and — decisively — `scripts/validate-di-deps.js` (`npm run validate:di`, added July 2026, CI-gated) catches used-but-undeclared and declared-but-undeliverable deps statically. See the rewritten Step 2 below.
 
 4. **Manifests are closer to flip-ready than "Why Not Now" implies.** The April 2026 audit (see [AUTO_GENERATED_DEPMAPPINGS_PLAN.md](./AUTO_GENERATED_DEPMAPPINGS_PLAN.md)) already plugged 8 HIGH + 24 MEDIUM declaration gaps.
 
@@ -41,7 +40,7 @@ This plan was written March 15, 2026 and predates commit `00c727b3` (Apr 27), wh
 
 ## Goal
 
-Flip `ENFORCE_REQUIRES` to `true` in `moduleLoader.js` so that each module **only receives dependencies it explicitly declares** in its manifest (`requires`, `optionalDeps`, `lazyRequires`). Today the flag is `false` (L148), meaning all ~221 `depMappings` entries are spread into every module regardless of declarations.
+Flip `ENFORCE_REQUIRES` to `true` in `moduleLoader.js` so that each module **only receives dependencies it explicitly declares** in its manifest (`requires`, `optionalDeps`, `lazyRequires`). Today the flag is `false` (`const ENFORCE_REQUIRES`), meaning all ~230 `depMappings` entries are spread into every module regardless of declarations.
 
 ---
 
@@ -49,7 +48,7 @@ Flip `ENFORCE_REQUIRES` to `true` in `moduleLoader.js` so that each module **onl
 
 As of March 2026, manifests are significantly tighter (30 modules updated, `CORE_DEPS` expanded with DOM helpers), but flipping the flag globally is premature for three reasons:
 
-### 1. CORE_DEPS are not injected in strict mode
+### 1. CORE_DEPS are not injected in strict mode — ✅ RESOLVED June 2026 (see correction block; kept for history)
 
 `CORE_DEPS` entries (e.g., `getElementById`, `querySelector`, `getBody`) suppress audit warnings (line 1079) and skip validation warnings (line 1046), but they are **not automatically injected** into `result` when `ENFORCE_REQUIRES = true`. The broad `Object.assign(result, depMappings)` at line 1056 only runs when the flag is `false`.
 
@@ -62,9 +61,9 @@ This means every module that uses a DOM helper without declaring it in its manif
 
 The injection logic must pull from the correct source for each entry.
 
-### 2. Audit mode is too noisy to verify completeness
+### 2. Audit mode is too noisy to verify completeness — ✅ MITIGATED July 2026 (`validate:di` provides the clean signal; see rewritten Step 2)
 
-`AUDIT_UNDECLARED_DEPS` (line 129) wraps deps in a Proxy that logs undeclared access. In practice it generates false positives from:
+`AUDIT_UNDECLARED_DEPS` (`const AUDIT_UNDECLARED_DEPS`) wraps deps in a Proxy that logs undeclared access. In practice it generates false positives from:
 - DevTools property enumeration (inspecting objects in console)
 - Proxy traps firing on internal JS operations (`then`, `constructor`, etc.)
 - Conditional dep access paths that only trigger in specific user flows
@@ -99,19 +98,21 @@ for (const coreDep of CORE_DEPS) {
 }
 ```
 
-**Location:** `moduleLoader.js`, inside `buildModuleDependencies()` (L771), before the broad `Object.assign(result, depMappings)` at L1374. (See correction block: only the depMappings-sourced CORE_DEPS need this — the `coreResult`-sourced ones are already injected at L776–833; and add an `optionalDeps` copy loop here too.)
+**Location:** `moduleLoader.js`, inside `buildModuleDependencies()`, before the broad `Object.assign(result, depMappings)` fallback. (See correction block: only the depMappings-sourced CORE_DEPS need this — the `coreResult`-sourced ones are already injected by the Phase-1 prologue; and add an `optionalDeps` copy loop here too. Shipped as `injectCoreDeps()` + `injectDeclaredDeps()`, both exported from moduleLoader.js.)
 **Risk:** Low — only adds deps that were already available via broad injection.
 **Verification:** Boot app, confirm all DOM helpers resolve, run tests.
 
-### Step 2: Clean up audit mode
+### Step 2 (rewritten July/Aug 2026): Retire or shrink the audit Proxy — lean on `validate:di`
 
-Reduce false positives in the `AUDIT_UNDECLARED_DEPS` Proxy:
+The original Step 2 wanted to clean up the `AUDIT_UNDECLARED_DEPS` runtime Proxy so its output could verify manifest completeness. That goal is now served **statically** by `scripts/validate-di-deps.js` (`npm run validate:di`), which runs in CI and is **gated**: `undeclared = 0`, `nowhere = 0`, `undeliverable = 0`, plus a ratchet on unused declarations. It catches every `this.deps.X` / `_deps.X` access with no manifest declaration — the exact class the Proxy was meant to surface — with zero runtime noise and no manual console reading. (Its header cites this plan; it also covers the supply side — declared-but-undeliverable — which no runtime warn flag could see.)
 
-- **Filter DevTools enumeration:** Ignore `Symbol` properties and known JS internal properties beyond the current allowlist
-- **Debounce/deduplicate:** Already partially done (line 1082 `warnedProps`), but consider grouping output per module instead of per-access
-- **Add structured output:** Log as structured JSON so results can be piped to a validation script rather than read manually from console
+Remaining work here is **subtractive, not additive**:
 
-**Goal:** Enable `AUDIT_UNDECLARED_DEPS = true` during development without drowning in noise, so developers can catch undeclared deps as they add them.
+- Keep `WARN_ON_UNMAPPED_DECLARED_DEPS` (currently `true`) as the boot-time complement for the declared-but-unmapped direction.
+- Retire — or shrink to a debugging aid — the `AUDIT_UNDECLARED_DEPS` Proxy infrastructure. Its only residual value over `validate:di` is catching truly dynamic access patterns the static parse can't see; keep it only if such a case actually turns up.
+- Do NOT invest in the originally planned Proxy improvements (DevTools filtering, structured JSON output) — that would duplicate what `validate:di` already does better.
+
+**Goal:** manifest completeness verified by CI (`validate:di` green), not by runtime console auditing.
 
 ### Step 3: Add per-phase strict enforcement
 
@@ -179,7 +180,7 @@ The friction is intentional — it's the enforcement mechanism. The migration ri
 
 ---
 
-## Current State (updated June 30, 2026)
+## Current State (updated August 2026)
 
 | Item | Status |
 |------|--------|
@@ -187,8 +188,8 @@ The friction is intentional — it's the enforcement mechanism. The migration ri
 | CORE_DEPS expanded with DOM helpers | Complete |
 | `optionalDeps` injection in strict mode (Step 1a) | **Complete** (June 30, 2026 — commit `6c373122`, `injectDeclaredDeps`) |
 | CORE_DEPS injection in strict mode (Step 1b) | **Complete** (June 30, 2026 — commit `ec110544`, `injectCoreDeps`) |
-| Audit mode cleanup | **Not started** (Step 2) |
-| Per-phase enforcement | **Not started** (Step 3) |
+| Undeclared-dep detection (Step 2's goal) | **Covered by `npm run validate:di`** (CI-gated: undeclared=0, nowhere=0, undeliverable=0) — Proxy retirement itself optional, not started |
+| Per-phase enforcement (`STRICT_PHASES`) | **Not started** (Step 3 — no `STRICT_PHASES` exists anywhere, verified Aug 2026) |
 | Global flag flip | **Not started** (Step 4) |
 
 ---
@@ -197,11 +198,12 @@ The friction is intentional — it's the enforcement mechanism. The migration ri
 
 | File | Role |
 |------|------|
-| `modules/boot/moduleLoader.js` (L148) | `ENFORCE_REQUIRES` flag |
-| `modules/boot/moduleLoader.js` (L141) | `AUDIT_UNDECLARED_DEPS` flag |
-| `modules/boot/moduleLoader.js` (L162) | `WARN_ON_UNMAPPED_DECLARED_DEPS` flag (boot-time gap warnings) |
-| `modules/boot/moduleLoader.js` (`injectDeclaredDeps` L785; `injectCoreDeps` L824; `buildModuleDependencies` L842; broad inject L1440) | Enforcement/injection logic |
-| `modules/boot/moduleManifests.js` (L701–731) | `CORE_DEPS` definition |
+| `modules/boot/moduleLoader.js` (`const ENFORCE_REQUIRES`) | Enforcement flag (currently `false`) |
+| `modules/boot/moduleLoader.js` (`const AUDIT_UNDECLARED_DEPS`) | Runtime audit Proxy flag (currently `false`; candidate for retirement — see Step 2) |
+| `modules/boot/moduleLoader.js` (`const WARN_ON_UNMAPPED_DECLARED_DEPS`) | Boot-time gap warnings flag (currently `true`) |
+| `modules/boot/moduleLoader.js` (`injectDeclaredDeps`, `injectCoreDeps`, `buildModuleDependencies`, broad `Object.assign(result, depMappings)` fallback) | Enforcement/injection logic |
+| `modules/boot/moduleManifests.js` (`export const CORE_DEPS`) | `CORE_DEPS` definition (28 entries as of v2.412; two dual-annotated as "from coreBoot; also a depMappings key": `DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS`, `performSchema25Migration`) |
 | `modules/boot/moduleManifests.js` | All module manifests |
+| `scripts/validate-di-deps.js` (`npm run validate:di`) | Static declaration validator — CI-gated; supplies the completeness signal Step 2 originally sought |
 
-> Line numbers above are June-2026 snapshots; prefer the symbol names when they drift.
+> Locate by symbol name, not line number — every line pin this doc has carried so far drifted within months.

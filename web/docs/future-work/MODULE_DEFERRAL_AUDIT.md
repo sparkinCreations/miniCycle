@@ -1,7 +1,8 @@
 # Module Deferral Audit — Moving Modules Off the Critical Boot Path
 
-**Status:** Mechanism BUILT + 2 batches shipped & verified. Paused for real-device measurement. (Continuation point below.)
-**Created:** June 2026 · **Last updated:** June 2026
+**Status:** Mechanism BUILT + batches shipped & verified (deferred set now 5 modules as of v2.412). Still paused for real-device measurement — that remains the continuation trigger. (Continuation point below.)
+**Created:** June 2026 · **Last updated:** August 2026
+**See also:** [BOOT_PERF_ROADMAP.md](./BOOT_PERF_ROADMAP.md) — the successor roadmap that carries the remaining deferral/init-split backlog forward (post build-pipeline)
 **Goal:** Reduce time-to-interactive on slow (CPU-bound) devices by not parsing + `init()`-ing modules the user doesn't need at first paint.
 **Trigger to continue:** Slow-device reading from the testing modal's **Boot Timing** button showing `features_ms` dominates `bootSequence_ms`. (On a fast dev machine, features is too noisy — 264–634 ms across runs — to show the win; the deterministic signal is boot JS file count, ~131 → ~116.)
 
@@ -12,8 +13,8 @@
 ### What's DONE and verified
 - **Mechanism built** (`moduleLoader.js`): `deferred: true` manifest flag (skipped in `loadPhase`), `ensureModuleLoaded(name)` on-demand loader (idempotent; resolves deferred prerequisites first; re-runs `runPostInitInjections`), `findDeferredProvider()`, `deferredInvoke(moduleName, resolve, args)` (loads-then-calls for DI-triggered entry points). Boot context captured in module-level `_bootDeps`/`_bootCoreResult` at the top of `loadAllModules`.
 - **Wiring**: `featureBoot.js` exposes `deps.core.ensureModuleLoaded` from the **versioned** moduleLoader instance (a static import would be a separate instance with null boot context). `uiBoot.js` has `setupDeferredFeatureTriggers(deps)` for DOM-button triggers.
-- **Deferred & verified**: `testingModal` + `testingModalIntegration` (+ ~7 statically-imported sub-modules) via `#open-testing-modal` delegation stub; `basicPluginSystem` (no trigger — inert, no plugins registered at boot); `gamesManager` via `.menu-button` delegation + `unlockMiniGame` deferredInvoke.
-- **Free win**: `gamesManager` 15s boot poll → `appInit.waitForApp()`.
+- **Deferred & verified**: `testingModal` + `testingModalIntegration` (+ ~7 statically-imported sub-modules) via `#open-testing-modal` delegation stub; `basicPluginSystem` (no trigger — inert, no plugins registered at boot); `gamesManager` via `.menu-button` delegation + `unlockMiniGame` deferredInvoke; and (since this audit) `focusTaskPanel` (`deferred: true` in its moduleManifests.js entry). **Deferred set as of v2.412: 5 manifests** — gamesManager, focusTaskPanel, testingModal, testingModalIntegration, basicPluginSystem.
+- **Free win — ✅ shipped**: `gamesManager` 15s boot poll replaced; it now awaits `appInit.waitForApp()`.
 - **Boot JS files**: ~131 → ~116. Lint 0 errors. `version.js` at baseline 2.234.
 
 ### Hard-won gotchas (don't relearn these)
@@ -25,7 +26,7 @@
 ### What's LEFT (next sessions) — see corrected tiers below
 - **Refactor-tier** (need init-split, NOT plain defer): `taskSearch` (render-path wired at boot via `featureBoot.js` ~line 291), `guidedTourManager` (1,962 lines — boot-scheduled new-user tour), `helpWindowManager` (always-on ambient help: MutationObserver + 6 listeners + boot welcome), `focusMode` (creates its own button + restores persisted focus state at boot).
 - **Big parse wins still on the table**: `guidedTourManager` (1,962), `preferencesManager` (1,957), `settingsManager` — all need the boot-essential-vs-lazy init split.
-- **Before more work**: measure this batch on a real slow device (testing modal → Boot Timing).
+- **Before more work**: measure this batch on a real slow device (testing modal → Boot Timing). This is still the gating trigger as of Aug 2026 — the deferral backlog now continues in [BOOT_PERF_ROADMAP.md](./BOOT_PERF_ROADMAP.md), which supersedes the tiering below for prioritization.
 
 ---
 
@@ -43,12 +44,12 @@ Originally there was **no on-demand module loader**. `loadAllModules()` ([module
 
 ---
 
-## Free win — no mechanism needed
+## Free win — ✅ SHIPPED
 
 ### gamesManager boot-time polling
-`gamesManager.deferredCheckGamesUnlock()` runs `setInterval(…, 100ms)` up to **150 times (15 s)** polling `AppState.isReady()` on every boot ([gamesManager.js:124](../../modules/ui/gamesManager.js:124)) — even though `gamesManager` already has `appInit` injected.
+`gamesManager.deferredCheckGamesUnlock()` used to run `setInterval(…, 100ms)` up to **150 times (15 s)** polling `AppState.isReady()` on every boot — even though `gamesManager` already had `appInit` injected.
 
-**Fix:** replace the polling loop with `await appInit.waitForCore()` then call `checkGamesUnlock()` once. Removes a recurring boot-time timer on every load. Pure win, do this regardless of the deferral effort. *(Even better once gamesManager itself is deferred — Tier 1 — but fix the poll either way.)*
+**Shipped:** the polling loop was replaced — it now awaits `appInit.waitForApp()` and calls the unlock check once. (gamesManager itself is also deferred now, so this only runs on first games-panel open.)
 
 ---
 
@@ -59,8 +60,8 @@ User-interaction-gated, **not** hard-`required` by any eager module, no boot-tim
 | Module | Lines* | Loads on first… | Notes |
 |---|---|---|---|
 | `testingModal` + `testingModalIntegration` + `backupManager` | large (multi-file) | open of the testing modal | Defer as a **unit** — testingModal hard-requires backupManager. Most users never open it. Button listeners already attach on open (`setupTestButtons`), so on-demand load fits naturally. |
-| `basicPluginSystem` | 1,474 | plugin use | `pluginManager` is `optionalDeps` everywhere (taskCore). |
-| `gamesManager` | — | open of games panel (menu) | Also apply the polling fix above. |
+| `basicPluginSystem` | 415 | plugin use | `pluginManager` is `optionalDeps` everywhere (taskCore). *(An earlier revision said 1,474 lines — actual is ~415 (`modules/other/basicPluginSystem.js`), so its defer was hygiene, not a big parse win.)* |
+| `gamesManager` | — | open of games panel (menu) | Polling fix shipped (see Free win above). |
 | `guidedTourManager` | 1,962 | a tour starting | Consumed via `lazyRequires` (onboarding) + `optionalDeps` (`show*TourNotification`) — all guarded. One of the largest files. |
 | `helpWindowManager` | — | help window opening | `updateHelpWindow` is optional everywhere. |
 | `taskSearch` | — | search invoked | `updateSearchVisibility` is optional (routineLoader). |
@@ -68,7 +69,7 @@ User-interaction-gated, **not** hard-`required` by any eager module, no boot-tim
 
 *Line counts from PROJECT_STATS-era data; verify current.
 
-`guidedTourManager` (1,962) + `basicPluginSystem` (1,474) + the testing group + `gamesManager` are collectively a large share of the eager parse for users who never touch those features.
+`guidedTourManager` (~1,960) + the testing group + `gamesManager` are collectively a large share of the eager parse for users who never touch those features. (`basicPluginSystem` is only ~415 lines — negligible parse, deferred anyway since it's inert at boot.)
 
 ---
 
@@ -78,7 +79,7 @@ Safe to defer, but each needs a small decision or a load-trigger that isn't "pur
 
 | Module | Lines | Caveat / trigger |
 |---|---|---|
-| `settingsManager` | large (+subs) | Opened from menu → defer until settings opens. Its `init()` wires several sub-modules (facade), so deferral moves real work off boot. Provides `exportMiniCycleData`/`downloadBackupFile` — both optional in consumers. |
+| `settingsManager` | ~610-line facade (+subs) as of v2.412 | Opened from menu → defer until settings opens. The facade file itself is modest — the payoff is its `init()`, which wires several sub-modules, so deferral moves the whole sub-tree off boot. Provides `exportMiniCycleData`/`downloadBackupFile` — both optional in consumers. |
 | `preferencesManager` | 1,957 | Opened from personalization. **Verify first:** does the early inline colors script ([miniCycle.html ~250-327](../../miniCycle.html)) already apply a returning user's saved custom colors at boot? If yes, deferring is clean. If the module is what applies them, deferring causes a flash of default colors → keep a minimal boot color-apply path. `applyCustomColors` is optional in themeManager. |
 | `achievementsManager` | — | `checkAchievements` is called on **cycle completion** (cycleCompletion `optionalDeps`). Not needed at first paint, but must be loaded before the first cycle completes. Trigger: `ensureModuleLoaded('achievementsManager')` inside the cycle-completion path before `checkAchievements?.()`, plus on opening the achievements modal. |
 | `historyManager` + `clearedTasksManager` | — | **Tradeoff:** `logHistoryEvent` / `recordClearedTask` fire on many actions. Deferring means early events aren't logged until first load. Either accept the gap, or load on the first cycle/clear (reduces the win). Lower priority. |
@@ -92,7 +93,7 @@ Either hard-`required` by an eager module, or needed for first interactive paint
 
 - **First-paint / first-interaction core:** `taskCore` (add/edit/complete), `taskDOM`, `taskUI`, `taskInteractions`, `uiEffects`, `dragDropManager`, `reminders`, `routineLoader` (loads the cycle), `modeManager`, `routineSwitcher`, `routineManager`, `menuManager`, `themeManager`, `vocabThemes`, `modalRegistry`, `modalManager`, `notificationDialogHost`, `titleManager`, `recurringIntegration`, `dueDates`, `dailyResetManager`, `deviceDetection`, `taskOptionsCustomizer`, `completedTasksManager`, Phase-1 utils.
 - **Hard-required by eager modules (blocked):**
-  - `cycleCompletion` → `uiOrchestrator` hard-`requires` `updateProgressBar` ([moduleManifests.js:364](../../modules/boot/moduleManifests.js)).
+  - `cycleCompletion` → `uiOrchestrator` hard-`requires` `updateProgressBar` (the `uiOrchestrator` manifest's `requires` array in [moduleManifests.js](../../modules/boot/moduleManifests.js) — search `uiOrchestrator:`; earlier line pins have drifted).
   - `statsPanel` → `uiOrchestrator` hard-`requires` `updateStatsPanel`. **Also one of the heaviest `init()`s** (~5–10 `querySelectorAll`, several listeners, injects feature buttons). Deferring requires making that `require` optional + guarding all `updateStatsPanel` call sites — a real refactor, but high value given the init cost.
   - `undoRedoManager` → `titleManager` hard-`requires` `captureStateSnapshot` / `enableUndoSystemOnFirstInteraction`.
   - `uiOrchestrator` itself (drives the render pipeline).

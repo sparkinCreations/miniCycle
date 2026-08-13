@@ -1,5 +1,7 @@
 # First-Run Splash Locks Out Users Who Already Have Routines
 
+> **✅ ARCHIVED 2026-08-13** — work verified shipped in the tree at v2.412. Both gates fixed and test-pinned (doc already marked ✅ FIXED). The dead production code `onboardingManager.shouldShowOnboarding()` is still in the tree. Live leftovers moved to `docs/future-work/AUDIT_RESIDUALS_2026_08.md`.
+
 > **Status:** ✅ FIXED (Aug 2026) · **Severity:** was High — user cannot reach their own data
 > through the UI · **Found:** Aug 2026, live browser session on `minicycle.app` v2.396.
 >

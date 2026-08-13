@@ -75,7 +75,7 @@ Sizing comes from `.icon` (System A, CSS-driven) or explicit `width`/`height` on
 - Route `taskButtons.js` through `icons.js` (`createIcon()` / `iconHTML()`), delete `TASK_ICONS` and the `<template>` code.
 - Verify the 6 task-option buttons look identical on-device first — `TASK_ICONS` SVGs use explicit `14×14` sizing and (historically) some hardcoded fills, so confirm the central `currentColor` + CSS sizing matches before deleting.
 
-Tracked in [`future-work/CODE_CONSISTENCY_AUDIT.md`](../future-work/CODE_CONSISTENCY_AUDIT.md). Because task buttons render on every task (via both render paths), this is a focused, separately-tested change — not a drive-by.
+Tracked in [`future-work/AUDIT_RESIDUALS_2026_08.md`](../future-work/AUDIT_RESIDUALS_2026_08.md) (the original tracker, `CODE_CONSISTENCY_AUDIT.md`, was completed and archived Aug 2026). Because task buttons render on every task (via both render paths), this is a focused, separately-tested change — not a drive-by.
 
 ---
 
