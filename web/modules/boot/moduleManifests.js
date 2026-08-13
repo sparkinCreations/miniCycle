@@ -260,7 +260,35 @@ export const MODULE_MANIFESTS = {
         path: '../task/taskDOM.js',
         phase: PHASES.TASK_MANAGEMENT,
         requires: ['appInit', 'AppState', 'generateId', 'sanitizeInput', 'TaskOptionsVisibilityController', 'showTaskOptions', 'hideTaskOptions', 'attachKeyboardTaskOptionToggle', 'triggerLogoBackground'],
-        optionalDeps: ['saveTaskToSchema25', 'showNotification', 'taskCore'],
+        // FORWARD-THROUGH deps. taskDOM does not call most of these itself — it hands
+        // them to its dynamically-imported sub-modules (taskRenderer / taskEvents /
+        // taskValidation / taskUtils), which are deliberately absent from this manifest
+        // (facade pattern; adding them would double-initialise).
+        //
+        // They live here because the loader only routes what a manifest declares once
+        // ENFORCE_REQUIRES is on. Until then the broad `Object.assign(result, depMappings)`
+        // hands every module the whole catalogue, which hides the gap: flipping the flag
+        // stalled boot outright, with TaskRenderer reporting eight missing deps
+        // (validate:di's amber FACADE FORWARD-THROUGH bucket predicted exactly this).
+        //
+        // optionalDeps, not requires, on purpose: most resolve LATER than this phase
+        // (taskCore, cycleCompletion, undoRedoManager, routineLoader, menuManager are
+        // Phase 5-6 against taskDOM's Phase 3) and arrive by post-init injection, which
+        // propagates into the renderer via injectDependency(). The construction site
+        // guards them with `|| null` for exactly that reason — declaring them `requires`
+        // would assert an availability that does not hold when the sub-modules are built.
+        optionalDeps: [
+            'saveTaskToSchema25', 'showNotification', 'taskCore',
+            'DEFAULT_TASK_OPTION_BUTTONS', 'addTask', 'checkCompleteAllButton',
+            'checkMiniCycle', 'checkOverdueTasks', 'createDueDateInput',
+            'enableDragAndDropOnTask', 'enableUndoSystemOnFirstInteraction',
+            'handleRecurringTaskActivation', 'handleRecurringTaskDeactivation',
+            'handleTaskCompletionChange', 'helpWindowManager', 'loadMiniCycle',
+            'recurringPanel', 'setupReminderButtonHandler', 'taskOptionsCustomizer',
+            'triggerLogoScan', 'updateArrowsInDOM', 'updateMainMenuHeader',
+            'updateMoveArrowsVisibility', 'updateProgressBar', 'updateRecurringInfoLink',
+            'updateRecurringPanelButtonVisibility', 'updateStatsPanel', 'updateUndoRedoButtons'
+        ],
         provides: [
             'createTaskDOMElements', 'setupTaskInteractions', 'refreshUIFromState',
             'loadTaskContext', 'createOrUpdateTaskData', 'finalizeTaskCreation',

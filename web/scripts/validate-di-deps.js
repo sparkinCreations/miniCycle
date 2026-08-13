@@ -179,6 +179,23 @@ function collectAccessed(src) {
     for (const m of src.matchAll(/this\.deps\??\.([A-Za-z$][\w$]*)/g)) add(m[1]);
     for (const m of src.matchAll(/(?<![\w.$])_deps\.([A-Za-z$][\w$]*)/g)) add(m[1]);
 
+    // this._rawDeps.NAME — taskDOM keeps an UN-NORMALISED copy of its injected deps
+    // and forwards those straight into its sub-module constructors (a normalised
+    // `this.deps` getter would substitute optional() defaults for values that are
+    // legitimately absent at Phase 3 and arrive by post-init injection). Without this
+    // pattern those forwarded names read as dead declarations, which is how declaring
+    // addTask / loadMiniCycle / updateArrowsInDOM / checkOverdueTasks — the very deps
+    // TaskRenderer reports missing under ENFORCE_REQUIRES — tripped the unused ratchet.
+    //
+    // Counted ONLY when the name is something the loader could supply. The same
+    // accessor also carries constructor test seams (`this._rawDeps.renderer ||
+    // new TaskRenderer(...)`, and the same for validator/events/buttons/patcher),
+    // which are pre-built sub-module instances, not DI deps — collecting those
+    // would report five phantom deps that resolve nowhere.
+    for (const m of src.matchAll(/this\._rawDeps\??\.([A-Za-z$][\w$]*)/g)) {
+        if (known.has(m[1])) add(m[1]);
+    }
+
     // destructure off this.deps / _deps:  const { a, b: c, d = x } = this.deps
     for (const m of src.matchAll(/(?:const|let|var)\s*\{([^}]*)\}\s*=\s*(?:this\.deps|_deps)\b/g)) {
         for (const part of m[1].split(',')) add(part.trim().split(/[:=]/)[0].trim());
