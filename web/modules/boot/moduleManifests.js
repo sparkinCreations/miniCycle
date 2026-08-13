@@ -103,10 +103,17 @@ export const MODULE_MANIFESTS = {
         path: '../labels/labelResolver.js',
         phase: PHASES.CORE_UTILS,
         requires: [],
-        // No optionalDeps — getActiveLens/getRoutineLens were removed (April 2026):
-        // they're injection hooks set externally (not from depMappings) and the
-        // unified vocabThemeManager handles lens resolution internally now.
-        optionalDeps: [],
+        // getActiveLens/getRoutineLens were removed (April 2026): they're injection
+        // hooks set externally (not from depMappings) and the unified
+        // vocabThemeManager handles lens resolution internally now.
+        //
+        // isTouchDevice IS a depMappings dep — an optional override for isTouchPrimary(),
+        // which picks the touch vs pointer wording of device-variant labels ("tap" vs
+        // "click"). Undeclared it still arrives today via the broad depMappings assign,
+        // so the override is live; under ENFORCE_REQUIRES it would silently stop
+        // arriving and every such label would quietly fall back to the `(pointer: coarse)`
+        // media query instead. Declaring it keeps the shipped behaviour identical.
+        optionalDeps: ['isTouchDevice'],
         provides: ['getLabel', 'getLabelOrFallback', 'hasLabel', 'isLensSensitive', 'getLabels', 'getCategoryLabels', 'getLensSensitiveKeys', 'getLabelDiagnostics'],
         api: 'labels',
         optional: false,
@@ -600,7 +607,29 @@ export const MODULE_MANIFESTS = {
         path: '../task/taskCore.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState', 'showNotification', 'sanitizeInput', 'removeRecurringTasksFromCycle'],
-        optionalDeps: ['AppGlobalState', 'showCompletionAnimation', 'showClearAnimation', 'handleTaskListMovement', 'logHistoryEvent', 'showMilestoneCelebrationOverlay', 'checkBackupReminderOnTaskClear', 'DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS', 'DEFAULT_TASK_OPTION_BUTTONS', 'animateProgressBarEmpty', 'animateProgressBarFill', 'checkCompleteAllButton', 'checkMiniCycle', 'checkOverdueTasks', 'enableDragAndDropOnTask', 'incrementCycleCount', 'isPerformingUndoRedo', 'isTouchDevice', 'pluginManager', 'recurringPanel', 'updateArrowsInDOM', 'updateMainMenuHeader', 'updateMoveArrowsVisibility', 'updateProgressBar', 'updateRecurringPanelButtonVisibility', 'updateStatsPanel', 'updateCompletedTasksCount'],
+        // The tail of this list is FORWARD-THROUGH: taskCore does not call these, it
+        // hands them to its taskCRUD / taskCompletion / taskCycleReset sub-modules
+        // (taskCore.js, `resolvedDeps.…`), which are absent from this manifest by
+        // design (facade pattern). Undeclared, they arrive null under ENFORCE_REQUIRES.
+        //
+        // The task-creation chain is the load-bearing part: validateAndSanitizeTaskInput
+        // → loadTaskContext → createOrUpdateTaskData → createTaskDOMElements →
+        // setupTaskInteractions → finalizeTaskCreation. Each is an early-return guard,
+        // so a single missing link kills every add — and surfaces only as a 10s
+        // waitForFunction timeout in the journeys, because a starved dep warns rather
+        // than throwing and `pageerror` never fires.
+        //
+        // taskDOM provides most of them and taskCore is Phase 6 with `after: ['taskDOM']`,
+        // so they are available by then — they simply were not routed. Note validate:di
+        // could not see this gap: its facade detection knows `this.deps` / `_deps` /
+        // `this.m.dependencies` / `this._rawDeps`, but taskCore reads a local
+        // `resolvedDeps` alias 41 times.
+        optionalDeps: ['AppGlobalState', 'showCompletionAnimation', 'showClearAnimation', 'handleTaskListMovement', 'logHistoryEvent', 'showMilestoneCelebrationOverlay', 'checkBackupReminderOnTaskClear', 'DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS', 'DEFAULT_TASK_OPTION_BUTTONS', 'animateProgressBarEmpty', 'animateProgressBarFill', 'checkCompleteAllButton', 'checkMiniCycle', 'checkOverdueTasks', 'enableDragAndDropOnTask', 'incrementCycleCount', 'isPerformingUndoRedo', 'isTouchDevice', 'pluginManager', 'recurringPanel', 'updateArrowsInDOM', 'updateMainMenuHeader', 'updateMoveArrowsVisibility', 'updateProgressBar', 'updateRecurringPanelButtonVisibility', 'updateStatsPanel', 'updateCompletedTasksCount',
+            'validateAndSanitizeTaskInput', 'loadTaskContext', 'createOrUpdateTaskData',
+            'createTaskDOMElements', 'setupTaskInteractions', 'finalizeTaskCreation',
+            'captureStateSnapshot', 'enableUndoSystemOnFirstInteraction', 'updateUndoRedoButtons',
+            'refreshUIFromState', 'helpWindowManager', 'recurringCore',
+            'showConfirmationModal', 'showPromptModal'],
         provides: ['addTask', 'editTask', 'deleteTask', 'toggleTaskPriority', 'handleTaskCompletionChange', 'resetTasks', 'saveTaskToSchema25', 'handleCompleteAllTasks'],
         provideInstance: 'taskCore',
         api: 'task',

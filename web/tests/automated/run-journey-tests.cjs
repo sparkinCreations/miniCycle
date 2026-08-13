@@ -120,7 +120,7 @@ async function openFresh(browser, baseURL) {
     page.on('console', (msg) => {
         if (msg.type() !== 'warning' && msg.type() !== 'error') return;
         const text = msg.text();
-        if (!/missing dep|not injected|undefined|validation failed|is not a function|DI /i.test(text)) return;
+        if (!/missing dep|not injected|undefined|validation failed|is not a function|could not load|DI /i.test(text)) return;
         console.log(`   ${colors.gray}page ${msg.type()}: ${text.slice(0, 240)}${colors.reset}`);
     });
     await page.goto(`${baseURL}/miniCycle.html`, { waitUntil: 'domcontentloaded', timeout: 20000 });

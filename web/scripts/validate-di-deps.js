@@ -201,6 +201,21 @@ function collectAccessed(src) {
         for (const part of m[1].split(',')) add(part.trim().split(/[:=]/)[0].trim());
     }
 
+    // aliasing off di.resolve(): `const resolvedDeps = di.resolve(dependencies)`.
+    // The facades (taskCore, taskDOM) resolve ONCE at wiring time and forward the
+    // resulting bag straight into their dynamically-imported sub-modules, so these
+    // reads are the only evidence a forwarded dep is live. The alias branch below
+    // only understands `= this.deps`, so without this the whole task-creation chain
+    // (loadTaskContext → createOrUpdateTaskData → … → finalizeTaskCreation) reads as
+    // dead declarations. Same shape as the _rawDeps gap above, and likewise scoped
+    // to names the loader can supply so local seams aren't mistaken for deps.
+    for (const m of src.matchAll(/(?:const|let|var)\s+([A-Za-z$][\w$]*)\s*=\s*di\.resolve\s*\(/g)) {
+        const alias = m[1];
+        if (!/dep/i.test(alias)) continue;
+        const memberRe = new RegExp(`(?<![\\w.$])${alias}\\??\\.([A-Za-z$][\\w$]*)`, 'g');
+        for (const mm of src.matchAll(memberRe)) { if (known.has(mm[1])) add(mm[1]); }
+    }
+
     // aliasing: const ALIAS = this.deps;  then ALIAS.NAME / destructure off ALIAS
     for (const m of src.matchAll(/(?:const|let|var)\s+([A-Za-z$][\w$]*)\s*=\s*this\.deps\s*;/g)) {
         const alias = m[1];
