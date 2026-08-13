@@ -1,3 +1,10 @@
+## [2.413] - 2026-08-13
+- fix(mode): make a routine mode switch one transaction, and one undo step
+- docs(readme): taskcycle.app demos the upcoming TaskCycle, not the 2023 project
+- docs(readme): taskcycle.app is the demo, not Pro
+- docs(readme): fix positioning (routine manager, not habit tracker), retire stale claims, floor-phrase stats
+
+
 ## [2.412] - 2026-08-12
 - fix(stats): pin title outside the scroller with a top fade mask — no more show-through on the glass title
 - feat(gates): validate:labels registry gate; fix undo/redo history rendering, stale label, pluralization; scroll-clip padding; manual refresh
