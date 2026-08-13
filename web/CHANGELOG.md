@@ -1,3 +1,9 @@
+## [2.416] - 2026-08-13
+- fix(layout): observe the header's border box — a padding-only inset change was invisible
+- chore(release): update version to 2.415
+- refactor(state): delete the unreachable initial-state factory, retarget its tests
+
+
 ## [2.415] - 2026-08-13
 - refactor(state): delete the unreachable initial-state factory, retarget its tests
 
