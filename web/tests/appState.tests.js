@@ -967,36 +967,12 @@ export async function runAppStateTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
-    await test('createInitialState method exists', () => {
-        const stateManager = createStateManager();
-        if (typeof stateManager.createInitialState !== 'function') {
-            throw new Error('createInitialState should be a function');
-        }
-    });
-
-    await test('createInitialState returns valid Schema 2.5 structure', () => {
-        const stateManager = createStateManager();
-        const initial = stateManager.createInitialState();
-
-        if (initial.schemaVersion !== '2.5') {
-            throw new Error('Should have schemaVersion 2.5');
-        }
-        if (!initial.metadata) {
-            throw new Error('Should have metadata');
-        }
-        if (!initial.settings) {
-            throw new Error('Should have settings');
-        }
-        if (!initial.data || !initial.data.cycles) {
-            throw new Error('Should have data.cycles');
-        }
-        if (!initial.appState) {
-            throw new Error('Should have appState');
-        }
-        if (!initial.userProgress) {
-            throw new Error('Should have userProgress');
-        }
-    });
+    // Two tests here exercised a local initial-state factory on the state manager.
+    // It was unreachable — nothing called it, and the dep slot its fallback fed is
+    // never invoked — so it drifted out of sync with the real factory while these
+    // kept passing. Method and tests removed; the equivalent shape assertions now
+    // run against migrationManager's factory in state.tests.js, which is the one a
+    // new user actually gets.
 
     await test('createMinimalFallbackState method exists', () => {
         const stateManager = createStateManager();
