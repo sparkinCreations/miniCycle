@@ -144,9 +144,16 @@ export class TaskDOMManager {
             // Mode management
             getCurrentMode: resolvedDeps.getCurrentMode || this.fallbackGetMode,
 
-            // Feature modules
-            dueDates: resolvedDeps.dueDates || this._warnMissingOptional('dueDates'),
-            reminders: resolvedDeps.reminders || this._warnMissingOptional('reminders'),
+            // Feature modules.
+            //
+            // `dueDates` and `reminders` used to sit here too. Neither was ever a
+            // depMappings key — only a provideInstance, which lands in the api bucket
+            // (deps.features.dueDates) and never as a top-level dep — so both resolved
+            // to _warnMissingOptional's `{}` on EVERY boot, with the warning suppressed
+            // because both are on the lateLoadingDeps list. "Late-loading" was hiding a
+            // permanent absence, not a temporary one. Nothing read either of them (the
+            // due-date input comes from the `createDueDateInput` FUNCTION below), so
+            // they were removed rather than given routes to serve dead code.
             recurringPanel: resolvedDeps.recurringPanel || this._warnMissingOptional('recurringPanel'),
 
             // Helper functions (use ?.() chaining when calling)
@@ -473,7 +480,10 @@ export class TaskDOMManager {
      */
     _warnMissingOptional(depName) {
         // These deps load in later boot phases - don't warn for expected late-loading deps
-        const lateLoadingDeps = ['dueDates', 'reminders', 'recurringPanel', 'taskCore'];
+        // Genuinely late-loading: both ARE depMappings keys, they just arrive after
+        // this Phase-3 module wires. Do not add a name here to silence a dep that has
+        // no route at all — that is what hid dueDates/reminders resolving to {} forever.
+        const lateLoadingDeps = ['recurringPanel', 'taskCore'];
         if (!lateLoadingDeps.includes(depName)) {
             console.warn(`⚠️ TaskDOMManager: Optional dependency ${depName} not injected`);
         }
