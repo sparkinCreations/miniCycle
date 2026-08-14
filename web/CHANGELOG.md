@@ -1,3 +1,7 @@
+## [2.421] - 2026-08-14
+- fix(nav): stop nav dots overlapping so the Routine dot is clickable
+
+
 ## [2.420] - 2026-08-14
 - fix(a11y): hand focus into and back out of Focus View
 
