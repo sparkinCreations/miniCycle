@@ -170,29 +170,54 @@ const STRICT_LAZY_VALIDATION = false;
 
 /**
  * Enable audit mode to log when modules access undeclared dependencies.
- * Use this to find missing `requires` entries before enabling ENFORCE_REQUIRES.
  *
  * NOTE: Currently generates many false positives due to property enumeration
  * (DevTools logging, Object.keys, etc.). Only enable for targeted debugging.
+ *
+ * Largely superseded: it existed to size the ENFORCE_REQUIRES migration, which
+ * shipped Aug 2026 without it — its `get` trap fires during WIRING, so every
+ * depMappings key gets attributed to whichever module is being wired. The work
+ * was actually driven by `validate:di` (static, gated) and `test:journey`
+ * (runtime). Also note this branch is skipped entirely while ENFORCE_REQUIRES
+ * is true, since it audits the broad-assign path.
  */
 const AUDIT_UNDECLARED_DEPS = false;
 
 /**
- * When true, modules ONLY receive dependencies declared in `requires`.
- * This is a breaking change - enable only after all modules have complete `requires`.
- * Use AUDIT_UNDECLARED_DEPS=true first to find missing entries.
+ * When true, a module receives ONLY the dependencies its manifest declares
+ * (`requires` + `optionalDeps` + `lazyRequires`) plus CORE_DEPS. When false, the
+ * broad `Object.assign(result, depMappings)` below hands every module the entire
+ * ~230-entry catalogue, so an undeclared dep still works and the manifest is
+ * decorative.
  *
- * Aug 2026 sizing run: the audit Proxy CANNOT size this work as-is — its `get`
- * trap fires during WIRING (something enumerates the built deps object once
- * per module), so every key in depMappings gets attributed to whichever module
- * is being wired (achievementsManager was "accessing" TaskRenderer,
- * UIOrchestrator, the whole catalog). To make it usable, attribute access at
- * the consumer's deps-getter (diBase.resolve) or count only accesses after
- * boot completes. Until then, do NOT flip ENFORCE_REQUIRES from audit data;
- * static coverage lives in validate:di (gated) and
- * WARN_ON_UNMAPPED_DECLARED_DEPS below (high-signal, on in dev).
+ * ON since Aug 2026. What that took, because the failures were all silent — an
+ * absent dep makes `deps.foo?.()` no-op rather than throw:
+ *
+ *  - Facade forward-through. taskDOM and taskCore hand deps to dynamically
+ *    imported sub-modules that are deliberately absent from the manifest. Those
+ *    deps were never declared, so strict mode stopped routing them. taskCore's
+ *    task-creation chain (validateAndSanitizeTaskInput → loadTaskContext → … →
+ *    finalizeTaskCreation) is a series of early-return guards: one missing link
+ *    killed every task add, surfacing only as journey timeouts.
+ *  - Self-routed names. taskDOM both PROVIDES and consumes handleTaskButtonClick /
+ *    revealTaskButtons / setupRecurringButtonHandler. Safe to declare because each
+ *    depMappings entry is a late-binding wrapper. Missing setupRecurringButtonHandler
+ *    meant the recurring button's listener was never attached — the click did
+ *    nothing, with no error and no warning anywhere.
+ *
+ * Guard rails, in order of usefulness:
+ *  - `npm run validate:di` gates used-but-undeclared, declared-but-undeliverable
+ *    and facade forward-through at 0. It only sees the dep-accessor shapes it
+ *    models; `_rawDeps` and the `resolvedDeps = di.resolve(...)` alias both had to
+ *    be taught to it. A NEW accessor shape is a new blind spot.
+ *  - `npm run test:journey` is the backstop that actually caught these, and it
+ *    now forwards DI-shaped console warnings so a starved dep does not read as a
+ *    bare 10s timeout.
+ *
+ * To revert: set this to false. That restores the broad assign and is behaviour-
+ * neutral — every declaration added for strict mode is inert under it.
  */
-const ENFORCE_REQUIRES = false;
+const ENFORCE_REQUIRES = true;
 
 /**
  * When true, log a warning at boot for any dep declared in a manifest's

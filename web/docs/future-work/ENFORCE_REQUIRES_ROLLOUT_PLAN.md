@@ -1,7 +1,31 @@
 # ENFORCE_REQUIRES Rollout Plan
 
 **Date:** March 15, 2026
-**Status:** In progress — Step 1 complete (June 2026); Step 2's goal now covered statically by `npm run validate:di`; Steps 3–4 not started (no `STRICT_PHASES` exists anywhere yet, verified Aug 2026)
+**Status:** ✅ **SHIPPED — `ENFORCE_REQUIRES = true` since August 2026.** Step 1 landed June 2026; Step 2's goal was covered statically by `npm run validate:di`; Steps 3–4 (`STRICT_PHASES`, per-phase rollout) were **never built and are no longer needed** — the whole-app flip passed in one go once the facade forward-through gaps were declared.
+
+> **What the phased rollout was insurance against, and what actually happened.**
+> The blocker was never a phase-ordering problem, so enforcing per phase would not
+> have found it faster. It was **facade forward-through**: `taskDOM` and `taskCore`
+> hand deps to dynamically imported sub-modules that are deliberately absent from
+> the manifest, and nothing declared them. Every failure was silent — an absent dep
+> makes `deps.foo?.()` no-op — so all four failing journeys reported only a 10s
+> `waitForFunction` timeout.
+>
+> Fixed in v2.418: taskDOM's 24 forwarded deps, taskCore's 13 (the task-creation
+> chain, a series of early-return guards where one missing link killed every add),
+> and taskDOM's three self-routed names. `setupRecurringButtonHandler` was the last
+> and quietest: undeclared, the recurring button's listener never attached, so the
+> click did nothing with no error and no warning anywhere.
+>
+> Two `validate:di` blind spots had to be closed on the way: it models specific
+> dep-accessor shapes, and both `this._rawDeps.X` and the
+> `const resolvedDeps = di.resolve(...)` alias were invisible to it. A new accessor
+> shape is a new blind spot. Teaching it the second one also surfaced a real
+> pre-existing gap (`labelResolver`'s `isTouchDevice` override).
+>
+> **To revert:** set `ENFORCE_REQUIRES = false`. Behaviour-neutral — every
+> declaration added for strict mode is inert under the broad assign.
+
 **Prerequisite:** DI manifest tightening (Complete — March 2026)
 **Related:** [DI_MIGRATION_COMPLETION_PLAN.md](../archive/DI_MIGRATION_COMPLETION_PLAN.md) (Phase 5, effectively)
 
@@ -17,7 +41,7 @@ This plan was written March 15, 2026 and predates commit `00c727b3` (Apr 27), wh
 
 | Reference in plan | Current anchor |
 |---|---|
-| `ENFORCE_REQUIRES` "line 136" | `const ENFORCE_REQUIRES` (currently `false`) |
+| `ENFORCE_REQUIRES` "line 136" | `const ENFORCE_REQUIRES` (now `true` — shipped Aug 2026) |
 | `AUDIT_UNDECLARED_DEPS` "line 129" | `const AUDIT_UNDECLARED_DEPS` (currently `false`) |
 | `WARN_ON_UNMAPPED_DECLARED_DEPS` | `const WARN_ON_UNMAPPED_DECLARED_DEPS` (currently `true`) |
 | `Object.assign(result, depMappings)` "line 1056" | inside `buildModuleDependencies()`, guarded by `if (!ENFORCE_REQUIRES)` |
@@ -40,7 +64,7 @@ This plan was written March 15, 2026 and predates commit `00c727b3` (Apr 27), wh
 
 ## Goal
 
-Flip `ENFORCE_REQUIRES` to `true` in `moduleLoader.js` so that each module **only receives dependencies it explicitly declares** in its manifest (`requires`, `optionalDeps`, `lazyRequires`). Today the flag is `false` (`const ENFORCE_REQUIRES`), meaning all ~230 `depMappings` entries are spread into every module regardless of declarations.
+Flip `ENFORCE_REQUIRES` to `true` in `moduleLoader.js` so that each module **only receives dependencies it explicitly declares** in its manifest (`requires`, `optionalDeps`, `lazyRequires`). **Achieved August 2026** — see the status banner at the top. Everything below this line documents the plan as it stood before the flip; the "Why Not Now" reasoning and Steps 2–4 are kept as the historical record, not as outstanding work.
 
 ---
 
