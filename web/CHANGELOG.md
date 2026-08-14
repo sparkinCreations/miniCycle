@@ -1,3 +1,11 @@
+## [2.418] - 2026-08-14
+- feat(di): enable ENFORCE_REQUIRES — modules receive only declared deps
+- refactor(task): drop taskDOM's dead dueDates/reminders deps
+- build(di): declare taskDOM's self-routed trio — all 5 journeys pass under ENFORCE_REQUIRES
+- build(di): declare taskCore's forward-through chain; validate:di learns resolvedDeps
+- test(journey): surface DI-shaped console warnings
+
+
 ## [2.417] - 2026-08-13
 - build(di): declare taskDOM's forward-through deps, teach validate:di _rawDeps
 - refactor(state): one repair+derive for deleteWhenComplete, fixing routineLoader data loss
