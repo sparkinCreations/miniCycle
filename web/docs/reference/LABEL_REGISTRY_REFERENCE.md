@@ -534,7 +534,7 @@ These are the foundational terms that define the app's vocabulary. A contextual 
 | `about.title` | miniCycle | miniCycle.html:1229 | No | Brand name |
 | `about.tagline` | Turn Your Routine Into Progress | miniCycle.html:1230 | No | Tagline |
 | `about.description` | Your routine workflow companion — turn repeatable tasks into effortless cycles, stay focused, and build momentum. | miniCycle.html:1237 | Yes | Description |
-| `about.aria` | About Task Cycle Mini | miniCycle.html:1212 (aria) | No | Button ARIA |
+| `about.aria` | About miniCycle | miniCycle.html:1212 (aria) | No | Button ARIA |
 | `about.closeAria` | Close about modal | miniCycle.html:1225 (aria) | No | Close ARIA |
 
 ---

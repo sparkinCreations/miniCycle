@@ -362,8 +362,10 @@
             miniCycle quietly protects your data in the background: a daily automatic
             backup is kept for each of the last 10 days, up to 50 named manual backups
             are stored on your device, and a safety backup is created before every
-            restore. Cleared tasks are kept for 90 days (visible in the Cleared Tasks
-            view) before being pruned automatically.</p>
+            restore. Non-recurring tasks cleared in To-Do Mode are kept for 90 days
+            (visible in the Cleared Tasks view) before being pruned automatically, and
+            may contribute to cleared-task achievements. Recurring task occurrences
+            continue according to their schedule and are not added to Cleared Tasks.</p>
 
             <p><strong>Monitoring Storage Usage</strong><br>
             You can check how much storage your routines are using in two ways:</p>
@@ -423,7 +425,7 @@
             <p>View your routine history from the Stats Panel by tapping the History button. The History panel has two tabs:</p>
             <ul>
                 <li><strong>Events:</strong> Cycle completions, achievements unlocked, and tasks cleared — with timestamps</li>
-                <li><strong>Cleared Tasks:</strong> Individual tasks removed in To-Do Mode. Select tasks with checkboxes and tap "Recreate Selected" to restore them to your routine.</li>
+                <li><strong>Cleared Tasks:</strong> Non-recurring tasks removed in To-Do Mode. Select tasks with checkboxes and tap "Recreate Selected" to restore them to your routine. Recurring tasks are not added here — they continue on their own schedule, so there is nothing to restore.</li>
             </ul>
             <img src="../assets/images/screenshots/Example/user-manual/v3/cleared-tasks-history.jpg" alt="The History panel Cleared Tasks tab with 3 tasks selected via blue checkboxes. A Recreate Selected button at the bottom allows restoring chosen tasks back to the routine." width="280" loading="lazy" style="display: block; margin: 1rem auto;">
             <p>You can also reset your routine progress (cycle count and history) from the bottom of the History panel.</p>

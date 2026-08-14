@@ -467,6 +467,29 @@ export class MenuManager {
             menu.classList.remove(DOM_CLASSES.VISIBLE);
         }
         document.body.classList.remove(DOM_CLASSES.MAIN_MENU_OPEN);
+        // Keep the button's ARIA state derived from the menu's real visibility.
+        // This is the shared close route — menuManager's own Close Main Menu / Enter
+        // Focus View / outside-click paths all land here, and it is what the loader
+        // wires as the `hideMainMenu` dep for quickActionsManager and settingsUIManager.
+        // It used to drop the class without touching aria-expanded, so the menu
+        // visually closed while the button kept announcing "expanded" to assistive
+        // tech. uiBoot's own closeMainMenu() always set it, which is why only some
+        // close routes were affected.
+        this._syncMenuButtonExpanded(menu);
+    }
+
+    /**
+     * Single source of truth for the menu button's aria-expanded: read the menu's
+     * actual visibility rather than tracking it separately, so the two cannot drift.
+     * @param {HTMLElement|null} [menu] - Resolved menu element, if the caller has one.
+     * @returns {void}
+     */
+    _syncMenuButtonExpanded(menu) {
+        const menuEl = menu || this.elements?.menu || this.deps.querySelector(DOM_SELECTORS.MENU_CONTAINER);
+        const button = this.elements?.menuButton || this.deps.querySelector(DOM_SELECTORS.MENU_BUTTON);
+        if (!button) return;
+        const isVisible = !!menuEl?.classList.contains(DOM_CLASSES.VISIBLE);
+        button.setAttribute('aria-expanded', String(isVisible));
     }
 
     /**

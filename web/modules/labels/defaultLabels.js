@@ -1684,7 +1684,7 @@ export const DEFAULT_LABELS = deepFreeze({
         title:       'miniCycle',
         tagline:     'Turn Your Routine Into Progress',
         description: 'Your routine workflow companion — turn repeatable tasks into effortless cycles, stay focused, and build momentum.',
-        aria:        'About Task Cycle Mini',
+        aria:        'About miniCycle',
         closeAria:   'Close about modal'
     },
 

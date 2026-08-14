@@ -144,6 +144,123 @@ export async function runTaskCycleResetTests(resultsDiv) {
     });
 
     // ============================================
+    resultsDiv.innerHTML += '<h4 class="test-section">🔁 Recurring tasks are excluded from Clear Completed</h4>';
+
+    // A recurring occurrence is scheduled to come back, so clearing it in To-Do Mode
+    // must NOT archive it (Cleared Tasks offered "restore" for something that restores
+    // itself) and must NOT count toward cleared-task achievements. Recurring tasks still
+    // reach achievements through completed CYCLES — a different path, untouched here.
+    //
+    // These are two SEPARATE writes to separate state (`cycle.clearedTasks` via
+    // recordMultipleClearedTasks, and `userProgress.totalTasksCompleted`), so they get
+    // separate tests: a fix that filters only one leaves the other wrong.
+    function makeClearHarness(tasks) {
+        const container = document.createElement('div');
+        const taskList = document.createElement('ul');
+        tasks.forEach(t => {
+            const li = document.createElement('li');
+            li.className = 'task';
+            li.dataset.taskId = t.id;
+            const cb = document.createElement('input');
+            cb.type = 'checkbox';
+            li.appendChild(cb);
+            taskList.appendChild(li);
+        });
+        container.appendChild(taskList);
+        document.body.appendChild(container);
+
+        const stateObj = {
+            appState: { activeCycleId: 'c1' },
+            data: { cycles: { c1: { tasks: tasks.map(t => ({ ...t })) } } },
+            userProgress: { totalTasksCompleted: 0 }
+        };
+        const recorded = [];
+        const AppState = {
+            isReady: () => true,
+            get: () => stateObj,
+            update: async (producer) => { producer(stateObj); return stateObj; }
+        };
+        const deps = {
+            AppState,
+            recordMultipleClearedTasks: (entries) => recorded.push(...entries)
+        };
+        return { taskList, stateObj, recorded, deps, cleanup: () => { mod.clearAllTimeouts(); container.remove(); } };
+    }
+
+    const RECURRING = { id: 'R', text: 'Recurring', completed: true, deleteWhenComplete: true, recurring: true };
+    const PLAIN = { id: 'P', text: 'Plain', completed: true, deleteWhenComplete: true, recurring: false };
+
+    await test('recurring task cleared in To-Do is NOT added to Cleared Tasks', async () => {
+        const h = makeClearHarness([RECURRING]);
+        try {
+            await mod.deleteCompletedTasksImpl('c1', h.stateObj.data.cycles.c1, h.taskList, h.deps);
+            if (h.recorded.length !== 0) {
+                throw new Error(`archived ${h.recorded.length} recurring task(s); expected 0`);
+            }
+        } finally { h.cleanup(); }
+    });
+
+    await test('recurring task cleared in To-Do does NOT increment totalTasksCompleted', async () => {
+        // Deliberately separate from the archive test: different state field, different write.
+        const h = makeClearHarness([RECURRING]);
+        try {
+            await mod.deleteCompletedTasksImpl('c1', h.stateObj.data.cycles.c1, h.taskList, h.deps);
+            if (h.stateObj.userProgress.totalTasksCompleted !== 0) {
+                throw new Error(`counter went to ${h.stateObj.userProgress.totalTasksCompleted}; expected 0`);
+            }
+        } finally { h.cleanup(); }
+    });
+
+    await test('non-recurring task cleared in To-Do IS archived and counted', async () => {
+        const h = makeClearHarness([PLAIN]);
+        try {
+            await mod.deleteCompletedTasksImpl('c1', h.stateObj.data.cycles.c1, h.taskList, h.deps);
+            if (h.recorded.length !== 1) throw new Error(`archived ${h.recorded.length}; expected 1`);
+            if (h.recorded[0].text !== 'Plain') throw new Error(`archived the wrong task: ${h.recorded[0].text}`);
+            if (h.stateObj.userProgress.totalTasksCompleted !== 1) {
+                throw new Error(`counter=${h.stateObj.userProgress.totalTasksCompleted}; expected 1`);
+            }
+        } finally { h.cleanup(); }
+    });
+
+    await test('mixed batch archives and counts only the non-recurring task', async () => {
+        const h = makeClearHarness([RECURRING, PLAIN]);
+        try {
+            await mod.deleteCompletedTasksImpl('c1', h.stateObj.data.cycles.c1, h.taskList, h.deps);
+            if (h.recorded.length !== 1) throw new Error(`archived ${h.recorded.length}; expected 1`);
+            if (h.recorded[0].text !== 'Plain') throw new Error(`archived ${h.recorded[0].text}; expected Plain`);
+            if (h.stateObj.userProgress.totalTasksCompleted !== 1) {
+                throw new Error(`counter=${h.stateObj.userProgress.totalTasksCompleted}; expected 1`);
+            }
+        } finally { h.cleanup(); }
+    });
+
+    await test('both recurring and non-recurring are still REMOVED from the task list', async () => {
+        // Exclusion is about archiving/counting only — clearing must still clear.
+        const h = makeClearHarness([RECURRING, PLAIN]);
+        try {
+            await mod.deleteCompletedTasksImpl('c1', h.stateObj.data.cycles.c1, h.taskList, h.deps);
+            const remaining = h.stateObj.data.cycles.c1.tasks.map(t => t.id);
+            if (remaining.length !== 0) throw new Error(`tasks left behind: [${remaining}]`);
+        } finally { h.cleanup(); }
+    });
+
+    await test('an all-recurring batch performs no archive write at all', async () => {
+        // Guards the empty-batch edge: recordMultipleClearedTasks should not be called
+        // with an empty array, which would still bump the archive's totalCleared.
+        const h = makeClearHarness([RECURRING, { ...RECURRING, id: 'R2', text: 'Recurring 2' }]);
+        let recordCalls = 0;
+        h.deps.recordMultipleClearedTasks = (entries) => { recordCalls++; h.recorded.push(...entries); };
+        try {
+            await mod.deleteCompletedTasksImpl('c1', h.stateObj.data.cycles.c1, h.taskList, h.deps);
+            if (recordCalls !== 0) throw new Error(`recordMultipleClearedTasks called ${recordCalls}x; expected 0`);
+            if (h.stateObj.userProgress.totalTasksCompleted !== 0) {
+                throw new Error(`counter=${h.stateObj.userProgress.totalTasksCompleted}; expected 0`);
+            }
+        } finally { h.cleanup(); }
+    });
+
+    // ============================================
     resultsDiv.innerHTML += '<h4 class="test-section">↩️ Undo snapshot at gesture boundary (v2.362)</h4>';
 
     // Invariant: a batch gesture captures EXACTLY ONE snapshot — never zero

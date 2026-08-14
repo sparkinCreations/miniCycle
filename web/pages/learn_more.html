@@ -151,7 +151,8 @@
             align-items: center;
         }
 
-        .intro-text h3 {
+        /* h2 since the section title became the page h1 — level changed, look unchanged */
+        .intro-text h2 {
             font-size: 1.4rem;
             color: #0044bb;
             margin-bottom: 1rem;
@@ -680,13 +681,16 @@
     <!-- What is miniCycle -->
     <section id="what-is" style="background: #edf3fb;">
         <div class="container">
-            <h2 class="section-title">What is miniCycle?</h2>
+            <!-- Page-level H1. This was an H2 with no H1 anywhere on the page, so screen
+                 readers and outline tools saw a document with no title-level heading and
+                 a hierarchy starting at level 2. Subsequent sections stay H2, their cards H3. -->
+            <h1 class="section-title">What is miniCycle?</h1>
             <p class="section-subtitle">A privacy-focused routine manager that handles repeating tasks differently than traditional to-do apps.</p>
 
             <div class="intro-grid">
                 <div class="intro-text">
-                    <h3>Routines, Not Just Tasks</h3>
-                    <p>Most task managers treat each task as a one-off item and delete it when complete. miniCycle is different.</p>
+                    <h2>Routines, Not Just Tasks</h2>
+                    <p>Most to-do apps are centered on completing individual tasks. miniCycle is centered on completing and repeating an entire routine.</p>
                     <p>miniCycle organizes your tasks into <strong>routines</strong>. When you complete all your tasks, they automatically reset so you can tackle them again. Your progress is tracked by <strong>cycle count</strong> - how many times you've completed the routine.</p>
                     <p>It's perfect for daily routines, weekly goals, and recurring habits you want to build consistency with.</p>
                     <div class="privacy-badge">
@@ -736,12 +740,12 @@
                 <div class="mode-card">
                     <div class="mode-icon" aria-hidden="true">✅</div>
                     <h3>Manual Cycle</h3>
-                    <p>Click "Complete" when you're ready to reset. Gives you time to review before starting fresh.</p>
+                    <p>Select "Complete Cycle" when you're ready to finish and reset the routine. Gives you time to review before starting fresh.</p>
                 </div>
                 <div class="mode-card">
                     <div class="mode-icon" aria-hidden="true">📝</div>
                     <h3>To-Do Mode</h3>
-                    <p>Completed tasks are removed from your list and kept in history — recoverable for 90 days. Works like a traditional to-do list for one-time tasks.</p>
+                    <p>Completed tasks are moved to Cleared Tasks, where eligible non-recurring tasks can be restored for up to 90 days. Recurring tasks continue on their own schedule instead. Works like a traditional to-do list for one-time tasks.</p>
                 </div>
             </div>
         </div>
@@ -955,7 +959,7 @@
                     <button class="faq-question" aria-expanded="false" aria-controls="faq-answer-10">How do achievements work?</button>
                     <div class="faq-answer" id="faq-answer-10">
                         <div class="faq-answer-content">
-                            miniCycle tracks milestones like total tasks completed and cycles finished. You earn badges and unlock vocabulary themes as you hit these milestones. Check your progress in the Stats Panel.
+                            miniCycle awards achievements for completed cycles and for eligible tasks cleared in To-Do Mode. Recurring tasks contribute through completed cycles rather than counting as cleared tasks. You earn badges and unlock vocabulary themes as you hit these milestones. Check your progress in the Stats Panel.
                         </div>
                     </div>
                 </div>

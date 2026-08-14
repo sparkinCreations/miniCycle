@@ -717,25 +717,42 @@ export async function deleteCompletedTasksImpl(activeCycleId, cycleData, taskLis
         return { aborted: true, reason: 'no_tasks' };
     }
 
-    // Count recurring tasks among those being deleted
-    const recurringDeleteCount = tasksToDelete.filter(({ taskId }) => {
-        const task = cycleData.tasks?.find(t => t.id === taskId);
-        return task?.recurring === true;
-    }).length;
+    // Partition the batch by recurrence ONCE — both the Cleared Tasks archive and the
+    // achievement counter below key off this.
+    //
+    // A recurring occurrence is not a task the user finished with: it is scheduled to
+    // come back. Archiving it offered a "restore" for something that restores itself,
+    // and counting it inflated the cleared-task achievement total. Recurring tasks still
+    // contribute to CYCLE achievements — that path is untouched.
+    //
+    // Both exclusions matter and they are separate writes to separate state:
+    // `cycle.clearedTasks` (the archive) and `userProgress.totalTasksCompleted` (what
+    // achievementsManager reads). Filtering only one leaves the other wrong.
+    const isRecurringTask = (taskId) =>
+        cycleData.tasks?.find(t => t.id === taskId)?.recurring === true;
+    const nonRecurringToDelete = tasksToDelete.filter(({ taskId }) => !isRecurringTask(taskId));
+    const recurringDeleteCount = tasksToDelete.length - nonRecurringToDelete.length;
 
     // Trigger logo scan effect for to-do mode task clearing
     if (typeof _deps.triggerLogoScan === 'function') {
         _deps.triggerLogoScan(500);
     }
 
-    // Record cleared tasks before deleting (for history tracking)
-    const tasksToRecord = tasksToDelete
+    // Record cleared tasks before deleting (for history tracking).
+    // Recurring occurrences are excluded — see the partition above.
+    const tasksToRecord = nonRecurringToDelete
         .map(({ taskId }) => cycleData.tasks?.find(t => t.id === taskId))
         .filter(Boolean)
         .map(buildClearedRecord);
 
-    if (tasksToRecord.length > 0 && typeof _deps.recordMultipleClearedTasks === 'function') {
-        _deps.recordMultipleClearedTasks(tasksToRecord);
+    // Accept a caller override like the cycle-reset path does (see the sibling
+    // `deps.recordMultipleClearedTasks || _deps...` above). This path read only the
+    // module-level dep, so a caller-supplied recorder was silently ignored — which also
+    // made the archive untestable without mutating module DI, and a test that mocked it
+    // via the params object passed while asserting nothing.
+    const recordClearedFn = deps.recordMultipleClearedTasks || _deps.recordMultipleClearedTasks;
+    if (tasksToRecord.length > 0 && typeof recordClearedFn === 'function') {
+        recordClearedFn(tasksToRecord);
     }
 
     // Log history event for tasks cleared
@@ -796,9 +813,15 @@ export async function deleteCompletedTasksImpl(activeCycleId, cycleData, taskLis
             if (cycle?.tasks) {
                 cycle.tasks = cycle.tasks.filter(t => !taskIdsToDelete.includes(t.id));
             }
-            // Update total tasks completed count for achievements
+            // Update total tasks completed count for achievements.
+            // Counts NON-RECURRING clears only — a recurring occurrence is scheduled to
+            // return, so counting it inflated the cleared-task milestones. This is the
+            // second of the two writes the recurrence partition above governs; the other
+            // is the Cleared Tasks archive. Recurring tasks still reach achievements via
+            // the cycle-completion path.
             if (!state.userProgress) state.userProgress = {};
-            state.userProgress.totalTasksCompleted = (state.userProgress.totalTasksCompleted || 0) + taskIdsToDelete.length;
+            state.userProgress.totalTasksCompleted =
+                (state.userProgress.totalTasksCompleted || 0) + nonRecurringToDelete.length;
         }, true);
 
         // Check for new achievements (OR-based: cycles OR tasks can unlock)
