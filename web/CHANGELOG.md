@@ -1,3 +1,7 @@
+## [2.420] - 2026-08-14
+- fix(a11y): hand focus into and back out of Focus View
+
+
 ## [2.419] - 2026-08-14
 - fix(tasks,a11y,copy): recurring tasks excluded from Cleared Tasks; menu ARIA; QA copy pass
 
