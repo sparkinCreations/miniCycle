@@ -294,7 +294,28 @@ export const MODULE_MANIFESTS = {
             'recurringPanel', 'setupReminderButtonHandler', 'taskOptionsCustomizer',
             'triggerLogoScan', 'updateArrowsInDOM', 'updateMainMenuHeader',
             'updateMoveArrowsVisibility', 'updateProgressBar', 'updateRecurringInfoLink',
-            'updateRecurringPanelButtonVisibility', 'updateStatsPanel', 'updateUndoRedoButtons'
+            'updateRecurringPanelButtonVisibility', 'updateStatsPanel', 'updateUndoRedoButtons',
+            // These three taskDOM both PROVIDES and consumes: it forwards them to its
+            // sub-modules, and the loader routes them back in from the task api bucket.
+            // Self-referential, but safe — all three depMappings entries are late-binding
+            // wrappers (`(...args) => deps.task?.X?.(...args)`), so nothing dereferences
+            // the taskDOM instance at its own wire time; they resolve on first call.
+            // setupRecurringButtonHandler is the load-bearing one: undeclared, the
+            // recurring button's listener is never attached, so clicking it does nothing
+            // at all — no template, no error, no warning. That was the last of the five
+            // journeys failing under ENFORCE_REQUIRES.
+            'handleTaskButtonClick', 'revealTaskButtons', 'setupRecurringButtonHandler',
+            // Also forwarded (surfaced once validate:di learned taskDOM's resolvedDeps
+            // alias). None broke a journey, but they are the same latent class.
+            //
+            // `dueDates` is deliberately NOT here. taskDOM reads it
+            // (`resolvedDeps.dueDates || this._warnMissingOptional('dueDates')`) but it is
+            // only a provideInstance — it reaches the api bucket as deps.features.dueDates
+            // and is not a top-level depMappings key, so declaring it fails the diWiring
+            // suite's "every optionalDep has a real route" check. validate:di counts
+            // provideInstance names as routes and so accepts it; the runtime test is the
+            // stricter, more truthful one. Giving it an actual route is its own change.
+            'captureStateSnapshot', 'incrementCycleCount', 'showCompletionAnimation'
         ],
         provides: [
             'createTaskDOMElements', 'setupTaskInteractions', 'refreshUIFromState',
