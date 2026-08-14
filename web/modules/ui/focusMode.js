@@ -70,6 +70,8 @@ export class FocusMode {
         this._keyHandler = null;
         this._undoRedoOriginalParent = null;
         this._undoRedoNextSibling = null;
+        /** @type {HTMLElement|null} Control that opened focus view; focus returns here on exit. */
+        this._focusReturnEl = null;
         this._navDotsOriginalParent = null;
         this._navDotsNextSibling = null;
         this._menuBtn = null;
@@ -779,6 +781,52 @@ export class FocusMode {
     }
 
     /**
+     * Put keyboard focus on focus view's primary control after activation.
+     *
+     * Preference order: the focus-view actions menu button (its own entry point),
+     * then the task input, then the task list. All are outside the inert chrome, so
+     * whichever exists is a valid landing spot. Falls back to doing nothing rather
+     * than focusing something inert — that would drop focus to <body> again.
+     * @returns {void}
+     */
+    _moveFocusIntoFocusView() {
+        const { getElementById } = this.deps;
+        const candidates = [
+            getElementById(DOM_IDS.FOCUS_MODE_MENU_BTN),
+            getElementById(DOM_IDS.TASK_INPUT),
+            getElementById(DOM_IDS.TASK_LIST)
+        ];
+        for (const el of candidates) {
+            if (!el || el.inert || el.closest('[inert]')) continue;
+            if (typeof el.checkVisibility === 'function' &&
+                !el.checkVisibility({ visibilityProperty: true })) continue;
+            try { el.focus({ preventScroll: true }); } catch { continue; }
+            if (document.activeElement === el) return;
+        }
+    }
+
+    /**
+     * Hand focus back to whatever opened focus view.
+     *
+     * Exiting used to leave activeElement on <body> (measured on the menu-item exit
+     * path), so a keyboard user's next Tab restarted from the top of the document
+     * instead of resuming near the control they came from.
+     * @returns {void}
+     */
+    _restoreFocusAfterExit() {
+        const target = this._focusReturnEl;
+        this._focusReturnEl = null;
+        const usable = (el) => el && el.isConnected && !el.inert && !el.closest('[inert]') &&
+            (typeof el.checkVisibility !== 'function' || el.checkVisibility({ visibilityProperty: true }));
+        const fallback = this.deps.getElementById(DOM_IDS.FOCUS_MODE_BTN);
+        for (const el of [target, fallback]) {
+            if (!usable(el)) continue;
+            try { el.focus({ preventScroll: true }); } catch { continue; }
+            if (document.activeElement === el) return;
+        }
+    }
+
+    /**
      * Collect the chrome elements that are visually hidden in focus mode.
      * Returned elements get `inert` toggled so keyboard / screen-reader
      * users don't tab into invisible chrome.
@@ -860,6 +908,12 @@ export class FocusMode {
             body.appendChild(navDots);
         }
 
+        // Remember who opened focus view so deactivate() can hand focus back.
+        // Captured BEFORE the inert sweep below, because the opener is usually
+        // #focus-mode-btn, which that sweep is about to remove from the tab order.
+        const opener = document.activeElement;
+        this._focusReturnEl = (opener && opener !== document.body) ? opener : null;
+
         // Make hidden chrome inert — removes it from the tab order and the
         // accessibility tree so keyboard / screen-reader users don't land on
         // invisible buttons. Done after undo-redo reparent so the footer's
@@ -867,6 +921,19 @@ export class FocusMode {
         for (const el of this._getInertChromeElements()) {
             el.inert = true;
         }
+
+        // Hand focus to focus view's own control.
+        //
+        // Inerting a subtree that CONTAINS the focused element silently drops focus
+        // to <body> — measured: activating from the keyboard left activeElement as
+        // BODY, so the next Tab restarted from the top of the document and the user
+        // got no announcement that the view had changed. `inert` correctly hides the
+        // chrome; nothing was picking focus back up afterwards.
+        //
+        // Deliberately NOT a focus trap: the chrome is already inert, so the tab
+        // ring is naturally confined to focus view's live controls. Adding a manual
+        // trap on top would be redundant and would fight the browser.
+        this._moveFocusIntoFocusView();
 
         this.deps.AppState?.update?.(state => {
             state.settings.focusModeActive = true;
@@ -959,6 +1026,14 @@ export class FocusMode {
                 this._navDotsOriginalParent = null;
                 this._navDotsNextSibling = null;
             }
+
+            // Hand focus back to whatever opened focus view — LAST, deliberately.
+            // Three things above would each defeat an earlier call: the opener is
+            // hidden while body still carries .focus-mode, it sits in a subtree that
+            // is inert until the loop above clears it, and this timeout REPARENTS
+            // this._button (the usual opener), which blurs it. Restoring here is the
+            // first point where the target is visible, focusable and settled.
+            this._restoreFocusAfterExit();
         }, 400);
 
         const settings = this.deps.AppState?.get?.()?.settings;
