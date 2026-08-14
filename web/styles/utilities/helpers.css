@@ -325,14 +325,34 @@
     background-color: rgba(130, 177, 250, 0.55);
 }
 
+/* Touch target for the 7px visual dot rendered by ::after.
+ *
+ * Width and horizontal spacing are the SAME number here: the visible dot is
+ * centred in this box, so box width IS the gap between adjacent dots. This was
+ * 48px wide with `margin: 0 -13px`, i.e. 48px targets yanked together to leave a
+ * 22px visual gap — which made adjacent targets OVERLAP by 26px. Each dot's
+ * centre therefore landed inside its right-hand neighbour, and since the
+ * neighbour comes later in the DOM it won hit-testing: clicking the visible
+ * "Routine" dot dispatched to "Stats", so Routine looked dead. Only its leftmost
+ * ~22px strip was live, and the visible dot wasn't in it. The handler was always
+ * fine — a programmatic .click() worked, which is exactly why it never looked
+ * like a CSS problem.
+ *
+ * 24px with no negative margin: targets tile instead of overlapping, every dot
+ * is clickable across its whole box, and 24×24 is the WCAG 2.5.8 (AA) minimum.
+ * Costs 2px of extra spacing between the visible dots. Do not reintroduce a
+ * negative margin to tighten them — that is the bug.
+ *
+ * Focus view overrides this entirely (focus-mode.css restyles the dots as a text
+ * switcher with `width: auto`), so this rule is home view only. */
 .dot {
-    width: 48px;
+    width: 24px;
     height: 48px;
     background: transparent;
     border: none;
     outline: none;
     padding: 0;
-    margin: 0 -13px;
+    margin: 0;
     border-radius: 50%;
     pointer-events: auto;
     cursor: pointer;
