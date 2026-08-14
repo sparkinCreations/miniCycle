@@ -124,6 +124,7 @@
   * [Stale Cache Fix #3](incidents/FIX_3_STALE_CACHE.md)
   * [Undo/Redo Rollback UI Refresh](incidents/BUG_undo-redo-rollback-ui-refresh.md)
   * [boot-sw Classic-Script ESM Break (v2.346)](incidents/INCIDENT_boot-sw-classic-script-esm.md)
+  * [Nav Dots Overlapping Touch Targets](incidents/BUG_nav-dots-overlapping-touch-targets.md)
 
 * **Deployment & Updates**
   * [Deployment Guide](deployment/DEPLOYMENT.md)

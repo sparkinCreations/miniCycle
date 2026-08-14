@@ -205,6 +205,43 @@ stored timestamp. Clamp to `LIMITS.MAX_TIMEOUT_MS` and re-arm.
 **Precedent:** a "every 30 days" reminder became an unbounded notification loop
 (the frequency input offered Days with no `max`).
 
+## 10. Touch targets wider than their spacing overlap, and DOM order wins
+
+Enlarging a hit area to meet a minimum-target-size guideline silently steals
+clicks from the neighbour when the targets are closer together than they are
+wide. The later sibling paints on top, so it is always the **earlier** control
+that goes dead — and only in the region where they overlap, which is usually
+dead centre.
+
+Target size and visual spacing are **coupled** whenever the visible mark is
+centred in its target: the box width *is* the gap between marks. You cannot have
+22px spacing and 44px non-overlapping targets; one of the two has to move.
+
+**Smell:** a negative margin pulling large targets together — `width: 48px;
+margin: 0 -13px` is a statement that adjacent targets overlap by 26px.
+
+**Check:** probe the hit-test, not the handler.
+
+```js
+const r = el.getBoundingClientRect();
+document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); // === el?
+```
+
+A programmatic `.click()` **passing proves nothing here** — it bypasses
+hit-testing, so the handler tests clean while every real pointer misses. For any
+"this control does nothing" report, probe the centre point before reading JS.
+
+**Precedent:** the Home View nav dots. A Feb 2026 accessibility commit added a
+48×48 invisible target to dots spaced 22px apart; the Routine dot's centre landed
+inside the Stats target and stayed unclickable for ~6 months. Full write-up:
+`docs/incidents/BUG_nav-dots-overlapping-touch-targets.md`.
+
+**Corollary — verify a repro before believing it.** The first attempt to
+reproduce the old geometry lost a CSS specificity fight, left the pseudo-element
+at its real size, and reported everything healthy. An unapplied override fails
+*open*. Assert the simulated value took effect (`getComputedStyle(el,
+'::after').width`) before trusting the verdict.
+
 ## What consistently holds up
 
 Not everything needs re-review. These were checked and found sound: corruption

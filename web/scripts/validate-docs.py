@@ -402,7 +402,7 @@ def main():
 
     print()
     if errors:
-        print('❌ FAIL — %d problem(s). See docs/future-work/DOCS_REORG_PLAN.md '
+        print('❌ FAIL — %d problem(s). See docs/project-info/CONTRIBUTING.md '
               'for the filing rules.' % errors)
         return 1
     print('✅ PASS — links resolve (docs + root), every doc is reachable, '
