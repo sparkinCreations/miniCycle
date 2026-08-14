@@ -1,3 +1,7 @@
+## [2.419] - 2026-08-14
+- fix(tasks,a11y,copy): recurring tasks excluded from Cleared Tasks; menu ARIA; QA copy pass
+
+
 ## [2.418] - 2026-08-14
 - feat(di): enable ENFORCE_REQUIRES — modules receive only declared deps
 - refactor(task): drop taskDOM's dead dueDates/reminders deps
