@@ -1,3 +1,7 @@
+## [2.422] - 2026-08-15
+- fix(a11y): vocab-theme presets no longer leak into the dark-mode modal
+
+
 ## [2.421] - 2026-08-14
 - fix(nav): stop nav dots overlapping so the Routine dot is clickable
 
