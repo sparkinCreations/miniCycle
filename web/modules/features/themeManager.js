@@ -112,8 +112,14 @@ const VOCAB_THEME_CSS_VARS = {
 // When dark mode is toggled ON while a vocab theme is active, we clear the
 // direct body.style.background so dark mode CSS rules take over.
 // When dark mode is toggled OFF, we restore it.
-// CSS :not(.dark-mode) guards handle all --pref-* custom property vars automatically;
-// only the direct `background` property on body.style needs manual management.
+// Surfaces that must drop the preset in dark mode do it themselves: stats-panel.css
+// uses `body:not(.dark-mode)` guards, and themes-modal.css routes every read through
+// --modal-*-effective tokens that it redefines under body.dark-mode. This is NOT
+// automatic — a --pref-* read with no such guard keeps the preset colour in dark mode,
+// which is how the vocab-theme modal text ended up at 2.48:1 (Aug 2026). Note a plain
+// `body:not(.dark-mode)` guard cannot work on the same property, because the presets
+// below are set as INLINE styles on <body> and outrank any stylesheet rule.
+// Only the direct `background` property on body.style needs manual management.
 let _darkModeObserver = null;
 
 function _setupDarkModeObserver() {

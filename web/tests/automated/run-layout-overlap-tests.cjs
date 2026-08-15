@@ -232,6 +232,80 @@ async function run() {
             });
         }
 
+        // --- Vocab-theme modal contrast in dark mode --------------------------
+        // Vocabulary themes ship a colorPreset built for a LIGHT modal (Scholar's
+        // modalText is #1e1b4b). themeManager applies those as --pref-* INLINE on
+        // <body>, and --pref-* sat first in every fallback chain in
+        // themes-modal.css — ahead of --theme-modal-text, the only dark-aware
+        // link. In dark mode the panel went dark and the text stayed dark:
+        // Scholar measured 2.48:1 against a 4.5:1 AA floor, on every label in the
+        // modal. Presets are read from themes.js so a NEW theme is covered here
+        // the day it is added, rather than needing this list updated.
+        {
+            const vp = { name: 'theme-contrast', width: 390, height: 844 };
+            await page.setViewportSize({ width: vp.width, height: vp.height });
+            console.log(`\n${colors.cyan}▸ ${vp.name} ${vp.width}x${vp.height} (dark mode)${colors.reset}`);
+
+            const measured = await page.evaluate(async () => {
+                const v = globalThis.APP_VERSION;
+                const mod = await import(`/modules/labels/themes.js?v=${v}`);
+                const defs = mod.THEME_DEFINITIONS || {};
+
+                document.documentElement.classList.add('dark-mode');
+                document.body.classList.add('dark-mode');
+                const dlg = document.getElementById('themes-modal');
+                if (dlg && !dlg.open) dlg.showModal();
+                await new Promise(r => setTimeout(r, 350));
+
+                const srgb = (c) => { c /= 255; return c <= 0.03928 ? c/12.92 : Math.pow((c+0.055)/1.055, 2.4); };
+                const lum = (r) => 0.2126*srgb(r[0]) + 0.7152*srgb(r[1]) + 0.0722*srgb(r[2]);
+                const parse = (str) => { const n = (str.match(/[\d.]+/g) || []).map(Number);
+                    return { rgb: n.slice(0,3), a: n.length > 3 ? n[3] : 1 }; };
+                const over = (f, b) => f.rgb.map((c,i) => c*f.a + b[i]*(1-f.a));
+                const effBg = (el) => { const L = []; let n = el;
+                    while (n) { const c = parse(getComputedStyle(n).backgroundColor);
+                        if (c.a > 0) L.push(c); if (c.a === 1) break; n = n.parentElement; }
+                    let base = L.length && L[L.length-1].a === 1 ? L.pop().rgb : [255,255,255];
+                    for (let i = L.length-1; i >= 0; i--) base = over(L[i], base);
+                    return base; };
+                const ratio = (a,b) => { const la = lum(a), lb = lum(b);
+                    const hi = Math.max(la,lb), lo = Math.min(la,lb); return (hi+0.05)/(lo+0.05); };
+
+                const out = [];
+                for (const [id, def] of Object.entries(defs)) {
+                    const preset = def.colorPreset || {};
+                    // Apply the preset exactly as themeManager does: inline on <body>.
+                    if (preset.modalText) document.body.style.setProperty('--pref-modal-text', preset.modalText);
+                    if (preset.modalBg)   document.body.style.setProperty('--pref-modal-bg', preset.modalBg);
+                    await new Promise(r => setTimeout(r, 60));
+
+                    let worst = Infinity, sample = null;
+                    document.querySelectorAll('.vocab-theme-name, .themes-modal-content h2').forEach(el => {
+                        const fgP = parse(getComputedStyle(el).color);
+                        const bg = effBg(el.parentElement || el);
+                        const fg = fgP.a < 1 ? over(fgP, bg) : fgP.rgb;
+                        const r = ratio(fg, bg);
+                        if (r < worst) { worst = r; sample = { fg: getComputedStyle(el).color,
+                            bg: 'rgb(' + bg.map(Math.round).join(', ') + ')' }; }
+                    });
+                    document.body.style.removeProperty('--pref-modal-text');
+                    document.body.style.removeProperty('--pref-modal-bg');
+                    if (worst !== Infinity) out.push({ id, worst: +worst.toFixed(2), ...sample });
+                }
+                if (dlg && dlg.open) dlg.close();
+                document.documentElement.classList.remove('dark-mode');
+                document.body.classList.remove('dark-mode');
+                return out;
+            });
+
+            record(vp, 'themes modal exposes labels to measure', measured.length > 0,
+                'no .vocab-theme-name / modal heading found — the check would pass vacuously');
+            for (const m of measured) {
+                record(vp, `${m.id} modal text meets AA (4.5:1) in dark mode`, m.worst >= 4.5,
+                    `${m.worst}:1 — fg=${m.fg} on bg=${m.bg}; a light-mode preset is leaking into dark mode`);
+            }
+        }
+
         // --- Safe-area inset change (padding-only header growth) --------------
         // The header's height moves through padding:
         //   padding: calc(env(safe-area-inset-top, 0px) + 28px) ...
