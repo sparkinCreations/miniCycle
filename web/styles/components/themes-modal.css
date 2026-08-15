@@ -38,16 +38,38 @@ body {
     --modal-bg-effective:         var(--pref-modal-bg, var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white))));
     --modal-bg-solid-effective:   var(--pref-modal-bg, var(--theme-modal-bg, var(--color-white)));
     --modal-panel-text-effective: var(--pref-panel-text, var(--theme-text-primary, var(--color-gray-700)));
+    /* --pref-modal-bg sits ahead of the theme's APP-header colour on purpose:
+       every colorPreset pairs modalBg with modalText, and without that first
+       link a DARK colour theme (dark, dark-ocean) painted this surface with its
+       own header colour while the preset kept supplying light-modal text —
+       measured 1.04:1 for cleaning on the dark theme, in LIGHT mode. Themes
+       with no preset are untouched and keep their app-header colour. */
+    --modal-header-bg-effective:  var(--pref-modal-bg, var(--theme-header-bg, var(--color-gray-100)));
 }
 
-/* Dark mode: drop the preset layer entirely and use the dark-aware tokens. */
-body.dark-mode {
+/* Drop the preset layer entirely and use the dark-aware tokens wherever the
+   modal surface is dark. That is dark mode, but ALSO the two dark colour themes
+   — they paint the modal from their own dark palette while --pref-modal-text
+   keeps supplying a colour drawn for a light modal, which measured 1.15:1 (dark)
+   and 1.36:1 (dark-ocean) in LIGHT mode. A new dark theme has to be added here;
+   the theme-contrast gate in run-layout-overlap-tests.cjs enumerates [data-theme]
+   blocks straight from the stylesheets, so it fails the day one is missed. */
+body.dark-mode,
+:root[data-theme="dark"] body,
+:root[data-theme="dark-ocean"] body {
     --modal-text-effective:      var(--theme-modal-text, var(--color-gray-700));
     --modal-text-muted-effective: var(--theme-modal-text, var(--color-gray-600));
     --modal-border-effective:    var(--theme-modal-border, var(--overlay-light));
     --modal-bg-effective:        var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white)));
     --modal-bg-solid-effective:  var(--theme-modal-bg, var(--color-white));
     --modal-panel-text-effective: var(--theme-text-primary, var(--color-gray-700));
+    /* --theme-header-bg is a theme's APP-header colour and is NOT dark-aware:
+       dark-mode.css overrides every --theme-modal-* token but leaves that one
+       alone, so golden-glow kept painting these surfaces #ffd700 under
+       #f0f0f0 dark-mode text — 1.23:1, worse than the preset leak above and
+       present since long before it. The modal-specific token IS overridden for
+       dark mode, so every theme lands on a dark surface here. */
+    --modal-header-bg-effective: var(--theme-modal-header-bg, var(--color-gray-100));
 }
 
 /* =============================================================================
@@ -88,7 +110,7 @@ body.dark-mode {
 .themes-modal-content h2 {
     margin: 0;
     padding: var(--space-4-5) var(--space-6);
-    background: var(--theme-header-bg, var(--color-gray-100));
+    background: var(--modal-header-bg-effective);
     color: var(--modal-text-effective);
     font-size: var(--font-size-lg);
     font-weight: 600;
@@ -122,6 +144,17 @@ body.dark-mode {
 .theme-radio-option:has(input:checked) {
     background: var(--color-blue-pale-mid);
     border-color: var(--border-blue-subtle-hover);
+}
+
+/* The fill above is a fixed light blue, so on a dark colour theme it put that
+   theme's light --theme-modal-text on #c0d4ed: 1.15:1 for dark, 1.36:1 for
+   dark-ocean. Keep the row's own opaque surface — which already pairs with the
+   label — and let the accent ring plus the filled radio carry the selected
+   state. Scoped to the dark themes so the default selection is untouched. */
+:root[data-theme="dark"] .theme-radio-option:has(input:checked),
+:root[data-theme="dark-ocean"] .theme-radio-option:has(input:checked) {
+    background: var(--theme-input-bg, var(--overlay-faint));
+    border-color: var(--theme-accent, var(--border-blue-subtle-hover));
 }
 
 .theme-radio-option input[type="radio"] {
@@ -364,7 +397,7 @@ dialog.preferences-modal::backdrop {
 .preferences-modal-content h2 {
     margin: 0;
     padding: var(--space-4) var(--space-5);
-    background: var(--theme-header-bg, var(--color-gray-100));
+    background: var(--modal-header-bg-effective);
     color: var(--modal-text-effective);
     font-size: var(--font-size-lg);
     font-weight: 600;
@@ -1204,7 +1237,7 @@ dialog.preferences-modal::backdrop {
 .bg-image-preview-container {
     margin-top: var(--space-2-5);
     padding: var(--space-2);
-    background: var(--theme-header-bg, var(--color-gray-100));
+    background: var(--modal-header-bg-effective);
     border-radius: var(--radius-md);
     text-align: center;
 }
@@ -1232,7 +1265,7 @@ dialog.preferences-modal::backdrop {
     display: flex;
     gap: var(--space-2-5);
     padding: var(--space-3) var(--space-4);
-    background: var(--theme-header-bg, var(--color-gray-100));
+    background: var(--modal-header-bg-effective);
     border-top: 1px solid var(--modal-border-effective);
     flex-shrink: 0;
 }

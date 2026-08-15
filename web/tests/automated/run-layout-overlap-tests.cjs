@@ -232,28 +232,58 @@ async function run() {
             });
         }
 
-        // --- Vocab-theme modal contrast in dark mode --------------------------
-        // Vocabulary themes ship a colorPreset built for a LIGHT modal (Scholar's
-        // modalText is #1e1b4b). themeManager applies those as --pref-* INLINE on
-        // <body>, and --pref-* sat first in every fallback chain in
-        // themes-modal.css — ahead of --theme-modal-text, the only dark-aware
-        // link. In dark mode the panel went dark and the text stayed dark:
-        // Scholar measured 2.48:1 against a 4.5:1 AA floor, on every label in the
-        // modal. Presets are read from themes.js so a NEW theme is covered here
-        // the day it is added, rather than needing this list updated.
+        // --- Modal contrast across every colour layer -------------------------
+        // Three layers stack on this modal and each was written as if it were the
+        // only one:
+        //   1. the vocab theme's colorPreset (--pref-*), built for a LIGHT modal
+        //      — Scholar's modalText is #1e1b4b;
+        //   2. the colour theme ([data-theme]), which may be light (golden-glow)
+        //      or dark (dark, dark-ocean);
+        //   3. dark mode, which overrides --theme-modal-* but not --theme-header-bg.
+        // Every measured failure so far was two of those layers disagreeing:
+        // preset text on a dark-mode panel (2.48:1), dark-mode text on golden
+        // -glow's app-header colour (1.23:1), preset text on the dark theme's
+        // app-header colour in LIGHT mode (1.04:1). So sweep the whole matrix —
+        // both modes, every colour theme, every preset — reading all three lists
+        // from the app itself so a new theme is covered the day it lands.
         {
             const vp = { name: 'theme-contrast', width: 390, height: 844 };
             await page.setViewportSize({ width: vp.width, height: vp.height });
-            console.log(`\n${colors.cyan}▸ ${vp.name} ${vp.width}x${vp.height} (dark mode)${colors.reset}`);
+            console.log(`\n${colors.cyan}▸ ${vp.name} ${vp.width}x${vp.height} (light + dark mode)${colors.reset}`);
 
-            const measured = await page.evaluate(async () => {
+            let probe = { out: [], skipped: 0, measuredEls: 0 };
+            try {
+            probe = await page.evaluate(async () => {
                 const v = globalThis.APP_VERSION;
                 const mod = await import(`/modules/labels/themes.js?v=${v}`);
                 const defs = mod.THEME_DEFINITIONS || {};
 
-                document.documentElement.classList.add('dark-mode');
-                document.body.classList.add('dark-mode');
+                // Snapshot every piece of page state this block writes, and park it
+                // where the restore pass below can reach it — so an early throw
+                // can't hand the next scenario a dark, modal-open, preset-tinted
+                // page.
+                const root = document.documentElement;
                 const dlg = document.getElementById('themes-modal');
+                globalThis.__themeContrastRestore = {
+                    rootDark: root.classList.contains('dark-mode'),
+                    bodyDark: document.body.classList.contains('dark-mode'),
+                    dataTheme: root.getAttribute('data-theme'),
+                    themeClasses: Array.from(document.body.classList).filter(c => c.indexOf('theme-') === 0),
+                    dlgOpen: !!(dlg && dlg.open),
+                    prefText: document.body.style.getPropertyValue('--pref-modal-text'),
+                    prefBg: document.body.style.getPropertyValue('--pref-modal-bg')
+                };
+
+                // .theme-radio-option transitions `all`, so switching theme between
+                // iterations left the row mid-fade and the probe measured blended
+                // colours that drifted with loop order. Freeze animation for the
+                // duration of the sweep.
+                const freeze = document.createElement('style');
+                freeze.id = '__theme-contrast-freeze';
+                freeze.textContent = '*, *::before, *::after { transition: none !important;'
+                    + ' animation: none !important; }';
+                document.head.appendChild(freeze);
+
                 if (dlg && !dlg.open) dlg.showModal();
                 await new Promise(r => setTimeout(r, 350));
 
@@ -262,47 +292,138 @@ async function run() {
                 const parse = (str) => { const n = (str.match(/[\d.]+/g) || []).map(Number);
                     return { rgb: n.slice(0,3), a: n.length > 3 ? n[3] : 1 }; };
                 const over = (f, b) => f.rgb.map((c,i) => c*f.a + b[i]*(1-f.a));
-                const effBg = (el) => { const L = []; let n = el;
+                // Composite the background stack, but return null rather than
+                // guessing when nothing in the chain is opaque. The app paints its
+                // background through a layer that leaves backgroundColor
+                // transparent all the way to <html>, so an assumed white base
+                // produced confident, wrong ratios for anything on a glass surface
+                // — light-on-dark text scored as light-on-white. Only elements that
+                // resolve to a real colour are asserted on; the rest are counted.
+                const effBg = (el) => { const L = []; let n = el, opaque = false;
                     while (n) { const c = parse(getComputedStyle(n).backgroundColor);
-                        if (c.a > 0) L.push(c); if (c.a === 1) break; n = n.parentElement; }
-                    let base = L.length && L[L.length-1].a === 1 ? L.pop().rgb : [255,255,255];
+                        if (c.a > 0) L.push(c);
+                        if (c.a === 1) { opaque = true; break; }
+                        n = n.parentElement; }
+                    if (!opaque) return null;
+                    let base = L.pop().rgb;
                     for (let i = L.length-1; i >= 0; i--) base = over(L[i], base);
                     return base; };
                 const ratio = (a,b) => { const la = lum(a), lb = lum(b);
                     const hi = Math.max(la,lb), lo = Math.min(la,lb); return (hi+0.05)/(lo+0.05); };
 
-                const out = [];
-                for (const [id, def] of Object.entries(defs)) {
-                    const preset = def.colorPreset || {};
-                    // Apply the preset exactly as themeManager does: inline on <body>.
-                    if (preset.modalText) document.body.style.setProperty('--pref-modal-text', preset.modalText);
-                    if (preset.modalBg)   document.body.style.setProperty('--pref-modal-bg', preset.modalBg);
-                    await new Promise(r => setTimeout(r, 60));
-
-                    let worst = Infinity, sample = null;
-                    document.querySelectorAll('.vocab-theme-name, .themes-modal-content h2').forEach(el => {
-                        const fgP = parse(getComputedStyle(el).color);
-                        const bg = effBg(el.parentElement || el);
-                        const fg = fgP.a < 1 ? over(fgP, bg) : fgP.rgb;
-                        const r = ratio(fg, bg);
-                        if (r < worst) { worst = r; sample = { fg: getComputedStyle(el).color,
-                            bg: 'rgb(' + bg.map(Math.round).join(', ') + ')' }; }
-                    });
-                    document.body.style.removeProperty('--pref-modal-text');
-                    document.body.style.removeProperty('--pref-modal-bg');
-                    if (worst !== Infinity) out.push({ id, worst: +worst.toFixed(2), ...sample });
+                // Colour themes are a SECOND layer over the vocab preset: each one
+                // sets --theme-header-bg, which paints the modal heading's own
+                // background. Read them out of the stylesheets rather than a hand
+                // list, so a new [data-theme] block is covered the day it lands.
+                // themes.css arrives through an @import in main.css, so a flat pass
+                // over document.styleSheets never reaches it — recurse through
+                // imported sheets and grouping rules (@media/@supports) too.
+                const colorThemes = ['default'];
+                const scan = (rules) => {
+                    for (const rule of Array.from(rules || [])) {
+                        const m = /\[data-theme=["']?([\w-]+)["']?\]/.exec(rule.selectorText || '');
+                        if (m && !colorThemes.includes(m[1])) colorThemes.push(m[1]);
+                        try {
+                            if (rule.styleSheet) scan(rule.styleSheet.cssRules);  // @import
+                            else if (rule.cssRules) scan(rule.cssRules);          // @media/@supports
+                        } catch { /* cross-origin sheet — nothing readable inside */ }
+                    }
+                };
+                for (const sheet of Array.from(document.styleSheets)) {
+                    try { scan(sheet.cssRules); } catch { /* cross-origin */ }
                 }
-                if (dlg && dlg.open) dlg.close();
-                document.documentElement.classList.remove('dark-mode');
-                document.body.classList.remove('dark-mode');
-                return out;
-            });
 
-            record(vp, 'themes modal exposes labels to measure', measured.length > 0,
-                'no .vocab-theme-name / modal heading found — the check would pass vacuously');
+                const out = [];
+                let skipped = 0, measuredEls = 0;
+                for (const mode of ['light', 'dark']) {
+                    root.classList.toggle('dark-mode', mode === 'dark');
+                    document.body.classList.toggle('dark-mode', mode === 'dark');
+
+                    for (const theme of colorThemes) {
+                        // Mirror themeManager.applyTheme(): the [data-theme] attribute
+                        // AND the body.theme-<name> class. Setting only the attribute
+                        // left the page background on the default palette, which
+                        // changes what translucent modal layers composite over.
+                        for (const t of colorThemes) document.body.classList.remove('theme-' + t);
+                        if (theme === 'default') delete root.dataset.theme;
+                        else { root.dataset.theme = theme; document.body.classList.add('theme-' + theme); }
+
+                        // One record per (mode, colour theme), carrying the worst
+                        // preset — a per-preset line would be 40 rows of noise, and
+                        // the failing preset is named in the message either way.
+                        let worst = Infinity, sample = null, culprit = null, below = 0;
+                        for (const [id, def] of Object.entries(defs)) {
+                            const preset = def.colorPreset || {};
+                            // Apply the preset exactly as themeManager does: inline on <body>.
+                            if (preset.modalText) document.body.style.setProperty('--pref-modal-text', preset.modalText);
+                            if (preset.modalBg)   document.body.style.setProperty('--pref-modal-bg', preset.modalBg);
+                            await new Promise(r => setTimeout(r, 60));
+
+                            document.querySelectorAll('.vocab-theme-name, .themes-modal-content h2').forEach(el => {
+                                // Start AT the element: a heading paints its own
+                                // background, and measuring from the parent would
+                                // score it against a colour it never shows.
+                                const bg = effBg(el);
+                                if (!bg) { skipped++; return; }
+                                measuredEls++;
+                                const fgP = parse(getComputedStyle(el).color);
+                                const fg = fgP.a < 1 ? over(fgP, bg) : fgP.rgb;
+                                const r = ratio(fg, bg);
+                                if (r < 4.5) below++;
+                                if (r < worst) { worst = r; culprit = id;
+                                    sample = { fg: getComputedStyle(el).color,
+                                        bg: 'rgb(' + bg.map(Math.round).join(', ') + ')',
+                                        el: el.tagName.toLowerCase() + (el.className ? '.' + String(el.className).trim().split(/\s+/).join('.') : '') }; }
+                            });
+                            document.body.style.removeProperty('--pref-modal-text');
+                            document.body.style.removeProperty('--pref-modal-bg');
+                        }
+                        if (worst !== Infinity) out.push({ mode, theme, culprit, below, worst: +worst.toFixed(2), ...sample });
+                    }
+                }
+                return { out, skipped, measuredEls };
+            });
+            } finally {
+                // Put the page back the way it was, whether the block finished or
+                // threw — inset-change measures the same page right after this.
+                await page.evaluate(() => {
+                    const freeze = document.getElementById('__theme-contrast-freeze');
+                    if (freeze) freeze.remove();
+                    const prev = globalThis.__themeContrastRestore;
+                    if (!prev) return;
+                    delete globalThis.__themeContrastRestore;
+                    const root = document.documentElement;
+                    const dlg = document.getElementById('themes-modal');
+                    if (dlg && dlg.open && !prev.dlgOpen) dlg.close();
+                    root.classList.toggle('dark-mode', prev.rootDark);
+                    document.body.classList.toggle('dark-mode', prev.bodyDark);
+                    if (prev.dataTheme === null) root.removeAttribute('data-theme');
+                    else root.setAttribute('data-theme', prev.dataTheme);
+                    Array.from(document.body.classList)
+                        .filter(c => c.indexOf('theme-') === 0)
+                        .forEach(c => document.body.classList.remove(c));
+                    (prev.themeClasses || []).forEach(c => document.body.classList.add(c));
+                    for (const pair of [['--pref-modal-text', prev.prefText],
+                                        ['--pref-modal-bg', prev.prefBg]]) {
+                        if (pair[1]) document.body.style.setProperty(pair[0], pair[1]);
+                        else document.body.style.removeProperty(pair[0]);
+                    }
+                });
+            }
+
+            const measured = probe.out;
+            record(vp, 'themes modal exposes labels to measure', probe.measuredEls > 0,
+                `no label resolved to a measurable background (${probe.skipped} skipped) — `
+                + 'the check would pass vacuously');
+            if (probe.skipped > 0) {
+                console.log(`   ${colors.yellow}⚠${colors.reset}  theme-contrast: ${probe.skipped} label(s) sit on a `
+                    + `fully translucent stack and were NOT measured (see effBg)`);
+            }
             for (const m of measured) {
-                record(vp, `${m.id} modal text meets AA (4.5:1) in dark mode`, m.worst >= 4.5,
-                    `${m.worst}:1 — fg=${m.fg} on bg=${m.bg}; a light-mode preset is leaking into dark mode`);
+                record(vp, `${m.theme} theme, ${m.mode} mode: modal text meets AA (4.5:1)`, m.worst >= 4.5,
+                    `${m.worst}:1 on ${m.el} with the ${m.culprit} preset — fg=${m.fg} on bg=${m.bg}; `
+                    + `${m.below} measurement(s) below the floor in this combination; `
+                    + `two colour layers disagree (vocab preset --pref-*, colour theme, or dark mode)`);
             }
         }
 
