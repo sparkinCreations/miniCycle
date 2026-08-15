@@ -4,6 +4,75 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 /* =============================================================================
+   EFFECTIVE MODAL TOKENS — the dark-mode guard for vocab-theme presets
+   =============================================================================
+   Vocabulary themes ship a colorPreset built for a LIGHT modal (Scholar's
+   modalText is #1e1b4b, Habit Tracker's #3d1a00, and so on). themeManager
+   applies those as --pref-* custom properties, and --pref-* sits FIRST in every
+   fallback chain here — so it beat --theme-modal-text, which is the only link
+   that is dark-mode aware. In dark mode the panel went dark while the text
+   stayed a dark preset colour: Scholar measured 2.48:1 against a 4.5:1 AA floor.
+
+   themeManager.js used to claim ":not(.dark-mode) guards handle all --pref-*
+   vars automatically". They exist in stats-panel.css; this file had 29 --pref-*
+   reads and none of them was guarded.
+
+   Guarding via `body:not(.dark-mode)` on each read would not work anyway:
+   themeManager sets the presets as INLINE styles on <body>, which outrank any
+   stylesheet rule targeting the same property. Hence this indirection — the
+   inline style writes --pref-*, while these --modal-*-effective tokens are ours
+   alone, so the dark-mode override below always wins without !important.
+
+   Add new modal colours here rather than reading --pref-* directly.
+   ============================================================================= */
+
+/* Defined on BODY, not :root — themeManager sets the --pref-* presets as inline
+   styles on <body>, and a custom property is resolved against the element that
+   DECLARES it. Declaring these on :root resolved --pref-* before body's inline
+   value existed, so every theme silently lost its modal colour in LIGHT mode
+   too (measured: preset #1e1b4b applied, text still rendering #333333). */
+body {
+    --modal-text-effective:       var(--pref-modal-text, var(--theme-modal-text, var(--color-gray-700)));
+    --modal-text-muted-effective: var(--pref-modal-text, var(--theme-modal-text, var(--color-gray-600)));
+    --modal-border-effective:     var(--pref-modal-border, var(--theme-modal-border, var(--overlay-light)));
+    --modal-bg-effective:         var(--pref-modal-bg, var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white))));
+    --modal-bg-solid-effective:   var(--pref-modal-bg, var(--theme-modal-bg, var(--color-white)));
+    --modal-panel-text-effective: var(--pref-panel-text, var(--theme-text-primary, var(--color-gray-700)));
+    /* --pref-modal-bg sits ahead of the theme's APP-header colour on purpose:
+       every colorPreset pairs modalBg with modalText, and without that first
+       link a DARK colour theme (dark, dark-ocean) painted this surface with its
+       own header colour while the preset kept supplying light-modal text —
+       measured 1.04:1 for cleaning on the dark theme, in LIGHT mode. Themes
+       with no preset are untouched and keep their app-header colour. */
+    --modal-header-bg-effective:  var(--pref-modal-bg, var(--theme-header-bg, var(--color-gray-100)));
+}
+
+/* Drop the preset layer entirely and use the dark-aware tokens wherever the
+   modal surface is dark. That is dark mode, but ALSO the two dark colour themes
+   — they paint the modal from their own dark palette while --pref-modal-text
+   keeps supplying a colour drawn for a light modal, which measured 1.15:1 (dark)
+   and 1.36:1 (dark-ocean) in LIGHT mode. A new dark theme has to be added here;
+   the theme-contrast gate in run-layout-overlap-tests.cjs enumerates [data-theme]
+   blocks straight from the stylesheets, so it fails the day one is missed. */
+body.dark-mode,
+:root[data-theme="dark"] body,
+:root[data-theme="dark-ocean"] body {
+    --modal-text-effective:      var(--theme-modal-text, var(--color-gray-700));
+    --modal-text-muted-effective: var(--theme-modal-text, var(--color-gray-600));
+    --modal-border-effective:    var(--theme-modal-border, var(--overlay-light));
+    --modal-bg-effective:        var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white)));
+    --modal-bg-solid-effective:  var(--theme-modal-bg, var(--color-white));
+    --modal-panel-text-effective: var(--theme-text-primary, var(--color-gray-700));
+    /* --theme-header-bg is a theme's APP-header colour and is NOT dark-aware:
+       dark-mode.css overrides every --theme-modal-* token but leaves that one
+       alone, so golden-glow kept painting these surfaces #ffd700 under
+       #f0f0f0 dark-mode text — 1.23:1, worse than the preset leak above and
+       present since long before it. The modal-specific token IS overridden for
+       dark mode, so every theme lands on a dark surface here. */
+    --modal-header-bg-effective: var(--theme-modal-header-bg, var(--color-gray-100));
+}
+
+/* =============================================================================
    THEMES MODAL
    ============================================================================= */
 
@@ -22,8 +91,8 @@
 
 .themes-modal-content {
     position: relative;
-    background: var(--pref-modal-bg, var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white))));
-    color: var(--pref-modal-text, var(--theme-modal-text, var(--color-gray-700)));
+    background: var(--modal-bg-effective);
+    color: var(--modal-text-effective);
     padding: 0;
     border-radius: var(--radius-xl);
     width: 420px;
@@ -41,12 +110,12 @@
 .themes-modal-content h2 {
     margin: 0;
     padding: var(--space-4-5) var(--space-6);
-    background: var(--theme-header-bg, var(--color-gray-100));
-    color: var(--pref-modal-text, var(--theme-modal-text, var(--color-gray-700)));
+    background: var(--modal-header-bg-effective);
+    color: var(--modal-text-effective);
     font-size: var(--font-size-lg);
     font-weight: 600;
     letter-spacing: 0.3px;
-    border-bottom: 1px solid var(--pref-modal-border, var(--theme-modal-border, var(--overlay-light)));
+    border-bottom: 1px solid var(--modal-border-effective);
 }
 
 /* Theme options sections */
@@ -75,6 +144,17 @@
 .theme-radio-option:has(input:checked) {
     background: var(--color-blue-pale-mid);
     border-color: var(--border-blue-subtle-hover);
+}
+
+/* The fill above is a fixed light blue, so on a dark colour theme it put that
+   theme's light --theme-modal-text on #c0d4ed: 1.15:1 for dark, 1.36:1 for
+   dark-ocean. Keep the row's own opaque surface — which already pairs with the
+   label — and let the accent ring plus the filled radio carry the selected
+   state. Scoped to the dark themes so the default selection is untouched. */
+:root[data-theme="dark"] .theme-radio-option:has(input:checked),
+:root[data-theme="dark-ocean"] .theme-radio-option:has(input:checked) {
+    background: var(--theme-input-bg, var(--overlay-faint));
+    border-color: var(--theme-accent, var(--border-blue-subtle-hover));
 }
 
 .theme-radio-option input[type="radio"] {
@@ -109,7 +189,7 @@
 .theme-radio-label {
     font-size: var(--font-size-sm);
     font-weight: 500;
-    color: var(--pref-modal-text, var(--theme-modal-text, var(--color-gray-700)));
+    color: var(--modal-text-effective);
 }
 
 /* Legacy checkbox support */
@@ -238,7 +318,7 @@
 .vocab-theme-name {
     font-size: var(--font-size-sm);
     font-weight: 500;
-    color: var(--pref-modal-text, var(--theme-modal-text, var(--color-gray-700)));
+    color: var(--modal-text-effective);
 }
 
 .vocab-theme-hint {
@@ -295,8 +375,8 @@ dialog.preferences-modal::backdrop {
 
 .preferences-modal-content {
     position: relative;
-    background: var(--pref-modal-bg, var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white))));
-    color: var(--pref-modal-text, var(--theme-modal-text, var(--color-gray-700)));
+    background: var(--modal-bg-effective);
+    color: var(--modal-text-effective);
     padding: 0;
     border-radius: var(--radius-xl);
     width: 420px;
@@ -317,12 +397,12 @@ dialog.preferences-modal::backdrop {
 .preferences-modal-content h2 {
     margin: 0;
     padding: var(--space-4) var(--space-5);
-    background: var(--theme-header-bg, var(--color-gray-100));
-    color: var(--pref-modal-text, var(--theme-modal-text, var(--color-gray-700)));
+    background: var(--modal-header-bg-effective);
+    color: var(--modal-text-effective);
     font-size: var(--font-size-lg);
     font-weight: 600;
     letter-spacing: 0.3px;
-    border-bottom: 1px solid var(--pref-modal-border, var(--theme-modal-border, var(--overlay-light)));
+    border-bottom: 1px solid var(--modal-border-effective);
     flex-shrink: 0;
 }
 
@@ -338,7 +418,7 @@ dialog.preferences-modal::backdrop {
     border: 1px solid var(--theme-accent, var(--highlight-blue-border));
     border-radius: var(--radius-md);
     font-size: var(--font-size-xs);
-    color: var(--pref-modal-text, var(--theme-modal-text, var(--color-gray-600)));
+    color: var(--modal-text-muted-effective);
     text-align: left;
     flex-shrink: 0;
 }
@@ -390,7 +470,7 @@ dialog.preferences-modal::backdrop {
 .preferences-preview-label {
     font-size: var(--font-size-xs);
     font-weight: 600;
-    color: var(--pref-panel-text);
+    color: var(--modal-panel-text-effective);
     text-transform: uppercase;
     letter-spacing: 0.5px;
     margin-bottom: var(--space-2);
@@ -635,7 +715,7 @@ dialog.preferences-modal::backdrop {
     gap: var(--space-2);
     font-size: var(--font-size-sm);
     font-weight: 600;
-    color: var(--pref-modal-text, var(--theme-modal-text, var(--color-gray-700)));
+    color: var(--modal-text-effective);
     margin-bottom: var(--space-2-5);
     text-align: left;
 }
@@ -683,7 +763,7 @@ dialog.preferences-modal::backdrop {
 .quick-preset-name {
     font-size: var(--font-size-xs);
     font-weight: 500;
-    color: var(--pref-modal-text, var(--theme-modal-text, var(--color-gray-600)));
+    color: var(--modal-text-muted-effective);
 }
 
 /* =============================================================================
@@ -704,7 +784,7 @@ dialog.preferences-modal::backdrop {
 .preferences-import-btn {
     padding: var(--space-1-25) var(--space-2-5);
     background: transparent;
-    color: var(--pref-modal-text, var(--theme-modal-text, var(--color-gray-600)));
+    color: var(--modal-text-muted-effective);
     border: 1px solid var(--theme-border, var(--color-gray-300));
     border-radius: var(--radius-6);
     font-size: var(--font-size-xs);
@@ -791,7 +871,7 @@ dialog.preferences-modal::backdrop {
     flex: 1;
     font-size: var(--font-size-xs);
     font-weight: 500;
-    color: var(--pref-modal-text, var(--theme-modal-text, var(--color-gray-700)));
+    color: var(--modal-text-effective);
     cursor: pointer;
     padding: var(--space-0-75) var(--space-1-5);
     border-radius: var(--radius-sm);
@@ -828,7 +908,7 @@ dialog.preferences-modal::backdrop {
     font-size: var(--font-size-xs);
     cursor: pointer;
     transition: all var(--transition-fast) ease;
-    color: var(--pref-modal-text, var(--theme-modal-text, var(--color-gray-600)));
+    color: var(--modal-text-muted-effective);
 }
 
 .preferences-preset-btn:hover {
@@ -866,8 +946,8 @@ dialog.preferences-modal::backdrop {
     border: 1px solid var(--theme-accent, var(--color-primary));
     border-radius: var(--radius-sm);
     outline: none;
-    background: var(--pref-modal-bg, var(--theme-modal-bg, var(--color-white)));
-    color: var(--pref-modal-text, var(--theme-modal-text, var(--color-gray-700)));
+    background: var(--modal-bg-solid-effective);
+    color: var(--modal-text-effective);
 }
 
 .preferences-preset-name-input:focus-visible {
@@ -988,7 +1068,7 @@ dialog.preferences-modal::backdrop {
     flex: 1;
     font-size: var(--font-size-sm);
     font-weight: 500;
-    color: var(--pref-modal-text, var(--theme-modal-text, var(--color-gray-700)));
+    color: var(--modal-text-effective);
     text-align: left;
 }
 
@@ -1037,7 +1117,7 @@ dialog.preferences-modal::backdrop {
 
 .preferences-reset-btn:hover {
     background: var(--theme-hover-bg, var(--overlay-faint));
-    color: var(--pref-modal-text, var(--theme-modal-text, var(--color-gray-700)));
+    color: var(--modal-text-effective);
 }
 
 /* Range slider in preferences */
@@ -1083,7 +1163,7 @@ dialog.preferences-modal::backdrop {
 .pref-range-value {
     font-size: var(--font-size-xs);
     font-weight: 600;
-    color: var(--pref-modal-text, var(--theme-modal-text, var(--color-gray-700)));
+    color: var(--modal-text-effective);
     min-width: 32px;
     text-align: center;
     transition: opacity var(--transition-fast) ease;
@@ -1096,8 +1176,8 @@ dialog.preferences-modal::backdrop {
 .preferences-bg-image-section {
     margin: var(--space-2) 0;
     padding: var(--space-2) 0;
-    border-top: 1px solid var(--pref-modal-border, var(--theme-modal-border, var(--overlay-light)));
-    border-bottom: 1px solid var(--pref-modal-border, var(--theme-modal-border, var(--overlay-light)));
+    border-top: 1px solid var(--modal-border-effective);
+    border-bottom: 1px solid var(--modal-border-effective);
 }
 
 .preferences-upload-btn,
@@ -1138,8 +1218,8 @@ dialog.preferences-modal::backdrop {
     padding: var(--space-1-5) var(--space-2-5);
     border: 1px solid var(--theme-border, var(--color-gray-300));
     border-radius: var(--radius-6);
-    background: var(--pref-modal-bg, var(--theme-modal-bg, var(--color-white)));
-    color: var(--pref-modal-text, var(--theme-modal-text, var(--color-gray-700)));
+    background: var(--modal-bg-solid-effective);
+    color: var(--modal-text-effective);
     font-size: var(--font-size-xs);
     cursor: pointer;
     min-width: 120px;
@@ -1157,7 +1237,7 @@ dialog.preferences-modal::backdrop {
 .bg-image-preview-container {
     margin-top: var(--space-2-5);
     padding: var(--space-2);
-    background: var(--theme-header-bg, var(--color-gray-100));
+    background: var(--modal-header-bg-effective);
     border-radius: var(--radius-md);
     text-align: center;
 }
@@ -1185,8 +1265,8 @@ dialog.preferences-modal::backdrop {
     display: flex;
     gap: var(--space-2-5);
     padding: var(--space-3) var(--space-4);
-    background: var(--theme-header-bg, var(--color-gray-100));
-    border-top: 1px solid var(--pref-modal-border, var(--theme-modal-border, var(--overlay-light)));
+    background: var(--modal-header-bg-effective);
+    border-top: 1px solid var(--modal-border-effective);
     flex-shrink: 0;
 }
 
@@ -1198,7 +1278,7 @@ dialog.preferences-modal::backdrop {
     gap: var(--space-1-5);
     padding: var(--space-2-5);
     background: transparent;
-    color: var(--pref-modal-text, var(--theme-modal-text, var(--color-gray-600)));
+    color: var(--modal-text-muted-effective);
     border: 1px solid var(--theme-border, var(--color-gray-300));
     border-radius: var(--radius-md);
     font-size: var(--font-size-sm);
@@ -1337,7 +1417,7 @@ dialog.preferences-modal::backdrop {
         display: inline;
         margin-left: auto;
         font-size: var(--font-size-xs);
-        color: var(--pref-panel-text);
+        color: var(--modal-panel-text-effective);
         transition: transform var(--transition-normal) ease;
     }
 
