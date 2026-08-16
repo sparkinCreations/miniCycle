@@ -169,6 +169,71 @@ export async function runDiBaseTests(resultsDiv) {
     });
 
     // ============================================
+    // 🕵️ NON-ENUMERABLE PROPERTIES (moduleLoader's undeclared-dep warners)
+    // ============================================
+    resultsDiv.innerHTML += '<h4 class="test-section">🕵️ Non-enumerable deps</h4>';
+
+    await test('resolve carries NON-ENUMERABLE injected props through to the resolved object', () => {
+        // setDependencies copies descriptors, so _injected can hold non-enumerable
+        // properties — moduleLoader attaches its undeclared-dep warners that way.
+        // resolve() used Object.keys here, which silently dropped them, making the
+        // warners unreachable for every module that reads deps off the resolved
+        // object rather than the built one (i.e. most of them).
+        const di = createDIModule('Test', {});
+        const source = {};
+        Object.defineProperty(source, 'hidden', {
+            get() { return 'reachable'; },
+            enumerable: false,
+            configurable: true
+        });
+        di.setDependencies(source);
+        const deps = di.resolve();
+        if (deps.hidden !== 'reachable') throw new Error('non-enumerable prop was dropped by resolve');
+    });
+
+    await test('a carried non-enumerable prop stays non-enumerable on the resolved object', () => {
+        // It must stay invisible to spread / Object.keys, or every module that
+        // forwards `{...this.deps}` would fan the warners out and fire them all.
+        const di = createDIModule('Test', {});
+        const source = { visible: 1 };
+        Object.defineProperty(source, 'hidden', { value: 2, enumerable: false, configurable: true });
+        di.setDependencies(source);
+        const deps = di.resolve();
+        if (!Object.keys(deps).includes('visible')) throw new Error('enumerable dep lost its enumerability');
+        if (Object.keys(deps).includes('hidden')) throw new Error('non-enumerable dep became enumerable');
+        if ('hidden' in { ...deps }) throw new Error('non-enumerable dep leaked into spread');
+    });
+
+    await test('the override probe does not read non-enumerable props of the overrides object', () => {
+        // hasOverride() runs for every key in both resolve loops. Overrides are very
+        // often the dependency object moduleLoader built, which carries a warning
+        // accessor for every dep the module did NOT declare. Probing those blind
+        // fired the lot — reporting a whole catalogue of reads that never happened.
+        const di = createDIModule('Test', { a: optional(null) });
+        di.setDependencies({ a: 'injected', b: 'injected-b' });
+        const overrides = {};
+        let probed = 0;
+        for (const key of ['a', 'b', 'c']) {
+            Object.defineProperty(overrides, key, {
+                get() { probed++; return 'from-overrides'; },
+                enumerable: false,
+                configurable: true
+            });
+        }
+        const deps = di.resolve(overrides);
+        if (probed !== 0) throw new Error(`overrides probe read ${probed} non-enumerable prop(s)`);
+        if (deps.a !== 'injected') throw new Error('non-enumerable override wrongly won over the injected value');
+    });
+
+    await test('enumerable overrides still win (probe fix did not break real overrides)', () => {
+        const di = createDIModule('Test', { foo: required() });
+        di.setDependencies({ foo: 'injected', extra: 'injected-extra' });
+        const deps = di.resolve({ foo: 'override', extra: 'override-extra' });
+        if (deps.foo !== 'override') throw new Error(`Expected "override", got "${deps.foo}"`);
+        if (deps.extra !== 'override-extra') throw new Error('extra-key override stopped working');
+    });
+
+    // ============================================
     // 💾 CACHING
     // ============================================
     resultsDiv.innerHTML += '<h4 class="test-section">💾 Caching</h4>';

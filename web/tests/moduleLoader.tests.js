@@ -118,6 +118,194 @@ export async function runModuleLoaderTests(resultsDiv) {
         }
     });
 
+    resultsDiv.innerHTML += '<h4 class="test-section">🔎 Undeclared-dep access audit (ENFORCE_REQUIRES runtime net)</h4>';
+
+    // The audit gates on orchestrator's `mc:boot:interactive` performance mark.
+    // These tests drive that mark directly, and each uses its OWN module instance
+    // (unique ?v= suffix) because `bootIsInteractive()` latches once true — a
+    // shared instance would carry that latch between tests.
+    const INTERACTIVE_MARK = 'mc:boot:interactive';
+    const freshLoader = (tag) => import(`../modules/boot/moduleLoader.js?v=${cacheBuster}-${tag}`);
+    const markInteractive = () => { try { performance.mark(INTERACTIVE_MARK); } catch (_) { /* no perf API */ } };
+    const clearInteractive = () => { try { performance.clearMarks(INTERACTIVE_MARK); } catch (_) { /* no perf API */ } };
+    // Restore whatever the page had, so a real app boot's timing marks survive
+    // these tests (getBootTiming reads this mark; it is diagnostic-only).
+    const hadInteractiveMark = (() => {
+        try { return performance.getEntriesByName(INTERACTIVE_MARK, 'mark').length > 0; }
+        catch (_) { return false; }
+    })();
+    const restoreInteractiveMark = () => {
+        clearInteractive();
+        if (hadInteractiveMark) markInteractive();
+    };
+    // Capture console.warn for the duration of fn.
+    const captureWarnings = async (fn) => {
+        const original = console.warn;
+        const lines = [];
+        console.warn = (...args) => { lines.push(args.join(' ')); };
+        try { await fn(); } finally { console.warn = original; }
+        return lines;
+    };
+
+    await test('attachUndeclaredDepWarnings is an exported function', () => {
+        if (typeof mod.attachUndeclaredDepWarnings !== 'function') {
+            throw new Error(`Expected function, got ${typeof mod.attachUndeclaredDepWarnings}`);
+        }
+    });
+
+    await test('delivered deps keep a plain data property — no accessor on the hot path', () => {
+        const result = { given: 'value' };
+        mod.attachUndeclaredDepWarnings(result, { path: 'm.js' }, { given: 'x', absent: 'y' });
+        const d = Object.getOwnPropertyDescriptor(result, 'given');
+        if (typeof d.get === 'function') throw new Error('delivered dep was wrapped in an accessor');
+        if (result.given !== 'value') throw new Error('delivered dep value was altered');
+    });
+
+    await test('absent deps get a NON-ENUMERABLE accessor invisible to keys/spread', () => {
+        const result = { given: 1 };
+        mod.attachUndeclaredDepWarnings(result, { path: 'm.js' }, { given: 1, absent: 2 });
+        const d = Object.getOwnPropertyDescriptor(result, 'absent');
+        if (typeof d.get !== 'function') throw new Error('absent dep did not get a getter');
+        if (d.enumerable) {
+            throw new Error('warner is enumerable — spread/Object.keys would fire every getter, ' +
+                'which is exactly the false-positive storm the old audit Proxy had');
+        }
+        if (Object.keys(result).includes('absent')) throw new Error('warner leaked into Object.keys');
+        if ('absent' in { ...result }) throw new Error('warner leaked into spread');
+    });
+
+    await test('names outside depMappings are never instrumented', () => {
+        const result = {};
+        mod.attachUndeclaredDepWarnings(result, { path: 'm.js' }, { known: 1 });
+        if (Object.getOwnPropertyDescriptor(result, 'somethingElse')) {
+            throw new Error('instrumented a name that is not a depMappings key');
+        }
+    });
+
+    await test('reading an undeclared dep warns once, post-boot, naming module and dep', async () => {
+        const m = await freshLoader('audit-warn');
+        markInteractive();
+        try {
+            const result = {};
+            m.attachUndeclaredDepWarnings(result, { path: 'task/taskDOM.js' }, { setupRecurringButtonHandler: 1 });
+            const lines = await captureWarnings(() => {
+                const first = result.setupRecurringButtonHandler;
+                const second = result.setupRecurringButtonHandler;
+                if (first !== undefined || second !== undefined) {
+                    throw new Error('warner changed the value — must stay undefined, as an absent key was');
+                }
+            });
+            if (lines.length !== 1) throw new Error(`Expected exactly 1 warning (deduped), got ${lines.length}`);
+            if (!lines[0].includes('task/taskDOM.js')) throw new Error('warning does not name the module');
+            if (!lines[0].includes('setupRecurringButtonHandler')) throw new Error('warning does not name the dep');
+            if (!/DI /.test(lines[0])) {
+                throw new Error('warning lacks the "DI " prefix run-journey-tests.cjs filters on');
+            }
+        } finally {
+            restoreInteractiveMark();
+        }
+    });
+
+    await test('boot-time reads are BUFFERED, not dropped, and flush once boot completes', async () => {
+        // Boot reads must survive. The first cut of this audit suppressed them, and
+        // measuring against the real app showed that is exactly backwards: taskDOM
+        // snapshots resolvedDeps.setupRecurringButtonHandler into this.deps inside
+        // its CONSTRUCTOR, so the only read of the undeclared name happens during
+        // boot. Suppressing would have made the audit blind to its headline case.
+        const m = await freshLoader('audit-buffer');
+        clearInteractive();
+        try {
+            const result = {};
+            m.attachUndeclaredDepWarnings(result, { path: 'm.js' }, { early: 1, later: 2 });
+            const duringBoot = await captureWarnings(() => { void result.early; });
+            if (duringBoot.length !== 0) throw new Error(`Expected quiet console during boot, got ${duringBoot.length}`);
+            if (!m.getUndeclaredDepAccesses().includes('m.js::early')) {
+                throw new Error('boot-time read was dropped instead of buffered');
+            }
+            // Post-boot: the buffered read drains alongside the new one.
+            markInteractive();
+            const afterBoot = await captureWarnings(() => { void result.later; });
+            const joined = afterBoot.join('\n');
+            if (!joined.includes('"early"')) throw new Error('buffered boot-time read never surfaced');
+            if (!/during boot/.test(joined)) throw new Error('flushed read is not labelled as a boot-time read');
+            if (!joined.includes('"later"')) throw new Error('post-boot read did not warn');
+        } finally {
+            restoreInteractiveMark();
+            m.resetUndeclaredDepAudit();
+        }
+    });
+
+    await test('buffered reads flush on the interactive mark with no further access', async () => {
+        // The PerformanceObserver path: nothing may read a dep again after boot, so
+        // the flush cannot depend on another access to trigger it.
+        const m = await freshLoader('audit-observer');
+        clearInteractive();
+        const original = console.warn;
+        const lines = [];
+        try {
+            const result = {};
+            m.attachUndeclaredDepWarnings(result, { path: 'm.js' }, { orphan: 1 });
+            void result.orphan;                       // buffered — boot not finished
+            console.warn = (...args) => { lines.push(args.join(' ')); };
+            markInteractive();                        // observer should drain on its own
+            const deadline = Date.now() + 2000;
+            while (lines.length === 0 && Date.now() < deadline) {
+                await new Promise(r => setTimeout(r, 25));
+            }
+        } finally {
+            console.warn = original;
+            restoreInteractiveMark();
+            m.resetUndeclaredDepAudit();
+        }
+        if (typeof PerformanceObserver !== 'function') return;  // env without the observer
+        if (lines.length === 0) throw new Error('observer never flushed the buffered read');
+        if (!lines.join('\n').includes('"orphan"')) throw new Error('flushed the wrong entry');
+    });
+
+    await test('warner survives the getOwnPropertyDescriptors copy diBase.setDependencies performs', async () => {
+        // THE load-bearing behaviour. Modules do not read the built deps object —
+        // setDependencies copies descriptors into the module's own `_injected`, and
+        // reads go there. A Proxy trap would be dropped by that copy; a
+        // non-enumerable accessor is carried by it, which is why this is an accessor.
+        const m = await freshLoader('audit-copy');
+        markInteractive();
+        try {
+            const built = {};
+            m.attachUndeclaredDepWarnings(built, { path: 'task/taskCore.js' }, { forwarded: 1 });
+            const injected = {};
+            Object.defineProperties(injected, Object.getOwnPropertyDescriptors(built));
+            if (!Object.getOwnPropertyDescriptor(injected, 'forwarded')) {
+                throw new Error('warner was lost in the descriptor copy — the audit would never fire in practice');
+            }
+            const lines = await captureWarnings(() => { void injected.forwarded; });
+            if (lines.length !== 1) throw new Error(`Expected the copied warner to fire, got ${lines.length} warnings`);
+            if (!lines[0].includes('task/taskCore.js')) {
+                throw new Error('copied warner lost its attribution to the declaring manifest');
+            }
+        } finally {
+            restoreInteractiveMark();
+        }
+    });
+
+    await test('assigning over a warner does not throw in strict mode and wins', () => {
+        // Modules are ES modules, so they run strict: assigning to a getter-only
+        // accessor throws TypeError. A late `_deps.x = fn` / injectDependency / test
+        // stub must keep working, and must land on the receiver being written to.
+        const built = {};
+        mod.attachUndeclaredDepWarnings(built, { path: 'm.js' }, { late: 1 });
+        const injected = {};
+        Object.defineProperties(injected, Object.getOwnPropertyDescriptors(built));
+        const fn = () => 'real';
+        injected.late = fn;                       // must not throw
+        if (injected.late !== fn) throw new Error('assignment did not replace the warner');
+        if (!Object.keys(injected).includes('late')) {
+            throw new Error('assigned dep stayed non-enumerable — it should behave like a normal dep now');
+        }
+        if (Object.getOwnPropertyDescriptor(built, 'late')?.value === fn) {
+            throw new Error('assignment landed on the ORIGINAL object, not the receiver — closure bug');
+        }
+    });
+
     resultsDiv.innerHTML += '<h4 class="test-section">🧬 Boot-retry safety (July 2026 audit C1/C2/C3)</h4>';
 
     await test('module registries are shared across differently-versioned instances (C1)', async () => {

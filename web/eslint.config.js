@@ -49,6 +49,7 @@ export default [
                 MutationObserver: 'readonly',
                 IntersectionObserver: 'readonly',
                 ResizeObserver: 'readonly',
+                PerformanceObserver: 'readonly',
                 HTMLElement: 'readonly',
                 HTMLDialogElement: 'readonly',
                 Element: 'readonly',

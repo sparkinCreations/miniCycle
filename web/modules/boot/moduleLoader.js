@@ -169,19 +169,73 @@ let resolveAlias = (apiName) => apiName;  // Will be populated from manifest
 const STRICT_LAZY_VALIDATION = false;
 
 /**
- * Enable audit mode to log when modules access undeclared dependencies.
+ * True on the deployed hosts. Mirrors orchestrator.js's production guard
+ * (`location.hostname.includes('minicycle.app')`) plus the product-page domain,
+ * rather than importing it — orchestrator is not a versioned import here and a
+ * static import would risk a second module instance.
  *
- * NOTE: Currently generates many false positives due to property enumeration
- * (DevTools logging, Object.keys, etc.). Only enable for targeted debugging.
- *
- * Largely superseded: it existed to size the ENFORCE_REQUIRES migration, which
- * shipped Aug 2026 without it — its `get` trap fires during WIRING, so every
- * depMappings key gets attributed to whichever module is being wired. The work
- * was actually driven by `validate:di` (static, gated) and `test:journey`
- * (runtime). Also note this branch is skipped entirely while ENFORCE_REQUIRES
- * is true, since it audits the broad-assign path.
+ * Staging (test.minicycle.app) counts as production on purpose: it is a real
+ * deploy, and the dev-only diagnostics below should not add work to it.
+ * @returns {boolean}
  */
-const AUDIT_UNDECLARED_DEPS = false;
+function isProductionHost() {
+    try {
+        const host = globalThis.location?.hostname || '';
+        return host.includes('minicycle.app') || host.includes('minicycleapp.com');
+    } catch (_) {
+        // No location (worker / test harness) — treat as dev so diagnostics stay on.
+        return false;
+    }
+}
+
+/**
+ * Warn when a module READS a dependency its manifest never declared.
+ *
+ * This is the runtime net for ENFORCE_REQUIRES' own failure mode. Under strict
+ * mode an undeclared dep is simply absent, and absence is silent: `deps.foo?.()`
+ * no-ops, `if (deps.foo)` takes the false branch. Nothing throws, nothing logs —
+ * the recurring button's listener just never gets attached.
+ *
+ * Replaces AUDIT_UNDECLARED_DEPS (removed Aug 2026), which could not do this job
+ * for two reasons:
+ *  1. It only ran on the `!ENFORCE_REQUIRES` branch — it audited the broad-assign
+ *     path, i.e. exactly the mode that has no failure mode to audit.
+ *  2. Its Proxy `get` trap fired during WIRING, where something enumerates the
+ *     built deps object once per module. With all ~230 depMappings keys present as
+ *     own keys, that enumeration touched every one of them and attributed the lot
+ *     to whichever module was mid-wire (achievementsManager "accessing"
+ *     TaskRenderer, UIOrchestrator, the whole catalogue).
+ *
+ * Both are fixed by inverting what is instrumented. Warners are attached to the
+ * names that are ABSENT from the built deps object, as NON-ENUMERABLE accessors:
+ *  - Absent-only means a delivered dep is a plain data property with no trap, so
+ *    the common path is untouched and costs nothing.
+ *  - Non-enumerable means `Object.keys` / spread / `for…in` / `JSON.stringify`
+ *    skip them, so the wiring-time enumeration that poisoned the old audit cannot
+ *    see them at all. That is what removes the false positives — not the boot gate.
+ *  - `Object.getOwnPropertyDescriptors` DOES see non-enumerable accessors, and
+ *    that is the copy diBase's `setDependencies` performs. So a warner survives
+ *    into the module's own `_injected`, and `resolve()` carries it through to
+ *    `this.deps` for any name in the module's DI schema. The warning therefore
+ *    fires at the REAL access site with the RIGHT module attributed — the
+ *    "attribute at the consumer's deps-getter" fix the old audit's note called for.
+ *
+ * Facade forward-through is covered for free: facades copy descriptors down to
+ * their dynamically imported sub-modules, so a sub-module reading an undeclared
+ * name warns against the facade's manifest path — which is the manifest that
+ * actually needs the entry. That is the taskDOM / taskCore class that cost v2.418.
+ *
+ * Gated on the boot-interactive mark (see `bootIsInteractive`). Reads before that
+ * are NOT reported, deliberately: the only pre-interactive reader is
+ * `di.resolve()` probing `required()` markers at construction, and a schema name
+ * missing from the manifest is the static case `validate:di` already gates at 0.
+ * Post-boot reads are the complement — dynamic, forwarded, and unmodeled accessor
+ * shapes, which is precisely what static analysis cannot see. Suppressed reads are
+ * not recorded as seen, so the same dep still warns when a real interaction hits it.
+ *
+ * Dev only. Production pays nothing: the attach loop is skipped outright.
+ */
+const WARN_ON_UNDECLARED_DEP_ACCESS = !isProductionHost();
 
 /**
  * When true, a module receives ONLY the dependencies its manifest declares
@@ -210,9 +264,16 @@ const AUDIT_UNDECLARED_DEPS = false;
  *    and facade forward-through at 0. It only sees the dep-accessor shapes it
  *    models; `_rawDeps` and the `resolvedDeps = di.resolve(...)` alias both had to
  *    be taught to it. A NEW accessor shape is a new blind spot.
+ *  - `WARN_ON_UNDECLARED_DEP_ACCESS` (below) is the runtime cover for exactly that
+ *    blind spot: it warns when a module READS a name it never declared, at the
+ *    access site, whatever accessor shape got it there. Added Aug 2026 — until
+ *    then strict mode had no runtime signal for its own failure mode, and the
+ *    module test suite structurally cannot supply one (4 of 132 test files touch
+ *    the loader; the rest hand modules their deps directly, bypassing wiring).
  *  - `npm run test:journey` is the backstop that actually caught these, and it
  *    now forwards DI-shaped console warnings so a starved dep does not read as a
- *    bare 10s timeout.
+ *    bare 10s timeout — including the undeclared-access warnings above, since
+ *    journeys drive real interactions after boot.
  *
  * To revert: set this to false. That restores the broad assign and is behaviour-
  * neutral — every declaration added for strict mode is inert under it.
@@ -225,9 +286,10 @@ const ENFORCE_REQUIRES = true;
  * in `CORE_DEPS`. This catches the silent-failure bug class where a consumer's
  * `optional()` default sentinel is used forever because nothing wired the dep.
  *
- * High-signal: each warning corresponds to a real missing wiring entry. The
- * AUDIT_UNDECLARED_DEPS flag above catches the OPPOSITE direction (deps used
- * but not declared) and has many false positives — this one doesn't.
+ * High-signal: each warning corresponds to a real missing wiring entry. This is
+ * the SUPPLY side — declared but undeliverable. WARN_ON_UNDECLARED_DEP_ACCESS
+ * above covers the demand side (used but not declared). Together they close both
+ * directions of the manifest/consumer mismatch at runtime.
  *
  * Default ON in development. Set false to suppress.
  */
@@ -235,6 +297,232 @@ const WARN_ON_UNMAPPED_DECLARED_DEPS = true;
 // Dedupe DI-gap warnings — buildModuleDependencies re-runs on deferred loads,
 // so without this each gap spams the console once per wiring pass.
 const _warnedDIGaps = new Set();
+
+// ============================================================================
+// UNDECLARED DEP ACCESS AUDIT (dev only — see WARN_ON_UNDECLARED_DEP_ACCESS)
+// ============================================================================
+
+/**
+ * Performance mark orchestrator.js emits when the app becomes interactive
+ * (`BOOT_MARKS.INTERACTIVE`). Coupled by NAME, not by import: orchestrator
+ * already reads this file's `mc:subphase:*` measures by prefix for exactly the
+ * same reason — moduleLoader is loaded through a versioned dynamic import, so a
+ * static import in either direction would create a second module instance with
+ * its own state. Keep this string in sync with BOOT_MARKS.INTERACTIVE.
+ * @type {string}
+ */
+const BOOT_INTERACTIVE_MARK = 'mc:boot:interactive';
+
+/** @type {boolean} Latched once the interactive mark is observed. */
+let _bootInteractive = false;
+
+/** @type {Set<string>} `path::dep` pairs already recorded, so each is reported once. */
+const _warnedUndeclaredAccess = new Set();
+
+/** @type {string[]} Reads seen before boot finished, held for the post-boot flush. */
+let _pendingUndeclaredAccess = [];
+
+/** @type {PerformanceObserver|null} Watches for the interactive mark to flush the buffer. */
+let _bootMarkObserver = null;
+
+/**
+ * Has boot reached "interactive"?
+ *
+ * Latches on first true so the steady-state cost is one boolean read. A boot
+ * RETRY clears the mark (orchestrator's clearBootTiming) but does not un-latch
+ * this — deliberate: after a retry the app is still past the point where these
+ * warnings are meaningful, and re-arming would only silence real findings.
+ *
+ * The transition also flushes any buffered reads, which is the fallback path when
+ * PerformanceObserver is unavailable: the next read after boot drains the buffer.
+ * @returns {boolean}
+ */
+function bootIsInteractive() {
+    if (_bootInteractive) return true;
+    try {
+        if (performance.getEntriesByName(BOOT_INTERACTIVE_MARK, 'mark').length > 0) {
+            _bootInteractive = true;
+            flushPendingUndeclaredAccess();
+        }
+    } catch (_) { /* Performance API unavailable — buffer just never drains */ }
+    return _bootInteractive;
+}
+
+/**
+ * Watch for the interactive mark so buffered reads surface even if nothing reads a
+ * dep again after boot. Event-driven rather than polled; installed lazily, on the
+ * first buffered read, so a clean boot never constructs an observer at all.
+ * @returns {void}
+ */
+function ensureBootMarkObserver() {
+    if (_bootInteractive || _bootMarkObserver || typeof PerformanceObserver !== 'function') return;
+    try {
+        _bootMarkObserver = new PerformanceObserver((list) => {
+            if (list.getEntriesByName(BOOT_INTERACTIVE_MARK).length === 0) return;
+            _bootInteractive = true;
+            flushPendingUndeclaredAccess();
+            try { _bootMarkObserver.disconnect(); } catch (_) { /* already gone */ }
+            _bootMarkObserver = null;
+        });
+        _bootMarkObserver.observe({ entryTypes: ['mark'] });
+    } catch (_) {
+        // No mark observation available — bootIsInteractive()'s lazy check still drains.
+        _bootMarkObserver = null;
+    }
+}
+
+/**
+ * Emit one warning line.
+ * @param {string} key - `path::dep`
+ * @param {string} [when] - Optional phase note appended to the message
+ * @returns {void}
+ */
+function emitUndeclaredDepWarning(key, when = '') {
+    const sep = key.lastIndexOf('::');
+    const modulePath = key.slice(0, sep);
+    const dep = key.slice(sep + 2);
+    // Prefix is "DI access" to pair with the "DI gap" supply-side warning, and
+    // because run-journey-tests.cjs surfaces page warnings matching /DI /i — the
+    // journeys are where these are meant to be read.
+    console.warn(
+        `⚠️ DI access: ${modulePath} read undeclared dep "${dep}"${when} — it resolved to undefined. ` +
+        `Under ENFORCE_REQUIRES a module only receives what its manifest declares, so ` +
+        `calls through this dep silently no-op. Add "${dep}" to this module's requires ` +
+        `(or optionalDeps / lazyRequires) in moduleManifests.js.`
+    );
+}
+
+/**
+ * Drain reads that happened before boot finished.
+ * @returns {void}
+ */
+function flushPendingUndeclaredAccess() {
+    if (_pendingUndeclaredAccess.length === 0) return;
+    const pending = _pendingUndeclaredAccess;
+    _pendingUndeclaredAccess = [];
+    for (const key of pending) emitUndeclaredDepWarning(key, ' during boot');
+}
+
+/**
+ * Record one undeclared dep read, reported once per module+dep pair.
+ *
+ * Boot-time reads are BUFFERED, not dropped. The first cut of this audit
+ * suppressed them outright, on the theory that reads happen at access time and
+ * anything earlier was `di.resolve()` probing markers. Measured against the real
+ * app, that was wrong and it made the audit blind to its headline case: taskDOM
+ * snapshots `resolvedDeps.setupRecurringButtonHandler` into `this.deps` inside its
+ * CONSTRUCTOR, so the only read of the undeclared name happens during boot. The
+ * snapshot-at-construction shape is common across the facades, so suppressing boot
+ * reads would have shipped an audit that could not see the bug class it exists for.
+ *
+ * Buffering costs nothing in signal and keeps the console quiet while boot is still
+ * printing: the wiring-time enumeration that poisoned the old audit is already
+ * neutralised by the warners being non-enumerable, not by this gate.
+ *
+ * @param {string} modulePath - Manifest path of the module that owns the deps object
+ * @param {string} dep - Dependency name that was read but never declared
+ * @returns {void}
+ */
+function reportUndeclaredDepAccess(modulePath, dep) {
+    const key = `${modulePath}::${dep}`;
+    if (_warnedUndeclaredAccess.has(key)) return;
+    _warnedUndeclaredAccess.add(key);
+    if (bootIsInteractive()) {
+        emitUndeclaredDepWarning(key);
+        return;
+    }
+    _pendingUndeclaredAccess.push(key);
+    ensureBootMarkObserver();
+}
+
+/**
+ * Read the undeclared accesses seen so far. Test/debug hook.
+ * @returns {string[]} `path::dep` pairs, in the order they were first warned about
+ */
+export function getUndeclaredDepAccesses() {
+    return [..._warnedUndeclaredAccess];
+}
+
+/**
+ * Clear the audit's dedupe set so a pair can warn again. Test hook.
+ * @returns {void}
+ */
+export function resetUndeclaredDepAudit() {
+    _warnedUndeclaredAccess.clear();
+    _pendingUndeclaredAccess = [];
+}
+
+/**
+ * Attach warn-on-read accessors for every depMappings name this module did NOT
+ * receive. See WARN_ON_UNDECLARED_DEP_ACCESS for the full rationale.
+ *
+ * Only ABSENT names get an accessor, so delivered deps keep their plain data
+ * property and the hot path is untouched. Each accessor is NON-ENUMERABLE, which
+ * is what keeps it invisible to `Object.keys` / spread / `for…in` while still
+ * being carried by the `Object.getOwnPropertyDescriptors` copy that diBase's
+ * `setDependencies` performs.
+ *
+ * Behaviour-neutral: the getter returns `undefined`, which is exactly what
+ * reading an absent key already yielded. Under ENFORCE_REQUIRES=false the broad
+ * assign has already delivered every depMappings key, so the loop attaches
+ * nothing at all.
+ *
+ * @param {Object} result - Built dependency object (mutated in place)
+ * @param {Object} manifest - Module manifest (`path` is used for attribution)
+ * @param {Object} depMappings - Map of dep name → resolver; its keys are the audit universe
+ * @returns {Object} the same `result`, for chaining
+ */
+export function attachUndeclaredDepWarnings(result, manifest, depMappings) {
+    const modulePath = manifest?.path || '(unknown module)';
+    for (const dep of Object.keys(depMappings)) {
+        // Delivered — declared, or a CORE_DEP. Nothing to warn about.
+        if (dep in result) continue;
+        defineUndeclaredDepWarner(result, dep, modulePath);
+    }
+    return result;
+}
+
+/**
+ * Define a single non-enumerable warn-on-read accessor.
+ *
+ * The setter is NOT optional. Modules are ES modules, so they run in strict mode,
+ * where assigning to an accessor that has only a getter throws a TypeError. A
+ * getter-only warner would therefore convert a harmless late assignment
+ * (`_deps.foo = fn`, injectDependency, a test stub) into a hard crash. The setter
+ * makes a real assignment win by replacing the accessor with a normal data
+ * property — and uses `this`, not the captured object, because the descriptor is
+ * copied onto OTHER objects (`_injected`, sub-module deps) and must define on
+ * whichever receiver is actually being written to.
+ *
+ * @param {Object} target - Object to define the accessor on
+ * @param {string} dep - Dependency name
+ * @param {string} modulePath - Manifest path used for attribution in the warning
+ * @returns {void}
+ */
+function defineUndeclaredDepWarner(target, dep, modulePath) {
+    Object.defineProperty(target, dep, {
+        get() {
+            reportUndeclaredDepAccess(modulePath, dep);
+            return undefined;
+        },
+        set(value) {
+            if (!this || (typeof this !== 'object' && typeof this !== 'function')) return;
+            try {
+                Object.defineProperty(this, dep, {
+                    value,
+                    writable: true,
+                    enumerable: true,
+                    configurable: true
+                });
+            } catch (_) {
+                // Frozen/sealed receiver — a plain assignment would have thrown here
+                // too. Swallow so the audit can never be the reason boot breaks.
+            }
+        },
+        enumerable: false,
+        configurable: true
+    });
+}
 
 /**
  * Create a validated lazy wrapper that warns/throws on null provider access.
@@ -1602,36 +1890,14 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         Object.assign(result, depMappings);
     }
 
-    // AUDIT mode: Wrap in Proxy to detect undeclared dep access
-    if (AUDIT_UNDECLARED_DEPS && !ENFORCE_REQUIRES) {
-        // Static declared deps (from manifest)
-        const manifestDeclaredDeps = new Set([
-            ...(manifest.requires || []),
-            ...(manifest.lazyRequires || []),
-            ...(manifest.optionalDeps || []),
-            // Standard object properties
-            'then', 'catch', 'finally', 'constructor', 'prototype',
-            'toString', 'valueOf', 'toJSON',
-        ]);
-
-        // Track warned props to avoid spamming (e.g., when devtools enumerates properties)
-        const warnedProps = new Set();
-
-        return new Proxy(result, {
-            get(target, prop) {
-                // Only log for string properties that look like dep names
-                if (typeof prop === 'string' &&
-                    !manifestDeclaredDeps.has(prop) &&
-                    !CORE_DEPS.has(prop) &&  // Check CORE_DEPS dynamically (may be populated after Proxy creation)
-                    prop in depMappings &&
-                    !prop.startsWith('_') &&
-                    !warnedProps.has(prop)) {  // Only warn once per prop
-                    warnedProps.add(prop);
-                    console.warn(`📋 AUDIT: ${manifest.path} accessed undeclared dep '${prop}' - add to requires`);
-                }
-                return target[prop];
-            }
-        });
+    // Runtime net for ENFORCE_REQUIRES' own failure mode: attach warn-on-read
+    // accessors for the depMappings names this module did NOT receive, so a read
+    // of an undeclared dep says so instead of silently yielding undefined.
+    // MUST run last — it keys off which names are absent from `result`, so it has
+    // to see the finished object (after the declared/core injections above, and
+    // after the broad assign, under which nothing is absent and nothing attaches).
+    if (WARN_ON_UNDECLARED_DEP_ACCESS && ENFORCE_REQUIRES) {
+        attachUndeclaredDepWarnings(result, manifest, depMappings);
     }
 
     return result;

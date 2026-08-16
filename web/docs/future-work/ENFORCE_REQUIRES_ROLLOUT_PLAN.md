@@ -42,7 +42,7 @@ This plan was written March 15, 2026 and predates commit `00c727b3` (Apr 27), wh
 | Reference in plan | Current anchor |
 |---|---|
 | `ENFORCE_REQUIRES` "line 136" | `const ENFORCE_REQUIRES` (now `true` — shipped Aug 2026) |
-| `AUDIT_UNDECLARED_DEPS` "line 129" | `const AUDIT_UNDECLARED_DEPS` (currently `false`) |
+| `AUDIT_UNDECLARED_DEPS` "line 129" | **Removed Aug 2026.** Replaced by `const WARN_ON_UNDECLARED_DEP_ACCESS` + `attachUndeclaredDepWarnings()` |
 | `WARN_ON_UNMAPPED_DECLARED_DEPS` | `const WARN_ON_UNMAPPED_DECLARED_DEPS` (currently `true`) |
 | `Object.assign(result, depMappings)` "line 1056" | inside `buildModuleDependencies()`, guarded by `if (!ENFORCE_REQUIRES)` |
 | validation / audit-proxy suppression, `warnedProps` | inside `buildModuleDependencies()` (CORE_DEPS-aware) |
@@ -133,10 +133,56 @@ The original Step 2 wanted to clean up the `AUDIT_UNDECLARED_DEPS` runtime Proxy
 Remaining work here is **subtractive, not additive**:
 
 - Keep `WARN_ON_UNMAPPED_DECLARED_DEPS` (currently `true`) as the boot-time complement for the declared-but-unmapped direction.
-- Retire — or shrink to a debugging aid — the `AUDIT_UNDECLARED_DEPS` Proxy infrastructure. Its only residual value over `validate:di` is catching truly dynamic access patterns the static parse can't see; keep it only if such a case actually turns up.
+- ~~Retire — or shrink to a debugging aid — the `AUDIT_UNDECLARED_DEPS` Proxy infrastructure. Its only residual value over `validate:di` is catching truly dynamic access patterns the static parse can't see; keep it only if such a case actually turns up.~~
 - Do NOT invest in the originally planned Proxy improvements (DevTools filtering, structured JSON output) — that would duplicate what `validate:di` already does better.
 
 **Goal:** manifest completeness verified by CI (`validate:di` green), not by runtime console auditing.
+
+#### ✅ Closed August 2026 — retired *and replaced*
+
+"Keep it only if such a case actually turns up" — it did, and the case was the whole
+point. Flipping `ENFORCE_REQUIRES` gave strict mode a failure mode with **no runtime
+signal at all**: an undeclared dep is simply absent, and absence is silent
+(`deps.foo?.()` no-ops, `if (deps.foo)` takes the false branch). `validate:di` covers
+this statically but only for the accessor shapes it models — this plan already records
+`_rawDeps` and the `resolvedDeps` alias each needing to be taught, i.e. a new shape is a
+new blind spot — and the module test suite structurally cannot cover it either: 4 of 132
+test files touch the loader, and the rest hand modules their deps directly, bypassing
+wiring entirely. That left 5 journeys as the entire net.
+
+`AUDIT_UNDECLARED_DEPS` was deleted and `WARN_ON_UNDECLARED_DEP_ACCESS` +
+`attachUndeclaredDepWarnings()` put in its place. Same intent, inverted mechanism:
+instead of a Proxy over an object holding *every* dep, non-enumerable warn-on-read
+accessors are attached to the names the module did **not** receive. Non-enumerability is
+what removes the old audit's false positives — the wiring-time enumeration that
+attributed the whole catalogue to whichever module was mid-wire cannot see a
+non-enumerable property. `Object.getOwnPropertyDescriptors` still can, which is exactly
+the copy `diBase.setDependencies` performs, so the warner rides into the module's own
+`_injected` and warns at the real access site with the right module named.
+
+Two things had to change in `diBase.js` to make that reach the consumer, both real
+asymmetries in their own right:
+
+- `resolve()` iterated `Object.keys(_injected)`, silently dropping the non-enumerable
+  properties `setDependencies` had just accepted via descriptor copy. Now
+  `getOwnPropertyNames`, carrying source enumerability through.
+- `hasOverride()` read `overrides[key]` blind for every key. `overrides` is frequently
+  the loader-built deps object, so the *probe* ("did you pass this?") fired every warner
+  on it — a whole catalogue of reads that never happened. It now checks the descriptor
+  first and never touches a non-enumerable property.
+
+Verified by sabotage: deleting `setupRecurringButtonHandler` from taskDOM's manifest —
+the v2.418 bug, reproduced — makes the audit name it exactly, where before the only
+symptom was a 10s journey timeout. On a clean tree it surfaced **four pre-existing
+undeclared reads** that `validate:di` (green) and all 5 journeys (passing) both missed.
+See `AUDIT_RESIDUALS_2026_08.md`.
+
+One caveat worth keeping: the first cut gated warnings to *post-boot only*, on the
+assumption that reads happen at access time. Measured against the real app that was
+backwards — taskDOM snapshots `resolvedDeps.setupRecurringButtonHandler` into `this.deps`
+inside its **constructor**, so the only read of the undeclared name happens during boot,
+and snapshot-at-construction is common across the facades. Boot-time reads are therefore
+buffered and flushed on the interactive mark, not dropped.
 
 ### Step 3: Add per-phase strict enforcement
 
@@ -176,7 +222,7 @@ Once all phases are individually verified under strict enforcement:
 2. Remove `STRICT_PHASES` (no longer needed)
 3. Remove the `Object.assign(result, depMappings)` broad-injection path
 4. Run full test suite + manual smoke test
-5. Optionally remove `AUDIT_UNDECLARED_DEPS` infrastructure (its job is done)
+5. ~~Optionally remove `AUDIT_UNDECLARED_DEPS` infrastructure (its job is done)~~ — done Aug 2026, but *replaced* rather than deleted: see Step 2.
 
 ---
 
@@ -222,8 +268,8 @@ The friction is intentional — it's the enforcement mechanism. The migration ri
 
 | File | Role |
 |------|------|
-| `modules/boot/moduleLoader.js` (`const ENFORCE_REQUIRES`) | Enforcement flag (currently `false`) |
-| `modules/boot/moduleLoader.js` (`const AUDIT_UNDECLARED_DEPS`) | Runtime audit Proxy flag (currently `false`; candidate for retirement — see Step 2) |
+| `modules/boot/moduleLoader.js` (`const ENFORCE_REQUIRES`) | Enforcement flag (`true` since Aug 2026) |
+| `modules/boot/moduleLoader.js` (`const WARN_ON_UNDECLARED_DEP_ACCESS`, `attachUndeclaredDepWarnings`) | Runtime undeclared-**access** audit (dev only, on). Replaced the retired `AUDIT_UNDECLARED_DEPS` Proxy — see Step 2 |
 | `modules/boot/moduleLoader.js` (`const WARN_ON_UNMAPPED_DECLARED_DEPS`) | Boot-time gap warnings flag (currently `true`) |
 | `modules/boot/moduleLoader.js` (`injectDeclaredDeps`, `injectCoreDeps`, `buildModuleDependencies`, broad `Object.assign(result, depMappings)` fallback) | Enforcement/injection logic |
 | `modules/boot/moduleManifests.js` (`export const CORE_DEPS`) | `CORE_DEPS` definition (28 entries as of v2.412; two dual-annotated as "from coreBoot; also a depMappings key": `DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS`, `performSchema25Migration`) |
