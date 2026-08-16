@@ -839,6 +839,11 @@ export const DEFAULT_LABELS = deepFreeze({
         // Pull-to-refresh notifications
         refreshFailed:           'Refresh failed',
         updateAvailableReload:   'App update available! Reload to update.',
+        // Same "which version am I moving to" answer the boot overlay and the
+        // pre-boot updating screen give. Used when the waiting service worker
+        // reports its version; the plain string above is the fallback for when
+        // it cannot be asked (no message channel, timeout, identical versions).
+        updateAvailableFromTo:   'Update available: version {from} → {to}. Reload to update.',
         refreshed:               'Refreshed',
 
         // Undo/redo notifications

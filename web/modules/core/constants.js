@@ -111,6 +111,7 @@ export const UI_TIMEOUTS = Object.freeze({
     SAVE_DEFER: 50,                // 50ms - Defer a state save to the next tick so DOM/state settles first
     RESIZE_DEBOUNCE: 150,          // 150ms - Window resize debounce
     LAYOUT_CLICK_SWALLOW: 50,      // 50ms - Task View Layout: window in which the synthesized click after a drag is swallowed
+    SW_VERSION_QUERY: 1500,        // 1500ms - give up asking a service worker for its version; the message may never be answered, and the caller falls back to a version-less notice
     LAYOUT_COALESCE_WINDOW: 500,   // 500ms - Task View Layout: merge position writes from rapid successive drags into ONE AppState.update (one undo entry per burst, not per drag)
     ANIMATION_SHORT: 200,          // 200ms - Short animation / transition delay
     NOTIFICATION_FADE: 300,        // 300ms - Notification removal animation
@@ -313,6 +314,33 @@ export const LIMITS = Object.freeze({
  * can't slide under the header, footer, or off-screen.
  * @constant {Object}
  */
+/**
+ * Snap-back ("dock") zone geometry per Task View draggable, keyed to the
+ * `key` of each entry in taskViewLayoutManager's DRAGGABLES registry.
+ *
+ * `tolerancePx`   — vertical depth of the snap band. Drop an element with its
+ *                   centre inside and it re-docks instead of staying free.
+ * `widthFraction` — horizontal width of that band as a fraction of the anchor's
+ *                   current width (0..1, centred on the anchor).
+ *
+ * These are feel knobs — how forgiving the snap is — so they live here with the
+ * other tunables rather than inline in the registry.
+ *
+ * Deliberately NOT de-duplicated: two pairs share values today (90/0.8 and
+ * 80/0.7), but they describe unrelated elements. Collapsing them into shared
+ * entries would mean tuning the status bubble silently re-tunes Quick Actions.
+ * @constant {Object}
+ */
+export const LAYOUT_DOCK_ZONES = Object.freeze({
+    // Big, forgiving band — the task card is the anchor everything else docks to,
+    // so homing it should not require precision.
+    TASK_CARD_GROUP:     Object.freeze({ tolerancePx: 160, widthFraction: 0.5 }),
+    ADD_TASK_INPUT:      Object.freeze({ tolerancePx: 80,  widthFraction: 0.7 }),
+    QUICK_ACTIONS_PANEL: Object.freeze({ tolerancePx: 90,  widthFraction: 0.8 }),
+    STATUS_BUBBLE:       Object.freeze({ tolerancePx: 90,  widthFraction: 0.8 }),
+    COMPLETE_CYCLE_BTN:  Object.freeze({ tolerancePx: 80,  widthFraction: 0.7 })
+});
+
 export const LAYOUT_PLAY_AREA_INSETS = Object.freeze({
     top: 90,        // header + mode pill clearance
     bottom: 90,     // nav-dots + footer clearance

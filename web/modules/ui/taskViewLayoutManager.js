@@ -43,7 +43,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_CLASSES, DOM_SELECTORS, Z_INDEX, LIMITS, LAYOUT_PLAY_AREA_INSETS, UI_TIMEOUTS, EVENTS, BREAKPOINTS } from '../core/constants.js';
+import { DOM_IDS, DOM_CLASSES, DOM_SELECTORS, Z_INDEX, LIMITS, LAYOUT_PLAY_AREA_INSETS, LAYOUT_DOCK_ZONES, UI_TIMEOUTS, EVENTS, BREAKPOINTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { getIcon } from '../utils/icons.js';
 import { isTouchDevice } from '../utils/deviceDetection.js';
@@ -91,13 +91,14 @@ let taskViewLayoutManagerInstance = null;
  * when the host is a small button you don't want to overlay (the handle
  * floats just outside the host's left edge, vertically centered).
  *
- * `dock.tolerancePx` — vertical depth of the snap-back band adjacent to
- * the anchor.
- * `dock.widthFraction` — horizontal width of the snap zone, expressed as
- * a fraction of the anchor's current width (0..1, centered on anchor).
- * Defaults to 1.0 (full anchor width) if omitted.
+ * `dock.tolerancePx` / `dock.widthFraction` — the snap band's depth and its
+ * width as a fraction of the anchor (0..1, centred). These are FEEL knobs, so
+ * the numbers live in `LAYOUT_DOCK_ZONES` in constants.js and are spread in
+ * below; tune them there, not here. `widthFraction` defaults to 1.0 (full
+ * anchor width) if a zone omits it.
  * `dock.side` — which edge of the anchor the snap zone hugs. `'bottom'`
- * places the band below; `'top'` above.
+ * places the band below; `'top'` above. Stays here: it is structural, not a
+ * tunable.
  *
  * @type {Array<{
  *   key: string,
@@ -109,7 +110,7 @@ let taskViewLayoutManagerInstance = null;
  *       | { self: true, tolerancePx: number, widthFraction?: number }
  * }>}
  */
-const DRAGGABLES = [
+export const DRAGGABLES = [
     {
         key: 'task-card-group',
         elementId: DOM_IDS.TASK_CARD_GROUP,
@@ -130,8 +131,7 @@ const DRAGGABLES = [
         // with it; independently-placed satellites are left where they are.
         dock: {
             self: true,
-            tolerancePx: 160,
-            widthFraction: 0.5
+            ...LAYOUT_DOCK_ZONES.TASK_CARD_GROUP
         }
     },
     {
@@ -147,8 +147,7 @@ const DRAGGABLES = [
         dock: {
             relativeToId: DOM_IDS.TASK_CARD_GROUP,
             side: 'top',
-            tolerancePx: 80,
-            widthFraction: 0.7
+            ...LAYOUT_DOCK_ZONES.ADD_TASK_INPUT
         }
     },
     {
@@ -161,8 +160,7 @@ const DRAGGABLES = [
         // (no dependents), so no cascade — just returns itself to flex flow.
         dock: {
             self: true,
-            tolerancePx: 90,
-            widthFraction: 0.8
+            ...LAYOUT_DOCK_ZONES.QUICK_ACTIONS_PANEL
         }
     },
     {
@@ -173,8 +171,7 @@ const DRAGGABLES = [
         // Self-home dock: snaps back to its own default position. Independent.
         dock: {
             self: true,
-            tolerancePx: 90,
-            widthFraction: 0.8
+            ...LAYOUT_DOCK_ZONES.STATUS_BUBBLE
         }
     },
     {
@@ -195,8 +192,7 @@ const DRAGGABLES = [
         dock: {
             relativeToId: DOM_IDS.TASK_CARD_GROUP,
             side: 'bottom',
-            tolerancePx: 80,
-            widthFraction: 0.7
+            ...LAYOUT_DOCK_ZONES.COMPLETE_CYCLE_BTN
         }
     }
 ];

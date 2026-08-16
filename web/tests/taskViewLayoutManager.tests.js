@@ -28,7 +28,8 @@ export async function runTaskViewLayoutManagerTests(resultsDiv) {
         getTaskViewLayoutManager,
         initTaskViewLayoutManager
     } = mod;
-    const { DOM_IDS, DOM_CLASSES, EVENTS } = await import(`../modules/core/constants.js?v=${cacheBuster}`);
+    const { DOM_IDS, DOM_CLASSES, EVENTS, LAYOUT_DOCK_ZONES } = await import(`../modules/core/constants.js?v=${cacheBuster}`);
+    const { DRAGGABLES } = mod;
 
     resultsDiv.innerHTML = '<h2>🧲 TaskViewLayoutManager Tests</h2><h3>Running tests...</h3>';
 
@@ -455,6 +456,43 @@ export async function runTaskViewLayoutManagerTests(resultsDiv) {
         mgr._flushPositionWrites();
 
         assert(!('solo' in AppState.state.settings.taskViewLayout.positions), 'solo should be deleted');
+    });
+
+    // ============================================
+    // 🧲 Dock zone geometry (tunables live in constants.js)
+    // ============================================
+    resultsDiv.innerHTML += '<h4 class="test-section">🧲 Dock zones</h4>';
+
+    await test('every dock zone constant is wired to exactly one draggable', () => {
+        // The values were inline in the registry; they now come from
+        // LAYOUT_DOCK_ZONES. This catches an entry that was added to constants
+        // but never wired, or a draggable left with no snap geometry.
+        //
+        // It canNOT catch two draggables swapping constants, because two pairs
+        // hold identical values by design (90/0.8 and 80/0.7) — the spread makes
+        // them indistinguishable by value. Structural coverage only.
+        const zoneCount = Object.keys(LAYOUT_DOCK_ZONES).length;
+        const docked = DRAGGABLES.filter(d => d.dock);
+        assertEq(docked.length, zoneCount,
+            `every LAYOUT_DOCK_ZONES entry should back one docked draggable`);
+    });
+
+    await test('every dock config carries usable snap geometry', () => {
+        for (const d of DRAGGABLES) {
+            if (!d.dock) continue;
+            const { tolerancePx, widthFraction } = d.dock;
+            assert(Number.isFinite(tolerancePx) && tolerancePx > 0,
+                `${d.key}: tolerancePx must be a positive number, got ${tolerancePx}`);
+            assert(Number.isFinite(widthFraction) && widthFraction > 0 && widthFraction <= 1,
+                `${d.key}: widthFraction must be within (0, 1], got ${widthFraction}`);
+        }
+    });
+
+    await test('LAYOUT_DOCK_ZONES entries are frozen so a consumer cannot retune them', () => {
+        const zone = LAYOUT_DOCK_ZONES.TASK_CARD_GROUP;
+        const before = zone.tolerancePx;
+        try { zone.tolerancePx = 9999; } catch { /* strict mode throws — also fine */ }
+        assertEq(zone.tolerancePx, before, 'dock zone values must not be mutable');
     });
 
     // ============================================

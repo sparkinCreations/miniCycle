@@ -323,6 +323,70 @@ export async function runPullToRefreshTests(resultsDiv) {
         }
     });
 
+    // ===== SW VERSION QUERY (update-available notice) =====
+
+    resultsDiv.innerHTML += '<h4 class="test-section">SW version query</h4>';
+
+    /** A stub ServiceWorker whose postMessage replies over the transferred port. */
+    function fakeWorker(reply, { delayMs = 0, throwOnPost = false } = {}) {
+        return {
+            postMessage(_msg, transfer) {
+                if (throwOnPost) throw new Error('postMessage blew up');
+                const port = transfer && transfer[0];
+                if (!port) return;
+                // Post THROUGH the transferred port so the real MessageChannel
+                // delivers to port1, exactly as a service worker would. Invoking
+                // port.onmessage directly would target the wrong end and never
+                // reach the listener under test.
+                const send = () => port.postMessage(reply);
+                if (delayMs > 0) setTimeout(send, delayMs); else send();
+            }
+        };
+    }
+
+    await test('_askWorkerVersion returns the waiting worker\'s appVersion', async () => {
+        const ptr = new PullToRefresh();
+        const v = await ptr._askWorkerVersion(fakeWorker({ appVersion: '2.428' }));
+        if (v !== '2.428') throw new Error(`Expected "2.428", got ${JSON.stringify(v)}`);
+    });
+
+    await test('_askWorkerVersion resolves null when there is no worker', async () => {
+        const ptr = new PullToRefresh();
+        if (await ptr._askWorkerVersion(null) !== null) throw new Error('expected null');
+    });
+
+    await test('_askWorkerVersion resolves null on a malformed reply', async () => {
+        const ptr = new PullToRefresh();
+        for (const reply of [{}, { appVersion: 42 }, { appVersion: '' }, null]) {
+            const v = await ptr._askWorkerVersion(fakeWorker(reply));
+            if (v !== null) throw new Error(`Expected null for ${JSON.stringify(reply)}, got ${v}`);
+        }
+    });
+
+    await test('_askWorkerVersion sanitises and bounds the reported version', async () => {
+        const ptr = new PullToRefresh();
+        const v = await ptr._askWorkerVersion(fakeWorker({ appVersion: '<img src=x>2.4' }));
+        if (/[<>"']/.test(v)) throw new Error(`markup survived: ${v}`);
+        const long = await ptr._askWorkerVersion(fakeWorker({ appVersion: '9'.repeat(200) }));
+        if (long.length !== 16) throw new Error(`expected 16-char cap, got ${long.length}`);
+    });
+
+    await test('_askWorkerVersion does not reject when postMessage throws', async () => {
+        const ptr = new PullToRefresh();
+        const v = await ptr._askWorkerVersion(fakeWorker({ appVersion: '2.428' }, { throwOnPost: true }));
+        if (v !== null) throw new Error('a broken channel must resolve null, not reject');
+    });
+
+    await test('_askWorkerVersion gives up on a worker that never answers', async () => {
+        // The caller awaits this before showing the notice, so a silent worker
+        // must not leave the promise pending forever.
+        const ptr = new PullToRefresh();
+        const started = Date.now();
+        const v = await ptr._askWorkerVersion({ postMessage() { /* never replies */ } });
+        if (v !== null) throw new Error('expected null after the timeout');
+        if (Date.now() - started > 5000) throw new Error('timeout did not fire promptly');
+    });
+
     // ===== SUMMARY =====
 
     const percentage = Math.round((passed.count / total.count) * 100);
