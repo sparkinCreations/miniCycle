@@ -186,6 +186,7 @@ export async function runTaskViewLayoutManagerTests(resultsDiv) {
         el.style.width = '300px';
 
         mgr._saveElementPosition(el, { key: 'task-card-group' });
+        mgr._flushPositionWrites();   // writes are coalesced; flush to observe them
 
         const saved = AppState.state.settings.taskViewLayout.positions['task-card-group'];
         assertEq(saved.left, 120, 'left not saved');
@@ -201,7 +202,9 @@ export async function runTaskViewLayoutManagerTests(resultsDiv) {
         el.style.left = '10px';
         el.style.top = '20px';
 
-        new TaskViewLayoutManager()._saveElementPosition(el, { key: 'status-bubble' });
+        const mgr = new TaskViewLayoutManager();
+        mgr._saveElementPosition(el, { key: 'status-bubble' });
+        mgr._flushPositionWrites();
 
         assertEq(AppState.state.settings.taskViewLayout.positions['status-bubble'].width, null,
             'width should be null, not NaN');
@@ -214,7 +217,9 @@ export async function runTaskViewLayoutManagerTests(resultsDiv) {
         el.style.left = '1px';
         el.style.top = '2px';
 
-        new TaskViewLayoutManager()._saveElementPosition(el, { key: 'complete-cycle-btn' }, false);
+        const mgr = new TaskViewLayoutManager();
+        mgr._saveElementPosition(el, { key: 'complete-cycle-btn' }, false);
+        mgr._flushPositionWrites();
 
         assertEq(AppState.state.settings.taskViewLayout.positions['complete-cycle-btn'].customized, false,
             'dependent must stay customized=false so future anchor drags still pull it');
@@ -237,14 +242,16 @@ export async function runTaskViewLayoutManagerTests(resultsDiv) {
         new TaskViewLayoutManager()._saveElementPosition(el, { key: 'x' }); // must not throw
     });
 
-    await test('_saveElementPosition saves immediately rather than debounced', () => {
+    await test('a flushed position write bypasses the 600ms save debounce', () => {
         const AppState = makeAppState();
         setTaskViewLayoutManagerDependencies(makeDeps({ AppState }));
         const el = document.createElement('div');
         el.style.left = '7px';
         el.style.top = '8px';
 
-        new TaskViewLayoutManager()._saveElementPosition(el, { key: 'k' });
+        const mgr = new TaskViewLayoutManager();
+        mgr._saveElementPosition(el, { key: 'k' });
+        mgr._flushPositionWrites();
 
         assertEq(AppState.calls.immediate[0], true, 'a drag-drop should not sit in the 600ms debounce');
     });
@@ -260,7 +267,9 @@ export async function runTaskViewLayoutManagerTests(resultsDiv) {
         el.style.left = '9px';
         el.style.top = '9px';
 
-        new TaskViewLayoutManager()._saveElementPosition(el, { key: 'k' });
+        const mgr = new TaskViewLayoutManager();
+        mgr._saveElementPosition(el, { key: 'k' });
+        mgr._flushPositionWrites();
 
         assertEq(enabled, 1, 'without this the first drag of a session is dropped from the undo stack');
     });
@@ -274,7 +283,9 @@ export async function runTaskViewLayoutManagerTests(resultsDiv) {
         const AppState = makeAppState({ taskViewLayout: { positions: { a: { left: 1, top: 1 }, b: { left: 2, top: 2 } } } });
         setTaskViewLayoutManagerDependencies(makeDeps({ AppState }));
 
-        new TaskViewLayoutManager()._clearSavedPositions(['a', 'missing']);
+        const mgr = new TaskViewLayoutManager();
+        mgr._clearSavedPositions(['a', 'missing']);
+        mgr._flushPositionWrites();
 
         const positions = AppState.state.settings.taskViewLayout.positions;
         assert(!('a' in positions), 'a should be deleted');
@@ -285,9 +296,131 @@ export async function runTaskViewLayoutManagerTests(resultsDiv) {
         const AppState = makeAppState({ taskViewLayout: { positions: { a: {}, b: {}, c: {} } } });
         setTaskViewLayoutManagerDependencies(makeDeps({ AppState }));
 
-        new TaskViewLayoutManager()._clearSavedPositions(['a', 'b', 'c']);
+        const mgr = new TaskViewLayoutManager();
+        mgr._clearSavedPositions(['a', 'b', 'c']);
+        mgr._flushPositionWrites();
 
         assertEq(AppState.calls.update, 1, 'homing a card + its followers must be a single undo step');
+    });
+
+    // ============================================
+    // 🧵 Persistence — write coalescing (undo-entry rules)
+    // ============================================
+    resultsDiv.innerHTML += '<h4 class="test-section">🧵 Persistence — coalescing</h4>';
+
+    await test('one gesture moving an anchor and its followers is ONE update', () => {
+        // The regression this closes: each element used to get its own
+        // AppState.update, so undoing a single drag of the task card took as
+        // many presses as it had followers.
+        const AppState = makeAppState();
+        setTaskViewLayoutManagerDependencies(makeDeps({ AppState }));
+        const mgr = new TaskViewLayoutManager();
+        const mk = (l, t) => { const e = document.createElement('div'); e.style.left = l; e.style.top = t; return e; };
+
+        mgr._saveElementPosition(mk('10px', '10px'), { key: 'task-card-group' }, true);
+        mgr._saveElementPosition(mk('20px', '20px'), { key: 'status-bubble' }, false);
+        mgr._saveElementPosition(mk('30px', '30px'), { key: 'complete-cycle-btn' }, false);
+        mgr._flushPositionWrites();
+
+        assertEq(AppState.calls.update, 1, 'anchor + followers must collapse to a single undo entry');
+        const positions = AppState.state.settings.taskViewLayout.positions;
+        assertEq(positions['task-card-group'].left, 10, 'anchor position lost');
+        assertEq(positions['status-bubble'].left, 20, 'follower position lost');
+        assertEq(positions['complete-cycle-btn'].left, 30, 'follower position lost');
+    });
+
+    await test('repeated nudges of one element collapse to a single write', () => {
+        const AppState = makeAppState();
+        setTaskViewLayoutManagerDependencies(makeDeps({ AppState }));
+        const mgr = new TaskViewLayoutManager();
+        for (const px of ['1px', '2px', '3px', '4px']) {
+            const el = document.createElement('div');
+            el.style.left = px;
+            el.style.top = px;
+            mgr._saveElementPosition(el, { key: 'k' });
+        }
+        mgr._flushPositionWrites();
+
+        assertEq(AppState.calls.update, 1, 'a burst of nudges must not flood the undo stack');
+        assertEq(AppState.state.settings.taskViewLayout.positions.k.left, 4, 'last position should win');
+    });
+
+    await test('a drag then a dock-home in the same window collapses to the delete', () => {
+        const AppState = makeAppState({ taskViewLayout: { positions: { k: { left: 1, top: 1 } } } });
+        setTaskViewLayoutManagerDependencies(makeDeps({ AppState }));
+        const mgr = new TaskViewLayoutManager();
+        const el = document.createElement('div');
+        el.style.left = '50px';
+        el.style.top = '50px';
+
+        mgr._saveElementPosition(el, { key: 'k' });
+        mgr._clearSavedPositions(['k']);
+        mgr._flushPositionWrites();
+
+        assert(!('k' in AppState.state.settings.taskViewLayout.positions),
+            'dropping an element back home must win over the queued drag position');
+    });
+
+    await test('a queued write is discarded by reset, not applied after it', () => {
+        const AppState = makeAppState({ taskViewLayout: { positions: {} } });
+        setTaskViewLayoutManagerDependencies(makeDeps({ AppState }));
+        const mgr = new TaskViewLayoutManager();
+        const el = document.createElement('div');
+        el.style.left = '77px';
+        el.style.top = '77px';
+
+        mgr._saveElementPosition(el, { key: 'k' });
+        mgr.resetTaskViewLayout();
+        mgr._flushPositionWrites();   // must be a no-op — queue was discarded
+
+        assert(!('k' in AppState.state.settings.taskViewLayout.positions),
+            'a write queued before reset must not resurrect the position after it');
+    });
+
+    await test('flushing an empty queue never writes (no stray undo entry)', () => {
+        let enabled = 0;
+        const AppState = makeAppState();
+        setTaskViewLayoutManagerDependencies(makeDeps({
+            AppState,
+            enableUndoSystemOnFirstInteraction: () => { enabled++; }
+        }));
+        const mgr = new TaskViewLayoutManager();
+        mgr._flushPositionWrites();
+
+        assertEq(AppState.calls.update, 0, 'an empty flush must not write');
+        assertEq(enabled, 0, 'an empty flush must not capture an undo snapshot');
+    });
+
+    await test('destroy flushes a pending write instead of losing it', () => {
+        withFixture((mgr, fixture, deps) => {
+            mgr.init();
+            const el = document.createElement('div');
+            el.style.left = '5px';
+            el.style.top = '6px';
+            mgr._saveElementPosition(el, { key: 'k' });
+            assertEq(deps.AppState.calls.update, 0, 'write should still be queued');
+            mgr.destroy();
+            assertEq(deps.AppState.calls.update, 1, 'the last drag before teardown must still persist');
+        });
+    });
+
+    await test('_clearSavedPositions can cancel a write that is only queued', () => {
+        // The key is not yet in state — it lives in the pending queue. Without
+        // treating a pending write as "persisted", the delete would be skipped
+        // and the queued position would land anyway.
+        const AppState = makeAppState({ taskViewLayout: { positions: {} } });
+        setTaskViewLayoutManagerDependencies(makeDeps({ AppState }));
+        const mgr = new TaskViewLayoutManager();
+        const el = document.createElement('div');
+        el.style.left = '12px';
+        el.style.top = '12px';
+
+        mgr._saveElementPosition(el, { key: 'k' });
+        mgr._clearSavedPositions(['k']);
+        mgr._flushPositionWrites();
+
+        assert(!('k' in AppState.state.settings.taskViewLayout.positions),
+            'a queued-but-unwritten position must be cancellable');
     });
 
     await test('_clearSavedPositions does nothing when no key is persisted', () => {
@@ -317,7 +450,9 @@ export async function runTaskViewLayoutManagerTests(resultsDiv) {
         const AppState = makeAppState({ taskViewLayout: { positions: { solo: {} } } });
         setTaskViewLayoutManagerDependencies(makeDeps({ AppState }));
 
-        new TaskViewLayoutManager()._clearSavedPosition('solo');
+        const mgr = new TaskViewLayoutManager();
+        mgr._clearSavedPosition('solo');
+        mgr._flushPositionWrites();
 
         assert(!('solo' in AppState.state.settings.taskViewLayout.positions), 'solo should be deleted');
     });
@@ -731,10 +866,13 @@ export async function runTaskViewLayoutManagerTests(resultsDiv) {
         assertEq(aborts, 1, 'visibilitychange should abort an active drag while live');
 
         mgr.destroy();
+        // destroy() aborts any in-flight drag on purpose, so it calls the stub
+        // once. Baseline here; what matters is that nothing fires AFTERWARDS.
+        const afterDestroy = aborts;
         try {
             document.dispatchEvent(new Event('visibilitychange'));
             window.dispatchEvent(new Event('pagehide'));
-            assertEq(aborts, 1, 'a destroyed manager still reacts to interrupts — listener leak');
+            assertEq(aborts, afterDestroy, 'a destroyed manager still reacts to interrupts — listener leak');
         } finally {
             fixture.cleanup();
         }

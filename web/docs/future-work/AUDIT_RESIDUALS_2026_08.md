@@ -5,28 +5,51 @@
 
 ---
 
-## 1. taskViewLayoutManager — test coverage ✅ RESOLVED; undo coalescing still open 🟡
+## 1. taskViewLayoutManager — ✅ CLOSED (coverage, coalescing, and an audit pass)
 
 *From archived `TASK_VIEW_CUSTOMIZATION_PLAN.md`.*
 
-**Test coverage: resolved.** `tests/taskViewLayoutManager.tests.js` now covers persistence,
-the desktop/home-view gates, drag interrupts and teardown — 52 tests, green. The original
-entry below described a file with no test file at all; that stopped being true in `9aec3ca5`.
+**Test coverage** — resolved in `9aec3ca5`; now 59 tests.
 
-**Still open — Phase 4 undo coalescing.** Rapid drags each push a full undo snapshot, so a
-few seconds of repositioning floods the undo stack. No `LAYOUT_COALESCE_WINDOW` /
-`LAYOUT_RESIZE_DEBOUNCE` constants exist (verified Aug 2026). Per the timing-constants rule
-these belong in `core/constants.js`, not as module-local values.
+**Phase 4 undo coalescing** — shipped Aug 2026. Position writes queue through
+`_queuePositionWrite` and land in a single `AppState.update` via
+`_flushPositionWrites`, so one gesture — and one burst of gestures inside
+`UI_TIMEOUTS.LAYOUT_COALESCE_WINDOW` — is one undo entry. Two distinct problems were
+folded into it: dragging an anchor wrote once per follower (undoing one drag took as
+many presses as it had followers), and repeated nudges each pushed their own snapshot.
+The delete path had batched "so a cascade is one undo entry, not one per key" since it
+was written; the save path never did. Flushed on teardown and page-hide so nothing is
+lost; discarded on reset and on undo-restore so a stale write cannot land after the
+state it described.
 
-For the record, the rest of what this entry implied was missing is **shipped**:
-`modules/ui/taskViewLayoutManager.js` has all five draggables wired, persists to
-`state.settings.taskViewLayout.positions`, captures pre-drag undo snapshots, backs the
-settings "Reset Task View Layout" button via `resetTaskViewLayout()`, and has iOS
-interrupted-drag teardown (`_abortActiveDrag()` on `visibilitychange`/`pagehide`) plus a
-dock/snap-target system. The module's own header banner still claimed two draggables and
-in-memory-only positions until Aug 2026 — corrected in the same pass as this entry, along
-with its `See:` pointer, which still referenced the pre-cleanup `docs/future-work/` path for
-a plan that now lives in `docs/archive/`. Same class as §10 below.
+**Audit findings, fixed in the same pass:**
+
+- 🔴 *Saved positions were applied unclamped.* Positions are global and stored in
+  pixels, so a layout arranged on a wide display could put an element — and its drag
+  handle — fully off-screen on a smaller one, recoverable only via settings Reset.
+  Measured: a saved `{left: 9000, top: 4000}` put `#task-card-group` at (9350, 4446) in
+  a 1400x900 viewport. Now clamped into the play area on apply; the same seed lands at
+  (980, 316).
+- 🟠 *Corrupt entries were applied on the boot path only.* `refreshTaskViewLayout()`
+  checked `Number.isFinite` before applying; `_loadAndApplyPositions()` passed anything
+  object-shaped straight through, so `{left: null, top: 'oops'}` set `position:absolute`
+  with `right/bottom:auto` and no coordinates, pulling the element out of flex flow with
+  nothing to anchor it. Validation moved into `_applySavedPosition` so both callers get
+  it. (The two-callers-disagree shape is CLAUDE.md #15.)
+- 🟠 *`destroy()` did not end an in-flight drag.* `_beginDrag` sets
+  `body.style.userSelect = 'none'` and only `_endDrag` clears it, so tearing down
+  mid-drag — which `destroyAllModules()` does on boot retry — left the whole page
+  unselectable until reload.
+- 🟡 *Reset was not undoable as a first interaction.* `resetTaskViewLayout()` was the
+  only one of the three write paths that never called
+  `enableUndoSystemOnFirstInteraction()`, so the most destructive action in the feature
+  could be silently dropped from the undo stack.
+- 🟡 *Magic number.* The 50ms click-swallow window moved to
+  `UI_TIMEOUTS.LAYOUT_CLICK_SWALLOW`.
+
+The module's header banner also claimed two draggables and in-memory-only positions
+long after five were wired and persisting, and pointed at the pre-cleanup
+`docs/future-work/` path for a plan now in `docs/archive/` — both corrected.
 
 ## 2. Modal registry — two stray direct lookups
 

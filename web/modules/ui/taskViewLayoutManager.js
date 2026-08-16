@@ -13,17 +13,18 @@
  *  - All five draggables in `DRAGGABLES` are wired, not two.
  *  - Positions PERSIST to `state.settings.taskViewLayout.positions`, keyed per
  *    draggable — they survive reload.
- *  - Undo captures a pre-drag snapshot (see `enableUndoSystemOnFirstInteraction`
- *    below, and the single-update batching in `_clearSavedPositions`).
+ *  - Undo captures a pre-drag snapshot, and position writes are COALESCED
+ *    through `_queuePositionWrite` → `_flushPositionWrites` so one gesture (and
+ *    one burst of gestures within UI_TIMEOUTS.LAYOUT_COALESCE_WINDOW) is one
+ *    undo entry, not one per element moved.
  *  - Reset ships: `resetTaskViewLayout()` backs the "Reset Task View Layout"
  *    button in settings.
  *  - Dock/snap zones let an element drop back into normal flex flow.
- *  - Covered by tests/taskViewLayoutManager.tests.js (52 tests).
+ *  - Covered by tests/taskViewLayoutManager.tests.js.
  *
- * STILL OPEN: undo COALESCING. Rapid drags each push their own snapshot, so a
- * few seconds of fiddling floods the undo stack; no LAYOUT_COALESCE_WINDOW /
- * LAYOUT_RESIZE_DEBOUNCE constants exist. Tracked in
- * docs/future-work/AUDIT_RESIDUALS_2026_08.md §1.
+ * Saved positions are validated and clamped on apply (`_applySavedPosition`):
+ * they are global and stored in pixels, so a layout arranged on a wide display
+ * must not strand an element off-screen when reopened on a smaller one.
  *
  * Gating: desktop-only (`_isDesktop` — non-touch, >= BREAKPOINTS.DESKTOP_MIN,
  * and `(hover: hover) and (pointer: fine)`) AND home-view only; focus view has
@@ -66,7 +67,7 @@ let taskViewLayoutManagerInstance = null;
 
 /**
  * Per-draggable configuration. Add entries here as more elements are wired in.
- * For Phase 2 only the two simple in-flow elements are registered.
+ * All five entries below are live; this note used to say only two were.
  *
  * `dock` (optional) defines a snap-back zone: when the user drops the
  * element with its center inside the zone, inline positioning is cleared
@@ -220,6 +221,9 @@ export class TaskViewLayoutManager {
         /** @type {(() => void) | null} Abort fn for the currently-active drag. */
         this._activeDrag = null;
         this._dragInterruptHandler = null;
+        /** @type {Map<string, object|null>} Queued position writes; null = delete. */
+        this._pendingWrites = new Map();
+        this._coalesceTimer = null;
     }
 
     get deps() {
@@ -293,7 +297,13 @@ export class TaskViewLayoutManager {
         // drag's chrome (the dragging handle + the "Drop to dock" snap
         // indicator), leaving it stuck visible across orientations. Abort
         // any active drag on these signals so the chrome can't orphan.
-        this._dragInterruptHandler = () => this._abortActiveDrag();
+        // Also flush any coalesced position write — these signals are the last
+        // chance to persist before the page may go away, and a dropped write
+        // would silently lose the drag the user just made.
+        this._dragInterruptHandler = () => {
+            this._abortActiveDrag();
+            this._flushPositionWrites();
+        };
         document.addEventListener('visibilitychange', this._dragInterruptHandler);
         window.addEventListener('pagehide', this._dragInterruptHandler);
 
@@ -401,12 +411,94 @@ export class TaskViewLayoutManager {
         const widthRaw = parseFloat(element.style.width);
         if (!Number.isFinite(left) || !Number.isFinite(top)) return;
         const width = Number.isFinite(widthRaw) ? widthRaw : null;
+        this._queuePositionWrite(config.key, { left, top, width, customized });
+    }
 
-        // Flip the undo system out of isInitializing so the wrapper captures
-        // a pre-drag snapshot. Without this, the very first drag of a session
-        // is silently dropped from the undo stack.
+    _clearSavedPosition(key) {
+        this._clearSavedPositions([key]);
+    }
+
+    /**
+     * Delete one or more saved positions. Skips keys that are not actually
+     * persisted, so a no-op dock (or the caller's redundant follow-up clear)
+     * never produces a stray undo entry.
+     */
+    _clearSavedPositions(keys) {
+        if (!this.deps.AppState?.update || !keys?.length) return;
+        const positions = this._readPositions();
+        const present = keys.filter(
+            (k) => positions && Object.prototype.hasOwnProperty.call(positions, k)
+        );
+        // A pending write for this key counts as "persisted" — it is about to be.
+        // Without this, dropping an element back home inside the coalesce window
+        // would skip the delete and let the queued position land anyway.
+        const pending = keys.filter((k) => this._pendingWrites.has(k) && !present.includes(k));
+        const targets = present.concat(pending);
+        if (!targets.length) return;
+        for (const key of targets) this._queuePositionWrite(key, null);
+    }
+
+    // ========================================================================
+    // COALESCED POSITION WRITES
+    // ========================================================================
+
+    /**
+     * Queue one position write (`value`) or delete (`value === null`), to be
+     * applied with every other queued change in a SINGLE AppState.update.
+     *
+     * Two separate problems this solves, both of which produced one undo entry
+     * per element instead of one per user gesture:
+     *
+     *  1. WITHIN a gesture. Dropping an anchor that pulls dependents called
+     *     _saveElementPosition once per element — anchor plus each follower —
+     *     and every call was its own AppState.update, so undoing one drag of the
+     *     task card took as many presses as it had followers. The delete path
+     *     already batched for exactly this reason ("one undo entry, not one per
+     *     key"); the save path never did.
+     *  2. ACROSS gestures. Nudging an element repeatedly pushed a full snapshot
+     *     per drop, flooding the undo stack so that undo could no longer reach
+     *     past a few seconds of fiddling.
+     *
+     * The DOM is already updated by the drag itself, so deferring the state
+     * write costs nothing visually. Anything still queued is flushed on
+     * teardown, page hide and reset, so a pending write cannot be lost or land
+     * after the state it was meant to describe.
+     *
+     * @param {string} key - Draggable key
+     * @param {{left:number, top:number, width:(number|null), customized:boolean}|null} value
+     *        Position to store, or null to delete the key.
+     * @returns {void}
+     */
+    _queuePositionWrite(key, value) {
+        // Last write for a key wins — a drag then a dock-home inside one window
+        // correctly collapses to just the delete.
+        this._pendingWrites.set(key, value);
+        clearTimeout(this._coalesceTimer);
+        this._coalesceTimer = setTimeout(
+            () => this._flushPositionWrites(),
+            UI_TIMEOUTS.LAYOUT_COALESCE_WINDOW
+        );
+    }
+
+    /**
+     * Apply every queued position write in one AppState.update — one undo entry
+     * for the whole burst. Safe to call at any time; a no-op when nothing is
+     * queued, so it never captures a stray snapshot.
+     * @returns {void}
+     */
+    _flushPositionWrites() {
+        clearTimeout(this._coalesceTimer);
+        this._coalesceTimer = null;
+        if (!this._pendingWrites.size) return;
+        const writes = new Map(this._pendingWrites);
+        this._pendingWrites.clear();
+        if (!this.deps.AppState?.update) return;
+
+        // Flip the undo system out of isInitializing so the wrapper captures a
+        // pre-drag snapshot. Without this the first drag of a session is silently
+        // dropped from the undo stack. Done here, not at queue time, so a burst
+        // that collapses to nothing never enables undo for no reason.
         this.deps.enableUndoSystemOnFirstInteraction?.();
-
         try {
             this.deps.AppState.update((state) => {
                 if (!state.settings) return;
@@ -416,53 +508,85 @@ export class TaskViewLayoutManager {
                 if (!state.settings.taskViewLayout.positions) {
                     state.settings.taskViewLayout.positions = {};
                 }
-                state.settings.taskViewLayout.positions[config.key] = {
-                    left, top, width, customized
-                };
+                const positions = state.settings.taskViewLayout.positions;
+                for (const [key, value] of writes) {
+                    if (value === null) delete positions[key];
+                    else positions[key] = value;
+                }
             }, true);
         } catch (err) {
-            console.warn('TaskViewLayoutManager: failed to save position', config.key, err);
+            console.warn('TaskViewLayoutManager: failed to flush position writes',
+                [...writes.keys()], err);
         }
-    }
-
-    _clearSavedPosition(key) {
-        this._clearSavedPositions([key]);
     }
 
     /**
-     * Delete one or more saved positions in a SINGLE AppState.update, so a
-     * cascade (homing the card + its followers) is one undo entry, not one per
-     * key. Skips the update — and the first-interaction undo enable — entirely
-     * when none of the keys are actually persisted, so a no-op dock (or the
-     * caller's redundant follow-up clear) never captures a stray undo snapshot.
+     * Drop queued writes without applying them. Used when the state they
+     * describe is being replaced wholesale (undo restore, reset) — otherwise a
+     * write queued before the change lands after it and resurrects a position
+     * the user just removed.
+     * @returns {void}
      */
-    _clearSavedPositions(keys) {
-        if (!this.deps.AppState?.update || !keys?.length) return;
-        const positions = this._readPositions();
-        const present = keys.filter(
-            (k) => positions && Object.prototype.hasOwnProperty.call(positions, k)
-        );
-        if (!present.length) return;
-        // A dock-home is a user action that should produce an undo entry.
-        this.deps.enableUndoSystemOnFirstInteraction?.();
-        try {
-            this.deps.AppState.update((state) => {
-                const pos = state.settings?.taskViewLayout?.positions;
-                if (!pos) return;
-                for (const k of present) delete pos[k];
-            }, true);
-        } catch (err) {
-            console.warn('TaskViewLayoutManager: failed to clear saved positions', present, err);
-        }
+    _discardPendingWrites() {
+        clearTimeout(this._coalesceTimer);
+        this._coalesceTimer = null;
+        this._pendingWrites.clear();
     }
 
+    /**
+     * Apply one saved position to its element.
+     *
+     * Validates and clamps HERE rather than in the callers, because the two
+     * callers disagreed: refreshTaskViewLayout() checked Number.isFinite first,
+     * _loadAndApplyPositions() passed anything object-shaped straight through.
+     * A corrupt entry (`{left: null, top: 'oops'}` — a bad import, a hand-edited
+     * backup) therefore set position:absolute with right/bottom:auto and NO
+     * coordinates on the boot path, yanking the element out of flex flow with
+     * nothing to anchor it. Verified by execution before this guard existed.
+     *
+     * Coordinates are also clamped into the visible play area. Positions are
+     * global and stored in pixels, so a layout arranged on a wide display and
+     * reopened on a laptop could place an element — and its drag handle — fully
+     * off-screen, leaving no way back except the settings Reset button. Measured:
+     * a saved {left: 9000, top: 4000} put #task-card-group at (9350, 4446) in a
+     * 1400x900 viewport.
+     *
+     * @param {string} key - Draggable key
+     * @param {object} pos - Saved position record
+     * @returns {void}
+     */
     _applySavedPosition(key, pos) {
         const entry = this._registry.get(key);
         if (!entry || !entry.element) return;
+        if (!pos || !Number.isFinite(pos.left) || !Number.isFinite(pos.top)) return;
         const el = entry.element;
+
+        // Clamp into the play area, in the same viewport-absolute frame the drag
+        // handler clamps in, then convert back to wrapper-relative for the style.
+        const wrapperRect = this._wrapper?.getBoundingClientRect();
+        let left = pos.left;
+        let top = pos.top;
+        if (wrapperRect) {
+            const rect = el.getBoundingClientRect();
+            const width = Number.isFinite(pos.width) ? pos.width : rect.width;
+            const height = rect.height;
+            const maxAbsLeft = Math.max(
+                LAYOUT_PLAY_AREA_INSETS.left,
+                window.innerWidth - width - LAYOUT_PLAY_AREA_INSETS.right
+            );
+            const maxAbsTop = Math.max(
+                LAYOUT_PLAY_AREA_INSETS.top,
+                window.innerHeight - height - LAYOUT_PLAY_AREA_INSETS.bottom
+            );
+            const absLeft = clamp(pos.left + wrapperRect.left, LAYOUT_PLAY_AREA_INSETS.left, maxAbsLeft);
+            const absTop = clamp(pos.top + wrapperRect.top, LAYOUT_PLAY_AREA_INSETS.top, maxAbsTop);
+            left = absLeft - wrapperRect.left;
+            top = absTop - wrapperRect.top;
+        }
+
         el.style.position = 'absolute';
-        el.style.left = `${pos.left}px`;
-        el.style.top = `${pos.top}px`;
+        el.style.left = `${left}px`;
+        el.style.top = `${top}px`;
         el.style.right = 'auto';
         el.style.bottom = 'auto';
         el.style.transform = 'none';
@@ -495,6 +619,13 @@ export class TaskViewLayoutManager {
      */
     resetTaskViewLayout() {
         if (!this.deps.AppState?.update) return false;
+        // Drop queued writes first — a drag persisted after the reset would
+        // resurrect exactly the position the user asked to clear.
+        this._discardPendingWrites();
+        // Reset is a user action and the most destructive one here; it must be
+        // undoable even as the first interaction of a session. Its two siblings
+        // (_flushPositionWrites, and the delete path through it) already did this.
+        this.deps.enableUndoSystemOnFirstInteraction?.();
         try {
             this.deps.AppState.update((state) => {
                 if (state.settings?.taskViewLayout?.positions) {
@@ -529,6 +660,10 @@ export class TaskViewLayoutManager {
      */
     refreshTaskViewLayout() {
         if (!this.deps.AppState?.get) return false;
+        // The caller has just replaced state wholesale (undo/redo restore). A
+        // write queued before that restore describes the pre-restore layout, so
+        // letting it land would immediately undo the undo.
+        this._discardPendingWrites();
         if (!this._shouldApplyLayout()) {
             this._clearAllCustomPositions();
             return true;
@@ -864,7 +999,7 @@ export class TaskViewLayoutManager {
                 window.addEventListener('click', swallowClick, { capture: true, once: true });
                 setTimeout(() => {
                     window.removeEventListener('click', swallowClick, { capture: true });
-                }, 50);
+                }, UI_TIMEOUTS.LAYOUT_CLICK_SWALLOW);
             }
 
             dragState = null;
@@ -1259,6 +1394,16 @@ export class TaskViewLayoutManager {
     }
 
     destroy() {
+        // End any in-flight drag FIRST. _beginDrag sets body.style.userSelect =
+        // 'none' and only _endDrag clears it, so tearing down mid-drag (boot
+        // retry calls destroyAllModules) left the whole page unselectable until
+        // reload. _abortActiveDrag also clears orphaned drag chrome.
+        this._abortActiveDrag();
+        this._activeDrag = null;
+        // Persist anything still coalescing — otherwise the last drag before a
+        // boot retry is silently lost.
+        this._flushPositionWrites();
+
         if (this._resizeHandler) {
             window.removeEventListener('resize', this._resizeHandler);
             this._resizeHandler = null;

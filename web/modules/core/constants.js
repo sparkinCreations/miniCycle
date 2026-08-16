@@ -110,6 +110,8 @@ export const UI_TIMEOUTS = Object.freeze({
     FOCUS_DELAY_SHORT: 50,         // 50ms - Focus an element shortly after it appears (inputs/edit fields)
     SAVE_DEFER: 50,                // 50ms - Defer a state save to the next tick so DOM/state settles first
     RESIZE_DEBOUNCE: 150,          // 150ms - Window resize debounce
+    LAYOUT_CLICK_SWALLOW: 50,      // 50ms - Task View Layout: window in which the synthesized click after a drag is swallowed
+    LAYOUT_COALESCE_WINDOW: 500,   // 500ms - Task View Layout: merge position writes from rapid successive drags into ONE AppState.update (one undo entry per burst, not per drag)
     ANIMATION_SHORT: 200,          // 200ms - Short animation / transition delay
     NOTIFICATION_FADE: 300,        // 300ms - Notification removal animation
     MODAL_ANIMATION: 500,          // 500ms - Modal open/close animation
