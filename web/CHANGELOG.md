@@ -1,3 +1,8 @@
+## [2.427] - 2026-08-16
+- fix(task-view): bound the drag play area by the MEASURED chrome, not a guess
+- fix(release): never push the tag when the branch push failed
+
+
 ## [2.426] - 2026-08-16
 - fix(task-view): make the position clamp scroll-independent; guard no-op reset
 - fix(task-view): coalesce layout writes; clamp and validate saved positions
