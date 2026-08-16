@@ -1,3 +1,8 @@
+## [2.425] - 2026-08-16
+- feat(boot): show which version the update screen is moving between
+- fix(csp): hash the document.write'd script — pre-boot cache clear was blocked
+
+
 ## [2.424] - 2026-08-16
 - fix(import,share,routine): restore two modals the ENFORCE_REQUIRES flip killed
 - feat(di): warn when a module reads a dep it never declared

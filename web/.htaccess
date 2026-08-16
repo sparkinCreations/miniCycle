@@ -27,7 +27,7 @@
             'sha256-za1ttq364TAwTTqV10AwAnsXHlgFSXnVpzP82BNmJcM=' \
             'sha256-PtjTViCuOjuj2D2cao71d7bjI5Rdyc2IJz+Vf3u5IxM=' \
             'sha256-TJvKNGd2juQ/x1tfGoDak7F4WXI6XRM55SvnV6tddE4=' \
-            'sha256-JIJELDjHhXx6g0I8ah11XDU9I8XbKUXb1vR0mol7gT4=' \
+            'sha256-M2/opFBOapjIMvP41bHLGFCxoB5txNpCe7XKRsuVQwI=' \
             'sha256-WL5F0h8oroguchAN9gVJMpn8QgFbiHZXo8gnikjEIL0=' \
             'sha256-4+Try4BCJl5RqrE2z8ON18rf30QjL9aCI3JCAtsTyvQ=' \
             'sha256-fB/nY9GhU/TNFVUbbqq/8F8sG9a81HMv4dCqev+U4dg=' \
@@ -42,7 +42,8 @@
             'sha256-ZmCo1D8qlgnCgO2lPu9go7bFumJyHt4sEttY02PYpQ8=' \
             'sha256-h+r8SXgnpMvpkOBx8UvUXtwr8qr+Jw6l0RYQo66Ga1s=' \
             'sha256-QpkPeUhcvkEgamsLQnX7k8hY+gb4DX1E+xrcb23bhJo=' \
-            'sha256-82dLW8NMvKnmLmdVcKj9zt/6ia8qy4Sx0htjR+Qzmmk='; \
+            'sha256-82dLW8NMvKnmLmdVcKj9zt/6ia8qy4Sx0htjR+Qzmmk=' \
+            'sha256-640meEnOenpColBQdyAuD707TeH3jPOOM4rKJiXun9k='; \
         style-src 'self' 'unsafe-inline'; \
         font-src 'self'; \
         img-src 'self' data: blob:; \
