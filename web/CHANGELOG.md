@@ -1,3 +1,9 @@
+## [2.426] - 2026-08-16
+- fix(task-view): make the position clamp scroll-independent; guard no-op reset
+- fix(task-view): coalesce layout writes; clamp and validate saved positions
+- docs(task-view): correct a banner that described a prototype, not the code
+
+
 ## [2.425] - 2026-08-16
 - feat(boot): show which version the update screen is moving between
 - fix(csp): hash the document.write'd script — pre-boot cache clear was blocked
