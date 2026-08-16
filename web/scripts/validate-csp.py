@@ -34,6 +34,9 @@ import os
 import re
 import sys
 
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__))))
+from csp_generated_scripts import generated_script_hashes  # noqa: E402
+
 # Must stay in sync with the CSP stage in scripts/update-version.sh
 SRC_FILES = ['miniCycle.html', 'lite/miniCycle-lite.html', 'tests/module-test-suite.html']
 CONFIGS = ['netlify.toml', '.htaccess', 'nginx-security.conf']
@@ -79,6 +82,21 @@ def main():
 
         truth.update(sha(s) for s in blocks(strip_comments(html)))
         naive.update(sha(s) for s in blocks(html))
+
+    # Runtime-generated inline scripts (document.write'd) execute under CSP but are
+    # not literal <script> elements, so `blocks()` cannot see them. They were the
+    # blind spot that let miniCycle.html's pre-boot cache-clear script ship BLOCKED
+    # through a green gate — measured on live minicycle.app at v2.424. Fold them
+    # into the truth set so a missing hash fails here instead of in the browser.
+    generated = generated_script_hashes(SRC_FILES)
+    if generated:
+        print('🧩 %d runtime-generated inline script(s) included (document.write\'d)' % len(generated))
+    else:
+        warnings.append('no runtime-generated inline scripts detected — if miniCycle.html '
+                        'still document.write\'s one, this gate is blind to it '
+                        '(see scripts/csp_generated_scripts.py)')
+    truth.update(generated)
+    naive.update(generated)
 
     if not scanned:
         print('❌ none of the source files were found — run this from web/')

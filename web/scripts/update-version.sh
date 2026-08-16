@@ -1543,7 +1543,10 @@ else
     done
 
     python3 - <<'CSP_PY'
-import hashlib, base64, re, os
+import hashlib, base64, re, os, sys
+
+sys.path.insert(0, 'scripts')
+from csp_generated_scripts import generated_script_hashes
 
 SRC_FILES = ['miniCycle.html', 'lite/miniCycle-lite.html', 'tests/module-test-suite.html']
 CONFIGS = ['netlify.toml', '.htaccess', 'nginx-security.conf']
@@ -1583,6 +1586,20 @@ for f in SRC_FILES:
         if s.strip():
             h = base64.b64encode(hashlib.sha256(s.encode()).digest()).decode()
             hashes.append("'sha256-%s'" % h)
+# Runtime-generated inline scripts (document.write'd) are invisible to SCRIPT_RE
+# but ARE hashed by the browser. Omitting them here is not cosmetic: this stage
+# rewrites the directive to exactly `canon`, so any hand-added hash for them is
+# deleted on the next release — which is how the pre-boot cache-clear script came
+# to be CSP-blocked in production while every gate stayed green (v2.424).
+generated = generated_script_hashes(SRC_FILES)
+if generated:
+    print("🧩 %d runtime-generated inline script(s) hashed (document.write'd)" % len(generated))
+else:
+    print("⚠️  No runtime-generated inline scripts detected — if miniCycle.html still "
+          "document.write's one, its CSP hash is about to be dropped (see "
+          "scripts/csp_generated_scripts.py)")
+hashes.extend(generated)
+
 seen = set()
 canon = [h for h in hashes if not (h in seen or seen.add(h))]
 if not canon:
