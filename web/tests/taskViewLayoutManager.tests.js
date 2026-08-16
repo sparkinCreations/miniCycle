@@ -458,6 +458,133 @@ export async function runTaskViewLayoutManagerTests(resultsDiv) {
     });
 
     // ============================================
+    // 📐 Play area (measured chrome, not guesses)
+    // ============================================
+    resultsDiv.innerHTML += '<h4 class="test-section">📐 Play area</h4>';
+
+    /** Swap in a fake :root computed style, counting how often it is asked for. */
+    function withRootVars(vars, fn) {
+        const realGCS = window.getComputedStyle;
+        let calls = 0;
+        window.getComputedStyle = function (el, ...rest) {
+            if (el === document.documentElement) {
+                calls++;
+                return { getPropertyValue: (name) => (name in vars ? vars[name] : '') };
+            }
+            return realGCS.call(window, el, ...rest);
+        };
+        try { return fn(() => calls); } finally { window.getComputedStyle = realGCS; }
+    }
+
+    await test('_measurePlayArea uses the measured header + mode-selector height', () => {
+        // The top boundary must be the real bottom of .fixed-header-container —
+        // the wrapper holding the header AND the mode selector — which
+        // headerLayoutManager publishes. The old hardcoded 90 sat 45px inside a
+        // measured 135px of chrome, so elements could be dragged under the banner.
+        setTaskViewLayoutManagerDependencies(makeDeps());
+        const mgr = new TaskViewLayoutManager();
+        withRootVars({ '--header-total-height': '135px', '--nav-dots-clearance': '83px' }, () => {
+            const area = mgr._measurePlayArea();
+            assertEq(area.top, 135, 'top must come from --header-total-height');
+            assertEq(area.bottom, 83, 'bottom must come from --nav-dots-clearance');
+        });
+    });
+
+    await test('_measurePlayArea falls back to the constants before the vars publish', () => {
+        // headerLayoutManager retries until it can publish, so there is a window
+        // at boot where these do not exist. Falling back beats clamping to zero.
+        setTaskViewLayoutManagerDependencies(makeDeps());
+        const mgr = new TaskViewLayoutManager();
+        withRootVars({}, () => {
+            const area = mgr._measurePlayArea();
+            assert(area.top > 0 && area.bottom > 0, 'must fall back to a usable inset');
+            assertEq(area.top, 90, 'expected the LAYOUT_PLAY_AREA_INSETS fallback');
+        });
+    });
+
+    await test('_measurePlayArea rejects unusable published values', () => {
+        setTaskViewLayoutManagerDependencies(makeDeps());
+        const mgr = new TaskViewLayoutManager();
+        for (const bad of ['', '0px', 'auto', 'NaN', '-40px']) {
+            withRootVars({ '--header-total-height': bad, '--nav-dots-clearance': bad }, () => {
+                const area = mgr._measurePlayArea();
+                assertEq(area.top, 90, `"${bad}" must not be trusted as a boundary`);
+                assertEq(area.bottom, 90, `"${bad}" must not be trusted as a boundary`);
+            });
+        }
+    });
+
+    await test('_measurePlayArea reads :root once, not once per variable', () => {
+        // getComputedStyle forces a style resolve. Both variables come off a
+        // single call.
+        setTaskViewLayoutManagerDependencies(makeDeps());
+        const mgr = new TaskViewLayoutManager();
+        withRootVars({ '--header-total-height': '135px', '--nav-dots-clearance': '83px' }, (count) => {
+            mgr._measurePlayArea();
+            assertEq(count(), 1, 'should resolve :root style exactly once');
+        });
+    });
+
+    await test('left/right stay constant gutters — nothing to measure against', () => {
+        setTaskViewLayoutManagerDependencies(makeDeps());
+        const mgr = new TaskViewLayoutManager();
+        withRootVars({ '--header-total-height': '135px', '--nav-dots-clearance': '83px' }, () => {
+            const area = mgr._measurePlayArea();
+            assertEq(area.left, 20, 'left gutter');
+            assertEq(area.right, 20, 'right gutter');
+        });
+    });
+
+    await test('_measureGroupInset reports how far followers overhang the anchor', () => {
+        // A follower docked ABOVE the anchor (negative offset) is why the anchor
+        // must stop short of the top boundary.
+        setTaskViewLayoutManagerDependencies(makeDeps());
+        const mgr = new TaskViewLayoutManager();
+        const anchorRect = { width: 700, height: 400 };
+
+        const above = mgr._measureGroupInset(
+            [{ relativeOffsetLeft: 0, relativeOffsetTop: -60, width: 450, height: 44 }], anchorRect);
+        assertEq(above.top, 60, 'a follower 60px above must hold the anchor back 60px');
+        assertEq(above.bottom, 0, 'nothing overhangs below');
+
+        const below = mgr._measureGroupInset(
+            [{ relativeOffsetLeft: 0, relativeOffsetTop: 420, width: 200, height: 50 }], anchorRect);
+        assertEq(below.bottom, 70, 'follower bottom 470 vs anchor height 400');
+        assertEq(below.top, 0, 'nothing overhangs above');
+    });
+
+    await test('_measureGroupInset takes the WORST overhang across followers', () => {
+        setTaskViewLayoutManagerDependencies(makeDeps());
+        const mgr = new TaskViewLayoutManager();
+        const inset = new TaskViewLayoutManager()._measureGroupInset([
+            { relativeOffsetLeft: -30, relativeOffsetTop: -20, width: 100, height: 40 },
+            { relativeOffsetLeft: -80, relativeOffsetTop: -55, width: 100, height: 40 },
+            { relativeOffsetLeft: 10, relativeOffsetTop: 10, width: 100, height: 40 }
+        ], { width: 700, height: 400 });
+        assertEq(inset.top, 55, 'the highest follower governs');
+        assertEq(inset.left, 80, 'the leftmost follower governs');
+        assertEq(mgr._measureGroupInset([], { width: 1, height: 1 }).top, 0, 'no followers → no inset');
+    });
+
+    await test('_measureGroupInset never returns a negative overhang', () => {
+        // A follower entirely inside the anchor's box must not LOOSEN the clamp.
+        setTaskViewLayoutManagerDependencies(makeDeps());
+        const inset = new TaskViewLayoutManager()._measureGroupInset(
+            [{ relativeOffsetLeft: 20, relativeOffsetTop: 20, width: 50, height: 50 }],
+            { width: 700, height: 400 });
+        assertEq(inset.top, 0, 'inset must not go negative');
+        assertEq(inset.bottom, 0, 'inset must not go negative');
+        assertEq(inset.left, 0, 'inset must not go negative');
+        assertEq(inset.right, 0, 'inset must not go negative');
+    });
+
+    await test('_measureGroupInset tolerates a missing follower list', () => {
+        setTaskViewLayoutManagerDependencies(makeDeps());
+        const inset = new TaskViewLayoutManager()._measureGroupInset(undefined, { width: 10, height: 10 });
+        assertEq(inset.top + inset.bottom + inset.left + inset.right, 0, 'should be all zeros');
+    });
+
+    // ============================================
     // 🎯 Applying saved positions
     // ============================================
     resultsDiv.innerHTML += '<h4 class="test-section">🎯 Applying positions</h4>';

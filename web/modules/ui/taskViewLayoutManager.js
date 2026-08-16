@@ -47,6 +47,10 @@ import { DOM_IDS, DOM_CLASSES, DOM_SELECTORS, Z_INDEX, LIMITS, LAYOUT_PLAY_AREA_
 import { getLabel } from '../labels/labelResolver.js';
 import { getIcon } from '../utils/icons.js';
 import { isTouchDevice } from '../utils/deviceDetection.js';
+// Names only — the VALUES are published on :root by headerLayoutManager, which
+// measures the real chrome. Importing the names rather than re-declaring the
+// strings keeps one source of truth if either variable is ever renamed.
+import { HEADER_HEIGHT_VAR, NAV_DOTS_CLEARANCE_VAR } from './headerLayoutManager.js';
 
 const di = createDIModule('TaskViewLayoutManager', {
     AppState: optional(null),
@@ -353,6 +357,87 @@ export class TaskViewLayoutManager {
             indicator.classList.remove(DOM_CLASSES.TVL_SNAP_TARGET_VISIBLE);
             indicator.classList.remove(DOM_CLASSES.TVL_SNAP_TARGET_ACTIVE);
         }
+    }
+
+    /**
+     * The rectangle a drag may not leave, in viewport-absolute pixels.
+     *
+     * Top and bottom come from the measurements headerLayoutManager publishes on
+     * `:root` rather than from fixed numbers. The top boundary is the real bottom
+     * of `.fixed-header-container` — the wrapper holding the header AND the mode
+     * selector — which is the same value `#app-container` reserves as padding, so
+     * the drag boundary finally agrees with the layout the rest of the app uses.
+     *
+     * The old constants were a guess and were wrong: `top: 90` against a measured
+     * 135px of chrome, so an element could be dragged 45px UNDER the fixed header
+     * and 20px into the mode-selector row, where it read as clipped. A fixed
+     * number cannot track this — the chrome grows with the vocab theme's header
+     * subtitle, with font size, and (per headerLayoutManager's own notes) is
+     * badly underestimated on a real iOS header.
+     *
+     * LAYOUT_PLAY_AREA_INSETS remains the fallback: headerLayoutManager retries
+     * until the variables are published, so there is a window at boot where they
+     * do not exist yet. Left/right stay constant — they are plain edge gutters
+     * with nothing to measure against.
+     *
+     * Called ONCE per drag (cached on dragState), never per pointermove:
+     * getComputedStyle forces a style resolve, and doing that every frame for a
+     * value that cannot change mid-drag is pure waste.
+     *
+     * @returns {{top: number, bottom: number, left: number, right: number}}
+     */
+    _measurePlayArea() {
+        let top = null;
+        let bottom = null;
+        try {
+            // One getComputedStyle call, both variables read off it.
+            const rootStyle = getComputedStyle(document.documentElement);
+            const parsePx = (raw) => {
+                const px = parseFloat(raw);
+                return Number.isFinite(px) && px > 0 ? px : null;
+            };
+            top = parsePx(rootStyle.getPropertyValue(HEADER_HEIGHT_VAR));
+            bottom = parsePx(rootStyle.getPropertyValue(NAV_DOTS_CLEARANCE_VAR));
+        } catch (_) {
+            // No computed style available — fall back to the constants below.
+        }
+        return {
+            top: top ?? LAYOUT_PLAY_AREA_INSETS.top,
+            bottom: bottom ?? LAYOUT_PLAY_AREA_INSETS.bottom,
+            left: LAYOUT_PLAY_AREA_INSETS.left,
+            right: LAYOUT_PLAY_AREA_INSETS.right
+        };
+    }
+
+    /**
+     * How far a follower group extends beyond its anchor on each side.
+     *
+     * The anchor's drag clamp is tightened by these amounts so the WHOLE group
+     * stays inside the play area. Followers are positioned from the anchor's
+     * already-clamped spot plus their captured offset and are never clamped
+     * themselves, so without this, pushing the task card to the top boundary
+     * shoved the Add-task input — which docks ABOVE it, i.e. a negative offset —
+     * straight under the header. Measured before the fix: anchor correctly at
+     * 135, follower at 75, 60px behind the mode-selector banner.
+     *
+     * Clamping each follower independently would be the wrong fix — it would
+     * stretch the very gaps the follower system exists to preserve. Holding the
+     * anchor back keeps the group rigid and in bounds: the card now stops 60px
+     * short of the boundary so its input lands exactly on it.
+     *
+     * @param {Array<{relativeOffsetLeft:number, relativeOffsetTop:number, width:number, height:number}>} followingDeps
+     * @param {DOMRect|{width:number, height:number}} anchorRect - Anchor's rect at drag start
+     * @returns {{top:number, bottom:number, left:number, right:number}} Non-negative overhangs
+     */
+    _measureGroupInset(followingDeps, anchorRect) {
+        const inset = { top: 0, bottom: 0, left: 0, right: 0 };
+        for (const dep of followingDeps || []) {
+            inset.top = Math.max(inset.top, -dep.relativeOffsetTop);
+            inset.bottom = Math.max(inset.bottom, dep.relativeOffsetTop + dep.height - anchorRect.height);
+            inset.left = Math.max(inset.left, -dep.relativeOffsetLeft);
+            inset.right = Math.max(inset.right, dep.relativeOffsetLeft + dep.width - anchorRect.width);
+        }
+        return inset;
     }
 
     _isDesktop() {
@@ -867,7 +952,10 @@ export class TaskViewLayoutManager {
                 followingDeps.push({
                     entry: depEntry,
                     relativeOffsetLeft: depRect.left - elementRect.left,
-                    relativeOffsetTop: depRect.top - elementRect.top
+                    relativeOffsetTop: depRect.top - elementRect.top,
+                    // Needed to keep followers inside the play area — see groupInset.
+                    width: depRect.width,
+                    height: depRect.height
                 });
             }
 
@@ -892,6 +980,24 @@ export class TaskViewLayoutManager {
                 seedTopAbs: elementRect.top,
                 wrapperRect,
                 followingDeps,
+                // Measured once here, not per pointermove — the chrome cannot
+                // change mid-drag, and getComputedStyle forces a style resolve.
+                playArea: this._measurePlayArea(),
+                // How far the follower group extends beyond the anchor on each
+                // side. The anchor's clamp is tightened by this so the WHOLE group
+                // stays in the play area.
+                //
+                // Followers were positioned from the anchor's already-clamped spot
+                // plus their captured offset and never clamped themselves, so
+                // pushing the task card up to the boundary shoved the Add-task
+                // input — which docks ABOVE it, i.e. a negative offset — straight
+                // under the header. Measured: anchor correctly at 135, follower at
+                // 75, 60px behind the mode-selector banner.
+                //
+                // Clamping each follower independently would be the wrong fix: it
+                // would stretch the gaps the follower system exists to preserve.
+                // Constraining the anchor keeps the group rigid AND in bounds.
+                groupInset: this._measureGroupInset(followingDeps, elementRect),
                 started: false
             };
 
@@ -926,11 +1032,19 @@ export class TaskViewLayoutManager {
             const desiredAbsTop = ev.clientY - dragState.offsetY;
 
             // Clamp to the play-area rect so users can't drag elements
-            // off-screen or under the header/footer.
-            const minAbsLeft = LAYOUT_PLAY_AREA_INSETS.left;
-            const maxAbsLeft = window.innerWidth - dragState.elementWidth - LAYOUT_PLAY_AREA_INSETS.right;
-            const minAbsTop = LAYOUT_PLAY_AREA_INSETS.top;
-            const maxAbsTop = window.innerHeight - dragState.elementHeight - LAYOUT_PLAY_AREA_INSETS.bottom;
+            // off-screen or under the header/mode selector/footer. The top and
+            // bottom bounds are the chrome's MEASURED size (see _measurePlayArea),
+            // captured once at drag start.
+            const playArea = dragState.playArea;
+            const group = dragState.groupInset;
+            const minAbsLeft = playArea.left + group.left;
+            const minAbsTop = playArea.top + group.top;
+            // Math.max keeps max >= min when a group is taller/wider than the play
+            // area; clamp() would otherwise pin to a bound below its own minimum.
+            const maxAbsLeft = Math.max(minAbsLeft,
+                window.innerWidth - dragState.elementWidth - playArea.right - group.right);
+            const maxAbsTop = Math.max(minAbsTop,
+                window.innerHeight - dragState.elementHeight - playArea.bottom - group.bottom);
 
             const clampedAbsLeft = clamp(desiredAbsLeft, minAbsLeft, maxAbsLeft);
             const clampedAbsTop = clamp(desiredAbsTop, minAbsTop, maxAbsTop);
