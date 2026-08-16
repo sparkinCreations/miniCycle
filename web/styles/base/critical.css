@@ -89,6 +89,22 @@ html, body {
   font-family: 'Poppins', 'Poppins Fallback', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   opacity: 0.9;
 }
+/* Version line on the "Updating to latest version…" overlay (v2.425+).
+   Lives in critical.css alongside .loader-text because the overlay renders
+   during boot and cache recovery — before any non-critical stylesheet is
+   guaranteed to have loaded. Colour is a fixed white here, like its siblings:
+   the boot splash paints its own gradient and never sees the app theme. */
+.loader-version-line {
+  margin-top: 6px;
+  color: rgba(255, 255, 255, 0.9);
+  /* Fallback matters here: this overlay renders during boot and cache recovery,
+     which can precede variables.css. Same shape as the other critical.css rules. */
+  font-size: var(--font-size-sm, 13px);
+  font-weight: 600;
+  font-family: 'Poppins', 'Poppins Fallback', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
 .loader-bar-container {
   margin-top: 24px;
   width: 200px;

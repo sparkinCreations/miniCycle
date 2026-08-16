@@ -1977,6 +1977,11 @@ export const DEFAULT_LABELS = deepFreeze({
         reportProblem:    'Report Problem',
         updatingToLatest: 'Updating to latest version...',
         updatingDetail:   'This only takes a moment.',
+        // Version line on the updating overlay. `updatingFromTo` is the normal case
+        // (both versions known); `updatingFromOnly` covers the cache-recovery paths,
+        // which know the build that is running but not yet what the server will serve.
+        updatingFromTo:   'Version {from} → {to}',
+        updatingFromOnly: 'Currently on version {from}',
         dataRestored:     'Data restored after interrupted test run',
         updateAvailable:  'Update Available!',
         oldCachedVersion: 'Your browser has an old cached version.',

@@ -436,29 +436,80 @@ function isCacheError(error) {
 }
 
 /**
+ * Normalise a version string for display.
+ *
+ * Versions reaching the overlay are not all ours: the target can come from
+ * `localStorage.__miniCycle_lastVersion` or from a regex over a fetched
+ * `version.js`, so treat both as untrusted text. Restrict to the characters a
+ * version can legitimately contain and cap the length — escaping alone would
+ * stop injection but still let a long string wreck the overlay layout.
+ *
+ * @param {*} value - Candidate version string
+ * @returns {string} Safe version text, or '' if nothing usable remains
+ */
+function sanitizeVersionForDisplay(value) {
+  if (value === null || value === undefined) return '';
+  return String(value).replace(/[^0-9A-Za-z.\-_]/g, '').slice(0, 16);
+}
+
+/**
  * Replace the boot-error UI with a friendly "Updating to latest version..."
  * overlay during automatic cache recovery. Called immediately before
  * `attemptCacheRecovery()` so the user sees a clear, non-alarming explanation
  * for the brief moment between cache clear and reload (typically <1s, longer
  * on slow networks).
  *
+ * Shows which version is running and which one it is moving to, so an update
+ * pause is legible rather than an unexplained wait. The target is only known on
+ * the version-gate path (it fetched the server's version.js); the two cache-
+ * recovery callers know the running build but not yet what the server will
+ * serve, so they fall back to `__miniCycle_lastVersion` — written by both the
+ * gate and the inline pre-boot check — and, failing that, show the running
+ * version alone rather than an empty or invented arrow.
+ *
  * The recovery itself triggers a full page reload, so this DOM is replaced
  * shortly after — no listener cleanup needed.
+ *
+ * @param {Object} [options] - Version display options
+ * @param {string} [options.fromVersion] - Version currently running (defaults to APP_VERSION)
+ * @param {string} [options.toVersion] - Version being updated to, when known
  * @returns {void}
  */
-function showUpdatingOverlay() {
+function showUpdatingOverlay({ fromVersion, toVersion } = {}) {
   const loader = document.getElementById(DOM_IDS.APP_LOADER);
   if (!loader) return;
 
   loader.style.display = 'flex';
   loader.classList.remove(DOM_CLASSES.FADE_OUT);
 
+  const from = sanitizeVersionForDisplay(fromVersion ?? APP_VERSION);
+  let to = sanitizeVersionForDisplay(toVersion);
+  if (!to) {
+    // Best effort for the recovery paths — may legitimately be absent.
+    try { to = sanitizeVersionForDisplay(localStorage.getItem('__miniCycle_lastVersion')); }
+    catch (_) { to = ''; /* storage unavailable */ }
+  }
+
   const headline = escapeHtml(getLabel('boot.updatingToLatest'));
   const detail   = escapeHtml(getLabel('boot.updatingDetail'));
+
+  // Escape the INTERPOLATED result: interpolate() does not escape, and these
+  // vars are untrusted (see sanitizeVersionForDisplay).
+  let versionLine = '';
+  if (from && to && from !== to) {
+    versionLine = escapeHtml(getLabel('boot.updatingFromTo', { vars: { from, to } }));
+  } else if (from) {
+    versionLine = escapeHtml(getLabel('boot.updatingFromOnly', { vars: { from } }));
+  }
+
+  const versionHtml = versionLine
+    ? `<div class="loader-version-line">${versionLine}</div>`
+    : '';
 
   loader.innerHTML = `
     <img src="assets/images/logo/minicycle_logo_icon.png" alt="miniCycle" class="loader-logo" width="120" height="96">
     <div class="loader-text" style="animation: none; margin-top: 16px;">${headline}</div>
+    ${versionHtml}
     <div style="margin-top: 8px; color: rgba(255,255,255,0.75); font-size: 13px;">${detail}</div>
   `;
 }
@@ -729,7 +780,11 @@ async function gateOnServerVersion(timeoutMs) {
     // Swap the boot splash for the friendly "Updating to latest version…" overlay so
     // the gate-triggered reload reads as a deliberate update, not a glitchy flash —
     // consistent with the isCacheError recovery path which shows the same overlay.
-    try { showUpdatingOverlay(); } catch (_) { /* loader missing — proceed to reload */ }
+    // This is the one caller that knows BOTH versions — it just fetched the
+    // server's version.js — so the overlay can name the actual target instead of
+    // falling back to the last-seen value.
+    try { showUpdatingOverlay({ fromVersion: APP_VERSION, toVersion: serverVersion }); }
+    catch (_) { /* loader missing — proceed to reload */ }
     try {
       if ('caches' in window) {
         const keys = await caches.keys();

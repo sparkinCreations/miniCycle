@@ -305,11 +305,31 @@
     // Store version BEFORE document.write (synchronous, persists across reload)
     localStorage.setItem('__miniCycle_lastVersion', currentVersion);
 
+    // Tell the user which version they are moving between, so the update pause is
+    // legible instead of an unexplained wait. Both values are sanitised to a
+    // version-safe charset and capped: lastSeenVersion comes out of localStorage,
+    // which is untrusted input, and this is written straight into markup.
+    // ES5 only — this block sits above the feature gate (Contract 1).
+    // Text is hardcoded rather than routed through getLabel(): no module has
+    // loaded at this point, so the label system does not exist yet.
+    var safeVersionText = function (value) {
+      return String(value === null || value === undefined ? '' : value)
+        .replace(/[^0-9A-Za-z.\-_]/g, '').slice(0, 16);
+    };
+    var fromVersionText = safeVersionText(lastSeenVersion);
+    var toVersionText = safeVersionText(currentVersion);
+    var versionLineHtml = (fromVersionText && toVersionText && fromVersionText !== toVersionText)
+      ? '<p style="margin-top:6px;font-size:13px;opacity:0.85;letter-spacing:0.02em;">Version ' +
+        fromVersionText + ' &rarr; ' + toVersionText + '</p>'
+      : '';
+
     // Use document.write to STOP further HTML parsing immediately
     // This prevents modulepreload hints from being processed with stale caches
-    // NOTE: The generated script content is intentionally static (no interpolated values)
-    // so its CSP SHA-256 hash can be precomputed. Do NOT embed dynamic values here.
-    document.write('<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><style>body{margin:0;min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;background:linear-gradient(135deg,#4c79ff,#74c0fc);font-family:-apple-system,BlinkMacSystemFont,sans-serif;color:white;}.loader{width:40px;height:40px;border:3px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin 1s linear infinite;}@keyframes spin{to{transform:rotate(360deg)}}</style></head><body><div class="loader"></div><p style="margin-top:20px;font-size:16px;">Updating miniCycle...</p><script>');
+    // NOTE: The generated SCRIPT content below is intentionally static (no interpolated
+    // values) so its CSP SHA-256 hash can be precomputed. Do NOT embed dynamic values in
+    // the document.write calls that follow the '<script>' opener. The MARKUP written in
+    // this first call is not hashed, so the version line above is safe here.
+    document.write('<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><style>body{margin:0;min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;background:linear-gradient(135deg,#4c79ff,#74c0fc);font-family:-apple-system,BlinkMacSystemFont,sans-serif;color:white;}.loader{width:40px;height:40px;border:3px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin 1s linear infinite;}@keyframes spin{to{transform:rotate(360deg)}}</style></head><body><div class="loader"></div><p style="margin-top:20px;font-size:16px;">Updating miniCycle...</p>' + versionLineHtml + '<script>');
     document.write('var clearPromises = [];');
     document.write('if ("caches" in window) { clearPromises.push(caches.keys().then(function(n) { console.log("Deleting caches:", n); return Promise.all(n.map(function(c) { return caches.delete(c); })); })); }');
     document.write('if ("serviceWorker" in navigator) { clearPromises.push(navigator.serviceWorker.getRegistrations().then(function(r) { console.log("Unregistering", r.length, "service workers"); return Promise.all(r.map(function(reg) { return reg.unregister(); })); })); }');
