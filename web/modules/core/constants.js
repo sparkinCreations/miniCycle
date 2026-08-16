@@ -302,6 +302,7 @@ export const LIMITS = Object.freeze({
     RECURRING_OVERSLEEP_FACTOR: 2,       // Watch tick counts as overslept when the gap since the last tick exceeds this multiple of the expected interval (device sleep / tab freeze) — the tick then delegates to catch-up
     LAYOUT_DRAG_THRESHOLD: 5,             // px - Task View Layout: pointer travel before drag starts (forgive hover jitter)
     LAYOUT_DOCK_GAP: 20,                  // px - Task View Layout: vertical gap between an anchor element and its docked dependent
+    LAYOUT_MIN_VISIBLE_OVERLAP: 40,       // px - Task View Layout: how much of a restored element must stay inside #task-view, so a layout saved on a wider display can never strand it (and its drag handle) out of reach
     NATIVE_REMINDER_SCHEDULE_MAX: 24      // Max future reminder occurrences pre-scheduled as native notifications (iOS caps pending local notifications at 64 app-wide)
 });
 

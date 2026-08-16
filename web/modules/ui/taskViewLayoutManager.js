@@ -460,9 +460,10 @@ export class TaskViewLayoutManager {
      *     past a few seconds of fiddling.
      *
      * The DOM is already updated by the drag itself, so deferring the state
-     * write costs nothing visually. Anything still queued is flushed on
-     * teardown, page hide and reset, so a pending write cannot be lost or land
-     * after the state it was meant to describe.
+     * write costs nothing visually. A queued write is FLUSHED on teardown and
+     * page hide (so the last drag is never lost) and DISCARDED on reset and on
+     * undo-restore (so it cannot land after the state it was meant to describe
+     * and quietly undo it).
      *
      * @param {string} key - Draggable key
      * @param {{left:number, top:number, width:(number|null), customized:boolean}|null} value
@@ -490,9 +491,13 @@ export class TaskViewLayoutManager {
         clearTimeout(this._coalesceTimer);
         this._coalesceTimer = null;
         if (!this._pendingWrites.size) return;
+        // Check AppState BEFORE consuming the queue. Draining first and then
+        // bailing would silently destroy the user's last drag if state happened
+        // to be unavailable at this instant; leaving it queued lets a later
+        // flush still persist it.
+        if (!this.deps.AppState?.update) return;
         const writes = new Map(this._pendingWrites);
         this._pendingWrites.clear();
-        if (!this.deps.AppState?.update) return;
 
         // Flip the undo system out of isInitializing so the wrapper captures a
         // pre-drag snapshot. Without this the first drag of a session is silently
@@ -561,8 +566,20 @@ export class TaskViewLayoutManager {
         if (!pos || !Number.isFinite(pos.left) || !Number.isFinite(pos.top)) return;
         const el = entry.element;
 
-        // Clamp into the play area, in the same viewport-absolute frame the drag
-        // handler clamps in, then convert back to wrapper-relative for the style.
+        // Clamp so the element keeps a grabbable overlap with the play area.
+        //
+        // Deliberately measured in WRAPPER-RELATIVE space, against the wrapper's own
+        // width/height. The obvious alternative — reuse the drag handler's
+        // viewport-absolute clamp — is wrong here: getBoundingClientRect() moves with
+        // SCROLL, so restoring a layout while the page happened to be scrolled would
+        // drag every saved element toward the viewport. Caught by a test whose
+        // wrapper sat ~2275px down the page: an in-bounds `top: 70` came back as
+        // -2205. Wrapper dimensions are scroll-independent, so this is stable.
+        //
+        // Negative coordinates are legitimate (the drag clamp can produce them when
+        // the wrapper's origin sits inside the play area), so the bound is "at least
+        // LAYOUT_MIN_VISIBLE_OVERLAP px must remain inside the wrapper" rather than
+        // "must be >= 0".
         const wrapperRect = this._wrapper?.getBoundingClientRect();
         let left = pos.left;
         let top = pos.top;
@@ -570,18 +587,9 @@ export class TaskViewLayoutManager {
             const rect = el.getBoundingClientRect();
             const width = Number.isFinite(pos.width) ? pos.width : rect.width;
             const height = rect.height;
-            const maxAbsLeft = Math.max(
-                LAYOUT_PLAY_AREA_INSETS.left,
-                window.innerWidth - width - LAYOUT_PLAY_AREA_INSETS.right
-            );
-            const maxAbsTop = Math.max(
-                LAYOUT_PLAY_AREA_INSETS.top,
-                window.innerHeight - height - LAYOUT_PLAY_AREA_INSETS.bottom
-            );
-            const absLeft = clamp(pos.left + wrapperRect.left, LAYOUT_PLAY_AREA_INSETS.left, maxAbsLeft);
-            const absTop = clamp(pos.top + wrapperRect.top, LAYOUT_PLAY_AREA_INSETS.top, maxAbsTop);
-            left = absLeft - wrapperRect.left;
-            top = absTop - wrapperRect.top;
+            const overlap = LIMITS.LAYOUT_MIN_VISIBLE_OVERLAP;
+            left = clamp(pos.left, overlap - width, Math.max(overlap - width, wrapperRect.width - overlap));
+            top = clamp(pos.top, overlap - height, Math.max(overlap - height, wrapperRect.height - overlap));
         }
 
         el.style.position = 'absolute';
@@ -622,19 +630,31 @@ export class TaskViewLayoutManager {
         // Drop queued writes first — a drag persisted after the reset would
         // resurrect exactly the position the user asked to clear.
         this._discardPendingWrites();
-        // Reset is a user action and the most destructive one here; it must be
-        // undoable even as the first interaction of a session. Its two siblings
-        // (_flushPositionWrites, and the delete path through it) already did this.
-        this.deps.enableUndoSystemOnFirstInteraction?.();
-        try {
-            this.deps.AppState.update((state) => {
-                if (state.settings?.taskViewLayout?.positions) {
-                    state.settings.taskViewLayout.positions = {};
-                }
-            }, true);
-        } catch (err) {
-            console.warn('TaskViewLayoutManager: failed to clear saved positions', err);
-            return false;
+
+        // Only write when there is something to clear. The update ran
+        // unconditionally before, so resetting an already-default layout still
+        // captured an undo snapshot the user could step back into for no visible
+        // change — the same stray-snapshot problem _clearSavedPositions guards
+        // against by skipping keys that are not persisted. The DOM sweep below
+        // still runs either way, since inline styles can exist without a saved
+        // position (a dependent pulled along by an anchor drag).
+        const positions = this._readPositions();
+        if (positions && Object.keys(positions).length > 0) {
+            // Reset is a user action and the most destructive one here, so it must
+            // be undoable even as the first interaction of a session. Its siblings
+            // (the save and delete paths, both through _flushPositionWrites)
+            // already did this; this one did not.
+            this.deps.enableUndoSystemOnFirstInteraction?.();
+            try {
+                this.deps.AppState.update((state) => {
+                    if (state.settings?.taskViewLayout?.positions) {
+                        state.settings.taskViewLayout.positions = {};
+                    }
+                }, true);
+            } catch (err) {
+                console.warn('TaskViewLayoutManager: failed to clear saved positions', err);
+                return false;
+            }
         }
         // Clear inline drag styles so all elements snap back to default.
         this._clearAllCustomPositions();

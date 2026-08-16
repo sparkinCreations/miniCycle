@@ -477,6 +477,86 @@ export async function runTaskViewLayoutManagerTests(resultsDiv) {
         assertEq(entry.customized, true, 'entry.customized');
     });
 
+    await test('_applySavedPosition rejects a non-finite saved position', () => {
+        // A corrupt entry — bad import, hand-edited backup — used to reach the DOM
+        // on the boot path: refreshTaskViewLayout() checked Number.isFinite first,
+        // _loadAndApplyPositions() did not. The element got position:absolute with
+        // right/bottom:auto and NO coordinates, pulling it out of flex flow with
+        // nothing to anchor it. Guard now lives in the shared function.
+        setTaskViewLayoutManagerDependencies(makeDeps());
+        const mgr = new TaskViewLayoutManager();
+
+        for (const bad of [
+            { left: null, top: 'oops' },
+            { left: NaN, top: 0 },
+            { left: 0, top: undefined },
+            null
+        ]) {
+            const entry = seedEntry(mgr, 'bad');
+            mgr._applySavedPosition('bad', bad);
+            assertEq(entry.element.style.position, '',
+                `corrupt entry ${JSON.stringify(bad)} must not be applied`);
+            mgr._registry.delete('bad');
+        }
+    });
+
+    await test('_applySavedPosition clamps a position that would land off-screen', () => {
+        // Positions are global and stored in pixels, so a layout arranged on a wide
+        // display could strand an element — and its drag handle — fully off-screen
+        // on a smaller one, recoverable only through settings Reset. Measured before
+        // the clamp: {left: 9000, top: 4000} put the task card at (9350, 4446) in a
+        // 1400x900 viewport.
+        setTaskViewLayoutManagerDependencies(makeDeps());
+        const mgr = new TaskViewLayoutManager();
+        // _applySavedPosition clamps against the wrapper rect, so give it one.
+        const wrapper = document.createElement('div');
+        document.body.appendChild(wrapper);
+        mgr._wrapper = wrapper;
+        const entry = seedEntry(mgr, 'k');
+        wrapper.appendChild(entry.element);
+
+        try {
+            wrapper.style.width = '800px';
+            wrapper.style.height = '600px';
+            mgr._applySavedPosition('k', { left: 9000, top: 4000, width: 400, customized: true });
+
+            const left = parseFloat(entry.element.style.left);
+            const top = parseFloat(entry.element.style.top);
+            const wrapperRect = wrapper.getBoundingClientRect();
+            assert(Number.isFinite(left) && Number.isFinite(top), 'should still write coordinates');
+            assert(left < 9000 && top < 4000, 'position was not clamped at all');
+            // A grabbable strip must remain inside the play area, measured
+            // wrapper-relative so the assertion does not depend on page scroll.
+            assert(left <= wrapperRect.width - 1,
+                `clamped left still outside the play area (${left} vs ${wrapperRect.width})`);
+            assert(top <= wrapperRect.height - 1,
+                `clamped top still outside the play area (${top} vs ${wrapperRect.height})`);
+        } finally {
+            wrapper.remove();
+        }
+    });
+
+    await test('_applySavedPosition leaves an in-bounds position untouched', () => {
+        // The clamp must not disturb ordinary saved layouts.
+        setTaskViewLayoutManagerDependencies(makeDeps());
+        const mgr = new TaskViewLayoutManager();
+        const wrapper = document.createElement('div');
+        document.body.appendChild(wrapper);
+        mgr._wrapper = wrapper;
+        const entry = seedEntry(mgr, 'k');
+        wrapper.appendChild(entry.element);
+
+        try {
+            wrapper.style.width = '800px';
+            wrapper.style.height = '600px';
+            mgr._applySavedPosition('k', { left: 60, top: 70, width: 200, customized: true });
+            assertEq(entry.element.style.left, '60px', 'in-bounds left must survive the clamp');
+            assertEq(entry.element.style.top, '70px', 'in-bounds top must survive the clamp');
+        } finally {
+            wrapper.remove();
+        }
+    });
+
     await test('_applySavedPosition treats a missing customized flag as customized (back-compat)', () => {
         setTaskViewLayoutManagerDependencies(makeDeps());
         const mgr = new TaskViewLayoutManager();
@@ -542,6 +622,39 @@ export async function runTaskViewLayoutManagerTests(resultsDiv) {
         assertEq(entry.element.style.position, '', 'inline position should be cleared');
         assert(!entry.element.classList.contains(DOM_CLASSES.TVL_CUSTOMIZED), 'customized class should be removed');
         assertEq(entry.customized, false, 'entry.customized should reset');
+    });
+
+    await test('resetTaskViewLayout on an already-default layout writes nothing', () => {
+        // The update ran unconditionally before, so resetting a layout that had
+        // nothing saved still captured an undo snapshot the user could step back
+        // into for no visible change — the stray-snapshot problem the delete path
+        // already guards against.
+        let enabled = 0;
+        const AppState = makeAppState({ taskViewLayout: { positions: {} } });
+        setTaskViewLayoutManagerDependencies(makeDeps({
+            AppState,
+            enableUndoSystemOnFirstInteraction: () => { enabled++; }
+        }));
+
+        assertEq(new TaskViewLayoutManager().resetTaskViewLayout(), true, 'should still report success');
+        assertEq(AppState.calls.update, 0, 'a no-op reset must not write');
+        assertEq(enabled, 0, 'a no-op reset must not capture a stray undo snapshot');
+    });
+
+    await test('resetTaskViewLayout still clears inline styles when nothing is saved', () => {
+        // Inline styles can exist with no saved position — a dependent pulled
+        // along by an anchor drag — so the DOM sweep must run regardless.
+        const AppState = makeAppState({ taskViewLayout: { positions: {} } });
+        setTaskViewLayoutManagerDependencies(makeDeps({ AppState }));
+        const mgr = new TaskViewLayoutManager();
+        const entry = seedEntry(mgr, 'k', { customized: true });
+        entry.element.style.position = 'absolute';
+        entry.element.style.left = '40px';
+
+        mgr.resetTaskViewLayout();
+
+        assertEq(entry.element.style.position, '', 'inline position must still be stripped');
+        assertEq(entry.customized, false, 'entry must be marked uncustomized');
     });
 
     await test('resetTaskViewLayout returns false without AppState.update', () => {
