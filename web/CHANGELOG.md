@@ -1,3 +1,10 @@
+## [2.424] - 2026-08-16
+- fix(import,share,routine): restore two modals the ENFORCE_REQUIRES flip killed
+- feat(di): warn when a module reads a dep it never declared
+- docs(incidents): record nav-dot overlap provenance; generalise to REVIEW_PATTERNS
+- fix(a11y): modal chrome keeps AA contrast under every colour theme
+
+
 ## [2.423] - 2026-08-15
 - fix(a11y): modal heading and selected row keep AA contrast under every colour theme
 - test(layout): theme-contrast gate sweeps light + dark against every colour theme and preset
