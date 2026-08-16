@@ -410,7 +410,10 @@ export const MODULE_MANIFESTS = {
         path: '../routine/routineSwitcher.js',
         phase: PHASES.CYCLE,
         requires: ['appInit', 'AppState', 'showNotification', 'showPromptModal', 'showCycleCreationModal', 'getModal'],
-        optionalDeps: ['onCycleRenamed', 'onCycleDeleted', 'onCycleSwitched', 'vocabThemeManager', 'checkCompleteAllButton', 'updateStatsPanel', 'updateMainMenuHeader', 'refreshThemeLabels', 'logHistoryEvent', 'exportMiniCycleData', 'hideMainMenu', 'showRoutineSwitcherTourNotification', 'hasActiveNotifications', 'isTouchDevice', 'loadMiniCycle', 'showConfirmationModal', 'updateReminderButtons'],
+        // checkCompleteAllButton + updateStatsPanel removed Aug 2026: the module
+        // declared them and never called them. The post-switch refresh runs in
+        // routineLoader.updateDependentComponents(), reached via loadMiniCycle().
+        optionalDeps: ['onCycleRenamed', 'onCycleDeleted', 'onCycleSwitched', 'vocabThemeManager', 'updateMainMenuHeader', 'refreshThemeLabels', 'logHistoryEvent', 'exportMiniCycleData', 'hideMainMenu', 'showRoutineSwitcherTourNotification', 'hasActiveNotifications', 'isTouchDevice', 'loadMiniCycle', 'showConfirmationModal', 'updateReminderButtons'],
         provides: ['switchMiniCycle', 'renameMiniCycle', 'deleteMiniCycle'],
         api: 'cycle',
         after: ['routineManager', 'onboardingManager']
@@ -463,7 +466,24 @@ export const MODULE_MANIFESTS = {
         path: '../ui/settingsManager.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState', 'showNotification', 'getModal'],
-        optionalDeps: ['clearAllUndoHistory', 'loadMiniCycle', 'showLoader', 'hideLoader', 'closeAllModals', 'hasActiveNotifications', 'hideMainMenu', 'BackupManager', 'DataValidator', 'calculateNextOccurrence', 'disableDebug', 'enableDebug', 'isDebug', 'handleTaskListMovement', 'organizeCompletedTasks', 'onCycleCreated', 'performSchema25Migration', 'refreshTaskListUI', 'resetDefaultRecurringSettings', 'setupDarkModeToggle', 'setupQuickDarkToggle', 'showConfirmationModal', 'showPromptModal', 'showSettingsTourNotification', 'startGuidedTour', 'toggleHoverTaskOptions', 'updateCompletedTasksCount', 'updateHelpWindow', 'updateMoveArrowsVisibility', 'updateStatsPanel'],
+        // vocabThemeManager is also FORWARD-THROUGH → cycleImportManager, which uses
+        // it to tell "theme the user hasn't unlocked yet" apart from "theme that does
+        // not exist". Dead since v2.418, an unlocked-theme import silently resolved to
+        // 'classic' instead of the user's own defaultTheme, and the notification
+        // explaining why never fired. Same restore as showChoiceModal below.
+        //
+        // showChoiceModal is FORWARD-THROUGH, not used by the facade itself: it is
+        // handed to cycleImportManager (Template vs With-Progress import) and
+        // shareManager (Routine-only vs With-history share). Both guard with
+        // `typeof _deps.showChoiceModal === 'function'` and fall back silently, so
+        // when ENFORCE_REQUIRES stopped routing undeclared deps in v2.418 the two
+        // modals simply stopped appearing — import always took 'template', share
+        // always excluded history — with no error anywhere. Restored Aug 2026 after
+        // the undeclared-dep access audit named it. It has no manifest `provides`
+        // entry because featureBoot assigns it directly
+        // (`deps.utils.showChoiceModal = …`) during the early notifications init,
+        // which is why the depMappings route resolves but nothing declares it.
+        optionalDeps: ['clearAllUndoHistory', 'loadMiniCycle', 'showLoader', 'hideLoader', 'closeAllModals', 'hasActiveNotifications', 'hideMainMenu', 'BackupManager', 'DataValidator', 'calculateNextOccurrence', 'disableDebug', 'enableDebug', 'isDebug', 'handleTaskListMovement', 'organizeCompletedTasks', 'onCycleCreated', 'performSchema25Migration', 'refreshTaskListUI', 'resetDefaultRecurringSettings', 'setupDarkModeToggle', 'setupQuickDarkToggle', 'showChoiceModal', 'showConfirmationModal', 'showPromptModal', 'showSettingsTourNotification', 'startGuidedTour', 'toggleHoverTaskOptions', 'updateCompletedTasksCount', 'updateHelpWindow', 'updateMoveArrowsVisibility', 'updateStatsPanel', 'vocabThemeManager'],
         provides: ['syncCurrentSettingsToStorage', 'exportMiniCycleData', 'downloadBackupFile', 'shareCurrentRoutine'],
         provideInstance: 'settingsManager',
         api: 'ui',

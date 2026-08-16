@@ -555,7 +555,13 @@ export const DEFAULT_LABELS = deepFreeze({
 
         // Theme notifications
         themeUnlocked:           '{name} theme unlocked!',
-        themeLockedOnImport:     'This routine uses the {name} theme — keep cycling to unlock it! Using Classic for now.',
+        // {fallback} is the theme actually applied — the user's own defaultTheme, not
+        // necessarily Classic. This said "Using Classic for now" unconditionally while
+        // the code resolved to settings.defaultTheme, so a user whose default was, say,
+        // Habit Tracker was told the wrong thing. Only observable once the import path's
+        // vocabThemeManager dep was restored (Aug 2026) — with it dead the message
+        // never fired at all.
+        themeLockedOnImport:     'This routine uses the {name} theme — keep cycling to unlock it! Using {fallback} for now.',
 
         // Boot/init notifications
         noRoutinesFound:         'No routines found. Create one or load a sample.',

@@ -70,3 +70,70 @@ The "Why DOM order matters" section (drag-drop relies on `closest('#completedTas
 ## 10. Stale doc paths inside code comments
 
 Two shipped files cite `docs/future-work/` paths that moved to `docs/archive/` in this cleanup: `modules/task/taskRenderer.js` (~:214, cites RENDER_PATH_UNIFICATION.md) and `modules/recurring/recurringWatcher.js` (~:78–86, cites "ARCHITECTURE REVIEW FINDINGS.md"). Harmless (validate:comments checks identifiers, not paths) — fix the paths next time those files ship in an app-code release; not worth a version bump alone.
+
+## 11. Four undeclared dep reads found by the new runtime DI audit — ✅ RESOLVED Aug 2026
+
+*Not from the future-work cleanup — output of `WARN_ON_UNDECLARED_DEP_ACCESS`, added Aug 2026 (see `ENFORCE_REQUIRES_ROLLOUT_PLAN.md` §Step 2 "Closed August 2026").*
+
+These are live under `ENFORCE_REQUIRES`: each name has a real `depMappings` route, the
+module reads it, and the manifest never declared it — so it arrives as `undefined` and
+every call through it silently no-ops. All four were invisible to `validate:di` (green)
+and to all 5 journeys (passing); the audit named them on its first clean run.
+
+| Module | Undeclared dep | Shape |
+|---|---|---|
+| `routine/routineSwitcher.js` | `updateProgressBar` | in the module's **DI schema** as `optional(() => {})`, absent from the manifest → the no-op default is permanent |
+| `routine/routineSwitcher.js` | `updateUndoRedoButtons` | same |
+| `ui/settingsManager.js` | `showChoiceModal` | **facade forward-through** — passed to `cycleImportManager` and `shareManager` |
+| `ui/settingsManager.js` | `vocabThemeManager` | facade forward-through — passed to `cycleImportManager` |
+
+**All four fixed, one at a time, each verified before moving on.** The two classes turned
+out to be opposites:
+
+- **routineSwitcher** — the deps were **dead**, not missing. `updateProgressBar` and
+  `updateUndoRedoButtons` appeared only in the DI schema and were never called anywhere
+  in the 2,574-line file; the post-switch refresh already runs in
+  `routineLoader.updateDependentComponents()`, reached via `loadMiniCycle()`. Fixed by
+  DELETING the schema entries, not by declaring them — plus `updateStatsPanel`,
+  `checkCompleteAllButton` and `initialSetup`, dead in the identical way, and the two
+  now-orphaned manifest declarations.
+- **settingsManager** — both were live features that the v2.418 flip silently switched
+  off, one day before the audit found them. `showChoiceModal` (Feb 2026) and
+  `vocabThemeManager` both predate `ENFORCE_REQUIRES`, so the old broad assign delivered
+  them; strict mode did not, and every consumer guards and falls back silently.
+  Restored by declaring them.
+
+What was actually broken between v2.418 and the fix:
+
+| Flow | Broken behaviour | Restored |
+|---|---|---|
+| Import a `.mcyc` | Template-vs-With-Progress modal never appeared; always took `template` | modal appears |
+| Share a routine | Routine-only-vs-With-history modal never appeared; always excluded history | modal appears |
+| Import a locked theme | silently forced `classic`, no explanation | applies the user's own `defaultTheme` + names the locked theme |
+
+Verified end-to-end in the browser, with a negative control for the import modal:
+declaration removed → no modal, import silently completed; declaration restored → modal
+appears. Two further defects surfaced while auditing the newly-live code, both fixed:
+
+- `_deps.vocabThemeManager?.getThemeDefinition(x)` — the depMappings route is a **Proxy**,
+  which is always truthy, so `?.` guards the dep being absent but NOT the method being
+  absent; a missing underlying manager would throw mid-import, after the user had already
+  chosen an import mode. Now goes through `getThemeDefinitionSafe()`, which checks the
+  method and calls it as a method (preserving `this` for a directly-injected manager).
+- `notify.themeLockedOnImport` said "Using Classic for now" unconditionally while the code
+  resolved to `settings.defaultTheme`. Observed live: it claimed Classic while applying
+  Habit Tracker. Now interpolates `{fallback}` with the theme actually applied.
+
+Original triage note follows.
+
+Deliberately NOT fixed in the same change as the audit. Declaring a dep that has been
+absent makes previously-dead code paths live in one step, which is its own behaviour
+change needing its own audit (precedent: the "wiring a previously-unused dep makes its
+latent bugs live" rule). Each should land as a separate change that declares the dep
+**and** checks what the newly-reachable call actually does — e.g. whether
+`routineSwitcher` calling a real `updateProgressBar` on every switch double-renders, and
+whether `cycleImportManager`'s `showChoiceModal` path has ever executed.
+
+Note the class the two `settingsManager` entries belong to: facade forward-through is
+exactly what cost v2.418 four failing journeys. `validate:di` gates that class at 0 and
+still reports 0 here, which is the blind spot the runtime audit exists to cover.

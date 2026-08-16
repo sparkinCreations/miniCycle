@@ -53,12 +53,16 @@ const di = createDIModule('RoutineSwitcher', {
     showConfirmationModal: optional(null),
     sanitizeInput: optional((str) => str),
     loadMiniCycle: optional(null),
-    updateProgressBar: optional(() => {}),
-    updateStatsPanel: optional(() => {}),
-    checkCompleteAllButton: optional(() => {}),
+    // No post-switch UI refresh deps here on purpose. Switching delegates to
+    // loadMiniCycle(), and routineLoader's updateDependentComponents() already
+    // fires updateProgressBar / checkCompleteAllButton / updateStatsPanel /
+    // updateMainMenuHeader / refreshThemeLabels for the newly active routine.
+    // This module declared updateProgressBar, updateStatsPanel,
+    // checkCompleteAllButton, updateUndoRedoButtons and initialSetup and never
+    // called any of them — removed Aug 2026, after the undeclared-dep access audit
+    // flagged the two that had no manifest entry either. If a refresh ever IS
+    // needed here, add the call, the schema entry and the manifest entry together.
     updateReminderButtons: optional(() => {}),
-    updateUndoRedoButtons: optional(() => {}),
-    initialSetup: optional(() => {}),
     showCycleCreationModal: optional(() => {}),
     getElementById: optional((id) => document.getElementById(id)),
     querySelector: optional((sel) => document.querySelector(sel)),

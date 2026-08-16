@@ -476,6 +476,33 @@ export function setupDragDropImport() {
 }
 
 /**
+ * Look up a vocab theme definition without trusting `?.` to guard the call.
+ *
+ * `vocabThemeManager` is delivered as a **Proxy** whose `get` trap forwards to
+ * `deps.features.vocabThemeManager`. The Proxy object itself is always truthy, so
+ * `_deps.vocabThemeManager?.getThemeDefinition(x)` short-circuits on the dep being
+ * absent but NOT on the method being absent — if the underlying manager is missing,
+ * the trap returns `undefined` and the call throws "is not a function" mid-import,
+ * after the user has already picked an import mode. Check the method, not the object.
+ *
+ * @param {string} themeId - Vocab theme id from the imported file
+ * @returns {Object|null} Theme definition, or null if unavailable/unknown
+ */
+function getThemeDefinitionSafe(themeId) {
+    const manager = _deps.vocabThemeManager;
+    if (!manager || typeof manager.getThemeDefinition !== 'function') return null;
+    try {
+        // Called as a METHOD, not through an extracted reference: the depMappings
+        // Proxy binds what it hands back, but a directly-injected manager (tests,
+        // future wiring) would lose `this` if the function were pulled off first.
+        return manager.getThemeDefinition(themeId) ?? null;
+    } catch (err) {
+        console.warn('Theme lookup failed during import:', err.message);
+        return null;
+    }
+}
+
+/**
  * Process imported cycle data
  * @param {string} fileContent - Raw file content
  * @returns {Promise<void>}
@@ -779,7 +806,7 @@ export async function processImportedData(fileContent) {
 
     if (importedTheme === 'classic' || unlockedThemes.includes(importedTheme)) {
         resolvedTheme = importedTheme;
-    } else if (_deps.vocabThemeManager?.getThemeDefinition(importedTheme)) {
+    } else if (getThemeDefinitionSafe(importedTheme)) {
         // Theme exists but user hasn't unlocked it yet
         resolvedTheme = currentState?.settings?.defaultTheme ?? 'classic';
         themeWasDowngraded = true;
@@ -891,8 +918,11 @@ export async function processImportedData(fileContent) {
     let messageType = 'success';
 
     if (themeWasDowngraded) {
-        const themeName = _deps.vocabThemeManager?.getThemeDefinition(importedTheme)?.name ?? importedTheme;
-        importMessage = getLabel('notify.themeLockedOnImport', { vars: { name: themeName } });
+        const themeName = getThemeDefinitionSafe(importedTheme)?.name ?? importedTheme;
+        // Name the theme actually applied. resolvedTheme is the user's defaultTheme
+        // here, which is not always Classic — the label used to claim it was.
+        const fallbackName = getThemeDefinitionSafe(resolvedTheme)?.name ?? resolvedTheme;
+        importMessage = getLabel('notify.themeLockedOnImport', { vars: { name: themeName, fallback: fallbackName } });
         messageType = 'info';
     } else if (tasksTruncated) {
         const truncatedCount = originalTaskCount - MAX_TASK_COUNT;
