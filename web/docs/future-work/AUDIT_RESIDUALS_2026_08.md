@@ -5,13 +5,28 @@
 
 ---
 
-## 1. taskViewLayoutManager has zero test coverage 🔴 (highest value)
+## 1. taskViewLayoutManager — test coverage ✅ RESOLVED; undo coalescing still open 🟡
 
 *From archived `TASK_VIEW_CUSTOMIZATION_PLAN.md`.*
 
-`modules/ui/taskViewLayoutManager.js` is ~1,300 lines of pointer-capture drag logic with iOS interrupted-drag teardown (`_abortActiveDrag()` on `visibilitychange`/`pagehide`), persistence, a dock/snap-target system, and a settings reset flow — and `web/tests/` has no test file for it. The plan's Phase 5 test list is a ready-made starting point (see the archived doc).
+**Test coverage: resolved.** `tests/taskViewLayoutManager.tests.js` now covers persistence,
+the desktop/home-view gates, drag interrupts and teardown — 52 tests, green. The original
+entry below described a file with no test file at all; that stopped being true in `9aec3ca5`.
 
-Also never built from that plan: **Phase 4 undo coalescing** — rapid drags each push a full undo snapshot; no `LAYOUT_COALESCE_WINDOW` / `LAYOUT_RESIZE_DEBOUNCE` constants exist.
+**Still open — Phase 4 undo coalescing.** Rapid drags each push a full undo snapshot, so a
+few seconds of repositioning floods the undo stack. No `LAYOUT_COALESCE_WINDOW` /
+`LAYOUT_RESIZE_DEBOUNCE` constants exist (verified Aug 2026). Per the timing-constants rule
+these belong in `core/constants.js`, not as module-local values.
+
+For the record, the rest of what this entry implied was missing is **shipped**:
+`modules/ui/taskViewLayoutManager.js` has all five draggables wired, persists to
+`state.settings.taskViewLayout.positions`, captures pre-drag undo snapshots, backs the
+settings "Reset Task View Layout" button via `resetTaskViewLayout()`, and has iOS
+interrupted-drag teardown (`_abortActiveDrag()` on `visibilitychange`/`pagehide`) plus a
+dock/snap-target system. The module's own header banner still claimed two draggables and
+in-memory-only positions until Aug 2026 — corrected in the same pass as this entry, along
+with its `See:` pointer, which still referenced the pre-cleanup `docs/future-work/` path for
+a plan that now lives in `docs/archive/`. Same class as §10 below.
 
 ## 2. Modal registry — two stray direct lookups
 

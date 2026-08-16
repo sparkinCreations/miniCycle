@@ -6,21 +6,37 @@
  * input, Quick Actions panel, status bubble (help window), and Complete
  * Cycle button — within the bounded #task-view rectangle.
  *
- * Phase 2: drag mechanic + hover-revealed handle for the two simple cases
- * (`task-card-group` and the Complete Cycle container). Architecture
- * supports more draggables — additional elements with non-trivial
- * positioning (side panels, input bar) ship in Phase 2b.
+ * SHIPPED (this banner described a Phase-2 prototype until Aug 2026, long after
+ * the rest landed — it claimed two draggables and no persistence while the file
+ * below already had five and an AppState writer. Corrected against the code):
  *
- * Persistence (Phase 3), undo (Phase 4), reset (Phase 5), and the remaining
- * draggables (Phase 2b) are not yet wired — drag positions are in-memory
- * and lost on reload.
+ *  - All five draggables in `DRAGGABLES` are wired, not two.
+ *  - Positions PERSIST to `state.settings.taskViewLayout.positions`, keyed per
+ *    draggable — they survive reload.
+ *  - Undo captures a pre-drag snapshot (see `enableUndoSystemOnFirstInteraction`
+ *    below, and the single-update batching in `_clearSavedPositions`).
+ *  - Reset ships: `resetTaskViewLayout()` backs the "Reset Task View Layout"
+ *    button in settings.
+ *  - Dock/snap zones let an element drop back into normal flex flow.
+ *  - Covered by tests/taskViewLayoutManager.tests.js (52 tests).
+ *
+ * STILL OPEN: undo COALESCING. Rapid drags each push their own snapshot, so a
+ * few seconds of fiddling floods the undo stack; no LAYOUT_COALESCE_WINDOW /
+ * LAYOUT_RESIZE_DEBOUNCE constants exist. Tracked in
+ * docs/future-work/AUDIT_RESIDUALS_2026_08.md §1.
+ *
+ * Gating: desktop-only (`_isDesktop` — non-touch, >= BREAKPOINTS.DESKTOP_MIN,
+ * and `(hover: hover) and (pointer: fine)`) AND home-view only; focus view has
+ * its own deliberate top-clearance layout that customization must not override.
  *
  * Pattern: Simple Instance + per-element registry
  *
- * Reference: notifications.js:925-1119 (the drag implementation we're
- * generalising — pointer-capture, threshold, click-swallow, idempotency).
+ * Reference: notifications.js (the drag implementation this generalises —
+ * pointer-capture, threshold, click-swallow, idempotency).
  *
- * See: docs/future-work/TASK_VIEW_CUSTOMIZATION_PLAN.md
+ * See: docs/archive/TASK_VIEW_CUSTOMIZATION_PLAN.md — the originating plan, moved
+ * to archive in the Aug 2026 future-work cleanup. This banner still pointed at
+ * its old docs/future-work/ path.
  *
  * @module ui/taskViewLayoutManager
  */
