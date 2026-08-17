@@ -1739,6 +1739,53 @@ else
     fi
 fi
 
+# ============================================
+# UNCOMMITTED WORK WARNING
+# ============================================
+# Deliberately OUTSIDE the --changelog stage. `git add -A` in the tag step
+# sweeps the working tree whether or not a changelog was requested, so work
+# shipping with nothing to describe it is a property of the RELEASE, not of the
+# changelog. Scoped to --changelog, `--auto --push` alone still shipped it
+# silently — which is the same shape as the bug this whole guard exists for.
+#
+# Runs before the changelog stage so an abort leaves CHANGELOG.md exactly as
+# found; otherwise the re-run after committing stacks a second entry for the
+# same version.
+PENDING_FILES=""
+if [ -n "$PRERUN_DIRTY" ]; then
+    # Strip the 2-char status column, and keep the destination half of any
+    # "old -> new" rename line.
+    PENDING_FILES=$(printf '%s\n' "$PRERUN_DIRTY" | sed -e 's/^...//' -e 's/.* -> //' | sort -u)
+fi
+
+if [ -n "$PENDING_FILES" ]; then
+    PENDING_COUNT=$(printf '%s\n' "$PENDING_FILES" | wc -l | tr -d ' ')
+    echo ""
+    echo "⚠️  $PENDING_COUNT uncommitted file(s) will ship in this release with no"
+    echo "    commit message to describe them:"
+    printf '%s\n' "$PENDING_FILES" | head -20 | sed 's/^/       /'
+    if [ "$PENDING_COUNT" -gt 20 ]; then
+        echo "       … and $((PENDING_COUNT - 20)) more"
+    fi
+    if [ "$UPDATE_CHANGELOG" = false ]; then
+        echo "    (no --changelog, so nothing will record them at all)"
+    fi
+
+    # Interactive runs can still bail out and commit properly first. Auto runs
+    # are unattended, so they ship with a TODO marker rather than blocking a
+    # release on a prompt nobody is there to answer.
+    if [ "$AUTO_MODE" = false ] && [ "$DRY_RUN" = false ]; then
+        echo ""
+        read -p "Abort so you can commit these first? (y/N): " -n 1 -r
+        echo ""
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            echo "🛑 Aborted before tagging — commit your work, then re-run."
+            exit 1
+        fi
+    fi
+    echo ""
+fi
+
 if [ "$UPDATE_CHANGELOG" = true ]; then
     if git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
         CHANGELOG_FILE="CHANGELOG.md"
@@ -1750,45 +1797,6 @@ if [ "$UPDATE_CHANGELOG" = true ]; then
         else
             echo "📋 Getting recent commits..."
             COMMITS=$(git log --oneline --no-merges -20 2>/dev/null | grep -v -E "^[a-f0-9]+ (chore: [Bb]ump|Bump version|Update version)" || true)
-        fi
-
-        # Files that were ALREADY dirty when this script started. `git add -A` in
-        # the tag step below sweeps them into the release commit, so they ship —
-        # but they have no commit message, so the loop below cannot describe
-        # them. Never let that pass silently.
-        PENDING_FILES=""
-        if [ -n "$PRERUN_DIRTY" ]; then
-            # Strip the 2-char status column, and keep the destination half of
-            # any "old -> new" rename line.
-            PENDING_FILES=$(printf '%s\n' "$PRERUN_DIRTY" | sed -e 's/^...//' -e 's/.* -> //' | sort -u)
-        fi
-
-        # Report (and offer to bail) BEFORE touching the file, so aborting leaves
-        # CHANGELOG.md exactly as it was found — otherwise the re-run after
-        # committing would stack a second entry for the same version.
-        if [ -n "$PENDING_FILES" ]; then
-            PENDING_COUNT=$(printf '%s\n' "$PENDING_FILES" | wc -l | tr -d ' ')
-            echo ""
-            echo "⚠️  $PENDING_COUNT uncommitted file(s) will ship in this release with no"
-            echo "    commit message to describe them:"
-            printf '%s\n' "$PENDING_FILES" | head -20 | sed 's/^/       /'
-            if [ "$PENDING_COUNT" -gt 20 ]; then
-                echo "       … and $((PENDING_COUNT - 20)) more"
-            fi
-
-            # Interactive runs can still bail out and commit properly first.
-            # Auto runs are unattended, so they ship with a TODO marker rather
-            # than blocking a release on a prompt nobody is there to answer.
-            if [ "$AUTO_MODE" = false ] && [ "$DRY_RUN" = false ]; then
-                echo ""
-                read -p "Abort so you can commit these first? (y/N): " -n 1 -r
-                echo ""
-                if [[ $REPLY =~ ^[Yy]$ ]]; then
-                    echo "🛑 Aborted before tagging — commit your work, then re-run."
-                    exit 1
-                fi
-            fi
-            echo ""
         fi
 
         if [ -n "$COMMITS" ] || [ -n "$PENDING_FILES" ]; then
