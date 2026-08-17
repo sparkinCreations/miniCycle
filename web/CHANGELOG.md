@@ -1,3 +1,9 @@
+## [2.430] - 2026-08-17
+- fix(modals): clamp every dialog to the viewport — four modal families clipped on phones
+- fix(storage): centre the storage viewer; div-era positioning outlived the <dialog> migration
+- test(layout): assert no dialog exceeds the viewport, across all 7 sizes
+
+
 ## [2.429] - 2026-08-16
 - fix(csp): discover CSP sources — three deployed pages were blocked, not hygiene
 - refactor(modals,onboarding): finish the registry routing; delete a misleading gate
