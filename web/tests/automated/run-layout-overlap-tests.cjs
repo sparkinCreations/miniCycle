@@ -96,6 +96,59 @@ function measureStats() {
     };
 }
 
+// Open every <dialog> in turn and measure it against the viewport.
+//
+// A modal <dialog> is width:fit-content with an auto centring margin, and the
+// global reset in modals.css drops the UA's max-width. So a child that clamps
+// itself as a PERCENTAGE resolves that percentage against the shrink-wrapped
+// dialog rather than the screen — the dialog stays wider than the viewport and
+// the centring margin resolves NEGATIVE, clipping the right edge. That shipped
+// live in .miniCycle-prompt-box (width:420px + max-width:95% => 399px inside a
+// 420px dialog on a 375px phone). Nothing should ever be wider than the screen,
+// so assert it for every dialog at once rather than per-component.
+function measureDialogOverflow() {
+    const W = window.innerWidth;
+    const results = [];
+    const probe = (el, label) => {
+        const wasOpen = el.open;
+        let opened = false;
+        try {
+            if (!wasOpen) { el.showModal(); opened = true; }
+        } catch (e) {
+            return; // detached, or another dialog already holds the top layer
+        }
+        const r = el.getBoundingClientRect();
+        if (r.width > 0) {
+            results.push({
+                label,
+                right: Math.round(r.right),
+                width: Math.round(r.width),
+                over: Math.round(r.right - W)
+            });
+        }
+        if (opened) el.close();
+    };
+
+    document.querySelectorAll('dialog').forEach((d, i) => {
+        probe(d, d.id || (typeof d.className === 'string' && d.className) || `dialog[${i}]`);
+    });
+
+    // The prompt family is built in JS at call time (routineManager, taskCRUD,
+    // notifications, dailyResetManager, routineSwitcher all share this markup),
+    // so a static sweep never sees it — synthesize one so it is covered too.
+    const synth = document.createElement('dialog');
+    synth.className = 'miniCycle-prompt-dialog';
+    synth.innerHTML = '<div class="miniCycle-prompt-box">'
+        + '<div class="miniCycle-prompt-title">Probe</div>'
+        + '<input class="miniCycle-prompt-input">'
+        + '</div>';
+    document.body.appendChild(synth);
+    probe(synth, 'miniCycle-prompt-dialog (synthesized)');
+    synth.remove();
+
+    return { W, results };
+}
+
 async function run() {
     console.log(`${colors.blue}${'='.repeat(64)}${colors.reset}`);
     console.log(`${colors.blue}📐 miniCycle Layout Overlap Regression Tests${colors.reset}`);
@@ -230,6 +283,13 @@ async function run() {
                 tv.classList.remove('hide'); tv.classList.add('show');
                 sp.classList.remove('show'); sp.classList.add('hide');
             });
+
+            // --- Dialogs never exceed the viewport ----------------------------
+            const dlg = await page.evaluate(measureDialogOverflow);
+            const over = dlg.results.filter(d => d.over > TOL);
+            record(vp, `dialogs fit viewport (${dlg.results.length} checked)`,
+                over.length === 0,
+                over.map(d => `${d.label} width=${d.width} right=${d.right} — ${d.over}px past ${dlg.W}`).join('; '));
         }
 
         // --- Modal contrast across every colour layer -------------------------

@@ -821,8 +821,11 @@ dialog.miniCycle-prompt-dialog::backdrop {
     border: 1px solid var(--color-black);
     text-align: center;
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-    max-width: 95%;
-    width: 420px;
+    /* Clamp against the viewport directly, matching the .focus-* idiom. The
+       dialog reset in modals.css now caps every dialog at 100vw, so a percentage
+       here would resolve correctly too — but this keeps a real gutter instead of
+       sitting flush, and it does not depend on the parent to stay correct. */
+    width: min(420px, calc(100vw - var(--space-8)));
 }
 
 .miniCycle-prompt-title {

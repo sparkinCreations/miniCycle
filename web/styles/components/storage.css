@@ -275,10 +275,12 @@
 }
 
 /* Storage Viewer Overlay */
+/* Positioning is the UA's job now. This was a plain <div> overlay pinned at
+   60/60 (see the migration note in uiBoot.js isOverlayActive); the JS moved to
+   showModal() but these rules stayed, and `position: absolute` beat the UA's
+   fixed top-layer centring — leaving the modal shifted 60px right/down and
+   clipped off the right edge at every viewport. */
 #storage-viewer-overlay {
-    position: absolute;
-    top: 60px;
-    left: 60px;
     z-index: var(--z-modal-high);
     pointer-events: none;
 }
