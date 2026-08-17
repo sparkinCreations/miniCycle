@@ -1,3 +1,10 @@
+## [2.429] - 2026-08-16
+- fix(csp): discover CSP sources — three deployed pages were blocked, not hygiene
+- refactor(modals,onboarding): finish the registry routing; delete a misleading gate
+- test(time): remove the last clock dependencies, and prove there are no others
+- docs(refs): repoint 25 dangling doc citations, and gate the class
+
+
 ## [2.428] - 2026-08-16
 - refactor(task-view,update): dock zones to constants; update toast names versions
 
