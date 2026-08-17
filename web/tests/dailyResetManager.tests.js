@@ -49,6 +49,34 @@ export async function runDailyResetManagerTests(resultsDiv) {
         };
     }
 
+    /**
+     * Run `fn` with the clock frozen at a fixed LOCAL time on a fixed date.
+     *
+     * The manager reads real wall-clock time (no injectable clock), so the
+     * "trigger time is in the future" and "has already passed" cases were
+     * whichever the current hour happened to make them. The future-time test
+     * papered over it by RETURNING early between 23:58 and midnight — which
+     * counts as a pass while asserting nothing, and test:meta cannot see a
+     * conditional early return.
+     *
+     * Freezing at midday makes 23:59 unambiguously future and 00:00
+     * unambiguously past, in every timezone and at every hour of the day.
+     */
+    async function withFrozenClock(hour, minute, fn) {
+        const RealDate = Date;
+        const frozen = new RealDate(2026, 5, 15, hour, minute, 0, 0);   // 15 Jun 2026, local
+        globalThis.Date = class extends RealDate {
+            constructor(...args) {
+                if (args.length === 0) super(frozen.getTime());
+                else super(...args);
+            }
+            static now() { return frozen.getTime(); }
+        };
+        globalThis.Date.parse = RealDate.parse;
+        globalThis.Date.UTC = RealDate.UTC;
+        try { return await fn(); } finally { globalThis.Date = RealDate; }
+    }
+
     function makeManager({ state, onUpdate = null, onNotify = null, onGetById = null } = {}) {
         let internalState = state || makeMockState();
         const updates = [];
@@ -146,27 +174,30 @@ export async function runDailyResetManagerTests(resultsDiv) {
     });
 
     await test('Enabled routine with future trigger time does not fire', async () => {
-        // Set trigger to 23:59 — almost certainly future-of-now during test run
         const cycles = {
             a: { tasks: [{ completed: true }], autoUncheckDaily: { enabled: true, hour: 23, minute: 59 } }
         };
-        const { manager, getState } = makeManager({ state: makeMockState({ cycles, activeCycleId: 'a' }) });
-        // Skip if test happens to run at 23:59 (extremely unlikely)
-        const now = new Date();
-        if (now.getHours() === 23 && now.getMinutes() >= 58) return;
-        await manager.checkAllRoutines();
-        if (!getState().data.cycles.a.tasks[0].completed) throw new Error('Should not have unchecked future-time routine');
+        // Frozen at midday, so 23:59 is future no matter when this actually runs.
+        await withFrozenClock(12, 0, async () => {
+            const { manager, getState } = makeManager({ state: makeMockState({ cycles, activeCycleId: 'a' }) });
+            await manager.checkAllRoutines();
+            if (!getState().data.cycles.a.tasks[0].completed) throw new Error('Should not have unchecked future-time routine');
+        });
     });
 
     await test('Enabled routine fires when trigger time has passed today', async () => {
         const cycles = {
             a: { tasks: [{ completed: true }, { completed: true }], autoUncheckDaily: { enabled: true, hour: 0, minute: 0 } }
         };
-        const { manager, getState } = makeManager({ state: makeMockState({ cycles, activeCycleId: 'a' }) });
-        await manager.checkAllRoutines();
-        const cycle = getState().data.cycles.a;
-        if (cycle.tasks.some(t => t.completed)) throw new Error('All tasks should be unchecked');
-        if (cycle.autoUncheckDaily.lastResetDate !== todayLocal()) throw new Error('lastResetDate not set');
+        // Frozen at midday so 00:00 has unambiguously passed — at exactly
+        // midnight the trigger time is EQUAL to now, not past.
+        await withFrozenClock(12, 0, async () => {
+            const { manager, getState } = makeManager({ state: makeMockState({ cycles, activeCycleId: 'a' }) });
+            await manager.checkAllRoutines();
+            const cycle = getState().data.cycles.a;
+            if (cycle.tasks.some(t => t.completed)) throw new Error('All tasks should be unchecked');
+            if (cycle.autoUncheckDaily.lastResetDate !== todayLocal()) throw new Error('lastResetDate not set');
+        });
     });
 
     await test('Active cycle fire clears pendingNotification immediately', async () => {
