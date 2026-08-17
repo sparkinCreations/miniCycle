@@ -319,6 +319,26 @@ fi
 echo ""
 
 # ============================================
+# PRE-RUN WORKING TREE SNAPSHOT
+# ============================================
+# Captured BEFORE this script edits a single file, so it records the USER's own
+# uncommitted work rather than the version bumps written further down.
+#
+# Why it exists: the changelog is generated from `git log LAST_TAG..HEAD`, but
+# the release commit later sweeps the whole tree with `git add -A`. Anything
+# uncommitted when this script starts therefore SHIPS in the release while
+# contributing no commit message for the changelog to read — v2.430 went out
+# with no entry at all exactly this way. Snapshotting here (rather than keeping
+# a list of the files this script writes) means the check cannot drift as new
+# build targets are added.
+PRERUN_DIRTY=""
+if git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
+    # No --untracked-files=no: `git add -A` stages new files too, so they ship
+    # as well and belong in this set. Ignored paths (backup/) never appear.
+    PRERUN_DIRTY=$(git status --porcelain 2>/dev/null || true)
+fi
+
+# ============================================
 # FILE CATEGORIES
 # ============================================
 
@@ -1732,13 +1752,57 @@ if [ "$UPDATE_CHANGELOG" = true ]; then
             COMMITS=$(git log --oneline --no-merges -20 2>/dev/null | grep -v -E "^[a-f0-9]+ (chore: [Bb]ump|Bump version|Update version)" || true)
         fi
 
-        if [ -n "$COMMITS" ]; then
+        # Files that were ALREADY dirty when this script started. `git add -A` in
+        # the tag step below sweeps them into the release commit, so they ship —
+        # but they have no commit message, so the loop below cannot describe
+        # them. Never let that pass silently.
+        PENDING_FILES=""
+        if [ -n "$PRERUN_DIRTY" ]; then
+            # Strip the 2-char status column, and keep the destination half of
+            # any "old -> new" rename line.
+            PENDING_FILES=$(printf '%s\n' "$PRERUN_DIRTY" | sed -e 's/^...//' -e 's/.* -> //' | sort -u)
+        fi
+
+        # Report (and offer to bail) BEFORE touching the file, so aborting leaves
+        # CHANGELOG.md exactly as it was found — otherwise the re-run after
+        # committing would stack a second entry for the same version.
+        if [ -n "$PENDING_FILES" ]; then
+            PENDING_COUNT=$(printf '%s\n' "$PENDING_FILES" | wc -l | tr -d ' ')
+            echo ""
+            echo "⚠️  $PENDING_COUNT uncommitted file(s) will ship in this release with no"
+            echo "    commit message to describe them:"
+            printf '%s\n' "$PENDING_FILES" | head -20 | sed 's/^/       /'
+            if [ "$PENDING_COUNT" -gt 20 ]; then
+                echo "       … and $((PENDING_COUNT - 20)) more"
+            fi
+
+            # Interactive runs can still bail out and commit properly first.
+            # Auto runs are unattended, so they ship with a TODO marker rather
+            # than blocking a release on a prompt nobody is there to answer.
+            if [ "$AUTO_MODE" = false ] && [ "$DRY_RUN" = false ]; then
+                echo ""
+                read -p "Abort so you can commit these first? (y/N): " -n 1 -r
+                echo ""
+                if [[ $REPLY =~ ^[Yy]$ ]]; then
+                    echo "🛑 Aborted before tagging — commit your work, then re-run."
+                    exit 1
+                fi
+            fi
+            echo ""
+        fi
+
+        if [ -n "$COMMITS" ] || [ -n "$PENDING_FILES" ]; then
             TODAY=$(date +"%Y-%m-%d")
             NEW_ENTRY="## [$NEW_VERSION] - $TODAY"$'\n'
-            while IFS= read -r commit; do
-                MSG=$(echo "$commit" | sed 's/^[a-f0-9]* //')
-                NEW_ENTRY+="- $MSG"$'\n'
-            done <<< "$COMMITS"
+            if [ -n "$COMMITS" ]; then
+                while IFS= read -r commit; do
+                    MSG=$(echo "$commit" | sed 's/^[a-f0-9]* //')
+                    NEW_ENTRY+="- $MSG"$'\n'
+                done <<< "$COMMITS"
+            fi
+            if [ -n "$PENDING_FILES" ]; then
+                NEW_ENTRY+="- TODO(changelog): uncommitted work shipped in this release — describe it here"$'\n'
+            fi
             NEW_ENTRY+=$'\n'
 
             if [ -f "$CHANGELOG_FILE" ]; then
@@ -1752,8 +1816,17 @@ if [ "$UPDATE_CHANGELOG" = true ]; then
                 echo "$NEW_ENTRY" >> "$CHANGELOG_FILE"
             fi
 
-            COMMIT_COUNT=$(echo "$COMMITS" | wc -l | tr -d ' ')
-            echo "✅ Changelog updated ($COMMIT_COUNT commits added)"
+            if [ -n "$COMMITS" ]; then
+                COMMIT_COUNT=$(echo "$COMMITS" | wc -l | tr -d ' ')
+                echo "✅ Changelog updated ($COMMIT_COUNT commits added)"
+            else
+                echo "✅ Changelog entry created for v$NEW_VERSION"
+            fi
+
+            if [ -n "$PENDING_FILES" ]; then
+                echo "   ⚠️  Includes a TODO(changelog) line for the uncommitted work —"
+                echo "       edit $CHANGELOG_FILE before pushing."
+            fi
         else
             echo "ℹ️  No new commits to add"
         fi
