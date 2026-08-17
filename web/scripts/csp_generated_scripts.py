@@ -1,5 +1,8 @@
 """
-csp_generated_scripts.py — hash the inline scripts that are WRITTEN AT RUNTIME.
+csp_generated_scripts.py — shared CSP source discovery + runtime-generated hashing.
+
+Two jobs, both shared by validate-csp.py and the CSP stage of update-version.sh
+so the two can never disagree about WHICH scripts need hashing.
 
 Why this exists
 ---------------
@@ -39,6 +42,7 @@ a loud miss, not a silent one.
 
 import base64
 import hashlib
+import os
 import re
 
 # End of the `document.write(…'<script>');` opener — the point where script BODY
@@ -116,3 +120,56 @@ def generated_script_hashes(paths):
                 seen.add(entry)
                 out.append(entry)
     return out
+
+
+# ============================================================================
+# SOURCE DISCOVERY
+# ============================================================================
+
+# Trees that are never deployed, or are vendored.
+_SKIP_DIRS = {'node_modules', 'dist', 'archive', 'backup', '.git', 'coverage'}
+
+# An inline script that the browser will EXECUTE, and therefore that script-src
+# governs. Excludes src= (external) and any `type=` that is not a JavaScript MIME
+# type — notably `application/ld+json`, which blog.html and pages/product.html use
+# for structured data. Those are DATA blocks: never executed, never hashed, and
+# treating them as script would add phantom hashes to the CSP for markup that
+# CSP does not police.
+INLINE_SCRIPT_RE = re.compile(
+    r'<script(?![^>]*\bsrc=)(?![^>]*\btype\s*=\s*["\']?(?!(?:text/javascript|application/javascript|module)["\'\s>]))[^>]*>',
+    re.I)
+
+
+def discover_html_sources(web_root):
+    """Every deployed .html file that contains at least one INLINE script.
+
+    Replaces a hardcoded three-file list. That list was the root cause of a
+    production outage class: games/miniCycle-taskScramble.html,
+    games/miniCycle- taskGame.html and timestamp-converter.html all shipped
+    inline scripts that were never hashed, so the site CSP blocked them and the
+    pages rendered but did nothing. Nothing failed — the validator simply was not
+    looking at those files, and the release script generated hashes from the same
+    blind list.
+
+    Discovery means a NEW page with an inline script is covered the day it lands,
+    which a list only manages if someone remembers to edit it.
+
+    @param web_root: path to web/
+    @return: sorted list of paths relative to web_root
+    """
+    found = []
+    for root, dirs, files in os.walk(web_root):
+        dirs[:] = [d for d in dirs if d not in _SKIP_DIRS]
+        for name in files:
+            if not name.endswith('.html'):
+                continue
+            full = os.path.join(root, name)
+            try:
+                text = open(full, encoding='utf-8').read()
+            except (IOError, UnicodeDecodeError):
+                continue
+            # Comment-stripping is the caller's job; a literal <script> inside an
+            # HTML comment is enough to warrant scanning the file.
+            if INLINE_SCRIPT_RE.search(text):
+                found.append(os.path.relpath(full, web_root))
+    return sorted(found)

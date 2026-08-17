@@ -1546,9 +1546,12 @@ else
 import hashlib, base64, re, os, sys
 
 sys.path.insert(0, 'scripts')
-from csp_generated_scripts import generated_script_hashes
+from csp_generated_scripts import generated_script_hashes, discover_html_sources
 
-SRC_FILES = ['miniCycle.html', 'lite/miniCycle-lite.html', 'tests/module-test-suite.html']
+# DISCOVERED, not listed — must match validate-csp.py exactly, which is why both
+# call the same helper. A hardcoded list here silently under-hashed three
+# deployed pages (games x2, timestamp-converter) until Aug 2026.
+SRC_FILES = discover_html_sources('.')
 CONFIGS = ['netlify.toml', '.htaccess', 'nginx-security.conf']
 
 COMMENT_RE = re.compile(r'<!--.*?-->', re.DOTALL)

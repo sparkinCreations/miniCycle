@@ -1,18 +1,34 @@
 User-agent: *
 Allow: /
+
+# --- Not for indexing -------------------------------------------------------
+# Live in the deployed tree:
+Disallow: /docs/
+# The mini-games. Playable, but not content we want surfaced in search.
+# /miniCycleGames/ is the pre-rename path; it still 301s to /games/:splat
+# (see _redirects), so it is NOT dead — blocking it stops a crawler following
+# the redirect in the first place. Both lines are needed.
+Disallow: /games/
+Disallow: /miniCycleGames/
+
+# Legacy paths, kept deliberately. None of these ship in dist/ today, so the
+# rules are inert — but they cost nothing and pre-block the names if any of them
+# ever re-enters the deploy. Do not read their presence as "these exist".
 Disallow: /utilities/
 Disallow: /components/
 Disallow: /backup/
 Disallow: /TTO/
-Disallow: /miniCycleGames/
-Disallow: /docs/
 
-# Allow important pages
+# --- Public pages -----------------------------------------------------------
+# These are pretty URLs: the files live under pages/ and legal/, and _redirects
+# 301s each one. They are the canonical addresses, and they match sitemap.xml —
+# keep the three lists (here, _redirects, sitemap.xml) in step.
 Allow: /product.html
 Allow: /miniCycle.html
 Allow: /privacy.html
 Allow: /terms.html
 Allow: /user-manual.html
+Allow: /blog.html
 Allow: /assets/
 
 # Sitemap location

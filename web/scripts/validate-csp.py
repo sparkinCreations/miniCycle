@@ -35,10 +35,14 @@ import re
 import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__))))
-from csp_generated_scripts import generated_script_hashes  # noqa: E402
+from csp_generated_scripts import generated_script_hashes, discover_html_sources  # noqa: E402
 
-# Must stay in sync with the CSP stage in scripts/update-version.sh
-SRC_FILES = ['miniCycle.html', 'lite/miniCycle-lite.html', 'tests/module-test-suite.html']
+# DISCOVERED, not listed. The hardcoded list here (and its twin in
+# update-version.sh) was the root cause of a production outage class: three
+# deployed pages shipped executable inline scripts that were never hashed, so the
+# strict `/*` CSP blocked them and the pages rendered but did nothing. Nothing
+# failed — both tools were simply looking at the wrong set of files.
+SRC_FILES = discover_html_sources(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 CONFIGS = ['netlify.toml', '.htaccess', 'nginx-security.conf']
 
 COMMENT_RE = re.compile(r'<!--.*?-->', re.DOTALL)
