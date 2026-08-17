@@ -1,3 +1,7 @@
+## [2.428] - 2026-08-16
+- refactor(task-view,update): dock zones to constants; update toast names versions
+
+
 ## [2.427] - 2026-08-16
 - fix(task-view): bound the drag play area by the MEASURED chrome, not a guess
 - fix(release): never push the tag when the branch push failed
