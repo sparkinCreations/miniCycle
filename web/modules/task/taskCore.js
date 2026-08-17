@@ -13,8 +13,8 @@
  * - Uses dynamic versioned imports to avoid duplicate module loading
  *
  * @module task/taskCore
- * @see {@link file://../../../docs/developer-guides/ARCHITECTURE_OVERVIEW.md} - Architecture
- * @see {@link file://../../../docs/developer-guides/DI_PATTERNS.md} - DI patterns
+ * @see {@link file://docs/architecture/ARCHITECTURE_OVERVIEW.md} - Architecture
+ * @see {@link file://docs/working-on-code/DI_PATTERNS.md} - DI patterns
  */
 
 /**

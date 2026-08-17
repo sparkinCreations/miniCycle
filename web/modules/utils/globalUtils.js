@@ -12,7 +12,7 @@
  * - Hash ID generation
  *
  * @module utils/globalUtils
- * @see {@link file://../../../docs/developer-guides/ARCHITECTURE_OVERVIEW.md} - Architecture
+ * @see {@link file://docs/architecture/ARCHITECTURE_OVERVIEW.md} - Architecture
  */
 
 /**

@@ -4,7 +4,7 @@
  * Generalizes the main-view panel switcher (task view ↔ stats panel) from a
  * hard-coded binary toggle into an ordered, indexed carousel so a third panel
  * (focus task view) can slot in without rewriting every input path.
- * See docs/future-work/FOCUS_TASK_VIEW_PLAN.md (Phase 0).
+ * See docs/archive/FOCUS_TASK_VIEW_PLAN.md (Phase 0).
  *
  * Ownership: constructed and owned by statsPanel (its `carousel` field). This
  * file is a Pattern-2 "pure utility" module (see LARGE_MODULE_SPLITS_PLAN.md):

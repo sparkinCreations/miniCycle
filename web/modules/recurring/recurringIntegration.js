@@ -102,7 +102,7 @@ export async function initRecurringModules(options = {}) {
         // #2 boot-phase cost on slow devices and are NOT needed until the user opens the
         // recurring panel. They load on first open via ensureRecurringPanelLoaded().
         // Boot-time button-visibility / info-link / open-triggers run via recurringBoot
-        // WITHOUT the heavy panel. See docs/future-work/RECURRING_PANEL_DEFERRAL_PLAN.md
+        // WITHOUT the heavy panel. See docs/archive/RECURRING_PANEL_DEFERRAL_PLAN.md
         // ============================================================================
 
         // DI-pure DOM accessors for the lightweight boot helpers.

@@ -12,7 +12,7 @@
  * - Minimum interval between snapshots
  *
  * @module ui/undoRedoManager
- * @see {@link file://../../../docs/developer-guides/ARCHITECTURE_OVERVIEW.md} - Architecture
+ * @see {@link file://docs/architecture/ARCHITECTURE_OVERVIEW.md} - Architecture
  */
 
 /**
@@ -582,7 +582,7 @@ export function captureStateSnapshot(state) {
   // recreations / wake-time catch-up). These aren't user actions — capturing them
   // puts a system-created task at the top of the undo stack, so the user's next Undo
   // removes the recurring task (which then silently reappears on the next tick).
-  // See docs/future-work/ARCHITECTURE REVIEW FINDINGS.md §1.2.
+  // See docs/archive/ARCHITECTURE_REVIEW_FINDINGS.md §1.2.
   // NOTE: the primary mechanism is now the { system: true } option on
   // AppState.update, checked in the wrapper before this function is even
   // called; this ambient-flag check remains as a fallback for direct callers

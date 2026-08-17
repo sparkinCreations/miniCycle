@@ -12,7 +12,7 @@
  * - Graceful degradation without dependencies
  *
  * @module features/themeManager
- * @see {@link file://../../../docs/developer-guides/DATA_SCHEMA_GUIDE.md} - Schema reference
+ * @see {@link file://docs/reference/DATA_SCHEMA_GUIDE.md} - Schema reference
  */
 
 /**

@@ -4,7 +4,7 @@
  * One-task-at-a-time card for focus view — the routine's "current step."
  * Carousel panel at index 0 (left of the routine list). Focus-view-only and
  * gated behind onboarding; Phase 2 registers it with the panel carousel.
- * See docs/future-work/FOCUS_TASK_VIEW_PLAN.md (Phase 1, decisions D2–D5).
+ * See docs/archive/FOCUS_TASK_VIEW_PLAN.md (Phase 1, decisions D2–D5).
  *
  * Behavior contract:
  *  - Shows the FIRST INCOMPLETE task in list order (D2). ‹ › browse the full

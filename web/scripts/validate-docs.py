@@ -269,6 +269,62 @@ def check_claude_md(list_mode):
     return len(missing)
 
 
+def check_code_doc_paths(list_mode):
+    """Every docs/... path cited in a CODE COMMENT must resolve.
+
+    Added Aug 2026. The future-work cleanup moved a dozen plans to docs/archive/
+    and left the citations in shipped modules pointing at their old homes — eight
+    sites across five plans, every one of them dangling. Nothing caught it:
+    validate:comments checks IDENTIFIERS named in comments, not paths, and this
+    script only checked the root CLAUDE.md.
+
+    These fail exactly the way a stale CLAUDE.md path does — silently, and they
+    are read at the moment someone is about to change the code the comment
+    describes, which is the worst possible time to send them to a 404.
+
+    Paths are resolved relative to web/ (how they are written) and to the repo
+    root, so both conventions pass.
+    """
+    bad = []
+    checked = 0
+    for root, dirs, files in os.walk(os.path.join(REPO, 'web', 'modules')):
+        dirs[:] = [d for d in dirs if d != 'archive']
+        for name in files:
+            if not name.endswith('.js'):
+                continue
+            full = os.path.join(root, name)
+            try:
+                text = open(full, encoding='utf-8').read()
+            except (IOError, UnicodeDecodeError):
+                continue
+            # Note the space in the class: one real citation carried a filename
+            # written with spaces instead of underscores, and it must be caught.
+            # Capture any leading path segments too. Matching from `docs/` alone
+            # truncated `mobile/android/docs/ANDROID_BUILD_AND_DIFFERENCES.md` to
+            # its tail and reported a live file as dangling.
+            for cited in sorted(set(re.findall(
+                    r'(?:[A-Za-z0-9_.\-]+/)*docs/[A-Za-z0-9_/ .\-]+\.md', text))):
+                checked += 1
+                # Citations come in three conventions, all legitimate: relative
+                # to the citing file (`../../docs/...`), relative to web/, and
+                # relative to the repo root. Accept whichever resolves.
+                candidates = [
+                    os.path.normpath(os.path.join(os.path.dirname(full), cited)),
+                    os.path.join(REPO, 'web', cited),
+                    os.path.join(REPO, cited),
+                ]
+                if not any(os.path.isfile(c) for c in candidates):
+                    bad.append((os.path.relpath(full, REPO), cited))
+    if bad:
+        print('❌ %d dangling doc path(s) cited in code comments:' % len(bad))
+        for src, cited in bad:
+            print('     %-52s %s' % (cited, src))
+        print('     ^ silent: read exactly when someone is about to edit that code.')
+    else:
+        print('✅ Code doc paths     all %d citation(s) in modules/ resolve' % checked)
+    return len(bad)
+
+
 def check_public_surfaces(list_mode):
     """Public-surface drift checks (drift-review item 18, July 2026).
 
@@ -398,6 +454,7 @@ def main():
     errors += check_root_links(args.list)
     errors += check_orphans(args.list)
     errors += check_claude_md(args.list)
+    errors += check_code_doc_paths(args.list)
     errors += check_public_surfaces(args.list)
 
     print()
@@ -406,7 +463,7 @@ def main():
               'for the filing rules.' % errors)
         return 1
     print('✅ PASS — links resolve (docs + root), every doc is reachable, '
-          'CLAUDE.md routing is intact.')
+          'CLAUDE.md routing and code citations are intact.')
     return 0
 
 

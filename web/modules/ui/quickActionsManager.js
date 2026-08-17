@@ -20,7 +20,7 @@ const TOOLTIP_OFFSET_PX = 10;
 import { getLabel } from '../labels/labelResolver.js';
 import { handleHorizontalArrowNav } from '../utils/keyboardNav.js';
 // Uniform usage tracking — one delegated listener records every action-button click
-// (direct + the panel's synthetic clicks). See docs/future-work/ACTION_DISPATCH_PLAN.md
+// (direct + the panel's synthetic clicks). See docs/archive/ACTION_DISPATCH_PLAN.md
 import { recordActionUsage, setupActionUsageTracking } from './actionUsage.js';
 
 // ============================================================================

@@ -31,7 +31,7 @@ import { getLabel, getIcon } from '../labels/labelResolver.js';
 import { recordActionUsage } from '../ui/actionUsage.js';
 // Pure utility class (no side effects/module state) — safe static import.
 // Owns the ordered panel registry; statsPanel registers its panels into it.
-// See docs/future-work/FOCUS_TASK_VIEW_PLAN.md Phase 0.
+// See docs/archive/FOCUS_TASK_VIEW_PLAN.md Phase 0.
 // PanelCarousel is now imported by statsPanelGestures.js (D-03 split).
 
 // ============================================================================

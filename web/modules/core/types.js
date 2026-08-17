@@ -6,8 +6,8 @@
  *
  * @module core/types
  * @version 1.0.0
- * @see {@link file://../../../docs/developer-guides/DATA_SCHEMA_GUIDE.md} - Full schema reference
- * @see {@link file://../../../docs/developer-guides/DI_PATTERNS.md} - Dependency injection patterns
+ * @see {@link file://docs/reference/DATA_SCHEMA_GUIDE.md} - Full schema reference
+ * @see {@link file://docs/working-on-code/DI_PATTERNS.md} - Dependency injection patterns
  */
 
 // =============================================================================
@@ -187,7 +187,7 @@
  * @property {Achievements} [achievements] - Global achievements (app-wide, NOT exported with .mcyc)
  * @property {CustomReminders} [customReminders] - Custom reminder configuration
  * @property {UIState} [ui] - UI state
- * @see {@link file://../../../docs/developer-guides/DATA_SCHEMA_GUIDE.md}
+ * @see {@link file://docs/reference/DATA_SCHEMA_GUIDE.md}
  */
 
 /**
@@ -290,7 +290,7 @@
  * @property {Object} [AppMeta] - Application metadata (version, etc.)
  * @property {Object} [AppGlobalState] - Runtime mutable state
  * @property {Storage} [storage] - Storage interface (localStorage)
- * @see {@link file://../../../docs/developer-guides/DI_PATTERNS.md}
+ * @see {@link file://docs/working-on-code/DI_PATTERNS.md}
  */
 
 /**
@@ -318,7 +318,7 @@
  * @property {boolean} [arrows] - Sync arrow visibility/markers
  * @property {boolean} [overdue] - Check overdue tasks
  * @property {boolean} [mainMenuHeader] - Update main menu header
- * @see {@link file://../../../docs/developer-guides/ASYNC_UI_PATTERNS.md}
+ * @see {@link file://docs/working-on-code/ASYNC_UI_PATTERNS.md}
  * @example
  * // Request multiple UI updates (coalesced into single frame)
  * requestUIUpdate({
@@ -522,7 +522,7 @@
  * @property {string} exportedAt - ISO timestamp
  * @property {string} [exportedFrom] - App version
  * @property {Cycle} cycle - The exported cycle data
- * @see {@link file://../../../docs/data-schema/MCYC_FILE_FORMAT.md}
+ * @see {@link file://docs/reference/MCYC_FILE_FORMAT.md}
  */
 
 // =============================================================================

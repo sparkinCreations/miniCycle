@@ -6,9 +6,9 @@
  * debounced saves, subscriber notifications, and concurrent modification detection.
  *
  * @module core/appState
- * @see {@link file://../../../docs/developer-guides/DATA_SCHEMA_GUIDE.md} - Schema reference
- * @see {@link file://../../../docs/developer-guides/DI_PATTERNS.md} - Dependency injection
- * @see {@link file://../../../docs/developer-guides/ARCHITECTURE_OVERVIEW.md} - Architecture
+ * @see {@link file://docs/reference/DATA_SCHEMA_GUIDE.md} - Schema reference
+ * @see {@link file://docs/working-on-code/DI_PATTERNS.md} - Dependency injection
+ * @see {@link file://docs/architecture/ARCHITECTURE_OVERVIEW.md} - Architecture
  */
 
 /**
@@ -63,7 +63,7 @@ export function setAppStateDependencies(dependencies) {
  * - Race condition prevention during initialization
  *
  * @class MiniCycleState
- * @see {@link file://../../../docs/developer-guides/DATA_SCHEMA_GUIDE.md#how-data-flows}
+ * @see {@link file://docs/reference/DATA_SCHEMA_GUIDE.md#how-data-flows}
  */
 class MiniCycleState {
     /**
@@ -636,7 +636,7 @@ class MiniCycleState {
      * await AppState.update(state => {
      *     state.data.cycles[cycleId].tasks.push(newTask);
      * }, true);
-     * @see {@link file://../../../docs/developer-guides/DATA_SCHEMA_GUIDE.md#how-data-flows}
+     * @see {@link file://docs/reference/DATA_SCHEMA_GUIDE.md#how-data-flows}
      */
     async update(updateFn, immediate = false) {
         if (!this.isInitialized) {

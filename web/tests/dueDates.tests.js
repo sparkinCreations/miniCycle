@@ -18,6 +18,10 @@ import {
     setDueDatesDependencies
 } from '../modules/features/dueDates.js';
 
+// The module compares against LOCAL midnight (parseDateAsLocal), so tests must
+// build date strings the same way. See the yesterday computation below.
+import { formatLocalDate } from '../modules/recurring/recurringDateUtils.js';
+
 export async function runDueDatesTests(resultsDiv, isPartOfSuite = false) {
     resultsDiv.innerHTML = '<h2>Due Dates Module Tests</h2><h3>Setting up mocks...</h3>';
 
@@ -280,10 +284,20 @@ export async function runDueDatesTests(resultsDiv, isPartOfSuite = false) {
             dueDateInput.type = 'date';
             dueDateInput.classList.add('due-date');
 
-            // Set to yesterday
+            // Set to yesterday — via LOCAL date parts, not toISOString().
+            //
+            // toISOString() converts to UTC, so in any negative UTC offset an
+            // evening "yesterday" serialises as TODAY's date: at 21:42 EDT this
+            // produced 2026-08-16 for a date meant to be 2026-08-15, the task was
+            // not overdue, and the test failed. It passed all day and broke after
+            // 20:00 local, which is why it read as flaky rather than wrong.
+            //
+            // This is the exact hazard dueDates.js documents at the top of the
+            // file and fixed in the implementation with parseDateAsLocal — the
+            // test kept the bug the module had already removed.
             const yesterday = new Date();
             yesterday.setDate(yesterday.getDate() - 1);
-            dueDateInput.value = yesterday.toISOString().split('T')[0];
+            dueDateInput.value = formatLocalDate(yesterday);
 
             taskDiv.appendChild(taskText);
             taskDiv.appendChild(dueDateInput);

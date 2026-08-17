@@ -13,7 +13,7 @@
  * - Schema 2.5 data integration
  *
  * @module utils/notifications
- * @see {@link file://../../../docs/developer-guides/ARCHITECTURE_OVERVIEW.md} - Architecture
+ * @see {@link file://docs/architecture/ARCHITECTURE_OVERVIEW.md} - Architecture
  */
 
 /**

@@ -11,8 +11,8 @@
  * - Priority toggling
  *
  * @module task/taskCRUD
- * @see {@link file://../../../docs/developer-guides/DATA_SCHEMA_GUIDE.md} - Schema reference
- * @see {@link file://../../../docs/developer-guides/DI_PATTERNS.md} - DI patterns
+ * @see {@link file://docs/reference/DATA_SCHEMA_GUIDE.md} - Schema reference
+ * @see {@link file://docs/working-on-code/DI_PATTERNS.md} - DI patterns
  */
 
 /**

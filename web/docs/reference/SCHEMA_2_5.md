@@ -393,6 +393,20 @@ OR-based achievement system (unlock via cycles OR tasks):
 | `unlocked` | string[] | Array of unlocked achievement/badge IDs |
 | `seen` | object | Map of achievement ID to boolean (user has seen popup) |
 
+**`achievements.unlocked` and `settings.unlockedThemes` are deliberately separate.**
+They look like the same idea — "things the user has earned" — and they are not:
+
+- `achievements.unlocked` is a permanent RECORD of milestones reached. Nothing
+  consumes it to gate functionality; it drives badges and the achievements modal.
+- `settings.unlockedThemes` is an ENTITLEMENT list the theme system reads to decide
+  what the user may actually apply, and it is written by other paths too (import
+  reads it to decide whether a routine's theme survives — see
+  `notify.themeLockedOnImport`).
+
+Merging them would make a cosmetic badge record load-bearing for theme access, and
+would mean an import touching theme entitlements could rewrite the user's milestone
+history. Keep them apart.
+
 **Achievement tiers unlock at:**
 | Badge | Cycles | Tasks |
 |-------|--------|-------|
@@ -418,6 +432,31 @@ User-configurable reminder system:
 | `frequencyValue` | number | Numeric interval value |
 | `frequencyUnit` | string | "minutes"\|"hours" |
 | `customMessages` | string[] | Custom reminder messages |
+
+## Undo Snapshots — new state surfaces must join the signature
+
+`undoRedoManager.buildSnapshotSignature()` reduces a snapshot to a comparison key
+and **skips pushing** anything whose key matches the previous entry. That dedup is
+what stops a burst of no-op updates flooding the undo stack.
+
+The consequence is a rule worth knowing before adding to the schema:
+
+> **Any new user-editable state surface must be added to `buildSnapshotSignature()`,
+> or a change touching ONLY that surface will dedup against the previous snapshot
+> and never enter undo history.**
+
+It fails silently and looks like "undo just doesn't cover that" rather than a bug.
+It has bitten twice already, and both fixes are visible in the function today:
+
+- **Settings objects, not just their booleans.** `recurringSettings` and
+  `deleteWhenCompleteSettings` are serialised whole; comparing only the derived
+  `recurring` / `deleteWhenComplete` flags meant editing a schedule without
+  toggling the flag was invisible.
+- **`taskViewLayout.positions`.** A drag-end or dock-back changes nothing else, so
+  without `tvl` in the key the whole Task View layout feature sat outside undo.
+
+The same applies to anything added under `settings`, `data.cycles[id]`, or a task
+record. If it is user-editable and worth undoing, it belongs in the signature.
 
 ## Migration Support
 

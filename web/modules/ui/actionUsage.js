@@ -5,7 +5,7 @@
  * driven by ONE place so every entry point tracks uniformly (the old bug: only 5 of
  * 22 actions counted usage from outside the quick-actions panel).
  *
- * Design (see docs/future-work/ACTION_DISPATCH_PLAN.md): most actions are triggered by
+ * Design (see docs/archive/ACTION_DISPATCH_PLAN.md): most actions are triggered by
  * clicking a DOM button, and the panel itself dispatches via `button.click()`. So a
  * single delegated click listener over ACTION_BUTTON_MAP catches BOTH direct user clicks
  * and the panel's synthetic clicks. The 3 function-dispatched panel cases

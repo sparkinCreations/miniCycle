@@ -12,7 +12,7 @@
  *
  * @module appGlobalState
  * @version 1.0.0
- * @see {@link file://../../../docs/developer-guides/DI_PATTERNS.md} - DI patterns
+ * @see {@link file://docs/working-on-code/DI_PATTERNS.md} - DI patterns
  */
 
 /**

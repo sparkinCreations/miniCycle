@@ -15,7 +15,7 @@
  * FUTURE:
  * - labelResolver.js will consume this as the default fallback
  * - Contextual lenses override specific keys (see LENS_SENSITIVE_KEYS)
- * - See docs/future-work/CONTEXTUAL_THEME_SYSTEM_PLAN.md
+ * - See docs/archive/CONTEXTUAL_THEME_SYSTEM_PLAN.md
  */
 
 // ============================================================================

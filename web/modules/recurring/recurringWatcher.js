@@ -77,7 +77,7 @@ function assertInjected(name, value) {
  * actions. The undo wrapper snapshots every AppState.update during normal operation;
  * passing { system: true } tells the wrapper to skip the snapshot for THIS call.
  * Without it, a user's next Undo removes the system-created task, which then silently
- * reappears on the next tick. See docs/future-work/ARCHITECTURE REVIEW FINDINGS.md §1.2.
+ * reappears on the next tick. See docs/archive/ARCHITECTURE_REVIEW_FINDINGS.md §1.2.
  *
  * The intent travels with the call rather than via the shared
  * AppGlobalState.isSystemMutation flag — the flag guarded an await window, so a

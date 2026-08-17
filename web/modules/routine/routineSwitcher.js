@@ -12,7 +12,7 @@
  * - Undo/redo stack management on switch
  *
  * @module routine/routineSwitcher
- * @see {@link file://../../../docs/developer-guides/DATA_SCHEMA_GUIDE.md} - Schema reference
+ * @see {@link file://docs/reference/DATA_SCHEMA_GUIDE.md} - Schema reference
  */
 
 /**

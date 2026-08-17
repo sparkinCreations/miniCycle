@@ -11,7 +11,7 @@
  * NO legacy fallbacks - strict DI only
  *
  * @module ui/settingsUIManager
- * @see {@link file://../../../docs/developer-guides/DI_PATTERNS.md} - DI patterns
+ * @see {@link file://docs/working-on-code/DI_PATTERNS.md} - DI patterns
  */
 
 /**
