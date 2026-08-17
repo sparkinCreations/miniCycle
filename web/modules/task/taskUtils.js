@@ -46,7 +46,10 @@ const di = createDIModule('TaskUtils', {
     remindOverdueTasks: optional(null),
     enableDragAndDropOnTask: optional(null),
     updateMoveArrowsVisibility: optional(null),
-    saveTaskToSchema25: optional(null)
+    saveTaskToSchema25: optional(null),
+    // Needed to stamp nextScheduledOccurrence on templates created here.
+    // Forwarded from taskDOM (facade sub-module); see the template literal below.
+    calculateNextOccurrence: optional(null)
 });
 
 // Late-binding deps via Proxy
@@ -330,7 +333,21 @@ export class TaskUtils {
                 remindersEnabled: remindersEnabled || false,
                 deleteWhenComplete: true, // Recurring tasks always auto-remove
                 deleteWhenCompleteSettings: { ...DEFAULT_RECURRING_DELETE_SETTINGS },
+                occurrenceCount: 0,
                 lastTriggeredTimestamp: null,
+                // WITHOUT this the template never fires. recurringWatcher gates on
+                // `template.nextScheduledOccurrence == null`, and `==` matches
+                // undefined as well as null, so an omitted field reads as
+                // "finished / exhausted" and the task silently never recurs.
+                //
+                // Reached in practice by the Cleared Tasks "restore" flow:
+                // historyManager passes recurring + recurringSettings into addTask,
+                // so a restored recurring task used to come back with its
+                // recurrence permanently dead. The other four template writers all
+                // set this; this one was the outlier.
+                nextScheduledOccurrence: _deps.calculateNextOccurrence
+                    ? _deps.calculateNextOccurrence(recurringSettings, Date.now())
+                    : null,
                 schemaVersion: 2
             } : null;
 

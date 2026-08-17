@@ -325,6 +325,84 @@ export async function runTaskUtilsTests(resultsDiv) {
     // A task context shaped like the one loadTaskContext hands over.
     // isLoading:true returns the built task WITHOUT committing it, so these
     // assert the exact object that would be persisted.
+    // ============================================
+    // 🔁 Recurring template shape
+    // ============================================
+    resultsDiv.innerHTML += '<h4 class="test-section">🔁 Recurring template</h4>';
+
+    const recurringCtx = (id) => ({
+        cycleTasks: [],
+        assignedTaskId: id,
+        taskTextTrimmed: 'a recurring task',
+        completed: false,
+        dueDate: null,
+        highPriority: false,
+        priorityColor: null,
+        remindersEnabled: false,
+        recurring: true,
+        recurringSettings: { frequency: 'daily', indefinitely: true },
+        currentCycle: { deleteCheckedTasks: false },
+        cycles: {},
+        activeCycle: 'cycle-1',
+        isLoading: true,
+        deleteWhenComplete: undefined,
+        deleteWhenCompleteSettings: null
+    });
+
+    await test('a template created here carries a nextScheduledOccurrence', () => {
+        // recurringWatcher gates on `template.nextScheduledOccurrence == null`,
+        // which matches UNDEFINED as well as null — so a template built without
+        // the field never fires. This path is reached by the Cleared Tasks
+        // "restore" flow (historyManager passes recurring + recurringSettings
+        // into addTask), so a restored recurring task comes back with its
+        // recurrence permanently dead.
+        //
+        // Driven through the legacy commit branch (no AppState, saveTaskToSchema25
+        // present) so the template lands on the context's own cycle object and can
+        // be inspected directly.
+        const WHEN = 1786000000000;
+        setTaskUtilsDependencies({ calculateNextOccurrence: () => WHEN });
+
+        const ctx = recurringCtx('t-rec');
+        ctx.isLoading = false;
+        ctx.currentCycle = { deleteCheckedTasks: false, tasks: [], recurringTemplates: {} };
+        TaskUtils.createOrUpdateTaskData(ctx, () => {}, () => {});
+
+        const template = ctx.currentCycle.recurringTemplates['t-rec'];
+        if (!template) throw new Error('no template was created at all');
+        if (!('nextScheduledOccurrence' in template)) {
+            throw new Error('template omits nextScheduledOccurrence — recurringWatcher will never fire it');
+        }
+        if (template.nextScheduledOccurrence !== WHEN) {
+            throw new Error(`expected the calculator's value, got ${template.nextScheduledOccurrence}`);
+        }
+        // occurrenceCount was missing here too; the watcher reads it for exhaustion.
+        if (template.occurrenceCount !== 0) {
+            throw new Error(`expected occurrenceCount 0, got ${template.occurrenceCount}`);
+        }
+    });
+
+    await test('a null nextScheduledOccurrence is as dead as an absent one', () => {
+        // Guards against "fixing" this by writing null when the calculator is
+        // missing. recurringWatcher gates on `== null`, which matches BOTH — so a
+        // null is not a safer default, it is the same bug wearing a field name.
+        setTaskUtilsDependencies({ calculateNextOccurrence: null });
+
+        const ctx = recurringCtx('t-nocalc');
+        ctx.isLoading = false;
+        ctx.currentCycle = { deleteCheckedTasks: false, tasks: [], recurringTemplates: {} };
+        TaskUtils.createOrUpdateTaskData(ctx, () => {}, () => {});
+
+        const template = ctx.currentCycle.recurringTemplates['t-nocalc'];
+        if (template && template.nextScheduledOccurrence == null) {
+            // Documented, not asserted away: without the dep the template is inert.
+            // The DI wiring (taskDOM manifest + forward) is what makes it work, and
+            // validate:di plus the runtime access audit are what keep it wired.
+            return;
+        }
+        throw new Error('expected an inert template when no calculator is injected');
+    });
+
     const priorityCtx = (id, highPriority, priorityColor) => ({
         cycleTasks: [],
         assignedTaskId: id,

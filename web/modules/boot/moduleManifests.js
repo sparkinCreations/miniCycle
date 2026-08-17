@@ -315,7 +315,11 @@ export const MODULE_MANIFESTS = {
             // suite's "every optionalDep has a real route" check. validate:di counts
             // provideInstance names as routes and so accepts it; the runtime test is the
             // stricter, more truthful one. Giving it an actual route is its own change.
-            'captureStateSnapshot', 'incrementCycleCount', 'showCompletionAnimation'
+            'captureStateSnapshot', 'incrementCycleCount', 'showCompletionAnimation',
+            // Forwarded to taskUtils so templates created on the add-task path
+            // carry nextScheduledOccurrence — without it recurringWatcher reads
+            // the template as exhausted and it never fires.
+            'calculateNextOccurrence'
         ],
         provides: [
             'createTaskDOMElements', 'setupTaskInteractions', 'refreshUIFromState',

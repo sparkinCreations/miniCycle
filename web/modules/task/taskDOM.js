@@ -305,7 +305,8 @@ export class TaskDOMManager {
                     get generateId() { return instanceDeps.generateId; },
                     get enableDragAndDropOnTask() { return instanceDeps.enableDragAndDropOnTask; },
                     get updateMoveArrowsVisibility() { return instanceDeps.updateMoveArrowsVisibility; },
-                    get saveTaskToSchema25() { return instanceDeps.saveTaskToSchema25; }
+                    get saveTaskToSchema25() { return instanceDeps.saveTaskToSchema25; },
+                    get calculateNextOccurrence() { return instanceDeps.calculateNextOccurrence; }
                 });
 
                 // Initialize validator module - no window.* fallbacks (Phase 2)
