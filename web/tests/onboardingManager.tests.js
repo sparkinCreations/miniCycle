@@ -144,59 +144,6 @@ export async function runOnboardingManagerTests(resultsDiv) {
 
     resultsDiv.innerHTML += '<h4 class="test-section">💾 AppState Integration (DI)</h4>';
 
-    await test('shouldShowOnboarding handles AppState not ready (DI)', () => {
-        // Inject deps with AppState that's not ready
-        setOnboardingManagerDependencies({
-            AppState: { isReady: () => false, get: () => null },
-            AppMeta: { version: '1.0.0' }
-        });
-        const om = new OnboardingManager();
-
-        // Should return false when AppState not ready
-        const result = om.shouldShowOnboarding();
-        if (result !== false) {
-            throw new Error('Should return false when AppState not ready');
-        }
-    });
-
-    await test('shouldShowOnboarding reads from injected AppState', () => {
-        const mockState = {
-            settings: { onboardingCompleted: false }
-        };
-        setOnboardingManagerDependencies({
-            AppState: {
-                isReady: () => true,
-                get: () => mockState
-            },
-            AppMeta: { version: '1.0.0' }
-        });
-        const om = new OnboardingManager();
-
-        const result = om.shouldShowOnboarding();
-        if (result !== true) {
-            throw new Error('Should return true when onboarding not completed');
-        }
-    });
-
-    await test('shouldShowOnboarding returns false when already completed (DI)', () => {
-        const mockState = {
-            settings: { onboardingCompleted: true }
-        };
-        setOnboardingManagerDependencies({
-            AppState: {
-                isReady: () => true,
-                get: () => mockState
-            },
-            AppMeta: { version: '1.0.0' }
-        });
-        const om = new OnboardingManager();
-
-        const result = om.shouldShowOnboarding();
-        if (result !== false) {
-            throw new Error('Should return false when onboarding completed');
-        }
-    });
-
     await test('completeOnboarding updates AppState (DI)', () => {
         let updateCalled = false;
         const mockState = {
@@ -737,23 +684,8 @@ export async function runOnboardingManagerTests(resultsDiv) {
         const om = new OnboardingManager();
 
         // Should not throw
-        om.shouldShowOnboarding();
         om.showOnboarding({}, null);
         om.resetOnboarding();
-    });
-
-    await test('handles missing AppState.get gracefully (DI)', () => {
-        setOnboardingManagerDependencies({
-            AppState: {
-                isReady: () => true
-                // Missing get method
-            },
-            AppMeta: { version: '1.0.0' }
-        });
-        const om = new OnboardingManager();
-
-        // Should not throw
-        om.shouldShowOnboarding();
     });
 
     await test('handles null cycles and activeCycle (DI)', () => {

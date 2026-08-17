@@ -1783,30 +1783,20 @@ export class OnboardingManager {
         this._firstSessionListenersAttached = false;
     }
 
-    /**
-     * Check if user should see onboarding
-     * @returns {boolean} True if onboarding should be shown
-     */
-    shouldShowOnboarding() {
-        if (!this.deps.AppState?.isReady?.()) {
-            console.warn('⚠️ AppState not ready for shouldShowOnboarding');
-            return false;
-        }
-
-        if (typeof this.deps.AppState.get !== 'function') {
-            console.warn('⚠️ AppState.get not available');
-            return false;
-        }
-
-        const currentState = this.deps.AppState.get();
-        if (!currentState) {
-            console.warn('⚠️ No state data for shouldShowOnboarding');
-            return false;
-        }
-
-        const hasSeenOnboarding = currentState.settings?.onboardingCompleted || false;
-        return !hasSeenOnboarding;
-    }
+    // shouldShowOnboarding() was REMOVED (Aug 2026). It had zero production
+    // callers — only its own tests kept it alive — and it was worse than dead
+    // weight: it returned `!settings.onboardingCompleted`, while the gate that
+    // actually runs treats EITHER flag as "seen":
+    //
+    //     appInit.js: onboardingCompleted || firstRunWelcomeDismissed
+    //
+    // So it encoded a stale, narrower version of the rule, sitting on the
+    // obvious name. That is the shape of the Aug 2026 onboarding-lockout
+    // incident: the plausible-looking function is not the one in the path, and
+    // "fixing" it changes nothing while looking like it should.
+    //
+    // The real gates live in appInit.js (~:494) and the pre-paint reader in
+    // miniCycle.html. Change them there.
 
     /**
      * Show onboarding modal flow

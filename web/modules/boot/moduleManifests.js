@@ -758,7 +758,10 @@ export const MODULE_MANIFESTS = {
         path: '../features/uxRatings.js',
         phase: PHASES.FEATURES,
         requires: ['appInit', 'AppState', 'safeAddEventListener'],
-        optionalDeps: ['AppMeta'],
+        // getModal: the feedback dialog is looked up through modalRegistry rather
+        // than by id, so the registry stays the single definition of how it is
+        // found. Optional — a leaf feature must not hard-require the registry.
+        optionalDeps: ['AppMeta', 'getModal'],
         provides: [],
         provideInstance: 'uxRatings',
         api: 'features'

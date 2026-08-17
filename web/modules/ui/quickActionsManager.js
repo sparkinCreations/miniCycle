@@ -660,7 +660,12 @@ export class QuickActionsManager {
                     recordActionUsage(this.deps.AppState, actionId);
                     setTimeout(() => {
                         try {
-                            const modal = this.deps.getModal?.('reminders') || this.deps.getElementById(DOM_IDS.REMINDERS_MODAL);
+                            // No getElementById fallback: `reminders` is in the modal
+                            // registry and `getModal` is a REQUIRED dep here, so the
+                            // fallback could only ever fire when DI was broken — and
+                            // then it silently papered over it. Letting the lookup fail
+                            // reaches _warnMissingDep below, which says so out loud.
+                            const modal = this.deps.getModal?.('reminders');
                             if (modal && !modal.open) {
                                 modal._previousFocus = document.activeElement;
                                 modal.showModal();
