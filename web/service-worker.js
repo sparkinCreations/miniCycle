@@ -214,6 +214,7 @@ var BOOT_CRITICAL = [
   './modules/recurring/recurringCalculators.js',
   './modules/recurring/recurringDateUtils.js',
   './modules/recurring/recurringIntegration.js',
+  './modules/recurring/recurringTemplate.js',
   './modules/recurring/recurringMatcher.js',
   './modules/recurring/recurringPanel.js',
   './modules/recurring/recurringPanelEvents.js',

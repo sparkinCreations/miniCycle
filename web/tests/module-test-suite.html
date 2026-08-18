@@ -412,6 +412,7 @@
             <option value="taskCore">TaskCore</option>
             <option value="taskValidation">TaskValidation</option>
             <option value="taskUtils">TaskUtils</option>
+            <option value="recurringTemplate">RecurringTemplate</option>
             <option value="taskRenderer">TaskRenderer</option>
             <option value="taskEvents">TaskEvents</option>
             <option value="taskDOM">TaskDOM</option>
@@ -581,6 +582,7 @@
         const { runTaskCoreTests } = await import(`./taskCore.tests.js?v=${cacheBuster}`);
         const { runTaskValidationTests } = await import(`./taskValidation.tests.js?v=${cacheBuster}`);
         const { runTaskUtilsTests } = await import(`./taskUtils.tests.js?v=${cacheBuster}`);
+        const { runRecurringTemplateTests } = await import(`./recurringTemplate.tests.js?v=${cacheBuster}`);
         const { runTaskRendererTests } = await import(`./taskRenderer.tests.js?v=${cacheBuster}`);
         const { runTaskEventsTests } = await import(`./taskEvents.tests.js?v=${cacheBuster}`);
         const { runTaskDOMTests } = await import(`./taskDOM.tests.js?v=${cacheBuster}`);
@@ -1585,6 +1587,10 @@
                     window.setupFinalTaskInteractions = mod.setupFinalTaskInteractions;
                     currentModule = 'taskUtils';
                     resultsDiv.innerHTML = '<p>✅ TaskUtils loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'recurringTemplate') {
+                    await import(`../modules/recurring/recurringTemplate.js?v=${cacheBuster}`);
+                    currentModule = 'recurringTemplate';
+                    resultsDiv.innerHTML = '<p>✅ RecurringTemplate loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'taskRenderer') {
                     const mod = await import(`../modules/task/taskRenderer.js?v=${cacheBuster}`);
                     window.TaskRenderer = mod.TaskRenderer;
@@ -2047,6 +2053,8 @@
                 await runTaskValidationTests(resultsDiv);
             } else if (currentModule === 'taskUtils') {
                 await runTaskUtilsTests(resultsDiv);
+            } else if (currentModule === 'recurringTemplate') {
+                await runRecurringTemplateTests(resultsDiv);
             } else if (currentModule === 'taskRenderer') {
                 await runTaskRendererTests(resultsDiv);
             } else if (currentModule === 'taskEvents') {
@@ -2434,6 +2442,7 @@
                 { name: 'TaskCore', key: 'taskCore', runFn: runTaskCoreTests, importPath: '../modules/task/taskCore.js' },
                 { name: 'TaskValidation', key: 'taskValidation', runFn: runTaskValidationTests, importPath: '../modules/task/taskValidation.js' },
                 { name: 'TaskUtils', key: 'taskUtils', runFn: runTaskUtilsTests, importPath: '../modules/task/taskUtils.js' },
+                { name: 'RecurringTemplate', key: 'recurringTemplate', runFn: runRecurringTemplateTests, importPath: '../modules/recurring/recurringTemplate.js' },
                 { name: 'TaskRenderer', key: 'taskRenderer', runFn: runTaskRendererTests, importPath: '../modules/task/taskRenderer.js' },
                 { name: 'TaskEvents', key: 'taskEvents', runFn: runTaskEventsTests, importPath: '../modules/task/taskEvents.js' },
                 { name: 'TaskDOM', key: 'taskDOM', runFn: runTaskDOMTests, importPath: '../modules/task/taskDOM.js' },

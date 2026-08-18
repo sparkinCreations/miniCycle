@@ -21,6 +21,7 @@ import { getLabel } from '../labels/labelResolver.js';
 // matcher's concern is memo-cache identity shared with recurringCore, which
 // import doesn't need; the cost is one duplicate cache, nothing behavioral.
 import { normalizeRecurringSettings } from '../recurring/recurringSettings.js';
+import { buildRecurringTemplate } from '../recurring/recurringTemplate.js';
 import { isValidHex } from '../utils/styleValidators.js';
 
 // ============================================================================
@@ -672,18 +673,16 @@ export async function processImportedData(fileContent) {
                 if (typeof calculateNextOccurrence === 'function') {
                     nextOccurrence = calculateNextOccurrence(task.recurringSettings, Date.now());
                 }
-                recurringTemplates[task.id] = {
+                recurringTemplates[task.id] = buildRecurringTemplate({
                     id: task.id,
                     text: task.text,
                     dueDate: task.dueDate || null,
                     highPriority: task.highPriority || false,
                     priorityColor: task.priorityColor || (task.highPriority ? COLORS.PRIORITY_DEFAULT : null),
                     remindersEnabled: task.remindersEnabled || false,
-                    recurring: true,
                     recurringSettings: structuredClone(task.recurringSettings),
-                    nextScheduledOccurrence: nextOccurrence,
-                    schemaVersion: 2
-                };
+                    nextScheduledOccurrence: nextOccurrence
+                });
             } catch (error) {
                 console.warn(`Failed to create template for task ${task.id}:`, error);
             }

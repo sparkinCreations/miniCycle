@@ -26,6 +26,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
+import { buildRecurringTemplate } from '../recurring/recurringTemplate.js';
 import {
     DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS,
     DEFAULT_RECURRING_DELETE_SETTINGS,
@@ -322,34 +323,22 @@ export class TaskUtils {
             };
 
             // Recurring template (built pure; committed alongside the task below)
-            const templateData = (recurring && recurringSettings) ? {
+            const templateData = (recurring && recurringSettings) ? buildRecurringTemplate({
                 id: assignedTaskId,
                 text: taskTextTrimmed,
-                recurring: true,
                 recurringSettings: structuredClone(recurringSettings),
                 highPriority: highPriority || false,
                 priorityColor: priorityColor || (highPriority ? COLORS.PRIORITY_DEFAULT : null),
                 dueDate: dueDate || null,
                 remindersEnabled: remindersEnabled || false,
-                deleteWhenComplete: true, // Recurring tasks always auto-remove
-                deleteWhenCompleteSettings: { ...DEFAULT_RECURRING_DELETE_SETTINGS },
-                occurrenceCount: 0,
-                lastTriggeredTimestamp: null,
-                // WITHOUT this the template never fires. recurringWatcher gates on
-                // `template.nextScheduledOccurrence == null`, and `==` matches
-                // undefined as well as null, so an omitted field reads as
-                // "finished / exhausted" and the task silently never recurs.
-                //
-                // Reached in practice by the Cleared Tasks "restore" flow:
-                // historyManager passes recurring + recurringSettings into addTask,
-                // so a restored recurring task used to come back with its
-                // recurrence permanently dead. The other four template writers all
-                // set this; this one was the outlier.
+                // Without this the template never fires — recurringWatcher gates on
+                // `nextScheduledOccurrence == null`, which matches undefined too.
+                // Reached by the Cleared Tasks "Recreate" flow (v2.431 fix); the
+                // builder warns if it is ever missing again.
                 nextScheduledOccurrence: _deps.calculateNextOccurrence
                     ? _deps.calculateNextOccurrence(recurringSettings, Date.now())
-                    : null,
-                schemaVersion: 2
-            } : null;
+                    : null
+            }) : null;
 
             // Only commit if NOT loading (prevents duplicate tasks — the load
             // path renders tasks that already exist in state)

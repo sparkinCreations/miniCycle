@@ -26,6 +26,7 @@ import { getLabel } from '../labels/labelResolver.js';
 // Pure date math (no DI, no side effects) — statically imported like
 // dataRecovery in appState.js, so migration can schedule rebuilt templates.
 import { calculateNextOccurrence } from '../recurring/recurringCalculators.js';
+import { buildRecurringTemplate } from '../recurring/recurringTemplate.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -444,18 +445,16 @@ export function simulateMigrationToSchema25(dryRun = true) {
                     console.warn(`⚠️ Could not schedule rebuilt template for "${task.text}":`, occurrenceError?.message || occurrenceError);
                 }
                 // Same shape the .mcyc import path builds (cycleImportManager)
-                cycle.recurringTemplates[task.id] = {
+                cycle.recurringTemplates[task.id] = buildRecurringTemplate({
                     id: task.id,
                     text: task.text,
                     dueDate: task.dueDate || null,
                     highPriority: task.highPriority || false,
                     priorityColor: task.priorityColor || null,
                     remindersEnabled: task.remindersEnabled || false,
-                    recurring: true,
                     recurringSettings: JSON.parse(JSON.stringify(task.recurringSettings)),
-                    nextScheduledOccurrence: nextOccurrence,
-                    schemaVersion: 2
-                };
+                    nextScheduledOccurrence: nextOccurrence
+                });
                 templatesRebuilt++;
             });
         });

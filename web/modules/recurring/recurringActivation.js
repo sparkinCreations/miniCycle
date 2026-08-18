@@ -14,6 +14,7 @@ import {
     DOM_SELECTORS,
     DATA_SELECTORS, DOM_CLASSES, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { buildRecurringTemplate } from './recurringTemplate.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -91,22 +92,16 @@ export function activateTaskRecurringState(cycle, taskId, normalizedSettings, ca
         cycle.recurringTemplates = {};
     }
 
-    cycle.recurringTemplates[taskId] = {
+    cycle.recurringTemplates[taskId] = buildRecurringTemplate({
         id: taskId,
         text: task?.text || cycle.recurringTemplates[taskId]?.text || getLabel('noun.untitledTask'),
-        recurring: true,
         recurringSettings: structuredClone(normalizedSettings),
         highPriority: task?.highPriority || false,
         priorityColor: task?.priorityColor || null,
         dueDate: task?.dueDate || null,
         remindersEnabled: task?.remindersEnabled || false,
-        deleteWhenComplete: true,
-        deleteWhenCompleteSettings: { ...DEFAULT_RECURRING_DELETE_SETTINGS },
-        occurrenceCount: 0,
-        lastTriggeredTimestamp: null,
-        nextScheduledOccurrence: calculateNextOccurrenceFn(normalizedSettings, Date.now()),
-        schemaVersion: 2
-    };
+        nextScheduledOccurrence: calculateNextOccurrenceFn(normalizedSettings, Date.now())
+    });
 }
 
 /**

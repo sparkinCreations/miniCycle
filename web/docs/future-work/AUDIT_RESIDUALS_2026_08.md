@@ -78,14 +78,58 @@ Still inline in `modules/recurring/recurringPanel.js`: `setupSpecificDatesPanel(
 - `web/games/miniCycle- taskGame.html` (note the space in the filename) and `web/games/miniCycle-taskScramble.html` each still have 1 inline `<script>`; `miniCycle-taskOrder.html` already extracted to a `.js` file.
 - `web/robots.txt:7` still reads `Disallow: /miniCycleGames/` — the pre-rename path. `/games/` is crawlable; decide whether that's intended.
 
-## 6. Architecture-review remainder (shared-helper genre)
+## 6. Architecture-review remainder — ✅ CLOSED Aug 2026
 
-*From archived `ARCHITECTURE_REVIEW_FINDINGS.md` (both P1 bugs and most P2 items shipped).*
+*From archived `ARCHITECTURE_REVIEW_FINDINGS.md`.*
 
-- **§2.2 (2 of 4 done):** the recurring instance-shape literal is still hand-written in `modules/recurring/recurringActivation.js` (~:97–108) and `modules/recurring/recurringSettingsApplicator.js` (~:146–151) instead of using `buildRecurringInstance()` from `recurringWatcher.js`.
-- **§2.4 (not done, prediction came true):** no `deriveDeleteWhenComplete()` helper; there are now **five** writers — `routine/modeManager.js:1167`, `routine/routineLoader.js:325`, `task/taskButtons.js:429` and `:514`, `recurring/recurringWatcher.js:283`. All currently correct, still fragile.
-- **§2.5 doc note:** the `buildSnapshotSignature` rule ("new state surface ⇒ add to signature or undo dedup-skips it") is only in code comments — not in `docs/reference/SCHEMA_2_5.md`.
-- **§3.3 doc note:** `achievements.unlocked` vs `settings.unlockedThemes` intentional separation is documented nowhere.
+Both bullets are done, but neither matched its description — worth reading before
+trusting a similar entry elsewhere in this file.
+
+**§2.2 — the premise was wrong, and hid a live bug.** The entry said
+`recurringActivation.js` and `recurringSettingsApplicator.js` hand-write copies of
+`buildRecurringInstance()`. They do not: that builds a TASK INSTANCE (`completed`,
+no scheduling fields) to push into `cycle.tasks`, while both of those build a
+`recurringTemplates` entry (`occurrenceCount`, `nextScheduledOccurrence`,
+`schemaVersion`, no `completed`). Routing either through the other would have been
+a bug.
+
+The real duplication was **five** template writers, already drifted into five
+field sets:
+
+|                            | activation | applicator | import | migration | taskUtils |
+|---|---|---|---|---|---|
+| deleteWhenComplete         | ✓ | ✓ | · | · | ✓ |
+| deleteWhenCompleteSettings | ✓ | ✓ | · | · | ✓ |
+| occurrenceCount            | ✓ | ✓ | · | · | · |
+| lastTriggeredTimestamp     | ✓ | ✓ | · | · | ✓ |
+| nextScheduledOccurrence    | ✓ | ✓ | ✓ | ✓ | **·** |
+
+That last gap shipped as a user-visible bug: `recurringWatcher` gates on
+`template.nextScheduledOccurrence == null`, and `==` matches **undefined**, so a
+template without the field reads as exhausted and never fires. `taskUtils` is
+reached by the Cleared Tasks **"Recreate"** flow, so restored recurring tasks came
+back permanently inert. Fixed in v2.431 (confirmed by a failing test against the
+real `createOrUpdateTaskData` first).
+
+All five now build through `modules/recurring/recurringTemplate.js`
+(`buildRecurringTemplate`), which names every field once and **warns** when
+`nextScheduledOccurrence` is missing — a null is as dead as an absent field to the
+watcher, so defaulting it silently would have been the same bug wearing a field
+name. New module, so it is registered in `BOOT_CRITICAL` (the `test:sw` precache
+guard caught the omission, as documented in CLAUDE.md).
+
+**§2.4 — already done before this pass.** The entry predicted five
+`deriveDeleteWhenComplete` writers needing a helper. Commit `9503e94c` had already
+centralised it as `syncTaskDeleteWhenComplete()` in `utils/cycleMode.js`: all
+three genuine derivation sites (`modeManager:380`, `routineLoader:319`,
+`taskButtons:513`) call it. The other two the entry listed are deliberately NOT
+derivations — the user-toggle write in `taskButtons` and the recurring
+always-true safety override in `recurringWatcher` — as that commit's own message
+records.
+
+**§2.5 / §3.3 doc notes** — both written into `docs/reference/SCHEMA_2_5.md`
+(the `buildSnapshotSignature` rule, and why `achievements.unlocked` and
+`settings.unlockedThemes` stay separate).
 
 ## 7. Dead production code: `shouldShowOnboarding()`
 

@@ -31,7 +31,7 @@ const ALL_MODULES = [
     'globalUtils', 'notifications', 'notificationDialogHost', 'dragDropManager', 'migrationManager', 'dueDates',
     'reminders', 'modeManager', 'routineSwitcher', 'routineManager', 'undoRedoManager',
     'gamesManager', 'onboardingManager', 'guidedTourManager', 'modalManager', 'menuManager', 'settingsManager',
-    'completedTasksManager', 'pullToRefresh', 'taskCore', 'taskValidation', 'taskUtils', 'taskRenderer',
+    'completedTasksManager', 'pullToRefresh', 'taskCore', 'taskValidation', 'taskUtils', 'recurringTemplate', 'taskRenderer',
     'taskEvents', 'taskDOM', 'taskOptionsCustomizer', 'taskUI', 'taskInteractions', 'uiEffects',
     'xss-vulnerability', 'errorHandler', 'testingModal', 'backupManager', 'cycleCompletion',
     'dataValidator', 'appInit', 'appState', 'helpWindowManager', 'constants', 'basicPluginSystem',

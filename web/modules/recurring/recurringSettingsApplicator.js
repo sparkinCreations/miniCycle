@@ -11,6 +11,7 @@
 import { createDIModule, required, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, UI_TIMEOUTS, DEFAULT_RECURRING_DELETE_SETTINGS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { buildRecurringTemplate } from './recurringTemplate.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -132,7 +133,7 @@ export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
                                        textFromDOM ||
                                        getLabel('noun.untitledTask');
 
-                    cycle.recurringTemplates[taskId] = {
+                    cycle.recurringTemplates[taskId] = buildRecurringTemplate({
                         id: taskId,
                         text: templateText,
                         dueDate: task?.dueDate || existingTemplate?.dueDate || null,
@@ -142,14 +143,14 @@ export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
                         deleteWhenComplete: task?.deleteWhenComplete ?? existingTemplate?.deleteWhenComplete ?? true,
                         deleteWhenCompleteSettings: task?.deleteWhenCompleteSettings
                             || existingTemplate?.deleteWhenCompleteSettings
-                            || { ...DEFAULT_RECURRING_DELETE_SETTINGS },
-                        recurring: true,
+                            || null,
                         recurringSettings: structuredClone(settings),
+                        // Preserved across a settings edit — re-applying must not
+                        // reset progress toward a finite recurrence count.
                         occurrenceCount: existingTemplate?.occurrenceCount ?? 0,
                         lastTriggeredTimestamp: existingTemplate?.lastTriggeredTimestamp ?? null,
-                        nextScheduledOccurrence: _deps.calculateNextOccurrence(settings, Date.now()),
-                        schemaVersion: 2
-                    };
+                        nextScheduledOccurrence: _deps.calculateNextOccurrence(settings, Date.now())
+                    });
                 });
             }, true); // Immediate save
         }
