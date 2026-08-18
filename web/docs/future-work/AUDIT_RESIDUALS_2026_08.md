@@ -143,11 +143,33 @@ records.
 
 The "Why DOM order matters" section (drag-drop relies on `closest('#completedTaskList')`, boundary markers, `dataset.originalIndex`) exists only in the archived doc. Candidate: copy it into a JSDoc block on `renderTasks` in `modules/task/taskRenderer.js` next time that file is touched in an app-code release.
 
-## 9. Task-button icon consolidation (re-homed from CODE_CONSISTENCY_AUDIT)
+## 9. Task-button icon consolidation — ✅ CLOSED Aug 2026
 
-*Tracking home was the archived `CODE_CONSISTENCY_AUDIT.md`; the work itself is still open.*
+*Tracking home was the archived `CODE_CONSISTENCY_AUDIT.md`.*
 
-`modules/task/taskButtons.js` still carries `TASK_ICONS` (:26) with the weaker `<template>` insertion path (:190–198), duplicating 6 icons already in the central `ICONS` registry. End-state per `docs/features/SVG_ICON_SYSTEM.md` §Tech debt: route through `icons.js` (`createIcon()` / `iconHTML()`), delete `TASK_ICONS` — after verifying the 6 task-option buttons look identical on-device (sizing/fill differences). Focused, separately-tested change; renders on every task.
+`taskButtons.js` carried a local `TASK_ICONS` map duplicating six icons already in
+`utils/icons.js`, inserted through a `<template>.innerHTML` parse. Both are gone:
+the six buttons now call `createIconElement()`, which parses via `DOMParser`
+(correct SVG namespacing) and warns on an unknown name instead of silently
+rendering nothing.
+
+The entry asked for on-device verification of sizing/fill before removal. Done
+programmatically, which is stronger than eyeballing:
+
+- **Path data byte-identical** for all six (`flag`, `edit`, `trash`, `repeat`,
+  `calendar-alt`, `bell`) — same `viewBox`, same single `d` attribute. The swap
+  cannot change what is drawn.
+- **Sizing was already CSS-governed.** `.task-btn .icon svg` in `icons.css` pins
+  `14px`, so the `width="14" height="14"` the local copies carried was redundant.
+  Measured before and after on the same seeded routine: 20 buttons, 12 icon SVGs,
+  rendered `14x14` in both — identical despite the inline attributes now being
+  absent, which is the proof that removing them was safe.
+- **Right icon on the right button**, checked by comparing each rendered path
+  against the central registry: priority→flag, edit→edit, recurring→repeat,
+  due-date→calendar-alt, reminders→bell, delete→trash.
+
+The emoji fallback branch is retained — it now covers "icon name not in the
+central registry" rather than "not in the local map".
 
 ## 10. Stale doc paths inside code comments
 
