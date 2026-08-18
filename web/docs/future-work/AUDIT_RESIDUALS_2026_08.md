@@ -64,12 +64,47 @@ long after five were wired and persisting, and pointed at the pre-cleanup
 
 Still inline in `modules/recurring/recurringPanel.js`: `setupSpecificDatesPanel()` (~:438, the big one), `setupBiweeklyDayToggle()` (~:648), `setupDurationRadioButtons()` (~:675), `attachRecurringSummaryListeners()` (~:1709). Follow the shipped deps-as-parameters pattern in `recurringPanelSetup.js`, not the old plan's callback-injection sketch.
 
-## 4. Caching defaults + deploy check
+## 4. Caching defaults + deploy check — ✅ CLOSED Aug 2026
 
-*From archived `PRETTY_URL_CACHE_CONTROL_FIX.md` (titular fix shipped).*
+*From archived `PRETTY_URL_CACHE_CONTROL_FIX.md`.*
 
-- `web/netlify.toml` `/*` catch-all still serves `public, max-age=31536000` — every **new** extensionless route is stale-by-default until someone remembers a header block. The doc argued for inverting the default (opt-in immutability). Second time this class has bitten.
-- No deploy-time smoke check asserts that no HTML response carries `max-age > 0`.
+The entry framed this as hardening. It was live: **11 HTML routes were being
+served `public, max-age=31536000`** in production, confirmed by probing the real
+deployment.
+
+The mechanism: Netlify serves every deployed `.html` at an EXTENSIONLESS
+canonical URL, and that form does not match the `*.html` header rule — so unless
+another rule names it, it inherits the `/*` catch-all's one year. The config
+already hand-covered six HTML scopes (`*.html`, `/`, `/pages/*`, `/minicycle`,
+`/legal/*`, `/blog`); the seventh route was silent. Among the casualties:
+
+- `/blog/posts/*` — a published post could not be corrected;
+- `/lite/minicycle-lite` — the old-device fallback;
+- all three `/games/*` — where this was first observed, when a deployed fix could
+  not reach a browser that had already cached the route.
+
+**Fixed by naming the routes, not by inverting the catch-all** (user's call —
+narrow and reviewable beats changing caching for every asset at once). Six new
+`[[headers]]` blocks mirror the existing `/pages/*` pattern. Asset caching is
+unchanged: the new directory rules sit BEFORE `*.js` / `*.css` in the file, and
+the live probe confirms `/games/miniCycle-taskOrder.js` still gets `max-age=86400`
+and `/build/*` stays immutable.
+
+**The check** is `npm run validate:cache` (`scripts/validate-cache-headers.py`),
+wired into CI. It enumerates every deployed `.html`, derives the extensionless URL
+Netlify will serve it at, models the header rules, and fails if any resolves to a
+long cache. The model was calibrated against five known live values before being
+trusted.
+
+`--live <base-url>` probes a real deployment instead — the deploy-time smoke check
+the entry asked for. It reports UNREACHABLE separately from LONG-CACHED: an early
+version reported every unreachable URL as long-cached, and a probe that turns "I
+could not ask" into "it is broken" is worse than no probe.
+
+One exemption, documented in the script: `modules/testing/testing-modal-tab-html.html`
+is not a page — it is a copy-paste snippet whose own content reads "Add this new
+tab to your existing testing modal HTML", referenced by nothing. **It probably
+should not be deployed at all**; a cache rule is not the fix for that.
 
 ## 5. Games pages + robots.txt stragglers
 

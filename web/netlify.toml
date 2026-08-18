@@ -149,6 +149,79 @@
     Pragma = "no-cache"
     Expires = "0"
 
+# ── HTML routes that would otherwise fall through to the /* catch-all ────────
+# Netlify serves every .html file at an EXTENSIONLESS canonical URL, and that
+# form does not match the `*.html` rule above — so without these blocks each one
+# inherits `/*`'s public, max-age=31536000. Measured on live minicycle.app: a
+# deployed fix to /games/minicycle-taskscramble could not reach a browser that
+# had already cached the route. npm run validate:cache enumerates every HTML
+# route and fails if one of them resolves to a long cache; add a block here when
+# it flags a new page.
+
+# Published posts — a correction must reach readers.
+[[headers]]
+  for = "/blog/posts/*"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
+
+# The old-device fallback. Frozen by design, but a fix to it still has to land.
+[[headers]]
+  for = "/lite/*"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
+
+# Where this was first measured.
+[[headers]]
+  for = "/games/*"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
+
+# Deployed reference pages.
+[[headers]]
+  for = "/examples/*"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
+
+# Docs shell (the docs subdomain proxies through here).
+[[headers]]
+  for = "/docs/*"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
+
+# Post-authoring template, deployed alongside the posts.
+[[headers]]
+  for = "/blog/docs/*"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
+
+# Standalone tool page at the site root.
+[[headers]]
+  for = "/timestamp-converter"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
+
+# Testing-modal HTML fragments.
+[[headers]]
+  for = "/modules/*.html"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
+
 [[headers]]
   for = "/manifest.json"
   [headers.values]

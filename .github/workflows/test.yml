@@ -60,6 +60,10 @@ jobs:
         working-directory: ./web
         run: npm run validate:labels
 
+      - name: Validate cache headers (no HTML route may be long-cached)
+        working-directory: ./web
+        run: npm run validate:cache
+
   test:
     runs-on: ubuntu-latest
 

@@ -29,6 +29,7 @@
     "validate:labels": "node scripts/validate-labels.js",
     "sweep:cruft": "node scripts/sweep-icloud-cruft.cjs",
     "validate:inline": "python3 scripts/validate-inline.py",
+    "validate:cache": "python3 scripts/validate-cache-headers.py",
     "validate:csp": "python3 scripts/validate-csp.py",
     "check:dupes": "bash scripts/check-duplicates.sh",
     "clean:dupes": "bash scripts/check-duplicates.sh --fix",
