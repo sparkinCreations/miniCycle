@@ -14,8 +14,11 @@
  * @version 1.0.0
  */
 
-import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, LIMITS, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { ICONS } from '../utils/icons.js';
+import { handleHorizontalArrowNav } from '../utils/keyboardNav.js';
+import { formatLocalDate } from './recurringDateUtils.js';
 
 // ============================================================================
 // SHARED HELPERS
@@ -358,3 +361,266 @@ export function setupAdditionalListeners(deps, callbacks) {
     });
 }
 
+
+
+// ============================================================================
+// SPECIFIC DATES / BIWEEKLY / DURATION / SUMMARY LISTENERS
+// ============================================================================
+// Extracted from recurringPanel.js (Aug 2026) — the four setup methods the
+// original refactor left behind. Same deps-as-parameters shape as the helpers
+// above; the panel keeps thin wrappers that pass its own resolved DI and bind
+// its instance methods as callbacks.
+
+/**
+ * Setup the specific-dates panel: the checkbox that swaps the whole frequency
+ * UI for a date list, plus adding/removing individual date inputs.
+ *
+ * The largest of these helpers, and the reason it stayed inline longest.
+ *
+ * @param {Object} deps - getElementById, safeAddEventListener, querySelectorAll, showNotification
+ * @param {Object} callbacks - { getTomorrow, updateRecurringSummary, updateRecurCountVisibility }
+ * @returns {void}
+ */
+export function setupSpecificDatesPanel(deps, callbacks) {
+    const checkbox = deps.getElementById(DOM_IDS.RECUR_SPECIFIC_DATES);
+    const panel = deps.getElementById(DOM_IDS.SPECIFIC_DATES_PANEL);
+    const timeOptions = deps.getElementById(DOM_IDS.SPECIFIC_DATE_TIME_OPTIONS);
+    const addBtn = deps.getElementById(DOM_IDS.ADD_SPECIFIC_DATE);
+    const list = deps.getElementById(DOM_IDS.SPECIFIC_DATE_LIST);
+
+    if (!checkbox || !panel || !timeOptions || !addBtn || !list) {
+        console.warn("⚠️ Missing elements for specific dates panel setup");
+        return;
+    }
+
+    const createDateInput = (isFirst = false) => {
+        const wrapper = document.createElement("div");
+        wrapper.className = "specific-date-item";
+
+        const input = document.createElement("input");
+        input.type = "date";
+        const index = list.children.length;
+        const inputId = `specific-date-input-${Date.now()}-${index}`;
+        input.id = inputId;
+        input.name = `specificDate${index}`;
+        input.setAttribute("aria-label", isFirst ? getLabel('recurring.firstSpecificDate') : getLabel('recurring.specificDate', { vars: { index: index + 1 } }));
+        input.required = true;
+
+        // Assign `value` from a locally-formatted string, NOT `valueAsDate`.
+        // valueAsDate is a UTC setter: it renders the instant's UTC calendar
+        // day. getTomorrow() is local, so in any negative offset an evening
+        // "tomorrow" is already the day after in UTC, and the input defaulted
+        // TWO days out. Measured Aug 2026: wrong from 20:00 EDT / 17:00 PDT
+        // onward, silent, and a user who accepts the default schedules the
+        // recurrence a day late.
+        try {
+            input.value = formatLocalDate(callbacks.getTomorrow()) ?? '';
+        } catch (error) {
+            console.warn("⚠️ Could not set default date:", error);
+        }
+
+        if (isFirst) {
+            input.classList.add(DOM_CLASSES.FIRST_SPECIFIC_DATE);
+        }
+
+        deps.safeAddEventListener(input, "change", () => {
+            if (isFirst && !input.value) {
+                try {
+                    // Same UTC hazard as the default above — local format only.
+                    input.value = formatLocalDate(callbacks.getTomorrow()) ?? '';
+                } catch (error) {
+                    console.warn("⚠️ Could not reset date:", error);
+                }
+            }
+            callbacks.updateRecurringSummary?.();
+        });
+
+        wrapper.appendChild(input);
+
+        if (!isFirst) {
+            const trash = document.createElement("button");
+            trash.type = "button";
+            trash.className = "trash-btn";
+            trash.innerHTML = `<span class="icon recurring-date-trash-icon" aria-hidden="true">${ICONS['trash']}</span>`;
+            trash.title = getLabel('recurring.removeDate');
+
+            deps.safeAddEventListener(trash, "click", () => {
+                wrapper.remove();
+                callbacks.updateRecurCountVisibility?.();
+                callbacks.updateRecurringSummary?.();
+            });
+            wrapper.appendChild(trash);
+        }
+
+        list.appendChild(wrapper);
+        callbacks.updateRecurringSummary?.();
+    };
+
+    deps.safeAddEventListener(checkbox, "change", () => {
+        const shouldShow = checkbox.checked;
+
+        panel.classList.toggle(DOM_CLASSES.HIDDEN, !shouldShow);
+        timeOptions.classList.toggle(DOM_CLASSES.HIDDEN, !shouldShow);
+
+        deps.querySelectorAll(DOM_SELECTORS.FREQUENCY_OPTIONS).forEach(panel => {
+            panel.classList.add(DOM_CLASSES.HIDDEN);
+        });
+
+        // Hide the surfaced time picker section when specific dates is active
+        const timePickerSection = deps.getElementById(DOM_IDS.TIME_PICKER_SECTION);
+        if (timePickerSection) {
+            timePickerSection.classList.toggle(DOM_CLASSES.HIDDEN, shouldShow);
+        }
+
+        deps.getElementById(DOM_IDS.RECUR_FREQUENCY_CONTAINER).classList.toggle(DOM_CLASSES.HIDDEN, shouldShow);
+        deps.getElementById(DOM_IDS.RECUR_INDEFINITELY).closest("label").classList.toggle(DOM_CLASSES.HIDDEN, shouldShow);
+
+        const advancedBtn = deps.getElementById(DOM_IDS.TOGGLE_ADVANCED_SETTINGS);
+        if (advancedBtn) {
+            advancedBtn.classList.toggle(DOM_CLASSES.HIDDEN, shouldShow);
+        }
+
+        if (shouldShow && list.children.length === 0) {
+            createDateInput(true);
+        }
+
+        if (!shouldShow) {
+            deps.getElementById(DOM_IDS.SPECIFIC_DATE_SPECIFIC_TIME).checked = false;
+            deps.getElementById(DOM_IDS.SPECIFIC_DATE_TIME_CONTAINER).classList.add(DOM_CLASSES.HIDDEN);
+
+            const freqSelect = deps.getElementById(DOM_IDS.RECUR_FREQUENCY);
+            if (freqSelect) {
+                const event = new Event("change");
+                freqSelect.dispatchEvent(event);
+            }
+
+            // Only restore "Recur indefinitely" label if advanced options are expanded
+            const advBtn = deps.getElementById(DOM_IDS.TOGGLE_ADVANCED_SETTINGS);
+            const advancedOn = advBtn?.dataset.advancedVisible === 'true';
+            const indefinitelyLabel = deps.getElementById(DOM_IDS.RECUR_INDEFINITELY)?.closest("label");
+            if (indefinitelyLabel && !advancedOn) {
+                indefinitelyLabel.classList.add(DOM_CLASSES.HIDDEN);
+            }
+        }
+
+        callbacks.updateRecurCountVisibility?.();
+        callbacks.updateRecurringSummary?.();
+    });
+
+    deps.safeAddEventListener(addBtn, "click", () => {
+        // Refuse past the cap and say so, rather than adding silently.
+        // The .mcyc importer truncates to the same LIMITS.MAX_SPECIFIC_DATES;
+        // before this the panel had no cap at all, so the two producers for
+        // the same field disagreed (REVIEW_PATTERNS.md §4).
+        if (list.children.length >= LIMITS.MAX_SPECIFIC_DATES) {
+            deps.showNotification(
+                getLabel('notify.specificDatesLimit', { vars: { limit: LIMITS.MAX_SPECIFIC_DATES } }),
+                'info',
+                UI_TIMEOUTS.NOTIFICATION_SHORT
+            );
+            return;
+        }
+        createDateInput(false);
+    });
+
+    callbacks.updateRecurringSummary?.();
+}
+
+/**
+ * Setup the biweekly Week 1 / Week 2 day pickers (delegated click + keyboard).
+ * @param {Object} deps - querySelectorAll, safeAddEventListener
+ * @returns {void}
+ */
+export function setupBiweeklyDayToggle(deps) {
+    // Delegated handlers on each .biweekly-days group (Week 1, Week 2)
+    deps.querySelectorAll(DOM_SELECTORS.BIWEEKLY_DAYS).forEach(container => {
+        deps.safeAddEventListener(container, "click", (e) => {
+            const box = e.target.closest(DOM_SELECTORS.BIWEEKLY_DAY_BOX);
+            if (!box) return;
+            box.classList.toggle(DOM_CLASSES.SELECTED);
+            box.setAttribute("aria-checked", box.classList.contains(DOM_CLASSES.SELECTED) ? "true" : "false");
+        });
+        deps.safeAddEventListener(container, "keydown", (e) => {
+            const box = e.target.closest(DOM_SELECTORS.BIWEEKLY_DAY_BOX);
+            if (!box) return;
+            // Arrow key navigation between day boxes
+            if (handleHorizontalArrowNav(e, container, DOM_SELECTORS.BIWEEKLY_DAY_BOX, { wrap: false })) return;
+            // Enter/Space to toggle selection
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                box.classList.toggle(DOM_CLASSES.SELECTED);
+                box.setAttribute("aria-checked", box.classList.contains(DOM_CLASSES.SELECTED) ? "true" : "false");
+            }
+        });
+    });
+}
+
+/**
+ * Setup the duration controls: the indefinitely checkbox and the count/until
+ * radio pair, including their initial visibility.
+ * @param {Object} deps - getElementById, safeAddEventListener
+ * @returns {void}
+ */
+export function setupDurationRadioButtons(deps) {
+    const indefinitelyCheckbox = deps.getElementById(DOM_IDS.RECUR_INDEFINITELY);
+    const limitedContainer = deps.getElementById(DOM_IDS.RECUR_LIMITED_CONTAINER);
+    const countRadio = deps.getElementById(DOM_IDS.RECUR_COUNT_RADIO);
+    const untilRadio = deps.getElementById(DOM_IDS.RECUR_UNTIL_RADIO);
+    const countContainer = deps.getElementById(DOM_IDS.RECUR_COUNT_CONTAINER);
+    const untilContainer = deps.getElementById(DOM_IDS.RECUR_UNTIL_CONTAINER);
+
+    if (!indefinitelyCheckbox || !limitedContainer) return;
+
+    // Handle indefinitely checkbox
+    const updateLimitedVisibility = () => {
+        if (indefinitelyCheckbox.checked) {
+            limitedContainer.classList.add(DOM_CLASSES.HIDDEN);
+        } else {
+            limitedContainer.classList.remove(DOM_CLASSES.HIDDEN);
+            // Trigger radio button update
+            updateDurationContainers();
+        }
+    };
+
+    // Handle radio buttons within limited container
+    const updateDurationContainers = () => {
+        if (countRadio && countContainer) {
+            countContainer.classList.toggle(DOM_CLASSES.HIDDEN, !countRadio.checked);
+        }
+        if (untilRadio && untilContainer) {
+            untilContainer.classList.toggle(DOM_CLASSES.HIDDEN, !untilRadio.checked);
+        }
+    };
+
+    deps.safeAddEventListener(indefinitelyCheckbox, "change", updateLimitedVisibility);
+    if (countRadio) deps.safeAddEventListener(countRadio, "change", updateDurationContainers);
+    if (untilRadio) deps.safeAddEventListener(untilRadio, "change", updateDurationContainers);
+
+    // Initialize visibility on load
+    updateLimitedVisibility();
+}
+
+/**
+ * Re-render the summary on any change or click inside the settings panel.
+ * @param {Object} deps - getElementById, safeAddEventListener
+ * @param {Object} callbacks - { updateRecurringSummary }
+ * @returns {void}
+ */
+export function attachRecurringSummaryListeners(deps, callbacks) {
+    if (!deps.safeAddEventListener) return; // Guard: dependency not injected (e.g., in tests)
+
+    try {
+        const panel = deps.getElementById(DOM_IDS.RECURRING_SETTINGS_PANEL);
+        if (!panel) {
+            console.warn('⚠️ Recurring settings panel not found');
+            return;
+        }
+
+        // Listen for changes in the panel
+        deps.safeAddEventListener(panel, "change", () => callbacks.updateRecurringSummary?.());
+        deps.safeAddEventListener(panel, "click", () => callbacks.updateRecurringSummary?.());
+
+    } catch (error) {
+        console.error('❌ Error attaching summary listeners:', error);
+    }
+}

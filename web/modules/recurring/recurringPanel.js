@@ -23,10 +23,9 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS, DATA_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, LIMITS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DATA_SELECTORS, DOM_CLASSES, UI_TIMEOUTS } from '../core/constants.js';
 import { ICONS } from '../utils/icons.js';
 import { getLabel } from '../labels/labelResolver.js';
-import { handleHorizontalArrowNav } from '../utils/keyboardNav.js';
 import { animateDialogClose } from '../utils/dialogClose.js';
 // Boot-time helpers — single source of truth for button-visibility + info-link so
 // recurringIntegration can run them at boot WITHOUT loading this 2k-line panel.
@@ -34,7 +33,6 @@ import {
     updateRecurringButtonVisibility as bootUpdateButtonVisibility,
     updateRecurringInfoLink as bootUpdateInfoLink
 } from './recurringBoot.js';
-import { formatLocalDate } from './recurringDateUtils.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -433,151 +431,15 @@ export class RecurringPanelManager {
     }
 
     /**
-     * Setup specific dates panel
+     * Setup the specific-dates panel
+     * Delegates to recurringPanelSetup module
      */
     setupSpecificDatesPanel() {
-        const checkbox = this.deps.getElementById(DOM_IDS.RECUR_SPECIFIC_DATES);
-        const panel = this.deps.getElementById(DOM_IDS.SPECIFIC_DATES_PANEL);
-        const timeOptions = this.deps.getElementById(DOM_IDS.SPECIFIC_DATE_TIME_OPTIONS);
-        const addBtn = this.deps.getElementById(DOM_IDS.ADD_SPECIFIC_DATE);
-        const list = this.deps.getElementById(DOM_IDS.SPECIFIC_DATE_LIST);
-
-        if (!checkbox || !panel || !timeOptions || !addBtn || !list) {
-            console.warn("⚠️ Missing elements for specific dates panel setup");
-            return;
-        }
-
-        const createDateInput = (isFirst = false) => {
-            const wrapper = document.createElement("div");
-            wrapper.className = "specific-date-item";
-
-            const input = document.createElement("input");
-            input.type = "date";
-            const index = list.children.length;
-            const inputId = `specific-date-input-${Date.now()}-${index}`;
-            input.id = inputId;
-            input.name = `specificDate${index}`;
-            input.setAttribute("aria-label", isFirst ? getLabel('recurring.firstSpecificDate') : getLabel('recurring.specificDate', { vars: { index: index + 1 } }));
-            input.required = true;
-
-            // Assign `value` from a locally-formatted string, NOT `valueAsDate`.
-            // valueAsDate is a UTC setter: it renders the instant's UTC calendar
-            // day. getTomorrow() is local, so in any negative offset an evening
-            // "tomorrow" is already the day after in UTC, and the input defaulted
-            // TWO days out. Measured Aug 2026: wrong from 20:00 EDT / 17:00 PDT
-            // onward, silent, and a user who accepts the default schedules the
-            // recurrence a day late.
-            try {
-                input.value = formatLocalDate(this.getTomorrow()) ?? '';
-            } catch (error) {
-                console.warn("⚠️ Could not set default date:", error);
-            }
-
-            if (isFirst) {
-                input.classList.add(DOM_CLASSES.FIRST_SPECIFIC_DATE);
-            }
-
-            this.deps.safeAddEventListener(input, "change", () => {
-                if (isFirst && !input.value) {
-                    try {
-                        // Same UTC hazard as the default above — local format only.
-                        input.value = formatLocalDate(this.getTomorrow()) ?? '';
-                    } catch (error) {
-                        console.warn("⚠️ Could not reset date:", error);
-                    }
-                }
-                this.updateRecurringSummary();
-            });
-
-            wrapper.appendChild(input);
-
-            if (!isFirst) {
-                const trash = document.createElement("button");
-                trash.type = "button";
-                trash.className = "trash-btn";
-                trash.innerHTML = `<span class="icon recurring-date-trash-icon" aria-hidden="true">${ICONS['trash']}</span>`;
-                trash.title = getLabel('recurring.removeDate');
-
-                this.deps.safeAddEventListener(trash, "click", () => {
-                    wrapper.remove();
-                    this.updateRecurCountVisibility();
-                    this.updateRecurringSummary();
-                });
-                wrapper.appendChild(trash);
-            }
-
-            list.appendChild(wrapper);
-            this.updateRecurringSummary();
-        };
-
-        this.deps.safeAddEventListener(checkbox, "change", () => {
-            const shouldShow = checkbox.checked;
-
-            panel.classList.toggle(DOM_CLASSES.HIDDEN, !shouldShow);
-            timeOptions.classList.toggle(DOM_CLASSES.HIDDEN, !shouldShow);
-
-            this.deps.querySelectorAll(DOM_SELECTORS.FREQUENCY_OPTIONS).forEach(panel => {
-                panel.classList.add(DOM_CLASSES.HIDDEN);
-            });
-
-            // Hide the surfaced time picker section when specific dates is active
-            const timePickerSection = this.deps.getElementById(DOM_IDS.TIME_PICKER_SECTION);
-            if (timePickerSection) {
-                timePickerSection.classList.toggle(DOM_CLASSES.HIDDEN, shouldShow);
-            }
-
-            this.deps.getElementById(DOM_IDS.RECUR_FREQUENCY_CONTAINER).classList.toggle(DOM_CLASSES.HIDDEN, shouldShow);
-            this.deps.getElementById(DOM_IDS.RECUR_INDEFINITELY).closest("label").classList.toggle(DOM_CLASSES.HIDDEN, shouldShow);
-
-            const advancedBtn = this.deps.getElementById(DOM_IDS.TOGGLE_ADVANCED_SETTINGS);
-            if (advancedBtn) {
-                advancedBtn.classList.toggle(DOM_CLASSES.HIDDEN, shouldShow);
-            }
-
-            if (shouldShow && list.children.length === 0) {
-                createDateInput(true);
-            }
-
-            if (!shouldShow) {
-                this.deps.getElementById(DOM_IDS.SPECIFIC_DATE_SPECIFIC_TIME).checked = false;
-                this.deps.getElementById(DOM_IDS.SPECIFIC_DATE_TIME_CONTAINER).classList.add(DOM_CLASSES.HIDDEN);
-
-                const freqSelect = this.deps.getElementById(DOM_IDS.RECUR_FREQUENCY);
-                if (freqSelect) {
-                    const event = new Event("change");
-                    freqSelect.dispatchEvent(event);
-                }
-
-                // Only restore "Recur indefinitely" label if advanced options are expanded
-                const advBtn = this.deps.getElementById(DOM_IDS.TOGGLE_ADVANCED_SETTINGS);
-                const advancedOn = advBtn?.dataset.advancedVisible === 'true';
-                const indefinitelyLabel = this.deps.getElementById(DOM_IDS.RECUR_INDEFINITELY)?.closest("label");
-                if (indefinitelyLabel && !advancedOn) {
-                    indefinitelyLabel.classList.add(DOM_CLASSES.HIDDEN);
-                }
-            }
-
-            this.updateRecurCountVisibility();
-            this.updateRecurringSummary();
+        _setupSpecificDatesPanel(this.deps, {
+            getTomorrow: () => this.getTomorrow(),
+            updateRecurringSummary: () => this.updateRecurringSummary(),
+            updateRecurCountVisibility: () => this.updateRecurCountVisibility()
         });
-
-        this.deps.safeAddEventListener(addBtn, "click", () => {
-            // Refuse past the cap and say so, rather than adding silently.
-            // The .mcyc importer truncates to the same LIMITS.MAX_SPECIFIC_DATES;
-            // before this the panel had no cap at all, so the two producers for
-            // the same field disagreed (REVIEW_PATTERNS.md §4).
-            if (list.children.length >= LIMITS.MAX_SPECIFIC_DATES) {
-                this.deps.showNotification(
-                    getLabel('notify.specificDatesLimit', { vars: { limit: LIMITS.MAX_SPECIFIC_DATES } }),
-                    'info',
-                    UI_TIMEOUTS.NOTIFICATION_SHORT
-                );
-                return;
-            }
-            createDateInput(false);
-        });
-
-        this.updateRecurringSummary();
     }
 
     /**
@@ -643,72 +505,19 @@ export class RecurringPanelManager {
     }
 
     /**
-     * Setup biweekly day toggle
+     * Setup biweekly Week 1 / Week 2 day pickers
+     * Delegates to recurringPanelSetup module
      */
     setupBiweeklyDayToggle() {
-        // Delegated handlers on each .biweekly-days group (Week 1, Week 2)
-        this.deps.querySelectorAll(DOM_SELECTORS.BIWEEKLY_DAYS).forEach(container => {
-            this.deps.safeAddEventListener(container, "click", (e) => {
-                const box = e.target.closest(DOM_SELECTORS.BIWEEKLY_DAY_BOX);
-                if (!box) return;
-                box.classList.toggle(DOM_CLASSES.SELECTED);
-                box.setAttribute("aria-checked", box.classList.contains(DOM_CLASSES.SELECTED) ? "true" : "false");
-            });
-            this.deps.safeAddEventListener(container, "keydown", (e) => {
-                const box = e.target.closest(DOM_SELECTORS.BIWEEKLY_DAY_BOX);
-                if (!box) return;
-                // Arrow key navigation between day boxes
-                if (handleHorizontalArrowNav(e, container, DOM_SELECTORS.BIWEEKLY_DAY_BOX, { wrap: false })) return;
-                // Enter/Space to toggle selection
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    box.classList.toggle(DOM_CLASSES.SELECTED);
-                    box.setAttribute("aria-checked", box.classList.contains(DOM_CLASSES.SELECTED) ? "true" : "false");
-                }
-            });
-        });
+        _setupBiweeklyDayToggle(this.deps);
     }
 
     /**
      * Setup duration options (indefinitely checkbox, count/until radio buttons)
+     * Delegates to recurringPanelSetup module
      */
     setupDurationRadioButtons() {
-        const indefinitelyCheckbox = this.deps.getElementById(DOM_IDS.RECUR_INDEFINITELY);
-        const limitedContainer = this.deps.getElementById(DOM_IDS.RECUR_LIMITED_CONTAINER);
-        const countRadio = this.deps.getElementById(DOM_IDS.RECUR_COUNT_RADIO);
-        const untilRadio = this.deps.getElementById(DOM_IDS.RECUR_UNTIL_RADIO);
-        const countContainer = this.deps.getElementById(DOM_IDS.RECUR_COUNT_CONTAINER);
-        const untilContainer = this.deps.getElementById(DOM_IDS.RECUR_UNTIL_CONTAINER);
-
-        if (!indefinitelyCheckbox || !limitedContainer) return;
-
-        // Handle indefinitely checkbox
-        const updateLimitedVisibility = () => {
-            if (indefinitelyCheckbox.checked) {
-                limitedContainer.classList.add(DOM_CLASSES.HIDDEN);
-            } else {
-                limitedContainer.classList.remove(DOM_CLASSES.HIDDEN);
-                // Trigger radio button update
-                updateDurationContainers();
-            }
-        };
-
-        // Handle radio buttons within limited container
-        const updateDurationContainers = () => {
-            if (countRadio && countContainer) {
-                countContainer.classList.toggle(DOM_CLASSES.HIDDEN, !countRadio.checked);
-            }
-            if (untilRadio && untilContainer) {
-                untilContainer.classList.toggle(DOM_CLASSES.HIDDEN, !untilRadio.checked);
-            }
-        };
-
-        this.deps.safeAddEventListener(indefinitelyCheckbox, "change", updateLimitedVisibility);
-        if (countRadio) this.deps.safeAddEventListener(countRadio, "change", updateDurationContainers);
-        if (untilRadio) this.deps.safeAddEventListener(untilRadio, "change", updateDurationContainers);
-
-        // Initialize visibility on load
-        updateLimitedVisibility();
+        _setupDurationRadioButtons(this.deps);
     }
 
     /**
@@ -1704,25 +1513,13 @@ export class RecurringPanelManager {
     // ============================================
 
     /**
-     * Attach recurring summary listeners
+     * Re-render the summary on any change/click inside the settings panel
+     * Delegates to recurringPanelSetup module
      */
     attachRecurringSummaryListeners() {
-        if (!this.deps.safeAddEventListener) return; // Guard: dependency not injected (e.g., in tests)
-
-        try {
-            const panel = this.deps.getElementById(DOM_IDS.RECURRING_SETTINGS_PANEL);
-            if (!panel) {
-                console.warn('⚠️ Recurring settings panel not found');
-                return;
-            }
-
-            // Listen for changes in the panel
-            this.deps.safeAddEventListener(panel, "change", () => this.updateRecurringSummary());
-            this.deps.safeAddEventListener(panel, "click", () => this.updateRecurringSummary());
-
-        } catch (error) {
-            console.error('❌ Error attaching summary listeners:', error);
-        }
+        _attachRecurringSummaryListeners(this.deps, {
+            updateRecurringSummary: () => this.updateRecurringSummary()
+        });
     }
 
     /**
@@ -1880,6 +1677,10 @@ let _setupAdvancedToggle = null;
 let _setupHourlyMinuteWrapping = null;
 let _setupMonthlyMutualExclusion = null;
 let _setupAdditionalListeners = null;
+let _setupSpecificDatesPanel = null;
+let _setupBiweeklyDayToggle = null;
+let _setupDurationRadioButtons = null;
+let _attachRecurringSummaryListeners = null;
 
 /**
  * Load sub-modules with version cache-busting
@@ -1924,6 +1725,10 @@ export async function loadPanelSubModules(version) {
     _setupHourlyMinuteWrapping = setupModule.setupHourlyMinuteWrapping;
     _setupMonthlyMutualExclusion = setupModule.setupMonthlyMutualExclusion;
     _setupAdditionalListeners = setupModule.setupAdditionalListeners;
+    _setupSpecificDatesPanel = setupModule.setupSpecificDatesPanel;
+    _setupBiweeklyDayToggle = setupModule.setupBiweeklyDayToggle;
+    _setupDurationRadioButtons = setupModule.setupDurationRadioButtons;
+    _attachRecurringSummaryListeners = setupModule.attachRecurringSummaryListeners;
 
 }
 

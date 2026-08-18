@@ -58,11 +58,45 @@ long after five were wired and persisting, and pointed at the pre-cleanup
 - `modules/ui/uxRatings.js:165` — `getElementById(DOM_IDS.FEEDBACK_MODAL)` directly instead of `getModal('feedback')`.
 - `modules/ui/quickActionsManager.js:663` — keeps a `getModal?.('reminders') || getElementById(...)` fallback.
 
-## 3. Recurring panel — 4 setup methods never extracted
+## 3. Recurring panel — 4 setup methods — ✅ CLOSED Aug 2026
 
-*From archived `RECURRING_PANEL_REFACTOR_PLAN.md` (extraction otherwise shipped as `recurringPanelSetup.js`).*
+*From archived `RECURRING_PANEL_REFACTOR_PLAN.md`.*
 
-Still inline in `modules/recurring/recurringPanel.js`: `setupSpecificDatesPanel()` (~:438, the big one), `setupBiweeklyDayToggle()` (~:648), `setupDurationRadioButtons()` (~:675), `attachRecurringSummaryListeners()` (~:1709). Follow the shipped deps-as-parameters pattern in `recurringPanelSetup.js`, not the old plan's callback-injection sketch.
+`setupSpecificDatesPanel()` (144 lines, the big one), `setupBiweeklyDayToggle()`,
+`setupDurationRadioButtons()` and `attachRecurringSummaryListeners()` now live in
+`recurringPanelSetup.js` alongside the seven helpers extracted earlier.
+`recurringPanel.js` 1949 → 1748 lines; the setup module 360 → 626.
+
+Followed the **shipped** deps-as-parameters pattern (`fn(deps, callbacks)`), not
+the archived plan's callback-injection sketch, exactly as the entry instructed.
+The panel keeps thin wrappers that pass its resolved DI and bind its instance
+methods — the same shape `setupMonthlyMutualExclusion` and
+`setupAdditionalListeners` already used.
+
+Extraction was done programmatically rather than by retyping: bodies were lifted
+verbatim and transformed (`this.deps.` → `deps.`, instance calls → `callbacks.`),
+then asserted to contain zero residual `this.` references. Three imports
+(`handleHorizontalArrowNav`, `formatLocalDate`, `LIMITS`) became dead in the panel
+and were removed; `UI_TIMEOUTS` had to be added to the setup module, which the
+lint error caught.
+
+Verified in the browser, not just by the suites — those predate the extraction and
+would pass either way:
+
+- **duration radios** — limited container hidden by default, revealed on
+  unchecking "indefinitely";
+- **specific dates** — ticking swaps the frequency UI out, seeds one date input
+  defaulted to tomorrow *in local time* (`2026-08-19`, which also exercises the
+  `formatLocalDate(getTomorrow())` callback), and the add button appends a second
+  row carrying a trash button;
+- **biweekly** — a day box toggles and updates `aria-checked`;
+- **summary listeners** — the live form summary re-renders on change
+  ("Repeats daily for 1 time" → "Repeats weekly for 1 time on Tue").
+
+One probe mistake worth recording: the first summary check targeted
+`[id*="summary"]` and caught the SAVED-task preview rather than the live form
+summary (`#recurring-summary`), reporting no change. The listener was fine; the
+selector was wrong.
 
 ## 4. Caching defaults + deploy check — ✅ CLOSED Aug 2026
 
