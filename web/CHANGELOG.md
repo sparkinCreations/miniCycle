@@ -1,3 +1,7 @@
+## [2.433] - 2026-08-18
+- refactor(icons): task buttons use the central registry
+
+
 ## [2.432] - 2026-08-18
 - refactor(recurring): one definition of a recurring template
 
