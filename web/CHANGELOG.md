@@ -1,3 +1,10 @@
+## [2.431] - 2026-08-18
+- fix(recurring): restored recurring tasks never fired again
+- fix(release): warn about uncommitted work regardless of --changelog
+- fix(release): never let uncommitted work ship without a changelog line
+- docs(changelog): record 2.430 — the release commit swallowed the fixes
+
+
 ## [2.430] - 2026-08-17
 - fix(modals): clamp every dialog to the viewport — four modal families clipped on phones
 - fix(storage): centre the storage viewer; div-era positioning outlived the <dialog> migration
