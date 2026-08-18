@@ -1,3 +1,7 @@
+## [2.432] - 2026-08-18
+- refactor(recurring): one definition of a recurring template
+
+
 ## [2.431] - 2026-08-18
 - fix(recurring): restored recurring tasks never fired again
 - fix(release): warn about uncommitted work regardless of --changelog
