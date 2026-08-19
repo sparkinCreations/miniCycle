@@ -637,7 +637,7 @@ export class HistoryManager {
         const html = entries.map(entry => this._renderClearedEntry(entry)).join('');
 
         // Add recurring tasks note below entries
-        const state = this.deps.AppState?.get?.();
+        const state = this.deps.AppState.get?.();
         const activeCycleId = state?.appState?.activeCycleId;
         const activeCycle = activeCycleId ? state?.data?.cycles?.[activeCycleId] : null;
         const hasRecurring = Object.keys(activeCycle?.recurringTemplates || {}).length > 0;

@@ -45,7 +45,16 @@ export async function runStatsPanelTests(resultsDiv) {
     setAchievementsManagerDependencies = achievementsModule.setAchievementsManagerDependencies;
 
     // Initialize achievementsManager to load MILESTONES from constants.js (needed for badge theme classes)
+    // Wire the required deps FIRST. init() reaches AppState (initBadgeTooltips
+    // reads settings.badgeHintShown), and a module is never constructed unwired
+    // in the app — featureBoot wires before calling init. The real deps are
+    // injected again further down with the badge fixture data.
     if (achievementsModule.initAchievementsManager) {
+        setAchievementsManagerDependencies({
+            AppState: { get: () => null, update: () => {} },
+            appInit: { waitForCore: async () => {} },
+            showNotification: () => {}
+        });
         await achievementsModule.initAchievementsManager();
     }
 

@@ -1793,10 +1793,10 @@ if [ "$UPDATE_CHANGELOG" = true ]; then
 
         if [ -n "$LAST_TAG" ]; then
             echo "📋 Getting commits since $LAST_TAG..."
-            COMMITS=$(git log "$LAST_TAG"..HEAD --oneline --no-merges 2>/dev/null | grep -v -E "^[a-f0-9]+ (chore: [Bb]ump|Bump version|Update version)" || true)
+            COMMITS=$(git log "$LAST_TAG"..HEAD --oneline --no-merges 2>/dev/null | grep -v -E "^[a-f0-9]+ (chore: [Bb]ump|chore\\(release\\): [Uu]pdate version|Bump version|Update version)" || true)
         else
             echo "📋 Getting recent commits..."
-            COMMITS=$(git log --oneline --no-merges -20 2>/dev/null | grep -v -E "^[a-f0-9]+ (chore: [Bb]ump|Bump version|Update version)" || true)
+            COMMITS=$(git log --oneline --no-merges -20 2>/dev/null | grep -v -E "^[a-f0-9]+ (chore: [Bb]ump|chore\\(release\\): [Uu]pdate version|Bump version|Update version)" || true)
         fi
 
         if [ -n "$COMMITS" ] || [ -n "$PENDING_FILES" ]; then
@@ -1805,6 +1805,24 @@ if [ "$UPDATE_CHANGELOG" = true ]; then
             if [ -n "$COMMITS" ]; then
                 while IFS= read -r commit; do
                     MSG=$(echo "$commit" | sed 's/^[a-f0-9]* //')
+                    # Skip anything CHANGELOG.md already describes.
+                    #
+                    # The range above is `LAST_TAG..HEAD`, and LAST_TAG comes from
+                    # the git tags that tag-releases.yml writes on merge to main.
+                    # When tagging stalls — it sat on v2.421 while the app shipped
+                    # 2.434 — that range widens to every commit since, and each new
+                    # release re-lists the whole backlog on top of its own entry.
+                    # Four consecutive releases were hand-corrected for this before
+                    # the cause was traced past the symptom.
+                    #
+                    # Filtering on what the file already SAYS is immune to that:
+                    # it needs no tag, and it self-heals whenever tagging resumes.
+                    # -F -x so a subject containing regex metacharacters (parens in
+                    # a conventional-commit scope, brackets, dots) matches literally
+                    # and as a whole line, never as a substring of a longer entry.
+                    if [ -f "$CHANGELOG_FILE" ] && grep -F -x -q -- "- $MSG" "$CHANGELOG_FILE"; then
+                        continue
+                    fi
                     NEW_ENTRY+="- $MSG"$'\n'
                 done <<< "$COMMITS"
             fi

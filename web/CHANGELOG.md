@@ -1,3 +1,10 @@
+## [2.435] - 2026-08-19
+- fix(di): read required deps unguarded — 210 sites where `?.` hid broken wiring
+- test(di): wire required deps in statsPanel and settingsManager base setup
+- build(di): add validate:chains gate — a required() dep may never be optional-chained
+- fix(release): changelog no longer re-lists released commits when tagging stalls
+
+
 ## [2.434] - 2026-08-18
 - fix(cache): 11 HTML routes were served with a one-year cache
 

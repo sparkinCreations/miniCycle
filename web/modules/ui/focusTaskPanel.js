@@ -100,7 +100,7 @@ export class FocusTaskPanel {
             this._celebrationTimer = null;
         }
         if (this._subscribed) {
-            this.deps.AppState?.unsubscribe?.(SUBSCRIBER_KEY, this._onStateChange);
+            this.deps.AppState.unsubscribe?.(SUBSCRIBER_KEY, this._onStateChange);
             this._subscribed = false;
         }
         const { completeBtn, prevBtn, nextBtn, panel } = this.elements;
@@ -126,7 +126,7 @@ export class FocusTaskPanel {
     // ------------------------------------------------------------------
 
     _getActiveCycle(state = null) {
-        const s = state || this.deps.AppState?.get?.();
+        const s = state || this.deps.AppState.get?.();
         const cycleId = s?.appState?.activeCycleId;
         const cycle = cycleId ? s?.data?.cycles?.[cycleId] : null;
         return { cycleId: cycleId ?? null, cycle: cycle ?? null };
@@ -261,7 +261,7 @@ export class FocusTaskPanel {
         // userProgress (stats home), NOT quickActions counts — those drive
         // the quick-actions MRU UI and must only contain action-button ids.
         if (!wasCompleted) {
-            this.deps.AppState?.update?.(s => {
+            this.deps.AppState.update?.(s => {
                 if (!s.userProgress) s.userProgress = {};
                 s.userProgress.focusTaskCompletions = (s.userProgress.focusTaskCompletions || 0) + 1;
             });
@@ -289,7 +289,7 @@ export class FocusTaskPanel {
     // ------------------------------------------------------------------
 
     _subscribe() {
-        if (!this.deps.AppState?.subscribe) return;
+        if (!this.deps.AppState.subscribe) return;
         this.deps.AppState.subscribe(SUBSCRIBER_KEY, this._onStateChange);
         this._subscribed = true;
     }

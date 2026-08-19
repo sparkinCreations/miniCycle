@@ -203,7 +203,7 @@ export function setupImportButtons() {
             localStorage.removeItem('miniCycle_importNotification');
             const { message, type } = JSON.parse(pending);
             if (message) {
-                _deps.showNotification?.(message, type || 'success', UI_TIMEOUTS.NOTIFICATION_EXTENDED);
+                _deps.showNotification(message, type || 'success', UI_TIMEOUTS.NOTIFICATION_EXTENDED);
             }
         }
     } catch (e) {
@@ -266,7 +266,7 @@ export function setupImportButtons() {
             }
 
             if (file.name.endsWith(".tcyc")) {
-                _deps.showNotification?.(getLabel('notify.tcycNotSupported'));
+                _deps.showNotification(getLabel('notify.tcycNotSupported'));
                 fileInput.remove();
                 fileInput = null;
                 resetPickerState();
@@ -275,7 +275,7 @@ export function setupImportButtons() {
 
             // Security: File size limit to prevent memory exhaustion
             if (file.size > MAX_FILE_SIZE_BYTES) {
-                _deps.showNotification?.(getLabel('notify.fileTooLarge'), "error");
+                _deps.showNotification(getLabel('notify.fileTooLarge'), "error");
                 console.warn(`Import rejected: file size ${(file.size / 1024 / 1024).toFixed(2)}MB exceeds 10MB limit`);
                 fileInput.remove();
                 fileInput = null;
@@ -432,7 +432,7 @@ export function setupDragDropImport() {
 
         // Warn if multiple files dropped
         if (files.length > 1) {
-            _deps.showNotification?.(getLabel('notify.importOneFileOnly'), 'warning');
+            _deps.showNotification(getLabel('notify.importOneFileOnly'), 'warning');
             return;
         }
 
@@ -440,19 +440,19 @@ export function setupDragDropImport() {
 
         // Validate file extension
         if (!isValidImportFile(file)) {
-            _deps.showNotification?.(getLabel('notify.importDropMcyc'), 'warning');
+            _deps.showNotification(getLabel('notify.importDropMcyc'), 'warning');
             return;
         }
 
         // Reject .tcyc files (shouldn't happen with extension check, but be safe)
         if (file.name.endsWith('.tcyc')) {
-            _deps.showNotification?.(getLabel('notify.tcycNotSupported'));
+            _deps.showNotification(getLabel('notify.tcycNotSupported'));
             return;
         }
 
         // Security: File size limit
         if (file.size > MAX_FILE_SIZE_BYTES) {
-            _deps.showNotification?.(getLabel('notify.fileTooLarge'), 'error');
+            _deps.showNotification(getLabel('notify.fileTooLarge'), 'error');
             console.warn(`Import rejected: file size ${(file.size / 1024 / 1024).toFixed(2)}MB exceeds 10MB limit`);
             return;
         }
@@ -468,7 +468,7 @@ export function setupDragDropImport() {
             }
         };
         reader.onerror = () => {
-            _deps.showNotification?.(getLabel('notify.importReadError'), 'error');
+            _deps.showNotification(getLabel('notify.importReadError'), 'error');
             console.error('FileReader error:', reader.error);
         };
         reader.readAsText(file);
@@ -519,7 +519,7 @@ export async function processImportedData(fileContent) {
     }
 
     if (!importedData.name || !Array.isArray(importedData.tasks)) {
-        _deps.showNotification?.(getLabel('notify.invalidFormat'));
+        _deps.showNotification(getLabel('notify.invalidFormat'));
         return;
     }
 
@@ -538,7 +538,7 @@ export async function processImportedData(fileContent) {
         const storageCheck = canAddToStorage(estimatedSize);
         if (!storageCheck.allowed) {
             console.warn('Storage quota exceeded. Cannot import routine.');
-            _deps.showNotification?.(
+            _deps.showNotification(
                 typeof getStorageShortageMessage === 'function'
                     ? getStorageShortageMessage(storageCheck.shortfall)
                     : getLabel('notify.importNoStorage'),
@@ -561,7 +561,7 @@ export async function processImportedData(fileContent) {
 
     if (!appState?.isReady?.()) {
         console.error("AppState not ready for import");
-        _deps.showNotification?.(getLabel('notify.importAppNotReady'), "error");
+        _deps.showNotification(getLabel('notify.importAppNotReady'), "error");
         return;
     }
 
@@ -945,7 +945,7 @@ export async function processImportedData(fileContent) {
         setTimeout(() => {
             _deps.loadMiniCycle();
             _deps.hideLoader?.();
-            _deps.showNotification?.(importMessage, messageType, UI_TIMEOUTS.NOTIFICATION_EXTENDED);
+            _deps.showNotification(importMessage, messageType, UI_TIMEOUTS.NOTIFICATION_EXTENDED);
         }, 400);
     } else {
         // Fallback: full page reload if loadMiniCycle not wired

@@ -69,7 +69,7 @@ function _downloadRoutineFile(dataBlob, fileName) {
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(link.href);
-        _deps.showNotification?.('📥 ' + getLabel('notify.shareRoutineFallback'), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
+        _deps.showNotification('📥 ' + getLabel('notify.shareRoutineFallback'), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
     } catch (error) {
         console.error('Routine file download failed:', error);
         _deps.showNotification?.(getLabel('notify.shareRoutineFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
@@ -119,7 +119,7 @@ export async function shareCurrentRoutine() {
     const schemaData = loadMiniCycleData?.();
 
     if (!schemaData) {
-        _deps.showNotification?.(getLabel('notify.shareRoutineNoActiveCycle'), 'error');
+        _deps.showNotification(getLabel('notify.shareRoutineNoActiveCycle'), 'error');
         return;
     }
 
@@ -127,7 +127,7 @@ export async function shareCurrentRoutine() {
     const cycle = cycles[activeCycle];
 
     if (!activeCycle || !cycle) {
-        _deps.showNotification?.(getLabel('notify.shareRoutineNoActiveCycle'), 'error');
+        _deps.showNotification(getLabel('notify.shareRoutineNoActiveCycle'), 'error');
         return;
     }
 
@@ -180,7 +180,7 @@ export async function shareCurrentRoutine() {
         });
         if (result.handled) {
             if (!result.cancelled) {
-                _deps.showNotification?.('✅ ' + getLabel('notify.shareRoutineSuccess'), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
+                _deps.showNotification('✅ ' + getLabel('notify.shareRoutineSuccess'), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
             }
             return;
         }
@@ -197,7 +197,7 @@ export async function shareCurrentRoutine() {
                 text: `Check out my "${cycleName}" routine on miniCycle!\n${APP_URL}`
             });
             _deps.hideMainMenu?.();
-            _deps.showNotification?.('✅ ' + getLabel('notify.shareRoutineSuccess'), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
+            _deps.showNotification('✅ ' + getLabel('notify.shareRoutineSuccess'), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
             return; // Success — don't fall through to download
         } catch (error) {
             // User dismissed share sheet — silently ignore
@@ -267,7 +267,7 @@ export function setupShareAppButton() {
             });
             if (result.handled) {
                 if (!result.cancelled) {
-                    _deps.showNotification?.('✅ ' + getLabel('notify.shareAppSuccess'), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
+                    _deps.showNotification('✅ ' + getLabel('notify.shareAppSuccess'), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
                 }
                 return;
             }
@@ -284,7 +284,7 @@ export function setupShareAppButton() {
                     url: appUrl
                 });
                 _deps.hideMainMenu?.();
-                _deps.showNotification?.('✅ ' + getLabel('notify.shareAppSuccess'), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
+                _deps.showNotification('✅ ' + getLabel('notify.shareAppSuccess'), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
             } catch (error) {
                 _deps.hideMainMenu?.();
                 // User dismissed share sheet — silently ignore
@@ -299,7 +299,7 @@ export function setupShareAppButton() {
         _deps.hideMainMenu?.();
         try {
             await navigator.clipboard.writeText(appUrl);
-            _deps.showNotification?.('📋 ' + getLabel('notify.shareAppCopied'), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
+            _deps.showNotification('📋 ' + getLabel('notify.shareAppCopied'), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
         } catch (error) {
             console.error('Share app clipboard fallback failed:', error);
             _deps.showNotification?.(getLabel('notify.shareAppFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);

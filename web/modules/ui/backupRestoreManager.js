@@ -203,7 +203,7 @@ export function downloadBackupFile(options = {}) {
     const AppState = getAppStateInstance();
     if (!AppState?.isReady?.()) {
         console.error('Schema 2.5 AppState required for backup');
-        _deps.showNotification?.(getLabel('notify.backupNoData'), 'error');
+        _deps.showNotification(getLabel('notify.backupNoData'), 'error');
         return false;
     }
 
@@ -216,7 +216,7 @@ export function downloadBackupFile(options = {}) {
 
     if (!localStorage.getItem(STORAGE_KEYS.DATA)) {
         console.error('Schema 2.5 data not found in localStorage');
-        _deps.showNotification?.(getLabel('notify.backupNoData'), 'error');
+        _deps.showNotification(getLabel('notify.backupNoData'), 'error');
         return false;
     }
 
@@ -231,7 +231,7 @@ export function downloadBackupFile(options = {}) {
         }
         const miniCycleData = localStorage.getItem(STORAGE_KEYS.DATA);
         if (!miniCycleData) {
-            _deps.showNotification?.(getLabel('notify.backupNoData'), 'error');
+            _deps.showNotification(getLabel('notify.backupNoData'), 'error');
             return;
         }
         const currentState = AppState.get();
@@ -262,7 +262,7 @@ export function downloadBackupFile(options = {}) {
         a.click();
         URL.revokeObjectURL(backupUrl);
 
-        _deps.showNotification?.('✅ ' + getLabel('notify.backupCreated'), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
+        _deps.showNotification('✅ ' + getLabel('notify.backupCreated'), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
 
         // Record backup timestamp for backup reminder system
         AppState.update(state => {
@@ -425,7 +425,7 @@ async function processRestoreData(fileContent) {
     const maxSize = 10 * 1024 * 1024;
     if (fileContent.length > maxSize) {
         console.error('File too large:', fileContent.length, 'bytes');
-        _deps.showNotification?.(getLabel('notify.fileTooLarge'), "error");
+        _deps.showNotification(getLabel('notify.fileTooLarge'), "error");
         return;
     }
 
@@ -441,7 +441,7 @@ async function processRestoreData(fileContent) {
     // Validate backup data is an object
     if (typeof backupData !== 'object' || backupData === null) {
         console.error('Invalid backup data type:', typeof backupData);
-        _deps.showNotification?.(getLabel('notify.invalidFormat'), "error");
+        _deps.showNotification(getLabel('notify.invalidFormat'), "error");
         return;
     }
 
@@ -472,7 +472,7 @@ async function processRestoreData(fileContent) {
             destructive: true,
             callback: async (confirmed) => {
                 if (!confirmed) {
-                    _deps.showNotification?.(getLabel('notify.restoreCancelled'), "info", UI_TIMEOUTS.NOTIFICATION_SHORT);
+                    _deps.showNotification(getLabel('notify.restoreCancelled'), "info", UI_TIMEOUTS.NOTIFICATION_SHORT);
                     resolve();
                     return;
                 }
@@ -509,7 +509,7 @@ async function processRestoreData(fileContent) {
                         });
                     });
                     if (!proceedAnyway) {
-                        _deps.showNotification?.(getLabel('notify.restoreCancelled'), "info", UI_TIMEOUTS.NOTIFICATION_SHORT);
+                        _deps.showNotification(getLabel('notify.restoreCancelled'), "info", UI_TIMEOUTS.NOTIFICATION_SHORT);
                         resolve();
                         return;
                     }
@@ -528,14 +528,14 @@ async function processRestoreData(fileContent) {
                     // recovery mode".
                     if (!validateSchema25PayloadString(backupData.miniCycleData)) {
                         console.error('miniCycleData failed structural validation');
-                        _deps.showNotification?.(getLabel('notify.backupCorruptData'), "error", UI_TIMEOUTS.NOTIFICATION_EXTENDED);
+                        _deps.showNotification(getLabel('notify.backupCorruptData'), "error", UI_TIMEOUTS.NOTIFICATION_EXTENDED);
                         resolve();
                         return;
                     }
 
                     localStorage.setItem(STORAGE_KEYS.DATA, backupData.miniCycleData);
                     restoreLiteStorageSnapshot(backupData.liteStorage);
-                    _deps.showNotification?.("✅ " + getLabel('notify.backupRestored'), "success", UI_TIMEOUTS.NOTIFICATION_EXTENDED);
+                    _deps.showNotification("✅ " + getLabel('notify.backupRestored'), "success", UI_TIMEOUTS.NOTIFICATION_EXTENDED);
 
                     // Re-render UI in place — faster than location.reload() and works offline
                     reloadWithLoader('Restore');
@@ -545,10 +545,10 @@ async function processRestoreData(fileContent) {
 
                 // Handle legacy backup - convert to Schema 2.5
                 if (backupData.schemaVersion === "legacy" || backupData.miniCycleStorage) {
-                    _deps.showNotification?.(getLabel('notify.backupConvertingLegacy'), "info", UI_TIMEOUTS.NOTIFICATION_LONG);
+                    _deps.showNotification(getLabel('notify.backupConvertingLegacy'), "info", UI_TIMEOUTS.NOTIFICATION_LONG);
 
                     if (!backupData.miniCycleStorage) {
-                        _deps.showNotification?.(getLabel('notify.backupInvalidLegacy'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
+                        _deps.showNotification(getLabel('notify.backupInvalidLegacy'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
                         resolve();
                         return;
                     }
@@ -558,7 +558,7 @@ async function processRestoreData(fileContent) {
                     // legacy backup left the user with NO data at all.
                     if (typeof backupData.miniCycleStorage !== 'string') {
                         console.error('Legacy backup missing miniCycleStorage string');
-                        _deps.showNotification?.(getLabel('notify.backupInvalidLegacy'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
+                        _deps.showNotification(getLabel('notify.backupInvalidLegacy'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
                         resolve();
                         return;
                     }
@@ -604,7 +604,7 @@ async function processRestoreData(fileContent) {
                         const migrationResults = performSchema25Migration?.() || { success: false };
 
                         if (migrationResults.success) {
-                            _deps.showNotification?.("✅ " + getLabel('notify.backupLegacyRestored'), "success", UI_TIMEOUTS.NOTIFICATION_EXTENDED);
+                            _deps.showNotification("✅ " + getLabel('notify.backupLegacyRestored'), "success", UI_TIMEOUTS.NOTIFICATION_EXTENDED);
                         } else {
                             // Roll back to the pre-restore data — without this the
                             // reload auto-creates empty 2.5 state and the restored
@@ -617,7 +617,7 @@ async function processRestoreData(fileContent) {
                                     console.error('❌ Could not roll back previous data after failed migration:', rollbackError);
                                 }
                             }
-                            _deps.showNotification?.(getLabel('notify.backupMigrationFailed'), "error", UI_TIMEOUTS.NOTIFICATION_EXTENDED);
+                            _deps.showNotification(getLabel('notify.backupMigrationFailed'), "error", UI_TIMEOUTS.NOTIFICATION_EXTENDED);
                         }
 
                         // Re-render UI in place — faster than location.reload() and works offline
@@ -629,7 +629,7 @@ async function processRestoreData(fileContent) {
                 }
 
                 console.error('Unrecognized backup format');
-                _deps.showNotification?.(getLabel('notify.invalidFormat'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
+                _deps.showNotification(getLabel('notify.invalidFormat'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
                 resolve();
             }
         });
@@ -807,7 +807,7 @@ export function setupFactoryResetButton() {
             console.warn('IndexedDB cleanup failed:', e);
         }
 
-        _deps.showNotification?.("✅ " + getLabel('notify.factoryResetComplete'), "success", UI_TIMEOUTS.NOTIFICATION_SHORT);
+        _deps.showNotification("✅ " + getLabel('notify.factoryResetComplete'), "success", UI_TIMEOUTS.NOTIFICATION_SHORT);
 
         // Full re-init: creates fresh Schema 2.5 data, triggers onboarding, loads UI
         reloadWithLoader('Factory reset', { fullReinit: true });
@@ -828,7 +828,7 @@ export function setupFactoryResetButton() {
             destructive: true,
             callback: async (confirmed) => {
                 if (!confirmed) {
-                    _deps.showNotification?.(getLabel('notify.factoryResetCancelled'), "info", UI_TIMEOUTS.NOTIFICATION_SHORT);
+                    _deps.showNotification(getLabel('notify.factoryResetCancelled'), "info", UI_TIMEOUTS.NOTIFICATION_SHORT);
                     return;
                 }
 
