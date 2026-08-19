@@ -2,20 +2,42 @@
 // Inline scripts each need a CSP SHA-256 hash in three deployment configs;
 // an external file needs none. Matches miniCycle-taskOrder.js, which was
 // extracted earlier.
-// Function to retrieve task names from localStorage (from your Task Cycle: Mini app)
-function getTaskNames() {
-  let taskNames = [];
-  const miniCycleName = localStorage.getItem("lastUsedMiniCycle");
-  if (miniCycleName) {
-    const miniCycleStorage = JSON.parse(localStorage.getItem("miniCycleStorage")) || {};
-    const currentCycle = miniCycleStorage[miniCycleName];
-    if (currentCycle && Array.isArray(currentCycle.tasks)) {
-      taskNames = currentCycle.tasks
-        .map(task => task.text)
-        .filter(text => text && text.trim() !== "");
-    }
+
+// Read task names from Schema 2.5 (`miniCycleData`).
+//
+// This used to read `lastUsedMiniCycle` + `miniCycleStorage` — the PRE-2.5 keys.
+// The app stopped writing them at the schema migration, so the lookup always
+// came back empty and the game silently fell back to its sample tasks. Nobody
+// noticed because the fallback is indistinguishable from "you have no tasks",
+// and because the game's own script was CSP-blocked until v2.429 so it never
+// ran at all. Mirrors getTaskNames() in miniCycle-taskOrder.js, which was
+// modernised when that game was extracted.
+function getSchema25Data() {
+  try {
+    const raw = localStorage.getItem("miniCycleData");
+    if (!raw) return null;
+    const schemaData = JSON.parse(raw);
+    if (!schemaData || schemaData.schemaVersion !== "2.5") return null;
+    return schemaData;
+  } catch (error) {
+    console.error('Error reading Schema 2.5 data:', error);
+    return null;
   }
-  return taskNames;
+}
+
+function getTaskNames() {
+  const schemaData = getSchema25Data();
+  if (!schemaData) return [];
+
+  const activeCycleId = schemaData.appState && schemaData.appState.activeCycleId;
+  if (!activeCycleId) return [];
+
+  const currentCycle = schemaData.data && schemaData.data.cycles && schemaData.data.cycles[activeCycleId];
+  if (!currentCycle || !Array.isArray(currentCycle.tasks)) return [];
+
+  return currentCycle.tasks
+    .map(task => task.text)
+    .filter(text => text && text.trim() !== "");
 }
 
 // Fallback sample tasks if none are stored

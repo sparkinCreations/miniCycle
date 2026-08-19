@@ -1,3 +1,7 @@
+## [2.440] - 2026-08-19
+- TODO(changelog): uncommitted work shipped in this release — describe it here
+
+
 ## [2.439] - 2026-08-19
 - refactor(recurring): extract the last four panel setup methods
 - test(journey): fail on DI wiring gaps, and cover To-Do mode
