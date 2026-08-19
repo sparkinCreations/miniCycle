@@ -106,11 +106,19 @@ async function bootApp(page, timeout = 20000) {
     }, null, { timeout: 8000 }).catch(() => {});
 }
 
+// Pages opened during the current journey, so the runner can assert on the DI
+// warnings they collected without every journey having to remember to.
+let _pagesThisJourney = [];
+
 // Open a fresh, isolated app instance. Returns { context, page }.
 async function openFresh(browser, baseURL) {
     const context = await browser.newContext();
     await context.grantPermissions(['notifications'], { origin: baseURL });
     const page = await context.newPage();
+    // Collected here and asserted by the caller, so a starved dependency FAILS the
+    // journey instead of scrolling past in green output. See diWarnings below.
+    page.__diWarnings = [];
+    _pagesThisJourney.push(page);
     page.on('pageerror', err => console.log(`   ${colors.yellow}page error: ${err.message}${colors.reset}`));
     // Surface DI-shaped console warnings. `pageerror` only fires for UNCAUGHT
     // exceptions, and a starved dependency is not one: `deps.foo?.()` no-ops and
@@ -122,6 +130,16 @@ async function openFresh(browser, baseURL) {
         const text = msg.text();
         if (!/missing dep|not injected|undefined|validation failed|is not a function|could not load|DI /i.test(text)) return;
         console.log(`   ${colors.gray}page ${msg.type()}: ${text.slice(0, 240)}${colors.reset}`);
+        // Only the DI-wiring shapes are treated as failures. The rest of the
+        // pattern above is diagnostic noise that can legitimately appear (a
+        // validation warning on purposely bad input, say), but these two mean a
+        // module asked for a dependency and got nothing — which under
+        // ENFORCE_REQUIRES silently removes a feature rather than breaking
+        // loudly. Every To-Do mode bug in v2.436-v2.438 printed one of these
+        // lines and shipped anyway, because printing was all this did.
+        if (/DI access|missing (required )?dep/i.test(text)) {
+            page.__diWarnings.push(text.slice(0, 240));
+        }
     });
     await page.goto(`${baseURL}/miniCycle.html`, { waitUntil: 'domcontentloaded', timeout: 20000 });
     await bootApp(page);
@@ -535,12 +553,77 @@ async function journeyRecurring(browser, baseURL) {
 }
 
 // ── Harness ─────────────────────────────────────────────────────────────────
+
+// ── Journey 6: To-Do mode (clear → archive + counter) ───────────────────────
+// The flow that carried three shipped bugs at once (v2.436-v2.438): clearing
+// recorded nothing to the Cleared Tasks archive, the achievement counter never
+// moved, and reminders stayed dead afterwards. None of the other five journeys
+// touches To-Do mode, so all three rode green CI for days.
+//
+// Asserts through PERSISTED state, not the DOM: every one of those bugs left the
+// screen looking correct — the tasks did visibly disappear — and only the stored
+// data disagreed.
+async function journeyTodoMode(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const { context, page } = await openFresh(browser, baseURL);
+    try {
+        await addTask(page, 'E2E todo clear one');
+        await addTask(page, 'E2E todo clear two');
+        await page.waitForFunction(() => document.querySelectorAll('#taskList li').length >= 2,
+            null, { timeout: 10000 });
+
+        // Switch to To-Do mode through the real control.
+        await openMenu(page).catch(() => {});
+        const switched = await page.evaluate(() => {
+            const cb = document.getElementById('deleteCheckedTasks');
+            if (!cb) return false;
+            if (!cb.checked) { cb.checked = true; cb.dispatchEvent(new Event('change', { bubbles: true })); }
+            return true;
+        });
+        record('To-Do mode control present', switched, 'no #deleteCheckedTasks control');
+        await page.waitForFunction(() => {
+            const p = JSON.parse(localStorage.getItem('miniCycleData') || 'null');
+            const cycles = p && p.data && p.data.cycles;
+            return cycles && Object.values(cycles).some(c => c.deleteCheckedTasks === true);
+        }, null, { timeout: 10000 }).catch(() => {});
+
+        // Complete every task — in To-Do mode this clears them.
+        await page.evaluate(() => document.querySelectorAll('#taskList li input[type="checkbox"]')
+            .forEach(cb => { if (!cb.checked) { cb.checked = true; cb.dispatchEvent(new Event('change', { bubbles: true })); } }));
+        await page.waitForTimeout(3500);
+
+        const after = await page.evaluate(() => {
+            const p = JSON.parse(localStorage.getItem('miniCycleData') || 'null');
+            const cycles = (p && p.data && p.data.cycles) || {};
+            const cycle = Object.values(cycles)[0] || {};
+            return {
+                remaining: Array.isArray(cycle.tasks) ? cycle.tasks.length : -1,
+                cleared: (cycle.clearedTasks && cycle.clearedTasks.totalCleared) || 0,
+                total: (p && p.userProgress && p.userProgress.totalTasksCompleted) || 0
+            };
+        });
+
+        record('tasks were cleared', after.remaining === 0, `${after.remaining} left`);
+        record('cleared tasks were archived', after.cleared >= 2,
+            `clearedTasks.totalCleared = ${after.cleared} (v2.436: the recorder was undeclared, so this stayed 0)`);
+        record('completed-task counter advanced', after.total >= 2,
+            `userProgress.totalTasksCompleted = ${after.total} (v2.437: reset never counted what it deleted)`);
+    } catch (e) {
+        console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);
+        failures.push(`harness error: ${e.message}`);
+    } finally {
+        await context.close();
+    }
+    return { name: 'to-do mode clearing', failures };
+}
+
 const JOURNEYS = [
     { name: 'core (add → persist → cycle → offline)', fn: journeyCore },
     { name: 'routine switching', fn: journeyRoutineSwitch },
     { name: 'undo / redo', fn: journeyUndoRedo },
     { name: 'theme & settings persistence', fn: journeyTheme },
     { name: 'recurring tasks', fn: journeyRecurring },
+    { name: 'to-do mode clearing', fn: journeyTodoMode },
 ];
 
 async function run() {
@@ -563,11 +646,17 @@ async function run() {
         for (const journey of JOURNEYS) {
             console.log(`\n${colors.cyan}▸ journey: ${journey.name}${colors.reset}`);
             let failures;
+            _pagesThisJourney = [];
             try {
                 ({ failures } = await journey.fn(browser, srv.url));
             } catch (e) {
                 failures = [`harness error: ${e.message}`];
             }
+            // A dependency that never arrived does not throw and does not fail an
+            // assertion — it removes a feature quietly. Treat the app's own
+            // warning as the failure, for every page this journey opened.
+            const diSeen = [...new Set(_pagesThisJourney.flatMap(pg => pg.__diWarnings || []))];
+            diSeen.forEach(w => failures.push(`DI wiring gap — ${w}`));
             const tag = failures.length === 0
                 ? `${colors.green}PASS${colors.reset}` : `${colors.red}FAIL${colors.reset}`;
             console.log(`   ${tag}`);

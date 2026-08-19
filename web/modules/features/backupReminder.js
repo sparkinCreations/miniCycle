@@ -62,7 +62,7 @@ const MS_3_DAYS  = 3  * MS_PER_DAY;
  * @returns {Object} Backup reminder settings
  */
 function _getSettings() {
-    const state = _deps.AppState?.get?.();
+    const state = _deps.AppState.get?.();
     const settings = state?.settings || {};
     return {
         lastShown:            settings.lastBackupReminderShown || 0,
@@ -78,7 +78,7 @@ function _getSettings() {
  * @returns {{ cycles: number, tasks: number }}
  */
 function _getProgress() {
-    const state = _deps.AppState?.get?.();
+    const state = _deps.AppState.get?.();
     return {
         cycles: state?.userProgress?.cyclesCompleted || 0,
         tasks:  state?.userProgress?.totalTasksCompleted || 0,
@@ -139,7 +139,7 @@ function _shouldShow(trigger) {
  */
 function _recordReminderShown() {
     const p = _getProgress();
-    _deps.AppState?.update?.(state => {
+    _deps.AppState.update?.(state => {
         if (!state.settings) state.settings = {};
         state.settings.lastBackupReminderShown = Date.now();
         state.settings.cyclesAtLastBackupReminder = p.cycles;
@@ -168,7 +168,7 @@ function _showReminder() {
                 }
             } else {
                 // Dismiss: suppress for 7 days
-                _deps.AppState?.update?.(state => {
+                _deps.AppState.update?.(state => {
                     if (!state.settings) state.settings = {};
                     state.settings.backupReminderDismissedUntil = Date.now() + MS_7_DAYS;
                 });

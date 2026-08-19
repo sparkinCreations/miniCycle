@@ -389,16 +389,16 @@ export class SettingsManager {
             time: null
         };
 
-        const AppState = _deps.AppState?.();
+        const AppState = _deps.AppState();
         if (AppState?.isReady?.()) {
             await AppState.update(state => {
                 if (!state.settings) state.settings = {};
                 state.settings.defaultRecurringSettings = defaultSettings;
             }, true);
-            _deps.showNotification?.(getLabel('notify.recurringDefaultReset'), "success");
+            _deps.showNotification(getLabel('notify.recurringDefaultReset'), "success");
         } else {
             console.error('AppState not ready - settings not saved');
-            _deps.showNotification?.(getLabel('notify.resetDefaultsFailed'), "error");
+            _deps.showNotification(getLabel('notify.resetDefaultsFailed'), "error");
         }
     }
 }

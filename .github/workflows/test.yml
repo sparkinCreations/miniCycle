@@ -44,6 +44,10 @@ jobs:
         working-directory: ./web
         run: npm run validate:legacy
 
+      - name: Validate required-dep chaining (a required dep must never be optional-chained)
+        working-directory: ./web
+        run: npm run validate:chains
+
       - name: Validate inline scripts (empty-catch intent comments)
         working-directory: ./web
         run: npm run validate:inline

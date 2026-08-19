@@ -63,6 +63,7 @@ npm run validate:di    # DI declarations — gated (undeclared=0, nowhere=0, und
 npm run validate:comments # identifiers named in comments must exist (CI; gated at 0)
 npm run validate:builtins # no post-es2020 built-ins in shipped code — esbuild transpiles syntax, NOT built-ins; Object.hasOwn/.at()/.replaceAll() throw on browsers the feature gate admits (CI; gated at 0)
 npm run validate:labels   # every getLabel() key resolves + every logged history event type is mapped — a miss ships the raw key as UI text, silently (CI; gated at 0)
+npm run validate:chains   # a required() dep may never be read through `?.` — that branch only fires when wiring is broken, and then it silently drops the feature (CI; gated at 0; catch blocks exempt)
 npm run validate:inline # miniCycle.html inline scripts: empty catches need intent comments + pre-gate contract (ES5-only above the feature gate, globalThis reads guarded, gate floor includes no-globalthis) (ESLint can't see the file; CI)
 ```
 
@@ -373,6 +374,7 @@ which regenerates them in `netlify.toml`.
 16. **Adding a specific `else if` below a general one** — a later branch that re-tests a condition an earlier branch already catches is dead code. Put type-specific branches *above* the generic field check (Aug 2026: the history priority-colour dot never rendered).
 17. **Using post-es2020 built-ins** (`Object.hasOwn`, `.at()`, `.replaceAll()`, `.findLast()`) — esbuild's `target: es2020` transpiles *syntax*, not built-ins; they ship verbatim and throw on browsers the feature gate admits (Safari ≤ 15.3). Tests can't catch it (Playwright = modern Chromium). `validate:builtins` gates it; use the es2020 equivalent (`Object.prototype.hasOwnProperty.call`, `arr[arr.length - 1]`).
 18. **Truthiness checks on name-keyed plain objects** — `if (map[name])` inherits from `Object.prototype`, so it's truthy for `constructor`/`toString`/`valueOf` on an *empty* map, and `map['__proto__'] = x` sets the prototype (reads back fine, serialises to `{}`, vanishes on reload). Where user text becomes a key, use `Object.prototype.hasOwnProperty.call` or `Object.create(null)` (Aug 2026: `getUniqueCycleName`, then the validate-builtins script itself the same day).
+19. **Optional-chaining a `required()` dep** — `deps.thing?.()` on a dep the module declares required writes a branch that can only be taken when wiring is broken, and that branch does nothing: the feature quietly isn't there. v2.418's ENFORCE_REQUIRES flip took import-mode choice, share-mode choice and theme-on-import dark for a day exactly this way, and a runtime audit found it, not a test. Read required deps unguarded so a wiring failure throws where it happens and names itself. `validate:chains` gates it. The one exception is inside a `catch` — throwing there replaces the error being reported.
 
 ---
 

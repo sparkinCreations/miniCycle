@@ -322,9 +322,9 @@ export class QuickActionsManager {
     // ========================================================================
 
     _ensureData() {
-        const state = this.deps.AppState?.get();
+        const state = this.deps.AppState.get();
         if (!state?.settings?.quickActions) {
-            this.deps.AppState?.update(s => {
+            this.deps.AppState.update(s => {
                 if (!s.settings) s.settings = {};
                 s.settings.quickActions = {
                     pinned: ['stats', null, null, null, null],
@@ -337,7 +337,7 @@ export class QuickActionsManager {
     }
 
     _getData() {
-        const state = this.deps.AppState?.get();
+        const state = this.deps.AppState.get();
         return state?.settings?.quickActions || {
             pinned: ['stats', null, null, null, null],
             counts: {},
@@ -367,7 +367,7 @@ export class QuickActionsManager {
 
         const nextView = VIEWS[nextIndex];
 
-        this.deps.AppState?.update(s => {
+        this.deps.AppState.update(s => {
             if (!s.settings?.quickActions) return;
             s.settings.quickActions.activeView = nextView;
         });
@@ -395,17 +395,17 @@ export class QuickActionsManager {
         const stateKey = tipKeys[view];
         if (!stateKey) return;
 
-        const state = this.deps.AppState?.get();
+        const state = this.deps.AppState.get();
         if (state?.settings?.[stateKey]) return; // Already shown
 
         // Mark as seen
-        this.deps.AppState?.update(s => {
+        this.deps.AppState.update(s => {
             if (!s.settings) s.settings = {};
             s.settings[stateKey] = true;
         });
 
         // Show the tip notification
-        this.deps.showNotification?.(
+        this.deps.showNotification(
             getLabel(tipLabelKeys[view]),
             'info',
             UI_TIMEOUTS.NOTIFICATION_MEDIUM
@@ -594,14 +594,14 @@ export class QuickActionsManager {
 
     _isActionAvailable(action) {
         if (!action.unlockKey) return true;
-        const state = this.deps.AppState?.get();
+        const state = this.deps.AppState.get();
         const unlocked = state?.settings?.unlockedFeatures || [];
         return unlocked.includes(action.unlockKey);
     }
 
     _warnMissingDep(depName, actionId) {
         console.warn(`⚡ QuickActionsManager: '${depName}' is null — action '${actionId}' cannot execute`);
-        this.deps.showNotification?.(getLabel('notify.actionUnavailable'), 'warning', UI_TIMEOUTS.NOTIFICATION_LONG);
+        this.deps.showNotification(getLabel('notify.actionUnavailable'), 'warning', UI_TIMEOUTS.NOTIFICATION_LONG);
     }
 
     executeAction(actionId) {
@@ -621,10 +621,10 @@ export class QuickActionsManager {
                     }
                     recordActionUsage(this.deps.AppState, actionId);
                     this.deps.showStatsPanel();
-                    this.deps.hideMainMenu?.();
+                    this.deps.hideMainMenu();
                     break;
                 case 'switchMiniCycle': {
-                    this.deps.hideMainMenu?.();
+                    this.deps.hideMainMenu();
                     setTimeout(() => {
                         try {
                             const routineBtn = document.getElementById(DOM_IDS.ROUTINE_SWITCHER_BTN);
@@ -641,7 +641,7 @@ export class QuickActionsManager {
                     break;
                 }
                 case 'openRecurringPanel':
-                    if (!this.deps.recurringPanel?.openPanel) {
+                    if (!this.deps.recurringPanel.openPanel) {
                         this._warnMissingDep('recurringPanel.openPanel', actionId);
                         break;
                     }
@@ -649,7 +649,7 @@ export class QuickActionsManager {
                     setTimeout(() => {
                         try {
                             this.deps.recurringPanel.openPanel();
-                            this.deps.hideMainMenu?.();
+                            this.deps.hideMainMenu();
                         } catch (err) {
                             console.error(`⚡ Quick action '${actionId}' failed:`, err);
                             this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
@@ -672,7 +672,7 @@ export class QuickActionsManager {
                             } else if (!modal) {
                                 this._warnMissingDep('reminders modal', actionId);
                             }
-                            this.deps.hideMainMenu?.();
+                            this.deps.hideMainMenu();
                         } catch (err) {
                             console.error(`⚡ Quick action '${actionId}' failed:`, err);
                             this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
@@ -681,7 +681,7 @@ export class QuickActionsManager {
                     break;
                 }
                 case 'openSettings': {
-                    this.deps.hideMainMenu?.();
+                    this.deps.hideMainMenu();
                     setTimeout(() => {
                         try {
                             const settingsBtn = document.getElementById(DOM_IDS.OPEN_SETTINGS);
@@ -698,7 +698,7 @@ export class QuickActionsManager {
                     break;
                 }
                 case 'openHistory': {
-                    this.deps.hideMainMenu?.();
+                    this.deps.hideMainMenu();
                     setTimeout(() => {
                         try {
                             const btn = document.getElementById(DOM_IDS.HISTORY_BTN);
@@ -715,7 +715,7 @@ export class QuickActionsManager {
                     break;
                 }
                 case 'openAchievements': {
-                    this.deps.hideMainMenu?.();
+                    this.deps.hideMainMenu();
                     setTimeout(() => {
                         try {
                             const btn = document.getElementById(DOM_IDS.ACHIEVEMENT_BADGES_BTN);
@@ -732,7 +732,7 @@ export class QuickActionsManager {
                     break;
                 }
                 case 'completeAll': {
-                    this.deps.hideMainMenu?.();
+                    this.deps.hideMainMenu();
                     setTimeout(() => {
                         try {
                             const btn = document.getElementById(DOM_IDS.COMPLETE_ALL);
@@ -765,7 +765,7 @@ export class QuickActionsManager {
                     break;
                 }
                 case 'openPersonalization': {
-                    this.deps.hideMainMenu?.();
+                    this.deps.hideMainMenu();
                     setTimeout(() => {
                         try {
                             const btn = document.getElementById(DOM_IDS.PERSONALIZATION_BTN);
@@ -782,7 +782,7 @@ export class QuickActionsManager {
                     break;
                 }
                 case 'openHelp': {
-                    this.deps.hideMainMenu?.();
+                    this.deps.hideMainMenu();
                     setTimeout(() => {
                         try {
                             const btn = document.getElementById(DOM_IDS.TOGGLE_HELP_WINDOW);
@@ -799,7 +799,7 @@ export class QuickActionsManager {
                     break;
                 }
                 case 'openGames': {
-                    this.deps.hideMainMenu?.();
+                    this.deps.hideMainMenu();
                     setTimeout(() => {
                         try {
                             const btn = document.getElementById(DOM_IDS.OPEN_GAMES_PANEL);
@@ -816,7 +816,7 @@ export class QuickActionsManager {
                     break;
                 }
                 case 'openFeedback': {
-                    this.deps.hideMainMenu?.();
+                    this.deps.hideMainMenu();
                     setTimeout(() => {
                         try {
                             const btn = document.getElementById(DOM_IDS.OPEN_FEEDBACK_MODAL);
@@ -833,7 +833,7 @@ export class QuickActionsManager {
                     break;
                 }
                 case 'openSearch': {
-                    this.deps.hideMainMenu?.();
+                    this.deps.hideMainMenu();
                     setTimeout(() => {
                         try {
                             const btn = document.getElementById(DOM_IDS.TASK_SEARCH_BTN);
@@ -850,7 +850,7 @@ export class QuickActionsManager {
                     break;
                 }
                 case 'openUserManual': {
-                    this.deps.hideMainMenu?.();
+                    this.deps.hideMainMenu();
                     setTimeout(() => {
                         try {
                             const btn = document.getElementById(DOM_IDS.OPEN_USER_MANUAL);
@@ -867,7 +867,7 @@ export class QuickActionsManager {
                     break;
                 }
                 case 'toggleTaskInput': {
-                    this.deps.hideMainMenu?.();
+                    this.deps.hideMainMenu();
                     setTimeout(() => {
                         try {
                             const btn = document.getElementById(DOM_IDS.TOGGLE_TASK_INPUT_BTN);
@@ -884,7 +884,7 @@ export class QuickActionsManager {
                     break;
                 }
                 case 'newRoutine': {
-                    this.deps.hideMainMenu?.();
+                    this.deps.hideMainMenu();
                     setTimeout(() => {
                         try {
                             const btn = document.getElementById(DOM_IDS.NEW_MINI_CYCLE);
@@ -901,7 +901,7 @@ export class QuickActionsManager {
                     break;
                 }
                 case 'shareRoutine': {
-                    this.deps.hideMainMenu?.();
+                    this.deps.hideMainMenu();
                     // Call the share flow DIRECTLY (Aug 2026 gesture fix): the old
                     // path clicked the main-menu Share button inside a setTimeout —
                     // a programmatic click carries no user activation, so
@@ -915,7 +915,7 @@ export class QuickActionsManager {
                             // async flow — catch rejections too, not just sync throws
                             Promise.resolve(this.deps.shareCurrentRoutine()).catch((err) => {
                                 console.error(`⚡ Quick action '${actionId}' failed:`, err);
-                                this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
+                                this.deps.showNotification(getLabel('notify.actionFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
                             });
                         } catch (err) {
                             console.error(`⚡ Quick action '${actionId}' failed:`, err);
@@ -941,7 +941,7 @@ export class QuickActionsManager {
                     break;
                 }
                 case 'exportData': {
-                    this.deps.hideMainMenu?.();
+                    this.deps.hideMainMenu();
                     setTimeout(() => {
                         try {
                             const btn = document.getElementById(DOM_IDS.EXPORT_MINI_CYCLE);
@@ -958,7 +958,7 @@ export class QuickActionsManager {
                     break;
                 }
                 case 'openTaskOrderGame': {
-                    this.deps.hideMainMenu?.();
+                    this.deps.hideMainMenu();
                     setTimeout(() => {
                         try {
                             const btn = document.getElementById(DOM_IDS.OPEN_TASK_ORDER_GAME);
@@ -975,7 +975,7 @@ export class QuickActionsManager {
                     break;
                 }
                 case 'openTaskOptions': {
-                    this.deps.hideMainMenu?.();
+                    this.deps.hideMainMenu();
                     setTimeout(() => {
                         try {
                             const btn = document.getElementById(DOM_IDS.OPEN_TASK_OPTIONS_CUSTOMIZER);
@@ -992,7 +992,7 @@ export class QuickActionsManager {
                     break;
                 }
                 case 'openThemesPanel': {
-                    this.deps.hideMainMenu?.();
+                    this.deps.hideMainMenu();
                     setTimeout(() => {
                         try {
                             const btn = document.getElementById(DOM_IDS.OPEN_THEMES_PANEL);
@@ -1020,7 +1020,7 @@ export class QuickActionsManager {
     // ========================================================================
 
     pinAction(slotIndex, actionId) {
-        this.deps.AppState?.update(s => {
+        this.deps.AppState.update(s => {
             if (!s.settings?.quickActions) return;
             s.settings.quickActions.pinned[slotIndex] = actionId;
         });
@@ -1030,7 +1030,7 @@ export class QuickActionsManager {
     }
 
     unpinAction(slotIndex) {
-        this.deps.AppState?.update(s => {
+        this.deps.AppState.update(s => {
             if (!s.settings?.quickActions) return;
             s.settings.quickActions.pinned[slotIndex] = null;
         });

@@ -277,7 +277,7 @@ export class GuidedTourManager {
                     messageKey: 'taskOptionsTour.step3',
                     position: 'auto',
                     onEnter: () => {
-                        const el = this.deps.querySelector?.(DOM_SELECTORS.TASK_OPTIONS_GLOBAL_SECTION);
+                        const el = this.deps.querySelector(DOM_SELECTORS.TASK_OPTIONS_GLOBAL_SECTION);
                         if (!el || el.offsetParent === null) return 'skip';
                         return null;
                     }
@@ -652,10 +652,10 @@ export class GuidedTourManager {
             return this;
         }
 
-        await this.deps.appInit?.waitForCore?.();
+        await this.deps.appInit.waitForCore?.();
         this.initialized = true;
 
-        const state = this.deps.AppState?.get?.();
+        const state = this.deps.AppState.get?.();
         const guidedTourStep = state?.settings?.guidedTourStep ?? null;
         if (guidedTourStep === 'done') {
             return this;
@@ -664,7 +664,7 @@ export class GuidedTourManager {
         const onboardingCompleted = !!state?.settings?.onboardingCompleted;
 
         if (onboardingCompleted) {
-            if (this.deps.appInit?.isAppReady?.()) {
+            if (this.deps.appInit.isAppReady?.()) {
                 this._scheduleNotification(UI_TIMEOUTS.TOUR_RETURNING_USER_DELAY);
             } else {
                 this._appReadyHandler = () => {
@@ -728,7 +728,7 @@ export class GuidedTourManager {
         // Skip modal guard for tours that run inside a modal (containerSelector)
         const tourDef = this._tours.get(tourId);
         if (!tourDef?.containerSelector && this.deps.isModalOpen?.()) {
-            this.deps.showNotification?.(
+            this.deps.showNotification(
                 getLabel('tour.closeDialogHint'),
                 'info',
                 UI_TIMEOUTS.NOTIFICATION_SHORT
@@ -760,13 +760,13 @@ export class GuidedTourManager {
 
         this._active = true;
         this._previousFocus = this.deps.getActiveElement();
-        this.deps.getRootElement?.()?.setAttribute(TOUR_ACTIVE_ATTR, 'true');
+        this.deps.getRootElement()?.setAttribute(TOUR_ACTIVE_ATTR, 'true');
 
         this._ensureTourElements();
         this._attachRuntimeListeners();
 
         const stateKey = this._getActiveStateKey();
-        const persistedStep = this.deps.AppState?.get?.()?.settings?.[stateKey];
+        const persistedStep = this.deps.AppState.get?.()?.settings?.[stateKey];
         const startIndex = typeof persistedStep === 'number' ? persistedStep : 0;
         this.showStep(startIndex);
 
@@ -885,7 +885,7 @@ export class GuidedTourManager {
         const tour = this._tours.get(this._activeTourId || 'main');
         this._markDone();
         this._teardownTourUI();
-        this.deps.showNotification?.(
+        this.deps.showNotification(
             getLabel(tour?.completeKey || 'tour.complete'),
             'success',
             UI_TIMEOUTS.NOTIFICATION_LONG
@@ -937,7 +937,7 @@ export class GuidedTourManager {
             clearTimeout(this._scheduleTimeout);
         }
 
-        const guidedTourStep = this.deps.AppState?.get?.()?.settings?.guidedTourStep ?? null;
+        const guidedTourStep = this.deps.AppState.get?.()?.settings?.guidedTourStep ?? null;
         if (guidedTourStep === 'done') {
             this._scheduleTimeout = null;
             return;
@@ -950,7 +950,7 @@ export class GuidedTourManager {
     }
 
     _showWelcomeOrResumeNotification() {
-        const state = this.deps.AppState?.get?.();
+        const state = this.deps.AppState.get?.();
         const guidedTourStep = state?.settings?.guidedTourStep ?? null;
         if (guidedTourStep === 'done') {
             return;
@@ -988,7 +988,7 @@ export class GuidedTourManager {
     }
 
     _showWelcomeNotification() {
-        this.deps.showNotification?.(
+        this.deps.showNotification(
             getLabel('tour.welcomeMessage'),
             'info',
             20000,
@@ -1003,7 +1003,7 @@ export class GuidedTourManager {
     }
 
     _showResumeNotification() {
-        this.deps.showNotification?.(
+        this.deps.showNotification(
             getLabel('tour.resumeMessage'),
             'info',
             0,
@@ -1048,7 +1048,7 @@ export class GuidedTourManager {
         const statsTour = this._tours.get('stats');
         if (!statsTour) return;
 
-        const state = this.deps.AppState?.get?.();
+        const state = this.deps.AppState.get?.();
         const val = state?.settings?.[statsTour.stateKey] ?? null;
         if (val !== null) return; // Already started or done
 
@@ -1065,7 +1065,7 @@ export class GuidedTourManager {
         // open stats again.
         if (state?.settings?.focusModeActive) return;
 
-        this.deps.showNotification?.(
+        this.deps.showNotification(
             getLabel('statsTour.welcomeMessage'),
             'info',
             UI_TIMEOUTS.NOTIFICATION_PERSISTENT,
@@ -1093,19 +1093,19 @@ export class GuidedTourManager {
         const prefsTour = this._tours.get('personalization');
         if (!prefsTour) return;
 
-        const val = this.deps.AppState?.get?.()?.settings?.[prefsTour.stateKey] ?? null;
+        const val = this.deps.AppState.get?.()?.settings?.[prefsTour.stateKey] ?? null;
         if (val !== null) return; // Already started or done
 
         // Render the notification inside the dialog's scroll area so it sits
         // below the title/logo and scrolls with the content.
         const dialog = prefsTour.containerSelector
-            ? this.deps.querySelector?.(prefsTour.containerSelector)
+            ? this.deps.querySelector(prefsTour.containerSelector)
             : null;
         const container = dialog?.querySelector(DOM_SELECTORS.PREFERENCES_SCROLL_AREA)
             || dialog?.querySelector(DOM_SELECTORS.PREFERENCES_MODAL_CONTENT)
             || dialog;
 
-        this.deps.showNotification?.(
+        this.deps.showNotification(
             getLabel('prefsTour.welcomeMessage'),
             'info',
             UI_TIMEOUTS.NOTIFICATION_PERSISTENT,
@@ -1134,17 +1134,17 @@ export class GuidedTourManager {
         const taskOptionsTour = this._tours.get('taskOptions');
         if (!taskOptionsTour) return;
 
-        const val = this.deps.AppState?.get?.()?.settings?.[taskOptionsTour.stateKey] ?? null;
+        const val = this.deps.AppState.get?.()?.settings?.[taskOptionsTour.stateKey] ?? null;
         if (val !== null) return; // Already started or done
 
         // Render the notification inside the dialog's modal-body so it sits
         // below the header and above the options grid.
         const dialog = taskOptionsTour.containerSelector
-            ? this.deps.querySelector?.(taskOptionsTour.containerSelector)
+            ? this.deps.querySelector(taskOptionsTour.containerSelector)
             : null;
         const container = dialog?.querySelector(DOM_SELECTORS.TASK_OPTIONS_MODAL_BODY) || dialog;
 
-        this.deps.showNotification?.(
+        this.deps.showNotification(
             getLabel('taskOptionsTour.welcomeMessage'),
             'info',
             UI_TIMEOUTS.NOTIFICATION_PERSISTENT,
@@ -1173,16 +1173,16 @@ export class GuidedTourManager {
         const remindersTour = this._tours.get('reminders');
         if (!remindersTour) return;
 
-        const val = this.deps.AppState?.get?.()?.settings?.[remindersTour.stateKey] ?? null;
+        const val = this.deps.AppState.get?.()?.settings?.[remindersTour.stateKey] ?? null;
         if (val !== null) return; // Already started or done
 
         // Render the notification inside the dialog's content wrapper
         const dialog = remindersTour.containerSelector
-            ? this.deps.querySelector?.(remindersTour.containerSelector)
+            ? this.deps.querySelector(remindersTour.containerSelector)
             : null;
         const container = dialog?.querySelector(DOM_SELECTORS.REMINDERS_MODAL_CONTENT) || dialog;
 
-        this.deps.showNotification?.(
+        this.deps.showNotification(
             getLabel('remindersTour.welcomeMessage'),
             'info',
             UI_TIMEOUTS.NOTIFICATION_PERSISTENT,
@@ -1210,10 +1210,10 @@ export class GuidedTourManager {
         const menuTour = this._tours.get('menu');
         if (!menuTour) return;
 
-        const val = this.deps.AppState?.get?.()?.settings?.[menuTour.stateKey] ?? null;
+        const val = this.deps.AppState.get?.()?.settings?.[menuTour.stateKey] ?? null;
         if (val !== null) return; // Already started or done
 
-        this.deps.showNotification?.(
+        this.deps.showNotification(
             getLabel('menuTour.welcomeMessage'),
             'info',
             UI_TIMEOUTS.NOTIFICATION_PERSISTENT,
@@ -1241,16 +1241,16 @@ export class GuidedTourManager {
         const settingsTour = this._tours.get('settings');
         if (!settingsTour) return;
 
-        const val = this.deps.AppState?.get?.()?.settings?.[settingsTour.stateKey] ?? null;
+        const val = this.deps.AppState.get?.()?.settings?.[settingsTour.stateKey] ?? null;
         if (val !== null) return; // Already started or done
 
         // Render the notification inside the dialog's content wrapper
         const dialog = settingsTour.containerSelector
-            ? this.deps.querySelector?.(settingsTour.containerSelector)
+            ? this.deps.querySelector(settingsTour.containerSelector)
             : null;
         const container = dialog?.querySelector(DOM_SELECTORS.SETTINGS_MODAL_CONTENT) || dialog;
 
-        this.deps.showNotification?.(
+        this.deps.showNotification(
             getLabel('settingsTour.welcomeMessage'),
             'info',
             UI_TIMEOUTS.NOTIFICATION_PERSISTENT,
@@ -1279,16 +1279,16 @@ export class GuidedTourManager {
         const rsTour = this._tours.get('routineSwitcher');
         if (!rsTour) return;
 
-        const val = this.deps.AppState?.get?.()?.settings?.[rsTour.stateKey] ?? null;
+        const val = this.deps.AppState.get?.()?.settings?.[rsTour.stateKey] ?? null;
         if (val !== null) return; // Already started or done
 
         // Render the notification inside the dialog's content wrapper
         const dialog = rsTour.containerSelector
-            ? this.deps.querySelector?.(rsTour.containerSelector)
+            ? this.deps.querySelector(rsTour.containerSelector)
             : null;
         const container = dialog?.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_MODAL_CONTENT) || dialog;
 
-        this.deps.showNotification?.(
+        this.deps.showNotification(
             getLabel('routineSwitcherTour.welcomeMessage'),
             'info',
             UI_TIMEOUTS.NOTIFICATION_PERSISTENT,
@@ -1316,15 +1316,15 @@ export class GuidedTourManager {
         const rlTour = this._tours.get('recurringList');
         if (!rlTour) return;
 
-        const val = this.deps.AppState?.get?.()?.settings?.[rlTour.stateKey] ?? null;
+        const val = this.deps.AppState.get?.()?.settings?.[rlTour.stateKey] ?? null;
         if (val !== null) return;
 
         const dialog = rlTour.containerSelector
-            ? this.deps.querySelector?.(rlTour.containerSelector)
+            ? this.deps.querySelector(rlTour.containerSelector)
             : null;
         const container = dialog?.querySelector(`#${DOM_IDS.RECURRING_PANEL}`) || dialog;
 
-        this.deps.showNotification?.(
+        this.deps.showNotification(
             getLabel('recurringListTour.welcomeMessage'),
             'info',
             UI_TIMEOUTS.NOTIFICATION_PERSISTENT,
@@ -1352,15 +1352,15 @@ export class GuidedTourManager {
         const rsTour = this._tours.get('recurringSettings');
         if (!rsTour) return;
 
-        const val = this.deps.AppState?.get?.()?.settings?.[rsTour.stateKey] ?? null;
+        const val = this.deps.AppState.get?.()?.settings?.[rsTour.stateKey] ?? null;
         if (val !== null) return;
 
         const dialog = rsTour.containerSelector
-            ? this.deps.querySelector?.(rsTour.containerSelector)
+            ? this.deps.querySelector(rsTour.containerSelector)
             : null;
         const container = dialog?.querySelector(`#${DOM_IDS.RECURRING_PANEL}`) || dialog;
 
-        this.deps.showNotification?.(
+        this.deps.showNotification(
             getLabel('recurringSettingsTour.welcomeMessage'),
             'info',
             UI_TIMEOUTS.NOTIFICATION_PERSISTENT,
@@ -1388,15 +1388,15 @@ export class GuidedTourManager {
         const hTour = this._tours.get('history');
         if (!hTour) return;
 
-        const val = this.deps.AppState?.get?.()?.settings?.[hTour.stateKey] ?? null;
+        const val = this.deps.AppState.get?.()?.settings?.[hTour.stateKey] ?? null;
         if (val !== null) return;
 
         const dialog = hTour.containerSelector
-            ? this.deps.querySelector?.(hTour.containerSelector)
+            ? this.deps.querySelector(hTour.containerSelector)
             : null;
         const container = dialog?.querySelector(DOM_SELECTORS.HISTORY_MODAL) || dialog;
 
-        this.deps.showNotification?.(
+        this.deps.showNotification(
             getLabel('historyTour.welcomeMessage'),
             'info',
             UI_TIMEOUTS.NOTIFICATION_PERSISTENT,
@@ -1424,15 +1424,15 @@ export class GuidedTourManager {
         const ctTour = this._tours.get('clearedTasks');
         if (!ctTour) return;
 
-        const val = this.deps.AppState?.get?.()?.settings?.[ctTour.stateKey] ?? null;
+        const val = this.deps.AppState.get?.()?.settings?.[ctTour.stateKey] ?? null;
         if (val !== null) return;
 
         const dialog = ctTour.containerSelector
-            ? this.deps.querySelector?.(ctTour.containerSelector)
+            ? this.deps.querySelector(ctTour.containerSelector)
             : null;
         const container = dialog?.querySelector(DOM_SELECTORS.HISTORY_MODAL) || dialog;
 
-        this.deps.showNotification?.(
+        this.deps.showNotification(
             getLabel('clearedTasksTour.welcomeMessage'),
             'info',
             UI_TIMEOUTS.NOTIFICATION_PERSISTENT,
@@ -1460,15 +1460,15 @@ export class GuidedTourManager {
         const aTour = this._tours.get('achievements');
         if (!aTour) return;
 
-        const val = this.deps.AppState?.get?.()?.settings?.[aTour.stateKey] ?? null;
+        const val = this.deps.AppState.get?.()?.settings?.[aTour.stateKey] ?? null;
         if (val !== null) return;
 
         const dialog = aTour.containerSelector
-            ? this.deps.querySelector?.(aTour.containerSelector)
+            ? this.deps.querySelector(aTour.containerSelector)
             : null;
         const container = dialog?.querySelector(DOM_SELECTORS.ACHIEVEMENTS_MODAL) || dialog;
 
-        this.deps.showNotification?.(
+        this.deps.showNotification(
             getLabel('achievementsTour.welcomeMessage'),
             'info',
             UI_TIMEOUTS.NOTIFICATION_PERSISTENT,
@@ -1813,7 +1813,7 @@ export class GuidedTourManager {
         this._activeTourId = null;
         this._filteredSteps = null;
 
-        this.deps.getRootElement?.()?.removeAttribute(TOUR_ACTIVE_ATTR);
+        this.deps.getRootElement()?.removeAttribute(TOUR_ACTIVE_ATTR);
 
         if (isHTMLElement(this._previousFocus) && document.contains(this._previousFocus)) {
             this._previousFocus.focus({ focusVisible: false });

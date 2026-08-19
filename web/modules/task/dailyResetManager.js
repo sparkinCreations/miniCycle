@@ -156,7 +156,7 @@ export class DailyResetManager {
             this._visibilityHandler = null;
         }
         if (this._appStateSubscribed) {
-            this.deps.AppState?.unsubscribe?.(APPSTATE_SUBSCRIBER_KEY, this._onAppStateChange);
+            this.deps.AppState.unsubscribe?.(APPSTATE_SUBSCRIBER_KEY, this._onAppStateChange);
             this._appStateSubscribed = false;
         }
         const toggle = this.deps.getElementById(DOM_IDS.AUTO_UNCHECK_DAILY_TOGGLE);
@@ -182,7 +182,7 @@ export class DailyResetManager {
      * init, wake) remain fire-and-forget.
      */
     async checkAllRoutines() {
-        const state = this.deps.AppState?.get?.();
+        const state = this.deps.AppState.get?.();
         if (!state?.data?.cycles) return;
 
         const now = new Date();
@@ -249,7 +249,7 @@ export class DailyResetManager {
      * Called when the user views (switches to / opens app on) a routine.
      */
     showPendingNotificationIfAny(cycleId) {
-        const state = this.deps.AppState?.get?.();
+        const state = this.deps.AppState.get?.();
         const cycle = state?.data?.cycles?.[cycleId];
         const s = readSettings(cycle);
         if (!s.pendingNotification) return;
@@ -359,7 +359,7 @@ export class DailyResetManager {
      * Native <input type="time"> for OS picker on mobile.
      */
     openTimePickerModal(cycleId) {
-        const state = this.deps.AppState?.get?.();
+        const state = this.deps.AppState.get?.();
         const cycle = state?.data?.cycles?.[cycleId];
         const s = readSettings(cycle);
         const name = cycle?.title || cycleId;
@@ -424,7 +424,7 @@ export class DailyResetManager {
     // ------------------------------------------------------------------------
 
     _syncForActiveCycle() {
-        const state = this.deps.AppState?.get?.();
+        const state = this.deps.AppState.get?.();
         const cycleId = state?.appState?.activeCycleId;
         if (!cycleId) return;
         const cycle = state.data.cycles?.[cycleId];
@@ -468,7 +468,7 @@ export class DailyResetManager {
 
         if (toggle) {
             this._toggleHandler = (e) => {
-                const cycleId = this.deps.AppState?.get?.()?.appState?.activeCycleId;
+                const cycleId = this.deps.AppState.get?.()?.appState?.activeCycleId;
                 if (!cycleId) return;
                 this.setEnabled(cycleId, e.target.checked);
             };
@@ -482,7 +482,7 @@ export class DailyResetManager {
                 // checkbox). Kept so the row stays click-safe if the markup shifts again.
                 e.preventDefault();
                 e.stopPropagation();
-                const cycleId = this.deps.AppState?.get?.()?.appState?.activeCycleId;
+                const cycleId = this.deps.AppState.get?.()?.appState?.activeCycleId;
                 if (!cycleId) return;
                 this.openTimePickerModal(cycleId);
             };
@@ -494,7 +494,7 @@ export class DailyResetManager {
         const banner = this.deps.getElementById(DOM_IDS.AUTO_UNCHECK_BANNER);
         if (!banner) return;
         this._bannerHandler = () => {
-            const cycleId = this.deps.AppState?.get?.()?.appState?.activeCycleId;
+            const cycleId = this.deps.AppState.get?.()?.appState?.activeCycleId;
             if (!cycleId) return;
             this.openTimePickerModal(cycleId);
         };
@@ -516,7 +516,7 @@ export class DailyResetManager {
     }
 
     _subscribeToAppState() {
-        if (!this.deps.AppState?.subscribe) return;
+        if (!this.deps.AppState.subscribe) return;
         this._onAppStateChange = (newState, oldState) => {
             const newActive = newState?.appState?.activeCycleId;
             const oldActive = oldState?.appState?.activeCycleId;

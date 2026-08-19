@@ -147,7 +147,7 @@ export class RecurringPanelManager {
         if (_formModule?.setFormActions) {
             _formModule.setFormActions({
                 updateRecurringSummary: () => this.updateRecurringSummary(),
-                normalizeRecurringSettings: (settings) => this.deps.normalizeRecurringSettings?.(settings) || settings
+                normalizeRecurringSettings: (settings) => this.deps.normalizeRecurringSettings(settings) || settings
             });
         }
 
@@ -973,7 +973,7 @@ export class RecurringPanelManager {
 
                 try {
                     // ✅ Use AppState instead of direct localStorage manipulation
-                    if (!this.deps.AppState?.isReady?.()) {
+                    if (!this.deps.AppState.isReady?.()) {
                         console.error('❌ AppState not ready for task removal');
                         this.deps.showNotification(getLabel('notify.appNotReady'), 'error');
                         return;
@@ -1207,7 +1207,7 @@ export class RecurringPanelManager {
             summaryContainer.classList.remove(DOM_CLASSES.HIDDEN);
 
             // Get recurring settings
-            if (!this.deps.AppState?.isReady?.()) {
+            if (!this.deps.AppState.isReady?.()) {
                 console.warn('⚠️ AppState not ready for showTaskSummaryPreview');
                 return;
             }
@@ -1539,7 +1539,7 @@ export class RecurringPanelManager {
         if (selectAllBtn) selectAllBtn.textContent = getLabel('recurring.selectAll');
 
         try {
-            if (!this.deps.AppState?.isReady?.()) {
+            if (!this.deps.AppState.isReady?.()) {
                 console.warn('⚠️ AppState not ready for populating available tasks');
                 noTasksMessage.classList.remove(DOM_CLASSES.HIDDEN);
                 noTasksMessage.textContent = getLabel('notify.taskLoadFailed');
@@ -1613,7 +1613,7 @@ export class RecurringPanelManager {
     async handleConfirmAddRecurring() {
 
         try {
-            if (!this.deps.AppState?.isReady?.()) {
+            if (!this.deps.AppState.isReady?.()) {
                 console.error('❌ AppState not ready');
                 this.deps.showNotification(getLabel('notify.appNotReady'), 'error');
                 return;
@@ -1759,7 +1759,7 @@ export class RecurringPanelManager {
         }
 
         // Get the task's current recurring settings from state
-        if (!this.deps.AppState?.isReady?.()) return;
+        if (!this.deps.AppState.isReady?.()) return;
 
         const state = this.deps.AppState.get();
         const activeCycleId = state.appState?.activeCycleId;
@@ -1822,7 +1822,7 @@ export class RecurringPanelManager {
                 });
 
                 // Show task preview
-                if (this.deps.AppState?.isReady?.()) {
+                if (this.deps.AppState.isReady?.()) {
                     const state = this.deps.AppState.get();
                     const activeCycleId = state.appState?.activeCycleId;
                     const task = state.data?.cycles?.[activeCycleId]?.tasks.find(t => t.id === taskIdToPreselect);

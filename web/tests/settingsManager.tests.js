@@ -42,15 +42,24 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
     const env = await setupTestEnvironment();
 
     // Set up SettingsManager module dependencies
-    // AppState mock must work both as a direct object (settingsUIManager calls _deps.AppState?.get())
-    // AND as a factory function (other code calls _deps.AppState?.()).
+    // AppState mock must work both as a direct object (settingsUIManager calls
+    // _deps.AppState.get()) AND as a factory function (other code calls
+    // _deps.AppState()).
     const defaultAppStateMock = Object.assign(
         () => ({ isReady: () => true, get: () => ({ settings: {} }), update: () => {} }),
         { isReady: () => true, get: () => ({ settings: {} }), update: () => {} }
     );
+    // showNotification is declared required(), so it belongs in the BASE wiring
+    // rather than only in the tests that happen to assert on it. Individual
+    // tests still re-inject their own spy where they need to observe the calls.
     setSettingsManagerDependencies({
         safeAddEventListener: env.deps.safeAddEventListener,
-        AppState: defaultAppStateMock
+        AppState: defaultAppStateMock,
+        showNotification: () => {},
+        // Also required(), and the facade forwards it to its sub-modules at WIRE
+        // time — so a constructor override never reaches settingsUIManager and
+        // it has to come from here. Tests needing specific data still override.
+        loadMiniCycleData: () => ({ settings: {} })
     });
 
     resultsDiv.innerHTML = '<h2>⚙️ Settings Manager Tests</h2>';

@@ -419,7 +419,38 @@ function resetTasksData(context, deps) {
                     }
                 });
             }
+
+            // Count the deleteWhenComplete tasks this reset just removed.
+            //
+            // This path and deleteCompletedTasksImpl both clear tasks and both
+            // archive them, but only that one was advancing the counter — so in
+            // To-Do mode, where finishing the last task completes the CYCLE and
+            // lands here instead, totalTasksCompleted never moved and no
+            // task-count achievement could ever unlock. The archive filled up
+            // while the number behind it stayed at zero.
+            //
+            // tasksToDelete is already non-recurring: the collection loop above
+            // returns early on DOM_CLASSES.RECURRING. That matches the rule the
+            // sibling path documents — a recurring occurrence is scheduled to
+            // return, so it must not inflate this total, and it still reaches
+            // achievements through the cycle-completion path.
+            if (tasksToDelete.length > 0) {
+                if (!state.userProgress) state.userProgress = {};
+                state.userProgress.totalTasksCompleted =
+                    (state.userProgress.totalTasksCompleted || 0) + tasksToDelete.length;
+            }
         }, true); // immediate save - required for stats panel to read correct data
+
+        // Re-check achievements against the new total, mirroring the sibling
+        // path. Without this the unlock waits for some later event to happen to
+        // call it, which for a To-Do user may be never.
+        if (tasksToDelete.length > 0 && typeof _deps.checkAchievements === 'function') {
+            const updatedState = AppState.get();
+            _deps.checkAchievements(
+                updatedState.userProgress?.cyclesCompleted || 0,
+                updatedState.userProgress?.totalTasksCompleted || 0
+            );
+        }
     } else {
         console.warn('⚠️ AppState not ready for cycle reset - state may be lost');
     }

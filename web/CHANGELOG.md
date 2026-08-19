@@ -1,3 +1,23 @@
+## [2.438] - 2026-08-19
+- fix(di): declare startReminders and checkAchievements — both were silently undefined
+
+
+## [2.437] - 2026-08-19
+- fix(stats): cycle reset never counted the tasks it deleted — To-Do mode could unlock no task milestone
+- test(reset): pin the counter and the recurring exclusion
+
+
+## [2.436] - 2026-08-19
+- fix(di): To-Do mode recorded no cleared tasks — taskCore never declared the recorder
+
+
+## [2.435] - 2026-08-19
+- fix(di): read required deps unguarded — 210 sites where `?.` hid broken wiring
+- test(di): wire required deps in statsPanel and settingsManager base setup
+- build(di): add validate:chains gate — a required() dep may never be optional-chained
+- fix(release): changelog no longer re-lists released commits when tagging stalls
+
+
 ## [2.434] - 2026-08-18
 - fix(cache): 11 HTML routes were served with a one-year cache
 
