@@ -1,3 +1,7 @@
+## [2.442] - 2026-08-19
+- fix(a11y): the completed-tasks header is a real <button>, not an <h3> with a role
+- fix(ci): test:a11y needs a browser — it was running in the lint job
+
 ## [2.441] - 2026-08-19
 - fix(a11y): cycle reset left every row announcing "Completed" over an unchecked box
 - fix(a11y): task-option checkboxes had no accessible name, and no linked description

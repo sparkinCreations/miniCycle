@@ -279,6 +279,15 @@ body.onboarding-active .complete-all-and-help-window-container {
 }
 
 .completed-tasks-header {
+    /* Was an <h3 role="button">, which the validator rejects — button is not a
+       permitted role on a heading. It is a disclosure control, so it is now a
+       real <button>: valid, natively operable by Enter and Space, and it let the
+       hand-written keydown handler go. These four lines undo the UA button
+       styling the <h3> never had. */
+    border: none;
+    width: 100%;
+    font-family: inherit;
+    text-align: center;
     font-size: var(--font-size-sm);
     font-weight: 600;
     color: rgba(255, 255, 255, 0.8);

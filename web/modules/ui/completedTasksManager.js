@@ -80,17 +80,6 @@ export class CompletedTasksManager {
         // Add click handler for toggling
         this.deps.safeAddEventListener(header, 'click', () => this.toggle());
 
-        // ...and the keyboard equivalent. This is an <h3>, not a <button>, so the
-        // platform gives it no activation behaviour: it was focusable (tabindex=0)
-        // and carried aria-expanded, but Enter and Space did nothing and only a
-        // mouse could open the section. role="button" in the markup makes the
-        // announcement match; this makes the behaviour match.
-        this.deps.safeAddEventListener(header, 'keydown', (event) => {
-            if (event.key === 'Enter' || event.key === ' ' || event.key === 'Spacebar') {
-                event.preventDefault(); // Space would otherwise scroll the list
-                this.toggle();
-            }
-        });
 
         // Restore saved collapsed state
         this.restoreState();
