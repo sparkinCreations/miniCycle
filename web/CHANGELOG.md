@@ -1,3 +1,7 @@
+## [2.436] - 2026-08-19
+- fix(di): To-Do mode recorded no cleared tasks — taskCore never declared the recorder
+
+
 ## [2.435] - 2026-08-19
 - fix(di): read required deps unguarded — 210 sites where `?.` hid broken wiring
 - test(di): wire required deps in statsPanel and settingsManager base setup
