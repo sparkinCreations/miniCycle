@@ -1,3 +1,8 @@
+## [2.444] - 2026-08-19
+- test(journey): pin the stats panel to state after a To-Do clear
+- fix(todo): clearing completed tasks left the stats panel showing old counts
+
+
 ## [2.443] - 2026-08-19
 - feat(release): --note supplies the changelog line for uncommitted work
 - fix(a11y): daily-reset DOM fallback left the row label saying Completed
