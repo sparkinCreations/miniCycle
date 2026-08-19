@@ -1,5 +1,5 @@
 ## [2.440] - 2026-08-19
-- TODO(changelog): uncommitted work shipped in this release — describe it here
+- fix(games): read tasks from Schema 2.5 — two mini-games still used pre-migration keys
 
 
 ## [2.439] - 2026-08-19
