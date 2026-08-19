@@ -44,6 +44,7 @@ npm run test:sw       # offline boot + PRECACHE DRIFT GUARD (see below)
 npm run test:layout   # panel-overlap + measured-var publish guard, 7 viewports
 npm run test:meta     # static: every test must assert and await its async body
 npm run test:journey  # end-to-end user journeys on the real app
+npm run test:a11y     # custom controls must be keyboard-operable and named — the class no label gate can see
 ```
 
 **Adding a new module file? Run `test:sw`.** Its precache drift guard fails when a module

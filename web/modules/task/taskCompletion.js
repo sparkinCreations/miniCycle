@@ -23,6 +23,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
+import { applyTaskStatusLabel } from './taskUtils.js';
 import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
@@ -164,12 +165,10 @@ export async function handleTaskCompletionChangeImpl(checkbox, deps = {}) {
                 handleTaskListMovement(taskItem, isCompleted);
             }
 
-            // Update task item aria-label to reflect new status
             const taskText = taskItem.querySelector(DOM_SELECTORS.TASK_TEXT)?.textContent || '';
-            const statusText = isCompleted ? getLabel('nav.completed') : getLabel('nav.notCompleted');
-            const isRecurring = taskItem.classList.contains(DOM_CLASSES.RECURRING);
-            const labelKey = isRecurring ? 'action.taskItemRecurring' : 'action.taskItemLabel';
-            taskItem.setAttribute('aria-label', getLabel(labelKey, { vars: { name: taskText, status: statusText } }));
+
+            // Update task item aria-label to reflect new status
+            applyTaskStatusLabel(taskItem, isCompleted, { name: taskText });
 
             // Announce completion state to screen readers via live region
             const getElementById = deps.getElementById || _deps.getElementById;

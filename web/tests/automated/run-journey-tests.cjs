@@ -285,6 +285,23 @@ async function journeyCore(browser, baseURL) {
             record('tasks reset to unchecked', (await checkedCount(page)) === 0, `${await checkedCount(page)} checked`);
             record('tasks remain after reset', (await taskCount(page)) === startCount + 2,
                 `count=${await taskCount(page)}`);
+
+            // The accessible name is a WRITTEN attribute, not something derived
+            // from checkbox.checked — so unchecking a row does not update it. The
+            // reset path had no such update and left every row announcing
+            // "Completed" over an unchecked box, which is worse than an absent
+            // label: it states the opposite of the control's real state. Asserted
+            // here because the DOM looked completely correct while it was wrong.
+            const staleLabels = await page.evaluate(() =>
+                Array.from(document.querySelectorAll('#taskList li'))
+                    .map(el => ({
+                        aria: el.getAttribute('aria-label') || '',
+                        checked: !!el.querySelector('input[type="checkbox"]')?.checked
+                    }))
+                    .filter(r => !r.checked && / Completed$/.test(r.aria))
+                    .length);
+            record('reset rows announce "Not completed"', staleLabels === 0,
+                `${staleLabels} unchecked row(s) still labelled Completed`);
         }
 
         // offline reload
@@ -608,6 +625,43 @@ async function journeyTodoMode(browser, baseURL) {
             `clearedTasks.totalCleared = ${after.cleared} (v2.436: the recorder was undeclared, so this stayed 0)`);
         record('completed-task counter advanced', after.total >= 2,
             `userProgress.totalTasksCompleted = ${after.total} (v2.437: reset never counted what it deleted)`);
+
+        // Recreate selection must be operable WITHOUT a pointer. The entries are
+        // focusable <div>s, and a focusable div does not fire click from the
+        // keyboard — so a click-only handler made the whole feature unreachable
+        // for keyboard and switch users (WCAG 2.1.1, Level A) while looking fine
+        // to a mouse. Arrow-key navigation between entries already worked, which
+        // is exactly what made the gap easy to miss.
+        await page.evaluate(() => document.getElementById('history-btn')?.click());
+        await page.waitForTimeout(1200);
+        await page.evaluate(() => document.querySelector('.history-tab[data-tab="cleared"]')?.click());
+        await page.waitForTimeout(900);
+        await page.evaluate(() => document.querySelector('.history-action-btn')?.click());
+        await page.waitForTimeout(900);
+
+        const hasEntry = await page.evaluate(() => {
+            const e = document.querySelector('.cleared-entry');
+            if (!e) return false;
+            e.focus();
+            return document.activeElement === e;
+        });
+        if (hasEntry) {
+            await page.keyboard.press('Enter');
+            await page.waitForTimeout(400);
+            const kb = await page.evaluate(() => {
+                const e = document.querySelector('.cleared-entry');
+                return { checked: e?.getAttribute('aria-checked'), role: e?.getAttribute('role'),
+                         named: !!e?.getAttribute('aria-label') };
+            });
+            record('recreate entry selectable by keyboard', kb.checked === 'true',
+                `aria-checked=${kb.checked} after Enter (click-only handler = keyboard cannot select)`);
+            record('recreate entry exposes checkbox role + name', kb.role === 'checkbox' && kb.named,
+                `role=${kb.role} named=${kb.named}`);
+        } else {
+            record('recreate entry reachable', false, 'no .cleared-entry could be focused');
+        }
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(600);
     } catch (e) {
         console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);
         failures.push(`harness error: ${e.message}`);

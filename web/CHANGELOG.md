@@ -1,3 +1,12 @@
+## [2.441] - 2026-08-19
+- fix(a11y): cycle reset left every row announcing "Completed" over an unchecked box
+- fix(a11y): task-option checkboxes had no accessible name, and no linked description
+- fix(a11y): a future due date stripped the task row's accessible name entirely
+- fix(a11y): Recreate could not be operated by keyboard at all (WCAG 2.1.1, Level A)
+- fix(a11y): history tabs expose tab semantics; completed-tasks header is keyboard-toggleable
+- build(a11y): add test:a11y — 12 surfaces, custom controls must be operable and named
+- perf(daily-reset): auto-uncheck checks every 30s instead of 60s
+
 ## [2.440] - 2026-08-19
 - fix(games): read tasks from Schema 2.5 — two mini-games still used pre-migration keys
 

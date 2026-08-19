@@ -14,6 +14,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
+import { applyTaskStatusLabel } from '../task/taskUtils.js';
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 // Date-only strings ("YYYY-MM-DD", which is exactly what <input type="date">.value
@@ -202,6 +203,14 @@ export class MiniCycleDueDates {
         // ✅ Track tasks that just became overdue (by ID, display text for notification)
         let newlyOverdueTasks = [];
 
+        // Completion state for the rows below, keyed by task id. Read from state
+        // rather than the checkbox — rule 14: the DOM holds only what is
+        // currently rendered, and this label must describe the task, not the view.
+        const activeCycleId = currentState?.appState?.activeCycleId;
+        const cycleTasks = new Map(
+            (currentState?.data?.cycles?.[activeCycleId]?.tasks || []).map(t => [t.id, t])
+        );
+
         tasks.forEach(task => {
             // ✅ FIX: Use task ID instead of task text for tracking (prevents issues when renaming tasks)
             const taskId = task.dataset?.taskId;
@@ -231,11 +240,20 @@ export class MiniCycleDueDates {
                     newlyOverdueTasks.push(displayName); // Display text for notification
                 }
                 task.classList.add(DOM_CLASSES.OVERDUE_TASK);
-                task.setAttribute('aria-label', getLabel('action.taskItemLabel', { vars: { name: displayName, status: 'overdue' } }));
+                applyTaskStatusLabel(task, false,
+                    { name: displayName, status: getLabel('nav.overdue') });
                 overdueTaskStates[taskId] = true;
             } else {
                 task.classList.remove(DOM_CLASSES.OVERDUE_TASK);
-                task.removeAttribute('aria-label');
+                // Restore the completion status rather than dropping the label.
+                // removeAttribute() left every task with a FUTURE due date with no
+                // accessible name at all — measured: "…, Not completed" became null
+                // — so the row lost the one thing a screen reader needs from it.
+                // Completion is read from state, never from the checkbox: the DOM
+                // holds only what is currently rendered.
+                const stateTask = cycleTasks.get(taskId);
+                applyTaskStatusLabel(task, stateTask?.completed === true,
+                    { name: displayName });
                 delete overdueTaskStates[taskId];
             }
         });

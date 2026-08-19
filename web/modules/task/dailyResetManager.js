@@ -26,11 +26,11 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, INTERVALS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { formatLocalDate } from '../recurring/recurringDateUtils.js';
 
-const TICK_INTERVAL_MS = 60_000;
+
 const APPSTATE_SUBSCRIBER_KEY = 'dailyResetManager';
 
 const di = createDIModule('DailyResetManager', {
@@ -504,7 +504,7 @@ export class DailyResetManager {
     _startTicker() {
         // 60s tick is plenty for a feature that fires once per day per routine.
         // Visibility-change covers the closed-app case (catch-up).
-        this._intervalId = setInterval(() => this.checkAllRoutines(), TICK_INTERVAL_MS);
+        this._intervalId = setInterval(() => this.checkAllRoutines(), INTERVALS.DAILY_RESET_TICK);
 
         this._visibilityHandler = () => {
             if (document.visibilityState === 'visible') {

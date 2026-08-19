@@ -67,6 +67,7 @@ npm test
 
 # Real-app suites — each starts its own server
 npm run test:layout
+npm run test:a11y
 npm run test:sw
 npm run test:meta
 npm run test:journey

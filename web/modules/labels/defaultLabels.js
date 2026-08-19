@@ -1456,6 +1456,7 @@ export const DEFAULT_LABELS = deepFreeze({
         nextView:       'Next view',
         completed:      'Completed',
         notCompleted:   'Not completed',
+        overdue:        'Overdue',
         saving:         'Saving...',
         hideTaskInput:  'Hide Task Input',
         addTaskToggle:  'Add Task',
@@ -2660,6 +2661,7 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'nav.addTaskToggle',
     'nav.completed',
     'nav.notCompleted',
+    'nav.overdue',
 
     // Quick actions
     'quickAction.openRoutine',
