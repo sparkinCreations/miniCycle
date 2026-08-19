@@ -80,6 +80,7 @@ export class CompletedTasksManager {
         // Add click handler for toggling
         this.deps.safeAddEventListener(header, 'click', () => this.toggle());
 
+
         // Restore saved collapsed state
         this.restoreState();
 

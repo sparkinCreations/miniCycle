@@ -50,6 +50,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
+import { applyTaskStatusLabel } from './taskUtils.js';
 import { TASK_TIMEOUTS, UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, MILESTONES } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
@@ -351,6 +352,10 @@ function resetTasksData(context, deps) {
         if (disableTaskAnimation) {
             // Skip animation, just reset immediately
             if (checkbox) checkbox.checked = false;
+            // The accessible name is NOT derived from checkbox.checked — it is a
+            // written attribute, so unchecking without this leaves every row
+            // announcing "Completed" over an unchecked box.
+            applyTaskStatusLabel(taskEl, false);
             taskEl.classList.remove(DOM_CLASSES.OVERDUE_TASK);
             if (dueDateInput) {
                 dueDateInput.value = "";
@@ -361,6 +366,7 @@ function resetTasksData(context, deps) {
             trackTimeout(setTimeout(() => {
                 taskEl.classList.add(DOM_CLASSES.TASK_RESETTING);
                 if (checkbox) checkbox.checked = false;
+                applyTaskStatusLabel(taskEl, false);
                 taskEl.classList.remove(DOM_CLASSES.OVERDUE_TASK);
                 if (dueDateInput) {
                     dueDateInput.value = "";

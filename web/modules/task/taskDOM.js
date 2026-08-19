@@ -29,6 +29,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
+import { applyTaskStatusLabel } from './taskUtils.js';
 import { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS, COLORS, DOM_IDS, DOM_SELECTORS, DATA_SELECTORS, DOM_CLASSES } from '../core/constants.js';
 import { ICONS } from '../utils/icons.js';
 import { getLabel } from '../labels/labelResolver.js';
@@ -576,10 +577,8 @@ export class TaskDOMManager {
         }
 
         // Accessibility: descriptive aria-label for screen readers
-        const completed = taskContext.completed || false;
-        const statusText = completed ? getLabel('nav.completed') : getLabel('nav.notCompleted');
-        const labelKey = recurring ? 'action.taskItemRecurring' : 'action.taskItemLabel';
-        taskItem.setAttribute('aria-label', getLabel(labelKey, { vars: { name: taskTextTrimmed, status: statusText } }));
+        applyTaskStatusLabel(taskItem, taskContext.completed || false,
+            { name: taskTextTrimmed, recurring });
 
         // Create three dots button if needed
         const threeDotsButton = this.createThreeDotsButton(taskItem, settings);

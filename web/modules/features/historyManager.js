@@ -282,12 +282,14 @@ export class HistoryManager {
                     <button class="history-action-btn history-action-btn--danger">${getLabel('history.clearAll')}</button>
                 </header>
                 ${clearedCount > 0 ? `
-                <div class="history-tabs">
-                    <button class="history-tab" data-tab="events">📜 ${getLabel('history.events')}</button>
-                    <button class="history-tab" data-tab="cleared">✓ ${getLabel('history.clearedTasks')} <span class="history-tab-badge">${clearedCount}</span></button>
+                <div class="history-tabs" role="tablist" aria-label="${getLabel('history.title')}">
+                    <button class="history-tab" data-tab="events" role="tab" id="history-tab-events"
+                            aria-controls="history-tabpanel" aria-selected="false" tabindex="-1">📜 ${getLabel('history.events')}</button>
+                    <button class="history-tab" data-tab="cleared" role="tab" id="history-tab-cleared"
+                            aria-controls="history-tabpanel" aria-selected="false" tabindex="-1">✓ ${getLabel('history.clearedTasks')} <span class="history-tab-badge">${clearedCount}</span></button>
                 </div>
                 ` : ''}
-                <div class="history-modal-content"></div>
+                <div class="history-modal-content" id="history-tabpanel" role="tabpanel" tabindex="0"></div>
                 <div class="history-reset-section">
                     <button class="history-reset-progress-btn">${getLabel('history.resetRoutineProgress')}</button>
                 </div>
@@ -666,20 +668,33 @@ export class HistoryManager {
         // Setup click handlers for entries in recreate mode
         if (this.isRecreateMode) {
             content.querySelectorAll(DOM_SELECTORS.CLEARED_ENTRY).forEach(el => {
-                el.addEventListener('click', () => {
+                const toggle = () => {
                     const id = el.dataset.id;
                     const checkbox = el.querySelector('span');
+                    const nowSelected = !this.selectedTasks.has(id);
 
-                    if (this.selectedTasks.has(id)) {
-                        this.selectedTasks.delete(id);
-                        el.classList.remove(DOM_CLASSES.SELECTED);
-                        if (checkbox) checkbox.textContent = '';
-                    } else {
-                        this.selectedTasks.add(id);
-                        el.classList.add(DOM_CLASSES.SELECTED);
-                        if (checkbox) checkbox.textContent = '✓';
-                    }
+                    if (nowSelected) this.selectedTasks.add(id);
+                    else this.selectedTasks.delete(id);
+
+                    el.classList.toggle(DOM_CLASSES.SELECTED, nowSelected);
+                    // The tick is decorative (aria-hidden); aria-checked is what
+                    // actually carries the state to assistive tech.
+                    if (checkbox) checkbox.textContent = nowSelected ? '✓' : '';
+                    el.setAttribute('aria-checked', String(nowSelected));
                     this._updateConfirmButton();
+                };
+
+                el.addEventListener('click', toggle);
+                // A focusable <div> does not fire click from the keyboard, so a
+                // click-only handler left this entirely inoperable without a
+                // pointer — measured: Enter and Space both did nothing while the
+                // mouse worked. Arrow-key navigation between entries already
+                // existed, which is what made the gap easy to miss.
+                el.addEventListener('keydown', (event) => {
+                    if (event.key === 'Enter' || event.key === ' ' || event.key === 'Spacebar') {
+                        event.preventDefault(); // Space would otherwise scroll the panel
+                        toggle();
+                    }
                 });
             });
         }
@@ -698,9 +713,12 @@ export class HistoryManager {
         return `
             <div class="cleared-entry ${isSelected ? 'selected' : ''} ${this.isRecreateMode ? 'selectable' : ''}"
                  data-id="${entry.id}"
-                 tabindex="0">
+                 tabindex="0"
+                 ${this.isRecreateMode
+                     ? `role="checkbox" aria-checked="${isSelected}" aria-label="${this._escapeHtml(entry.taskText)}"`
+                     : ''}>
                 ${this.isRecreateMode ? `
-                    <span class="cleared-entry-checkbox">${isSelected ? '✓' : ''}</span>
+                    <span class="cleared-entry-checkbox" aria-hidden="true">${isSelected ? '✓' : ''}</span>
                 ` : ''}
                 <div class="cleared-entry-content">
                     <div class="cleared-entry-text">${this._escapeHtml(entry.taskText)}</div>
@@ -897,7 +915,16 @@ export class HistoryManager {
         this.modalOverlay.querySelectorAll(DOM_SELECTORS.HISTORY_TAB).forEach(tab => {
             const isActive = tab.dataset.tab === this.activeTab;
             tab.classList.toggle(DOM_CLASSES.ACTIVE, isActive);
+            // The active class alone was the ONLY signal of which tab is current,
+            // so a screen reader could not tell Events from Cleared Tasks. Roving
+            // tabindex matches the arrow-key navigation this container already
+            // has: one stop for the group, arrows to move within it.
+            tab.setAttribute('aria-selected', String(isActive));
+            tab.setAttribute('tabindex', isActive ? '0' : '-1');
         });
+        const panel = this.modalOverlay.querySelector(DOM_SELECTORS.HISTORY_MODAL_CONTENT);
+        const activeTab = this.modalOverlay.querySelector(`${DOM_SELECTORS.HISTORY_TAB}[data-tab="${this.activeTab}"]`);
+        if (panel && activeTab?.id) panel.setAttribute('aria-labelledby', activeTab.id);
     }
 
     /**

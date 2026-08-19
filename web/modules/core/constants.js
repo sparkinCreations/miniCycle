@@ -215,7 +215,11 @@ export const INTERVALS = Object.freeze({
     RECURRING_WATCHER_IDLE: 7200000,    // 2h - Recurring watcher interval when no templates exist
     BACKUP_DAILY: 86400000,             // 24h - Default daily auto-backup interval
     BACKUP_SESSION_MIN: 300000,         // 5min - Minimum gap between auto-backups within a single session
-    BACKUP_TEST_MIN: 300000             // 5min - Minimum gap before re-running backup integrity tests
+    BACKUP_TEST_MIN: 300000,            // 5min - Minimum gap before re-running backup integrity tests
+    // Foreground cadence for the daily auto-uncheck. Only covers the app sitting
+    // open ACROSS the scheduled minute — a backgrounded tab has its timers
+    // throttled or suspended, and visibilitychange is the catch-up for that.
+    DAILY_RESET_TICK: 30000             // 30s - Daily auto-uncheck check interval
 });
 
 /**
