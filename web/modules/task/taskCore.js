@@ -67,6 +67,10 @@ const di = createDIModule('TaskCore', {
     updateStatsPanel: optional(null),
     updateProgressBar: optional(null),
     checkCompleteAllButton: optional(null),
+    // Forward-through to taskCRUD / taskCycleReset: the To-Do "Clear Completed"
+    // path refreshes stats ONLY through this, so an undeclared dep left the panel
+    // showing pre-clear counts with no error (v2.443).
+    requestUIUpdate: optional(null),
     updateMainMenuHeader: optional(null),
     checkOverdueTasks: optional(null),
     updateArrowsInDOM: optional(null),
