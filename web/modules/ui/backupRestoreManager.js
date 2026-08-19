@@ -115,6 +115,17 @@ function reloadWithLoader(logContext, options = {}) {
                 document.body.classList.add(DOM_CLASSES.TASKS_EMPTY);
             }
 
+            // ...and the routine title, for the same reason. Both title writers
+            // only run when a cycle EXISTS — routineLoader.updateCycleUIState()
+            // takes one as an argument, and appInit returns early on
+            // `if (!currentCycle)`. A factory reset produces exactly the state
+            // neither handles, so the header kept showing the name of the
+            // routine that had just been deleted while state read activeCycleId
+            // = null. Cleared here beside the task list, which had the same
+            // problem and the same fix.
+            const titleEl = document.getElementById(DOM_IDS.MINI_CYCLE_TITLE);
+            if (titleEl) titleEl.textContent = getLabel('routine.untitledCycle');
+
             const AppState = getAppStateInstance();
             AppState?.reload?.();
 

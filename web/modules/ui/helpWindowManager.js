@@ -646,6 +646,42 @@ export class HelpWindowManager {
         `;
     }
 
+    /**
+     * Drop any temporary content and re-render for the current routine.
+     *
+     * `isShowingModeDescription` is a lock, not a description: showModeDescription()
+     * holds it for 30s and showCustomizerTip() reuses the same flag for 10s, and
+     * updateConstantMessage() early-returns for as long as it is set. Nothing
+     * released it on a routine switch, so changing modes and then switching left
+     * the help window showing the PREVIOUS routine's temporary message — measured:
+     * the customizer tip survived the switch while the control run (no mode
+     * change) correctly showed the new routine's status.
+     *
+     * Called on routine switch. Safe at any time: a no-op when nothing temporary
+     * is showing.
+     * @returns {void}
+     */
+    clearTemporaryMessage() {
+        if (this.modeDescriptionTimeout) {
+            clearTimeout(this.modeDescriptionTimeout);
+            this.modeDescriptionTimeout = null;
+        }
+        if (!this.isShowingModeDescription && !this.isShowingCycleComplete) return;
+
+        this.isShowingModeDescription = false;
+        this.isShowingCycleComplete = false;
+        this.currentMode = null;
+        document.getElementById(DOM_IDS.TASK_VIEW)
+            ?.classList.remove(DOM_CLASSES.MODE_DESCRIPTION_VISIBLE);
+
+        // Clear the cache too — the parts key for the new routine can coincide
+        // with the old one (two empty routines read identically), and without
+        // this the re-render would be skipped as a no-change.
+        this.currentMessage = null;
+        this._currentPartsKey = null;
+        this.updateConstantMessage();
+    }
+
     show() {
         if (!this.helpWindow || this.isVisible) return;
 

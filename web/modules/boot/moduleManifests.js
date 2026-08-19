@@ -427,7 +427,7 @@ export const MODULE_MANIFESTS = {
         path: '../routine/routineManager.js',
         phase: PHASES.CYCLE,
         requires: ['appInit', 'AppState', 'showNotification', 'showPromptModal', 'updateMainMenuHeader'],
-        optionalDeps: ['refreshThemeLabels', 'onCycleCreated', 'syncModeFromToggles', 'updateRecurringInfoLink', 'loadMiniCycle', 'DEFAULT_TASK_OPTION_BUTTONS', 'checkCompleteAllButton', 'completeInitialSetup', 'hideMainMenu', 'updateProgressBar'],
+        optionalDeps: ['helpWindowManager', 'refreshThemeLabels', 'onCycleCreated', 'syncModeFromToggles', 'updateRecurringInfoLink', 'loadMiniCycle', 'DEFAULT_TASK_OPTION_BUTTONS', 'checkCompleteAllButton', 'completeInitialSetup', 'hideMainMenu', 'updateProgressBar'],
         provides: ['showCycleCreationModal', 'createNewMiniCycle', 'preloadGettingStartedCycle', 'preloadInitialRunCycle'],
         api: 'cycle',
         after: ['menuManager']  // Needs hideMainMenu and updateMainMenuHeader from menuManager
@@ -685,7 +685,7 @@ export const MODULE_MANIFESTS = {
         path: '../routine/routineLoader.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState', 'loadMiniCycleData'],
-        optionalDeps: ['refreshThemeLabels', 'syncModeFromToggles', 'updateRecurringInfoLink', 'addTask', 'catchUpMissedRecurringTasks', 'checkCompleteAllButton', 'completedTasksManager', 'createInitialSchema25Data', 'startReminders', 'syncAllTasksWithMode', 'taskToAddTaskOptions', 'updateMainMenuHeader', 'updateProgressBar', 'updateSearchVisibility', 'updateStatsPanel', 'updateThemeColor'],
+        optionalDeps: ['helpWindowManager', 'refreshThemeLabels', 'syncModeFromToggles', 'updateRecurringInfoLink', 'addTask', 'catchUpMissedRecurringTasks', 'checkCompleteAllButton', 'completedTasksManager', 'createInitialSchema25Data', 'startReminders', 'syncAllTasksWithMode', 'taskToAddTaskOptions', 'updateMainMenuHeader', 'updateProgressBar', 'updateSearchVisibility', 'updateStatsPanel', 'updateThemeColor'],
         provides: ['loadMiniCycle'],
         api: 'cycle',
         after: ['taskCore']

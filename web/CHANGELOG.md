@@ -1,3 +1,7 @@
+## [2.446] - 2026-08-19
+- fix(ui): factory reset left the old routine title; a mode change froze the help window across a routine switch
+
+
 ## [2.445] - 2026-08-19
 - test: pin repeat factory resets and the reset's storage contract
 - fix(reset): report real outcome, keep the device gate, clear plugin keys, re-ask the first-run choice
