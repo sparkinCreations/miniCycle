@@ -188,6 +188,9 @@ AUTO_GIT_PUSH=false
 INCLUDE_LITE=false
 LITE_ONLY=false
 AUTO_CHANGELOG=false
+# Describes uncommitted work that ships in this release. Supplied via --note,
+# or prompted for interactively; empty falls back to a TODO marker.
+RELEASE_NOTE=""
 AUTO_SAMPLES=false
 BUILD_CHROME=false
 BUILD_ANDROID=false
@@ -227,6 +230,17 @@ while [[ $# -gt 0 ]]; do
             AUTO_CHANGELOG=true
             shift
             ;;
+        --note|-m)
+            # Describes uncommitted work shipping in this release. Implies
+            # --changelog: a note with nothing to write it into is a silent no-op.
+            if [ -z "${2:-}" ]; then
+                echo "❌ --note requires a description (e.g. --note 'fix(games): read Schema 2.5')"
+                exit 1
+            fi
+            RELEASE_NOTE="$2"
+            AUTO_CHANGELOG=true
+            shift 2
+            ;;
         --samples|-s)
             AUTO_SAMPLES=true
             shift
@@ -260,6 +274,7 @@ while [[ $# -gt 0 ]]; do
             echo "Options:"
             echo "  --auto, -a      Auto-bump versions and update all files (no prompts)"
             echo "  --changelog, -c Auto-generate changelog from git commits"
+            echo "  --note, -m TEXT Changelog line for uncommitted work (implies --changelog)"
             echo "  --samples, -s   Regenerate sample routine manifest from .mcyc files"
             echo "  --chrome, -C    Rebuild the Chrome (full) extension to chrome/full/"
             echo "  --android, -A   Rebuild the Android (Capacitor) web payload + sync versionName"
@@ -281,6 +296,7 @@ while [[ $# -gt 0 ]]; do
             echo "  ./update-version.sh --auto --tag # Auto-bump + create tag"
             echo "  ./update-version.sh -a -c -t     # Auto-bump + changelog + tag"
             echo "  ./update-version.sh -a -p        # Auto-bump + tag + push"
+            echo "  ./update-version.sh -a -p -m 'fix(x): thing'  # ...describing uncommitted work"
             echo ""
             echo "Lite-only examples:"
             echo "  ./update-version.sh --lite-only        # Update only lite version (interactive)"
@@ -1771,17 +1787,33 @@ if [ -n "$PENDING_FILES" ]; then
         echo "    (no --changelog, so nothing will record them at all)"
     fi
 
-    # Interactive runs can still bail out and commit properly first. Auto runs
-    # are unattended, so they ship with a TODO marker rather than blocking a
-    # release on a prompt nobody is there to answer.
-    if [ "$AUTO_MODE" = false ] && [ "$DRY_RUN" = false ]; then
+    if [ -n "$RELEASE_NOTE" ]; then
+        # --note already describes them; nothing to prompt about.
+        echo "    📝 Described by --note: $RELEASE_NOTE"
+    elif [ "$AUTO_MODE" = false ] && [ "$DRY_RUN" = false ]; then
+        # Interactive runs can still bail out and commit properly first.
         echo ""
-        read -p "Abort so you can commit these first? (y/N): " -n 1 -r
-        echo ""
+        # Line-oriented on purpose. With `-n 1` this returns on the keypress and
+        # leaves the user's Enter in the buffer, where it instantly satisfies the
+        # changelog prompt below with an empty answer — silently reinstating the
+        # TODO marker that prompt exists to avoid. `|| true` because set -e would
+        # treat EOF (piped/closed stdin) as a fatal error mid-release.
+        REPLY=""
+        read -r -p "Abort so you can commit these first? (y/N): " REPLY || true
         if [[ $REPLY =~ ^[Yy]$ ]]; then
             echo "🛑 Aborted before tagging — commit your work, then re-run."
             exit 1
         fi
+        # Shipping anyway: take the changelog line now, while someone is here to
+        # give it. Blank falls through to the TODO marker below.
+        if [ "$UPDATE_CHANGELOG" = true ]; then
+            read -r -p "Changelog line for this work (blank = TODO marker): " RELEASE_NOTE || true
+            RELEASE_NOTE=$(printf '%s' "$RELEASE_NOTE" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+        fi
+    elif [ "$AUTO_MODE" = true ] && [ "$UPDATE_CHANGELOG" = true ]; then
+        # Unattended: no prompt to answer, so a TODO marker records the gap
+        # rather than blocking the release. --note is how you avoid it.
+        echo "    (no --note, so CHANGELOG.md gets a TODO marker to fill in)"
     fi
     echo ""
 fi
@@ -1827,7 +1859,11 @@ if [ "$UPDATE_CHANGELOG" = true ]; then
                 done <<< "$COMMITS"
             fi
             if [ -n "$PENDING_FILES" ]; then
-                NEW_ENTRY+="- TODO(changelog): uncommitted work shipped in this release — describe it here"$'\n'
+                if [ -n "$RELEASE_NOTE" ]; then
+                    NEW_ENTRY+="- ${RELEASE_NOTE}"$'\n'
+                else
+                    NEW_ENTRY+="- TODO(changelog): uncommitted work shipped in this release — describe it here"$'\n'
+                fi
             fi
             NEW_ENTRY+=$'\n'
 
@@ -1850,8 +1886,12 @@ if [ "$UPDATE_CHANGELOG" = true ]; then
             fi
 
             if [ -n "$PENDING_FILES" ]; then
-                echo "   ⚠️  Includes a TODO(changelog) line for the uncommitted work —"
-                echo "       edit $CHANGELOG_FILE before pushing."
+                if [ -n "$RELEASE_NOTE" ]; then
+                    echo "   📝 Uncommitted work recorded as: $RELEASE_NOTE"
+                else
+                    echo "   ⚠️  Includes a TODO(changelog) line for the uncommitted work —"
+                    echo "       edit $CHANGELOG_FILE before pushing."
+                fi
             fi
         else
             echo "ℹ️  No new commits to add"

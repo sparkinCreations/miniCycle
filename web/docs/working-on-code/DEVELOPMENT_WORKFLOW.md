@@ -176,6 +176,18 @@ npm run preview:dist  # serve dist on :8081 — check on a FRESH origin/incognit
 ./scripts/update-version.sh --auto --push --changelog
 ```
 
+> 📝 **Shipping uncommitted work?** `--changelog` writes a `TODO(changelog)` placeholder
+> when the tree is dirty, because `git add -A` sweeps that work into the release with no
+> commit message to describe it. Pass `--note` to supply the line up front and skip the
+> placeholder (interactive runs are prompted for it instead):
+>
+> ```bash
+> ./scripts/update-version.sh --auto --push --changelog --note "fix(x): what changed"
+> ```
+>
+> `--note` implies `--changelog`. Leave it off and the release still ships — you just owe
+> CHANGELOG.md a follow-up commit.
+
 > ⚠️ **Every push to `main` auto-deploys** (Netlify builds `dist/` and publishes it).
 > **Never bare-push app-code changes** — without the version bump, existing users' service
 > workers keep serving the old build (half-dark deploy). Docs-only pushes are fine.
