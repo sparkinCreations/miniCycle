@@ -1,3 +1,11 @@
+## [2.443] - 2026-08-19
+- feat(release): --note supplies the changelog line for uncommitted work
+- fix(a11y): daily-reset DOM fallback left the row label saying Completed
+- fix(a11y,ci): use a real button, and run the a11y gate where a browser exists
+- fix(a11y): custom-control semantics, plus a gate covering 12 surfaces
+- docs(changelog): describe 2.440 — the games Schema 2.5 fix
+
+
 ## [2.442] - 2026-08-19
 - fix(a11y): the completed-tasks header is a real <button>, not an <h3> with a role
 - fix(ci): test:a11y needs a browser — it was running in the lint job
