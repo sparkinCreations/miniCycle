@@ -72,6 +72,12 @@ npm run test:meta
 npm run test:journey
 ```
 
+**`npm run test:journey` fails on DI wiring gaps.** It drives the real app, and a
+dependency a module never declared does not throw — it silently removes a feature.
+The suite now treats the app's own `DI access` / `missing required dep` warning as a
+failure. Unit tests cannot cover this: they inject dependencies directly and so pass
+while the manifest is wrong.
+
 **If you add a module file, `npm run test:sw` is the one that matters.** Its
 precache drift guard fails when a module in the boot graph is missing from
 `BOOT_CRITICAL` in `service-worker.js`. Nothing else catches it — a new module

@@ -23,6 +23,7 @@
 | **DI declarations** | `npm run validate:di` | CI — `test.yml` | 🟡 Partially gated (undeclared=0, nowhere=0, undeliverable=0, unused ratchet; facade advisory) |
 | **Inline scripts** | `npm run validate:inline` | CI — `test.yml` | 🔴 Fails CI — empty catch blocks in miniCycle.html inline scripts must carry an intent comment (ESLint's `no-empty` can't see the file — drift-review D-01) |
 | **Comment references** | `npm run validate:comments` | CI — `test.yml` | 🔴 Fails CI — an identifier named in a comment must exist somewhere in the code |
+| **DI wiring gaps (runtime)** | `npm run test:journey` | CI — `test.yml` | 🔴 Fails CI — a `DI access` or `missing required dep` warning from the real app fails the journey that saw it |
 | **Required-dep chaining** | `npm run validate:chains` | CI — `test.yml` | 🔴 Fails CI — a dep declared `required()` must never be read as `deps.x?.` outside a `catch` block |
 | **ES built-in floor** | `npm run validate:builtins` | CI — `test.yml` | 🔴 Fails CI — no post-es2020 built-ins in shipped code (esbuild transpiles syntax, not built-ins) |
 | **Label registries** | `npm run validate:labels` | CI — `test.yml` | 🔴 Fails CI — every literal `getLabel()` key must resolve in `defaultLabels.js`; every logged history event type must be in historyManager's icon+label maps |
