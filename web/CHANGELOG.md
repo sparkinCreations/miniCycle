@@ -1,3 +1,8 @@
+## [2.437] - 2026-08-19
+- fix(stats): cycle reset never counted the tasks it deleted — To-Do mode could unlock no task milestone
+- test(reset): pin the counter and the recurring exclusion
+
+
 ## [2.436] - 2026-08-19
 - fix(di): To-Do mode recorded no cleared tasks — taskCore never declared the recorder
 

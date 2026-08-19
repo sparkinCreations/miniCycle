@@ -466,6 +466,83 @@ export async function runTaskCycleResetTests(resultsDiv) {
     });
 
     // ============================================
+    resultsDiv.innerHTML += '<h4 class="test-section">📊 Reset counts the tasks it deletes</h4>';
+
+    // resetTasksImpl and deleteCompletedTasksImpl BOTH delete deleteWhenComplete
+    // tasks and both archive them, but only the latter advanced
+    // userProgress.totalTasksCompleted. In To-Do mode finishing the last task
+    // completes the CYCLE and lands here, so the counter never moved and no
+    // task-count achievement could unlock — the archive filled while the number
+    // behind it stayed at zero.
+    function makeResetHarness(tasks) {
+        const taskList = document.createElement('ul');
+        taskList.id = 'taskList';
+        tasks.forEach(t => {
+            const li = document.createElement('li');
+            li.className = t.recurring ? 'task recurring' : 'task';
+            li.dataset.taskId = t.id;
+            const cb = document.createElement('input');
+            cb.type = 'checkbox';
+            cb.checked = true;
+            li.appendChild(cb);
+            taskList.appendChild(li);
+        });
+        document.body.appendChild(taskList);
+        const stateObj = {
+            appState: { activeCycleId: 'c1' },
+            settings: { disableCompletionAnimation: true },
+            data: { cycles: { c1: { tasks: tasks.map(t => ({ ...t, completed: true })), cycleCount: 0 } } },
+            userProgress: {}
+        };
+        const AppState = {
+            isReady: () => true,
+            get: () => stateObj,
+            update: async (producer) => { await producer(stateObj); return stateObj; }
+        };
+        return { taskList, stateObj, deps: { AppState, querySelector: (sel) => sel === '#taskList' ? taskList : null } };
+    }
+
+    await test('reset advances totalTasksCompleted by the tasks it deleted', async () => {
+        const h = makeResetHarness([
+            { id: 'A', text: 'A', deleteWhenComplete: true },
+            { id: 'B', text: 'B', deleteWhenComplete: true },
+            { id: 'C', text: 'C', deleteWhenComplete: false }
+        ]);
+        try {
+            await mod.resetTasksImpl(h.deps);
+            await new Promise(r => setTimeout(r, 150));
+            const got = h.stateObj.userProgress.totalTasksCompleted;
+            if (got !== 2) {
+                throw new Error(`Expected 2 deleted tasks counted, got ${got}`);
+            }
+        } finally {
+            mod.clearAllTimeouts();
+            h.taskList.remove();
+        }
+    });
+
+    await test('reset does not count recurring occurrences toward the total', async () => {
+        // A recurring occurrence is scheduled to return, so counting it would
+        // inflate the cleared-task milestones — the same rule the Clear
+        // Completed path documents. It still reaches achievements via cycles.
+        const h = makeResetHarness([
+            { id: 'A', text: 'A', deleteWhenComplete: true },
+            { id: 'R', text: 'R', deleteWhenComplete: true, recurring: true }
+        ]);
+        try {
+            await mod.resetTasksImpl(h.deps);
+            await new Promise(r => setTimeout(r, 150));
+            const got = h.stateObj.userProgress.totalTasksCompleted;
+            if (got !== 1) {
+                throw new Error(`Recurring occurrence must not count; expected 1, got ${got}`);
+            }
+        } finally {
+            mod.clearAllTimeouts();
+            h.taskList.remove();
+        }
+    });
+
+    // ============================================
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;
     if (passed.count === total.count) {
