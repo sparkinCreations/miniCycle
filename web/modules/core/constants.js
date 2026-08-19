@@ -560,6 +560,10 @@ export const STORAGE_KEYS = Object.freeze({
     LITE_CELEBRATED_CLEARED_BADGES: 'miniCycleLite_celebratedClearedBadges',
     LITE_NOTIFICATIONS: 'miniCycleLiteNotifications',
     FORCE_FULL_VERSION: 'miniCycleForceFullVersion',
+    // First-run choice screen. Written by the static handler in miniCycle.html
+    // and re-written when a factory reset raises that screen again in place.
+    FIRST_RUN_CHOICE_SESSION: 'miniCycle_firstRunChoice',
+    FIRST_RUN_CHOICE_MADE: 'miniCycle_firstRunChoiceMade',
     CONSOLE_CAPTURE_ENABLED: 'miniCycle_enableAutoConsoleCapture',
     CONSOLE_CAPTURE_BUFFER: 'miniCycle_capturedConsoleBuffer',
     TIME_TRACKER: 'timeTrackerData'
@@ -712,6 +716,10 @@ export const DOM_CLASSES = Object.freeze({
     CYCLE_DEMO_DIVIDER: 'cycle-demo__divider',
     CYCLE_DEMO_SUBTITLE: 'cycle-demo__subtitle',
     CYCLE_DEMO_ARROW: 'cycle-demo__arrow',
+    FIRST_RUN_MODE: 'first-run-mode',       // on #app-loader while the choice screen is up
+    MC_FIRST_RUN: 'mc-first-run',           // on <html>; critical.css lays the screen out from it
+    FIRST_RUN_BTN: 'first-run-btn',
+    FIRST_RUN_BTN_CHOSEN: 'is-chosen',
     FIRST_RUN_SPLASH: 'first-run-splash',
     FIRST_RUN_SPLASH_VISIBLE: 'first-run-splash--visible',
     FIRST_RUN_SPLASH_FADING: 'first-run-splash--fading',
@@ -1104,6 +1112,9 @@ export const DOM_IDS = Object.freeze({
     FIRST_RUN_WELCOME_NEXT: 'first-run-welcome-next',
     FIRST_RUN_SPLASH: 'first-run-splash',
     FIRST_RUN_SPLASH_TITLE: 'first-run-splash-title',
+    // Static first-run choice screen (create / sample / learn). Lives in
+    // miniCycle.html and is re-shown in place after a factory reset.
+    FIRST_RUN_CHOICE: 'first-run-choice',
     LIVE_REGION: 'live-region',
     SLIDE_LEFT: 'slide-left',
     SLIDE_RIGHT: 'slide-right',

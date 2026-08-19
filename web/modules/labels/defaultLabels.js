@@ -611,6 +611,7 @@ export const DEFAULT_LABELS = deepFreeze({
         backupCorruptData:       'Backup data is corrupt.',
         factoryResetComplete:    'Factory Reset Complete. Reloading...',
         factoryResetCancelled:   'Factory reset cancelled.',
+        factoryResetPartial:     'Factory reset finished, but some stored data could not be removed. Close other miniCycle tabs and try again.',
         restoreCancelled:        'Restore cancelled.',
 
         // Import/export notifications
@@ -2467,6 +2468,7 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'notify.backupCorruptData',
     'notify.factoryResetComplete',
     'notify.factoryResetCancelled',
+    'notify.factoryResetPartial',
     'notify.fileTooLarge',
     'notify.invalidJson',
     'notify.invalidFormat',

@@ -34,7 +34,11 @@ const di = createDIModule('BackupRestoreManager', {
     hideMainMenu: optional(null),  // Close settings menu after restore/reset
     closeAllModals: optional(null),  // Close all open modals after restore/reset
     appInit: optional(null),  // For full re-init after factory reset (triggers onboarding)
-    showPromptModal: optional(null)  // For naming backups
+    showPromptModal: optional(null),  // For naming backups
+    // Factory reset closes undo's IndexedDB connection before deleting the
+    // databases, then reopens it so a SECOND reset works without a page reload.
+    closeUndoIndexedDB: optional(null),
+    initUndoIndexedDB: optional(null)
 });
 
 /** @type {{AppState: Object, showNotification: Function, showConfirmationModal: Function, safeAddEventListener: Function, performSchema25Migration: Function|null, BackupManager: Object|null, AppMeta: Object|null, loadMiniCycle: Function|null, showLoader: Function|null, hideLoader: Function|null, hideMainMenu: Function|null, closeAllModals: Function|null, appInit: Object|null}} */
@@ -90,14 +94,16 @@ const LITE_STORAGE_KEYS = Object.freeze([
  * @returns {void}
  */
 function reloadWithLoader(logContext, options = {}) {
-    const { fullReinit = false } = options;
+    const { fullReinit = false, armFirstRunChoice = false } = options;
 
     // Close all open modals and the settings menu BEFORE showing the loader
     _deps.closeAllModals?.();
     _deps.hideMainMenu?.();
 
     // Show loading overlay via DI (from uiBoot)
-    _deps.showLoader?.(getLabel('notify.importLoading'));
+    // When the choice screen is up it IS the loader — showing the import spinner
+    // over it would replace the buttons with "Loading routines...".
+    if (!armFirstRunChoice) _deps.showLoader?.(getLabel('notify.importLoading'));
 
     setTimeout(async () => {
         try {
@@ -121,9 +127,107 @@ function reloadWithLoader(logContext, options = {}) {
         } catch (error) {
             console.error(`❌ ${logContext} reload failed:`, error);
         } finally {
-            _deps.hideLoader?.();
+            // Leave it up when it is hosting the choice screen — the pick's own
+            // handler hides it (see rearmFirstRunChoiceScreen).
+            if (!armFirstRunChoice) _deps.hideLoader?.();
         }
     }, 400);
+}
+
+const APP_DATABASES = ['miniCycle_backups', 'miniCycleUndoHistory', 'miniCycleBackgroundDB', 'miniCycleTestResultsDB'];
+
+/**
+ * Which of the app's databases still exist. Used to verify a factory reset
+ * rather than assume it: deleteDatabase can be blocked by an open connection and
+ * the reset's handler settles on `blocked` and continues.
+ *
+ * indexedDB.databases() is unsupported on Firefox and older Safari; there we
+ * return [] and the caller keeps its previous behaviour of reporting success,
+ * which is no worse than before this check existed.
+ * @returns {Promise<string[]>}
+ */
+async function listRemainingAppDatabases() {
+    try {
+        if (typeof indexedDB === 'undefined' || typeof indexedDB.databases !== 'function') return [];
+        const present = await indexedDB.databases();
+        const names = present.map(d => d?.name).filter(Boolean);
+        return APP_DATABASES.filter(name => names.includes(name));
+    } catch (e) {
+        console.warn('Could not enumerate databases after reset:', e);
+        return [];
+    }
+}
+
+/**
+ * Put the static first-run choice screen (create / sample / learn) back up.
+ *
+ * A factory reset re-initialises IN PLACE — no page load — so the pre-paint
+ * script that normally raises this screen never runs again. Without this,
+ * appInit saw no `first-run-mode` on the loader, took its legacy branch, and
+ * silently created "Your First Routine": a reset that decided for the user.
+ *
+ * Restoring the button labels from data-label matters for repeat resets — the
+ * click handler overwrites each label with its data-busy text and disables it,
+ * so a second reset would otherwise show three dead buttons reading
+ * "Setting up your routine…".
+ *
+ * @returns {boolean} true when the screen is up and appInit should wait for a pick
+ */
+function rearmFirstRunChoiceScreen() {
+    const loader = document.getElementById(DOM_IDS.APP_LOADER);
+    const choice = document.getElementById(DOM_IDS.FIRST_RUN_CHOICE);
+    if (!loader || !choice) return false;
+
+    document.documentElement.classList.add(DOM_CLASSES.MC_FIRST_RUN);
+    loader.classList.add(DOM_CLASSES.FIRST_RUN_MODE);
+    loader.classList.remove(DOM_CLASSES.FADE_OUT);
+    loader.style.display = '';
+    loader.setAttribute('data-awaiting-choice', 'true');
+    loader.setAttribute('aria-busy', 'false');
+
+    choice.querySelectorAll(`.${DOM_CLASSES.FIRST_RUN_BTN}`).forEach((btn) => {
+        btn.disabled = false;
+        btn.classList.remove(DOM_CLASSES.FIRST_RUN_BTN_CHOSEN);
+        const label = btn.getAttribute('data-label');
+        if (label) btn.textContent = label;
+    });
+
+    // Bind the pick handler ourselves. The static one in miniCycle.html is
+    // installed by a controller that returns early unless <html> carried
+    // mc-first-run AT PAGE LOAD — which is false for every in-place reset, so
+    // without this the screen came back up with three inert buttons. Guarded by
+    // a dataset flag so repeat resets don't stack listeners; harmless when the
+    // static handler IS present, because it disables the buttons first and the
+    // `btn.disabled` check below then makes this a no-op for that click.
+    if (choice.dataset.resetChoiceBound !== '1') {
+        choice.dataset.resetChoiceBound = '1';
+        choice.addEventListener('click', (e) => {
+            const btn = e.target?.closest?.(`.${DOM_CLASSES.FIRST_RUN_BTN}`);
+            if (!btn || btn.disabled) return;
+            const value = btn.getAttribute('data-choice');
+            try { sessionStorage.setItem(STORAGE_KEYS.FIRST_RUN_CHOICE_SESSION, value); }
+            catch (err) { /* private mode — routing falls back to the event below */ }
+            try { localStorage.setItem(STORAGE_KEYS.FIRST_RUN_CHOICE_MADE, '1'); }
+            catch (err) { /* worst case the choice screen re-shows next launch */ }
+
+            choice.querySelectorAll(`.${DOM_CLASSES.FIRST_RUN_BTN}`).forEach((b) => { b.disabled = true; });
+            btn.classList.add(DOM_CLASSES.FIRST_RUN_BTN_CHOSEN);
+            btn.textContent = btn.getAttribute('data-busy') || btn.textContent;
+
+            document.dispatchEvent(new CustomEvent('firstrun:choice', { detail: { choice: value } }));
+        });
+    }
+
+    // Nothing else tears the screen down on this path: the pre-paint controller
+    // is long gone and boot's fade-out already ran.
+    document.addEventListener('firstrun:choice', () => {
+        document.documentElement.classList.remove(DOM_CLASSES.MC_FIRST_RUN);
+        loader.classList.remove(DOM_CLASSES.FIRST_RUN_MODE);
+        loader.setAttribute('data-awaiting-choice', 'false');
+        _deps.hideLoader?.();
+    }, { once: true });
+
+    return true;
 }
 
 function getAppStateInstance() {
@@ -665,6 +769,14 @@ export function setupFactoryResetButton() {
         // Neutralize AppState first
         neutralizeAppState();
 
+        // The device-gate override is a DEVICE decision, not user data. It matches
+        // the "minicycle" substring rule below, so wiping it silently sent anyone
+        // who had opted out of Lite back to Lite on their next load — a one-way
+        // door, since getting back needs a ?mode=full URL they have no way to know.
+        let forcedFullVersion = null;
+        try { forcedFullVersion = localStorage.getItem(STORAGE_KEYS.FORCE_FULL_VERSION); }
+        catch (e) { /* storage unavailable — nothing to preserve */ }
+
         // Local storage cleanup
         try {
             localStorage.removeItem(STORAGE_KEYS.DATA);
@@ -691,7 +803,12 @@ export function setupFactoryResetButton() {
                 // Keys not caught by dynamic "minicycle"/"taskcycle" pattern match
                 "lastCompletionCheck",
                 "sw-migration-v1327-done",
-                "__t"
+                "__t",
+                // Plugin storage. The dynamic rule below matches on the app's own
+                // name, so any key that does not carry it survives a "factory"
+                // reset — and pluginIntegrationGuide.js tells plugin authors to
+                // name keys exactly like this one. Add new plugin keys HERE.
+                STORAGE_KEYS.TIME_TRACKER
             ];
             legacyKeysToRemove.forEach(key => localStorage.removeItem(key));
 
@@ -712,6 +829,12 @@ export function setupFactoryResetButton() {
             });
         } catch (e) {
             console.warn('Local storage cleanup encountered an issue:', e);
+        }
+
+        // Put the device-gate override back (see above).
+        if (forcedFullVersion !== null) {
+            try { localStorage.setItem(STORAGE_KEYS.FORCE_FULL_VERSION, forcedFullVersion); }
+            catch (e) { console.warn('Could not preserve full-version override:', e); }
         }
 
         // Session storage cleanup
@@ -766,6 +889,18 @@ export function setupFactoryResetButton() {
             console.warn('Cache cleanup failed:', e);
         }
 
+        // Release our own handle on miniCycleUndoHistory first. undoRedoManager
+        // keeps a long-lived connection, and an open connection turns
+        // deleteDatabase into `onblocked` — the database survives, the delete
+        // request stays pending, and the pending request then blocks every later
+        // open of it. Verified: before this call, the DB was still present
+        // immediately after a reset that reported success.
+        try {
+            _deps.closeUndoIndexedDB?.();
+        } catch (e) {
+            console.warn('Could not close undo IndexedDB connection:', e);
+        }
+
         // IndexedDB cleanup
         try {
             if (typeof indexedDB !== 'undefined') {
@@ -807,10 +942,33 @@ export function setupFactoryResetButton() {
             console.warn('IndexedDB cleanup failed:', e);
         }
 
-        _deps.showNotification("✅ " + getLabel('notify.factoryResetComplete'), "success", UI_TIMEOUTS.NOTIFICATION_SHORT);
+        // Check BEFORE reopening. initUndoIndexedDB() recreates
+        // miniCycleUndoHistory, so verifying afterwards would count our own fresh
+        // empty database as a survivor and report every reset as partial.
+        const leftovers = await listRemainingAppDatabases();
 
-        // Full re-init: creates fresh Schema 2.5 data, triggers onboarding, loads UI
-        reloadWithLoader('Factory reset', { fullReinit: true });
+        // Reopen undo storage so the app (and any LATER factory reset) has a live
+        // connection again. Without this the next reset runs against a stale
+        // handle and the feature needs a page reload between uses.
+        try {
+            await _deps.initUndoIndexedDB?.();
+        } catch (e) {
+            console.warn('Could not reopen undo IndexedDB:', e);
+        }
+
+        // Say what actually happened. Every cleanup step above only warns on
+        // failure, so the success notification was unconditional — it fired even
+        // when a database was still sitting there.
+        if (leftovers.length > 0) {
+            console.warn('Factory reset: these databases were not removed:', leftovers);
+            _deps.showNotification("⚠️ " + getLabel('notify.factoryResetPartial'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
+        } else {
+            _deps.showNotification("✅ " + getLabel('notify.factoryResetComplete'), "success", UI_TIMEOUTS.NOTIFICATION_SHORT);
+        }
+
+        // Full re-init. armFirstRunChoice puts the user back on the create /
+        // sample / learn screen instead of silently materialising a routine.
+        reloadWithLoader('Factory reset', { fullReinit: true, armFirstRunChoice: rearmFirstRunChoiceScreen() });
     };
 
     const showConfirmationModal = _deps.showConfirmationModal;
