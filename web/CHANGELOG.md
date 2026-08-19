@@ -1,3 +1,9 @@
+## [2.445] - 2026-08-19
+- test: pin repeat factory resets and the reset's storage contract
+- fix(reset): report real outcome, keep the device gate, clear plugin keys, re-ask the first-run choice
+- fix(reset): close undo's IndexedDB before deleting it, and reopen after
+
+
 ## [2.444] - 2026-08-19
 - test(journey): pin the stats panel to state after a To-Do clear
 - fix(todo): clearing completed tasks left the stats panel showing old counts
