@@ -671,6 +671,131 @@ async function journeyTodoMode(browser, baseURL) {
     return { name: 'to-do mode clearing', failures };
 }
 
+// ── Journey 7: To-Do "Clear Completed" keeps the stats panel truthful ───────
+//
+// The button path refreshes the stats panel ONLY through requestUIUpdate. That
+// dep was never declared on taskCore, so under ENFORCE_REQUIRES it arrived
+// undefined and the optional-chained call silently no-oped: tasks were deleted
+// correctly while the panel kept showing pre-clear counts, with no error
+// anywhere (v2.443).
+//
+// Reaching the button takes a specific setup. Checking a box while already in
+// To-Do mode auto-clears that task, and switching INTO To-Do mode clears
+// anything already complete — both of those paths refresh through
+// updateStatsPanel, which was always wired, so neither can expose this. What
+// leaves completed tasks sitting there for the button is reopening the app on a
+// To-Do routine that already has them. So: build the routine through the real
+// UI (every field app-derived, including deleteWhenComplete, which the button
+// requires), then flip only `completed` — exactly what a checkbox does — and
+// reload.
+async function journeyTodoStatsSync(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const { context, page } = await openFresh(browser, baseURL);
+    try {
+        for (const t of ['Stats sync one', 'Stats sync two', 'Stats sync three']) await addTask(page, t);
+        await page.waitForFunction(() => document.querySelectorAll('#taskList li').length >= 3,
+            null, { timeout: 10000 });
+
+        // Switch to To-Do mode through the real control so the app derives
+        // deleteWhenComplete onto the tasks itself.
+        await openMenu(page).catch(() => {});
+        await page.evaluate(() => {
+            const cb = document.getElementById('deleteCheckedTasks');
+            if (cb && !cb.checked) { cb.checked = true; cb.dispatchEvent(new Event('change', { bubbles: true })); }
+        });
+        await page.waitForTimeout(1500);
+        await page.evaluate(() => document.getElementById('main-menu')?.classList.remove('visible'));
+
+        const derived = await page.evaluate(() => {
+            const p = JSON.parse(localStorage.getItem('miniCycleData') || 'null');
+            const id = p.appState.activeCycleId;
+            const tasks = p.data.cycles[id].tasks || [];
+            return { todo: p.data.cycles[id].deleteCheckedTasks === true,
+                     dwc: tasks.filter(t => t.deleteWhenComplete === true).length, total: tasks.length };
+        });
+        record('To-Do mode set and deleteWhenComplete derived', derived.todo && derived.dwc >= 2,
+            `todo=${derived.todo} deleteWhenComplete on ${derived.dwc}/${derived.total} tasks ` +
+            `(the Clear button only deletes tasks carrying this flag)`);
+
+        // Mark two complete in storage and reload — the "reopened the app with
+        // completed tasks still listed" state.
+        await page.evaluate(() => {
+            const p = JSON.parse(localStorage.getItem('miniCycleData'));
+            const id = p.appState.activeCycleId;
+            p.data.cycles[id].tasks.slice(0, 2).forEach(t => { t.completed = true; });
+            localStorage.setItem('miniCycleData', JSON.stringify(p));
+        });
+        await page.reload({ waitUntil: 'domcontentloaded', timeout: 20000 });
+        await page.waitForFunction(() => document.querySelectorAll('#taskList li').length >= 3,
+            null, { timeout: 20000 });
+
+        // Render the stats panel once BEFORE clearing. A panel that has never been
+        // opened renders fresh on first open and would hide the staleness.
+        await clickEl(page, '#nav-dots .dot[aria-label="Stats"]');
+        await page.waitForTimeout(1000);
+        const statsBefore = await page.evaluate(() =>
+            (document.getElementById('stats-panel')?.innerText || '').replace(/\s+/g, ' ').trim());
+        await clickEl(page, '#nav-dots .dot[aria-label="Routine"]');
+        await page.waitForTimeout(700);
+
+        // Snapshot the real pre-clear counts — the seeded routine brings its own
+        // tasks, so the expected remainder has to be derived, not hard-coded.
+        const pre = await page.evaluate(() => {
+            const p = JSON.parse(localStorage.getItem('miniCycleData'));
+            const tasks = p.data.cycles[p.appState.activeCycleId].tasks || [];
+            return { total: tasks.length, completed: tasks.filter(t => t.completed === true).length };
+        });
+        record('two tasks are completed and awaiting the clear', pre.completed === 2,
+            `${pre.completed} completed of ${pre.total} before clearing`);
+
+        // The gesture under test.
+        await clickEl(page, '#completeAll');
+        await page.waitForTimeout(3000);
+
+        await clickEl(page, '#nav-dots .dot[aria-label="Stats"]');
+        await page.waitForTimeout(1200);
+
+        const result = await page.evaluate(() => {
+            const panelText = (document.getElementById('stats-panel')?.innerText || '')
+                .replace(/\s+/g, ' ').trim();
+            const m = panelText.match(/(\d+) of (\d+) tasks? Completed/);
+            const p = JSON.parse(localStorage.getItem('miniCycleData') || 'null');
+            const id = p.appState.activeCycleId;
+            const tasks = (p.data.cycles[id] || {}).tasks || [];
+            return {
+                panelText,
+                panelCompleted: m ? Number(m[1]) : null,
+                panelTotal: m ? Number(m[2]) : null,
+                stateCompleted: tasks.filter(t => t.completed === true).length,
+                stateTotal: tasks.length
+            };
+        });
+
+        const expectedRemaining = pre.total - pre.completed;
+        record('clear removed exactly the completed tasks', result.stateTotal === expectedRemaining,
+            `${result.stateTotal} task(s) left in state, expected ${expectedRemaining} ` +
+            `(${pre.total} total minus ${pre.completed} completed)`);
+        record('stats panel reports a task count', result.panelTotal !== null,
+            `could not parse "N of M tasks Completed" from: ${result.panelText.slice(0, 120)}`);
+        record('stats panel total matches state after clearing',
+            result.panelTotal === result.stateTotal,
+            `panel says ${result.panelTotal}, state has ${result.stateTotal} ` +
+            `(stale panel = requestUIUpdate undeclared on taskCore, so the refresh no-ops)`);
+        record('stats panel completed-count matches state after clearing',
+            result.panelCompleted === result.stateCompleted,
+            `panel says ${result.panelCompleted} completed, state has ${result.stateCompleted}`);
+        record('panel actually changed from its pre-clear render',
+            result.panelText !== statsBefore,
+            'panel text identical before and after clearing');
+    } catch (e) {
+        console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);
+        failures.push(`harness error: ${e.message}`);
+    } finally {
+        await context.close();
+    }
+    return { name: 'to-do stats sync', failures };
+}
+
 const JOURNEYS = [
     { name: 'core (add → persist → cycle → offline)', fn: journeyCore },
     { name: 'routine switching', fn: journeyRoutineSwitch },
@@ -678,6 +803,7 @@ const JOURNEYS = [
     { name: 'theme & settings persistence', fn: journeyTheme },
     { name: 'recurring tasks', fn: journeyRecurring },
     { name: 'to-do mode clearing', fn: journeyTodoMode },
+    { name: 'to-do stats stay in sync', fn: journeyTodoStatsSync },
 ];
 
 async function run() {
