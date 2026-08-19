@@ -29,6 +29,7 @@ import { createDIModule, required, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, INTERVALS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { formatLocalDate } from '../recurring/recurringDateUtils.js';
+import { applyTaskStatusLabel } from './taskUtils.js';
 
 
 const APPSTATE_SUBSCRIBER_KEY = 'dailyResetManager';
@@ -542,10 +543,17 @@ export class DailyResetManager {
         }
         const taskList = this.deps.getElementById(DOM_IDS.TASK_LIST);
         if (!taskList) return;
-        taskList.querySelectorAll(`${DOM_SELECTORS.TASK} ${DOM_SELECTORS.TASK_CHECKBOX}`)
-            .forEach(cb => { cb.checked = false; });
-        taskList.querySelectorAll(`${DOM_SELECTORS.TASK}.${DOM_CLASSES.OVERDUE_TASK}`)
-            .forEach(t => t.classList.remove(DOM_CLASSES.OVERDUE_TASK));
+        // Walk rows, not checkboxes: setting `checked` leaves the row's aria-label
+        // behind, so a screen reader keeps announcing "Completed" (or "Overdue")
+        // on a box that now reads unchecked — the mismatch applyTaskStatusLabel()
+        // exists to prevent. loadMiniCycle() re-renders through taskDOM and gets
+        // this for free; this fallback has to do it itself.
+        taskList.querySelectorAll(DOM_SELECTORS.TASK).forEach(taskEl => {
+            const checkbox = taskEl.querySelector(DOM_SELECTORS.TASK_CHECKBOX);
+            if (checkbox) checkbox.checked = false;
+            taskEl.classList.remove(DOM_CLASSES.OVERDUE_TASK);
+            applyTaskStatusLabel(taskEl, false);
+        });
     }
 }
 

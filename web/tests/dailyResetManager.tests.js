@@ -31,6 +31,8 @@ export async function runDailyResetManagerTests(resultsDiv) {
 
     const { todayLocal, localTimeToday, formatTime12, formatTimeInput, readSettings } = __test__;
 
+    const { getLabel } = await import(`../modules/labels/labelResolver.js${cacheBuster}`);
+
     resultsDiv.innerHTML = '<h2>dailyResetManager Tests</h2><h3>Running tests...</h3>';
 
     const passed = { count: 0 };
@@ -365,6 +367,73 @@ export async function runDailyResetManagerTests(resultsDiv) {
         const { manager, getState } = makeManager({ state: makeMockState({ cycles, activeCycleId: 'a' }) });
         await manager.checkAllRoutines();
         if (!getState().data.cycles.a.tasks[0].completed) throw new Error('Should not have unchecked');
+    });
+
+    // =========================================================
+    // ♿ DOM FALLBACK — accessible name must track the checkbox
+    // =========================================================
+    resultsDiv.innerHTML += '<h4 class="test-section">♿ DOM Fallback</h4>';
+
+    /**
+     * Build a task list holding one completed, overdue row and return the pieces.
+     * The row carries a deliberately STALE aria-label saying "Completed" so a
+     * fallback that only flips `checked` leaves an announcement contradicting
+     * the control it describes.
+     */
+    function makeStaleTaskList({ recurring = false } = {}) {
+        const list = document.createElement('ul');
+        list.id = 'taskList-a11y-probe';
+        const row = document.createElement('li');
+        row.className = recurring ? 'task overdue-task recurring' : 'task overdue-task';
+        row.setAttribute('aria-label', 'Water the plants, Completed');
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = true;
+        const text = document.createElement('span');
+        text.className = 'task-text';
+        text.textContent = 'Water the plants';
+        row.append(checkbox, text);
+        list.appendChild(row);
+        return { list, row, checkbox };
+    }
+
+    await test('DOM fallback rewrites aria-label, not just the checkbox', async () => {
+        const { list, row, checkbox } = makeStaleTaskList();
+        // No loadMiniCycle dep -> the fallback branch is the one under test.
+        const { manager } = makeManager({
+            state: makeMockState(),
+            onGetById: (id) => (id === 'taskList' ? list : null)
+        });
+
+        manager._refreshActiveCycleUI();
+
+        if (checkbox.checked) throw new Error('Checkbox should have been unchecked');
+        if (row.classList.contains('overdue-task')) throw new Error('Overdue class should have been cleared');
+
+        const label = row.getAttribute('aria-label');
+        if (label === 'Water the plants, Completed') {
+            throw new Error('aria-label still announces "Completed" on an unchecked row');
+        }
+        const expected = getLabel('action.taskItemLabel', {
+            vars: { name: 'Water the plants', status: getLabel('nav.notCompleted') }
+        });
+        if (label !== expected) throw new Error(`Got "${label}", expected "${expected}"`);
+    });
+
+    await test('DOM fallback keeps the recurring variant of the label', async () => {
+        const { list, row } = makeStaleTaskList({ recurring: true });
+        const { manager } = makeManager({
+            state: makeMockState(),
+            onGetById: (id) => (id === 'taskList' ? list : null)
+        });
+
+        manager._refreshActiveCycleUI();
+
+        const expected = getLabel('action.taskItemRecurring', {
+            vars: { name: 'Water the plants', status: getLabel('nav.notCompleted') }
+        });
+        const label = row.getAttribute('aria-label');
+        if (label !== expected) throw new Error(`Got "${label}", expected "${expected}"`);
     });
 
     // =========================================================
