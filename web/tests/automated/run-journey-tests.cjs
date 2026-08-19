@@ -796,6 +796,105 @@ async function journeyTodoStatsSync(browser, baseURL) {
     return { name: 'to-do stats sync', failures };
 }
 
+// ── Journey 8: factory reset, twice, with no page reload ────────────────────
+//
+// Factory reset re-initialises IN PLACE. Three things only a repeat run catches:
+//   • the choice screen (create / sample / learn) must come back up instead of a
+//     routine being created for the user;
+//   • its buttons must be re-enabled with their ORIGINAL labels — the pick
+//     handler overwrites them with data-busy text, so a second reset otherwise
+//     shows three dead buttons reading "Setting up your routine…";
+//   • the pick must still route, which needs a handler bound by the reset — the
+//     static one in miniCycle.html is installed only when the page LOADED on the
+//     choice screen.
+// Also asserts the completion notice is the success one: every cleanup step only
+// warns on failure, so the reset used to claim success unconditionally.
+async function journeyFactoryResetRepeat(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const { context, page } = await openFresh(browser, baseURL);
+
+    const notices = [];
+    page.on('console', (m) => {
+        const t = m.text();
+        if (/could not be removed|databases were not removed/i.test(t)) notices.push(t.slice(0, 160));
+    });
+
+    // Wait for the choice screen to be up AND fully re-armed.
+    const waitForChoiceScreen = () => page.waitForFunction(() => {
+        const loader = document.getElementById('app-loader');
+        const btns = [...document.querySelectorAll('.first-run-btn')];
+        return !!loader
+            && document.documentElement.classList.contains('mc-first-run')
+            && loader.classList.contains('first-run-mode')
+            && getComputedStyle(loader).display !== 'none'
+            && btns.length === 3
+            && btns.every(b => !b.disabled)
+            && btns.every(b => b.textContent.trim() === b.getAttribute('data-label'));
+    }, null, { timeout: 25000 });
+
+    const runFactoryReset = async () => {
+        await openMenu(page).catch(() => {});
+        await clickEl(page, '#open-settings');
+        await page.waitForTimeout(1200);
+        await clickEl(page, '#factory-reset');
+        await page.waitForTimeout(1000);
+        await clickEl(page, 'button.btn-confirm.btn-destructive');
+    };
+
+    const seedViaLearn = async () => {
+        await page.evaluate(() => document.querySelector('.first-run-btn[data-choice="learn"]')?.click());
+        await page.waitForFunction(() => {
+            const p = JSON.parse(localStorage.getItem('miniCycleData') || 'null');
+            return p && Object.keys((p.data && p.data.cycles) || {}).length > 0;
+        }, null, { timeout: 25000 });
+        await page.waitForTimeout(2500);
+        await page.evaluate(() => document.getElementById('first-run-welcome-dismiss')?.click());
+        await page.waitForTimeout(1200);
+    };
+
+    try {
+        await seedViaLearn();   // openFresh already picked "learn"; ensure a routine exists
+        for (const pass of [1, 2]) {
+            await runFactoryReset();
+            let armed = true;
+            try { await waitForChoiceScreen(); } catch (e) { armed = false; }
+            record(`pass ${pass}: choice screen re-armed with original labels`, armed,
+                'screen absent, or buttons left disabled / showing data-busy text');
+
+            const state = await page.evaluate(() => {
+                const p = JSON.parse(localStorage.getItem('miniCycleData') || 'null');
+                return {
+                    cycles: Object.keys((p && p.data && p.data.cycles) || {}).length,
+                    forcedFull: localStorage.getItem('miniCycleForceFullVersion'),
+                    plugin: localStorage.getItem('timeTrackerData')
+                };
+            });
+            record(`pass ${pass}: no routine created for the user`, state.cycles === 0,
+                `${state.cycles} cycle(s) exist — the reset decided instead of asking`);
+
+            if (armed) {
+                // The pick must route through the handler the reset bound.
+                await seedViaLearn();
+                const after = await page.evaluate(() => {
+                    const p = JSON.parse(localStorage.getItem('miniCycleData') || 'null');
+                    return Object.keys((p && p.data && p.data.cycles) || {}).length;
+                });
+                record(`pass ${pass}: pick routes via the re-armed handler`, after > 0,
+                    'clicking a choice button did nothing — no handler was bound');
+            }
+        }
+
+        record('reset never reported unremovable data', notices.length === 0,
+            `saw: ${notices.join(' | ')}`);
+    } catch (e) {
+        console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);
+        failures.push(`harness error: ${e.message}`);
+    } finally {
+        await context.close();
+    }
+    return { name: 'factory reset (repeat)', failures };
+}
+
 const JOURNEYS = [
     { name: 'core (add → persist → cycle → offline)', fn: journeyCore },
     { name: 'routine switching', fn: journeyRoutineSwitch },
@@ -804,6 +903,7 @@ const JOURNEYS = [
     { name: 'recurring tasks', fn: journeyRecurring },
     { name: 'to-do mode clearing', fn: journeyTodoMode },
     { name: 'to-do stats stay in sync', fn: journeyTodoStatsSync },
+    { name: 'factory reset repeats cleanly', fn: journeyFactoryResetRepeat },
 ];
 
 async function run() {

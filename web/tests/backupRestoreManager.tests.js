@@ -98,6 +98,11 @@ export async function runBackupRestoreManagerTests(resultsDiv) {
         localStorage.setItem('miniCycleData', JSON.stringify({ x: 1 }));
         localStorage.setItem('miniCycle_backup_test', 'b');
         localStorage.setItem('unrelatedKey', 'keep-me');
+        // A plugin key the name-matching rule cannot see, and the device-gate
+        // override that must OUTLIVE the wipe (clearing it sent old devices to
+        // the frozen Lite app with no discoverable way back).
+        localStorage.setItem('timeTrackerData', 'plugin-state');
+        localStorage.setItem('miniCycleForceFullVersion', 'true');
 
         const resetBtn = document.createElement('button');
         resetBtn.id = 'factory-reset';   // DOM_IDS.FACTORY_RESET
@@ -136,7 +141,20 @@ export async function runBackupRestoreManagerTests(resultsDiv) {
             if (localStorage.getItem('miniCycleData') !== null) throw new Error('confirm should remove miniCycleData');
             if (localStorage.getItem('miniCycle_backup_test') !== null) throw new Error('confirm should remove miniCycle_backup_* keys');
             if (localStorage.getItem('unrelatedKey') !== 'keep-me') throw new Error('unrelated keys must be preserved');
-            if (!notifications.some(n => n.type === 'success')) throw new Error('confirm should surface the completion (success) notification');
+            // Completion notice. Success when everything went, warning when a
+            // database could not be deleted — and in THIS page both are legitimate:
+            // the suite runs inside the live app, which holds its IndexedDB
+            // connections open, so deleteDatabase is blocked and the warning is the
+            // truthful outcome. What must never happen is silence.
+            const completion = notifications.filter(n => n.type === 'success' || n.type === 'warning');
+            if (completion.length === 0) throw new Error('confirm should surface a completion notification (success or partial)');
+
+            if (localStorage.getItem('timeTrackerData') !== null) {
+                throw new Error('confirm should remove plugin keys the name rule cannot match (timeTrackerData)');
+            }
+            if (localStorage.getItem('miniCycleForceFullVersion') !== 'true') {
+                throw new Error('confirm must PRESERVE the full-version override, or old devices are sent to Lite');
+            }
         } finally {
             resetBtn.remove();
             if (origSWGetRegs) navigator.serviceWorker.getRegistrations = origSWGetRegs;
