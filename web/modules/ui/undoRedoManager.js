@@ -1927,6 +1927,33 @@ export async function initUndoIndexedDB() {
 }
 
 /**
+ * Close the undo IndexedDB connection and drop every pending debounced write.
+ *
+ * Factory reset calls this BEFORE deleting the databases. An open connection
+ * makes `indexedDB.deleteDatabase` fire `onblocked` instead of deleting, and the
+ * reset's handler settles on `blocked` and carries on — so the user was told
+ * "Factory reset complete" while miniCycleUndoHistory was still there, with a
+ * delete request left pending that then blocks every later open of it. Pending
+ * debounced writes are cancelled too: one firing after the delete would recreate
+ * the database with pre-reset stacks in it.
+ *
+ * Safe to call repeatedly, and `initUndoIndexedDB()` reopens afterwards — that
+ * pair is what lets factory reset run more than once without a page reload.
+ * @returns {void}
+ */
+export function closeUndoIndexedDB() {
+  dbWriteTimers.forEach((entry) => clearTimeout(entry.timer));
+  dbWriteTimers.clear();
+
+  try {
+    undoDB?.close();
+  } catch (e) {
+    console.warn('⚠️ Failed to close undo IndexedDB connection:', e);
+  }
+  undoDB = null;
+}
+
+/**
  * Save undo/redo stacks to both localStorage cache (immediate) and IndexedDB (debounced)
  */
 export function saveUndoStackToIndexedDB(cycleId, undoStack, redoStack, options = {}) {
@@ -2268,6 +2295,8 @@ export async function initUndoRedoManager(dependencies = {}) {
     // Cache helpers
     clearUndoCache,
     clearAllUndoHistory,
+    closeUndoIndexedDB,
+    initUndoIndexedDB,
     // Cleanup
     destroy: destroyUndoRedoManager
   };

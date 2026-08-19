@@ -53,6 +53,10 @@ const di = createDIModule('SettingsManager', {
     disableDebug: optional(null),
     isDebug: optional(null),
     clearAllUndoHistory: optional(null),
+    // Forward-through to backupRestoreManager's factory reset (close before
+    // deleting the DBs, reopen after so a repeat reset needs no page reload).
+    closeUndoIndexedDB: optional(null),
+    initUndoIndexedDB: optional(null),
     startGuidedTour: optional(null),
     updateHelpWindow: optional(null),
     loadMiniCycle: optional(null),
@@ -242,7 +246,9 @@ function wireSubModuleDependencies(dependencies) {
         hideMainMenu: dependencies.hideMainMenu,
         closeAllModals: dependencies.closeAllModals,
         appInit: dependencies.appInit,
-        showPromptModal: dependencies.showPromptModal
+        showPromptModal: dependencies.showPromptModal,
+        closeUndoIndexedDB: dependencies.closeUndoIndexedDB,
+        initUndoIndexedDB: dependencies.initUndoIndexedDB
     });
 
     _subModules.setDataSanitizerDependencies({

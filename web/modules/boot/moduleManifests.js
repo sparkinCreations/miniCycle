@@ -451,7 +451,7 @@ export const MODULE_MANIFESTS = {
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState', 'showNotification', 'safeAddEventListener', 'refreshUIFromState', 'UIOrchestrator', 'requestUIUpdate'],
         optionalDeps: ['logHistoryEvent', 'organizeCompletedTasks', 'refreshHistoryIfOpen', 'updateRecurringInfoLink', 'updateHelpWindow', 'syncModeFromToggles', 'refreshThemeLabels', 'updateRecurringPanel', 'refreshTaskViewLayout', 'AppGlobalState'],
-        provides: ['performStateBasedUndo', 'performStateBasedRedo', 'captureStateSnapshot', 'updateUndoRedoButtons', 'enableUndoSystemOnFirstInteraction', 'wrapAppStateForUndo', 'setupStateBasedUndoRedo', 'initUndoSystemForApp', 'onCycleCreated', 'onCycleRenamed', 'onCycleDeleted', 'onCycleSwitched', 'clearAllUndoHistory'],
+        provides: ['performStateBasedUndo', 'performStateBasedRedo', 'captureStateSnapshot', 'updateUndoRedoButtons', 'enableUndoSystemOnFirstInteraction', 'wrapAppStateForUndo', 'setupStateBasedUndoRedo', 'initUndoSystemForApp', 'onCycleCreated', 'onCycleRenamed', 'onCycleDeleted', 'onCycleSwitched', 'clearAllUndoHistory', 'closeUndoIndexedDB', 'initUndoIndexedDB'],
         api: 'undo',
         after: ['taskDOM', 'uiOrchestrator']
     },
@@ -487,7 +487,7 @@ export const MODULE_MANIFESTS = {
         // entry because featureBoot assigns it directly
         // (`deps.utils.showChoiceModal = …`) during the early notifications init,
         // which is why the depMappings route resolves but nothing declares it.
-        optionalDeps: ['clearAllUndoHistory', 'loadMiniCycle', 'showLoader', 'hideLoader', 'closeAllModals', 'hasActiveNotifications', 'hideMainMenu', 'BackupManager', 'DataValidator', 'calculateNextOccurrence', 'disableDebug', 'enableDebug', 'isDebug', 'handleTaskListMovement', 'organizeCompletedTasks', 'onCycleCreated', 'performSchema25Migration', 'refreshTaskListUI', 'resetDefaultRecurringSettings', 'setupDarkModeToggle', 'setupQuickDarkToggle', 'showChoiceModal', 'showConfirmationModal', 'showPromptModal', 'showSettingsTourNotification', 'startGuidedTour', 'toggleHoverTaskOptions', 'updateCompletedTasksCount', 'updateHelpWindow', 'updateMoveArrowsVisibility', 'updateStatsPanel', 'vocabThemeManager'],
+        optionalDeps: ['clearAllUndoHistory', 'closeUndoIndexedDB', 'initUndoIndexedDB', 'loadMiniCycle', 'showLoader', 'hideLoader', 'closeAllModals', 'hasActiveNotifications', 'hideMainMenu', 'BackupManager', 'DataValidator', 'calculateNextOccurrence', 'disableDebug', 'enableDebug', 'isDebug', 'handleTaskListMovement', 'organizeCompletedTasks', 'onCycleCreated', 'performSchema25Migration', 'refreshTaskListUI', 'resetDefaultRecurringSettings', 'setupDarkModeToggle', 'setupQuickDarkToggle', 'showChoiceModal', 'showConfirmationModal', 'showPromptModal', 'showSettingsTourNotification', 'startGuidedTour', 'toggleHoverTaskOptions', 'updateCompletedTasksCount', 'updateHelpWindow', 'updateMoveArrowsVisibility', 'updateStatsPanel', 'vocabThemeManager'],
         provides: ['syncCurrentSettingsToStorage', 'exportMiniCycleData', 'downloadBackupFile', 'shareCurrentRoutine'],
         provideInstance: 'settingsManager',
         api: 'ui',

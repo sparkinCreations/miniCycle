@@ -1605,6 +1605,8 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         updateUndoRedoButtons: createValidatedWrapper('updateUndoRedoButtons',
             () => deps.ui?.updateUndoRedoButtons),
         clearAllUndoHistory: (...args) => deps.ui?.clearAllUndoHistory?.(...args),
+        closeUndoIndexedDB: (...args) => deps.ui?.closeUndoIndexedDB?.(...args),
+        initUndoIndexedDB: (...args) => deps.ui?.initUndoIndexedDB?.(...args),
         // Undo cycle lifecycle hooks (called by routineSwitcher when cycles change)
         onCycleSwitched: (...args) => deps.ui?.onCycleSwitched?.(...args),
         onCycleCreated: (...args) => deps.ui?.onCycleCreated?.(...args),
