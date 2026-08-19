@@ -1,3 +1,12 @@
+## [2.439] - 2026-08-19
+- refactor(recurring): extract the last four panel setup methods
+- test(journey): fail on DI wiring gaps, and cover To-Do mode
+- fix(di): declare startReminders and checkAchievements on taskCore
+- fix(stats): cycle reset never counted the tasks it deleted
+- fix(di): To-Do mode recorded no cleared tasks — the recorder was never declared
+- fix(di): read required deps unguarded so broken wiring cannot hide
+
+
 ## [2.438] - 2026-08-19
 - fix(di): declare startReminders and checkAchievements — both were silently undefined
 
