@@ -212,6 +212,55 @@ export async function runQuickActionsManagerTests(resultsDiv) {
     });
 
     // ============================================
+    resultsDiv.innerHTML += '<h4 class="test-section">🕘 Recent view</h4>';
+
+    // Drive the renderer directly with a stubbed data source — the panel itself
+    // renders lazily and needs the whole app up, which tells us nothing about
+    // these two behaviours.
+    const renderRecentWith = (recent) => {
+        const mgr = new mod.QuickActionsManager({});
+        mgr._getData = () => ({ pinned: ['stats', null, null, null, null], counts: {}, recent, activeView: 'recent' });
+        const container = document.createElement('div');
+        document.body.appendChild(container);
+        try {
+            mgr._renderRecentActions(container);
+            return [...container.querySelectorAll('.quick-actions-slot')].map(e => e.title || '?');
+        } finally {
+            document.body.removeChild(container);
+        }
+    };
+
+    // Slicing to SLOT_COUNT before dropping unknown ids meant one retired action
+    // in the newest five left a hole, even with valid entries below it.
+    await test('a retired action id does not leave a gap in the recent view', () => {
+        const slots = renderRecentWith(['settings', 'a-retired-action', 'history', 'themes', 'games', 'help']);
+        if (slots.length !== 5) {
+            throw new Error(`expected 5 filled slots, got ${slots.length}: ${JSON.stringify(slots)}`);
+        }
+    });
+
+    await test('recent view still caps at the slot count', () => {
+        const slots = renderRecentWith(['settings', 'history', 'themes', 'games', 'help', 'feedback', 'search']);
+        if (slots.length !== 5) throw new Error(`expected 5, got ${slots.length}`);
+    });
+
+    // `recent` survives reloads and comes back through a restored backup, so
+    // these ids can reach the registry lookup. A plain object literal would
+    // answer them from Object.prototype (CLAUDE.md #18) and _createFilledSlot
+    // would then read .labelKey off a native function.
+    await test('prototype-inherited ids in recent are ignored, not rendered', () => {
+        const slots = renderRecentWith(['constructor', '__proto__', 'toString', 'valueOf', 'settings', 'history']);
+        if (slots.length !== 2) {
+            throw new Error(`expected only the 2 real actions, got ${slots.length}: ${JSON.stringify(slots)}`);
+        }
+    });
+
+    await test('a recent list of nothing but junk renders the empty state', () => {
+        const slots = renderRecentWith(['constructor', 'not-an-action']);
+        if (slots.length !== 0) throw new Error(`expected 0 slots, got ${slots.length}`);
+    });
+
+    // ============================================
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;
     if (passed.count === total.count) {

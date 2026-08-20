@@ -34,23 +34,68 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const WEB = path.resolve(__dirname, '..');
 const FEATURE_BOOT = path.join(WEB, 'modules/boot/featureBoot.js');
 
-/** Strip // line comments, block comments and string/template literals. */
+/**
+ * Blank out // line comments, block comments and string/template literals,
+ * replacing each removed character with a space.
+ *
+ * LENGTH-PRESERVING on purpose: offsets in the returned string line up exactly
+ * with the raw source, so a block located here (safely, with no comment or
+ * string producing a false brace) can have its string literals read back out of
+ * the raw text at the same indices.
+ */
 function stripNonCode(src) {
-    let out = '';
+    const out = src.split('');
     let i = 0;
     const n = src.length;
+    const blank = (from, to) => {
+        for (let k = from; k < to && k < n; k++) if (out[k] !== '\n') out[k] = ' ';
+    };
     while (i < n) {
         const c = src[i], d = src[i + 1];
-        if (c === '/' && d === '/') { while (i < n && src[i] !== '\n') i++; continue; }
-        if (c === '/' && d === '*') { i += 2; while (i < n && !(src[i] === '*' && src[i + 1] === '/')) i++; i += 2; continue; }
-        if (c === '"' || c === "'" || c === '`') {
-            const q = c; i++;
-            while (i < n && src[i] !== q) { if (src[i] === '\\') i++; i++; }
-            i++; out += '""'; continue;
+        if (c === '/' && d === '/') {
+            const start = i;
+            while (i < n && src[i] !== '\n') i++;
+            blank(start, i);
+            continue;
         }
-        out += c; i++;
+        if (c === '/' && d === '*') {
+            const start = i;
+            i += 2;
+            while (i < n && !(src[i] === '*' && src[i + 1] === '/')) i++;
+            i += 2;
+            blank(start, i);
+            continue;
+        }
+        if (c === '"' || c === "'" || c === '`') {
+            const q = c, start = i;
+            i++;
+            while (i < n && src[i] !== q) { if (src[i] === '\\') i++; i++; }
+            i++;
+            blank(start + 1, i - 1);   // keep the quotes, blank the contents
+            continue;
+        }
+        i++;
     }
-    return out;
+    return out.join('');
+}
+
+/** Character range of the object/array literal opened at or after `from`. */
+function literalRange(stripped, from) {
+    const open = stripped.indexOf('{', from);
+    const openArr = stripped.indexOf('[', from);
+    const start = (openArr !== -1 && (open === -1 || openArr < open)) ? openArr : open;
+    if (start === -1) return null;
+    const closeOf = { '{': '}', '[': ']' };
+    const opener = stripped[start];
+    let depth = 0;
+    for (let i = start; i < stripped.length; i++) {
+        if (stripped[i] === opener) depth++;
+        else if (stripped[i] === closeOf[opener]) {
+            depth--;
+            if (depth === 0) return [start, i + 1];
+        }
+    }
+    return null;
 }
 
 /** Top-level keys of the object literal starting at the `{` at `open`. */
@@ -129,18 +174,90 @@ for (const file of walk(path.join(WEB, 'modules'))) {
     }
 }
 
+// ── 3. Quick Actions: three hand-maintained lists that must agree ─────────
+//
+// Same failure family as the API allow-list above: adding an action means
+// editing three places, and a miss is silent. If VALID_ACTION_IDS lacks an id,
+// recordActionUsage no-ops and that action never counts. If ACTION_BUTTON_MAP
+// points at an id the registry does not have, the recent/frequent views skip it
+// forever. Nothing throws in either case.
+const actionFindings = [];
+{
+    const usagePath = path.join(WEB, 'modules/ui/actionUsage.js');
+    const qamPath = path.join(WEB, 'modules/ui/quickActionsManager.js');
+    const usageRaw = fs.readFileSync(usagePath, 'utf8');
+    const usageCode = stripNonCode(usageRaw);
+    const qamRaw = fs.readFileSync(qamPath, 'utf8');
+    const qamCode = stripNonCode(qamRaw);
+
+    /** String literals inside the literal that starts at/after `anchor`. */
+    const literalsIn = (raw, code, anchor) => {
+        const at = code.indexOf(anchor);
+        if (at === -1) return null;
+        const range = literalRange(code, at);
+        if (!range) return null;
+        return raw.slice(range[0], range[1]);
+    };
+
+    const registryText = literalsIn(qamRaw, qamCode, 'ACTION_REGISTRY');
+    const validText = literalsIn(usageRaw, usageCode, 'VALID_ACTION_IDS');
+    const mapText = literalsIn(usageRaw, usageCode, 'ACTION_BUTTON_MAP');
+
+    if (!registryText || !validText || !mapText) {
+        console.error('❌ FAIL — could not locate ACTION_REGISTRY / VALID_ACTION_IDS / ACTION_BUTTON_MAP.');
+        console.error('   The parser is out of step with those files; fix this script before trusting it.');
+        process.exit(1);
+    }
+
+    // Registry keys are quoted at one indent level; map VALUES follow a colon.
+    const registry = new Set([...registryText.matchAll(/(?:^|\n)\s{4}'([a-z0-9-]+)'\s*:/g)].map(m => m[1]));
+    const valid = new Set([...validText.matchAll(/'([a-z0-9-]+)'/g)].map(m => m[1]));
+    const mapped = new Set([...mapText.matchAll(/:\s*'([a-z0-9-]+)'/g)].map(m => m[1]));
+
+    if (registry.size === 0 || valid.size === 0 || mapped.size === 0) {
+        console.error('❌ FAIL — parsed an empty Quick Actions list; the shapes changed.');
+        process.exit(1);
+    }
+
+    for (const id of registry) {
+        if (!valid.has(id)) {
+            actionFindings.push(`'${id}' is in ACTION_REGISTRY but not VALID_ACTION_IDS — recordActionUsage() would silently no-op for it.`);
+        }
+    }
+    for (const id of valid) {
+        if (!registry.has(id)) {
+            actionFindings.push(`'${id}' is in VALID_ACTION_IDS but not ACTION_REGISTRY — it can be recorded but never rendered.`);
+        }
+    }
+    for (const id of mapped) {
+        if (!registry.has(id)) {
+            actionFindings.push(`ACTION_BUTTON_MAP points at '${id}', which ACTION_REGISTRY does not define.`);
+        }
+    }
+    console.log('🎛️  Quick Actions lists — registry / valid ids / button map');
+    console.log(`   ${registry.size} registry · ${valid.size} valid · ${mapped.size} mapped action id(s)`);
+    console.log(`   not button-mapped (must record explicitly): ${[...registry].filter(id => !mapped.has(id)).join(', ') || 'none'}\n`);
+}
+
 console.log('🔌 appContext API surface — reads must resolve\n');
 for (const [name, keys] of [...surfaces].sort()) {
     console.log(`   ${String(keys.size).padStart(3)} key(s)  ${name}Api`);
 }
 console.log(`\n   ${reads} read site(s) checked across modules/\n`);
 
-if (violations.length === 0) {
-    console.log('✅ PASS — every get*Api() read resolves to a registered key.');
+if (violations.length === 0 && actionFindings.length === 0) {
+    console.log('✅ PASS — every get*Api() read resolves, and the Quick Actions lists agree.');
     process.exit(0);
 }
 
-console.log(`❌ FAIL — ${violations.length} read(s) reach a key no API registers:\n`);
+if (actionFindings.length > 0) {
+    console.log(`❌ FAIL — ${actionFindings.length} Quick Actions list mismatch(es):\n`);
+    for (const f of actionFindings) console.log(`   ${f}`);
+    console.log('\n   ACTION_REGISTRY lives in modules/ui/quickActionsManager.js;');
+    console.log('   VALID_ACTION_IDS and ACTION_BUTTON_MAP in modules/ui/actionUsage.js.\n');
+}
+
+if (violations.length > 0) console.log(`❌ FAIL — ${violations.length} read(s) reach a key no API registers:\n`);
 for (const v of violations) {
     console.log(`   ${v.file}:${v.line}`);
     console.log(`      get${v.apiName[0].toUpperCase()}${v.apiName.slice(1)}Api()?.${v.member}  →  not a key of ${v.apiName}ApiObj`);

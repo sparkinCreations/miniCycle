@@ -106,6 +106,61 @@ export async function runActionUsageTests(resultsDiv) {
         if (id !== null) throw new Error('expected null, got ' + id);
     });
 
+    // A mapped button can carry its own id-bearing children — the input
+    // toggle's text label, the achievements count badge. Resolving to the
+    // NEAREST [id] ancestor stopped at those, missed the map, and dropped the
+    // click. Measured before the fix: clicking #toggle-task-input-btn recorded,
+    // clicking its label did not — and the label is the larger tap target.
+    await test('actionIdForClick sees through an id-bearing child of a mapped button', () => {
+        const btn = document.createElement('button');
+        btn.id = 'toggle-task-input-btn';
+        const label = document.createElement('span');
+        label.id = 'toggle-task-input-text';
+        label.textContent = 'Hide Task Input';
+        btn.appendChild(label);
+        document.body.appendChild(btn);
+        const id = actionIdForClick({ target: label });
+        document.body.removeChild(btn);
+        if (id !== 'toggle-input') throw new Error('expected toggle-input from the inner label, got ' + id);
+    });
+
+    await test('actionIdForClick sees through a nested unmapped wrapper', () => {
+        const btn = document.createElement('button');
+        btn.id = 'achievement-badges-btn';
+        const wrap = document.createElement('span');
+        wrap.id = 'some-unmapped-wrapper';
+        const badge = document.createElement('span');
+        badge.id = 'achievement-count-badge';
+        wrap.appendChild(badge);
+        btn.appendChild(wrap);
+        document.body.appendChild(btn);
+        const id = actionIdForClick({ target: badge });
+        document.body.removeChild(btn);
+        if (id !== 'achievements') throw new Error('expected achievements through two unmapped ids, got ' + id);
+    });
+
+    // `el.id` is DOM-controlled and ACTION_BUTTON_MAP is a plain object literal,
+    // so a truthiness lookup answers 'constructor' from Object.prototype
+    // (CLAUDE.md #18) and would hand a function back as an action id.
+    await test('actionIdForClick ignores prototype-inherited ids', () => {
+        const results = [];
+        for (const junk of ['constructor', 'toString', 'valueOf', '__proto__']) {
+            const el = document.createElement('div');
+            el.id = junk;
+            document.body.appendChild(el);
+            results.push([junk, actionIdForClick({ target: el })]);
+            document.body.removeChild(el);
+        }
+        // Report with String(), not JSON.stringify: these resolve to FUNCTIONS
+        // (Object, Object.prototype.toString, …) and JSON renders a function as
+        // null, which makes a real failure read as a pass-shaped value.
+        const bad = results.filter(([, id]) => id !== null);
+        if (bad.length) {
+            throw new Error('prototype keys resolved: ' +
+                bad.map(([k, v]) => `${k} → ${typeof v} ${String(v).slice(0, 30)}`).join('; '));
+        }
+    });
+
     // ── delegated listener (the core fix) ────────────────────────────────────
     resultsDiv.innerHTML += '<h4 class="test-section">🎯 delegated listener</h4>';
 

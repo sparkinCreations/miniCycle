@@ -41,7 +41,22 @@ const VIEW_TITLE_KEYS = {
 // ACTION REGISTRY (Phase 1: 5 actions)
 // ============================================================================
 
-const ACTION_REGISTRY = {
+/**
+ * Every quick action, keyed by id.
+ *
+ * NULL PROTOTYPE on purpose. Ids reach the lookups below from stored state —
+ * `settings.quickActions.recent` and `.pinned` survive reloads and come back
+ * through a restored backup — and a plain object literal answers 'constructor',
+ * 'toString' and '__proto__' from Object.prototype (CLAUDE.md #18). Every
+ * `if (ACTION_REGISTRY[id])` guard here would pass for those, and
+ * _createFilledSlot would then read `.labelKey` off a native function.
+ *
+ * Fixing it here rather than converting seven call sites to hasOwnProperty:
+ * one guarantee at the declaration cannot be forgotten by the next lookup
+ * someone adds. Object.entries/keys/freeze all work unchanged on a null-proto
+ * object; only inherited-key reads change, which is the point.
+ */
+const ACTION_REGISTRY = Object.assign(Object.create(null), {
     'stats': {
         labelKey: 'quickAction.stats',
         icon: 'stats',
@@ -176,7 +191,7 @@ const ACTION_REGISTRY = {
         handler: 'openTaskOrderGame',
         unlockKey: 'task-order-game'
     }
-};
+});
 
 // SVG icons for the action registry (inline to avoid dynamic icon imports)
 const ACTION_ICONS = {
@@ -465,7 +480,13 @@ export class QuickActionsManager {
 
     _renderRecentActions(container) {
         const data = this._getData();
-        const recent = (data.recent || []).slice(0, SLOT_COUNT);
+        // Filter BEFORE slicing. Slicing first took the newest 5 ids and then
+        // dropped any the registry no longer defines, so one retired action
+        // left a hole even when valid entries sat below it in the list.
+        // _renderFrequentActions already had this order.
+        const recent = (data.recent || [])
+            .filter(id => ACTION_REGISTRY[id])
+            .slice(0, SLOT_COUNT);
 
         if (recent.length === 0) {
             const msg = document.createElement('div');
@@ -476,14 +497,10 @@ export class QuickActionsManager {
         }
 
         const fragment = document.createDocumentFragment();
-        let slotIndex = 0;
-        recent.forEach(actionId => {
-            if (ACTION_REGISTRY[actionId]) {
-                const slot = this._createFilledSlot(actionId, -1, true);
-                slot.setAttribute('tabindex', slotIndex === 0 ? '0' : '-1');
-                fragment.appendChild(slot);
-                slotIndex++;
-            }
+        recent.forEach((actionId, slotIndex) => {
+            const slot = this._createFilledSlot(actionId, -1, true);
+            slot.setAttribute('tabindex', slotIndex === 0 ? '0' : '-1');
+            fragment.appendChild(slot);
         });
         container.appendChild(fragment);
     }

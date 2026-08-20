@@ -106,9 +106,27 @@ export function recordActionUsage(AppState, actionId) {
 export function actionIdForClick(e) {
     const target = e?.target;
     if (!target?.closest) return null;
-    // closest ancestor (incl. self) carrying an id, then check the map.
-    const el = target.closest('[id]');
-    return el ? (ACTION_BUTTON_MAP[el.id] || null) : null;
+
+    // Walk up looking for a MAPPED id, not merely the NEAREST id. A mapped
+    // button can carry id-bearing children — the input toggle's own text label
+    // (#toggle-task-input-text), the achievements count badge
+    // (#achievement-count-badge) — and stopping at the first `[id]` ancestor
+    // found those instead, missed the map, and dropped the click. Measured:
+    // clicking #toggle-task-input-btn recorded; clicking its label did not,
+    // and the label is the larger tap target.
+    //
+    // hasOwnProperty, not truthiness: `el.id` is DOM-controlled, and a plain
+    // object literal answers 'constructor'/'toString' from Object.prototype
+    // (CLAUDE.md #18). Without this, id="constructor" would resolve to a
+    // function and be handed to callers as an action id.
+    let el = target.closest('[id]');
+    while (el) {
+        if (Object.prototype.hasOwnProperty.call(ACTION_BUTTON_MAP, el.id)) {
+            return ACTION_BUTTON_MAP[el.id];
+        }
+        el = el.parentElement ? el.parentElement.closest('[id]') : null;
+    }
+    return null;
 }
 
 // One global delegated listener records every action-button click (direct user clicks
