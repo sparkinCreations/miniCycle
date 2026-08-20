@@ -1,3 +1,7 @@
+## [2.449] - 2026-08-20
+- fix(tasks): a list re-render no longer counts as a hover
+
+
 ## [2.448] - 2026-08-20
 - fix(help): temporary messages never cleared themselves
 
