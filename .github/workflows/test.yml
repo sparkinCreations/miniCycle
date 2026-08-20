@@ -60,6 +60,10 @@ jobs:
         working-directory: ./web
         run: npm run validate:builtins
 
+      - name: Validate appContext API surface (get*Api reads must resolve)
+        working-directory: ./web
+        run: npm run validate:api
+
       - name: Validate label & history-event registries (keys must resolve)
         working-directory: ./web
         run: npm run validate:labels

@@ -25,7 +25,7 @@ import { createDIModule, optional } from '../core/diBase.js';
 import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, APP_VERSION } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
-import { toggleSectionExpanded, setSectionExpanded, isSectionExpanded, collapseAllSections, usesExclusiveSections } from '../utils/collapsibleSections.js';
+import { toggleSectionExpanded, setSectionExpanded, isSectionExpanded, collapseAllSections, usesExclusiveSections, isCollapseAllClick } from '../utils/collapsibleSections.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -291,6 +291,16 @@ export class MenuManager {
 
         // Load saved collapsed states from appState
         this.loadCollapsedStates();
+
+        // Click the menu's own chrome (not a section) to close everything.
+        const sectionsEl = this.deps.querySelector(DOM_SELECTORS.MENU_SECTIONS);
+        if (sectionsEl) {
+            replaceStoredEventListener(sectionsEl, 'click', '__miniCycleMenuCollapseAllClickHandler', (e) => {
+                if (!isCollapseAllClick(e, sectionsEl, DOM_SELECTORS.MENU_SECTION)) return;
+                collapseAllSections(accordionSections, DOM_SELECTORS.MENU_SECTION_HEADER_COLLAPSIBLE);
+                this.saveCollapsedStates();
+            });
+        }
 
         collapsibleHeaders.forEach(header => {
             replaceStoredEventListener(header, 'click', '__miniCycleMenuManagerSectionClickHandler', (e) => {

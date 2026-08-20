@@ -1445,6 +1445,7 @@ export const DOM_SELECTORS = Object.freeze({
     SETTINGS_MODAL: '.settings-modal',
     SETTINGS_MODAL_CONTENT: '.settings-modal-content',
     SETTINGS_SECTION: '.settings-section',
+    SETTINGS_SCROLL_AREA: '.settings-scroll-area',
     SETTINGS_SECTION_HEADER: '.settings-section-header',
     SETTINGS_SECTION_COLLAPSIBLE: '.settings-section.collapsible[data-section]',
 

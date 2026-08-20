@@ -141,13 +141,41 @@
     transform: rotate(-90deg);
 }
 
+/* Collapse/expand animation.
+   `display: none` cannot be transitioned, so the max-height transition that was
+   already declared here never ran. grid-template-rows 0fr→1fr animates to the
+   content's NATURAL height with no measured cap — a max-height cap either clips
+   tall sections or spends most of the duration above the visible range.
+   `visibility` keeps a closed section out of the tab order and the a11y tree
+   (display:none did that for free); transitioning it delays the hide until the
+   collapse finishes. Browsers too old for fr-interpolation (Safari <16, which
+   the feature gate still admits) skip the animation and apply the end state —
+   collapsed is still collapsed. Duration comes from --transition-normal, which
+   variables.css zeroes under prefers-reduced-motion. */
+.settings-section.collapsible {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    transition: grid-template-rows var(--transition-normal) ease;
+}
+
+.settings-section.collapsible.collapsed {
+    grid-template-rows: auto 0fr;
+}
+
 .settings-section-content {
     padding: var(--space-3) 14px;
-    transition: max-height var(--transition-normal) ease, padding var(--transition-normal) ease;
+    overflow: hidden;
+    min-height: 0;
+    transition: padding var(--transition-normal) ease,
+                opacity var(--transition-fast) ease,
+                visibility var(--transition-normal);
 }
 
 .settings-section.collapsed .settings-section-content {
-    display: none;
+    padding-top: 0;
+    padding-bottom: 0;
+    opacity: 0;
+    visibility: hidden;
 }
 
 /* =============================================================================

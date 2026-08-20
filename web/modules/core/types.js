@@ -232,6 +232,10 @@
  * @property {boolean} [highContrast=false] - High contrast mode
  * @property {string} [fontSize='16'] - Base font size in px
  * @property {boolean} [debugMode=false] - Debug mode enabled
+ * @property {boolean} [oneMenuSectionAtATime=true] - Accordion behaviour for the main menu, settings modal and personalization modal: one section open at a time, and each surface opens fully collapsed. Absent reads as true. When false, the three *CollapsedSections maps below are applied on open instead
+ * @property {Object.<string, boolean>} [menuCollapsedSections={}] - Main menu section name → collapsed. Written on every toggle in both modes; only READ when oneMenuSectionAtATime is false
+ * @property {Object.<string, boolean>} [settingsCollapsedSections={}] - Settings modal section name → collapsed. Same write-always/read-conditionally rule as above
+ * @property {Object.<string, boolean>} [preferencesCollapsedSections={}] - Personalization modal section name → collapsed. Same rule; includes the 'live-preview' key, which is never part of the accordion
  */
 
 /**
