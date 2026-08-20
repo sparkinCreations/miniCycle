@@ -273,6 +273,74 @@ export function hideTaskButtons(taskItem) {
 }
 
 /**
+ * Pending hover-intent listeners, keyed by task row.
+ *
+ * WeakMap so a row removed from the DOM takes its entry with it — task rows are
+ * created and destroyed constantly, and this is the pattern EVENT_LISTENER_GUIDE
+ * prescribes for exactly that case.
+ * @type {WeakMap<HTMLElement, Function>}
+ */
+const _hoverIntentHandlers = new WeakMap();
+
+/**
+ * Stop waiting for movement evidence on a row. Safe to call when nothing is armed.
+ * @param {HTMLElement} taskElement
+ * @returns {void}
+ */
+function disarmHoverIntent(taskElement) {
+    const handler = _hoverIntentHandlers.get(taskElement);
+    if (!handler) return;
+    taskElement.removeEventListener('mousemove', handler);
+    _hoverIntentHandlers.delete(taskElement);
+}
+
+/**
+ * Wait for the pointer to actually move inside this row before treating the
+ * mouseenter as a hover.
+ *
+ * `mouseenter` does not mean "the user pointed at this". The browser also fires
+ * it — genuinely, isTrusted and all — when an element MOVES UNDER a stationary
+ * pointer, which any task-list re-render can do: switching modes redraws the
+ * list, a row slides under the parked cursor, and the app used to open that
+ * row's option buttons and spend the once-per-reload customizer tip on a hover
+ * that never happened.
+ *
+ * The discriminator is the event that follows, not the enter itself. Measured
+ * both cases: a real hover fires `mouseenter` and then a `mousemove` inside the
+ * row (the pointer is in motion, so the very next motion sample lands there);
+ * a re-render fires `mouseenter` alone and nothing after it. movementX/movementY
+ * are 0 in BOTH cases, so they cannot be used, and no elapsed-time threshold is
+ * needed either — waiting for the move is exact.
+ *
+ * `once: true` removes the listener when it fires; mouseleave and re-arming
+ * disarm it otherwise; the WeakMap entry dies with the row.
+ * @param {HTMLElement} taskElement
+ * @returns {void}
+ */
+function armHoverIntent(taskElement) {
+    disarmHoverIntent(taskElement);
+    const handler = () => {
+        _hoverIntentHandlers.delete(taskElement);
+        revealTaskOptionsForHover(taskElement);
+    };
+    _hoverIntentHandlers.set(taskElement, handler);
+    taskElement.addEventListener('mousemove', handler, { once: true, passive: true });
+}
+
+/**
+ * Open a row's options because the user really is pointing at it.
+ * @param {HTMLElement} taskElement
+ * @returns {void}
+ */
+function revealTaskOptionsForHover(taskElement) {
+    // Use centralized controller (handles mode checking automatically)
+    TaskOptionsVisibilityController.show(taskElement, 'mouseenter');
+
+    // Show customizer tip on first hover (desktop only, once per reload)
+    _deps.showCustomizerTip?.('hover');
+}
+
+/**
  * Shows task options on mouse enter (hover handler).
  * Only shows on desktop or if long-pressed on mobile.
  * @param {Event} event - The mouseenter event
@@ -283,15 +351,20 @@ export function showTaskOptions(event) {
     // Only allow on desktop or if long-pressed on mobile
     const isTouchDevice = _deps.isTouchDevice;
     const isMobile = typeof isTouchDevice === 'function' ? isTouchDevice() : false;
-    const allowShow = !isMobile || taskElement.classList.contains(DOM_CLASSES.LONG_PRESSED);
+    const longPressed = taskElement.classList.contains(DOM_CLASSES.LONG_PRESSED);
+    const allowShow = !isMobile || longPressed;
 
-    if (allowShow) {
-        // Use centralized controller (handles mode checking automatically)
-        TaskOptionsVisibilityController.show(taskElement, 'mouseenter');
+    if (!allowShow) return;
 
-        // Show customizer tip on first hover (desktop only, once per reload)
-        _deps.showCustomizerTip?.('hover');
+    // A long-press is a deliberate gesture the user already completed, and the
+    // emulated mouse events touch produces carry no mousemove to wait for.
+    // Gating it on movement would break task options on touch entirely.
+    if (longPressed) {
+        revealTaskOptionsForHover(taskElement);
+        return;
     }
+
+    armHoverIntent(taskElement);
 }
 
 /**
@@ -306,6 +379,11 @@ export function hideTaskOptions(event) {
     const isTouchDevice = _deps.isTouchDevice;
     const isMobile = typeof isTouchDevice === 'function' ? isTouchDevice() : false;
     const allowHide = !isMobile || !taskElement.classList.contains(DOM_CLASSES.LONG_PRESSED);
+
+    // Always drop a pending hover-intent arm, even when the hide itself is
+    // suppressed for a long-press: the pointer has left, so a later mousemove
+    // inside this row can only come from the row moving again.
+    disarmHoverIntent(taskElement);
 
     if (allowHide) {
         // Use centralized controller (handles mode checking automatically)
