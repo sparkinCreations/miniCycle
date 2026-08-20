@@ -264,14 +264,40 @@ body.quick-actions-open #quick-actions-window {
     transform: rotate(-90deg);
 }
 
-.menu-section.collapsed .menu-section-grid {
-    display: none;
+/* Collapse/expand animation.
+   `display: none` cannot be transitioned, so the max-height transition that was
+   already declared here never ran. grid-template-rows 0fr→1fr animates to the
+   content's NATURAL height with no measured cap — a max-height cap either clips
+   tall sections or spends most of the duration above the visible range.
+   `visibility` keeps a closed section out of the tab order and the a11y tree
+   (display:none did that for free); transitioning it delays the hide until the
+   collapse finishes. Browsers too old for fr-interpolation (Safari <16, which
+   the feature gate still admits) skip the animation and apply the end state —
+   collapsed is still collapsed. Duration comes from --transition-normal, which
+   variables.css zeroes under prefers-reduced-motion. */
+.menu-section {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    transition: grid-template-rows var(--transition-normal) ease;
+}
+
+.menu-section.collapsed {
+    grid-template-rows: auto 0fr;
 }
 
 .menu-section-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: var(--space-1);
+    overflow: hidden;
+    min-height: 0;
+    transition: opacity var(--transition-fast) ease,
+                visibility var(--transition-normal);
+}
+
+.menu-section.collapsed .menu-section-grid {
+    opacity: 0;
+    visibility: hidden;
 }
 
 .menu-section-grid button,

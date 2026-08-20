@@ -24,7 +24,7 @@ import { getLabel } from '../labels/labelResolver.js';
 import { isValidHex, normalizeFontSize } from '../utils/styleValidators.js';
 import { loadPanelVisibility } from './panelVisibilityHelpers.js';
 import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
-import { toggleSectionExpanded, setSectionExpanded, isSectionExpanded, collapseAllSections, usesExclusiveSections } from '../utils/collapsibleSections.js';
+import { toggleSectionExpanded, setSectionExpanded, isSectionExpanded, collapseAllSections, usesExclusiveSections, isCollapseAllClick } from '../utils/collapsibleSections.js';
 import { isClickOnNotification } from './modalUtils.js';
 
 // ============================================================================
@@ -276,6 +276,18 @@ function setupSettingsCollapsibleSections() {
 
     // Find the settings modal for delegated arrow nav
     const settingsModal = document.querySelector(DOM_SELECTORS.SETTINGS_MODAL);
+
+    // Click the modal's own chrome (not a section) to close everything.
+    // Bound to the scroll area rather than the dialog: a click on the dialog
+    // element itself is the backdrop, which already closes the modal.
+    const scrollArea = settingsModal?.querySelector(DOM_SELECTORS.SETTINGS_SCROLL_AREA);
+    if (scrollArea) {
+        replaceStoredEventListener(scrollArea, 'click', '__miniCycleSettingsCollapseAllClickHandler', (e) => {
+            if (!isCollapseAllClick(e, scrollArea, DOM_SELECTORS.SETTINGS_SECTION)) return;
+            collapseAllSections(collapsibleSections, DOM_SELECTORS.SETTINGS_SECTION_HEADER);
+            saveSettingsCollapsedStates(collapsibleSections);
+        });
+    }
 
     sectionHeaders.forEach(header => {
         replaceStoredEventListener(header, 'click', '__miniCycleSettingsSectionClickHandler', (e) => {

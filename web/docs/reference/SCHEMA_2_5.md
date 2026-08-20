@@ -90,14 +90,17 @@ change without changing a task's shape, and vice versa, so each gets its own cou
     notificationPositionModified: false,   // User has customized position
     showCompletedDropdown: false,          // Enable completed tasks dropdown
     completedTasksExpanded: false,         // Completed section expanded state
+    oneMenuSectionAtATime: true,           // Accordion for menu/settings/personalization (absent = true)
     // Accessibility is FLAT (not nested under an `accessibility` object):
     reducedMotion: false,                  // Reduce animations
     highContrast: false,                   // High contrast mode
     fontSize: "16",                        // Base font size (string)
     debugMode: false,                      // Debug mode enabled
     // …plus guided-tour step trackers (guidedTourStep, statsTourStep, …),
-    // customColors {}, savedColorPresets [], menuCollapsedSections {},
-    // settingsCollapsedSections {}, and more. See createInitialState() in
+    // customColors {}, savedColorPresets [], and the three collapsed-section
+    // maps (menuCollapsedSections, settingsCollapsedSections,
+    // preferencesCollapsedSections — see the UI Preferences table below).
+    // And more: see createInitialState() in
     // appState.js / the Settings typedef in types.js for the exhaustive list.
   },
 
@@ -222,6 +225,10 @@ Tracks application-level information and migration history:
 | `onboardingCompleted` | boolean | User completed onboarding |
 | `dismissedEducationalTips` | object | Map of dismissed tip IDs |
 | `debugMode` | boolean | Debug mode enabled |
+| `oneMenuSectionAtATime` | boolean | Accordion behaviour for the main menu, settings modal and personalization modal — one section open at a time, each surface opening fully collapsed. **Absent reads as `true`.** When `false`, the three `*CollapsedSections` maps are applied on open instead |
+| `menuCollapsedSections` | object | Main menu section name → collapsed. Written on every toggle in **both** modes; only read when `oneMenuSectionAtATime` is `false` |
+| `settingsCollapsedSections` | object | Settings modal section name → collapsed. Same write-always / read-conditionally rule |
+| `preferencesCollapsedSections` | object | Personalization modal section name → collapsed. Same rule; includes `live-preview`, which is never part of the accordion |
 
 #### Accessibility (flat settings fields — **not** nested under an `accessibility` object)
 | Field | Type | Description |

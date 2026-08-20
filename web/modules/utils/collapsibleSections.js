@@ -114,6 +114,32 @@ export function toggleSectionExpanded(section, opts) {
 }
 
 /**
+ * Whether a click landed on the surface's own chrome rather than on a section,
+ * which is the gesture for "tidy up — close everything".
+ *
+ * Deliberately a predicate, not a listener: the three surfaces track and tear
+ * down listeners differently (replaceStoredEventListener vs the module's own
+ * safeAddEventListener), and centralising the DOM wiring here would bypass
+ * whichever cleanup path each one relies on.
+ *
+ * Returns false for a click inside any section — including its header, which
+ * has its own toggle handler and must not be double-handled — and false for a
+ * click on the backdrop outside `container`, which is the surface's own
+ * close-on-backdrop gesture and must not be stolen.
+ *
+ * @param {Event} event
+ * @param {HTMLElement} container - the surface's content area
+ * @param {string} sectionSelector
+ * @returns {boolean}
+ */
+export function isCollapseAllClick(event, container, sectionSelector) {
+    const target = event?.target;
+    if (!container || !target || typeof target.closest !== 'function') return false;
+    if (!container.contains(target)) return false;
+    return !target.closest(sectionSelector);
+}
+
+/**
  * Close every section in a group.
  *
  * Used when a surface opens in accordion mode, so it starts fully collapsed

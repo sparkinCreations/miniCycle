@@ -17,7 +17,7 @@ export async function runCollapsibleSectionsTests(resultsDiv) {
     const mod = await import(`../modules/utils/collapsibleSections.js?v=${cacheBuster}`);
     const {
         isSectionExpanded, setSectionExpanded, toggleSectionExpanded,
-        collapseAllSections, usesExclusiveSections
+        collapseAllSections, usesExclusiveSections, isCollapseAllClick
     } = mod;
 
     resultsDiv.innerHTML = '<h2>CollapsibleSections Tests</h2><h3>Running tests...</h3>';
@@ -51,9 +51,9 @@ export async function runCollapsibleSectionsTests(resultsDiv) {
 
     resultsDiv.innerHTML += '<h4 class="test-section">📦 Module Loading</h4>';
 
-    await test('exports the five helpers', () => {
+    await test('exports the six helpers', () => {
         for (const fn of ['isSectionExpanded', 'setSectionExpanded', 'toggleSectionExpanded',
-                          'collapseAllSections', 'usesExclusiveSections']) {
+                          'collapseAllSections', 'usesExclusiveSections', 'isCollapseAllClick']) {
             if (typeof mod[fn] !== 'function') throw new Error(`${fn} is not exported as a function`);
         }
     });
@@ -151,6 +151,52 @@ export async function runCollapsibleSectionsTests(resultsDiv) {
         cleanup(root);
         if (open.length !== 0) throw new Error(`expected nothing open, got ${open.join(',')}`);
         if (a.some(v => v !== 'false')) throw new Error(`aria-expanded not all false: ${a.join(',')}`);
+    });
+
+    resultsDiv.innerHTML += '<h4 class="test-section">🖱️ Collapse-all click</h4>';
+
+    await test('a click on the surface chrome counts as collapse-all', () => {
+        const root = makeSections(2, [0]);
+        const chrome = document.createElement('p');
+        root.appendChild(chrome);
+        const hit = isCollapseAllClick({ target: chrome }, root, '.sec');
+        cleanup(root);
+        if (!hit) throw new Error('a click on non-section chrome should collapse everything');
+    });
+
+    // The header has its own toggle handler; treating it as chrome would
+    // double-handle the click and fight the toggle.
+    await test('a click inside a section — header included — does not', () => {
+        const root = makeSections(2, [0]);
+        const header = root.querySelector('.sec-header');
+        const inSection = root.querySelector('.sec');
+        const a = isCollapseAllClick({ target: header }, root, '.sec');
+        const b = isCollapseAllClick({ target: inSection }, root, '.sec');
+        cleanup(root);
+        if (a) throw new Error('a header click must be left to the toggle handler');
+        if (b) throw new Error('a click on the section itself must not collapse everything');
+    });
+
+    // Outside the container is the surface's own close-on-backdrop gesture.
+    await test('a click outside the container does not', () => {
+        const root = makeSections(2, [0]);
+        const outside = document.createElement('div');
+        document.body.appendChild(outside);
+        const hit = isCollapseAllClick({ target: outside }, root, '.sec');
+        cleanup(root); cleanup(outside);
+        if (hit) throw new Error('a backdrop click must not be stolen from the close handler');
+    });
+
+    await test('a malformed event is a no-op, not a throw', () => {
+        const root = makeSections(1);
+        const results = [
+            isCollapseAllClick(null, root, '.sec'),
+            isCollapseAllClick({}, root, '.sec'),
+            isCollapseAllClick({ target: {} }, root, '.sec'),
+            isCollapseAllClick({ target: root }, null, '.sec')
+        ];
+        cleanup(root);
+        if (results.some(Boolean)) throw new Error('malformed input should report false');
     });
 
     resultsDiv.innerHTML += '<h4 class="test-section">🛡️ Guards</h4>';

@@ -1024,13 +1024,41 @@ dialog.preferences-modal::backdrop {
     transform: rotate(-90deg);
 }
 
+/* Collapse/expand animation.
+   `display: none` cannot be transitioned, so the transition already declared
+   here never ran. grid-template-rows 0fr→1fr animates to the content's NATURAL
+   height with no measured cap — a max-height cap either clips tall sections or
+   spends most of the duration above the visible range. `visibility` keeps a
+   closed section out of the tab order and the a11y tree (display:none did that
+   for free); transitioning it delays the hide until the collapse finishes.
+   Browsers too old for fr-interpolation (Safari <16, which the feature gate
+   still admits) skip the animation and apply the end state — collapsed is still
+   collapsed. Duration comes from --transition-normal, which variables.css
+   zeroes under prefers-reduced-motion. */
+.preferences-section {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    transition: grid-template-rows var(--transition-normal) ease;
+}
+
+.preferences-section.collapsed {
+    grid-template-rows: auto 0fr;
+}
+
 .preferences-section-content {
     padding: 0 var(--space-3) var(--space-3);
-    transition: all var(--transition-normal) ease;
+    overflow: hidden;
+    min-height: 0;
+    transition: opacity var(--transition-fast) ease,
+                visibility var(--transition-normal),
+                padding var(--transition-normal) ease;
 }
 
 .preferences-section.collapsed .preferences-section-content {
-    display: none;
+    padding-top: 0;
+    padding-bottom: 0;
+    opacity: 0;
+    visibility: hidden;
 }
 
 /* =============================================================================

@@ -28,7 +28,7 @@ import { updateThemeColor } from '../features/themeManager.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { applyHelpWindowVisibility, applyQuickActionsVisibility, loadPanelVisibility, resetPanelVisibility } from './panelVisibilityHelpers.js';
 import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
-import { toggleSectionExpanded, setSectionExpanded, collapseAllSections, usesExclusiveSections } from '../utils/collapsibleSections.js';
+import { toggleSectionExpanded, setSectionExpanded, collapseAllSections, usesExclusiveSections, isCollapseAllClick } from '../utils/collapsibleSections.js';
 import { normalizeHex } from '../utils/styleValidators.js';
 import { isClickOnNotification } from './modalUtils.js';
 
@@ -774,6 +774,23 @@ export class PreferencesManager {
         this.initCheckmarkStyleOptions();
 
         // Collapsible sections
+        // Click the modal's own chrome (not a section) to close everything. The
+        // live preview is excluded from the sweep for the same reason it is
+        // excluded from the accordion — it is not one of the sections you pick.
+        const scrollArea = _deps.querySelector(DOM_SELECTORS.PREFERENCES_SCROLL_AREA);
+        if (scrollArea) {
+            scrollArea._collapseAllClickHandler = (e) => {
+                if (!isCollapseAllClick(e, scrollArea, DOM_SELECTORS.PREFERENCES_SECTION)) return;
+                if (e.target.closest(DOM_SELECTORS.PREFERENCES_PREVIEW_SECTION)) return;
+                collapseAllSections(
+                    _deps.querySelectorAll(DOM_SELECTORS.PREFERENCES_SECTION),
+                    DOM_SELECTORS.PREFERENCES_SECTION_HEADER
+                );
+                this.saveCollapsedStates();
+            };
+            _deps.safeAddEventListener?.(scrollArea, 'click', scrollArea._collapseAllClickHandler);
+        }
+
         _deps.querySelectorAll(DOM_SELECTORS.PREFERENCES_SECTION_HEADER_COLLAPSIBLE).forEach(header => {
             header._clickHandler = () => this.toggleSection(header);
             safeAdd(header, 'click', header._clickHandler);
