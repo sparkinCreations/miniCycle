@@ -115,13 +115,32 @@ function collectEntries() {
 }
 
 // ── 2. copy pass ────────────────────────────────────────────────────────────
+// This pass is allow-everything-by-default: every top-level web/ entry not named
+// below is published verbatim at the site root. That is deliberate for assets,
+// but it means a stray file dropped in web/ becomes a public URL with no gate —
+// nothing lints it and no validator sees it.
+//
+// HISTORY: four throwaway Playwright probe scripts (probe-qa.cjs and friends,
+// v2.458–2.459 Quick Actions audit) were committed to web/ root and shipped this
+// way. The `.js` filter below applies only to the modules/ pass, and `.cjs` does
+// not match endsWith('.js') in any case.
 const COPY_EXCLUDE = new Set([
   'dist', 'node_modules', 'modules', 'scripts', 'docs', 'backup',
   'package.json', 'package-lock.json', '.eslintrc.json', '.DS_Store',
 ]);
+// Node tooling written as CommonJS — build/test runners, probes, one-off scripts.
+// Every legitimate one lives in scripts/ or tests/, both handled separately, so a
+// .cjs at the web/ root is scratch by definition and must not be published.
+const isRootTooling = (name) => name.endsWith('.cjs');
 function copyStatic() {
   for (const name of fs.readdirSync(WEB)) {
     if (COPY_EXCLUDE.has(name)) continue;
+    // Announce rather than drop quietly: a silent skip would be just as invisible
+    // as the silent copy that caused this, only in the other direction.
+    if (isRootTooling(name)) {
+      console.log(`⏭  not published: ${name} — a .cjs at the web/ root is tooling, not a site asset`);
+      continue;
+    }
     fs.cpSync(path.join(WEB, name), path.join(DIST, name), { recursive: true });
   }
   // modules/ non-JS assets fetched at runtime (e.g. labels/loading-tips.json)

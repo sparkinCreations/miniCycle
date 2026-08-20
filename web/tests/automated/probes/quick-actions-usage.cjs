@@ -1,3 +1,13 @@
+/**
+ * PROBE — does a Quick Action actually get counted?
+ *
+ * Clicks a mapped button, then its inner label, then a badge nested inside it,
+ * and prints settings.quickActions.recent / .counts before and after each.
+ * Written for the v2.458 audit: clicking a button's own label recorded nothing,
+ * because actionIdForClick resolved the NEAREST id rather than a MAPPED one.
+ *
+ * Not a test — see ./README.md. Needs `npm start` on :8080.
+ */
 const { chromium } = require('playwright');
 async function run(label, action) {
   const b = await chromium.launch();
