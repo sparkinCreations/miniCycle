@@ -1,3 +1,7 @@
+## [2.447] - 2026-08-20
+- fix: report factory-reset failures honestly, refresh mode help on the toggle path
+
+
 ## [2.446] - 2026-08-19
 - fix(ui): factory reset left the old routine title; a mode change froze the help window across a routine switch
 
