@@ -1,3 +1,7 @@
+## [2.455] - 2026-08-20
+- feat(ci): gate the appContext API surface
+
+
 ## [2.454] - 2026-08-20
 - feat(ui): animate section collapse, close-all on chrome click, document the schema keys
 
