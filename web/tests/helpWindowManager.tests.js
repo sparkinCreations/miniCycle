@@ -855,6 +855,94 @@ export async function runHelpWindowManagerTests(resultsDiv, isPartOfSuite = fals
         }
     });
 
+    // === TEMPORARY MESSAGE RESTORE ===
+    resultsDiv.innerHTML += '<h4 class="test-section">⏱️ Temporary message auto-hide</h4>';
+
+    // Runs the REAL auto-hide callback a show*() method scheduled, instead of a
+    // hand-copy of it, by capturing the setTimeout callback rather than waiting
+    // out the 10s/30s/2s delay.
+    const runAutoHide = (manager, show) => {
+        const realSetTimeout = window.setTimeout;
+        const captured = [];
+        window.setTimeout = (cb) => { captured.push(cb); return 0; };
+        try { show(); } finally { window.setTimeout = realSetTimeout; }
+        if (captured.length === 0) throw new Error('no auto-hide timeout was scheduled');
+        captured.forEach(cb => cb());
+    };
+
+    await test('customizer tip clears itself when the status line has not changed', () => {
+        const manager = new HelpWindowManager();
+        manager.isVisible = true;
+
+        // Cache the status message, so _currentPartsKey describes it.
+        manager.updateConstantMessage();
+        const statusHTML = helpWindowEl.innerHTML;
+
+        // The tip writes innerHTML directly and never touches _currentPartsKey.
+        // Pressing three-dots changes nothing getCurrentStatusMessage() reports,
+        // so the recomputed key still matches — which is exactly the case that
+        // used to make updateConstantMessage() skip the re-render and strand the
+        // tip on screen indefinitely (measured: still up 25s after a 10s hide).
+        runAutoHide(manager, () => manager.showCustomizerTip('three-dots'));
+
+        if (helpWindowEl.innerHTML.includes('+/-')) {
+            throw new Error('the tip is still showing after its auto-hide ran');
+        }
+        if (helpWindowEl.innerHTML !== statusHTML) {
+            throw new Error('auto-hide did not restore the original status message');
+        }
+    });
+
+    await test('mode description clears itself when the status line has not changed', () => {
+        const manager = new HelpWindowManager();
+        manager.isVisible = true;
+        manager.updateConstantMessage();
+        const statusHTML = helpWindowEl.innerHTML;
+
+        runAutoHide(manager, () => manager.showModeDescription('todo-mode'));
+
+        if (helpWindowEl.innerHTML.includes('To-Do Mode')) {
+            throw new Error('the mode description is still showing after its auto-hide ran');
+        }
+        if (helpWindowEl.innerHTML !== statusHTML) {
+            throw new Error('auto-hide did not restore the original status message');
+        }
+    });
+
+    await test('recurring-removed message clears itself when the status line has not changed', () => {
+        const manager = new HelpWindowManager();
+        manager.isVisible = true;
+        manager.updateConstantMessage();
+        const statusHTML = helpWindowEl.innerHTML;
+
+        runAutoHide(manager, () => manager.showRecurringRemovedMessage());
+
+        if (helpWindowEl.innerHTML !== statusHTML) {
+            throw new Error('auto-hide did not restore the original status message');
+        }
+    });
+
+    await test('_restoreConstantMessage drops the cached parts key', () => {
+        const manager = new HelpWindowManager();
+        manager.isVisible = true;
+        manager.updateConstantMessage();
+
+        if (manager._currentPartsKey === null) {
+            throw new Error('precondition failed: updateConstantMessage did not cache a parts key');
+        }
+
+        // Stand in for a temporary message having overwritten the DOM behind the
+        // cache's back. Without the key being dropped, the restore is a no-op.
+        helpWindowEl.innerHTML = '<p>temporary</p>';
+        manager.isShowingModeDescription = false;
+        manager.isShowingCycleComplete = false;
+        manager._restoreConstantMessage();
+
+        if (helpWindowEl.innerHTML.includes('temporary')) {
+            throw new Error('_restoreConstantMessage left the temporary content in place');
+        }
+    });
+
     // === SUMMARY ===
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;

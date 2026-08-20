@@ -251,6 +251,32 @@ export class HelpWindowManager {
         this.show();
     }
 
+    /**
+     * Put the normal status message back after a temporary one.
+     *
+     * Clearing `currentMessage` is not enough on its own. updateConstantMessage()
+     * skips the re-render whenever the recomputed parts key matches
+     * `_currentPartsKey`, and every temporary message writes innerHTML directly
+     * without touching that key — so the key still describes the status message
+     * from BEFORE the temporary one. It matches, the render is skipped, and the
+     * temporary message stays on screen for good.
+     *
+     * Measured: the customizer tip was still up 25s after its 10s auto-hide,
+     * because pressing three-dots changes nothing the status line reports. The
+     * other temporary messages usually escaped this by luck rather than design —
+     * what they announce also moves the task counts, so the key happened to
+     * differ. Cycle-complete on an already-empty routine would have stuck too.
+     *
+     * Callers own their own flag resets (which one is showing, the task-view
+     * class, their timeout handle); this only forces the re-render.
+     * @returns {void}
+     */
+    _restoreConstantMessage() {
+        this.currentMessage = null;
+        this._currentPartsKey = null;
+        this.updateConstantMessage();
+    }
+
     updateConstantMessage() {
         // Don't update if showing cycle completion message or mode description
         if (this.isShowingCycleComplete || this.isShowingModeDescription) return;
@@ -288,9 +314,7 @@ export class HelpWindowManager {
         }
 
         // Force re-evaluation of the constant message by clearing the cache
-        this.currentMessage = null;
-        this._currentPartsKey = null;
-        this.updateConstantMessage();
+        this._restoreConstantMessage();
     }
 
     /**
@@ -350,7 +374,7 @@ export class HelpWindowManager {
             // Remove class from task-view
             const taskView = document.getElementById(DOM_IDS.TASK_VIEW);
             taskView?.classList.remove(DOM_CLASSES.MODE_DESCRIPTION_VISIBLE);
-            this.updateConstantMessage();
+            this._restoreConstantMessage();
         }, 30000);
 
     }
@@ -387,7 +411,7 @@ export class HelpWindowManager {
         // Auto-hide after 2 seconds and return to normal message
         this._pendingTimeouts.push(setTimeout(() => {
             this.isShowingCycleComplete = false;
-            this.updateConstantMessage();
+            this._restoreConstantMessage();
         }, 2000));
     }
 
@@ -417,7 +441,7 @@ export class HelpWindowManager {
         // Auto-hide after 2 seconds and return to normal message
         this._pendingTimeouts.push(setTimeout(() => {
             this.isShowingCycleComplete = false;
-            this.updateConstantMessage();
+            this._restoreConstantMessage();
         }, 2000));
     }
 
@@ -462,9 +486,7 @@ export class HelpWindowManager {
             this.modeDescriptionTimeout = null;
             const taskView = document.getElementById(DOM_IDS.TASK_VIEW);
             taskView?.classList.remove(DOM_CLASSES.MODE_DESCRIPTION_VISIBLE);
-            // Force re-evaluation by clearing cached message (same pattern as refreshLabels)
-            this.currentMessage = null;
-            this.updateConstantMessage();
+            this._restoreConstantMessage();
         }, 10000);
     }
 
@@ -500,9 +522,7 @@ export class HelpWindowManager {
             this.modeDescriptionTimeout = null;
             const taskView = document.getElementById(DOM_IDS.TASK_VIEW);
             taskView?.classList.remove(DOM_CLASSES.MODE_DESCRIPTION_VISIBLE);
-            // Force re-evaluation by clearing cached message
-            this.currentMessage = null;
-            this.updateConstantMessage();
+            this._restoreConstantMessage();
         }, 10000);
     }
 
@@ -674,12 +694,10 @@ export class HelpWindowManager {
         document.getElementById(DOM_IDS.TASK_VIEW)
             ?.classList.remove(DOM_CLASSES.MODE_DESCRIPTION_VISIBLE);
 
-        // Clear the cache too — the parts key for the new routine can coincide
+        // Clears the cache too — the parts key for the new routine can coincide
         // with the old one (two empty routines read identically), and without
-        // this the re-render would be skipped as a no-change.
-        this.currentMessage = null;
-        this._currentPartsKey = null;
-        this.updateConstantMessage();
+        // that the re-render would be skipped as a no-change.
+        this._restoreConstantMessage();
     }
 
     show() {
