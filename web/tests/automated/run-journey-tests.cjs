@@ -111,9 +111,17 @@ async function bootApp(page, timeout = 20000) {
 let _pagesThisJourney = [];
 
 // Open a fresh, isolated app instance. Returns { context, page }.
-async function openFresh(browser, baseURL) {
+/**
+ * @param {object} [opts]
+ * @param {Function} [opts.initScript] Runs in the page before any app code, on every
+ *        document. Used to simulate a browser whose IndexedDB surface differs from
+ *        Chromium's — patching after boot is too late, the app reads it during init.
+ * @param {*} [opts.initArg] Serialisable argument passed to initScript.
+ */
+async function openFresh(browser, baseURL, opts = {}) {
     const context = await browser.newContext();
     await context.grantPermissions(['notifications'], { origin: baseURL });
+    if (opts.initScript) await context.addInitScript(opts.initScript, opts.initArg);
     const page = await context.newPage();
     // Collected here and asserted by the caller, so a starved dependency FAILS the
     // journey instead of scrolling past in green output. See diWarnings below.
@@ -895,6 +903,83 @@ async function journeyFactoryResetRepeat(browser, baseURL) {
     return { name: 'factory reset (repeat)', failures };
 }
 
+// ── Journey 9: the factory reset must not claim success it cannot verify ─────
+//
+// The reset has two independent sources of truth: indexedDB.databases(), which
+// says what survived, and the per-database deleteDatabase outcomes. Chromium has
+// the first, so every other journey exercises only that path. Firefox and older
+// Safari do NOT implement databases() — and there the reset used to read the
+// empty list from an enumeration that never ran as proof of a clean sweep and
+// announce "Factory Reset Complete" over a database that was still sitting
+// there. Measured before the fix: exactly that, with a blocked delete.
+//
+// Both halves matter, so both are asserted: no enumeration + clean deletes must
+// still report success (otherwise the honest verdict just nags Firefox users on
+// every reset), and no enumeration + a blocked delete must report partial.
+async function journeyResetHonesty(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+
+    // Simulates the non-Chromium surface: no databases(), and one database whose
+    // delete reports `blocked` (what a live connection in another tab produces).
+    const patchIndexedDB = (blockDb) => {
+        delete IDBFactory.prototype.databases;
+        if (!blockDb) return;
+        const orig = IDBFactory.prototype.deleteDatabase;
+        IDBFactory.prototype.deleteDatabase = function (name) {
+            if (name !== blockDb) return orig.call(this, name);
+            const req = { onsuccess: null, onerror: null, onblocked: null, error: null };
+            setTimeout(() => { if (req.onblocked) req.onblocked(); }, 5);
+            return req;
+        };
+    };
+
+    const verdictOf = async (blockDb) => {
+        const { context, page } = await openFresh(browser, baseURL, {
+            initScript: patchIndexedDB, initArg: blockDb
+        });
+        const seen = [];
+        try {
+            await page.evaluate(() => document.getElementById('first-run-welcome-dismiss')?.click());
+            await page.waitForTimeout(1000);
+            await page.exposeFunction('__resetNotice', (t) => seen.push(t));
+            await page.evaluate(() => {
+                new MutationObserver(() => {
+                    document.querySelectorAll('.notification, #notification-container div').forEach((n) => {
+                        const t = (n.textContent || '').trim();
+                        if (/[Ff]actory [Rr]eset/.test(t)) window.__resetNotice(t.slice(0, 160));
+                    });
+                }).observe(document.body, { childList: true, subtree: true, characterData: true });
+            });
+
+            await openMenu(page).catch(() => {});
+            await clickEl(page, '#open-settings');
+            await page.waitForTimeout(1200);
+            await clickEl(page, '#factory-reset');
+            await page.waitForTimeout(1000);
+            await clickEl(page, 'button.btn-confirm.btn-destructive');
+            await page.waitForTimeout(9000);
+        } finally {
+            await context.close();
+        }
+        const text = [...new Set(seen)].join(' | ');
+        return { text, partial: /could not be removed/i.test(text), complete: /Reset Complete/i.test(text) };
+    };
+
+    try {
+        const clean = await verdictOf(null);
+        record('no enumeration + clean deletes reports success', clean.complete && !clean.partial,
+            `expected "Reset Complete", saw: ${clean.text || '(no notification)'}`);
+
+        const blocked = await verdictOf('miniCycleBackgroundDB');
+        record('no enumeration + blocked delete reports partial', blocked.partial,
+            `a database was NOT removed and the reset said: ${blocked.text || '(no notification)'}`);
+    } catch (e) {
+        console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);
+        failures.push(`harness error: ${e.message}`);
+    }
+    return { name: 'factory reset honesty', failures };
+}
+
 const JOURNEYS = [
     { name: 'core (add → persist → cycle → offline)', fn: journeyCore },
     { name: 'routine switching', fn: journeyRoutineSwitch },
@@ -904,6 +989,7 @@ const JOURNEYS = [
     { name: 'to-do mode clearing', fn: journeyTodoMode },
     { name: 'to-do stats stay in sync', fn: journeyTodoStatsSync },
     { name: 'factory reset repeats cleanly', fn: journeyFactoryResetRepeat },
+    { name: 'factory reset admits what it cannot verify', fn: journeyResetHonesty },
 ];
 
 async function run() {
