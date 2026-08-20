@@ -5,10 +5,22 @@
 # fd 3 when open. Prints nothing and exits 1 when no boundary can be resolved —
 # the caller should fall back to a fixed commit count.
 #
-# WHY NOT THE LAST GIT TAG: tagging is done by tag-releases.yml on merge to main
-# and it stalls. It sat on v2.421 while the app shipped through 2.449. A stale
-# tag widens LAST_TAG..HEAD to the entire backlog, so every release re-lists
-# commits that shipped weeks ago.
+# WHY NOT THE LAST GIT TAG: `git describe --tags` answers from the LOCAL clone,
+# and a clone's tag set is not the repository's. A fresh or shallow clone, a CI
+# checkout, a cloud session, any clone that never ran `git fetch --tags` — each
+# sees only the tags it happens to have, and LAST_TAG..HEAD then widens to
+# everything since whatever old tag it found.
+#
+# Measured, not hypothetical: the session that shipped 2.447-2.449 ran in a
+# container whose clone stopped at v2.421 while the remote was at v2.445. Every
+# one of those releases re-listed the backlog and was hand-corrected.
+# (tag-releases.yml itself is healthy — 101 of 105 release commits on main are
+# tagged; the 4 gaps are the pre-workflow-edit backfill it documents. The
+# earlier diagnosis that tagging had stalled was read off that same partial
+# clone and was wrong.)
+#
+# The CHANGELOG heading is checked into the repo, so it reads identically in
+# every clone.
 #
 # WHY THE CHANGELOG HEADING: update-version.sh writes exactly one `## [x.y.z]`
 # heading per release, so the commit that INTRODUCED the top heading is where

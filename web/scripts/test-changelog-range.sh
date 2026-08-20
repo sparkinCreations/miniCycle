@@ -56,9 +56,11 @@ else
 fi
 rm -rf "$d"
 
-# ── Why not the last tag: tagging stalls, the range widens to the backlog ────
-# tag-releases.yml sat on v2.421 while the app shipped through 2.449. Anchoring
-# on the tag re-lists every commit since.
+# ── Why not the last tag: a clone's tag set is not the repository's ─────────
+# `git describe --tags` answers from the local clone. The container that shipped
+# 2.447-2.449 had tags only up to v2.421 while the remote was at v2.445, so
+# anchoring on the tag re-listed every commit since. The repo below models that:
+# a tag far behind the releases the CHANGELOG already records.
 d=$(new_repo)
 printf '# Changelog\n' > "$d/CHANGELOG.md"; echo x > "$d/app.js"; commit "$d" "chore: initial"
 git -C "$d" tag v1.0

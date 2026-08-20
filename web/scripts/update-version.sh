@@ -340,7 +340,8 @@ echo ""
 # Captured BEFORE this script edits a single file, so it records the USER's own
 # uncommitted work rather than the version bumps written further down.
 #
-# Why it exists: the changelog is generated from `git log LAST_TAG..HEAD`, but
+# Why it exists: the changelog is generated from a commit range (see
+# changelog-range.sh), but
 # the release commit later sweeps the whole tree with `git add -A`. Anything
 # uncommitted when this script starts therefore SHIPS in the release while
 # contributing no commit message for the changelog to read — v2.430 went out
