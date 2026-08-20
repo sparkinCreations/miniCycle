@@ -777,11 +777,21 @@ export class PreferencesManager {
         // Click the modal's own chrome (not a section) to close everything. The
         // live preview is excluded from the sweep for the same reason it is
         // excluded from the accordion — it is not one of the sections you pick.
-        const scrollArea = _deps.querySelector(DOM_SELECTORS.PREFERENCES_SCROLL_AREA);
-        if (scrollArea) {
+        // Bound to the modal CONTENT, not the scroll area — the title and footer
+        // sit outside that wrapper and a click there is equally "not a section".
+        const modalContent = _deps.querySelector(DOM_SELECTORS.PREFERENCES_MODAL_CONTENT);
+        if (modalContent) {
+            const scrollArea = modalContent;
             scrollArea._collapseAllClickHandler = (e) => {
                 if (!isCollapseAllClick(e, scrollArea, DOM_SELECTORS.PREFERENCES_SECTION)) return;
                 if (e.target.closest(DOM_SELECTORS.PREFERENCES_PREVIEW_SECTION)) return;
+                // Accordion mode only. With it off the user has deliberately
+                // opened several sections, and a stray tap on padding would wipe
+                // that. This mirrors the carve-out the original light-dismiss
+                // convention already had (uiBoot's handleGlobalClickForTaskButtons
+                // keeps `selected` while the recurring panel is open): sweep
+                // transient decoration, defer to deliberate state.
+                if (!usesExclusiveSections(_deps.AppState?.get()?.settings)) return;
                 collapseAllSections(
                     _deps.querySelectorAll(DOM_SELECTORS.PREFERENCES_SECTION),
                     DOM_SELECTORS.PREFERENCES_SECTION_HEADER

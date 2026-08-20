@@ -293,10 +293,21 @@ export class MenuManager {
         this.loadCollapsedStates();
 
         // Click the menu's own chrome (not a section) to close everything.
-        const sectionsEl = this.deps.querySelector(DOM_SELECTORS.MENU_SECTIONS);
-        if (sectionsEl) {
-            replaceStoredEventListener(sectionsEl, 'click', '__miniCycleMenuCollapseAllClickHandler', (e) => {
-                if (!isCollapseAllClick(e, sectionsEl, DOM_SELECTORS.MENU_SECTION)) return;
+        // Bound to the whole menu container, not just .menu-sections: the header
+        // and footer are outside that wrapper and a click there is equally
+        // "not a section". Clicking outside the container closes the menu and is
+        // handled elsewhere.
+        const menuEl = this.deps.querySelector(DOM_SELECTORS.MENU_CONTAINER);
+        if (menuEl) {
+            replaceStoredEventListener(menuEl, 'click', '__miniCycleMenuCollapseAllClickHandler', (e) => {
+                if (!isCollapseAllClick(e, menuEl, DOM_SELECTORS.MENU_SECTION)) return;
+                // Accordion mode only. With it off the user has deliberately
+                // opened several sections, and a stray tap on padding would wipe
+                // that. This mirrors the carve-out the original light-dismiss
+                // convention already had (uiBoot's handleGlobalClickForTaskButtons
+                // keeps `selected` while the recurring panel is open): sweep
+                // transient decoration, defer to deliberate state.
+                if (!usesExclusiveSections(this.deps.AppState?.get()?.settings)) return;
                 collapseAllSections(accordionSections, DOM_SELECTORS.MENU_SECTION_HEADER_COLLAPSIBLE);
                 this.saveCollapsedStates();
             });

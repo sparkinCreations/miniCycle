@@ -1,3 +1,7 @@
+## [2.456] - 2026-08-20
+- fix(ui): collapse-all covers the whole modal, and only in accordion mode
+
+
 ## [2.455] - 2026-08-20
 - feat(ci): gate the appContext API surface
 
