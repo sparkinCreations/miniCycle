@@ -24,6 +24,7 @@ import { getLabel } from '../labels/labelResolver.js';
 import { isValidHex, normalizeFontSize } from '../utils/styleValidators.js';
 import { loadPanelVisibility } from './panelVisibilityHelpers.js';
 import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
+import { toggleSectionExclusive, setSectionExpandedExclusive, isSectionExpanded, collapseAllSections } from '../utils/collapsibleSections.js';
 import { isClickOnNotification } from './modalUtils.js';
 
 // ============================================================================
@@ -255,7 +256,10 @@ function setupSettingsCollapsibleSections() {
     // Cache collapsible sections once and reuse in load/save
     const collapsibleSections = document.querySelectorAll(DOM_SELECTORS.SETTINGS_SECTION_COLLAPSIBLE);
 
-    // Load saved collapsed states using cached sections
+    // One section open at a time — every toggle below routes through this.
+    const opts = { siblings: collapsibleSections, headerSelector: DOM_SELECTORS.SETTINGS_SECTION_HEADER };
+
+    // Put the modal into its opening state (all collapsed)
     loadSettingsCollapsedStates(collapsibleSections);
 
     // Find the settings modal for delegated arrow nav
@@ -266,8 +270,7 @@ function setupSettingsCollapsibleSections() {
             e.stopPropagation();
             const section = header.closest(DOM_SELECTORS.SETTINGS_SECTION);
             if (section) {
-                section.classList.toggle(DOM_CLASSES.COLLAPSED);
-                header.setAttribute('aria-expanded', String(!section.classList.contains(DOM_CLASSES.COLLAPSED)));
+                toggleSectionExclusive(section, opts);
                 saveSettingsCollapsedStates(collapsibleSections);
             }
         });
@@ -277,23 +280,20 @@ function setupSettingsCollapsibleSections() {
                 e.preventDefault();
                 const section = header.closest(DOM_SELECTORS.SETTINGS_SECTION);
                 if (section) {
-                    section.classList.toggle(DOM_CLASSES.COLLAPSED);
-                    header.setAttribute('aria-expanded', String(!section.classList.contains(DOM_CLASSES.COLLAPSED)));
+                    toggleSectionExclusive(section, opts);
                     saveSettingsCollapsedStates(collapsibleSections);
                 }
             } else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
                 const section = header.closest(DOM_SELECTORS.SETTINGS_SECTION);
                 if (!section) return;
-                const isCollapsed = section.classList.contains(DOM_CLASSES.COLLAPSED);
+                const isCollapsed = !isSectionExpanded(section);
                 if (e.key === 'ArrowRight' && isCollapsed) {
                     e.preventDefault();
-                    section.classList.remove(DOM_CLASSES.COLLAPSED);
-                    header.setAttribute('aria-expanded', 'true');
+                    setSectionExpandedExclusive(section, true, opts);
                     saveSettingsCollapsedStates(collapsibleSections);
                 } else if (e.key === 'ArrowLeft' && !isCollapsed) {
                     e.preventDefault();
-                    section.classList.add(DOM_CLASSES.COLLAPSED);
-                    header.setAttribute('aria-expanded', 'false');
+                    setSectionExpandedExclusive(section, false, opts);
                     saveSettingsCollapsedStates(collapsibleSections);
                 }
             } else if (settingsModal && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
