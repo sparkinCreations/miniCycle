@@ -1,3 +1,8 @@
+## [2.451] - 2026-08-20
+- feat(focus): reach Settings without leaving Focus View
+- docs(release): correct why the changelog range cannot use git tags
+
+
 ## [2.450] - 2026-08-20
 - fix(release): changelog dedupe matched prose, so reworded releases came back
 
