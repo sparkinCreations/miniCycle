@@ -1,3 +1,7 @@
+## [2.458] - 2026-08-20
+- fix(usage): count clicks on a button's own label, and stats from every entry point
+
+
 ## [2.457] - 2026-08-20
 - style(ui): halve the section collapse duration to 150ms
 
