@@ -1,3 +1,7 @@
+## [2.453] - 2026-08-20
+- fix(sw): precache collapsibleSections.js
+
+
 ## [2.452] - 2026-08-20
 - feat(ui): "Open one menu section at a time" across menu, settings and personalization
 
