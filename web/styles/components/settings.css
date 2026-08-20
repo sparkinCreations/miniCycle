@@ -155,7 +155,7 @@
 .settings-section.collapsible {
     display: grid;
     grid-template-rows: auto 1fr;
-    transition: grid-template-rows var(--transition-normal) ease;
+    transition: grid-template-rows var(--transition-fast) ease;
 }
 
 .settings-section.collapsible.collapsed {
@@ -166,9 +166,9 @@
     padding: var(--space-3) 14px;
     overflow: hidden;
     min-height: 0;
-    transition: padding var(--transition-normal) ease,
+    transition: padding var(--transition-fast) ease,
                 opacity var(--transition-fast) ease,
-                visibility var(--transition-normal);
+                visibility var(--transition-fast);
 }
 
 .settings-section.collapsed .settings-section-content {
