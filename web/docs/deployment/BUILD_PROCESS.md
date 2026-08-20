@@ -114,6 +114,23 @@ The fix and current contract:
    entries + chunks), `CSS_FILES` (the hashed bundle), and `MODULE_MAP`. The hand lists
    in source are the DEV lists — do not remove any markers.
 
+8. **Static copy pass** (`copyStatic`): every top-level `web/` entry **not** named in
+   `COPY_EXCLUDE` is copied to `dist/` verbatim, recursively. This is
+   **allow-everything-by-default** — a file dropped in `web/` becomes a public URL at the
+   site root with nothing to stop it. ESLint does not see it, no `validate:*` gate covers
+   it, and the build says nothing.
+   - **Exclusions are `COPY_EXCLUDE` (exact names) plus any root `*.cjs`.** The `.js`
+     filter in the same function applies only to the `modules/` sub-pass, and `.cjs` does
+     not match `endsWith('.js')` regardless.
+   - **`tests/` IS published** (143 entries) — deliberately, on `test.minicycle.app` with
+     its own CSP block in `netlify.toml`. `tests/` is the right home for test scaffolding,
+     but it is not a private folder.
+   - **HISTORY:** four throwaway Playwright probe scripts from the v2.458–2.459 Quick
+     Actions audit were committed to `web/` root and published at the site root by this
+     pass. Nothing caught it. The root `*.cjs` exclusion was added in response and logs
+     each skip (`⏭  not published: …`) rather than dropping quietly — every legitimate
+     `.cjs` lives in `scripts/` or `tests/`, both handled separately.
+
 Output: ~133 entries + ~30 chunks + 1 CSS bundle, **3.4MB JS → ~1.47MB minified**.
 
 ### Boot-retry freshness (deliberate exception)
@@ -223,6 +240,9 @@ itself never reads it.
 6. Root-absolute specifiers assume the app is served at the **domain root**.
 7. **Font-preload `crossorigin` is REQUIRED even same-origin** (miniCycle.html preloads
    poppins-400/500/600) or the preload is double-fetched and wasted.
+8. **Anything you leave at the `web/` root gets published.** The copy pass (step 8 above)
+   is an exclusion list, not an inclusion list. Scratch scripts belong in
+   `tests/automated/probes/` (see its README) or outside the repo — never `web/` root.
 
 ---
 
