@@ -1509,6 +1509,7 @@ export const DEFAULT_LABELS = deepFreeze({
         toggleDarkMode: 'Toggle dark mode',
         uncheckAll:     'Uncheck all',
         deleteAll:      'Delete all',
+        settings:       'Settings',
         exitItem:       'Exit Focus View',
         modeItemPrefix: 'Mode',
         modeAutoName:   'Auto Cycle',

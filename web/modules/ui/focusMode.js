@@ -184,7 +184,17 @@ export class FocusMode {
         // Items grouped semantically. A horizontal separator is inserted
         // wherever the `group` value changes between consecutive items.
         // Groups: 'routine' (mode + routine management), 'view' (UI toggles),
-        // 'bulk' (task data ops), 'exit' (dismiss).
+        // 'bulk' (task data ops), 'leave' (go elsewhere), 'exit' (dismiss).
+        //
+        // Settings sits in 'leave' rather than 'view': the 'view' items are
+        // in-place toggles that keep you on the card, while Settings opens a
+        // full modal over it — the same "go somewhere else" shape as Exit.
+        //
+        // It belongs in this menu at all because Focus View makes the ⋯ menu the
+        // ONLY menu: focus-mode.css gives the main ☰ button `pointer-events:
+        // none` and puts this trigger over it, so every other ☰ entry has a
+        // counterpart here. Settings was the one that did not, which left a
+        // routine run in Focus View no way to reach it without exiting.
         const items = [
             { action: 'switch-mode',     group: 'routine', label: '' /* set dynamically in _refreshModeItemLabel */ },
             { action: 'switch-routines', group: 'routine', label: getLabel('focusMode.switchRoutines') },
@@ -193,6 +203,7 @@ export class FocusMode {
             { action: 'toggle-dark-mode', group: 'view',    label: getLabel('focusMode.toggleDarkMode') },
             { action: 'uncheck-all',     group: 'bulk',    label: getLabel('focusMode.uncheckAll') },
             { action: 'delete-all',      group: 'bulk',    label: getLabel('focusMode.deleteAll'), destructive: true },
+            { action: 'settings',        group: 'leave',   label: getLabel('focusMode.settings') },
             { action: 'exit',            group: 'exit',    label: getLabel('focusMode.exitItem') },
         ];
 
@@ -725,7 +736,7 @@ export class FocusMode {
 
     /**
      * Run the action associated with a menu item, then close the menu.
-     * @param {'switch-mode'|'switch-routines'|'create-routine'|'toggle-input-bar'|'toggle-dark-mode'|'uncheck-all'|'delete-all'|'exit'} action
+     * @param {'switch-mode'|'switch-routines'|'create-routine'|'toggle-input-bar'|'toggle-dark-mode'|'uncheck-all'|'delete-all'|'settings'|'exit'} action
      */
     _handleMenuAction(action) {
         this._closeMenu();
@@ -763,6 +774,22 @@ export class FocusMode {
                 // Wired to menuManager.deleteAllTasks which shows a confirmation modal
                 this.deps.deleteAllTasks?.();
                 break;
+            case 'settings': {
+                // Click the existing #open-settings button, the same pattern
+                // quickActionsManager uses and the same one 'toggle-dark-mode'
+                // above uses: the button lives in the main menu, which focus
+                // mode makes unreachable, but a programmatic .click() bypasses
+                // both `inert` and pointer-events and runs the real handler.
+                //
+                // The settings modal opens via showModal(), so it lands in the
+                // browser's TOP LAYER and paints above the focus chrome despite
+                // that chrome sitting at z-index 100000 against the modal's
+                // 1000. Verified in Focus View, not assumed. 'switch-routines'
+                // above already relies on the same property.
+                const btn = this.deps.getElementById(DOM_IDS.OPEN_SETTINGS);
+                btn?.click();
+                break;
+            }
             case 'exit':
                 this.deactivate();
                 break;
