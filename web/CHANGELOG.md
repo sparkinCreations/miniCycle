@@ -1,3 +1,7 @@
+## [2.452] - 2026-08-20
+- feat(ui): "Open one menu section at a time" across menu, settings and personalization
+
+
 ## [2.451] - 2026-08-20
 - feat(focus): reach Settings without leaving Focus View
 - docs(release): correct why the changelog range cannot use git tags

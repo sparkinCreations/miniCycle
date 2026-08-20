@@ -9,25 +9,25 @@
    ============================================================================= */
 
 /* Design tokens and CSS custom properties */
-@import './base/variables.css?v=2.451';
+@import './base/variables.css?v=2.452';
 
 /* Theme overrides — CSS-native [data-theme] attribute selectors */
-@import './themes/themes.css?v=2.451';
+@import './themes/themes.css?v=2.452';
 
 /* CSS reset and normalization */
-@import './base/reset.css?v=2.451';
+@import './base/reset.css?v=2.452';
 
 /* Background patterns, images, and theme overlays */
-@import './base/background.css?v=2.451';
+@import './base/background.css?v=2.452';
 
 /* Typography - fonts, sizes, line heights */
-@import './base/typography.css?v=2.451';
+@import './base/typography.css?v=2.452';
 
 /* Keyframe animations (deduplicated) */
-@import './base/animations.css?v=2.451';
+@import './base/animations.css?v=2.452';
 
 /* Accessibility overrides - high contrast, reduced motion, font size */
-@import './base/accessibility.css?v=2.451';
+@import './base/accessibility.css?v=2.452';
 
 
 /* =============================================================================
@@ -35,13 +35,13 @@
    ============================================================================= */
 
 /* Main app container and structure */
-@import './layout/app-container.css?v=2.451';
+@import './layout/app-container.css?v=2.452';
 
 /* Header and navigation */
-@import './layout/header.css?v=2.451';
+@import './layout/header.css?v=2.452';
 
 /* iOS safe areas and notch handling */
-@import './layout/safe-areas.css?v=2.451';
+@import './layout/safe-areas.css?v=2.452';
 
 
 /* =============================================================================
@@ -49,91 +49,91 @@
    ============================================================================= */
 
 /* Task input field */
-@import './components/task-input.css?v=2.451';
+@import './components/task-input.css?v=2.452';
 
 /* Task list and items */
-@import './components/task-list.css?v=2.451';
+@import './components/task-list.css?v=2.452';
 
 /* Task view layout (desktop drag-customize sub-wrapper) */
-@import './components/task-view-layout.css?v=2.451';
+@import './components/task-view-layout.css?v=2.452';
 
 /* Task action buttons and options */
-@import './components/task-options.css?v=2.451';
+@import './components/task-options.css?v=2.452';
 
 /* Generic button styles */
-@import './components/buttons.css?v=2.451';
+@import './components/buttons.css?v=2.452';
 
 /* SVG icons (replaces Font Awesome) */
-@import './components/icons.css?v=2.451';
+@import './components/icons.css?v=2.452';
 
 /* Modal dialogs */
-@import './components/modals.css?v=2.451';
+@import './components/modals.css?v=2.452';
 
 /* Theme customizer modal (themes + preferences + color picker) */
-@import './components/themes-modal.css?v=2.451';
+@import './components/themes-modal.css?v=2.452';
 
 /* Toast notifications */
-@import './components/notifications.css?v=2.451';
+@import './components/notifications.css?v=2.452';
 
 /* Statistics panel */
-@import './components/stats-panel.css?v=2.451';
+@import './components/stats-panel.css?v=2.452';
 
 /* Focus task panel (one task at a time) */
-@import './components/focus-task-panel.css?v=2.451';
+@import './components/focus-task-panel.css?v=2.452';
 
 /* Progress indicators */
-@import './components/progress-bar.css?v=2.451';
+@import './components/progress-bar.css?v=2.452';
 
 /* Form elements - inputs, selects, checkboxes */
-@import './components/forms.css?v=2.451';
+@import './components/forms.css?v=2.452';
 
 /* Settings panel */
-@import './components/settings.css?v=2.451';
+@import './components/settings.css?v=2.452';
 
 /* Mode selector (Auto/Manual/Todo) */
-@import './components/mode-selector.css?v=2.451';
+@import './components/mode-selector.css?v=2.452';
 
 /* Routine switcher */
-@import './components/routine-switcher.css?v=2.451';
+@import './components/routine-switcher.css?v=2.452';
 
 /* Games panel */
-@import './components/games.css?v=2.451';
+@import './components/games.css?v=2.452';
 
 /* Onboarding screens */
-@import './components/onboarding.css?v=2.451';
+@import './components/onboarding.css?v=2.452';
 
 /* First-run welcome banner (focus-first initial launch) */
-@import './components/first-run-welcome.css?v=2.451';
+@import './components/first-run-welcome.css?v=2.452';
 
 /* Guided tour overlay */
-@import './components/guided-tour.css?v=2.451';
+@import './components/guided-tour.css?v=2.452';
 
 /* Focus mode (hides chrome for distraction-free view) */
-@import './components/focus-mode.css?v=2.451';
+@import './components/focus-mode.css?v=2.452';
 
 /* Recurring tasks panel */
-@import './components/recurring.css?v=2.451';
+@import './components/recurring.css?v=2.452';
 
 /* History modal */
-@import './components/history.css?v=2.451';
+@import './components/history.css?v=2.452';
 
 /* Achievements modal */
-@import './components/achievements.css?v=2.451';
+@import './components/achievements.css?v=2.452';
 
 /* Storage usage display */
-@import './components/storage.css?v=2.451';
+@import './components/storage.css?v=2.452';
 
 /* Testing modal UI (drag handle, results, runner, backup, JSON tree) */
-@import './components/testing.css?v=2.451';
+@import './components/testing.css?v=2.452';
 
 /* Footer and copyright */
-@import './components/footer.css?v=2.451';
+@import './components/footer.css?v=2.452';
 
 /* Menu container and slide arrows */
-@import './components/menu.css?v=2.451';
+@import './components/menu.css?v=2.452';
 
 /* Quick actions panel */
-@import './components/quick-actions.css?v=2.451';
+@import './components/quick-actions.css?v=2.452';
 
 
 /* =============================================================================
@@ -141,10 +141,10 @@
    ============================================================================= */
 
 /* Utility classes and helpers */
-@import './utilities/helpers.css?v=2.451';
+@import './utilities/helpers.css?v=2.452';
 
 /* Responsive utilities and media queries */
-@import './utilities/responsive.css?v=2.451';
+@import './utilities/responsive.css?v=2.452';
 
 
 /* =============================================================================
@@ -152,7 +152,7 @@
    These styles modify components when body.dark-mode is active
    ============================================================================= */
 
-@import './utilities/dark-mode.css?v=2.451';
+@import './utilities/dark-mode.css?v=2.452';
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
