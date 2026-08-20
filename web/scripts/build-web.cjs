@@ -124,9 +124,25 @@ function collectEntries() {
 // v2.458–2.459 Quick Actions audit) were committed to web/ root and shipped this
 // way. The `.js` filter below applies only to the modules/ pass, and `.cjs` does
 // not match endsWith('.js') in any case.
+//
+// MUST KEEP SHIPPING — do not "tidy" these into the list below:
+//   netlify.toml — its [[headers]] are processed FROM THE DEPLOYED FILES, so the
+//                  dist copy is what applies the CSP and every other header. The
+//                  repo-root netlify.toml is the BUILD authority; this one is the
+//                  HEADER authority. Excluding it would silently strip the CSP.
+//   _redirects   — the redirect authority (the deploy-file toml's [[redirects]]
+//                  section is NOT consulted; v2.344 lesson).
+// See the banner in the repo-root netlify.toml for the full history.
 const COPY_EXCLUDE = new Set([
   'dist', 'node_modules', 'modules', 'scripts', 'docs', 'backup',
   'package.json', 'package-lock.json', '.eslintrc.json', '.DS_Store',
+  // Tooling config read from the SOURCE tree at lint/CI time, never over HTTP.
+  // Verified before excluding: `lhci autorun` runs with working-directory ./web
+  // (performance.yml), so it reads web/lighthouserc.json, not the dist copy.
+  'eslint.config.js', 'jsconfig.json', 'lighthouserc.json',
+  // Reference config for self-hosting behind nginx; update-version.sh and
+  // validate-csp.py rewrite it in the SOURCE tree. Nothing fetches it at runtime.
+  'nginx-security.conf',
 ]);
 // Node tooling written as CommonJS — build/test runners, probes, one-off scripts.
 // Every legitimate one lives in scripts/ or tests/, both handled separately, so a
@@ -149,6 +165,23 @@ function copyStatic() {
     const dest = path.join(DIST, rel(f));
     fs.mkdirSync(path.dirname(dest), { recursive: true });
     fs.copyFileSync(f, dest);
+  }
+}
+
+// Netlify applies headers and redirects from the DEPLOYED files, so these two are
+// not merely copied — they are the live config. Nothing else catches their loss:
+// validate:cache reads the SOURCE web/netlify.toml, and a site missing its CSP
+// still loads fine, so a bad deploy would look healthy. Fail the build instead.
+const MUST_PUBLISH = {
+  'netlify.toml': 'it is the header authority: its [[headers]] apply the CSP from the deployed file',
+  '_redirects': 'it is the redirect authority: the deploy-file toml\'s [[redirects]] are NOT consulted',
+};
+function assertMustPublish() {
+  for (const [name, why] of Object.entries(MUST_PUBLISH)) {
+    if (!fs.existsSync(path.join(DIST, name))) {
+      fail(`dist/${name} is missing — ${why}.\n` +
+           `   Something excluded it from the copy pass. It must ship; see COPY_EXCLUDE.`);
+    }
   }
 }
 
@@ -542,6 +575,7 @@ function makeRewritePlugin() {
   });
 
   copyStatic();
+  assertMustPublish();
   const docs = copyDocs();
   const stats = writeStatsJson();
 
