@@ -37,6 +37,7 @@ const di = createDIModule('RoutineLoader', {
   updateThemeColor: optional(null),
   startReminders: optional(null),
   catchUpMissedRecurringTasks: optional(null),
+  helpWindowManager: optional(null),
   updateProgressBar: optional(null),
   checkCompleteAllButton: optional(null),
   updateMainMenuHeader: optional(null),
@@ -470,6 +471,17 @@ function updateDependentComponents() {
   _deps.updateMainMenuHeader?.();
   _deps.updateStatsPanel?.();
   _deps.refreshThemeLabels?.();  // Apply vocab theme colors and labels for the newly active routine
+  // Release any temporary help-window content (mode description, customizer
+  // tip). Both hold isShowingModeDescription for 10-30s, and while it is set
+  // updateConstantMessage() early-returns — so switching routines shortly after
+  // changing modes left the PREVIOUS routine's message on screen. Not
+  // updateHelpWindow(): that routes to refreshLabels(), which deliberately
+  // PRESERVES the temporary state (it exists for theme changes, where keeping
+  // it is correct).
+  const helpMgr = typeof _deps.helpWindowManager === 'function'
+    ? _deps.helpWindowManager()
+    : _deps.helpWindowManager;
+  helpMgr?.clearTemporaryMessage?.();
   _deps.updateRecurringInfoLink?.();  // Refresh recurring count for the newly active routine
 }
 

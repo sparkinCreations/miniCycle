@@ -11,7 +11,7 @@
  *     (per-routine, like reminders), not at fire time.
  *
  * Catch-up: if the app was closed when the trigger time passed, the next
- * tick (60s interval) or visibility-change event fires the reset on open.
+ * tick (INTERVALS.DAILY_RESET_TICK) or visibility-change event fires the reset on open.
  *
  * Schema (per-cycle):
  *   state.data.cycles[cycleId].autoUncheckDaily = {
@@ -503,7 +503,8 @@ export class DailyResetManager {
     }
 
     _startTicker() {
-        // 60s tick is plenty for a feature that fires once per day per routine.
+        // A coarse tick is plenty for a feature that fires once per day per routine;
+        // the interval itself lives in INTERVALS.DAILY_RESET_TICK.
         // Visibility-change covers the closed-app case (catch-up).
         this._intervalId = setInterval(() => this.checkAllRoutines(), INTERVALS.DAILY_RESET_TICK);
 

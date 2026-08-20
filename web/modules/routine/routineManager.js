@@ -37,6 +37,7 @@ let _sampleManifestCache = null;
 // ============================================================================
 
 const di = createDIModule('RoutineManager', {
+    helpWindowManager: optional(null),
     AppState: optional(null),
     loadMiniCycleData: optional(null),
     showPromptModal: optional(null),
@@ -108,6 +109,13 @@ export class RoutineManager {
 
             // Theme
             refreshThemeLabels: resolvedDeps.refreshThemeLabels || null,
+
+            // Help window — forwarded explicitly. this.deps is rebuilt from this
+            // allow-list, so a dep the manifest DOES deliver is still dropped if
+            // it is not named here (same shape as taskCore's forward-through
+            // list, and the reason declaring it in the manifest alone changed
+            // nothing). Resolved as a factory by _clearHelpWindowTemporary().
+            helpWindowManager: resolvedDeps.helpWindowManager || null,
 
             // Mode sync (must run before refreshThemeLabels on new routine creation)
             syncModeFromToggles: resolvedDeps.syncModeFromToggles || null,
@@ -252,6 +260,8 @@ export class RoutineManager {
                     body.classList.add(DOM_CLASSES.AUTO_CYCLE_MODE);
 
                     this.deps.refreshThemeLabels?.();
+
+                    this._clearHelpWindowTemporary();
                     this.deps.updateRecurringInfoLink?.();
                     await this.deps.completeInitialSetup(finalTitle, appState.get());
 
@@ -370,6 +380,28 @@ export class RoutineManager {
     /**
      * Create a new miniCycle from the main menu
      */
+    /**
+     * Release temporary help-window content when the active routine changes.
+     *
+     * showModeDescription() and showCustomizerTip() both hold
+     * isShowingModeDescription — for 30s and 10s respectively — and
+     * updateConstantMessage() early-returns for as long as it is set. Nothing
+     * released it on a routine change, so changing modes and then creating or
+     * switching a routine left the PREVIOUS routine's message on screen.
+     *
+     * Called from every refresh block in this file. Those blocks are hand-rolled
+     * copies of routineLoader.updateDependentComponents() — only one of the three
+     * reaches it via loadMiniCycle(), which is exactly why fixing it there alone
+     * did not work. Collapsing them is a wider change than this fix.
+     * @private
+     */
+    _clearHelpWindowTemporary() {
+        const mgr = typeof this.deps.helpWindowManager === 'function'
+            ? this.deps.helpWindowManager()
+            : this.deps.helpWindowManager;
+        mgr?.clearTemporaryMessage?.();
+    }
+
     createNewMiniCycle() {
 
         // ✅ Use state-based data access
@@ -468,6 +500,7 @@ export class RoutineManager {
                 this.deps.checkCompleteAllButton();
                 this.deps.updateMainMenuHeader();
                 this.deps.refreshThemeLabels?.();
+                this._clearHelpWindowTemporary();
 
                 const recurringLink = this.deps.getElementById(DOM_IDS.RECURRING_INFO_LINK);
                 if (recurringLink) recurringLink.classList.remove(DOM_CLASSES.SHOW);
@@ -600,6 +633,7 @@ export class RoutineManager {
                 this.deps.checkCompleteAllButton();
                 this.deps.updateMainMenuHeader();
                 this.deps.refreshThemeLabels?.();
+                this._clearHelpWindowTemporary();
                 this.deps.loadMiniCycle?.();
             }
 

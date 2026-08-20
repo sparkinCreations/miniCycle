@@ -262,7 +262,13 @@ export async function runTaskUITests(resultsDiv, isPartOfSuite = false) {
     // =====================================================
     resultsDiv.innerHTML += '<h3>showTaskOptions/hideTaskOptions</h3>';
 
-    await test('showTaskOptions shows options on desktop', async () => {
+    // A mouseenter alone is NOT evidence of a hover: the browser fires it, with
+    // isTrusted true, whenever an element MOVES UNDER a stationary pointer — and
+    // any task-list re-render does that. These four tests pin the discriminator
+    // (a mousemove inside the row must follow) rather than the old contract,
+    // which showed options the instant a mouseenter arrived.
+
+    await test('showTaskOptions shows options on desktop once the pointer moves in the row', async () => {
         createTestDOM();
         document.body.classList.remove('show-three-dots-enabled');
         setTaskUIDependencies({ isTouchDevice: () => false });
@@ -270,12 +276,67 @@ export async function runTaskUITests(resultsDiv, isPartOfSuite = false) {
         const task = createMockTaskElement();
         document.getElementById('taskList').appendChild(task);
 
-        const event = { currentTarget: task, type: 'mouseenter' };
-        showTaskOptions(event);
+        showTaskOptions({ currentTarget: task, type: 'mouseenter' });
+        task.dispatchEvent(new MouseEvent('mousemove', { bubbles: true }));
 
         const taskOptions = task.querySelector('.task-options');
         if (taskOptions.classList.contains('task-options-force-hidden')) {
-            throw new Error('Task options should be visible on desktop');
+            throw new Error('Task options should be visible after a real hover');
+        }
+    });
+
+    await test('showTaskOptions ignores a mouseenter with no pointer movement', async () => {
+        createTestDOM();
+        document.body.classList.remove('show-three-dots-enabled');
+        setTaskUIDependencies({ isTouchDevice: () => false });
+
+        const task = createMockTaskElement();
+        document.getElementById('taskList').appendChild(task);
+
+        // A row sliding under a parked cursor: the enter arrives, nothing follows.
+        showTaskOptions({ currentTarget: task, type: 'mouseenter' });
+
+        const taskOptions = task.querySelector('.task-options');
+        if (!taskOptions.classList.contains('task-options-force-hidden')) {
+            throw new Error('a bare mouseenter opened the options — the row moved, the user did not point at it');
+        }
+    });
+
+    await test('showTaskOptions does not spend the customizer tip on a bare mouseenter', async () => {
+        createTestDOM();
+        document.body.classList.remove('show-three-dots-enabled');
+        let tips = 0;
+        setTaskUIDependencies({ isTouchDevice: () => false, showCustomizerTip: () => { tips++; } });
+
+        const task = createMockTaskElement();
+        document.getElementById('taskList').appendChild(task);
+
+        showTaskOptions({ currentTarget: task, type: 'mouseenter' });
+        if (tips !== 0) {
+            throw new Error(`the tip fired on a hover that never happened (${tips}x) — it only shows once per reload`);
+        }
+
+        task.dispatchEvent(new MouseEvent('mousemove', { bubbles: true }));
+        if (tips !== 1) {
+            throw new Error(`the tip should fire on the real hover, got ${tips}`);
+        }
+    });
+
+    await test('hideTaskOptions disarms a pending hover so a later stray move cannot open it', async () => {
+        createTestDOM();
+        document.body.classList.remove('show-three-dots-enabled');
+        setTaskUIDependencies({ isTouchDevice: () => false });
+
+        const task = createMockTaskElement();
+        document.getElementById('taskList').appendChild(task);
+
+        showTaskOptions({ currentTarget: task, type: 'mouseenter' });
+        hideTaskOptions({ currentTarget: task, type: 'mouseleave' });
+        task.dispatchEvent(new MouseEvent('mousemove', { bubbles: true }));
+
+        const taskOptions = task.querySelector('.task-options');
+        if (!taskOptions.classList.contains('task-options-force-hidden')) {
+            throw new Error('a move after the pointer left still opened the options');
         }
     });
 
@@ -308,6 +369,9 @@ export async function runTaskUITests(resultsDiv, isPartOfSuite = false) {
         const event = { currentTarget: task, type: 'mouseenter' };
         showTaskOptions(event);
 
+        // No mousemove is dispatched here on purpose: touch produces no pointer
+        // movement to wait for, so gating long-press on it would break task
+        // options on touch devices entirely.
         const taskOptions = task.querySelector('.task-options');
         if (taskOptions.classList.contains('task-options-force-hidden')) {
             throw new Error('Task options should be visible on mobile with long-press');

@@ -69,6 +69,9 @@ export class ModeManager {
         // from the live `di.resolve()` via the `deps` getter below.
         this.refreshDebounceTimer = null;
         this._initialized = false;
+        // Set while syncTogglesFromMode() is driving the toggles programmatically.
+        // See _refreshModeHelp() for why the toggle handlers must stand down then.
+        this._syncingTogglesFromMode = false;
     }
 
     /**
@@ -269,6 +272,41 @@ export class ModeManager {
                 // Only log if there were tasks but none had buttons yet (initial load)
             }
         }, 150); // 150ms debounce delay - prevents multiple rapid reflows
+    }
+
+    /**
+     * Show the current mode's help description, the same way a mode-selector
+     * switch does.
+     *
+     * The selector is not the only way to change mode — the settings toggles are
+     * a second path, and they used to leave the help window alone entirely. That
+     * matters more than a missing description, because showModeDescription()
+     * holds `isShowingModeDescription` for 30 seconds and updateConstantMessage()
+     * early-returns for that whole time: switch mode by selector, then switch
+     * again by toggle inside 30s, and the window kept showing the FIRST mode's
+     * description. Measured: the selector path itself is not stale — help,
+     * body class and selector value all land in the same animation frame.
+     *
+     * Reads the mode from the selector rather than recomputing it: syncModeFromToggles()
+     * has already written the canonical mode there, so this cannot disagree with
+     * the rest of the UI.
+     *
+     * Callers must skip this when syncTogglesFromMode() is driving. That function
+     * flips the two toggles one at a time and each flip fires the toggle handler,
+     * so unguarded a single selector switch renders up to three descriptions —
+     * including the transient mode the half-applied toggles spell out (auto →
+     * to-do passes through manual-cycle). It calls showModeDescription() itself
+     * once the toggles agree.
+     * @returns {void}
+     */
+    _refreshModeHelp() {
+        const modeSelector = this.deps.getElementById(DOM_IDS.MODE_SELECTOR);
+        if (!modeSelector) return;
+
+        const helpMgr = this.deps.helpWindowManager?.();
+        if (helpMgr && typeof helpMgr.showModeDescription === 'function') {
+            helpMgr.showModeDescription(modeSelector.value);
+        }
     }
 
     /**
@@ -556,43 +594,52 @@ export class ModeManager {
         // ✅ Function to sync toggles from either selector (NESTED FUNCTION - stays inside)
         // ✅ FIXED: Made async to properly await storage update before UI sync
         const syncTogglesFromMode = async (selectedMode) => {
+            // Hold off the toggle handlers' own help refresh until the toggles
+            // agree — see _refreshModeHelp(). try/finally so an await that
+            // rejects can't strand the flag and mute the toggle path for good.
+            this._syncingTogglesFromMode = true;
+            try {
 
-            switch(selectedMode) {
-                case 'auto-cycle':
-                    toggleAutoReset.checked = true;
-                    deleteCheckedTasks.checked = false;
-                    break;
-                case 'manual-cycle':
-                    toggleAutoReset.checked = false;
-                    deleteCheckedTasks.checked = false;
-                    break;
-                case 'todo-mode':
-                    toggleAutoReset.checked = false;
-                    deleteCheckedTasks.checked = true;
-                    break;
-            }
+                switch(selectedMode) {
+                    case 'auto-cycle':
+                        toggleAutoReset.checked = true;
+                        deleteCheckedTasks.checked = false;
+                        break;
+                    case 'manual-cycle':
+                        toggleAutoReset.checked = false;
+                        deleteCheckedTasks.checked = false;
+                        break;
+                    case 'todo-mode':
+                        toggleAutoReset.checked = false;
+                        deleteCheckedTasks.checked = true;
+                        break;
+                }
 
-            // Update selector value
-            modeSelector.value = selectedMode;
+                // Update selector value
+                modeSelector.value = selectedMode;
 
-            // ✅ UPDATE STORAGE FIRST - must await to ensure data is saved before UI sync
-            await this.updateStorageFromToggles();
+                // ✅ UPDATE STORAGE FIRST - must await to ensure data is saved before UI sync
+                await this.updateStorageFromToggles();
 
-            // ✅ THEN trigger change events (but prevent them from updating storage again)
-            toggleAutoReset.dispatchEvent(new Event('change'));
-            deleteCheckedTasks.dispatchEvent(new Event('change'));
+                // ✅ THEN trigger change events (but prevent them from updating storage again)
+                toggleAutoReset.dispatchEvent(new Event('change'));
+                deleteCheckedTasks.dispatchEvent(new Event('change'));
 
-            // Update UI - now storage has correct values (MUST await to ensure body class is set)
-            await this.syncModeFromToggles();
+                // Update UI - now storage has correct values (MUST await to ensure body class is set)
+                await this.syncModeFromToggles();
 
-            // Check complete all button
-            if (this.deps.checkCompleteAllButton) {
-                this.deps.checkCompleteAllButton();
-            }
+                // Check complete all button
+                if (this.deps.checkCompleteAllButton) {
+                    this.deps.checkCompleteAllButton();
+                }
 
-            // ✅ Update recurring button visibility via module (DI-pure)
-            if (this.deps.recurringCore?.updateRecurringButtonVisibility) {
-                this.deps.recurringCore.updateRecurringButtonVisibility();
+                // ✅ Update recurring button visibility via module (DI-pure)
+                if (this.deps.recurringCore?.updateRecurringButtonVisibility) {
+                    this.deps.recurringCore.updateRecurringButtonVisibility();
+                }
+
+            } finally {
+                this._syncingTogglesFromMode = false;
             }
 
             // ✅ Show mode description in help window
@@ -646,9 +693,18 @@ export class ModeManager {
             }
         });
 
-        toggleAutoReset._modeChangeHandler = (e) => {
-            this.syncModeFromToggles();
+        toggleAutoReset._modeChangeHandler = async (e) => {
+            // Read the guard NOW, not after the await. dispatchEvent runs this
+            // handler synchronously only as far as its first await; by the time
+            // it resumes, syncTogglesFromMode()'s finally has already cleared the
+            // flag, so checking it later would always say "not driving".
+            const drivenBySelector = this._syncingTogglesFromMode;
+
+            // Awaited: syncModeFromToggles() is what writes the canonical mode to
+            // the selector, and _refreshModeHelp() reads it back from there.
+            await this.syncModeFromToggles();
             this.updateCycleModeDescription();
+            if (!drivenBySelector) this._refreshModeHelp();
 
             if (this.deps.checkCompleteAllButton) {
                 this.deps.checkCompleteAllButton();
@@ -659,9 +715,13 @@ export class ModeManager {
         };
         safeAdd(toggleAutoReset, 'change', toggleAutoReset._modeChangeHandler);
 
-        deleteCheckedTasks._modeChangeHandler = (e) => {
-            this.syncModeFromToggles();
+        deleteCheckedTasks._modeChangeHandler = async (e) => {
+            // Guard captured synchronously — see the toggleAutoReset handler above.
+            const drivenBySelector = this._syncingTogglesFromMode;
+
+            await this.syncModeFromToggles();
             this.updateCycleModeDescription();
+            if (!drivenBySelector) this._refreshModeHelp();
 
             if (this.deps.checkCompleteAllButton) {
                 this.deps.checkCompleteAllButton();

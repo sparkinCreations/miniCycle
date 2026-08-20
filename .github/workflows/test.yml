@@ -68,6 +68,10 @@ jobs:
         working-directory: ./web
         run: npm run validate:cache
 
+      - name: Changelog range (released commits must not be re-listed)
+        working-directory: ./web
+        run: npm run test:changelog
+
   test:
     runs-on: ubuntu-latest
 

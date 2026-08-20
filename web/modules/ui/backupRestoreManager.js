@@ -115,6 +115,17 @@ function reloadWithLoader(logContext, options = {}) {
                 document.body.classList.add(DOM_CLASSES.TASKS_EMPTY);
             }
 
+            // ...and the routine title, for the same reason. Both title writers
+            // only run when a cycle EXISTS — routineLoader.updateCycleUIState()
+            // takes one as an argument, and appInit returns early on
+            // `if (!currentCycle)`. A factory reset produces exactly the state
+            // neither handles, so the header kept showing the name of the
+            // routine that had just been deleted while state read activeCycleId
+            // = null. Cleared here beside the task list, which had the same
+            // problem and the same fix.
+            const titleEl = document.getElementById(DOM_IDS.MINI_CYCLE_TITLE);
+            if (titleEl) titleEl.textContent = getLabel('routine.untitledCycle');
+
             const AppState = getAppStateInstance();
             AppState?.reload?.();
 
@@ -141,20 +152,24 @@ const APP_DATABASES = ['miniCycle_backups', 'miniCycleUndoHistory', 'miniCycleBa
  * rather than assume it: deleteDatabase can be blocked by an open connection and
  * the reset's handler settles on `blocked` and continues.
  *
- * indexedDB.databases() is unsupported on Firefox and older Safari; there we
- * return [] and the caller keeps its previous behaviour of reporting success,
- * which is no worse than before this check existed.
- * @returns {Promise<string[]>}
+ * indexedDB.databases() is unsupported on Firefox and older Safari, and can
+ * throw anywhere. Both cases report `supported: false` rather than an empty
+ * `remaining` — an empty list from an enumeration that never ran is
+ * indistinguishable from a clean reset, and the caller used to read it as one
+ * and announce success on exactly the browsers it could not check.
+ * @returns {Promise<{supported: boolean, remaining: string[]}>}
  */
 async function listRemainingAppDatabases() {
     try {
-        if (typeof indexedDB === 'undefined' || typeof indexedDB.databases !== 'function') return [];
+        if (typeof indexedDB === 'undefined' || typeof indexedDB.databases !== 'function') {
+            return { supported: false, remaining: [] };
+        }
         const present = await indexedDB.databases();
         const names = present.map(d => d?.name).filter(Boolean);
-        return APP_DATABASES.filter(name => names.includes(name));
+        return { supported: true, remaining: APP_DATABASES.filter(name => names.includes(name)) };
     } catch (e) {
         console.warn('Could not enumerate databases after reset:', e);
-        return [];
+        return { supported: false, remaining: [] };
     }
 }
 
@@ -901,17 +916,15 @@ export function setupFactoryResetButton() {
             console.warn('Could not close undo IndexedDB connection:', e);
         }
 
-        // IndexedDB cleanup
+        // IndexedDB cleanup. Every database's outcome is recorded, not just
+        // logged: on browsers without indexedDB.databases() these are the ONLY
+        // evidence the reset has about what happened, and `blocked`/`error`
+        // used to settle indistinguishably from `success`.
+        const deleteOutcomes = [];
         try {
             if (typeof indexedDB !== 'undefined') {
-                const idbDatabases = [
-                    'miniCycle_backups',
-                    'miniCycleUndoHistory',
-                    'miniCycleBackgroundDB',
-                    'miniCycleTestResultsDB'
-                ];
                 await Promise.allSettled(
-                    idbDatabases.map(dbName => {
+                    APP_DATABASES.map(dbName => {
                         return new Promise((resolve) => {
                             // Settle exactly once. A deleteDatabase against a DB the app
                             // still holds open fires `blocked` the FIRST time — but on a
@@ -921,18 +934,23 @@ export function setupFactoryResetButton() {
                             // Promise.allSettled hangs, and the whole reset stalls before
                             // re-init — leaving the app dataless until a manual refresh.
                             let settled = false;
-                            const done = () => { if (!settled) { settled = true; resolve(); } };
-                            const timer = setTimeout(done, UI_TIMEOUTS.INDEXEDDB_DELETE_SAFETY);
-                            const finish = () => { clearTimeout(timer); done(); };
+                            const done = (outcome) => {
+                                if (settled) return;
+                                settled = true;
+                                deleteOutcomes.push({ name: dbName, outcome });
+                                resolve();
+                            };
+                            const timer = setTimeout(() => done('timeout'), UI_TIMEOUTS.INDEXEDDB_DELETE_SAFETY);
+                            const finish = (outcome) => { clearTimeout(timer); done(outcome); };
                             const req = indexedDB.deleteDatabase(dbName);
-                            req.onsuccess = finish;
+                            req.onsuccess = () => finish('deleted');
                             req.onerror = () => {
                                 console.warn(`IndexedDB ${dbName} delete errored:`, req.error);
-                                finish();
+                                finish('error');
                             };
                             req.onblocked = () => {
                                 console.warn(`IndexedDB ${dbName} delete blocked (connections still open)`);
-                                finish();
+                                finish('blocked');
                             };
                         });
                     })
@@ -940,12 +958,29 @@ export function setupFactoryResetButton() {
             }
         } catch (e) {
             console.warn('IndexedDB cleanup failed:', e);
+            // The loop is the only writer of deleteOutcomes, so a throw here can
+            // leave it short. Mark it unusable rather than let the verdict read
+            // the surviving entries as a full, clean sweep.
+            deleteOutcomes.push({ name: '(cleanup)', outcome: 'error' });
         }
 
         // Check BEFORE reopening. initUndoIndexedDB() recreates
         // miniCycleUndoHistory, so verifying afterwards would count our own fresh
         // empty database as a survivor and report every reset as partial.
-        const leftovers = await listRemainingAppDatabases();
+        const { supported: canEnumerate, remaining: leftovers } = await listRemainingAppDatabases();
+
+        // Two independent sources of truth, and which one is authoritative
+        // depends on the browser:
+        //
+        //  - Enumeration available (Chrome, modern Safari): the leftover list is
+        //    definitive. Trust it over the outcomes — a delete can report
+        //    `blocked` and still have completed once the blocking connection
+        //    closed, and calling that partial would nag on a clean reset.
+        //  - Enumeration unavailable (Firefox, older Safari): there is nothing to
+        //    check against, so the per-database outcomes are all we have. Any
+        //    outcome other than `deleted` means we cannot claim the data is gone.
+        const failedDeletes = deleteOutcomes.filter(d => d.outcome !== 'deleted');
+        const resetIncomplete = canEnumerate ? leftovers.length > 0 : failedDeletes.length > 0;
 
         // Reopen undo storage so the app (and any LATER factory reset) has a live
         // connection again. Without this the next reset runs against a stale
@@ -959,8 +994,12 @@ export function setupFactoryResetButton() {
         // Say what actually happened. Every cleanup step above only warns on
         // failure, so the success notification was unconditional — it fired even
         // when a database was still sitting there.
-        if (leftovers.length > 0) {
-            console.warn('Factory reset: these databases were not removed:', leftovers);
+        if (resetIncomplete) {
+            if (canEnumerate) {
+                console.warn('Factory reset: these databases were not removed:', leftovers);
+            } else {
+                console.warn('Factory reset: these databases could not be confirmed removed:', failedDeletes);
+            }
             _deps.showNotification("⚠️ " + getLabel('notify.factoryResetPartial'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
         } else {
             _deps.showNotification("✅ " + getLabel('notify.factoryResetComplete'), "success", UI_TIMEOUTS.NOTIFICATION_SHORT);

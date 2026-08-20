@@ -1,3 +1,23 @@
+## [2.450] - 2026-08-20
+- fix(release): changelog dedupe matched prose, so reworded releases came back
+
+
+## [2.449] - 2026-08-20
+- fix(tasks): a list re-render no longer counts as a hover
+
+
+## [2.448] - 2026-08-20
+- fix(help): temporary messages never cleared themselves
+
+
+## [2.447] - 2026-08-20
+- fix: report factory-reset failures honestly, refresh mode help on the toggle path
+
+
+## [2.446] - 2026-08-19
+- fix(ui): factory reset left the old routine title; a mode change froze the help window across a routine switch
+
+
 ## [2.445] - 2026-08-19
 - test: pin repeat factory resets and the reset's storage contract
 - fix(reset): report real outcome, keep the device gate, clear plugin keys, re-ask the first-run choice
