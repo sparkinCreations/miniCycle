@@ -445,6 +445,11 @@ function registerGroupedApisFromLoader(deps, appContextMod, coreResult) {
     getModal: deps.ui?.getModal,
     initCompletedTasksSection: () => deps.ui?.completedTasksManager?.init?.(),
     showMenuTourNotification: deps.ui?.showMenuTourNotification,
+    // Forwarded explicitly. This object is an allow-list, so a method the
+    // manifest DOES deliver on deps.ui is still dropped unless it is named
+    // here — and nothing warns, because the manifest side succeeded. uiBoot's
+    // menu-open handler calls this to re-collapse sections on every open.
+    applyMenuSectionOpenState: deps.ui?.applyMenuSectionOpenState,
     // Lazy wrapper (call-time resolve) so the menu "Reset Tours → Start Tour"
     // action reaches guidedTourManager.startGuidedTour regardless of boot order.
     startGuidedTour: (...args) => deps.ui?.startGuidedTour?.(...args)

@@ -28,6 +28,7 @@ import { updateThemeColor } from '../features/themeManager.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { applyHelpWindowVisibility, applyQuickActionsVisibility, loadPanelVisibility, resetPanelVisibility } from './panelVisibilityHelpers.js';
 import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
+import { toggleSectionExpanded, setSectionExpanded, collapseAllSections, usesExclusiveSections } from '../utils/collapsibleSections.js';
 import { normalizeHex } from '../utils/styleValidators.js';
 import { isClickOnNotification } from './modalUtils.js';
 
@@ -1775,12 +1776,21 @@ export class PreferencesManager {
      */
     toggleSection(header) {
         const section = header.closest(DOM_SELECTORS.PREFERENCES_SECTION) || header.closest(DOM_SELECTORS.PREFERENCES_PREVIEW_SECTION);
-        if (section) {
-            section.classList.toggle(DOM_CLASSES.COLLAPSED);
-            const isCollapsed = section.classList.contains(DOM_CLASSES.COLLAPSED);
-            header.setAttribute('aria-expanded', (!isCollapsed).toString());
-            this.saveCollapsedStates();
-        }
+        if (!section) return;
+
+        // The live preview is NOT part of the accordion, in either mode. It
+        // previews the thing you are editing, so closing it when you open a
+        // section would hide the feedback you opened the section to get. It is
+        // excluded by being left out of `siblings`, and toggling it exclusively
+        // would close whichever section you were working in — so it toggles
+        // plainly whatever the setting says.
+        const isPreview = !section.matches(DOM_SELECTORS.PREFERENCES_SECTION);
+        toggleSectionExpanded(section, {
+            siblings: isPreview ? [] : _deps.querySelectorAll(DOM_SELECTORS.PREFERENCES_SECTION),
+            headerSelector: DOM_SELECTORS.PREFERENCES_SECTION_HEADER,
+            exclusive: !isPreview && usesExclusiveSections(_deps.AppState?.get()?.settings)
+        });
+        this.saveCollapsedStates();
     }
 
     /**
@@ -1809,22 +1819,28 @@ export class PreferencesManager {
             }
         }
 
+        if (usesExclusiveSections(state?.settings)) {
+            // Accordion: the settings sections open fully collapsed. The live
+            // preview is deliberately not in this sweep — its own default
+            // (expanded on desktop, collapsed on mobile) is applied above and
+            // must survive.
+            collapseAllSections(
+                _deps.querySelectorAll(DOM_SELECTORS.PREFERENCES_SECTION),
+                DOM_SELECTORS.PREFERENCES_SECTION_HEADER
+            );
+            return;
+        }
+
         if (!collapsedSections) return;
 
-        // Apply saved collapsed states
+        // Accordion off — restore what was left open, as before.
         Object.entries(collapsedSections).forEach(([sectionName, isCollapsed]) => {
             const section = _deps.querySelector(DATA_SELECTORS.preferencesSectionByName(sectionName));
-            if (section) {
-                if (isCollapsed) {
-                    section.classList.add(DOM_CLASSES.COLLAPSED);
-                } else {
-                    section.classList.remove(DOM_CLASSES.COLLAPSED);
-                }
-                const header = section.querySelector(DOM_SELECTORS.PREFERENCES_SECTION_HEADER);
-                if (header) {
-                    header.setAttribute('aria-expanded', (!isCollapsed).toString());
-                }
-            }
+            if (!section) return;
+            setSectionExpanded(section, !isCollapsed, {
+                headerSelector: DOM_SELECTORS.PREFERENCES_SECTION_HEADER,
+                exclusive: false
+            });
         });
     }
 

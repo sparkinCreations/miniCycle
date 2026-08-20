@@ -22,10 +22,10 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION } from '../core/constants.js';
+import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, APP_VERSION } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
-import { toggleSectionExclusive, setSectionExpandedExclusive, isSectionExpanded, collapseAllSections } from '../utils/collapsibleSections.js';
+import { toggleSectionExpanded, setSectionExpanded, isSectionExpanded, collapseAllSections, usesExclusiveSections } from '../utils/collapsibleSections.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -276,7 +276,18 @@ export class MenuManager {
         const accordionSections = Array.from(collapsibleHeaders)
             .map(h => h.closest(DOM_SELECTORS.MENU_SECTION))
             .filter(Boolean);
-        const opts = { siblings: accordionSections, headerSelector: DOM_SELECTORS.MENU_SECTION_HEADER_COLLAPSIBLE };
+        // `exclusive` is read through a getter, not captured as a boolean: these
+        // handlers are bound once, and the setting can change while they are
+        // live. A captured value would leave the menu on the old behaviour until
+        // a reload. The getter's own `this` is the opts object, hence the alias.
+        const self = this;
+        const opts = {
+            siblings: accordionSections,
+            headerSelector: DOM_SELECTORS.MENU_SECTION_HEADER_COLLAPSIBLE,
+            get exclusive() {
+                return usesExclusiveSections(self.deps.AppState?.get()?.settings);
+            }
+        };
 
         // Load saved collapsed states from appState
         this.loadCollapsedStates();
@@ -286,7 +297,7 @@ export class MenuManager {
                 e.stopPropagation();
                 const section = header.closest(DOM_SELECTORS.MENU_SECTION);
                 if (section) {
-                    const expanded = toggleSectionExclusive(section, opts);
+                    const expanded = toggleSectionExpanded(section, opts);
                     this.saveCollapsedStates();
                     if (expanded) {
                         this._scrollSectionIntoView(section);
@@ -299,7 +310,7 @@ export class MenuManager {
                     e.preventDefault();
                     const section = header.closest(DOM_SELECTORS.MENU_SECTION);
                     if (section) {
-                        const expanded = toggleSectionExclusive(section, opts);
+                        const expanded = toggleSectionExpanded(section, opts);
                         this.saveCollapsedStates();
                         if (expanded) {
                             this._scrollSectionIntoView(section);
@@ -315,11 +326,11 @@ export class MenuManager {
                     if (!section) return;
                     const isCollapsed = !isSectionExpanded(section);
                     if (e.key === 'ArrowRight' && isCollapsed) {
-                        setSectionExpandedExclusive(section, true, opts);
+                        setSectionExpanded(section, true, opts);
                         this.saveCollapsedStates();
                         this._scrollSectionIntoView(section);
                     } else if (e.key === 'ArrowLeft' && !isCollapsed) {
-                        setSectionExpandedExclusive(section, false, opts);
+                        setSectionExpanded(section, false, opts);
                         this.saveCollapsedStates();
                     }
                     return;
@@ -355,15 +366,46 @@ export class MenuManager {
      * reopen all of them.
      * @returns {void}
      */
+    /**
+     * Put the menu's sections into their opening state.
+     *
+     * Called on every menu OPEN, not just at setup. In accordion mode the menu
+     * must open fully collapsed each time; running this once at boot meant the
+     * second open still showed whatever was left expanded.
+     * @returns {void}
+     */
+    applyMenuSectionOpenState() {
+        this.loadCollapsedStates();
+    }
+
     loadCollapsedStates() {
+        const state = this.deps.AppState?.get();
         const collapsibleHeaders = this.deps.querySelectorAll(DOM_SELECTORS.MENU_SECTION_HEADER_COLLAPSIBLE);
         const accordionSections = Array.from(collapsibleHeaders)
             .map(h => h.closest(DOM_SELECTORS.MENU_SECTION))
             .filter(Boolean);
-        // Only sections with a collapsible header — the quick-actions row is a
-        // `.menu-section` with no header and must stay visible. Mode Info has
-        // its own toggle outside the data-section system and is untouched.
-        collapseAllSections(accordionSections, DOM_SELECTORS.MENU_SECTION_HEADER_COLLAPSIBLE);
+
+        if (usesExclusiveSections(state?.settings)) {
+            // Accordion: always open fully collapsed. Only sections with a
+            // collapsible header — the quick-actions row is a `.menu-section`
+            // with no header and must stay visible. Mode Info has its own toggle
+            // outside the data-section system and is untouched.
+            collapseAllSections(accordionSections, DOM_SELECTORS.MENU_SECTION_HEADER_COLLAPSIBLE);
+            return;
+        }
+
+        // Accordion off — restore what was left open, as before.
+        const collapsedSections = state?.settings?.menuCollapsedSections;
+        if (!collapsedSections) return;
+
+        Object.entries(collapsedSections).forEach(([sectionName, isCollapsed]) => {
+            const section = this.deps.querySelector(DATA_SELECTORS.menuSectionByName(sectionName));
+            if (!section) return;
+            setSectionExpanded(section, !isCollapsed, {
+                headerSelector: DOM_SELECTORS.MENU_SECTION_HEADER_COLLAPSIBLE,
+                exclusive: false
+            });
+        });
     }
 
     /**

@@ -20,6 +20,30 @@
 import { DOM_CLASSES } from '../core/constants.js';
 
 /**
+ * Whether collapsible sections behave as an accordion.
+ *
+ * ON  — one section open at a time, and every surface opens fully collapsed.
+ * OFF — the pre-v2.452 behaviour: open as many as you like, and each surface
+ *       reopens showing whatever you left open.
+ *
+ * Defaults ON for an absent key, so a routine that has never seen this setting
+ * gets the accordion. Compared against `false` rather than coerced, so a
+ * corrupted or half-written value cannot read as "off" by accident.
+ *
+ * One switch drives all three surfaces on purpose: nobody wants the main menu
+ * to accordion while the settings modal remembers. It also bundles exclusivity
+ * with start-collapsed deliberately — "one at a time" and "start fresh" belong
+ * together, as do "remember what I left" and "let me open several"; splitting
+ * them into two settings would create two incoherent combinations.
+ *
+ * @param {object} [settings] - state.settings
+ * @returns {boolean}
+ */
+export function usesExclusiveSections(settings) {
+    return settings?.oneMenuSectionAtATime !== false;
+}
+
+/**
  * Read whether a section is currently open.
  * @param {HTMLElement} section
  * @returns {boolean}
@@ -45,10 +69,11 @@ function applySectionState(section, expanded, headerSelector) {
 }
 
 /**
- * Open or close a section, closing every sibling when it opens (accordion).
+ * Open or close a section, closing every sibling when it opens if the accordion
+ * is on.
  *
- * Only ONE section in a group is open at a time. Collapsing needs no sweep —
- * the others are already closed — so siblings are only touched on expand.
+ * Collapsing never needs a sweep — in accordion mode the others are already
+ * closed — so siblings are only touched on expand.
  *
  * @param {HTMLElement} section - the section being toggled
  * @param {boolean} expanded - target state
@@ -58,12 +83,13 @@ function applySectionState(section, expanded, headerSelector) {
  *        should behave exclusively; a panel that must stay open regardless
  *        (e.g. the personalization modal's live preview) is simply left out.
  * @param {string} opts.headerSelector - header selector within a section
+ * @param {boolean} [opts.exclusive=true] - false keeps siblings as they are
  * @returns {boolean} the state actually applied, for callers that log or persist
  */
-export function setSectionExpandedExclusive(section, expanded, { siblings = [], headerSelector }) {
+export function setSectionExpanded(section, expanded, { siblings = [], headerSelector, exclusive = true }) {
     if (!section) return false;
 
-    if (expanded) {
+    if (expanded && exclusive) {
         for (const other of siblings) {
             if (other === section) continue;
             if (isSectionExpanded(other)) {
@@ -77,21 +103,22 @@ export function setSectionExpandedExclusive(section, expanded, { siblings = [], 
 }
 
 /**
- * Flip a section, closing its siblings if that flip opens it.
+ * Flip a section, closing its siblings if that flip opens it and the accordion
+ * is on.
  * @param {HTMLElement} section
- * @param {object} opts - as setSectionExpandedExclusive
+ * @param {object} opts - as setSectionExpanded
  * @returns {boolean} the state applied
  */
-export function toggleSectionExclusive(section, opts) {
-    return setSectionExpandedExclusive(section, !isSectionExpanded(section), opts);
+export function toggleSectionExpanded(section, opts) {
+    return setSectionExpanded(section, !isSectionExpanded(section), opts);
 }
 
 /**
  * Close every section in a group.
  *
- * Used when a surface opens, so it always starts fully collapsed rather than
- * restoring whatever was left open. See each surface's load*CollapsedStates()
- * for why the saved state is deliberately not applied.
+ * Used when a surface opens in accordion mode, so it starts fully collapsed
+ * rather than restoring whatever was left open. With the accordion off, each
+ * surface's load*CollapsedStates() applies the stored map instead.
  *
  * @param {Iterable<HTMLElement>} sections
  * @param {string} headerSelector

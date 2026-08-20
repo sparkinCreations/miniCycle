@@ -288,7 +288,8 @@ Create tasks that automatically appear on a schedule.
 | Menu Collapsed State | Remember expanded/collapsed menu sections | `ui/menuManager.js` |
 | Settings Panel | Configure app behavior with collapsible sections | `ui/settingsManager.js` |
 | Settings Toggle Switches | Toggle-style switches for settings options | `ui/settingsUIManager.js` |
-| Settings Collapsed State | Remember expanded/collapsed settings sections | `ui/settingsUIManager.js` |
+| Settings Collapsed State | Remember expanded/collapsed settings sections (only when the accordion is off — see below) | `ui/settingsUIManager.js` |
+| Menu Section Accordion | "Open one menu section at a time" (Settings → Display, default on): the main menu, settings modal and personalization modal open fully collapsed and keep one section open at a time. Off restores the remember-what-was-open behaviour. The personalization live preview is never part of the accordion | `utils/collapsibleSections.js` |
 | Help Window | Mode-aware in-app help and documentation | `ui/helpWindowManager.js` |
 | Reset Achievement Progress | Reset global achievements (keeps routine stats) | `ui/settingsUIManager.js` |
 

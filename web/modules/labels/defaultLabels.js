@@ -1239,6 +1239,7 @@ export const DEFAULT_LABELS = deepFreeze({
         fontSizeExtraLarge:   'Extra Large',
         showHelpWindow:       'Show Help Window',
         showQuickActions:     'Show Quick Actions',
+        oneSectionAtATime:    'Open one menu section at a time',
         addRemoveTaskButtons: 'Add or Remove Task Buttons',
         enableNotifications:  'Enable Notifications',
         clearUndoHistory:     'Clear Undo History',
