@@ -1,3 +1,7 @@
+## [2.450] - 2026-08-20
+- fix(release): changelog dedupe matched prose, so reworded releases came back
+
+
 ## [2.449] - 2026-08-20
 - fix(tasks): a list re-render no longer counts as a hover
 
