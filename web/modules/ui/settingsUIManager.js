@@ -280,10 +280,21 @@ function setupSettingsCollapsibleSections() {
     // Click the modal's own chrome (not a section) to close everything.
     // Bound to the scroll area rather than the dialog: a click on the dialog
     // element itself is the backdrop, which already closes the modal.
-    const scrollArea = settingsModal?.querySelector(DOM_SELECTORS.SETTINGS_SCROLL_AREA);
-    if (scrollArea) {
-        replaceStoredEventListener(scrollArea, 'click', '__miniCycleSettingsCollapseAllClickHandler', (e) => {
-            if (!isCollapseAllClick(e, scrollArea, DOM_SELECTORS.SETTINGS_SECTION)) return;
+    // Bound to the modal CONTENT, not the scroll area: the title, the tour
+    // banner and the footer all sit outside the scroll area, and a click there
+    // is just as much "not a section" as a click on the padding below.
+    // Not the <dialog> itself — that is the backdrop, which already closes.
+    const modalContent = settingsModal?.querySelector(DOM_SELECTORS.SETTINGS_MODAL_CONTENT);
+    if (modalContent) {
+        replaceStoredEventListener(modalContent, 'click', '__miniCycleSettingsCollapseAllClickHandler', (e) => {
+            if (!isCollapseAllClick(e, modalContent, DOM_SELECTORS.SETTINGS_SECTION)) return;
+                // Accordion mode only. With it off the user has deliberately
+                // opened several sections, and a stray tap on padding would wipe
+                // that. This mirrors the carve-out the original light-dismiss
+                // convention already had (uiBoot's handleGlobalClickForTaskButtons
+                // keeps `selected` while the recurring panel is open): sweep
+                // transient decoration, defer to deliberate state.
+            if (!usesExclusiveSections(_deps.AppState.get()?.settings)) return;
             collapseAllSections(collapsibleSections, DOM_SELECTORS.SETTINGS_SECTION_HEADER);
             saveSettingsCollapsedStates(collapsibleSections);
         });
