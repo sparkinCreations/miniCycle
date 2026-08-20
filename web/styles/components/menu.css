@@ -278,7 +278,7 @@ body.quick-actions-open #quick-actions-window {
 .menu-section {
     display: grid;
     grid-template-rows: auto 1fr;
-    transition: grid-template-rows var(--transition-normal) ease;
+    transition: grid-template-rows var(--transition-fast) ease;
 }
 
 .menu-section.collapsed {
@@ -292,7 +292,7 @@ body.quick-actions-open #quick-actions-window {
     overflow: hidden;
     min-height: 0;
     transition: opacity var(--transition-fast) ease,
-                visibility var(--transition-normal);
+                visibility var(--transition-fast);
 }
 
 .menu-section.collapsed .menu-section-grid {

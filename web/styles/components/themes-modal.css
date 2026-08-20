@@ -1038,7 +1038,7 @@ dialog.preferences-modal::backdrop {
 .preferences-section {
     display: grid;
     grid-template-rows: auto 1fr;
-    transition: grid-template-rows var(--transition-normal) ease;
+    transition: grid-template-rows var(--transition-fast) ease;
 }
 
 .preferences-section.collapsed {
@@ -1050,8 +1050,8 @@ dialog.preferences-modal::backdrop {
     overflow: hidden;
     min-height: 0;
     transition: opacity var(--transition-fast) ease,
-                visibility var(--transition-normal),
-                padding var(--transition-normal) ease;
+                visibility var(--transition-fast),
+                padding var(--transition-fast) ease;
 }
 
 .preferences-section.collapsed .preferences-section-content {
