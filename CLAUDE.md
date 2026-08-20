@@ -65,6 +65,7 @@ npm run validate:comments # identifiers named in comments must exist (CI; gated 
 npm run validate:builtins # no post-es2020 built-ins in shipped code — esbuild transpiles syntax, NOT built-ins; Object.hasOwn/.at()/.replaceAll() throw on browsers the feature gate admits (CI; gated at 0)
 npm run validate:labels   # every getLabel() key resolves + every logged history event type is mapped — a miss ships the raw key as UI text, silently (CI; gated at 0)
 npm run validate:chains   # a required() dep may never be read through `?.` — that branch only fires when wiring is broken, and then it silently drops the feature (CI; gated at 0; catch blocks exempt)
+npm run validate:api    # appContext API reads must resolve — featureBoot's *ApiObj are hand-written ALLOW-LISTS, so a method the manifest delivers on deps.ui is still dropped unless named there, and nothing warns (this silently broke 3 features in one session) (CI; gated at 0)
 npm run validate:inline # miniCycle.html inline scripts: empty catches need intent comments + pre-gate contract (ES5-only above the feature gate, globalThis reads guarded, gate floor includes no-globalthis) (ESLint can't see the file; CI)
 npm run test:changelog # release changelog must not re-list already-shipped commits — boundary is the previous CHANGELOG heading, not the last git tag (a clone whose tags lag the remote widens the range; 3 releases were hand-corrected) (CI)
 ```
