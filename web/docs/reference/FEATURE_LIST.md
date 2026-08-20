@@ -288,7 +288,8 @@ Create tasks that automatically appear on a schedule.
 | Menu Collapsed State | Remember expanded/collapsed menu sections | `ui/menuManager.js` |
 | Settings Panel | Configure app behavior with collapsible sections | `ui/settingsManager.js` |
 | Settings Toggle Switches | Toggle-style switches for settings options | `ui/settingsUIManager.js` |
-| Settings Collapsed State | Remember expanded/collapsed settings sections | `ui/settingsUIManager.js` |
+| Settings Collapsed State | Remember expanded/collapsed settings sections (only when the accordion is off — see below) | `ui/settingsUIManager.js` |
+| Menu Section Accordion | "Open one menu section at a time" (Settings → Display, default on): the main menu, settings modal and personalization modal open fully collapsed and keep one section open at a time. Off restores the remember-what-was-open behaviour. The personalization live preview is never part of the accordion | `utils/collapsibleSections.js` |
 | Help Window | Mode-aware in-app help and documentation | `ui/helpWindowManager.js` |
 | Reset Achievement Progress | Reset global achievements (keeps routine stats) | `ui/settingsUIManager.js` |
 
@@ -297,7 +298,7 @@ Create tasks that automatically appear on a schedule.
 |---------|-------------|--------|
 | Focus View | Distraction-free view hiding header/menus/footer; persists across sessions | `ui/focusMode.js` |
 | Focus Action Button | Floating mode-aware button (Cycle / Clear) in the bottom-right corner | `ui/focusMode.js` |
-| Focus Quick Menu | ⋯ menu for routine actions (switch/create) without leaving Focus View | `ui/focusMode.js` |
+| Focus Quick Menu | ⋯ menu for routine actions (mode/switch/create), view toggles, bulk task ops, and Settings without leaving Focus View — it replaces the ☰ menu, which focus mode makes unreachable | `ui/focusMode.js` |
 | Task View (One at a Time) | Focus-only panel showing the current step: complete button, "N of M" position, ‹ › browse (incl. dimmed completed tasks), mode-aware cycle-complete celebration | `ui/focusTaskPanel.js` |
 | Panel Switcher | Task \| Routine \| Stats carousel — swipe, tap a pill, or Shift+Arrow keys; Task tab gated until onboarding completes | `ui/panelCarousel.js` |
 | Themed Tab Labels | Pill tab names resolve through the vocabulary theme system (e.g. "Habit \| Routine \| Stats") | `features/themeManager.js` |

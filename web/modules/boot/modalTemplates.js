@@ -839,6 +839,13 @@ export const SETTINGS_MODAL_HTML = `            <!-- Settings Modal -->
                             </span>
                             <span>${getLabel('settings.showQuickActions')}</span>
                         </label>
+                        <label class="settings-option">
+                            <span class="toggle-switch">
+                                <input type="checkbox" id="settings-toggle-one-section" name="settings-toggle-one-section" checked>
+                                <span class="toggle-slider"></span>
+                            </span>
+                            <span>${getLabel('settings.oneSectionAtATime')}</span>
+                        </label>
                         <button id="open-task-options-customizer" class="settings-btn"><span class="icon-text">+/-</span> ${getLabel('settings.addRemoveTaskButtons')}</button>
                     </div>
                 </div>

@@ -25,6 +25,7 @@ import { createDIModule, optional } from '../core/diBase.js';
 import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, APP_VERSION } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
+import { toggleSectionExpanded, setSectionExpanded, isSectionExpanded, collapseAllSections, usesExclusiveSections } from '../utils/collapsibleSections.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -268,6 +269,26 @@ export class MenuManager {
     setupCollapsibleSections() {
         const collapsibleHeaders = this.deps.querySelectorAll(DOM_SELECTORS.MENU_SECTION_HEADER_COLLAPSIBLE);
 
+        // The accordion group: every section that owns a collapsible header.
+        // Read from the headers rather than querying `.menu-section` directly —
+        // the quick-actions row is a `.menu-section` too but has no collapsible
+        // header, and sweeping it closed would hide it permanently.
+        const accordionSections = Array.from(collapsibleHeaders)
+            .map(h => h.closest(DOM_SELECTORS.MENU_SECTION))
+            .filter(Boolean);
+        // `exclusive` is read through a getter, not captured as a boolean: these
+        // handlers are bound once, and the setting can change while they are
+        // live. A captured value would leave the menu on the old behaviour until
+        // a reload. The getter's own `this` is the opts object, hence the alias.
+        const self = this;
+        const opts = {
+            siblings: accordionSections,
+            headerSelector: DOM_SELECTORS.MENU_SECTION_HEADER_COLLAPSIBLE,
+            get exclusive() {
+                return usesExclusiveSections(self.deps.AppState?.get()?.settings);
+            }
+        };
+
         // Load saved collapsed states from appState
         this.loadCollapsedStates();
 
@@ -276,9 +297,7 @@ export class MenuManager {
                 e.stopPropagation();
                 const section = header.closest(DOM_SELECTORS.MENU_SECTION);
                 if (section) {
-                    section.classList.toggle(DOM_CLASSES.COLLAPSED);
-                    const expanded = !section.classList.contains(DOM_CLASSES.COLLAPSED);
-                    header.setAttribute('aria-expanded', String(expanded));
+                    const expanded = toggleSectionExpanded(section, opts);
                     this.saveCollapsedStates();
                     if (expanded) {
                         this._scrollSectionIntoView(section);
@@ -291,9 +310,7 @@ export class MenuManager {
                     e.preventDefault();
                     const section = header.closest(DOM_SELECTORS.MENU_SECTION);
                     if (section) {
-                        section.classList.toggle(DOM_CLASSES.COLLAPSED);
-                        const expanded = !section.classList.contains(DOM_CLASSES.COLLAPSED);
-                        header.setAttribute('aria-expanded', String(expanded));
+                        const expanded = toggleSectionExpanded(section, opts);
                         this.saveCollapsedStates();
                         if (expanded) {
                             this._scrollSectionIntoView(section);
@@ -307,15 +324,13 @@ export class MenuManager {
                     e.preventDefault();
                     const section = header.closest(DOM_SELECTORS.MENU_SECTION);
                     if (!section) return;
-                    const isCollapsed = section.classList.contains(DOM_CLASSES.COLLAPSED);
+                    const isCollapsed = !isSectionExpanded(section);
                     if (e.key === 'ArrowRight' && isCollapsed) {
-                        section.classList.remove(DOM_CLASSES.COLLAPSED);
-                        header.setAttribute('aria-expanded', 'true');
+                        setSectionExpanded(section, true, opts);
                         this.saveCollapsedStates();
                         this._scrollSectionIntoView(section);
                     } else if (e.key === 'ArrowLeft' && !isCollapsed) {
-                        section.classList.add(DOM_CLASSES.COLLAPSED);
-                        header.setAttribute('aria-expanded', 'false');
+                        setSectionExpanded(section, false, opts);
                         this.saveCollapsedStates();
                     }
                     return;
@@ -331,34 +346,65 @@ export class MenuManager {
     }
 
     /**
-     * Load collapsed states from appState
+     * Put the menu's sections into their opening state: all collapsed.
+     *
+     * The saved state in `settings.menuCollapsedSections` is deliberately NOT
+     * applied. The menu is an accordion — one section open at a time — and it
+     * opens fully collapsed every time, so you always start from the same
+     * place instead of wherever you happened to leave it.
+     *
+     * saveCollapsedStates() still runs on every toggle and the stored key is
+     * still maintained, so restoring is a one-line change here if that
+     * behaviour is ever wanted back:
+     *
+     *     read settings.menuCollapsedSections, resolve each entry's section via
+     *     DATA_SELECTORS.menuSectionByName(), and apply it with
+     *     setSectionExpandedExclusive() rather than by hand.
+     *
+     * Note the accordion invariant if you do: the stored map can hold several
+     * open sections from before this change, and applying it verbatim would
+     * reopen all of them.
+     * @returns {void}
      */
+    /**
+     * Put the menu's sections into their opening state.
+     *
+     * Called on every menu OPEN, not just at setup. In accordion mode the menu
+     * must open fully collapsed each time; running this once at boot meant the
+     * second open still showed whatever was left expanded.
+     * @returns {void}
+     */
+    applyMenuSectionOpenState() {
+        this.loadCollapsedStates();
+    }
+
     loadCollapsedStates() {
         const state = this.deps.AppState?.get();
-        const collapsedSections = state?.settings?.menuCollapsedSections;
+        const collapsibleHeaders = this.deps.querySelectorAll(DOM_SELECTORS.MENU_SECTION_HEADER_COLLAPSIBLE);
+        const accordionSections = Array.from(collapsibleHeaders)
+            .map(h => h.closest(DOM_SELECTORS.MENU_SECTION))
+            .filter(Boolean);
 
-        // No saved preference — leave sections in their HTML-authored state
-        // (all collapsed by default). Mode Info has its own toggle outside
-        // the data-section system and stays expanded.
-        if (!collapsedSections) {
+        if (usesExclusiveSections(state?.settings)) {
+            // Accordion: always open fully collapsed. Only sections with a
+            // collapsible header — the quick-actions row is a `.menu-section`
+            // with no header and must stay visible. Mode Info has its own toggle
+            // outside the data-section system and is untouched.
+            collapseAllSections(accordionSections, DOM_SELECTORS.MENU_SECTION_HEADER_COLLAPSIBLE);
             return;
         }
 
-        // Apply saved collapsed states
+        // Accordion off — restore what was left open, as before.
+        const collapsedSections = state?.settings?.menuCollapsedSections;
+        if (!collapsedSections) return;
+
         Object.entries(collapsedSections).forEach(([sectionName, isCollapsed]) => {
             const section = this.deps.querySelector(DATA_SELECTORS.menuSectionByName(sectionName));
-            if (section) {
-                if (isCollapsed) {
-                    section.classList.add(DOM_CLASSES.COLLAPSED);
-                } else {
-                    section.classList.remove(DOM_CLASSES.COLLAPSED);
-                }
-                // Sync aria-expanded on the header
-                const sectionHeader = section.querySelector(DOM_SELECTORS.MENU_SECTION_HEADER_COLLAPSIBLE);
-                if (sectionHeader) {
-                    sectionHeader.setAttribute('aria-expanded', String(!isCollapsed));
-                }
-            }
+            if (!section) return;
+            setSectionExpanded(section, !isCollapsed, {
+                headerSelector: DOM_SELECTORS.MENU_SECTION_HEADER_COLLAPSIBLE,
+                exclusive: false
+            });
         });
     }
 

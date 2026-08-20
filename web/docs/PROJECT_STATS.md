@@ -18,14 +18,14 @@
 
 | Metric | Value |
 |--------|-------|
-| **App Version** | 2.450 |
+| **App Version** | 2.453 |
 | **Lite Version** | 2.092 (frozen) |
 | **Schema Version** | 2.5 |
-| **Total Modules** | 139 |
-| **Total Tests** | 3460 |
+| **Total Modules** | 140 |
+| **Total Tests** | 3475 |
 | **Test Pass Rate** | 100% |
 | **CSS Files** | 44 |
-| **JSDoc Blocks** | 1375 |
+| **JSDoc Blocks** | 1383 |
 | **Documentation Files** | 243 |
 | **DI Completion** | 100% |
 | **Custom window.* Globals (modules)** | 0 |
@@ -45,14 +45,14 @@
 | `recurring/` | 17 | Recurring task scheduling, panel, activation |
 | `ui/` | 37 | Modals, menus, settings, onboarding, gestures |
 | `features/` | 11 | Themes, stats, achievements, history, reminders |
-| `utils/` | 21 | Notifications, device detection, utilities |
+| `utils/` | 22 | Notifications, device detection, utilities |
 | `labels/` | 3 | Default labels + label resolver |
 | `storage/` | 2 | Backup manager (IndexedDB), storage persistence (eviction protection) |
 | `progress/` | 1 | Cycle completion tracking |
 | `platform/` | 1 | capacitorBridge — native shell for iOS/Android; no-op on web |
 | `testing/` | 9 | Test infrastructure |
 | `other/` | 3 | Plugins, experimental |
-| **Total** | **139** | |
+| **Total** | **140** | |
 
 ---
 
@@ -63,9 +63,9 @@
 | `miniCycle-main.js` | ~50 | Entrypoint |
 | `modules/boot/orchestrator.js` | ~1277 | Sequence control + boot UI + early coordination |
 | `modules/boot/coreBoot.js` | ~788 | Core state & init |
-| `modules/boot/featureBoot.js` | ~620 | DI wiring hub |
-| `modules/boot/uiBoot.js` | ~1186 | UI handlers |
-| **Total** | **~3921** | |
+| `modules/boot/featureBoot.js` | ~625 | DI wiring hub |
+| `modules/boot/uiBoot.js` | ~1196 | UI handlers |
+| **Total** | **~3936** | |
 
 ---
 
@@ -73,8 +73,8 @@
 
 | Category | Tests |
 |----------|-------|
-| Total Tests | 3460 |
-| Test Files | 132 |
+| Total Tests | 3475 |
+| Test Files | 133 |
 | Pass Rate | 100% |
 | Platforms Tested | Mac, iPad, iPhone |
 

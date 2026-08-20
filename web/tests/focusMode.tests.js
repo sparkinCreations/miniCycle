@@ -253,7 +253,8 @@ export async function runFocusModeTests(resultsDiv) {
         const actions = Array.from(menuItems).map(el => el.dataset.action);
         const expected = [
             'switch-mode', 'switch-routines', 'create-routine',
-            'toggle-input-bar', 'toggle-dark-mode', 'uncheck-all', 'delete-all', 'exit'
+            'toggle-input-bar', 'toggle-dark-mode', 'uncheck-all', 'delete-all',
+            'settings', 'exit'
         ];
         instance.destroy();
         teardownDOMScaffold();
@@ -268,7 +269,7 @@ export async function runFocusModeTests(resultsDiv) {
         }
     });
 
-    await test('init() inserts a separator between each group (3 separators total)', () => {
+    await test('init() inserts a separator between each group (4 separators total)', () => {
         setupDOMScaffold();
         mod.setFocusModeDependencies({
             AppState: createMockAppState(),
@@ -284,9 +285,9 @@ export async function runFocusModeTests(resultsDiv) {
         instance.destroy();
         teardownDOMScaffold();
 
-        // Groups: routine | view | bulk | exit → 3 separators
-        if (separators.length !== 3) {
-            throw new Error(`Expected 3 separators, got ${separators.length}`);
+        // Groups: routine | view | bulk | leave | exit → 4 separators
+        if (separators.length !== 4) {
+            throw new Error(`Expected 4 separators, got ${separators.length}`);
         }
     });
 
@@ -478,6 +479,63 @@ export async function runFocusModeTests(resultsDiv) {
         teardownDOMScaffold();
 
         if (!clicked) throw new Error('Existing toggle-task-input-btn should have been clicked');
+    });
+
+    // Focus View makes the ⋯ menu the ONLY menu — focus-mode.css gives the main
+    // ☰ button `pointer-events: none` and stacks this trigger over it. Settings
+    // was the one ☰ entry with no counterpart here, so a routine run in Focus
+    // View had to be abandoned to reach it.
+    await test('settings action clicks the existing open-settings button', () => {
+        let clicked = false;
+        setupDOMScaffold();
+        const settingsBtn = document.createElement('button');
+        settingsBtn.id = 'open-settings';
+        settingsBtn.addEventListener('click', () => { clicked = true; });
+        document.body.appendChild(settingsBtn);
+
+        mod.setFocusModeDependencies({
+            AppState: createMockAppState(),
+            getElementById: (id) => document.getElementById(id),
+            querySelector: (sel) => document.querySelector(sel),
+            getBody: () => document.body,
+            safeAddEventListener: (el, evt, fn) => el.addEventListener(evt, fn)
+        });
+        const instance = new mod.FocusMode();
+        instance.init();
+        instance._handleMenuAction('settings');
+        instance.destroy();
+        settingsBtn.remove();
+        teardownDOMScaffold();
+
+        if (!clicked) throw new Error('Existing open-settings button should have been clicked');
+    });
+
+    await test('settings sits in its own group, separated from bulk ops and exit', () => {
+        setupDOMScaffold();
+        mod.setFocusModeDependencies({
+            AppState: createMockAppState(),
+            getElementById: (id) => document.getElementById(id),
+            querySelector: (sel) => document.querySelector(sel),
+            getBody: () => document.body,
+            safeAddEventListener: (el, evt, fn) => el.addEventListener(evt, fn)
+        });
+        const instance = new mod.FocusMode();
+        instance.init();
+
+        const menu = document.getElementById('focus-mode-menu');
+        const kids = Array.from(menu.children);
+        const idx = kids.findIndex(el => el.dataset && el.dataset.action === 'settings');
+        const prevIsSeparator = idx > 0 && kids[idx - 1].getAttribute('role') === 'separator';
+        const nextIsSeparator = idx >= 0 && idx + 1 < kids.length &&
+            kids[idx + 1].getAttribute('role') === 'separator';
+        instance.destroy();
+        teardownDOMScaffold();
+
+        if (idx < 0) throw new Error('settings item not found in the menu');
+        // A group of one: separators on both sides. Grouping it with the bulk
+        // ops would file "open a settings panel" next to "delete all tasks".
+        if (!prevIsSeparator) throw new Error('settings should be separated from the bulk group above it');
+        if (!nextIsSeparator) throw new Error('settings should be separated from exit below it');
     });
 
     await test('exit action calls deactivate', () => {

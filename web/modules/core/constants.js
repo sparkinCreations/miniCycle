@@ -956,6 +956,7 @@ export const DOM_IDS = Object.freeze({
     TOGGLE_QUICK_ACTIONS: 'toggle-quick-actions',
     SETTINGS_TOGGLE_HELP_WINDOW: 'settings-toggle-help-window',
     SETTINGS_TOGGLE_QUICK_ACTIONS: 'settings-toggle-quick-actions',
+    SETTINGS_TOGGLE_ONE_SECTION: 'settings-toggle-one-section',
 
     // ---- Accessibility Settings ----
     TOGGLE_REDUCED_MOTION: 'toggle-reduced-motion',

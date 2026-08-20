@@ -298,6 +298,16 @@ export function attachMenuButtonListener(_GlobalUtils, menuButton, menu) {
       document.body.classList.toggle(DOM_CLASSES.MAIN_MENU_OPEN, isVisible);
 
       if (isVisible) {
+        // Re-apply section collapse state on every open. With "open one menu
+        // section at a time" on, the menu must open fully collapsed each time —
+        // menuManager sets this up once at boot, so without this the second
+        // open still showed whatever was left expanded.
+        try {
+          getUiApi()?.applyMenuSectionOpenState?.();
+        } catch {
+          // APIs may not be ready - that's ok
+        }
+
         menu._previousFocus = document.activeElement;
         // Focus first focusable element in menu
         const firstFocusable = menu.querySelector('button, [tabindex="0"]');

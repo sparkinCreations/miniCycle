@@ -24,6 +24,7 @@ import { getLabel } from '../labels/labelResolver.js';
 import { isValidHex, normalizeFontSize } from '../utils/styleValidators.js';
 import { loadPanelVisibility } from './panelVisibilityHelpers.js';
 import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
+import { toggleSectionExpanded, setSectionExpanded, isSectionExpanded, collapseAllSections, usesExclusiveSections } from '../utils/collapsibleSections.js';
 import { isClickOnNotification } from './modalUtils.js';
 
 // ============================================================================
@@ -171,6 +172,10 @@ export function setupSettingsMenu() {
 
     const openSettings = (event) => {
         event.stopPropagation();
+        // Re-apply section state on every open, not just at setup. In accordion
+        // mode the modal must open fully collapsed each time; setting it up once
+        // meant the second open still showed whatever was left expanded.
+        loadSettingsCollapsedStates();
         // Usage tracked by the delegated listener (actionUsage.js, OPEN_SETTINGS).
         if (isNativeDialog && !settingsModal.open) {
             settingsModal._previousFocus = document.activeElement;
@@ -255,7 +260,18 @@ function setupSettingsCollapsibleSections() {
     // Cache collapsible sections once and reuse in load/save
     const collapsibleSections = document.querySelectorAll(DOM_SELECTORS.SETTINGS_SECTION_COLLAPSIBLE);
 
-    // Load saved collapsed states using cached sections
+    // Every toggle below routes through this. `exclusive` is a getter, not a
+    // captured boolean: these handlers are bound once and the setting can change
+    // while they are live.
+    const opts = {
+        siblings: collapsibleSections,
+        headerSelector: DOM_SELECTORS.SETTINGS_SECTION_HEADER,
+        get exclusive() {
+            return usesExclusiveSections(_deps.AppState.get()?.settings);
+        }
+    };
+
+    // Put the modal into its opening state (all collapsed)
     loadSettingsCollapsedStates(collapsibleSections);
 
     // Find the settings modal for delegated arrow nav
@@ -266,8 +282,7 @@ function setupSettingsCollapsibleSections() {
             e.stopPropagation();
             const section = header.closest(DOM_SELECTORS.SETTINGS_SECTION);
             if (section) {
-                section.classList.toggle(DOM_CLASSES.COLLAPSED);
-                header.setAttribute('aria-expanded', String(!section.classList.contains(DOM_CLASSES.COLLAPSED)));
+                toggleSectionExpanded(section, opts);
                 saveSettingsCollapsedStates(collapsibleSections);
             }
         });
@@ -277,23 +292,20 @@ function setupSettingsCollapsibleSections() {
                 e.preventDefault();
                 const section = header.closest(DOM_SELECTORS.SETTINGS_SECTION);
                 if (section) {
-                    section.classList.toggle(DOM_CLASSES.COLLAPSED);
-                    header.setAttribute('aria-expanded', String(!section.classList.contains(DOM_CLASSES.COLLAPSED)));
+                    toggleSectionExpanded(section, opts);
                     saveSettingsCollapsedStates(collapsibleSections);
                 }
             } else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
                 const section = header.closest(DOM_SELECTORS.SETTINGS_SECTION);
                 if (!section) return;
-                const isCollapsed = section.classList.contains(DOM_CLASSES.COLLAPSED);
+                const isCollapsed = !isSectionExpanded(section);
                 if (e.key === 'ArrowRight' && isCollapsed) {
                     e.preventDefault();
-                    section.classList.remove(DOM_CLASSES.COLLAPSED);
-                    header.setAttribute('aria-expanded', 'true');
+                    setSectionExpanded(section, true, opts);
                     saveSettingsCollapsedStates(collapsibleSections);
                 } else if (e.key === 'ArrowLeft' && !isCollapsed) {
                     e.preventDefault();
-                    section.classList.add(DOM_CLASSES.COLLAPSED);
-                    header.setAttribute('aria-expanded', 'false');
+                    setSectionExpanded(section, false, opts);
                     saveSettingsCollapsedStates(collapsibleSections);
                 }
             } else if (settingsModal && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
@@ -312,25 +324,26 @@ function setupSettingsCollapsibleSections() {
  */
 function loadSettingsCollapsedStates(sections) {
     const state = _deps.AppState.get();
-    const collapsedStates = state?.settings?.settingsCollapsedSections;
+    const sectionElements = sections || document.querySelectorAll(DOM_SELECTORS.SETTINGS_SECTION_COLLAPSIBLE);
 
+    if (usesExclusiveSections(state?.settings)) {
+        // Accordion: open fully collapsed, ignoring the stored map. The map is
+        // still written on every toggle, so turning the setting off restores the
+        // old behaviour from real data rather than a blank slate.
+        collapseAllSections(sectionElements, DOM_SELECTORS.SETTINGS_SECTION_HEADER);
+        return;
+    }
+
+    const collapsedStates = state?.settings?.settingsCollapsedSections;
     if (!collapsedStates) return;
 
-    const sectionElements = sections || document.querySelectorAll(DOM_SELECTORS.SETTINGS_SECTION_COLLAPSIBLE);
     sectionElements.forEach(section => {
         const sectionName = section.dataset.section;
         if (sectionName && collapsedStates[sectionName] !== undefined) {
-            const isCollapsed = collapsedStates[sectionName];
-            if (isCollapsed) {
-                section.classList.add(DOM_CLASSES.COLLAPSED);
-            } else {
-                section.classList.remove(DOM_CLASSES.COLLAPSED);
-            }
-            // Sync aria-expanded on the header
-            const sectionHeader = section.querySelector(DOM_SELECTORS.SETTINGS_SECTION_HEADER_COLLAPSIBLE);
-            if (sectionHeader) {
-                sectionHeader.setAttribute('aria-expanded', String(!isCollapsed));
-            }
+            setSectionExpanded(section, !collapsedStates[sectionName], {
+                headerSelector: DOM_SELECTORS.SETTINGS_SECTION_HEADER,
+                exclusive: false
+            });
         }
     });
 }
@@ -503,6 +516,57 @@ export function setupThreeDotsToggle() {
 /**
  * Setup completed dropdown toggle
  */
+/**
+ * Toggle: "Open one menu section at a time".
+ *
+ * One switch for the main menu, the settings modal and the personalization
+ * modal — nobody wants the menu to accordion while settings remembers.
+ *
+ * ON  — one section open at a time, every surface opens fully collapsed.
+ * OFF — the pre-v2.452 behaviour: open as many as you like, and each surface
+ *       reopens showing whatever you left open.
+ *
+ * Takes effect the next time each surface OPENS, deliberately. Applying it live
+ * would collapse the Display section out from under the finger that just
+ * flipped this toggle.
+ *
+ * Persistence is unaffected either way: every surface keeps writing its
+ * *CollapsedSections map on each toggle, so switching this off restores the old
+ * behaviour from real data rather than a blank slate.
+ * @returns {void}
+ */
+export function setupOneSectionAtATimeToggle() {
+    if (!_deps.safeAddEventListener) {
+        console.error('SettingsUIManager: safeAddEventListener dependency not injected');
+        return;
+    }
+
+    const toggle = document.getElementById(DOM_IDS.SETTINGS_TOGGLE_ONE_SECTION);
+    if (!toggle) return;
+
+    const AppState = _deps.AppState();
+    if (AppState?.isReady?.()) {
+        toggle.checked = usesExclusiveSections(AppState.get()?.settings);
+    }
+
+    toggle._changeHandler = async () => {
+        const enabled = toggle.checked;
+        const AppState = _deps.AppState();
+        if (!AppState?.isReady?.()) {
+            console.error('AppState not ready - setting not saved');
+            _deps.showNotification(getLabel('notify.settingSaveFailed'), 'error');
+            toggle.checked = !enabled;
+            return;
+        }
+        await AppState.update(state => {
+            if (!state.settings) state.settings = {};
+            state.settings.oneMenuSectionAtATime = enabled;
+        }, true);
+    };
+
+    _deps.safeAddEventListener(toggle, 'change', toggle._changeHandler);
+}
+
 export function setupCompletedDropdownToggle() {
     // ✅ Idempotency guard
     if (_initialized.completedDropdownToggle) {
@@ -1356,6 +1420,7 @@ export function initAllToggles() {
     setupCompletedDropdownToggle();
     setupHelpWindowToggle();
     setupQuickActionsToggle();
+    setupOneSectionAtATimeToggle();
     setupScrollToNewTaskToggle();
     setupScrollOnLoadToggle();
     setupDebugModeToggle();

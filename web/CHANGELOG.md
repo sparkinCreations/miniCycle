@@ -1,3 +1,16 @@
+## [2.453] - 2026-08-20
+- fix(sw): precache collapsibleSections.js
+
+
+## [2.452] - 2026-08-20
+- feat(ui): "Open one menu section at a time" across menu, settings and personalization
+
+
+## [2.451] - 2026-08-20
+- feat(focus): reach Settings without leaving Focus View
+- docs(release): correct why the changelog range cannot use git tags
+
+
 ## [2.450] - 2026-08-20
 - fix(release): changelog dedupe matched prose, so reworded releases came back
 
