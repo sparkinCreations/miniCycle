@@ -1823,9 +1823,17 @@ if [ "$UPDATE_CHANGELOG" = true ]; then
         CHANGELOG_FILE="CHANGELOG.md"
         LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
 
-        if [ -n "$LAST_TAG" ]; then
-            echo "📋 Getting commits since $LAST_TAG..."
-            COMMITS=$(git log "$LAST_TAG"..HEAD --oneline --no-merges 2>/dev/null | grep -v -E "^[a-f0-9]+ (chore: [Bb]ump|chore\\(release\\): [Uu]pdate version|Bump version|Update version)" || true)
+        # Where the previous release ended. Resolution (and the reasoning
+        # behind not using the last git tag) lives in changelog-range.sh, so the
+        # release path and its regression test share one definition.
+        RANGE_LABEL_FILE=$(mktemp)
+        RANGE_START=$(bash "$(dirname "$0")/changelog-range.sh" "$CHANGELOG_FILE" "$LAST_TAG" 3>"$RANGE_LABEL_FILE" || true)
+        RANGE_LABEL=$(cat "$RANGE_LABEL_FILE" 2>/dev/null || true)
+        rm -f "$RANGE_LABEL_FILE"
+
+        if [ -n "$RANGE_START" ]; then
+            echo "📋 Getting commits since $RANGE_LABEL..."
+            COMMITS=$(git log "$RANGE_START"..HEAD --oneline --no-merges 2>/dev/null | grep -v -E "^[a-f0-9]+ (chore: [Bb]ump|chore\\(release\\): [Uu]pdate version|Bump version|Update version)" || true)
         else
             echo "📋 Getting recent commits..."
             COMMITS=$(git log --oneline --no-merges -20 2>/dev/null | grep -v -E "^[a-f0-9]+ (chore: [Bb]ump|chore\\(release\\): [Uu]pdate version|Bump version|Update version)" || true)
@@ -1837,18 +1845,17 @@ if [ "$UPDATE_CHANGELOG" = true ]; then
             if [ -n "$COMMITS" ]; then
                 while IFS= read -r commit; do
                     MSG=$(echo "$commit" | sed 's/^[a-f0-9]* //')
-                    # Skip anything CHANGELOG.md already describes.
+                    # Backstop: skip anything CHANGELOG.md already says verbatim.
                     #
-                    # The range above is `LAST_TAG..HEAD`, and LAST_TAG comes from
-                    # the git tags that tag-releases.yml writes on merge to main.
-                    # When tagging stalls — it sat on v2.421 while the app shipped
-                    # 2.434 — that range widens to every commit since, and each new
-                    # release re-lists the whole backlog on top of its own entry.
-                    # Four consecutive releases were hand-corrected for this before
-                    # the cause was traced past the symptom.
+                    # The range above now stops at the previous release's heading,
+                    # which is what actually keeps the backlog out. This catches
+                    # the rest: an entry someone wrote by hand ahead of the
+                    # release, or a commit cherry-picked forward.
                     #
-                    # Filtering on what the file already SAYS is immune to that:
-                    # it needs no tag, and it self-heals whenever tagging resumes.
+                    # It can only match subjects that were NOT reworded, which is
+                    # precisely why it cannot be the primary defence — see the
+                    # RANGE_START comment above.
+                    #
                     # -F -x so a subject containing regex metacharacters (parens in
                     # a conventional-commit scope, brackets, dots) matches literally
                     # and as a whole line, never as a substring of a longer entry.

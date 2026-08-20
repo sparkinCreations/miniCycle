@@ -28,6 +28,7 @@
 | **Required-dep chaining** | `npm run validate:chains` | CI — `test.yml` | 🔴 Fails CI — a dep declared `required()` must never be read as `deps.x?.` outside a `catch` block |
 | **ES built-in floor** | `npm run validate:builtins` | CI — `test.yml` | 🔴 Fails CI — no post-es2020 built-ins in shipped code (esbuild transpiles syntax, not built-ins) |
 | **Label registries** | `npm run validate:labels` | CI — `test.yml` | 🔴 Fails CI — every literal `getLabel()` key must resolve in `defaultLabels.js`; every logged history event type must be in historyManager's icon+label maps |
+| **Changelog range** | `npm run test:changelog` | CI — `test.yml` | 🔴 Fails CI — a release entry must not re-list commits an earlier release already shipped; the boundary is the previous `## [x.y.z]` heading, NOT the last git tag (tagging stalls) |
 
 ---
 
