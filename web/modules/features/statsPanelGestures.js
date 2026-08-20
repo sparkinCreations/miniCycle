@@ -18,6 +18,7 @@
 import { getLabel } from '../labels/labelResolver.js';
 import { DOM_CLASSES, DOM_IDS, EVENTS } from '../core/constants.js';
 import { PanelCarousel } from '../ui/panelCarousel.js';
+import { recordActionUsage } from '../ui/actionUsage.js';
 
 export class StatsPanelGestures {
     constructor(manager) {
@@ -201,6 +202,18 @@ export class StatsPanelGestures {
 
     /** Panel-specific side effects when the stats panel becomes active. */
     _onStatsPanelShown() {
+        // Usage is recorded HERE, not at the slide-arrow click, because every
+        // way into this panel converges on the carousel: the arrow, the nav
+        // pill, swipe, wheel, pointer drag and keyboard all reach
+        // goTo()/navigate() and land in this callback. Recording at one caller
+        // meant the arrow counted and the pill did not — measured, and exactly
+        // the "only some entry points count" bug actionUsage.js exists to end.
+        //
+        // Safe against inflation at boot: initTo() sets the opening panel
+        // WITHOUT firing callbacks, and the focus-mode restore path only ever
+        // goTo()s 'focus-task-panel'.
+        recordActionUsage(this.m.rawDeps.AppState, 'stats');
+
         if (this.m.elements.slideRight) {
             this.m.elements.slideRight.classList.add(DOM_CLASSES.HIDE);
             this.m.elements.slideRight.classList.remove(DOM_CLASSES.SHOW);

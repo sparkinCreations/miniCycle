@@ -28,7 +28,6 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { UI_TIMEOUTS, CHART, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION } from '../core/constants.js';
 import { getLabel, getIcon } from '../labels/labelResolver.js';
-import { recordActionUsage } from '../ui/actionUsage.js';
 // Pure utility class (no side effects/module state) — safe static import.
 // Owns the ordered panel registry; statsPanel registers its panels into it.
 // See docs/archive/FOCUS_TASK_VIEW_PLAN.md Phase 0.
@@ -408,11 +407,10 @@ export class StatsPanelManager {
             handleNavPillClick: this._gestures.handleNavPillClick.bind(this._gestures),
             // UI event handlers
             handleSlideLeftClick: () => this.showTaskView(),
-            handleSlideRightClick: () => {
-                // Slide gesture isn't a mapped button — record stats usage directly.
-                recordActionUsage(_deps.AppState, 'stats');
-                this.showStatsPanel();
-            },
+            // Usage is recorded in statsPanelGestures._onStatsPanelShown, which
+            // every entry point reaches. Recording here too would double-count
+            // this one path in `counts`.
+            handleSlideRightClick: () => this.showStatsPanel(),
             handleSlideArrowKeydown: (e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
