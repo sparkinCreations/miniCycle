@@ -1,3 +1,7 @@
+## [2.457] - 2026-08-20
+- style(ui): halve the section collapse duration to 150ms
+
+
 ## [2.456] - 2026-08-20
 - fix(ui): collapse-all covers the whole modal, and only in accordion mode
 
