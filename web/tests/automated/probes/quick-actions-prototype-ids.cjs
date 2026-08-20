@@ -1,3 +1,13 @@
+/**
+ * PROBE — do prototype-inherited ids survive a reload into the recent view?
+ *
+ * Seeds `recent` with a retired id and dumps what comes back after reload plus
+ * the menu's classes and text. Written while chasing CLAUDE.md #18: a plain
+ * object literal answers `constructor` / `toString` / `__proto__`, so every
+ * `if (ACTION_REGISTRY[id])` guard passed for them.
+ *
+ * Not a test — see ./README.md. Needs `npm start` on :8080.
+ */
 const { chromium } = require('playwright');
 (async () => {
   const b = await chromium.launch();

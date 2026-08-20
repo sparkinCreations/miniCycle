@@ -1,3 +1,13 @@
+/**
+ * PROBE — what does the recent view render for a given `recent` array?
+ *
+ * Seeds settings.quickActions.recent, reloads, opens the menu and lists the
+ * filled slots inside #quick-actions-menu. Written for the v2.459 audit; note
+ * this container is the WRONG one to read (see quick-actions-slot-count.cjs),
+ * which is how the slot-gap bug was missed twice.
+ *
+ * Not a test — see ./README.md. Needs `npm start` on :8080.
+ */
 const { chromium } = require('playwright');
 async function run(label, recent) {
   const b = await chromium.launch();
@@ -12,22 +22,17 @@ async function run(label, recent) {
   await p.evaluate((r) => { const d=JSON.parse(localStorage.getItem('miniCycleData'));
     d.settings.quickActions = { pinned:['stats',null,null,null,null], counts:{}, recent:r, activeView:'recent' };
     localStorage.setItem('miniCycleData', JSON.stringify(d)); }, recent);
-  await p.reload(); await p.waitForTimeout(7500);
-  const slots = await p.evaluate(() => {
-    const read = id => { const c = document.getElementById(id); return c
-      ? [...c.querySelectorAll('.quick-actions-slot')].map(e => (e.title||'?') + (e.classList.contains('filled')?'':'(empty)'))
-      : 'container absent'; };
-    return { window: read('quick-actions-slots'), menuRow: read('quick-actions-menu-slots') };
-  });
-  console.log(`${label}\n   recent = ${JSON.stringify(recent)}`);
-  console.log(`   #quick-actions-slots      : ${JSON.stringify(slots.window)}`);
-  console.log(`   #quick-actions-menu-slots : ${JSON.stringify(slots.menuRow)}`);
-  console.log(`   page errors               : ${JSON.stringify(errs)}\n`);
+  await p.reload(); await p.waitForTimeout(7000);
+  await p.evaluate(() => document.getElementById('quick-actions-btn')?.click());
+  await p.waitForTimeout(1500);
+  const slots = await p.evaluate(() =>
+    [...document.querySelectorAll('#quick-actions-menu .quick-actions-slot.filled')].map(e => e.title || e.dataset.action || '?'));
+  console.log(`${label}\n   recent=${JSON.stringify(recent)}\n   rendered ${slots.length}: ${JSON.stringify(slots)}\n   errors: ${JSON.stringify(errs)}`);
   await b.close();
 }
 (async () => {
-  await run('A) retired id among valid ones — must still fill 5 slots',
+  await run('A) a retired id among valid ones (was: left a gap)',
     ['settings','a-retired-action','history','themes','games','help']);
-  await run('B) prototype keys from a restored backup — must be ignored',
+  await run('B) prototype keys from a restored backup',
     ['constructor','__proto__','toString','settings','history']);
 })();
