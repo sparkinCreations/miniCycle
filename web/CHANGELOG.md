@@ -1,3 +1,7 @@
+## [2.459] - 2026-08-20
+- fix(quick-actions): no gap from a retired id, and a prototype-proof registry
+
+
 ## [2.458] - 2026-08-20
 - fix(usage): count clicks on a button's own label, and stats from every entry point
 
