@@ -53,7 +53,16 @@ const OPTIONAL = Symbol('optional');
 
 /**
  * Mark a dependency as required
- * If missing at resolve time, logs a warning (dev) or throws (strict mode)
+ *
+ * If missing at resolve time this WARNS and resolves to null — it does not throw.
+ * There is no "strict mode": ENFORCE_REQUIRES (moduleLoader.js) controls what the
+ * loader DELIVERS, not what resolve() does when a declared dep is absent. The
+ * STRICT_PHASES follow-up that would have thrown was never built and was dropped
+ * as unnecessary — see docs/archive/ENFORCE_REQUIRES_ROLLOUT_PLAN.md.
+ *
+ * The practical consequence is rule #19 in CLAUDE.md: read a required dep
+ * UNGUARDED, so a wiring failure throws at the point of use and names itself,
+ * rather than silently taking a branch that does nothing.
  * @returns {Object} Required marker
  * @example
  * const di = createDIModule('MyModule', {

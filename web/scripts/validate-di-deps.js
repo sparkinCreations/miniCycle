@@ -13,7 +13,7 @@
  * silently no-ops (guarded with `?.`) or THROWS (called directly). The WARN
  * flag only iterates manifest-declared deps, so a never-declared one is invisible
  * to it; this static check closes that gap. See:
- *   docs/future-work/ENFORCE_REQUIRES_ROLLOUT_PLAN.md
+ *   docs/archive/ENFORCE_REQUIRES_ROLLOUT_PLAN.md
  *   docs/future-work/AUTO_GENERATED_DEPMAPPINGS_PLAN.md
  *
  * Findings are split by confidence:

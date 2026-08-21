@@ -30,6 +30,7 @@
 | **appContext API surface + Quick Actions lists** | `npm run validate:api` | CI — `test.yml` | 🔴 Fails CI — every `get*Api()?.member` read must be a key of the object `featureBoot.js` registers. Those `*ApiObj` literals are hand-written allow-lists: a method the manifest genuinely delivers on `deps.<category>` is still dropped unless named there, the optional chain swallows it, and nothing warns because the manifest side succeeded. Also enforces that `ACTION_REGISTRY`, `VALID_ACTION_IDS` and `ACTION_BUTTON_MAP` agree — three hand-maintained lists where a miss means an action is never counted, with nothing thrown |
 | **Label registries** | `npm run validate:labels` | CI — `test.yml` | 🔴 Fails CI — every literal `getLabel()` key must resolve in `defaultLabels.js`; every logged history event type must be in historyManager's icon+label maps |
 | **Changelog range** | `npm run test:changelog` | CI — `test.yml` | 🔴 Fails CI — a release entry must not re-list commits an earlier release already shipped; the boundary is the previous `## [x.y.z]` heading, NOT the last git tag — `git describe` answers from the local clone, and a clone whose tags lag the remote widens the range to the whole backlog (measured: v2.447–v2.449 shipped from a container stuck at v2.421) |
+| **HTML cache headers** | `npm run validate:cache` | CI — `test.yml` | 🔴 Fails CI — no HTML route may be served with a long cache. Netlify serves every `.html` at an EXTENSIONLESS canonical URL (`/games/foo.html` → `/games/foo`), which does not match the `*.html` header rule and falls through to the `/*` catch-all: `max-age=31536000`. One year, on a document. Measured live Aug 2026 — a deployed fix to `/games/minicycle-taskscramble` could not reach users because the route was cached under the catch-all. The server had the fix; the browser would not ask for it |
 
 ---
 
@@ -235,6 +236,31 @@ for `.at(-1)`, a `/g`-regex `.replace` for `.replaceAll`). If the call is genuin
 guarded (`typeof X === 'function'`) or the receiver is a project object whose method
 merely shares the name, append `// es2020-ok: <reason>` to the line — after
 verifying, not before.
+
+---
+
+## 🔴 `validate:cache` — no HTML route served with a year-long cache
+
+**What it checks:** every deployed `.html` route resolves to a `no-cache` header rule.
+
+**Why it exists — the failure is invisible from the server side.** Netlify serves each `.html` file
+at an extensionless canonical URL: `/games/foo.html` is reachable as `/games/foo`. That
+extensionless form does **not** match a `*.html` header rule, so unless some rule names it
+explicitly it falls through to the `/*` catch-all — which sets `public, max-age=31536000`.
+
+Measured on live `minicycle.app`, Aug 2026: a fix deployed to `/games/minicycle-taskscramble` never
+reached users, because the route had already been cached for a year under the catch-all. Nothing was
+broken on the server. The browser simply had no reason to ask again — and for a year, wouldn't.
+
+`netlify.toml` no-caches six HTML scopes by hand (`*.html`, `/`, `/pages/*`, `/minicycle`,
+`/legal/*`, `/blog`). The failure mode is adding a **seventh** HTML route somewhere those six don't
+reach, which is silent: the page works, deploys fine, and only stops updating.
+
+**Also runs against a live deploy** — `python3 scripts/validate-cache-headers.py --live https://minicycle.app`
+checks the headers a real request receives, rather than what the config says it should.
+
+**When it fails:** add a header rule naming the new route's scope in `web/netlify.toml`. Do not fix
+it by renaming the file.
 
 ---
 

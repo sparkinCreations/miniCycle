@@ -1,6 +1,9 @@
 # Audit Residuals — August 2026 Future-Work Cleanup
 
-**Status:** Open backlog
+**Status:** Open backlog — **3 live items** (#2, #5, #12). Nine of the original eleven are closed;
+re-verified against the tree on 2026-08-21 at v2.461, which found #7, #8 and #10 had shipped
+without being marked, and half of #2. A ledger nobody re-checks becomes a list of things that
+look open, so the closures below record *how* they were verified, not just that they were.
 **Source:** Full audit of `docs/future-work/` on 2026-08-13 (verified against the tree at v2.412). Thirteen plans whose work had shipped were archived; the live leftovers they still carried are collected here so they don't die in `archive/`. Line numbers below are as of v2.412 — prefer the symbol names if they've drifted.
 
 ---
@@ -55,8 +58,12 @@ long after five were wired and persisting, and pointed at the pre-cleanup
 
 *From archived `MODAL_ACCESS_CENTRALIZATION_PLAN.md` (otherwise fully shipped).*
 
-- `modules/ui/uxRatings.js:165` — `getElementById(DOM_IDS.FEEDBACK_MODAL)` directly instead of `getModal('feedback')`.
-- `modules/ui/quickActionsManager.js:663` — keeps a `getModal?.('reminders') || getElementById(...)` fallback.
+- `modules/features/uxRatings.js:174` — **LIVE.** Still `getModal?.('feedback') || getElementById(DOM_IDS.FEEDBACK_MODAL)`.
+  (The path in the original entry said `modules/ui/uxRatings.js`; the module moved to `modules/features/`.)
+- `modules/ui/quickActionsManager.js` — ✅ **CLOSED.** The fallback is gone, and the code now carries the
+  reason: it "could only ever fire when DI was broken — and then it silently papered over it."
+
+Note this is app code, so closing the remaining half needs a version bump — it is not a docs-only fix.
 
 ## 3. Recurring panel — 4 setup methods — ✅ CLOSED Aug 2026
 
@@ -200,17 +207,21 @@ records.
 (the `buildSnapshotSignature` rule, and why `achievements.unlocked` and
 `settings.unlockedThemes` stay separate).
 
-## 7. Dead production code: `shouldShowOnboarding()`
+## 7. Dead production code: `shouldShowOnboarding()` — ✅ CLOSED Aug 2026
 
 *From archived `ONBOARDING_COMPLETED_LOCKOUT.md`.*
 
 `modules/ui/onboardingManager.js` `shouldShowOnboarding()` (~:1790) has **zero production callers** — only its own tests keep it alive. It is exactly the function the Aug 2026 lockout incident shows people "fix" by mistake (the real gates live in the `miniCycle.html` pre-paint reader and `appInit.js`). Delete it (and its test scaffolding), or mark it loudly as non-production.
 
-## 8. Render-path rationale worth salvaging into code
+**Verified closed 2026-08-21:** `onboardingManager.js:1786` now reads "shouldShowOnboarding() was REMOVED (Aug 2026)" — deleted, with a comment left behind so the next person looking for it learns where the real gates live instead of re-adding it.
+
+## 8. Render-path rationale worth salvaging into code — ✅ CLOSED Aug 2026
 
 *From archived `RENDER_PATH_UNIFICATION.md`.*
 
 The "Why DOM order matters" section (drag-drop relies on `closest('#completedTaskList')`, boundary markers, `dataset.originalIndex`) exists only in the archived doc. Candidate: copy it into a JSDoc block on `renderTasks` in `modules/task/taskRenderer.js` next time that file is touched in an app-code release.
+
+**Verified closed 2026-08-21:** done — `taskRenderer.js:178-184` carries the rationale, including why the pure-CSS `order` approach was rejected, and says why it was moved: "the archive is not somewhere anyone reads before editing this."
 
 ## 9. Task-button icon consolidation — ✅ CLOSED Aug 2026
 
@@ -240,13 +251,15 @@ programmatically, which is stronger than eyeballing:
 The emoji fallback branch is retained — it now covers "icon name not in the
 central registry" rather than "not in the local map".
 
-## 10. Stale doc paths inside code comments
+## 10. Stale doc paths inside code comments — ✅ CLOSED Aug 2026
 
 Two shipped files cite `docs/future-work/` paths that moved to `docs/archive/` in this cleanup: `modules/task/taskRenderer.js` (~:214, cites RENDER_PATH_UNIFICATION.md) and `modules/recurring/recurringWatcher.js` (~:78–86, cites "ARCHITECTURE REVIEW FINDINGS.md"). Harmless (validate:comments checks identifiers, not paths) — fix the paths next time those files ship in an app-code release; not worth a version bump alone.
 
+**Verified closed 2026-08-21:** both now cite `docs/archive/`. `validate:docs` also grew a "Code doc paths" check that resolves every citation in `modules/`, so the class is gated now, not merely cleared.
+
 ## 11. Four undeclared dep reads found by the new runtime DI audit — ✅ RESOLVED Aug 2026
 
-*Not from the future-work cleanup — output of `WARN_ON_UNDECLARED_DEP_ACCESS`, added Aug 2026 (see `ENFORCE_REQUIRES_ROLLOUT_PLAN.md` §Step 2 "Closed August 2026").*
+*Not from the future-work cleanup — output of `WARN_ON_UNDECLARED_DEP_ACCESS`, added Aug 2026 (see `../archive/ENFORCE_REQUIRES_ROLLOUT_PLAN.md` §Step 2 "Closed August 2026").*
 
 These are live under `ENFORCE_REQUIRES`: each name has a real `depMappings` route, the
 module reads it, and the manifest never declared it — so it arrives as `undefined` and
@@ -310,3 +323,21 @@ whether `cycleImportManager`'s `showChoiceModal` path has ever executed.
 Note the class the two `settingsManager` entries belong to: facade forward-through is
 exactly what cost v2.418 four failing journeys. `validate:di` gates that class at 0 and
 still reports 0 here, which is the blind spot the runtime audit exists to cover.
+
+---
+
+## 12. `aria-describedby` on complex modals
+
+*Inherited 2026-08-21 from `NATIVE_DIALOG_AUDIT_AND_REFACTOR_PLAN.md`, archived that day.*
+
+That plan's headline — replacing native `<dialog>` with custom modals — was **resolved without a
+refactor**, so the plan became history. This was its one live finding, and it is recorded here
+rather than left in `archive/` for the same reason this file exists.
+
+Static modals carry `aria-labelledby` (their title) but not `aria-describedby`. For a simple modal
+that is correct — the content *is* the description, and a redundant one would just be read twice.
+For the complex ones (settings, preferences) a short description would tell a screen-reader user
+what the modal is for before they start navigating its controls.
+
+Low priority, and worth doing per-modal rather than sweepingly: the gain only exists where the
+purpose is not obvious from the first focused control.
