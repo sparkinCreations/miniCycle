@@ -64,6 +64,10 @@ jobs:
         working-directory: ./web
         run: npm run validate:api
 
+      - name: Validate manifest provides (claims must be supplied; no duplicate owners)
+        working-directory: ./web
+        run: npm run validate:provides
+
       - name: Validate label & history-event registries (keys must resolve)
         working-directory: ./web
         run: npm run validate:labels

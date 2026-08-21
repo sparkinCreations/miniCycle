@@ -28,6 +28,7 @@
 | **Required-dep chaining** | `npm run validate:chains` | CI — `test.yml` | 🔴 Fails CI — a dep declared `required()` must never be read as `deps.x?.` outside a `catch` block |
 | **ES built-in floor** | `npm run validate:builtins` | CI — `test.yml` | 🔴 Fails CI — no post-es2020 built-ins in shipped code (esbuild transpiles syntax, not built-ins) |
 | **appContext API surface + Quick Actions lists** | `npm run validate:api` | CI — `test.yml` | 🔴 Fails CI — every `get*Api()?.member` read must be a key of the object `featureBoot.js` registers. Those `*ApiObj` literals are hand-written allow-lists: a method the manifest genuinely delivers on `deps.<category>` is still dropped unless named there, the optional chain swallows it, and nothing warns because the manifest side succeeded. Also enforces that `ACTION_REGISTRY`, `VALID_ACTION_IDS` and `ACTION_BUTTON_MAP` agree — three hand-maintained lists where a miss means an action is never counted, with nothing thrown |
+| **Manifest `provides`** | `npm run validate:provides` | CI — `test.yml` | 🔴 Fails CI — every name in a manifest's `provides` must actually exist on the module, and no two manifests may claim the same name. Both halves fail silently today: `registerProvides()` SKIPS a name `findProvidedValue()` cannot locate, and where the loader calls the method on the instance instead, it resolves to `undefined` inside a consumer that guards with `?.`. That is the v2.347 statsPanel split — `navigatePanels` moved to the gestures sub-module, the facade never re-exported it, `gesturePanelManager` read `undefined` as "no carousel" and fell back BY DESIGN to two-panel behaviour. Nothing threw; three-panel swipe stayed broken on mobile until v2.387 and was found on a phone. Unsupplied names are ratcheted BY NAME (an allow-list, not a count — a count would let a new violation hide behind a fixed one); duplicate owners are gated at 0 |
 | **Label registries** | `npm run validate:labels` | CI — `test.yml` | 🔴 Fails CI — every literal `getLabel()` key must resolve in `defaultLabels.js`; every logged history event type must be in historyManager's icon+label maps |
 | **Changelog range** | `npm run test:changelog` | CI — `test.yml` | 🔴 Fails CI — a release entry must not re-list commits an earlier release already shipped; the boundary is the previous `## [x.y.z]` heading, NOT the last git tag — `git describe` answers from the local clone, and a clone whose tags lag the remote widens the range to the whole backlog (measured: v2.447–v2.449 shipped from a container stuck at v2.421) |
 | **HTML cache headers** | `npm run validate:cache` | CI — `test.yml` | 🔴 Fails CI — no HTML route may be served with a long cache. Netlify serves every `.html` at an EXTENSIONLESS canonical URL (`/games/foo.html` → `/games/foo`), which does not match the `*.html` header rule and falls through to the `/*` catch-all: `max-age=31536000`. One year, on a document. Measured live Aug 2026 — a deployed fix to `/games/minicycle-taskscramble` could not reach users because the route was cached under the catch-all. The server had the fix; the browser would not ask for it |
@@ -290,6 +291,67 @@ that module is genuinely slow or hanging, and its budget or its test setup needs
 looking at, not another retry.
 
 ---
+
+---
+
+## 🔴 `validate:provides` — the manifest contract (Aug 2026)
+
+A manifest's `provides` list looks like a declaration. It is really a **claim**, and
+until this gate nothing checked it. `validate:di` says so out loud —
+"`provides` is deliberately EXCLUDED — it is a claim, not a route."
+
+Two ways it goes wrong, both silent:
+
+**The name does not exist on the module.** `registerProvides()` calls
+`findProvidedValue(instance, name)` and, on `undefined`, simply skips it — no throw,
+no warning. Where the loader instead calls the method directly on the instance (via
+`provideInstance`), the call resolves to `undefined` at call time, inside a consumer
+that almost always guards with `?.`.
+
+This is not hypothetical. The **v2.347** statsPanel split moved `navigatePanels` to
+`statsPanelGestures` and the facade never re-exported it. The manifest still listed
+it; `moduleLoader` still wired `gesturePanelManager`'s `onNavigate` to it.
+`gesturePanelManager` treats an `undefined` result as "carousel not available" and
+falls back **by design** to its legacy two-panel path. So nothing threw, no test
+failed, and three-panel swipe was broken on mobile from v2.347 to **v2.387** — found
+by using the app on a phone.
+
+The subtler variant costs the same: a delegate that exists but **forgets its
+`return`**. `undefined` comes back either way.
+
+**Two manifests claim the same name.** `registerProvides` writes into a deps bucket
+chosen by the module's `api`, so two claimants in *different* buckets never overwrite
+each other — one copy is simply unreachable. Harmless at runtime, corrosive on paper:
+`provides` is exactly what the next person splitting the module will try to preserve.
+statsPanel carried three such claims (`openHistoryModal`, `openClearedTasksModal`,
+`openAchievementsModal` — all owned by the history / cleared-tasks / achievements
+managers) until v2.462.
+
+### How it is gated
+
+| Check | Gate |
+|---|---|
+| Unsupplied name | Ratcheted **by name** against `KNOWN_UNSUPPLIED` in the script |
+| Duplicate owner | **0** |
+
+The nine grandfathered entries are all real — each is a manifest claim whose module
+does not define that identifier, reaching consumers only because `moduleLoader`'s
+`depMappings` or `featureBoot` hand-wires it (e.g. the manifest says
+`logHistoryEvent`, the module has `logEvent`). Each is listed with the route that
+actually supplies it. **Do not add to that list to silence a new failure** — a new
+entry is the v2.347 bug shape.
+
+The allow-list is by name rather than a count on purpose: a ceiling would let a new
+violation in one module hide behind a fixed one in another. It is also one-way — an
+entry that stops being a violation must leave the list in the same change, or a later
+regression could quietly reoccupy its slot.
+
+### What it does not catch
+
+Only the **static** surface. A delegate that exists and forwards to the wrong
+sub-module, or one that drops its `return`, still parses as supplied — that needs a
+forwarding test (see `statsPanel.tests.js`, which asserts both the exposure and the
+returned value for `navigatePanels`, `showTaskView` and `showStatsPanel`).
 
 ## 🔴 Real-app gates — the four suites `npm test` doesn't run
 
