@@ -247,6 +247,8 @@ export const DEFAULT_LABELS = deepFreeze({
         renameRoutine:      'Rename routine',
         renameRoutineMessage: 'Enter a new name for this routine:',
         deleteRoutine:      'Delete routine',
+        downloadRoutine:    'Download routine',
+        changeRoutineTheme: 'Change routine theme',
         preview:            'Preview',
         importExternal:     'Import Routine',
         storage:            'Routine Storage',

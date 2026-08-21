@@ -134,6 +134,7 @@
 
 /* Quick actions panel */
 @import './components/quick-actions.css?v=2.459';
+@import './components/long-press-hint.css?v=2.459';
 
 
 /* =============================================================================

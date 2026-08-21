@@ -1,0 +1,33 @@
+/* =============================================================================
+   LONG-PRESS HINT
+   The label bubble that answers "what is this icon?" on touch, without
+   activating the control. Shared by the Quick Actions slots and the routine
+   switcher's Routine Actions row — see modules/utils/longPressHint.js.
+
+   Deliberately matches .quick-actions-tooltip, which has shown this exact
+   shape on this exact gesture since Quick Actions shipped. One gesture should
+   not produce two different-looking answers.
+   ============================================================================= */
+
+.long-press-hint {
+    position: fixed;
+    background: rgba(0, 0, 0, 0.85);
+    color: var(--color-white);
+    padding: var(--space-2) 14px;
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    /* JS sets the inline z-index from Z_INDEX.LONG_PRESS_HINT; this is the
+       fallback for the no-JS/`.visible`-toggled-by-CSS case and keeps the value
+       visible to anyone reading the stylesheet alone. */
+    z-index: calc(var(--z-modal) + 1);
+    /* Never intercept the tap that dismisses it. */
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity var(--transition-fast) ease;
+    white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.long-press-hint.visible {
+    opacity: 1;
+}
