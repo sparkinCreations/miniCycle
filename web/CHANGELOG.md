@@ -1,3 +1,17 @@
+## [2.463] - 2026-08-21
+No user-facing change. First module split from the splits plan since v2.347.
+- refactor(notifications): EducationalTipManager moves to its own module,
+  `utils/educationalTips.js`. The two classes shared a file because a tip is
+  delivered as a notification, but tracking what a user has already learned is a
+  different job from rendering a toast. notifications.js drops from 1,928 to
+  1,741 lines and re-exports the class, so every existing importer and the test
+  suite reach it unchanged.
+- test(notifications): guard the new split seam — the re-export, the facade using
+  the class it re-exports, and the live deps getter. Capturing deps by value at
+  construction (an easy "simplification") passes every other test and would stop
+  late-injected deps ever arriving.
+
+
 ## [2.462] - 2026-08-21
 No user-facing change. Internal correctness work on the stats panel's module
 contract, ahead of further module splits.

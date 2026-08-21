@@ -2,7 +2,7 @@
 
 **Date:** March 15, 2026
 **Updated:** August 21 2026 — four previously-unassessed modules given verdicts; scripts brought into scope (`update-version.sh`); the last inline line counts removed, since the doc had retired them in principle but kept four in practice and all four had drifted. August 2026 — Priority 2 (statsPanel) SHIPPED (commit `806f8082`); line-count table retired (numbers rot — see [PROJECT_STATS.md](../PROJECT_STATS.md)). July 7, 2026 — god-module audit: added statsPanel (Priority 2), orchestrator assessment, false-positive list
-**Status:** In progress — Priority 2 complete; Priorities 1, 3, 4, 5 open, plus 6 (notifications) and 7 (`update-version.sh`) added Aug 21 2026
+**Status:** In progress — Priorities 2 and 6 complete; Priorities 1, 3, 4, 5 open, plus 7 (`update-version.sh`) added Aug 21 2026
 **Related:** [DI_MIGRATION_COMPLETION_PLAN.md](../archive/DI_MIGRATION_COMPLETION_PLAN.md), [ENFORCE_REQUIRES_ROLLOUT_PLAN.md](../archive/ENFORCE_REQUIRES_ROLLOUT_PLAN.md)
 
 ---
@@ -25,7 +25,7 @@ This doc no longer pins line/dep/method counts — every measured number in the 
 | moduleLoader.js | Deferred (boot infrastructure) |
 | migrationManager.js (`modules/routine/`) | Deferred (working code) |
 | orchestrator.js | Deferred (see below) |
-| notifications.js (`modules/utils/`) | **Candidate — Priority 6** (assessed Aug 21 2026; see below) |
+| notifications.js (`modules/utils/`) | **Priority 6** — ✅ **SHIPPED** (v2.463; `EducationalTipManager` → `utils/educationalTips.js`) |
 | taskViewLayoutManager.js | Not a god module — one feature, low fan-out (assessed Aug 21 2026) |
 | quickActionsManager.js | Not a god module — one feature (assessed Aug 21 2026) |
 | settingsUIManager.js | Not a god module — **repetition, not spread** (assessed Aug 21 2026) |
@@ -62,14 +62,33 @@ complete when it was not. Verdicts use the same three signals — size, fan-out,
 — and the same rule: a module qualifies only when **all three** are high AND the responsibilities
 span multiple user-facing domains.
 
-### `notifications.js` — CANDIDATE (Priority 6)
+### `notifications.js` — Priority 6 — ✅ SHIPPED (v2.463)
 
 The only one of the four that qualifies, and it comes with its seam already drawn: the file holds
 **two classes**, `EducationalTipManager` and `MiniCycleNotifications`. The tip manager is a distinct
 feature — teaching moments tied to app state — that happens to live in the notifications file
 because tips are delivered as notifications. Delivery mechanism and pedagogy are different jobs.
 
-Fan-out is moderate rather than alarming, which is why this is Priority 6 and not higher: the size
+**Outcome (v2.463).** `EducationalTipManager` (210 lines) moved to
+`modules/utils/educationalTips.js`; `notifications.js` went 1,928 → 1,741 and keeps a
+**re-export** so the test harness and every existing importer reach the class unchanged.
+The extraction was as clean as predicted — one coupling point, `new EducationalTipManager(() => this.deps)` —
+but three things surfaced that a size-and-class-boundary read did not predict, and they are
+the reusable lesson for the remaining splits:
+
+1. **A module-scoped helper came along invisibly.** The class called `_safeAddEventListener`,
+   defined in `notifications.js` and closing over its `_deps` proxy. Scanning for "what does
+   this class reference" with a guessed list of names missed it; **ESLint's `no-undef` caught
+   it**. The fix takes deps explicitly rather than importing the twin back — a circular ESM
+   edge between two BOOT_CRITICAL modules is not worth saving four lines.
+2. **The re-export is a silent seam.** Dropping `export { EducationalTipManager }` throws
+   nothing at the source: importers get `undefined`, and the harness's
+   `window.EducationalTipManager = mod.EducationalTipManager` quietly assigns it. Guarded now.
+3. **The deps getter is load-bearing and easy to "simplify" away.** Capturing deps by value at
+   construction passes 46 of 47 tests — everything except the one written for it. Late-injected
+   deps would simply never arrive.
+
+Fan-out is moderate rather than alarming, which is why this was Priority 6 and not higher: the size
 comes from one large class, not from wiring breadth. Extract `EducationalTipManager` first — it is
 already class-boundaried, so the extraction is a move rather than a carve.
 
@@ -374,7 +393,7 @@ If revisited, the split is unusually low-risk precisely because it's pre-DI — 
 5. **taskDOMCompat** — large extraction (~450 lines), mostly pure delegation
 6. **undoSnapshotManager** — small extraction (~190 lines), needs interface for AppGlobalState fields
 7. **recurringPanelAddTask** — if desired (~275 lines), low priority
-8. **EducationalTipManager** out of `notifications.js` — already a separate class, so a move rather than a carve (Priority 6)
+8. ~~**EducationalTipManager** out of `notifications.js`~~ — ✅ **SHIPPED v2.463** (Priority 6)
 9. **`update-version.sh` stages** — CSP regeneration first, then the `?v=` sweep; each becomes a script that can have tests, following `changelog-range.sh` (Priority 7)
 
 ✅ Done (removed from the order): **statsPanel gestures + rewards** — shipped as `statsPanelGestures.js` + `statsPanelRewards.js` (commit `806f8082`; see Priority 2).
