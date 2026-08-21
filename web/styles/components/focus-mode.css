@@ -9,7 +9,9 @@
    ============================================================================= */
 
 /* Selectors map to constants.js:
-   .fixed-header-container  → DOM_CLASSES.FIXED_HEADER_CONTAINER
+   .menu-button             → DOM_SELECTORS.MENU_BUTTON
+   .mode-selector-wrapper   → DOM_SELECTORS.MODE_SELECTOR_WRAPPER
+   #saving-indicator        → DOM_IDS.SAVING_INDICATOR
    #slide-left              → DOM_IDS.SLIDE_LEFT
    #slide-right             → DOM_IDS.SLIDE_RIGHT
    #quick-actions-window    → DOM_IDS.QUICK_ACTIONS_WINDOW
@@ -140,7 +142,9 @@ body.focus-mode #task-view .task-list-container {
    --focus-chrome-fade exists so the fade duration and the visibility delay
    below cannot drift apart: the delay MUST equal the fade, or the chrome either
    vanishes mid-fade or lingers in the tab order after it. */
-.fixed-header-container,
+.mini-cycle-header-row .menu-button,
+.mode-selector-wrapper,
+#saving-indicator,
 #slide-left,
 #slide-right,
 #quick-actions-window,
@@ -152,7 +156,16 @@ body.focus-mode #task-view .task-list-container {
     transition: opacity var(--focus-chrome-fade) ease, visibility 0s;
 }
 
-body.focus-mode .fixed-header-container,
+/* The header's CHROME children are hidden individually — NOT the whole
+   .fixed-header-container — so .header-branding stays visible in focus view.
+   It has to be this way round: a descendant can override an ancestor's
+   `visibility`, but it can NEVER override an ancestor's `opacity` (opacity
+   applies to the composited subtree), and `inert` on an ancestor is likewise
+   not cancellable from within. Exempting the logo inside a hidden container
+   is therefore impossible; the container must not be the thing hidden. */
+body.focus-mode .mini-cycle-header-row .menu-button,
+body.focus-mode .mode-selector-wrapper,
+body.focus-mode #saving-indicator,
 body.focus-mode #slide-left,
 body.focus-mode #slide-right,
 body.focus-mode #quick-actions-window,

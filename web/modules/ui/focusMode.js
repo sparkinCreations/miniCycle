@@ -862,7 +862,13 @@ export class FocusMode {
     _getInertChromeElements() {
         const { getElementById, querySelector } = this.deps;
         const elements = [
-            querySelector(`.${DOM_CLASSES.FIXED_HEADER_CONTAINER}`),
+            // The header's chrome children, NOT .fixed-header-container itself —
+            // `inert` on the container would also make .header-branding inert, and
+            // inertness cannot be cancelled from inside. Keep this list in step with
+            // the focus-mode hide list in styles/components/focus-mode.css.
+            querySelector(DOM_SELECTORS.MENU_BUTTON),
+            querySelector(DOM_SELECTORS.MODE_SELECTOR_WRAPPER),
+            getElementById(DOM_IDS.SAVING_INDICATOR),
             getElementById(DOM_IDS.SLIDE_LEFT),
             getElementById(DOM_IDS.SLIDE_RIGHT),
             getElementById(DOM_IDS.QUICK_ACTIONS_WINDOW),

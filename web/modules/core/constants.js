@@ -1667,6 +1667,9 @@ export const DOM_SELECTORS = Object.freeze({
     LOADER_BAR: '.loader-bar',
     LOADING_SPINNER_TEXT: '.loading-spinner-text',
     HEADER_BRANDING: '.header-branding',
+    // Focus view hides the header's chrome children individually rather than the
+    // whole .fixed-header-container, so the branding lockup can stay visible.
+    MODE_SELECTOR_WRAPPER: '.mode-selector-wrapper',
     HEADER_BRANDING_LOGO: '.header-branding .header-logo',
     HEADER_LOGO: '.header-logo',
     PULL_REFRESH_ICON: '.pull-refresh-icon',
