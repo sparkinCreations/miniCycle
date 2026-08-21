@@ -2,7 +2,7 @@
 
 **Date:** March 15, 2026
 **Updated:** August 21 2026 — four previously-unassessed modules given verdicts; scripts brought into scope (`update-version.sh`); the last inline line counts removed, since the doc had retired them in principle but kept four in practice and all four had drifted. August 2026 — Priority 2 (statsPanel) SHIPPED (commit `806f8082`); line-count table retired (numbers rot — see [PROJECT_STATS.md](../PROJECT_STATS.md)). July 7, 2026 — god-module audit: added statsPanel (Priority 2), orchestrator assessment, false-positive list
-**Status:** In progress — Priorities 2 and 6 complete; Priorities 1, 3, 4, 5 open, plus 7 (`update-version.sh`) added Aug 21 2026
+**Status:** In progress — Priorities 2 and 6 complete; Priorities 1, 3, 4, 5 open, plus 7 (`update-version.sh`) added Aug 21 2026. **Aug 21 2026 review:** added a DONE condition (~1,500-line target, everything else trigger-based); rewrote the per-extraction checklist around the gates that caught the two defects the completed splits shipped (`test:sw`, `validate:provides`); corrected the "provides stays the same" promise the statsPanel split falsified; pulled the release script's CSP stage forward from Priority 7
 **Related:** [DI_MIGRATION_COMPLETION_PLAN.md](../archive/DI_MIGRATION_COMPLETION_PLAN.md), [ENFORCE_REQUIRES_ROLLOUT_PLAN.md](../archive/ENFORCE_REQUIRES_ROLLOUT_PLAN.md)
 
 ---
@@ -10,6 +10,26 @@
 ## Problem
 
 Several modules exceed 1,300 lines and handle multiple distinct responsibilities. Large modules are harder to navigate, test in isolation, and modify without unintended side effects.
+
+### When this plan is DONE (added Aug 21 2026)
+
+Every split buys navigability and pays a permanent tax: a Pattern 1 sub-module is invisible to
+`moduleManifests.js` by design, so it needs `FACADE_SUB_FILES` special-casing in `validate:di`, its
+own precache entry, and its own test file. That tax is worth paying a bounded number of times, not
+indefinitely — and this page has drifted toward expansion (scripts came into scope Aug 21 2026; four
+more modules were assessed the same day).
+
+**Target:** no non-data module over ~1,500 lines. `defaultLabels.js` and `constants.js` are
+permanently exempt — they are data, and centralizing them is an explicit project rule.
+
+**Everything not required to hit that target is trigger-based, not scheduled.** The orchestrator
+entry already has the right shape ("do it opportunistically next time boot timing is touched"); the
+Priority 4/5 entries (`recurringPanel`, `taskDOM`) and the deferred list should be read the same
+way. Re-open a trigger-based item only when its module gains a *second user-facing domain*, not when
+it gains lines.
+
+Reaching the target closes this plan. Do not add candidates to keep it alive; open a new one if the
+codebase genuinely drifts again.
 
 This doc no longer pins line/dep/method counts — every measured number in the previous revision of this table had drifted by August 2026. For current volatile metrics see [PROJECT_STATS.md](../PROJECT_STATS.md); for a specific module, measure it fresh (`wc -l`) before extracting. Candidates by verdict:
 
@@ -156,8 +176,22 @@ Best candidates, by the same "most isolated first" ordering used above:
 3. **`restore.sh` generation** — self-contained, and the heredoc quoting is precisely where the
    `$SCRIPT_DIR` bug lived.
 
-Not urgent. But the next time a release-script bug costs an afternoon, this is the reason, and
-these are the seams.
+**Sequencing correction (Aug 21 2026): "not urgent" contradicted the blast-radius argument above,
+so stage 1 moves up.** This section simultaneously called the release script "the highest blast
+radius on this page" and deferred it to last. Both cannot be true. The evidence favours the first
+reading — recent releases surfaced two live defects in this script, neither of which failed loudly:
+
+- it pushed the tag even when the branch push was **rejected**, leaving a tag pointing at a commit
+  the remote did not have (fixed; verified since by checking `git rev-list --left-right --count`
+  after every `--push`);
+- with a dirty tree it wrote a literal `TODO(changelog)` line into a **shipped** release, needing a
+  follow-up docs commit to repair (fixed by `--note` / the interactive prompt).
+
+So: **CSP hash regeneration is pulled forward to slot 2 in the execution order** — it is already
+glue around a Python validator, which makes it the cheapest possible instance of the
+`changelog-range.sh` pattern this section cites as the model. The remaining stages (`?v=` sweep,
+`restore.sh` generation) stay at the back and stay trigger-based: do them the next time a release
+bug costs an afternoon.
 
 ## Established Sub-Module Patterns
 
@@ -224,24 +258,32 @@ Rules:
 
 All three have internal state or DOM side effects → dynamic versioned imports.
 
-**`routineSwitcherThemePicker.js` (~110 lines)**
-- `toggleThemePicker()`, `openThemePicker()`, `_selectTheme()`, `closeThemePicker()`
+**`routineSwitcherThemePicker.js`**
+- `toggleThemePicker()`, `openThemePicker()`, `_selectTheme()`, `closeThemePicker()` — all four
+  verified present Aug 21 2026
 - Self-contained feature with its own DOM state
 - Risk: Low — isolated UI with clear boundaries
 
-**`routineSwitcherPreview.js` (~250 lines)**
-- `updatePreview()`, `_updateDesktopPreview()`, `_resetDesktopPreview()`, `setupPreviewPopout()`, `_openPreviewReviewModal()`
+**`routineSwitcherPreview.js`**
+- The preview cluster: preview rendering/reset, the popout, and the review modal.
+- ⚠️ **Method names below are stale — measure the cluster fresh.** As of Aug 21 2026
+  `_updateDesktopPreview()` **no longer exists** in the file, while `updatePreview()` and
+  `setupPreviewPopout()` do. Named for orientation only, not as a work list:
+  `updatePreview()`, `_resetDesktopPreview()`, `setupPreviewPopout()`, `_openPreviewReviewModal()`.
 - Desktop-only feature, mobile users never load it
 - Risk: Low — preview is read-only, no state mutations
 
-**`routineSwitcherSearch.js` (~240 lines)**
+**`routineSwitcherSearch.js`** — all listed methods verified present Aug 21 2026
 - `setupSearchInput()`, `filterRoutineList()`, `setupSortControls()`, `_updateSortButtonStates()`, `_sortCycles()`, `setupFilterControls()`, `_getCycleMode()`, `_filterCycles()`
 - Pure UI filtering, operates on already-rendered list
 - Risk: Low — search/sort/filter are stateless transforms
 
-**Remaining routineSwitcher.js (~1,900 lines)**
+**Remaining routineSwitcher.js**
 - Core modal, CRUD, list management, inline edit, export, storage bar
-- Note (July 2026): extraction estimates above are from the March audit; the module has since grown ~486 lines. Re-measure method boundaries before extracting — the theme picker and preview clusters have gained methods (`_selectTheme`, `_openPreviewReviewModal`, `_resetPreview`).
+- Still Priority 1 as of Aug 21 2026: 2,649 lines, the largest non-data module, and still growing
+  (+71 since v2.445 alone).
+- The March estimates that used to sit in this section were removed because they had drifted and
+  one named method no longer exists. **Re-measure the cluster boundaries before extracting.**
 
 ---
 
@@ -386,15 +428,21 @@ If revisited, the split is unusually low-risk precisely because it's pre-DI — 
 
 ## Recommended Execution Order
 
-1. **routineSwitcher theme picker** — smallest extraction (~110 lines), most isolated, lowest risk
-2. **routineSwitcher preview** — medium extraction (~250 lines), desktop-only feature
-3. **routineSwitcher search/sort/filter** — medium extraction (~240 lines), stateless transforms
-4. **undoIndexedDB** — small extraction (~190 lines), needs interface for module-level refs
-5. **taskDOMCompat** — large extraction (~450 lines), mostly pure delegation
-6. **undoSnapshotManager** — small extraction (~190 lines), needs interface for AppGlobalState fields
-7. **recurringPanelAddTask** — if desired (~275 lines), low priority
-8. ~~**EducationalTipManager** out of `notifications.js`~~ — ✅ **SHIPPED v2.463** (Priority 6)
-9. **`update-version.sh` stages** — CSP regeneration first, then the `?v=` sweep; each becomes a script that can have tests, following `changelog-range.sh` (Priority 7)
+1. **routineSwitcher theme picker** — smallest extraction, most isolated, lowest risk
+2. **`update-version.sh` CSP-hash regeneration → its own script** — moved up from Priority 7; glue
+   around an existing validator, and the release gate is the highest-blast-radius item on this page
+   (see Scripts, above). Model: `changelog-range.sh` + `test-changelog-range.sh`.
+3. **routineSwitcher preview** — medium extraction, desktop-only feature
+4. **routineSwitcher search/sort/filter** — medium extraction, stateless transforms
+5. **undoIndexedDB** — small extraction, needs interface for module-level refs
+6. **taskDOMCompat** — large extraction, mostly pure delegation
+7. **undoSnapshotManager** — small extraction, needs interface for AppGlobalState fields
+8. **recurringPanelAddTask** — trigger-based, low priority
+9. ~~**EducationalTipManager** out of `notifications.js`~~ — ✅ **SHIPPED v2.463** (Priority 6)
+10. **Remaining `update-version.sh` stages** — the `?v=` sweep, then `restore.sh` generation;
+    trigger-based (Priority 7)
+
+Sizes are deliberately not given here — see "When this plan is DONE" and measure fresh.
 
 ✅ Done (removed from the order): **statsPanel gestures + rewards** — shipped as `statsPanelGestures.js` + `statsPanelRewards.js` (commit `806f8082`; see Priority 2).
 
@@ -410,22 +458,69 @@ Each extraction should be done as a separate commit with full test verification 
 
 ## Execution Checklist (Per Extraction)
 
+### Build
+
 1. Create the new sub-module file in the same directory as the parent
 2. Move functions/methods to the new file, exporting them
 3. Add dynamic versioned import in the parent's `init()` or constructor
 4. Store references and update delegation calls in the parent
 5. Do NOT add a manifest entry — sub-modules are internal
-6. Run `npm run lint` — verify no errors
-7. Run `npm test` — verify no regressions
-8. Manual smoke test of the affected feature
-9. Commit with descriptive message
+6. **Re-verify the parent's `provides` against what the facade actually supplies.** Step 5 says
+   don't ADD entries; it does not say the existing list is correct. See "What This Does NOT
+   Change" below — the shipped statsPanel split left three fictional entries in place.
+7. **Give the sub-module its own test file** (`tests/<subModule>.tests.js`), importing it
+   directly with `?v=${cacheBuster}` rather than through the facade — the facade's `init()`
+   may create a singleton (see CLAUDE.md § Testing note). This is already the norm:
+   `statsPanelGestures`, `statsPanelRewards`, `collapsibleSections` and `recurringPanelSetup`
+   each have one. `educationalTips` (v2.463) does not — the gap this step closes.
+
+### Verify — the gates, not just the suite
+
+The two defects the completed splits shipped were both invisible to `lint` + `npm test`. Run:
+
+8. `npm run lint` — 0 errors, warnings under the ratchet
+9. `npm test` — no regressions
+10. **`npm run test:sw` — MANDATORY for any new file.** A static import from anything already
+    boot-critical makes the new file boot-critical too; left out of `BOOT_CRITICAL`, offline boot
+    goes to the network for it. No `validate:*` gate and no other suite covers this.
+11. **`npm run validate:provides`** — catches the manifest over-claim described in step 6
+12. `npm run validate:di` — the sub-module's deps must still resolve (facade sub-files are
+    scanned via `FACADE_SUB_FILES`)
+13. **`npm run validate:comments`** — a move invalidates every comment that names a moved
+    identifier by its old home; gated at 0
+14. `npm run test:journey` — for anything user-facing
+15. Manual smoke test of the affected feature
+16. Commit with descriptive message
+
+**Both of these have already happened during this plan's execution, so treat 10 and 11 as the
+load-bearing steps rather than box-ticking:**
+
+- `f7a207f7` — `collapsibleSections.js` was left out of `BOOT_CRITICAL` and caught only by
+  `test:sw`. The commit records that the full suite, journey, a11y and meta were all run; the one
+  gate that catches new module files was not.
+- `14a9bc6f` — the **completed** Priority 2 statsPanel split (v2.347) left three fictional entries
+  in `provides`. Undiscovered for ~115 versions, and it took a new gate (`validate:provides`) to
+  find them.
 
 ---
 
 ## What This Does NOT Change
 
 - No manifest entries added or removed
-- No public API changes (parent's `provides` list stays the same)
 - No DI wiring changes
 - No boot sequence changes
 - No new dependencies introduced
+
+### Corrected Aug 21 2026: `provides` is re-verified, not assumed unchanged
+
+This list used to promise "no public API changes (parent's `provides` list stays the same)."
+That is wrong in the one case that matters, and the completed Priority 2 split is the
+counter-example: statsPanel's `provides` listed `openHistoryModal`, `openClearedTasksModal` and
+`openAchievementsModal`, which the facade never supplied — the DI names belong to
+historyManager / clearedTasksManager / achievementsManager. Preserving the list unchanged
+preserved the fiction (`14a9bc6f`, v2.462).
+
+The correct rule: **an extraction must not ADD or REMOVE entries to change the public API, but it
+must re-verify that every entry still names something this module actually supplies.** A split is
+exactly when someone reads that list closely, which makes it the right moment to check it.
+`validate:provides` now gates this.
