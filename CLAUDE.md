@@ -394,8 +394,11 @@ Five facade modules dynamically import their sub-modules during `init()` instead
 | `taskDOM` | taskValidation, taskUtils, taskRenderer, taskEvents |
 | `preferencesManager` | preferencesBgImage, preferencesPresets |
 | `statsPanel` | statsPanelGestures, statsPanelRewards |
+| `notifications` | educationalTips *(static import, not dynamic — see below)* |
 
-**Why:** Sub-modules are tightly coupled to their facade. Dynamic imports with `?v=${APP_VERSION}` cache busting ensure fresh loads. The facade wires DI to each sub-module via its own `wireSubModuleDependencies()` — except `statsPanel`, whose sub-modules hold a back-reference to the manager (`this.m`) and reach its deps via `this.m.dependencies` / `this.m.rawDeps` (`validate:di` scans those files via `FACADE_SUB_FILES`).
+**Why:** Sub-modules are tightly coupled to their facade. Dynamic imports with `?v=${APP_VERSION}` cache busting ensure fresh loads.
+
+**`notifications` → `educationalTips` differs** (Aug 2026 split): it is a **static** `import` at the top of `notifications.js`, not a dynamic one. The class is constructed in `MiniCycleNotifications`'s constructor, so there is no async init to hang a dynamic import on, and builds have been content-hashed since v2.301 so `?v=` buys nothing. The consequence to remember: a static import from a boot-critical module makes the target boot-critical too, so `educationalTips.js` is in `BOOT_CRITICAL` — run `test:sw` if you touch it. It reaches callers via a **re-export** from `notifications.js`; drop that line and importers silently get `undefined` (guarded in `notifications.tests.js`). The facade wires DI to each sub-module via its own `wireSubModuleDependencies()` — except `statsPanel`, whose sub-modules hold a back-reference to the manager (`this.m`) and reach its deps via `this.m.dependencies` / `this.m.rawDeps` (`validate:di` scans those files via `FACADE_SUB_FILES`).
 
 **Testing note:** Tests for sub-modules import them directly with `?v=${cacheBuster}`. The facade's `init()` may create a singleton — tests that need fresh instances should use the sub-module's exported class/functions directly, not through the facade.
 

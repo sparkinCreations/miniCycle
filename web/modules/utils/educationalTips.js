@@ -19,7 +19,7 @@
  * @see {@link file://docs/future-work/LARGE_MODULE_SPLITS_PLAN.md} - why this split
  */
 
-import { DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
+import { DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 /**
@@ -180,7 +180,7 @@ export class EducationalTipManager {
         if (e.target.classList.contains(DOM_CLASSES.TIP_TOGGLE) || e.target.classList.contains(DOM_CLASSES.TIP_TOGGLE_BTN)) {
           e.stopPropagation();
           const tipId = e.target.dataset.tipId;
-          const tipElement = container.querySelector(`#tip-${tipId}`);
+          const tipElement = container.querySelector(DATA_SELECTORS.tipById(tipId));
 
           if (tipElement.style.display === 'none') {
             this.showTipElement(tipId, container);
@@ -199,7 +199,7 @@ export class EducationalTipManager {
   }
 
   hideTip(tipId, container) {
-    const tipElement = container.querySelector(`#tip-${tipId}`);
+    const tipElement = container.querySelector(DATA_SELECTORS.tipById(tipId));
     const toggleButton = container.querySelector(`${DOM_SELECTORS.TIP_TOGGLE}[data-tip-id="${tipId}"]`);
     
     if (tipElement) {
@@ -219,7 +219,7 @@ export class EducationalTipManager {
   }
 
   showTipElement(tipId, container) {
-    const tipElement = container.querySelector(`#tip-${tipId}`);
+    const tipElement = container.querySelector(DATA_SELECTORS.tipById(tipId));
     const toggleButton = container.querySelector(`${DOM_SELECTORS.TIP_TOGGLE}[data-tip-id="${tipId}"]`);
     
     if (tipElement) {

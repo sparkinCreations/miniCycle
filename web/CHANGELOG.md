@@ -10,6 +10,9 @@ No user-facing change. First module split from the splits plan since v2.347.
   the class it re-exports, and the live deps getter. Capturing deps by value at
   construction (an easy "simplification") passes every other test and would stop
   late-injected deps ever arriving.
+- refactor(constants): `DATA_SELECTORS.tipById()` replaces three hardcoded
+  `#tip-${id}` selectors in the extracted module, matching the CSS.escape'd
+  builder pattern its neighbours already use.
 
 
 ## [2.462] - 2026-08-21

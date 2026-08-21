@@ -1741,6 +1741,11 @@ export const DATA_SELECTORS = Object.freeze({
     settingsSectionByName: (name) => `.settings-section[data-section="${name}"]`,
     preferencesSectionByName: (name) => `.preferences-section[data-section="${name}"], .preferences-preview-section[data-section="${name}"]`,
     cycleByKey: (key) => `[data-cycle-key="${CSS.escape(key)}"]`,
+    // Educational tips are addressed by element id, not a data attribute.
+    // CSS.escape for the same reason as the builders above: tip ids are author-
+    // supplied strings, and an id starting with a digit or containing a colon is
+    // a thrown DOMException rather than a miss.
+    tipById: (id) => `#tip-${CSS.escape(id)}`,
     // Data attribute names (for setAttribute/removeAttribute/getAttribute)
     ATTR_RECURRING_SETTINGS: 'data-recurring-settings'
 });
