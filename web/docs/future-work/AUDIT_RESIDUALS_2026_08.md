@@ -1,6 +1,10 @@
 # Audit Residuals — August 2026 Future-Work Cleanup
 
-**Status:** Open backlog
+**Status:** Open backlog — **1 live item** (#12). Eleven of twelve are closed. Re-verified twice
+against the tree on 2026-08-21 at v2.461: the first pass found #7, #8 and #10 had shipped without
+being marked; the second found #5 had too, and that #2's remaining half is deliberate rather than
+outstanding. A ledger nobody re-checks becomes a list of things that
+look open, so the closures below record *how* they were verified, not just that they were.
 **Source:** Full audit of `docs/future-work/` on 2026-08-13 (verified against the tree at v2.412). Thirteen plans whose work had shipped were archived; the live leftovers they still carried are collected here so they don't die in `archive/`. Line numbers below are as of v2.412 — prefer the symbol names if they've drifted.
 
 ---
@@ -51,12 +55,28 @@ The module's header banner also claimed two draggables and in-memory-only positi
 long after five were wired and persisting, and pointed at the pre-cleanup
 `docs/future-work/` path for a plan now in `docs/archive/` — both corrected.
 
-## 2. Modal registry — two stray direct lookups
+## 2. Modal registry — two stray direct lookups — ✅ CLOSED Aug 2026 (one removed, one deliberate)
 
 *From archived `MODAL_ACCESS_CENTRALIZATION_PLAN.md` (otherwise fully shipped).*
 
-- `modules/ui/uxRatings.js:165` — `getElementById(DOM_IDS.FEEDBACK_MODAL)` directly instead of `getModal('feedback')`.
-- `modules/ui/quickActionsManager.js:663` — keeps a `getModal?.('reminders') || getElementById(...)` fallback.
+- `modules/features/uxRatings.js:174` — **LIVE.** Still `getModal?.('feedback') || getElementById(DOM_IDS.FEEDBACK_MODAL)`.
+  (The path in the original entry said `modules/ui/uxRatings.js`; the module moved to `modules/features/`.)
+- `modules/ui/quickActionsManager.js` — ✅ **CLOSED.** The fallback is gone, and the code now carries the
+  reason: it "could only ever fire when DI was broken — and then it silently papered over it."
+
+**Re-examined 2026-08-21 — the uxRatings half is not a stray, and closing it would be wrong.**
+`getModal` there is declared `optional(null)` with the reason written at the declaration: uxRatings is
+a leaf feature, and a missing registry must not take out the whole feedback form. That is a different
+situation from quickActionsManager, where the fallback guarded a dep the module needed to work at all
+and so could only ever fire when DI was already broken.
+
+What the original plan actually wanted — modalRegistry as the single definition of HOW each modal is
+found — is satisfied: the registry is tried first, and the fallback is documented as the boot-failure
+path rather than an alternative route. The residual risk is that the two silently diverge if the
+`feedback` registry def changes method or key; the code names that risk in place, which is the
+honest mitigation for a two-line fallback that exists to keep a leaf feature alive.
+
+Closed as resolved-by-design. Reopen it only if the `feedback` def actually changes.
 
 ## 3. Recurring panel — 4 setup methods — ✅ CLOSED Aug 2026
 
@@ -140,12 +160,19 @@ is not a page — it is a copy-paste snippet whose own content reads "Add this n
 tab to your existing testing modal HTML", referenced by nothing. **It probably
 should not be deployed at all**; a cache rule is not the fix for that.
 
-## 5. Games pages + robots.txt stragglers
+## 5. Games pages + robots.txt stragglers — ✅ CLOSED Aug 2026
 
 *Also from `PRETTY_URL_CACHE_CONTROL_FIX.md` ("Related" findings, unrelated to caching).*
 
 - `web/games/miniCycle- taskGame.html` (note the space in the filename) and `web/games/miniCycle-taskScramble.html` each still have 1 inline `<script>`; `miniCycle-taskOrder.html` already extracted to a `.js` file.
 - `web/robots.txt:7` still reads `Disallow: /miniCycleGames/` — the pre-rename path. `/games/` is crawlable; decide whether that's intended.
+
+**Verified closed 2026-08-21.** Both halves:
+- Neither games page has an inline `<script>` any more — both load an external `.js`.
+- The robots.txt question was answered and the answer written down. `/games/` is **not**
+  crawlable (it is disallowed), and the `/miniCycleGames/` line is deliberate rather than
+  stale: the old path still 301s to the new one (`_redirects:19`), so blocking it stops a
+  crawler following the redirect in the first place. The file says so in a comment.
 
 ## 6. Architecture-review remainder — ✅ CLOSED Aug 2026
 
@@ -200,17 +227,21 @@ records.
 (the `buildSnapshotSignature` rule, and why `achievements.unlocked` and
 `settings.unlockedThemes` stay separate).
 
-## 7. Dead production code: `shouldShowOnboarding()`
+## 7. Dead production code: `shouldShowOnboarding()` — ✅ CLOSED Aug 2026
 
 *From archived `ONBOARDING_COMPLETED_LOCKOUT.md`.*
 
 `modules/ui/onboardingManager.js` `shouldShowOnboarding()` (~:1790) has **zero production callers** — only its own tests keep it alive. It is exactly the function the Aug 2026 lockout incident shows people "fix" by mistake (the real gates live in the `miniCycle.html` pre-paint reader and `appInit.js`). Delete it (and its test scaffolding), or mark it loudly as non-production.
 
-## 8. Render-path rationale worth salvaging into code
+**Verified closed 2026-08-21:** `onboardingManager.js:1786` now reads "shouldShowOnboarding() was REMOVED (Aug 2026)" — deleted, with a comment left behind so the next person looking for it learns where the real gates live instead of re-adding it.
+
+## 8. Render-path rationale worth salvaging into code — ✅ CLOSED Aug 2026
 
 *From archived `RENDER_PATH_UNIFICATION.md`.*
 
 The "Why DOM order matters" section (drag-drop relies on `closest('#completedTaskList')`, boundary markers, `dataset.originalIndex`) exists only in the archived doc. Candidate: copy it into a JSDoc block on `renderTasks` in `modules/task/taskRenderer.js` next time that file is touched in an app-code release.
+
+**Verified closed 2026-08-21:** done — `taskRenderer.js:178-184` carries the rationale, including why the pure-CSS `order` approach was rejected, and says why it was moved: "the archive is not somewhere anyone reads before editing this."
 
 ## 9. Task-button icon consolidation — ✅ CLOSED Aug 2026
 
@@ -240,13 +271,15 @@ programmatically, which is stronger than eyeballing:
 The emoji fallback branch is retained — it now covers "icon name not in the
 central registry" rather than "not in the local map".
 
-## 10. Stale doc paths inside code comments
+## 10. Stale doc paths inside code comments — ✅ CLOSED Aug 2026
 
 Two shipped files cite `docs/future-work/` paths that moved to `docs/archive/` in this cleanup: `modules/task/taskRenderer.js` (~:214, cites RENDER_PATH_UNIFICATION.md) and `modules/recurring/recurringWatcher.js` (~:78–86, cites "ARCHITECTURE REVIEW FINDINGS.md"). Harmless (validate:comments checks identifiers, not paths) — fix the paths next time those files ship in an app-code release; not worth a version bump alone.
 
+**Verified closed 2026-08-21:** both now cite `docs/archive/`. `validate:docs` also grew a "Code doc paths" check that resolves every citation in `modules/`, so the class is gated now, not merely cleared.
+
 ## 11. Four undeclared dep reads found by the new runtime DI audit — ✅ RESOLVED Aug 2026
 
-*Not from the future-work cleanup — output of `WARN_ON_UNDECLARED_DEP_ACCESS`, added Aug 2026 (see `ENFORCE_REQUIRES_ROLLOUT_PLAN.md` §Step 2 "Closed August 2026").*
+*Not from the future-work cleanup — output of `WARN_ON_UNDECLARED_DEP_ACCESS`, added Aug 2026 (see `../archive/ENFORCE_REQUIRES_ROLLOUT_PLAN.md` §Step 2 "Closed August 2026").*
 
 These are live under `ENFORCE_REQUIRES`: each name has a real `depMappings` route, the
 module reads it, and the manifest never declared it — so it arrives as `undefined` and
@@ -310,3 +343,21 @@ whether `cycleImportManager`'s `showChoiceModal` path has ever executed.
 Note the class the two `settingsManager` entries belong to: facade forward-through is
 exactly what cost v2.418 four failing journeys. `validate:di` gates that class at 0 and
 still reports 0 here, which is the blind spot the runtime audit exists to cover.
+
+---
+
+## 12. `aria-describedby` on complex modals
+
+*Inherited 2026-08-21 from `NATIVE_DIALOG_AUDIT_AND_REFACTOR_PLAN.md`, archived that day.*
+
+That plan's headline — replacing native `<dialog>` with custom modals — was **resolved without a
+refactor**, so the plan became history. This was its one live finding, and it is recorded here
+rather than left in `archive/` for the same reason this file exists.
+
+Static modals carry `aria-labelledby` (their title) but not `aria-describedby`. For a simple modal
+that is correct — the content *is* the description, and a redundant one would just be read twice.
+For the complex ones (settings, preferences) a short description would tell a screen-reader user
+what the modal is for before they start navigating its controls.
+
+Low priority, and worth doing per-modal rather than sweepingly: the gain only exists where the
+purpose is not obvious from the first focused control.

@@ -113,7 +113,8 @@
 
             <h3>Task Options</h3>
             <img src="../assets/images/screenshots/Example/user-manual/v3/task-options.jpg" alt="Fun Activities routine with task option buttons visible on each task row, showing customize, move arrows, rename, recurring, reminder, delete, and three-dots icons." width="280" loading="lazy" style="display: block; margin: 1rem auto;">
-            <p>Long-press a task (or use the three-dots menu) to reveal task option buttons. Available buttons include customize (-/+), priority, edit, delete, recurring, due date, reminders, and marked for removal. You can choose which buttons appear using the <a href="#task-option-buttons">Customize Task Options</a> panel.</p>
+            <p>Long-press a task (or use the three-dots menu) to reveal task option buttons. Available buttons include customize (-/+), priority, edit, delete, recurring, due date, reminders, and clear on reset. You can choose which buttons appear using the <a href="#task-option-buttons">Customize Task Options</a> panel.</p>
+            <p><strong>Not sure what an icon does?</strong> Press and hold it. Its name appears and the button does <em>not</em> activate, so you can check before you act. This works on the Quick Actions row and on the Routine Actions buttons in the routine switcher, where the icons have no visible label on a phone. A normal tap still works as usual.</p>
 
             <h3>High Priority Tasks</h3>
             <img src="../assets/images/screenshots/Example/user-manual/v3/priority-task.jpg" alt="Priority color picker notification showing Priority enabled Choose priority color with color dot options. Task option buttons visible on the first task with Undo button at the bottom." width="280" loading="lazy" style="display: block; margin: 1rem auto;">
@@ -131,8 +132,13 @@
                 <li>Overdue tasks are visually highlighted</li>
             </ul>
 
-            <h3>Marked for Removal</h3>
-            <p>The ❌ button in task options marks a task for automatic deletion. When enabled, the task is removed when the cycle resets (in Auto/Manual Cycle mode) or when tasks are cleared (in To-Do Mode). This is useful for temporary tasks you only need for one cycle. The button must be enabled in <a href="#task-option-buttons">Customize Task Options</a>.</p>
+            <h3>Clear on Reset / Marked for Clearing</h3>
+            <p>The ❌ button in task options marks a task to be removed automatically. The button is named for what it does in the mode you are using:</p>
+            <ul>
+                <li><strong>Clear on Reset</strong> — in Auto Cycle and Manual Cycle mode. The task is removed when the cycle resets.</li>
+                <li><strong>Marked for Clearing</strong> — in To-Do Mode. The task is removed when you clear completed tasks.</li>
+            </ul>
+            <p>Either way it is the same button and the same idea: a task you only need for this round, gone automatically instead of by hand. The button must be enabled in <a href="#task-option-buttons">Customize Task Options</a>.</p>
 
             <h3>Reminders</h3>
             <img src="../assets/images/screenshots/Example/user-manual/v3/reminders.jpg" alt="The Reminders and Notifications modal with all three options checked: Enable Reminders, Enable Due Date Notifications, and Browser Notifications. Remind Indefinitely option checked." width="280" loading="lazy" style="display: block; margin: 1rem auto;">
@@ -301,7 +307,7 @@
                 <li><strong>Recurring:</strong> Set up repeating schedules</li>
                 <li><strong>Due Date:</strong> Set deadlines with a calendar picker</li>
                 <li><strong>Reminders:</strong> Enable browser notifications</li>
-                <li><strong>Marked for Removal:</strong> Auto-delete on cycle reset</li>
+                <li><strong>Clear on Reset:</strong> Remove the task automatically when the cycle resets — shown as <strong>Marked for Clearing</strong> in To-Do Mode, where it removes the task when completed tasks are cleared</li>
             </ul>
             <p>Global options (apply to all routines):</p>
             <ul>
@@ -315,6 +321,7 @@
             <p><strong>Display:</strong></p>
             <ul>
                 <li>Show Help Window, Show Quick Actions, Customize Task Options, Dark Mode, Show Completed in Dropdown</li>
+                <li><strong>Open one menu section at a time:</strong> On by default. Expanding a section in the hamburger menu, Settings or Personalization collapses the others, so you see one at a time instead of a long scroll. Clicking anywhere in the modal outside the sections collapses them all. Turn it off to keep several open at once — the app then remembers which were open, as it did before.</li>
             </ul>
             <p><strong>Behavior:</strong></p>
             <ul>
@@ -406,7 +413,7 @@
             <p>While in Focus View:</p>
             <ul>
                 <li><strong>Floating action button (bottom-right):</strong> honors your routine's mode — <strong>Cycle</strong> in Manual Cycle mode and <strong>Clear</strong> in To-Do Mode. In Auto Cycle mode there is no button, because the routine resets itself the moment you finish the last task.</li>
-                <li><strong>⋯ menu (top-right):</strong> quick actions like switching or creating routines without leaving Focus View.</li>
+                <li><strong>⋯ menu (top-right):</strong> in Focus View this is the <em>only</em> menu — the ☰ button is still visible but inactive, so everything you need is here. Switch or create routines, toggle dark mode, uncheck all, delete all, and open <strong>Settings</strong> — so changing a reminder, a theme or a backup option no longer means leaving the routine you are working through.</li>
                 <li><strong>Panel switcher (bottom):</strong> the pills read <strong>Task | Routine | Stats</strong> — swipe, tap a pill, or use Shift+Arrow keys to move between panels.</li>
             </ul>
             <h3>Task Card (One Task at a Time)</h3>

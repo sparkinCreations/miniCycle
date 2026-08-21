@@ -3,6 +3,12 @@
 **Status:** Mechanism BUILT + batches shipped & verified (deferred set now 5 modules as of v2.412). Still paused for real-device measurement — that remains the continuation trigger. (Continuation point below.)
 **Created:** June 2026 · **Last updated:** August 2026
 **See also:** [BOOT_PERF_ROADMAP.md](./BOOT_PERF_ROADMAP.md) — the successor roadmap that carries the remaining deferral/init-split backlog forward (post build-pipeline)
+
+> **Which of these two is the live one?** BOOT_PERF_ROADMAP. This file is the record of the
+> mechanism and the batches already shipped — read it to understand how deferral works and what
+> was measured. The remaining *candidates* live in the roadmap's Tier A/B/C tables. Both are
+> gated on the same thing (a slow-device reading), so if you are looking for work to pick up,
+> open the roadmap.
 **Goal:** Reduce time-to-interactive on slow (CPU-bound) devices by not parsing + `init()`-ing modules the user doesn't need at first paint.
 **Trigger to continue:** Slow-device reading from the testing modal's **Boot Timing** button showing `features_ms` dominates `bootSequence_ms`. (On a fast dev machine, features is too noisy — 264–634 ms across runs — to show the win; the deterministic signal is boot JS file count, ~131 → ~116.)
 

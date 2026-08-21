@@ -67,6 +67,7 @@ npm run validate:labels   # every getLabel() key resolves + every logged history
 npm run validate:chains   # a required() dep may never be read through `?.` — that branch only fires when wiring is broken, and then it silently drops the feature (CI; gated at 0; catch blocks exempt)
 npm run validate:api    # appContext API reads must resolve — featureBoot's *ApiObj are hand-written ALLOW-LISTS, so a method the manifest delivers on deps.ui is still dropped unless named there, and nothing warns (this silently broke 3 features in one session) (CI; gated at 0) — ALSO checks the Quick Actions triple (ACTION_REGISTRY / VALID_ACTION_IDS / ACTION_BUTTON_MAP): same failure family, a miss means an action silently never counts
 npm run validate:inline # miniCycle.html inline scripts: empty catches need intent comments + pre-gate contract (ES5-only above the feature gate, globalThis reads guarded, gate floor includes no-globalthis) (ESLint can't see the file; CI)
+npm run validate:cache  # no HTML route may be served with a long cache — Netlify serves .html at an EXTENSIONLESS canonical URL that misses the *.html rule and falls through to the /* catch-all (max-age=31536000). A deployed fix then cannot reach users for a year; the server has it, the browser never asks (CI; measured live Aug 2026)
 npm run test:changelog # release changelog must not re-list already-shipped commits — boundary is the previous CHANGELOG heading, not the last git tag (a clone whose tags lag the remote widens the range; 3 releases were hand-corrected) (CI)
 ```
 

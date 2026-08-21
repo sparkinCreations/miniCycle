@@ -409,7 +409,13 @@ def check_public_surfaces(list_mode):
 
     # -- 2. forbidden terminology on public surfaces ---------------------------
     # (term, canonical replacement) — case-sensitive, user-facing spellings only.
-    forbidden = [('Focus Mode', 'Focus View')]
+    # 'Marked for Removal' was never a name in the app. The button is labelled by
+    # MODE (taskButtons.js): 'Clear on Reset' in the cycle modes, 'Marked for
+    # Clearing' in To-Do Mode. The manual invented a third name and kept it for
+    # months — a user searching the UI for what the manual called it found nothing.
+    forbidden = [('Focus Mode', 'Focus View'),
+                 ('Marked for Removal', 'Clear on Reset / Marked for Clearing'),
+                 ('marked for removal', 'clear on reset / marked for clearing')]
     surface_files = []
     for d in ('pages', 'legal'):
         droot = os.path.join(WEB, d)

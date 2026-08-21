@@ -2,7 +2,7 @@
 
 **Date:** April 27, 2026
 **Status:** Deferred — mitigated by `npm run validate:di` (see below); revisit only if depMappings maintenance cost grows
-**Related:** [ENFORCE_REQUIRES_ROLLOUT_PLAN.md](./ENFORCE_REQUIRES_ROLLOUT_PLAN.md), [feedback_di_consumer_surface.md](../../../../.claude/projects/-Users-mjaynumberone-Documents-Programs-Code-miniCycle/memory/feedback_di_consumer_surface.md) (memory)
+**Related:** [ENFORCE_REQUIRES_ROLLOUT_PLAN.md](../archive/ENFORCE_REQUIRES_ROLLOUT_PLAN.md), [feedback_di_consumer_surface.md](../../../../.claude/projects/-Users-mjaynumberone-Documents-Programs-Code-miniCycle/memory/feedback_di_consumer_surface.md) (memory)
 
 ---
 
@@ -266,7 +266,7 @@ Current pattern lets you write any function as a depMapping. Auto-generation for
 - ✅ Boot-time warning for unmapped declared deps (`WARN_ON_UNMAPPED_DECLARED_DEPS`) — implemented April 2026
 - ✅ One-shot audit closing existing gaps — completed April 2026
 - ✅ Static CI gate for the bug class (`scripts/validate-di-deps.js`, `npm run validate:di`) — shipped July 2026; gated at undeclared=0, nowhere=0, undeliverable=0 (this is what re-scoped the plan to "deferred")
-- ⚠️ `ENFORCE_REQUIRES` rollout (per [ENFORCE_REQUIRES_ROLLOUT_PLAN.md](./ENFORCE_REQUIRES_ROLLOUT_PLAN.md)) — should happen first OR concurrently. With `ENFORCE_REQUIRES = true` AND auto-generated depMappings, the system is fully self-validating: declared deps must be in `requires`/`optionalDeps`/`lazyRequires`, and they automatically resolve from `provides`.
+- ⚠️ `ENFORCE_REQUIRES` rollout (per [ENFORCE_REQUIRES_ROLLOUT_PLAN.md](../archive/ENFORCE_REQUIRES_ROLLOUT_PLAN.md)) — should happen first OR concurrently. With `ENFORCE_REQUIRES = true` AND auto-generated depMappings, the system is fully self-validating: declared deps must be in `requires`/`optionalDeps`/`lazyRequires`, and they automatically resolve from `provides`.
 
 ---
 
@@ -289,4 +289,4 @@ Until then, the CI gate (`npm run validate:di`) + boot-time warning + closed gap
 - Code: [moduleLoader.js depMappings](../../modules/boot/moduleLoader.js) (search for `const depMappings`)
 - Code: [moduleManifests.js](../../modules/boot/moduleManifests.js)
 - Code: [scripts/validate-di-deps.js](../../scripts/validate-di-deps.js) — the shipped static gate that mitigates this plan's bug class (`npm run validate:di`)
-- Plan: [ENFORCE_REQUIRES_ROLLOUT_PLAN.md](./ENFORCE_REQUIRES_ROLLOUT_PLAN.md) — strict mode rollout, complementary to this plan
+- Plan: [ENFORCE_REQUIRES_ROLLOUT_PLAN.md](../archive/ENFORCE_REQUIRES_ROLLOUT_PLAN.md) — strict mode rollout, complementary to this plan
