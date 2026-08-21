@@ -1,8 +1,8 @@
 # Large Module Splits Plan
 
 **Date:** March 15, 2026
-**Updated:** August 2026 — Priority 2 (statsPanel) SHIPPED (commit `806f8082`); line-count table retired (numbers rot — see [PROJECT_STATS.md](../PROJECT_STATS.md)). July 7, 2026 — god-module audit: added statsPanel (Priority 2), orchestrator assessment, false-positive list
-**Status:** In progress — Priority 2 complete; Priorities 1, 3, 4, 5 open
+**Updated:** August 21 2026 — four previously-unassessed modules given verdicts; scripts brought into scope (`update-version.sh`); the last inline line counts removed, since the doc had retired them in principle but kept four in practice and all four had drifted. August 2026 — Priority 2 (statsPanel) SHIPPED (commit `806f8082`); line-count table retired (numbers rot — see [PROJECT_STATS.md](../PROJECT_STATS.md)). July 7, 2026 — god-module audit: added statsPanel (Priority 2), orchestrator assessment, false-positive list
+**Status:** In progress — Priority 2 complete; Priorities 1, 3, 4, 5 open, plus 6 (notifications) and 7 (`update-version.sh`) added Aug 21 2026
 **Related:** [DI_MIGRATION_COMPLETION_PLAN.md](../archive/DI_MIGRATION_COMPLETION_PLAN.md), [ENFORCE_REQUIRES_ROLLOUT_PLAN.md](../archive/ENFORCE_REQUIRES_ROLLOUT_PLAN.md)
 
 ---
@@ -15,7 +15,7 @@ This doc no longer pins line/dep/method counts — every measured number in the 
 
 | Module | Verdict |
 |--------|---------|
-| routineSwitcher.js (`modules/routine/`) | **God module** — Priority 1 (largest module, ~2,574 lines as of v2.412, and fastest-growing) |
+| routineSwitcher.js (`modules/routine/`) | **God module** — Priority 1 (largest non-data module, and still the fastest-growing) |
 | onboardingManager.js | Borderline (sequential step content) |
 | undoRedoManager.js | Split planned (Priority 3) |
 | statsPanel.js (`modules/features/`) | **God module** — Priority 2 — ✅ **SHIPPED** (commit `806f8082`, see below) |
@@ -25,6 +25,11 @@ This doc no longer pins line/dep/method counts — every measured number in the 
 | moduleLoader.js | Deferred (boot infrastructure) |
 | migrationManager.js (`modules/routine/`) | Deferred (working code) |
 | orchestrator.js | Deferred (see below) |
+| notifications.js (`modules/utils/`) | **Candidate — Priority 6** (assessed Aug 21 2026; see below) |
+| taskViewLayoutManager.js | Not a god module — one feature, low fan-out (assessed Aug 21 2026) |
+| quickActionsManager.js | Not a god module — one feature (assessed Aug 21 2026) |
+| settingsUIManager.js | Not a god module — **repetition, not spread** (assessed Aug 21 2026) |
+| `scripts/update-version.sh` | **Candidate — Priority 7**, and the highest blast radius on this page (see Scripts, below) |
 
 Note: routineSwitcher grew ~500 lines between March and July 2026 (inline-edit modal, recently-used rendering, routine selection, data validation/repair). It is growing fastest of the candidates — another reason it stays Priority 1.
 
@@ -42,12 +47,98 @@ Line count alone over-flags. The audit combined three signals: **size** (lines),
 
 **Not god modules (false positives a size/dep-count tool will flag):**
 - **The four facades** — `settingsManager` (35 deps), `taskCore` (29), `taskDOM`, `preferencesManager`: high dep counts are the point of the facade pattern; they wire sub-modules. Intentional.
-- **Data files** — `defaultLabels.js` (2,688 lines), `constants.js` (1,609): pure data; centralizing them is an explicit project rule.
-- **Orchestrators with high fan-out but one job** — `taskCycleReset.js` (29 deps, 948 lines), `menuManager.js` (26 deps, 811 lines): cycle reset and the main menu touch everything by nature. High fan-out, single purpose.
+- **Data files** — `defaultLabels.js`, `constants.js`: pure data; centralizing them is an explicit project rule. Both are larger than most modules on this page and always will be — that is the design, not drift.
+- **Orchestrators with high fan-out but one job** — `taskCycleReset.js`, `menuManager.js`: cycle reset and the main menu touch everything by nature. High fan-out, single purpose.
 - **Boot infrastructure** — `moduleLoader.js`, `moduleManifests.js`: centralization is the design.
 - **`migrationManager.js`** — previously ruled acceptable (working write-once code).
 
 ---
+
+## August 21 2026 — Four Modules the Audit Had Never Assessed
+
+Three of these post-date the July 2026 audit; one predates it and was simply missed. All four are
+now among the ten largest files under `modules/`, so their absence made the candidate table read as
+complete when it was not. Verdicts use the same three signals — size, fan-out, responsibility spread
+— and the same rule: a module qualifies only when **all three** are high AND the responsibilities
+span multiple user-facing domains.
+
+### `notifications.js` — CANDIDATE (Priority 6)
+
+The only one of the four that qualifies, and it comes with its seam already drawn: the file holds
+**two classes**, `EducationalTipManager` and `MiniCycleNotifications`. The tip manager is a distinct
+feature — teaching moments tied to app state — that happens to live in the notifications file
+because tips are delivered as notifications. Delivery mechanism and pedagogy are different jobs.
+
+Fan-out is moderate rather than alarming, which is why this is Priority 6 and not higher: the size
+comes from one large class, not from wiring breadth. Extract `EducationalTipManager` first — it is
+already class-boundaried, so the extraction is a move rather than a carve.
+
+### `taskViewLayoutManager.js` — NOT a god module
+
+High on size, **low on fan-out**, and it does exactly one thing: the drag-to-reorder layout for the
+task view. Long because dragging is fiddly — pointer maths, snap targets, coalesced writes — not
+because it accreted unrelated work. This is the case the methodology exists to protect: a size-only
+tool flags it, all three signals together do not.
+
+### `quickActionsManager.js` — NOT a god module
+
+One feature domain (the Quick Actions panel: slots, picker, views, tooltip), moderate fan-out. Its
+usage-tracking concern was **already extracted** to `actionUsage.js`, which is the split this module
+needed and has had. Re-examine only if it grows a second user-facing domain.
+
+### `settingsUIManager.js` — NOT a god module, but a real problem of a different kind
+
+This one scores highest of the four on every raw signal — most deps, most methods, most exports —
+and is nonetheless **not** a god module, which makes it the most instructive entry here.
+
+It is **23 near-identical `setupXToggle()` functions** plus `initAllToggles()`. Every signal is
+inflated by repetition of one job, not by spread across jobs: the dep count is high because each
+toggle needs its own bits, and the export count is one per toggle. Splitting it would produce two
+files of the same repetition.
+
+The fix it actually wants is a **declarative toggle table** — id, settings key, default, optional
+side-effect — with one generic wiring function, so adding a setting is a row rather than a
+function. That is a different refactor from anything else on this page, and it is worth recording
+here precisely so nobody "solves" this file by cutting it in half.
+
+Note also what it is: a **sub-module of the `settingsManager` facade** that has itself grown to near
+the size of the modules the facade pattern was meant to tame. Extracting into sub-modules moves work
+rather than shrinking it; sub-modules need re-measuring too.
+
+---
+
+## Scripts — In Scope As Of August 21 2026
+
+This plan covered `modules/` only. That excluded the **second-largest file in the repository**.
+
+### `scripts/update-version.sh` — CANDIDATE (Priority 7)
+
+Larger than every module except `defaultLabels.js`, and structurally unlike anything else here:
+roughly **30 labelled stages and only four functions**. It is a linear procedure, so almost none of
+it is callable — and therefore almost none of it is testable — in isolation.
+
+**Why it belongs on this page despite not being a module:** blast radius. It is the release gate.
+Every app-code change ships through it, and a bug in it does not fail loudly — it produces a
+half-dark deploy. That is not hypothetical: an August 2026 review found a `$SCRIPT_DIR` reference
+that belonged to a generated `restore.sh` heredoc being read as if it were the script's own
+variable. Under `set -euo pipefail` that would have aborted **every release** until someone
+diagnosed it.
+
+**The pattern already exists here, and it worked.** The changelog-range logic was extracted to
+`scripts/changelog-range.sh` and immediately gained `scripts/test-changelog-range.sh` — five tests,
+including the boundary case that had shipped three wrong changelogs. That is the model: a stage
+becomes a script, and a script can have tests.
+
+Best candidates, by the same "most isolated first" ordering used above:
+
+1. **CSP hash regeneration** — already shells out to a Python validator; the stage is glue.
+2. **The `?v=` cache-buster sweep** across HTML/CSS/manifests — a pure text transform over a file
+   list, which is exactly the shape that tests well.
+3. **`restore.sh` generation** — self-contained, and the heredoc quoting is precisely where the
+   `$SCRIPT_DIR` bug lived.
+
+Not urgent. But the next time a release-script bug costs an afternoon, this is the reason, and
+these are the seams.
 
 ## Established Sub-Module Patterns
 
@@ -96,7 +187,7 @@ Rules:
 
 ---
 
-## Priority 1: routineSwitcher.js (~2,574 lines as of v2.412 — untouched, all target methods still inline)
+## Priority 1: routineSwitcher.js — untouched, all target methods still inline
 
 ### Current Responsibilities
 - Modal presentation and lifecycle
@@ -283,10 +374,16 @@ If revisited, the split is unusually low-risk precisely because it's pre-DI — 
 5. **taskDOMCompat** — large extraction (~450 lines), mostly pure delegation
 6. **undoSnapshotManager** — small extraction (~190 lines), needs interface for AppGlobalState fields
 7. **recurringPanelAddTask** — if desired (~275 lines), low priority
+8. **EducationalTipManager** out of `notifications.js` — already a separate class, so a move rather than a carve (Priority 6)
+9. **`update-version.sh` stages** — CSP regeneration first, then the `?v=` sweep; each becomes a script that can have tests, following `changelog-range.sh` (Priority 7)
 
 ✅ Done (removed from the order): **statsPanel gestures + rewards** — shipped as `statsPanelGestures.js` + `statsPanelRewards.js` (commit `806f8082`; see Priority 2).
 
 Opportunistic (no scheduled slot): **orchestrator bootUI/bootTiming split** — next time boot timing code is touched.
+
+Not an extraction, but recorded so it is not mistaken for one: **`settingsUIManager`'s 23 repeated
+`setupXToggle()` functions want a declarative toggle table**, not a split. See the August 21 2026
+assessment above.
 
 Each extraction should be done as a separate commit with full test verification before proceeding to the next.
 
