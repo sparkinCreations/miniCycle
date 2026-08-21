@@ -119,10 +119,17 @@ export const ACTION_BUTTON_MAP = Object.freeze({
 
 // The single delegated listener — setupActionUsageTracking(AppState), attached once
 document.addEventListener('click', (e) => {
-  const el = e.target?.closest?.('[id]');
-  const actionId = el && ACTION_BUTTON_MAP[el.id];   // did the click hit a mapped action button?
+  const actionId = actionIdForClick(e);   // walks up for a MAPPED id — see below
   if (actionId) recordActionUsage(AppState, actionId);
 }, true);  // ← CAPTURE phase: fires before the button's own handler, so stopPropagation() can't suppress it
+
+// actionIdForClick walks ancestors looking for a MAPPED id, not the NEAREST id.
+// Resolving `closest('[id]')` and looking THAT up meant a mapped button carrying
+// id-bearing children shadowed itself: clicking #toggle-task-input-text (the
+// button's own label, and the larger tap target) recorded nothing, while clicking
+// the button around it recorded normally. It also uses hasOwnProperty — `el.id` is
+// DOM-controlled, so an id of "constructor" or "toString" would otherwise resolve
+// to a function off Object.prototype (CLAUDE.md #18).
 ```
 
 ### How a use is recorded (all entry points, exactly once)
@@ -134,8 +141,19 @@ document.addEventListener('click', (e) => {
    `stopPropagation()` (e.g. the settings open handler) can't suppress tracking.
 2. **Function-dispatched panel cases (`stats`/`recurring`/`reminders`):** `executeAction`
    calls `recordActionUsage` explicitly (no button click for the listener to catch).
-3. **Stats slide-gesture:** `statsPanel`'s `handleSlideRightClick` records directly (not a
-   mapped button).
+3. **Stats — every entry point:** recorded in `statsPanelGestures._onStatsPanelShown`, the
+   carousel's `onShow`. It used to sit in `handleSlideRightClick`, so the slide arrow counted and
+   the nav pill did not — and by the panel architecture all five gesture modalities (swipe, wheel,
+   pointer drag, keyboard, arrow) reach the panel through the carousel, so four of them were
+   missing too. `onShow` is where they converge. Safe against inflation at boot: `initTo()` sets
+   the opening panel WITHOUT firing callbacks, and the focus-mode restore path only ever `goTo()`s
+   `focus-task-panel`.
+
+> **A long press is not a use.** Holding a slot shows its tooltip and the click that the browser
+> fires on touchend is SWALLOWED — by a capture-phase guard on `document` in
+> `utils/longPressHint.js`, which runs before this listener. So a hold records nothing and runs
+> nothing: asking what an icon does must not do it. A normal tap is unaffected; suppression is
+> scoped to the held element and expires after `UI_TIMEOUTS.LONG_PRESS_CLICK_GUARD`.
 
 The listener is set up once in `quickActionsManager.init()` and lives for the app lifetime
 (idempotent + boot-retry-safe — it refreshes its AppState reference on re-init).

@@ -290,6 +290,7 @@ Create tasks that automatically appear on a schedule.
 | Settings Toggle Switches | Toggle-style switches for settings options | `ui/settingsUIManager.js` |
 | Settings Collapsed State | Remember expanded/collapsed settings sections (only when the accordion is off — see below) | `ui/settingsUIManager.js` |
 | Menu Section Accordion | "Open one menu section at a time" (Settings → Display, default on): the main menu, settings modal and personalization modal open fully collapsed and keep one section open at a time. Off restores the remember-what-was-open behaviour. The personalization live preview is never part of the accordion | `utils/collapsibleSections.js` |
+| Long-Press Hint | Hold an icon-only control to see its name WITHOUT activating it — Quick Actions slots and the routine switcher's Routine Actions row, where the labels are `display: none` on mobile. The click the browser fires on touchend is swallowed by a capture-phase guard; a normal tap still acts. Touch only — desktop keeps `title` on hover, and every one of these controls is separately named for screen readers | `utils/longPressHint.js` |
 | Help Window | Mode-aware in-app help and documentation | `ui/helpWindowManager.js` |
 | Reset Achievement Progress | Reset global achievements (keeps routine stats) | `ui/settingsUIManager.js` |
 
