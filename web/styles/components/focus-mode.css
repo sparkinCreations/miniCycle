@@ -639,9 +639,9 @@ body.focus-mode .focus-mode-mode-modal {
 @media (max-width: 1023px) {
     body.focus-mode #focus-mode-menu-btn,
     body.focus-mode #focus-mode-exit-btn {
-        top: calc(env(safe-area-inset-top) + 12px);
+        top: calc(env(safe-area-inset-top, 0px) + var(--focus-btn-top));
         width: 56px;
-        height: 38px;
+        height: var(--focus-btn-height);
     }
     body.focus-mode #focus-mode-menu-btn { right: 12px; }
     body.focus-mode #focus-mode-exit-btn { left: 12px; }
@@ -658,7 +658,9 @@ body.focus-mode .focus-mode-mode-modal {
     }
 
     body.focus-mode #focus-mode-menu {
-        top: calc(env(safe-area-inset-top) + 64px);
+        /* Sits below the buttons — derived from where they end rather than
+           restating 12 + 38 + 14 as a literal 64px. */
+        top: calc(var(--focus-top-chrome) + var(--focus-btn-gap));
         right: 12px;
         min-width: 200px;
     }
@@ -999,7 +1001,8 @@ body.focus-mode #complete-all-and-help-window-container {
            where it was reported. The safe inset appears DOUBLED because the
            element is centred: reserving space at the top costs the same at the
            bottom. */
-        max-height: calc(100dvh - 2 * env(safe-area-inset-top, 0px) - 50px);
+        max-height: calc(100dvh - 2 * env(safe-area-inset-top, 0px)
+                         - var(--focus-btn-top) - var(--focus-btn-height));
 
         /* Handles the short-list case, where max-height is not reached and the
            element's own top edge is already below the chrome. */

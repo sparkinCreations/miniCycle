@@ -563,13 +563,21 @@
      freeing space for the title row to sit above the centerline. Capped
      by the three-dots / exit buttons at top: 16px (height: 30px). */
   --focus-mode-top-offset: 35px;
-  /* Bottom edge of the tallest chrome along the top of focus view: the ✕ / ⋯
-     buttons, which sit at `top: env(safe-area-inset-top) + 12px` with
-     `height: 38px`. The logo mark's lower edge lands at safe + 49px, just
-     inside this, so clearing the buttons clears the mark too.
-     Derived from those rules rather than tuned — if either moves, update this
-     and the layout follows. See styles/components/focus-mode.css. */
-  --focus-top-chrome: calc(env(safe-area-inset-top, 0px) + 50px);
+  /* Focus view's top chrome — the ✕ / ⋯ buttons. These two are the SOURCE:
+     the buttons are positioned and sized from them, and everything that has to
+     sit clear of the buttons derives from them rather than restating the sum.
+     Before this there were three copies of the same geometry (the buttons'
+     own 12px/38px, the focus menu's 64px, and the task-view clearance), which
+     is the drift pattern documented in
+     docs/future-work/SINGLE_SOURCE_CONSOLIDATION_PLAN.md. */
+  --focus-btn-top: 12px;
+  --focus-btn-height: 38px;
+  --focus-btn-gap: 14px;
+
+  /* Bottom edge of that chrome. The logo mark's lower edge lands just inside
+     it (safe + 49px against safe + 50px), so clearing the buttons clears the
+     mark too — which is what makes this one value enough. */
+  --focus-top-chrome: calc(env(safe-area-inset-top, 0px) + var(--focus-btn-top) + var(--focus-btn-height));
 
   /* Task-list-container max-height reduction in focus mode — controls how
      much the scrollable list shrinks below 100dvh so its bottom edge
