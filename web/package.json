@@ -28,6 +28,7 @@
     "validate:comments": "node scripts/validate-comment-refs.js",
     "validate:builtins": "node scripts/validate-es-builtins.js",
     "validate:api": "node scripts/validate-api-surface.js",
+    "validate:provides": "node scripts/validate-provides.js",
     "validate:labels": "node scripts/validate-labels.js",
     "sweep:cruft": "node scripts/sweep-icloud-cruft.cjs",
     "validate:inline": "python3 scripts/validate-inline.py",
