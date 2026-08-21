@@ -579,6 +579,17 @@
      mark too — which is what makes this one value enough. */
   --focus-top-chrome: calc(env(safe-area-inset-top, 0px) + var(--focus-btn-top) + var(--focus-btn-height));
 
+  /* The three values below turn "the task CARD clears the chrome" into an
+     equation. #task-view is a centred, fixed wrapper; the card is what the
+     user actually sees, and it starts --focus-card-inset-top BELOW the
+     wrapper's own top edge. v2.465 constrained the wrapper's edge instead of
+     the card's, which over-reserved by 2x that inset (the wrapper edge is
+     invisible) and left a 181px gap above a 294px card. Measured at 393x852
+     with a simulated 59px inset. */
+  --focus-mode-top-offset-mobile: 25px;  /* the +25px in top: calc(50% + ...) */
+  --focus-card-inset-top: 64px;          /* wrapper top edge -> card top edge */
+  --focus-card-chrome-gap: 8px;          /* how close the card may come to the chrome */
+
   /* Task-list-container max-height reduction in focus mode — controls how
      much the scrollable list shrinks below 100dvh so its bottom edge
      clears the bottom controls band (action button / nav-dots / undo).

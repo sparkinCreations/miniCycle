@@ -1,3 +1,29 @@
+## [2.466] - 2026-08-21
+- fix(focus): the Focus View task card is no longer far too short. 2.465 fixed
+  the clipping but over-corrected badly, and for two separate reasons: it kept
+  the *wrapper's* top edge clear of the chrome rather than the visible card's —
+  missing the 64px inset between them, which costs double because the element is
+  centred — and it stacked a redundant `padding-top` on top of that cap. The
+  clearance is now written against the card's own edge.
+
+  Measured at 393x844 with a simulated 59px safe-area inset (Chromium exposes no
+  way to set `env(safe-area-inset-*)`, so the two rules that consume it are
+  restated with a literal):
+
+  | | card height | card top | vs chrome bottom (109) |
+  |---|---|---|---|
+  | 2.464 (pre-fix) | 550px | 103 | **6px overlap** — the reported clipping |
+  | 2.465 (shipped) | 294px | 290 | 181px gap — far too short |
+  | 2.466 | 523px | 117 | 8px clear |
+
+  27px shorter than 2.464 rather than 256px shorter.
+
+  (The first four probes of this reported the wrong layout: `main.css:346` un-fixes
+  `#task-view` under BOTH `body.onboarding-active` and `body.first-run-welcome-active`,
+  and dropping only the first still measures the flow layout. The probe now asserts
+  `position === 'fixed'` and throws instead of reporting numbers from the wrong state.)
+
+
 ## [2.465] - 2026-08-21
 - fix(focus): a long task list no longer rides up under the Focus View header.
   The view is centred, so once its content reached the old `100dvh - 10px` cap
