@@ -47,7 +47,7 @@ const ALL_MODULES = [
     'appContext', 'dataAccess', 'appGlobalState', 'migrationFacade', 'types',
     'modalRegistry', 'modalUtils', 'panelVisibilityHelpers', 'gesturePanelManager',
     'titleManager', 'headerLayoutManager', 'featureAvailability', 'dataRecovery', 'uiOrchestrator', 'preferencesBgImage', 'preferencesPresets',
-    'taskDOMPatch', 'debugMode', 'iconInit', 'icons', 'keyboardNav', 'collapsibleSections', 'longPressHint', 'mcycPayload', 'nameUtils', 'styleValidators', 'cycleMode', 'bootSw',
+    'taskDOMPatch', 'debugMode', 'iconInit', 'icons', 'keyboardNav', 'collapsibleSections', 'educationalTips', 'longPressHint', 'mcycPayload', 'nameUtils', 'styleValidators', 'cycleMode', 'bootSw',
     'statsPanelGestures', 'statsPanelRewards', 'taskViewLayoutManager',
     'recurringPanelEvents', 'recurringPanelForm', 'recurringPanelGrids',
     'recurringPanelSetup', 'recurringPanelSummary', 'recurringSettings',
