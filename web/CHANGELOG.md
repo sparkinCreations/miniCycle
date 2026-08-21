@@ -1,3 +1,16 @@
+## [2.461] - 2026-08-21
+- a11y: hide focus-mode chrome from AT without depending on `inert`
+- test(probe): prove the duplicated Quick Actions are exposed to AT only once
+- a11y(switcher): one accessible name for the routine actions, at every width
+
+
+## [2.460] - 2026-08-21
+- feat(touch): hold an icon to see what it does, without doing it
+- build: stop publishing tooling config, and refuse to drop the two that must ship
+- build: never publish a .cjs from the web/ root
+- chore(tests): move stray probe scripts out of the published site root
+
+
 ## [2.459] - 2026-08-20
 - fix(quick-actions): no gap from a retired id, and a prototype-proof registry
 

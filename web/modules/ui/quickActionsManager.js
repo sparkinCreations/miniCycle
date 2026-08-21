@@ -19,6 +19,7 @@ import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/consta
 const TOOLTIP_OFFSET_PX = 10;
 import { getLabel } from '../labels/labelResolver.js';
 import { handleHorizontalArrowNav } from '../utils/keyboardNav.js';
+import { attachLongPressHint } from '../utils/longPressHint.js';
 // Uniform usage tracking — one delegated listener records every action-button click
 // (direct + the panel's synthetic clicks). See docs/archive/ACTION_DISPATCH_PLAN.md
 import { recordActionUsage, setupActionUsageTracking } from './actionUsage.js';
@@ -1402,22 +1403,25 @@ export class QuickActionsManager {
     // LONG-PRESS (mobile tooltip + remove)
     // ========================================================================
 
+    /**
+     * Long-press a slot to see what its icon means.
+     *
+     * Delegated to the shared helper so the press ALSO suppresses the click
+     * the browser fires on touchend. Before that, holding a slot showed the
+     * tooltip and ran the action — asking what an icon does performed it, which
+     * is the opposite of what the gesture is for.
+     *
+     * The tooltip stays local rather than using the helper's bubble: this one
+     * carries an unpin control for the pinned view, so it is a menu, not a hint.
+     */
     _addLongPressHandler(element, actionId, slotIndex, isAutoView) {
-        let timer = null;
-
-        element.addEventListener('touchstart', (e) => {
-            timer = setTimeout(() => {
-                this._showTooltip(element, actionId, slotIndex, isAutoView);
-            }, 500);
-        }, { passive: true });
-
-        element.addEventListener('touchend', () => {
-            clearTimeout(timer);
-        }, { passive: true });
-
-        element.addEventListener('touchmove', () => {
-            clearTimeout(timer);
-        }, { passive: true });
+        // Detach is unused on purpose. Slots are rebuilt on every render, so the
+        // listeners are discarded with the element they were attached to —
+        // holding the detach functions would mean retaining closures over
+        // elements that no longer exist, which is the leak, not the fix.
+        attachLongPressHint(element, {
+            onLongPress: () => this._showTooltip(element, actionId, slotIndex, isAutoView),
+        });
     }
 
     _createTooltip() {

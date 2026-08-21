@@ -135,7 +135,11 @@ body.focus-mode #task-view .task-list-container {
     max-height: calc(100dvh - var(--focus-task-list-reduction-desktop));
 }
 
-/* Chrome elements fade in/out */
+/* Chrome elements fade in/out.
+
+   --focus-chrome-fade exists so the fade duration and the visibility delay
+   below cannot drift apart: the delay MUST equal the fade, or the chrome either
+   vanishes mid-fade or lingers in the tab order after it. */
 .fixed-header-container,
 #slide-left,
 #slide-right,
@@ -143,7 +147,9 @@ body.focus-mode #task-view .task-list-container {
 #footer-container,
 #personalization-btn,
 #quick-dark-toggle {
-    transition: opacity 0.3s ease;
+    --focus-chrome-fade: 0.3s;
+    /* Coming BACK: visibility flips at 0s so the fade-in is visible from frame one. */
+    transition: opacity var(--focus-chrome-fade) ease, visibility 0s;
 }
 
 body.focus-mode .fixed-header-container,
@@ -155,6 +161,26 @@ body.focus-mode #personalization-btn,
 body.focus-mode #quick-dark-toggle {
     opacity: 0;
     pointer-events: none;
+    /* visibility:hidden is what actually removes this chrome from the
+       accessibility tree and the tab order.
+    
+       focusMode.js also sets `inert` on exactly these elements, and its comment
+       states the intent: "so keyboard / screen-reader users don't land on
+       invisible buttons." But `inert` needs Chrome 102 / Safari 15.5, while the
+       app's feature gate admits Chrome 71 / Safari 12.1 — so on browsers inside
+       that band the protection silently did not happen and the faded-out chrome
+       stayed focusable and announced. opacity and pointer-events do not help:
+       opacity:0 leaves a control in the tree, and pointer-events only blocks the
+       mouse, not Tab or a screen reader.
+    
+       visibility is supported everywhere, so this closes the band. `inert` stays
+       — it also blocks clicks and is the clearer signal of intent where supported.
+    
+       The 0.3s delay lets the fade finish before the element leaves the tree;
+       without it the chrome would disappear instantly instead of fading. */
+    visibility: hidden;
+    transition: opacity var(--focus-chrome-fade) ease,
+                visibility 0s linear var(--focus-chrome-fade);
 }
 
 /* Help window stays visible in focus mode, but strip the leading

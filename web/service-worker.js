@@ -31,9 +31,9 @@
 // §1 VERSION IDENTITY (update-version.sh rewrites the three vars below — keep
 //    their exact `var NAME = …` shapes) + the build-injected module map.
 // ═══════════════════════════════════════════════════════════════════════════
-var APP_VERSION = '2.459';
-var CACHE_VERSION = 'v1302';
-var CACHE_VERSION_NUMBER = 1302; // Numeric version matching version.js (for synthetic fallback)
+var APP_VERSION = '2.461';
+var CACHE_VERSION = 'v1304';
+var CACHE_VERSION_NUMBER = 1304; // Numeric version matching version.js (for synthetic fallback)
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -161,6 +161,7 @@ var BOOT_CRITICAL = [
   './modules/utils/nameUtils.js',
   './modules/utils/storageUtils.js',
   './modules/utils/keyboardNav.js',
+  './modules/utils/longPressHint.js',
   './modules/utils/collapsibleSections.js',
   './modules/utils/styleValidators.js',
   './modules/utils/cycleMode.js',
@@ -316,6 +317,7 @@ var CSS_FILES = [
   './styles/components/footer.css?v=' + APP_VERSION,
   './styles/components/menu.css?v=' + APP_VERSION,
   './styles/components/quick-actions.css?v=' + APP_VERSION,
+  './styles/components/long-press-hint.css?v=' + APP_VERSION,
   './styles/utilities/helpers.css?v=' + APP_VERSION,
   './styles/utilities/responsive.css?v=' + APP_VERSION,
   './styles/utilities/dark-mode.css?v=' + APP_VERSION,

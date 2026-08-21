@@ -110,6 +110,9 @@ export const UI_TIMEOUTS = Object.freeze({
     FOCUS_DELAY_SHORT: 50,         // 50ms - Focus an element shortly after it appears (inputs/edit fields)
     SAVE_DEFER: 50,                // 50ms - Defer a state save to the next tick so DOM/state settles first
     RESIZE_DEBOUNCE: 150,          // 150ms - Window resize debounce
+    LONG_PRESS_HINT: 500,          // 500ms - Hold an icon-only control this long before its label appears (matches the task drag long-press so one hold feels the same everywhere)
+    LONG_PRESS_CLICK_GUARD: 300,   // 300ms - Window in which the synthetic click after a long-press is swallowed, so asking what an icon does never also does it
+    HINT_DISMISS_ARM: 100,         // 100ms - Delay before a shown long-press hint starts listening for the touch that dismisses it, so the press that raised it cannot also close it
     LAYOUT_CLICK_SWALLOW: 50,      // 50ms - Task View Layout: window in which the synthesized click after a drag is swallowed
     SW_VERSION_QUERY: 1500,        // 1500ms - give up asking a service worker for its version; the message may never be answered, and the caller falls back to a version-less notice
     LAYOUT_COALESCE_WINDOW: 500,   // 500ms - Task View Layout: merge position writes from rapid successive drags into ONE AppState.update (one undo entry per burst, not per drag)
@@ -505,6 +508,7 @@ export const Z_INDEX = Object.freeze({
     MODAL: 1000,             // Standard modals
     MODAL_HIGH: 2000,        // High-priority modals (storage, onboarding)
     OVERLAY_CRITICAL: 10000, // Import/migration error overlays
+    LONG_PRESS_HINT: 1001,   // Long-press label bubble — one above MODAL, matching .quick-actions-tooltip's calc(var(--z-modal) + 1). Inside a showModal() dialog the top layer decides instead; see longPressHint._ensureHintElement
     TOUR_OVERLAY: 10500,     // Guided tour overlay
     TOUR_TOOLTIP: 10501,     // Guided tour tooltip
     DEBUG: 99999,            // Debug utilities
@@ -596,6 +600,7 @@ export const DOM_CLASSES = Object.freeze({
     // ---- Visibility ----
     HIDDEN: 'hidden',
     VISIBLE: 'visible',
+    LONG_PRESS_HINT: 'long-press-hint',
     SHOW: 'show',
     HIDE: 'hide',
     HIDE_LEFT: 'hide-left',    // panel carousel: hidden panel sits left of the active one
@@ -1270,6 +1275,7 @@ export const DOM_IDS = Object.freeze({
     QUICK_ACTIONS_MENU_SLOTS: 'quick-actions-menu-slots',
     QUICK_ACTIONS_PICKER_OVERLAY: 'quick-actions-picker-overlay',
     QUICK_ACTIONS_TOOLTIP: 'quick-actions-tooltip',
+    LONG_PRESS_HINT: 'long-press-hint',
     QUICK_ACTIONS_BTN: 'quick-actions-btn',
     // Focus task panel (one task at a time — FOCUS_TASK_VIEW_PLAN Phase 1)
     FOCUS_TASK_PANEL: 'focus-task-panel',

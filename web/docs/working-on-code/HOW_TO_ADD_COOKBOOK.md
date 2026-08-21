@@ -18,6 +18,7 @@
 7. [New Dependency Between Modules](#new-dependency-between-modules)
 8. [New Exported Function](#new-exported-function)
 9. [New Sample Routine](#new-sample-routine)
+10. [New Icon-Only Touch Control](#new-icon-only-touch-control)
 
 ---
 
@@ -492,6 +493,61 @@ The script scans all `.mcyc` files, extracts title + emoji, and writes `manifest
 - [ ] Filename uses underscores: `Descriptive_Name.mcyc`
 - [ ] `npm run samples` ran successfully
 - [ ] Sample appears in Create New Routine dialog
+
+---
+
+## New Icon-Only Touch Control
+
+An icon with no visible label tells a touch user nothing. `title` is a hover
+affordance and touch devices have no hover, so on mobile the icon is simply
+unexplained — which is where the labels are hidden most often (`.switch-btn-label`
+is `display: none` under the mobile breakpoint).
+
+Give it a long-press hint:
+
+```javascript
+import { attachLongPressHint } from '../utils/longPressHint.js';
+
+const detach = attachLongPressHint(button, {
+    getText: () => getLabel('switcher.duplicateRoutine'),
+});
+```
+
+**`getText` is a function, not a string.** It resolves on every press, so the
+hint follows the current language and the currently selected item rather than
+whatever was true when the control was wired.
+
+### What it guarantees
+
+- **A hold names the control and activates nothing.** Without this, holding an
+  icon to ask what it does also *does* it — the browser still fires a click on
+  touchend. The helper installs one capture-phase guard on `document`, which
+  runs before any listener on any descendant, so no existing click handler needs
+  to change and no call site has to register anything in a particular order.
+- **A tap still activates it.** Suppression is scoped to the held element and
+  expires after `UI_TIMEOUTS.LONG_PRESS_CLICK_GUARD`.
+- **The hint leaves on its own** — it times out, and the next touch anywhere
+  clears it.
+
+### Gotchas
+
+- **Detach when the control is re-wired, not when it is discarded.** A surface
+  that re-runs its wiring on every open (the routine switcher) must call the
+  returned `detach` before re-attaching, or it stacks a second set of touch
+  listeners. A surface that rebuilds its elements (Quick Actions slots) should
+  *not* hold the detachers — the listeners die with the element, and keeping the
+  functions would retain closures over elements that no longer exist.
+- **Inside a `showModal()` dialog, z-index does not apply.** The dialog renders
+  in the browser's top layer, above everything on the page. The helper handles
+  this by re-parenting the hint into the open dialog; if you write your own
+  bubble, it will be invisible until you do the same.
+- **Bring your own bubble with `onLongPress`** when the popup is really a menu.
+  Quick Actions does this — its tooltip carries an unpin control, so it is not
+  just a label.
+
+**Files:** `modules/utils/longPressHint.js`, `styles/components/long-press-hint.css`,
+`tests/longPressHint.tests.js`, and `tests/automated/probes/long-press-hint.cjs`
+(drives the running app to measure placement and the top-layer parenting).
 
 ---
 

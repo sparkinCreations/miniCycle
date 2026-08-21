@@ -25,6 +25,7 @@ import { createDIModule, optional } from '../core/diBase.js';
 import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, APP_VERSION } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
+import { attachLongPressHint } from '../utils/longPressHint.js';
 import { buildMcycPayload } from '../utils/mcycPayload.js';
 
 // ============================================================================
@@ -118,6 +119,11 @@ export class RoutineSwitcher {
 
         this.loadMiniCycleListTimeout = null;
         this._idleSaveScheduled = false;
+
+        // Detach functions for the Routine Actions long-press hints. The switcher
+        // re-runs its wiring on every open, so these are replaced rather than
+        // appended — see _attachActionHints().
+        this._actionHintDetachers = [];
 
         // Sort preference: 'alpha', 'recent', or 'size'
         this._sortMode = 'alpha';
@@ -251,6 +257,14 @@ export class RoutineSwitcher {
             }
             safeAdd(downloadButton, "click", downloadButton._clickHandler);
         }
+
+        // ✅ Long-press hints for the Routine Actions row.
+        //
+        // On mobile .switch-btn-label is display:none (routine-switcher.css), so
+        // these five are icon-only — and `title` never surfaces on touch, which
+        // left the icons unexplained on exactly the devices that show them bare.
+        // A hold names the button and activates nothing; a tap still acts.
+        this._attachActionHints();
 
         // Theme picker button (only wired once; shows/hides the picker for the selected routine)
         const themeBtn = this.deps.getElementById(DOM_IDS.SWITCH_THEME_BTN);
@@ -2168,6 +2182,63 @@ export class RoutineSwitcher {
                 refreshBtn.disabled = false;
             }
         });
+    }
+
+    /**
+     * Attach a long-press hint to each Routine Actions button.
+     *
+     * Idempotent: switchMiniCycle() re-runs this wiring on every open, so a previous
+     * attachment is detached before re-attaching rather than stacking a second
+     * set of touch listeners on the same button.
+     *
+     * Labels resolve at press time through getLabel, so a hint reflects the
+     * current language rather than whatever was current when the modal first
+     * opened. The buttons' own title attributes stay as they are — they are the
+     * desktop hover affordance, and this is the touch one.
+     *
+     * This also pins the ACCESSIBLE NAME, which is not the same job. Measured
+     * with Chromium's accessibility tree: because `.switch-btn-label` is
+     * `display: none` under the mobile breakpoint — and display:none removes
+     * text from the accessibility tree, not just from view — the same button
+     * was announced as "Duplicate" on desktop and "Duplicate routine" on
+     * mobile, the latter coming from `title`, which is the LAST resort in the
+     * accessible-name algorithm and the one assistive tech is least reliably
+     * configured to read.
+     *
+     * Naming from the same label key as the hint fixes both: one name at every
+     * width, from a real `aria-label` rather than a fallback, and it cannot
+     * drift from what the hint says because there is only one string. Buttons
+     * that already carry a deliberate aria-label (the theme picker) keep it.
+     * @returns {void}
+     */
+    _attachActionHints() {
+        const hints = [
+            [DOM_IDS.SWITCH_DUPLICATE, 'switcher.duplicateRoutine'],
+            [DOM_IDS.SWITCH_RENAME, 'switcher.renameRoutine'],
+            [DOM_IDS.SWITCH_DELETE, 'switcher.deleteRoutine'],
+            [DOM_IDS.SWITCH_DOWNLOAD, 'switcher.downloadRoutine'],
+            [DOM_IDS.SWITCH_THEME_BTN, 'switcher.changeRoutineTheme'],
+        ];
+
+        this._actionHintDetachers.forEach(detach => detach());
+        this._actionHintDetachers = [];
+
+        for (const [id, labelKey] of hints) {
+            const btn = this.deps.getElementById(id);
+            if (!btn) continue;
+            // Re-applied on every open so the name follows the current language,
+            // exactly like the hint text it is drawn from.
+            if (!btn.dataset.ariaLabelFixed && btn.hasAttribute('aria-label')) {
+                // Authored deliberately in the markup — leave it alone.
+                btn.dataset.ariaLabelFixed = 'authored';
+            } else {
+                btn.dataset.ariaLabelFixed = 'derived';
+                btn.setAttribute('aria-label', getLabel(labelKey));
+            }
+            this._actionHintDetachers.push(
+                attachLongPressHint(btn, { getText: () => getLabel(labelKey) })
+            );
+        }
     }
 
     /**

@@ -179,7 +179,17 @@ async function run() {
           ready: () => document.getElementById('themes-modal')?.open },
         { name: 'routine switcher',
           open: () => document.getElementById('open-mini-cycle')?.click(),
-          ready: () => document.getElementById('routine-switcher-modal')?.open },
+          ready: () => document.getElementById('routine-switcher-modal')?.open,
+          // The Routine Actions row is display:none until a routine is selected,
+          // so opening the modal alone audits a modal with its five icon-only
+          // buttons still out of the tree. Select one, then REQUIRE the row to be
+          // laid out — an unmet `reveals` fails the surface instead of quietly
+          // auditing less than it claims to.
+          prepare: () => document.querySelector('.mini-cycle-switch-item')?.click(),
+          reveals: () => {
+              const r = document.getElementById('switch-rename')?.getBoundingClientRect();
+              return !!r && r.width > 0 && r.height > 0;
+          } },
         { name: 'reminders modal',
           open: () => document.getElementById('open-reminders-modal')?.click(),
           ready: () => document.getElementById('reminders-modal')?.open },
@@ -219,6 +229,18 @@ async function run() {
             if (!opened) {
                 console.log(`   ${colors.red}❌ ${surface.name} — could not open${colors.reset}`);
                 failures.push(`${surface.name}: could not be opened, so it was NOT audited`);
+                await page.keyboard.press('Escape');
+                await page.waitForTimeout(600);
+                continue;
+            }
+            if (surface.prepare) {
+                await page.evaluate(surface.prepare);
+                await page.waitForTimeout(900);
+            }
+            if (surface.reveals && !(await page.evaluate(surface.reveals))) {
+                console.log(`   ${colors.red}❌ ${surface.name} — prepare() did not reveal its content${colors.reset}`);
+                failures.push(`${surface.name}: prepare() ran but the content it should reveal is still not laid out, `
+                    + `so the audit would have skipped it`);
                 await page.keyboard.press('Escape');
                 await page.waitForTimeout(600);
                 continue;

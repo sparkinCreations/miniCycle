@@ -121,7 +121,17 @@ The fix and current contract:
    it, and the build says nothing.
    - **Exclusions are `COPY_EXCLUDE` (exact names) plus any root `*.cjs`.** The `.js`
      filter in the same function applies only to the `modules/` sub-pass, and `.cjs` does
-     not match `endsWith('.js')` regardless.
+     not match `endsWith('.js')` regardless. Excluded by name: build/dep manifests,
+     `eslint.config.js`, `jsconfig.json`, `lighthouserc.json`, `nginx-security.conf` —
+     all read from the SOURCE tree by lint/CI, never fetched over HTTP. (`lhci autorun`
+     runs with `working-directory: ./web`, so it reads `web/lighthouserc.json`.)
+   - **`netlify.toml` and `_redirects` MUST keep shipping — do not "tidy" them into the
+     exclusion list.** Netlify applies headers and redirects from the DEPLOYED files, so
+     the dist copies are the live config: `netlify.toml` is the header authority (it
+     carries the CSP), `_redirects` is the redirect authority. Nothing else catches their
+     loss — `validate:cache` reads the SOURCE `web/netlify.toml`, and a site missing its
+     CSP still loads fine, so a bad deploy would look healthy. `assertMustPublish()` runs
+     right after the copy pass and fails the build instead.
    - **`tests/` IS published** (143 entries) — deliberately, on `test.minicycle.app` with
      its own CSP block in `netlify.toml`. `tests/` is the right home for test scaffolding,
      but it is not a private folder.
