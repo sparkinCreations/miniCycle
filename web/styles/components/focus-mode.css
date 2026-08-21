@@ -648,8 +648,8 @@ body.focus-mode .focus-mode-mode-modal {
 
     /* Top-clearance comes from #task-view's max-height (see rule above),
        which is what positions the centred wrapper. Zero the normal-mode
-       margins on #task-input-row and .task-card so they don't add to the
-       --focus-card-inset-top the clearance equation assumes. */
+       margins on #task-input-row and .task-card so they don't push the card
+       below the wrapper edge the clearance equation assumes. */
     body.focus-mode #task-input-row {
         margin-top: 0;
     }
@@ -990,11 +990,12 @@ body.focus-mode #complete-all-and-help-window-container {
         /* DERIVED, not tuned — and the thing being kept clear is the visible
            task CARD, not this wrapper. The wrapper is centred and shifted, so
            at max-height its top edge lands at 50dvh + offset - maxH/2; the
-           card starts --focus-card-inset-top below that. Requiring the CARD's
-           top to clear the chrome:
+           card starts at the wrapper's edge once #task-input-row is hidden,
+           which is the focus-mode case. Requiring the CARD's top to clear the
+           chrome:
 
-               50dvh + offset + inset - maxH/2  >=  chromeBottom + gap
-               maxH <= 100dvh + 2*offset + 2*inset - 2*chromeBottom - 2*gap
+               50dvh + offset - maxH/2  >=  chromeBottom + gap
+               maxH <= 100dvh + 2*offset - 2*chromeBottom - 2*gap
 
            Everything doubles because the element is centred: space reserved
            at the top costs the same at the bottom.
@@ -1007,7 +1008,6 @@ body.focus-mode #complete-all-and-help-window-container {
            cap: card 550px -> 294px with a 181px empty band above it. Measured,
            not guessed — see the table in the commit. */
         max-height: calc(100dvh + 2 * var(--focus-mode-top-offset-mobile)
-                         + 2 * var(--focus-card-inset-top)
                          - 2 * var(--focus-top-chrome)
                          - 2 * var(--focus-card-chrome-gap));
     }

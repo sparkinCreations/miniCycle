@@ -579,20 +579,26 @@
      mark too — which is what makes this one value enough. */
   --focus-top-chrome: calc(env(safe-area-inset-top, 0px) + var(--focus-btn-top) + var(--focus-btn-height));
 
-  /* The three values below turn "the task CARD clears the chrome" into an
-     equation. #task-view is a centred, fixed wrapper; the card is what the
-     user actually sees, and it starts --focus-card-inset-top BELOW the
-     wrapper's own top edge. v2.465 constrained the wrapper's edge instead of
-     the card's, which over-reserved by 2x that inset (the wrapper edge is
-     invisible) and left a 181px gap above a 294px card. Measured at 393x852
-     with a simulated 59px inset. */
+  /* These two turn "the task CARD clears the chrome" into an equation.
+     #task-view is a centred, fixed wrapper; the card is what the user sees.
+
+     There is NO inset term, deliberately. v2.466-v2.468 carried a
+     --focus-card-inset-top: 64px, measured locally as the gap between the
+     wrapper's top edge and the card's. That 64px is #task-input-row, which
+     focus mode hides — the local probe simply had it visible. An on-device
+     reading (?layoutdebug=1) reported inset 0, meaning the equation was
+     granting the card 2x64 = 128px more height than it may have, and letting
+     it ride up under the chrome wherever the cap binds.
+
+     The inset is state-dependent, so the equation assumes the worst case of 0.
+     When the row IS visible the card sits lower than strictly required, which
+     is the safe direction to be wrong in. */
   --focus-mode-top-offset-mobile: 25px;  /* the +25px in top: calc(50% + ...) */
-  --focus-card-inset-top: 64px;          /* wrapper top edge -> card top edge */
-  /* How close the card may come to the chrome. This is the knob for nudging the
-     card up or down: the cap binds on a long list, so the card's top edge sits
-     exactly this far below the chrome. Raising it by N moves the card down N
-     and shortens it by 2N (the element is centred). 8px -> 16px in v2.468 on
-     device feedback that 8px read as too tight. */
+
+  /* How close the card may come to the chrome — the knob for nudging it up or
+     down. The cap binds on a long list, so the card's top edge sits exactly
+     this far below the chrome. Raising it by N moves the card down N and
+     shortens it by 2N (the element is centred). */
   --focus-card-chrome-gap: 16px;
 
   /* Task-list-container max-height reduction in focus mode — controls how

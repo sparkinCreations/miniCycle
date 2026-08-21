@@ -1,3 +1,29 @@
+## [2.469] - 2026-08-21
+- fix(focus): the Focus View clearance equation no longer reserves 64px that
+  isn't there. v2.466 introduced `--focus-card-inset-top: 64px` as the gap
+  between `#task-view`'s top edge and the visible card's. That 64px is
+  `#task-input-row` — which focus mode hides. The local probe simply had it
+  visible, so a state artefact got tokenised as geometry.
+
+  An on-device reading via `?layoutdebug=1` reported `inset(view->card) 0`,
+  which means the cap was granting the card 2x64 = 128px more height than it
+  may have (the term doubles, the element being centred) and letting it ride up
+  under the chrome wherever the cap binds. It also reported `env safe-top 0` in
+  Safari, where the browser's own chrome covers the island — so the same build
+  behaves differently in-app and standalone.
+
+  The inset is state-dependent, so the equation now assumes the worst case of 0.
+  When the input row IS visible the card sits lower than strictly required,
+  which is the safe direction. Both of the reporting device's contexts now clear
+  by exactly the 16px gap, and the cap actually binds in each — previously it was
+  inert, clearing by luck rather than by construction:
+
+  | context | viewport | env | chrome bottom | card top | clearance |
+  |---|---|---|---|---|---|
+  | in-app Safari | 402x656 | 0 | 50 | 66 | 16 |
+  | standalone | 393x852 | 61 | 111 | 127 | 16 |
+
+
 ## [2.468] - 2026-08-21
 - style(focus): the Focus View card sits a little lower. `--focus-card-chrome-gap`
   goes 8px -> 16px, which on a long list moves the card's top edge down 8px and
