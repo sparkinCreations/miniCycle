@@ -555,8 +555,21 @@
      viewport bottom. The normal-mode --help-window-clearance (above) is
      calibrated against the original #footer-container layout and isn't
      enough to clear the focus-mode band. Mobile/tablet only — desktop
-     pins .help-window absolutely beside #task-view. */
-  --focus-help-window-clearance: 150px;
+     pins .help-window absolutely beside #task-view.
+
+     This is also what sets the task list's LENGTH, which is not obvious.
+     #task-view is a fixed-height flex column and #task-card-group is its only
+     growable child (flex: 1 1 auto), so this margin is the one thing consuming
+     the free space — at 150px it consumed all of it, leaving flex-grow nothing
+     to distribute and the list shorter than it needed to be. Measured at
+     393x852 with a 61px inset: the help window ended at y=625 while #nav-dots
+     began at y=720, i.e. 95px of slack sitting idle below the content.
+
+     150px -> 100px in v2.470 spends 50px of that slack on the list, the
+     progress bar and the help window, keeping ~45px of visible gap above the
+     nav dots. test:layout's "task-view (and its help window) clears nav dots"
+     invariant is the guard on going too far. */
+  --focus-help-window-clearance: 100px;
 
   /* Task-view upward shift on desktop (used as `top: calc(50% - var(--*))`).
      Higher values move the centered task-view further up the viewport,

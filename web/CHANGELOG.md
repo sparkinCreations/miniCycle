@@ -1,3 +1,23 @@
+## [2.470] - 2026-08-21
+- style(focus): the Focus View logo sits 6px lower (`--focus-logo-rise` 10px ->
+  4px), and the task list, progress bar and help window are 50px longer.
+
+  The extra length came from slack that was already there. `#task-view` is a
+  fixed-height flex column whose only growable child is `#task-card-group`
+  (`flex: 1 1 auto`), and `#help-window`'s bottom margin
+  (`--focus-help-window-clearance`) was the one thing consuming the free space —
+  at 150px it consumed all of it, so flex-grow had nothing to distribute and the
+  list was shorter than it needed to be. Measured at 393x852 with a 61px inset,
+  the help window ended at y=625 while `#nav-dots` began at y=720: 95px sitting
+  idle.
+
+  150px -> 100px spends 50px of that: list 407 -> 457, card 439 -> 489, and
+  ~45px of visible gap remains above the nav dots. The card's top edge does not
+  move, so the 16px chrome clearance is unchanged. `test:layout`'s "task-view
+  (and its help window) clears nav dots" invariant holds across all 7 viewports
+  and is the guard against going further.
+
+
 ## [2.469] - 2026-08-21
 - fix(focus): the Focus View clearance equation no longer reserves 64px that
   isn't there. v2.466 introduced `--focus-card-inset-top: 64px` as the gap

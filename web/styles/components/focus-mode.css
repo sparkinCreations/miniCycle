@@ -232,6 +232,10 @@ body.focus-mode .header-logo {
    viewport rule pushes it further down by half the safe-area inset). Ten
    pixels low reads as misaligned against two elements it sits between.
 
+   v2.470 backs the lift off to 4px on device feedback that a full 10px sat too
+   high. That is a deliberate 6px below the buttons' optical line, not a
+   miscalculation of it — the derivation below still gives 10px.
+
    margin-top, NOT transform: .header-branding already uses
    translate(-50%, -50%) to centre itself, so overriding transform here would
    mean restating that centring. A negative margin composes with the existing
@@ -247,7 +251,7 @@ body.focus-mode .header-logo {
    another safe-area term here would over-correct on notched devices only —
    the hardest place to notice it. */
 body.focus-mode .header-branding {
-    --focus-logo-rise: 10px;
+    --focus-logo-rise: 4px;
     margin-top: calc(-1 * var(--focus-logo-rise));
 }
 
