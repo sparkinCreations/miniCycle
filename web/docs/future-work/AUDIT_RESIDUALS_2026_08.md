@@ -1,8 +1,9 @@
 # Audit Residuals — August 2026 Future-Work Cleanup
 
-**Status:** Open backlog — **3 live items** (#2, #5, #12). Nine of the original eleven are closed;
-re-verified against the tree on 2026-08-21 at v2.461, which found #7, #8 and #10 had shipped
-without being marked, and half of #2. A ledger nobody re-checks becomes a list of things that
+**Status:** Open backlog — **1 live item** (#12). Eleven of twelve are closed. Re-verified twice
+against the tree on 2026-08-21 at v2.461: the first pass found #7, #8 and #10 had shipped without
+being marked; the second found #5 had too, and that #2's remaining half is deliberate rather than
+outstanding. A ledger nobody re-checks becomes a list of things that
 look open, so the closures below record *how* they were verified, not just that they were.
 **Source:** Full audit of `docs/future-work/` on 2026-08-13 (verified against the tree at v2.412). Thirteen plans whose work had shipped were archived; the live leftovers they still carried are collected here so they don't die in `archive/`. Line numbers below are as of v2.412 — prefer the symbol names if they've drifted.
 
@@ -54,7 +55,7 @@ The module's header banner also claimed two draggables and in-memory-only positi
 long after five were wired and persisting, and pointed at the pre-cleanup
 `docs/future-work/` path for a plan now in `docs/archive/` — both corrected.
 
-## 2. Modal registry — two stray direct lookups
+## 2. Modal registry — two stray direct lookups — ✅ CLOSED Aug 2026 (one removed, one deliberate)
 
 *From archived `MODAL_ACCESS_CENTRALIZATION_PLAN.md` (otherwise fully shipped).*
 
@@ -63,7 +64,19 @@ long after five were wired and persisting, and pointed at the pre-cleanup
 - `modules/ui/quickActionsManager.js` — ✅ **CLOSED.** The fallback is gone, and the code now carries the
   reason: it "could only ever fire when DI was broken — and then it silently papered over it."
 
-Note this is app code, so closing the remaining half needs a version bump — it is not a docs-only fix.
+**Re-examined 2026-08-21 — the uxRatings half is not a stray, and closing it would be wrong.**
+`getModal` there is declared `optional(null)` with the reason written at the declaration: uxRatings is
+a leaf feature, and a missing registry must not take out the whole feedback form. That is a different
+situation from quickActionsManager, where the fallback guarded a dep the module needed to work at all
+and so could only ever fire when DI was already broken.
+
+What the original plan actually wanted — modalRegistry as the single definition of HOW each modal is
+found — is satisfied: the registry is tried first, and the fallback is documented as the boot-failure
+path rather than an alternative route. The residual risk is that the two silently diverge if the
+`feedback` registry def changes method or key; the code names that risk in place, which is the
+honest mitigation for a two-line fallback that exists to keep a leaf feature alive.
+
+Closed as resolved-by-design. Reopen it only if the `feedback` def actually changes.
 
 ## 3. Recurring panel — 4 setup methods — ✅ CLOSED Aug 2026
 
@@ -147,12 +160,19 @@ is not a page — it is a copy-paste snippet whose own content reads "Add this n
 tab to your existing testing modal HTML", referenced by nothing. **It probably
 should not be deployed at all**; a cache rule is not the fix for that.
 
-## 5. Games pages + robots.txt stragglers
+## 5. Games pages + robots.txt stragglers — ✅ CLOSED Aug 2026
 
 *Also from `PRETTY_URL_CACHE_CONTROL_FIX.md` ("Related" findings, unrelated to caching).*
 
 - `web/games/miniCycle- taskGame.html` (note the space in the filename) and `web/games/miniCycle-taskScramble.html` each still have 1 inline `<script>`; `miniCycle-taskOrder.html` already extracted to a `.js` file.
 - `web/robots.txt:7` still reads `Disallow: /miniCycleGames/` — the pre-rename path. `/games/` is crawlable; decide whether that's intended.
+
+**Verified closed 2026-08-21.** Both halves:
+- Neither games page has an inline `<script>` any more — both load an external `.js`.
+- The robots.txt question was answered and the answer written down. `/games/` is **not**
+  crawlable (it is disallowed), and the `/miniCycleGames/` line is deliberate rather than
+  stale: the old path still 301s to the new one (`_redirects:19`), so blocking it stops a
+  crawler following the redirect in the first place. The file says so in a comment.
 
 ## 6. Architecture-review remainder — ✅ CLOSED Aug 2026
 
