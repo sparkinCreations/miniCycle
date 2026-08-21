@@ -984,8 +984,26 @@ body.focus-mode #complete-all-and-help-window-container {
     body.focus-mode #task-view {
         top: calc(50% + 25px);
         transform: translate(-50%, -50%);
-        max-height: calc(100dvh - 10px);
-        padding-top: calc(env(safe-area-inset-top, 0px) + 25px);
+
+        /* DERIVED, not tuned. The view is centred and shifted +25px, so when
+           content is tall enough to reach max-height its top edge lands at
+           50dvh + 25 - height/2. Requiring that edge to stay clear of the top
+           chrome gives:
+
+               50dvh + 25 - maxH/2  >=  chromeBottom
+               maxH  <=  100dvh - 2*env(safe-area-inset-top) - 50px
+
+           The old `100dvh - 10px` let a long list ride up under the chrome —
+           invisible at safe-inset 0 (every desktop browser and headless probe)
+           and ~19px of clipped routine title on a notched phone, which is
+           where it was reported. The safe inset appears DOUBLED because the
+           element is centred: reserving space at the top costs the same at the
+           bottom. */
+        max-height: calc(100dvh - 2 * env(safe-area-inset-top, 0px) - 50px);
+
+        /* Handles the short-list case, where max-height is not reached and the
+           element's own top edge is already below the chrome. */
+        padding-top: calc(var(--focus-top-chrome) + var(--space-2));
         box-sizing: border-box;
     }
 

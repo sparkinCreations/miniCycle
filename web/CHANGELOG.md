@@ -1,3 +1,16 @@
+## [2.465] - 2026-08-21
+- fix(focus): a long task list no longer rides up under the Focus View header.
+  The view is centred, so once its content reached the old `100dvh - 10px` cap
+  its top edge climbed past the logo and the ✕ / ⋯ buttons and clipped the
+  routine title. The cap is now DERIVED from where that chrome actually ends
+  rather than from a fixed allowance. Only visible on devices with a
+  status-bar safe area — at inset 0 (desktop, and any headless check) the old
+  value looked fine, which is why it reached a phone before it was caught.
+
+  (The mark-only and 36px logo changes listed by the release tooling here
+  already shipped in 2.464 — see that entry.)
+
+
 ## [2.464] - 2026-08-21
 - test(tips): cover the extracted educational-tips class, and record the deps gap
 - docs(splits): add a DONE condition, and gate the checklist on what actually caught the last two split bugs

@@ -563,6 +563,13 @@
      freeing space for the title row to sit above the centerline. Capped
      by the three-dots / exit buttons at top: 16px (height: 30px). */
   --focus-mode-top-offset: 35px;
+  /* Bottom edge of the tallest chrome along the top of focus view: the ✕ / ⋯
+     buttons, which sit at `top: env(safe-area-inset-top) + 12px` with
+     `height: 38px`. The logo mark's lower edge lands at safe + 49px, just
+     inside this, so clearing the buttons clears the mark too.
+     Derived from those rules rather than tuned — if either moves, update this
+     and the layout follows. See styles/components/focus-mode.css. */
+  --focus-top-chrome: calc(env(safe-area-inset-top, 0px) + 50px);
 
   /* Task-list-container max-height reduction in focus mode — controls how
      much the scrollable list shrinks below 100dvh so its bottom edge
