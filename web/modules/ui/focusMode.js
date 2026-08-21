@@ -15,7 +15,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_CLASSES, DOM_SELECTORS, UI_TIMEOUTS, EVENTS } from '../core/constants.js';
+import { DOM_IDS, DOM_CLASSES, DOM_SELECTORS, UI_TIMEOUTS, EVENTS, Z_INDEX } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { getIcon } from '../utils/icons.js';
 
@@ -859,6 +859,124 @@ export class FocusMode {
      * users don't tab into invisible chrome.
      * @returns {HTMLElement[]}
      */
+    /**
+     * Developer diagnostic overlay for the Focus View clearance geometry.
+     *
+     * Renders ONLY when the URL carries ?layoutdebug=1, so it costs nothing in
+     * normal use. It exists because the clearance arithmetic depends on values
+     * that cannot be reproduced off-device: env(safe-area-inset-top) is 0 in
+     * every headless browser, and whether iOS RESOLVES the max-height calc at
+     * all (as opposed to dropping it as invalid) is not observable from here.
+     * The decisive line is `view.maxHeight` — a length means the cap applied,
+     * `none` means the declaration was dropped and the card sizes to content.
+     *
+     * Text here is developer-facing diagnostic output, not product copy, so it
+     * is deliberately not routed through getLabel().
+     */
+    _renderLayoutDebug() {
+        if (!this._layoutDebugEnabled()) return;
+
+        const overlay = this._ensureLayoutDebugOverlay();
+        if (!overlay) return;
+        overlay.textContent = this._collectLayoutDebugLines().join('\n');
+    }
+
+    _layoutDebugEnabled() {
+        try {
+            return new URLSearchParams(globalThis.location?.search || '').has('layoutdebug');
+        } catch {
+            return false;
+        }
+    }
+
+    _ensureLayoutDebugOverlay() {
+        let overlay = document.getElementById(DOM_IDS.LAYOUT_DEBUG_OVERLAY);
+        if (overlay) return overlay;
+
+        overlay = document.createElement('pre');
+        overlay.id = DOM_IDS.LAYOUT_DEBUG_OVERLAY;
+        overlay.setAttribute('aria-hidden', 'true');
+        overlay.style.cssText = [
+            'position:fixed', 'left:4px', 'right:4px', 'bottom:4px',
+            'margin:0', 'padding:8px', 'border-radius:8px',
+            'background:rgba(0,0,0,0.82)', 'color:#0f0',
+            'font:11px/1.35 ui-monospace,Menlo,monospace',
+            'white-space:pre', 'overflow:auto', 'max-height:45dvh',
+            'pointer-events:auto', `z-index:${Z_INDEX.DEBUG}`
+        ].join(';');
+
+        // Tap to dismiss. Tracked so destroy()/deactivate() can remove it.
+        this._layoutDebugDismiss = () => this._removeLayoutDebug();
+        overlay.addEventListener('click', this._layoutDebugDismiss);
+
+        // Values change with rotation and with the dynamic viewport.
+        this._layoutDebugResize = () => this._renderLayoutDebug();
+        globalThis.addEventListener('resize', this._layoutDebugResize);
+        globalThis.visualViewport?.addEventListener('resize', this._layoutDebugResize);
+
+        document.body.appendChild(overlay);
+        return overlay;
+    }
+
+    _collectLayoutDebugLines() {
+        const round = (n) => (typeof n === 'number' && isFinite(n) ? Math.round(n) : n);
+        const rect = (el) => {
+            if (!el) return null;
+            const r = el.getBoundingClientRect();
+            return { top: round(r.top), bottom: round(r.bottom), h: round(r.height) };
+        };
+
+        // env() is only resolvable by asking the engine to lay something out.
+        const meter = document.createElement('div');
+        meter.style.cssText = 'position:fixed;top:0;left:0;width:1px;visibility:hidden;'
+            + 'height:env(safe-area-inset-top, 0px)';
+        document.body.appendChild(meter);
+        const safeTop = round(meter.getBoundingClientRect().height);
+        meter.remove();
+
+        const view = document.getElementById(DOM_IDS.TASK_VIEW);
+        const card = view?.querySelector(DOM_SELECTORS.TASK_CARD);
+        const exitBtn = document.getElementById(DOM_IDS.FOCUS_MODE_EXIT_BTN);
+        const viewCS = view ? getComputedStyle(view) : null;
+        const rootCS = getComputedStyle(document.documentElement);
+
+        const viewBox = rect(view);
+        const cardBox = rect(card);
+        const exitBox = rect(exitBtn);
+
+        return [
+            `miniCycle ${globalThis.APP_VERSION} cache ${globalThis.CACHE_VERSION}`,
+            `viewport      ${round(globalThis.innerWidth)}x${round(globalThis.innerHeight)}`
+                + `  visual ${round(globalThis.visualViewport?.height)}`,
+            `env safe-top  ${safeTop}`,
+            `--focus-top-chrome  ${rootCS.getPropertyValue('--focus-top-chrome').trim() || '(unset)'}`,
+            `view.maxHeight      ${viewCS?.maxHeight ?? '(no #task-view)'}   <-- none = cap dropped`,
+            `view.height/top     ${viewCS?.height} / ${viewCS?.top}`,
+            `view.position       ${viewCS?.position}`,
+            `view.transform      ${viewCS?.transform}`,
+            `view  rect   ${JSON.stringify(viewBox)}`,
+            `card  rect   ${JSON.stringify(cardBox)}`,
+            `exit  rect   ${JSON.stringify(exitBox)}`,
+            `inset(view->card)   ${viewBox && cardBox ? cardBox.top - viewBox.top : 'n/a'}`,
+            `CLEARANCE           ${cardBox && exitBox ? cardBox.top - exitBox.bottom : 'n/a'}`,
+            '(tap to dismiss)'
+        ];
+    }
+
+    _removeLayoutDebug() {
+        const overlay = document.getElementById(DOM_IDS.LAYOUT_DEBUG_OVERLAY);
+        if (overlay && this._layoutDebugDismiss) {
+            overlay.removeEventListener('click', this._layoutDebugDismiss);
+        }
+        if (this._layoutDebugResize) {
+            globalThis.removeEventListener('resize', this._layoutDebugResize);
+            globalThis.visualViewport?.removeEventListener('resize', this._layoutDebugResize);
+            this._layoutDebugResize = null;
+        }
+        this._layoutDebugDismiss = null;
+        overlay?.remove();
+    }
+
     _getInertChromeElements() {
         const { getElementById, querySelector } = this.deps;
         const elements = [
@@ -979,6 +1097,13 @@ export class FocusMode {
         document.dispatchEvent(new CustomEvent(EVENTS.FOCUS_MODE_ACTIVATED, {
             detail: { restoring }
         }));
+
+        // No-op unless ?layoutdebug=1. Deferred past the enter transition so the
+        // rects it reports are the settled ones, not mid-animation.
+        if (this._layoutDebugEnabled()) {
+            this._layoutDebugTimer = setTimeout(
+                () => this._renderLayoutDebug(), UI_TIMEOUTS.TRANSITION_FALLBACK);
+        }
     }
 
     /**
@@ -987,6 +1112,8 @@ export class FocusMode {
      * then reparents button back to #task-view after the animation.
      */
     deactivate() {
+        this._removeLayoutDebug();
+
         if (!this._active) return;
         this._active = false;
         // If the three-dots menu was open when focus mode was toggled off,
@@ -1107,6 +1234,11 @@ export class FocusMode {
      * Clean up all event listeners.
      */
     destroy() {
+        if (this._layoutDebugTimer) {
+            clearTimeout(this._layoutDebugTimer);
+            this._layoutDebugTimer = null;
+        }
+        this._removeLayoutDebug();
         if (this._button && this._clickHandler) {
             this._button.removeEventListener('click', this._clickHandler);
         }

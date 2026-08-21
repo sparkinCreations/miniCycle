@@ -895,6 +895,9 @@ export const DOM_CLASSES = Object.freeze({
 export const DOM_IDS = Object.freeze({
     // ---- Task ----
     TASK_LIST: 'taskList',
+    // Developer diagnostic overlay, rendered only when the URL carries
+    // ?layoutdebug=1. See focusMode._renderLayoutDebug().
+    LAYOUT_DEBUG_OVERLAY: 'layout-debug-overlay',
     TASK_INPUT: 'taskInput',
     ADD_TASK_BTN: 'addTaskBtn',
     COMPLETE_ALL: 'completeAll',

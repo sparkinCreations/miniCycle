@@ -1,3 +1,18 @@
+## [2.467] - 2026-08-21
+- feat(debug): loading any page with `?layoutdebug=1` and entering Focus View now
+  renders a diagnostic overlay with the clearance geometry. It exists because two
+  of the inputs to that arithmetic cannot be observed off-device:
+  `env(safe-area-inset-top)` is 0 in every headless browser, and whether iOS
+  *resolves* the `max-height` calc at all — as opposed to dropping it as invalid —
+  is not visible from a desktop engine. The decisive line is `view.maxHeight`:
+  a length means the cap applied; `none` means the declaration was dropped and
+  the card sized to content.
+
+  Renders only with the query param present, tears down on Focus View exit and on
+  `destroy()`, and is `aria-hidden` — it is developer diagnostic output, so its
+  text is deliberately not routed through `getLabel()`.
+
+
 ## [2.466] - 2026-08-21
 - fix(focus): the Focus View task card is no longer far too short. 2.465 fixed
   the clipping but over-corrected badly, and for two separate reasons: it kept
