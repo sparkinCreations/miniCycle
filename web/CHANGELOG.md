@@ -1,3 +1,13 @@
+## [2.471] - 2026-08-21
+- style(focus): another 20px of the Focus View bottom gap goes to the content.
+  `--focus-help-window-clearance` 100px -> 80px: list 457 -> 477, card 489 -> 509,
+  and the gap above the nav dots closes from ~45px to ~25px. The card's top edge
+  is unchanged, so the 16px chrome clearance holds. `test:layout` still passes
+  all 60 invariants across 7 viewports — but 25px is close enough to the
+  "task-view (and its help window) clears nav dots" bound that any further
+  reduction should be driven by that test rather than by eye.
+
+
 ## [2.470] - 2026-08-21
 - style(focus): the Focus View logo sits 6px lower (`--focus-logo-rise` 10px ->
   4px), and the task list, progress bar and help window are 50px longer.

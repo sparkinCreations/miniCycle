@@ -565,11 +565,13 @@
      393x852 with a 61px inset: the help window ended at y=625 while #nav-dots
      began at y=720, i.e. 95px of slack sitting idle below the content.
 
-     150px -> 100px in v2.470 spends 50px of that slack on the list, the
-     progress bar and the help window, keeping ~45px of visible gap above the
-     nav dots. test:layout's "task-view (and its help window) clears nav dots"
-     invariant is the guard on going too far. */
-  --focus-help-window-clearance: 100px;
+     150px -> 100px (v2.470) -> 80px (v2.471) spends 70px of that slack on the
+     list, the progress bar and the help window, keeping ~25px of visible gap
+     above the nav dots. test:layout's "task-view (and its help window) clears
+     nav dots" invariant is the guard on going too far, and 25px is close
+     enough to it that the next reduction should be checked against that test
+     rather than eyeballed. */
+  --focus-help-window-clearance: 80px;
 
   /* Task-view upward shift on desktop (used as `top: calc(50% - var(--*))`).
      Higher values move the centered task-view further up the viewport,
