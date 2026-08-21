@@ -665,6 +665,66 @@ export async function runStatsPanelTests(resultsDiv) {
         }
     });
 
+    // === PANEL-SWITCH DELEGATES ===
+    // showTaskView and showStatsPanel moved to statsPanelGestures in the D-03
+    // split exactly like navigatePanels did, and their consumers degrade just
+    // as quietly if a delegate goes missing:
+    //   focusMode.js  — `this.deps.showTaskView?.()` when leaving focus view
+    //                   with the Task panel active. A no-op strands the user on
+    //                   the wrong panel; nothing throws.
+    //   quickActionsManager.js — the showStatsPanel action console-warns via
+    //                   _warnMissingDep and breaks. The console notices; the
+    //                   user just sees a Quick Action that does nothing.
+    // navigatePanels got these guards only after it shipped broken. These two
+    // sit on the same seam, so they get them before.
+
+    await test('exposes showTaskView and showStatsPanel (panel-switch delegates)', () => {
+        const statsPanel = new StatsPanelManager();
+        for (const name of ['showTaskView', 'showStatsPanel']) {
+            if (typeof statsPanel[name] !== 'function') {
+                throw new Error(
+                    `${name} is declared in this module's manifest \`provides\` and consumed by ` +
+                    'focusMode / quickActionsManager; without the delegate those callers no-op silently'
+                );
+            }
+        }
+    });
+
+    await test('panel-switch delegates forward to the gestures sub-module', async () => {
+        const statsPanel = new StatsPanelManager();
+        await new Promise(resolve => setTimeout(resolve, 200));
+
+        const calls = [];
+        statsPanel._gestures = {
+            showTaskView: () => { calls.push('showTaskView'); return 'task'; },
+            showStatsPanel: () => { calls.push('showStatsPanel'); return 'stats'; }
+        };
+
+        const taskResult = statsPanel.showTaskView();
+        const statsResult = statsPanel.showStatsPanel();
+
+        if (calls.join(',') !== 'showTaskView,showStatsPanel') {
+            throw new Error(`Expected both delegates forwarded once each, got ${JSON.stringify(calls)}`);
+        }
+        if (taskResult !== 'task' || statsResult !== 'stats') {
+            throw new Error(
+                `Delegates must return the sub-module result, got ${JSON.stringify([taskResult, statsResult])}`
+            );
+        }
+    });
+
+    await test('panel-switch delegates do not throw when the sub-module is absent', async () => {
+        // The facade may be constructed before init() imports the sub-module.
+        // Callers guard with `?.`, so the delegate must return undefined rather
+        // than throw on a half-built facade.
+        const statsPanel = new StatsPanelManager();
+        await new Promise(resolve => setTimeout(resolve, 200));
+        statsPanel._gestures = null;
+        if (statsPanel.showTaskView() !== undefined || statsPanel.showStatsPanel() !== undefined) {
+            throw new Error('Expected undefined from both delegates when _gestures is absent');
+        }
+    });
+
     // === RESULTS SUMMARY ===
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;

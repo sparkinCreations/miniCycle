@@ -258,7 +258,15 @@ export const MODULE_MANIFESTS = {
         phase: PHASES.TASK_MANAGEMENT,
         requires: ['showNotification', 'AppState', 'appInit', 'getModal'],
         optionalDeps: ['historyManager', 'clearedTasksManager', 'achievementsManager', 'gesturePanelManager', 'vocabThemeManager', 'focusTaskPanel', 'hideMainMenu', 'isDraggingNotification', 'isOverlayActive', 'setupDarkModeToggle', 'updateThemeColor', 'showStatsTourNotification'],
-        provides: ['showStatsPanel', 'showTaskView', 'navigatePanels', 'updateStatsPanel', 'openHistoryModal', 'openClearedTasksModal', 'openAchievementsModal'],
+        // openHistoryModal / openClearedTasksModal / openAchievementsModal are NOT
+        // listed here. The facade defines methods by those names, but they are
+        // launchers it calls on itself -- the DI names belong to historyManager /
+        // clearedTasksManager / achievementsManager, which declare them in their own
+        // `provides` and which the loader's depMappings actually route to. Claiming
+        // them here registered a second, unreachable copy under deps.ui (no ui API
+        // allow-list entry, no consumer) and left a `provides` contract that lies to
+        // the next person splitting this module. Removed Aug 2026.
+        provides: ['showStatsPanel', 'showTaskView', 'navigatePanels', 'updateStatsPanel'],
         provideInstance: 'statsPanelManager',
         api: 'ui'
     },

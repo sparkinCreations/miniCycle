@@ -1,3 +1,20 @@
+## [2.462] - 2026-08-21
+No user-facing change. Internal correctness work on the stats panel's module
+contract, ahead of further module splits.
+- fix(manifest): statsPanel no longer claims three DI names it does not supply —
+  openHistoryModal / openClearedTasksModal / openAchievementsModal belong to the
+  history, cleared-tasks and achievements managers, which the loader already
+  routes to. The duplicate claim registered a second, unreachable copy.
+- test(statsPanel): guard the showTaskView / showStatsPanel delegates the way
+  navigatePanels is guarded. A delegate that goes missing — or merely forgets to
+  return — makes callers no-op silently instead of failing; that shipped once
+  already: the v2.347 split dropped navigatePanels and three-panel swipe stayed
+  broken until v2.387, found on a device rather than by a test.
+- docs: splits-plan assessment of four previously-uncovered modules, scripts
+  brought into scope, residuals closed, Quick Actions architecture corrected,
+  user-manual terminology fixed.
+
+
 ## [2.461] - 2026-08-21
 - a11y: hide focus-mode chrome from AT without depending on `inert`
 - test(probe): prove the duplicated Quick Actions are exposed to AT only once
