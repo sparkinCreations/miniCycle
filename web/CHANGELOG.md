@@ -1,3 +1,10 @@
+## [2.468] - 2026-08-21
+- style(focus): the Focus View card sits a little lower. `--focus-card-chrome-gap`
+  goes 8px -> 16px, which on a long list moves the card's top edge down 8px and
+  shortens it by 16px (the doubling is because the element is centred). Measured
+  at 393x852 with a 59px simulated inset: card top 117 -> 125, height 523 -> 507.
+
+
 ## [2.467] - 2026-08-21
 - feat(debug): loading any page with `?layoutdebug=1` and entering Focus View now
   renders a diagnostic overlay with the clearance geometry. It exists because two

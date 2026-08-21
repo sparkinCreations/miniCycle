@@ -588,7 +588,12 @@
      with a simulated 59px inset. */
   --focus-mode-top-offset-mobile: 25px;  /* the +25px in top: calc(50% + ...) */
   --focus-card-inset-top: 64px;          /* wrapper top edge -> card top edge */
-  --focus-card-chrome-gap: 8px;          /* how close the card may come to the chrome */
+  /* How close the card may come to the chrome. This is the knob for nudging the
+     card up or down: the cap binds on a long list, so the card's top edge sits
+     exactly this far below the chrome. Raising it by N moves the card down N
+     and shortens it by 2N (the element is centred). 8px -> 16px in v2.468 on
+     device feedback that 8px read as too tight. */
+  --focus-card-chrome-gap: 16px;
 
   /* Task-list-container max-height reduction in focus mode — controls how
      much the scrollable list shrinks below 100dvh so its bottom edge
