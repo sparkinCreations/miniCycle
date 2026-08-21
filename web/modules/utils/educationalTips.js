@@ -57,6 +57,10 @@ export class EducationalTipManager {
     // Store getter function for live deps access
     this._getDeps = typeof getDeps === 'function' ? getDeps : () => getDeps;
     this.dismissedTips = null; // Will be loaded lazily
+    // Distinguishes "loaded, and the user has dismissed nothing" from "could not
+    // load yet". Without it, an early read cached {} forever and every already-
+    // dismissed tip reappeared.
+    this._loadedFromSource = false;
   }
 
   // Getter that always returns current deps
@@ -67,34 +71,68 @@ export class EducationalTipManager {
   loadDismissedTips() {
 
     try {
-      // Check if loadMiniCycleData is available (DI-pure)
+      // Returns null -- NOT {} -- when the source is unavailable. The caller
+      // caches the result forever, so an empty object here is indistinguishable
+      // from "the user has dismissed nothing" and permanently poisons the cache.
       if (typeof this.deps.loadMiniCycleData !== 'function') {
-        console.warn('⚠️ loadMiniCycleData not yet available, using fallback');
-        return {};
+        console.warn('⚠️ loadMiniCycleData not yet available, will retry on next read');
+        return null;
       }
 
       const schemaData = this.deps.loadMiniCycleData();
       if (!schemaData || !schemaData.settings) {
         console.error('❌ Schema 2.5 data required for loadDismissedTips');
-        return {};
+        return null;
       }
 
       // ✅ DI-pure: Use schemaData directly, no localStorage access
       return schemaData.settings.dismissedEducationalTips || {};
     } catch (e) {
       console.warn('⚠️ Error loading dismissed tips from Schema 2.5:', e);
-      return {};
+      return null;
     }
   }
 
+  /**
+   * Dismissed-tip map, loaded once the source is actually available.
+   *
+   * A failed load returns a THROWAWAY empty object rather than caching one: a
+   * tip-bearing notification can fire before loadMiniCycleData is wired, and
+   * caching {} there made every already-dismissed tip reappear and — via the
+   * old wholesale save — erased them from storage on the next dismissal.
+   *
+   * @returns {Object<string, boolean>}
+   */
   getDismissedTips() {
-    if (this.dismissedTips === null) {
-      this.dismissedTips = this.loadDismissedTips();
+    if (!this._loadedFromSource) {
+      const loaded = this.loadDismissedTips();
+      if (loaded === null) {
+        // Source still unavailable. Hold a local scratch map so a dismissal made
+        // right now is not lost, and try again on the next read.
+        if (this.dismissedTips === null) this.dismissedTips = {};
+      } else {
+        // Source arrived. Stored dismissals are the base; anything recorded
+        // locally while we were waiting wins over it.
+        this.dismissedTips = { ...loaded, ...(this.dismissedTips || {}) };
+        this._loadedFromSource = true;
+      }
     }
     return this.dismissedTips;
   }
 
-  async saveDismissedTips() {
+  /**
+   * Persist dismissal changes by MERGING a delta into whatever is already
+   * stored, rather than replacing the stored map with this instance's copy.
+   *
+   * The replace-wholesale version could erase real data: if the cache had been
+   * populated before the data source was ready, dismissing one tip wrote
+   * `{ thatTip: true }` over every dismissal the user had accumulated.
+   *
+   * @param {Object<string, boolean>} [delta] - tipId → true (dismissed) or
+   *   false (un-dismissed). Omitted means "merge in what we already hold",
+   *   which is additive and can never delete.
+   */
+  async saveDismissedTips(delta) {
 
     try {
       // ✅ DEFENSIVE CHECK: Ensure deps and AppState exist before accessing
@@ -111,9 +149,20 @@ export class EducationalTipManager {
         return;
       }
 
+      // Build the change against the PERSISTED map inside the producer, so a
+      // stale or transient local cache can never clobber stored dismissals.
+      const changes = delta || this.getDismissedTips();
       await deps.AppState.update(state => {
         if (!state.settings) state.settings = {};
-        state.settings.dismissedEducationalTips = this.getDismissedTips();
+        const merged = { ...(state.settings.dismissedEducationalTips || {}) };
+        for (const tipId of Object.keys(changes)) {
+          if (changes[tipId]) {
+            merged[tipId] = true;
+          } else {
+            delete merged[tipId];
+          }
+        }
+        state.settings.dismissedEducationalTips = merged;
       }, true);
 
     } catch (e) {
@@ -127,12 +176,14 @@ export class EducationalTipManager {
 
   dismissTip(tipId) {
     this.getDismissedTips()[tipId] = true;
-    this.saveDismissedTips();
+    // Pass the specific change: the local map may be a throwaway if the data
+    // source was not ready, and only this delta is known to be intentional.
+    this.saveDismissedTips({ [tipId]: true });
   }
 
   showTip(tipId) {
     delete this.getDismissedTips()[tipId];
-    this.saveDismissedTips();
+    this.saveDismissedTips({ [tipId]: false });
   }
 
   createTip(tipId, tipText, options = {}) {

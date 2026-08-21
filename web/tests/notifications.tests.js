@@ -456,6 +456,68 @@ export async function runNotificationsTests(resultsDiv) {
         }
     });
 
+    await test('an unavailable data source is not cached as "nothing dismissed"', async () => {
+        // A tip-bearing notification can fire before loadMiniCycleData is wired.
+        // Caching {} at that moment made every already-dismissed tip reappear.
+        const { EducationalTipManager } = await import(`../modules/utils/educationalTips.js?v=${cacheBuster}`);
+        let deps = {};                       // loadMiniCycleData not available yet
+        const tipManager = new EducationalTipManager(() => deps);
+
+        if (tipManager.isTipDismissed('already-dismissed') !== false) {
+            throw new Error('Expected false while the source is unavailable');
+        }
+
+        // Source arrives late, reporting a real dismissal.
+        deps = { loadMiniCycleData: () => ({ settings: { dismissedEducationalTips: { 'already-dismissed': true } } }) };
+        if (tipManager.isTipDismissed('already-dismissed') !== true) {
+            throw new Error('Fallback was cached — the real dismissed map is now unreachable');
+        }
+    });
+
+    await test('saving merges into stored dismissals instead of replacing them', async () => {
+        // The replace-wholesale version erased every prior dismissal the first
+        // time a user dismissed a tip after a failed early load.
+        const { EducationalTipManager } = await import(`../modules/utils/educationalTips.js?v=${cacheBuster}`);
+        const stored = { settings: { dismissedEducationalTips: { old: true, older: true } } };
+        let updated = null;
+        const deps = {
+            loadMiniCycleData: () => stored,
+            AppState: {
+                isReady: () => true,
+                update: async (producer) => { producer(stored); updated = stored.settings.dismissedEducationalTips; }
+            }
+        };
+        const tipManager = new EducationalTipManager(() => deps);
+        tipManager.dismissedTips = {};       // simulate a poisoned/empty local cache
+
+        await tipManager.saveDismissedTips({ fresh: true });
+
+        if (!updated || updated.old !== true || updated.older !== true) {
+            throw new Error(`Prior dismissals erased: ${JSON.stringify(updated)}`);
+        }
+        if (updated.fresh !== true) {
+            throw new Error('New dismissal not persisted');
+        }
+    });
+
+    await test('un-dismissing removes only that tip', async () => {
+        const { EducationalTipManager } = await import(`../modules/utils/educationalTips.js?v=${cacheBuster}`);
+        const stored = { settings: { dismissedEducationalTips: { keep: true, drop: true } } };
+        let updated = null;
+        const deps = {
+            loadMiniCycleData: () => stored,
+            AppState: {
+                isReady: () => true,
+                update: async (producer) => { producer(stored); updated = stored.settings.dismissedEducationalTips; }
+            }
+        };
+        const tipManager = new EducationalTipManager(() => deps);
+        await tipManager.saveDismissedTips({ drop: false });
+
+        if (updated.keep !== true) throw new Error('Un-dismissing one tip removed another');
+        if ('drop' in updated) throw new Error('Un-dismissed tip was not removed');
+    });
+
     await test('a plain object still works as the constructor argument', async () => {
         // Backwards compatibility: the pre-split class accepted either shape, and
         // the harness constructs it with no argument at all.
@@ -902,8 +964,12 @@ export async function runNotificationsTests(resultsDiv) {
         const tipManager = new window.EducationalTipManager();
         const tips = tipManager.loadDismissedTips();
 
-        if (Object.keys(tips).length !== 0) {
-            throw new Error('Should return empty object when function missing');
+        // Contract changed deliberately: null means "could not load", which is
+        // NOT the same as "loaded, nothing dismissed". Returning {} here is what
+        // let getDismissedTips() cache an empty map forever and, via the old
+        // wholesale save, erase the user's real dismissals.
+        if (tips !== null) {
+            throw new Error(`Should return null when the data source is missing, got ${JSON.stringify(tips)}`);
         }
     });
 
