@@ -2,7 +2,7 @@
 
 **Date:** April 27, 2026
 **Status:** Deferred — mitigated by `npm run validate:di` (see below); revisit only if depMappings maintenance cost grows
-**Related:** [ENFORCE_REQUIRES_ROLLOUT_PLAN.md](../archive/ENFORCE_REQUIRES_ROLLOUT_PLAN.md), [feedback_di_consumer_surface.md](../../../../.claude/projects/-Users-mjaynumberone-Documents-Programs-Code-miniCycle/memory/feedback_di_consumer_surface.md) (memory)
+**Related:** [SINGLE_SOURCE_CONSOLIDATION_PLAN.md](SINGLE_SOURCE_CONSOLIDATION_PLAN.md) (this plan is entry #5 in that inventory), [ENFORCE_REQUIRES_ROLLOUT_PLAN.md](../archive/ENFORCE_REQUIRES_ROLLOUT_PLAN.md), [feedback_di_consumer_surface.md](../../../../.claude/projects/-Users-mjaynumberone-Documents-Programs-Code-miniCycle/memory/feedback_di_consumer_surface.md) (memory)
 
 ---
 

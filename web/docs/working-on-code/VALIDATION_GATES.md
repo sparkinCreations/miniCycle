@@ -406,3 +406,4 @@ npm run test:sw && npm run test:layout && npm run test:meta && npm run test:jour
 - [CONTRIBUTING.md](../project-info/CONTRIBUTING.md) — where a new doc goes
 - [BUILD_PROCESS.md](../deployment/BUILD_PROCESS.md) — what the release script does
 - [TESTING_GUIDE.md](TESTING_GUIDE.md) — the test suites in depth
+- [SINGLE_SOURCE_CONSOLIDATION_PLAN.md](../future-work/SINGLE_SOURCE_CONSOLIDATION_PLAN.md) — the counterweight to this page: several gates here exist only because N hand-maintained lists must agree, and a gate that computes the right answer is proof the list could be generated instead

@@ -147,6 +147,7 @@
   * [Prompt Modal Theme Token Gap](future-work/PROMPT_MODAL_THEME_TOKEN_GAP.md)
   * [Recurring Tasks — P3 Follow-ups](future-work/RECURRING_TASKS_P3_FOLLOWUP.md)
   * [Schema 2.6 Migration](future-work/SCHEMA_2_6_PLAN.md)
+  * [Single-Source Consolidation](future-work/SINGLE_SOURCE_CONSOLIDATION_PLAN.md)
   * [Task Ordering System](future-work/TASK_ORDERING_SYSTEM_PLAN.md)
 
 
