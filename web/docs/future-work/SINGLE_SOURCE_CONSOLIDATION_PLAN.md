@@ -75,6 +75,7 @@ Measured Aug 21 2026. "Places" counts locations that must be edited together.
 
 | # | Divergent list | Places | Current gate | Derivable? | Priority |
 |---|---|---|---|---|---|
+| 0 | **DI name aliases** — manifest/loader name ≠ module method name | 18 aliases; 7 also sit in the `validate:provides` allow-list | `validate:provides` (ratchet), `validate:di` | n/a — this is *removal*, not derivation | **P0** |
 | 1 | Test-module registration | **7** (6 in `module-test-suite.html` + `run-browser-tests.cjs`) | none | **Fully** | **P1** |
 | 2 | `BOOT_CRITICAL` + `CSS_FILES` precache | 2 arrays vs the real boot graph | `test:sw` | **Fully** (the guard already computes it) | **P2** |
 | 3 | Quick Actions triple | 3 (`ACTION_REGISTRY`, `VALID_ACTION_IDS`, `ACTION_BUTTON_MAP`) | `validate:api` | **Mostly** | **P3** |
@@ -82,6 +83,72 @@ Measured Aug 21 2026. "Places" counts locations that must be edited together.
 | 5 | `depMappings` ← manifests | 258 entries vs 191 `provides` names | `validate:di` | Partly | Deferred — see [existing plan](AUTO_GENERATED_DEPMAPPINGS_PLAN.md) |
 | 6 | CSP hashes × 3 configs | 3 × 22 | `validate:csp` | — | ✅ **Already generated** — the model |
 | 7 | Manifest `provides` / `requires` | 1 each | `validate:provides`, `validate:di` | **No — intentional** | ❌ Never consolidate |
+
+---
+
+## P0 — DI name aliases (do this before anything else)
+
+Not a consolidation in its own right: a **cheap cleanup that shrinks the cost of every other
+item on this page**, and of the deferred `depMappings` plan in particular.
+
+An *alias* is a DI name that does not match the method it resolves to. There are **18**,
+found by parsing every `depMappings` entry:
+
+```
+logHistoryEvent          -> historyManager.logEvent          openHistoryModal      -> historyManager.openModal
+clearClearedTasks        -> clearedTasksManager.clearAll     openClearedTasksModal -> clearedTasksManager.openModal
+isAchievementUnlocked    -> achievementsManager.isUnlocked   openAchievementsModal -> achievementsManager.openModal
+activateFocusMode        -> focusMode.activate               refreshFocusActionButton -> focusMode.refreshActionButton
+renderTaskList           -> task.refreshTaskListUI           refreshHistoryIfOpen  -> historyManager.refreshIfOpen
+organizeCompletedTasks   -> ...organize                      initCompletedTasksSection -> ...init
+handleTaskListMovement   -> ...handleMovement                updateCompletedTasksCount -> ...updateCount
+initializeModeSelector   -> cycle.setupModeSelector          updateHelpWindow      -> helpWindowManager.refreshLabels
+onShowStatsPanel         -> statsPanelManager.showStatsPanel onShowTaskView        -> statsPanelManager.showTaskView
+```
+
+Aliases are the friction point for two separate problems at once:
+
+- **They are 8% of `depMappings` and the part auto-generation provably cannot derive.** A
+  generator can map `foo` to `deps.cat.mod.foo`; it cannot guess that `logHistoryEvent`
+  means `logEvent`. Every alias is a forced entry in the override map.
+- **Seven of the eighteen are the same seven grandfathered in `validate:provides`.** The
+  manifest claims `logHistoryEvent`, the module defines `logEvent`, so `registerProvides`
+  silently skips it *and* the generator is blocked. One defect, two symptoms.
+
+### P0a — delete the seven inert `provides` claims (nearly free)
+
+Those seven names are already supplied by the loader's `depMappings`; the manifest claim on
+top of that is inert — it registers nothing. Removing it changes no behaviour, touches no
+consumer, and renames nothing. It is exactly the fix already shipped for statsPanel's three
+claims in **v2.462**.
+
+Effect: `KNOWN_UNSUPPLIED` drops from **9 to 2** (`notifications.showNotification`, which
+`featureBoot` hand-wires from `notifications.show`, and `pullToRefresh.pullToRefresh`, a
+factory/singleton rather than a member — both different shapes needing their own decision).
+
+Verify each the way statsPanel's were: confirm the deps **category** the module registers
+into, confirm the name is absent from the matching `featureBoot` API allow-list, and confirm
+no consumer reads it off that module. Do not batch-delete on the strength of the pattern.
+
+### P0b — resolve the remaining eleven, per case
+
+The other eleven are loader-only renames never declared in `provides`. Each needs a decision,
+and the right answer is **not** uniformly "rename":
+
+| Resolution | When |
+|---|---|
+| Rename the module method to the DI name | The method name is only shorter by accident |
+| Rename the DI name to the method name | The DI name is the odd one out; costs consumer edits |
+| Keep the alias, recorded as a **declared** override | The difference carries meaning |
+
+Two cases that likely stay: `onShowStatsPanel` / `onShowTaskView` carry an `on` prefix
+because they are wired as *callbacks*, and flattening that would lose the distinction. And
+three separate modules each expose a generic `openModal()` — `historyManager.openModal()`
+reads better locally than `openHistoryModal()` does, so the DI name may rightly stay the
+disambiguated one.
+
+The deliverable is that **no alias is silent**: each is either gone or written down as
+intentional, which is what turns the auto-generation override map from a mystery into a list.
 
 ---
 
@@ -177,6 +244,8 @@ Ascending blast radius, one PR each — the same discipline as the splits plan:
 
 | Order | Item | Blast radius | Why here |
 |---|---|---|---|
+| 0 | P0a inert `provides` claims | None — deletes fiction | No behaviour change; takes the `validate:provides` allow-list from 9 to 2 |
+| 0 | P0b alias decisions | Renames + consumer edits | Cheap, individually verifiable, and it is what makes #5 affordable |
 | 1 | P1 test registration | Dev tooling only | Nothing shipped can break; 7→1 is the best ratio available |
 | 2 | P3 Quick Actions triple | One feature | Small and contained; retires half of `validate:api` |
 | 3 | P2 precache generation | Shipped, but mechanical | Fixes the failure mode no other gate can see |
@@ -185,6 +254,26 @@ Ascending blast radius, one PR each — the same discipline as the splits plan:
 `depMappings` (#5) stays deferred on its existing plan's own criteria. Worth noting for that
 page: it cited **~230 entries at v2.412** and set "crosses ~500" as a trigger — the count is
 **258 as of v2.462**, so it is drifting upward but nowhere near the threshold.
+
+**But P0 changes its economics, which is the main reason P0 goes first.** Classifying all 230
+entries by shape: **142 (62%)** are plain same-name passthroughs and **12 (5%)** are direct
+property reads — both trivially derivable. A further **15 (7%)** are instance references that
+`provideInstance` likely covers. Against that, **18 (8%)** are aliases a generator cannot
+derive, **41 (18%)** are bespoke (mostly DOM and `localStorage` helpers, which are `CORE_DEPS`
+and are not going anywhere), and **2** use `||` fallbacks.
+
+So roughly **two thirds is derivable today**, and the override map lands near 60 entries
+against 230 — a real reduction by this page's own test. Retire the aliases in P0 and the
+derivable share rises further while the override map shrinks, so the generator gets both
+cheaper to build and easier to trust.
+
+Two cautions keep it at #5 rather than higher. First, the bug class is **already gated** —
+`validate:di` holds undeclared, resolvable-nowhere and undeliverable at 0 — so auto-generation
+buys maintenance cost, not safety. Second, it is the highest-blast-radius item on this page:
+it changes how *every* dep resolves for *every* module. Given that a single facade delegate
+resolving to `undefined` degraded three-panel swipe silently for 40 versions, it wants
+build-time (not boot-time) generation and a diff phase proving the generated map matches the
+hand-written one entry for entry before anything switches over.
 
 ---
 

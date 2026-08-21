@@ -56,6 +56,14 @@ const MANIFEST_DIR = path.resolve(__dirname, '../modules/boot');
  * Do not add to this list to make a new failure go away. A new entry means a
  * module claims something it does not supply, which is the exact shape of the
  * v2.347 navigatePanels bug.
+ *
+ * SEVEN of these nine are also DI-name ALIASES in moduleLoader's depMappings --
+ * the manifest says logHistoryEvent, the module defines logEvent. That single
+ * mismatch causes both symptoms: registerProvides skips the name, and the
+ * deferred depMappings generator cannot derive it. Deleting the inert manifest
+ * claim (as v2.462 did for statsPanel's three) takes this list from 9 to 2 with
+ * no behaviour change. See P0 in
+ * docs/future-work/SINGLE_SOURCE_CONSOLIDATION_PLAN.md.
  */
 const KNOWN_UNSUPPLIED = new Map([
     ['notifications.showNotification',            'featureBoot.js wires deps.utils.showNotification -> notifications.show()'],
