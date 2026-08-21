@@ -10,7 +10,7 @@
 > Other sites should fetch that rather than scraping this page — both come from
 > the same counter, so they cannot disagree.
 
-**Last Updated**: August 20, 2026
+**Last Updated**: August 21, 2026
 
 ---
 
@@ -18,14 +18,14 @@
 
 | Metric | Value |
 |--------|-------|
-| **App Version** | 2.459 |
+| **App Version** | 2.460 |
 | **Lite Version** | 2.092 (frozen) |
 | **Schema Version** | 2.5 |
-| **Total Modules** | 140 |
-| **Total Tests** | 3486 |
+| **Total Modules** | 141 |
+| **Total Tests** | 3501 |
 | **Test Pass Rate** | 100% |
-| **CSS Files** | 44 |
-| **JSDoc Blocks** | 1385 |
+| **CSS Files** | 45 |
+| **JSDoc Blocks** | 1394 |
 | **Documentation Files** | 243 |
 | **DI Completion** | 100% |
 | **Custom window.* Globals (modules)** | 0 |
@@ -45,14 +45,14 @@
 | `recurring/` | 17 | Recurring task scheduling, panel, activation |
 | `ui/` | 37 | Modals, menus, settings, onboarding, gestures |
 | `features/` | 11 | Themes, stats, achievements, history, reminders |
-| `utils/` | 22 | Notifications, device detection, utilities |
+| `utils/` | 23 | Notifications, device detection, utilities |
 | `labels/` | 3 | Default labels + label resolver |
 | `storage/` | 2 | Backup manager (IndexedDB), storage persistence (eviction protection) |
 | `progress/` | 1 | Cycle completion tracking |
 | `platform/` | 1 | capacitorBridge — native shell for iOS/Android; no-op on web |
 | `testing/` | 9 | Test infrastructure |
 | `other/` | 3 | Plugins, experimental |
-| **Total** | **140** | |
+| **Total** | **141** | |
 
 ---
 
@@ -73,8 +73,8 @@
 
 | Category | Tests |
 |----------|-------|
-| Total Tests | 3486 |
-| Test Files | 133 |
+| Total Tests | 3501 |
+| Test Files | 134 |
 | Pass Rate | 100% |
 | Platforms Tested | Mac, iPad, iPhone |
 
