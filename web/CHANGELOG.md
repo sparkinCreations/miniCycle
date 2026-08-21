@@ -1,3 +1,16 @@
+## [2.464] - 2026-08-21
+- test(tips): cover the extracted educational-tips class, and record the deps gap
+- docs(splits): add a DONE condition, and gate the checklist on what actually caught the last two split bugs
+- fix(tips): stop an early empty cache from erasing dismissed tips
+- refactor(tips): align the extracted module with the app's own patterns
+- feat(focus): the miniCycle logo now stays visible in Focus View. The header's
+  chrome (menu button, mode selector, saving indicator) is hidden individually
+  instead of hiding the whole header, so the logo survives. Focus View shows the
+  MARK only — slightly enlarged — with the wordmark and "ROUTINE MANAGER"
+  subtitle left out: both address someone who does not yet know the app, and this
+  view is for someone mid-routine who does.
+
+
 ## [2.463] - 2026-08-21
 First module split from the splits plan since v2.347, and one real fix that the
 split surfaced.

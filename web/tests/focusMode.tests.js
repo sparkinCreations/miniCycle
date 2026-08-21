@@ -859,6 +859,91 @@ export async function runFocusModeTests(resultsDiv) {
     });
 
     // ============================================
+    resultsDiv.innerHTML += '<h4 class="test-section">🎨 Branding stays visible in focus view</h4>';
+
+    // The header BRANDING is deliberately exempt from the chrome focus view hides.
+    // It can only be exempt if the header's chrome CHILDREN are hidden rather than
+    // .fixed-header-container itself: a descendant can override an ancestor's
+    // `visibility`, but never its `opacity`, and `inert` on an ancestor cannot be
+    // cancelled from within. Re-adding the container to the list silently re-hides
+    // the logo.
+    //
+    // These build their own fixture on purpose. The harness page has no app header,
+    // so an earlier version of these guards querySelector'd null and skipped every
+    // assertion — they passed even with the container put back, which is a test that
+    // cannot fail. Injecting deps that resolve against the fixture makes them real.
+
+    const withHeaderFixture = (fn) => {
+        const host = document.createElement('div');
+        host.innerHTML =
+            '<div class="fixed-header-container">' +
+              '<header class="mini-cycle-header-row">' +
+                '<div class="header-branding"><img class="header-logo" alt="miniCycle"></div>' +
+                '<button class="menu-button">☰</button>' +
+              '</header>' +
+              '<div class="mode-selector-wrapper"></div>' +
+              '<div id="saving-indicator"></div>' +
+            '</div>';
+        document.body.appendChild(host);
+        const deps = {
+            querySelector: (sel) => host.querySelector(sel),
+            getElementById: (id) => host.querySelector(`#${id}`),
+            getBody: () => document.body,
+            AppState: { get: () => ({ settings: {} }), update: () => {} },
+            safeAddEventListener: () => {}
+        };
+        try {
+            mod.setFocusModeDependencies(deps);
+            const focusMode = new mod.FocusMode();
+            return fn(focusMode, host);
+        } finally {
+            host.remove();
+        }
+    };
+
+    await test('the header container itself is never made inert', () => {
+        withHeaderFixture((focusMode, host) => {
+            const els = focusMode._getInertChromeElements();
+            const container = host.querySelector('.fixed-header-container');
+            if (!container) throw new Error('fixture broken — no container to assert against');
+            if (els.includes(container)) {
+                throw new Error(
+                    'fixed-header-container is back in the inert list — inertness inherits and cannot ' +
+                    'be cancelled by .header-branding, so the logo is hidden from assistive tech again'
+                );
+            }
+        });
+    });
+
+    await test('branding is not inside anything focus view hides', () => {
+        withHeaderFixture((focusMode, host) => {
+            const branding = host.querySelector('.header-branding');
+            if (!branding) throw new Error('fixture broken — no branding to assert against');
+            for (const hidden of focusMode._getInertChromeElements()) {
+                if (hidden.contains(branding)) {
+                    throw new Error(
+                        'the logo sits inside an element focus view hides — opacity and inert both ' +
+                        'inherit, so it cannot be exempted from within'
+                    );
+                }
+            }
+        });
+    });
+
+    await test('the header chrome children are still hidden', () => {
+        withHeaderFixture((focusMode, host) => {
+            const els = focusMode._getInertChromeElements();
+            for (const sel of ['.menu-button', '.mode-selector-wrapper']) {
+                const el = host.querySelector(sel);
+                if (!el) throw new Error(`fixture broken — ${sel} missing`);
+                if (!els.includes(el)) {
+                    throw new Error(`${sel} dropped from the inert list — focus view would leave it tabbable`);
+                }
+            }
+        });
+    });
+
+    // ============================================
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;
     if (passed.count === total.count) {

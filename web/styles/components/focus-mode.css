@@ -9,7 +9,9 @@
    ============================================================================= */
 
 /* Selectors map to constants.js:
-   .fixed-header-container  → DOM_CLASSES.FIXED_HEADER_CONTAINER
+   .menu-button             → DOM_SELECTORS.MENU_BUTTON
+   .mode-selector-wrapper   → DOM_SELECTORS.MODE_SELECTOR_WRAPPER
+   #saving-indicator        → DOM_IDS.SAVING_INDICATOR
    #slide-left              → DOM_IDS.SLIDE_LEFT
    #slide-right             → DOM_IDS.SLIDE_RIGHT
    #quick-actions-window    → DOM_IDS.QUICK_ACTIONS_WINDOW
@@ -140,7 +142,9 @@ body.focus-mode #task-view .task-list-container {
    --focus-chrome-fade exists so the fade duration and the visibility delay
    below cannot drift apart: the delay MUST equal the fade, or the chrome either
    vanishes mid-fade or lingers in the tab order after it. */
-.fixed-header-container,
+.mini-cycle-header-row .menu-button,
+.mode-selector-wrapper,
+#saving-indicator,
 #slide-left,
 #slide-right,
 #quick-actions-window,
@@ -152,7 +156,16 @@ body.focus-mode #task-view .task-list-container {
     transition: opacity var(--focus-chrome-fade) ease, visibility 0s;
 }
 
-body.focus-mode .fixed-header-container,
+/* The header's CHROME children are hidden individually — NOT the whole
+   .fixed-header-container — so .header-branding stays visible in focus view.
+   It has to be this way round: a descendant can override an ancestor's
+   `visibility`, but it can NEVER override an ancestor's `opacity` (opacity
+   applies to the composited subtree), and `inert` on an ancestor is likewise
+   not cancellable from within. Exempting the logo inside a hidden container
+   is therefore impossible; the container must not be the thing hidden. */
+body.focus-mode .mini-cycle-header-row .menu-button,
+body.focus-mode .mode-selector-wrapper,
+body.focus-mode #saving-indicator,
 body.focus-mode #slide-left,
 body.focus-mode #slide-right,
 body.focus-mode #quick-actions-window,
@@ -181,6 +194,67 @@ body.focus-mode #quick-dark-toggle {
     visibility: hidden;
     transition: opacity var(--focus-chrome-fade) ease,
                 visibility 0s linear var(--focus-chrome-fade);
+}
+
+/* =============================================================================
+   FOCUS MODE — BRANDING: THE MARK ALONE
+   ============================================================================= */
+
+/* The logo MARK stays; the wordmark and the "ROUTINE MANAGER" subtitle do not.
+   Both are identity/descriptor elements aimed at someone who does not yet know
+   the app — this view is for someone mid-routine who does. Dropping them also
+   returns the vertical breathing room that is most of why focus view reads calm.
+   Hiding the group (not the two children) keeps .header-branding's flex gap from
+   leaving a hole where they were. */
+body.focus-mode .app-name-group {
+    display: none;
+}
+
+/* Sized up so the mark reads as a deliberate anchor rather than an orphaned icon
+   once it stands alone (25px base -> 36px).
+
+   HEIGHT, NOT transform: the logo carries the cycle-reset coin flip
+   (.logo-spin), the green/red flash feedback (.logo-flash-*) and a :hover
+   scale — all of which animate `transform`. Scaling here would be overwritten
+   mid-animation and the mark would snap back to base size on every cycle reset.
+
+   `width: auto` is explicit because a narrow-viewport rule in header.css pins
+   width to 28px; without it the taller mark would be squashed. */
+body.focus-mode .header-logo {
+    --focus-logo-height: 36px;
+    height: var(--focus-logo-height);
+    width: auto;
+}
+
+/* Lift the mark to sit on the same optical line as the ✕ / ⋯ buttons.
+   Measured at 390x844: the buttons centre at y=31 while .header-branding
+   centres at y=41, because it is centred on the HEADER ROW (and a narrow-
+   viewport rule pushes it further down by half the safe-area inset). Ten
+   pixels low reads as misaligned against two elements it sits between.
+
+   margin-top, NOT transform: .header-branding already uses
+   translate(-50%, -50%) to centre itself, so overriding transform here would
+   mean restating that centring. A negative margin composes with the existing
+   absolute positioning and leaves the transform alone.
+
+   THE 10px IS SAFE-AREA INDEPENDENT — do not "fix" it with an env() term.
+   With S = env(safe-area-inset-top):
+       buttons   top: S + 12, height 38        -> centre  S + 31
+       branding  row padding grows by S, so the row is (82 + S) tall, and
+                 top: 50% + S/2                -> centre  (82+S)/2 + S/2 = 41 + S
+   The difference is 41 + S - (S + 31) = 10px for every S. That cancellation is
+   exactly what header.css's `+ env(...)/2` rule is there to produce, so adding
+   another safe-area term here would over-correct on notched devices only —
+   the hardest place to notice it. */
+body.focus-mode .header-branding {
+    --focus-logo-rise: 10px;
+    margin-top: calc(-1 * var(--focus-logo-rise));
+}
+
+/* Transition lives on the base selector so the resize eases BOTH ways — a rule
+   inside body.focus-mode simply stops applying on exit, which would snap. */
+.header-logo {
+    transition: height var(--transition-normal) ease;
 }
 
 /* Help window stays visible in focus mode, but strip the leading
