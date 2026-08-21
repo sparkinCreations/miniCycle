@@ -2195,6 +2195,20 @@ export class RoutineSwitcher {
      * current language rather than whatever was current when the modal first
      * opened. The buttons' own title attributes stay as they are — they are the
      * desktop hover affordance, and this is the touch one.
+     *
+     * This also pins the ACCESSIBLE NAME, which is not the same job. Measured
+     * with Chromium's accessibility tree: because `.switch-btn-label` is
+     * `display: none` under the mobile breakpoint — and display:none removes
+     * text from the accessibility tree, not just from view — the same button
+     * was announced as "Duplicate" on desktop and "Duplicate routine" on
+     * mobile, the latter coming from `title`, which is the LAST resort in the
+     * accessible-name algorithm and the one assistive tech is least reliably
+     * configured to read.
+     *
+     * Naming from the same label key as the hint fixes both: one name at every
+     * width, from a real `aria-label` rather than a fallback, and it cannot
+     * drift from what the hint says because there is only one string. Buttons
+     * that already carry a deliberate aria-label (the theme picker) keep it.
      * @returns {void}
      */
     _attachActionHints() {
@@ -2212,6 +2226,15 @@ export class RoutineSwitcher {
         for (const [id, labelKey] of hints) {
             const btn = this.deps.getElementById(id);
             if (!btn) continue;
+            // Re-applied on every open so the name follows the current language,
+            // exactly like the hint text it is drawn from.
+            if (!btn.dataset.ariaLabelFixed && btn.hasAttribute('aria-label')) {
+                // Authored deliberately in the markup — leave it alone.
+                btn.dataset.ariaLabelFixed = 'authored';
+            } else {
+                btn.dataset.ariaLabelFixed = 'derived';
+                btn.setAttribute('aria-label', getLabel(labelKey));
+            }
             this._actionHintDetachers.push(
                 attachLongPressHint(btn, { getText: () => getLabel(labelKey) })
             );
