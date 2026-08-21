@@ -34,7 +34,7 @@
  * `--first-run-welcome-height` measurement pattern in `onboardingManager`.
  */
 
-import { DOM_SELECTORS, DOM_IDS } from '../core/constants.js';
+import { DOM_SELECTORS, DOM_IDS, EVENTS } from '../core/constants.js';
 
 /** CSS variables layout rules read. Kept here as the single source. */
 export const HEADER_HEIGHT_VAR = '--header-total-height';
@@ -48,6 +48,7 @@ let _navEl = null;
 let _retryRaf = null;
 let _loadHandler = null;
 let _visibilityHandler = null;
+let _focusModeHandler = null;
 
 /**
  * Measure the fixed header and publish its height to `:root`.
@@ -172,6 +173,20 @@ export function initHeaderLayout() {
         document.addEventListener('visibilitychange', _visibilityHandler);
     }
 
+    // Focus mode MOVES the nav dots (bottom: 80px there vs their normal-mode
+    // offset), which changes --nav-dots-clearance — and nothing else here fires
+    // on that transition: no resize, no orientation change, and the dots don't
+    // resize so the ResizeObserver stays quiet. Without this the published
+    // clearance describes the mode the app was in at the last measure, and
+    // focus mode's help-window clearance derives from it. Measured on the next
+    // frame because the class that repositions the dots is applied by the same
+    // dispatch that emits these events.
+    if (!_focusModeHandler) {
+        _focusModeHandler = () => requestAnimationFrame(_measureAll);
+        document.addEventListener(EVENTS.FOCUS_MODE_ACTIVATED, _focusModeHandler);
+        document.addEventListener(EVENTS.FOCUS_MODE_DEACTIVATED, _focusModeHandler);
+    }
+
     return !!_headerEl;
 }
 
@@ -229,6 +244,11 @@ export function destroyHeaderLayout() {
     if (_visibilityHandler) {
         document.removeEventListener('visibilitychange', _visibilityHandler);
         _visibilityHandler = null;
+    }
+    if (_focusModeHandler) {
+        document.removeEventListener(EVENTS.FOCUS_MODE_ACTIVATED, _focusModeHandler);
+        document.removeEventListener(EVENTS.FOCUS_MODE_DEACTIVATED, _focusModeHandler);
+        _focusModeHandler = null;
     }
     if (_retryRaf) {
         cancelAnimationFrame(_retryRaf);

@@ -1,3 +1,40 @@
+## [2.472] - 2026-08-21
+- fix(focus): the Focus View help window no longer runs into the Routine|Stats
+  nav dots when the browser shows its own chrome. `--focus-help-window-clearance`
+  is now derived rather than a fixed px.
+
+  Both edges involved are known, and solving for the clearance cancels the
+  viewport term entirely:
+
+  ```
+  view.bottom = 100dvh + 2*offset - chromeBottom - cardGap
+  navTop      = 100dvh - navDotsClearance
+  clearance   = 2*offset - chromeBottom - cardGap + navDotsClearance + gap
+  ```
+
+  So the correct value never depended on viewport *height* — but it does depend
+  on `env(safe-area-inset-top)` via chromeBottom, which no fixed number can
+  express. 80px was right at a 61px inset (installed app) and 61px too small at
+  inset 0, where Safari's own chrome covers the island and the equation asks for
+  141px. Same build, same device, different surface.
+
+  Measured gap above the nav dots, previously overlapping at 402x656:
+
+  | inset | viewport | gap |
+  |---|---|---|
+  | 61 | 393x852 | 25 |
+  | 0 | 402x656 | 25 |
+  | 61 | 375x812 | 25 |
+  | 0 | 393x852 | 35 (cap not binding — more room, never less) |
+
+- fix(layout): `headerLayoutManager` now re-measures on focus-mode enter/exit.
+  Focus mode moves `#nav-dots` (`bottom: 80px` there), which changes
+  `--nav-dots-clearance`, and nothing was firing on that transition — no resize,
+  no orientation change, and the dots don't resize so the ResizeObserver stayed
+  quiet. The published value described whichever mode the app was in at the last
+  measure, which the clearance above reads directly.
+
+
 ## [2.471] - 2026-08-21
 - style(focus): another 20px of the Focus View bottom gap goes to the content.
   `--focus-help-window-clearance` 100px -> 80px: list 457 -> 477, card 489 -> 509,
