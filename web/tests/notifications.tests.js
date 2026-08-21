@@ -404,6 +404,134 @@ export async function runNotificationsTests(resultsDiv) {
 
     resultsDiv.innerHTML += '<h4 class="test-section">🎓 Educational Tips</h4>';
 
+    // --- SPLIT SEAM (Aug 2026) ---
+    // EducationalTipManager moved to modules/utils/educationalTips.js and reaches
+    // its consumers only because notifications.js RE-EXPORTS it. That re-export is
+    // the same shape of seam the v2.347 statsPanel split dropped: remove it and
+    // nothing throws at the source — importers just receive undefined, and the
+    // harness's `window.EducationalTipManager = mod.EducationalTipManager` quietly
+    // assigns undefined. Every tip test below would then fail with a confusing
+    // "not a constructor" instead of naming the cause, so these run first.
+
+    await test('notifications.js re-exports EducationalTipManager (split seam)', async () => {
+        const mod = await import(`../modules/utils/notifications.js?v=${cacheBuster}`);
+        if (typeof mod.EducationalTipManager !== 'function') {
+            throw new Error(
+                'notifications.js must re-export EducationalTipManager — it lives in ' +
+                './educationalTips.js since the Aug 2026 split, and the test harness plus ' +
+                'every existing importer reach it through this facade re-export'
+            );
+        }
+    });
+
+    await test('the facade uses the class it re-exports (no second copy)', async () => {
+        // Deliberately compared INSIDE one module graph. The facade imports
+        // './educationalTips.js' bare while a test importing it with ?v= gets a
+        // separate registry entry, so comparing those two is guaranteed to differ
+        // and would prove nothing. What matters is that the class a caller gets
+        // from the facade is the one the facade itself instantiates.
+        const facade = await import(`../modules/utils/notifications.js?v=${cacheBuster}`);
+        const instance = new facade.MiniCycleNotifications();
+        if (!(instance.educationalTips instanceof facade.EducationalTipManager)) {
+            throw new Error(
+                'The tip manager held by MiniCycleNotifications is not an instance of the ' +
+                're-exported class — two copies mean dismissed-tip state can diverge'
+            );
+        }
+    });
+
+    await test('the extracted class still resolves deps through the live getter', async () => {
+        const { EducationalTipManager } = await import(`../modules/utils/educationalTips.js?v=${cacheBuster}`);
+        let handed = { marker: 'first' };
+        const tipManager = new EducationalTipManager(() => handed);
+        if (tipManager.deps.marker !== 'first') {
+            throw new Error('Constructor getter not consulted on read');
+        }
+        // The getter exists so LATE-injected deps propagate without re-wiring.
+        // A split that captured deps by value instead would pass the line above
+        // and silently freeze the notifications instance's deps at boot.
+        handed = { marker: 'second' };
+        if (tipManager.deps.marker !== 'second') {
+            throw new Error('deps captured by value — late-injected deps will never reach this class');
+        }
+    });
+
+    await test('an unavailable data source is not cached as "nothing dismissed"', async () => {
+        // A tip-bearing notification can fire before loadMiniCycleData is wired.
+        // Caching {} at that moment made every already-dismissed tip reappear.
+        const { EducationalTipManager } = await import(`../modules/utils/educationalTips.js?v=${cacheBuster}`);
+        let deps = {};                       // loadMiniCycleData not available yet
+        const tipManager = new EducationalTipManager(() => deps);
+
+        if (tipManager.isTipDismissed('already-dismissed') !== false) {
+            throw new Error('Expected false while the source is unavailable');
+        }
+
+        // Source arrives late, reporting a real dismissal.
+        deps = { loadMiniCycleData: () => ({ settings: { dismissedEducationalTips: { 'already-dismissed': true } } }) };
+        if (tipManager.isTipDismissed('already-dismissed') !== true) {
+            throw new Error('Fallback was cached — the real dismissed map is now unreachable');
+        }
+    });
+
+    await test('saving merges into stored dismissals instead of replacing them', async () => {
+        // The replace-wholesale version erased every prior dismissal the first
+        // time a user dismissed a tip after a failed early load.
+        const { EducationalTipManager } = await import(`../modules/utils/educationalTips.js?v=${cacheBuster}`);
+        const stored = { settings: { dismissedEducationalTips: { old: true, older: true } } };
+        let updated = null;
+        const deps = {
+            loadMiniCycleData: () => stored,
+            AppState: {
+                isReady: () => true,
+                update: async (producer) => { producer(stored); updated = stored.settings.dismissedEducationalTips; }
+            }
+        };
+        const tipManager = new EducationalTipManager(() => deps);
+        tipManager.dismissedTips = {};       // simulate a poisoned/empty local cache
+
+        await tipManager.saveDismissedTips({ fresh: true });
+
+        if (!updated || updated.old !== true || updated.older !== true) {
+            throw new Error(`Prior dismissals erased: ${JSON.stringify(updated)}`);
+        }
+        if (updated.fresh !== true) {
+            throw new Error('New dismissal not persisted');
+        }
+    });
+
+    await test('un-dismissing removes only that tip', async () => {
+        const { EducationalTipManager } = await import(`../modules/utils/educationalTips.js?v=${cacheBuster}`);
+        const stored = { settings: { dismissedEducationalTips: { keep: true, drop: true } } };
+        let updated = null;
+        const deps = {
+            loadMiniCycleData: () => stored,
+            AppState: {
+                isReady: () => true,
+                update: async (producer) => { producer(stored); updated = stored.settings.dismissedEducationalTips; }
+            }
+        };
+        const tipManager = new EducationalTipManager(() => deps);
+        await tipManager.saveDismissedTips({ drop: false });
+
+        if (updated.keep !== true) throw new Error('Un-dismissing one tip removed another');
+        if ('drop' in updated) throw new Error('Un-dismissed tip was not removed');
+    });
+
+    await test('a plain object still works as the constructor argument', async () => {
+        // Backwards compatibility: the pre-split class accepted either shape, and
+        // the harness constructs it with no argument at all.
+        const { EducationalTipManager } = await import(`../modules/utils/educationalTips.js?v=${cacheBuster}`);
+        const withObject = new EducationalTipManager({ marker: 'obj' });
+        if (withObject.deps.marker !== 'obj') {
+            throw new Error('Plain-object deps argument no longer supported');
+        }
+        const withNothing = new EducationalTipManager();
+        if (typeof withNothing.deps === 'undefined' && withNothing.deps !== undefined) {
+            throw new Error('Zero-argument construction should not throw');
+        }
+    });
+
     await test('EducationalTipManager creates successfully', () => {
         const tipManager = new window.EducationalTipManager();
         if (!tipManager) {
@@ -836,8 +964,12 @@ export async function runNotificationsTests(resultsDiv) {
         const tipManager = new window.EducationalTipManager();
         const tips = tipManager.loadDismissedTips();
 
-        if (Object.keys(tips).length !== 0) {
-            throw new Error('Should return empty object when function missing');
+        // Contract changed deliberately: null means "could not load", which is
+        // NOT the same as "loaded, nothing dismissed". Returning {} here is what
+        // let getDismissedTips() cache an empty map forever and, via the old
+        // wholesale save, erase the user's real dismissals.
+        if (tips !== null) {
+            throw new Error(`Should return null when the data source is missing, got ${JSON.stringify(tips)}`);
         }
     });
 

@@ -1,3 +1,28 @@
+## [2.463] - 2026-08-21
+First module split from the splits plan since v2.347, and one real fix that the
+split surfaced.
+- fix(tips): dismissed educational tips could be wiped. If a tip-bearing
+  notification appeared before the data source finished wiring, the manager
+  cached "nothing dismissed" permanently — so already-dismissed tips reappeared,
+  and the next dismissal saved that empty map over every dismissal the user had
+  accumulated. The cache now distinguishes "could not load yet" from "nothing
+  dismissed" and retries, and saving merges a change into stored data instead of
+  replacing it wholesale.
+- refactor(notifications): EducationalTipManager moves to its own module,
+  `utils/educationalTips.js`. The two classes shared a file because a tip is
+  delivered as a notification, but tracking what a user has already learned is a
+  different job from rendering a toast. notifications.js drops from 1,928 to
+  1,741 lines and re-exports the class, so every existing importer and the test
+  suite reach it unchanged.
+- test(notifications): guard the new split seam — the re-export, the facade using
+  the class it re-exports, and the live deps getter. Capturing deps by value at
+  construction (an easy "simplification") passes every other test and would stop
+  late-injected deps ever arriving.
+- refactor(constants): `DATA_SELECTORS.tipById()` replaces three hardcoded
+  `#tip-${id}` selectors in the extracted module, matching the CSS.escape'd
+  builder pattern its neighbours already use.
+
+
 ## [2.462] - 2026-08-21
 No user-facing change. Internal correctness work on the stats panel's module
 contract, ahead of further module splits.

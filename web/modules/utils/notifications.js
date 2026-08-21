@@ -38,6 +38,7 @@ import { createDIModule, optional } from '../core/diBase.js';
 import { UI_TIMEOUTS, COLORS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, BREAKPOINTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { reshowPopover } from './popoverUtils.js';
+import { EducationalTipManager } from './educationalTips.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -126,200 +127,6 @@ function simpleHash(str) {
  */
 export function setNotificationsDependencies(dependencies) {
   di.setDependencies(dependencies);
-}
-
-/**
- * 🎓 Educational Tips Manager Class
- */
-class EducationalTipManager {
-  constructor(getDeps) {
-    // Store getter function for live deps access
-    this._getDeps = typeof getDeps === 'function' ? getDeps : () => getDeps;
-    this.dismissedTips = null; // Will be loaded lazily
-  }
-
-  // Getter that always returns current deps
-  get deps() {
-    return this._getDeps();
-  }
-
-  loadDismissedTips() {
-
-    try {
-      // Check if loadMiniCycleData is available (DI-pure)
-      if (typeof this.deps.loadMiniCycleData !== 'function') {
-        console.warn('⚠️ loadMiniCycleData not yet available, using fallback');
-        return {};
-      }
-
-      const schemaData = this.deps.loadMiniCycleData();
-      if (!schemaData || !schemaData.settings) {
-        console.error('❌ Schema 2.5 data required for loadDismissedTips');
-        return {};
-      }
-
-      // ✅ DI-pure: Use schemaData directly, no localStorage access
-      return schemaData.settings.dismissedEducationalTips || {};
-    } catch (e) {
-      console.warn('⚠️ Error loading dismissed tips from Schema 2.5:', e);
-      return {};
-    }
-  }
-
-  getDismissedTips() {
-    if (this.dismissedTips === null) {
-      this.dismissedTips = this.loadDismissedTips();
-    }
-    return this.dismissedTips;
-  }
-
-  async saveDismissedTips() {
-
-    try {
-      // ✅ DEFENSIVE CHECK: Ensure deps and AppState exist before accessing
-      // Node.js 20.x timing differences can cause AppState to be undefined
-      const deps = this.deps;
-      if (!deps || !deps.AppState) {
-        console.warn('⚠️ AppState not available for saveDismissedTips (deps not ready)');
-        return;
-      }
-
-      // ✅ Use AppState only (DI-pure, no localStorage fallback)
-      if (typeof deps.AppState.isReady !== 'function' || !deps.AppState.isReady()) {
-        console.warn('⚠️ AppState not ready for saveDismissedTips');
-        return;
-      }
-
-      await deps.AppState.update(state => {
-        if (!state.settings) state.settings = {};
-        state.settings.dismissedEducationalTips = this.getDismissedTips();
-      }, true);
-
-    } catch (e) {
-      console.error('❌ Error saving dismissed tips to Schema 2.5:', e);
-    }
-  }
-
-  isTipDismissed(tipId) {
-    return this.getDismissedTips()[tipId] === true;
-  }
-
-  dismissTip(tipId) {
-    this.getDismissedTips()[tipId] = true;
-    this.saveDismissedTips();
-  }
-
-  showTip(tipId) {
-    delete this.getDismissedTips()[tipId];
-    this.saveDismissedTips();
-  }
-
-  createTip(tipId, tipText, options = {}) {
-    const {
-      icon = '💡',
-      borderColor = 'var(--tip-border-color, rgba(255, 255, 255, 0.3))',
-      backgroundColor = 'var(--tip-bg-color, rgba(255, 255, 255, 0.1))',
-      className = 'educational-tip'
-    } = options;
-
-    const isDismissed = this.isTipDismissed(tipId);
-    
-    return `
-      <div class="${className}" id="tip-${tipId}" data-tip-id="${tipId}" 
-           style="display: ${isDismissed ? 'none' : 'block'};">
-        <div class="tip-content">
-          <span class="tip-icon">${icon}</span>
-          <span class="tip-text">${tipText}</span>
-          <button class="tip-close" aria-label="${getLabel('notify.dismissTip')}">✕</button>
-        </div>
-      </div>
-      <button class="tip-toggle ${isDismissed ? 'show' : 'hide'}"
-              data-tip-id="${tipId}"
-              aria-label="${getLabel('notify.showTip')}">
-        💡
-      </button>
-    `;
-  }
-
-  initTipListeners(container) {
-    // Create bound handlers for this container (stored on container to enable removal)
-    if (!container._tipCloseHandler) {
-      container._tipCloseHandler = (e) => {
-        if (e.target.classList.contains(DOM_CLASSES.TIP_CLOSE)) {
-          e.stopPropagation();
-          const tipElement = e.target.closest(DOM_SELECTORS.EDUCATIONAL_TIP);
-          const tipId = tipElement.dataset.tipId;
-          this.hideTip(tipId, container);
-        }
-      };
-    }
-
-    if (!container._tipToggleHandler) {
-      container._tipToggleHandler = (e) => {
-        if (e.target.classList.contains(DOM_CLASSES.TIP_TOGGLE) || e.target.classList.contains(DOM_CLASSES.TIP_TOGGLE_BTN)) {
-          e.stopPropagation();
-          const tipId = e.target.dataset.tipId;
-          const tipElement = container.querySelector(`#tip-${tipId}`);
-
-          if (tipElement.style.display === 'none') {
-            this.showTipElement(tipId, container);
-          } else {
-            this.hideTip(tipId, container);
-          }
-        }
-      };
-    }
-
-    // Handle tip close buttons
-    _safeAddEventListener(container, 'click', container._tipCloseHandler);
-
-    // Handle tip toggle buttons
-    _safeAddEventListener(container, 'click', container._tipToggleHandler);
-  }
-
-  hideTip(tipId, container) {
-    const tipElement = container.querySelector(`#tip-${tipId}`);
-    const toggleButton = container.querySelector(`${DOM_SELECTORS.TIP_TOGGLE}[data-tip-id="${tipId}"]`);
-    
-    if (tipElement) {
-      tipElement.style.opacity = '0';
-      tipElement.style.transform = 'translateY(-10px)';
-      
-      setTimeout(() => {
-        tipElement.style.display = 'none';
-        if (toggleButton) {
-          toggleButton.classList.remove(DOM_CLASSES.HIDE);
-          toggleButton.classList.add(DOM_CLASSES.SHOW);
-        }
-      }, 200);
-    }
-    
-    this.dismissTip(tipId);
-  }
-
-  showTipElement(tipId, container) {
-    const tipElement = container.querySelector(`#tip-${tipId}`);
-    const toggleButton = container.querySelector(`${DOM_SELECTORS.TIP_TOGGLE}[data-tip-id="${tipId}"]`);
-    
-    if (tipElement) {
-      tipElement.style.display = 'block';
-      tipElement.style.opacity = '0';
-      tipElement.style.transform = 'translateY(-10px)';
-      
-      // Force reflow
-      tipElement.offsetHeight;
-      
-      tipElement.style.opacity = '1';
-      tipElement.style.transform = 'translateY(0)';
-      
-      if (toggleButton) {
-        toggleButton.classList.remove(DOM_CLASSES.SHOW);
-        toggleButton.classList.add(DOM_CLASSES.HIDE);
-      }
-    }
-    
-    this.showTip(tipId);
-  }
 }
 
 /**
@@ -1925,4 +1732,10 @@ async setDefaultPosition(notificationContainer) {
 }
 
 // Phase 2 Step 3 - Clean exports (no window.* pollution)
+// RE-EXPORT SEAM (Aug 2026 split): EducationalTipManager now lives in
+// ./educationalTips.js. This line is what keeps the test harness's
+// `window.EducationalTipManager = mod.EducationalTipManager` and every existing
+// importer working through the facade. Drop it and nothing throws here — the
+// importer just gets undefined, which is how the v2.347 statsPanel split broke
+// three-panel swipe for 40 versions. notifications.tests.js guards it.
 export { EducationalTipManager };
