@@ -1,3 +1,26 @@
+## [2.477] - 2026-08-22
+- fix(todo): completing a task glows the logo green in **every** mode, To-Do
+  included. Corrects v2.475, which read the report as "no logo effect in To-Do
+  mode" and removed both effects; only the blue scan line was wrong there.
+
+  Finishing a task is the same act whichever mode you are in, so the feedback is
+  the same and there is deliberately no mode branch left in the handler. The scan
+  line is a different signal — it means tasks were CLEARED — and stays on
+  `taskCycleReset`'s clear path.
+
+  Verified by reproduction rather than reasoning, since this contract has now
+  been got wrong twice:
+
+  | | on complete | on clear |
+  |---|---|---|
+  | To-Do | green glow | blue scan line |
+  | Cycle | green glow | — |
+
+  (The empty cell is an artefact of the probe: in Cycle mode that button
+  completes the *cycle*, which plays `logo-spin`, a class the observer does not
+  watch. It is not evidence that nothing happens.)
+
+
 ## [2.476] - 2026-08-22
 - fix(focus): the Focus View input bar stays attached to the task list, matching
   Home view. v2.474 centred a short routine using `margin-top: auto` on
