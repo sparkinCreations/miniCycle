@@ -1,3 +1,50 @@
+## [2.483] - 2026-08-22
+- Two latent seam defects found by an audit of the bug class behind v2.481. Neither
+  was user-visible; both would have surfaced later, silently, and been reported by
+  a person rather than caught by a test.
+
+  **themeManager is now the sole owner of the themes-panel buttons.** `statsPanel`
+  bound a second click handler to `#open-themes-panel` and `#close-themes-btn`,
+  which themeManager already owned. `safeAddEventListener` only dedupes *identical
+  handler references*, so both survived and both fired — making two things depend on
+  listener registration order:
+
+  - themeManager calls `renderVocabThemes()` only inside its `if (!open)` branch, so
+    whichever handler opened the dialog first decided whether the modal's content was
+    refreshed at all;
+  - statsPanel set `_previousFocus` *unconditionally*, so running second it overwrote
+    themeManager's capture with an element inside the now-open dialog — sending focus
+    into a closed dialog on restore.
+
+  Neither surfaced, because `renderVocabThemes()` is also driven centrally by
+  `refreshThemeLabels()` (boot, theme change, routine switch, cycle completion,
+  undo/redo). The removal is what makes it true rather than lucky.
+  `StatsPanelRewards.openThemesPanel()` / `closeThemesPanel()` are gone; a test now
+  fails if either returns.
+
+  **The games panel repopulates its text on every open.** `populateGamesPanelContent()`
+  ran only from `init()`. It writes the panel title, description and play-button text
+  through `getLabel()`, and `games.description` / `games.play` are both in
+  `LENS_SENSITIVE_KEYS` — so they change with the active vocab theme, while
+  `refreshThemeLabels()` has never covered this panel. Written once at boot, the panel
+  kept whichever theme's wording was live then.
+
+  Latent only because no shipped theme overrides those two keys yet — all five were
+  checked. The first one that does would have shipped stale wording that nothing
+  reported. Three `textContent` writes moved into the open handler, which also makes
+  this panel "rebuild on open", the one strategy of the three in use here that cannot
+  fail this way.
+
+  Both fixes are mutation-checked: each new test fails against the pre-fix module.
+
+  Verified in a browser: the themes modal still opens, re-renders its vocab-theme
+  section (proved by wiping the section first), and closes. Focus *restore* was not
+  verified end-to-end — two probe attempts measured a hidden button, since the themes
+  control lives inside the main menu — so that half rests on the structural argument
+  (one owner cannot clobber another's `_previousFocus`) plus `test:a11y`, not on a
+  measurement.
+
+
 ## [2.482] - 2026-08-22
 - Three follow-ups to v2.481's reminder fixes, from external review. No
   user-visible behaviour change on the working path; all three harden it.

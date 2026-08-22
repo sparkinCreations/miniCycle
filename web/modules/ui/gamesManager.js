@@ -241,6 +241,17 @@ class GamesManager {
             openButton._clickHandler = () => {
                 const gamesPanel = this.deps.getModal('games');
                 if (gamesPanel) {
+                    // Repopulate on every open, not just at init(). The panel's title,
+                    // description and play-button text come from getLabel(), and
+                    // `games.description` / `games.play` are both in
+                    // LENS_SENSITIVE_KEYS — so they change with the active vocab theme.
+                    // Written once at init they would keep the wording of whichever
+                    // theme was active at boot; refreshThemeLabels() re-renders many
+                    // surfaces on theme change but has never covered this panel.
+                    // Latent today only because no shipped theme overrides those two
+                    // keys yet (Aug 2026 seam audit) — the first one that does would
+                    // have shipped a silent staleness bug. Three textContent writes.
+                    this.populateGamesPanelContent();
                     gamesPanel._previousFocus = document.activeElement;
                     if (!gamesPanel.open) gamesPanel.showModal();
                     this.setupGamesModalOutsideClick();

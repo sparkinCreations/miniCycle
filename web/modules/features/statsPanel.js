@@ -367,10 +367,9 @@ export class StatsPanelManager {
             goldenUnlockMessage: getById(DOM_IDS.GOLDEN_UNLOCK_MESSAGE),
             gameUnlockMessage: getById(DOM_IDS.GAME_UNLOCK_MESSAGE),
             themeUnlockStatus: getById(DOM_IDS.THEME_UNLOCK_STATUS),
-            // Theme panel elements
-            openThemesPanel: getById(DOM_IDS.OPEN_THEMES_PANEL),
+            // Theme panel elements. The open/close BUTTONS are deliberately absent —
+            // themeManager binds them; see setupUIEvents.
             get themesModal() { return _deps.getModal('themes'); },
-            closeThemesBtn: getById(DOM_IDS.CLOSE_THEMES_BTN),
             quickDarkToggle: getById(DOM_IDS.QUICK_DARK_TOGGLE)
         };
 
@@ -420,9 +419,7 @@ export class StatsPanelManager {
             // Theme event handlers
             handleCurrentRoutineToggle: () => this.handleCurrentRoutineToggle(),
             handleThemeToggleClick: () => this._rewards.handleThemeToggleClick(),
-            handleQuickDarkToggle: () => this.handleQuickDarkToggle(),
-            handleOpenThemesPanel: () => this._rewards.openThemesPanel(),
-            handleCloseThemesPanel: () => this._rewards.closeThemesPanel()
+            handleQuickDarkToggle: () => this.handleQuickDarkToggle()
         };
 
         // NOTE: Gesture events (touch, mouse, wheel, pointer, keyboard) are now
@@ -529,13 +526,18 @@ export class StatsPanelManager {
         }
             */
 
-        // Theme panel buttons
-        if (this.elements.openThemesPanel) {
-            safeAdd(this.elements.openThemesPanel, "click", this.boundHandlers.handleOpenThemesPanel);
-        }
-        if (this.elements.closeThemesBtn) {
-            safeAdd(this.elements.closeThemesBtn, "click", this.boundHandlers.handleCloseThemesPanel);
-        }
+        // The themes modal's open/close buttons are NOT bound here. themeManager owns
+        // them (setupThemesPanelWithData), and binding a second handler to the same
+        // elements made two things depend on listener registration order:
+        //   - themeManager hydrates the modal (renderVocabThemes) only inside its
+        //     `if (!open)` branch, so whichever handler opened the dialog first
+        //     decided whether the content was refreshed at all;
+        //   - this module set `_previousFocus` UNconditionally, so running second it
+        //     overwrote themeManager's capture with an element inside the now-open
+        //     dialog, sending focus into a closed dialog on restore.
+        // Neither surfaced, because renderVocabThemes is also driven centrally by
+        // refreshThemeLabels. One owner per control removes the coin-flip. (Aug 2026
+        // seam audit.)
     }
 
     /**
@@ -1170,13 +1172,6 @@ export class StatsPanelManager {
             this._milestoneHeaderKeydownHandler = null;
             this._milestoneHeaderEl = null;
         }
-        if (this.elements.openThemesPanel) {
-            this.elements.openThemesPanel.removeEventListener("click", this.boundHandlers.handleOpenThemesPanel);
-        }
-        if (this.elements.closeThemesBtn) {
-            this.elements.closeThemesBtn.removeEventListener("click", this.boundHandlers.handleCloseThemesPanel);
-        }
-
         // Remove setupDataReadyListener listeners
         if (this.boundHandlers.handleCycleReady) {
             document.removeEventListener('cycle:ready', this.boundHandlers.handleCycleReady);
