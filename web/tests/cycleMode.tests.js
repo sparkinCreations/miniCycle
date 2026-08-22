@@ -7,7 +7,8 @@ import { setupTestEnvironment, createProtectedTest } from './testHelpers.js';
 export async function runCycleModeTests(resultsDiv) {
     const cacheBuster = window.testCacheBuster || Date.now();
     const mod = await import(`../modules/utils/cycleMode.js?v=${cacheBuster}`);
-    const { getCycleMode, getAllDoneHintKey, getDeleteSettingsMode, syncTaskDeleteWhenComplete } = mod;
+    const { getCycleMode, getAllDoneHintKey, getDeleteSettingsMode, syncTaskDeleteWhenComplete,
+            resolveDeleteWhenComplete, getTaskResetIndicator } = mod;
     const { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS: DEFAULTS } =
         await import(`../modules/core/constants.js?v=${cacheBuster}`);
     const { DEFAULT_LABELS } = await import(`../modules/labels/defaultLabels.js?v=${cacheBuster}`);
@@ -197,6 +198,73 @@ export async function runCycleModeTests(resultsDiv) {
         if (a.changed || a.repaired) throw new Error('null task should be inert');
         const b = syncTaskDeleteWhenComplete({}, 'cycle', null);
         if (b.changed || b.repaired) throw new Error('missing defaults should be inert');
+    });
+
+    resultsDiv.innerHTML += '<h4 class="test-section">resolveDeleteWhenComplete — priority order</h4>';
+
+    const resolve = (settings, legacy, mode) =>
+        resolveDeleteWhenComplete({ settings, legacy, mode, defaults: DEFAULTS });
+
+    await test('falls back to the legacy field when settings are MISSING', () => {
+        // Regression: an earlier version validated the settings map wholesale and
+        // substituted defaults, which made this branch unreachable — a task whose
+        // only signal was deleteWhenComplete:true resolved to the mode default.
+        if (resolve(undefined, true, 'cycle') !== true) {
+            throw new Error('missing settings + legacy true should resolve true, not the cycle default');
+        }
+        if (resolve(undefined, false, 'todo') !== false) {
+            throw new Error('missing settings + legacy false should resolve false, not the todo default');
+        }
+    });
+
+    await test('falls back to the legacy field when settings are MALFORMED', () => {
+        if (resolve({ cycle: 'yes', todo: 1 }, true, 'cycle') !== true) {
+            throw new Error('non-boolean settings should not mask a valid legacy value');
+        }
+    });
+
+    await test('honours a PARTIALLY populated settings map for the mode it covers', () => {
+        // Per key, not wholesale — the same rule syncTaskDeleteWhenComplete follows.
+        // { cycle: true } is a usable answer in cycle mode even with todo missing.
+        if (resolve({ cycle: true }, undefined, 'cycle') !== true) {
+            throw new Error('a valid key for the active mode must win');
+        }
+        // ...and must NOT be borrowed for the mode it does not cover.
+        if (resolve({ cycle: true }, false, 'todo') !== false) {
+            throw new Error('a key for the other mode must not leak across modes');
+        }
+    });
+
+    await test('falls back to the per-mode default when NEITHER source is present', () => {
+        if (resolve(undefined, undefined, 'cycle') !== DEFAULTS.cycle) {
+            throw new Error('cycle with no signal should use the cycle default');
+        }
+        if (resolve(undefined, undefined, 'todo') !== DEFAULTS.todo) {
+            throw new Error('todo with no signal should use the todo default');
+        }
+    });
+
+    await test('valid settings outrank the legacy field', () => {
+        if (resolve({ cycle: true, todo: false }, false, 'cycle') !== true) {
+            throw new Error('settings are canonical and must win over the legacy mirror');
+        }
+    });
+
+    await test('getTaskResetIndicator matches the routine list branch table', () => {
+        const cases = [
+            [{ deleteWhenComplete: true,  isRecurring: false, mode: 'todo'  }, null],
+            [{ deleteWhenComplete: false, isRecurring: false, mode: 'todo'  }, 'keep'],
+            [{ deleteWhenComplete: false, isRecurring: false, mode: 'cycle' }, null],
+            [{ deleteWhenComplete: true,  isRecurring: false, mode: 'cycle' }, 'clear'],
+            [{ deleteWhenComplete: true,  isRecurring: true,  mode: 'cycle' }, null],
+            [{ deleteWhenComplete: false, isRecurring: true,  mode: 'cycle' }, 'keep']
+        ];
+        for (const [args, want] of cases) {
+            const got = getTaskResetIndicator(args);
+            if (got !== want) {
+                throw new Error(`${JSON.stringify(args)} -> ${got}, expected ${want}`);
+            }
+        }
     });
 
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed</h3>`;

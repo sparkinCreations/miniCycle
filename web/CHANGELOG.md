@@ -1,3 +1,32 @@
+## [2.480] - 2026-08-22
+- fix(cycleMode): `resolveDeleteWhenComplete()` now implements the fallback order
+  it documents. It validated the whole `deleteCheckedTasksSettings` map up front
+  and substituted the per-mode defaults whenever *any* key was missing or
+  non-boolean — which made the `deleteCheckedTasks` legacy branch below it
+  unreachable. A routine saved before the per-mode split, or one whose map lost a
+  key, silently got the default instead of the user's actual setting: in Cycle
+  mode that reads as "clear on reset stopped sticking".
+
+  It now reads the one key for the active mode, exactly as
+  `syncTaskDeleteWhenComplete()` two functions below already did, so the
+  documented priority holds — settings[mode] → legacy → default:
+
+  | settings | legacy | mode | before | after |
+  |---|---|---|---|---|
+  | missing | `true` | cycle | `false` | `true` |
+  | `{cycle:'yes'}` | `true` | cycle | `false` | `true` |
+  | `{cycle:true}` | — | cycle | `false` | `true` |
+  | `{cycle:true}` | `true` | todo | `false` | `false` |
+
+  The defect predates the v2.478 extraction: a side-by-side run of the original
+  `taskDOM` logic against the extracted helper differed on no case, because the
+  original's wholesale validation killed its own legacy branch the same way. The
+  extraction preserved it faithfully, bug included — it did not introduce it.
+
+  Six tests added, three of which fail against the pre-fix source (verified by
+  reverting the module and re-running the suite).
+
+
 ## [2.479] - 2026-08-22
 - fix(first-run): the rotating loading tip no longer renders on top of
   "Restore from a backup file". On a short viewport the tip's bottom-anchored
