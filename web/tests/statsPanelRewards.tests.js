@@ -195,24 +195,18 @@ export async function runStatsPanelRewardsTests(resultsDiv) {
         }
     });
 
-    await test('openThemesPanel and closeThemesPanel drive the dialog', () => {
-        const dialog = document.createElement('dialog');
-        document.body.appendChild(dialog);
-        try {
-            let menuHidden = 0;
-            const m = makeManager();
-            m.elements.themesModal = dialog;
-            m.dependencies.hideMainMenu = () => { menuHidden++; };
-            const r = new StatsPanelRewards(m);
-
-            r.openThemesPanel();
-            if (!dialog.open) throw new Error('openThemesPanel should open the dialog');
-            if (menuHidden !== 1) throw new Error('Opening themes should hide the main menu');
-
-            r.closeThemesPanel();
-            if (dialog.open) throw new Error('closeThemesPanel should close the dialog');
-        } finally {
-            dialog.remove();
+    await test('the rewards module does NOT own the themes-panel buttons', () => {
+        // Regression guard for the Aug 2026 seam audit. This module used to bind a
+        // second click handler to #open-themes-panel / #close-themes-btn, which
+        // themeManager already owns. Two owners made the modal's hydration
+        // (renderVocabThemes, called only inside themeManager's `if (!open)` branch)
+        // and its focus-restore target depend on listener registration order.
+        // If someone re-adds these, this fails before it can ship.
+        const r = new StatsPanelRewards(makeManager());
+        for (const name of ['openThemesPanel', 'closeThemesPanel']) {
+            if (typeof r[name] === 'function') {
+                throw new Error(name + '() is back — themeManager owns the themes buttons; two owners is the bug');
+            }
         }
     });
 

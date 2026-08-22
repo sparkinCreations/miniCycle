@@ -228,6 +228,52 @@ export async function runGamesManagerTests(resultsDiv) {
         }
     });
 
+    test('the open handler repopulates the panel on every open, not just at init', () => {
+        // Aug 2026 seam audit. populateGamesPanelContent() writes the panel's title,
+        // description and play-button text from getLabel(). `games.description` and
+        // `games.play` are in LENS_SENSITIVE_KEYS, so they change with the active vocab
+        // theme — and refreshThemeLabels() has never covered this panel. Called only
+        // from init(), the panel kept whichever theme's wording was live at boot.
+        const made = [];
+        for (const id of ['games-panel-title', 'open-task-order-game']) {
+            const el = document.createElement(id === 'games-panel-title' ? 'h2' : 'button');
+            el.id = id; document.body.appendChild(el); made.push(el);
+        }
+        const panel = document.createElement('dialog');
+        panel.id = 'games-panel';
+        document.body.appendChild(panel); made.push(panel);
+
+        const openBtn = document.createElement('button');
+        openBtn.id = 'open-games-panel';
+        document.body.appendChild(openBtn); made.push(openBtn);
+
+        try {
+            setGamesManagerDependencies({
+                AppState: { isReady: () => true, get: () => ({ settings: {} }), update: () => {} },
+                AppMeta: { version: '1.0.0' },
+                getModal: () => panel,
+                safeAddEventListener: (el, ev, fn) => el.addEventListener(ev, fn)
+            });
+            const gm = new GamesManager();
+            gm.setupEventListeners();
+
+            // Blank the text the way a vocab-theme switch would leave it stale.
+            document.getElementById('games-panel-title').textContent = 'STALE';
+            document.getElementById('open-task-order-game').textContent = 'STALE';
+
+            openBtn.click();
+
+            if (document.getElementById('games-panel-title').textContent === 'STALE') {
+                throw new Error('opening the panel must re-render its title from the label system');
+            }
+            if (document.getElementById('open-task-order-game').textContent === 'STALE') {
+                throw new Error('opening the panel must re-render the play button from the label system');
+            }
+        } finally {
+            made.forEach(el => el.remove());
+        }
+    });
+
     // ===== DOM MANIPULATION TESTS (DI-Pure) =====
 
     resultsDiv.innerHTML += '<h4 class="test-section">🎨 DOM Manipulation (DI)</h4>';
