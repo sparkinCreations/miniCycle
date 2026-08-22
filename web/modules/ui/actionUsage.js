@@ -8,8 +8,8 @@
  * Design (see docs/archive/ACTION_DISPATCH_PLAN.md): most actions are triggered by
  * clicking a DOM button, and the panel itself dispatches via `button.click()`. So a
  * single delegated click listener over ACTION_BUTTON_MAP catches BOTH direct user clicks
- * and the panel's synthetic clicks. The 3 function-dispatched panel cases
- * (stats/recurring/reminders) call `recordActionUsage` explicitly.
+ * and the panel's synthetic clicks. The 2 function-dispatched panel cases
+ * (stats/recurring) call `recordActionUsage` explicitly.
  *
  * Pure / side-effect-free (no module-level work) → safe to static-import anywhere.
  *
@@ -26,9 +26,11 @@ export const MAX_RECENT = 10;
  * `btn.click()` targets + alternate buttons like the menu's open-routine). A click on
  * any of these — by the user OR the panel's synthetic click — records the action.
  * Keep in sync with quickActionsManager.executeAction's `btn.click()` cases.
- * NOTE: stats/recurring/reminders are dispatched by the panel as function calls (no
- * btn.click), so they record explicitly in executeAction; their DIRECT buttons are
- * still mapped here so direct clicks track too.
+ * NOTE: stats/recurring are dispatched by the panel as function calls (no btn.click),
+ * so they record explicitly in executeAction; their DIRECT buttons are still mapped
+ * here so direct clicks track too. `reminders` used to be one of them — it now goes
+ * through btn.click() so the panel cannot bypass the modal's settings hydration, which
+ * means this map is its ONLY usage recorder (adding an explicit call would double-count).
  */
 export const ACTION_BUTTON_MAP = Object.freeze({
     [DOM_IDS.ROUTINE_SWITCHER_BTN]: 'open-routine',

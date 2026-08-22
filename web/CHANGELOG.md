@@ -1,3 +1,59 @@
+## [2.481] - 2026-08-22
+- fix(reminders): reminder settings could be silently erased. Enabling Due Date
+  Notifications (or setting a repeat count or frequency) would come back later
+  switched off, with no error and nothing in the data to show what happened.
+
+  Two independent causes, both now fixed.
+
+  **The form was not always loaded before it was saved.**
+  `loadRemindersSettings()` — the only thing that fills the reminders form from
+  stored state — is called from exactly one place, `openRemindersModal()`. The
+  **Quick Actions** entry didn't use it; it called `modal.showModal()` directly.
+  So opening Reminders from the panel showed a form still sitting at its HTML
+  defaults, and `autoSaveReminders()` rebuilds the ENTIRE settings object from
+  those controls. One innocuous action — expanding the Privacy Notice — wrote the
+  blank form over the real settings:
+
+  | setting | stored | after one Privacy Notice click |
+  |---|---|---|
+  | `dueDatesReminders` | `true` | `false` |
+  | `repeatCount` | `5` | `1` |
+  | `frequencyValue` | `45` | `1` |
+
+  The Quick Action now clicks the real menu button, matching every other action in
+  that switch, so hydration stays on the path. (Usage tracking moves to
+  `actionUsage`'s delegated listener — recording it here too would double-count.)
+
+  **The task-list 🔔 button did the same thing from outside the modal.** It called
+  `autoSaveReminders()` after saving its own task state, and it lives on the task
+  list, so it was reachable with the form never loaded at all — the more likely
+  route in normal use. It had nothing to save: the task state is persisted
+  separately and the global settings are unchanged by that click. Removed.
+
+  **Underneath both: handlers no longer rebuild the whole object.** New
+  `updateReminderSettings(patch)` merges onto `DEFAULT_REMINDERS` + current state,
+  so each handler writes only the field it owns — due dates, privacy notice,
+  browser notifications, indefinite, and the frequency triple (with the timer
+  fields it derives). A stale or unloaded control can no longer reach its
+  neighbours, which makes the hydration fix a second line of defence rather than
+  the only one. Only the main Enable switch still writes the whole form; it owns
+  `enabled` plus the timers, and cannot be reached without the modal being open.
+
+  Two smaller faults fixed on the way: the due-date handler didn't `await` its
+  save, and it was wrapped in `if (state.customReminders)` — so on a migrated or
+  recovered profile missing that key it silently did nothing while appearing to
+  work. `DEFAULT_REMINDERS` is now exported from `dataAccess.js` and used as the
+  merge base, so a profile missing the key persists exactly the settings it was
+  already displaying instead of a second, divergent set of defaults.
+
+  Hydration itself is now guarded: setting `<details>.open` fires a real `toggle`
+  event, so loading the form used to trigger a save of the value it had just read.
+
+  Seven tests added across `reminders.tests.js` and `quickActionsManager.tests.js`,
+  including the save → reconstruct → reopen round trip the suite never made. Six
+  fail against the pre-fix code (verified by reverting each module and re-running).
+
+
 ## [2.480] - 2026-08-22
 - fix(cycleMode): `resolveDeleteWhenComplete()` now implements the fallback order
   it documents. It validated the whole `deleteCheckedTasksSettings` map up front

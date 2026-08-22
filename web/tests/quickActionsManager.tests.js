@@ -160,6 +160,38 @@ export async function runQuickActionsManagerTests(resultsDiv) {
         if (state.settings.quickActions.counts.stats) throw new Error('usage must NOT be recorded when the action cannot execute');
     });
 
+    await test("executeAction('reminders') clicks the real button instead of opening the modal itself", async () => {
+        // The modal's own opener (reminders.js openRemindersModal) is the ONLY caller of
+        // loadRemindersSettings(). Calling modal.showModal() from here skipped it, so the
+        // panel showed an un-hydrated form and the next save wrote HTML defaults over the
+        // stored settings. Delegating to the button keeps hydration on the path.
+        let showModalCalls = 0, buttonClicks = 0;
+        const modal = { open: false, showModal() { showModalCalls++; this.open = true; } };
+
+        const btn = document.createElement('button');
+        btn.id = 'open-reminders-modal';
+        btn.addEventListener('click', () => { buttonClicks++; });
+        document.body.appendChild(btn);
+        try {
+            const { inst, state } = freshInstance({
+                quickActions: baseQA(),
+                overrides: { getModal: () => modal, hideMainMenu: () => {} }
+            });
+            inst.executeAction('reminders');
+            await new Promise(r => setTimeout(r, 20));   // the case defers with setTimeout(0)
+
+            if (buttonClicks !== 1) throw new Error(`the real open button should be clicked once, got ${buttonClicks}`);
+            if (showModalCalls !== 0) throw new Error('the panel must NOT call modal.showModal() itself — that bypasses settings hydration');
+            // Usage now comes from actionUsage's delegated listener, so executeAction must
+            // not also record it or every panel-opened reminder counts twice.
+            if (state.settings.quickActions.counts.reminders) {
+                throw new Error('executeAction must not record usage for reminders — the delegated button listener does');
+            }
+        } finally {
+            btn.remove();
+        }
+    });
+
     await test('pinAction and unpinAction write the pinned slot', () => {
         const { inst, state } = freshInstance({ quickActions: baseQA() });
         inst.pinAction(2, 'history');

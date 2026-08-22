@@ -434,6 +434,171 @@ export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
             if (state.data.cycles.c1.tasks.length !== 1) throw new Error('an unknown task id should be a no-op');
         });
 
+        // === SETTINGS PERSISTENCE (v2.481 regression guards) ===
+        resultsDiv.innerHTML += '<h4>\ud83d\udcbe Settings Persistence</h4>';
+
+        // Build the reminder form at its HTML DEFAULTS — i.e. exactly the state it is
+        // in before loadRemindersSettings() hydrates it. Every field here is
+        // deliberately WRONG relative to the stored settings, so any handler that
+        // rebuilds the whole object from the DOM will visibly clobber them.
+        function buildUnhydratedReminderForm() {
+            const mk = (tag, id, props = {}) => {
+                const el = document.createElement(tag);
+                el.id = id;
+                Object.assign(el, props);
+                testContainer.appendChild(el);
+                return el;
+            };
+            return {
+                enable: mk('input', 'enableReminders', { type: 'checkbox', checked: false }),
+                indefinite: mk('input', 'indefiniteCheckbox', { type: 'checkbox', checked: false }),
+                dueDates: mk('input', 'dueDatesReminders', { type: 'checkbox', checked: false }),
+                browser: mk('input', 'browserNotifications', { type: 'checkbox', checked: false }),
+                privacy: mk('details', 'privacyNoticeDetails', { open: false }),
+                repeat: mk('input', 'repeatCount', { type: 'number', value: '1' }),
+                freqValue: mk('input', 'frequencyValue', { type: 'number', value: '1' }),
+                freqUnit: mk('select', 'frequencyUnit', {}),
+                remove() { Object.values(this).forEach(el => el?.remove?.()); }
+            };
+        }
+
+        const CONFIGURED = Object.freeze({
+            enabled: true, indefinite: false, dueDatesReminders: true,
+            browserNotifications: false, privacyNoticeOpen: false,
+            repeatCount: 5, frequencyValue: 45, frequencyUnit: 'minutes'
+        });
+
+        await test('updateReminderSettings patches one field and leaves every other untouched', async () => {
+            const state = { customReminders: { ...CONFIGURED } };
+            const AppState = { isReady: () => true, get: () => state, update: async (fn) => fn(state) };
+            const { instance } = wireReminders({ AppState });
+
+            const ok = await instance.updateReminderSettings({ privacyNoticeOpen: true });
+            if (ok !== true) throw new Error('a ready AppState should report a successful save');
+
+            const after = state.customReminders;
+            if (after.privacyNoticeOpen !== true) throw new Error('the patched field should be written');
+            for (const key of ['dueDatesReminders', 'repeatCount', 'frequencyValue', 'frequencyUnit', 'enabled', 'indefinite']) {
+                if (after[key] !== CONFIGURED[key]) {
+                    throw new Error(`patching privacyNoticeOpen must not change ${key} (${CONFIGURED[key]} -> ${after[key]})`);
+                }
+            }
+        });
+
+        await test('updateReminderSettings persists when customReminders is absent entirely', async () => {
+            // The old due-date handler was `if (state.customReminders) { ... }` — on a
+            // migrated or recovered profile missing the key it silently did nothing, so
+            // the toggle looked like it worked and never survived a reload.
+            const state = {};
+            const AppState = { isReady: () => true, get: () => state, update: async (fn) => fn(state) };
+            const { instance } = wireReminders({ AppState });
+
+            await instance.updateReminderSettings({ dueDatesReminders: true });
+            if (!state.customReminders) throw new Error('customReminders should be created, not skipped');
+            if (state.customReminders.dueDatesReminders !== true) throw new Error('the patched field should persist');
+            // and the rest should come from the SAME defaults the reader substitutes
+            if (typeof state.customReminders.frequencyUnit !== 'string') {
+                throw new Error('missing keys should be seeded from DEFAULT_REMINDERS');
+            }
+        });
+
+        await test('updateReminderSettings reports failure (not a throw) when AppState is not ready', async () => {
+            const AppState = { isReady: () => false, update: async () => { throw new Error('must not be called'); } };
+            const { instance } = wireReminders({ AppState });
+            const ok = await instance.updateReminderSettings({ dueDatesReminders: true });
+            if (ok !== false) throw new Error('an unready AppState should report false');
+        });
+
+        await test('the privacy-notice toggle does not clobber unrelated settings on an un-hydrated form', async () => {
+            // THE reported bug: opening Reminders via Quick Actions skipped
+            // loadRemindersSettings(), so the form sat at its HTML defaults and the very
+            // next save rebuilt the whole object from it — erasing dueDatesReminders,
+            // repeatCount and frequencyValue in one write.
+            const form = buildUnhydratedReminderForm();
+            try {
+                const state = { customReminders: { ...CONFIGURED } };
+                const AppState = { isReady: () => true, get: () => state, update: async (fn) => fn(state) };
+                const { instance } = wireReminders({ AppState, loadMiniCycleData: () => ({ reminders: state.customReminders }) });
+                instance.setupReminderInputListeners();
+
+                form.privacy.open = true;
+                form.privacy.dispatchEvent(new Event('toggle'));
+                await waitForAsyncOperations();
+
+                const after = state.customReminders;
+                if (after.privacyNoticeOpen !== true) throw new Error('the privacy notice state should be saved');
+                if (after.dueDatesReminders !== true) throw new Error('dueDatesReminders was clobbered by the un-hydrated form');
+                if (after.repeatCount !== 5) throw new Error(`repeatCount was clobbered (5 -> ${after.repeatCount})`);
+                if (after.frequencyValue !== 45) throw new Error(`frequencyValue was clobbered (45 -> ${after.frequencyValue})`);
+            } finally {
+                form.remove();
+            }
+        });
+
+        await test('the due-dates toggle writes only its own field', async () => {
+            const form = buildUnhydratedReminderForm();
+            try {
+                const state = { customReminders: { ...CONFIGURED } };
+                const AppState = { isReady: () => true, get: () => state, update: async (fn) => fn(state) };
+                const { instance } = wireReminders({ AppState, loadMiniCycleData: () => ({ reminders: state.customReminders }) });
+                instance.setupReminderInputListeners();
+
+                form.dueDates.checked = false;
+                form.dueDates.dispatchEvent(new Event('change'));
+                await waitForAsyncOperations();
+
+                const after = state.customReminders;
+                if (after.dueDatesReminders !== false) throw new Error('the due-dates field should follow the checkbox');
+                if (after.repeatCount !== 5 || after.frequencyValue !== 45) {
+                    throw new Error('the due-dates toggle must not touch the frequency fields');
+                }
+            } finally {
+                form.remove();
+            }
+        });
+
+        await test('settings survive a full save -> reconstruct -> reopen round trip', async () => {
+            // The round trip the old tests never made: persist, throw the in-memory
+            // state away, rebuild from what was stored, and reopen the panel.
+            const form = buildUnhydratedReminderForm();
+            try {
+                let state = { customReminders: { ...CONFIGURED } };
+                const AppState = { isReady: () => true, get: () => state, update: async (fn) => fn(state) };
+                // Full shape, not just `reminders`: loadRemindersSettings() ends in
+                // updateReminderButtons(), which reads cycles[activeCycle] unguarded.
+                const { instance } = wireReminders({
+                    AppState,
+                    loadMiniCycleData: () => ({
+                        reminders: state.customReminders,
+                        cycles: { c1: { tasks: [] } },
+                        activeCycle: 'c1'
+                    }),
+                    appInit: { waitForCore: async () => {} }
+                });
+                instance.setupReminderInputListeners();
+
+                form.privacy.open = true;
+                form.privacy.dispatchEvent(new Event('toggle'));
+                await waitForAsyncOperations();
+
+                // Reconstruct: serialise out and back, then drop every DOM control to
+                // its HTML default, as a fresh page load would.
+                state = JSON.parse(JSON.stringify(state));
+                form.dueDates.checked = false;
+                form.repeat.value = '1';
+                form.freqValue.value = '1';
+
+                await instance.loadRemindersSettings();
+
+                if (form.dueDates.checked !== true) throw new Error('reopening should re-check due dates from state');
+                if (parseInt(form.repeat.value, 10) !== 5) throw new Error('reopening should restore repeatCount');
+                if (parseInt(form.freqValue.value, 10) !== 45) throw new Error('reopening should restore frequencyValue');
+                if (state.customReminders.dueDatesReminders !== true) throw new Error('stored due-dates should have survived the round trip');
+            } finally {
+                form.remove();
+            }
+        });
+
         // === SUMMARY ===
         const percentage = Math.round((passed.count / total.count) * 100);
         resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;
