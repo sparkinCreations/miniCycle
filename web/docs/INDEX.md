@@ -342,6 +342,18 @@
 - Achievement-based progression
 - Creating new themes
 
+#### [FOCUS_VIEW_LAYOUT.md](architecture/FOCUS_VIEW_LAYOUT.md)
+**What it is**: The band model Focus View's task card is anchored to (v2.473+)
+**Read if**: You're about to change any focus-mode geometry value
+**Time**: 10 minutes
+
+**Topics:**
+- Why both band edges are measured rather than computed
+- The three wrong candidates for "the chrome bottom", and why each fails
+- Surfaces disagree: inset 61 installed vs 0 in a browser, same device
+- Why centring failed at 820x480 and must not be reinstated
+- The layout-suite checks that guard it, and the known short-viewport gap
+
 #### [MODE_MANAGER_ARCHITECTURE.md](architecture/MODE_MANAGER_ARCHITECTURE.md)
 **What it is**: Mode management system documentation (v1.373+)
 **Read if**: You're working with cycling modes or mode switching

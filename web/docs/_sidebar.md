@@ -58,6 +58,7 @@
   * [Quick Actions & Usage Tracking](architecture/QUICK_ACTIONS_ARCHITECTURE.md)
   * [Drag & Drop Architecture](architecture/DRAG_DROP_ARCHITECTURE.md)
   * [Drag & Drop Long Press](architecture/DRAG_DROP_LONG_PRESS.md)
+  * [Focus View Layout](architecture/FOCUS_VIEW_LAYOUT.md)
   * [Mode Manager Architecture](architecture/MODE_MANAGER_ARCHITECTURE.md)
   * [Routine Switcher Architecture](architecture/ROUTINE_SWITCHER_ARCHITECTURE.md)
   * [Recurring Watch Function](architecture/RECURRING_WATCH_FUNCTION.md)
