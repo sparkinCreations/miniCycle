@@ -1,3 +1,36 @@
+## [2.474] - 2026-08-22
+- docs: connect the focus-view band model to the home-view pattern it diverged from
+- docs: record the Focus View band model and why five probes measured the wrong thing
+- fix(focus): a short routine now sits centred in the Focus View band instead of
+  pinned to its top edge with all the slack below. Follow-up to v2.473: anchoring
+  fixed both band *edges*, but `#task-view` was still content-sized, so a short
+  list simply started at the top.
+
+  Two things were needed. `top` + `bottom` + `height: auto` makes the element
+  *occupy* the band rather than be capped by it (a content-sized box gives
+  alignment nothing to distribute), and `flex-grow: 0` on `#task-card-group`
+  stops the card absorbing that space before the alignment can centre it.
+  Shrink is untouched, so a list longer than the band still collapses to fill it
+  and the full-list geometry is unchanged — card top 127, band 127–695 at
+  393x852 / inset 61, exactly as before.
+
+  Measured at 393x852 / inset 61 (slack above / below the content):
+
+  | tasks | before | after |
+  |---|---|---|
+  | 8 | 0 / 0 | 0 / 0 (unchanged) |
+  | 4 | 0 / 170 | 85 / 85 |
+  | 2 | 0 / 285 | 143 / 143 |
+
+  Centring is done with **auto margins, not `justify-content: center`**. When
+  content exceeds the band the free space goes negative and centring overflows
+  *both* edges — at 820x480 that put the card back under the header at y=70
+  against a chrome bottom of 81. Auto margins resolve to 0 on negative free
+  space, so short content centres and tall content stays top-aligned. The
+  layout suite's "focus card clears the painted chrome" check caught this on the
+  first attempt, which is what it was added for.
+
+
 ## [2.473] - 2026-08-22
 - fix(focus): the Focus View routine title no longer sits inside the blurred
   header band, and `#task-view` is now anchored to a measured band rather than
