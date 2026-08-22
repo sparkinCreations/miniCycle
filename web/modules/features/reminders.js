@@ -17,10 +17,9 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, FREQUENCY_MS, LIMITS } from '../core/constants.js';
+import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, FREQUENCY_MS, LIMITS, DEFAULT_REMINDERS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { isClickOnNotification } from '../ui/modalUtils.js';
-import { DEFAULT_REMINDERS } from '../core/dataAccess.js';
 import {
     isNativeApp,
     requestNotificationPermission,
@@ -536,55 +535,69 @@ export class MiniCycleReminders {
         // trigger a save of the value it just read.
         this._hydratingSettings = true;
 
-        // Apply settings to UI
-        const enableReminders = this.deps.getElementById(DOM_IDS.ENABLE_REMINDERS);
-        const indefiniteCheckbox = this.deps.getElementById(DOM_IDS.INDEFINITE_CHECKBOX);
-        const dueDatesReminders = this.deps.getElementById(DOM_IDS.DUE_DATES_REMINDERS);
-        const repeatCount = this.deps.getElementById(DOM_IDS.REPEAT_COUNT);
-        const frequencyValue = this.deps.getElementById(DOM_IDS.FREQUENCY_VALUE);
-        const frequencyUnit = this.deps.getElementById(DOM_IDS.FREQUENCY_UNIT);
+        try {
 
-        const browserNotifications = this.deps.getElementById(DOM_IDS.BROWSER_NOTIFICATIONS);
+            // Apply settings to UI
+            const enableReminders = this.deps.getElementById(DOM_IDS.ENABLE_REMINDERS);
+            const indefiniteCheckbox = this.deps.getElementById(DOM_IDS.INDEFINITE_CHECKBOX);
+            const dueDatesReminders = this.deps.getElementById(DOM_IDS.DUE_DATES_REMINDERS);
+            const repeatCount = this.deps.getElementById(DOM_IDS.REPEAT_COUNT);
+            const frequencyValue = this.deps.getElementById(DOM_IDS.FREQUENCY_VALUE);
+            const frequencyUnit = this.deps.getElementById(DOM_IDS.FREQUENCY_UNIT);
 
-        if (enableReminders) enableReminders.checked = reminders.enabled;
-        if (indefiniteCheckbox) indefiniteCheckbox.checked = reminders.indefinite;
-        if (dueDatesReminders) dueDatesReminders.checked = reminders.dueDatesReminders;
-        // Only check browser notifications if permission is still granted.
-        // Native app: the WebView has no web Notification API, so verify against
-        // the native permission — the web-only check silently uncleared the box
-        // on every launch, killing system reminders until re-enabled by hand.
-        if (browserNotifications) {
-            if (isNativeApp()) {
-                const nativePerm = await checkNotificationPermission();
-                browserNotifications.checked = !!reminders.browserNotifications && nativePerm === 'granted';
-            } else {
-                browserNotifications.checked = reminders.browserNotifications &&
-                    typeof Notification !== 'undefined' && Notification.permission === 'granted';
+            const browserNotifications = this.deps.getElementById(DOM_IDS.BROWSER_NOTIFICATIONS);
+
+            if (enableReminders) enableReminders.checked = reminders.enabled;
+            if (indefiniteCheckbox) indefiniteCheckbox.checked = reminders.indefinite;
+            if (dueDatesReminders) dueDatesReminders.checked = reminders.dueDatesReminders;
+            // Only check browser notifications if permission is still granted.
+            // Native app: the WebView has no web Notification API, so verify against
+            // the native permission — the web-only check silently uncleared the box
+            // on every launch, killing system reminders until re-enabled by hand.
+            if (browserNotifications) {
+                if (isNativeApp()) {
+                    const nativePerm = await checkNotificationPermission();
+                    browserNotifications.checked = !!reminders.browserNotifications && nativePerm === 'granted';
+                } else {
+                    browserNotifications.checked = reminders.browserNotifications &&
+                        typeof Notification !== 'undefined' && Notification.permission === 'granted';
+                }
             }
+            const privacyNotice = this.deps.getElementById(DOM_IDS.PRIVACY_NOTICE_DETAILS);
+            if (privacyNotice) privacyNotice.open = reminders.privacyNoticeOpen ?? false;
+            if (repeatCount) repeatCount.value = reminders.repeatCount;
+            if (frequencyValue) frequencyValue.value = reminders.frequencyValue;
+            if (frequencyUnit) frequencyUnit.value = reminders.frequencyUnit;
+
+            // Show/hide frequency settings dynamically
+            const frequencySection = this.deps.getElementById(DOM_IDS.FREQUENCY_SECTION);
+            if (frequencySection) {
+                frequencySection.classList.toggle(DOM_CLASSES.HIDDEN, !reminders.enabled);
+            }
+
+            const repeatCountRow = this.deps.getElementById(DOM_IDS.REPEAT_COUNT_ROW);
+            if (repeatCountRow) {
+                repeatCountRow.style.display = reminders.indefinite ? "none" : "block";
+            }
+
+            // Show/hide reminder buttons on load
+            this.updateReminderButtons();
+
+        } finally {
+            // `toggle` on <details> is queued as a task, so it lands AFTER this
+            // function returns — release the guard on the next turn, not
+            // synchronously.
+            //
+            // In `finally` because a throw between here and the flag being set
+            // would otherwise strand it at `true`, and every later due-date and
+            // privacy interaction would silently no-op — a failure shaped exactly
+            // like the bug this guard exists to prevent. Nothing in the guarded
+            // span currently throws (checkNotificationPermission catches its own
+            // errors and returns null), but that safety lives in another module,
+            // so it holds by audit rather than by construction. This makes it
+            // structural.
+            setTimeout(() => { this._hydratingSettings = false; }, 0);
         }
-        const privacyNotice = this.deps.getElementById(DOM_IDS.PRIVACY_NOTICE_DETAILS);
-        if (privacyNotice) privacyNotice.open = reminders.privacyNoticeOpen ?? false;
-        if (repeatCount) repeatCount.value = reminders.repeatCount;
-        if (frequencyValue) frequencyValue.value = reminders.frequencyValue;
-        if (frequencyUnit) frequencyUnit.value = reminders.frequencyUnit;
-
-        // Show/hide frequency settings dynamically
-        const frequencySection = this.deps.getElementById(DOM_IDS.FREQUENCY_SECTION);
-        if (frequencySection) {
-            frequencySection.classList.toggle(DOM_CLASSES.HIDDEN, !reminders.enabled);
-        }
-
-        const repeatCountRow = this.deps.getElementById(DOM_IDS.REPEAT_COUNT_ROW);
-        if (repeatCountRow) {
-            repeatCountRow.style.display = reminders.indefinite ? "none" : "block";
-        }
-
-        // Show/hide reminder buttons on load
-        this.updateReminderButtons();
-
-        // `toggle` on <details> is queued as a task, so it lands AFTER this function
-        // returns — release the guard on the next turn, not synchronously.
-        setTimeout(() => { this._hydratingSettings = false; }, 0);
     }
 
     /**

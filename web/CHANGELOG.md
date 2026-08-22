@@ -1,3 +1,42 @@
+## [2.482] - 2026-08-22
+- Three follow-ups to v2.481's reminder fixes, from external review. No
+  user-visible behaviour change on the working path; all three harden it.
+
+  **The hydration guard is now released in `finally`.** `_hydratingSettings`
+  suppresses handler writes while the reminders form is filled from state. It was
+  cleared at the end of the happy path, so a throw mid-hydration would strand it
+  at `true` and every later due-date and privacy interaction would silently
+  no-op — a failure shaped exactly like the bug the guard exists to prevent.
+  Nothing in the guarded span can currently throw (`checkNotificationPermission`
+  catches its own errors and returns `null`), so this was latent, not live — but
+  that safety lived in another module and held by audit rather than by
+  construction. Now it is structural.
+
+  **`DEFAULT_REMINDERS` moved to `core/constants.js`.** v2.481 exported it from
+  `dataAccess.js` to give readers and writers one base. That worked, but made
+  every writer import from the legacy, stateful data-access layer — the same file
+  that documents the versioned/unversioned module-instance hazard. `constants.js`
+  imports nothing at all, so the defaults are now reachable without pulling that
+  in, and the constant sits where this project's own rules put tunable defaults.
+  `dataAccess.js` and `reminders.js` both import it from there.
+
+  **An end-to-end journey now covers the path the bug actually took.** Two unit
+  suites covered the two halves — that the panel clicks the real button, and that
+  the opener hydrates the form — but nothing joined them, and the wiring *between*
+  them is where the bug lived. The new journey pins Reminders to a Quick Actions
+  slot, boots as a returning user with configured settings, clicks the real
+  rendered slot, asserts the form shows stored values rather than HTML defaults,
+  then expands the Privacy Notice and asserts nothing else moved.
+
+  It reproduces the original failure exactly when run against pre-v2.481 code —
+  form at `dueDates:false, repeat:1, freq:1`, then all three stored values
+  destroyed — with 4 of its 9 assertions failing. Reminders had no end-to-end
+  coverage at all before this.
+
+  Also: one new unit test proves the `finally` change, failing when the release is
+  removed. Both were mutation-checked rather than assumed.
+
+
 ## [2.481] - 2026-08-22
 - fix(reminders): reminder settings could be silently erased. Enabling Due Date
   Notifications (or setting a repeat count or frequency) would come back later

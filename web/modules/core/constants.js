@@ -279,6 +279,26 @@ export const SCHEMA = Object.freeze({
     CURRENT_TASK: 2
 });
 
+/**
+ * Default reminder settings — the single source of truth shared by the READER
+ * (the reader in dataAccess.js substitutes this when `customReminders` is absent)
+ * and every WRITER (reminders.updateReminderSettings merges onto it).
+ *
+ * Lives here rather than in dataAccess.js because this module is pure — it imports
+ * nothing — so a writer can depend on the defaults without pulling in the legacy,
+ * stateful data-access layer and its versioned/unversioned module-instance hazard.
+ *
+ * Frozen to prevent accidental mutation; spread when assigning to create a fresh copy.
+ */
+export const DEFAULT_REMINDERS = Object.freeze({
+    enabled: false,
+    indefinite: false,
+    dueDatesReminders: false,
+    repeatCount: 0,
+    frequencyValue: 30,
+    frequencyUnit: "minutes"
+});
+
 export const LIMITS = Object.freeze({
     MAX_TIMEOUT_MS: 2147483647,    // Largest setTimeout delay (~24.8 days). Above this the delay overflows a signed 32-bit int and the timer fires IMMEDIATELY — clamp and re-arm for anything longer (reminders.js scheduleNextReminder)
     UNDO_STACK: 20,                // Max items in undo/redo stack
