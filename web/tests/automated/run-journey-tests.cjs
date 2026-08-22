@@ -980,6 +980,108 @@ async function journeyResetHonesty(browser, baseURL) {
     return { name: 'factory reset honesty', failures };
 }
 
+
+// ── Journey 10: reminder settings survive the Quick Actions path ────────────
+// The v2.481 bug, end to end. Two unit suites cover the two halves — that the
+// panel clicks the real button, and that the opener hydrates the form — but
+// nothing joined them, and the wiring BETWEEN them is exactly where the bug
+// lived: Quick Actions called modal.showModal() directly, skipping the only
+// caller of loadRemindersSettings(), so the form sat at its HTML defaults and
+// the next save rebuilt the whole settings object from it.
+//
+// Drives the real Quick Actions dispatch against the real app, then asserts on
+// PERSISTED state — the panel looked fine throughout; only the stored data
+// disagreed.
+async function journeyReminderSettings(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const { context, page } = await openFresh(browser, baseURL);
+    try {
+        const CONFIGURED = {
+            enabled: true, indefinite: false, dueDatesReminders: true,
+            browserNotifications: false, privacyNoticeOpen: false,
+            repeatCount: 5, frequencyValue: 45, frequencyUnit: 'minutes'
+        };
+
+        // Seed a configured profile AND pin Reminders into a quick-actions slot,
+        // then reload, so the app boots as a returning user whose reminders are
+        // already set up and who reaches them from the panel.
+        await page.evaluate((cfg) => {
+            const p = JSON.parse(localStorage.getItem('miniCycleData'));
+            p.customReminders = cfg;
+            p.settings = p.settings || {};
+            p.settings.quickActions = {
+                pinned: ['reminders', null, null, null, null],
+                counts: {}, recent: [], activeView: 'pinned'
+            };
+            localStorage.setItem('miniCycleData', JSON.stringify(p));
+        }, CONFIGURED);
+        await page.reload({ waitUntil: 'domcontentloaded' });
+        await bootApp(page);
+        await page.waitForTimeout(800);
+
+        const stored = () => page.evaluate(() => {
+            try { return JSON.parse(localStorage.getItem('miniCycleData')).customReminders; }
+            catch { return null; }
+        });
+
+        const afterBoot = await stored();
+        record('settings survive boot', afterBoot && afterBoot.dueDatesReminders === true
+            && afterBoot.repeatCount === 5 && afterBoot.frequencyValue === 45,
+            `boot changed the stored settings: ${JSON.stringify(afterBoot)}`);
+
+        // Click the REAL panel slot. There is no global handle on the manager (the
+        // codebase is strictly zero-window-globals), so the panel's own rendered
+        // button is the only honest way in — and it is the exact control the user
+        // pressed when they hit this bug.
+        const clicked = await page.evaluate(() => {
+            const slot = document.querySelector('#quick-actions-slots [data-action-id="reminders"]')
+                || document.querySelector('[data-action-id="reminders"]');
+            if (!slot) return false;
+            slot.click();
+            return true;
+        });
+        record('the reminders quick-action slot is present and clickable', clicked === true,
+            'no [data-action-id="reminders"] slot rendered — the panel never got the pinned action');
+        await page.waitForTimeout(900);
+
+        // The form must show the STORED values, not the HTML defaults.
+        const form = await page.evaluate(() => ({
+            open: !!document.getElementById('reminders-modal')?.open,
+            dueDates: document.getElementById('dueDatesReminders')?.checked,
+            repeat: document.getElementById('repeatCount')?.value,
+            freq: document.getElementById('frequencyValue')?.value
+        }));
+        record('quick action opens the reminders modal', form.open === true,
+            'the reminders modal did not open');
+        record('the form is HYDRATED, not at HTML defaults',
+            form.dueDates === true && parseInt(form.repeat, 10) === 5 && parseInt(form.freq, 10) === 45,
+            `form showed defaults instead of stored settings: ${JSON.stringify(form)}`);
+
+        // Now the action that used to destroy everything: expand the Privacy Notice.
+        await page.evaluate(() => {
+            const d = document.getElementById('privacyNoticeDetails');
+            if (d) { d.open = true; d.dispatchEvent(new Event('toggle')); }
+        });
+        await page.waitForTimeout(900);
+
+        const after = await stored();
+        record('the privacy notice saved its own field', after && after.privacyNoticeOpen === true,
+            `privacyNoticeOpen was not persisted: ${JSON.stringify(after)}`);
+        record('due dates survived the save', after && after.dueDatesReminders === true,
+            `dueDatesReminders was clobbered: ${JSON.stringify(after)}`);
+        record('repeat count survived the save', after && after.repeatCount === 5,
+            `repeatCount was clobbered (expected 5): ${JSON.stringify(after)}`);
+        record('frequency survived the save', after && after.frequencyValue === 45,
+            `frequencyValue was clobbered (expected 45): ${JSON.stringify(after)}`);
+
+        record('no starved dependencies', page.__diWarnings.length === 0,
+            `DI warnings: ${page.__diWarnings.join(' | ')}`);
+    } finally {
+        await context.close();
+    }
+    return { name: 'reminder settings survive the quick-actions path', failures };
+}
+
 const JOURNEYS = [
     { name: 'core (add → persist → cycle → offline)', fn: journeyCore },
     { name: 'routine switching', fn: journeyRoutineSwitch },
@@ -990,6 +1092,7 @@ const JOURNEYS = [
     { name: 'to-do stats stay in sync', fn: journeyTodoStatsSync },
     { name: 'factory reset repeats cleanly', fn: journeyFactoryResetRepeat },
     { name: 'factory reset admits what it cannot verify', fn: journeyResetHonesty },
+    { name: 'reminder settings survive the quick-actions path', fn: journeyReminderSettings },
 ];
 
 async function run() {

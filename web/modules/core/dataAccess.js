@@ -15,25 +15,7 @@
  * - updateCycleData(): Wraps AppState.update() for cycle mutations
  */
 
-import { STORAGE_KEYS } from './constants.js';
-
-/**
- * Default reminders configuration — single source of truth
- * Frozen to prevent accidental mutation; spread when assigning to create fresh copy
- *
- * Exported so writers can use the SAME base the reader substitutes when
- * `customReminders` is absent. reminders.js merges onto this in
- * updateReminderSettings(); if the two bases diverged, a profile missing the key
- * would read one set of defaults and persist a different one.
- */
-export const DEFAULT_REMINDERS = Object.freeze({
-    enabled: false,
-    indefinite: false,
-    dueDatesReminders: false,
-    repeatCount: 0,
-    frequencyValue: 30,
-    frequencyUnit: "minutes"
-});
+import { STORAGE_KEYS, DEFAULT_REMINDERS } from './constants.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION

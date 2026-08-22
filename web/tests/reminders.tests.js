@@ -557,6 +557,57 @@ export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
             }
         });
 
+        await test('a throw during hydration does not strand the guard and deafen the handlers', async () => {
+            // _hydratingSettings suppresses handler writes while the form is filled
+            // from state. If it is set outside try/finally, a throw mid-hydration
+            // leaves it true forever and every later due-date / privacy interaction
+            // silently no-ops — a failure shaped exactly like the bug the guard
+            // exists to prevent.
+            const form = buildUnhydratedReminderForm();
+            try {
+                const state = { customReminders: { ...CONFIGURED } };
+                const AppState = { isReady: () => true, get: () => state, update: async (fn) => fn(state) };
+                let explode = false;
+                const realGet = (id) => document.getElementById(id);
+                const { instance } = wireReminders({
+                    AppState,
+                    loadMiniCycleData: () => ({
+                        reminders: state.customReminders,
+                        cycles: { c1: { tasks: [] } },
+                        activeCycle: 'c1'
+                    }),
+                    appInit: { waitForCore: async () => {} }
+                });
+                // Swap in a lookup that blows up partway through hydration.
+                Object.defineProperty(instance.deps, 'getElementById', {
+                    configurable: true,
+                    get: () => (id) => {
+                        if (explode && id === 'privacyNoticeDetails') throw new Error('boom during hydration');
+                        return realGet(id);
+                    }
+                });
+                instance.setupReminderInputListeners();
+
+                explode = true;
+                let threw = false;
+                try { await instance.loadRemindersSettings(); } catch { threw = true; }
+                if (!threw) throw new Error('the probe should have made hydration throw');
+                explode = false;
+
+                // The guard must have been released anyway.
+                await waitForAsyncOperations();
+                form.dueDates.checked = false;
+                form.dueDates.dispatchEvent(new Event('change'));
+                await waitForAsyncOperations();
+
+                if (state.customReminders.dueDatesReminders !== false) {
+                    throw new Error('the due-dates handler was still deafened after a failed hydration');
+                }
+            } finally {
+                form.remove();
+            }
+        });
+
         await test('settings survive a full save -> reconstruct -> reopen round trip', async () => {
             // The round trip the old tests never made: persist, throw the in-memory
             // state away, rebuild from what was stored, and reopen the panel.
