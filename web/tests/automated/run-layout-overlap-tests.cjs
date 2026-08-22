@@ -81,6 +81,49 @@ function measureRoutine() {
     };
 }
 
+/**
+ * Focus view geometry. The card must clear the chrome that actually PAINTS,
+ * which is not the same thing as the ✕ / ⋯ buttons: .mini-cycle-header-row
+ * carries the backdrop-filter and extends below them at inset 0. Three
+ * releases in a row bounded against the wrong element here (v2.469 the
+ * buttons, v2.472 still the buttons), each time landing the routine title
+ * inside the blurred band on the surface with no safe-area inset — which is
+ * every desktop browser and this test.
+ */
+function measureFocus() {
+    const px = (el) => { if (!el) return null; const r = el.getBoundingClientRect();
+        return r.height > 0 ? { top: Math.round(r.top), bottom: Math.round(r.bottom) } : null; };
+    const card = px(document.querySelector('#task-view .task-card'));
+    const chrome = [
+        px(document.querySelector('.mini-cycle-header-row')),
+        px(document.querySelector('.header-logo')),
+        px(document.getElementById('focus-mode-exit-btn')),
+        px(document.getElementById('focus-mode-menu-btn')),
+    ].filter(Boolean);
+    const liveChromeBottom = chrome.length ? Math.max(...chrome.map(c => c.bottom)) : null;
+    const publishedVar = parseFloat(
+        getComputedStyle(document.documentElement).getPropertyValue('--focus-chrome-bottom')) || 0;
+    const tv = document.getElementById('task-view');
+    const nav = document.getElementById('nav-dots');
+    const navRect = nav ? nav.getBoundingClientRect() : null;
+    const help = px(document.getElementById('help-window'));
+    const tvBottom = tv ? Math.round(tv.getBoundingClientRect().bottom) : null;
+    return {
+        cardTop: card ? card.top : null,
+        liveChromeBottom, publishedVar,
+        taskViewBottom: tvBottom,
+        // In focus mode #task-view deliberately extends BELOW the nav line —
+        // the help window's bottom margin is what creates the visible gap, so
+        // the wrapper's own edge sits inside that margin and asserting on it
+        // would fail by design. The help window is the last painted thing, and
+        // it is inside the wrapper (unclipped) precisely because the clearance
+        // holds; `helpClipped` catches the case where that stops being true.
+        helpBottom: help ? help.bottom : null,
+        helpClipped: help && tvBottom !== null ? help.bottom > tvBottom : false,
+        navLine: navRect && navRect.height > 0 ? Math.round(navRect.top) : null,
+    };
+}
+
 function measureStats() {
     const q = (s) => document.querySelector(s);
     const rect = (el) => el ? el.getBoundingClientRect() : null;
@@ -283,6 +326,68 @@ async function run() {
                 tv.classList.remove('hide'); tv.classList.add('show');
                 sp.classList.remove('show'); sp.classList.add('hide');
             });
+
+            // --- Focus view ---------------------------------------------------
+            await page.evaluate(() => {
+                document.body.classList.add('focus-mode');
+                document.dispatchEvent(new CustomEvent('focusMode:activated', { detail: {} }));
+            });
+            await page.waitForTimeout(450); // class + the re-measure it triggers
+            const f = await page.evaluate(measureFocus);
+
+            record(vp, 'focus chrome var published', f.publishedVar > 0,
+                `--focus-chrome-bottom=${f.publishedVar} (0 = empty/unpublished)`);
+
+            // Published is not the same as correct — same distinction the header
+            // var checks above draw.
+            if (f.liveChromeBottom !== null) {
+                record(vp, 'focus chrome var matches the live chrome',
+                    Math.abs(f.publishedVar - f.liveChromeBottom) <= TOL,
+                    `--focus-chrome-bottom=${f.publishedVar} but the lowest painted chrome is ${f.liveChromeBottom}`);
+            }
+
+            if (f.cardTop !== null && f.liveChromeBottom !== null) {
+                record(vp, 'focus card clears the painted chrome',
+                    f.cardTop >= f.liveChromeBottom - TOL,
+                    `card.top ${f.cardTop} < chrome.bottom ${f.liveChromeBottom}`);
+            }
+
+            // The band itself — this is what anchoring #task-view between the
+            // chrome and the nav dots actually guarantees, and it holds on every
+            // viewport including the ones too short to fit their own content.
+            if (f.taskViewBottom !== null && f.navLine !== null) {
+                record(vp, 'focus band clears nav dots',
+                    f.taskViewBottom <= f.navLine + TOL,
+                    `task-view.bottom ${f.taskViewBottom} > navLine ${f.navLine}`);
+            }
+
+            // Whether the CONTENT fits that band is a separate question. On a
+            // viewport this short the card-group's own floor exceeds the band,
+            // so the help window overhangs it and #task-view's overflow: hidden
+            // clips it. Pre-existing — the centred layout put the help window
+            // 59px past the nav dots here, band-anchoring plus min-height: 0 on
+            // the list brings it to 29px past the band edge — and NOT fixed, so
+            // it is named rather than asserted away. Fixing it properly means
+            // deciding what focus view drops when there is no room (the help
+            // window is the obvious candidate), which is a product call.
+            const CONTENT_FIT_KNOWN_SHORT = vp.height < 520;
+            if (f.helpBottom !== null && f.taskViewBottom !== null) {
+                if (CONTENT_FIT_KNOWN_SHORT) {
+                    console.log(`   ${colors.yellow}⚠${colors.reset}  ${vp.name.padEnd(26)} `
+                        + `${colors.gray}focus content does not fit the band (known, ${vp.height}px tall): `
+                        + `help.bottom ${f.helpBottom} vs band ${f.taskViewBottom}${colors.reset}`);
+                } else {
+                    record(vp, 'focus content fits inside the band',
+                        !f.helpClipped,
+                        `help.bottom ${f.helpBottom} > task-view.bottom ${f.taskViewBottom}`);
+                }
+            }
+
+            await page.evaluate(() => {
+                document.body.classList.remove('focus-mode');
+                document.dispatchEvent(new CustomEvent('focusMode:deactivated', { detail: {} }));
+            });
+            await page.waitForTimeout(250);
 
             // --- Dialogs never exceed the viewport ----------------------------
             const dlg = await page.evaluate(measureDialogOverflow);

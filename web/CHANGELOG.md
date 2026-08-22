@@ -1,3 +1,190 @@
+## [2.473] - 2026-08-22
+- fix(focus): the Focus View routine title no longer sits inside the blurred
+  header band, and `#task-view` is now anchored to a measured band rather than
+  centred with a derived height.
+
+  Two separate errors, both found by measuring the reporting device:
+
+  **Bounding against the wrong element.** The card was held clear of the ✕ / ⋯
+  buttons. What actually paints at the top is `.mini-cycle-header-row`
+  (`backdrop-filter: blur(5px)`), and it extends *below* them — at inset 0 it
+  runs to y=82 while the buttons end at 50, so the title landed inside it.
+  `--header-total-height` is not the answer either: that element is transparent
+  and spans the mode-selector wrapper focus mode hides, over-reserving ~35px.
+  Which of the three sits lowest changes with `env(safe-area-inset-top)` and with
+  the surface, so `headerLayoutManager` now publishes `--focus-chrome-bottom` as
+  the max of the live rects while focus mode is active.
+
+  **The centred model itself.** `top: 50% + 25px` with a height derived to clear
+  the chrome only works while `50dvh + 25` sits near the available band's centre.
+  At 820x480 the band runs 81 -> 349, centred on 215, against an element centred
+  on 265 — so any height that cleared the top pushed the bottom past the nav dots,
+  and the help window's clearance margin was truncated by `overflow: hidden`
+  instead of pushing content up. `#task-view` is now anchored top-and-height to
+  the band between `--focus-chrome-bottom` and `--nav-dots-clearance`, both
+  measured. The doubling, the derived help-window clearance and the circular
+  dependency between them are all gone.
+
+  Band-anchoring reproduces every previously approved number exactly — card top
+  127 and help bottom 695 at 393x852/inset 61, card top 98 at 402x656/inset 0 —
+  which is the evidence the old formulas were computing this band the long way
+  round.
+
+- test(layout): the layout suite now covers focus view — that the chrome var is
+  published, that it still *matches* the live chrome, that the card clears the
+  painted band, and that the band clears the nav dots. This is the third
+  consecutive release to get the focus-view top bound wrong; nothing was
+  watching it.
+
+- **Known gap:** at viewports under ~520px tall the content still cannot fit the
+  band (the card-group's floor exceeds it) and `overflow: hidden` clips the help
+  window — 29px past the band edge at 820x480, improved from 59px past the *nav
+  dots* before. `min-height: 0` on the focus-mode task list recovers part of it.
+  Not fixed: deciding what focus view drops when there is no room is a product
+  call. The layout suite names this case explicitly rather than asserting it away.
+
+
+## [2.472] - 2026-08-21
+- fix(focus): the Focus View help window no longer runs into the Routine|Stats
+  nav dots when the browser shows its own chrome. `--focus-help-window-clearance`
+  is now derived rather than a fixed px.
+
+  Both edges involved are known, and solving for the clearance cancels the
+  viewport term entirely:
+
+  ```
+  view.bottom = 100dvh + 2*offset - chromeBottom - cardGap
+  navTop      = 100dvh - navDotsClearance
+  clearance   = 2*offset - chromeBottom - cardGap + navDotsClearance + gap
+  ```
+
+  So the correct value never depended on viewport *height* — but it does depend
+  on `env(safe-area-inset-top)` via chromeBottom, which no fixed number can
+  express. 80px was right at a 61px inset (installed app) and 61px too small at
+  inset 0, where Safari's own chrome covers the island and the equation asks for
+  141px. Same build, same device, different surface.
+
+  Measured gap above the nav dots, previously overlapping at 402x656:
+
+  | inset | viewport | gap |
+  |---|---|---|
+  | 61 | 393x852 | 25 |
+  | 0 | 402x656 | 25 |
+  | 61 | 375x812 | 25 |
+  | 0 | 393x852 | 35 (cap not binding — more room, never less) |
+
+- fix(layout): `headerLayoutManager` now re-measures on focus-mode enter/exit.
+  Focus mode moves `#nav-dots` (`bottom: 80px` there), which changes
+  `--nav-dots-clearance`, and nothing was firing on that transition — no resize,
+  no orientation change, and the dots don't resize so the ResizeObserver stayed
+  quiet. The published value described whichever mode the app was in at the last
+  measure, which the clearance above reads directly.
+
+
+## [2.471] - 2026-08-21
+- style(focus): another 20px of the Focus View bottom gap goes to the content.
+  `--focus-help-window-clearance` 100px -> 80px: list 457 -> 477, card 489 -> 509,
+  and the gap above the nav dots closes from ~45px to ~25px. The card's top edge
+  is unchanged, so the 16px chrome clearance holds. `test:layout` still passes
+  all 60 invariants across 7 viewports — but 25px is close enough to the
+  "task-view (and its help window) clears nav dots" bound that any further
+  reduction should be driven by that test rather than by eye.
+
+
+## [2.470] - 2026-08-21
+- style(focus): the Focus View logo sits 6px lower (`--focus-logo-rise` 10px ->
+  4px), and the task list, progress bar and help window are 50px longer.
+
+  The extra length came from slack that was already there. `#task-view` is a
+  fixed-height flex column whose only growable child is `#task-card-group`
+  (`flex: 1 1 auto`), and `#help-window`'s bottom margin
+  (`--focus-help-window-clearance`) was the one thing consuming the free space —
+  at 150px it consumed all of it, so flex-grow had nothing to distribute and the
+  list was shorter than it needed to be. Measured at 393x852 with a 61px inset,
+  the help window ended at y=625 while `#nav-dots` began at y=720: 95px sitting
+  idle.
+
+  150px -> 100px spends 50px of that: list 407 -> 457, card 439 -> 489, and
+  ~45px of visible gap remains above the nav dots. The card's top edge does not
+  move, so the 16px chrome clearance is unchanged. `test:layout`'s "task-view
+  (and its help window) clears nav dots" invariant holds across all 7 viewports
+  and is the guard against going further.
+
+
+## [2.469] - 2026-08-21
+- fix(focus): the Focus View clearance equation no longer reserves 64px that
+  isn't there. v2.466 introduced `--focus-card-inset-top: 64px` as the gap
+  between `#task-view`'s top edge and the visible card's. That 64px is
+  `#task-input-row` — which focus mode hides. The local probe simply had it
+  visible, so a state artefact got tokenised as geometry.
+
+  An on-device reading via `?layoutdebug=1` reported `inset(view->card) 0`,
+  which means the cap was granting the card 2x64 = 128px more height than it
+  may have (the term doubles, the element being centred) and letting it ride up
+  under the chrome wherever the cap binds. It also reported `env safe-top 0` in
+  Safari, where the browser's own chrome covers the island — so the same build
+  behaves differently in-app and standalone.
+
+  The inset is state-dependent, so the equation now assumes the worst case of 0.
+  When the input row IS visible the card sits lower than strictly required,
+  which is the safe direction. Both of the reporting device's contexts now clear
+  by exactly the 16px gap, and the cap actually binds in each — previously it was
+  inert, clearing by luck rather than by construction:
+
+  | context | viewport | env | chrome bottom | card top | clearance |
+  |---|---|---|---|---|---|
+  | in-app Safari | 402x656 | 0 | 50 | 66 | 16 |
+  | standalone | 393x852 | 61 | 111 | 127 | 16 |
+
+
+## [2.468] - 2026-08-21
+- style(focus): the Focus View card sits a little lower. `--focus-card-chrome-gap`
+  goes 8px -> 16px, which on a long list moves the card's top edge down 8px and
+  shortens it by 16px (the doubling is because the element is centred). Measured
+  at 393x852 with a 59px simulated inset: card top 117 -> 125, height 523 -> 507.
+
+
+## [2.467] - 2026-08-21
+- feat(debug): loading any page with `?layoutdebug=1` and entering Focus View now
+  renders a diagnostic overlay with the clearance geometry. It exists because two
+  of the inputs to that arithmetic cannot be observed off-device:
+  `env(safe-area-inset-top)` is 0 in every headless browser, and whether iOS
+  *resolves* the `max-height` calc at all — as opposed to dropping it as invalid —
+  is not visible from a desktop engine. The decisive line is `view.maxHeight`:
+  a length means the cap applied; `none` means the declaration was dropped and
+  the card sized to content.
+
+  Renders only with the query param present, tears down on Focus View exit and on
+  `destroy()`, and is `aria-hidden` — it is developer diagnostic output, so its
+  text is deliberately not routed through `getLabel()`.
+
+
+## [2.466] - 2026-08-21
+- fix(focus): the Focus View task card is no longer far too short. 2.465 fixed
+  the clipping but over-corrected badly, and for two separate reasons: it kept
+  the *wrapper's* top edge clear of the chrome rather than the visible card's —
+  missing the 64px inset between them, which costs double because the element is
+  centred — and it stacked a redundant `padding-top` on top of that cap. The
+  clearance is now written against the card's own edge.
+
+  Measured at 393x844 with a simulated 59px safe-area inset (Chromium exposes no
+  way to set `env(safe-area-inset-*)`, so the two rules that consume it are
+  restated with a literal):
+
+  | | card height | card top | vs chrome bottom (109) |
+  |---|---|---|---|
+  | 2.464 (pre-fix) | 550px | 103 | **6px overlap** — the reported clipping |
+  | 2.465 (shipped) | 294px | 290 | 181px gap — far too short |
+  | 2.466 | 523px | 117 | 8px clear |
+
+  27px shorter than 2.464 rather than 256px shorter.
+
+  (The first four probes of this reported the wrong layout: `main.css:346` un-fixes
+  `#task-view` under BOTH `body.onboarding-active` and `body.first-run-welcome-active`,
+  and dropping only the first still measures the flow layout. The probe now asserts
+  `position === 'fixed'` and throws instead of reporting numbers from the wrong state.)
+
+
 ## [2.465] - 2026-08-21
 - fix(focus): a long task list no longer rides up under the Focus View header.
   The view is centred, so once its content reached the old `100dvh - 10px` cap

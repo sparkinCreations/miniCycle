@@ -34,11 +34,12 @@
  * `--first-run-welcome-height` measurement pattern in `onboardingManager`.
  */
 
-import { DOM_SELECTORS, DOM_IDS } from '../core/constants.js';
+import { DOM_SELECTORS, DOM_IDS, DOM_CLASSES, EVENTS } from '../core/constants.js';
 
 /** CSS variables layout rules read. Kept here as the single source. */
 export const HEADER_HEIGHT_VAR = '--header-total-height';
 export const NAV_DOTS_CLEARANCE_VAR = '--nav-dots-clearance';
+export const FOCUS_CHROME_BOTTOM_VAR = '--focus-chrome-bottom';
 
 let _headerObserver = null;
 let _navObserver = null;
@@ -48,6 +49,7 @@ let _navEl = null;
 let _retryRaf = null;
 let _loadHandler = null;
 let _visibilityHandler = null;
+let _focusModeHandler = null;
 
 /**
  * Measure the fixed header and publish its height to `:root`.
@@ -97,10 +99,62 @@ export function measureNavDotsClearance() {
     return clearance;
 }
 
+/**
+ * Measure the lowest edge of the chrome that is actually VISIBLE in focus mode,
+ * and publish it as `--focus-chrome-bottom`. Focus view's task card is held
+ * clear of this.
+ *
+ * Why measured rather than computed: three plausible arithmetic answers exist
+ * and all three are wrong somewhere.
+ *   - the ✕ / ⋯ buttons (env + 12 + 38) bound only themselves; the band that
+ *     paints (.mini-cycle-header-row, backdrop-filter: blur(5px)) extends
+ *     BELOW them, and the routine title was landing inside it;
+ *   - --header-total-height is the .fixed-header-container, which is
+ *     transparent AND spans the mode-selector wrapper that focus mode hides,
+ *     so it over-reserves;
+ *   - the logo moved in v2.470 and is now the lowest of the three on some
+ *     viewports.
+ * Which one is lowest changes with env(safe-area-inset-top) and with the
+ * surface (an in-app browser reports inset 0 where the installed app reports
+ * 61), so max() of the live rects is the only answer that holds everywhere.
+ *
+ * Only published while focus mode is active — the elements move on that
+ * transition, so a value measured outside it would describe the wrong layout.
+ * Consumers fall back to the button arithmetic.
+ *
+ * @returns {number} the bottom edge in px, or 0 if not in focus mode
+ */
+export function measureFocusChromeBottom() {
+    if (!document.body.classList.contains(DOM_CLASSES.FOCUS_MODE)) return 0;
+
+    const els = [
+        document.querySelector(DOM_SELECTORS.MINI_CYCLE_HEADER_ROW),
+        document.querySelector(DOM_SELECTORS.HEADER_LOGO),
+        document.getElementById(DOM_IDS.FOCUS_MODE_EXIT_BTN),
+        document.getElementById(DOM_IDS.FOCUS_MODE_MENU_BTN),
+    ];
+
+    let bottom = 0;
+    for (const el of els) {
+        if (!el) continue;
+        const rect = el.getBoundingClientRect();
+        // Skip anything not laid out — a display:none child reports 0/0 and
+        // would otherwise drag the max down to nothing.
+        if (rect.height <= 0) continue;
+        if (rect.bottom > bottom) bottom = rect.bottom;
+    }
+    if (bottom <= 0) return 0;
+
+    const rounded = Math.round(bottom);
+    document.documentElement.style.setProperty(FOCUS_CHROME_BOTTOM_VAR, `${rounded}px`);
+    return rounded;
+}
+
 /** Measure every tracked element in one pass. */
 function _measureAll() {
     measureHeaderHeight();
     measureNavDotsClearance();
+    measureFocusChromeBottom();
 }
 
 /**
@@ -172,6 +226,20 @@ export function initHeaderLayout() {
         document.addEventListener('visibilitychange', _visibilityHandler);
     }
 
+    // Focus mode MOVES the nav dots (bottom: 80px there vs their normal-mode
+    // offset), which changes --nav-dots-clearance — and nothing else here fires
+    // on that transition: no resize, no orientation change, and the dots don't
+    // resize so the ResizeObserver stays quiet. Without this the published
+    // clearance describes the mode the app was in at the last measure, and
+    // focus mode's help-window clearance derives from it. Measured on the next
+    // frame because the class that repositions the dots is applied by the same
+    // dispatch that emits these events.
+    if (!_focusModeHandler) {
+        _focusModeHandler = () => requestAnimationFrame(_measureAll);
+        document.addEventListener(EVENTS.FOCUS_MODE_ACTIVATED, _focusModeHandler);
+        document.addEventListener(EVENTS.FOCUS_MODE_DEACTIVATED, _focusModeHandler);
+    }
+
     return !!_headerEl;
 }
 
@@ -229,6 +297,11 @@ export function destroyHeaderLayout() {
     if (_visibilityHandler) {
         document.removeEventListener('visibilitychange', _visibilityHandler);
         _visibilityHandler = null;
+    }
+    if (_focusModeHandler) {
+        document.removeEventListener(EVENTS.FOCUS_MODE_ACTIVATED, _focusModeHandler);
+        document.removeEventListener(EVENTS.FOCUS_MODE_DEACTIVATED, _focusModeHandler);
+        _focusModeHandler = null;
     }
     if (_retryRaf) {
         cancelAnimationFrame(_retryRaf);

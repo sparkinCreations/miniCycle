@@ -51,6 +51,32 @@ without the fix** — revert, see red with the expected message, restore. A test
 written alongside a fix can easily replicate the fixed expression instead of
 exercising production code, and will then pass on revert while proving nothing.
 
+**Corollary — a browser probe measures whatever state the page is actually in,
+which is often not the one you named.** Verifying by running only helps if the
+run exercises the rule under test. Chasing one Focus View layout bug (Aug 2026)
+this cost five separate probes, in three different disguises:
+
+- `main.css` un-fixes `#task-view` under **both** `body.onboarding-active` and
+  `body.first-run-welcome-active`. Dropping only the first still measures the
+  flow layout, where `position: relative` means `max-height` cannot move
+  anything — `#task-view`'s top stayed at 257 across a 684px and an 823px
+  height, and every clearance number from it was meaningless.
+- An earlier probe stripped `[data-modal].visible` to clear overlays and blanked
+  the page; its measurements described a broken render.
+- The probe simulated `env(safe-area-inset-top)` by overriding
+  `--focus-top-chrome` — **the exact declaration under test**. It faithfully
+  reported the simulation back.
+
+Each one produced confident, precise, wrong numbers, and two of them shipped.
+
+**Check:** assert the page is in the state you think it is *before* reading any
+value, and make the probe throw rather than report when it is not — e.g.
+`if (getComputedStyle(el).position !== 'fixed') throw`. Then check what your
+harness overrides: if the probe stubs, patches, or simulates the thing being
+measured, it is testing the stub. And prefer measuring a value the app itself
+publishes over recomputing it in the probe, so a divergence shows up as a
+mismatch instead of agreeing with itself.
+
 ---
 
 ## 1. Live-state mutation before the producer

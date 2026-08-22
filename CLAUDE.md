@@ -16,6 +16,7 @@ Auto-loaded `CLAUDE.md` covers the high-level rules; the specifics that prevent 
 - **Deciding *where* a user-facing message belongs** (help window vs empty state vs notification vs modal) → `web/docs/working-on-code/MESSAGING_SURFACES.md`
 - **Modifying anything in or near the 5 facade modules** (`settingsManager`, `taskCore`, `taskDOM`, `preferencesManager`, `statsPanel`) → `web/docs/working-on-code/HIDDEN_CODEBASE_INSIGHTS.md` (dynamic-import sub-module pattern; do NOT add their sub-modules to manifests)
 - **Touching event handlers, AppState updates, or async UI** → `web/docs/working-on-code/EVENT_LISTENER_GUIDE.md` and `web/docs/working-on-code/ASYNC_UI_PATTERNS.md`
+- **Changing any focus-mode / task-view geometry value** → `web/docs/architecture/FOCUS_VIEW_LAYOUT.md` (the band model; both edges are MEASURED — three releases in a row shipped a different constant inside a model that was itself wrong)
 - **Reviewing or refactoring anything** → `web/docs/reference/REVIEW_PATTERNS.md` — known fault lines; check these before reviewing or refactoring
 
 When in doubt about *where* a doc lives, check `web/docs/INDEX.md`.

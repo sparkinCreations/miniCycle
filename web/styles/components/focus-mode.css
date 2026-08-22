@@ -232,6 +232,10 @@ body.focus-mode .header-logo {
    viewport rule pushes it further down by half the safe-area inset). Ten
    pixels low reads as misaligned against two elements it sits between.
 
+   v2.470 backs the lift off to 4px on device feedback that a full 10px sat too
+   high. That is a deliberate 6px below the buttons' optical line, not a
+   miscalculation of it — the derivation below still gives 10px.
+
    margin-top, NOT transform: .header-branding already uses
    translate(-50%, -50%) to centre itself, so overriding transform here would
    mean restating that centring. A negative margin composes with the existing
@@ -247,7 +251,7 @@ body.focus-mode .header-logo {
    another safe-area term here would over-correct on notched devices only —
    the hardest place to notice it. */
 body.focus-mode .header-branding {
-    --focus-logo-rise: 10px;
+    --focus-logo-rise: 4px;
     margin-top: calc(-1 * var(--focus-logo-rise));
 }
 
@@ -646,10 +650,10 @@ body.focus-mode .focus-mode-mode-modal {
     body.focus-mode #focus-mode-menu-btn { right: 12px; }
     body.focus-mode #focus-mode-exit-btn { left: 12px; }
 
-    /* Top-clearance is now provided by #task-view's padding-top (see rule
-       above) so the layout works whether the input bar is visible or
-       hidden. Just zero the normal-mode margins on #task-input-row and
-       .task-card so they don't stack on top of that padding. */
+    /* Top-clearance comes from #task-view's max-height (see rule above),
+       which is what positions the centred wrapper. Zero the normal-mode
+       margins on #task-input-row and .task-card so they don't push the card
+       below the wrapper edge the clearance equation assumes. */
     body.focus-mode #task-input-row {
         margin-top: 0;
     }
@@ -984,30 +988,32 @@ body.focus-mode #complete-all-and-help-window-container {
        preserve flex space in this configuration, so we can't rely on
        margin on #task-input-row alone). */
     body.focus-mode #task-view {
-        top: calc(50% + 25px);
-        transform: translate(-50%, -50%);
+        /* BAND-ANCHORED, not centred. The view occupies exactly the space
+           between the painted chrome and the nav dots, so both edges are set
+           by construction and neither can drift:
 
-        /* DERIVED, not tuned. The view is centred and shifted +25px, so when
-           content is tall enough to reach max-height its top edge lands at
-           50dvh + 25 - height/2. Requiring that edge to stay clear of the top
-           chrome gives:
+               top    = chromeBottom + cardGap          (--focus-band-top)
+               bottom = 100dvh - navDotsClearance - gap
 
-               50dvh + 25 - maxH/2  >=  chromeBottom
-               maxH  <=  100dvh - 2*env(safe-area-inset-top) - 50px
+           Both inputs are MEASURED on the live elements (--focus-chrome-bottom
+           and --nav-dots-clearance, published by headerLayoutManager), which is
+           what makes this hold across surfaces: an in-app browser reports
+           env(safe-area-inset-top) 0 where the installed app reports 61, and
+           the chrome that paints is .mini-cycle-header-row, not the ✕ / ⋯
+           buttons it contains.
 
-           The old `100dvh - 10px` let a long list ride up under the chrome —
-           invisible at safe-inset 0 (every desktop browser and headless probe)
-           and ~19px of clipped routine title on a notched phone, which is
-           where it was reported. The safe inset appears DOUBLED because the
-           element is centred: reserving space at the top costs the same at the
-           bottom. */
-        max-height: calc(100dvh - 2 * env(safe-area-inset-top, 0px)
-                         - var(--focus-btn-top) - var(--focus-btn-height));
-
-        /* Handles the short-list case, where max-height is not reached and the
-           element's own top edge is already below the chrome. */
-        padding-top: calc(var(--focus-top-chrome) + var(--space-2));
-        box-sizing: border-box;
+           The previous centred model (top: 50% + 25px with the height derived
+           so the top edge cleared the chrome) assumed 50dvh + 25 sat near the
+           band's centre. At 820x480 the band is 81 -> 349, centred on 215,
+           against an element centred on 265 — so clearing the top forced the
+           bottom past the nav dots. Reverting to centring will reintroduce
+           that; the layout suite's focus-view checks are the guard. */
+        top: var(--focus-band-top);
+        transform: translateX(-50%);
+        max-height: calc(100dvh
+                         - var(--nav-dots-clearance, var(--nav-dots-clearance-fallback))
+                         - var(--focus-band-bottom-gap)
+                         - var(--focus-band-top));
     }
 
     body.focus-mode #task-view .task-card {
@@ -1017,6 +1023,14 @@ body.focus-mode #complete-all-and-help-window-container {
     body.focus-mode #task-view .task-list-container {
         /* Tunable via --focus-task-list-reduction-mobile in variables.css. */
         max-height: calc(100dvh - var(--focus-task-list-reduction-mobile));
+
+        /* The list's normal 200px floor is taller than the whole band on a
+           short landscape viewport (820x480: the band is 97 -> 324, and the
+           card-group's floor alone exceeds it), so the content overflowed
+           #task-view and was clipped by its overflow: hidden — with the help
+           window landing over the nav dots. Inside the band the list is the
+           element that should absorb the shortage: it already scrolls. */
+        min-height: 0;
     }
 
     /* Focus mode: fixed to bottom-right of viewport.
