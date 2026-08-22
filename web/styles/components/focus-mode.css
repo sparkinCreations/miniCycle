@@ -988,32 +988,32 @@ body.focus-mode #complete-all-and-help-window-container {
        preserve flex space in this configuration, so we can't rely on
        margin on #task-input-row alone). */
     body.focus-mode #task-view {
-        top: calc(50% + var(--focus-mode-top-offset-mobile));
-        transform: translate(-50%, -50%);
+        /* BAND-ANCHORED, not centred. The view occupies exactly the space
+           between the painted chrome and the nav dots, so both edges are set
+           by construction and neither can drift:
 
-        /* DERIVED, not tuned — and the thing being kept clear is the visible
-           task CARD, not this wrapper. The wrapper is centred and shifted, so
-           at max-height its top edge lands at 50dvh + offset - maxH/2; the
-           card starts at the wrapper's edge once #task-input-row is hidden,
-           which is the focus-mode case. Requiring the CARD's top to clear the
-           chrome:
+               top    = chromeBottom + cardGap          (--focus-band-top)
+               bottom = 100dvh - navDotsClearance - gap
 
-               50dvh + offset - maxH/2  >=  chromeBottom + gap
-               maxH <= 100dvh + 2*offset - 2*chromeBottom - 2*gap
+           Both inputs are MEASURED on the live elements (--focus-chrome-bottom
+           and --nav-dots-clearance, published by headerLayoutManager), which is
+           what makes this hold across surfaces: an in-app browser reports
+           env(safe-area-inset-top) 0 where the installed app reports 61, and
+           the chrome that paints is .mini-cycle-header-row, not the ✕ / ⋯
+           buttons it contains.
 
-           Everything doubles because the element is centred: space reserved
-           at the top costs the same at the bottom.
-
-           History, because both mistakes are easy to repeat. `100dvh - 10px`
-           (<= v2.464) let a long list ride up under the chrome — 6px of the
-           routine title clipped here, more on a taller notch. v2.465 then
-           constrained THIS element's top edge rather than the card's, missing
-           the inset term, and stacked a redundant padding-top on top of the
-           cap: card 550px -> 294px with a 181px empty band above it. Measured,
-           not guessed — see the table in the commit. */
-        max-height: calc(100dvh + 2 * var(--focus-mode-top-offset-mobile)
-                         - 2 * var(--focus-top-chrome)
-                         - 2 * var(--focus-card-chrome-gap));
+           The previous centred model (top: 50% + 25px with the height derived
+           so the top edge cleared the chrome) assumed 50dvh + 25 sat near the
+           band's centre. At 820x480 the band is 81 -> 349, centred on 215,
+           against an element centred on 265 — so clearing the top forced the
+           bottom past the nav dots. Reverting to centring will reintroduce
+           that; the layout suite's focus-view checks are the guard. */
+        top: var(--focus-band-top);
+        transform: translateX(-50%);
+        max-height: calc(100dvh
+                         - var(--nav-dots-clearance, var(--nav-dots-clearance-fallback))
+                         - var(--focus-band-bottom-gap)
+                         - var(--focus-band-top));
     }
 
     body.focus-mode #task-view .task-card {
@@ -1023,6 +1023,14 @@ body.focus-mode #complete-all-and-help-window-container {
     body.focus-mode #task-view .task-list-container {
         /* Tunable via --focus-task-list-reduction-mobile in variables.css. */
         max-height: calc(100dvh - var(--focus-task-list-reduction-mobile));
+
+        /* The list's normal 200px floor is taller than the whole band on a
+           short landscape viewport (820x480: the band is 97 -> 324, and the
+           card-group's floor alone exceeds it), so the content overflowed
+           #task-view and was clipped by its overflow: hidden — with the help
+           window landing over the nav dots. Inside the band the list is the
+           element that should absorb the shortage: it already scrolls. */
+        min-height: 0;
     }
 
     /* Focus mode: fixed to bottom-right of viewport.

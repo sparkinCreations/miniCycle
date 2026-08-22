@@ -1396,6 +1396,11 @@ export const DOM_SELECTORS = Object.freeze({
     // Fixed header + mode-selector wrapper — measured by headerLayoutManager to
     // publish --header-total-height (note: this is a CLASS, not an id).
     FIXED_HEADER_CONTAINER: '.fixed-header-container',
+    // The band that actually PAINTS at the top (backdrop-filter: blur(5px)).
+    // Not the same as FIXED_HEADER_CONTAINER, which is transparent and also
+    // spans the mode-selector wrapper that focus mode hides. Measured by
+    // headerLayoutManager to publish --focus-chrome-bottom.
+    MINI_CYCLE_HEADER_ROW: '.mini-cycle-header-row',
     COMPLETE_ALL_BTN: '.complete-all-btn',
     EMPTY_STATE_TEXT: '.empty-state-text',
     // Home-view hint shown while the input bar is HIDDEN. The variant classes

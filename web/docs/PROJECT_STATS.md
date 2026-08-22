@@ -10,7 +10,7 @@
 > Other sites should fetch that rather than scraping this page — both come from
 > the same counter, so they cannot disagree.
 
-**Last Updated**: August 21, 2026
+**Last Updated**: August 22, 2026
 
 ---
 
@@ -18,14 +18,14 @@
 
 | Metric | Value |
 |--------|-------|
-| **App Version** | 2.472 |
+| **App Version** | 2.473 |
 | **Lite Version** | 2.092 (frozen) |
 | **Schema Version** | 2.5 |
 | **Total Modules** | 142 |
 | **Total Tests** | 3540 |
 | **Test Pass Rate** | 100% |
 | **CSS Files** | 45 |
-| **JSDoc Blocks** | 1396 |
+| **JSDoc Blocks** | 1397 |
 | **Documentation Files** | 244 |
 | **DI Completion** | 100% |
 | **Custom window.* Globals (modules)** | 0 |

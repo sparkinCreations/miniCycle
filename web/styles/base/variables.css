@@ -557,46 +557,31 @@
      enough to clear the focus-mode band. Mobile/tablet only — desktop
      pins .help-window absolutely beside #task-view.
 
-     This is also what sets the task list's LENGTH, which is not obvious.
-     #task-view is a fixed-height flex column and #task-card-group is its only
-     growable child (flex: 1 1 auto), so this margin is the one thing consuming
-     the free space — too large and flex-grow has nothing to distribute and the
-     list is shorter than it needs to be; too small and the help window runs
-     into the nav dots.
+     Focus view no longer needs this to position anything: #task-view is
+     anchored to the band between the chrome and the nav dots (see
+     --focus-band-top / --focus-band-bottom-gap), so the band's own bottom edge
+     is the clearance. Kept at 0 in focus mode so the help window ends exactly
+     at that edge. */
+  --focus-help-window-clearance: 0px;
 
-     DERIVED, not tuned. #task-view's bottom edge and the nav dots' top edge are
-     both known:
+  /* The band focus view lives in: from just below the painted chrome to just
+     above the nav dots. #task-view is anchored to it top-and-height.
 
-         view.bottom = 100dvh + 2*offset - chromeBottom - cardGap
-         navTop      = 100dvh - navDotsClearance
-         help.bottom = view.bottom - clearance          (help sits in flow)
+     This replaced a centred layout (top: 50% + 25px, height derived so the top
+     edge cleared the chrome). That worked only while 50dvh + 25 happened to sit
+     near the band's own centre. At 820x480 the band runs 81 -> 349, centred on
+     215, while the element centred on 265 — 50px low — so any height that
+     cleared the chrome pushed the bottom past the nav dots, and the help
+     window's margin was then truncated by overflow: hidden rather than pushing
+     content up. Three fixes in a row tuned constants inside that model; the
+     model was the problem.
 
-     Requiring help.bottom to stay `gap` above navTop and solving for clearance,
-     the 100dvh terms CANCEL:
-
-         clearance = 2*offset - chromeBottom - cardGap + navDotsClearance + gap
-
-     So the right clearance does not depend on viewport height at all — but it
-     DOES depend on env(safe-area-inset-top) through chromeBottom, and that is
-     what a fixed value could never express. 80px was correct at a 61px inset
-     (installed PWA) and 61px too small at inset 0 (Safari showing its own
-     chrome, which covers the island), where the equation asks for 141px. That
-     is exactly the overlap reported on the shorter in-app viewport: the same
-     build, the same device, a different surface.
-
-     --nav-dots-clearance is published by headerLayoutManager as the dots'
-     `bottom + height`. Focus mode MOVES the dots, so that module re-measures on
-     the focus-mode events too — without it this equation reads the other mode's
-     number. NOTE: --nav-dots-clearance-fallback (90px) is well below the 132px
-     actually measured; it only applies if publishing fails outright, but in that
-     case this clearance comes out ~42px short. */
-  --focus-help-window-gap: 25px;  /* visible gap left above the nav dots */
-  --focus-help-window-clearance: calc(
-      2 * var(--focus-mode-top-offset-mobile)
-      - var(--focus-top-chrome)
-      - var(--focus-card-chrome-gap)
-      + var(--nav-dots-clearance, var(--nav-dots-clearance-fallback))
-      + var(--focus-help-window-gap));
+     Anchoring to the band reproduces every previously approved number exactly
+     (card top 127 and help bottom 695 at 393x852 / inset 61; card top 98 at
+     402x656 / inset 0) and fixes the landscape case, which is the evidence that
+     the old formulas were computing this band the long way round. */
+  --focus-band-top: calc(var(--focus-top-chrome) + var(--focus-card-chrome-gap));
+  --focus-band-bottom-gap: 25px;  /* visible gap left above the nav dots */
 
   /* Task-view upward shift on desktop (used as `top: calc(50% - var(--*))`).
      Higher values move the centered task-view further up the viewport,
@@ -614,7 +599,31 @@
   --focus-btn-height: 38px;
   --focus-btn-gap: 14px;
 
-  /* Bottom edge of that chrome — the BUTTON band specifically.
+  /* Bottom edge of the chrome the focus card must clear.
+
+     MEASURED (--focus-chrome-bottom, published by headerLayoutManager while
+     focus mode is active) rather than computed, because three plausible
+     arithmetic answers exist and each is wrong somewhere:
+
+       - the buttons' own band, env + 12 + 38, bounds only the buttons. The
+         band that PAINTS is .mini-cycle-header-row (backdrop-filter: blur(5px))
+         and it extends below them — at inset 0 it runs to y=82 while the
+         buttons end at 50, and the routine title was landing inside it, washed
+         out. That is the v2.472 report.
+       - --header-total-height is .fixed-header-container: transparent, and it
+         spans the mode-selector wrapper that focus mode hides, so it
+         over-reserves by ~35px.
+       - the logo, which v2.470 moved down, is the lowest of the three on some
+         viewports.
+
+     Which one is lowest changes with env(safe-area-inset-top) AND with the
+     surface — an in-app browser reports inset 0 where the installed app reports
+     61 — so no fixed expression covers both. max() of the live rects does.
+
+     The arithmetic below stays as the fallback for the window before the first
+     measure publishes.
+
+     Historical note, since it explains why the button band was ever used here:
 
      This used to note that the logo mark's lower edge landed just inside it
      (safe + 49px against safe + 50px), so clearing the buttons cleared the mark
@@ -624,7 +633,8 @@
      --focus-card-chrome-gap minus ~5px, and that is the spacing signed off on
      device. Raise --focus-card-chrome-gap, not this token, if it needs more —
      this one also positions the focus menu, which keys off the buttons. */
-  --focus-top-chrome: calc(env(safe-area-inset-top, 0px) + var(--focus-btn-top) + var(--focus-btn-height));
+  --focus-top-chrome-fallback: calc(env(safe-area-inset-top, 0px) + var(--focus-btn-top) + var(--focus-btn-height));
+  --focus-top-chrome: var(--focus-chrome-bottom, var(--focus-top-chrome-fallback));
 
   /* These two turn "the task CARD clears the chrome" into an equation.
      #task-view is a centred, fixed wrapper; the card is what the user sees.

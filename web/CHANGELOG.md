@@ -1,3 +1,49 @@
+## [2.473] - 2026-08-22
+- fix(focus): the Focus View routine title no longer sits inside the blurred
+  header band, and `#task-view` is now anchored to a measured band rather than
+  centred with a derived height.
+
+  Two separate errors, both found by measuring the reporting device:
+
+  **Bounding against the wrong element.** The card was held clear of the ✕ / ⋯
+  buttons. What actually paints at the top is `.mini-cycle-header-row`
+  (`backdrop-filter: blur(5px)`), and it extends *below* them — at inset 0 it
+  runs to y=82 while the buttons end at 50, so the title landed inside it.
+  `--header-total-height` is not the answer either: that element is transparent
+  and spans the mode-selector wrapper focus mode hides, over-reserving ~35px.
+  Which of the three sits lowest changes with `env(safe-area-inset-top)` and with
+  the surface, so `headerLayoutManager` now publishes `--focus-chrome-bottom` as
+  the max of the live rects while focus mode is active.
+
+  **The centred model itself.** `top: 50% + 25px` with a height derived to clear
+  the chrome only works while `50dvh + 25` sits near the available band's centre.
+  At 820x480 the band runs 81 -> 349, centred on 215, against an element centred
+  on 265 — so any height that cleared the top pushed the bottom past the nav dots,
+  and the help window's clearance margin was truncated by `overflow: hidden`
+  instead of pushing content up. `#task-view` is now anchored top-and-height to
+  the band between `--focus-chrome-bottom` and `--nav-dots-clearance`, both
+  measured. The doubling, the derived help-window clearance and the circular
+  dependency between them are all gone.
+
+  Band-anchoring reproduces every previously approved number exactly — card top
+  127 and help bottom 695 at 393x852/inset 61, card top 98 at 402x656/inset 0 —
+  which is the evidence the old formulas were computing this band the long way
+  round.
+
+- test(layout): the layout suite now covers focus view — that the chrome var is
+  published, that it still *matches* the live chrome, that the card clears the
+  painted band, and that the band clears the nav dots. This is the third
+  consecutive release to get the focus-view top bound wrong; nothing was
+  watching it.
+
+- **Known gap:** at viewports under ~520px tall the content still cannot fit the
+  band (the card-group's floor exceeds it) and `overflow: hidden` clips the help
+  window — 29px past the band edge at 820x480, improved from 59px past the *nav
+  dots* before. `min-height: 0` on the focus-mode task list recovers part of it.
+  Not fixed: deciding what focus view drops when there is no room is a product
+  call. The layout suite names this case explicitly rather than asserting it away.
+
+
 ## [2.472] - 2026-08-21
 - fix(focus): the Focus View help window no longer runs into the Routine|Stats
   nav dots when the browser shows its own chrome. `--focus-help-window-clearance`
