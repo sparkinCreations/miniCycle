@@ -300,7 +300,7 @@ export const MODULE_MANIFESTS = {
             'handleRecurringTaskActivation', 'handleRecurringTaskDeactivation',
             'handleTaskCompletionChange', 'helpWindowManager', 'loadMiniCycle',
             'recurringPanel', 'setupReminderButtonHandler', 'taskOptionsCustomizer',
-            'triggerLogoScan', 'updateArrowsInDOM', 'updateMainMenuHeader',
+            'updateArrowsInDOM', 'updateMainMenuHeader',
             'updateMoveArrowsVisibility', 'updateProgressBar', 'updateRecurringInfoLink',
             'updateRecurringPanelButtonVisibility', 'updateStatsPanel', 'updateUndoRedoButtons',
             // These three taskDOM both PROVIDES and consumes: it forwards them to its

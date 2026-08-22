@@ -657,6 +657,31 @@ body.focus-mode .focus-mode-mode-modal {
     body.focus-mode #task-input-row {
         margin-top: 0;
     }
+
+    /* Let the card size to its CONTENT inside the band instead of growing to
+       fill it. #task-card-group is flex: 1 1 auto by default, and flex-grow
+       consumes the free space before justify-content can centre anything — so
+       a two-task routine still rendered as tall as an eight-task one, pinned
+       to the band's top edge. Shrink is left intact: a list longer than the
+       band still collapses to fill it exactly, so the full-list geometry is
+       unchanged. */
+    body.focus-mode #task-card-group {
+        flex-grow: 0;
+
+        /* Centre the content in the band with AUTO MARGINS, not
+           justify-content: center. When the content is taller than the band the
+           free space goes negative, and centring then overflows BOTH edges —
+           at 820x480 that put the card at y=70 against a chrome bottom of 81,
+           i.e. back under the header. Auto margins resolve to 0 on negative
+           free space, so the content falls back to top-aligned and overflows
+           downward only. Caught by the layout suite's "focus card clears the
+           painted chrome" check, which is exactly what it was added for. */
+        margin-top: auto;
+    }
+
+    body.focus-mode #help-window {
+        margin-bottom: auto;
+    }
     body.focus-mode #task-view .task-card {
         margin-top: 0;
     }
@@ -1009,11 +1034,20 @@ body.focus-mode #complete-all-and-help-window-container {
            bottom past the nav dots. Reverting to centring will reintroduce
            that; the layout suite's focus-view checks are the guard. */
         top: var(--focus-band-top);
+        bottom: calc(var(--nav-dots-clearance, var(--nav-dots-clearance-fallback))
+                     + var(--focus-band-bottom-gap));
         transform: translateX(-50%);
-        max-height: calc(100dvh
-                         - var(--nav-dots-clearance, var(--nav-dots-clearance-fallback))
-                         - var(--focus-band-bottom-gap)
-                         - var(--focus-band-top));
+
+        /* top + bottom + height:auto makes the element OCCUPY the band rather
+           than be capped by it. That distinction matters: with only a
+           max-height the element is content-sized, so a short routine sat at
+           the band's top edge with all the slack below it — v2.473's reported
+           "should be more centered". A content-sized box also gives
+           justify-content nothing to distribute. #task-view paints nothing of
+           its own, so filling the band is invisible; the content centres
+           inside it, and a full list still fills it exactly as before. */
+        height: auto;
+        max-height: none;
     }
 
     body.focus-mode #task-view .task-card {
