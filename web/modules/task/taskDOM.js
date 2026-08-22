@@ -33,6 +33,7 @@ import { applyTaskStatusLabel } from './taskUtils.js';
 import { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS, COLORS, DOM_IDS, DOM_SELECTORS, DATA_SELECTORS, DOM_CLASSES } from '../core/constants.js';
 import { ICONS } from '../utils/icons.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { resolveDeleteWhenComplete, getTaskResetIndicator } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -658,46 +659,30 @@ export class TaskDOMManager {
             : { cycle: false, todo: true }; // Use defaults if invalid
 
         // ✅ Decide active deleteWhenComplete strictly from settings when possible
-        // Priority: mode-specific setting (canonical) > legacy field > hard defaults
-        let finalDeleteWhenComplete;
-
-        // 1) Preferred: mode-specific setting (canonical source of truth)
-        if (typeof validSettings[currentMode] === 'boolean') {
-            finalDeleteWhenComplete = validSettings[currentMode];
-
-        // 2) Fallback: legacy/temporary field if settings are somehow missing
-        } else if (typeof deleteWhenComplete === 'boolean') {
-            finalDeleteWhenComplete = deleteWhenComplete;
-
-        // 3) Last-resort: hard defaults per mode
-        } else {
-            finalDeleteWhenComplete = currentMode === 'todo'
-                ? true   // To-Do default = delete
-                : false; // Cycle default = keep
-        }
+        // Priority: mode-specific setting (canonical) > legacy field > hard defaults.
+        // Shared with the Task view via utils/cycleMode.js — the same task must
+        // not show one indicator in the list and another on the card.
+        const finalDeleteWhenComplete = resolveDeleteWhenComplete({
+            settings: validSettings,
+            legacy: deleteWhenComplete,
+            mode: currentMode,
+            defaults: DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS
+        });
 
         // ✅ ALWAYS set the dataset attribute (for DOM sync)
         taskItem.dataset.deleteWhenComplete = finalDeleteWhenComplete.toString();
         taskItem.dataset.deleteWhenCompleteSettings = JSON.stringify(validSettings);
 
-        // ✅ Apply visual indicators based on mode
-        if (isToDoMode) {
-            // To-Do mode: show pin ONLY if opted OUT (deleteWhenComplete=false)
-            // Recurring tasks CAN show pin if user manually disabled deleteWhenComplete
-            if (!finalDeleteWhenComplete) {
-                taskItem.classList.add(DOM_CLASSES.KEPT_TASK);
-            }
-        } else {
-            // Cycle mode: show red X ONLY if opted IN (deleteWhenComplete=true)
-            // BUT recurring tasks never show ❌ (recurring symbol indicates deletion)
-            if (finalDeleteWhenComplete && !isRecurring) {
-                taskItem.classList.add(DOM_CLASSES.SHOW_DELETE_INDICATOR);
-            }
-            // Recurring tasks show pin 📌 if user manually disabled deleteWhenComplete
-            if (!finalDeleteWhenComplete && isRecurring) {
-                taskItem.classList.add(DOM_CLASSES.KEPT_TASK);
-            }
-        }
+        // ✅ Apply visual indicators. The per-mode rules (and the recurring
+        // special-cases in both directions) live in getTaskResetIndicator so the
+        // routine list and the Task view stay in agreement.
+        const resetIndicator = getTaskResetIndicator({
+            deleteWhenComplete: finalDeleteWhenComplete,
+            isRecurring,
+            mode: currentMode
+        });
+        if (resetIndicator === 'clear') taskItem.classList.add(DOM_CLASSES.SHOW_DELETE_INDICATOR);
+        if (resetIndicator === 'keep') taskItem.classList.add(DOM_CLASSES.KEPT_TASK);
 
         return taskItem;
     }

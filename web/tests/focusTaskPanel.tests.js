@@ -29,6 +29,7 @@ export async function runFocusTaskPanelTests(resultsDiv) {
                     <div class="focus-task-indicators">
                         <span id="focus-task-recurring-indicator" class="hidden">R</span>
                         <span id="focus-task-due-indicator" class="hidden"></span>
+                        <span id="focus-task-reset-indicator" class="hidden" role="img"></span>
                     </div>
                     <button type="button" id="focus-task-complete-btn"></button>
                     <div class="focus-task-nav">
@@ -111,6 +112,53 @@ export async function runFocusTaskPanelTests(resultsDiv) {
                 !document.getElementById('focus-task-position').textContent.includes('3')) {
                 throw new Error(`Position should be 2 of 3: "${document.getElementById('focus-task-position').textContent}"`);
             }
+            panel.destroy();
+        } finally { host.remove(); }
+    });
+
+    await test('reset indicator mirrors the routine list, per mode', async () => {
+        const host = buildPanelFixture();
+        const el = () => document.getElementById('focus-task-reset-indicator');
+        const shown = () => !el().classList.contains('hidden');
+        try {
+            // Cycle mode, opted IN to removal -> 🧹. The list shows the same via
+            // SHOW_DELETE_INDICATOR; both read getTaskResetIndicator.
+            let { panel } = await makeManager(makeState(
+                [T('a', false, { deleteWhenCompleteSettings: { cycle: true, todo: true } })]));
+            if (!shown()) throw new Error('cycle + delete-on-complete should show an indicator');
+            if (el().textContent !== '🧹') throw new Error(`expected broom, got "${el().textContent}"`);
+            if (!el().getAttribute('aria-label')) throw new Error('indicator must carry an accessible name');
+            panel.destroy();
+
+            // Cycle mode default (keep) -> nothing. Marking the unsurprising
+            // case would make the indicator noise.
+            ({ panel } = await makeManager(makeState(
+                [T('b', false, { deleteWhenCompleteSettings: { cycle: false, todo: true } })])));
+            if (shown()) throw new Error('cycle + keep is the default and should show nothing');
+            if (el().getAttribute('aria-label')) throw new Error('hidden indicator must not keep a stale name');
+            panel.destroy();
+
+            // Cycle mode, RECURRING + removal -> nothing: the recurring glyph
+            // already implies it.
+            ({ panel } = await makeManager(makeState(
+                [T('c', false, { recurring: true, deleteWhenCompleteSettings: { cycle: true, todo: true } })])));
+            if (shown()) throw new Error('recurring already implies removal; no broom');
+            panel.destroy();
+
+            // To-Do mode, opted OUT -> 📌. Inverse of cycle: here removal is the
+            // default, so only survival is worth marking.
+            ({ panel } = await makeManager(makeState(
+                [T('d', false, { deleteWhenCompleteSettings: { cycle: false, todo: false } })],
+                { deleteCheckedTasks: true })));
+            if (!shown()) throw new Error('to-do + opted out should show an indicator');
+            if (el().textContent !== '📌') throw new Error(`expected pin, got "${el().textContent}"`);
+            panel.destroy();
+
+            // To-Do default (delete) -> nothing.
+            ({ panel } = await makeManager(makeState(
+                [T('e', false, { deleteWhenCompleteSettings: { cycle: false, todo: true } })],
+                { deleteCheckedTasks: true })));
+            if (shown()) throw new Error('to-do + delete is the default and should show nothing');
             panel.destroy();
         } finally { host.remove(); }
     });

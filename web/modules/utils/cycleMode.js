@@ -106,6 +106,66 @@ export function syncTaskDeleteWhenComplete(task, mode, defaults) {
 }
 
 /**
+ * The `deleteWhenComplete` value actually in effect for a task.
+ *
+ * DERIVED, with a priority order that matters: the per-mode map is canonical,
+ * the flat field is a legacy/transitional mirror of it, and the hard defaults
+ * are last resort. Reading the flat field first would give a stale answer right
+ * after a mode switch, before syncTaskDeleteWhenComplete has re-derived it.
+ *
+ * @param {Object} args
+ * @param {Object|undefined} args.settings - task.deleteWhenCompleteSettings
+ * @param {boolean|undefined} args.legacy - task.deleteWhenComplete
+ * @param {'todo'|'cycle'} args.mode - see getDeleteSettingsMode
+ * @param {Object} args.defaults - DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS
+ * @returns {boolean}
+ */
+export function resolveDeleteWhenComplete({ settings, legacy, mode, defaults }) {
+    const valid = settings && typeof settings === 'object'
+        && typeof settings.cycle === 'boolean'
+        && typeof settings.todo === 'boolean'
+        ? settings
+        : defaults;
+
+    if (typeof valid[mode] === 'boolean') return valid[mode];
+    if (typeof legacy === 'boolean') return legacy;
+    return defaults[mode];
+}
+
+/**
+ * Which reset indicator a task shows, if any.
+ *
+ * The two are mutually exclusive by construction, and the rule is NOT simply
+ * "show what deleteWhenComplete says" — it differs per mode, and recurring
+ * tasks are special-cased in both directions:
+ *
+ *   To-Do   the default is to delete, so only the OPT-OUT is worth marking
+ *           -> 'keep' when the task will survive
+ *   Cycle   the default is to keep, so only the OPT-IN is worth marking
+ *           -> 'clear' when the task will be removed... except for recurring
+ *              tasks, whose own indicator already implies removal
+ *           -> 'keep' when a RECURRING task has been opted out of removal,
+ *              which is the one case where that is surprising
+ *
+ * Lives here rather than in either renderer because the routine list and the
+ * Task view both need the same answer, and a second copy would drift — the
+ * fault line in REVIEW_PATTERNS.md §4 that this module already exists to close.
+ *
+ * @param {Object} args
+ * @param {boolean} args.deleteWhenComplete - see resolveDeleteWhenComplete
+ * @param {boolean} args.isRecurring
+ * @param {'todo'|'cycle'} args.mode
+ * @returns {'clear'|'keep'|null}
+ */
+export function getTaskResetIndicator({ deleteWhenComplete, isRecurring, mode }) {
+    if (mode === 'todo') {
+        return deleteWhenComplete ? null : 'keep';
+    }
+    if (deleteWhenComplete) return isRecurring ? null : 'clear';
+    return isRecurring ? 'keep' : null;
+}
+
+/**
  * Label key for the "everything is finished, here's what happens next" hint.
  *
  * Each mode gets its own because the affordance genuinely differs — and in AUTO

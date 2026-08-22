@@ -24,9 +24,11 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS, DATA_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, GESTURE } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DATA_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, GESTURE,
+         DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
-import { getCycleMode, getAllDoneHintKey } from '../utils/cycleMode.js';
+import { getCycleMode, getAllDoneHintKey, getDeleteSettingsMode,
+         resolveDeleteWhenComplete, getTaskResetIndicator } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION
@@ -159,7 +161,8 @@ export class FocusTaskPanel {
 
     render() {
         const { panel, card, position, text, completeBtn, prevBtn, nextBtn,
-                alldone, alldoneText, alldoneHint, recurringIndicator, dueIndicator } = this.elements;
+                alldone, alldoneText, alldoneHint, recurringIndicator, dueIndicator,
+                resetIndicator } = this.elements;
         if (!panel) return;
 
         // A celebration in progress owns the card until its timer ends
@@ -217,6 +220,7 @@ export class FocusTaskPanel {
 
         // Indicators
         recurringIndicator.classList.toggle(DOM_CLASSES.HIDDEN, !task.recurring);
+        this._renderResetIndicator(resetIndicator, task);
         if (task.dueDate) {
             dueIndicator.textContent = getLabel('focusTask.dueLabel', { vars: { date: task.dueDate } });
             dueIndicator.classList.remove(DOM_CLASSES.HIDDEN);
@@ -361,6 +365,51 @@ export class FocusTaskPanel {
     // Wiring
     // ------------------------------------------------------------------
 
+    /**
+     * 🧹 / 📌 — whether this task survives a reset or clear.
+     *
+     * The rule is NOT "show what deleteWhenComplete says": it differs per mode
+     * and special-cases recurring tasks in both directions, so it is derived by
+     * getTaskResetIndicator, shared with the routine list (taskDOM). Without
+     * that sharing the same task could show 🧹 in the list and nothing here.
+     *
+     * Given a name rather than aria-hidden (as the recurring glyph is) because
+     * this one carries information the card shows nowhere else.
+     */
+    _renderResetIndicator(el, task) {
+        if (!el) return;
+
+        const state = this.deps.AppState.get();
+        const cycle = state?.data?.cycles?.[state?.appState?.activeCycleId];
+        const mode = getDeleteSettingsMode(cycle);
+
+        const indicator = getTaskResetIndicator({
+            deleteWhenComplete: resolveDeleteWhenComplete({
+                settings: task.deleteWhenCompleteSettings,
+                legacy: task.deleteWhenComplete,
+                mode,
+                defaults: DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS
+            }),
+            isRecurring: !!task.recurring,
+            mode
+        });
+
+        if (!indicator) {
+            el.classList.add(DOM_CLASSES.HIDDEN);
+            el.textContent = '';
+            el.removeAttribute('aria-label');
+            el.removeAttribute('title');
+            return;
+        }
+
+        const isClear = indicator === 'clear';
+        const name = getLabel(isClear ? 'focusTask.indicatorClear' : 'focusTask.indicatorKeep');
+        el.textContent = isClear ? '🧹' : '📌';
+        el.setAttribute('aria-label', name);
+        el.setAttribute('title', name);
+        el.classList.remove(DOM_CLASSES.HIDDEN);
+    }
+
     _cacheElements() {
         const byId = this.deps.getElementById;
         this.elements = {
@@ -369,6 +418,7 @@ export class FocusTaskPanel {
             text: byId(DOM_IDS.FOCUS_TASK_TEXT),
             recurringIndicator: byId(DOM_IDS.FOCUS_TASK_RECURRING_INDICATOR),
             dueIndicator: byId(DOM_IDS.FOCUS_TASK_DUE_INDICATOR),
+            resetIndicator: byId(DOM_IDS.FOCUS_TASK_RESET_INDICATOR),
             completeBtn: byId(DOM_IDS.FOCUS_TASK_COMPLETE_BTN),
             prevBtn: byId(DOM_IDS.FOCUS_TASK_PREV_BTN),
             nextBtn: byId(DOM_IDS.FOCUS_TASK_NEXT_BTN),

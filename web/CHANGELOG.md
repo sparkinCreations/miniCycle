@@ -1,3 +1,32 @@
+## [2.478] - 2026-08-22
+- feat(focus): the Task view now shows the 🧹 clear-on-reset and 📌 kept
+  indicators. Previously only the recurring glyph appeared there, so a task
+  marked for removal looked identical to one that would survive — the routine
+  list showed the difference, the card did not.
+
+  The rule is not "show what `deleteWhenComplete` says". It inverts by mode and
+  special-cases recurring tasks in both directions:
+
+  | mode | condition | indicator |
+  |---|---|---|
+  | Cycle | opted IN to removal | 🧹 |
+  | Cycle | recurring + removal | — (the recurring glyph already implies it) |
+  | Cycle | recurring, opted OUT | 📌 |
+  | To-Do | opted OUT of removal | 📌 |
+  | To-Do | default (removes) | — |
+
+  That logic now lives once, in `utils/cycleMode.js` as `getTaskResetIndicator`
+  (plus `resolveDeleteWhenComplete` for the per-mode-setting → legacy-field →
+  default priority chain), and **`taskDOM` was switched onto it** rather than
+  left with its own copy. Copying it into the panel would have recreated the
+  duplication fault line that module already exists to close, and the two
+  surfaces could then disagree about the same task.
+
+  The indicator carries an accessible name (`role="img"` + `aria-label`), unlike
+  the decorative recurring glyph, because it is the only place that information
+  appears on the card.
+
+
 ## [2.477] - 2026-08-22
 - fix(todo): completing a task glows the logo green in **every** mode, To-Do
   included. Corrects v2.475, which read the report as "no logo effect in To-Do
