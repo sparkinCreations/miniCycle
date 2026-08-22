@@ -1,3 +1,24 @@
+## [2.475] - 2026-08-22
+- fix(todo): completing a task in To-Do mode no longer plays a logo effect.
+
+  The green logo flash celebrates progress toward a cycle, so it means nothing
+  in To-Do mode, where nothing cycles. The blue scan line is the CLEAR signal —
+  it belongs to the clear path in `taskCycleReset` — and firing it on completion
+  made every checkbox tick look like a clear had just happened. To-Do mode now
+  gets neither; the scan still plays when completed tasks are cleared, and cycle
+  modes still flash green.
+
+  Worth recording: which of the two wrong effects you got depended on module
+  load order. `taskDOM` took `triggerLogoScan` as a **snapshot at wiring time**
+  (`resolvedDeps.triggerLogoScan || null`), so if `uiEffects` hadn't loaded yet
+  it captured `null`, the `isToDoMode && typeof fn === 'function'` test failed,
+  and completion fell through to the *green* branch instead. A local probe
+  reproduced exactly that, while the reporting device saw the scan line — same
+  code, opposite symptom. The now-unused snapshot is gone from `taskDOM` and
+  from its manifest entry; `taskCycleReset` resolves the same dependency lazily
+  at call time, which is why the clear path was never affected.
+
+
 ## [2.474] - 2026-08-22
 - docs: connect the focus-view band model to the home-view pattern it diverged from
 - docs: record the Focus View band model and why five probes measured the wrong thing
