@@ -1,3 +1,34 @@
+## [2.479] - 2026-08-22
+- fix(first-run): the rotating loading tip no longer renders on top of
+  "Restore from a backup file". On a short viewport the tip's bottom-anchored
+  strip and the bottom of the choice column meet, and the two drew over each
+  other.
+
+  The tip now measures before it shows and stays hidden when it would sit within
+  8px of the restore link. Measured rather than gated on a breakpoint, because
+  whether they collide depends on three things a media query cannot see: the
+  viewport, whether the browser is showing its own chrome, and how many lines the
+  *current* tip wraps to — a three-line tip collides where a one-line tip does
+  not, which is why the same device showed it sometimes and not others.
+
+  | viewport | gap | tip |
+  |---|---|---|
+  | 393x852 | +41 | shown |
+  | 402x656 (Safari with chrome) | −28 | suppressed |
+  | 393x600 | −68 | suppressed |
+  | 820x480 | −123 | suppressed |
+
+  Scoped to the actual collision, not to short screens: a **returning** user on a
+  393x520 viewport still gets tips, because the restore link only renders on the
+  first-run choice screen — verified, since silently killing tips for every
+  returning user is the way this would have gone wrong.
+
+  No flash while deciding: the tip is `position: absolute` and only
+  opacity-hidden, so it already has a real rect before it is shown. The check
+  re-runs per tip and on resize/orientation rather than latching the first answer,
+  and its listeners are removed when the rotation stops.
+
+
 ## [2.478] - 2026-08-22
 - feat(focus): the Task view now shows the 🧹 clear-on-reset and 📌 kept
   indicators. Previously only the recurring glyph appeared there, so a task
