@@ -1,3 +1,29 @@
+## [2.476] - 2026-08-22
+- fix(focus): the Focus View input bar stays attached to the task list, matching
+  Home view. v2.474 centred a short routine using `margin-top: auto` on
+  `#task-card-group` — but an auto margin there absorbs the slack *between* the
+  input bar and the card, so the bar stayed pinned to the band's top edge while
+  the card floated down.
+
+  Measured gap from the input bar's bottom to the card's top, at 393x852:
+
+  | | 8 tasks | 2 tasks |
+  |---|---|---|
+  | Home view | 16px | 16px |
+  | Focus, v2.474 | 16px | **141px** |
+  | Focus, v2.476 | 16px | **16px** |
+
+  Centring now happens on the container so the input bar, card and help window
+  move as one block. It uses **`justify-content: safe center`**, and the `safe`
+  is load-bearing: with content taller than the band the free space goes
+  negative and plain `center` overflows *both* edges, which is what put the card
+  back under the header at 820x480 during v2.474. `safe` falls back to
+  flex-start exactly in that case — verified, the card still clears the chrome
+  by 16px there. On engines without the keyword the declaration is dropped and
+  alignment defaults to flex-start, which is the same conservative outcome, so
+  the browser floor degrades safely rather than breaking.
+
+
 ## [2.475] - 2026-08-22
 - fix(todo): completing a task in To-Do mode no longer plays a logo effect.
 
