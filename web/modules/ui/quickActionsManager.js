@@ -675,22 +675,24 @@ export class QuickActionsManager {
                     }, 0);
                     break;
                 case 'openRemindersModal': {
-                    recordActionUsage(this.deps.AppState, actionId);
+                    // Click the real button instead of calling modal.showModal() here.
+                    // showModal() skipped reminders.js's openRemindersModal(), which is
+                    // the ONLY caller of loadRemindersSettings() — so this path showed a
+                    // form still at its HTML defaults, and the next save wrote those
+                    // defaults over the user's stored settings. Delegating also matches
+                    // every other action in this switch.
+                    // Usage is recorded by the delegated listener (actionUsage.js maps
+                    // OPEN_REMINDERS_MODAL), so do NOT call recordActionUsage here —
+                    // that would double-count.
+                    this.deps.hideMainMenu();
                     setTimeout(() => {
                         try {
-                            // No getElementById fallback: `reminders` is in the modal
-                            // registry and `getModal` is a REQUIRED dep here, so the
-                            // fallback could only ever fire when DI was broken — and
-                            // then it silently papered over it. Letting the lookup fail
-                            // reaches _warnMissingDep below, which says so out loud.
-                            const modal = this.deps.getModal?.('reminders');
-                            if (modal && !modal.open) {
-                                modal._previousFocus = document.activeElement;
-                                modal.showModal();
-                            } else if (!modal) {
-                                this._warnMissingDep('reminders modal', actionId);
+                            const btn = document.getElementById(DOM_IDS.OPEN_REMINDERS_MODAL);
+                            if (btn) {
+                                btn.click();
+                            } else {
+                                this._warnMissingDep(DOM_IDS.OPEN_REMINDERS_MODAL, actionId);
                             }
-                            this.deps.hideMainMenu();
                         } catch (err) {
                             console.error(`⚡ Quick action '${actionId}' failed:`, err);
                             this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);

@@ -20,6 +20,7 @@ import { createDIModule, optional } from '../core/diBase.js';
 import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, FREQUENCY_MS, LIMITS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { isClickOnNotification } from '../ui/modalUtils.js';
+import { DEFAULT_REMINDERS } from '../core/dataAccess.js';
 import {
     isNativeApp,
     requestNotificationPermission,
@@ -395,7 +396,55 @@ export class MiniCycleReminders {
     }
 
     /**
-     * Auto-save reminder settings
+     * Patch reminder settings WITHOUT rebuilding them from the DOM.
+     *
+     * autoSaveReminders() reads EVERY control and replaces state.customReminders
+     * wholesale. That is only correct when the form is hydrated — and it is not
+     * hydrated until loadRemindersSettings() runs, which happens on modal open.
+     * Any save before that wrote HTML defaults over the stored settings: opening
+     * Reminders from Quick Actions bypassed the hydrating opener, so expanding the
+     * Privacy Notice erased dueDatesReminders, repeatCount AND frequencyValue in
+     * one write (measured; v2.481 fixes both halves).
+     *
+     * So each handler owns one field and patches only that field. A stale or
+     * un-hydrated control can no longer overwrite its neighbours, which makes the
+     * hydration fix a second line of defence rather than the only one.
+     *
+     * DEFAULT_REMINDERS is the base the READER (loadMiniCycleData) substitutes when
+     * `customReminders` is absent, so a profile missing the key persists exactly the
+     * settings it was already showing.
+     *
+     * @param {Object} patch - the field(s) this handler owns
+     * @returns {Promise<boolean>} true if persisted, false if AppState wasn't ready
+     */
+    async updateReminderSettings(patch) {
+        const AppStatePatch = typeof this.deps.AppState === 'function' ? this.deps.AppState() : this.deps.AppState;
+        if (!AppStatePatch?.isReady?.()) {
+            // Named, not silent: the old due-date handler used `if (state.customReminders)`
+            // and did nothing when the key was absent, so the toggle looked like it
+            // worked and never persisted.
+            console.error('\u274c AppState not ready \u2014 reminder setting not saved:', Object.keys(patch).join(', '));
+            return false;
+        }
+        await AppStatePatch.update(state => {
+            state.customReminders = {
+                ...DEFAULT_REMINDERS,
+                ...(state.customReminders || {}),
+                ...patch
+            };
+        }, true); // immediate save for reminders
+        return true;
+    }
+
+    /**
+     * Auto-save reminder settings — rebuilds the WHOLE object from the form.
+     *
+     * Only the main Enable Reminders switch may call this: it owns `enabled` plus the
+     * timer fields that initialise with it, and it lives inside the reminders modal,
+     * which cannot be opened without loadRemindersSettings() hydrating the form first.
+     * Every other handler patches its own field through updateReminderSettings() —
+     * see the note there for what a stray whole-form write cost.
+     *
      * @returns {Promise<boolean>} - Returns the enabled state
      */
     async autoSaveReminders() {
@@ -482,6 +531,11 @@ export class MiniCycleReminders {
             frequencyUnit: "hours"
         };
 
+        // Suppress handler writes while the form is being filled from state. Setting
+        // `<details>.open` fires a real `toggle` event, so hydration would otherwise
+        // trigger a save of the value it just read.
+        this._hydratingSettings = true;
+
         // Apply settings to UI
         const enableReminders = this.deps.getElementById(DOM_IDS.ENABLE_REMINDERS);
         const indefiniteCheckbox = this.deps.getElementById(DOM_IDS.INDEFINITE_CHECKBOX);
@@ -528,6 +582,9 @@ export class MiniCycleReminders {
         // Show/hide reminder buttons on load
         this.updateReminderButtons();
 
+        // `toggle` on <details> is queued as a task, so it lands AFTER this function
+        // returns — release the guard on the next turn, not synchronously.
+        setTimeout(() => { this._hydratingSettings = false; }, 0);
     }
 
     /**
@@ -903,7 +960,11 @@ export class MiniCycleReminders {
             button.setAttribute("aria-pressed", isActive.toString());
 
             await this.saveTaskReminderState(assignedTaskId, isActive);
-            this.autoSaveReminders();
+            // No autoSaveReminders() here. This button lives on the TASK LIST, not in
+            // the reminders modal, so it is reachable while that form is still at its
+            // HTML defaults — and the rebuild-from-DOM save then wiped the global
+            // settings. It never had anything to save either: the task state is
+            // persisted above, and the global settings are unchanged by this click.
             this.startReminders();
 
             // Update undo/redo button states
@@ -1005,34 +1066,17 @@ export class MiniCycleReminders {
                     repeatCountRow.style.display = indefiniteCheckbox.checked ? "none" : "block";
                 }
 
-                this.autoSaveReminders();
-                this.startReminders();
+                this.updateReminderSettings({ indefinite: indefiniteCheckbox.checked })
+                    .then(() => this.startReminders());
             });
         }
 
         // Due dates reminders listener
         const dueDatesReminders = this.deps.getElementById(DOM_IDS.DUE_DATES_REMINDERS);
         if (dueDatesReminders) {
-            replaceStoredEventListener(dueDatesReminders, "change", "__miniCycleRemindersDueDatesChangeHandler", () => {
-
-                const schemaData = this.deps.loadMiniCycleData();
-                if (!schemaData) {
-                    console.error('❌ Schema 2.5 data required for dueDatesReminders change');
-                    return;
-                }
-
-                // ✅ Use AppState instead of direct localStorage - Save per-cycle
-                const AppStateDueDates = typeof this.deps.AppState === 'function' ? this.deps.AppState() : this.deps.AppState;
-                if (AppStateDueDates?.update) {
-                    AppStateDueDates.update(state => {
-                        // Fix: Write to customReminders (where loadMiniCycleData reads from)
-                        if (state.customReminders) {
-                            state.customReminders.dueDatesReminders = dueDatesReminders.checked;
-                        }
-                    }, true); // immediate save
-                } else {
-                    console.error('❌ AppState not ready for dueDatesReminders toggle - setting not saved');
-                }
+            replaceStoredEventListener(dueDatesReminders, "change", "__miniCycleRemindersDueDatesChangeHandler", async () => {
+                if (this._hydratingSettings) return;
+                await this.updateReminderSettings({ dueDatesReminders: dueDatesReminders.checked });
             });
         }
 
@@ -1049,10 +1093,28 @@ export class MiniCycleReminders {
                     }
 
                     const settings = schemaData.reminders || {};
-                    if (settings.enabled) {
-                        this.autoSaveReminders();
-                        this.startReminders();
+                    if (!settings.enabled) return;
+
+                    const frequencyValue = parseInt(this.deps.getElementById(DOM_IDS.FREQUENCY_VALUE)?.value) || 0;
+                    const frequencyUnit = this.deps.getElementById(DOM_IDS.FREQUENCY_UNIT)?.value || "hours";
+                    const patch = {
+                        repeatCount: parseInt(this.deps.getElementById(DOM_IDS.REPEAT_COUNT)?.value) || 0,
+                        frequencyValue,
+                        frequencyUnit
+                    };
+
+                    // The timer fields are derived from the frequency, so this handler
+                    // owns them too — restating autoSaveReminders' reset rule for the
+                    // one case that can reach it.
+                    if (settings.frequencyValue !== frequencyValue || settings.frequencyUnit !== frequencyUnit) {
+                        const now = Date.now();
+                        const multiplier = FREQUENCY_MS[frequencyUnit] || FREQUENCY_MS.minutes;
+                        patch.nextReminderTime = now + (frequencyValue * multiplier);
+                        patch.reminderStartTime = now;
+                        patch.timesReminded = 0;
                     }
+
+                    this.updateReminderSettings(patch).then(() => this.startReminders());
                 });
             }
         });
@@ -1072,7 +1134,7 @@ export class MiniCycleReminders {
                             const permission = await requestNotificationPermission();
                             if (permission === 'granted') {
                                 browserNotificationsCheckbox.checked = true;
-                                await this.autoSaveReminders();
+                                await this.updateReminderSettings({ browserNotifications: true });
                                 // Anchor the OS-scheduled series now — waiting for
                                 // the next JS fire could be hours away, and the app
                                 // may be backgrounded before then.
@@ -1112,7 +1174,7 @@ export class MiniCycleReminders {
                     // Case 3: Permission already granted — skip confirmation, just enable
                     if (Notification.permission === 'granted') {
                         browserNotificationsCheckbox.checked = true;
-                        this.autoSaveReminders();
+                        this.updateReminderSettings({ browserNotifications: true });
                         this.deps.showNotification(getLabel('reminders.permissionGranted'), 'success', UI_TIMEOUTS.NOTIFICATION_MEDIUM);
                         return;
                     }
@@ -1140,7 +1202,7 @@ export class MiniCycleReminders {
                                         const test = new Notification('miniCycle', { body: 'Browser notifications enabled!', silent: true });
                                         test.close();
                                         browserNotificationsCheckbox.checked = true;
-                                        this.autoSaveReminders();
+                                        this.updateReminderSettings({ browserNotifications: true });
                                         this.deps.showNotification(getLabel('reminders.permissionGranted'), 'success', UI_TIMEOUTS.NOTIFICATION_MEDIUM);
                                     } catch (testErr) {
                                         console.warn('⚠️ Test notification failed:', testErr);
@@ -1162,7 +1224,8 @@ export class MiniCycleReminders {
                     // Toggling OFF — save, then clear any OS-scheduled series
                     // (syncNativeReminderSeries reads the saved "off" state and
                     // cancels; no-op on the web).
-                    this.autoSaveReminders().then(() => this.syncNativeReminderSeries());
+                    this.updateReminderSettings({ browserNotifications: false })
+                        .then(() => this.syncNativeReminderSeries());
                     this.deps.showNotification(getLabel('reminders.browserNotificationsDisabled'), 'info', UI_TIMEOUTS.NOTIFICATION_SHORT);
                 }
             });
@@ -1172,7 +1235,11 @@ export class MiniCycleReminders {
         const privacyNoticeDetails = this.deps.getElementById(DOM_IDS.PRIVACY_NOTICE_DETAILS);
         if (privacyNoticeDetails) {
             replaceStoredEventListener(privacyNoticeDetails, "toggle", "__miniCycleRemindersPrivacyToggleHandler", () => {
-                this.autoSaveReminders();
+                // `toggle` also fires when loadRemindersSettings() sets `.open` during
+                // hydration, so this is exactly where a rebuild-from-DOM save used to
+                // land mid-hydration.
+                if (this._hydratingSettings) return;
+                this.updateReminderSettings({ privacyNoticeOpen: privacyNoticeDetails.open });
             });
         }
 
