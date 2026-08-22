@@ -1286,6 +1286,9 @@ export const DOM_IDS = Object.freeze({
     FOCUS_TASK_TEXT: 'focus-task-text',
     FOCUS_TASK_RECURRING_INDICATOR: 'focus-task-recurring-indicator',
     FOCUS_TASK_DUE_INDICATOR: 'focus-task-due-indicator',
+    // One element for both reset states — they are mutually exclusive by
+    // construction (see getTaskResetIndicator), so a single slot enforces that.
+    FOCUS_TASK_RESET_INDICATOR: 'focus-task-reset-indicator',
     FOCUS_TASK_COMPLETE_BTN: 'focus-task-complete-btn',
     FOCUS_TASK_PREV_BTN: 'focus-task-prev-btn',
     FOCUS_TASK_NEXT_BTN: 'focus-task-next-btn',

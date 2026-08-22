@@ -667,20 +667,6 @@ body.focus-mode .focus-mode-mode-modal {
        unchanged. */
     body.focus-mode #task-card-group {
         flex-grow: 0;
-
-        /* Centre the content in the band with AUTO MARGINS, not
-           justify-content: center. When the content is taller than the band the
-           free space goes negative, and centring then overflows BOTH edges —
-           at 820x480 that put the card at y=70 against a chrome bottom of 81,
-           i.e. back under the header. Auto margins resolve to 0 on negative
-           free space, so the content falls back to top-aligned and overflows
-           downward only. Caught by the layout suite's "focus card clears the
-           painted chrome" check, which is exactly what it was added for. */
-        margin-top: auto;
-    }
-
-    body.focus-mode #help-window {
-        margin-bottom: auto;
     }
     body.focus-mode #task-view .task-card {
         margin-top: 0;
@@ -1048,6 +1034,21 @@ body.focus-mode #complete-all-and-help-window-container {
            inside it, and a full list still fills it exactly as before. */
         height: auto;
         max-height: none;
+
+        /* Centre the WHOLE group — input bar, card, help window — as one block.
+           `safe` is load-bearing: with content taller than the band the free
+           space goes negative and plain `center` overflows BOTH edges, which
+           put the card back under the header at 820x480. `safe` falls back to
+           flex-start exactly then. On engines that don't support the keyword
+           the declaration is dropped and alignment defaults to flex-start,
+           which is the same conservative outcome, so the floor degrades safely.
+
+           This must live on the CONTAINER, not as `margin-top: auto` on
+           #task-card-group: an auto margin there absorbs the slack BETWEEN the
+           input bar and the card, pinning the bar to the band's top edge while
+           the card floats down — 141px apart on a two-task routine, against a
+           constant 16px in Home view. */
+        justify-content: safe center;
     }
 
     body.focus-mode #task-view .task-card {

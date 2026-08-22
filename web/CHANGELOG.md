@@ -1,3 +1,112 @@
+## [2.479] - 2026-08-22
+- fix(first-run): the rotating loading tip no longer renders on top of
+  "Restore from a backup file". On a short viewport the tip's bottom-anchored
+  strip and the bottom of the choice column meet, and the two drew over each
+  other.
+
+  The tip now measures before it shows and stays hidden when it would sit within
+  8px of the restore link. Measured rather than gated on a breakpoint, because
+  whether they collide depends on three things a media query cannot see: the
+  viewport, whether the browser is showing its own chrome, and how many lines the
+  *current* tip wraps to — a three-line tip collides where a one-line tip does
+  not, which is why the same device showed it sometimes and not others.
+
+  | viewport | gap | tip |
+  |---|---|---|
+  | 393x852 | +41 | shown |
+  | 402x656 (Safari with chrome) | −28 | suppressed |
+  | 393x600 | −68 | suppressed |
+  | 820x480 | −123 | suppressed |
+
+  Scoped to the actual collision, not to short screens: a **returning** user on a
+  393x520 viewport still gets tips, because the restore link only renders on the
+  first-run choice screen — verified, since silently killing tips for every
+  returning user is the way this would have gone wrong.
+
+  No flash while deciding: the tip is `position: absolute` and only
+  opacity-hidden, so it already has a real rect before it is shown. The check
+  re-runs per tip and on resize/orientation rather than latching the first answer,
+  and its listeners are removed when the rotation stops.
+
+
+## [2.478] - 2026-08-22
+- feat(focus): the Task view now shows the 🧹 clear-on-reset and 📌 kept
+  indicators. Previously only the recurring glyph appeared there, so a task
+  marked for removal looked identical to one that would survive — the routine
+  list showed the difference, the card did not.
+
+  The rule is not "show what `deleteWhenComplete` says". It inverts by mode and
+  special-cases recurring tasks in both directions:
+
+  | mode | condition | indicator |
+  |---|---|---|
+  | Cycle | opted IN to removal | 🧹 |
+  | Cycle | recurring + removal | — (the recurring glyph already implies it) |
+  | Cycle | recurring, opted OUT | 📌 |
+  | To-Do | opted OUT of removal | 📌 |
+  | To-Do | default (removes) | — |
+
+  That logic now lives once, in `utils/cycleMode.js` as `getTaskResetIndicator`
+  (plus `resolveDeleteWhenComplete` for the per-mode-setting → legacy-field →
+  default priority chain), and **`taskDOM` was switched onto it** rather than
+  left with its own copy. Copying it into the panel would have recreated the
+  duplication fault line that module already exists to close, and the two
+  surfaces could then disagree about the same task.
+
+  The indicator carries an accessible name (`role="img"` + `aria-label`), unlike
+  the decorative recurring glyph, because it is the only place that information
+  appears on the card.
+
+
+## [2.477] - 2026-08-22
+- fix(todo): completing a task glows the logo green in **every** mode, To-Do
+  included. Corrects v2.475, which read the report as "no logo effect in To-Do
+  mode" and removed both effects; only the blue scan line was wrong there.
+
+  Finishing a task is the same act whichever mode you are in, so the feedback is
+  the same and there is deliberately no mode branch left in the handler. The scan
+  line is a different signal — it means tasks were CLEARED — and stays on
+  `taskCycleReset`'s clear path.
+
+  Verified by reproduction rather than reasoning, since this contract has now
+  been got wrong twice:
+
+  | | on complete | on clear |
+  |---|---|---|
+  | To-Do | green glow | blue scan line |
+  | Cycle | green glow | — |
+
+  (The empty cell is an artefact of the probe: in Cycle mode that button
+  completes the *cycle*, which plays `logo-spin`, a class the observer does not
+  watch. It is not evidence that nothing happens.)
+
+
+## [2.476] - 2026-08-22
+- fix(focus): the Focus View input bar stays attached to the task list, matching
+  Home view. v2.474 centred a short routine using `margin-top: auto` on
+  `#task-card-group` — but an auto margin there absorbs the slack *between* the
+  input bar and the card, so the bar stayed pinned to the band's top edge while
+  the card floated down.
+
+  Measured gap from the input bar's bottom to the card's top, at 393x852:
+
+  | | 8 tasks | 2 tasks |
+  |---|---|---|
+  | Home view | 16px | 16px |
+  | Focus, v2.474 | 16px | **141px** |
+  | Focus, v2.476 | 16px | **16px** |
+
+  Centring now happens on the container so the input bar, card and help window
+  move as one block. It uses **`justify-content: safe center`**, and the `safe`
+  is load-bearing: with content taller than the band the free space goes
+  negative and plain `center` overflows *both* edges, which is what put the card
+  back under the header at 820x480 during v2.474. `safe` falls back to
+  flex-start exactly in that case — verified, the card still clears the chrome
+  by 16px there. On engines without the keyword the declaration is dropped and
+  alignment defaults to flex-start, which is the same conservative outcome, so
+  the browser floor degrades safely rather than breaking.
+
+
 ## [2.475] - 2026-08-22
 - fix(todo): completing a task in To-Do mode no longer plays a logo effect.
 

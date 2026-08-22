@@ -1492,7 +1492,12 @@ export const DEFAULT_LABELS = deepFreeze({
         // view (taskUI.checkCompleteAllButton) and focus mode (CSS). This hint
         // describes what happens instead of instructing.
         allDoneHintAuto:  'This routine resets automatically',
-        dueLabel:         'Due {date}'
+        dueLabel:         'Due {date}',
+        // Reset indicators. Wording is mode-neutral on purpose: 'clear' only
+        // ever arises in cycle mode, and 'keep' arises in both, so neither
+        // needs a per-mode string.
+        indicatorClear:   'Removed when the cycle resets',
+        indicatorKeep:    'Kept when other tasks are removed'
     },
 
     focusMode: {
@@ -2550,6 +2555,8 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     // Focus task panel (one-task-at-a-time card — noun-bearing keys themeable)
     'nav.tabTask',
     'focusTask.panelAria',
+    'focusTask.indicatorClear',
+    'focusTask.indicatorKeep',
     'focusTask.completeTask',
     'focusTask.prevTask',
     'focusTask.nextTask',
