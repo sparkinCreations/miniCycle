@@ -121,13 +121,21 @@ export function syncTaskDeleteWhenComplete(task, mode, defaults) {
  * @returns {boolean}
  */
 export function resolveDeleteWhenComplete({ settings, legacy, mode, defaults }) {
-    const valid = settings && typeof settings === 'object'
-        && typeof settings.cycle === 'boolean'
-        && typeof settings.todo === 'boolean'
-        ? settings
-        : defaults;
-
-    if (typeof valid[mode] === 'boolean') return valid[mode];
+    // Read the ONE key that matters, not the whole map. An earlier version
+    // (inherited verbatim from taskDOM when this was extracted) validated the
+    // map wholesale and substituted `defaults` when any key was bad — which
+    // made the legacy branch below unreachable, since a default always supplies
+    // a boolean for the mode. A task with no settings and `deleteWhenComplete:
+    // true` therefore resolved to the mode DEFAULT, silently ignoring the only
+    // signal it had.
+    //
+    // Per-key is also what syncTaskDeleteWhenComplete does two functions down,
+    // and for the same reason: `{ cycle: true }` is a usable answer in cycle
+    // mode even though `todo` is missing, and discarding it loses a real user
+    // choice.
+    if (settings && typeof settings === 'object' && typeof settings[mode] === 'boolean') {
+        return settings[mode];
+    }
     if (typeof legacy === 'boolean') return legacy;
     return defaults[mode];
 }
