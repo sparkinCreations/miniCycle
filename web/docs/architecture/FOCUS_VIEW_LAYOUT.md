@@ -10,6 +10,16 @@ This document exists because the same bug was shipped three releases running
 was itself wrong. If you are about to change a number in the focus-mode
 geometry, read this first.
 
+**None of it was novel.** Home view has measured the same chrome and sized
+itself against it since long before — see
+[CSS_ARCHITECTURE_GUIDE.md → *Measured chrome → CSS variables (band-centering)*](CSS_ARCHITECTURE_GUIDE.md#measured-chrome--css-variables-band-centering),
+which documents `--header-total-height` / `--nav-dots-clearance` and the
+band-centring formula. Focus mode was the one surface that ignored it, using a
+hardcoded `top: 50% + 25px`, and every symptom below follows from that single
+divergence. The lesson generalises past this file: when a view misbehaves at
+some viewport size, first check whether it opted out of the measured-chrome
+pattern the other views already use.
+
 ---
 
 ## The model
@@ -148,6 +158,8 @@ case as a `⚠` naming the viewport rather than asserting it away.
 - `styles/base/variables.css` — the focus geometry tokens and their derivations
 - `styles/components/focus-mode.css` — the mobile focus block
 - `modules/ui/headerLayoutManager.js` — publishes both measured vars
-- [CSS_ARCHITECTURE_GUIDE.md](CSS_ARCHITECTURE_GUIDE.md) — token system
+- [CSS_ARCHITECTURE_GUIDE.md](CSS_ARCHITECTURE_GUIDE.md) — the token system, and
+  the measured-chrome / band-centring pattern this view should have used from
+  the start
 - [REVIEW_PATTERNS.md](../reference/REVIEW_PATTERNS.md) §0 — why probes of this
   layout kept measuring the wrong thing

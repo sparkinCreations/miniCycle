@@ -423,6 +423,27 @@ orientation / safe-area:
 > sits ~68px too high and the title slides under the mode selector. The manager is
 > hardened to **query fresh + retry over a few frames until both vars are set**;
 > `npm run test:layout` asserts they're non-empty so this can't silently regress.
+>
+> The same trap applies to `--nav-dots-clearance-fallback` (90px) against the
+> ~132px actually measured — any consumer that falls back comes out ~42px short.
+
+#### Focus mode is band-**anchored**, and adds a third measured var
+
+Focus mode does not band-centre. `#task-view` is anchored to the band
+(`top` + `max-height`) rather than centred within it, because focus mode's
+top edge is not `--header-total-height`: that container is transparent and
+spans the mode-selector wrapper focus mode hides. The chrome that actually
+paints there is `.mini-cycle-header-row`, so `headerLayoutManager` publishes a
+third variable:
+
+| Variable | Set by | Meaning |
+|----------|--------|---------|
+| `--focus-chrome-bottom` | `headerLayoutManager` (measured, focus mode only) | lowest edge of the chrome that paints in focus view — `max()` of the header row, the logo and the ✕ / ⋯ buttons |
+
+Focus view spent three releases (v2.469–v2.472) using a fixed `top: 50% + 25px`
+instead of this pattern, which is what the centred formula above exists to
+avoid. Full derivation, the failure modes, and the guard:
+**[FOCUS_VIEW_LAYOUT.md](FOCUS_VIEW_LAYOUT.md)**.
 
 ---
 
