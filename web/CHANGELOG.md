@@ -1,3 +1,12 @@
+## [2.484] - 2026-08-23
+- refactor(switcher): extract routine actions via the manager back-reference pattern
+- refactor(switcher): extract data repair, the last clean seam in the file
+- refactor(switcher): extract the pure list transforms, and record why the rest stays
+- refactor(switcher): extract the preview cluster, with the tests it never had
+- refactor(switcher): extract the theme picker, with the tests it never had
+- docs: add state-as-truth migration plan from Aug 2026 code review
+
+
 ## [2.483] - 2026-08-22
 - Two latent seam defects found by an audit of the bug class behind v2.481. Neither
   was user-visible; both would have surfaced later, silently, and been reported by

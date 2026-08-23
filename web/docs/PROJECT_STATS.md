@@ -10,7 +10,7 @@
 > Other sites should fetch that rather than scraping this page — both come from
 > the same counter, so they cannot disagree.
 
-**Last Updated**: August 22, 2026
+**Last Updated**: August 23, 2026
 
 ---
 
@@ -18,15 +18,15 @@
 
 | Metric | Value |
 |--------|-------|
-| **App Version** | 2.483 |
+| **App Version** | 2.484 |
 | **Lite Version** | 2.092 (frozen) |
 | **Schema Version** | 2.5 |
-| **Total Modules** | 142 |
-| **Total Tests** | 3556 |
+| **Total Modules** | 147 |
+| **Total Tests** | 3642 |
 | **Test Pass Rate** | 100% |
 | **CSS Files** | 45 |
-| **JSDoc Blocks** | 1399 |
-| **Documentation Files** | 245 |
+| **JSDoc Blocks** | 1417 |
+| **Documentation Files** | 246 |
 | **DI Completion** | 100% |
 | **Custom window.* Globals (modules)** | 0 |
 
@@ -41,7 +41,7 @@
 | `boot/` | 7 | Boot sequence, orchestration, module loading |
 | `core/` | 9 | AppState, appInit, appContext, DI base, constants |
 | `task/` | 13 | Task CRUD, DOM, events, drag-drop, validation |
-| `routine/` | 5 | Routine management, switching, migration |
+| `routine/` | 10 | Routine management, switching, migration |
 | `recurring/` | 17 | Recurring task scheduling, panel, activation |
 | `ui/` | 37 | Modals, menus, settings, onboarding, gestures |
 | `features/` | 11 | Themes, stats, achievements, history, reminders |
@@ -52,7 +52,7 @@
 | `platform/` | 1 | capacitorBridge — native shell for iOS/Android; no-op on web |
 | `testing/` | 9 | Test infrastructure |
 | `other/` | 3 | Plugins, experimental |
-| **Total** | **142** | |
+| **Total** | **147** | |
 
 ---
 
@@ -73,8 +73,8 @@
 
 | Category | Tests |
 |----------|-------|
-| Total Tests | 3556 |
-| Test Files | 135 |
+| Total Tests | 3642 |
+| Test Files | 140 |
 | Pass Rate | 100% |
 | Platforms Tested | Mac, iPad, iPhone |
 
