@@ -28,6 +28,7 @@ import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
 import { attachLongPressHint } from '../utils/longPressHint.js';
 import { buildMcycPayload } from '../utils/mcycPayload.js';
 import * as themePicker from './routineSwitcherThemePicker.js';
+import * as preview from './routineSwitcherPreview.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -117,6 +118,12 @@ export class RoutineSwitcher {
         // this field via _getSelectedItem(), never the DOM class, so a stray re-render that
         // drops/moves the highlight can't make a destructive action target the wrong routine.
         this._selectedCycleKey = null;
+
+        // Handed to routineSwitcherPreview so the review dialog can read the
+        // switcher's selection without the sub-module owning that state.
+        this._previewCallbacks = {
+            getSelectedItem: () => this._getSelectedItem()
+        };
 
         this.loadMiniCycleListTimeout = null;
         this._idleSaveScheduled = false;
@@ -1391,107 +1398,16 @@ export class RoutineSwitcher {
      * @param {string} cycleName - Cycle storage key
      * @returns {void}
      */
+    // ── Preview ─────────────────────────────────────────────────────────────
+    // Rendering, reset and the review dialog live in routineSwitcherPreview.js
+    // (splits-plan Priority 1). The selection infrastructure below stays here —
+    // it is switcher state, not preview rendering — and the two functions that
+    // need it receive it through `_previewCallbacks`.
+
     updatePreview(cycleName) {
-        if (!this.deps.AppState?.isReady?.()) {
-            console.error('❌ AppState not ready for updatePreview');
-            return;
-        }
-
-        const currentState = this.deps.AppState.get();
-        if (!currentState) {
-            console.error('❌ No state data available for updatePreview');
-            return;
-        }
-
-        const cycles = currentState.data?.cycles || {};
-        const cycleData = cycles[cycleName];
-
-        function escapeText(str) {
-            const temp = document.createElement("div");
-            temp.textContent = str;
-            return temp.innerHTML;
-        }
-
-        // Build task HTML and date (shared across both panels)
-        let tasksHTML = '';
-        let dateLabel = '';
-        let formattedDate = '';
-
-        if (cycleData?.tasks) {
-            tasksHTML = cycleData.tasks
-                .map(task => `<div class="preview-task">${task.completed ? "✔️" : "___"} ${escapeText(task.text)}</div>`)
-                .join("");
-
-            const timestamp = cycleData.lastModified || cycleData.createdAt;
-            if (timestamp) {
-                const date = new Date(timestamp);
-                formattedDate = date.toLocaleDateString(undefined, {
-                    year: 'numeric', month: 'short', day: 'numeric'
-                });
-                dateLabel = cycleData.lastModified ? getLabel('switcher.modified') : getLabel('switcher.created');
-            }
-        }
-
-        const contentHTML = tasksHTML
-            ? `<strong>${getLabel('switcher.tasksPreviewLabel')}:</strong><br>${tasksHTML}`
-            : '';
-        const dateHTML = (dateLabel && formattedDate)
-            ? `<div class="desktop-preview-date">${dateLabel}: ${formattedDate}</div>`
-            : '';
-        const noTasksLabel = getLabel('empty.noTasksPreview');
-
-        // --- Mobile preview panel ---
-        const previewWindow = this.deps.getElementById(DOM_IDS.SWITCH_PREVIEW_WINDOW);
-        if (previewWindow) {
-            if (tasksHTML) {
-                previewWindow.innerHTML = contentHTML;
-            } else {
-                previewWindow.innerHTML = '<br>';
-                const msg = document.createElement('strong');
-                msg.textContent = noTasksLabel;
-                previewWindow.appendChild(msg);
-            }
-        }
-
-        // Mobile date display (below preview)
-        let dateDisplay = this.deps.getElementById(DOM_IDS.SWITCH_PREVIEW_DATE);
-        if (!dateDisplay && previewWindow) {
-            dateDisplay = document.createElement("div");
-            dateDisplay.id = DOM_IDS.SWITCH_PREVIEW_DATE;
-            dateDisplay.className = "switch-preview-date";
-            previewWindow.parentNode.insertBefore(dateDisplay, previewWindow.nextSibling);
-        }
-        if (dateDisplay) {
-            dateDisplay.textContent = (dateLabel && formattedDate) ? `${dateLabel}: ${formattedDate}` : '';
-        }
-
-        // --- Desktop preview panel ---
-        const desktopPreview = this.deps.getElementById(DOM_IDS.DESKTOP_PREVIEW_WINDOW);
-        if (desktopPreview) {
-            if (tasksHTML) {
-                desktopPreview.innerHTML = contentHTML + dateHTML;
-            } else {
-                desktopPreview.innerHTML = '';
-                const msg = document.createElement('strong');
-                msg.textContent = noTasksLabel;
-                desktopPreview.appendChild(msg);
-            }
-        }
-
-        // Desktop preview title
-        const previewTitle = this.deps.getElementById(DOM_IDS.DESKTOP_PREVIEW_TITLE);
-        if (previewTitle) {
-            previewTitle.textContent = cycleData?.title || cycleName || getLabel('switcher.preview');
-        }
-
-        // Desktop preview hint
-        const hint = this.deps.getElementById(DOM_IDS.DESKTOP_PREVIEW_HINT);
-        if (hint) {
-            const isMobile = window.matchMedia('(max-width: 767px)').matches;
-            hint.textContent = getLabel(isMobile ? 'switcher.doubleTapEnlarge' : 'switcher.doubleClickEnlarge');
-            hint.style.display = 'block';
-        }
+        preview.updatePreview(this.deps, cycleName);
     }
+
 
     /**
      * The cycle key currently selected in the switcher (source of truth — NOT the DOM class).
@@ -1588,140 +1504,25 @@ export class RoutineSwitcher {
      * @returns {void}
      */
     _resetPreview() {
-        // Mobile preview
-        const previewWindow = this.deps.getElementById(DOM_IDS.SWITCH_PREVIEW_WINDOW);
-        if (previewWindow) {
-            previewWindow.innerHTML = '';
-        }
-        const dateDisplay = this.deps.getElementById(DOM_IDS.SWITCH_PREVIEW_DATE);
-        if (dateDisplay) {
-            dateDisplay.textContent = '';
-        }
-
-        // Desktop preview
-        const desktopPreview = this.deps.getElementById(DOM_IDS.DESKTOP_PREVIEW_WINDOW);
-        if (desktopPreview) {
-            desktopPreview.textContent = getLabel('switcher.selectPreview');
-        }
-        const previewTitle = this.deps.getElementById(DOM_IDS.DESKTOP_PREVIEW_TITLE);
-        if (previewTitle) {
-            previewTitle.textContent = getLabel('switcher.preview');
-        }
-        const hint = this.deps.getElementById(DOM_IDS.DESKTOP_PREVIEW_HINT);
-        if (hint) {
-            hint.style.display = 'none';
-        }
+        preview.resetPreview(this.deps);
     }
+
 
     /**
      * Setup double-click on preview windows to open in a review modal
      */
     setupPreviewPopout() {
-        const previewWindow = this.deps.getElementById(DOM_IDS.SWITCH_PREVIEW_WINDOW);
-        const desktopPreview = this.deps.getElementById(DOM_IDS.DESKTOP_PREVIEW_WINDOW);
-
-        const safeAdd = this.deps.safeAddEventListener;
-        if (!safeAdd) return;
-
-        // Show subtle hint below inline preview if user hasn't used the feature yet
-        if (previewWindow) {
-            const _state = this.deps.AppState?.get();
-            const _dismissed = _state?.settings?.dismissedEducationalTips?.['tip.routinePreview'];
-            if (!_dismissed) {
-                let hint = document.getElementById('switch-preview-hint');
-                if (!hint) {
-                    hint = document.createElement('div');
-                    hint.id = 'switch-preview-hint';
-                    hint.className = 'switch-preview-hint';
-                    hint.textContent = getLabel('notify.routinePreviewTip');
-                    previewWindow.insertAdjacentElement('afterend', hint);
-                }
-            }
-
-            safeAdd(previewWindow, "dblclick", () => this._openPreviewReviewModal());
-        }
-
-        // Also attach to desktop preview panel
-        if (desktopPreview) {
-            // Stop click propagation so clicks inside the preview don't bubble up
-            // to the modal and deselect the currently selected routine
-            if (!desktopPreview._clickHandler) {
-                desktopPreview._clickHandler = (e) => e.stopPropagation();
-            }
-            safeAdd(desktopPreview, "click", desktopPreview._clickHandler);
-            safeAdd(desktopPreview, "dblclick", () => this._openPreviewReviewModal());
-        }
+        preview.setupPreviewPopout(this.deps, this._previewCallbacks);
     }
+
 
     /**
      * Open the full-screen review modal for the currently selected routine's tasks
      */
     _openPreviewReviewModal() {
-        // Dismiss hint on first use
-        const hintEl = document.getElementById('switch-preview-hint');
-        if (hintEl) {
-            hintEl.remove();
-            this.deps.AppState?.update(s => {
-                if (!s.settings.dismissedEducationalTips) s.settings.dismissedEducationalTips = {};
-                s.settings.dismissedEducationalTips['tip.routinePreview'] = true;
-            }, false);
-        }
-
-        const selected = this._getSelectedItem();
-        if (!selected) return;
-
-        const cycleKey = selected.dataset.cycleKey;
-        const currentState = this.deps.AppState?.get();
-        const cycleData = currentState?.data?.cycles?.[cycleKey];
-        if (!cycleData?.tasks) return;
-
-        const cycleName = cycleData.title || cycleKey;
-        const timestamp = cycleData.lastModified || cycleData.createdAt;
-        const dateStr = timestamp
-            ? new Date(timestamp).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
-            : '';
-        const dateLabel = cycleData.lastModified ? getLabel('switcher.modified') : getLabel('switcher.created');
-
-        const escDiv = document.createElement("div");
-        const escapeText = (str) => { escDiv.textContent = str; return escDiv.innerHTML; };
-
-        const completedCount = cycleData.tasks.filter(t => t.completed).length;
-        const taskRows = cycleData.tasks.map(task => {
-            const check = task.completed ? '&#10004;' : '&mdash;';
-            const cls = task.completed ? ' completed' : '';
-            return `<div class="preview-modal-task${cls}"><span class="preview-modal-check">${check}</span> ${escapeText(task.text)}</div>`;
-        }).join('');
-
-        // Remove existing preview modal if any
-        const existing = document.getElementById(DOM_IDS.PREVIEW_REVIEW_OVERLAY);
-        if (existing) existing.remove();
-
-        // Create modal as native dialog for proper top-layer stacking
-        const overlay = document.createElement('dialog');
-        overlay.id = 'preview-review-overlay';
-        overlay.className = 'preview-review-dialog';
-        overlay.innerHTML = `
-            <div class="modal-content preview-review-modal">
-                <button class="close-modal preview-review-close" aria-label="${getLabel('button.close')}">&times;</button>
-                <h3 class="preview-review-title">${escapeText(cycleName)}</h3>
-                <div class="preview-review-meta">
-                    ${cycleData.tasks.length} task${cycleData.tasks.length !== 1 ? 's' : ''} &middot; ${completedCount} completed${dateStr ? ` &middot; ${dateLabel}: ${dateStr}` : ''}
-                </div>
-                <div class="preview-review-body">${taskRows}</div>
-            </div>
-        `;
-
-        document.body.appendChild(overlay);
-        overlay.showModal();
-
-        // Close handlers
-        const close = () => { if (overlay.open) overlay.close(); overlay.remove(); };
-        overlay.querySelector(DOM_SELECTORS.PREVIEW_REVIEW_CLOSE).addEventListener('click', close);
-        overlay.addEventListener('click', (e) => {
-            e.stopPropagation(); // prevent routine switcher's document-level handler from closing
-            if (e.target === overlay) close();
-        });
+        preview.openPreviewReviewModal(this.deps, this._previewCallbacks);
     }
+
 
     /**
      * Load miniCycle list (debounced wrapper)
