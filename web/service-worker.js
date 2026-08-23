@@ -186,6 +186,7 @@ var BOOT_CRITICAL = [
   './modules/routine/routineSwitcherThemePicker.js',
   './modules/routine/routineSwitcherPreview.js',
   './modules/routine/routineSwitcherListTransforms.js',
+  './modules/routine/routineSwitcherRepair.js',
   './modules/routine/modeManager.js',
   './modules/routine/migrationManager.js',
   // UI modules
