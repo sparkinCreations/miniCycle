@@ -29,6 +29,7 @@ import { attachLongPressHint } from '../utils/longPressHint.js';
 import { buildMcycPayload } from '../utils/mcycPayload.js';
 import * as themePicker from './routineSwitcherThemePicker.js';
 import * as preview from './routineSwitcherPreview.js';
+import * as listTransforms from './routineSwitcherListTransforms.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -2106,37 +2107,20 @@ export class RoutineSwitcher {
      * @param {Array} cycleEntries - Array of [key, cycleData] entries
      * @returns {Array} Sorted array
      */
-    _sortCycles(cycleEntries) {
-        const isAsc = this._sortDirection === 'asc';
+    // ── List transforms ─────────────────────────────────────────────────────
+    // The pure ordering/filtering lives in routineSwitcherListTransforms.js
+    // (splits-plan Priority 1). The mode STATE stays here — it is persisted in
+    // _savePreferences and read by list rendering — so it is passed in per call
+    // rather than owned by the sub-module.
 
-        if (this._sortMode === 'recent') {
-            // Sort by lastModified, fall back to createdAt
-            // asc = newest first, desc = oldest first
-            return cycleEntries.sort((a, b) => {
-                const aTime = a[1].lastModified || a[1].createdAt || 0;
-                const bTime = b[1].lastModified || b[1].createdAt || 0;
-                return isAsc ? bTime - aTime : aTime - bTime;
-            });
-        } else if (this._sortMode === 'size') {
-            // Sort by file size
-            // asc = largest first, desc = smallest first
-            return cycleEntries.sort((a, b) => {
-                const aSize = getObjectSizeBytes(a[1]);
-                const bSize = getObjectSizeBytes(b[1]);
-                return isAsc ? bSize - aSize : aSize - bSize;
-            });
-        } else {
-            // Default: alphabetical by title
-            // asc = A-Z, desc = Z-A
-            // Strip leading emojis (including ZWJ sequences) so sort uses the text, not emoji code points
-            const stripLeadingEmoji = (text) => text.replace(/^[\p{Extended_Pictographic}\uFE0F\u200D\s]+/u, '');
-            return cycleEntries.sort((a, b) => {
-                const aTitle = stripLeadingEmoji((a[1].title || a[0]).toLowerCase());
-                const bTitle = stripLeadingEmoji((b[1].title || b[0]).toLowerCase());
-                return isAsc ? aTitle.localeCompare(bTitle) : bTitle.localeCompare(aTitle);
-            });
-        }
+    _sortCycles(cycleEntries) {
+        return listTransforms.sortCycles(cycleEntries, {
+            mode: this._sortMode,
+            direction: this._sortDirection,
+            sizeOf: getObjectSizeBytes
+        });
     }
+
 
     /**
      * Setup filter dropdown
@@ -2169,14 +2153,9 @@ export class RoutineSwitcher {
      * @returns {string} 'auto', 'manual', or 'todo'
      */
     _getCycleMode(cycleData) {
-        if (cycleData.deleteCheckedTasks) {
-            return 'todo';
-        } else if (cycleData.autoReset) {
-            return 'auto';
-        } else {
-            return 'manual';
-        }
+        return listTransforms.getCycleMode(cycleData);
     }
+
 
     /**
      * Filter cycles based on current filter mode
@@ -2184,14 +2163,9 @@ export class RoutineSwitcher {
      * @returns {Array} Filtered array
      */
     _filterCycles(cycleEntries) {
-        if (this._filterMode === 'all') {
-            return cycleEntries;
-        }
-
-        return cycleEntries.filter(([key, cycleData]) => {
-            return this._getCycleMode(cycleData) === this._filterMode;
-        });
+        return listTransforms.filterCycles(cycleEntries, this._filterMode);
     }
+
 
     /**
      * Schedule an idle-time save for durability without blocking UI
