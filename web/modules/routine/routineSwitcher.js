@@ -27,6 +27,7 @@ import { getLabel } from '../labels/labelResolver.js';
 import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
 import { attachLongPressHint } from '../utils/longPressHint.js';
 import { buildMcycPayload } from '../utils/mcycPayload.js';
+import * as themePicker from './routineSwitcherThemePicker.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -974,129 +975,23 @@ export class RoutineSwitcher {
      * Toggle the theme picker for the given routine.
      * @param {string} cycleKey
      */
+    // ── Theme picker ────────────────────────────────────────────────────────
+    // The rendering, selection and teardown live in routineSwitcherThemePicker.js
+    // (splits-plan Priority 1). These stay as thin methods because six call sites
+    // in this class already read as `this.toggleThemePicker(...)`, and because the
+    // module's public wrapper API is unchanged. Deps are passed through live, so
+    // late-injected deps still reach the picker.
+
     toggleThemePicker(cycleKey) {
-        const picker = this.deps.getElementById(DOM_IDS.THEME_PICKER_ROW);
-        const themeBtn = this.deps.getElementById(DOM_IDS.SWITCH_THEME_BTN);
-        if (!picker) return;
-
-        const isOpen = !picker.classList.contains(DOM_CLASSES.HIDDEN);
-        if (isOpen) {
-            this.closeThemePicker();
-        } else {
-            this.openThemePicker(cycleKey);
-        }
+        themePicker.toggleThemePicker(this.deps, cycleKey);
     }
 
-    /**
-     * Render and show the theme picker for a given routine.
-     * @param {string} cycleKey
-     */
     openThemePicker(cycleKey) {
-        const vtm = this.deps.vocabThemeManager;
-        const picker = this.deps.getElementById(DOM_IDS.THEME_PICKER_ROW);
-        if (!picker || !vtm) return;
-
-        // Update theme button active state
-        const themeBtn = this.deps.getElementById(DOM_IDS.SWITCH_THEME_BTN);
-        themeBtn?.setAttribute('aria-expanded', 'true');
-
-        const state = this.deps.AppState?.get();
-        const cycle = state?.data?.cycles?.[cycleKey];
-        const currentThemeId = cycle?.theme ?? 'classic';
-        const unlocked = new Set(vtm.getUnlockedThemeIds());
-
-        // Clear existing chips and their listeners
-        picker.innerHTML = '';
-        picker._clickHandlers = picker._clickHandlers ?? [];
-        picker._clickHandlers.forEach(({ el, fn }) => el.removeEventListener('click', fn));
-        picker._clickHandlers = [];
-
-        // Add title
-        const title = document.createElement('div');
-        title.className = 'theme-picker-title';
-        title.textContent = getLabel('switcher.themePickerTitle');
-        picker.appendChild(title);
-
-        // Chips container (bordered area)
-        const chipsContainer = document.createElement('div');
-        chipsContainer.className = 'theme-picker-chips';
-
-        // Build a chip for each unlocked theme only
-        const themeIds = ['classic', 'habit-tracker', 'fitness', 'scholar', 'cleaning'];
-        themeIds.forEach(id => {
-            if (!unlocked.has(id)) return; // hide locked themes entirely
-
-            const def = vtm.getThemeDefinition(id);
-            if (!def) return;
-
-            const isCurrent = id === currentThemeId;
-
-            const chip = document.createElement('button');
-            chip.className = 'theme-chip';
-            chip.setAttribute('role', 'radio');
-            chip.setAttribute('aria-checked', String(isCurrent));
-            chip.setAttribute('title', def.description);
-
-            const icon = def.icons?.celebrate ?? (id === 'classic' ? '✨' : '');
-            chip.innerHTML = [
-                icon ? `<span class="theme-chip-icon" aria-hidden="true">${icon}</span>` : '',
-                `<span class="theme-chip-name">${def.name}</span>`
-            ].join('');
-
-            const handler = (e) => {
-                e.stopPropagation();
-                this._selectTheme(cycleKey, id, def);
-            };
-            chip.addEventListener('click', handler);
-            picker._clickHandlers.push({ el: chip, fn: handler });
-
-            chipsContainer.appendChild(chip);
-        });
-
-        picker.appendChild(chipsContainer);
-        picker.classList.remove(DOM_CLASSES.HIDDEN);
+        themePicker.openThemePicker(this.deps, cycleKey);
     }
 
-    /**
-     * Apply a theme to a routine and close the picker.
-     * @param {string} cycleKey
-     * @param {string} themeId
-     * @param {Object} def - Theme definition object
-     */
-    _selectTheme(cycleKey, themeId, def) {
-        const vtm = this.deps.vocabThemeManager;
-        if (!vtm) return;
-
-        const success = vtm.setRoutineTheme(cycleKey, themeId);
-        if (success) {
-            const icon = def.icons?.celebrate ?? '🎨';
-            this.deps.showNotification(
-                `${icon} ${getLabel('notify.themeApplied', { vars: { name: def.name } })}`,
-                'success', UI_TIMEOUTS.NOTIFICATION_LONG
-            );
-            this.deps.logHistoryEvent?.('theme_changed', { themeName: def.name, themeId });
-            // refreshThemeLabels handles all label updates + applies vocab theme color preset
-            this.deps.refreshThemeLabels?.();
-            // Re-render picker to update which chip is highlighted (don't close it)
-            this.openThemePicker(cycleKey);
-        }
-    }
-
-    /**
-     * Hide and reset the theme picker.
-     */
     closeThemePicker() {
-        const picker = this.deps.getElementById(DOM_IDS.THEME_PICKER_ROW);
-        const themeBtn = this.deps.getElementById(DOM_IDS.SWITCH_THEME_BTN);
-        if (picker) {
-            picker.classList.add(DOM_CLASSES.HIDDEN);
-            // Clean up chip listeners
-            if (picker._clickHandlers) {
-                picker._clickHandlers.forEach(({ el, fn }) => el.removeEventListener('click', fn));
-                picker._clickHandlers = [];
-            }
-        }
-        themeBtn?.setAttribute('aria-expanded', 'false');
+        themePicker.closeThemePicker(this.deps);
     }
 
     hideSwitchMiniCycleModal() {

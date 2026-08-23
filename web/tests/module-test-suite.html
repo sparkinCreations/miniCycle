@@ -495,6 +495,7 @@
             <option value="keyboardNav">⌨️ Keyboard Nav</option>
             <option value="collapsibleSections">🪗 Collapsible Sections</option>
                             <option value="educationalTips">🎓 Educational Tips</option>
+                            <option value="routineSwitcherThemePicker">🎨 Routine Theme Picker</option>
             <option value="longPressHint">👆 Long-Press Hint</option>
             <option value="mcycPayload">📦 Mcyc Payload</option>
             <option value="bootSw">🛰 Boot SW</option>
@@ -665,6 +666,7 @@
         const { runKeyboardNavTests } = await import(`./keyboardNav.tests.js?v=${cacheBuster}`);
         const { runCollapsibleSectionsTests } = await import(`./collapsibleSections.tests.js?v=${cacheBuster}`);
         const { runEducationalTipsTests } = await import(`./educationalTips.tests.js?v=${cacheBuster}`);
+        const { runRoutineSwitcherThemePickerTests } = await import(`./routineSwitcherThemePicker.tests.js?v=${cacheBuster}`);
         const { runLongPressHintTests } = await import(`./longPressHint.tests.js?v=${cacheBuster}`);
         const { runMcycPayloadTests } = await import(`./mcycPayload.tests.js?v=${cacheBuster}`);
         const { runBootSwTests } = await import(`./bootSw.tests.js?v=${cacheBuster}`);
@@ -1892,7 +1894,7 @@
                     await import(`../modules/features/uxRatings.js?v=${cacheBuster}`);
                     currentModule = 'uxRatings';
                     resultsDiv.innerHTML = '<p>✅ UXRatings loaded. Click "Run Tests" to begin.</p>';
-                } else if (['diWiring','orchestrator','moduleLoader','moduleManifests','modalTemplates','appContext','dataAccess','appGlobalState','migrationFacade','types','modalRegistry','modalUtils','panelVisibilityHelpers','gesturePanelManager','titleManager','headerLayoutManager','featureAvailability','dataRecovery','uiOrchestrator','preferencesBgImage','preferencesPresets','taskDOMPatch','debugMode','iconInit','icons','keyboardNav','collapsibleSections','educationalTips','longPressHint','mcycPayload','bootSw','nameUtils','styleValidators','cycleMode','panelCarousel','focusTaskPanel','recurringPanelEvents','recurringPanelForm','recurringPanelGrids','recurringPanelSetup','recurringPanelSummary','recurringSettings','recurringSettingsApplicator','recurringWatcher','statsPanelGestures','statsPanelRewards','taskViewLayoutManager'].includes(moduleName)) {
+                } else if (['diWiring','orchestrator','moduleLoader','moduleManifests','modalTemplates','appContext','dataAccess','appGlobalState','migrationFacade','types','modalRegistry','modalUtils','panelVisibilityHelpers','gesturePanelManager','titleManager','headerLayoutManager','featureAvailability','dataRecovery','uiOrchestrator','preferencesBgImage','preferencesPresets','taskDOMPatch','debugMode','iconInit','icons','keyboardNav','collapsibleSections','educationalTips','routineSwitcherThemePicker','longPressHint','mcycPayload','bootSw','nameUtils','styleValidators','cycleMode','panelCarousel','focusTaskPanel','recurringPanelEvents','recurringPanelForm','recurringPanelGrids','recurringPanelSetup','recurringPanelSummary','recurringSettings','recurringSettingsApplicator','recurringWatcher','statsPanelGestures','statsPanelRewards','taskViewLayoutManager'].includes(moduleName)) {
                     const pathMap = {
                         diWiring: '../modules/boot/moduleLoader.js',
                         orchestrator: '../modules/boot/orchestrator.js',
@@ -1922,6 +1924,7 @@
                         keyboardNav: '../modules/utils/keyboardNav.js',
                         collapsibleSections: '../modules/utils/collapsibleSections.js',
                         educationalTips: '../modules/utils/educationalTips.js',
+                        routineSwitcherThemePicker: '../modules/routine/routineSwitcher.js',
                         longPressHint: '../modules/utils/longPressHint.js',
                         mcycPayload: '../modules/utils/mcycPayload.js',
                         bootSw: '../boot-sw.js',
@@ -2202,6 +2205,7 @@
             } else if (currentModule === 'keyboardNav') { await runKeyboardNavTests(resultsDiv);
             } else if (currentModule === 'collapsibleSections') { await runCollapsibleSectionsTests(resultsDiv);
             } else if (currentModule === 'educationalTips') { await runEducationalTipsTests(resultsDiv);
+            } else if (currentModule === 'routineSwitcherThemePicker') { await runRoutineSwitcherThemePickerTests(resultsDiv);
             } else if (currentModule === 'longPressHint') { await runLongPressHintTests(resultsDiv);
             } else if (currentModule === 'mcycPayload') { await runMcycPayloadTests(resultsDiv);
             } else if (currentModule === 'bootSw') { await runBootSwTests(resultsDiv);
@@ -2537,6 +2541,7 @@
                 { name: 'KeyboardNav', key: 'keyboardNav', runFn: runKeyboardNavTests, importPath: '../modules/utils/keyboardNav.js' },
                 { name: 'CollapsibleSections', key: 'collapsibleSections', runFn: runCollapsibleSectionsTests, importPath: '../modules/utils/collapsibleSections.js' },
                 { name: 'EducationalTips', key: 'educationalTips', runFn: runEducationalTipsTests, importPath: '../modules/utils/educationalTips.js' },
+                { name: 'RoutineSwitcherThemePicker', key: 'routineSwitcherThemePicker', runFn: runRoutineSwitcherThemePickerTests, importPath: '../modules/routine/routineSwitcher.js' },
                 { name: 'LongPressHint', key: 'longPressHint', runFn: runLongPressHintTests, importPath: '../modules/utils/longPressHint.js' },
                 { name: 'McycPayload', key: 'mcycPayload', runFn: runMcycPayloadTests, importPath: '../modules/utils/mcycPayload.js' },
                 { name: 'BootSW', key: 'bootSw', runFn: runBootSwTests, importPath: '../boot-sw.js' },
