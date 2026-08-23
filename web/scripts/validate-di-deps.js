@@ -74,6 +74,12 @@ const FACADES = new Set(['settingsManager', 'taskCore', 'taskDOM', 'preferencesM
 // like manifest paths. (The 4 older facades wire sub-modules their own way —
 // add them here only when their access shape is machine-recognizable.)
 const FACADE_SUB_FILES = {
+    // routineSwitcherActions holds a manager back-reference (`this.m`) exactly as
+    // the statsPanel sub-modules do, so its `this.m.deps.*` reads are the parent's
+    // dependency usage — without this entry they read as undeclared.
+    routineSwitcher: [
+        '../routine/routineSwitcherActions.js',
+    ],
     statsPanel: [
         '../features/statsPanelGestures.js',
         '../features/statsPanelRewards.js',
