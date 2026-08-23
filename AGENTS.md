@@ -31,6 +31,16 @@ directory unless noted.
 ### Non-obvious gotchas
 - Do not confuse `npm test` with "all tests" — CI runs five more suites (see `CLAUDE.md`).
   Adding a new module file? Run `npm run test:sw` (precache drift guard).
+- **Replaying the first-run onboarding for manual testing:** don't clear `localStorage`.
+  Use the app's own reset — main menu → Settings → Reset Options → **Reset Onboarding** —
+  then **switch to Focus View before reloading** the page. The guided onboarding carousel
+  (Welcome → Why → auto-animating "Example of a Cycle" → interactive "Try it yourself" →
+  "All Set!") only replays from **Focus View**, and a separate 5-step coach-mark tour plays
+  on first entry to **Home View**. Focus View vs Home View are two distinct app surfaces.
+- The app has three cycle **modes** (menu → Mode, or the Home View header dropdown):
+  Auto Cycle (reset when all complete), Manual Cycle (reset via a "Complete Cycle" button),
+  and To-Do (completed tasks removed via "Clear Completed"). Behavior of the reset/cycle
+  loop depends on the active mode.
 - `lite/`, `chrome/`, `mobile/`, `desktop/`, `shared/`, and `web/blog/` are ancillary
   packaging targets, not the main dev surface. Ignore them for core web work.
 - Shipping/deploy is push-to-`main` = production; app-code changes must ship via
