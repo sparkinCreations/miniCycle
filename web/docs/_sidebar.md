@@ -149,6 +149,7 @@
   * [Recurring Tasks — P3 Follow-ups](future-work/RECURRING_TASKS_P3_FOLLOWUP.md)
   * [Schema 2.6 Migration](future-work/SCHEMA_2_6_PLAN.md)
   * [Single-Source Consolidation](future-work/SINGLE_SOURCE_CONSOLIDATION_PLAN.md)
+  * [State-as-Truth Migration](future-work/STATE_TRUTH_MIGRATION.md)
   * [Task Ordering System](future-work/TASK_ORDERING_SYSTEM_PLAN.md)
 
 

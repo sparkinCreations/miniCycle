@@ -97,6 +97,7 @@ See [DEPENDENCY_MAP.md](./architecture/DEPENDENCY_MAP.md) for complete analysis.
 ### Future Work
 - **[MODULAR_OVERHAUL_PLAN.md](archive/MODULAR_OVERHAUL_PLAN.md)** - Plan for true modularization
 - **[SCHEMA_2_6_PLAN.md](./future-work/SCHEMA_2_6_PLAN.md)** - Terminology alignment (cycles → routine)
+- **[STATE_TRUTH_MIGRATION.md](./future-work/STATE_TRUTH_MIGRATION.md)** - Finish migrating cycle-complete / boot render off the DOM (Gen 1 leftovers)
 
 ### Completed Initiatives
 - ✅ **Vocabulary Theme System** (Feb 2026) - See [THEME_ARCHITECTURE.md](./architecture/THEME_ARCHITECTURE.md) and [VOCAB_THEME_SYSTEM.md](features/VOCAB_THEME_SYSTEM.md)
