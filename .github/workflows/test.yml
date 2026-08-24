@@ -80,6 +80,13 @@ jobs:
         working-directory: ./web
         run: npm run test:changelog
 
+      # The CSP stage of update-version.sh, extracted so it can be tested at all.
+      # Its failures are SILENT — a wrong hash list ships a deploy where a script
+      # is blocked in production while every gate stays green (v2.316, v2.424).
+      - name: CSP hash sync (the release stage that decides what may execute)
+        working-directory: ./web
+        run: npm run test:csp-sync
+
   test:
     runs-on: ubuntu-latest
 

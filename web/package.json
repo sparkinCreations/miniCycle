@@ -36,6 +36,7 @@
     "validate:csp": "python3 scripts/validate-csp.py",
     "validate:chains": "python3 scripts/validate-required-chains.py",
     "test:changelog": "bash scripts/test-changelog-range.sh",
+    "test:csp-sync": "python3 scripts/test-csp-hash-sync.py",
     "check:dupes": "bash scripts/check-duplicates.sh",
     "clean:dupes": "bash scripts/check-duplicates.sh --fix",
     "validate:docs": "python3 scripts/validate-docs.py",

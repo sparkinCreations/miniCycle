@@ -1579,117 +1579,13 @@ else
         [ -f "$cfg" ] && backup_file "$cfg" || true
     done
 
-    python3 - <<'CSP_PY'
-import hashlib, base64, re, os, sys
-
-sys.path.insert(0, 'scripts')
-from csp_generated_scripts import generated_script_hashes, discover_html_sources
-
-# DISCOVERED, not listed — must match validate-csp.py exactly, which is why both
-# call the same helper. A hardcoded list here silently under-hashed three
-# deployed pages (games x2, timestamp-converter) until Aug 2026.
-SRC_FILES = discover_html_sources('.')
-CONFIGS = ['netlify.toml', '.htaccess', 'nginx-security.conf']
-
-COMMENT_RE = re.compile(r'<!--.*?-->', re.DOTALL)
-SCRIPT_RE = re.compile(r'<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>', re.DOTALL)
-
-def strip_comments(html):
-    """Blank out HTML comments before matching script blocks.
-
-    WHY (v2.316 postmortem): the browser treats comments as comments, but a bare
-    regex does not. A literal script tag written in PROSE inside a comment starts
-    a bogus non-greedy match that swallows everything up to the next REAL closing
-    tag — emitting a junk hash for [prose + real block] while the real block's
-    true hash never reaches the CSP. The browser then blocks that script in
-    production. The block COUNT is unchanged, so counting can't detect it.
-    v2.316 shipped this way and blocked the async main-CSS loader.
-
-    Spaces (not '') preserve length so line numbers stay meaningful.
-    """
-    return COMMENT_RE.sub(lambda m: re.sub(r'[^\n]', ' ', m.group(0)), html)
-
-# 1) Canonical, de-duplicated hash set (insertion order preserved).
-hashes = []
-for f in SRC_FILES:
-    try:
-        html = open(f).read()
-    except FileNotFoundError:
-        continue
-    # Nudge authors away from the footgun even though it is now handled.
-    for m in COMMENT_RE.finditer(html):
-        if re.search(r'</?script', m.group(0)):
-            print("⚠️  %s: literal script tag inside an HTML comment near line %d — "
-                  "handled, but write \"script element\" in prose instead."
-                  % (f, html[:m.start()].count('\n') + 1))
-    for s in SCRIPT_RE.findall(strip_comments(html)):
-        if s.strip():
-            h = base64.b64encode(hashlib.sha256(s.encode()).digest()).decode()
-            hashes.append("'sha256-%s'" % h)
-# Runtime-generated inline scripts (document.write'd) are invisible to SCRIPT_RE
-# but ARE hashed by the browser. Omitting them here is not cosmetic: this stage
-# rewrites the directive to exactly `canon`, so any hand-added hash for them is
-# deleted on the next release — which is how the pre-boot cache-clear script came
-# to be CSP-blocked in production while every gate stayed green (v2.424).
-generated = generated_script_hashes(SRC_FILES)
-if generated:
-    print("🧩 %d runtime-generated inline script(s) hashed (document.write'd)" % len(generated))
-else:
-    print("⚠️  No runtime-generated inline scripts detected — if miniCycle.html still "
-          "document.write's one, its CSP hash is about to be dropped (see "
-          "scripts/csp_generated_scripts.py)")
-hashes.extend(generated)
-
-seen = set()
-canon = [h for h in hashes if not (h in seen or seen.add(h))]
-if not canon:
-    print("ℹ️  No inline scripts found to hash")
-    raise SystemExit(0)
-canon_set = set(canon)
-
-def render_single(c):
-    return "script-src 'self' " + " ".join(c) + ";"
-
-def render_htaccess(c):
-    # 8-space directive, 12-space hash lines, trailing " \" continuations; the
-    # final hash closes the directive with ";".
-    lines = ["script-src 'self' \\"]
-    lines += ["            %s \\" % h for h in c[:-1]]
-    lines.append("            %s;" % c[-1])
-    return "\n".join(lines)
-
-PATTERN = r"script-src 'self'.*?;"
-changed = 0
-for cfg in CONFIGS:
-    if not os.path.exists(cfg):
-        print("⏭️  %s not found — skipping" % cfg)
-        continue
-    content = open(cfg).read()
-    m = re.search(PATTERN, content, re.DOTALL)
-    if not m:
-        print("⚠️  %s has no script-src 'self' directive — skipping" % cfg)
-        continue
-    current = re.findall(r"'sha256-[^']+'", m.group(0))
-    cur = set(current)
-    missing = [h for h in canon if h not in cur]
-    stale = [h for h in current if h not in canon_set]
-    if not missing and not stale:
-        print("✅ %s — already canonical (%d hashes)" % (cfg, len(canon)))
-        continue
-    repl = render_htaccess(canon) if cfg.endswith('.htaccess') else render_single(canon)
-    # lambda => replacement string is treated literally (no backslash/group escapes).
-    content = re.sub(PATTERN, lambda _m: repl, content, count=1, flags=re.DOTALL)
-    open(cfg, 'w').write(content)
-    changed += 1
-    for h in missing:
-        print("   + %s  (%s)" % (h, cfg))
-    for h in stale:
-        print("   - %s  (%s)" % (h, cfg))
-    print("✅ %s — updated script-src (+%d new, -%d stale → %d total)" % (cfg, len(missing), len(stale), len(canon)))
-
-if changed == 0:
-    print("✅ All CSP configs already match the canonical hash set (%d hashes)" % len(canon))
-CSP_PY
+    # The hashing + config-rewrite logic lives in scripts/csp_hash_sync.py so it
+    # can be run and TESTED on its own (scripts/test-csp-hash-sync.py, 17 cases)
+    # instead of only as a side effect of cutting a release. Same model as
+    # changelog-range.sh. Behaviour is unchanged — the extraction was verified by
+    # running both implementations against perturbed configs and diffing: all
+    # three came out byte-identical.
+    python3 "$(dirname "$0")/csp_hash_sync.py"
 fi
 
 echo ""
