@@ -258,16 +258,16 @@
  * @typedef {Object} UserProgress
  * @property {number} cyclesCompleted - Total cycles completed
  * @property {number} [totalTasksCompleted=0] - Total tasks completed
- * @property {string[]} [achievementsUnlocked=[]] - Unlocked achievement IDs
  * @property {string[]} [rewardMilestones=[]] - Reached milestones
- * @property {StreakData} [streaks] - Streak tracking
- */
-
-/**
- * Streak tracking data
- * @typedef {Object} StreakData
- * @property {number} current - Current streak count
- * @property {number} longest - Longest streak ever
+ *
+ * Deliberately NOT declared here (both were, and neither is a field any code
+ * path writes — the schema docs inherited the error from this typedef):
+ *  - `achievementsUnlocked` was superseded by the top-level `achievements`
+ *    object ({ unlocked: [], seen: {} }), which achievementsManager owns.
+ *  - `streaks` was never implemented; its typedef was removed here too, since
+ *    it typed nothing. The word appears throughout the habit-tracker vocab
+ *    theme, which renames "cycle" to "streak" in UI labels — presentation,
+ *    not state.
  */
 
 /**
