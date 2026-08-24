@@ -71,6 +71,16 @@
             align-items: center;
         }
 
+        /* Persistent brand chrome — kept byte-identical to product.html so the
+           header does not change shape between the two marketing pages. If the
+           tagline wording is ever revised, revise it in BOTH files. */
+        .header-subtitle { max-width: 1200px; margin: 0 auto; padding: 4px 20px 0; }
+        .logo-tagline { display: inline-block; font-family: var(--font-heading); font-size: 0.6rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255, 255, 255, 0.8); line-height: 1.2; }
+        @media (min-width: 768px) {
+            .header-subtitle { padding: 6px 20px 2px; }
+            .logo-tagline { font-size: 0.65rem; letter-spacing: 0.14em; }
+        }
+
         .header-nav a {
             color: rgba(255, 255, 255, 0.9);
             text-decoration: none;
@@ -144,6 +154,11 @@
             gap: 3rem;
             align-items: center;
         }
+
+        /* Grid items default to min-width:auto and so refuse to shrink below
+           their content, pushing past the 1fr track on a 320px phone. Same
+           cause as .story-content on product.html. */
+        .intro-grid > * { min-width: 0; }
 
         .intro-image {
             display: flex;
@@ -277,9 +292,14 @@
 
         .cycle-visual {
             display: flex;
+            /* wrap + shrinkable gap: five pills (Complete -> Cycle -> Repeat) at
+               1.2rem with 1rem gaps do not fit a 320px phone — "Repeat" ran 32px
+               past the viewport and gave the whole page a horizontal scrollbar.
+               Caught by test:layout's static-page sweep, not by eye. */
+            flex-wrap: wrap;
             justify-content: center;
             align-items: center;
-            gap: 1rem;
+            gap: 0.5rem 1rem;
             margin-top: 1rem;
             font-size: 1.2rem;
             font-weight: 600;
@@ -668,12 +688,16 @@
                 <img src="../assets/images/logo/App_Name_miniCycle.png" alt="miniCycle" style="height: 28px; width: auto; filter: brightness(0) invert(1);">
             </a>
             <nav class="header-nav" aria-label="Page navigation">
+                <a href="product.html">Home</a>
                 <a href="#what-is">What is miniCycle</a>
                 <a href="#features">Features</a>
                 <a href="#who-its-for">Who It's For</a>
                 <a href="#faq">FAQ</a>
                 <a href="../miniCycle.html" class="cta-btn" data-track="app-launch">Try Now</a>
             </nav>
+        </div>
+        <div class="header-subtitle">
+            <span class="logo-tagline">A repeatable multi-step process tool</span>
         </div>
     </header>
 

@@ -60,7 +60,8 @@ const VIEWPORTS = [
 // been swept across 7 viewports this whole time; the marketing page, which is
 // the first thing a visitor sees, was covered by nothing.
 const STATIC_PAGES = [
-    { name: 'product', path: '/pages/product.html' }
+    { name: 'product',    path: '/pages/product.html' },
+    { name: 'learn-more', path: '/pages/learn_more.html' }
 ];
 
 // Width-only matrix: these pages are long documents, so height is irrelevant to
