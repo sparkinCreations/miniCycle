@@ -1,3 +1,7 @@
+## [2.490] - 2026-08-24
+- site(mcyc): publish the .mcyc format as an open standard — spec page, JSON Schema, and /mcyc alias
+
+
 ## [2.489] - 2026-08-23
 - docs: correct the '?v= is dev-only' claim, and re-scope the sweep it justified
 - chore(html): delete the commented-out link to miniCycle-styles.css, a file that no longer exists

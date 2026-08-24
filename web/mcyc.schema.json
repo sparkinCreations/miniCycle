@@ -1,0 +1,191 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minicycle.app/mcyc.schema.json",
+  "title": ".mcyc routine file",
+  "description": "A miniCycle routine: a named, ordered list of tasks that resets and repeats. Plain JSON, UTF-8, no compression. This schema describes what the miniCycle importer ACCEPTS — a file that validates here will import. Fields marked 'derived' are recomputed by the app on load; authoring them has no durable effect.",
+  "type": "object",
+  "required": ["name", "tasks"],
+  "additionalProperties": true,
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "REQUIRED. A stable identifier for the routine. The importer rejects any file where this is missing or empty, even if 'title' is present. Convention is lowercase with underscores (morning_routine)."
+    },
+    "title": {
+      "type": "string",
+      "description": "Display name shown in the app, and where emoji belong. Optional: the app falls back to 'name'. Resolution order is title -> name -> \"Routine\"."
+    },
+    "tasks": {
+      "type": "array",
+      "description": "REQUIRED, and must be an array (an empty array is valid). Order is meaningful — it is the order tasks appear. Files with more than 150 tasks are TRUNCATED to the first 150 on import, not rejected.",
+      "maxItems": 150,
+      "items": { "$ref": "#/$defs/task" }
+    },
+    "autoReset": {
+      "type": "boolean",
+      "default": true,
+      "description": "Auto mode: the routine resets itself once every task is checked. NOTE the default — omitting this field produces an AUTO routine, because the importer reads it as (autoReset !== false). Set it to false explicitly for a manual routine."
+    },
+    "deleteCheckedTasks": {
+      "type": "boolean",
+      "default": false,
+      "description": "To-Do mode: completed tasks are removed rather than reset. Takes precedence over autoReset when both are true."
+    },
+    "cycleCount": {
+      "type": "integer",
+      "minimum": 0,
+      "default": 0,
+      "description": "How many times the routine has been completed. Ship shared templates with 0."
+    },
+    "theme": {
+      "type": "string",
+      "description": "Vocabulary theme identifier. Unknown values fall back to the default theme rather than failing the import."
+    },
+    "recurringTemplates": {
+      "type": "object",
+      "description": "Optional map keyed by task id. Usually omit this: the importer DERIVES a template for every task with recurring:true, and merges anything supplied here on top.",
+      "additionalProperties": { "type": "object" }
+    }
+  },
+  "$defs": {
+    "task": {
+      "type": "object",
+      "description": "A single task. No field is strictly required — the importer generates a missing id, coerces non-string text, and fills every flag — but 'text' is what the user reads, so always supply it. Unknown properties are DROPPED on import (the importer copies a fixed field set), so custom metadata will not survive a round trip.",
+      "additionalProperties": true,
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique within the file. Generated as task-<timestamp>-<index> if absent. Must be unique: duplicate ids make find-by-id resolve to the first match and can drop a task on reorder."
+        },
+        "text": {
+          "type": "string",
+          "description": "The task text the user reads. Emoji are supported."
+        },
+        "completed": {
+          "type": "boolean",
+          "default": false,
+          "description": "Ship shared templates with false."
+        },
+        "highPriority": {
+          "type": "boolean",
+          "default": false
+        },
+        "priorityColor": {
+          "type": ["string", "null"],
+          "default": null,
+          "description": "Hex color for the priority border, e.g. \"#dc3545\". Ignored unless highPriority is true.",
+          "pattern": "^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$"
+        },
+        "dueDate": {
+          "type": ["string", "null"],
+          "default": null,
+          "description": "ISO 8601 date string, or null. Invalid dates are discarded rather than failing the import."
+        },
+        "remindersEnabled": {
+          "type": "boolean",
+          "default": false
+        },
+        "recurring": {
+          "type": "boolean",
+          "default": false,
+          "description": "Marks the task as scheduled. Setting this also changes the default for deleteWhenCompleteSettings — see that field."
+        },
+        "recurringSettings": {
+          "$ref": "#/$defs/recurringSettings"
+        },
+        "deleteWhenCompleteSettings": {
+          "$ref": "#/$defs/deleteWhenCompleteSettings"
+        },
+        "deleteWhenComplete": {
+          "type": "boolean",
+          "description": "DERIVED — do not author this. It mirrors whichever deleteWhenCompleteSettings entry matches the routine's current mode, and the app re-derives it on every load. A file setting this field alone (with no deleteWhenCompleteSettings) will appear to import correctly and then silently lose the value on first open. Use deleteWhenCompleteSettings instead."
+        },
+        "schemaVersion": {
+          "type": "integer",
+          "const": 2,
+          "description": "Task schema version. Optional — the importer sets it to 2."
+        }
+      }
+    },
+    "deleteWhenCompleteSettings": {
+      "type": "object",
+      "description": "Whether the task is REMOVED (rather than just unchecked) when the routine resets or completed tasks are cleared. Held per mode, because the sensible answer differs between them. This is the durable field; 'deleteWhenComplete' is derived from it.",
+      "additionalProperties": false,
+      "properties": {
+        "cycle": {
+          "type": "boolean",
+          "description": "Applies in Auto and Manual modes. Default depends on the task: TRUE for recurring tasks (the occurrence is removed and the schedule brings it back) and FALSE for ordinary tasks (they are unchecked and stay). Set false on a recurring task to keep it permanently visible."
+        },
+        "todo": {
+          "type": "boolean",
+          "description": "Applies in To-Do mode, where 'Clear Completed' removes finished tasks. Defaults to TRUE for every task. Note that To-Do mode does delete recurring tasks — the schedule re-adds them; only the archive and the achievement counter exclude them."
+        }
+      },
+      "required": ["cycle", "todo"]
+    },
+    "recurringSettings": {
+      "type": "object",
+      "description": "Schedule for a task with recurring:true. Only the sub-object matching 'frequency' is read. Invalid values are normalized rather than rejected, so an unrecognized frequency will not fail the import — it will simply not schedule the way you intended.",
+      "additionalProperties": true,
+      "properties": {
+        "frequency": {
+          "type": "string",
+          "enum": ["hourly", "daily", "weekly", "biweekly", "monthly", "yearly"],
+          "description": "Which sub-object below is consulted."
+        },
+        "indefinitely": {
+          "type": "boolean",
+          "default": true,
+          "description": "Repeat forever. When false, repeatCount bounds it."
+        },
+        "repeatCount": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of occurrences when indefinitely is false."
+        },
+        "time": {
+          "type": ["object", "null"],
+          "description": "Time of day for the occurrence.",
+          "properties": {
+            "hour": { "type": "integer", "minimum": 1, "maximum": 12 },
+            "minute": { "type": "integer", "minimum": 0, "maximum": 59 },
+            "meridiem": { "type": "string", "enum": ["AM", "PM"] }
+          }
+        },
+        "daily": {
+          "type": "object",
+          "properties": { "time": { "type": "string", "description": "24-hour HH:MM." } }
+        },
+        "weekly": {
+          "type": "object",
+          "properties": {
+            "days": {
+              "type": "array",
+              "description": "Three-letter day names.",
+              "items": { "type": "string", "enum": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] }
+            }
+          }
+        },
+        "biweekly": { "type": "object" },
+        "monthly": {
+          "type": "object",
+          "properties": {
+            "dayOfMonth": { "type": ["integer", "null"], "minimum": 1, "maximum": 31 },
+            "nthWeekday": { "type": ["integer", "null"] },
+            "weekday": { "type": ["string", "null"] }
+          }
+        },
+        "yearly": { "type": "object" },
+        "hourly": { "type": "object" },
+        "specificDates": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "dates": { "type": "array", "items": { "type": "string" } }
+          }
+        }
+      }
+    }
+  }
+}

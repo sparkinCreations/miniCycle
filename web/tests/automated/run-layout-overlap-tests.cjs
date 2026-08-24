@@ -61,7 +61,8 @@ const VIEWPORTS = [
 // the first thing a visitor sees, was covered by nothing.
 const STATIC_PAGES = [
     { name: 'product',    path: '/pages/product.html' },
-    { name: 'learn-more', path: '/pages/learn_more.html' }
+    { name: 'learn-more', path: '/pages/learn_more.html' },
+    { name: 'mcyc-format', path: '/pages/mcyc-format.html' }
 ];
 
 // Width-only matrix: these pages are long documents, so height is irrelevant to

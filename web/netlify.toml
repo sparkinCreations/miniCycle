@@ -13,6 +13,16 @@
   included_files = ["netlify/functions/**"]
 
 # Domain redirects for minicycleapp.com
+# Short, citable alias for the .mcyc format specification. A file format that
+# other people are invited to implement needs a URL that survives being pasted
+# into a README or a chat message — "/mcyc" does, "/pages/mcyc-format.html" does
+# not. 301 (not a 200 rewrite) so there is exactly one indexable URL for the
+# page, matching the canonical tag it carries.
+[[redirects]]
+  from = "/mcyc"
+  to = "/pages/mcyc-format.html"
+  status = 301
+
 [[redirects]]
   from = "https://minicycleapp.com/*"
   to = "https://minicycle.app/product.html"
@@ -143,6 +153,13 @@
     Expires = "0"
 
 [[headers]]
+  for = "/mcyc"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
+
+[[headers]]
   for = "/blog"
   [headers.values]
     Cache-Control = "no-cache, no-store, must-revalidate"
@@ -221,6 +238,17 @@
     Cache-Control = "no-cache, no-store, must-revalidate"
     Pragma = "no-cache"
     Expires = "0"
+
+# The published .mcyc JSON Schema. Third parties are invited to point editors and
+# CI at this URL, so it must stay correctable: without this block it falls through
+# to the "/*" catch-all (public, max-age=31536000) and a fix to the schema could
+# not reach anyone who had already fetched it for a YEAR — the same trap the HTML
+# route blocks above exist to close, and validate:cache only enumerates HTML.
+[[headers]]
+  for = "/mcyc.schema.json"
+  [headers.values]
+    Cache-Control = "public, max-age=3600"
+    Access-Control-Allow-Origin = "*"
 
 [[headers]]
   for = "/manifest.json"

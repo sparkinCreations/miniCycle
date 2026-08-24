@@ -167,6 +167,11 @@ Full application state export. Includes settings, metadata, and multiple cycles.
 
 ### Task Object
 
+> **"Required" here means "present in every file miniCycle exports"** — not "rejected if absent."
+> The only fields the importer actually enforces are the top-level `name` and `tasks`.
+> A task missing `id` gets one generated, non-string `text` is coerced, and `schemaVersion`
+> is set for you. Author the required fields anyway; just do not expect an error if you skip one.
+
 Every task in the `tasks` array uses this structure:
 
 ```json
@@ -203,8 +208,8 @@ Every task in the `tasks` array uses this structure:
 | `remindersEnabled` | boolean | No | `false` | Enable reminders for this task |
 | `recurring` | boolean | No | `false` | Is this a recurring task? |
 | `recurringSettings` | object | No | `{}` | Recurring configuration (see below) |
-| `deleteWhenComplete` | boolean | No | `false` | Active deletion flag (synced from mode settings) |
-| `deleteWhenCompleteSettings` | object | No | `{"cycle": false, "todo": true}` | Per-mode deletion behavior |
+| `deleteWhenComplete` | boolean | No | *derived* | **Do not author this.** It mirrors whichever `deleteWhenCompleteSettings` entry matches the routine's current mode, and `routineLoader` re-derives it on **every** load. A file that sets only this field imports looking correct, then loses the value the first time the routine opens. |
+| `deleteWhenCompleteSettings` | object | No | recurring: `{"cycle": true, "todo": true}`<br>otherwise: `{"cycle": false, "todo": true}` | Per-mode deletion behavior, and the **durable** setting. The import default depends on `recurring` (cycleImportManager) — a recurring occurrence is removed on reset so the schedule can bring it back. |
 
 ---
 
@@ -244,7 +249,7 @@ When using the complete format, each cycle is stored in `data.cycles`:
 | `id` | string | **Yes** | Internal cycle ID. **Not** the `cycles` map key — cycles are keyed by **title** (creation, rename, duplication, and import all write `cycles[title]`), and this field is currently not read by the app |
 | `title` | string | **Yes** | Display name |
 | `tasks` | array | **Yes** | Array of task objects |
-| `autoReset` | boolean | No | Auto-reset behavior |
+| `autoReset` | boolean | No | Auto-reset behavior. **Import default is `true`** — the importer reads it as `!== false`, so a file that omits this field becomes an *Auto* routine. Write `false` explicitly for Manual. |
 | `deleteCheckedTasks` | boolean | No | To-Do mode behavior |
 | `cycleCount` | number | No | Times completed |
 | `createdAt` | number | No | Unix timestamp (milliseconds) |

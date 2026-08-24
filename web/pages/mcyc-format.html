@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>The .mcyc Format - An Open Routine File Format</title>
+    <link rel="icon" type="image/png" href="../assets/images/logo/logo.png">
+    <link rel="canonical" href="https://minicycle.app/pages/mcyc-format.html">
+
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="The .mcyc file format specification - an open, plain-JSON format for portable, shareable routines. Free to implement in your own software.">
+    <meta name="keywords" content="mcyc, mcyc format, routine file format, open format, JSON routine, miniCycle, task cycling format">
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="The .mcyc Format - An Open Routine File Format">
+    <meta property="og:description" content="A plain-JSON format for portable routines. Openly specified and free to implement in your own software.">
+    <meta property="og:image" content="https://minicycle.app/assets/images/logo/logo.png">
+    <meta property="og:url" content="https://minicycle.app/pages/mcyc-format.html">
+
+    <style>
+        :root {
+            --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            --font-heading: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --code-bg: #1e2733;
+            --code-fg: #e6edf3;
+            --rule: #d4e0ee;
+            --ink-soft: #5a6b7d;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: var(--font-body);
+            line-height: 1.6;
+            color: #333;
+            background: #edf3fb;
+        }
+
+        /* ── Chrome: matches learn_more.html / product.html ───────────────── */
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            background: #0088ff;
+            color: #fff;
+            padding: 8px 16px;
+            z-index: 1001;
+            font-size: 0.9rem;
+            text-decoration: none;
+            border-radius: 0 0 4px 0;
+            transition: top 0.2s;
+        }
+
+        .skip-link:focus {
+            top: 0;
+        }
+
+        header {
+            background: rgba(0, 68, 187, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            color: white;
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        header *:focus-visible {
+            outline-color: white;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: white;
+            padding: 0.5rem 0;
+            min-width: 0;
+        }
+
+        .logo-link img {
+            height: 36px;
+            width: auto;
+        }
+
+        .header-nav {
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+        }
+
+        .header-nav a {
+            color: rgba(255, 255, 255, 0.9);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s;
+            white-space: nowrap;
+        }
+
+        .header-nav a:hover {
+            color: white;
+        }
+
+        .header-nav .cta-btn {
+            background: white;
+            color: #0088ff;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s, background 0.2s, color 0.2s;
+        }
+
+        .header-nav .cta-btn:hover {
+            background: transparent;
+            color: white;
+            box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.85);
+            transform: translateY(-2px);
+        }
+
+        .header-subtitle {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 6px 20px 2px;
+        }
+
+        .logo-tagline {
+            display: inline-block;
+            font-family: var(--font-heading);
+            font-size: 0.65rem;
+            font-weight: 600;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.8);
+            line-height: 1.2;
+        }
+
+        @media (max-width: 767px) {
+            .header-nav a:not(.cta-btn) {
+                display: none;
+            }
+        }
+
+        /* ── Page layout ──────────────────────────────────────────────────── */
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .hero {
+            background: linear-gradient(160deg, #dce9f6 0%, #edf3fb 100%);
+            padding: 3rem 0 2.5rem;
+            border-bottom: 1px solid var(--rule);
+        }
+
+        .hero h1 {
+            font-family: var(--font-heading);
+            font-size: clamp(1.9rem, 5vw, 2.7rem);
+            line-height: 1.15;
+            color: #12324f;
+        }
+
+        .hero .filetype {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            background: rgba(0, 68, 187, 0.09);
+            padding: 0 0.25em;
+            border-radius: 4px;
+        }
+
+        .hero p.lede {
+            margin-top: 0.9rem;
+            font-size: 1.1rem;
+            color: var(--ink-soft);
+            max-width: 62ch;
+        }
+
+        .hero-actions {
+            margin-top: 1.6rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.7rem;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 0.65rem 1.25rem;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: transform 0.2s, box-shadow 0.2s, background 0.2s, color 0.2s;
+        }
+
+        .btn-primary {
+            background: #0088ff;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 136, 255, 0.3);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: #0a5ca8;
+            box-shadow: inset 0 0 0 2px rgba(10, 92, 168, 0.35);
+        }
+
+        .btn-ghost:hover {
+            background: rgba(10, 92, 168, 0.08);
+            transform: translateY(-2px);
+        }
+
+        section {
+            padding: 2.6rem 0;
+        }
+
+        section + section {
+            border-top: 1px solid var(--rule);
+        }
+
+        h2 {
+            font-family: var(--font-heading);
+            font-size: 1.55rem;
+            color: #12324f;
+            margin-bottom: 0.35rem;
+        }
+
+        h3 {
+            font-family: var(--font-heading);
+            font-size: 1.1rem;
+            color: #1b3f60;
+            margin: 1.6rem 0 0.5rem;
+        }
+
+        .section-sub {
+            color: var(--ink-soft);
+            margin-bottom: 1.2rem;
+            max-width: 70ch;
+        }
+
+        p {
+            margin-bottom: 0.9rem;
+            max-width: 74ch;
+        }
+
+        ul, ol {
+            margin: 0 0 1rem 1.3rem;
+            max-width: 74ch;
+        }
+
+        li {
+            margin-bottom: 0.4rem;
+        }
+
+        a {
+            color: #0a5ca8;
+        }
+
+        code {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 0.9em;
+            background: rgba(10, 92, 168, 0.08);
+            padding: 0.1em 0.35em;
+            border-radius: 4px;
+            overflow-wrap: break-word;
+        }
+
+        /* Wide content must scroll inside its own box — the page body must never
+           scroll horizontally (run-layout-overlap-tests.cjs sweeps 10 widths). */
+        pre {
+            background: var(--code-bg);
+            color: var(--code-fg);
+            padding: 1.1rem 1.2rem;
+            border-radius: 10px;
+            overflow-x: auto;
+            margin-bottom: 1rem;
+            font-size: 0.85rem;
+            line-height: 1.55;
+        }
+
+        pre code {
+            background: none;
+            padding: 0;
+            color: inherit;
+            font-size: inherit;
+            overflow-wrap: normal;
+        }
+
+        .table-scroll {
+            overflow-x: auto;
+            margin-bottom: 1.2rem;
+            border: 1px solid var(--rule);
+            border-radius: 10px;
+            background: white;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            min-width: 520px;
+            font-size: 0.92rem;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 0.65rem 0.9rem;
+            border-bottom: 1px solid #e8eef6;
+            vertical-align: top;
+        }
+
+        th {
+            background: #f4f8fd;
+            font-family: var(--font-heading);
+            font-weight: 600;
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: #3d556c;
+            white-space: nowrap;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        td code {
+            white-space: nowrap;
+        }
+
+        .req {
+            color: #b3261e;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .callout {
+            border-left: 4px solid #0088ff;
+            background: #ffffff;
+            padding: 1rem 1.2rem;
+            border-radius: 0 10px 10px 0;
+            margin: 1.2rem 0;
+            box-shadow: 0 1px 3px rgba(18, 50, 79, 0.07);
+        }
+
+        .callout p:last-child {
+            margin-bottom: 0;
+        }
+
+        .callout-title {
+            font-family: var(--font-heading);
+            font-weight: 600;
+            color: #12324f;
+            margin-bottom: 0.35rem;
+        }
+
+        .callout.warn {
+            border-left-color: #e07a00;
+        }
+
+        .callout.open {
+            border-left-color: #1f9254;
+        }
+
+        .toc {
+            background: white;
+            border: 1px solid var(--rule);
+            border-radius: 10px;
+            padding: 1.1rem 1.3rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .toc ol {
+            margin: 0.4rem 0 0 1.2rem;
+        }
+
+        .toc li {
+            margin-bottom: 0.25rem;
+        }
+
+        footer {
+            background: #2c3e50;
+            color: white;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        footer a {
+            color: #bdc3c7;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            color: white;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            html {
+                scroll-behavior: auto;
+            }
+
+            * {
+                transition: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <!-- Header -->
+    <header role="banner">
+        <div class="header-content">
+            <a href="product.html" class="logo-link">
+                <img src="../assets/images/logo/logo.png" alt="miniCycle">
+                <img src="../assets/images/logo/App_Name_miniCycle.png" alt="miniCycle" style="height: 28px; width: auto; filter: brightness(0) invert(1);">
+            </a>
+            <nav class="header-nav" aria-label="Page navigation">
+                <a href="product.html">Home</a>
+                <a href="learn_more.html">Learn More</a>
+                <a href="#example">Example</a>
+                <a href="#reference">Reference</a>
+                <a href="#validate">Validate</a>
+                <a href="../miniCycle.html" class="cta-btn" data-track="app-launch">Try Now</a>
+            </nav>
+        </div>
+        <div class="header-subtitle">
+            <span class="logo-tagline">A repeatable multi-step process tool</span>
+        </div>
+    </header>
+
+    <main id="main-content">
+        <!-- Hero -->
+        <div class="hero">
+            <div class="container">
+                <h1>The <span class="filetype">.mcyc</span> routine format</h1>
+                <p class="lede">
+                    A routine is a list of steps you repeat. <code>.mcyc</code> is a
+                    plain-JSON file that holds one — its steps, their order, their schedules, and how it resets.
+                    One file, no server, no account. Readable in a text editor and writable by any program.
+                </p>
+                <div class="hero-actions">
+                    <a href="#example" class="btn btn-primary">See a complete file</a>
+                    <a href="../mcyc.schema.json" class="btn btn-ghost" data-track="schema-download">JSON&nbsp;Schema</a>
+                    <a href="https://docs.minicycle.app/#/reference/MCYC_FILE_FORMAT" class="btn btn-ghost" data-track="full-spec">Full specification</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Open format -->
+        <section id="open">
+            <div class="container">
+                <h2>The format is open</h2>
+                <p class="section-sub">You do not need permission, a license, or a conversation with us to use it.</p>
+
+                <div class="callout open">
+                    <p class="callout-title">Free to implement</p>
+                    <p>
+                        Anyone may read, write, generate, or validate <code>.mcyc</code> files in their own
+                        software — commercial or not, open source or closed — without asking permission and
+                        without a fee. There is no patent claim and no trademark condition on producing or
+                        consuming the format.
+                    </p>
+                    <p>
+                        The <em>format</em> is open. The miniCycle <em>application</em> is proprietary. Those are
+                        separate things, and only the first one is being granted here.
+                    </p>
+                </div>
+
+                <p>
+                    That split is deliberate. A routine you spent months refining should not be trapped in one
+                    vendor's app — including ours. If miniCycle disappeared tomorrow, a <code>.mcyc</code> file
+                    would still be a readable, documented description of your routine, and anything could open it.
+                </p>
+                <p>
+                    If you build something that reads or writes <code>.mcyc</code>, we would genuinely like to
+                    hear about it — but that is an invitation, not a requirement.
+                </p>
+            </div>
+        </section>
+
+        <!-- Quick facts -->
+        <section id="facts">
+            <div class="container">
+                <h2>At a glance</h2>
+                <div class="table-scroll">
+                    <table>
+                        <tbody>
+                            <tr><th scope="row">Extension</th><td><code>.mcyc</code> &mdash; <code>.json</code> is also accepted on import, and <code>.tcyc</code> is recognised as a legacy name</td></tr>
+                            <tr><th scope="row">Media type</th><td><code>application/json</code></td></tr>
+                            <tr><th scope="row">Encoding</th><td>UTF-8, uncompressed. Emoji are fine and widely used in task text.</td></tr>
+                            <tr><th scope="row">Contents</th><td>Exactly one routine per file</td></tr>
+                            <tr><th scope="row">Required fields</th><td><code>name</code> and <code>tasks</code>. Nothing else.</td></tr>
+                            <tr><th scope="row">Task ceiling</th><td>150 tasks. Longer files import, truncated to the first 150.</td></tr>
+                            <tr><th scope="row">Schema</th><td><a href="../mcyc.schema.json">mcyc.schema.json</a> (JSON Schema 2020-12)</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="toc">
+                    <strong>On this page</strong>
+                    <ol>
+                        <li><a href="#example">A complete file</a></li>
+                        <li><a href="#reference">Field reference</a></li>
+                        <li><a href="#modes">Modes: how a routine resets</a></li>
+                        <li><a href="#gotchas">Three things that surprise people</a></li>
+                        <li><a href="#validate">Validating a file</a></li>
+                        <li><a href="#stability">Versioning and stability</a></li>
+                    </ol>
+                </div>
+            </div>
+        </section>
+
+        <!-- Example -->
+        <section id="example">
+            <div class="container">
+                <h2>A complete file</h2>
+                <p class="section-sub">
+                    This is valid and complete. Save it as <code>morning.mcyc</code> and import it.
+                </p>
+
+<pre><code>{
+  "name": "morning_routine",
+  "title": "☀️ Morning Routine",
+  "autoReset": true,
+  "deleteCheckedTasks": false,
+  "cycleCount": 0,
+  "tasks": [
+    { "id": "t1", "text": "💧 Drink a glass of water", "completed": false },
+    { "id": "t2", "text": "🧘 Stretch for five minutes", "completed": false },
+    { "id": "t3", "text": "📓 Write down today's top task", "completed": false, "highPriority": true }
+  ]
+}</code></pre>
+
+                <p>
+                    Strip it further if you like — this is the smallest file that imports:
+                </p>
+
+<pre><code>{ "name": "minimal", "tasks": [] }</code></pre>
+
+                <h3>With a scheduled task</h3>
+                <p>
+                    Set <code>recurring</code> and describe the schedule. Only the sub-object matching
+                    <code>frequency</code> is read, so you can leave the others out:
+                </p>
+
+<pre><code>{
+  "name": "weekly_shop",
+  "title": "🛒 Weekly Shop",
+  "autoReset": false,
+  "tasks": [
+    {
+      "id": "t1",
+      "text": "🧺 Check what's already in the pantry",
+      "completed": false,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "weekly",
+        "indefinitely": true,
+        "weekly": { "days": ["Sat"] },
+        "time": { "hour": 10, "minute": 0, "meridiem": "AM" }
+      }
+    }
+  ]
+}</code></pre>
+
+                <p>
+                    You do not need to write a <code>recurringTemplates</code> map. The app derives one from
+                    every task marked <code>recurring</code> when the file is imported.
+                </p>
+            </div>
+        </section>
+
+        <!-- Reference -->
+        <section id="reference">
+            <div class="container">
+                <h2>Field reference</h2>
+                <p class="section-sub">
+                    Defaults below are what the importer actually applies to a file that omits the field — which
+                    is not always the same as the value you would guess.
+                </p>
+
+                <h3>Root object</h3>
+                <div class="table-scroll">
+                    <table>
+                        <thead>
+                            <tr><th scope="col">Field</th><th scope="col">Type</th><th scope="col">Default</th><th scope="col">Notes</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><code>name</code></td><td>string</td><td class="req">required</td><td>Identifier for the routine. A file without it is rejected, even when <code>title</code> is present.</td></tr>
+                            <tr><td><code>tasks</code></td><td>array</td><td class="req">required</td><td>Must be an array; empty is valid. Order is the display order.</td></tr>
+                            <tr><td><code>title</code></td><td>string</td><td><em>falls back to <code>name</code></em></td><td>The display name, and where emoji belong.</td></tr>
+                            <tr><td><code>autoReset</code></td><td>boolean</td><td><code>true</code></td><td>Auto mode. See the note under <a href="#gotchas">surprises</a> — omitting this does <em>not</em> give you a manual routine.</td></tr>
+                            <tr><td><code>deleteCheckedTasks</code></td><td>boolean</td><td><code>false</code></td><td>To-Do mode. Wins over <code>autoReset</code> when both are true.</td></tr>
+                            <tr><td><code>cycleCount</code></td><td>integer</td><td><code>0</code></td><td>Times completed. Ship shared templates with <code>0</code>.</td></tr>
+                            <tr><td><code>theme</code></td><td>string</td><td><em>app default</em></td><td>Vocabulary theme. An unknown value falls back rather than failing.</td></tr>
+                            <tr><td><code>recurringTemplates</code></td><td>object</td><td><em>derived</em></td><td>Usually omit. Derived from recurring tasks; anything you supply is merged on top.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3>Task object</h3>
+                <div class="table-scroll">
+                    <table>
+                        <thead>
+                            <tr><th scope="col">Field</th><th scope="col">Type</th><th scope="col">Default</th><th scope="col">Notes</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><code>text</code></td><td>string</td><td><em>&mdash;</em></td><td>What the user reads. Technically repairable, but always supply it.</td></tr>
+                            <tr><td><code>id</code></td><td>string</td><td><em>generated</em></td><td>Must be unique within the file. Duplicates make reordering drop a task.</td></tr>
+                            <tr><td><code>completed</code></td><td>boolean</td><td><code>false</code></td><td></td></tr>
+                            <tr><td><code>highPriority</code></td><td>boolean</td><td><code>false</code></td><td></td></tr>
+                            <tr><td><code>priorityColor</code></td><td>string / null</td><td><code>null</code></td><td>Hex, e.g. <code>"#dc3545"</code>. Ignored unless <code>highPriority</code> is true.</td></tr>
+                            <tr><td><code>dueDate</code></td><td>string / null</td><td><code>null</code></td><td>ISO 8601. Invalid values are discarded, not rejected.</td></tr>
+                            <tr><td><code>remindersEnabled</code></td><td>boolean</td><td><code>false</code></td><td></td></tr>
+                            <tr><td><code>recurring</code></td><td>boolean</td><td><code>false</code></td><td>Also changes the default for <code>deleteWhenCompleteSettings</code>.</td></tr>
+                            <tr><td><code>recurringSettings</code></td><td>object</td><td><em>&mdash;</em></td><td>Read only when <code>recurring</code> is true.</td></tr>
+                            <tr><td><code>deleteWhenCompleteSettings</code></td><td>object</td><td><em>see below</em></td><td><code>{ "cycle": bool, "todo": bool }</code>. The durable setting.</td></tr>
+                            <tr><td><code>deleteWhenComplete</code></td><td>boolean</td><td><em>derived</em></td><td><strong>Do not author.</strong> Recomputed on every load.</td></tr>
+                            <tr><td><code>schemaVersion</code></td><td>integer</td><td><code>2</code></td><td>Optional; the importer sets it.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3><code>recurringSettings</code></h3>
+                <p>
+                    <code>frequency</code> selects which sub-object is consulted, and may be
+                    <code>hourly</code>, <code>daily</code>, <code>weekly</code>, <code>biweekly</code>,
+                    <code>monthly</code>, or <code>yearly</code>. Use <code>indefinitely: true</code> to repeat
+                    forever, or <code>indefinitely: false</code> with a <code>repeatCount</code>. Weekday names
+                    are three letters: <code>Sun</code> through <code>Sat</code>. Full details, including the
+                    monthly and specific-date forms, are in the
+                    <a href="https://docs.minicycle.app/#/reference/MCYC_FILE_FORMAT">full specification</a>.
+                </p>
+            </div>
+        </section>
+
+        <!-- Modes -->
+        <section id="modes">
+            <div class="container">
+                <h2>Modes: how a routine resets</h2>
+                <p class="section-sub">
+                    Two booleans at the root decide what happens when everything is checked off. There is no
+                    <code>mode</code> field — the mode is inferred.
+                </p>
+
+                <div class="table-scroll">
+                    <table>
+                        <thead>
+                            <tr><th scope="col">Mode</th><th scope="col">Set</th><th scope="col">Behavior</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><strong>To-Do</strong></td><td><code>deleteCheckedTasks: true</code></td><td>Finished tasks are removed. Checked first — it wins over <code>autoReset</code>.</td></tr>
+                            <tr><td><strong>Auto</strong></td><td><code>autoReset: true</code></td><td>The routine resets itself the moment every task is done.</td></tr>
+                            <tr><td><strong>Manual</strong></td><td>both <code>false</code></td><td>You decide when the routine has been completed.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Gotchas -->
+        <section id="gotchas">
+            <div class="container">
+                <h2>Three things that surprise people</h2>
+                <p class="section-sub">
+                    Each of these is a real behavior of the importer, not a caveat about edge cases.
+                </p>
+
+                <div class="callout warn">
+                    <p class="callout-title">1. Omitting <code>autoReset</code> gives you an Auto routine, not a Manual one</p>
+                    <p>
+                        The importer reads this field as &ldquo;true unless explicitly false.&rdquo; If you leave it
+                        out, you get a routine that resets itself. Write <code>"autoReset": false</code> when you
+                        want the user to decide.
+                    </p>
+                </div>
+
+                <div class="callout warn">
+                    <p class="callout-title">2. <code>deleteWhenComplete</code> is derived — authoring it does nothing</p>
+                    <p>
+                        The durable field is <code>deleteWhenCompleteSettings</code>, which holds a separate
+                        boolean per mode. The flat <code>deleteWhenComplete</code> is just whichever entry matches
+                        the routine's current mode, and it is recomputed every time the routine is opened.
+                    </p>
+                    <p>
+                        A file that sets only <code>"deleteWhenComplete": true</code> will appear to import
+                        correctly and then lose the value the first time the routine loads. Set the per-mode
+                        object instead:
+                    </p>
+<pre><code>"deleteWhenCompleteSettings": { "cycle": true, "todo": true }</code></pre>
+                    <p>
+                        The defaults differ by task type, which is usually what you want:
+                        recurring tasks default to <code>{ "cycle": true, "todo": true }</code> — the occurrence
+                        is removed on reset and the schedule brings it back — while ordinary tasks default to
+                        <code>{ "cycle": false, "todo": true }</code>, so they are unchecked and stay put.
+                    </p>
+                </div>
+
+                <div class="callout warn">
+                    <p class="callout-title">3. Unknown fields are dropped, not preserved</p>
+                    <p>
+                        The importer copies a fixed set of fields. Extra keys of your own will not survive a
+                        round trip through the app, so don't use a <code>.mcyc</code> file to carry metadata you
+                        need back later.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Validate -->
+        <section id="validate">
+            <div class="container">
+                <h2>Validating a file</h2>
+                <p class="section-sub">
+                    A machine-readable schema is published alongside this page, so you can check a file before
+                    handing it to anyone.
+                </p>
+
+                <p>
+                    <a href="../mcyc.schema.json"><code>https://minicycle.app/mcyc.schema.json</code></a>
+                    &mdash; JSON Schema, draft 2020-12. It describes what the importer <em>accepts</em>: a file
+                    that validates will import.
+                </p>
+
+                <h3>From the command line</h3>
+<pre><code># Node, using ajv
+npx ajv-cli validate -s mcyc.schema.json -d my-routine.mcyc --spec=draft2020
+
+# Python, using check-jsonschema
+pipx run check-jsonschema --schemafile mcyc.schema.json my-routine.mcyc</code></pre>
+
+                <h3>In an editor</h3>
+                <p>
+                    Most editors will offer completion and inline errors if you point them at the schema. In
+                    VS Code, map the extension once in your settings:
+                </p>
+<pre><code>"json.schemas": [
+  {
+    "fileMatch": ["*.mcyc"],
+    "url": "https://minicycle.app/mcyc.schema.json"
+  }
+]</code></pre>
+
+                <div class="callout">
+                    <p class="callout-title">Being strict is on you</p>
+                    <p>
+                        The importer is deliberately forgiving: it repairs missing ids, coerces odd types, and
+                        discards bad dates rather than refusing the file. That is good for users and unhelpful
+                        for authors, because a sloppy file imports quietly. Validate before you publish.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Stability -->
+        <section id="stability">
+            <div class="container">
+                <h2>Versioning and stability</h2>
+                <p>
+                    Files carry a task-level <code>schemaVersion</code> of <code>2</code>, matching the app's
+                    current 2.5 data schema. The format has been stable since then, and the importer still reads
+                    older files — including pre-2.5 layouts and the legacy <code>.tcyc</code> extension.
+                </p>
+                <p>
+                    Our intent for anything built on this: existing files keep importing. New fields may be
+                    added, so treat unknown keys as ignorable rather than as errors — which is also how the app
+                    treats them.
+                </p>
+                <p>
+                    The <a href="https://docs.minicycle.app/#/reference/MCYC_FILE_FORMAT">full specification</a>
+                    carries the complete field-by-field reference, every recurring form, worked examples, security
+                    notes, and generator scripts for Node and Python. This page is the short version.
+                </p>
+
+                <div class="hero-actions">
+                    <a href="../miniCycle.html" class="btn btn-primary" data-track="app-launch-footer">Try miniCycle</a>
+                    <a href="https://docs.minicycle.app/#/reference/MCYC_FILE_FORMAT" class="btn btn-ghost" data-track="full-spec-footer">Read the full specification</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer role="contentinfo">
+        <p>&copy; 2026 <a href="https://sparkincreations.com" target="_blank" rel="noopener noreferrer">sparkinCreations</a> &middot; <a href="learn_more.html">Learn More</a> &middot; <a href="../lite/miniCycle-lite.html">Lite Version</a> &middot; <a href="../legal/user-manual.html">User Manual</a> &middot; <a href="../legal/terms.html">Terms</a> &middot; <a href="../legal/privacy.html">Privacy</a> &middot; <a href="../legal/accessibility.html">Accessibility</a></p>
+    </footer>
+
+    <script src="mcyc-format.js"></script>
+</body>
+</html>
