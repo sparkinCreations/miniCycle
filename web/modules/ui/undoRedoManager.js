@@ -31,6 +31,46 @@ import { createDIModule, optional } from '../core/diBase.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { LIMITS, DEBOUNCE, DOM_IDS, APP_VERSION, UI_TIMEOUTS } from '../core/constants.js';
 
+// Durable per-cycle undo persistence, split out Aug 2026 (Priority 3,
+// LARGE_MODULE_SPLITS_PLAN.md). STATIC, not a dynamic Pattern-1 import: these
+// run from synchronous paths — including the beforeunload flush — where
+// awaiting an import is impossible, and this module has no async init to hang
+// one on. Same call made for notifications.js -> educationalTips.js.
+//
+// CONSEQUENCE: a static import from a boot-critical module makes the target
+// boot-critical. undoIndexedDB.js is in BOOT_CRITICAL in service-worker.js;
+// run `npm run test:sw` if you touch either file — no other gate covers it.
+import {
+  setUndoIndexedDBDependencies,
+  initUndoIndexedDB,
+  closeUndoIndexedDB,
+  saveUndoStackToIndexedDB,
+  loadUndoStackFromIndexedDB,
+  deleteUndoStackFromIndexedDB,
+  renameUndoStackInIndexedDB,
+  clearAllUndoHistoryFromIndexedDB,
+  cancelPendingDbWrite,
+  flushPendingWritesSync,
+  forceSaveStackSync,
+  cancelAllPendingWrites
+} from './undoIndexedDB.js';
+
+// RE-EXPORT, not decoration. `initUndoIndexedDB` and `closeUndoIndexedDB` are
+// named in this module's `provides` list in moduleManifests.js, and
+// registerProvides SILENTLY SKIPS a name it cannot find on the module — the
+// failure that broke three-panel swipe for forty releases after the v2.347
+// statsPanel split. The rest are re-exported because existing callers and the
+// test suite import them from here. `validate:provides` gates the first two.
+export {
+  initUndoIndexedDB,
+  closeUndoIndexedDB,
+  saveUndoStackToIndexedDB,
+  loadUndoStackFromIndexedDB,
+  deleteUndoStackFromIndexedDB,
+  renameUndoStackInIndexedDB,
+  clearAllUndoHistoryFromIndexedDB
+};
+
 // ============ CONSTANTS (from centralized constants.js) ============
 const UNDO_LIMIT = LIMITS.UNDO_STACK;
 const UNDO_MIN_INTERVAL_MS = DEBOUNCE.UNDO_MIN_INTERVAL;
@@ -317,6 +357,16 @@ const _deps = new Proxy({}, {
  */
 export function setUndoRedoManagerDependencies(overrides = {}) {
   di.setDependencies(overrides);
+
+  // Wire the IndexedDB sub-module from the SAME call, so the two can never end
+  // up half-wired. showNotification goes through a getter on purpose: diBase
+  // uses defineProperties precisely to preserve these, and a plain read here
+  // would capture undefined at boot, before featureBoot supplies it.
+  setUndoIndexedDBDependencies({
+    get showNotification() { return _deps.showNotification; },
+    saveToUndoCache,
+    relabelSnapshotsForCycle
+  });
 }
 
 function assertInjected(name, value) {
@@ -1713,7 +1763,7 @@ export async function initUndoSystemForApp() {
 
   try {
     // 1. Always initialize IndexedDB (even if no active cycle yet — first-time users
-    //    complete onboarding later, and cycle lifecycle hooks need undoDB ready)
+    //    complete onboarding later, and cycle lifecycle hooks need the DB ready)
     const dbReady = initUndoIndexedDB();
 
     // 2. Get current active cycle
@@ -1777,26 +1827,10 @@ export async function initUndoSystemForApp() {
       document.removeEventListener('visibilitychange', _visibilityFlushHandler);
     }
     _beforeunloadHandler = () => {
-      // Flush EVERY pending debounced write synchronously (not just the active
-      // cycle's) so a fast switch-then-close can't drop a scheduled write.
-      dbWriteTimers.forEach((entry, cid) => {
-        clearTimeout(entry.timer);
-        if (undoDB && cid) {
-          try {
-            const tx = undoDB.transaction(["undoStacks"], "readwrite");
-            tx.objectStore("undoStacks").put({
-              cycleId: cid,
-              undoStack: entry.undoSnap,
-              redoStack: entry.redoSnap,
-              lastUpdated: Date.now(),
-              version: APP_VERSION
-            });
-          } catch (e) {
-            console.warn('⚠️ Failed to flush pending undo write:', e);
-          }
-        }
-      });
-      dbWriteTimers.clear();
+      // Flush EVERY pending debounced write (not just the active cycle's) so a
+      // fast switch-then-close can't drop a scheduled write, then force-save the
+      // active cycle. Both live in undoIndexedDB.js, which owns the connection.
+      flushPendingWritesSync();
 
       const cycleId = _deps.AppGlobalState.activeCycleIdForUndo;
       const undoStack = _deps.AppGlobalState.activeUndoStack || [];
@@ -1804,26 +1838,7 @@ export async function initUndoSystemForApp() {
 
       // Always save to cache on unload (instant for next boot)
       saveToUndoCache(cycleId, undoStack, redoStack);
-
-      // Also save to IndexedDB if available
-      if (cycleId && undoDB) {
-        try {
-          const transaction = undoDB.transaction(["undoStacks"], "readwrite");
-          const objectStore = transaction.objectStore("undoStacks");
-
-          const data = {
-            cycleId,
-            undoStack,
-            redoStack,
-            lastUpdated: Date.now(),
-            version: APP_VERSION
-          };
-
-          objectStore.put(data);
-        } catch (e) {
-          console.warn('⚠️ Failed to force-save undo history:', e);
-        }
-      }
+      forceSaveStackSync(cycleId, undoStack, redoStack);
     };
     _visibilityFlushHandler = () => {
       if (document.visibilityState === 'hidden') _beforeunloadHandler?.();
@@ -1849,7 +1864,6 @@ export async function initUndoSystemForApp() {
 
 // ============ INDEXEDDB PERSISTENCE ============
 
-let undoDB = null;  // Database connection
 
 // Per-cycle debounced IndexedDB write timers, keyed by cycleId.
 // A SINGLE shared timer used to let a save for one cycle cancel another cycle's
@@ -1858,325 +1872,14 @@ let undoDB = null;  // Database connection
 // record. Keying by cycleId keeps cycles independent. Each entry also carries the
 // call-time array snapshots so beforeunload can flush every pending write.
 // Map<cycleId, { timer:number, undoSnap:Array, redoSnap:Array }>
-const dbWriteTimers = new Map();
 
-/**
- * Cancel a cycle's pending debounced IndexedDB write, if any. Used on
- * delete/rename so a late write can't recreate the deleted record or misfile
- * the renamed one.
- * @param {string} cycleId
- */
-function cancelPendingDbWrite(cycleId) {
-  const entry = dbWriteTimers.get(cycleId);
-  if (entry) {
-    clearTimeout(entry.timer);
-    dbWriteTimers.delete(cycleId);
-  }
-}
 
-/**
- * Initialize IndexedDB for undo history persistence
- * Gracefully degrades if IndexedDB unavailable (private browsing)
- */
-export async function initUndoIndexedDB() {
-  try {
-    return new Promise((resolve, reject) => {
-      // Timeout to prevent indefinite hangs
-      const timeout = setTimeout(() => {
-        console.warn('⚠️ initUndoIndexedDB timed out');
-        undoDB = null;
-        resolve(false);
-      }, 5000);
 
-      const request = indexedDB.open("miniCycleUndoHistory", 1);
 
-      request.onerror = () => {
-        clearTimeout(timeout);
-        console.warn('⚠️ IndexedDB unavailable - undo limited to session only');
-        undoDB = null;
-        resolve(false);
-      };
 
-      request.onsuccess = (event) => {
-        clearTimeout(timeout);
-        undoDB = event.target.result;
-        resolve(true);
-      };
 
-      request.onblocked = () => {
-        clearTimeout(timeout);
-        console.warn('⚠️ IndexedDB blocked - undo limited to session only');
-        undoDB = null;
-        resolve(false);
-      };
 
-      request.onupgradeneeded = (event) => {
-        const db = event.target.result;
 
-        // Create object store if it doesn't exist
-        if (!db.objectStoreNames.contains("undoStacks")) {
-          const objectStore = db.createObjectStore("undoStacks", { keyPath: "cycleId" });
-        }
-      };
-    });
-  } catch (e) {
-    console.warn('⚠️ IndexedDB initialization failed:', e);
-    undoDB = null;
-    return false;
-  }
-}
-
-/**
- * Close the undo IndexedDB connection and drop every pending debounced write.
- *
- * Factory reset calls this BEFORE deleting the databases. An open connection
- * makes `indexedDB.deleteDatabase` fire `onblocked` instead of deleting, and the
- * reset's handler settles on `blocked` and carries on — so the user was told
- * "Factory reset complete" while miniCycleUndoHistory was still there, with a
- * delete request left pending that then blocks every later open of it. Pending
- * debounced writes are cancelled too: one firing after the delete would recreate
- * the database with pre-reset stacks in it.
- *
- * Safe to call repeatedly, and `initUndoIndexedDB()` reopens afterwards — that
- * pair is what lets factory reset run more than once without a page reload.
- * @returns {void}
- */
-export function closeUndoIndexedDB() {
-  dbWriteTimers.forEach((entry) => clearTimeout(entry.timer));
-  dbWriteTimers.clear();
-
-  try {
-    undoDB?.close();
-  } catch (e) {
-    console.warn('⚠️ Failed to close undo IndexedDB connection:', e);
-  }
-  undoDB = null;
-}
-
-/**
- * Save undo/redo stacks to both localStorage cache (immediate) and IndexedDB (debounced)
- */
-export function saveUndoStackToIndexedDB(cycleId, undoStack, redoStack, options = {}) {
-  if (!cycleId) return;
-
-  // Save to localStorage cache unless explicitly skipped (e.g., during cycle switching)
-  if (!options.skipCache) {
-    saveToUndoCache(cycleId, undoStack, redoStack);
-  }
-
-  // Graceful degradation if IndexedDB unavailable
-  if (!undoDB) return;
-
-  // Snapshot the arrays at CALL time. captureStateSnapshot mutates the live
-  // stack in place (push/shift), so serializing at fire time could otherwise
-  // persist a state that no longer matches this call. (Belt-and-suspenders — the
-  // cross-cycle switch path reassigns, but a copy is cheap and removes the class.)
-  const undoSnap = Array.isArray(undoStack) ? [...undoStack] : [];
-  const redoSnap = Array.isArray(redoStack) ? [...redoStack] : [];
-
-  // Debounce IndexedDB writes PER CYCLE (see dbWriteTimers) — only cancel this
-  // cycle's own pending write, never another cycle's.
-  cancelPendingDbWrite(cycleId);
-
-  const timer = setTimeout(async () => {
-    dbWriteTimers.delete(cycleId);
-    try {
-      const transaction = undoDB.transaction(["undoStacks"], "readwrite");
-      const objectStore = transaction.objectStore("undoStacks");
-
-      const data = {
-        cycleId,
-        undoStack: undoSnap,
-        redoStack: redoSnap,
-        lastUpdated: Date.now(),
-        version: APP_VERSION
-      };
-
-      const request = objectStore.put(data);
-
-      await new Promise((resolve, reject) => {
-        request.onsuccess = () => {
-          resolve();
-        };
-
-        request.onerror = () => {
-          console.warn(`⚠️ Failed to save undo history for "${cycleId}"`);
-          reject(request.error);
-        };
-      });
-    } catch (e) {
-      console.error('❌ IndexedDB write failed:', e);
-
-      if (e.name === 'QuotaExceededError') {
-        console.error('💾 Storage quota exceeded - undo history not saved');
-        if (_deps.showNotification) {
-          _deps.showNotification(
-            '⚠️ ' + getLabel('notify.undoStorageFull'),
-            'warning',
-            UI_TIMEOUTS.NOTIFICATION_SLOW
-          );
-        }
-      }
-    }
-  }, UNDO_DB_WRITE_DEBOUNCE_MS);
-
-  dbWriteTimers.set(cycleId, { timer, undoSnap, redoSnap });
-}
-
-/**
- * Load undo/redo stacks from IndexedDB
- */
-export async function loadUndoStackFromIndexedDB(cycleId) {
-  if (!undoDB) {
-    return { undoStack: [], redoStack: [] };  // Graceful degradation
-  }
-  if (!cycleId) {
-    return { undoStack: [], redoStack: [] };
-  }
-
-  try {
-    return new Promise((resolve) => {
-      // Timeout to prevent indefinite hangs
-      const timeout = setTimeout(() => {
-        console.warn(`⚠️ loadUndoStackFromIndexedDB timed out for "${cycleId}"`);
-        resolve({ undoStack: [], redoStack: [] });
-      }, 5000);
-
-      const transaction = undoDB.transaction(["undoStacks"], "readonly");
-      const objectStore = transaction.objectStore("undoStacks");
-      const request = objectStore.get(cycleId);
-
-      request.onsuccess = (event) => {
-        clearTimeout(timeout);
-        const data = event.target.result;
-        if (data) {
-          resolve({
-            undoStack: data.undoStack || [],
-            redoStack: data.redoStack || []
-          });
-        } else {
-          resolve({ undoStack: [], redoStack: [] });
-        }
-      };
-
-      request.onerror = () => {
-        clearTimeout(timeout);
-        console.warn(`⚠️ Failed to load undo history for "${cycleId}"`);
-        resolve({ undoStack: [], redoStack: [] });
-      };
-    });
-  } catch (e) {
-    console.warn('⚠️ IndexedDB read error:', e);
-    return { undoStack: [], redoStack: [] };
-  }
-}
-
-/**
- * Delete undo/redo stacks from IndexedDB
- */
-export async function deleteUndoStackFromIndexedDB(cycleId) {
-  if (!undoDB) return;
-  if (!cycleId) return;
-
-  try {
-    const transaction = undoDB.transaction(["undoStacks"], "readwrite");
-    const objectStore = transaction.objectStore("undoStacks");
-    const request = objectStore.delete(cycleId);
-
-    // Wrap the callback-based request so callers actually await completion
-    // and failures reach the error boundary
-    await new Promise((resolve, reject) => {
-      request.onsuccess = () => {
-        resolve();
-      };
-
-      request.onerror = () => {
-        console.warn(`⚠️ Failed to delete undo history for "${cycleId}"`);
-        reject(request.error);
-      };
-    });
-  } catch (e) {
-    console.error('❌ IndexedDB delete failed:', e);
-  }
-}
-
-/**
- * Rename cycle's undo/redo stacks in IndexedDB
- */
-export async function renameUndoStackInIndexedDB(oldCycleId, newCycleId) {
-  if (!undoDB) return;
-  if (!oldCycleId || !newCycleId) return;
-
-  try {
-    // Load old data
-    const oldData = await loadUndoStackFromIndexedDB(oldCycleId);
-
-    // Save under new key
-    const transaction = undoDB.transaction(["undoStacks"], "readwrite");
-    const objectStore = transaction.objectStore("undoStacks");
-
-    // Relabel every snapshot, not just the storage key — snapshots embed
-    // activeCycleId and title (key=title in this app). A verbatim copy left
-    // each one carrying the OLD id, so validateSnapshot's strict-equality
-    // check rejected the entire migrated history on the next filtered load
-    // (silent total wipe), and any snapshot that DID survive an unfiltered
-    // path would restore the old title into the renamed cycle on Undo,
-    // breaking the key=title invariant.
-    const newData = {
-      cycleId: newCycleId,
-      undoStack: relabelSnapshotsForCycle(oldData.undoStack, newCycleId),
-      redoStack: relabelSnapshotsForCycle(oldData.redoStack, newCycleId),
-      lastUpdated: Date.now(),
-      version: APP_VERSION
-    };
-
-    // Wrap the callback-based request so callers actually await completion
-    // and failures reach the error boundary
-    const putRequest = objectStore.put(newData);
-    await new Promise((resolve, reject) => {
-      putRequest.onsuccess = () => resolve();
-      putRequest.onerror = () => reject(putRequest.error);
-    });
-
-    // Delete old key
-    const deleteRequest = objectStore.delete(oldCycleId);
-    await new Promise((resolve, reject) => {
-      deleteRequest.onsuccess = () => resolve();
-      deleteRequest.onerror = () => reject(deleteRequest.error);
-    });
-
-  } catch (e) {
-    console.error('❌ IndexedDB rename failed:', e);
-  }
-}
-
-/**
- * Clear all undo history from IndexedDB (factory reset)
- */
-export async function clearAllUndoHistoryFromIndexedDB() {
-  if (!undoDB) return;
-
-  try {
-    const transaction = undoDB.transaction(["undoStacks"], "readwrite");
-    const objectStore = transaction.objectStore("undoStacks");
-    const request = objectStore.clear();
-
-    // Wrap the callback-based request so callers actually await completion
-    // and failures reach the error boundary
-    await new Promise((resolve, reject) => {
-      request.onsuccess = () => {
-        resolve();
-      };
-
-      request.onerror = () => {
-        console.warn('⚠️ Failed to clear undo history');
-        reject(request.error);
-      };
-    });
-  } catch (e) {
-    console.warn('⚠️ IndexedDB clear error:', e);
-  }
-}
 
 /**
  * Clear ALL undo/redo history: in-memory stacks, localStorage cache, and IndexedDB.
@@ -2188,8 +1891,7 @@ export async function clearAllUndoHistoryFromIndexedDB() {
  */
 export async function clearAllUndoHistory() {
   // 1. Cancel ALL pending debounced IndexedDB writes that would re-save old data
-  dbWriteTimers.forEach(entry => clearTimeout(entry.timer));
-  dbWriteTimers.clear();
+  cancelAllPendingWrites();
 
   // 2. Guard against snapshot recapture during cleanup
   if (_deps.AppGlobalState) {
@@ -2238,8 +1940,7 @@ function destroyUndoRedoManager() {
     _visibilityFlushHandler = null;
   }
   // Cancel any pending debounced writes so they don't fire after teardown.
-  dbWriteTimers.forEach(entry => clearTimeout(entry.timer));
-  dbWriteTimers.clear();
+  cancelAllPendingWrites();
   _initialized.undoRedoUI = false;
   _initialized.undoRedoKeyboard = false;
 }

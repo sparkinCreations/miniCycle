@@ -70,6 +70,8 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         wrapAppStateForUndo,
         initUndoSystemForApp,
         initUndoIndexedDB,
+        closeUndoIndexedDB,
+        renameUndoStackInIndexedDB,
         saveUndoStackToIndexedDB,
         loadUndoStackFromIndexedDB,
         clearUndoCache,
@@ -1834,6 +1836,129 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         // In test env, they'll both return empty defaults
         if (!loaded1 || !loaded2) {
             throw new Error('Both loads should return objects');
+        }
+    });
+
+    // =========================================================
+    // 🔒 close + rename — WRITTEN BEFORE THE undoIndexedDB EXTRACTION
+    // =========================================================
+    // Both functions are being moved into modules/ui/undoIndexedDB.js, and
+    // neither was referenced by a single existing test. They also own the two
+    // behaviours most likely to break silently in a move:
+    //   - closeUndoIndexedDB must CANCEL pending debounced writes, not just
+    //     close the handle. A write that lands after close resurrects history
+    //     the user cleared.
+    //   - renameUndoStackInIndexedDB must RELABEL every snapshot, not copy it
+    //     verbatim. A verbatim copy leaves each snapshot carrying the old id,
+    //     which validateSnapshot then rejects wholesale: a silent total wipe of
+    //     undo history on the next filtered load (see the comment on the
+    //     function itself).
+    const DB_DEBOUNCE_MS = 3000; // DEBOUNCE.UNDO_DB_WRITE
+
+    resultsDiv.innerHTML += '<h4 class="test-section">🔒 Close &amp; Rename (pre-extraction)</h4>';
+
+    await test('closeUndoIndexedDB does not throw when no database was opened', async () => {
+        let threw = null;
+        try { closeUndoIndexedDB(); } catch (e) { threw = e; }
+        if (threw) throw new Error(`should be safe with no open DB, threw: ${threw.message}`);
+    });
+
+    await test('closeUndoIndexedDB is idempotent', async () => {
+        let threw = null;
+        try { closeUndoIndexedDB(); closeUndoIndexedDB(); } catch (e) { threw = e; }
+        if (threw) throw new Error(`second close threw: ${threw.message}`);
+    });
+
+    await test('closeUndoIndexedDB cancels a pending debounced write', async () => {
+        // The write is debounced by 3s. Closing before it fires must CANCEL the
+        // timer, not merely drop the handle.
+        //
+        // Order matters here, and an earlier version of this test got it wrong:
+        // it waited out the debounce BEFORE re-opening, so the pending write hit
+        // a null handle and failed for the wrong reason. The test then passed
+        // even with the cancellation deleted. Re-opening FIRST restores a live
+        // handle, so an uncancelled timer genuinely lands a write and the
+        // assertion below is the only thing standing between us and a
+        // resurrected undo stack. Verified by mutation: deleting the two
+        // clearTimeout lines fails this test.
+        await initUndoIndexedDB().catch(() => {});
+        const cycleId = 'close-cancels-' + Date.now();
+        saveUndoStackToIndexedDB(cycleId, [{
+            activeCycleId: cycleId, tasks: [], title: cycleId, timestamp: Date.now()
+        }], []);
+
+        closeUndoIndexedDB();                        // must cancel the pending timer
+        await initUndoIndexedDB().catch(() => {});   // live handle again, BEFORE it would fire
+        await new Promise(r => setTimeout(r, DB_DEBOUNCE_MS + 400));
+
+        const loaded = await loadUndoStackFromIndexedDB(cycleId);
+        if (loaded.undoStack.length !== 0) {
+            throw new Error(`uncancelled write landed: ${loaded.undoStack.length} snapshot(s)`);
+        }
+    });
+
+    await test('renameUndoStackInIndexedDB ignores a missing old or new id', async () => {
+        await initUndoIndexedDB().catch(() => {});
+        let threw = null;
+        try {
+            await renameUndoStackInIndexedDB(null, 'somewhere');
+            await renameUndoStackInIndexedDB('somewhere', null);
+            await renameUndoStackInIndexedDB(null, null);
+        } catch (e) { threw = e; }
+        if (threw) throw new Error(`guard clauses should no-op, threw: ${threw.message}`);
+    });
+
+    // Shared setup for the relabel assertions below: one real round trip through
+    // the debounce, rather than three.
+    const OLD_ID = 'rename-old-' + Date.now();
+    const NEW_ID = 'rename-new-' + Date.now();
+    let renamedNew = { undoStack: [], redoStack: [] };
+    let renamedOld = { undoStack: [], redoStack: [] };
+    await initUndoIndexedDB().catch(() => {});
+    saveUndoStackToIndexedDB(OLD_ID, [{
+        activeCycleId: OLD_ID, tasks: [{ id: 't1', text: 'Kept', completed: false }],
+        title: OLD_ID, timestamp: Date.now(), _sig: 'stale-signature-from-old-id'
+    }], []);
+    await new Promise(r => setTimeout(r, DB_DEBOUNCE_MS + 400)); // let the debounced write land
+    await renameUndoStackInIndexedDB(OLD_ID, NEW_ID);
+    renamedNew = await loadUndoStackFromIndexedDB(NEW_ID);
+    renamedOld = await loadUndoStackFromIndexedDB(OLD_ID);
+
+    await test('renameUndoStackInIndexedDB moves the stack to the new id', async () => {
+        if (renamedNew.undoStack.length !== 1) {
+            throw new Error(`expected 1 snapshot under the new id, got ${renamedNew.undoStack.length}`);
+        }
+        if (renamedNew.undoStack[0].tasks[0]?.text !== 'Kept') {
+            throw new Error('snapshot payload did not survive the rename');
+        }
+    });
+
+    await test('renameUndoStackInIndexedDB relabels activeCycleId and title', async () => {
+        // A verbatim copy here is the silent-wipe bug: validateSnapshot compares
+        // activeCycleId strictly and rejects the whole migrated history.
+        const snap = renamedNew.undoStack[0];
+        if (!snap) throw new Error('no snapshot to inspect');
+        if (snap.activeCycleId !== NEW_ID) {
+            throw new Error(`activeCycleId still ${snap.activeCycleId}, expected ${NEW_ID}`);
+        }
+        if (snap.title !== NEW_ID) {
+            throw new Error(`title still ${snap.title}, expected ${NEW_ID}`);
+        }
+    });
+
+    await test('renameUndoStackInIndexedDB drops the stale cached signature', async () => {
+        // _sig embeds the OLD id, so carrying it forward makes the first capture
+        // after a rename mismatch the stack top and push a duplicate.
+        const snap = renamedNew.undoStack[0];
+        if (!snap) throw new Error('no snapshot to inspect');
+        if (snap._sig !== undefined) {
+            throw new Error(`stale _sig survived the rename: ${snap._sig}`);
+        }
+    });
+
+    await test('renameUndoStackInIndexedDB removes the old key', async () => {
+        if (renamedOld.undoStack.length !== 0) {
+            throw new Error(`old id still holds ${renamedOld.undoStack.length} snapshot(s)`);
         }
     });
 

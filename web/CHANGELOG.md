@@ -1,3 +1,7 @@
+## [2.495] - 2026-08-24
+- refactor(undo): extract undoIndexedDB.js — the one cluster in undoRedoManager that owns its own state
+
+
 ## [2.494] - 2026-08-24
 - site(mcyc): publish a pinned /schema/mcyc-2.5.schema.json beside the current one, so CI can rely on a schema that never shifts
 

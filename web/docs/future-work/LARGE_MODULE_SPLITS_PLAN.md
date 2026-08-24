@@ -383,7 +383,57 @@ Remaining statsPanel.js keeps view lifecycle, stats rendering, caching, modal la
 
 ---
 
-## Priority 3: undoRedoManager.js
+## Priority 3: undoRedoManager.js — PARTIALLY SHIPPED (Aug 24 2026)
+
+**Shipped:** `undoIndexedDB.js` — the durable-persistence cluster, 2,306 → 2,007 lines.
+**Open:** the snapshot cluster, deliberately deferred; evidence below.
+
+### What this plan got wrong, measured
+
+1. **Sizing was low.** Both extractions were estimated at ~190 lines. Measured: IndexedDB
+   **320**, snapshot **269**. The "~1,690 remaining" figure implied a ~2,070-line file; it was
+   2,277 when that was written and 2,306 when the work started. Even both extractions would not
+   have reached the ~1,500 target.
+
+2. **The two seams were rated identically ("Medium risk"). They are not comparable.**
+   Measured outbound calls: IndexedDB reaches 2 in-file functions, snapshot reaches 4 — and
+   snapshot's include a call *into* the IndexedDB cluster plus two parent UI callbacks
+   (`onCycleSwitched`, `updateUndoRedoButtons`). IndexedDB also **owns** its state (`undoDB`,
+   `dbWriteTimers`), so moving the functions moved the state and left no shared surface.
+
+3. **The manager back-reference pattern does not apply here.** Priority 1's lesson (price against
+   `this.m` before calling a seam wide) was reached for first and is wrong for this file:
+   `undoRedoManager` has **zero classes** — 33 exported functions over module-level state. There is
+   no instance to hang a back-reference on. The correct precedent is `notifications.js` →
+   `educationalTips.js`: a **static** import, because these functions run from synchronous paths
+   (the `beforeunload` flush) with no async init to await a dynamic import from.
+
+### Two gated constraints the original entry did not mention
+
+- **`provides`.** `initUndoIndexedDB` and `closeUndoIndexedDB` are both in this module's `provides`
+  list. Moving them without re-exporting makes `registerProvides` skip them **silently** — the
+  v2.347 statsPanel failure. The parent re-exports all seven moved public functions.
+- **`BOOT_CRITICAL`.** A static import from a boot-critical module makes the target boot-critical.
+  `undoIndexedDB.js` had to be added to `service-worker.js`; `test:sw` is the only gate that covers it.
+
+### Why the snapshot cluster is NOT being extracted yet
+
+Not "too hard" — differently shaped. `captureStateSnapshot` is 120 lines that call `onCycleSwitched`
+and `updateUndoRedoButtons`, i.e. it drives UI and lifecycle rather than only capturing state. That
+is worth understanding before moving, and possibly worth splitting *within* the parent first. Extract
+it only alongside that question, not as a line-count exercise.
+
+### Test note
+
+86 tests existed, but `closeUndoIndexedDB`, `renameUndoStackInIndexedDB` and `sanitizeSnapshot` had
+**zero references**. Eight tests were added before the move (94 total) and **mutation-verified**: each
+regression was injected and confirmed to fail the intended test. One initially did not — the
+close-cancels-pending-write test passed with the cancellation deleted, because closing also nulls the
+handle. Re-ordering the test to re-open *before* the timer fires isolates the real behaviour. Green is
+not evidence until you have watched the test go red.
+
+### Original assessment (retained)
+
 
 ### Current Responsibilities
 - localStorage cache (instant boot)
