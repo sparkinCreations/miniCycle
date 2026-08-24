@@ -3,7 +3,7 @@
 **Date:** March 15, 2026
 **Updated:** August 21 2026 — four previously-unassessed modules given verdicts; scripts brought into scope (`update-version.sh`); the last inline line counts removed, since the doc had retired them in principle but kept four in practice and all four had drifted. August 2026 — Priority 2 (statsPanel) SHIPPED (commit `806f8082`); line-count table retired (numbers rot — see [PROJECT_STATS.md](../PROJECT_STATS.md)). July 7, 2026 — god-module audit: added statsPanel (Priority 2), orchestrator assessment, false-positive list
 **Updated:** Aug 23 2026 — Priority 1 shipped; Priority 7 stage 1 (CSP hashes) shipped in v2.488 and the `?v=` stage re-scoped after checking what content hashing actually replaced; execution order, DONE condition and the pattern guidance all revised against what the work actually showed.
-**Status:** In progress — **Priorities 1, 2 and 6 complete**; Priorities 3, 4, 5 open, plus 7 (`update-version.sh`) added Aug 21 2026. Priority 1 SHIPPED Aug 23 2026 in v2.484 (five extractions, 2,649 → 1,587 lines, 83 new tests). **Aug 21 2026 review:** added a DONE condition (~1,500-line target, everything else trigger-based); rewrote the per-extraction checklist around the gates that caught the two defects the completed splits shipped (`test:sw`, `validate:provides`); corrected the "provides stays the same" promise the statsPanel split falsified; pulled the release script's CSP stage forward from Priority 7
+**Status:** In progress — **Priorities 1, 2, 3 and 6 complete**; Priorities 4 and 5 open but TRIGGER-BASED (do not schedule them), plus 7 (`update-version.sh`, `restore.sh` stage next). Priority 3 CLOSED Aug 24 2026 at 1,636 lines — **above the ~1,500 target, deliberately**; the remaining bulk is the 10-dep undo/redo execution core, recorded as a non-split with evidence. Priority 1 SHIPPED Aug 23 2026 in v2.484 (five extractions, 2,649 → 1,587 lines, 83 new tests). **Aug 21 2026 review:** added a DONE condition (~1,500-line target, everything else trigger-based); rewrote the per-extraction checklist around the gates that caught the two defects the completed splits shipped (`test:sw`, `validate:provides`); corrected the "provides stays the same" promise the statsPanel split falsified; pulled the release script's CSP stage forward from Priority 7
 **Related:** [DI_MIGRATION_COMPLETION_PLAN.md](../archive/DI_MIGRATION_COMPLETION_PLAN.md), [ENFORCE_REQUIRES_ROLLOUT_PLAN.md](../archive/ENFORCE_REQUIRES_ROLLOUT_PLAN.md)
 
 ---
@@ -45,13 +45,29 @@ it gains lines.
 Reaching the target closes this plan. Do not add candidates to keep it alive; open a new one if the
 codebase genuinely drifts again.
 
+**Amendment, Aug 24 2026 — the target is a heuristic, and Priority 3 closed above it.**
+`undoRedoManager.js` was closed at **1,636** lines, not ~1,500. That is consistent with the rule
+directly above, not an exception to it: what remains is `performStateBasedUndo` (197) and
+`performStateBasedRedo` (189), carrying **10 dependencies each**. Cutting into them to buy ~136
+lines would trade a wide seam for a number, which is the failure this section exists to prevent.
+Recorded as a non-split with evidence, exactly as Priority 1 did for search/sort/filter.
+
+So a priority closes when its seams are exhausted, not when a line count is met. Twelve non-data
+modules remain over 1,500 and **every one already carries a verdict** — deferred (`moduleLoader`,
+`migrationManager`), not-a-god-module (`taskViewLayoutManager`, `quickActionsManager`), already
+split and trigger-based (`taskDOM`, `recurringPanel`, `notifications`, `routineSwitcher`), or
+borderline-and-unscheduled (`onboardingManager`, `guidedTourManager`). Two gaps are real and worth
+naming rather than hiding: **`preferencesManager` (2,027) has no verdict anywhere in this document**,
+and `onboardingManager` (2,534) is now the largest non-data module while carrying only "borderline".
+Give those two verdicts before treating this plan as finished.
+
 This doc no longer pins line/dep/method counts — every measured number in the previous revision of this table had drifted by August 2026. For current volatile metrics see [PROJECT_STATS.md](../PROJECT_STATS.md); for a specific module, measure it fresh (`wc -l`) before extracting. Candidates by verdict:
 
 | Module | Verdict |
 |--------|---------|
 | routineSwitcher.js (`modules/routine/`) | **God module** — Priority 1 — ✅ **SHIPPED** v2.484 (2,649 → 1,587; five sub-modules; see below) |
 | onboardingManager.js | Borderline (sequential step content) |
-| undoRedoManager.js | Split planned (Priority 3) |
+| undoRedoManager.js | **Priority 3** — ✅ **CLOSED** v2.498 (2,306 → 1,636; three sub-modules, 53 new tests; execution core is a recorded non-split — see below) |
 | statsPanel.js (`modules/features/`) | **God module** — Priority 2 — ✅ **SHIPPED** (commit `806f8082`, see below) |
 | guidedTourManager.js | Borderline (sequential step content) |
 | recurringPanel.js | Already split (5 sub-modules) |
@@ -383,7 +399,7 @@ Remaining statsPanel.js keeps view lifecycle, stats rendering, caching, modal la
 
 ---
 
-## Priority 3: undoRedoManager.js — PARTIALLY SHIPPED (Aug 24 2026)
+## Priority 3: undoRedoManager.js — ✅ CLOSED (Aug 24 2026, v2.495–v2.498)
 
 **Shipped, three passes:** `undoIndexedDB.js` (persistence, Pattern 1 static),
 `undoSnapshotUtils.js` and `undoTransactionDiff.js` (both Pattern 2, pure).
@@ -616,9 +632,14 @@ If revisited, the split is unusually low-risk precisely because it's pre-DI — 
 3. ~~**routineSwitcher preview**~~ — ✅ SHIPPED v2.484
 4. ~~**routineSwitcher search/sort/filter**~~ — ✅ SHIPPED v2.484, but only the three PURE
    transforms; the state-owning half is a recorded non-split (see Priority 1)
-5. **undoIndexedDB** — small extraction, needs interface for module-level refs
+5. ~~**undoIndexedDB**~~ — ✅ SHIPPED v2.495. Sized at ~190 lines and "needs an interface"; measured
+   320 lines and needed three injected deps, because it OWNS its state (`undoDB`, `dbWriteTimers`)
+   and the state moved with it.
 6. **taskDOMCompat** — large extraction, mostly pure delegation
-7. **undoSnapshotManager** — small extraction, needs interface for AppGlobalState fields
+7. ~~**undoSnapshotManager**~~ — ✅ SHIPPED v2.496 + v2.498, but **NOT as scheduled**. This entry named
+   `captureStateSnapshot`, which measured as the least extractable function in the file. What came out
+   instead was its pure NEIGHBOURS: `undoSnapshotUtils.js` (121) and `undoTransactionDiff.js` (276),
+   both Pattern 2, zero DI. Measure a function's neighbours before its body.
 8. **recurringPanelAddTask** — trigger-based, low priority
 9. ~~**EducationalTipManager** out of `notifications.js`~~ — ✅ **SHIPPED v2.463** (Priority 6)
 10. **Remaining `update-version.sh` stages** — `restore.sh` generation next; the `?v=` sweep was
