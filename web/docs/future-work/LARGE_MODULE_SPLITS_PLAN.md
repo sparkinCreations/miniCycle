@@ -2,7 +2,8 @@
 
 **Date:** March 15, 2026
 **Updated:** August 21 2026 — four previously-unassessed modules given verdicts; scripts brought into scope (`update-version.sh`); the last inline line counts removed, since the doc had retired them in principle but kept four in practice and all four had drifted. August 2026 — Priority 2 (statsPanel) SHIPPED (commit `806f8082`); line-count table retired (numbers rot — see [PROJECT_STATS.md](../PROJECT_STATS.md)). July 7, 2026 — god-module audit: added statsPanel (Priority 2), orchestrator assessment, false-positive list
-**Status:** In progress — Priorities 2 and 6 complete; Priorities 1, 3, 4, 5 open, plus 7 (`update-version.sh`) added Aug 21 2026. **Aug 21 2026 review:** added a DONE condition (~1,500-line target, everything else trigger-based); rewrote the per-extraction checklist around the gates that caught the two defects the completed splits shipped (`test:sw`, `validate:provides`); corrected the "provides stays the same" promise the statsPanel split falsified; pulled the release script's CSP stage forward from Priority 7
+**Updated:** Aug 23 2026 — Priority 1 shipped; execution order, DONE condition and the pattern guidance all revised against what the work actually showed.
+**Status:** In progress — **Priorities 1, 2 and 6 complete**; Priorities 3, 4, 5 open, plus 7 (`update-version.sh`) added Aug 21 2026. Priority 1 SHIPPED Aug 23 2026 in v2.484 (five extractions, 2,649 → 1,587 lines, 83 new tests). **Aug 21 2026 review:** added a DONE condition (~1,500-line target, everything else trigger-based); rewrote the per-extraction checklist around the gates that caught the two defects the completed splits shipped (`test:sw`, `validate:provides`); corrected the "provides stays the same" promise the statsPanel split falsified; pulled the release script's CSP stage forward from Priority 7
 **Related:** [DI_MIGRATION_COMPLETION_PLAN.md](../archive/DI_MIGRATION_COMPLETION_PLAN.md), [ENFORCE_REQUIRES_ROLLOUT_PLAN.md](../archive/ENFORCE_REQUIRES_ROLLOUT_PLAN.md)
 
 ---
@@ -22,6 +23,19 @@ more modules were assessed the same day).
 **Target:** no non-data module over ~1,500 lines. `defaultLabels.js` and `constants.js` are
 permanently exempt — they are data, and centralizing them is an explicit project rule.
 
+**But judge by SEAM WIDTH, not the line count.** Priority 1 tested this directly. Mid-way
+through, the remaining clusters were assessed as unextractable and the ~1,500 target declared
+unreachable for that file — a verdict that was wrong, and wrong for an instructive reason: the
+cost had been priced as a **callback bag** (7 callbacks + 2 bindings) when the codebase's
+actual pattern for stateful sub-modules is statsPanel's **manager back-reference**, which needs
+no interface at all. Re-grouping (inline edit moved WITH CRUD) then narrowed it further. The
+file landed at 1,587.
+
+So: a wide seam is a real reason to stop, but price it against the pattern the app ALREADY
+uses before concluding it is wide. And when a cluster is genuinely inseparable — state the
+parent persists and reads, plus many call-backs — record it as a non-split with the evidence,
+as Priority 1 does for search/sort/filter.
+
 **Everything not required to hit that target is trigger-based, not scheduled.** The orchestrator
 entry already has the right shape ("do it opportunistically next time boot timing is touched"); the
 Priority 4/5 entries (`recurringPanel`, `taskDOM`) and the deferred list should be read the same
@@ -35,7 +49,7 @@ This doc no longer pins line/dep/method counts — every measured number in the 
 
 | Module | Verdict |
 |--------|---------|
-| routineSwitcher.js (`modules/routine/`) | **God module** — Priority 1 (largest non-data module, and still the fastest-growing) |
+| routineSwitcher.js (`modules/routine/`) | **God module** — Priority 1 — ✅ **SHIPPED** v2.484 (2,649 → 1,587; five sub-modules; see below) |
 | onboardingManager.js | Borderline (sequential step content) |
 | undoRedoManager.js | Split planned (Priority 3) |
 | statsPanel.js (`modules/features/`) | **God module** — Priority 2 — ✅ **SHIPPED** (commit `806f8082`, see below) |
@@ -240,50 +254,91 @@ Rules:
 
 ---
 
-## Priority 1: routineSwitcher.js — untouched, all target methods still inline
+## Priority 1: routineSwitcher.js — ✅ SHIPPED (v2.484, Aug 23 2026)
 
-### Current Responsibilities
-- Modal presentation and lifecycle
-- Cycle CRUD (create, rename, delete, duplicate)
-- Export/download (.mcyc files)
-- Inline editing UX
-- Theme picker UI
-- Desktop preview subsystem
-- Cycle list rendering
-- Search, sort, and filter controls
-- Storage bar display
-- Wrapper compatibility layer
+**2,649 → 1,587 lines (−40%)**, five sub-modules, and **83 tests over code that had none**.
+The family totals 3,088 lines — MORE than the 2,649 it started as. That increase is module
+headers and JSDoc, not duplicated logic; the metric that mattered was the largest single file.
 
-### Proposed Extractions (3 dynamic sub-modules)
+| Sub-module | Lines | Tests | Pattern |
+|---|---|---|---|
+| `routineSwitcherActions.js` | 712 | 15 | manager back-reference (`this.m`) |
+| `routineSwitcherPreview.js` | 304 | 16 | static import, `fn(deps, callbacks)` |
+| `routineSwitcherThemePicker.js` | 198 | 17 | static import, `fn(deps, …)` |
+| `routineSwitcherRepair.js` | 152 | 17 | static import, single dep |
+| `routineSwitcherListTransforms.js` | 135 | 18 | static import, pure functions |
 
-All three have internal state or DOM side effects → dynamic versioned imports.
+Commits: `60b721a5` (theme picker), `148322eb` (preview), `af99748a` (list transforms),
+`3f458f26` (repair), `997700f4` (actions).
 
-**`routineSwitcherThemePicker.js`**
-- `toggleThemePicker()`, `openThemePicker()`, `_selectTheme()`, `closeThemePicker()` — all four
-  verified present Aug 21 2026
-- Self-contained feature with its own DOM state
-- Risk: Low — isolated UI with clear boundaries
+### What the plan got wrong, and what that cost
 
-**`routineSwitcherPreview.js`**
-- The preview cluster: preview rendering/reset, the popout, and the review modal.
-- ⚠️ **Method names below are stale — measure the cluster fresh.** As of Aug 21 2026
-  `_updateDesktopPreview()` **no longer exists** in the file, while `updatePreview()` and
-  `setupPreviewPopout()` do. Named for orientation only, not as a work list:
-  `updatePreview()`, `_resetDesktopPreview()`, `setupPreviewPopout()`, `_openPreviewReviewModal()`.
-- Desktop-only feature, mobile users never load it
-- Risk: Low — preview is read-only, no state mutations
+**Every extraction was preceded by tests written against the PRE-split code.** That is now
+the non-negotiable step — it caught four wrong assumptions before the move and one real
+break after it:
 
-**`routineSwitcherSearch.js`** — all listed methods verified present Aug 21 2026
-- `setupSearchInput()`, `filterRoutineList()`, `setupSortControls()`, `_updateSortButtonStates()`, `_sortCycles()`, `setupFilterControls()`, `_getCycleMode()`, `_filterCycles()`
-- Pure UI filtering, operates on already-rendered list
-- Risk: Low — search/sort/filter are stateless transforms
+- `onCycleDeleted` / `onCycleRenamed` are awaited with `.catch()`, so a mock returning
+  `undefined` throws;
+- duplicate increments `state.metadata.totalCyclesCreated`, NOT `userProgress`;
+- `_commitRename(oldKey, rawNewName, oldName)` takes **three** args and **re-keys** the
+  cycle (`cycles[newName] = …; delete cycles[oldKey]`) rather than just retitling;
+- uniqueness is enforced on the storage KEY, not the display title — two routines can end
+  up showing the same title;
+- after the actions move, `adjustStorageEstimate` and `updateStorageBarUIEstimated` were
+  still unqualified and threw. Nothing but the pre-written tests would have caught it, and
+  the symptom would have been "delete silently does nothing".
 
-**Remaining routineSwitcher.js**
-- Core modal, CRUD, list management, inline edit, export, storage bar
-- Still Priority 1 as of Aug 21 2026: 2,649 lines, the largest non-data module, and still growing
-  (+71 since v2.445 alone).
-- The March estimates that used to sit in this section were removed because they had drifted and
-  one named method no longer exists. **Re-measure the cluster boundaries before extracting.**
+**The method lists in this plan had rotted.** `_updateDesktopPreview` no longer existed and
+`_resetDesktopPreview` had become `_resetPreview`. Measure the cluster fresh; treat any
+method list here as orientation, not a work list.
+
+**Clusters are not contiguous.** `updatePreview` sat ~95 lines from the rest of the preview
+cluster with selection infrastructure in between. Extract by signature, not by line range.
+
+**Grouping changes the seam width.** CRUD looked like a 7-callback interface until inline
+edit was moved WITH it — rename flows straight into `_startInlineEdit`, so pulling them
+together made two of those callbacks internal and left **four**.
+
+### The pattern decision that matters
+
+The plan assumed Pattern 1 (dynamic `?v=` import) for all three original clusters. That was
+wrong for every one of them, for the same measured reason: **`routineSwitcher.tests.js`
+constructs `new RoutineSwitcher(mockDeps)` 19 times without calling `initRoutineSwitcher`.**
+This file loads dynamic imports INSIDE that init, so a dynamically-loaded sub-module is
+`null` on every one of those paths and its methods silently no-op.
+
+All five therefore use **static imports**, which is safe because none holds module-level
+state — the theme picker's state lives on the DOM element (`picker._clickHandlers`), and the
+others are stateless. Precedent is in the parent already: `keyboardNav`, `mcycPayload` and
+`longPressHint` are static imports there, and `longPressHint` both attaches listeners and
+carries module state. The versioned-import rule exists to prevent instance-splitting; a
+stateless module cannot split.
+
+`routineSwitcherActions.js` additionally uses **statsPanel's manager back-reference**
+(`constructor(manager) { this.m = manager }`), because it needs the parent's deps, selection
+state and two dynamic-import bindings. It is registered in `FACADE_SUB_FILES` in
+`scripts/validate-di-deps.js` so its `this.m.deps.*` reads count as the parent's usage —
+without that entry `validate:di` reports them as undeclared.
+
+### What deliberately STAYED, and why
+
+Not everything large is separable. These are recorded as **non-splits** so nobody
+"solves" them later:
+
+- **Search/sort/filter UI** (~168 lines) — `setupSearchInput`, `filterRoutineList`,
+  `setupSortControls`, `_updateSortButtonStates`, `setupFilterControls` own `_sortMode`,
+  `_sortDirection` and `_filterMode`, which the parent **persists** in `_savePreferences`
+  and **reads** when rendering the empty-list message. They call back into the parent 14
+  times. Only the three pure transforms were separable.
+- **Switching** (~262 lines) — the module's actual job.
+- **Modal lifecycle** (~132 lines) — core.
+- **Fallbacks** (~20 lines) — too small to warrant a module. NOTE: an earlier revision of
+  this plan sized these at 121 lines from a "everything until the next method" heuristic,
+  which inflates the last method in any run. Brace-match when measuring.
+
+Two cleanups noticed but not done (they are not extractions): `fallbackAddListener` in
+routineSwitcher is dead code, and `fallbackNotification` has an empty body, so a missing
+`showNotification` would silently swallow every notification from this module.
 
 ---
 
@@ -428,12 +483,14 @@ If revisited, the split is unusually low-risk precisely because it's pre-DI — 
 
 ## Recommended Execution Order
 
-1. **routineSwitcher theme picker** — smallest extraction, most isolated, lowest risk
+1. ~~**routineSwitcher theme picker**~~ — ✅ SHIPPED v2.484
 2. **`update-version.sh` CSP-hash regeneration → its own script** — moved up from Priority 7; glue
    around an existing validator, and the release gate is the highest-blast-radius item on this page
-   (see Scripts, above). Model: `changelog-range.sh` + `test-changelog-range.sh`.
-3. **routineSwitcher preview** — medium extraction, desktop-only feature
-4. **routineSwitcher search/sort/filter** — medium extraction, stateless transforms
+   (see Scripts, above). Model: `changelog-range.sh` + `test-changelog-range.sh`. **Now the next
+   item on this list.**
+3. ~~**routineSwitcher preview**~~ — ✅ SHIPPED v2.484
+4. ~~**routineSwitcher search/sort/filter**~~ — ✅ SHIPPED v2.484, but only the three PURE
+   transforms; the state-owning half is a recorded non-split (see Priority 1)
 5. **undoIndexedDB** — small extraction, needs interface for module-level refs
 6. **taskDOMCompat** — large extraction, mostly pure delegation
 7. **undoSnapshotManager** — small extraction, needs interface for AppGlobalState fields
