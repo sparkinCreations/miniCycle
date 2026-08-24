@@ -1,3 +1,9 @@
+## [2.485] - 2026-08-23
+- types: drop two UserProgress properties nothing writes, and an orphan typedef
+- docs(schema): achievements live in state.achievements, not userProgress
+- docs(schema): correct six claims the code contradicts, add three real fields
+
+
 ## [2.484] - 2026-08-23
 - refactor(switcher): extract routine actions via the manager back-reference pattern
 - refactor(switcher): extract data repair, the last clean seam in the file
