@@ -1,4 +1,5 @@
 {
+  "name": "morning_routine",
   "title": "Morning Routine",
   "autoReset": true,
   "deleteCheckedTasks": false,

@@ -1,3 +1,7 @@
+## [2.492] - 2026-08-24
+- fix(examples): add the required `name` field so Utesample-getting-started.mcyc can actually import
+
+
 ## [2.491] - 2026-08-24
 - fix(site): move the /mcyc alias to _redirects — netlify.toml path redirects are inert here
 
