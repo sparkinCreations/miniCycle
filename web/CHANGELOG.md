@@ -1,3 +1,7 @@
+## [2.496] - 2026-08-24
+- refactor(undo): extract undoSnapshotUtils.js — 121 pure lines, the cluster around captureStateSnapshot rather than the function itself
+
+
 ## [2.495] - 2026-08-24
 - refactor(undo): extract undoIndexedDB.js — the one cluster in undoRedoManager that owns its own state
 

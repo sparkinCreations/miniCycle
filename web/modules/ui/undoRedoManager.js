@@ -31,6 +31,23 @@ import { createDIModule, optional } from '../core/diBase.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { LIMITS, DEBOUNCE, DOM_IDS, APP_VERSION, UI_TIMEOUTS } from '../core/constants.js';
 
+// Pure snapshot helpers (Pattern 2). No DI, no state, no side effects — a plain
+// static import is safe, and nothing here needs wiring. Split out Aug 2026;
+// see the header of that file for why these, and not captureStateSnapshot.
+// Boot-critical by virtue of this import: it is in BOOT_CRITICAL.
+import {
+  sanitizeSnapshot,
+  filterValidSnapshots,
+  buildSnapshotSignature,
+  snapshotsEqual
+} from './undoSnapshotUtils.js';
+
+// Re-exported because all three were part of this module's public surface
+// before the split and the test suite imports them from here. None is a
+// `provides` name, so unlike the undoIndexedDB re-exports these are a
+// compatibility surface rather than a registerProvides requirement.
+export { filterValidSnapshots, buildSnapshotSignature, snapshotsEqual };
+
 // Durable per-cycle undo persistence, split out Aug 2026 (Priority 3,
 // LARGE_MODULE_SPLITS_PLAN.md). STATIC, not a dynamic Pattern-1 import: these
 // run from synchronous paths — including the beforeunload flush — where
@@ -172,63 +189,8 @@ function loadFromUndoCache(expectedCycleId) {
 }
 
 
-/**
- * Validate a single snapshot belongs to the expected cycle
- * @param {Object} snapshot - The snapshot to validate
- * @param {string} expectedCycleId - The cycle ID it should belong to
- * @returns {boolean} True if valid
- */
-function validateSnapshot(snapshot, expectedCycleId) {
-  if (!snapshot || typeof snapshot !== 'object') return false;
-  if (!snapshot.activeCycleId) return false;
-  if (snapshot.activeCycleId !== expectedCycleId) return false;
-  if (!Array.isArray(snapshot.tasks)) return false;
-  return true;
-}
 
-// Known valid theme IDs (avoids importing side-effectful themes.js)
-const VALID_THEME_IDS = new Set(['classic', 'habit-tracker', 'fitness', 'scholar', 'cleaning']);
 
-/**
- * Sanitize a snapshot before restoring to prevent corrupted data from entering state.
- * Clamps numeric fields, validates task entries, and normalizes theme IDs.
- * @param {Object} snapshot - The snapshot to sanitize
- * @returns {Object} The sanitized snapshot (mutated in place for efficiency)
- */
-function sanitizeSnapshot(snapshot) {
-  if (!snapshot || typeof snapshot !== 'object') return snapshot;
-
-  // Clamp cycleCount to non-negative integer
-  if ('cycleCount' in snapshot) {
-    const cc = snapshot.cycleCount;
-    snapshot.cycleCount = (Number.isFinite(cc) && cc >= 0) ? Math.floor(cc) : 0;
-  }
-
-  // Validate theme is a known ID
-  if ('theme' in snapshot) {
-    if (!VALID_THEME_IDS.has(snapshot.theme)) {
-      snapshot.theme = 'classic';
-    }
-  }
-
-  // Sanitize clearedTasks
-  if (snapshot.clearedTasks && typeof snapshot.clearedTasks === 'object') {
-    const tc = snapshot.clearedTasks.totalCleared;
-    snapshot.clearedTasks.totalCleared = (Number.isFinite(tc) && tc >= 0) ? Math.floor(tc) : 0;
-    if (!Array.isArray(snapshot.clearedTasks.entries)) {
-      snapshot.clearedTasks.entries = [];
-    }
-  }
-
-  // Validate task entries — filter out malformed tasks
-  if (Array.isArray(snapshot.tasks)) {
-    snapshot.tasks = snapshot.tasks.filter(t =>
-      t && typeof t === 'object' && typeof t.id === 'string' && typeof t.text === 'string'
-    );
-  }
-
-  return snapshot;
-}
 
 /**
  * Relabel snapshots for a renamed cycle. Snapshots embed the cycle identity
@@ -252,25 +214,6 @@ function relabelSnapshotsForCycle(snapshots, newCycleId) {
   });
 }
 
-/**
- * Filter snapshots to only include those belonging to the specified cycle
- * @param {Array} snapshots - Array of snapshots to filter
- * @param {string} cycleId - The cycle ID to filter for
- * @returns {Array} Filtered array of valid snapshots
- */
-export function filterValidSnapshots(snapshots, cycleId) {
-  if (!Array.isArray(snapshots)) return [];
-  if (!cycleId) return [];
-
-  const valid = snapshots.filter(snap => validateSnapshot(snap, cycleId));
-  const removed = snapshots.length - valid.length;
-
-  if (removed > 0) {
-    console.warn(`🧹 Filtered out ${removed} invalid snapshots (wrong cycleId or malformed)`);
-  }
-
-  return valid;
-}
 
 /**
  * Clear the undo cache (used on cycle deletion or factory reset)
@@ -727,38 +670,6 @@ export function captureStateSnapshot(state) {
   );
 }
 
-/**
- * Build snapshot signature for comparison
- */
-export function buildSnapshotSignature(s) {
-  if (!s) return '';
-  return JSON.stringify({
-    c: s.activeCycleId,
-    t: (s.tasks || []).map(t => ({
-      id: t.id, txt: t.text, c: !!t.completed, p: !!t.highPriority, d: t.dueDate || null,
-      r: !!t.recurring, re: !!t.remindersEnabled, dwc: !!t.deleteWhenComplete, pc: t.priorityColor || null,
-      // Settings OBJECTS, not just their booleans — an edit touching only
-      // these would otherwise dedup-skip its snapshot (same class of bug as
-      // the taskViewLayout omission below).
-      rs: t.recurringSettings ? JSON.stringify(t.recurringSettings) : null,
-      dws: t.deleteWhenCompleteSettings ? JSON.stringify(t.deleteWhenCompleteSettings) : null
-    })),
-    ti: s.title || '',
-    ar: !!s.autoReset,
-    dc: !!s.deleteCheckedTasks,
-    cc: s.cycleCount || 0,
-    th: s.theme || 'classic',
-    rt: Object.keys(s.recurringTemplates || {}).sort().map(k => {
-      const tmpl = s.recurringTemplates[k];
-      return { id: k, rs: JSON.stringify(tmpl?.recurringSettings || {}) };
-    }),
-    ct: s.clearedTasks?.totalCleared || 0,
-    // Task view layout — without this in the signature, a layout-only
-    // change (drag-end or dock-back) would dedup against the previous
-    // snapshot and never push, leaving the move outside undo history.
-    tvl: JSON.stringify(s.taskViewLayout?.positions || {})
-  });
-}
 
 /**
  * Analyze what changed between two snapshots
@@ -1038,21 +949,6 @@ export function computeTransactionDiff(fromSnapshot, toSnapshot) {
   return diff;
 }
 
-/**
- * Compare two snapshots for equality
- * Uses cached signatures if available for performance
- */
-export function snapshotsEqual(a, b) {
-  if (!a || !b) return false;
-
-  // ✅ Use cached signatures if available
-  if (a._sig && b._sig) {
-    return a._sig === b._sig;
-  }
-
-  // Fallback to building (shouldn't happen often)
-  return buildSnapshotSignature(a) === buildSnapshotSignature(b);
-}
 
 // ============ UNDO/REDO OPERATIONS ============
 

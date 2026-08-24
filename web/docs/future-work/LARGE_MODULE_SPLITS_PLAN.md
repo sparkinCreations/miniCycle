@@ -385,8 +385,35 @@ Remaining statsPanel.js keeps view lifecycle, stats rendering, caching, modal la
 
 ## Priority 3: undoRedoManager.js — PARTIALLY SHIPPED (Aug 24 2026)
 
-**Shipped:** `undoIndexedDB.js` — the durable-persistence cluster, 2,306 → 2,007 lines.
-**Open:** the snapshot cluster, deliberately deferred; evidence below.
+**Shipped, two passes:** `undoIndexedDB.js` (persistence, Pattern 1 static) and
+`undoSnapshotUtils.js` (pure snapshot helpers, Pattern 2). **2,306 → 1,903 lines.**
+**Open:** `captureStateSnapshot` itself, and the undo/redo execution core.
+
+### The second pass inverted the plan's proposal
+
+Priority 3 scheduled **`captureStateSnapshot`** for extraction. Measured, it is the least
+extractable function in the file: 120 lines across six phases — 35 lines of admission guards,
+a 9-line self-heal that fire-and-forgets `onCycleSwitched()` and returns, 19 lines of
+construction, 22 of dedup, 17 of stack commit, and 13 of side effects (`updateUndoRedoButtons()`
+plus a debounced durable write). It reads and writes `AppGlobalState` throughout.
+
+The functions AROUND it were the cluster: `validateSnapshot`, `sanitizeSnapshot`,
+`filterValidSnapshots`, `buildSnapshotSignature`, `snapshotsEqual` — **121 lines with zero
+`_deps` references**, calling only each other, none in `provides`, none used outside the module.
+That is Pattern 2, not Pattern 1: no DI container, no manifest entry, no `registerProvides`
+exposure, no re-export obligation beyond the three that were already public.
+
+**Generalisable:** when a plan names a big function for extraction, measure its *neighbours*
+before its body. The impure orchestrator is often the thing that should stay.
+
+### Still open, and why
+
+`captureStateSnapshot`'s self-heal is worth a look before anything else moves: a synchronous
+"capture a snapshot" call can trigger an async cycle switch whose errors are swallowed by
+`.catch(() => {})`. The recovery is real (a stale `activeCycleIdForUndo` permanently disables
+undo) but it is buried where nobody would look, and a failure is silent. Understand that path
+before treating the rest of this file as a line-count exercise.
+
 
 ### What this plan got wrong, measured
 
