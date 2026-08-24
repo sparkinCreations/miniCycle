@@ -175,8 +175,14 @@ change without changing a task's shape, and vice versa, so each gets its own cou
     rewardMilestones: [],                  // Reached milestone IDs (e.g., "golden-glow-50")
     totalTasksCompleted: 156,              // Lifetime tasks cleared — LIVES HERE, not on metadata
                                            // (read by achievementsManager, backupReminder, undo)
-    // Fresh state seeds only these two. A `streaks` object is NOT currently
-    // written by any code path — treat it as not-yet-implemented.
+    // createInitialSchema25Data() seeds only `cyclesCompleted` and
+    // `rewardMilestones`; `totalTasksCompleted` is written later, on first clear.
+    // NOT here, despite older docs listing both:
+    //  • `streaks` — never implemented. types.js declares a StreakData typedef,
+    //    but nothing writes one. ("streaks" in the codebase is mostly the
+    //    habit-tracker vocab theme renaming "cycle" in UI labels.)
+    //  • `achievementsUnlocked` — superseded by the top-level `achievements`
+    //    object below, which is what achievementsManager actually uses.
   },
 
   achievements: {

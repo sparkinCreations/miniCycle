@@ -162,14 +162,25 @@
     },
 
     userProgress: {
-        cyclesCompleted: 42,
-        totalTasksCompleted: 156,
-        achievementsUnlocked: [],            // Placeholder for future feature
-        rewardMilestones: [],                // Placeholder for future feature
-        streaks: {                           // Placeholder for future feature
-            current: 0,
-            longest: 0
-        }
+        cyclesCompleted: 42,                 // Global cycles completed
+        totalTasksCompleted: 156,            // Lifetime tasks cleared
+        rewardMilestones: []                 // LIVE, not a placeholder — gamesManager
+                                             // pushes "task-order-game-100", the
+                                             // migration seeds "dark-ocean-5", and
+                                             // Reset Progress clears it
+        // NOT here (both were listed as placeholders; neither is a field the app writes):
+        //  • `achievementsUnlocked` — superseded. Achievements live in the TOP-LEVEL
+        //    `achievements` object ({ unlocked: [], seen: {} }), which is what
+        //    achievementsManager reads and writes. See SCHEMA_2_5.md.
+        //  • `streaks` — never implemented. types.js declares a `StreakData`
+        //    typedef, but no code path writes one. (Searching for "streaks" mostly
+        //    hits the habit-tracker VOCAB THEME, which renames "cycle" to "streak"
+        //    in UI labels — unrelated to state.)
+    },
+
+    achievements: {                          // The real achievements store
+        unlocked: [],                        // Unlocked achievement IDs
+        seen: {}                             // { [achievementId]: boolean }
     }
 }
 ```
