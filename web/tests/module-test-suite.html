@@ -500,6 +500,7 @@
                             <option value="routineSwitcherListTransforms">🔤 Routine List Transforms</option>
                             <option value="routineSwitcherRepair">🩹 Routine Data Repair</option>
                             <option value="undoSnapshotUtils">🧊 Undo Snapshot Utils</option>
+                            <option value="undoTransactionDiff">🧊 Undo Transaction Diff</option>
                             <option value="routineSwitcherActions">🗂️ Routine Actions</option>
             <option value="longPressHint">👆 Long-Press Hint</option>
             <option value="mcycPayload">📦 Mcyc Payload</option>
@@ -676,6 +677,7 @@
         const { runRoutineSwitcherListTransformsTests } = await import(`./routineSwitcherListTransforms.tests.js?v=${cacheBuster}`);
         const { runRoutineSwitcherRepairTests } = await import(`./routineSwitcherRepair.tests.js?v=${cacheBuster}`);
         const { runUndoSnapshotUtilsTests } = await import(`./undoSnapshotUtils.tests.js?v=${cacheBuster}`);
+        const { runUndoTransactionDiffTests } = await import(`./undoTransactionDiff.tests.js?v=${cacheBuster}`);
         const { runRoutineSwitcherActionsTests } = await import(`./routineSwitcherActions.tests.js?v=${cacheBuster}`);
         const { runLongPressHintTests } = await import(`./longPressHint.tests.js?v=${cacheBuster}`);
         const { runMcycPayloadTests } = await import(`./mcycPayload.tests.js?v=${cacheBuster}`);
@@ -1904,7 +1906,7 @@
                     await import(`../modules/features/uxRatings.js?v=${cacheBuster}`);
                     currentModule = 'uxRatings';
                     resultsDiv.innerHTML = '<p>✅ UXRatings loaded. Click "Run Tests" to begin.</p>';
-                } else if (['diWiring','orchestrator','moduleLoader','moduleManifests','modalTemplates','appContext','dataAccess','appGlobalState','migrationFacade','types','modalRegistry','modalUtils','panelVisibilityHelpers','gesturePanelManager','titleManager','headerLayoutManager','featureAvailability','dataRecovery','uiOrchestrator','preferencesBgImage','preferencesPresets','taskDOMPatch','debugMode','iconInit','icons','keyboardNav','collapsibleSections','educationalTips','routineSwitcherThemePicker','routineSwitcherPreview','routineSwitcherListTransforms','routineSwitcherRepair','routineSwitcherActions','longPressHint','mcycPayload','bootSw','nameUtils','styleValidators','cycleMode','undoSnapshotUtils','panelCarousel','focusTaskPanel','recurringPanelEvents','recurringPanelForm','recurringPanelGrids','recurringPanelSetup','recurringPanelSummary','recurringSettings','recurringSettingsApplicator','recurringWatcher','statsPanelGestures','statsPanelRewards','taskViewLayoutManager'].includes(moduleName)) {
+                } else if (['diWiring','orchestrator','moduleLoader','moduleManifests','modalTemplates','appContext','dataAccess','appGlobalState','migrationFacade','types','modalRegistry','modalUtils','panelVisibilityHelpers','gesturePanelManager','titleManager','headerLayoutManager','featureAvailability','dataRecovery','uiOrchestrator','preferencesBgImage','preferencesPresets','taskDOMPatch','debugMode','iconInit','icons','keyboardNav','collapsibleSections','educationalTips','routineSwitcherThemePicker','routineSwitcherPreview','routineSwitcherListTransforms','routineSwitcherRepair','routineSwitcherActions','longPressHint','mcycPayload','bootSw','nameUtils','styleValidators','cycleMode','undoSnapshotUtils','undoTransactionDiff','panelCarousel','focusTaskPanel','recurringPanelEvents','recurringPanelForm','recurringPanelGrids','recurringPanelSetup','recurringPanelSummary','recurringSettings','recurringSettingsApplicator','recurringWatcher','statsPanelGestures','statsPanelRewards','taskViewLayoutManager'].includes(moduleName)) {
                     const pathMap = {
                         diWiring: '../modules/boot/moduleLoader.js',
                         orchestrator: '../modules/boot/orchestrator.js',
@@ -1939,6 +1941,7 @@
                         routineSwitcherListTransforms: '../modules/routine/routineSwitcher.js',
                         routineSwitcherRepair: '../modules/routine/routineSwitcher.js',
                         undoSnapshotUtils: '../modules/ui/undoSnapshotUtils.js',
+                        undoTransactionDiff: '../modules/ui/undoTransactionDiff.js',
                         routineSwitcherActions: '../modules/routine/routineSwitcher.js',
                         longPressHint: '../modules/utils/longPressHint.js',
                         mcycPayload: '../modules/utils/mcycPayload.js',
@@ -2225,6 +2228,7 @@
             } else if (currentModule === 'routineSwitcherListTransforms') { await runRoutineSwitcherListTransformsTests(resultsDiv);
             } else if (currentModule === 'routineSwitcherRepair') { await runRoutineSwitcherRepairTests(resultsDiv);
             } else if (currentModule === 'undoSnapshotUtils') { await runUndoSnapshotUtilsTests(resultsDiv);
+            } else if (currentModule === 'undoTransactionDiff') { await runUndoTransactionDiffTests(resultsDiv);
             } else if (currentModule === 'routineSwitcherActions') { await runRoutineSwitcherActionsTests(resultsDiv);
             } else if (currentModule === 'longPressHint') { await runLongPressHintTests(resultsDiv);
             } else if (currentModule === 'mcycPayload') { await runMcycPayloadTests(resultsDiv);
@@ -2566,6 +2570,7 @@
                 { name: 'RoutineSwitcherListTransforms', key: 'routineSwitcherListTransforms', runFn: runRoutineSwitcherListTransformsTests, importPath: '../modules/routine/routineSwitcher.js' },
                 { name: 'RoutineSwitcherRepair', key: 'routineSwitcherRepair', runFn: runRoutineSwitcherRepairTests, importPath: '../modules/routine/routineSwitcher.js' },
                 { name: 'UndoSnapshotUtils', key: 'undoSnapshotUtils', runFn: runUndoSnapshotUtilsTests, importPath: '../modules/ui/undoSnapshotUtils.js' },
+                { name: 'UndoTransactionDiff', key: 'undoTransactionDiff', runFn: runUndoTransactionDiffTests, importPath: '../modules/ui/undoTransactionDiff.js' },
                 { name: 'RoutineSwitcherActions', key: 'routineSwitcherActions', runFn: runRoutineSwitcherActionsTests, importPath: '../modules/routine/routineSwitcher.js' },
                 { name: 'LongPressHint', key: 'longPressHint', runFn: runLongPressHintTests, importPath: '../modules/utils/longPressHint.js' },
                 { name: 'McycPayload', key: 'mcycPayload', runFn: runMcycPayloadTests, importPath: '../modules/utils/mcycPayload.js' },

@@ -1,3 +1,7 @@
+## [2.498] - 2026-08-24
+- refactor(undo): extract undoTransactionDiff.js — 276 pure lines of change description
+
+
 ## [2.497] - 2026-08-24
 - fix(di): guard the wrapper's RESULT, not just the wrapper — 9 lifecycle .catch sites could throw when a hook is unwired
 

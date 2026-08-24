@@ -385,9 +385,25 @@ Remaining statsPanel.js keeps view lifecycle, stats rendering, caching, modal la
 
 ## Priority 3: undoRedoManager.js — PARTIALLY SHIPPED (Aug 24 2026)
 
-**Shipped, two passes:** `undoIndexedDB.js` (persistence, Pattern 1 static) and
-`undoSnapshotUtils.js` (pure snapshot helpers, Pattern 2). **2,306 → 1,903 lines.**
-**Open:** `captureStateSnapshot` itself, and the undo/redo execution core.
+**Shipped, three passes:** `undoIndexedDB.js` (persistence, Pattern 1 static),
+`undoSnapshotUtils.js` and `undoTransactionDiff.js` (both Pattern 2, pure).
+**2,306 → 1,636 lines**, 670 extracted, 53 new tests.
+**Open:** the undo/redo execution core — see the non-split note at the end.
+
+### Pass 3: the change describer (Aug 24 2026)
+
+`computeTransactionDiff` (145) + `describeChange` (131) moved out: 276 lines that touch no
+`_deps` **and no globals** — no `localStorage`, `document`, `window` or timers. Neither is in
+`provides`; neither is used outside the module.
+
+**"No deps" is not "pure."** `saveToUndoCache` / `loadFromUndoCache` also report zero deps and
+were deliberately LEFT in the parent because they touch `localStorage` directly. Grouping them
+in would have made the module header's side-effect-free claim a lie. Check globals, not just
+the DI surface.
+
+**One honest caveat on the extracted pair:** `describeChange` resolves user text through
+`getLabel()`, which is vocabulary-theme sensitive. Same input, same output *for a given theme* —
+so its tests assert shape (non-empty, mutually distinct) rather than literal wording.
 
 ### The second pass inverted the plan's proposal
 
@@ -405,6 +421,14 @@ exposure, no re-export obligation beyond the three that were already public.
 
 **Generalisable:** when a plan names a big function for extraction, measure its *neighbours*
 before its body. The impure orchestrator is often the thing that should stay.
+
+### Recommended non-split: undo/redo execution
+
+`performStateBasedUndo` (197) and `performStateBasedRedo` (189) carry **10 dependencies each**
+and are the execution core. With the three passes done, the file is ~1,636 lines against a
+~1,500 target, and closing that last ~136 would mean cutting into those two. That is a genuinely
+wide seam — the same call already accepted for routineSwitcher's search/sort/filter cluster.
+Record it as a non-split rather than forcing the number.
 
 ### Still open, and why
 
