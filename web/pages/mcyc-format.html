@@ -287,7 +287,7 @@
             overflow-wrap: break-word;
         }
 
-        /* Wide content must scroll inside its own box — the page body must never
+        /* Wide content must scroll inside its own box; the page body must never
            scroll horizontally (run-layout-overlap-tests.cjs sweeps 10 widths). */
         pre {
             background: var(--code-bg);
@@ -356,10 +356,10 @@
         }
 
         .callout {
-            border-left: 4px solid #0088ff;
+            border: 1px solid var(--rule);
             background: #ffffff;
             padding: 1rem 1.2rem;
-            border-radius: 0 10px 10px 0;
+            border-radius: 10px;
             margin: 1.2rem 0;
             box-shadow: 0 1px 3px rgba(18, 50, 79, 0.07);
         }
@@ -375,12 +375,16 @@
             margin-bottom: 0.35rem;
         }
 
+        /* Warn/open keep a distinction without a coloured left edge: a faint
+           tint plus a matching border, applied on all four sides. */
         .callout.warn {
-            border-left-color: #e07a00;
+            background: #fffaf3;
+            border-color: #f0dcc2;
         }
 
         .callout.open {
-            border-left-color: #1f9254;
+            background: #f5fbf7;
+            border-color: #cfe7d9;
         }
 
         .toc {
@@ -457,7 +461,7 @@
                 <h1>The <span class="filetype">.mcyc</span> routine format</h1>
                 <p class="lede">
                     A routine is a list of steps you repeat. <code>.mcyc</code> is a
-                    plain-JSON file that holds one — its steps, their order, their schedules, and how it resets.
+                    plain-JSON file that holds one: its steps, their order, their schedules, and how it resets.
                     One file, no server, no account. Readable in a text editor and writable by any program.
                 </p>
                 <div class="hero-actions">
@@ -478,7 +482,7 @@
                     <p class="callout-title">Free to implement</p>
                     <p>
                         Anyone may read, write, generate, or validate <code>.mcyc</code> files in their own
-                        software — commercial or not, open source or closed — without asking permission and
+                        software (commercial or not, open source or closed) without asking permission and
                         without a fee. There is no patent claim and no trademark condition on producing or
                         consuming the format.
                     </p>
@@ -490,12 +494,12 @@
 
                 <p>
                     That split is deliberate. A routine you spent months refining should not be trapped in one
-                    vendor's app — including ours. If miniCycle disappeared tomorrow, a <code>.mcyc</code> file
+                    vendor's app, including ours. If miniCycle disappeared tomorrow, a <code>.mcyc</code> file
                     would still be a readable, documented description of your routine, and anything could open it.
                 </p>
                 <p>
                     If you build something that reads or writes <code>.mcyc</code>, we would genuinely like to
-                    hear about it — but that is an invitation, not a requirement.
+                    hear about it, but that is an invitation, not a requirement.
                 </p>
             </div>
         </section>
@@ -507,7 +511,7 @@
                 <div class="table-scroll">
                     <table>
                         <tbody>
-                            <tr><th scope="row">Extension</th><td><code>.mcyc</code> &mdash; <code>.json</code> is also accepted on import, and <code>.tcyc</code> is recognised as a legacy name</td></tr>
+                            <tr><th scope="row">Extension</th><td><code>.mcyc</code> files. A <code>.json</code> extension is also accepted on import.</td></tr>
                             <tr><th scope="row">Media type</th><td><code>application/json</code></td></tr>
                             <tr><th scope="row">Encoding</th><td>UTF-8, uncompressed. Emoji are fine and widely used in task text.</td></tr>
                             <tr><th scope="row">Contents</th><td>Exactly one routine per file</td></tr>
@@ -554,7 +558,7 @@
 }</code></pre>
 
                 <p>
-                    Strip it further if you like — this is the smallest file that imports:
+                    Strip it further if you like. This is the smallest file that imports:
                 </p>
 
 <pre><code>{ "name": "minimal", "tasks": [] }</code></pre>
@@ -597,7 +601,7 @@
             <div class="container">
                 <h2>Field reference</h2>
                 <p class="section-sub">
-                    Defaults below are what the importer actually applies to a file that omits the field — which
+                    Defaults below are what the importer actually applies to a file that omits the field, which
                     is not always the same as the value you would guess.
                 </p>
 
@@ -611,7 +615,7 @@
                             <tr><td><code>name</code></td><td>string</td><td class="req">required</td><td>Identifier for the routine. A file without it is rejected, even when <code>title</code> is present.</td></tr>
                             <tr><td><code>tasks</code></td><td>array</td><td class="req">required</td><td>Must be an array; empty is valid. Order is the display order.</td></tr>
                             <tr><td><code>title</code></td><td>string</td><td><em>falls back to <code>name</code></em></td><td>The display name, and where emoji belong.</td></tr>
-                            <tr><td><code>autoReset</code></td><td>boolean</td><td><code>true</code></td><td>Auto mode. See the note under <a href="#gotchas">surprises</a> — omitting this does <em>not</em> give you a manual routine.</td></tr>
+                            <tr><td><code>autoReset</code></td><td>boolean</td><td><code>true</code></td><td>Auto mode. See the note under <a href="#gotchas">surprises</a>: omitting this does <em>not</em> give you a manual routine.</td></tr>
                             <tr><td><code>deleteCheckedTasks</code></td><td>boolean</td><td><code>false</code></td><td>To-Do mode. Wins over <code>autoReset</code> when both are true.</td></tr>
                             <tr><td><code>cycleCount</code></td><td>integer</td><td><code>0</code></td><td>Times completed. Ship shared templates with <code>0</code>.</td></tr>
                             <tr><td><code>theme</code></td><td>string</td><td><em>app default</em></td><td>Vocabulary theme. An unknown value falls back rather than failing.</td></tr>
@@ -627,7 +631,7 @@
                             <tr><th scope="col">Field</th><th scope="col">Type</th><th scope="col">Default</th><th scope="col">Notes</th></tr>
                         </thead>
                         <tbody>
-                            <tr><td><code>text</code></td><td>string</td><td><em>&mdash;</em></td><td>What the user reads. Technically repairable, but always supply it.</td></tr>
+                            <tr><td><code>text</code></td><td>string</td><td><em>none</em></td><td>What the user reads. Technically repairable, but always supply it.</td></tr>
                             <tr><td><code>id</code></td><td>string</td><td><em>generated</em></td><td>Must be unique within the file. Duplicates make reordering drop a task.</td></tr>
                             <tr><td><code>completed</code></td><td>boolean</td><td><code>false</code></td><td></td></tr>
                             <tr><td><code>highPriority</code></td><td>boolean</td><td><code>false</code></td><td></td></tr>
@@ -635,7 +639,7 @@
                             <tr><td><code>dueDate</code></td><td>string / null</td><td><code>null</code></td><td>ISO 8601. Invalid values are discarded, not rejected.</td></tr>
                             <tr><td><code>remindersEnabled</code></td><td>boolean</td><td><code>false</code></td><td></td></tr>
                             <tr><td><code>recurring</code></td><td>boolean</td><td><code>false</code></td><td>Also changes the default for <code>deleteWhenCompleteSettings</code>.</td></tr>
-                            <tr><td><code>recurringSettings</code></td><td>object</td><td><em>&mdash;</em></td><td>Read only when <code>recurring</code> is true.</td></tr>
+                            <tr><td><code>recurringSettings</code></td><td>object</td><td><em>none</em></td><td>Read only when <code>recurring</code> is true.</td></tr>
                             <tr><td><code>deleteWhenCompleteSettings</code></td><td>object</td><td><em>see below</em></td><td><code>{ "cycle": bool, "todo": bool }</code>. The durable setting.</td></tr>
                             <tr><td><code>deleteWhenComplete</code></td><td>boolean</td><td><em>derived</em></td><td><strong>Do not author.</strong> Recomputed on every load.</td></tr>
                             <tr><td><code>schemaVersion</code></td><td>integer</td><td><code>2</code></td><td>Optional; the importer sets it.</td></tr>
@@ -662,7 +666,7 @@
                 <h2>Modes: how a routine resets</h2>
                 <p class="section-sub">
                     Two booleans at the root decide what happens when everything is checked off. There is no
-                    <code>mode</code> field — the mode is inferred.
+                    <code>mode</code> field. The mode is inferred.
                 </p>
 
                 <div class="table-scroll">
@@ -671,7 +675,7 @@
                             <tr><th scope="col">Mode</th><th scope="col">Set</th><th scope="col">Behavior</th></tr>
                         </thead>
                         <tbody>
-                            <tr><td><strong>To-Do</strong></td><td><code>deleteCheckedTasks: true</code></td><td>Finished tasks are removed. Checked first — it wins over <code>autoReset</code>.</td></tr>
+                            <tr><td><strong>To-Do</strong></td><td><code>deleteCheckedTasks: true</code></td><td>Finished tasks are removed. Checked first, so it wins over <code>autoReset</code>.</td></tr>
                             <tr><td><strong>Auto</strong></td><td><code>autoReset: true</code></td><td>The routine resets itself the moment every task is done.</td></tr>
                             <tr><td><strong>Manual</strong></td><td>both <code>false</code></td><td>You decide when the routine has been completed.</td></tr>
                         </tbody>
@@ -698,7 +702,7 @@
                 </div>
 
                 <div class="callout warn">
-                    <p class="callout-title">2. <code>deleteWhenComplete</code> is derived — authoring it does nothing</p>
+                    <p class="callout-title">2. <code>deleteWhenComplete</code> is derived, so authoring it does nothing</p>
                     <p>
                         The durable field is <code>deleteWhenCompleteSettings</code>, which holds a separate
                         boolean per mode. The flat <code>deleteWhenComplete</code> is just whichever entry matches
@@ -712,8 +716,8 @@
 <pre><code>"deleteWhenCompleteSettings": { "cycle": true, "todo": true }</code></pre>
                     <p>
                         The defaults differ by task type, which is usually what you want:
-                        recurring tasks default to <code>{ "cycle": true, "todo": true }</code> — the occurrence
-                        is removed on reset and the schedule brings it back — while ordinary tasks default to
+                        recurring tasks default to <code>{ "cycle": true, "todo": true }</code>, so the occurrence
+                        is removed on reset and the schedule brings it back, while ordinary tasks default to
                         <code>{ "cycle": false, "todo": true }</code>, so they are unchecked and stay put.
                     </p>
                 </div>
@@ -740,7 +744,7 @@
 
                 <p>
                     <a href="../mcyc.schema.json"><code>https://minicycle.app/mcyc.schema.json</code></a>
-                    &mdash; JSON Schema, draft 2020-12. It describes what the importer <em>accepts</em>: a file
+                    is the JSON Schema, draft 2020-12. It describes what the importer <em>accepts</em>: a file
                     that validates will import.
                 </p>
 
@@ -781,11 +785,11 @@ pipx run check-jsonschema --schemafile mcyc.schema.json my-routine.mcyc</code></
                 <p>
                     Files carry a task-level <code>schemaVersion</code> of <code>2</code>, matching the app's
                     current 2.5 data schema. The format has been stable since then, and the importer still reads
-                    older files — including pre-2.5 layouts and the legacy <code>.tcyc</code> extension.
+                    older files, including pre-2.5 layouts.
                 </p>
                 <p>
                     Our intent for anything built on this: existing files keep importing. New fields may be
-                    added, so treat unknown keys as ignorable rather than as errors — which is also how the app
+                    added, so treat unknown keys as ignorable rather than as errors, which is also how the app
                     treats them.
                 </p>
                 <p>

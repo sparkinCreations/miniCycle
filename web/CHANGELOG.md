@@ -1,3 +1,7 @@
+## [2.493] - 2026-08-24
+- site(mcyc): drop the left border accents, remove the incorrect .tcyc legacy claim, and clear the em dashes
+
+
 ## [2.492] - 2026-08-24
 - fix(examples): add the required `name` field so Utesample-getting-started.mcyc can actually import
 
