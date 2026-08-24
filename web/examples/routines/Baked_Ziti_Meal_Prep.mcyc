@@ -1,0 +1,373 @@
+{
+  "name": "baked_ziti_meal_prep",
+  "title": "🍝 Baked Ziti Meal Prep",
+  "tasks": [
+    {
+      "id": "ziti-01",
+      "text": "🛒 Check pantry/fridge for ziti, marinara, ricotta, mozzarella, Parmesan, egg, garlic, and herbs; add anything missing to the grocery list",
+      "completed": false,
+      "schemaVersion": 2,
+      "dueDate": null,
+      "highPriority": false,
+      "priorityColor": null,
+      "remindersEnabled": false,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "weekly",
+        "indefinitely": true,
+        "count": null,
+        "untilDate": null,
+        "time": {
+          "hour": 10,
+          "minute": 0,
+          "meridiem": "AM",
+          "military": false
+        },
+        "specificDates": {
+          "enabled": false,
+          "dates": []
+        },
+        "hourly": {
+          "useSpecificMinute": false,
+          "minute": 0
+        },
+        "weekly": {
+          "days": [
+            "Sat"
+          ]
+        },
+        "biweekly": {
+          "week1": [],
+          "week2": [],
+          "referenceDate": null
+        },
+        "monthly": {
+          "useSpecificDays": false,
+          "days": [],
+          "lastDay": false,
+          "useWeekOfMonth": false,
+          "weekOfMonth": null
+        },
+        "yearly": {
+          "months": [],
+          "useSpecificDays": false,
+          "daysByMonth": {},
+          "applyDaysToAll": false
+        }
+      },
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      }
+    },
+    {
+      "id": "ziti-02",
+      "text": "🧀 Shred mozzarella and grate Parmesan; portion ricotta and seasonings",
+      "completed": false,
+      "schemaVersion": 2,
+      "dueDate": null,
+      "highPriority": false,
+      "priorityColor": null,
+      "remindersEnabled": false,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "weekly",
+        "indefinitely": true,
+        "count": null,
+        "untilDate": null,
+        "time": {
+          "hour": 4,
+          "minute": 30,
+          "meridiem": "PM",
+          "military": false
+        },
+        "specificDates": {
+          "enabled": false,
+          "dates": []
+        },
+        "hourly": {
+          "useSpecificMinute": false,
+          "minute": 0
+        },
+        "weekly": {
+          "days": [
+            "Sun"
+          ]
+        },
+        "biweekly": {
+          "week1": [],
+          "week2": [],
+          "referenceDate": null
+        },
+        "monthly": {
+          "useSpecificDays": false,
+          "days": [],
+          "lastDay": false,
+          "useWeekOfMonth": false,
+          "weekOfMonth": null
+        },
+        "yearly": {
+          "months": [],
+          "useSpecificDays": false,
+          "daysByMonth": {},
+          "applyDaysToAll": false
+        }
+      },
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      }
+    },
+    {
+      "id": "ziti-03",
+      "text": "🔥 Preheat oven to 375°F (190°C) and lightly grease a 9×13-inch baking dish",
+      "completed": false,
+      "schemaVersion": 2,
+      "dueDate": null,
+      "highPriority": true,
+      "priorityColor": "#dc3545",
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      }
+    },
+    {
+      "id": "ziti-04",
+      "text": "💧 Bring a large pot of well-salted water to a boil",
+      "completed": false,
+      "schemaVersion": 2,
+      "dueDate": null,
+      "highPriority": false,
+      "priorityColor": null,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      }
+    },
+    {
+      "id": "ziti-05",
+      "text": "🍝 Boil ziti 2–3 minutes less than package directions so it stays very al dente",
+      "completed": false,
+      "schemaVersion": 2,
+      "dueDate": null,
+      "highPriority": true,
+      "priorityColor": "#dc3545",
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      }
+    },
+    {
+      "id": "ziti-06",
+      "text": "🥣 Mix ricotta with egg, half the Parmesan, garlic, herbs, salt, and pepper",
+      "completed": false,
+      "schemaVersion": 2,
+      "dueDate": null,
+      "highPriority": false,
+      "priorityColor": null,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      }
+    },
+    {
+      "id": "ziti-07",
+      "text": "🍅 Drain pasta and toss with enough marinara to coat evenly",
+      "completed": false,
+      "schemaVersion": 2,
+      "dueDate": null,
+      "highPriority": false,
+      "priorityColor": null,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      }
+    },
+    {
+      "id": "ziti-08",
+      "text": "🧱 Layer half the sauced ziti, dollops of ricotta mixture, mozzarella, and marinara; repeat",
+      "completed": false,
+      "schemaVersion": 2,
+      "dueDate": null,
+      "highPriority": false,
+      "priorityColor": null,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      }
+    },
+    {
+      "id": "ziti-09",
+      "text": "🧀 Finish with remaining mozzarella and Parmesan",
+      "completed": false,
+      "schemaVersion": 2,
+      "dueDate": null,
+      "highPriority": false,
+      "priorityColor": null,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      }
+    },
+    {
+      "id": "ziti-10",
+      "text": "⏲️ Cover with foil and bake about 20 minutes; uncover and bake 10–15 minutes more until bubbling and browned",
+      "completed": false,
+      "schemaVersion": 2,
+      "dueDate": null,
+      "highPriority": true,
+      "priorityColor": "#fd7e14",
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      }
+    },
+    {
+      "id": "ziti-11",
+      "text": "🌡️ Confirm the center is piping hot (about 165°F / 74°C if checking with a thermometer)",
+      "completed": false,
+      "schemaVersion": 2,
+      "dueDate": null,
+      "highPriority": true,
+      "priorityColor": "#dc3545",
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      }
+    },
+    {
+      "id": "ziti-12",
+      "text": "🕒 Rest baked ziti for 10–15 minutes before slicing and serving",
+      "completed": false,
+      "schemaVersion": 2,
+      "dueDate": null,
+      "highPriority": true,
+      "priorityColor": "#fd7e14",
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      }
+    },
+    {
+      "id": "ziti-13",
+      "text": "🥡 Refrigerate leftovers promptly in shallow covered containers",
+      "completed": false,
+      "schemaVersion": 2,
+      "dueDate": null,
+      "highPriority": true,
+      "priorityColor": "#dc3545",
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      }
+    },
+    {
+      "id": "ziti-14",
+      "text": "🍽️ Plan the next baked-ziti night and reset ingredient quantities as needed",
+      "completed": false,
+      "schemaVersion": 2,
+      "dueDate": null,
+      "highPriority": false,
+      "priorityColor": null,
+      "remindersEnabled": false,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "weekly",
+        "indefinitely": true,
+        "count": null,
+        "untilDate": null,
+        "time": {
+          "hour": 6,
+          "minute": 0,
+          "meridiem": "PM",
+          "military": false
+        },
+        "specificDates": {
+          "enabled": false,
+          "dates": []
+        },
+        "hourly": {
+          "useSpecificMinute": false,
+          "minute": 0
+        },
+        "weekly": {
+          "days": [
+            "Sun"
+          ]
+        },
+        "biweekly": {
+          "week1": [],
+          "week2": [],
+          "referenceDate": null
+        },
+        "monthly": {
+          "useSpecificDays": false,
+          "days": [],
+          "lastDay": false,
+          "useWeekOfMonth": false,
+          "weekOfMonth": null
+        },
+        "yearly": {
+          "months": [],
+          "useSpecificDays": false,
+          "daysByMonth": {},
+          "applyDaysToAll": false
+        }
+      },
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      }
+    }
+  ],
+  "autoReset": false,
+  "cycleCount": 0,
+  "deleteCheckedTasks": false
+}

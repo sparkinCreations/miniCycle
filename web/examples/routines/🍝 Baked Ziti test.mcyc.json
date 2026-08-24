@@ -1,0 +1,797 @@
+{
+  "name": "🍝 Baked Ziti",
+  "title": "🍝 Baked Ziti",
+  "tasks": [
+    {
+      "id": "t1",
+      "text": "🧺 Check pantry for ziti, pasta sauce, ricotta, mozzarella, Parmesan, and seasonings",
+      "completed": true,
+      "dueDate": null,
+      "highPriority": false,
+      "priorityColor": null,
+      "remindersEnabled": false,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "weekly",
+        "indefinitely": true,
+        "count": null,
+        "untilDate": null,
+        "time": {
+          "hour": 10,
+          "minute": 0,
+          "meridiem": "AM"
+        },
+        "useSpecificTime": false,
+        "specificDates": {
+          "enabled": false,
+          "dates": []
+        },
+        "hourly": {
+          "useSpecificMinute": false,
+          "minute": 0
+        },
+        "weekly": {
+          "days": [
+            "Sat"
+          ]
+        },
+        "biweekly": {
+          "week1": [],
+          "week2": [],
+          "referenceDate": "2026-08-24T03:24:24.594Z"
+        },
+        "monthly": {
+          "useSpecificDays": false,
+          "days": [],
+          "lastDay": false,
+          "useWeekOfMonth": false,
+          "weekOfMonth": null
+        },
+        "yearly": {
+          "months": [],
+          "useSpecificDays": false,
+          "applyDaysToAll": true,
+          "daysByMonth": {}
+        }
+      },
+      "deleteWhenComplete": true,
+      "deleteWhenCompleteSettings": {
+        "cycle": true,
+        "todo": false
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "t2",
+      "text": "🛒 Buy any missing baked-ziti ingredients",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": true,
+      "priorityColor": "#dc3545",
+      "remindersEnabled": false,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "weekly",
+        "indefinitely": true,
+        "count": null,
+        "untilDate": null,
+        "time": {
+          "hour": 11,
+          "minute": 0,
+          "meridiem": "AM"
+        },
+        "useSpecificTime": false,
+        "specificDates": {
+          "enabled": false,
+          "dates": []
+        },
+        "hourly": {
+          "useSpecificMinute": false,
+          "minute": 0
+        },
+        "weekly": {
+          "days": [
+            "Sat"
+          ]
+        },
+        "biweekly": {
+          "week1": [],
+          "week2": [],
+          "referenceDate": "2026-08-24T03:24:24.595Z"
+        },
+        "monthly": {
+          "useSpecificDays": false,
+          "days": [],
+          "lastDay": false,
+          "useWeekOfMonth": false,
+          "weekOfMonth": null
+        },
+        "yearly": {
+          "months": [],
+          "useSpecificDays": false,
+          "applyDaysToAll": true,
+          "daysByMonth": {}
+        }
+      },
+      "deleteWhenComplete": true,
+      "deleteWhenCompleteSettings": {
+        "cycle": true,
+        "todo": false
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "t3",
+      "text": "🔥 Preheat oven to 375°F",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": true,
+      "priorityColor": "#dc3545",
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {
+        "frequency": "daily",
+        "indefinitely": true,
+        "count": null,
+        "untilDate": null,
+        "time": null,
+        "useSpecificTime": false,
+        "specificDates": {
+          "enabled": false,
+          "dates": []
+        },
+        "hourly": {
+          "useSpecificMinute": false,
+          "minute": 0
+        },
+        "weekly": {
+          "days": []
+        },
+        "biweekly": {
+          "week1": [],
+          "week2": [],
+          "referenceDate": "2026-08-24T03:24:24.595Z"
+        },
+        "monthly": {
+          "useSpecificDays": false,
+          "days": [],
+          "lastDay": false,
+          "useWeekOfMonth": false,
+          "weekOfMonth": null
+        },
+        "yearly": {
+          "months": [],
+          "useSpecificDays": false,
+          "applyDaysToAll": true,
+          "daysByMonth": {}
+        }
+      },
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "t4",
+      "text": "🍝 Boil ziti in salted water until just under al dente",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": true,
+      "priorityColor": "#dc3545",
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {
+        "frequency": "daily",
+        "indefinitely": true,
+        "count": null,
+        "untilDate": null,
+        "time": null,
+        "useSpecificTime": false,
+        "specificDates": {
+          "enabled": false,
+          "dates": []
+        },
+        "hourly": {
+          "useSpecificMinute": false,
+          "minute": 0
+        },
+        "weekly": {
+          "days": []
+        },
+        "biweekly": {
+          "week1": [],
+          "week2": [],
+          "referenceDate": "2026-08-24T03:24:24.595Z"
+        },
+        "monthly": {
+          "useSpecificDays": false,
+          "days": [],
+          "lastDay": false,
+          "useWeekOfMonth": false,
+          "weekOfMonth": null
+        },
+        "yearly": {
+          "months": [],
+          "useSpecificDays": false,
+          "applyDaysToAll": true,
+          "daysByMonth": {}
+        }
+      },
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "t5",
+      "text": "🥣 Mix ricotta, Parmesan, seasoning, and some mozzarella",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "priorityColor": null,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {
+        "frequency": "daily",
+        "indefinitely": true,
+        "count": null,
+        "untilDate": null,
+        "time": null,
+        "useSpecificTime": false,
+        "specificDates": {
+          "enabled": false,
+          "dates": []
+        },
+        "hourly": {
+          "useSpecificMinute": false,
+          "minute": 0
+        },
+        "weekly": {
+          "days": []
+        },
+        "biweekly": {
+          "week1": [],
+          "week2": [],
+          "referenceDate": "2026-08-24T03:24:24.595Z"
+        },
+        "monthly": {
+          "useSpecificDays": false,
+          "days": [],
+          "lastDay": false,
+          "useWeekOfMonth": false,
+          "weekOfMonth": null
+        },
+        "yearly": {
+          "months": [],
+          "useSpecificDays": false,
+          "applyDaysToAll": true,
+          "daysByMonth": {}
+        }
+      },
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "t6",
+      "text": "🍅 Warm the pasta sauce",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "priorityColor": null,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {
+        "frequency": "daily",
+        "indefinitely": true,
+        "count": null,
+        "untilDate": null,
+        "time": null,
+        "useSpecificTime": false,
+        "specificDates": {
+          "enabled": false,
+          "dates": []
+        },
+        "hourly": {
+          "useSpecificMinute": false,
+          "minute": 0
+        },
+        "weekly": {
+          "days": []
+        },
+        "biweekly": {
+          "week1": [],
+          "week2": [],
+          "referenceDate": "2026-08-24T03:24:24.596Z"
+        },
+        "monthly": {
+          "useSpecificDays": false,
+          "days": [],
+          "lastDay": false,
+          "useWeekOfMonth": false,
+          "weekOfMonth": null
+        },
+        "yearly": {
+          "months": [],
+          "useSpecificDays": false,
+          "applyDaysToAll": true,
+          "daysByMonth": {}
+        }
+      },
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "t7",
+      "text": "🥄 Drain ziti and toss with enough sauce to coat",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "priorityColor": null,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {
+        "frequency": "daily",
+        "indefinitely": true,
+        "count": null,
+        "untilDate": null,
+        "time": null,
+        "useSpecificTime": false,
+        "specificDates": {
+          "enabled": false,
+          "dates": []
+        },
+        "hourly": {
+          "useSpecificMinute": false,
+          "minute": 0
+        },
+        "weekly": {
+          "days": []
+        },
+        "biweekly": {
+          "week1": [],
+          "week2": [],
+          "referenceDate": "2026-08-24T03:24:24.596Z"
+        },
+        "monthly": {
+          "useSpecificDays": false,
+          "days": [],
+          "lastDay": false,
+          "useWeekOfMonth": false,
+          "weekOfMonth": null
+        },
+        "yearly": {
+          "months": [],
+          "useSpecificDays": false,
+          "applyDaysToAll": true,
+          "daysByMonth": {}
+        }
+      },
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "t8",
+      "text": "🧀 Layer sauce, ziti, ricotta mixture, and mozzarella in a baking dish",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "priorityColor": null,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {
+        "frequency": "daily",
+        "indefinitely": true,
+        "count": null,
+        "untilDate": null,
+        "time": null,
+        "useSpecificTime": false,
+        "specificDates": {
+          "enabled": false,
+          "dates": []
+        },
+        "hourly": {
+          "useSpecificMinute": false,
+          "minute": 0
+        },
+        "weekly": {
+          "days": []
+        },
+        "biweekly": {
+          "week1": [],
+          "week2": [],
+          "referenceDate": "2026-08-24T03:24:24.596Z"
+        },
+        "monthly": {
+          "useSpecificDays": false,
+          "days": [],
+          "lastDay": false,
+          "useWeekOfMonth": false,
+          "weekOfMonth": null
+        },
+        "yearly": {
+          "months": [],
+          "useSpecificDays": false,
+          "applyDaysToAll": true,
+          "daysByMonth": {}
+        }
+      },
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "t9",
+      "text": "🧀 Top with mozzarella and Parmesan",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "priorityColor": null,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {
+        "frequency": "daily",
+        "indefinitely": true,
+        "count": null,
+        "untilDate": null,
+        "time": null,
+        "useSpecificTime": false,
+        "specificDates": {
+          "enabled": false,
+          "dates": []
+        },
+        "hourly": {
+          "useSpecificMinute": false,
+          "minute": 0
+        },
+        "weekly": {
+          "days": []
+        },
+        "biweekly": {
+          "week1": [],
+          "week2": [],
+          "referenceDate": "2026-08-24T03:24:24.596Z"
+        },
+        "monthly": {
+          "useSpecificDays": false,
+          "days": [],
+          "lastDay": false,
+          "useWeekOfMonth": false,
+          "weekOfMonth": null
+        },
+        "yearly": {
+          "months": [],
+          "useSpecificDays": false,
+          "applyDaysToAll": true,
+          "daysByMonth": {}
+        }
+      },
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "t10",
+      "text": "♨️ Bake until hot and bubbling, about 25–30 minutes",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": true,
+      "priorityColor": "#dc3545",
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {
+        "frequency": "daily",
+        "indefinitely": true,
+        "count": null,
+        "untilDate": null,
+        "time": null,
+        "useSpecificTime": false,
+        "specificDates": {
+          "enabled": false,
+          "dates": []
+        },
+        "hourly": {
+          "useSpecificMinute": false,
+          "minute": 0
+        },
+        "weekly": {
+          "days": []
+        },
+        "biweekly": {
+          "week1": [],
+          "week2": [],
+          "referenceDate": "2026-08-24T03:24:24.596Z"
+        },
+        "monthly": {
+          "useSpecificDays": false,
+          "days": [],
+          "lastDay": false,
+          "useWeekOfMonth": false,
+          "weekOfMonth": null
+        },
+        "yearly": {
+          "months": [],
+          "useSpecificDays": false,
+          "applyDaysToAll": true,
+          "daysByMonth": {}
+        }
+      },
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "t11",
+      "text": "🔥 Broil briefly for a browned top, watching closely",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "priorityColor": null,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {
+        "frequency": "daily",
+        "indefinitely": true,
+        "count": null,
+        "untilDate": null,
+        "time": null,
+        "useSpecificTime": false,
+        "specificDates": {
+          "enabled": false,
+          "dates": []
+        },
+        "hourly": {
+          "useSpecificMinute": false,
+          "minute": 0
+        },
+        "weekly": {
+          "days": []
+        },
+        "biweekly": {
+          "week1": [],
+          "week2": [],
+          "referenceDate": "2026-08-24T03:24:24.596Z"
+        },
+        "monthly": {
+          "useSpecificDays": false,
+          "days": [],
+          "lastDay": false,
+          "useWeekOfMonth": false,
+          "weekOfMonth": null
+        },
+        "yearly": {
+          "months": [],
+          "useSpecificDays": false,
+          "applyDaysToAll": true,
+          "daysByMonth": {}
+        }
+      },
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "t12",
+      "text": "⏲️ Let the baked ziti rest 5–10 minutes before serving",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": true,
+      "priorityColor": "#dc3545",
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {
+        "frequency": "daily",
+        "indefinitely": true,
+        "count": null,
+        "untilDate": null,
+        "time": null,
+        "useSpecificTime": false,
+        "specificDates": {
+          "enabled": false,
+          "dates": []
+        },
+        "hourly": {
+          "useSpecificMinute": false,
+          "minute": 0
+        },
+        "weekly": {
+          "days": []
+        },
+        "biweekly": {
+          "week1": [],
+          "week2": [],
+          "referenceDate": "2026-08-24T03:24:24.596Z"
+        },
+        "monthly": {
+          "useSpecificDays": false,
+          "days": [],
+          "lastDay": false,
+          "useWeekOfMonth": false,
+          "weekOfMonth": null
+        },
+        "yearly": {
+          "months": [],
+          "useSpecificDays": false,
+          "applyDaysToAll": true,
+          "daysByMonth": {}
+        }
+      },
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": true
+      },
+      "schemaVersion": 2
+    }
+  ],
+  "autoReset": false,
+  "cycleCount": 0,
+  "deleteCheckedTasks": false,
+  "taskOptionButtons": {
+    "highPriority": true,
+    "rename": true,
+    "delete": true,
+    "recurring": false,
+    "dueDate": false,
+    "reminders": false,
+    "deleteWhenComplete": true,
+    "customize": true
+  },
+  "recurringTemplates": {
+    "t1": {
+      "id": "t1",
+      "text": "🧺 Check pantry for ziti, pasta sauce, ricotta, mozzarella, Parmesan, and seasonings",
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "weekly",
+        "indefinitely": true,
+        "count": null,
+        "untilDate": null,
+        "time": {
+          "hour": 10,
+          "minute": 0,
+          "meridiem": "AM"
+        },
+        "useSpecificTime": false,
+        "specificDates": {
+          "enabled": false,
+          "dates": []
+        },
+        "hourly": {
+          "useSpecificMinute": false,
+          "minute": 0
+        },
+        "weekly": {
+          "days": [
+            "Sat"
+          ]
+        },
+        "biweekly": {
+          "week1": [],
+          "week2": [],
+          "referenceDate": "2026-08-24T03:24:24.594Z"
+        },
+        "monthly": {
+          "useSpecificDays": false,
+          "days": [],
+          "lastDay": false,
+          "useWeekOfMonth": false,
+          "weekOfMonth": null
+        },
+        "yearly": {
+          "months": [],
+          "useSpecificDays": false,
+          "applyDaysToAll": true,
+          "daysByMonth": {}
+        }
+      },
+      "dueDate": null,
+      "highPriority": false,
+      "priorityColor": null,
+      "remindersEnabled": false,
+      "deleteWhenComplete": true,
+      "deleteWhenCompleteSettings": {
+        "cycle": true,
+        "todo": true
+      },
+      "occurrenceCount": 0,
+      "lastTriggeredTimestamp": null,
+      "nextScheduledOccurrence": 1788012000000,
+      "schemaVersion": 2
+    },
+    "t2": {
+      "id": "t2",
+      "text": "🛒 Buy any missing baked-ziti ingredients",
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "weekly",
+        "indefinitely": true,
+        "count": null,
+        "untilDate": null,
+        "time": {
+          "hour": 11,
+          "minute": 0,
+          "meridiem": "AM"
+        },
+        "useSpecificTime": false,
+        "specificDates": {
+          "enabled": false,
+          "dates": []
+        },
+        "hourly": {
+          "useSpecificMinute": false,
+          "minute": 0
+        },
+        "weekly": {
+          "days": [
+            "Sat"
+          ]
+        },
+        "biweekly": {
+          "week1": [],
+          "week2": [],
+          "referenceDate": "2026-08-24T03:24:24.595Z"
+        },
+        "monthly": {
+          "useSpecificDays": false,
+          "days": [],
+          "lastDay": false,
+          "useWeekOfMonth": false,
+          "weekOfMonth": null
+        },
+        "yearly": {
+          "months": [],
+          "useSpecificDays": false,
+          "applyDaysToAll": true,
+          "daysByMonth": {}
+        }
+      },
+      "dueDate": null,
+      "highPriority": true,
+      "priorityColor": "#dc3545",
+      "remindersEnabled": false,
+      "deleteWhenComplete": true,
+      "deleteWhenCompleteSettings": {
+        "cycle": true,
+        "todo": true
+      },
+      "occurrenceCount": 0,
+      "lastTriggeredTimestamp": null,
+      "nextScheduledOccurrence": 1788015600000,
+      "schemaVersion": 2
+    }
+  },
+  "reminders": null,
+  "autoUncheckDaily": null,
+  "createdAt": 1787541864598,
+  "theme": "classic",
+  "history": null,
+  "clearedTasks": null
+}

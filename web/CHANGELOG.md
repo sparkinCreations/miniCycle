@@ -1,3 +1,8 @@
+## [2.489] - 2026-08-23
+- docs: correct the '?v= is dev-only' claim, and re-scope the sweep it justified
+- chore(html): delete the commented-out link to miniCycle-styles.css, a file that no longer exists
+
+
 ## [2.488] - 2026-08-23
 - refactor(release): extract the CSP hash stage, and give it 17 tests
 - docs(splits): record Priority 1 as shipped, and what the work disproved

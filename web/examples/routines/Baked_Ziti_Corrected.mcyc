@@ -1,0 +1,160 @@
+{
+  "name": "baked_ziti",
+  "title": "🍝 Baked Ziti",
+  "tasks": [
+    {
+      "id": "t1",
+      "text": "🧺 Check pantry for ziti, pasta sauce, ricotta, mozzarella, Parmesan, and seasonings",
+      "completed": false,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "weekly",
+        "indefinitely": true,
+        "repeatCount": 0,
+        "timesActivated": 0,
+        "weekdays": [
+          "Sat"
+        ],
+        "dayOfMonth": null,
+        "nthWeekday": null,
+        "weekday": null,
+        "time": {
+          "hour": 10,
+          "minute": 0,
+          "meridiem": "AM"
+        },
+        "daily": {
+          "time": "10:00"
+        },
+        "weekly": {
+          "days": [
+            "Sat"
+          ]
+        },
+        "monthly": {
+          "dayOfMonth": null,
+          "nthWeekday": null,
+          "weekday": null
+        },
+        "lastActivated": null,
+        "nextActivation": null
+      },
+      "schemaVersion": 2,
+      "createdAt": "2026-08-24T03:19:15.111Z",
+      "completedAt": null,
+      "dueDate": null,
+      "remindersEnabled": false,
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": false
+      }
+    },
+    {
+      "id": "t2",
+      "text": "🛒 Buy any missing baked-ziti ingredients",
+      "completed": false,
+      "highPriority": true,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "weekly",
+        "indefinitely": true,
+        "repeatCount": 0,
+        "timesActivated": 0,
+        "weekdays": [
+          "Sat"
+        ],
+        "dayOfMonth": null,
+        "nthWeekday": null,
+        "weekday": null,
+        "time": {
+          "hour": 11,
+          "minute": 0,
+          "meridiem": "AM"
+        },
+        "daily": {
+          "time": "11:00"
+        },
+        "weekly": {
+          "days": [
+            "Sat"
+          ]
+        },
+        "monthly": {
+          "dayOfMonth": null,
+          "nthWeekday": null,
+          "weekday": null
+        },
+        "lastActivated": null,
+        "nextActivation": null
+      },
+      "schemaVersion": 2,
+      "createdAt": "2026-08-24T03:19:15.111Z",
+      "completedAt": null,
+      "dueDate": null,
+      "remindersEnabled": false,
+      "deleteWhenComplete": false,
+      "deleteWhenCompleteSettings": {
+        "cycle": false,
+        "todo": false
+      }
+    },
+    {
+      "id": "t3",
+      "text": "🔥 Preheat oven to 375°F",
+      "completed": false,
+      "highPriority": true
+    },
+    {
+      "id": "t4",
+      "text": "🍝 Boil ziti in salted water until just under al dente",
+      "completed": false,
+      "highPriority": true
+    },
+    {
+      "id": "t5",
+      "text": "🥣 Mix ricotta, Parmesan, seasoning, and some mozzarella",
+      "completed": false
+    },
+    {
+      "id": "t6",
+      "text": "🍅 Warm the pasta sauce",
+      "completed": false
+    },
+    {
+      "id": "t7",
+      "text": "🥄 Drain ziti and toss with enough sauce to coat",
+      "completed": false
+    },
+    {
+      "id": "t8",
+      "text": "🧀 Layer sauce, ziti, ricotta mixture, and mozzarella in a baking dish",
+      "completed": false
+    },
+    {
+      "id": "t9",
+      "text": "🧀 Top with mozzarella and Parmesan",
+      "completed": false
+    },
+    {
+      "id": "t10",
+      "text": "♨️ Bake until hot and bubbling, about 25–30 minutes",
+      "completed": false,
+      "highPriority": true
+    },
+    {
+      "id": "t11",
+      "text": "🔥 Broil briefly for a browned top, watching closely",
+      "completed": false
+    },
+    {
+      "id": "t12",
+      "text": "⏲️ Let the baked ziti rest 5–10 minutes before serving",
+      "completed": false,
+      "highPriority": true
+    }
+  ],
+  "autoReset": false,
+  "cycleCount": 0,
+  "deleteCheckedTasks": false
+}
