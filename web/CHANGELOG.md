@@ -1,3 +1,7 @@
+## [2.486] - 2026-08-23
+- perf(site): fix hero overflow, and cut the product page from 4.5MB to 444KB
+
+
 ## [2.485] - 2026-08-23
 - types: drop two UserProgress properties nothing writes, and an orphan typedef
 - docs(schema): achievements live in state.achievements, not userProgress
