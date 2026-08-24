@@ -215,7 +215,7 @@ All notification messages, modal text, ARIA labels, and button text should use `
         deleteCheckedTasks: boolean,
         taskOptionButtons: { /* per-cycle button visibility */ },
         recurringTemplates: {},   // map keyed by taskId (NOT an array)
-        history: [],              // Per-routine activity log
+        history: { events: [], maxEvents: 100 },  // OBJECT, not an array — see SCHEMA_2_5.md
         clearedTasks: { entries: [], totalCleared: 0, autoPruneEnabled: true }  // To-Do clears + cycle-reset auto-removes
       }
     }

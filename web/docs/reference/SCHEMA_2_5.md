@@ -63,12 +63,17 @@ change without changing a task's shape, and vice versa, so each gets its own cou
   metadata: {
     createdAt: 1696723400000,              // Unix timestamp
     lastModified: 1696723445123,           // Unix timestamp
-    appVersion: "1.729",                   // App version string
-    migrationHistory: ["2.0 → 2.5"],       // Migration path history
-    migratedFrom: "2.0",                   // Previous schema version
-    migrationDate: "2025-10-07",           // When migration occurred
+    migratedFrom: "2.0",                   // Previous schema version (null when fresh)
+    migrationDate: "2025-10-07",           // When migration occurred (null when fresh)
     totalCyclesCreated: 5,                 // Lifetime cycle creation count
-    totalTasksCompleted: 156               // Lifetime task completion count
+    totalCyclesCompleted: 12,              // Lifetime cycle completion count
+    schemaVersion: "2.5",                  // Duplicated here as well as at the root
+    lastModifiedBy: "tab-x7f2",            // Writing tab's id — multi-tab conflict detection
+                                           // (appState.js stamps it on every save)
+    storageQuota: { /* … */ }              // Cached quota estimate (storageUtils.js)
+    // NOT here: `appVersion`, `migrationHistory` and `totalTasksCompleted` were
+    // documented on metadata but nothing writes them. `totalTasksCompleted` is
+    // real and lives on `userProgress` — see that section.
   },
 
   settings: {
@@ -82,7 +87,8 @@ change without changing a task's shape, and vice versa, so each gets its own cou
     dismissedEducationalTips: {},          // { [tipId]: boolean }
     defaultRecurringSettings: {            // Default values for new recurring tasks
       frequency: "daily",
-      indefinitely: true
+      indefinitely: true,
+      time: null                           // Optional time-of-day
     },
     unlockedThemes: [],                    // Themes unlocked through milestones
     unlockedFeatures: [],                  // Features unlocked through milestones
@@ -108,8 +114,15 @@ change without changing a task's shape, and vice versa, so each gets its own cou
     cycles: {
       "cycle-abc123": {
         id: "cycle-abc123",                // Unique cycle identifier
-        name: "Morning Routine",           // Display name
-        title: "Morning Routine",          // Legacy field (same as name)
+        // ⚠️ `title` IS the display name. There is no `name` field: nothing in
+        // the app writes one (routineManager creates cycles with `title`, and
+        // there are ~47 reads of `.title`). An earlier revision of this doc had
+        // these reversed — `cycleCompletion.js` still reads `cycleData.name ||
+        // activeCycle`, which therefore always falls through to the storage key.
+        title: "Morning Routine",          // Display name — the real field
+        theme: "classic",                  // Per-routine vocab theme (default "classic")
+        showTaskInput: true,               // Per-routine task-input bar visibility
+                                           // (modeManager toggles it per routine)
         cycleCount: 42,                    // Times completed
         autoReset: true,                   // Auto-reset on completion
         deleteCheckedTasks: false,         // Delete tasks when checked
@@ -129,7 +142,13 @@ change without changing a task's shape, and vice versa, so each gets its own cou
           reminders: false,                // Reminders option
           deleteWhenComplete: false        // 🧹 Clear on Reset / Marked for Clearing (per-mode auto-remove)
         },
-        history: [],                       // Per-routine activity log
+        // ⚠️ An OBJECT, not an array. `historyManager.logEvent()` writes
+        // { events: [], maxEvents: 100 } and unshifts onto `history.events`.
+        // Building a fixture with `history: []` passes the `if (!cycle.history)`
+        // guard (an empty array is truthy) and then throws on
+        // `history.events.unshift`.
+        history: { events: [], maxEvents: 100 },
+        reminders: {},                     // Per-routine reminder settings
         clearedTasks: {                    // Cleared tasks (To-Do mode clears + cycle reset auto-removes)
           entries: [],                     // Array of cleared task records
           totalCleared: 0,                 // Total tasks cleared in this routine
@@ -153,7 +172,9 @@ change without changing a task's shape, and vice versa, so each gets its own cou
 
   userProgress: {
     cyclesCompleted: 42,                   // Total cycles completed (global)
-    rewardMilestones: []                   // Reached milestone IDs (e.g., "golden-glow-50")
+    rewardMilestones: [],                  // Reached milestone IDs (e.g., "golden-glow-50")
+    totalTasksCompleted: 156,              // Lifetime tasks cleared — LIVES HERE, not on metadata
+                                           // (read by achievementsManager, backupReminder, undo)
     // Fresh state seeds only these two. A `streaks` object is NOT currently
     // written by any code path — treat it as not-yet-implemented.
   },
@@ -169,8 +190,9 @@ change without changing a task's shape, and vice versa, so each gets its own cou
     dueDatesReminders: false,              // Remind about due dates
     repeatCount: 0,                        // Times to repeat
     frequencyValue: 30,                    // Interval value
-    frequencyUnit: "minutes",              // "minutes"|"hours"
-    customMessages: []                     // Custom reminder messages
+    frequencyUnit: "minutes"               // "minutes"|"hours"
+    // NOT here: `customMessages` was documented but appears nowhere in the
+    // codebase — no reads, no writes.
   }
 }
 ```
@@ -252,8 +274,9 @@ Each cycle contains:
 | Field | Type | Description |
 |-------|------|-------------|
 | `id` | string | Unique cycle identifier |
-| `name` | string | Display name of the cycle |
-| `title` | string | Legacy field (same as name) |
+| `title` | string | **Display name — the real field.** There is no `name` field; nothing writes one |
+| `theme` | string | Per-routine vocab theme (`"classic"` by default) |
+| `showTaskInput` | boolean | Per-routine task-input bar visibility |
 | `tasks` | Task[] | Array of task objects |
 | `recurringTemplates` | object | Recurring task template definitions |
 | `autoReset` | boolean | Auto-reset on completion (Auto Cycle Mode) |
@@ -262,7 +285,8 @@ Each cycle contains:
 | `createdAt` | number | Creation timestamp |
 | `lastModified` | number | Last modification timestamp |
 | `taskOptionButtons` | object | Per-cycle button visibility settings |
-| `history` | array | Per-routine activity log entries |
+| `history` | **object** | Per-routine activity log — `{ events: [], maxEvents: 100 }`, NOT an array |
+| `reminders` | object | Per-routine reminder settings (created with each routine) |
 | `clearedTasks` | object | Cleared tasks tracking (To-Do mode + cycle reset auto-removes) |
 | `clearedTasks.entries` | array | Array of cleared task records |
 | `clearedTasks.totalCleared` | number | Total tasks cleared in this routine |
@@ -270,14 +294,31 @@ Each cycle contains:
 
 #### History Entry Structure
 
-Each entry in the `history` array:
+`cycle.history` is an **object**, and the entries live in `history.events` — newest
+first (`unshift`), capped at `maxEvents` (100). `historyManager.logEvent()` is the
+only writer:
+
+```javascript
+cycle.history = {
+  events: [ /* newest first */ ],
+  maxEvents: 100
+}
+```
+
+Each entry in `history.events`:
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `type` | string | Entry type (e.g., "task_completed", "cycle_completed") |
-| `taskId` | string | Task ID (if applicable) |
-| `taskText` | string | Task text at time of action |
+| `id` | string | `evt-<timestamp>-<random>` |
+| `type` | string | Entry type (e.g., "task_completed", "cycle_completed", "tasks_cleared") |
 | `timestamp` | number | Unix timestamp of action |
+| `details` | object | Type-specific payload — per-event fields such as `taskText` live in HERE, not on the entry |
+
+> **Fixture warning.** `history: []` is the shape an earlier revision of this doc
+> described, and it fails in a way that is easy to misread: the empty array passes
+> `if (!cycle.history)` (arrays are truthy), so the guard does not repair it, and the
+> next write throws on `history.events.unshift`. Seed `{ events: [], maxEvents: 100 }`
+> or omit the key entirely and let `logEvent` create it.
 
 #### Cleared Task Record Structure
 

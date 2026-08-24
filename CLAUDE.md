@@ -311,9 +311,10 @@ this.deps.AppState.update(state => {
 Schema 2.5 shape:
 ```
 state.data.cycles[cycleId].tasks[]        — task array
+state.data.cycles[cycleId].title          — display name (there is no `name` field)
 state.data.cycles[cycleId].cycleCount     — times completed
 state.data.cycles[cycleId].recurringTemplates  — map keyed by taskId (not an array)
-state.data.cycles[cycleId].history[]
+state.data.cycles[cycleId].history        — { events[], maxEvents } — an OBJECT, not an array
 state.data.cycles[cycleId].clearedTasks   — { entries[], totalCleared, autoPruneEnabled }
 state.appState.activeCycleId              — current routine
 state.settings                            — theme, darkMode, etc.

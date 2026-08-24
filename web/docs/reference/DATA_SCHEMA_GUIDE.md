@@ -25,12 +25,14 @@
     metadata: {
         createdAt: 1696723400000,            // Unix timestamp
         lastModified: 1696723445123,         // Unix timestamp
-        appVersion: "1.729",
-        migrationHistory: ["2.0 → 2.5"],
-        migratedFrom: "2.0",                 // Previous schema version
-        migrationDate: "2025-10-07",         // Migration date
+        migratedFrom: "2.0",                 // Previous schema version (null when fresh)
+        migrationDate: "2025-10-07",         // Migration date (null when fresh)
         totalCyclesCreated: 5,               // Total cycles ever created
-        totalTasksCompleted: 156             // Total tasks ever completed
+        totalCyclesCompleted: 12,            // Total cycles ever completed
+        schemaVersion: "2.5"                 // Also stamped here, not just at the root
+        // NOT here: `appVersion`, `migrationHistory` and `totalTasksCompleted`
+        // were listed but nothing writes them. `totalTasksCompleted` is real and
+        // lives on `userProgress`.
     },
 
     data: {
@@ -155,8 +157,8 @@
         dueDatesReminders: false,
         repeatCount: 0,
         frequencyValue: 30,
-        frequencyUnit: "minutes",            // "minutes"|"hours"
-        customMessages: []
+        frequencyUnit: "minutes"             // "minutes"|"hours"
+        // NOT here: `customMessages` appears nowhere in the codebase.
     },
 
     userProgress: {
