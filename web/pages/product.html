@@ -22,8 +22,11 @@
     <meta name="twitter:description" content="A repeatable multi-step process tool. Build your checklist once — it resets every time you finish. Free, private, works offline.">
     <meta name="twitter:image" content="https://minicycle.app/assets/images/Product/Light_and_Dark_no_background.png">
 
-    <link rel="preload" as="image" href="../assets/images/Product/phone-light-mode.png">
-    <link rel="preload" as="image" href="../assets/images/Product/desktop-monitor-mockup.png">
+    <!-- Preload the image that is actually visible first: .hero-phone-img.active is
+         phone-light-focus-mode. This previously preloaded phone-light-mode, which
+         starts at opacity:0 — the browser was told to prioritise a hidden image. -->
+    <link rel="preload" as="image" type="image/webp" href="../assets/images/Product/phone-light-focus-mode.webp">
+    <link rel="preload" as="image" href="../assets/images/Product/desktop-monitor-mockup.webp">
 
     <!-- Structured Data (JSON-LD) for SEO -->
     <script type="application/ld+json">
@@ -150,7 +153,14 @@
         /* ============================
            Hero — Clean Split Layout
            ============================ */
-        .hero-section { background: radial-gradient(ellipse 1200px 800px at 85% 10%, #c8daf2 0%, #a8c5e8 55%, #8eb4dc 100%); padding: var(--space-2xl) 0 var(--space-xl); overflow: visible; }
+        .hero-section { background: radial-gradient(ellipse 1200px 800px at 85% 10%, #c8daf2 0%, #a8c5e8 55%, #8eb4dc 100%); padding: var(--space-2xl) 0 var(--space-xl); overflow: visible; overflow-x: clip; }
+        /* The device mockups bleed past the container on purpose (.hero-phone is
+           left:80px and height:130%). Without clipping, that bleed extended the
+           DOCUMENT: 296px of horizontal scroll at 1280px wide, 164px at ~785px.
+           `overflow-x: clip` contains it without creating a scroll container the
+           way `hidden` would (which breaks position:sticky and scroll anchoring),
+           and it leaves the vertical drop-shadows alone. Browsers without `clip`
+           support simply ignore it and behave exactly as before. */
         .hero-grid { display: flex; flex-direction: column; align-items: center; gap: var(--space-lg); }
         .hero-text { text-align: center; max-width: 550px; }
         .hero-eyebrow { font-family: var(--font-heading); font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.14em; color: var(--color-primary-dark); margin-bottom: 0.6rem; }
@@ -318,9 +328,15 @@
             .story-author { flex-shrink: 0; max-width: 320px; margin: 0; text-align: center; }
             .story-author .story-photo { margin: 0 auto var(--space-md); }
             .story-author .story-pull-quote { margin-left: auto; margin-right: auto; max-width: 320px; }
-            .story-content { flex: 1; align-items: stretch; }
+            /* min-width:0 lets this flex child shrink below its intrinsic content
+               width. Without it, 320px author + gap + content overflowed the row
+               and pushed the page ~164px wide at tablet sizes. */
+            .story-content { flex: 1; min-width: 0; align-items: stretch; }
             .story-content .story-sublead { margin-left: 0; max-width: none; text-align: left; }
-            .story-content .story-stats { flex-direction: row; justify-content: center; margin-bottom: 0; }
+            /* wrap, don't overflow: three .story-stat cards each carry min-width:160px,
+               which exceeds the content column between 768px and ~900px and pushed
+               the page 6-72px wide. Wrapping keeps the row layout wherever it fits. */
+            .story-content .story-stats { flex-direction: row; flex-wrap: wrap; justify-content: center; margin-bottom: 0; }
             .story-content .story-quote { margin-left: 0; max-width: none; text-align: left; }
         }
         .story-sublead { font-size: 0.9rem; opacity: 0.7; margin-bottom: var(--space-lg); max-width: 480px; margin-left: auto; margin-right: auto; line-height: 1.65; }
@@ -543,16 +559,16 @@
                     <a href="learn_more.html" class="hero-learn-more">Learn more &#8594;</a>
                 </div>
                 <div class="hero-desk-photo">
-                    <img src="../assets/images/Product/phone-on-desk-updated.png" alt="miniCycle open on a phone, ready for a routine">
+                    <img src="../assets/images/Product/phone-on-desk-updated.webp" alt="miniCycle open on a phone, ready for a routine">
                 </div>
                 <div class="hero-mockup">
                     <div class="hero-phone">
-                        <img class="hero-phone-img active" src="../assets/images/Product/phone-light-focus-mode.png" alt="miniCycle in focus mode showing the 4 Ps Hourly Rounding Checklist">
-                        <img class="hero-phone-img" src="../assets/images/Product/phone-dark-mode.png" alt="miniCycle in dark mode showing the 4 Ps Hourly Rounding Checklist" loading="lazy">
-                        <img class="hero-phone-img" src="../assets/images/Product/phone-light-mode.png" alt="miniCycle in light mode showing the 4 Ps Hourly Rounding Checklist" loading="lazy">
+                        <img class="hero-phone-img active" src="../assets/images/Product/phone-light-focus-mode.webp" alt="miniCycle in focus mode showing the 4 Ps Hourly Rounding Checklist">
+                        <img class="hero-phone-img" src="../assets/images/Product/phone-dark-mode.webp" alt="miniCycle in dark mode showing the 4 Ps Hourly Rounding Checklist" loading="lazy">
+                        <img class="hero-phone-img" src="../assets/images/Product/phone-light-mode.webp" alt="miniCycle in light mode showing the 4 Ps Hourly Rounding Checklist" loading="lazy">
                     </div>
                     <div class="hero-desktop">
-                        <img src="../assets/images/Product/desktop-monitor-mockup.png" alt="miniCycle app on a desktop showing a Daily Programming Workflow">
+                        <img src="../assets/images/Product/desktop-monitor-mockup.webp" alt="miniCycle app on a desktop showing a Daily Programming Workflow">
                     </div>
                 </div>
             </div>
@@ -663,7 +679,7 @@
                     @keyframes pf{0%,7.7%{width:0}15.4%{width:38px}23.1%{width:76px}30.8%{width:114px}38.5%{width:152px}46.2%{width:190px}53.9%{width:228px}61.5%{width:266px}69%{width:300px}77%{width:300px}92%,100%{width:0}}
                     @media(prefers-reduced-motion:reduce){*{animation:none!important}}
                   </style>
-                  <image href="../assets/images/Product/4ps-See-it-in-action-1.png" x="0" y="0" width="491" height="978"/>
+                  <image href="../assets/images/Product/4ps-See-it-in-action-1.webp" x="0" y="0" width="491" height="978"/>
                   <g class="ca c1"><use href="#check" x="95" y="215"/></g>
                   <rect class="gb g1" x="82" y="190" width="310" height="48" rx="10" fill="#1e8e3e" fill-opacity="0.2"/>
                   <g class="ca c2"><use href="#check" x="95" y="275"/></g>
@@ -716,11 +732,11 @@
             <!-- Mobile: scrollable strip -->
             <div class="themes-scroll-wrapper reveal">
                 <div class="themes-scroll-track">
-                    <img class="themes-scroll-img" src="../assets/images/Product/No-Background-Unlocked-Themes-Mock-Up.png" alt="Four miniCycle vocabulary themes side by side: Study Planner (purple), Habit Tracker (amber), Fitness Tracker (green), and Chore Manager (teal)" loading="lazy">
+                    <img class="themes-scroll-img" src="../assets/images/Product/No-Background-Unlocked-Themes-Mock-Up.webp" alt="Four miniCycle vocabulary themes side by side: Study Planner (purple), Habit Tracker (amber), Fitness Tracker (green), and Chore Manager (teal)" loading="lazy">
                 </div>
             </div>
             <!-- Desktop: full static image -->
-            <img class="themes-image reveal" src="../assets/images/Product/Unlocked-Themes-Mock-Up.png" alt="Four miniCycle vocabulary themes side by side: Study Planner (purple), Habit Tracker (amber), Fitness Tracker (green), and Chore Manager (teal) — each with unique colors, language, and real routines" loading="lazy">
+            <img class="themes-image reveal" src="../assets/images/Product/Unlocked-Themes-Mock-Up.webp" alt="Four miniCycle vocabulary themes side by side: Study Planner (purple), Habit Tracker (amber), Fitness Tracker (green), and Chore Manager (teal) — each with unique colors, language, and real routines" loading="lazy">
             <p class="themes-desc reveal">Complete cycles to unlock vocabulary themes. Each one changes the app's language, colors, and identity. Your fitness routine becomes a workout tracker. Your study list becomes a study planner.</p>
         </div>
     </section>
