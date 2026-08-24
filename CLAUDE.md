@@ -80,8 +80,11 @@ path here fails **silently** — it routes to a missing file and degrades every 
 
 **Every push to `main` triggers a Netlify build of `web/dist/` and deploys it** — driven by
 the **repo-root `netlify.toml`** (the build authority; do not delete it — `web/netlify.toml`
-is headers/redirects only, and its [build] block is NOT read). Since v2.301 the build is
-fully content-hashed (`/build/` tree + module map; `?v=` is dev-only).
+is headers/redirects only, and its [build] block is NOT read). Since v2.301 JS and CSS entries are
+content-hashed (`/build/` tree + module map + `build/styles/main-*.css`). `?v=` is NOT gone:
+`version.js?v=` is a live production request and has to stay query-busted — it is the file
+that publishes `APP_VERSION`, so a content-hashed name could not be resolved before the
+version it declares is read. Dynamic sub-module imports also use `?v=${APP_VERSION}`.
 App-code changes must ship via `cd web && ./scripts/update-version.sh --auto --push --changelog`
 (the script lives at `web/scripts/` and must run from `web/`)
 (version + cache bump + CSP hashes + tag + push). A bare `git push` of app code creates a

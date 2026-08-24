@@ -2,7 +2,7 @@
 
 **Date:** March 15, 2026
 **Updated:** August 21 2026 — four previously-unassessed modules given verdicts; scripts brought into scope (`update-version.sh`); the last inline line counts removed, since the doc had retired them in principle but kept four in practice and all four had drifted. August 2026 — Priority 2 (statsPanel) SHIPPED (commit `806f8082`); line-count table retired (numbers rot — see [PROJECT_STATS.md](../PROJECT_STATS.md)). July 7, 2026 — god-module audit: added statsPanel (Priority 2), orchestrator assessment, false-positive list
-**Updated:** Aug 23 2026 — Priority 1 shipped; execution order, DONE condition and the pattern guidance all revised against what the work actually showed.
+**Updated:** Aug 23 2026 — Priority 1 shipped; Priority 7 stage 1 (CSP hashes) shipped in v2.488 and the `?v=` stage re-scoped after checking what content hashing actually replaced; execution order, DONE condition and the pattern guidance all revised against what the work actually showed.
 **Status:** In progress — **Priorities 1, 2 and 6 complete**; Priorities 3, 4, 5 open, plus 7 (`update-version.sh`) added Aug 21 2026. Priority 1 SHIPPED Aug 23 2026 in v2.484 (five extractions, 2,649 → 1,587 lines, 83 new tests). **Aug 21 2026 review:** added a DONE condition (~1,500-line target, everything else trigger-based); rewrote the per-extraction checklist around the gates that caught the two defects the completed splits shipped (`test:sw`, `validate:provides`); corrected the "provides stays the same" promise the statsPanel split falsified; pulled the release script's CSP stage forward from Priority 7
 **Related:** [DI_MIGRATION_COMPLETION_PLAN.md](../archive/DI_MIGRATION_COMPLETION_PLAN.md), [ENFORCE_REQUIRES_ROLLOUT_PLAN.md](../archive/ENFORCE_REQUIRES_ROLLOUT_PLAN.md)
 
@@ -184,11 +184,36 @@ becomes a script, and a script can have tests.
 
 Best candidates, by the same "most isolated first" ordering used above:
 
-1. **CSP hash regeneration** — already shells out to a Python validator; the stage is glue.
-2. **The `?v=` cache-buster sweep** across HTML/CSS/manifests — a pure text transform over a file
-   list, which is exactly the shape that tests well.
-3. **`restore.sh` generation** — self-contained, and the heredoc quoting is precisely where the
-   `$SCRIPT_DIR` bug lived.
+1. ~~**CSP hash regeneration**~~ — ✅ **SHIPPED v2.488** as `scripts/csp_hash_sync.py` +
+   `scripts/test-csp-hash-sync.py` (17 cases, wired to `npm run test:csp-sync` and CI).
+   update-version.sh 2,528 → 2,424. Equivalence was proven rather than assumed: both the old
+   heredoc and the new module were run against deliberately perturbed configs and the three
+   outputs diffed byte-for-byte. The tests immediately earned themselves — they caught a bug in
+   the extraction itself, where `discover_html_sources(root)` returns paths relative to `root`
+   while `generated_script_hashes` opens them relative to the CWD. Those agree in production
+   (`cwd == web/`, `root == '.'`) and diverge anywhere else, so the fixture silently hashed the
+   REAL `miniCycle.html`. Invisible in production; fatal to any test.
+
+2. **`restore.sh` generation** — self-contained, and the heredoc quoting is precisely where the
+   `$SCRIPT_DIR` bug lived. Now the next candidate.
+
+3. **The `?v=` cache-buster sweep** — **RE-SCOPED Aug 23 2026, and demoted.** This was listed on
+   the rationale that it is "a pure text transform over a file list". The transform part is still
+   true; the IMPORTANCE is not. Since v2.301 the JS entries and the CSS bundle are content-hashed
+   (`/build/…`, `build/styles/main-*.css`), so the sweep is no longer the app's cache-busting
+   mechanism. What still legitimately depends on it is narrow:
+
+   - `version.js?v=` — a live production request that MUST stay query-busted, because it is the
+     file publishing `APP_VERSION`; a content-hashed name cannot be resolved before the version
+     it declares has been read.
+   - `?v=${APP_VERSION}` on dynamic sub-module imports.
+
+   Note also that `CLAUDE.md` claimed "`?v=` is dev-only" until Aug 23 2026 — it is not, and that
+   sentence has been corrected. And the sweep still rewrites
+   `<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=…"> -->` in `miniCycle.html` on every
+   release: a COMMENTED-OUT link to a file that 404s in production, superseded by the hashed
+   bundle. Deleting that comment removes a file from the sweep's surface and is the cheaper fix
+   than extracting the stage.
 
 **Sequencing correction (Aug 21 2026): "not urgent" contradicted the blast-radius argument above,
 so stage 1 moves up.** This section simultaneously called the release script "the highest blast
@@ -484,10 +509,9 @@ If revisited, the split is unusually low-risk precisely because it's pre-DI — 
 ## Recommended Execution Order
 
 1. ~~**routineSwitcher theme picker**~~ — ✅ SHIPPED v2.484
-2. **`update-version.sh` CSP-hash regeneration → its own script** — moved up from Priority 7; glue
-   around an existing validator, and the release gate is the highest-blast-radius item on this page
-   (see Scripts, above). Model: `changelog-range.sh` + `test-changelog-range.sh`. **Now the next
-   item on this list.**
+2. ~~**`update-version.sh` CSP-hash regeneration → its own script**~~ — ✅ SHIPPED v2.488
+   (`csp_hash_sync.py` + 17 tests). The blast-radius argument held: the extraction surfaced a
+   path-resolution bug that no release would ever have revealed.
 3. ~~**routineSwitcher preview**~~ — ✅ SHIPPED v2.484
 4. ~~**routineSwitcher search/sort/filter**~~ — ✅ SHIPPED v2.484, but only the three PURE
    transforms; the state-owning half is a recorded non-split (see Priority 1)
@@ -496,8 +520,9 @@ If revisited, the split is unusually low-risk precisely because it's pre-DI — 
 7. **undoSnapshotManager** — small extraction, needs interface for AppGlobalState fields
 8. **recurringPanelAddTask** — trigger-based, low priority
 9. ~~**EducationalTipManager** out of `notifications.js`~~ — ✅ **SHIPPED v2.463** (Priority 6)
-10. **Remaining `update-version.sh` stages** — the `?v=` sweep, then `restore.sh` generation;
-    trigger-based (Priority 7)
+10. **Remaining `update-version.sh` stages** — `restore.sh` generation next; the `?v=` sweep was
+    RE-SCOPED and demoted Aug 23 2026 (content hashing superseded most of it — see Scripts above),
+    both trigger-based (Priority 7)
 
 Sizes are deliberately not given here — see "When this plan is DONE" and measure fresh.
 
