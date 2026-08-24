@@ -9,6 +9,7 @@
  *   - the help window never overlaps the Routine|Stats nav dots
  *   - the task-view never overlaps the nav dots
  *   - the stats panel never overlaps the header or the nav dots
+ *   - the static pages (product) never scroll sideways, at any width
  *
  * These are exactly the regressions that slipped through manual checking (a
  * header-clearance fix that pushed the help window into the nav dots). One page
@@ -50,6 +51,61 @@ const VIEWPORTS = [
     { name: 'tablet-landscape',  width: 1024, height: 768 },
     { name: 'desktop',           width: 1280, height: 800 }
 ];
+
+// Static marketing/content pages. These have no app chrome to collide with, so
+// the invariant is different and simpler: THE PAGE MUST NOT SCROLL SIDEWAYS.
+//
+// Added Aug 2026 after minicycleapp.com shipped with 296px of horizontal
+// overflow at 1280px and 6-72px between 768 and 900 — for months. The app had
+// been swept across 7 viewports this whole time; the marketing page, which is
+// the first thing a visitor sees, was covered by nothing.
+const STATIC_PAGES = [
+    { name: 'product', path: '/pages/product.html' }
+];
+
+// Width-only matrix: these pages are long documents, so height is irrelevant to
+// horizontal overflow. 768 and 900 are here BECAUSE they were the widths that
+// broke — three .story-stat cards with min-width:160px stopped fitting the
+// content column between them.
+const STATIC_WIDTHS = [320, 375, 414, 600, 768, 800, 900, 1024, 1280, 1440];
+
+/**
+ * Horizontal overflow, plus the outermost element responsible.
+ *
+ * Reporting the offender matters: "the page scrolls sideways" sends you hunting,
+ * whereas "`.story-stats` reaches 825px in a 753px viewport" is the fix. Elements
+ * inside a scroll container (overflow-x auto/scroll/clip/hidden) are excluded —
+ * a horizontal carousel legitimately extends past the viewport and is contained.
+ */
+function measureHorizontalOverflow() {
+    const d = document.documentElement;
+    const overflowPx = Math.max(0, d.scrollWidth - d.clientWidth);
+    if (overflowPx === 0) return { overflowPx: 0, offender: null };
+
+    const contained = (el) => {
+        for (let p = el.parentElement; p; p = p.parentElement) {
+            const ox = getComputedStyle(p).overflowX;
+            if (ox === 'auto' || ox === 'scroll' || ox === 'hidden' || ox === 'clip') return true;
+        }
+        return false;
+    };
+    const offenders = [...document.querySelectorAll('body *')]
+        .filter(el => !contained(el))
+        .map(el => ({ el, r: el.getBoundingClientRect() }))
+        .filter(x => x.r.width > 0 && x.r.right > d.clientWidth + 1)
+        // keep only the OUTERMOST — a child of an offender is not the cause
+        .filter((x, _, arr) => !arr.some(y => y.el !== x.el && y.el.contains(x.el)));
+
+    const worst = offenders.sort((a, b) => b.r.right - a.r.right)[0];
+    return {
+        overflowPx,
+        offender: worst
+            ? `${worst.el.tagName.toLowerCase()}${worst.el.className && typeof worst.el.className === 'string'
+                ? '.' + worst.el.className.trim().split(/\s+/)[0] : ''}`
+                + ` reaches ${Math.round(worst.r.right)}px in a ${d.clientWidth}px viewport`
+            : 'no un-contained element found (check pseudo-elements or transforms)'
+    };
+}
 
 // Measure the routine view (title vs header, help/task-view vs nav dots).
 function measureRoutine() {
@@ -630,6 +686,24 @@ async function run() {
                 if (el) el.style.paddingTop = '';
             });
         }
+
+        // ── Static pages: no sideways scroll at any width ────────────────────
+        // Separate phase because these pages have no app chrome and no
+        // ResizeObserver plumbing — one navigation per page, then a width sweep.
+        for (const pageDef of STATIC_PAGES) {
+            console.log(`\n${colors.cyan}▸ ${pageDef.name} ${pageDef.path}${colors.reset}`);
+            await page.goto(`${baseURL}${pageDef.path}`, { waitUntil: 'domcontentloaded', timeout: 15000 });
+
+            for (const width of STATIC_WIDTHS) {
+                await page.setViewportSize({ width, height: 900 });
+                // Media queries + any reveal/animation settling.
+                await page.waitForTimeout(350);
+                const { overflowPx, offender } = await page.evaluate(measureHorizontalOverflow);
+                const vp = { name: `${pageDef.name} @${width}`, width, height: 900 };
+                record(vp, 'page does not scroll sideways', overflowPx <= TOL,
+                    `${overflowPx}px of horizontal overflow — ${offender}`);
+            }
+        }
     } catch (e) {
         console.error(`\n${colors.red}❌ Test run errored: ${e.message}${colors.reset}`);
         failures.push(`run error: ${e.message}`);
@@ -641,7 +715,8 @@ async function run() {
 
     console.log(`\n${colors.blue}${'='.repeat(64)}${colors.reset}`);
     if (failures.length === 0) {
-        console.log(`${colors.green}🎉 All layout invariants hold across ${VIEWPORTS.length} viewports.${colors.reset}`);
+        console.log(`${colors.green}🎉 All layout invariants hold across ${VIEWPORTS.length} app viewports`
+            + ` and ${STATIC_PAGES.length} static page(s) x ${STATIC_WIDTHS.length} widths.${colors.reset}`);
         console.log(`${colors.blue}${'='.repeat(64)}${colors.reset}\n`);
         process.exit(0);
     } else {

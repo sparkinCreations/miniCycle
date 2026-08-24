@@ -121,8 +121,11 @@ jobs:
     # Layout + service-worker regression guards. Each spawns its OWN server (its
     # own port) and uses the chromium installed above — no extra setup needed.
     # test:layout = centred-panel overlap + measured-var (--header-total-height)
-    # publish guard. test:sw = offline boot + precache drift (every boot-graph
-    # module AND every @imported stylesheet must be precached).
+    # publish guard, PLUS a horizontal-overflow sweep of the static pages
+    # (product.html across 10 widths — it shipped 296px of sideways scroll at
+    # 1280px for months while only the app was being swept). test:sw = offline
+    # boot + precache drift (every boot-graph module AND every @imported
+    # stylesheet must be precached).
     - name: Run layout regression tests
       working-directory: ./web
       run: npm run test:layout

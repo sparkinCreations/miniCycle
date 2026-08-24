@@ -361,7 +361,7 @@ more, and each spawns **its own server on its own port** — they need no `npm s
 | Suite | Guards |
 |-------|--------|
 | `test:sw` | Offline boot (honest offline + lying-`navigator.onLine` circuit breaker) and **precache drift** |
-| `test:layout` | Centred-panel overlap + measured-var (`--header-total-height`) publish guard, across 7 viewports |
+| `test:layout` | Centred-panel overlap + measured-var (`--header-total-height`) publish guard across 7 app viewports, **plus a horizontal-overflow sweep of the static pages** (`product.html` at 10 widths, 320–1440). The overflow half was added Aug 2026: the marketing page had 296px of sideways scroll at 1280px and 6–72px between 768–900, unnoticed because only the app was swept. Failures name the offending element and width. |
 | `test:meta` | Static: every local `test()` harness awaits async bodies; every test asserts (or declares no-throw in its name) |
 | `test:journey` | End-to-end on the real app: add tasks → reload → complete a cycle → offline reload |
 
