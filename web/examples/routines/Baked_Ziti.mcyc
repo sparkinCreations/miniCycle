@@ -1,0 +1,465 @@
+{
+  "schemaVersion": "2.5",
+  "metadata": {
+    "createdAt": 1787541319159,
+    "lastModified": 1787541319159,
+    "migratedFrom": null,
+    "migrationDate": null,
+    "totalCyclesCreated": 1,
+    "totalCyclesCompleted": 0,
+    "schemaVersion": "2.5"
+  },
+  "data": {
+    "cycles": {
+      "Baked Ziti": {
+        "id": "cycle-ca57e9b3794a",
+        "title": "Baked Ziti",
+        "theme": "classic",
+        "showTaskInput": true,
+        "cycleCount": 0,
+        "autoReset": false,
+        "deleteCheckedTasks": false,
+        "createdAt": 1787541319159,
+        "lastModified": 1787541319159,
+        "tasks": [
+          {
+            "id": "task-19b2fc2f945c",
+            "text": "🧺 Check pantry for ziti, sauce, ricotta, mozzarella, Parmesan, and seasonings",
+            "completed": false,
+            "highPriority": false,
+            "dueDate": null,
+            "remindersEnabled": false,
+            "recurring": true,
+            "recurringSettings": {
+              "frequency": "weekly",
+              "indefinitely": true,
+              "repeatCount": 0,
+              "timesActivated": 0,
+              "weekdays": [
+                "Sat"
+              ],
+              "dayOfMonth": null,
+              "nthWeekday": null,
+              "weekday": null,
+              "time": {
+                "hour": 10,
+                "minute": 0,
+                "meridiem": "AM"
+              },
+              "daily": {
+                "time": "10:00"
+              },
+              "weekly": {
+                "days": [
+                  "Sat"
+                ]
+              },
+              "monthly": {
+                "dayOfMonth": null,
+                "nthWeekday": null,
+                "weekday": null
+              },
+              "lastActivated": null,
+              "nextActivation": null
+            },
+            "schemaVersion": 2,
+            "createdAt": "2026-08-24T03:15:19.159Z",
+            "completedAt": null,
+            "deleteWhenComplete": false,
+            "deleteWhenCompleteSettings": {
+              "cycle": false,
+              "todo": false
+            }
+          },
+          {
+            "id": "task-f079d01a20a7",
+            "text": "🛒 Buy any missing baked-ziti ingredients",
+            "completed": false,
+            "highPriority": true,
+            "dueDate": null,
+            "remindersEnabled": false,
+            "recurring": true,
+            "recurringSettings": {
+              "frequency": "weekly",
+              "indefinitely": true,
+              "repeatCount": 0,
+              "timesActivated": 0,
+              "weekdays": [
+                "Sat"
+              ],
+              "dayOfMonth": null,
+              "nthWeekday": null,
+              "weekday": null,
+              "time": {
+                "hour": 11,
+                "minute": 0,
+                "meridiem": "AM"
+              },
+              "daily": {
+                "time": "11:00"
+              },
+              "weekly": {
+                "days": [
+                  "Sat"
+                ]
+              },
+              "monthly": {
+                "dayOfMonth": null,
+                "nthWeekday": null,
+                "weekday": null
+              },
+              "lastActivated": null,
+              "nextActivation": null
+            },
+            "schemaVersion": 2,
+            "createdAt": "2026-08-24T03:15:19.159Z",
+            "completedAt": null,
+            "deleteWhenComplete": false,
+            "deleteWhenCompleteSettings": {
+              "cycle": false,
+              "todo": false
+            }
+          },
+          {
+            "id": "task-de7f88915c17",
+            "text": "🔥 Preheat oven to 375°F",
+            "completed": false,
+            "highPriority": true,
+            "dueDate": null,
+            "remindersEnabled": false,
+            "recurring": false,
+            "recurringSettings": {},
+            "schemaVersion": 2,
+            "createdAt": "2026-08-24T03:15:19.159Z",
+            "completedAt": null,
+            "deleteWhenComplete": false,
+            "deleteWhenCompleteSettings": {
+              "cycle": false,
+              "todo": false
+            }
+          },
+          {
+            "id": "task-14cb2a2c5cc0",
+            "text": "🍝 Boil ziti in salted water until just under al dente",
+            "completed": false,
+            "highPriority": true,
+            "dueDate": null,
+            "remindersEnabled": false,
+            "recurring": false,
+            "recurringSettings": {},
+            "schemaVersion": 2,
+            "createdAt": "2026-08-24T03:15:19.159Z",
+            "completedAt": null,
+            "deleteWhenComplete": false,
+            "deleteWhenCompleteSettings": {
+              "cycle": false,
+              "todo": false
+            }
+          },
+          {
+            "id": "task-f7b5ff153712",
+            "text": "🥣 Mix ricotta with Parmesan, seasoning, and a little mozzarella",
+            "completed": false,
+            "highPriority": false,
+            "dueDate": null,
+            "remindersEnabled": false,
+            "recurring": false,
+            "recurringSettings": {},
+            "schemaVersion": 2,
+            "createdAt": "2026-08-24T03:15:19.159Z",
+            "completedAt": null,
+            "deleteWhenComplete": false,
+            "deleteWhenCompleteSettings": {
+              "cycle": false,
+              "todo": false
+            }
+          },
+          {
+            "id": "task-aa2ceb9f7ad2",
+            "text": "🍅 Warm the pasta sauce",
+            "completed": false,
+            "highPriority": false,
+            "dueDate": null,
+            "remindersEnabled": false,
+            "recurring": false,
+            "recurringSettings": {},
+            "schemaVersion": 2,
+            "createdAt": "2026-08-24T03:15:19.159Z",
+            "completedAt": null,
+            "deleteWhenComplete": false,
+            "deleteWhenCompleteSettings": {
+              "cycle": false,
+              "todo": false
+            }
+          },
+          {
+            "id": "task-1a8363aa270d",
+            "text": "🥄 Toss drained ziti with enough sauce to coat",
+            "completed": false,
+            "highPriority": false,
+            "dueDate": null,
+            "remindersEnabled": false,
+            "recurring": false,
+            "recurringSettings": {},
+            "schemaVersion": 2,
+            "createdAt": "2026-08-24T03:15:19.159Z",
+            "completedAt": null,
+            "deleteWhenComplete": false,
+            "deleteWhenCompleteSettings": {
+              "cycle": false,
+              "todo": false
+            }
+          },
+          {
+            "id": "task-a5d875d10575",
+            "text": "🧀 Layer sauce, ziti, ricotta mixture, and mozzarella in a baking dish",
+            "completed": false,
+            "highPriority": false,
+            "dueDate": null,
+            "remindersEnabled": false,
+            "recurring": false,
+            "recurringSettings": {},
+            "schemaVersion": 2,
+            "createdAt": "2026-08-24T03:15:19.159Z",
+            "completedAt": null,
+            "deleteWhenComplete": false,
+            "deleteWhenCompleteSettings": {
+              "cycle": false,
+              "todo": false
+            }
+          },
+          {
+            "id": "task-a6fa96cd1737",
+            "text": "🧀 Finish with mozzarella and Parmesan on top",
+            "completed": false,
+            "highPriority": false,
+            "dueDate": null,
+            "remindersEnabled": false,
+            "recurring": false,
+            "recurringSettings": {},
+            "schemaVersion": 2,
+            "createdAt": "2026-08-24T03:15:19.159Z",
+            "completedAt": null,
+            "deleteWhenComplete": false,
+            "deleteWhenCompleteSettings": {
+              "cycle": false,
+              "todo": false
+            }
+          },
+          {
+            "id": "task-a90ab69b80ee",
+            "text": "♨️ Bake until hot and bubbling, about 25–30 minutes",
+            "completed": false,
+            "highPriority": true,
+            "dueDate": null,
+            "remindersEnabled": false,
+            "recurring": false,
+            "recurringSettings": {},
+            "schemaVersion": 2,
+            "createdAt": "2026-08-24T03:15:19.159Z",
+            "completedAt": null,
+            "deleteWhenComplete": false,
+            "deleteWhenCompleteSettings": {
+              "cycle": false,
+              "todo": false
+            }
+          },
+          {
+            "id": "task-aed6a94cdc91",
+            "text": "🔥 Broil briefly for a browned top, watching closely",
+            "completed": false,
+            "highPriority": false,
+            "dueDate": null,
+            "remindersEnabled": false,
+            "recurring": false,
+            "recurringSettings": {},
+            "schemaVersion": 2,
+            "createdAt": "2026-08-24T03:15:19.159Z",
+            "completedAt": null,
+            "deleteWhenComplete": false,
+            "deleteWhenCompleteSettings": {
+              "cycle": false,
+              "todo": false
+            }
+          },
+          {
+            "id": "task-574c5dba89c9",
+            "text": "⏲️ Let the baked ziti rest 5–10 minutes before serving",
+            "completed": false,
+            "highPriority": true,
+            "dueDate": null,
+            "remindersEnabled": false,
+            "recurring": false,
+            "recurringSettings": {},
+            "schemaVersion": 2,
+            "createdAt": "2026-08-24T03:15:19.159Z",
+            "completedAt": null,
+            "deleteWhenComplete": false,
+            "deleteWhenCompleteSettings": {
+              "cycle": false,
+              "todo": false
+            }
+          }
+        ],
+        "recurringTemplates": {
+          "template-e27e92f19fc7": {
+            "taskText": "🧺 Check pantry for ziti, sauce, ricotta, mozzarella, Parmesan, and seasonings",
+            "highPriority": false,
+            "dueDate": null,
+            "remindersEnabled": false,
+            "recurringSettings": {
+              "frequency": "weekly",
+              "indefinitely": true,
+              "repeatCount": 0,
+              "timesActivated": 0,
+              "weekdays": [
+                "Sat"
+              ],
+              "dayOfMonth": null,
+              "nthWeekday": null,
+              "weekday": null,
+              "time": {
+                "hour": 10,
+                "minute": 0,
+                "meridiem": "AM"
+              },
+              "daily": {
+                "time": "10:00"
+              },
+              "weekly": {
+                "days": [
+                  "Sat"
+                ]
+              },
+              "monthly": {
+                "dayOfMonth": null,
+                "nthWeekday": null,
+                "weekday": null
+              },
+              "lastActivated": null,
+              "nextActivation": null
+            },
+            "createdAt": "2026-08-24T03:15:19.159Z"
+          },
+          "template-0061b08008ea": {
+            "taskText": "🛒 Buy any missing baked-ziti ingredients",
+            "highPriority": true,
+            "dueDate": null,
+            "remindersEnabled": false,
+            "recurringSettings": {
+              "frequency": "weekly",
+              "indefinitely": true,
+              "repeatCount": 0,
+              "timesActivated": 0,
+              "weekdays": [
+                "Sat"
+              ],
+              "dayOfMonth": null,
+              "nthWeekday": null,
+              "weekday": null,
+              "time": {
+                "hour": 11,
+                "minute": 0,
+                "meridiem": "AM"
+              },
+              "daily": {
+                "time": "11:00"
+              },
+              "weekly": {
+                "days": [
+                  "Sat"
+                ]
+              },
+              "monthly": {
+                "dayOfMonth": null,
+                "nthWeekday": null,
+                "weekday": null
+              },
+              "lastActivated": null,
+              "nextActivation": null
+            },
+            "createdAt": "2026-08-24T03:15:19.159Z"
+          }
+        },
+        "taskOptionButtons": {
+          "customize": true,
+          "moveArrows": false,
+          "threeDots": false,
+          "highPriority": true,
+          "rename": true,
+          "delete": true,
+          "recurring": true,
+          "dueDate": false,
+          "reminders": false,
+          "deleteWhenComplete": false
+        },
+        "history": {
+          "events": [],
+          "maxEvents": 100
+        },
+        "reminders": {},
+        "clearedTasks": {
+          "entries": [],
+          "totalCleared": 0,
+          "autoPruneEnabled": true
+        }
+      }
+    }
+  },
+  "appState": {
+    "activeCycleId": "Baked Ziti",
+    "overdueTaskStates": {}
+  },
+  "ui": {
+    "moveArrowsVisible": false,
+    "activeTaskId": null
+  },
+  "settings": {
+    "theme": "default",
+    "darkMode": false,
+    "alwaysShowRecurring": false,
+    "autoSave": true,
+    "showThreeDots": false,
+    "showTaskInput": true,
+    "onboardingCompleted": true,
+    "dismissedEducationalTips": {},
+    "defaultRecurringSettings": {
+      "frequency": "daily",
+      "indefinitely": true
+    },
+    "unlockedThemes": [],
+    "unlockedFeatures": [],
+    "notificationPosition": {
+      "x": 100,
+      "y": 20
+    },
+    "notificationPositionModified": false,
+    "showCompletedDropdown": false,
+    "completedTasksExpanded": false,
+    "reducedMotion": false,
+    "highContrast": false,
+    "fontSize": "16",
+    "debugMode": false,
+    "oneMenuSectionAtATime": true,
+    "menuCollapsedSections": {},
+    "settingsCollapsedSections": {},
+    "preferencesCollapsedSections": {}
+  },
+  "customReminders": {
+    "enabled": false,
+    "indefinite": false,
+    "dueDatesReminders": false,
+    "repeatCount": 0,
+    "frequencyValue": 30,
+    "frequencyUnit": "minutes"
+  },
+  "userProgress": {
+    "cyclesCompleted": 0,
+    "totalTasksCompleted": 0,
+    "rewardMilestones": []
+  },
+  "achievements": {
+    "unlocked": [],
+    "seen": {}
+  }
+}

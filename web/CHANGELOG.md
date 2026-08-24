@@ -1,3 +1,9 @@
+## [2.488] - 2026-08-23
+- refactor(release): extract the CSP hash stage, and give it 17 tests
+- docs(splits): record Priority 1 as shipped, and what the work disproved
+- TODO(changelog): uncommitted work shipped in this release — describe it here
+
+
 ## [2.487] - 2026-08-23
 - site(nav): surface Learn More, match its header, and fix two phone-width overflows
 - test(layout): sweep the marketing page for horizontal overflow, 10 widths
