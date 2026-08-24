@@ -3,7 +3,7 @@
 **Date:** March 15, 2026
 **Updated:** August 21 2026 — four previously-unassessed modules given verdicts; scripts brought into scope (`update-version.sh`); the last inline line counts removed, since the doc had retired them in principle but kept four in practice and all four had drifted. August 2026 — Priority 2 (statsPanel) SHIPPED (commit `806f8082`); line-count table retired (numbers rot — see [PROJECT_STATS.md](../PROJECT_STATS.md)). July 7, 2026 — god-module audit: added statsPanel (Priority 2), orchestrator assessment, false-positive list
 **Updated:** Aug 23 2026 — Priority 1 shipped; Priority 7 stage 1 (CSP hashes) shipped in v2.488 and the `?v=` stage re-scoped after checking what content hashing actually replaced; execution order, DONE condition and the pattern guidance all revised against what the work actually showed.
-**Status:** In progress — **Priorities 1, 2, 3 and 6 complete**; Priorities 4 and 5 open but TRIGGER-BASED (do not schedule them), plus 7 (`update-version.sh`, `restore.sh` stage next). Priority 3 CLOSED Aug 24 2026 at 1,636 lines — **above the ~1,500 target, deliberately**; the remaining bulk is the 10-dep undo/redo execution core, recorded as a non-split with evidence. Priority 1 SHIPPED Aug 23 2026 in v2.484 (five extractions, 2,649 → 1,587 lines, 83 new tests). **Aug 21 2026 review:** added a DONE condition (~1,500-line target, everything else trigger-based); rewrote the per-extraction checklist around the gates that caught the two defects the completed splits shipped (`test:sw`, `validate:provides`); corrected the "provides stays the same" promise the statsPanel split falsified; pulled the release script's CSP stage forward from Priority 7
+**Status:** In progress — **Priorities 1, 2, 3 and 6 complete**; Priorities 4 and 5 open but TRIGGER-BASED (do not schedule them), plus 7 (`update-version.sh`, `restore.sh` stage next). **Priority 8 (`onboardingManager`) OPENED Aug 24 2026** — a god module the page had mislabelled "borderline" and left unscheduled. Priority 3 CLOSED Aug 24 2026 at 1,636 lines — **above the ~1,500 target, deliberately**; the remaining bulk is the 10-dep undo/redo execution core, recorded as a non-split with evidence. Priority 1 SHIPPED Aug 23 2026 in v2.484 (five extractions, 2,649 → 1,587 lines, 83 new tests). **Aug 21 2026 review:** added a DONE condition (~1,500-line target, everything else trigger-based); rewrote the per-extraction checklist around the gates that caught the two defects the completed splits shipped (`test:sw`, `validate:provides`); corrected the "provides stays the same" promise the statsPanel split falsified; pulled the release script's CSP stage forward from Priority 7
 **Related:** [DI_MIGRATION_COMPLETION_PLAN.md](../archive/DI_MIGRATION_COMPLETION_PLAN.md), [ENFORCE_REQUIRES_ROLLOUT_PLAN.md](../archive/ENFORCE_REQUIRES_ROLLOUT_PLAN.md)
 
 ---
@@ -56,20 +56,19 @@ So a priority closes when its seams are exhausted, not when a line count is met.
 modules remain over 1,500 and **every one already carries a verdict** — deferred (`moduleLoader`,
 `migrationManager`), not-a-god-module (`taskViewLayoutManager`, `quickActionsManager`), already
 split and trigger-based (`taskDOM`, `recurringPanel`, `notifications`, `routineSwitcher`), or
-borderline-and-unscheduled (`onboardingManager`, `guidedTourManager`). Two gaps are real and worth
-naming rather than hiding: **`preferencesManager` (2,027) has no verdict anywhere in this document**,
-and `onboardingManager` (2,534) is now the largest non-data module while carrying only "borderline".
-Give those two verdicts before treating this plan as finished.
+borderline-and-unscheduled (`onboardingManager`, `guidedTourManager`). Both gaps flagged here on Aug 24 2026 have since been
+assessed and now carry verdicts (see the two sections below): `preferencesManager` is **not** a god
+module, and `onboardingManager` **is** one and became Priority 8.
 
 This doc no longer pins line/dep/method counts — every measured number in the previous revision of this table had drifted by August 2026. For current volatile metrics see [PROJECT_STATS.md](../PROJECT_STATS.md); for a specific module, measure it fresh (`wc -l`) before extracting. Candidates by verdict:
 
 | Module | Verdict |
 |--------|---------|
 | routineSwitcher.js (`modules/routine/`) | **God module** — Priority 1 — ✅ **SHIPPED** v2.484 (2,649 → 1,587; five sub-modules; see below) |
-| onboardingManager.js | Borderline (sequential step content) |
+| onboardingManager.js | **God module** — **Priority 8** (assessed Aug 24 2026; the earlier "sequential step content" verdict was WRONG — see below) |
 | undoRedoManager.js | **Priority 3** — ✅ **CLOSED** v2.498 (2,306 → 1,636; three sub-modules, 53 new tests; execution core is a recorded non-split — see below) |
 | statsPanel.js (`modules/features/`) | **God module** — Priority 2 — ✅ **SHIPPED** (commit `806f8082`, see below) |
-| guidedTourManager.js | Borderline (sequential step content) |
+| guidedTourManager.js | Borderline (sequential step content) — **unverified**; onboardingManager carried the same label and it did not survive measurement. Re-assess before trusting this row. |
 | recurringPanel.js | Already split (5 sub-modules) |
 | taskDOM.js | Already split (6 sub-modules) |
 | moduleLoader.js | Deferred (boot infrastructure) |
@@ -79,6 +78,7 @@ This doc no longer pins line/dep/method counts — every measured number in the 
 | taskViewLayoutManager.js | Not a god module — one feature, low fan-out (assessed Aug 21 2026) |
 | quickActionsManager.js | Not a god module — one feature (assessed Aug 21 2026) |
 | settingsUIManager.js | Not a god module — **repetition, not spread** (assessed Aug 21 2026) |
+| preferencesManager.js (`modules/ui/`) | Not a god module — **already split, and what remains is one domain with wide seams** (assessed Aug 24 2026) |
 | `scripts/update-version.sh` | **Candidate — Priority 7**, and the highest blast radius on this page (see Scripts, below) |
 
 Note: routineSwitcher grew ~500 lines between March and July 2026 (inline-edit modal, recently-used rendering, routine selection, data validation/repair). It is growing fastest of the candidates — another reason it stays Priority 1.
@@ -141,6 +141,46 @@ the reusable lesson for the remaining splits:
 Fan-out is moderate rather than alarming, which is why this was Priority 6 and not higher: the size
 comes from one large class, not from wiring breadth. Extract `EducationalTipManager` first — it is
 already class-boundaried, so the extraction is a move rather than a carve.
+
+### `onboardingManager.js` — GOD MODULE — Priority 8 (assessed Aug 24 2026)
+
+**The previous verdict was wrong.** This page called it "borderline (sequential step content)" and
+left it unscheduled. Measured: **13 lines** of template-literal HTML in 2,534 lines, across
+43 methods. It is not step content. It is **four distinct interactive subsystems** in one file:
+
+| Subsystem | Lines | deps | calls out | Seam |
+|---|---|---|---|---|
+| Interactive demo (`_startInteractiveDemo`, `_buildCycleDemo`, `_buildTryItDynamic`) | 470 | 1 | **1** | **narrow** |
+| Welcome carousel (`_showFirstRunWelcome` + 4) | 466 | 1 | 11 | wide — calls INTO the demo |
+| First-run splash (`_showFirstRunSplash`, `_hideFirstRunSplash`) | 247 | 1 | 3 | narrow |
+| Onboarding modal + completion | ~324 | — | — | the residual facade |
+
+**Start with the interactive demo.** 470 lines reaching ONE sibling method
+(`_setFirstRunWelcomeMessageText`) and one dependency — a narrower seam than `undoIndexedDB` had,
+and more than three times the size. The splash is a viable second. Take the welcome carousel LAST
+or not at all: it calls into the demo cluster, so extracting it first creates a sub-module edge
+for no reason.
+
+**Do not repeat the Priority 3 mistake** of scheduling the biggest *function*. Measure neighbours.
+
+### `preferencesManager.js` — NOT a god module (assessed Aug 24 2026)
+
+2,027 lines, but it has **already been split**: a Pattern 1 facade dynamic-importing
+`preferencesBgImage.js` (549) and `preferencesPresets.js` (807), so 1,356 lines are already out.
+What remains is one domain — the preferences panel — and its seams are wide.
+
+The only real cluster is **custom colours** (`resetAllColors`, `loadSavedColors`, `updatePreview`,
+`resetColor`, `applyCustomColors`): 525 lines, but it calls out to **9** sibling methods
+(`applyPatternWithCurrentSettings`, `isDefaultTheme`, `isPatternCustomizable`, `pushToUndoStack`,
+`saveColor`, `removeCustomColors`, `removePatternColor`, `updatePatternControlsVisibility`,
+`normalizeHexInput`). Nine outbound calls is the callback-bag shape Priority 1 warns about, and
+unlike Priority 1 there is no manager back-reference to fall back on here — the sub-modules use
+the dynamic-import pattern, not `this.m`.
+
+**The real problem is a method, not a module.** `setupEventListeners` is **459 lines** — 23% of
+the file — with 65 branches across 25 distinct `DOM_IDS`, yet only 3 listener registrations. That
+is conditional wiring logic that grew, and the fix is extracting methods **in place**, not carving
+out a file. Trigger-based: do it next time that method is touched for another reason.
 
 ### `taskViewLayoutManager.js` — NOT a god module
 
@@ -642,7 +682,9 @@ If revisited, the split is unusually low-risk precisely because it's pre-DI — 
    both Pattern 2, zero DI. Measure a function's neighbours before its body.
 8. **recurringPanelAddTask** — trigger-based, low priority
 9. ~~**EducationalTipManager** out of `notifications.js`~~ — ✅ **SHIPPED v2.463** (Priority 6)
-10. **Remaining `update-version.sh` stages** — `restore.sh` generation next; the `?v=` sweep was
+10. **onboardingManager interactive demo** — Priority 8, the widest-value/narrowest-seam extraction
+    currently on this page: 470 lines, one dependency, one outbound call. First-run splash second.
+11. **Remaining `update-version.sh` stages** — `restore.sh` generation next; the `?v=` sweep was
     RE-SCOPED and demoted Aug 23 2026 (content hashing superseded most of it — see Scripts above),
     both trigger-based (Priority 7)
 
