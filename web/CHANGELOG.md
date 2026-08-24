@@ -1,3 +1,8 @@
+## [2.487] - 2026-08-23
+- site(nav): surface Learn More, match its header, and fix two phone-width overflows
+- test(layout): sweep the marketing page for horizontal overflow, 10 widths
+
+
 ## [2.486] - 2026-08-23
 - perf(site): fix hero overflow, and cut the product page from 4.5MB to 444KB
 
