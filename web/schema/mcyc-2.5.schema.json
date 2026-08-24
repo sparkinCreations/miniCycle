@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://minicycle.app/mcyc.schema.json",
-  "title": ".mcyc routine file",
-  "description": "CURRENT version, tracking the latest .mcyc format (2.5 today). This document may gain fields as the format grows; pin https://minicycle.app/schema/mcyc-2.5.schema.json instead if you need validation results that never shift. A miniCycle routine: a named, ordered list of tasks that resets and repeats. Plain JSON, UTF-8, no compression. This schema describes what the miniCycle importer ACCEPTS: a file that validates here will import. Fields marked 'derived' are recomputed by the app on load; authoring them has no durable effect.",
+  "$id": "https://minicycle.app/schema/mcyc-2.5.schema.json",
+  "title": ".mcyc routine file (format 2.5)",
+  "description": "PINNED to .mcyc format version 2.5. This document never changes, so it is safe to reference from CI or a build step. For the version that tracks the format as it evolves, use https://minicycle.app/mcyc.schema.json. A miniCycle routine: a named, ordered list of tasks that resets and repeats. Plain JSON, UTF-8, no compression. This schema describes what the miniCycle importer ACCEPTS: a file that validates here will import. Fields marked 'derived' are recomputed by the app on load; authoring them has no durable effect.",
   "type": "object",
   "required": [
     "name",

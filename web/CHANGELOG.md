@@ -1,3 +1,7 @@
+## [2.494] - 2026-08-24
+- site(mcyc): publish a pinned /schema/mcyc-2.5.schema.json beside the current one, so CI can rely on a schema that never shifts
+
+
 ## [2.493] - 2026-08-24
 - site(mcyc): drop the left border accents, remove the incorrect .tcyc legacy claim, and clear the em dashes
 

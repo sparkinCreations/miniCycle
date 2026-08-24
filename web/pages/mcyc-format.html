@@ -517,7 +517,7 @@
                             <tr><th scope="row">Contents</th><td>Exactly one routine per file</td></tr>
                             <tr><th scope="row">Required fields</th><td><code>name</code> and <code>tasks</code>. Nothing else.</td></tr>
                             <tr><th scope="row">Task ceiling</th><td>150 tasks. Longer files import, truncated to the first 150.</td></tr>
-                            <tr><th scope="row">Schema</th><td><a href="../mcyc.schema.json">mcyc.schema.json</a> (JSON Schema 2020-12)</td></tr>
+                            <tr><th scope="row">Schema</th><td>JSON Schema 2020-12. <a href="../schema/mcyc-2.5.schema.json">Pinned to 2.5</a> for CI, or <a href="../mcyc.schema.json">current</a> for editors.</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -743,17 +743,46 @@
                 </p>
 
                 <p>
-                    <a href="../mcyc.schema.json"><code>https://minicycle.app/mcyc.schema.json</code></a>
-                    is the JSON Schema, draft 2020-12. It describes what the importer <em>accepts</em>: a file
-                    that validates will import.
+                    Both URLs below are JSON Schema, draft 2020-12, and both describe what the importer
+                    <em>accepts</em>: a file that validates will import. They carry identical rules today.
+                    Pick one based on whether you want it to stay still.
+                </p>
+
+                <div class="table-scroll">
+                    <table>
+                        <thead>
+                            <tr><th scope="col">URL</th><th scope="col">Use it when</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><a href="../schema/mcyc-2.5.schema.json"><code>/schema/mcyc-2.5.schema.json</code></a></td>
+                                <td><strong>Pinned to format 2.5.</strong> Never changes. Reference this from CI or a
+                                    build step, where a validation result that shifts under you is a broken build.</td>
+                            </tr>
+                            <tr>
+                                <td><a href="../mcyc.schema.json"><code>/mcyc.schema.json</code></a></td>
+                                <td><strong>Current.</strong> Tracks the format as it grows, so it may gain fields.
+                                    Good for editor autocomplete, where you want the newest hints.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <p>
+                    A new format version gets a new filename, never an edit to an existing one. That is the
+                    guarantee that makes the pinned URL worth pinning, and it is why the two are served with
+                    different cache lifetimes: the versioned file is immutable, the current one stays
+                    correctable.
                 </p>
 
                 <h3>From the command line</h3>
-<pre><code># Node, using ajv
-npx ajv-cli validate -s mcyc.schema.json -d my-routine.mcyc --spec=draft2020
+<pre><code># Node, using ajv (pinned: safe in CI)
+npx ajv-cli validate -s mcyc-2.5.schema.json -d my-routine.mcyc --spec=draft2020
 
-# Python, using check-jsonschema
-pipx run check-jsonschema --schemafile mcyc.schema.json my-routine.mcyc</code></pre>
+# Python, using check-jsonschema (reads the URL directly)
+pipx run check-jsonschema \
+  --schemafile https://minicycle.app/schema/mcyc-2.5.schema.json \
+  my-routine.mcyc</code></pre>
 
                 <h3>In an editor</h3>
                 <p>
@@ -791,6 +820,13 @@ pipx run check-jsonschema --schemafile mcyc.schema.json my-routine.mcyc</code></
                     Our intent for anything built on this: existing files keep importing. New fields may be
                     added, so treat unknown keys as ignorable rather than as errors, which is also how the app
                     treats them.
+                </p>
+                <p>
+                    Published schemas follow the same rule. Each format version gets its own permanent URL
+                    (<code>/schema/mcyc-2.5.schema.json</code> today), and a version that has shipped is never
+                    edited in place. If the format reaches 2.6, that becomes a new file and the 2.5 document
+                    stays exactly as it is, so anything pinned to it keeps validating the way it did on the
+                    day you pinned it.
                 </p>
                 <p>
                     The <a href="https://docs.minicycle.app/#/reference/MCYC_FILE_FORMAT">full specification</a>

@@ -234,6 +234,17 @@
 # to the "/*" catch-all (public, max-age=31536000) and a fix to the schema could
 # not reach anyone who had already fetched it for a YEAR — the same trap the HTML
 # route blocks above exist to close, and validate:cache only enumerates HTML.
+# Pinned, versioned schemas. Unlike /mcyc.schema.json (which tracks the current
+# format and therefore stays correctable at 1h), a versioned document is immutable
+# BY DEFINITION: /schema/mcyc-2.5.schema.json describes format 2.5 and will never
+# describe anything else. A new format version gets a new filename, never an edit
+# here — which is the whole reason the URL is worth pinning in someone's CI.
+[[headers]]
+  for = "/schema/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+    Access-Control-Allow-Origin = "*"
+
 [[headers]]
   for = "/mcyc.schema.json"
   [headers.values]
