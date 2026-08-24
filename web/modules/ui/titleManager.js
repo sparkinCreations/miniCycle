@@ -200,7 +200,10 @@ async function handleMiniCycleTitleBlur() {
 
     // ✅ Notify undo system of rename (if key changed)
     if (finalTitle !== activeCycle && typeof _deps.onCycleRenamed === 'function') {
-        _deps.onCycleRenamed(activeCycle, finalTitle).catch(err => {
+        // Promise.resolve(): the moduleLoader DI wrapper optional-chains its inner
+        // call, so it yields undefined when the hook is unwired and `.catch` on
+        // undefined throws here — inside a UI flow, after state already changed.
+        Promise.resolve(_deps.onCycleRenamed(activeCycle, finalTitle)).catch(err => {
             console.warn('⚠️ Undo system rename notification failed:', err);
         });
     }

@@ -183,7 +183,10 @@ export class RoutineSwitcherActions {
 
                 // ✅ Notify undo system of cycle deletion (DI-pure)
                 if (typeof this.m.deps.onCycleDeleted === 'function') {
-                    this.m.deps.onCycleDeleted(cycleKey).catch(err => {
+                    // Promise.resolve(): the moduleLoader DI wrapper optional-chains its inner
+                    // call, so it yields undefined when the hook is unwired and `.catch` on
+                    // undefined throws here — inside a UI flow, after state already changed.
+                    Promise.resolve(this.m.deps.onCycleDeleted(cycleKey)).catch(err => {
                         console.warn('⚠️ Undo system cycle deletion notification failed:', err);
                     });
                 }
@@ -688,7 +691,10 @@ export class RoutineSwitcherActions {
 
         // Notify undo system of cycle rename
         if (typeof this.m.deps.onCycleRenamed === 'function') {
-            this.m.deps.onCycleRenamed(oldKey, uniqueName).catch(err => {
+            // Promise.resolve(): the moduleLoader DI wrapper optional-chains its inner
+            // call, so it yields undefined when the hook is unwired and `.catch` on
+            // undefined throws here — inside a UI flow, after state already changed.
+            Promise.resolve(this.m.deps.onCycleRenamed(oldKey, uniqueName)).catch(err => {
                 console.warn('⚠️ Undo system cycle rename notification failed:', err);
             });
         }

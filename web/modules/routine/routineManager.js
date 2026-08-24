@@ -244,7 +244,10 @@ export class RoutineManager {
                     }, true);
 
                     if (typeof this.deps.onCycleCreated === 'function') {
-                        this.deps.onCycleCreated(finalTitle).catch(err => {
+                        // Promise.resolve(): the moduleLoader DI wrapper optional-chains its inner
+                        // call, so it yields undefined when the hook is unwired and `.catch` on
+                        // undefined throws here — inside a UI flow, after state already changed.
+                        Promise.resolve(this.deps.onCycleCreated(finalTitle)).catch(err => {
                             console.warn('⚠️ Undo system cycle creation notification failed:', err);
                         });
                     }
@@ -369,7 +372,10 @@ export class RoutineManager {
 
         // ✅ Notify undo system of new cycle (fallback path)
         if (typeof this.deps.onCycleCreated === 'function') {
-            this.deps.onCycleCreated(finalTitle).catch(err => {
+            // Promise.resolve(): the moduleLoader DI wrapper optional-chains its inner
+            // call, so it yields undefined when the hook is unwired and `.catch` on
+            // undefined throws here — inside a UI flow, after state already changed.
+            Promise.resolve(this.deps.onCycleCreated(finalTitle)).catch(err => {
                 console.warn('⚠️ Undo system cycle creation notification failed:', err);
             });
         }
@@ -517,7 +523,10 @@ export class RoutineManager {
                 }
 
                 if (finalResult && typeof this.deps.onCycleCreated === 'function') {
-                    this.deps.onCycleCreated(finalResult.storageKey).catch(err => {
+                    // Promise.resolve(): the moduleLoader DI wrapper optional-chains its inner
+                    // call, so it yields undefined when the hook is unwired and `.catch` on
+                    // undefined throws here — inside a UI flow, after state already changed.
+                    Promise.resolve(this.deps.onCycleCreated(finalResult.storageKey)).catch(err => {
                         console.warn('⚠️ Undo system cycle creation notification failed:', err);
                     });
                 }
@@ -600,7 +609,10 @@ export class RoutineManager {
 
             // Notify undo system
             if (typeof this.deps.onCycleCreated === 'function') {
-                this.deps.onCycleCreated(finalTitle).catch(err => {
+                // Promise.resolve(): the moduleLoader DI wrapper optional-chains its inner
+                // call, so it yields undefined when the hook is unwired and `.catch` on
+                // undefined throws here — inside a UI flow, after state already changed.
+                Promise.resolve(this.deps.onCycleCreated(finalTitle)).catch(err => {
                     console.warn('⚠️ Undo system cycle creation notification failed:', err);
                 });
             }

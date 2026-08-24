@@ -325,3 +325,36 @@ the 100-cycle milestone). The unlock schema is namespaced per-game
 siblings can be added when the reward ladder grows. Unreferenced is the expected
 state until a tier ships — reachability does not distinguish "abandoned" from
 "not yet scheduled."
+
+## Guarding the DI wrapper instead of its result
+
+`moduleLoader` supplies cross-module hooks as optional-chained wrappers:
+
+```js
+onCycleSwitched: (...args) => deps.ui?.onCycleSwitched?.(...args)
+```
+
+That wrapper is **always a function**, so a call-site guard of
+`typeof this.deps.onCycleSwitched === 'function'` always passes — while the wrapper
+**returns `undefined`** whenever the inner hook is unwired. Anything chained onto the
+result then throws:
+
+```
+TypeError: Cannot read properties of undefined (reading 'catch')
+```
+
+Found Aug 2026 across **9 call sites** in 5 modules, all chaining `.catch` onto a
+lifecycle hook (`onCycleCreated` / `onCycleRenamed` / `onCycleDeleted` /
+`onCycleSwitched`). Worst case is `routineSwitcher.confirmMiniCycle`, which has no
+enclosing `try`: the throw lands after the state update has already succeeded and
+before `hideSwitchMiniCycleModal()`, so the routine switches and the modal stays open.
+
+Not reachable while the hooks are in `provides` and `validate:provides` passes — this
+is rule #19's shape again: a branch written as though the dep might be absent, which
+if it ever *is* absent fails as a confusing TypeError deep in a UI flow instead of a
+clear wiring error. `validate:chains` does not catch it (the dep is `optional()` at
+the call site and the `?.` lives in `moduleLoader`).
+
+**Fix:** `Promise.resolve(hook(...)).catch(...)` — which `quickActionsManager` was
+already doing. **When reviewing:** a `typeof === 'function'` guard on a DI-supplied
+hook tells you nothing about what the call returns. Check the wrapper.

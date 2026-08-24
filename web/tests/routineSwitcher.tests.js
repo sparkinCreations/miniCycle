@@ -499,6 +499,70 @@ export async function runRoutineSwitcherTests(resultsDiv, isPartOfSuite = false)
         // Should not throw
     });
 
+    await test('an unwired onCycleSwitched hook does not abort the switch', async () => {
+        // The DI wrapper moduleLoader supplies is `(...args) => deps.ui?.onCycleSwitched?.(...args)`.
+        // It is ALWAYS a function, so the `typeof === 'function'` guard at the call
+        // site passes — but it RETURNS UNDEFINED when the inner hook is missing, and
+        // `.catch` on undefined throws a TypeError. That throw would land in
+        // confirmMiniCycle with no try block around it: after the state update has
+        // already succeeded and before hideSwitchMiniCycleModal() runs, leaving the
+        // routine switched but the modal stuck open.
+        //
+        // Hardened with Promise.resolve() (v2.497). This test injects the wrapper in
+        // its unwired shape; without the fix it throws.
+        const schemaData = JSON.parse(localStorage.getItem('miniCycleData'));
+
+        const selectedCycle = document.createElement('div');
+        selectedCycle.className = 'mini-cycle-switch-item selected';
+        selectedCycle.dataset.cycleKey = 'Evening Routine';
+        document.body.appendChild(selectedCycle);
+
+        let modalHidden = false;
+        const unwiredUi = {};   // ui exists, but carries no onCycleSwitched
+        const mockDeps = {
+            AppState: {
+                isReady: () => true,
+                get: () => schemaData,
+                update: (updateFn) => {
+                    // Must PERSIST: confirmMiniCycle re-reads AppState.get() straight
+                    // after and bails if activeCycleId did not actually change. A
+                    // non-persisting mock aborts the switch before the hook is ever
+                    // reached, which is not the path this test is about.
+                    const state = JSON.parse(JSON.stringify(schemaData));
+                    updateFn(state);
+                    schemaData.appState = state.appState;
+                    schemaData.data = state.data;
+                    return state;
+                }
+            },
+            querySelector: (sel) => document.querySelector(sel),
+            showNotification: () => {},
+            loadMiniCycle: () => {},
+            getModal: () => document.querySelector('.mini-cycle-switch-modal'),
+            // exactly the wrapper shape moduleLoader builds
+            onCycleSwitched: (...args) => unwiredUi?.onCycleSwitched?.(...args)
+        };
+
+        const instance = new RoutineSwitcher(mockDeps);
+        instance.hideSwitchMiniCycleModal = () => { modalHidden = true; };
+        instance._selectedCycleKey = 'Evening Routine';
+
+        let threw = null;
+        try {
+            instance.confirmMiniCycle();
+        } catch (e) {
+            threw = e;
+        }
+        await new Promise(resolve => setTimeout(resolve, 150));
+
+        if (threw) {
+            throw new Error(`confirmMiniCycle threw on an unwired hook: ${threw.message}`);
+        }
+        if (!modalHidden) {
+            throw new Error('the switch aborted before hiding the modal — the user would be left with it open');
+        }
+    });
+
     await test('confirms cycle switch with valid data', async () => {
         const schemaData = JSON.parse(localStorage.getItem('miniCycleData'));
 

@@ -1,3 +1,7 @@
+## [2.497] - 2026-08-24
+- fix(di): guard the wrapper's RESULT, not just the wrapper — 9 lifecycle .catch sites could throw when a hook is unwired
+
+
 ## [2.496] - 2026-08-24
 - refactor(undo): extract undoSnapshotUtils.js — 121 pure lines, the cluster around captureStateSnapshot rather than the function itself
 

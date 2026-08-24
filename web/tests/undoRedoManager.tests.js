@@ -1840,6 +1840,87 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
     });
 
     // =========================================================
+    // 🩹 Cycle-mismatch self-heal
+    // =========================================================
+    // captureStateSnapshot carries a recovery branch nothing tested: when
+    // AppGlobalState.activeCycleIdForUndo disagrees with the state's real
+    // activeCycleId, it fires onCycleSwitched() and returns WITHOUT capturing.
+    //
+    // It matters because the failure it recovers from is permanent: a stale
+    // tracked id makes every subsequent capture hit this branch, so undo stops
+    // recording entirely and nothing tells the user. The recovery is also
+    // deliberately fire-and-forget, so the only evidence it ran is its effect.
+    const UI_TIMEOUTS_CYCLE_SWITCH = 300; // UI_TIMEOUTS.CYCLE_SWITCH_TRANSITION
+    resultsDiv.innerHTML += '<h4 class="test-section">🩹 Cycle-Mismatch Self-Heal</h4>';
+
+    await test('a cycle mismatch does NOT capture a snapshot', async () => {
+        const deps = createMockDependencies();
+        setUndoRedoManagerDependencies(deps);
+        const gs = deps.AppGlobalState;
+        gs.activeCycleIdForUndo = 'Stale Cycle';   // tracking a cycle we are no longer on
+        gs.activeUndoStack = [];
+
+        captureStateSnapshot(deps.AppState.get());   // state.appState.activeCycleId === 'Test Cycle'
+
+        if (gs.activeUndoStack.length !== 0) {
+            throw new Error(`captured ${gs.activeUndoStack.length} snapshot(s) against a stale cycle id`);
+        }
+    });
+
+    await test('a cycle mismatch starts the switch synchronously', async () => {
+        // onCycleSwitched sets isSwitchingCycles BEFORE its first await, so the
+        // flag is already up by the time captureStateSnapshot returns. That is
+        // the observable proof the self-heal fired rather than simply bailing.
+        const deps = createMockDependencies();
+        setUndoRedoManagerDependencies(deps);
+        const gs = deps.AppGlobalState;
+        gs.activeCycleIdForUndo = 'Stale Cycle';
+        gs.isSwitchingCycles = false;
+
+        captureStateSnapshot(deps.AppState.get());
+
+        if (gs.isSwitchingCycles !== true) {
+            throw new Error('self-heal did not start a cycle switch');
+        }
+        await new Promise(r => setTimeout(r, UI_TIMEOUTS_CYCLE_SWITCH + 250)); // let it settle
+    });
+
+    await test('the self-heal repoints the tracked cycle and clears the flag', async () => {
+        const deps = createMockDependencies();
+        setUndoRedoManagerDependencies(deps);
+        const gs = deps.AppGlobalState;
+        gs.activeCycleIdForUndo = 'Stale Cycle';
+
+        captureStateSnapshot(deps.AppState.get());
+        await new Promise(r => setTimeout(r, UI_TIMEOUTS_CYCLE_SWITCH + 250));
+
+        if (gs.activeCycleIdForUndo !== 'Test Cycle') {
+            throw new Error(`tracked id is "${gs.activeCycleIdForUndo}", expected "Test Cycle"`);
+        }
+        if (gs.isSwitchingCycles !== false) {
+            throw new Error('isSwitchingCycles was left set — captures would stay blocked forever');
+        }
+    });
+
+    await test('a matching cycle id captures normally (the branch is not always-on)', async () => {
+        // Guards the obvious over-correction: if the mismatch test above passed
+        // because capture is broken generally, this fails.
+        const deps = createMockDependencies();
+        setUndoRedoManagerDependencies(deps);
+        const gs = deps.AppGlobalState;
+        gs.activeCycleIdForUndo = 'Test Cycle';    // matches
+        gs.activeUndoStack = [];
+        gs.lastSnapshotSignature = null;
+        gs.lastSnapshotTs = 0;
+
+        captureStateSnapshot(deps.AppState.get());
+
+        if (gs.activeUndoStack.length !== 1) {
+            throw new Error(`expected 1 captured snapshot, got ${gs.activeUndoStack.length}`);
+        }
+    });
+
+    // =========================================================
     // 🔒 close + rename — WRITTEN BEFORE THE undoIndexedDB EXTRACTION
     // =========================================================
     // Both functions are being moved into modules/ui/undoIndexedDB.js, and

@@ -904,7 +904,10 @@ export async function processImportedData(fileContent) {
     // a snapshot from the old cycle and switch the user back to it.
     // Same pattern routineManager uses after creating a new routine.
     if (typeof _deps.onCycleCreated === 'function') {
-        _deps.onCycleCreated(finalCycleTitle).catch(err => {
+        // Promise.resolve(): the moduleLoader DI wrapper optional-chains its inner
+        // call, so it yields undefined when the hook is unwired and `.catch` on
+        // undefined throws here — inside a UI flow, after state already changed.
+        Promise.resolve(_deps.onCycleCreated(finalCycleTitle)).catch(err => {
             console.warn('Failed to initialize undo stack for imported cycle:', err);
         });
     }
