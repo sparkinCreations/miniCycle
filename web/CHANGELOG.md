@@ -1,3 +1,7 @@
+## [2.491] - 2026-08-24
+- fix(site): move the /mcyc alias to _redirects — netlify.toml path redirects are inert here
+
+
 ## [2.490] - 2026-08-24
 - site(mcyc): publish the .mcyc format as an open standard — spec page, JSON Schema, and /mcyc alias
 

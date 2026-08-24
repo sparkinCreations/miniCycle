@@ -18,6 +18,14 @@ https://minicycle.app/docs/*  https://docs.minicycle.app/:splat  301!
 /miniCycle-lite.html    /lite/miniCycle-lite.html     301
 /miniCycleGames/*       /games/:splat                 301
 
+# Short, citable alias for the .mcyc format spec. A format other people are
+# invited to implement needs a URL that survives being pasted into a README.
+# MUST sit above the /* SPA fallback below — that rule answers every unmatched
+# path with miniCycle.html and a 404 status, which is what swallowed this alias
+# when it was (wrongly) declared in netlify.toml instead of here. Path redirects
+# live in THIS file; netlify.toml carries the headers.
+/mcyc                   /pages/mcyc-format.html       301
+
 # Redirect root to miniCycle.html
 /    /miniCycle.html    200
 
