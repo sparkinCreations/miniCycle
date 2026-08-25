@@ -31,9 +31,9 @@
 // §1 VERSION IDENTITY (update-version.sh rewrites the three vars below — keep
 //    their exact `var NAME = …` shapes) + the build-injected module map.
 // ═══════════════════════════════════════════════════════════════════════════
-var APP_VERSION = '2.502';
-var CACHE_VERSION = 'v1345';
-var CACHE_VERSION_NUMBER = 1345; // Numeric version matching version.js (for synthetic fallback)
+var APP_VERSION = '2.504';
+var CACHE_VERSION = 'v1347';
+var CACHE_VERSION_NUMBER = 1347; // Numeric version matching version.js (for synthetic fallback)
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -279,6 +279,7 @@ var BOOT_CRITICAL = [
   './modules/ui/modalUtils.js',
   './modules/ui/actionUsage.js',
   './modules/ui/guidedTourManager.js',
+  './modules/ui/guidedTourDefinitions.js',
   './modules/task/dailyResetManager.js',
   './modules/features/backupReminder.js',
   './modules/other/basicPluginSystem.js',

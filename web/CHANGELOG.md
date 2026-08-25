@@ -1,3 +1,12 @@
+## [2.504] - 2026-08-25
+- refactor(tours): move the thirteen tour definitions to a pure-data module and replace sixteen onEnter closures with a named visibility predicate (guidedTourManager 1,712 → 1,193; Priority 9 closed)
+
+
+## [2.503] - 2026-08-25
+- docs(splits-plan): assess guidedTourManager — Priority 9, a dedup not a split
+- refactor(tours): collapse twelve near-identical tour prompts into one table-driven helper (guidedTourManager 1,962 → 1,712), plus four regression tests covering guards the copies left untested
+
+
 ## [2.502] - 2026-08-25
 - perf(auto-uncheck): the daily auto-uncheck watcher now ticks at an idle rate
   when no routine has the feature enabled — 30s active, **2h idle**, mirroring

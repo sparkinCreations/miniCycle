@@ -64,7 +64,8 @@ export async function runGuidedTourManagerTests(resultsDiv) {
             '#quick-actions-btn, #progressBar, #mode-selector, ' +
             '#help-window, #quick-actions-window, #personalization-btn, ' +
             '#quick-dark-toggle, #slide-right, #retake-guided-tour, ' +
-            '#current-routine-status, #history-btn, ' +
+            '#current-routine-status, #history-btn, '
+            + '#focus-mode-btn, #routine-switcher-btn, ' +
             '#preferences-modal, #preferences-preview, #pref-section-quick-themes, ' +
             '#preferences-reset-all, ' +
             '#task-options-customizer-modal, #option-preview-content, #reset-task-options-btn, ' +
@@ -348,6 +349,84 @@ export async function runGuidedTourManagerTests(resultsDiv) {
         }
     });
 
+    // Regression cover added with the v2.504 tour-definitions split, which turned
+    // sixteen onEnter closures into a `skipWhenHidden` field naming a shared
+    // predicate. The suite above only ever exercised the MISSING-target path:
+    // making _isStepHidden() always return false, or typo'ing a predicate name in
+    // a tour definition, both left all 67 tests green.
+    await test('a present-but-hidden step is filtered out by its visibility predicate', async () => {
+        setupTargets();
+        createTarget('button', { id: 'focus-mode-btn', rect: { left: 100, top: 40, width: 40, height: 40 } });
+        createTarget('button', { id: 'routine-switcher-btn', rect: { left: 150, top: 40, width: 40, height: 40 } });
+
+        const allVisible = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: null }
+        });
+        allVisible.startTour();
+
+        if (allVisible._steps.length !== 5) {
+            throw new Error(`Expected all 5 main-tour steps when every target is present, got ${allVisible._steps.length}`);
+        }
+
+        // display:none leaves the element resolvable here (the helper stubs its
+        // rects) but strips its offsetParent — exactly the case skipWhenHidden
+        // 'computedDisplay' exists for, and one _resolveTarget() alone misses.
+        document.getElementById('focus-mode-btn').style.display = 'none';
+
+        const oneHidden = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: null }
+        });
+        oneHidden.startTour();
+
+        if (oneHidden._steps.length !== 4) {
+            throw new Error(`Expected the hidden focus-mode step to be filtered out (4 steps), got ${oneHidden._steps.length}`);
+        }
+    });
+
+    await test('every skipWhenHidden name in TOUR_DEFINITIONS resolves to a predicate', async () => {
+        const { TOUR_DEFINITIONS } = await import(`../modules/ui/guidedTourDefinitions.js?v=${cacheBuster}`);
+        const predicates = GuidedTourModule.STEP_VISIBILITY_PREDICATES;
+
+        const used = new Set();
+        for (const [, definition] of TOUR_DEFINITIONS) {
+            for (const step of definition.steps) {
+                if (step.skipWhenHidden) used.add(step.skipWhenHidden);
+            }
+        }
+
+        if (used.size === 0) {
+            throw new Error('Expected at least one step to declare skipWhenHidden');
+        }
+
+        const unknown = [...used].filter(
+            name => !Object.prototype.hasOwnProperty.call(predicates, name)
+        );
+        if (unknown.length > 0) {
+            throw new Error(`Unknown skipWhenHidden predicate(s): ${unknown.join(', ')}`);
+        }
+    });
+
+    await test('the manager registers every tour in TOUR_DEFINITIONS', async () => {
+        const { TOUR_DEFINITIONS } = await import(`../modules/ui/guidedTourDefinitions.js?v=${cacheBuster}`);
+        const manager = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: 'done' }
+        });
+
+        const missing = TOUR_DEFINITIONS
+            .map(([tourId]) => tourId)
+            .filter(tourId => !manager._tours.has(tourId));
+
+        if (missing.length > 0) {
+            throw new Error(`Tours declared but not registered: ${missing.join(', ')}`);
+        }
+        if (manager._tours.size !== TOUR_DEFINITIONS.length) {
+            throw new Error(`Expected ${TOUR_DEFINITIONS.length} registered tours, got ${manager._tours.size}`);
+        }
+    });
+
     await test('startTour skips entirely when no steps have valid targets', async () => {
         // No targets at all — every main-tour step should filter out
         const manager = await createManager({
@@ -582,6 +661,44 @@ export async function runGuidedTourManagerTests(resultsDiv) {
         }
     });
 
+    // Regression cover added with the v2.503 prompt dedup, which turned these two
+    // guards into tour-definition fields (promptMinCycles / promptMainViewOnly).
+    // Neither was tested before: deleting either field left all 63 tests green.
+    await test('showStatsTourNotification is a no-op before the first cycle completes', async () => {
+        const manager = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: 'done', statsTourStep: null },
+            userProgress: { cyclesCompleted: 0 }
+        });
+
+        notifications.length = 0;
+        manager.showStatsTourNotification();
+
+        if (notifications.length !== 0) {
+            throw new Error(`Expected 0 notifications before the first cycle, got ${notifications.length}`);
+        }
+    });
+
+    await test('showStatsTourNotification is a no-op in focus view', async () => {
+        const manager = await createManager({
+            appReady: false,
+            settings: {
+                onboardingCompleted: true,
+                guidedTourStep: 'done',
+                statsTourStep: null,
+                focusModeActive: true
+            },
+            userProgress: { cyclesCompleted: 1 }
+        });
+
+        notifications.length = 0;
+        manager.showStatsTourNotification();
+
+        if (notifications.length !== 0) {
+            throw new Error(`Expected 0 notifications in focus view, got ${notifications.length}`);
+        }
+    });
+
     await test('stats tour completion sets statsTourStep to done without affecting guidedTourStep', async () => {
         setupStatsPanelTargets();
         const manager = await createManager({
@@ -727,6 +844,60 @@ export async function runGuidedTourManagerTests(resultsDiv) {
 
         if (mockState.settings.prefsTourStep !== 'done') {
             throw new Error(`Expected prefsTourStep done, got ${mockState.settings.prefsTourStep}`);
+        }
+    });
+
+    // Regression cover added with the v2.503 prompt dedup. Dialog-anchored prompts
+    // must render INSIDE the dialog because showModal() makes the global
+    // notification container inert. Only the negative case (menu passes no
+    // container) was asserted before: blanking the resolver entirely, or dropping
+    // the first selector in the fallback chain, left all 63 tests green.
+    await test('personalization prompt renders in the dialog scroll area when present', async () => {
+        const dialog = setupPreferencesModalTargets();
+        const scrollArea = document.createElement('div');
+        scrollArea.className = 'preferences-scroll-area';
+        dialog.appendChild(scrollArea);
+        const modalContent = document.createElement('div');
+        modalContent.className = 'preferences-modal-content';
+        dialog.appendChild(modalContent);
+
+        const manager = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: 'done', prefsTourStep: null }
+        });
+
+        notifications.length = 0;
+        manager.showPersonalizationTourNotification();
+
+        if (notifications[0]?.options?.container !== scrollArea) {
+            throw new Error('Expected the prompt to render in .preferences-scroll-area');
+        }
+    });
+
+    await test('personalization prompt falls back to modal content, then to the dialog', async () => {
+        const dialog = setupPreferencesModalTargets();
+        const modalContent = document.createElement('div');
+        modalContent.className = 'preferences-modal-content';
+        dialog.appendChild(modalContent);
+
+        const manager = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: 'done', prefsTourStep: null }
+        });
+
+        notifications.length = 0;
+        manager.showPersonalizationTourNotification();
+
+        if (notifications[0]?.options?.container !== modalContent) {
+            throw new Error('Expected fallback to .preferences-modal-content when no scroll area exists');
+        }
+
+        modalContent.remove();
+        notifications.length = 0;
+        manager.showPersonalizationTourNotification();
+
+        if (notifications[0]?.options?.container !== dialog) {
+            throw new Error('Expected final fallback to the dialog element itself');
         }
     });
 
