@@ -2,8 +2,9 @@
 
 **Date:** March 15, 2026
 **Updated:** August 21 2026 — four previously-unassessed modules given verdicts; scripts brought into scope (`update-version.sh`); the last inline line counts removed, since the doc had retired them in principle but kept four in practice and all four had drifted. August 2026 — Priority 2 (statsPanel) SHIPPED (commit `806f8082`); line-count table retired (numbers rot — see [PROJECT_STATS.md](../PROJECT_STATS.md)). July 7, 2026 — god-module audit: added statsPanel (Priority 2), orchestrator assessment, false-positive list
+**Updated:** Aug 25 2026 — `guidedTourManager` assessed and the "borderline (sequential step content)" row RETIRED: it is **not** a god module (fan-out is 9 infrastructure deps and zero feature modules; one `innerHTML` in 1,962 lines), but half the file is data + repetition, so it opens as **Priority 9 — a dedup, not a split**.
 **Updated:** Aug 23 2026 — Priority 1 shipped; Priority 7 stage 1 (CSP hashes) shipped in v2.488 and the `?v=` stage re-scoped after checking what content hashing actually replaced; execution order, DONE condition and the pattern guidance all revised against what the work actually showed.
-**Status:** In progress — **Priorities 1, 2, 3 and 6 complete**; Priorities 4 and 5 open but TRIGGER-BASED (do not schedule them), plus 7 (`update-version.sh`, `restore.sh` stage next). **Priority 8 (`onboardingManager`) OPENED Aug 24 2026; CLOSED Aug 25 2026 — steps 1-3 shipped (v2.499 demo, v2.500 splash, v2.501 carousel): 2,534 → 1,052, eighteen new tests** — a god module the page had mislabelled "borderline" and left unscheduled. Priority 3 CLOSED Aug 24 2026 at 1,636 lines — **above the ~1,500 target, deliberately**; the remaining bulk is the 10-dep undo/redo execution core, recorded as a non-split with evidence. Priority 1 SHIPPED Aug 23 2026 in v2.484 (five extractions, 2,649 → 1,587 lines, 83 new tests). **Aug 21 2026 review:** added a DONE condition (~1,500-line target, everything else trigger-based); rewrote the per-extraction checklist around the gates that caught the two defects the completed splits shipped (`test:sw`, `validate:provides`); corrected the "provides stays the same" promise the statsPanel split falsified; pulled the release script's CSP stage forward from Priority 7
+**Status:** In progress — **Priorities 1, 2, 3 and 6 complete**; Priorities 4 and 5 open but TRIGGER-BASED (do not schedule them), plus 7 (`update-version.sh`, `restore.sh` stage next). **Priority 9 (`guidedTourManager`) OPENED Aug 25 2026 — a DEDUP, not a split: 50% of the file measured as declarative data + twelve near-identical prompt functions; not a god module, but over target and cheaply fixable.** **Priority 8 (`onboardingManager`) OPENED Aug 24 2026; CLOSED Aug 25 2026 — steps 1-3 shipped (v2.499 demo, v2.500 splash, v2.501 carousel): 2,534 → 1,052, eighteen new tests** — a god module the page had mislabelled "borderline" and left unscheduled. Priority 3 CLOSED Aug 24 2026 at 1,636 lines — **above the ~1,500 target, deliberately**; the remaining bulk is the 10-dep undo/redo execution core, recorded as a non-split with evidence. Priority 1 SHIPPED Aug 23 2026 in v2.484 (five extractions, 2,649 → 1,587 lines, 83 new tests). **Aug 21 2026 review:** added a DONE condition (~1,500-line target, everything else trigger-based); rewrote the per-extraction checklist around the gates that caught the two defects the completed splits shipped (`test:sw`, `validate:provides`); corrected the "provides stays the same" promise the statsPanel split falsified; pulled the release script's CSP stage forward from Priority 7
 **Related:** [DI_MIGRATION_COMPLETION_PLAN.md](../archive/DI_MIGRATION_COMPLETION_PLAN.md), [ENFORCE_REQUIRES_ROLLOUT_PLAN.md](../archive/ENFORCE_REQUIRES_ROLLOUT_PLAN.md)
 
 ---
@@ -56,9 +57,15 @@ So a priority closes when its seams are exhausted, not when a line count is met.
 modules remain over 1,500 and **every one already carries a verdict** — deferred (`moduleLoader`,
 `migrationManager`), not-a-god-module (`taskViewLayoutManager`, `quickActionsManager`), already
 split and trigger-based (`taskDOM`, `recurringPanel`, `notifications`, `routineSwitcher`), or
-borderline-and-unscheduled (`onboardingManager`, `guidedTourManager`). Both gaps flagged here on Aug 24 2026 have since been
-assessed and now carry verdicts (see the two sections below): `preferencesManager` is **not** a god
-module, and `onboardingManager` **is** one and became Priority 8.
+— until Aug 25 2026 — borderline-and-unscheduled (`onboardingManager`, `guidedTourManager`). All
+three of those labels have since been replaced by measured verdicts (see the sections below):
+`preferencesManager` is **not** a god module, `onboardingManager` **is** one and became Priority 8
+(closed), and `guidedTourManager` is **not** one — but it is over target for a reason the target can
+still fix, so it opens as Priority 9.
+
+Note what Priority 9 is *not*: **the remedies on this page are not all splits.** A module can sit
+over 1,500 lines because it repeats one job rather than spans several, and the correct fix is then a
+declarative table — the `settingsUIManager` finding, applied for the first time.
 
 This doc no longer pins line/dep/method counts — every measured number in the previous revision of this table had drifted by August 2026. For current volatile metrics see [PROJECT_STATS.md](../PROJECT_STATS.md); for a specific module, measure it fresh (`wc -l`) before extracting. Candidates by verdict:
 
@@ -68,7 +75,7 @@ This doc no longer pins line/dep/method counts — every measured number in the 
 | onboardingManager.js | **God module** — Priority 8 — ✅ **CLOSED** v2.501 (2,534 → 1,052; three sub-modules, 18 new tests; see below) |
 | undoRedoManager.js | **Priority 3** — ✅ **CLOSED** v2.498 (2,306 → 1,636; three sub-modules, 53 new tests; execution core is a recorded non-split — see below) |
 | statsPanel.js (`modules/features/`) | **God module** — Priority 2 — ✅ **SHIPPED** (commit `806f8082`, see below) |
-| guidedTourManager.js | Borderline (sequential step content) — **unverified**; onboardingManager carried the same label and it did not survive measurement. Re-assess before trusting this row. |
+| guidedTourManager.js | Not a god module — **repetition + data, not spread** — but over target: **Priority 9, a dedup not a split** (assessed Aug 25 2026; the "sequential step content" label was measurably false — see below) |
 | recurringPanel.js | Already split (5 sub-modules) |
 | taskDOM.js | Already split (6 sub-modules) |
 | moduleLoader.js | Deferred (boot infrastructure) |
@@ -94,6 +101,13 @@ Line count alone over-flags. The audit combined three signals: **size** (lines),
 - `statsPanel.js` — at audit time, highest method count in the codebase (~61). Gesture *detection* was already extracted to `gesturePanelManager`, but statsPanel still hosted ~12 gesture handler-method bodies (touch/mouse/pointer/wheel/keyboard), plus stats rendering, theme-unlock logic, nav dots, and launcher code for four other modals. **✅ Since split — see Priority 2 below (shipped).**
 
 **Borderline (not scheduled):** `onboardingManager.js`, `guidedTourManager.js` — big but inherently sequential step content; long ≠ god unless they accrete non-onboarding work. `recurringPanel.js` — already split; see Priority 4.
+
+> **Retracted Aug 25 2026 — both halves of that call were wrong, and neither was ever measured.**
+> `onboardingManager` *was* a god module (Priority 8, closed). `guidedTourManager` is *not* one — but
+> not for the reason given: it holds **one** `innerHTML` in 1,962 lines, because tour copy lives in
+> `defaultLabels.js` behind `messageKey` references. "Sequential step content" described neither file.
+> The lesson is narrower than "that audit was sloppy": **one label applied to two modules at once is a
+> guess about both.** Measure each, or leave the row blank.
 
 **Not god modules (false positives a size/dep-count tool will flag):**
 - **The four facades** — `settingsManager` (35 deps), `taskCore` (29), `taskDOM`, `preferencesManager`: high dep counts are the point of the facade pattern; they wire sub-modules. Intentional.
@@ -298,6 +312,108 @@ here precisely so nobody "solves" this file by cutting it in half.
 Note also what it is: a **sub-module of the `settingsManager` facade** that has itself grown to near
 the size of the modules the facade pattern was meant to tame. Extracting into sub-modules moves work
 rather than shrinking it; sub-modules need re-measuring too.
+
+---
+
+## August 25 2026 — `guidedTourManager.js`: NOT a god module — Priority 9, a **dedup**, not a split
+
+Measured on `7f043d7b` (v2.502): **1,962 lines.** This entry exists because the candidate table
+carried an unverified label from the July 2026 audit until now, and because the fix this file wants
+is the one `settingsUIManager` describes but nothing on this page had yet executed.
+
+### The three signals
+
+**Size — high, but half of it is not code.**
+
+| region | lines | % | kind |
+|---|---:|---:|---|
+| header / DI / constructor | 113 | 5.8% | — |
+| `_register*Tour()` × 13 | **536** | 27.3% | **declarative data** |
+| lifecycle: init / start / step nav / destroy | 397 | 20.2% | engine |
+| `show*TourNotification()` × 12 | **443** | 22.6% | **repetition** |
+| persistence + reduced-motion | 42 | 2.1% | engine |
+| DOM build / render / position | 176 | 9.0% | engine |
+| runtime listeners + focus trap | 255 | 13.0% | engine |
+
+**979 lines — exactly 50% — are data and repetition.** The engine is ~980.
+
+**Fan-out — low.** Nine required deps plus one optional, and every one is infrastructure:
+`AppState`, `showNotification`, `safeAddEventListener`, `appInit`, five DOM accessors,
+`isModalOpen`. **Zero feature-module dependencies.** Twelve tours cover twelve user-facing domains
+and the module imports from none of them — it resolves selectors and reads `settings[stateKey]`.
+Its only state writes are `_persistStep` / `_markDone`, each writing a single key.
+
+**Responsibility spread — low.** The four engine clusters are one job: run a spotlight tour
+(position tooltip, trap focus, persist step, tear down). The twelve domains are *subjects* of the
+tour, not work the module performs. This is the distinction the methodology turns on:
+`routineSwitcher` actually performed routine CRUD and theme picking; this file talks *about* stats
+and reminders without doing either.
+
+Two of three signals are low, so it does not qualify. **Not a god module.**
+
+### It is the `settingsUIManager` shape, and this was measured, not eyeballed
+
+All twelve `show*TourNotification` bodies were normalized (tour ids, label strings and selectors
+stripped) and diffed line-set-wise against `showStatsTourNotification`:
+
+- **Ten of twelve are line-for-line identical** apart from the tour id, the label prefix, and one
+  inner container selector.
+- `showMenuTourNotification` differs by **2 lines** (no dialog container — the menu is a `<nav>`).
+- `showStatsTourNotification` is the only genuinely different one: two extra guards
+  (`cyclesCompleted >= 1`, `!focusModeActive`).
+
+395 non-blank lines expressing one function with a per-tour selector — precisely what the
+`settingsUIManager` entry above warns must not be "solved" by cutting the file in half.
+
+The sharper point: **guidedTourManager already has the table.** `this._tours` is a `Map` keyed by
+tour id, and the file still hand-writes twelve registrars and twelve openers around it. The
+declarative structure exists; the code just doesn't read from it.
+
+### The real cost is not the line count — it is the per-tour tax across six files
+
+Adding one tour today touches **six files**: the module (registrar + opener),
+`moduleManifests.js` `provides` (14 names, twelve of them `show*TourNotification`),
+`moduleLoader.js`'s hand-written `depMappings` table, the consumer's `optional(null)` declaration,
+the consumer's call site, and `defaultLabels.js`. Miss the `depMappings` line and the tour silently
+never prompts — the exact failure family `validate:api` was written for.
+
+Neither Priority 9 move changes that tax: the public API stays twelve names, so all six layers stay.
+What the moves buy is that the twelfth tour stops costing ~37 lines of copied body inside the module
+— the wiring cost is structural and is not what this page can fix.
+
+### Priority 9 — two moves, neither a Pattern 1 split
+
+No new facade, no `FACADE_SUB_FILES` entry, no new `provides`, no change to any of the five wiring
+layers.
+
+1. **Generic `_showTourPrompt(tourId)` + twelve thin public wrappers.** Public API unchanged — all
+   fourteen `provides` names survive, so `validate:provides` and `validate:api` see no diff. The
+   per-tour differences become fields on the tour definition (`promptContainerSelector`,
+   `minCycles`, `mainViewOnly`). ≈443 → ≈130 lines.
+2. **Tour definitions → a data module.** 536 lines out. `defaultLabels.js` and `constants.js` are
+   already permanently exempt as data, so this is consistent with the project rule rather than an
+   exception to it.
+
+Combined: **≈1,116 lines**, under the ~1,500 target.
+
+### Two costs recorded honestly, because move 2 is not mechanical
+
+- **Sixteen steps carry `onEnter` closures that read `this.deps`.** Fourteen are one of two shapes
+  — "skip if the element isn't visible", varying only by selector and visibility predicate — so a
+  pure-data module requires making the predicate declarative
+  (`skipIfHidden: { type, target, check }`) with the engine interpreting it. That is a design
+  decision, not a move. If it turns out ugly in practice, ship move 1 alone (≈1,650 lines) and
+  record move 2 as a non-split with evidence, the way Priority 3 did for the execution core.
+- **`guidedTourManager.js` is in `BOOT_CRITICAL`** (`service-worker.js`). A statically imported
+  data module becomes boot-critical too and needs its own entry — `test:sw`'s precache drift guard
+  is the gate, and it is the one gate `npm test` cannot substitute for.
+
+### Do this before trusting any other unverified row
+
+The two things this assessment overturned were both *labels*, not measurements: "sequential step
+content" (false — one `innerHTML`) and "borderline" (false in both directions, on both modules it
+was applied to). Every remaining verdict on this page that was reached by reading rather than
+measuring deserves the same treatment before it is acted on.
 
 ---
 
@@ -772,6 +888,10 @@ If revisited, the split is unusually low-risk precisely because it's pre-DI — 
 11. **Remaining `update-version.sh` stages** — `restore.sh` generation next; the `?v=` sweep was
     RE-SCOPED and demoted Aug 23 2026 (content hashing superseded most of it — see Scripts above),
     both trigger-based (Priority 7)
+12. **guidedTourManager prompt dedup** — Priority 9, move 1: one generic `_showTourPrompt(tourId)`
+    behind twelve unchanged public wrappers. Narrowest seam currently on this page — no new file, no
+    new `provides`, no wiring layer touched. Move 2 (tour definitions → data module) second, and only
+    if the `onEnter` predicates go declarative cleanly; otherwise record it as a non-split.
 
 Sizes are deliberately not given here — see "When this plan is DONE" and measure fresh.
 
@@ -781,7 +901,8 @@ Opportunistic (no scheduled slot): **orchestrator bootUI/bootTiming split** — 
 
 Not an extraction, but recorded so it is not mistaken for one: **`settingsUIManager`'s 23 repeated
 `setupXToggle()` functions want a declarative toggle table**, not a split. See the August 21 2026
-assessment above.
+assessment above. `guidedTourManager` (Priority 9) is the same remedy and is scheduled — shipping it
+first would give that pattern a worked precedent to copy.
 
 Each extraction should be done as a separate commit with full test verification before proceeding to the next.
 
