@@ -1,3 +1,30 @@
+## [2.501] - 2026-08-25
+- refactor(onboarding): the welcome carousel moves to its own module. Priority 8
+  step 3, and the step that closes it. No behaviour change.
+
+  Carousel measured at **740** lines across **15** methods — the plan estimated
+  ~466 across 5. One contiguous region, so it moved as a single block.
+  **1,764 → 1,052**, under the plan's ~1,500 target.
+
+  Its 22 instance fields stayed on the manager, as the splash's did. Two methods
+  kept **thin delegators** there — `_scheduleFirstRunWelcomeAdvance` (called by
+  `onboardingSplash`) and `_setFirstRunWelcomeMessageText` (called by
+  `onboardingDemo`). That was the point: the sibling sub-modules keep addressing
+  the manager, so neither needed a single line changed and there is no
+  sub-module-to-sub-module edge to maintain.
+
+  **Priority 8 total: 2,534 → 1,052 across three sub-modules and eighteen new
+  tests**, in a file that had no coverage for any of the three clusters.
+
+  Also fixed here, found by the version counter rather than by the refactor: a
+  latent bug in `testingModal.tests.js`. It guarded against the app version
+  falling back to the schema version with a **substring** check, and
+  `'App Version: 2.500'.includes('App Version: 2.5')` is true — so it would have
+  failed spuriously on every release in the 2.5xx range. Now compares the whole
+  line. Verified by mutation that it still catches the real regression it was
+  written for.
+
+
 ## [2.500] - 2026-08-25
 - refactor(onboarding): the first-run splash moves to its own module, and both
   onboarding sub-modules switch to static imports. Priority 8 step 2. No

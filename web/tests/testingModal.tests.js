@@ -255,7 +255,13 @@ export async function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
             throw new Error(`expected the real app version ${appVersion}, got: "${text}"`);
         }
         if (!text.includes('Schema Version: 2.5')) throw new Error('expected schema version line');
-        if (text.includes(`App Version: ${mockState.metadata.schemaVersion}`)) {
+        // Compare the LINE, not a substring. `text.includes('App Version: 2.5')`
+        // is true for "App Version: 2.500" — so this guard fired spuriously for
+        // every release in the 2.5xx range the moment the counter reached it
+        // (found at v2.501; latent since the test was written).
+        const appVersionLine = text.split('\n').map(l => l.trim())
+            .find(l => l.startsWith('App Version:'));
+        if (appVersionLine === `App Version: ${mockState.metadata.schemaVersion}`) {
             throw new Error('app version must not fall back to the schema version');
         }
         if (!text.includes('miniCycle')) throw new Error('expected app name');

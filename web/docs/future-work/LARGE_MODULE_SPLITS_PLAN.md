@@ -3,7 +3,7 @@
 **Date:** March 15, 2026
 **Updated:** August 21 2026 — four previously-unassessed modules given verdicts; scripts brought into scope (`update-version.sh`); the last inline line counts removed, since the doc had retired them in principle but kept four in practice and all four had drifted. August 2026 — Priority 2 (statsPanel) SHIPPED (commit `806f8082`); line-count table retired (numbers rot — see [PROJECT_STATS.md](../PROJECT_STATS.md)). July 7, 2026 — god-module audit: added statsPanel (Priority 2), orchestrator assessment, false-positive list
 **Updated:** Aug 23 2026 — Priority 1 shipped; Priority 7 stage 1 (CSP hashes) shipped in v2.488 and the `?v=` stage re-scoped after checking what content hashing actually replaced; execution order, DONE condition and the pattern guidance all revised against what the work actually showed.
-**Status:** In progress — **Priorities 1, 2, 3 and 6 complete**; Priorities 4 and 5 open but TRIGGER-BASED (do not schedule them), plus 7 (`update-version.sh`, `restore.sh` stage next). **Priority 8 (`onboardingManager`) OPENED Aug 24 2026; steps 1-2 SHIPPED Aug 25 2026 (v2.499 demo, v2.500 splash) — 2,534 → 1,764, twelve new tests** — a god module the page had mislabelled "borderline" and left unscheduled. Priority 3 CLOSED Aug 24 2026 at 1,636 lines — **above the ~1,500 target, deliberately**; the remaining bulk is the 10-dep undo/redo execution core, recorded as a non-split with evidence. Priority 1 SHIPPED Aug 23 2026 in v2.484 (five extractions, 2,649 → 1,587 lines, 83 new tests). **Aug 21 2026 review:** added a DONE condition (~1,500-line target, everything else trigger-based); rewrote the per-extraction checklist around the gates that caught the two defects the completed splits shipped (`test:sw`, `validate:provides`); corrected the "provides stays the same" promise the statsPanel split falsified; pulled the release script's CSP stage forward from Priority 7
+**Status:** In progress — **Priorities 1, 2, 3 and 6 complete**; Priorities 4 and 5 open but TRIGGER-BASED (do not schedule them), plus 7 (`update-version.sh`, `restore.sh` stage next). **Priority 8 (`onboardingManager`) OPENED Aug 24 2026; CLOSED Aug 25 2026 — steps 1-3 shipped (v2.499 demo, v2.500 splash, v2.501 carousel): 2,534 → 1,052, eighteen new tests** — a god module the page had mislabelled "borderline" and left unscheduled. Priority 3 CLOSED Aug 24 2026 at 1,636 lines — **above the ~1,500 target, deliberately**; the remaining bulk is the 10-dep undo/redo execution core, recorded as a non-split with evidence. Priority 1 SHIPPED Aug 23 2026 in v2.484 (five extractions, 2,649 → 1,587 lines, 83 new tests). **Aug 21 2026 review:** added a DONE condition (~1,500-line target, everything else trigger-based); rewrote the per-extraction checklist around the gates that caught the two defects the completed splits shipped (`test:sw`, `validate:provides`); corrected the "provides stays the same" promise the statsPanel split falsified; pulled the release script's CSP stage forward from Priority 7
 **Related:** [DI_MIGRATION_COMPLETION_PLAN.md](../archive/DI_MIGRATION_COMPLETION_PLAN.md), [ENFORCE_REQUIRES_ROLLOUT_PLAN.md](../archive/ENFORCE_REQUIRES_ROLLOUT_PLAN.md)
 
 ---
@@ -65,7 +65,7 @@ This doc no longer pins line/dep/method counts — every measured number in the 
 | Module | Verdict |
 |--------|---------|
 | routineSwitcher.js (`modules/routine/`) | **God module** — Priority 1 — ✅ **SHIPPED** v2.484 (2,649 → 1,587; five sub-modules; see below) |
-| onboardingManager.js | **God module** — **Priority 8** (assessed Aug 24 2026; the earlier "sequential step content" verdict was WRONG — see below) |
+| onboardingManager.js | **God module** — Priority 8 — ✅ **CLOSED** v2.501 (2,534 → 1,052; three sub-modules, 18 new tests; see below) |
 | undoRedoManager.js | **Priority 3** — ✅ **CLOSED** v2.498 (2,306 → 1,636; three sub-modules, 53 new tests; execution core is a recorded non-split — see below) |
 | statsPanel.js (`modules/features/`) | **God module** — Priority 2 — ✅ **SHIPPED** (commit `806f8082`, see below) |
 | guidedTourManager.js | Borderline (sequential step content) — **unverified**; onboardingManager carried the same label and it did not survive measurement. Re-assess before trusting this row. |
@@ -210,12 +210,41 @@ caller is downstream of an awaited init — which is rarer here than it looks. A
 leaves a window where the sub-module is null, and that window is exactly the silent-feature-loss
 this codebase keeps paying for.
 
-**Remaining in the file:** the welcome carousel (**740** lines measured, not the ~466 estimated —
-15 methods, not 5), onboarding modal + completion. The carousel's seam is ONE outbound call plus
-reaching `this.m._demo`; its 22 instance fields stay on the manager under the back-reference, as
-the splash's did. Extracting it lands the file near **1,024**. The old "carousel last or not at
-all, because it calls INTO the demo" caution is spent: the demo is already out, so that call is now
-an ordinary `this.m` hop rather than a new edge.
+#### ✅ Step 3 SHIPPED — `onboardingCarousel.js` (v2.501) — PRIORITY 8 CLOSED
+
+Carousel measured at **740** lines across **15** methods; the estimate said ~466 across 5. One
+contiguous region, so it moved in a single block. **1,764 → 1,052** — under the ~1,500 target.
+
+Its 22 instance fields stayed on the manager, as the splash's did. Two methods kept **thin
+delegators** on the manager — `_scheduleFirstRunWelcomeAdvance` (called by `onboardingSplash`) and
+`_setFirstRunWelcomeMessageText` (called by `onboardingDemo`). That was the point: sibling
+sub-modules keep addressing the MANAGER, so neither of them needed a single line changed, and there
+is no sub-module-to-sub-module edge to maintain. One hop, not two.
+
+The old "carousel last or not at all, because it calls INTO the demo" caution turned out to be
+spent once the demo was already out: that call is an ordinary `this.m` hop.
+
+**Priority 8 total: 2,534 → 1,052 across three sub-modules and eighteen new tests**, in a file that
+had no coverage for any of the three clusters.
+
+#### What the three steps cost in mistakes, recorded because the next split will hit them
+
+1. **Step 1's load-point rule was wrong** and step 2 disproved it — see above. Static import,
+   constructed in the constructor, whenever entry points are synchronous.
+2. **Range-based moves sweep the NEXT method's JSDoc.** Three lost in step 1, four caught
+   pre-emptively in step 2, one misplacement in step 3 (delegators inserted between a docblock and
+   its getter). Now checklist step 6b.
+3. **Two tests asserted contracts that did not exist.** Step 1's "deps are read live" passed
+   against a deliberately capturing constructor; step 3's "message setter is inert with no element"
+   asserted a null guard the method has never had and should not have (rule 19 — a guard there
+   hides broken wiring). Both were caught by mutating, not by reading. **Mutate every new test in a
+   split**: a test that cannot fail is worse than no test, because it reads as coverage.
+4. **`validate:comments` rejects glob identifiers.** ``_firstRunWelcome*`` in a header comment
+   fails the gate — name a real field or drop the backticks.
+
+**Remaining in the file (~1,052):** the onboarding modal, `setupModalControls`,
+`completeOnboarding`, `_scheduleStartTourFlow`, lifecycle and `destroy`. That is the residual
+facade — one domain, and the target is met. **Priority 8 is closed.**
 
 **Do not repeat the Priority 3 mistake** of scheduling the biggest *function*. Measure neighbours.
 
