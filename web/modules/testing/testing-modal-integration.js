@@ -353,6 +353,26 @@ function runAllAutomatedTests() {
  * Initialize testing modal integration (called by moduleLoader)
  * @param {Object} dependencies - { safeAddEventListenerById, showNotification }
  */
+/**
+ * Point the "Open Test Suite Browser" link at the ISOLATED test origin.
+ *
+ * The markup carries a RELATIVE href (`tests/module-test-suite.html`) as a no-JS
+ * fallback, but relative means *this* origin — so on minicycle.app the link sent
+ * users to the copy of the runner that shares storage with their real routines.
+ * Single-module runs there fall back to backup/restore instead of the isolation
+ * this app already has a second origin for, and "Run All" only survives because
+ * the page guards itself (v2.505/v2.507).
+ *
+ * Rewriting it here rather than hardcoding keeps localhost and LAN dev working:
+ * getTestOrigin() maps production to test.minicycle.app and dev to :8081.
+ * @returns {void}
+ */
+function pointTestSuiteLinkAtIsolatedOrigin() {
+    const link = document.getElementById(DOM_IDS.OPEN_TEST_SUITE_LINK);
+    if (!link) return;
+    link.href = `${getTestOrigin()}/tests/module-test-suite.html`;
+}
+
 export function initTestingModalIntegration(dependencies = {}) {
     // Set dependencies
     setTestingModalDependencies(dependencies);
@@ -360,9 +380,15 @@ export function initTestingModalIntegration(dependencies = {}) {
     // Setup event listeners
     setupAutomatedTestingFunctions();
 
+    // Retarget the "Open Test Suite Browser" link away from this origin. Safe to do
+    // here: the anchor is static markup in miniCycle.html, so it is in the DOM long
+    // before this module is lazily loaded on the Diagnostics button.
+    pointTestSuiteLinkAtIsolatedOrigin();
+
     return {
         runAllAutomatedTests,
-        setupAutomatedTestingFunctions
+        setupAutomatedTestingFunctions,
+        pointTestSuiteLinkAtIsolatedOrigin
     };
 }
 

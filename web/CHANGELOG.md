@@ -1,3 +1,7 @@
+## [2.508] - 2026-08-25
+- fix(diagnostics): point the Test Suite Browser link at the isolated test origin, not the app's own
+
+
 ## [2.507] - 2026-08-25
 - test(suite): Run All on a real-data origin hands off to the isolated test origin and autoruns, instead of dead-ending
 
