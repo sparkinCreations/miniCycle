@@ -8,10 +8,22 @@
  *   1. tests that assert nothing (a name that claims behavior, a body that checks none)
  *   2. hand-rolled test() harnesses that call testFn() without awaiting it, so async
  *      test bodies report ✅ before running and their throws never fail the suite.
+ *   3. suites whose runner returns nothing, so the browser suite scores them 0/0 while
+ *      npm test reports them passing — the two runners silently disagree (v2.505).
  *
  * CHECK 1 — harness conformance: any file that defines its own local test() harness
  *   must await async bodies (an `instanceof Promise` guard) or use the shared
  *   createProtectedTest/createTest helpers, which already do.
+ *
+ * CHECK 3 — runner returns its counts: every exported run*Tests() must end with
+ *   `return { passed, total }`. module-test-suite.html's "Run All" scores each suite
+ *   from that RETURN VALUE (`result?.passed || 0`), NOT from the DOM — so a runner
+ *   that returns nothing reports 0/0 and its tests vanish from the browser summary.
+ *   npm test parses the DOM summary text instead, so it keeps reporting them as
+ *   passing and nothing flags the disagreement. That is exactly how
+ *   statsPanelGestures (12 tests) and statsPanelRewards (10) were invisible in the
+ *   browser from the v2.347 statsPanel split until v2.505 — found by a user reading
+ *   the summary table, not by any gate.
  *
  * CHECK 2 — no vacuous tests: every test('name', fn) block must contain a real
  *   assertion (a throw / assert / known throwing helper). Legitimate no-throw and
@@ -51,6 +63,47 @@ const VACUOUS_ALLOWLIST = new Set([
     // allowlist it. This set exists only as a deliberate, reviewed escape hatch for a
     // genuine no-throw/no-op smoke test whose NAME cannot express that contract.
 ]);
+
+// ---------------------------------------------------------------------------
+// CHECK 3 helpers — exported suite runners must return their counts.
+// ---------------------------------------------------------------------------
+const EXPORTED_RUNNER_RE = /export\s+(?:async\s+)?function\s+(run\w*Tests)\s*\(/g;
+
+// A return of an object literal naming BOTH keys, in either order. Deliberately
+// narrow: helper closures inside a runner return objects too (e.g. panelCarousel's
+// `return { carousel, els, cleanup }`), and only the counts pair should match.
+const RETURNS_COUNTS_RE =
+    /return\s*\{[^{}]*\bpassed\b[^{}]*\btotal\b[^{}]*\}|return\s*\{[^{}]*\btotal\b[^{}]*\bpassed\b[^{}]*\}/;
+
+// NOTE ON COVERAGE: matchDelimiter() is not regex-literal aware, so a regex
+// containing a quote — e.g. /[<>"']/ in pullToRefresh, /['"]orchestrator-…['"]/ in
+// orchestrator — opens a phantom string and swallows the rest of the file. Rather
+// than `continue` past those (which silently under-covered 2 of 145 runners while
+// this check still printed a ✅), fall back to scanning from the opening brace to
+// EOF and FLAG it. Every file has exactly one exported runner, so the fallback is
+// sound for this check; it is reported so the coverage gap is never invisible.
+// The same blind spot applies to CHECK 1 and CHECK 2 in those two files.
+function exportedRunners(src) {
+    const out = [];
+    let m;
+    EXPORTED_RUNNER_RE.lastIndex = 0;
+    while ((m = EXPORTED_RUNNER_RE.exec(src)) !== null) {
+        const parenOpen = m.index + m[0].length - 1;
+        const parenClose = matchDelimiter(src, parenOpen, '(', ')');
+        const braceIdx = parenClose === -1 ? -1 : src.indexOf('{', parenClose);
+        if (braceIdx === -1) {
+            out.push({ name: m[1], body: src.slice(m.index), fellBack: true });
+            continue;
+        }
+        const end = matchDelimiter(src, braceIdx, '{', '}');
+        if (end === -1) {
+            out.push({ name: m[1], body: src.slice(braceIdx), fellBack: true });
+            continue;
+        }
+        out.push({ name: m[1], body: src.slice(braceIdx, end + 1), fellBack: false });
+    }
+    return out;
+}
 
 function walk(dir, out) {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -239,14 +292,29 @@ function main() {
     const files = walk(TESTS_DIR, []).sort();
     let harnessViolations = [];
     let vacuousViolations = [];
+    let noReturnViolations = [];
+    let runnersChecked = 0;
+    let runnerFallbacks = [];
     let allowlistHits = 0;
     let noThrowSkips = 0;
     let totalTests = 0;
 
     for (const file of files) {
         const base = path.basename(file).replace(/\.tests\.js$/, '');
-        if (base === 'MODULE_TEMPLATE') continue;
         const src = fs.readFileSync(file, 'utf8');
+
+        // CHECK 3 — runner returns its counts. Runs for MODULE_TEMPLATE too: it is the
+        // copy source for every new suite, so a template that stopped returning would
+        // propagate the 0/0 bug into each file cloned from it.
+        for (const runner of exportedRunners(src)) {
+            runnersChecked++;
+            if (runner.fellBack) runnerFallbacks.push(`${base}::${runner.name}`);
+            if (!RETURNS_COUNTS_RE.test(runner.body)) {
+                noReturnViolations.push(`${base}::${runner.name}`);
+            }
+        }
+
+        if (base === 'MODULE_TEMPLATE') continue;
 
         // CHECK 1 — harness conformance
         const h = localHarnessInfo(src);
@@ -294,7 +362,23 @@ function main() {
         console.log(`   ${c.yellow}  NAME says so) add its "file::name" key to VACUOUS_ALLOWLIST in this script.${c.reset}\n`);
     }
 
-    const failed = harnessViolations.length > 0 || vacuousViolations.length > 0;
+    console.log(`${c.cyan}▸ CHECK 3 — suite runners return their counts (browser "Run All" scores from the return value)${c.reset}`);
+    console.log(`${c.gray}   ${runnersChecked} exported run*Tests() runner(s) checked${c.reset}`);
+    if (runnerFallbacks.length > 0) {
+        console.log(`${c.yellow}   ⚠️  ${runnerFallbacks.length} scanned to EOF — a quote inside a regex literal defeats brace matching:${c.reset}`);
+        runnerFallbacks.forEach(k => console.log(`${c.yellow}      • ${k}${c.reset}`));
+        console.log(`${c.gray}      (still covered; CHECK 1 and CHECK 2 share this blind spot in these files)${c.reset}`);
+    }
+    if (noReturnViolations.length === 0) {
+        console.log(`   ${c.green}✅${c.reset} every runner returns { passed, total }\n`);
+    } else {
+        console.log(`   ${c.red}❌ ${noReturnViolations.length} runner(s) do not return their counts — the browser suite will score them 0/0:${c.reset}`);
+        noReturnViolations.forEach(k => console.log(`      ${c.red}• ${k}${c.reset}`));
+        console.log(`   ${c.yellow}→ end the runner with: return { passed: passed.count, total: total.count };${c.reset}`);
+        console.log(`   ${c.yellow}  npm test parses the DOM instead, so it will keep reporting these as passing.${c.reset}\n`);
+    }
+
+    const failed = harnessViolations.length > 0 || vacuousViolations.length > 0 || noReturnViolations.length > 0;
     console.log(`${c.blue}================================================================${c.reset}`);
     if (failed) {
         console.log(`${c.red}❌ Meta guards failed.${c.reset}`);
