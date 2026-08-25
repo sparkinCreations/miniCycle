@@ -1,3 +1,7 @@
+## [2.509] - 2026-08-25
+- fix(diagnostics): report the run's real test count instead of a hardcoded '1600+' that had drifted by half
+
+
 ## [2.508] - 2026-08-25
 - fix(diagnostics): point the Test Suite Browser link at the isolated test origin, not the app's own
 

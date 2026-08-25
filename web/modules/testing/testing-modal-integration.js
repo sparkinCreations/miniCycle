@@ -48,8 +48,33 @@ function setupAutomatedTestingFunctions() {
 }
 
 // Display test results in the output area
+/**
+ * Replace the Quick Test hint with the size of the run that just finished.
+ *
+ * The markup deliberately carries NO total. It used to claim "1600+ tests" and had
+ * drifted to less than half the real figure. There is no static source that could
+ * have kept it honest either: stats.json counts lines matching /test(/ across
+ * tests/ — which sweeps in `test(s) failed` strings and `async function test(...)`
+ * definitions — while `await test(` UNDER-counts, because several suites call
+ * test() inside loops. The only number that is true is the one the runner reports
+ * when it finishes, so that is what goes here.
+ *
+ * Session-scoped on purpose: nothing is persisted. A diagnostics artifact does not
+ * belong in state.settings, where it would ride along in exports and backups.
+ * @param {number} totalTests
+ * @param {number} duration - seconds
+ * @returns {void}
+ */
+function updateQuickTestHint(totalTests, duration) {
+    const hint = document.getElementById(DOM_IDS.QUICK_TEST_HINT);
+    if (!hint || !Number.isFinite(totalTests) || totalTests <= 0) return;
+    hint.textContent = `Runs the full suite and shows a pass/fail summary. `
+        + `Last run: ${totalTests.toLocaleString()} tests in ${Number(duration).toFixed(1)}s.`;
+}
+
 function displayTestResults(resultData) {
     const { totalPassed, totalTests, duration, allPassed, failedModules, suiteWentHidden, incompleteModules = [] } = resultData;
+    updateQuickTestHint(totalTests, duration);
 
     // Clear any waiting message
     const output = getAutomatedTestOutput();

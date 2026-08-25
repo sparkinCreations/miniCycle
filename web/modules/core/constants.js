@@ -1368,6 +1368,7 @@ export const DOM_IDS = Object.freeze({
     TEST_TIME_ESTIMATE: 'test-time-estimate',
     TEST_RUNNER_TITLE: 'test-runner-title',
     OPEN_TEST_SUITE_LINK: 'open-test-suite-link',
+    QUICK_TEST_HINT: 'quick-test-hint',
     SEARCH_TEST_RESULTS: 'search-test-results',
     STORAGE_VIEWER_OVERLAY: 'storage-viewer-overlay',
     CLOSE_STORAGE_VIEWER_BTN: 'close-storage-viewer-btn',
