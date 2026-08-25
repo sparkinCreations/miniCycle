@@ -526,8 +526,14 @@ Best candidates, by the same "most isolated first" ordering used above:
    (`cwd == web/`, `root == '.'`) and diverge anywhere else, so the fixture silently hashed the
    REAL `miniCycle.html`. Invisible in production; fatal to any test.
 
-2. **`restore.sh` generation** — self-contained, and the heredoc quoting is precisely where the
-   `$SCRIPT_DIR` bug lived. Now the next candidate.
+2. ~~**`restore.sh` generation**~~ — ✅ **SHIPPED** as `scripts/generate_restore_script.py` +
+   `scripts/test-generate-restore-script.py` (18 tests, `npm run test:restore`).
+   update-version.sh 2,424 → 2,341. Output verified **byte-identical** to the heredoc it
+   replaced before the swap. The argument held again: this file is written on every release
+   and read only during an emergency, and **nothing had ever executed one**. The suite now
+   builds a throwaway web root and runs a real restore — including the two-levels-up
+   resolution whose one-level-up ancestor restored into `backup/` and recovered nothing.
+   Re-introducing that bug fails two tests.
 
 3. **The `?v=` cache-buster sweep** — **RE-SCOPED Aug 23 2026, and demoted.** This was listed on
    the rationale that it is "a pure text transform over a file list". The transform part is still
@@ -958,8 +964,8 @@ If revisited, the split is unusually low-risk precisely because it's pre-DI — 
    both Pattern 2, zero DI. Measure a function's neighbours before its body.
 8. **recurringPanelAddTask** — trigger-based, low priority
 9. ~~**EducationalTipManager** out of `notifications.js`~~ — ✅ **SHIPPED v2.463** (Priority 6)
-10. **onboardingManager interactive demo** — Priority 8, the widest-value/narrowest-seam extraction
-    currently on this page: 470 lines, one dependency, one outbound call. First-run splash second.
+10. ~~**onboardingManager interactive demo**~~ — ✅ SHIPPED v2.499-v2.501 (Priority 8, closed:
+    2,534 → 1,052). Order followed as recommended: demo, splash, carousel last.
 11. **Remaining `update-version.sh` stages** — `restore.sh` generation next; the `?v=` sweep was
     RE-SCOPED and demoted Aug 23 2026 (content hashing superseded most of it — see Scripts above),
     both trigger-based (Priority 7)

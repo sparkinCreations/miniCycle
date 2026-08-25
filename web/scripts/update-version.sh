@@ -1375,90 +1375,28 @@ fi
 if [ "$DRY_RUN" = false ]; then
     echo "📝 Stage 6: Generating restore script..."
 
-    cat > "$BACKUP_FOLDER/restore.sh" << 'EOF'
-#!/bin/bash
-# Auto-generated restore script
-set -euo pipefail
-
-# Resolve paths from THIS script's own location, not the caller's cwd. This
-# backup folder lives at <web>/backup/version_update_*/, so the web root (where
-# the files belong) is two levels up. Earlier versions used "../$file", which
-# is only ONE level up — it wrongly wrote restores into <web>/backup/ and the
-# real files were never recovered. Deriving WEB_ROOT here also lets the script
-# be run from any cwd.
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-WEB_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-
-echo "🔄 Restoring files from backup..."
-echo "   → restoring into: $WEB_ROOT"
-echo ""
-
-RESTORED=0
-FAILED=0
-
-restore_file() {
-    local file=$1
-    if [ -f "$SCRIPT_DIR/$file" ]; then
-        mkdir -p "$WEB_ROOT/$(dirname "$file")" 2>/dev/null || true
-        if cp "$SCRIPT_DIR/$file" "$WEB_ROOT/$file" 2>/dev/null; then
-            echo "✅ Restored $file"
-            RESTORED=$((RESTORED + 1))
-        else
-            echo "❌ Failed to restore $file"
-            FAILED=$((FAILED + 1))
-        fi
-    fi
-}
-
-EOF
-
-    # Add files to restore script
-    echo "restore_file \"version.js\"" >> "$BACKUP_FOLDER/restore.sh"
-    echo "restore_file \"service-worker.js\"" >> "$BACKUP_FOLDER/restore.sh"
-
-    for file in "${CORE_HTML_FILES[@]}"; do
-        echo "restore_file \"$file\"" >> "$BACKUP_FOLDER/restore.sh"
-    done
-
-    for file in "${CSS_FILES[@]}"; do
-        echo "restore_file \"$file\"" >> "$BACKUP_FOLDER/restore.sh"
-    done
-
-    for file in "${MANIFEST_FILES[@]}"; do
-        echo "restore_file \"$file\"" >> "$BACKUP_FOLDER/restore.sh"
-    done
-
-    for file in "${PACKAGE_FILES[@]}"; do
-        echo "restore_file \"$file\"" >> "$BACKUP_FOLDER/restore.sh"
-    done
-
-    # Add PROJECT_STATS.md to restore script
-    echo "restore_file \"docs/PROJECT_STATS.md\"" >> "$BACKUP_FOLDER/restore.sh"
-
-    # Add lite version files (backed up during --lite / --lite-only runs).
-    # Without these, a --lite-only run produced a restore.sh that restored
-    # none of the files it actually changed.
-    for file in "${LITE_HTML_FILES[@]}" "${LITE_JS_FILES[@]}" "${LITE_CSS_FILES[@]}" "${LITE_MANIFEST_FILES[@]}"; do
-        echo "restore_file \"$file\"" >> "$BACKUP_FOLDER/restore.sh"
-    done
-
-    # Add deployment configs (rewritten in place by the CSP hash stage).
-    for file in netlify.toml .htaccess nginx-security.conf; do
-        echo "restore_file \"$file\"" >> "$BACKUP_FOLDER/restore.sh"
-    done
-
-    cat >> "$BACKUP_FOLDER/restore.sh" << 'EOF'
-
-echo ""
-echo "📊 Restore Summary:"
-echo "   ✅ Restored: $RESTORED files"
-echo "   ❌ Failed: $FAILED files"
-echo ""
-echo "🎉 Restore completed!"
-EOF
-
-    chmod +x "$BACKUP_FOLDER/restore.sh"
-    echo "✅ Restore script created: $BACKUP_FOLDER/restore.sh"
+    # Delegate to scripts/generate_restore_script.py (splits-plan Priority 7, the
+    # last scheduled stage). It takes the file list on stdin and owns the template.
+    # Extracted so restore.sh — the undo button for a release, written every time
+    # and read only in an emergency — can finally be TESTED:
+    # scripts/test-generate-restore-script.py builds a throwaway web root and runs
+    # a generated restore for real, including the two-levels-up path resolution
+    # whose one-level-up ancestor silently restored into backup/ and recovered
+    # nothing. Output verified byte-identical to the heredoc this replaced.
+    {
+        echo "version.js"
+        echo "service-worker.js"
+        printf '%s\n' "${CORE_HTML_FILES[@]}"
+        printf '%s\n' "${CSS_FILES[@]}"
+        printf '%s\n' "${MANIFEST_FILES[@]}"
+        printf '%s\n' "${PACKAGE_FILES[@]}"
+        echo "docs/PROJECT_STATS.md"
+        # Lite files: backed up during --lite / --lite-only runs. Without these a
+        # --lite-only release produced a restore.sh restoring none of what it changed.
+        printf '%s\n' "${LITE_HTML_FILES[@]}" "${LITE_JS_FILES[@]}" "${LITE_CSS_FILES[@]}" "${LITE_MANIFEST_FILES[@]}"
+        # Deploy configs: rewritten in place by the CSP hash stage.
+        printf '%s\n' netlify.toml .htaccess nginx-security.conf
+    } | python3 "$(dirname "$0")/generate_restore_script.py" --out "$BACKUP_FOLDER/restore.sh"
     echo "✅ Stage 6 complete"
     echo ""
 fi

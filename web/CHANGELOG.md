@@ -1,3 +1,7 @@
+## [2.510] - 2026-08-25
+- refactor(release): extract restore.sh generation, closing Priority 7's last scheduled stage
+
+
 ## [2.509] - 2026-08-25
 - fix(diagnostics): report the run's real test count instead of a hardcoded '1600+' that had drifted by half
 
