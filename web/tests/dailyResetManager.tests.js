@@ -108,6 +108,120 @@ export async function runDailyResetManagerTests(resultsDiv) {
     }
 
     // =========================================================
+    // ⏱️ ADAPTIVE TICK RATE
+    // =========================================================
+    resultsDiv.innerHTML += '<h4 class="test-section">⏱️ Adaptive Tick Rate</h4>';
+
+    // Mirrors recurringWatcher's active/idle switch. The point is NOT correctness —
+    // init() and the visibilitychange handler both run the same idempotent
+    // catch-up check, so the tick can never be the thing that makes or breaks a
+    // reset. The point is not waking every 30s forever for a feature nobody has
+    // turned on. These tests therefore assert the RATE, and separately assert that
+    // the slow rate never costs a reset.
+    const INTERVALS_MOD = await import(`../modules/core/constants.js${cacheBuster}`);
+    const { INTERVALS } = INTERVALS_MOD;
+
+    /** Run fn with setInterval captured, returning every (delay) it was given. */
+    function withCapturedIntervals(fn) {
+        const realSet = globalThis.setInterval;
+        const realClear = globalThis.clearInterval;
+        const delays = [];
+        let nextId = 1;
+        globalThis.setInterval = (_cb, delay) => { delays.push(delay); return nextId++; };
+        globalThis.clearInterval = () => {};
+        try { return { result: fn(), delays }; }
+        finally { globalThis.setInterval = realSet; globalThis.clearInterval = realClear; }
+    }
+
+    const enabledCycle = (over = {}) => ({
+        title: 'Morning', tasks: [],
+        autoUncheckDaily: { enabled: true, hour: 6, minute: 0, lastResetDate: null, pendingNotification: false, ...over }
+    });
+    const disabledCycle = () => ({
+        title: 'Evening', tasks: [],
+        autoUncheckDaily: { enabled: false, hour: 6, minute: 0, lastResetDate: null, pendingNotification: false }
+    });
+
+    await test('ticks at the ACTIVE rate when a routine has it enabled', () => {
+        const state = makeMockState({ cycles: { morning: enabledCycle() } });
+        const { manager } = makeManager({ state });
+        const { delays } = withCapturedIntervals(() => manager._startTicker());
+        if (delays[0] !== INTERVALS.DAILY_RESET_TICK) {
+            throw new Error(`expected ${INTERVALS.DAILY_RESET_TICK}, got ${delays[0]}`);
+        }
+        manager.destroy();
+    });
+
+    await test('ticks at the IDLE rate when NO routine has it enabled', () => {
+        const state = makeMockState({ cycles: { evening: disabledCycle() } });
+        const { manager } = makeManager({ state });
+        const { delays } = withCapturedIntervals(() => manager._startTicker());
+        if (delays[0] !== INTERVALS.DAILY_RESET_TICK_IDLE) {
+            throw new Error(`expected the idle rate ${INTERVALS.DAILY_RESET_TICK_IDLE}, got ${delays[0]}`);
+        }
+        manager.destroy();
+    });
+
+    await test('one enabled routine among many is enough for the active rate', () => {
+        const state = makeMockState({ cycles: { evening: disabledCycle(), morning: enabledCycle() } });
+        const { manager } = makeManager({ state });
+        const { delays } = withCapturedIntervals(() => manager._startTicker());
+        if (delays[0] !== INTERVALS.DAILY_RESET_TICK) {
+            throw new Error('any enabled routine must pull the whole watcher to the active rate');
+        }
+        manager.destroy();
+    });
+
+    await test('switching is idempotent — no churn when the target has not changed', () => {
+        const state = makeMockState({ cycles: { morning: enabledCycle() } });
+        const { manager } = makeManager({ state });
+        const { delays } = withCapturedIntervals(() => {
+            manager._startTicker();
+            manager._switchInterval();
+            manager._switchInterval();
+        });
+        if (delays.length !== 1) {
+            throw new Error(`the interval should be created once, not ${delays.length} times`);
+        }
+        manager.destroy();
+    });
+
+    await test('enabling a routine returns an idle watcher to the active rate immediately', () => {
+        // Without this, turning the feature on could wait up to the IDLE interval
+        // (2h) before the first tick at the active rate.
+        const state = makeMockState({ cycles: { morning: disabledCycle() } });
+        const { manager } = makeManager({ state });
+        const { delays } = withCapturedIntervals(() => {
+            manager._startTicker();                    // idle
+            manager.setEnabled('morning', true);       // must switch now
+        });
+        if (delays[0] !== INTERVALS.DAILY_RESET_TICK_IDLE) throw new Error('should have started idle');
+        if (delays[1] !== INTERVALS.DAILY_RESET_TICK) {
+            throw new Error(`enabling must switch to the active rate, got ${delays[1]}`);
+        }
+        manager.destroy();
+    });
+
+    await test('the idle rate never costs a reset — the check is still run on wake', async () => {
+        // The load-bearing guarantee. A routine whose trigger passed while the
+        // watcher sat idle must still reset the moment the check runs, because
+        // checkAllRoutines() asks "have we passed today's trigger?", not "is it
+        // exactly now?".
+        await withFrozenClock(12, 0, async () => {
+            const state = makeMockState({
+                cycles: { morning: enabledCycle({ hour: 6, minute: 0, lastResetDate: null }) }
+            });
+            state.data.cycles.morning.tasks = [{ id: 't1', completed: true }];
+            const { manager } = makeManager({ state });
+            await manager.checkAllRoutines();
+            if (state.data.cycles.morning.tasks[0].completed !== false) {
+                throw new Error('a trigger passed hours ago must still fire on the next check');
+            }
+            manager.destroy();
+        });
+    });
+
+    // =========================================================
     // 🧮 PURE HELPERS
     // =========================================================
     resultsDiv.innerHTML += '<h4 class="test-section">🧮 Pure Helpers</h4>';

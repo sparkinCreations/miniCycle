@@ -222,7 +222,8 @@ export const INTERVALS = Object.freeze({
     // Foreground cadence for the daily auto-uncheck. Only covers the app sitting
     // open ACROSS the scheduled minute — a backgrounded tab has its timers
     // throttled or suspended, and visibilitychange is the catch-up for that.
-    DAILY_RESET_TICK: 30000             // 30s - Daily auto-uncheck check interval
+    DAILY_RESET_TICK: 30000,            // 30s - Daily auto-uncheck check interval (active: at least one routine has it enabled)
+    DAILY_RESET_TICK_IDLE: 7200000      // 2h - Daily auto-uncheck interval when NO routine has it enabled. Mirrors RECURRING_WATCHER_IDLE. Correctness never rests on this tick — init() and visibilitychange both run the same idempotent catch-up check — so a slow idle poll costs nothing but wakeups
 });
 
 /**

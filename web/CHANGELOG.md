@@ -1,3 +1,40 @@
+## [2.502] - 2026-08-25
+- perf(auto-uncheck): the daily auto-uncheck watcher now ticks at an idle rate
+  when no routine has the feature enabled — 30s active, **2h idle**, mirroring
+  what `recurringWatcher` already did.
+
+  Previously it woke every 30s for the lifetime of the session regardless, even
+  for users who have never turned the feature on. Each wake is only a cheap state
+  read, so this is a battery/wakeup saving rather than a bug fix.
+
+  `_switchInterval()` re-evaluates on every AppState change, on `setEnabled()`,
+  and on `visibilitychange` (another tab may have enabled it while this one
+  slept). Enabling the feature therefore returns an idle watcher to the fast rate
+  **immediately**, not after up to two hours.
+
+  **The tick rate is a responsiveness knob here, never a correctness one**, and
+  that is what makes the idle rate safe. `checkAllRoutines()` asks an *interval*
+  question — "have we passed today's trigger, and not yet reset?" — which stays
+  true until midnight and is guarded by `lastResetDate`. Both the boot pass and
+  the visibility handler run that same check unconditionally, so a slow tick can
+  delay a reset for someone watching an open tab, but cannot lose one. There is a
+  test asserting exactly that.
+
+  This is precisely where the feature differs from `recurringWatcher`, which
+  needs a 15s cadence, oversleep detection and a separate timestamp-based
+  catch-up: its pattern gate asks whether *now MATCHES* the schedule, so a frozen
+  or slow tick misses the matching minute outright. Nothing here can miss a
+  minute, because it is not looking for one.
+
+  Six tests added, all three new behaviours mutation-checked (forcing the active
+  rate, dropping the immediate switch on enable, and breaking the idempotency
+  guard each fail a distinct test).
+
+  Also corrected two stale claims in `AUTO_UNCHECK_DAILY.md`: it documented a
+  "60s tick" and a `TICK_INTERVAL_MS` module constant, neither accurate since the
+  interval moved into `constants.js`.
+
+
 ## [2.501] - 2026-08-25
 - refactor(onboarding): the welcome carousel moves to its own module. Priority 8
   step 3, and the step that closes it. No behaviour change.
