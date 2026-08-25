@@ -886,6 +886,31 @@
         const moduleSelect = document.getElementById('module-select');
         // Tests are network-only by design (the SW never caches /tests/), so an
         // offline run can only produce fetch failures — refuse with a clear message.
+        // Origins where "Run All" may wipe storage: it calls localStorage.clear() with
+        // no backup, so it is only safe where localStorage holds no real routines.
+        //
+        // ALLOW-LIST, not a deny-list, deliberately. Until v2.505 the only thing standing
+        // between that clear() and a user's data was a COMMENT asserting this page was
+        // served from test.minicycle.app — but the page lives in web/tests/ and deploys
+        // like everything else, so minicycle.app/tests/module-test-suite served the same
+        // wipe against real data. A deny-list would fail open the next time a domain is
+        // added; this fails closed.
+        const HERMETIC_TEST_ORIGINS = ['localhost', '127.0.0.1', 'test.minicycle.app'];
+
+        function requireHermeticOrigin() {
+            if (HERMETIC_TEST_ORIGINS.includes(location.hostname)) return true;
+            const note = document.createElement('div');
+            note.className = 'result fail';
+            note.textContent =
+                `🛑 "Run All" is blocked on ${location.hostname} because it clears localStorage `
+                + `with no backup, and this origin holds real routine data. Run the full suite at `
+                + `https://test.minicycle.app/tests/module-test-suite (or localhost) instead. `
+                + `Single-module runs still work here — those back up and restore your data.`;
+            resultsDiv.innerHTML = '<h2>🧪 All Tests</h2>';
+            resultsDiv.appendChild(note);
+            return false;
+        }
+
         function requireOnline() {
             if (navigator.onLine) return true;
             const note = document.createElement('div');
@@ -2426,6 +2451,9 @@
         // Run all tests
         runAllTestsBtn.addEventListener('click', async () => {
             if (!requireOnline()) return;
+            // Must precede every destructive step below (localStorage.clear(), the undo-DB
+            // delete) AND the visibilitychange listener, so a blocked run leaves no trace.
+            if (!requireHermeticOrigin()) return;
             const startTime = performance.now();
 
             // Suite-level "did the tab go hidden during this run?" tracker. Backgrounding
@@ -2441,9 +2469,10 @@
             copyResultsBtn.style.display = 'none';
             copyFailedBtn.style.display = 'none';
 
-            // Hermetic runner: this is a dedicated test origin (test.minicycle.app),
-            // isolated from real user data, so we can freely clear storage for a clean
-            // slate — no backup/restore/flags needed.
+            // Hermetic runner: requireHermeticOrigin() above has already established that
+            // this origin holds no real user data, so storage can be cleared for a clean
+            // slate with no backup/restore/flags. That guard is the safety mechanism — this
+            // comment is not; see HERMETIC_TEST_ORIGINS.
             localStorage.clear();
 
             // Clear the undo-history DB so tests start from a clean slate.
