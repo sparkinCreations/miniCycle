@@ -897,16 +897,59 @@
         // added; this fails closed.
         const HERMETIC_TEST_ORIGINS = ['localhost', '127.0.0.1', 'test.minicycle.app'];
 
+        /**
+         * The hermetic origin that serves this same page, or null if there isn't one.
+         *
+         * Mirrors getTestOrigin() in modules/core/constants.js deliberately rather than
+         * importing it: this harness must not depend on app code it exists to test.
+         * Keep the two in step.
+         *
+         * Returns null when no DIFFERENT hermetic origin exists — that null is what
+         * stops a redirect loop. getTestOrigin()'s last branch falls back to the
+         * current origin, and sending a non-hermetic origin to itself would bounce
+         * forever, arriving each time with autorun set.
+         */
+        function hermeticCounterpartOrigin() {
+            const { protocol, hostname } = location;
+            if (hostname.includes('minicycle.app') && hostname !== 'test.minicycle.app') {
+                return 'https://test.minicycle.app';
+            }
+            // LAN IPs deliberately get NO hand-off, even though getTestOrigin() maps them
+            // to :8081. `location.hostname` excludes the port, so 192.168.x:8081 is still
+            // not in HERMETIC_TEST_ORIGINS on arrival — it would redirect to itself, for
+            // ever. Making it work needs a port-aware hermetic check, i.e. widening the
+            // safety allow-list, which is not worth doing for a convenience. LAN users get
+            // the message below and navigate to :8081 themselves.
+            return null;
+        }
+
         function requireHermeticOrigin() {
             if (HERMETIC_TEST_ORIGINS.includes(location.hostname)) return true;
+
+            const target = hermeticCounterpartOrigin();
+            resultsDiv.innerHTML = '<h2>🧪 All Tests</h2>';
             const note = document.createElement('div');
             note.className = 'result fail';
+
+            if (target) {
+                // Hand off rather than dead-end: same deploy, same code, isolated storage.
+                // Reuses the EXISTING ?autorun=true handler at the bottom of this file,
+                // which works by clicking the button — so the arriving run re-enters this
+                // very function. The parameter therefore cannot bypass the guard; on a
+                // non-hermetic origin ?autorun=true just lands back here and hands off.
+                note.textContent =
+                    `🛑 "Run All" clears localStorage with no backup, and ${location.hostname} holds real `
+                    + `routine data. Handing off to ${target.replace('https://', '')} — same build, isolated storage…`;
+                resultsDiv.appendChild(note);
+                location.href = `${target}/tests/module-test-suite.html?autorun=true`;
+                return false;
+            }
+
             note.textContent =
                 `🛑 "Run All" is blocked on ${location.hostname} because it clears localStorage `
                 + `with no backup, and this origin holds real routine data. Run the full suite at `
                 + `https://test.minicycle.app/tests/module-test-suite (or localhost) instead. `
                 + `Single-module runs still work here — those back up and restore your data.`;
-            resultsDiv.innerHTML = '<h2>🧪 All Tests</h2>';
             resultsDiv.appendChild(note);
             return false;
         }

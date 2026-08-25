@@ -1,3 +1,7 @@
+## [2.507] - 2026-08-25
+- test(suite): Run All on a real-data origin hands off to the isolated test origin and autoruns, instead of dead-ending
+
+
 ## [2.506] - 2026-08-25
 - test(meta): gate that every suite runner returns its counts
 - fix(restore): the first-run "Restore from a backup file" screen now accepts the backup Settings actually writes, and Settings → Restore now accepts the pre-boot rescue screen's export — until now each entry point took only the format the other rejected

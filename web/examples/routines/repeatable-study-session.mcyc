@@ -1,0 +1,53 @@
+{
+  "name": "repeatable_study_session",
+  "title": "📚 Repeatable Study Session",
+  "autoReset": true,
+  "deleteCheckedTasks": false,
+  "cycleCount": 0,
+  "tasks": [
+    {
+      "id": "study_01",
+      "text": "🎯 Set one clear goal for this study session",
+      "completed": false,
+      "highPriority": true,
+      "schemaVersion": 2
+    },
+    {
+      "id": "study_02",
+      "text": "🧹 Clear distractions and open only the materials you need",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "study_03",
+      "text": "⏱️ Focus deeply for 25 minutes",
+      "completed": false,
+      "highPriority": true,
+      "schemaVersion": 2
+    },
+    {
+      "id": "study_04",
+      "text": "🧠 Recall from memory: write or say the key ideas without looking",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "study_05",
+      "text": "✅ Check your notes/materials and correct anything you missed",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "study_06",
+      "text": "☕ Take a 5-minute break away from the study material",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "study_07",
+      "text": "📝 Record what you finished and choose the next study goal",
+      "completed": false,
+      "schemaVersion": 2
+    }
+  ]
+}
