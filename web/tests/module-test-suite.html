@@ -497,6 +497,7 @@
                             <option value="educationalTips">🎓 Educational Tips</option>
                             <option value="routineSwitcherThemePicker">🎨 Routine Theme Picker</option>
                             <option value="onboardingDemo">🎓 Onboarding Demo</option>
+                            <option value="onboardingSplash">✨ Onboarding Splash</option>
                             <option value="routineSwitcherPreview">👁️ Routine Preview</option>
                             <option value="routineSwitcherListTransforms">🔤 Routine List Transforms</option>
                             <option value="routineSwitcherRepair">🩹 Routine Data Repair</option>
@@ -675,6 +676,7 @@
         const { runEducationalTipsTests } = await import(`./educationalTips.tests.js?v=${cacheBuster}`);
         const { runRoutineSwitcherThemePickerTests } = await import(`./routineSwitcherThemePicker.tests.js?v=${cacheBuster}`);
         const { runOnboardingDemoTests } = await import(`./onboardingDemo.tests.js?v=${cacheBuster}`);
+        const { runOnboardingSplashTests } = await import(`./onboardingSplash.tests.js?v=${cacheBuster}`);
         const { runRoutineSwitcherPreviewTests } = await import(`./routineSwitcherPreview.tests.js?v=${cacheBuster}`);
         const { runRoutineSwitcherListTransformsTests } = await import(`./routineSwitcherListTransforms.tests.js?v=${cacheBuster}`);
         const { runRoutineSwitcherRepairTests } = await import(`./routineSwitcherRepair.tests.js?v=${cacheBuster}`);
@@ -1908,7 +1910,7 @@
                     await import(`../modules/features/uxRatings.js?v=${cacheBuster}`);
                     currentModule = 'uxRatings';
                     resultsDiv.innerHTML = '<p>✅ UXRatings loaded. Click "Run Tests" to begin.</p>';
-                } else if (['diWiring','orchestrator','moduleLoader','moduleManifests','modalTemplates','appContext','dataAccess','appGlobalState','migrationFacade','types','modalRegistry','modalUtils','panelVisibilityHelpers','gesturePanelManager','titleManager','headerLayoutManager','featureAvailability','dataRecovery','uiOrchestrator','preferencesBgImage','preferencesPresets','taskDOMPatch','debugMode','iconInit','icons','keyboardNav','collapsibleSections','educationalTips','routineSwitcherThemePicker','routineSwitcherPreview','routineSwitcherListTransforms','routineSwitcherRepair','routineSwitcherActions','onboardingDemo','longPressHint','mcycPayload','bootSw','nameUtils','styleValidators','cycleMode','undoSnapshotUtils','undoTransactionDiff','panelCarousel','focusTaskPanel','recurringPanelEvents','recurringPanelForm','recurringPanelGrids','recurringPanelSetup','recurringPanelSummary','recurringSettings','recurringSettingsApplicator','recurringWatcher','statsPanelGestures','statsPanelRewards','taskViewLayoutManager'].includes(moduleName)) {
+                } else if (['diWiring','orchestrator','moduleLoader','moduleManifests','modalTemplates','appContext','dataAccess','appGlobalState','migrationFacade','types','modalRegistry','modalUtils','panelVisibilityHelpers','gesturePanelManager','titleManager','headerLayoutManager','featureAvailability','dataRecovery','uiOrchestrator','preferencesBgImage','preferencesPresets','taskDOMPatch','debugMode','iconInit','icons','keyboardNav','collapsibleSections','educationalTips','routineSwitcherThemePicker','routineSwitcherPreview','routineSwitcherListTransforms','routineSwitcherRepair','routineSwitcherActions','onboardingDemo','onboardingSplash','longPressHint','mcycPayload','bootSw','nameUtils','styleValidators','cycleMode','undoSnapshotUtils','undoTransactionDiff','panelCarousel','focusTaskPanel','recurringPanelEvents','recurringPanelForm','recurringPanelGrids','recurringPanelSetup','recurringPanelSummary','recurringSettings','recurringSettingsApplicator','recurringWatcher','statsPanelGestures','statsPanelRewards','taskViewLayoutManager'].includes(moduleName)) {
                     const pathMap = {
                         diWiring: '../modules/boot/moduleLoader.js',
                         orchestrator: '../modules/boot/orchestrator.js',
@@ -1940,6 +1942,7 @@
                         educationalTips: '../modules/utils/educationalTips.js',
                         routineSwitcherThemePicker: '../modules/routine/routineSwitcher.js',
                         onboardingDemo: '../modules/ui/onboardingDemo.js',
+                        onboardingSplash: '../modules/ui/onboardingSplash.js',
                         routineSwitcherPreview: '../modules/routine/routineSwitcher.js',
                         routineSwitcherListTransforms: '../modules/routine/routineSwitcher.js',
                         routineSwitcherRepair: '../modules/routine/routineSwitcher.js',
@@ -2228,6 +2231,7 @@
             } else if (currentModule === 'educationalTips') { await runEducationalTipsTests(resultsDiv);
             } else if (currentModule === 'routineSwitcherThemePicker') { await runRoutineSwitcherThemePickerTests(resultsDiv);
             } else if (currentModule === 'onboardingDemo') { await runOnboardingDemoTests(resultsDiv);
+            } else if (currentModule === 'onboardingSplash') { await runOnboardingSplashTests(resultsDiv);
             } else if (currentModule === 'routineSwitcherPreview') { await runRoutineSwitcherPreviewTests(resultsDiv);
             } else if (currentModule === 'routineSwitcherListTransforms') { await runRoutineSwitcherListTransformsTests(resultsDiv);
             } else if (currentModule === 'routineSwitcherRepair') { await runRoutineSwitcherRepairTests(resultsDiv);

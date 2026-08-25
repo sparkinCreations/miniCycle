@@ -18,14 +18,14 @@
 
 | Metric | Value |
 |--------|-------|
-| **App Version** | 2.499 |
+| **App Version** | 2.500 |
 | **Lite Version** | 2.092 (frozen) |
 | **Schema Version** | 2.5 |
-| **Total Modules** | 151 |
-| **Total Tests** | 3700 |
+| **Total Modules** | 152 |
+| **Total Tests** | 3706 |
 | **Test Pass Rate** | 100% |
 | **CSS Files** | 45 |
-| **JSDoc Blocks** | 1427 |
+| **JSDoc Blocks** | 1428 |
 | **Documentation Files** | 246 |
 | **DI Completion** | 100% |
 | **Custom window.* Globals (modules)** | 0 |
@@ -43,7 +43,7 @@
 | `task/` | 13 | Task CRUD, DOM, events, drag-drop, validation |
 | `routine/` | 10 | Routine management, switching, migration |
 | `recurring/` | 17 | Recurring task scheduling, panel, activation |
-| `ui/` | 41 | Modals, menus, settings, onboarding, gestures |
+| `ui/` | 42 | Modals, menus, settings, onboarding, gestures |
 | `features/` | 11 | Themes, stats, achievements, history, reminders |
 | `utils/` | 24 | Notifications, device detection, utilities |
 | `labels/` | 3 | Default labels + label resolver |
@@ -52,7 +52,7 @@
 | `platform/` | 1 | capacitorBridge — native shell for iOS/Android; no-op on web |
 | `testing/` | 9 | Test infrastructure |
 | `other/` | 3 | Plugins, experimental |
-| **Total** | **151** | |
+| **Total** | **152** | |
 
 ---
 
@@ -73,8 +73,8 @@
 
 | Category | Tests |
 |----------|-------|
-| Total Tests | 3700 |
-| Test Files | 143 |
+| Total Tests | 3706 |
+| Test Files | 144 |
 | Pass Rate | 100% |
 | Platforms Tested | Mac, iPad, iPhone |
 

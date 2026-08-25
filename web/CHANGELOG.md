@@ -1,3 +1,38 @@
+## [2.500] - 2026-08-25
+- refactor(onboarding): the first-run splash moves to its own module, and both
+  onboarding sub-modules switch to static imports. Priority 8 step 2. No
+  behaviour change.
+
+  Splash cluster measured at **329** lines — the plan's estimate said ~247,
+  because it counted two methods where there are five. Seam again narrow: one
+  outbound sibling call and one dependency. **2,065 → 1,764**, sub-module 350
+  lines, six new tests.
+
+  State was deliberately not migrated. The seven `_firstRunSplash*` fields stay
+  on the manager and are reached through the back-reference, so `destroy()` still
+  clears every timer it always cleared. `showWelcomeSplash()` and
+  `_hideFirstRunSplash()` stay on the manager as thin delegators: appInit calls
+  the first and two test files reach for both, so moving them wholesale would
+  have been an API change dressed up as a refactor.
+
+  **The load-point decision from v2.499 was wrong, and this step proved it.**
+  v2.499 loaded the demo sub-module with a dynamic import inside `init()`.
+  Applying the same shape to the splash broke **14 existing tests at once**: they
+  construct the manager directly and never await `init()`, so `this._splash` was
+  null on every synchronous entry point — and `_showFirstRunSplash` is reached
+  from appInit, not from an awaited path.
+
+  The fix is a precedent already documented in CLAUDE.md: **static import,
+  constructed in the constructor**, exactly as `notifications` →
+  `educationalTips`. There is no async init to hang a dynamic import on when the
+  entry points are synchronous, and builds have been content-hashed since v2.301,
+  so `?v=` was buying nothing. Both sub-modules were switched, which also removes
+  the window where `this._demo` could be null.
+
+  Net for onboarding so far: **2,534 → 1,764** across two sub-modules and twelve
+  new tests, in a file that had none for either cluster.
+
+
 ## [2.499] - 2026-08-25
 - docs(splits): verdicts for onboardingManager (god module, Priority 8) and preferencesManager (not one)
 - docs(splits): close Priority 3 at 1,636 lines, with the non-split evidence

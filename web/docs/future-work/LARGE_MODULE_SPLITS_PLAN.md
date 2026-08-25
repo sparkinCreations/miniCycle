@@ -3,7 +3,7 @@
 **Date:** March 15, 2026
 **Updated:** August 21 2026 — four previously-unassessed modules given verdicts; scripts brought into scope (`update-version.sh`); the last inline line counts removed, since the doc had retired them in principle but kept four in practice and all four had drifted. August 2026 — Priority 2 (statsPanel) SHIPPED (commit `806f8082`); line-count table retired (numbers rot — see [PROJECT_STATS.md](../PROJECT_STATS.md)). July 7, 2026 — god-module audit: added statsPanel (Priority 2), orchestrator assessment, false-positive list
 **Updated:** Aug 23 2026 — Priority 1 shipped; Priority 7 stage 1 (CSP hashes) shipped in v2.488 and the `?v=` stage re-scoped after checking what content hashing actually replaced; execution order, DONE condition and the pattern guidance all revised against what the work actually showed.
-**Status:** In progress — **Priorities 1, 2, 3 and 6 complete**; Priorities 4 and 5 open but TRIGGER-BASED (do not schedule them), plus 7 (`update-version.sh`, `restore.sh` stage next). **Priority 8 (`onboardingManager`) OPENED Aug 24 2026; step 1 (interactive demo) SHIPPED Aug 25 2026 in v2.499 — 2,534 → 2,065, six new tests** — a god module the page had mislabelled "borderline" and left unscheduled. Priority 3 CLOSED Aug 24 2026 at 1,636 lines — **above the ~1,500 target, deliberately**; the remaining bulk is the 10-dep undo/redo execution core, recorded as a non-split with evidence. Priority 1 SHIPPED Aug 23 2026 in v2.484 (five extractions, 2,649 → 1,587 lines, 83 new tests). **Aug 21 2026 review:** added a DONE condition (~1,500-line target, everything else trigger-based); rewrote the per-extraction checklist around the gates that caught the two defects the completed splits shipped (`test:sw`, `validate:provides`); corrected the "provides stays the same" promise the statsPanel split falsified; pulled the release script's CSP stage forward from Priority 7
+**Status:** In progress — **Priorities 1, 2, 3 and 6 complete**; Priorities 4 and 5 open but TRIGGER-BASED (do not schedule them), plus 7 (`update-version.sh`, `restore.sh` stage next). **Priority 8 (`onboardingManager`) OPENED Aug 24 2026; steps 1-2 SHIPPED Aug 25 2026 (v2.499 demo, v2.500 splash) — 2,534 → 1,764, twelve new tests** — a god module the page had mislabelled "borderline" and left unscheduled. Priority 3 CLOSED Aug 24 2026 at 1,636 lines — **above the ~1,500 target, deliberately**; the remaining bulk is the 10-dep undo/redo execution core, recorded as a non-split with evidence. Priority 1 SHIPPED Aug 23 2026 in v2.484 (five extractions, 2,649 → 1,587 lines, 83 new tests). **Aug 21 2026 review:** added a DONE condition (~1,500-line target, everything else trigger-based); rewrote the per-extraction checklist around the gates that caught the two defects the completed splits shipped (`test:sw`, `validate:provides`); corrected the "provides stays the same" promise the statsPanel split falsified; pulled the release script's CSP stage forward from Priority 7
 **Related:** [DI_MIGRATION_COMPLETION_PLAN.md](../archive/DI_MIGRATION_COMPLETION_PLAN.md), [ENFORCE_REQUIRES_ROLLOUT_PLAN.md](../archive/ENFORCE_REQUIRES_ROLLOUT_PLAN.md)
 
 ---
@@ -182,10 +182,40 @@ Two things worth carrying to the remaining steps:
    rather than render an empty slide, which is the failure the v2.481 seam audit spent a release
    chasing.
 
-**Remaining in the file:** the welcome carousel (~466), first-run splash (~247), onboarding modal +
-completion. The splash is the viable next step; the carousel still calls INTO the demo, so it stays
-last or not at all. 2,065 is above the ~1,500 target — judge the next step by seam width, per the
-DONE section, not by the gap.
+#### ✅ Step 2 SHIPPED — `onboardingSplash.js` (v2.500)
+
+Splash cluster measured at **329** lines (the estimate above said ~247 — it counted two methods,
+not five). Seam again narrow: ONE outbound sibling call (`_scheduleFirstRunWelcomeAdvance`) and
+ONE dep. **2,065 → 1,764**, sub-module 350, six new tests.
+
+State was deliberately NOT migrated: the seven `_firstRunSplash*` fields stay on the manager and
+are reached via `this.m`, so `destroy()` still clears every timer it always cleared.
+`showWelcomeSplash()` and `_hideFirstRunSplash()` stay on the manager as thin delegators — appInit
+calls the first and two test files reach for both, so moving them would have been an API change
+dressed as a refactor.
+
+**The load-point rule from step 1 was WRONG, and this step proved it.** Step 1 concluded "load in
+`init()`". Applied to the splash that broke **14 existing tests** at once: they construct the
+manager directly and never await `init()`, so `this._splash` was null on every synchronous entry
+point — and `_showFirstRunSplash` is reached from appInit, not from an awaited path.
+
+The fix is the precedent already in CLAUDE.md: **static import, constructed in the constructor**,
+exactly as `notifications` → `educationalTips`. There is no async init to hang a dynamic import on
+when the entry points are synchronous, and content-hashed builds (since v2.301) mean `?v=` buys
+nothing. Both sub-modules were switched.
+
+**So the rule for the remaining steps is:** if a cluster's entry points are synchronous, use a
+STATIC import and construct in the constructor. Dynamic-in-`init()` is only correct when every
+caller is downstream of an awaited init — which is rarer here than it looks. A dynamic import
+leaves a window where the sub-module is null, and that window is exactly the silent-feature-loss
+this codebase keeps paying for.
+
+**Remaining in the file:** the welcome carousel (**740** lines measured, not the ~466 estimated —
+15 methods, not 5), onboarding modal + completion. The carousel's seam is ONE outbound call plus
+reaching `this.m._demo`; its 22 instance fields stay on the manager under the back-reference, as
+the splash's did. Extracting it lands the file near **1,024**. The old "carousel last or not at
+all, because it calls INTO the demo" caution is spent: the demo is already out, so that call is now
+an ordinary `this.m` hop rather than a new edge.
 
 **Do not repeat the Priority 3 mistake** of scheduling the biggest *function*. Measure neighbours.
 
