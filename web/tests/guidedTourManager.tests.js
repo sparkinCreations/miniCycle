@@ -64,7 +64,8 @@ export async function runGuidedTourManagerTests(resultsDiv) {
             '#quick-actions-btn, #progressBar, #mode-selector, ' +
             '#help-window, #quick-actions-window, #personalization-btn, ' +
             '#quick-dark-toggle, #slide-right, #retake-guided-tour, ' +
-            '#current-routine-status, #history-btn, ' +
+            '#current-routine-status, #history-btn, '
+            + '#focus-mode-btn, #routine-switcher-btn, ' +
             '#preferences-modal, #preferences-preview, #pref-section-quick-themes, ' +
             '#preferences-reset-all, ' +
             '#task-options-customizer-modal, #option-preview-content, #reset-task-options-btn, ' +
@@ -345,6 +346,84 @@ export async function runGuidedTourManagerTests(resultsDiv) {
         // Original main tour has 5 steps; filter should remove the 2 missing ones
         if (manager._steps.length !== 3) {
             throw new Error(`Expected 3 filtered steps, got ${manager._steps.length}`);
+        }
+    });
+
+    // Regression cover added with the v2.504 tour-definitions split, which turned
+    // sixteen onEnter closures into a `skipWhenHidden` field naming a shared
+    // predicate. The suite above only ever exercised the MISSING-target path:
+    // making _isStepHidden() always return false, or typo'ing a predicate name in
+    // a tour definition, both left all 67 tests green.
+    await test('a present-but-hidden step is filtered out by its visibility predicate', async () => {
+        setupTargets();
+        createTarget('button', { id: 'focus-mode-btn', rect: { left: 100, top: 40, width: 40, height: 40 } });
+        createTarget('button', { id: 'routine-switcher-btn', rect: { left: 150, top: 40, width: 40, height: 40 } });
+
+        const allVisible = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: null }
+        });
+        allVisible.startTour();
+
+        if (allVisible._steps.length !== 5) {
+            throw new Error(`Expected all 5 main-tour steps when every target is present, got ${allVisible._steps.length}`);
+        }
+
+        // display:none leaves the element resolvable here (the helper stubs its
+        // rects) but strips its offsetParent — exactly the case skipWhenHidden
+        // 'computedDisplay' exists for, and one _resolveTarget() alone misses.
+        document.getElementById('focus-mode-btn').style.display = 'none';
+
+        const oneHidden = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: null }
+        });
+        oneHidden.startTour();
+
+        if (oneHidden._steps.length !== 4) {
+            throw new Error(`Expected the hidden focus-mode step to be filtered out (4 steps), got ${oneHidden._steps.length}`);
+        }
+    });
+
+    await test('every skipWhenHidden name in TOUR_DEFINITIONS resolves to a predicate', async () => {
+        const { TOUR_DEFINITIONS } = await import(`../modules/ui/guidedTourDefinitions.js?v=${cacheBuster}`);
+        const predicates = GuidedTourModule.STEP_VISIBILITY_PREDICATES;
+
+        const used = new Set();
+        for (const [, definition] of TOUR_DEFINITIONS) {
+            for (const step of definition.steps) {
+                if (step.skipWhenHidden) used.add(step.skipWhenHidden);
+            }
+        }
+
+        if (used.size === 0) {
+            throw new Error('Expected at least one step to declare skipWhenHidden');
+        }
+
+        const unknown = [...used].filter(
+            name => !Object.prototype.hasOwnProperty.call(predicates, name)
+        );
+        if (unknown.length > 0) {
+            throw new Error(`Unknown skipWhenHidden predicate(s): ${unknown.join(', ')}`);
+        }
+    });
+
+    await test('the manager registers every tour in TOUR_DEFINITIONS', async () => {
+        const { TOUR_DEFINITIONS } = await import(`../modules/ui/guidedTourDefinitions.js?v=${cacheBuster}`);
+        const manager = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: 'done' }
+        });
+
+        const missing = TOUR_DEFINITIONS
+            .map(([tourId]) => tourId)
+            .filter(tourId => !manager._tours.has(tourId));
+
+        if (missing.length > 0) {
+            throw new Error(`Tours declared but not registered: ${missing.join(', ')}`);
+        }
+        if (manager._tours.size !== TOUR_DEFINITIONS.length) {
+            throw new Error(`Expected ${TOUR_DEFINITIONS.length} registered tours, got ${manager._tours.size}`);
         }
     });
 

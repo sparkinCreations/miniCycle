@@ -2,9 +2,9 @@
 
 **Date:** March 15, 2026
 **Updated:** August 21 2026 — four previously-unassessed modules given verdicts; scripts brought into scope (`update-version.sh`); the last inline line counts removed, since the doc had retired them in principle but kept four in practice and all four had drifted. August 2026 — Priority 2 (statsPanel) SHIPPED (commit `806f8082`); line-count table retired (numbers rot — see [PROJECT_STATS.md](../PROJECT_STATS.md)). July 7, 2026 — god-module audit: added statsPanel (Priority 2), orchestrator assessment, false-positive list
-**Updated:** Aug 25 2026 — `guidedTourManager` assessed and the "borderline (sequential step content)" row RETIRED: it is **not** a god module (fan-out is 9 infrastructure deps and zero feature modules; one `innerHTML` in 1,962 lines), but half the file is data + repetition, so it opens as **Priority 9 — a dedup, not a split**.
+**Updated:** Aug 25 2026 — `guidedTourManager` assessed and the "borderline (sequential step content)" row RETIRED: it is **not** a god module (fan-out is 9 infrastructure deps and zero feature modules; one `innerHTML` in 1,962 lines), but half the file was data + repetition. Opened as **Priority 9 — a dedup, not a split** and CLOSED the same day at 1,193 lines (v2.503 + v2.504), the first worked example on this page of the `settingsUIManager` remedy.
 **Updated:** Aug 23 2026 — Priority 1 shipped; Priority 7 stage 1 (CSP hashes) shipped in v2.488 and the `?v=` stage re-scoped after checking what content hashing actually replaced; execution order, DONE condition and the pattern guidance all revised against what the work actually showed.
-**Status:** In progress — **Priorities 1, 2, 3 and 6 complete**; Priorities 4 and 5 open but TRIGGER-BASED (do not schedule them), plus 7 (`update-version.sh`, `restore.sh` stage next). **Priority 9 (`guidedTourManager`) OPENED Aug 25 2026 — a DEDUP, not a split: 50% of the file measured as declarative data + twelve near-identical prompt functions; not a god module, but over target and cheaply fixable. Move 1 SHIPPED v2.503 (1,962 → 1,712, 63 → 67 tests); move 2 (tour definitions → data module) open.** **Priority 8 (`onboardingManager`) OPENED Aug 24 2026; CLOSED Aug 25 2026 — steps 1-3 shipped (v2.499 demo, v2.500 splash, v2.501 carousel): 2,534 → 1,052, eighteen new tests** — a god module the page had mislabelled "borderline" and left unscheduled. Priority 3 CLOSED Aug 24 2026 at 1,636 lines — **above the ~1,500 target, deliberately**; the remaining bulk is the 10-dep undo/redo execution core, recorded as a non-split with evidence. Priority 1 SHIPPED Aug 23 2026 in v2.484 (five extractions, 2,649 → 1,587 lines, 83 new tests). **Aug 21 2026 review:** added a DONE condition (~1,500-line target, everything else trigger-based); rewrote the per-extraction checklist around the gates that caught the two defects the completed splits shipped (`test:sw`, `validate:provides`); corrected the "provides stays the same" promise the statsPanel split falsified; pulled the release script's CSP stage forward from Priority 7
+**Status:** In progress — **Priorities 1, 2, 3 and 6 complete**; Priorities 4 and 5 open but TRIGGER-BASED (do not schedule them), plus 7 (`update-version.sh`, `restore.sh` stage next). **Priority 9 (`guidedTourManager`) OPENED Aug 25 2026 — a DEDUP, not a split: 50% of the file measured as declarative data + twelve near-identical prompt functions; not a god module, but over target and cheaply fixable. ✅ CLOSED v2.504 — both moves shipped: 1,962 → 1,193, 63 → 70 tests, no new facade and no wiring layer touched.** **Priority 8 (`onboardingManager`) OPENED Aug 24 2026; CLOSED Aug 25 2026 — steps 1-3 shipped (v2.499 demo, v2.500 splash, v2.501 carousel): 2,534 → 1,052, eighteen new tests** — a god module the page had mislabelled "borderline" and left unscheduled. Priority 3 CLOSED Aug 24 2026 at 1,636 lines — **above the ~1,500 target, deliberately**; the remaining bulk is the 10-dep undo/redo execution core, recorded as a non-split with evidence. Priority 1 SHIPPED Aug 23 2026 in v2.484 (five extractions, 2,649 → 1,587 lines, 83 new tests). **Aug 21 2026 review:** added a DONE condition (~1,500-line target, everything else trigger-based); rewrote the per-extraction checklist around the gates that caught the two defects the completed splits shipped (`test:sw`, `validate:provides`); corrected the "provides stays the same" promise the statsPanel split falsified; pulled the release script's CSP stage forward from Priority 7
 **Related:** [DI_MIGRATION_COMPLETION_PLAN.md](../archive/DI_MIGRATION_COMPLETION_PLAN.md), [ENFORCE_REQUIRES_ROLLOUT_PLAN.md](../archive/ENFORCE_REQUIRES_ROLLOUT_PLAN.md)
 
 ---
@@ -75,7 +75,7 @@ This doc no longer pins line/dep/method counts — every measured number in the 
 | onboardingManager.js | **God module** — Priority 8 — ✅ **CLOSED** v2.501 (2,534 → 1,052; three sub-modules, 18 new tests; see below) |
 | undoRedoManager.js | **Priority 3** — ✅ **CLOSED** v2.498 (2,306 → 1,636; three sub-modules, 53 new tests; execution core is a recorded non-split — see below) |
 | statsPanel.js (`modules/features/`) | **God module** — Priority 2 — ✅ **SHIPPED** (commit `806f8082`, see below) |
-| guidedTourManager.js | Not a god module — **repetition + data, not spread** — but over target: **Priority 9, a dedup not a split** (assessed Aug 25 2026; the "sequential step content" label was measurably false — see below) |
+| guidedTourManager.js | Not a god module — **repetition + data, not spread** — **Priority 9 (a dedup, not a split) ✅ CLOSED** v2.504 (1,962 → 1,193; one data module, 7 new tests; see below) |
 | recurringPanel.js | Already split (5 sub-modules) |
 | taskDOM.js | Already split (6 sub-modules) |
 | moduleLoader.js | Deferred (boot infrastructure) |
@@ -391,13 +391,15 @@ layers.
    `validate:api` saw no diff. Per-tour differences became tour-definition fields
    (`promptContainerSelectors`, `promptMinCycles`, `promptMainViewOnly`). **1,962 → 1,712**
    (−250), plus `_resolvePromptContainer()` and four new tests. See the post-mortem below.
-2. **Tour definitions → a data module.** 536 lines out. `defaultLabels.js` and `constants.js` are
-   already permanently exempt as data, so this is consistent with the project rule rather than an
-   exception to it.
+2. **Tour definitions → a data module** — ✅ **SHIPPED v2.504.** `guidedTourDefinitions.js` (498
+   lines, pure data, zero DI, statically imported) exports `TOUR_DEFINITIONS` as `[tourId, def]`
+   pairs; the constructor is now `new Map(TOUR_DEFINITIONS)` and the thirteen `_register*Tour()`
+   methods are gone. **1,712 → 1,193.**
 
-Estimated after both: **≈1,180 lines**, under the ~1,500 target. (Move 1 estimated ≈310 lines saved
-and delivered 250 — the gap is docblocks kept verbatim, which was the right trade: they carry the
-"called by X, after showModal()" knowledge that nothing else records.)
+**Priority 9 CLOSED at 1,193 lines** (from 1,962), under the ~1,500 target, with no new facade, no
+`FACADE_SUB_FILES` entry, no new `provides`, and no wiring layer touched. 63 → 70 tests.
+Move 1 estimated ≈310 lines saved and delivered 250 — the gap is docblocks kept verbatim, which was
+the right trade: they carry the "called by X, after showModal()" knowledge that nothing else records.
 
 ### Move 1 post-mortem (Aug 25 2026) — two things worth carrying forward
 
@@ -431,6 +433,43 @@ fail. 63 → 67 tests.
 The generalisable point: **collapsing N copies into one is the moment to mutation-test, because it
 is the moment the copies' shared behaviour first has a single name.** Twelve copies of an untested
 guard read as covered; one field called `promptMinCycles` does not.
+
+### Move 2 post-mortem (Aug 25 2026) — the `onEnter` obstacle wasn't one
+
+The move-1 entry recorded the blocker as "16 `onEnter` closures read `this.deps` and would have to
+go declarative, and that is a design decision, not a move". Measuring them dissolved it:
+**all sixteen re-resolved THE STEP'S OWN TARGET** — same `targetType` dispatch, same constant — and
+returned `'skip'` when it wasn't visible. They differed only in *which* visibility test they ran.
+
+So the closures did not need deps at all; the engine already had `_resolveTarget(step)`. Each became
+`skipWhenHidden: '<predicateName>'`, with five named predicates in the manager
+(`offsetParent` ×10, `computedDisplay` ×3, `inlineDisplay`, `clientRects`, `hiddenClass`). They are
+kept distinct rather than collapsed: `offsetParent === null` is also true of a *visible*
+`position: fixed` element, so they are not interchangeable.
+
+**The lesson is the same one Priority 1 and the execution order already record in other words:
+price the obstacle by measuring it, not by reading it.** "Sixteen closures that read `this.deps`"
+was an accurate description and a wrong cost estimate.
+
+Three things the move surfaced, all recorded rather than quietly fixed:
+
+- **One predicate is already unreachable.** `clientRects` tests exactly what
+  `_isRenderableTarget()` — which `_resolveTarget()` applies before any skip check — already
+  rejects. It is kept with a comment saying so, because the field still documents that the recurring
+  remove-button can vanish. Deleting it is a behaviour-neutral follow-up, not a bug fix.
+- **Lint caught the extraction's one real defect.** The new data module used `DATA_SELECTORS` and
+  the moved import line did not name it — `no-undef`, nine occurrences, before any test ran.
+- **The precache guard was verified by removing the entry, not by trusting it.** Without
+  `guidedTourDefinitions.js` in `BOOT_CRITICAL`, `test:sw` fails with
+  `module not precached: modules/ui/guidedTourDefinitions.js`. This is the gate that let
+  `styleValidators.js` through every other check in Aug 2026, so it is worth proving each time a
+  static import adds a boot-critical file.
+
+And the same coverage finding as move 1, again: before writing tests, making `_isStepHidden()`
+always return false, and typo'ing a predicate name in a definition, **both left all 67 tests
+green** — the suite only ever exercised the missing-target path, never the present-but-hidden one.
+Three tests added (a behavioural skip test, a `skipWhenHidden`-vs-predicate registry diff, and a
+definitions-vs-registered-tours diff); all four mutations now fail. 67 → 70.
 
 ### Two costs recorded honestly, because move 2 is not mechanical
 
@@ -924,10 +963,10 @@ If revisited, the split is unusually low-risk precisely because it's pre-DI — 
 11. **Remaining `update-version.sh` stages** — `restore.sh` generation next; the `?v=` sweep was
     RE-SCOPED and demoted Aug 23 2026 (content hashing superseded most of it — see Scripts above),
     both trigger-based (Priority 7)
-12. ~~**guidedTourManager prompt dedup**~~ — Priority 9, move 1 — ✅ **SHIPPED v2.503** (1,962 →
-    1,712; no new file, no new `provides`, no wiring layer touched). Move 2 (tour definitions → data
-    module) next, and only if the `onEnter` predicates go declarative cleanly; otherwise record it as
-    a non-split. Read the move 1 post-mortem first — the label gate has a trap here.
+12. ~~**guidedTourManager prompt dedup + tour-definitions data module**~~ — Priority 9 — ✅
+    **CLOSED v2.504** (move 1 v2.503, move 2 v2.504; 1,962 → 1,193; no new `provides`, no wiring
+    layer touched). Read both post-mortems before attempting the same shape elsewhere — move 1 found
+    a trap in the label gate, move 2 found that the obstacle it had recorded did not exist.
 
 Sizes are deliberately not given here — see "When this plan is DONE" and measure fresh.
 

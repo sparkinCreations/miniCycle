@@ -9,6 +9,7 @@
 import { createDIModule, required, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, UI_TIMEOUTS, EVENTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { TOUR_DEFINITIONS } from './guidedTourDefinitions.js';
 
 const TOUR_ACTIVE_ATTR = 'data-tour-active';
 const TOUR_PADDING = 12;
@@ -48,6 +49,30 @@ function isHTMLElement(value) {
 
 let guidedTourManager = null;
 
+/**
+ * Visibility tests a step may name via `skipWhenHidden`, each answering
+ * "is this target present in the DOM but not actually on screen?".
+ *
+ * These are the bodies of the sixteen onEnter closures the tour definitions
+ * carried until v2.504, deduplicated: every one of them re-resolved the step's
+ * own target and returned 'skip' when its test matched. They are NOT
+ * interchangeable — `offsetParent === null` is also true of a visible
+ * position:fixed element, and the inline/computed/class variants were each
+ * written for a different way the app hides that particular element — so they
+ * are preserved verbatim rather than collapsed into one.
+ *
+ * Exported so tests can diff these names against every `skipWhenHidden` value
+ * in TOUR_DEFINITIONS; an unnamed predicate is a silent no-skip.
+ * @type {Readonly<Record<string, (el: HTMLElement) => boolean>>}
+ */
+export const STEP_VISIBILITY_PREDICATES = Object.freeze({
+    offsetParent: (el) => el.offsetParent === null,
+    computedDisplay: (el) => el.offsetParent === null || getComputedStyle(el).display === 'none',
+    inlineDisplay: (el) => el.offsetParent === null || el.style.display === 'none',
+    clientRects: (el) => el.getClientRects().length === 0,
+    hiddenClass: (el) => el.classList.contains(DOM_CLASSES.HIDDEN) || el.offsetParent === null
+});
+
 export class GuidedTourManager {
     /**
      * Creates a new GuidedTourManager and registers all built-in tours.
@@ -68,21 +93,8 @@ export class GuidedTourManager {
         this._documentKeydownHandler = null;
         this._appReadyHandler = null;
         this._onboardingHandler = null;
-        this._tours = new Map();
+        this._tours = new Map(TOUR_DEFINITIONS);
         this._activeTourId = null;
-        this._registerMainTour();
-        this._registerStatsTour();
-        this._registerPersonalizationTour();
-        this._registerTaskOptionsTour();
-        this._registerRemindersTour();
-        this._registerMenuTour();
-        this._registerSettingsTour();
-        this._registerRoutineSwitcherTour();
-        this._registerRecurringListTour();
-        this._registerRecurringSettingsTour();
-        this._registerHistoryTour();
-        this._registerClearedTasksTour();
-        this._registerAchievementsTour();
     }
 
     /**
@@ -98,9 +110,29 @@ export class GuidedTourManager {
     }
 
     _isStepAvailable(step) {
-        if (!this._resolveTarget(step)) return false;
-        if (typeof step.onEnter === 'function' && step.onEnter() === 'skip') return false;
-        return true;
+        const target = this._resolveTarget(step);
+        if (!target) return false;
+        return !this._isStepHidden(step, target);
+    }
+
+    /**
+     * Whether a step names a visibility test that its resolved target fails.
+     * Steps without `skipWhenHidden` are never hidden by this route — a missing
+     * target is already handled by the callers.
+     * @param {object} step - a step from a tour definition
+     * @param {HTMLElement} target - the step's resolved target
+     * @returns {boolean}
+     */
+    _isStepHidden(step, target) {
+        if (!step?.skipWhenHidden) return false;
+
+        // Name-keyed plain object: hasOwnProperty, not truthiness (CLAUDE.md #18).
+        if (!Object.prototype.hasOwnProperty.call(STEP_VISIBILITY_PREDICATES, step.skipWhenHidden)) {
+            console.warn(`⚠️ Unknown skipWhenHidden predicate "${step.skipWhenHidden}" — step will never be skipped.`);
+            return false;
+        }
+
+        return STEP_VISIBILITY_PREDICATES[step.skipWhenHidden](target);
     }
 
     /**
@@ -109,557 +141,6 @@ export class GuidedTourManager {
      */
     get deps() {
         return di.resolve();
-    }
-
-    _registerMainTour() {
-        this._tours.set('main', {
-            stateKey: 'guidedTourStep',
-            completeKey: 'tour.complete',
-            steps: [
-                {
-                    targetType: 'id',
-                    target: DOM_IDS.MODE_SELECTOR,
-                    messageKey: 'tour.step1',
-                    position: 'auto'
-                },
-                {
-                    targetType: 'id',
-                    target: DOM_IDS.FOCUS_MODE_BTN,
-                    messageKey: 'tour.step2',
-                    position: 'auto',
-                    onEnter: () => {
-                        const el = this.deps.getElementById(DOM_IDS.FOCUS_MODE_BTN);
-                        if (!el || el.offsetParent === null || getComputedStyle(el).display === 'none') {
-                            return 'skip';
-                        }
-                        return null;
-                    }
-                },
-                {
-                    targetType: 'id',
-                    target: DOM_IDS.HELP_WINDOW,
-                    messageKey: 'tour.step3',
-                    position: 'auto',
-                    onEnter: () => {
-                        const el = this.deps.getElementById(DOM_IDS.HELP_WINDOW);
-                        if (!el || el.offsetParent === null || getComputedStyle(el).display === 'none') {
-                            return 'skip';
-                        }
-                        return null;
-                    }
-                },
-                {
-                    targetType: 'id',
-                    target: DOM_IDS.PERSONALIZATION_BTN,
-                    messageKey: 'tour.step4',
-                    position: 'auto'
-                },
-                {
-                    targetType: 'id',
-                    target: DOM_IDS.ROUTINE_SWITCHER_BTN,
-                    messageKey: 'tour.step5',
-                    position: 'auto',
-                    onEnter: () => {
-                        const el = this.deps.getElementById(DOM_IDS.ROUTINE_SWITCHER_BTN);
-                        if (!el || el.offsetParent === null || getComputedStyle(el).display === 'none') {
-                            return 'skip';
-                        }
-                        return null;
-                    }
-                }
-            ]
-        });
-    }
-
-    _registerStatsTour() {
-        this._tours.set('stats', {
-            stateKey: 'statsTourStep',
-            completeKey: 'statsTour.complete',
-            // Wait for one completed cycle so the panel has data worth touring,
-            // and stay silent in focus view (the tour highlights main-view chrome).
-            promptMinCycles: 1,
-            promptMainViewOnly: true,
-            steps: [
-                {
-                    targetType: 'id',
-                    target: DOM_IDS.CURRENT_ROUTINE_STATUS,
-                    messageKey: 'statsTour.step1',
-                    position: 'auto'
-                },
-                {
-                    targetType: 'id',
-                    target: DOM_IDS.HISTORY_BTN,
-                    messageKey: 'statsTour.step2',
-                    position: 'auto',
-                    onEnter: () => {
-                        const el = this.deps.getElementById(DOM_IDS.HISTORY_BTN);
-                        if (!el || el.offsetParent === null) return 'skip';
-                        return null;
-                    }
-                },
-                {
-                    targetType: 'selector',
-                    target: DOM_SELECTORS.BADGE_CONTAINER,
-                    messageKey: 'statsTour.step3',
-                    position: 'auto'
-                },
-                {
-                    targetType: 'selector',
-                    target: DOM_SELECTORS.GLOBAL_STATS_CONTAINER,
-                    messageKey: 'statsTour.step4',
-                    position: 'auto'
-                }
-            ]
-        });
-    }
-
-    _registerPersonalizationTour() {
-        this._tours.set('personalization', {
-            stateKey: 'prefsTourStep',
-            completeKey: 'prefsTour.complete',
-            containerSelector: '#preferences-modal',
-            // Below the title/logo, scrolling with the content.
-            promptContainerSelectors: [
-                DOM_SELECTORS.PREFERENCES_SCROLL_AREA,
-                DOM_SELECTORS.PREFERENCES_MODAL_CONTENT
-            ],
-            steps: [
-                {
-                    targetType: 'id',
-                    target: DOM_IDS.PREFERENCES_PREVIEW,
-                    messageKey: 'prefsTour.step1',
-                    position: 'auto'
-                },
-                {
-                    targetType: 'id',
-                    target: DOM_IDS.PREF_QUICK_PRESETS_GRID,
-                    messageKey: 'prefsTour.step2',
-                    position: 'auto',
-                    onEnter: () => {
-                        const el = this.deps.getElementById(DOM_IDS.PREF_QUICK_PRESETS_GRID);
-                        if (!el || el.offsetParent === null) return 'skip';
-                        return null;
-                    }
-                },
-                {
-                    targetType: 'selector',
-                    target: DOM_SELECTORS.PREFERENCES_SECTION_HEADER_COLLAPSIBLE,
-                    messageKey: 'prefsTour.step3',
-                    position: 'auto'
-                },
-                {
-                    targetType: 'id',
-                    target: DOM_IDS.PREFERENCES_RESET_ALL,
-                    messageKey: 'prefsTour.step4',
-                    position: 'auto'
-                }
-            ]
-        });
-    }
-
-    _registerTaskOptionsTour() {
-        this._tours.set('taskOptions', {
-            stateKey: 'taskOptionsTourStep',
-            completeKey: 'taskOptionsTour.complete',
-            containerSelector: '#task-options-customizer-modal',
-            // Below the header, above the options grid.
-            promptContainerSelectors: [DOM_SELECTORS.TASK_OPTIONS_MODAL_BODY],
-            steps: [
-                {
-                    targetType: 'selector',
-                    target: DOM_SELECTORS.TASK_OPTIONS_LIST,
-                    messageKey: 'taskOptionsTour.step1',
-                    position: 'auto'
-                },
-                {
-                    targetType: 'id',
-                    target: DOM_IDS.OPTION_PREVIEW_CONTENT,
-                    messageKey: 'taskOptionsTour.step2',
-                    position: 'auto',
-                    onEnter: () => {
-                        const el = this.deps.getElementById(DOM_IDS.OPTION_PREVIEW_CONTENT);
-                        if (!el || el.offsetParent === null) return 'skip';
-                        return null;
-                    }
-                },
-                {
-                    targetType: 'selector',
-                    target: DOM_SELECTORS.TASK_OPTIONS_GLOBAL_SECTION,
-                    messageKey: 'taskOptionsTour.step3',
-                    position: 'auto',
-                    onEnter: () => {
-                        const el = this.deps.querySelector(DOM_SELECTORS.TASK_OPTIONS_GLOBAL_SECTION);
-                        if (!el || el.offsetParent === null) return 'skip';
-                        return null;
-                    }
-                },
-                {
-                    targetType: 'id',
-                    target: DOM_IDS.RESET_TASK_OPTIONS_BTN,
-                    messageKey: 'taskOptionsTour.step4',
-                    position: 'auto'
-                }
-            ]
-        });
-    }
-
-    _registerRemindersTour() {
-        this._tours.set('reminders', {
-            stateKey: 'remindersTourStep',
-            completeKey: 'remindersTour.complete',
-            containerSelector: '#reminders-modal',
-            promptContainerSelectors: [DOM_SELECTORS.REMINDERS_MODAL_CONTENT],
-            steps: [
-                {
-                    targetType: 'id',
-                    target: DOM_IDS.ENABLE_REMINDERS,
-                    messageKey: 'remindersTour.step1',
-                    position: 'auto'
-                },
-                {
-                    targetType: 'id',
-                    target: DOM_IDS.DUE_DATES_REMINDERS,
-                    messageKey: 'remindersTour.step2',
-                    position: 'auto'
-                },
-                {
-                    targetType: 'id',
-                    target: DOM_IDS.BROWSER_NOTIFICATIONS,
-                    messageKey: 'remindersTour.step3',
-                    position: 'auto'
-                },
-                {
-                    targetType: 'id',
-                    target: DOM_IDS.FREQUENCY_SECTION,
-                    messageKey: 'remindersTour.step4',
-                    position: 'auto',
-                    onEnter: () => {
-                        const el = this.deps.getElementById(DOM_IDS.FREQUENCY_SECTION);
-                        if (!el || el.offsetParent === null) return 'skip';
-                        return null;
-                    }
-                }
-            ]
-        });
-    }
-
-    _registerMenuTour() {
-        this._tours.set('menu', {
-            stateKey: 'menuTourStep',
-            completeKey: 'menuTour.complete',
-            steps: [
-                {
-                    targetType: 'selector',
-                    target: DATA_SELECTORS.menuSectionByName('routines'),
-                    messageKey: 'menuTour.step1',
-                    position: 'auto'
-                },
-                {
-                    targetType: 'selector',
-                    target: DATA_SELECTORS.menuSectionByName('tasks'),
-                    messageKey: 'menuTour.step2',
-                    position: 'auto'
-                },
-                {
-                    targetType: 'selector',
-                    target: DATA_SELECTORS.menuSectionByName('rewards'),
-                    messageKey: 'menuTour.step3',
-                    position: 'auto'
-                },
-                {
-                    targetType: 'selector',
-                    target: DATA_SELECTORS.menuSectionByName('app'),
-                    messageKey: 'menuTour.step4',
-                    position: 'auto'
-                }
-            ]
-        });
-    }
-
-    _registerSettingsTour() {
-        this._tours.set('settings', {
-            stateKey: 'settingsTourStep',
-            completeKey: 'settingsTour.complete',
-            containerSelector: '#settings-modal',
-            promptContainerSelectors: [DOM_SELECTORS.SETTINGS_MODAL_CONTENT],
-            steps: [
-                {
-                    targetType: 'selector',
-                    target: DATA_SELECTORS.settingsSectionByName('display'),
-                    messageKey: 'settingsTour.step1',
-                    position: 'auto'
-                },
-                {
-                    targetType: 'selector',
-                    target: DATA_SELECTORS.settingsSectionByName('accessibility'),
-                    messageKey: 'settingsTour.step2',
-                    position: 'auto'
-                },
-                {
-                    targetType: 'selector',
-                    target: DATA_SELECTORS.settingsSectionByName('behavior'),
-                    messageKey: 'settingsTour.step3',
-                    position: 'auto'
-                },
-                {
-                    targetType: 'selector',
-                    target: DATA_SELECTORS.settingsSectionByName('data'),
-                    messageKey: 'settingsTour.step4',
-                    position: 'auto'
-                },
-                {
-                    targetType: 'selector',
-                    target: DATA_SELECTORS.settingsSectionByName('reset'),
-                    messageKey: 'settingsTour.step5',
-                    position: 'auto'
-                },
-                {
-                    targetType: 'selector',
-                    target: DATA_SELECTORS.settingsSectionByName('advanced'),
-                    messageKey: 'settingsTour.step6',
-                    position: 'auto'
-                }
-            ]
-        });
-    }
-
-    _registerRoutineSwitcherTour() {
-        this._tours.set('routineSwitcher', {
-            stateKey: 'routineSwitcherTourStep',
-            completeKey: 'routineSwitcherTour.complete',
-            containerSelector: '#routine-switcher-modal',
-            promptContainerSelectors: [DOM_SELECTORS.MINI_CYCLE_SWITCH_MODAL_CONTENT],
-            steps: [
-                {
-                    targetType: 'id',
-                    target: DOM_IDS.MINI_CYCLE_LIST,
-                    messageKey: 'routineSwitcherTour.step1',
-                    position: 'auto'
-                },
-                {
-                    targetType: 'id',
-                    target: DOM_IDS.ROUTINE_SEARCH_INPUT,
-                    messageKey: 'routineSwitcherTour.step2',
-                    position: 'auto'
-                },
-                {
-                    targetType: 'id',
-                    target: DOM_IDS.SWITCH_ITEMS_ROW,
-                    messageKey: 'routineSwitcherTour.step3',
-                    position: 'auto',
-                    onEnter: () => {
-                        // Action row is hidden until a routine is selected
-                        const el = this.deps.getElementById(DOM_IDS.SWITCH_ITEMS_ROW);
-                        if (!el || el.offsetParent === null || el.style.display === 'none') return 'skip';
-                        return null;
-                    }
-                },
-                {
-                    targetType: 'id',
-                    target: DOM_IDS.MINI_CYCLE_SWITCH_CONFIRM,
-                    messageKey: 'routineSwitcherTour.step4',
-                    position: 'auto'
-                }
-            ]
-        });
-    }
-
-    _registerRecurringListTour() {
-        this._tours.set('recurringList', {
-            stateKey: 'recurringListTourStep',
-            completeKey: 'recurringListTour.complete',
-            containerSelector: '#recurring-panel-overlay',
-            promptContainerSelectors: [`#${DOM_IDS.RECURRING_PANEL}`],
-            steps: [
-                {
-                    targetType: 'id',
-                    target: DOM_IDS.RECURRING_TASK_LIST,
-                    messageKey: 'recurringListTour.step1',
-                    position: 'auto'
-                },
-                {
-                    targetType: 'selector',
-                    target: DOM_SELECTORS.RECURRING_REMOVE_BTN,
-                    messageKey: 'recurringListTour.step2',
-                    position: 'auto',
-                    onEnter: () => {
-                        const el = this.deps.querySelector(DOM_SELECTORS.RECURRING_REMOVE_BTN);
-                        if (!el || el.getClientRects().length === 0) return 'skip';
-                        return null;
-                    }
-                },
-                {
-                    targetType: 'id',
-                    target: DOM_IDS.ADD_RECURRING_TASK_BTN,
-                    messageKey: 'recurringListTour.step3',
-                    position: 'auto'
-                }
-            ]
-        });
-    }
-
-    _registerRecurringSettingsTour() {
-        this._tours.set('recurringSettings', {
-            stateKey: 'recurringSettingsTourStep',
-            completeKey: 'recurringSettingsTour.complete',
-            containerSelector: '#recurring-panel-overlay',
-            promptContainerSelectors: [`#${DOM_IDS.RECURRING_PANEL}`],
-            steps: [
-                {
-                    targetType: 'id',
-                    target: DOM_IDS.RECURRING_TASK_LIST,
-                    messageKey: 'recurringSettingsTour.step1',
-                    position: 'auto'
-                },
-                {
-                    targetType: 'id',
-                    target: DOM_IDS.RECURRING_SUMMARY_PREVIEW,
-                    messageKey: 'recurringSettingsTour.step2',
-                    position: 'auto',
-                    onEnter: () => {
-                        const el = this.deps.getElementById(DOM_IDS.RECURRING_SUMMARY_PREVIEW);
-                        if (!el || el.classList.contains(DOM_CLASSES.HIDDEN) || el.offsetParent === null) return 'skip';
-                        return null;
-                    }
-                },
-                {
-                    targetType: 'id',
-                    target: DOM_IDS.RECUR_FREQUENCY,
-                    messageKey: 'recurringSettingsTour.step3',
-                    position: 'auto'
-                },
-                {
-                    targetType: 'id',
-                    target: DOM_IDS.TOGGLE_ADVANCED_SETTINGS,
-                    messageKey: 'recurringSettingsTour.step4',
-                    position: 'auto'
-                },
-                {
-                    targetType: 'id',
-                    target: DOM_IDS.APPLY_RECURRING_SETTINGS,
-                    messageKey: 'recurringSettingsTour.step5',
-                    position: 'auto'
-                }
-            ]
-        });
-    }
-
-    _registerHistoryTour() {
-        this._tours.set('history', {
-            stateKey: 'historyTourStep',
-            completeKey: 'historyTour.complete',
-            containerSelector: '#' + DOM_IDS.HISTORY_MODAL_DIALOG,
-            promptContainerSelectors: [DOM_SELECTORS.HISTORY_MODAL],
-            steps: [
-                {
-                    targetType: 'selector',
-                    target: DOM_SELECTORS.HISTORY_MODAL_CONTENT,
-                    messageKey: 'historyTour.step1',
-                    position: 'auto'
-                },
-                {
-                    targetType: 'selector',
-                    target: DOM_SELECTORS.HISTORY_TAB + '[data-tab="cleared"]',
-                    messageKey: 'historyTour.step2',
-                    position: 'auto',
-                    onEnter: () => {
-                        const el = this.deps.querySelector(DOM_SELECTORS.HISTORY_TAB + '[data-tab="cleared"]');
-                        if (!el || el.offsetParent === null) return 'skip';
-                        return null;
-                    }
-                },
-                {
-                    targetType: 'selector',
-                    target: DOM_SELECTORS.HISTORY_ACTION_BTN,
-                    messageKey: 'historyTour.step3',
-                    position: 'auto'
-                },
-                {
-                    targetType: 'selector',
-                    target: DOM_SELECTORS.HISTORY_RESET_PROGRESS_BTN,
-                    messageKey: 'historyTour.step4',
-                    position: 'auto'
-                }
-            ]
-        });
-    }
-
-    _registerClearedTasksTour() {
-        this._tours.set('clearedTasks', {
-            stateKey: 'clearedTasksTourStep',
-            completeKey: 'clearedTasksTour.complete',
-            containerSelector: '#' + DOM_IDS.HISTORY_MODAL_DIALOG,
-            promptContainerSelectors: [DOM_SELECTORS.HISTORY_MODAL],
-            steps: [
-                {
-                    targetType: 'selector',
-                    target: DOM_SELECTORS.CLEARED_ENTRY,
-                    messageKey: 'clearedTasksTour.step1',
-                    position: 'auto',
-                    onEnter: () => {
-                        const el = this.deps.querySelector(DOM_SELECTORS.CLEARED_ENTRY);
-                        if (!el || el.offsetParent === null) return 'skip';
-                        return null;
-                    }
-                },
-                {
-                    targetType: 'selector',
-                    target: DOM_SELECTORS.HISTORY_ACTION_BTN,
-                    messageKey: 'clearedTasksTour.step2',
-                    position: 'auto'
-                },
-                {
-                    targetType: 'selector',
-                    target: DOM_SELECTORS.HISTORY_TAB + '[data-tab="events"]',
-                    messageKey: 'clearedTasksTour.step3',
-                    position: 'auto',
-                    onEnter: () => {
-                        const el = this.deps.querySelector(DOM_SELECTORS.HISTORY_TAB + '[data-tab="events"]');
-                        if (!el || el.offsetParent === null) return 'skip';
-                        return null;
-                    }
-                }
-            ]
-        });
-    }
-
-    _registerAchievementsTour() {
-        this._tours.set('achievements', {
-            stateKey: 'achievementsTourStep',
-            completeKey: 'achievementsTour.complete',
-            containerSelector: '#' + DOM_IDS.ACHIEVEMENTS_MODAL_DIALOG,
-            promptContainerSelectors: [DOM_SELECTORS.ACHIEVEMENTS_MODAL],
-            steps: [
-                {
-                    targetType: 'selector',
-                    target: DOM_SELECTORS.ACHIEVEMENTS_SUMMARY,
-                    messageKey: 'achievementsTour.step1',
-                    position: 'auto'
-                },
-                {
-                    targetType: 'selector',
-                    target: DOM_SELECTORS.ACHIEVEMENTS_UNLOCKED,
-                    messageKey: 'achievementsTour.step2',
-                    position: 'auto',
-                    onEnter: () => {
-                        const el = this.deps.querySelector(DOM_SELECTORS.ACHIEVEMENTS_UNLOCKED);
-                        if (!el || el.offsetParent === null) return 'skip';
-                        return null;
-                    }
-                },
-                {
-                    targetType: 'selector',
-                    target: DOM_SELECTORS.ACHIEVEMENTS_UPCOMING,
-                    messageKey: 'achievementsTour.step3',
-                    position: 'auto',
-                    onEnter: () => {
-                        const el = this.deps.querySelector(DOM_SELECTORS.ACHIEVEMENTS_UPCOMING);
-                        if (!el || el.offsetParent === null) return 'skip';
-                        return null;
-                    }
-                }
-            ]
-        });
     }
 
     /**
@@ -767,8 +248,9 @@ export class GuidedTourManager {
 
         this._activeTourId = tourId;
 
-        // Filter out steps whose targets are missing or whose onEnter() returns 'skip'
-        // so progress count and prev/next reflect only steps that will actually display.
+        // Filter out steps whose targets are missing or whose visibility test says
+        // they are hidden, so progress count and prev/next reflect only steps that
+        // will actually display.
         const filteredSteps = (tourDef?.steps || []).filter(step => this._isStepAvailable(step));
         if (filteredSteps.length === 0) {
             this._markDone();
@@ -822,7 +304,7 @@ export class GuidedTourManager {
             return;
         }
 
-        if (typeof step.onEnter === 'function' && step.onEnter() === 'skip') {
+        if (this._isStepHidden(step, target)) {
             if (index < this._steps.length - 1) {
                 this.showStep(index + 1);
             } else {
