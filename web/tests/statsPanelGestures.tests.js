@@ -256,4 +256,11 @@ export async function runStatsPanelGesturesTests(resultsDiv) {
     } else {
         resultsDiv.innerHTML += `<div class="result fail">⚠️ ${total.count - passed.count} test(s) failed</div>`;
     }
+
+    // REQUIRED by module-test-suite.html's "Run All": it scores each suite from this
+    // return value (`result?.passed || 0`), NOT from the summary line above. Omitting it
+    // reports the suite as 0/0 — which is exactly what these two did from the v2.347
+    // statsPanel split until v2.505. npm test parses the DOM instead, so it read 12/12
+    // and 10/10 the whole time and the two runners silently disagreed.
+    return { passed: passed.count, total: total.count };
 }

@@ -1,3 +1,7 @@
+## [2.505] - 2026-08-25
+- fix(tests): block the destructive Run All on non-test origins (it was wiping real routine data on minicycle.app) and restore the two statsPanel sub-module suites that silently reported 0/0
+
+
 ## [2.504] - 2026-08-25
 - refactor(tours): move the thirteen tour definitions to a pure-data module and replace sixteen onEnter closures with a named visibility predicate (guidedTourManager 1,712 → 1,193; Priority 9 closed)
 
