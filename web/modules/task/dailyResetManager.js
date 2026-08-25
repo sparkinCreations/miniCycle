@@ -98,6 +98,7 @@ export const __test__ = { todayLocal, localTimeToday, formatTime12, formatTimeIn
 export class DailyResetManager {
     constructor() {
         this._intervalId = null;
+        this._currentIntervalMs = null;  // active vs idle tick rate — see _switchInterval()
         this._visibilityHandler = null;
         this._appStateSubscribed = false;
         this._toggleHandler = null;
@@ -152,6 +153,7 @@ export class DailyResetManager {
             clearInterval(this._intervalId);
             this._intervalId = null;
         }
+        this._currentIntervalMs = null;
         if (this._visibilityHandler) {
             document.removeEventListener('visibilitychange', this._visibilityHandler);
             this._visibilityHandler = null;
@@ -300,6 +302,9 @@ export class DailyResetManager {
         }, true);
 
         this._syncForActiveCycle();
+        // Immediate, not via the subscription: turning the feature on should not
+        // wait up to the IDLE interval for the first tick at the active rate.
+        this._switchInterval();
 
         if (snapshot?.enabled) {
             const time = formatTime12(snapshot.hour, snapshot.minute);
@@ -502,16 +507,60 @@ export class DailyResetManager {
         banner.addEventListener('click', this._bannerHandler);
     }
 
+    /**
+     * True when at least one routine has the daily auto-uncheck enabled.
+     * Drives the tick rate — see _switchInterval().
+     * @returns {boolean}
+     */
+    _anyRoutineEnabled() {
+        const cycles = this.deps.AppState.get?.()?.data?.cycles;
+        if (!cycles) return false;
+        return Object.values(cycles).some(c => readSettings(c).enabled);
+    }
+
+    /**
+     * Switch the tick between the active rate and the idle rate, mirroring
+     * recurringWatcher.switchInterval().
+     *
+     * Why this is safe here in a way it would NOT be for the recurring watcher:
+     * the recurring watcher's pattern gate asks whether NOW MATCHES the schedule,
+     * so a slow tick can miss the matching minute outright. This feature asks an
+     * interval question instead — "have we passed today's trigger, and not yet
+     * reset?" — which stays true until midnight and is guarded by lastResetDate.
+     * init() and the visibilitychange handler both run that same check, so
+     * correctness never rests on the tick at all; the tick only shortens the
+     * delay for a user sitting on an open tab through their trigger time.
+     *
+     * Hence: when NO routine has the feature on, there is nothing the tick could
+     * ever discover, and 30s wakeups forever buy nothing.
+     * @returns {void}
+     */
+    _switchInterval() {
+        const target = this._anyRoutineEnabled()
+            ? INTERVALS.DAILY_RESET_TICK
+            : INTERVALS.DAILY_RESET_TICK_IDLE;
+
+        if (this._currentIntervalMs === target) return;
+
+        if (this._intervalId) clearInterval(this._intervalId);
+        this._intervalId = setInterval(() => this.checkAllRoutines(), target);
+        this._currentIntervalMs = target;
+    }
+
     _startTicker() {
-        // A coarse tick is plenty for a feature that fires once per day per routine;
-        // the interval itself lives in INTERVALS.DAILY_RESET_TICK.
-        // Visibility-change covers the closed-app case (catch-up).
-        this._intervalId = setInterval(() => this.checkAllRoutines(), INTERVALS.DAILY_RESET_TICK);
+        // Rate is adaptive: INTERVALS.DAILY_RESET_TICK while any routine has the
+        // feature enabled, INTERVALS.DAILY_RESET_TICK_IDLE when none does.
+        // Visibility-change covers the closed-app case (catch-up), and it runs
+        // the check unconditionally — so switching to the idle rate can delay a
+        // reset for someone watching an open tab, but can never miss one.
+        this._switchInterval();
 
         this._visibilityHandler = () => {
             if (document.visibilityState === 'visible') {
                 this.checkAllRoutines();
                 this._syncForActiveCycle();
+                // Another tab may have enabled the feature while this one slept.
+                this._switchInterval();
             }
         };
         document.addEventListener('visibilitychange', this._visibilityHandler);
@@ -525,6 +574,12 @@ export class DailyResetManager {
             if (newActive !== oldActive) {
                 this._syncForActiveCycle();
             }
+            // Enablement can change from anywhere (this tab's toggle, an import,
+            // a restore, another tab). Re-evaluating the rate on every state
+            // change is cheap — _switchInterval() no-ops unless the target
+            // actually differs — and it is the only thing that returns a
+            // long-idle watcher to the active rate without a reload.
+            this._switchInterval();
         };
         this.deps.AppState.subscribe(APPSTATE_SUBSCRIBER_KEY, this._onAppStateChange);
         this._appStateSubscribed = true;

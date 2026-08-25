@@ -102,9 +102,27 @@ DI-pure (uses `createDIModule()` from `diBase.js`). Exports a singleton `dailyRe
 
 Self-contained scheduler (no coupling to `recurringWatcher.js`):
 
-- **60s `setInterval`** — covers the case where the app stays open across the trigger time. The reset fires within ~60 seconds of the configured time.
-- **`visibilitychange` listener** — covers the closed-app case. When the tab becomes visible, `checkAllRoutines()` runs immediately and fires any missed resets.
-- **Boot pass** — `init()` runs `checkAllRoutines()` once after wiring, so a reset that should have fired while the app was closed is caught the moment the user opens the app.
+- **Adaptive `setInterval`** — `INTERVALS.DAILY_RESET_TICK` (30s) while **any** routine has the
+  feature enabled, `INTERVALS.DAILY_RESET_TICK_IDLE` (2h) when none does. Covers the case where the
+  app stays open across the trigger time. `_switchInterval()` re-evaluates on every AppState change
+  and on `setEnabled()`, so enabling the feature returns an idle watcher to the fast rate
+  immediately rather than after up to 2h. (Added Aug 2026, mirroring `recurringWatcher`.)
+- **`visibilitychange` listener** — covers the closed-app case. When the tab becomes visible,
+  `checkAllRoutines()` runs immediately and fires any missed resets. It also re-evaluates the tick
+  rate, since another tab may have enabled the feature while this one slept.
+- **Boot pass** — `init()` runs `checkAllRoutines()` once after wiring, so a reset that should have
+  fired while the app was closed is caught the moment the user opens the app.
+
+**The tick rate is a responsiveness knob, never a correctness one.** `checkAllRoutines()` asks an
+INTERVAL question — *"have we passed today's trigger, and not yet reset?"* — which stays true until
+midnight and is guarded by `lastResetDate`. Both the boot pass and the visibility handler run that
+same check unconditionally. So the idle rate can delay a reset for a user sitting on an open tab; it
+cannot lose one.
+
+This is exactly where this feature differs from `recurringWatcher`, and why that module needs far
+more machinery (15s cadence, oversleep detection, a separate timestamp-based catch-up): its pattern
+gate asks whether *now MATCHES* the schedule, so a slow or frozen tick misses the matching minute
+outright. Nothing here can miss a minute, because it is not looking for one.
 
 ### Idempotency
 
@@ -203,7 +221,7 @@ Runnable in-browser via the testing modal (`/tests/module-test-suite.html`) or v
 ## Edge Cases Handled
 
 - **App closed all night** → `visibilitychange` on next open fires the catch-up pass
-- **App open across midnight** → 60s tick fires the reset within a minute of the trigger time
+- **App open across midnight** → the 30s tick fires the reset within ~30s of the trigger time (or on the next visibility change / reload if the watcher happened to be at the idle rate, which can only be the case when no routine has the feature enabled)
 - **Multi-tab open** → first tab to fire wins (atomic `lastResetDate` update); other tabs see same-day skip on next tick
 - **DST transitions** → local `YYYY-MM-DD` avoids UTC bugs; reset fires once on the transition day at the configured local clock time
 - **User changes time after today's fire** → if the new time is in the future, `lastResetDate` clears so it can fire again today; if past, no re-fire (prevents accidental immediate re-trigger)
@@ -238,4 +256,4 @@ No CSP hash recompute — no inline `<script>` edits in `miniCycle.html`.
 - **Notification batching** — if a user has 5+ routines all set to the same trigger time, the view-time toasts could batch into one ("3 routines reset for the day"). Skipped for v1; only worth doing if user feedback indicates it's noisy.
 - **Per-routine notification mute** — `autoUncheckDaily.silentNotification: true` would let users disable the view-time toast for a specific routine. Trivial addition once the need surfaces.
 - **Custom message** — currently the toast is fixed copy. Could be user-configurable per routine.
-- **Tighter / looser tick** — `TICK_INTERVAL_MS` at the top of the module is the single tuning knob. 60s is a reasonable middle for a once-per-day feature; tighten for responsiveness, loosen for battery.
+- **Tighter / looser tick** — `INTERVALS.DAILY_RESET_TICK` / `INTERVALS.DAILY_RESET_TICK_IDLE` in `constants.js` are the tuning knobs (the doc previously named a `TICK_INTERVAL_MS` module constant and a 60s value; neither has been accurate since the interval moved to `constants.js`). 30s is a reasonable middle for a once-per-day feature; tighten for responsiveness, loosen for battery.
