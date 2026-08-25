@@ -3,7 +3,7 @@
 **Date:** March 15, 2026
 **Updated:** August 21 2026 — four previously-unassessed modules given verdicts; scripts brought into scope (`update-version.sh`); the last inline line counts removed, since the doc had retired them in principle but kept four in practice and all four had drifted. August 2026 — Priority 2 (statsPanel) SHIPPED (commit `806f8082`); line-count table retired (numbers rot — see [PROJECT_STATS.md](../PROJECT_STATS.md)). July 7, 2026 — god-module audit: added statsPanel (Priority 2), orchestrator assessment, false-positive list
 **Updated:** Aug 23 2026 — Priority 1 shipped; Priority 7 stage 1 (CSP hashes) shipped in v2.488 and the `?v=` stage re-scoped after checking what content hashing actually replaced; execution order, DONE condition and the pattern guidance all revised against what the work actually showed.
-**Status:** In progress — **Priorities 1, 2, 3 and 6 complete**; Priorities 4 and 5 open but TRIGGER-BASED (do not schedule them), plus 7 (`update-version.sh`, `restore.sh` stage next). **Priority 8 (`onboardingManager`) OPENED Aug 24 2026** — a god module the page had mislabelled "borderline" and left unscheduled. Priority 3 CLOSED Aug 24 2026 at 1,636 lines — **above the ~1,500 target, deliberately**; the remaining bulk is the 10-dep undo/redo execution core, recorded as a non-split with evidence. Priority 1 SHIPPED Aug 23 2026 in v2.484 (five extractions, 2,649 → 1,587 lines, 83 new tests). **Aug 21 2026 review:** added a DONE condition (~1,500-line target, everything else trigger-based); rewrote the per-extraction checklist around the gates that caught the two defects the completed splits shipped (`test:sw`, `validate:provides`); corrected the "provides stays the same" promise the statsPanel split falsified; pulled the release script's CSP stage forward from Priority 7
+**Status:** In progress — **Priorities 1, 2, 3 and 6 complete**; Priorities 4 and 5 open but TRIGGER-BASED (do not schedule them), plus 7 (`update-version.sh`, `restore.sh` stage next). **Priority 8 (`onboardingManager`) OPENED Aug 24 2026; step 1 (interactive demo) SHIPPED Aug 25 2026 in v2.499 — 2,534 → 2,065, six new tests** — a god module the page had mislabelled "borderline" and left unscheduled. Priority 3 CLOSED Aug 24 2026 at 1,636 lines — **above the ~1,500 target, deliberately**; the remaining bulk is the 10-dep undo/redo execution core, recorded as a non-split with evidence. Priority 1 SHIPPED Aug 23 2026 in v2.484 (five extractions, 2,649 → 1,587 lines, 83 new tests). **Aug 21 2026 review:** added a DONE condition (~1,500-line target, everything else trigger-based); rewrote the per-extraction checklist around the gates that caught the two defects the completed splits shipped (`test:sw`, `validate:provides`); corrected the "provides stays the same" promise the statsPanel split falsified; pulled the release script's CSP stage forward from Priority 7
 **Related:** [DI_MIGRATION_COMPLETION_PLAN.md](../archive/DI_MIGRATION_COMPLETION_PLAN.md), [ENFORCE_REQUIRES_ROLLOUT_PLAN.md](../archive/ENFORCE_REQUIRES_ROLLOUT_PLAN.md)
 
 ---
@@ -160,6 +160,32 @@ left it unscheduled. Measured: **13 lines** of template-literal HTML in 2,534 li
 and more than three times the size. The splash is a viable second. Take the welcome carousel LAST
 or not at all: it calls into the demo cluster, so extracting it first creates a sub-module edge
 for no reason.
+
+#### ✅ Step 1 SHIPPED — `onboardingDemo.js` (v2.499)
+
+Re-measured before extracting, exactly as this page instructs, and every number above held:
+2,534 lines, 470 in the cluster, **one** outbound sibling call, **one** dep (`AppState`), no
+instance state beyond `this.deps`. Result: **2,534 → 2,065**, sub-module 512, six new tests.
+
+Pattern 1 with the **manager back-reference** (`this.m`), as Priority 1 recommends — the seam
+needed no interface at all, just two ownership rewrites.
+
+Two things worth carrying to the remaining steps:
+
+1. **Load point is forced by the CALLER, not the cluster.** The obvious choice was a lazy import
+   at the demo's own entry point, which would keep 470 lines out of the boot graph. It doesn't
+   work: the welcome carousel renders two of these builders from **synchronous** slide callbacks,
+   so there is no await to hang an import on. Loaded in `init()` instead. Check how a cluster is
+   *reached* before deciding where to import it.
+2. **The delegating call sites are unguarded on purpose.** `this._demo._buildCycleDemo(container)`,
+   not `this._demo?.…` — per CLAUDE.md rule 19. A missing sub-module must throw and name itself
+   rather than render an empty slide, which is the failure the v2.481 seam audit spent a release
+   chasing.
+
+**Remaining in the file:** the welcome carousel (~466), first-run splash (~247), onboarding modal +
+completion. The splash is the viable next step; the carousel still calls INTO the demo, so it stays
+last or not at all. 2,065 is above the ~1,500 target — judge the next step by seam width, per the
+DONE section, not by the gap.
 
 **Do not repeat the Priority 3 mistake** of scheduling the biggest *function*. Measure neighbours.
 
@@ -714,6 +740,14 @@ Each extraction should be done as a separate commit with full test verification 
 6. **Re-verify the parent's `provides` against what the facade actually supplies.** Step 5 says
    don't ADD entries; it does not say the existing list is correct. See "What This Does NOT
    Change" below — the shipped statsPanel split left three fictional entries in place.
+6b. **Check the docblock at every block boundary.** A range-based move (from the start of a
+    method to the start of the next) sweeps the NEXT method's JSDoc into the sub-module, leaving
+    an orphan comment there and an undocumented method behind. The Priority 8 demo extraction did
+    this **three times in one move** — `completeOnboarding`, `_buildFocusViewWithCta` and
+    `_scheduleFirstRunWelcomeAdvance` all lost their docs. It is silent: both files still parse,
+    lint is clean, and `validate:comments` passes because the identifiers still exist. Scan the
+    sub-module for a docblock not immediately followed by a method definition.
+
 7. **Give the sub-module its own test file** (`tests/<subModule>.tests.js`), importing it
    directly with `?v=${cacheBuster}` rather than through the facade — the facade's `init()`
    may create a singleton (see CLAUDE.md § Testing note). This is already the norm:

@@ -1,3 +1,42 @@
+## [2.499] - 2026-08-25
+- docs(splits): verdicts for onboardingManager (god module, Priority 8) and preferencesManager (not one)
+- docs(splits): close Priority 3 at 1,636 lines, with the non-split evidence
+- refactor(onboarding): the first-run interactive demo moves to its own module.
+  No behaviour change — this is Priority 8 step 1 of the large-module splits plan.
+
+  `onboardingManager.js` was 2,534 lines and had been mislabelled "borderline
+  (sequential step content)" for months. It is not step content: 13 lines of that
+  file are template-literal HTML. It is four interactive subsystems sharing a file.
+
+  The demo cluster was the narrowest seam in it, and re-measuring before the move
+  confirmed every number the plan predicted: 470 lines reaching **one** sibling
+  method (`_setFirstRunWelcomeMessageText`) and **one** dependency (`AppState`),
+  touching no instance state beyond `this.deps`. Moved verbatim into
+  `modules/ui/onboardingDemo.js` with two ownership rewrites, using the manager
+  back-reference pattern (`this.m`) — the seam needed no interface at all.
+
+  **2,534 → 2,065**, sub-module 512 lines, six new tests where there had been none.
+
+  Two decisions worth recording, both about seams rather than size:
+
+  - **The load point is set by the caller, not the cluster.** A lazy import at the
+    demo's own entry point would have kept 470 lines out of the boot graph, but the
+    welcome carousel renders two of these builders from *synchronous* slide
+    callbacks — there is no await down there to hang an import on. Loaded in
+    `init()` instead, and precached, so an offline first run doesn't reach the
+    network for it.
+  - **The delegating call sites are unguarded on purpose** — `this._demo._build…`,
+    not `this._demo?._build…`. Per rule 19, broken wiring must throw and name itself
+    rather than render an empty slide, which is precisely the silent feature loss
+    this codebase spent v2.481 chasing.
+
+  One hazard found the hard way and now added to the plan's checklist: a range-based
+  move sweeps the NEXT method's JSDoc into the sub-module. It happened three times in
+  this one move, and it is invisible — both files parse, lint is clean, and
+  `validate:comments` passes because the identifiers still exist. All three docblocks
+  were returned to their methods.
+
+
 ## [2.498] - 2026-08-24
 - refactor(undo): extract undoTransactionDiff.js — 276 pure lines of change description
 
