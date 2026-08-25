@@ -582,6 +582,44 @@ export async function runGuidedTourManagerTests(resultsDiv) {
         }
     });
 
+    // Regression cover added with the v2.503 prompt dedup, which turned these two
+    // guards into tour-definition fields (promptMinCycles / promptMainViewOnly).
+    // Neither was tested before: deleting either field left all 63 tests green.
+    await test('showStatsTourNotification is a no-op before the first cycle completes', async () => {
+        const manager = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: 'done', statsTourStep: null },
+            userProgress: { cyclesCompleted: 0 }
+        });
+
+        notifications.length = 0;
+        manager.showStatsTourNotification();
+
+        if (notifications.length !== 0) {
+            throw new Error(`Expected 0 notifications before the first cycle, got ${notifications.length}`);
+        }
+    });
+
+    await test('showStatsTourNotification is a no-op in focus view', async () => {
+        const manager = await createManager({
+            appReady: false,
+            settings: {
+                onboardingCompleted: true,
+                guidedTourStep: 'done',
+                statsTourStep: null,
+                focusModeActive: true
+            },
+            userProgress: { cyclesCompleted: 1 }
+        });
+
+        notifications.length = 0;
+        manager.showStatsTourNotification();
+
+        if (notifications.length !== 0) {
+            throw new Error(`Expected 0 notifications in focus view, got ${notifications.length}`);
+        }
+    });
+
     await test('stats tour completion sets statsTourStep to done without affecting guidedTourStep', async () => {
         setupStatsPanelTargets();
         const manager = await createManager({
@@ -727,6 +765,60 @@ export async function runGuidedTourManagerTests(resultsDiv) {
 
         if (mockState.settings.prefsTourStep !== 'done') {
             throw new Error(`Expected prefsTourStep done, got ${mockState.settings.prefsTourStep}`);
+        }
+    });
+
+    // Regression cover added with the v2.503 prompt dedup. Dialog-anchored prompts
+    // must render INSIDE the dialog because showModal() makes the global
+    // notification container inert. Only the negative case (menu passes no
+    // container) was asserted before: blanking the resolver entirely, or dropping
+    // the first selector in the fallback chain, left all 63 tests green.
+    await test('personalization prompt renders in the dialog scroll area when present', async () => {
+        const dialog = setupPreferencesModalTargets();
+        const scrollArea = document.createElement('div');
+        scrollArea.className = 'preferences-scroll-area';
+        dialog.appendChild(scrollArea);
+        const modalContent = document.createElement('div');
+        modalContent.className = 'preferences-modal-content';
+        dialog.appendChild(modalContent);
+
+        const manager = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: 'done', prefsTourStep: null }
+        });
+
+        notifications.length = 0;
+        manager.showPersonalizationTourNotification();
+
+        if (notifications[0]?.options?.container !== scrollArea) {
+            throw new Error('Expected the prompt to render in .preferences-scroll-area');
+        }
+    });
+
+    await test('personalization prompt falls back to modal content, then to the dialog', async () => {
+        const dialog = setupPreferencesModalTargets();
+        const modalContent = document.createElement('div');
+        modalContent.className = 'preferences-modal-content';
+        dialog.appendChild(modalContent);
+
+        const manager = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: 'done', prefsTourStep: null }
+        });
+
+        notifications.length = 0;
+        manager.showPersonalizationTourNotification();
+
+        if (notifications[0]?.options?.container !== modalContent) {
+            throw new Error('Expected fallback to .preferences-modal-content when no scroll area exists');
+        }
+
+        modalContent.remove();
+        notifications.length = 0;
+        manager.showPersonalizationTourNotification();
+
+        if (notifications[0]?.options?.container !== dialog) {
+            throw new Error('Expected final fallback to the dialog element itself');
         }
     });
 

@@ -175,6 +175,10 @@ export class GuidedTourManager {
         this._tours.set('stats', {
             stateKey: 'statsTourStep',
             completeKey: 'statsTour.complete',
+            // Wait for one completed cycle so the panel has data worth touring,
+            // and stay silent in focus view (the tour highlights main-view chrome).
+            promptMinCycles: 1,
+            promptMainViewOnly: true,
             steps: [
                 {
                     targetType: 'id',
@@ -214,6 +218,11 @@ export class GuidedTourManager {
             stateKey: 'prefsTourStep',
             completeKey: 'prefsTour.complete',
             containerSelector: '#preferences-modal',
+            // Below the title/logo, scrolling with the content.
+            promptContainerSelectors: [
+                DOM_SELECTORS.PREFERENCES_SCROLL_AREA,
+                DOM_SELECTORS.PREFERENCES_MODAL_CONTENT
+            ],
             steps: [
                 {
                     targetType: 'id',
@@ -253,6 +262,8 @@ export class GuidedTourManager {
             stateKey: 'taskOptionsTourStep',
             completeKey: 'taskOptionsTour.complete',
             containerSelector: '#task-options-customizer-modal',
+            // Below the header, above the options grid.
+            promptContainerSelectors: [DOM_SELECTORS.TASK_OPTIONS_MODAL_BODY],
             steps: [
                 {
                     targetType: 'selector',
@@ -297,6 +308,7 @@ export class GuidedTourManager {
             stateKey: 'remindersTourStep',
             completeKey: 'remindersTour.complete',
             containerSelector: '#reminders-modal',
+            promptContainerSelectors: [DOM_SELECTORS.REMINDERS_MODAL_CONTENT],
             steps: [
                 {
                     targetType: 'id',
@@ -369,6 +381,7 @@ export class GuidedTourManager {
             stateKey: 'settingsTourStep',
             completeKey: 'settingsTour.complete',
             containerSelector: '#settings-modal',
+            promptContainerSelectors: [DOM_SELECTORS.SETTINGS_MODAL_CONTENT],
             steps: [
                 {
                     targetType: 'selector',
@@ -415,6 +428,7 @@ export class GuidedTourManager {
             stateKey: 'routineSwitcherTourStep',
             completeKey: 'routineSwitcherTour.complete',
             containerSelector: '#routine-switcher-modal',
+            promptContainerSelectors: [DOM_SELECTORS.MINI_CYCLE_SWITCH_MODAL_CONTENT],
             steps: [
                 {
                     targetType: 'id',
@@ -455,6 +469,7 @@ export class GuidedTourManager {
             stateKey: 'recurringListTourStep',
             completeKey: 'recurringListTour.complete',
             containerSelector: '#recurring-panel-overlay',
+            promptContainerSelectors: [`#${DOM_IDS.RECURRING_PANEL}`],
             steps: [
                 {
                     targetType: 'id',
@@ -488,6 +503,7 @@ export class GuidedTourManager {
             stateKey: 'recurringSettingsTourStep',
             completeKey: 'recurringSettingsTour.complete',
             containerSelector: '#recurring-panel-overlay',
+            promptContainerSelectors: [`#${DOM_IDS.RECURRING_PANEL}`],
             steps: [
                 {
                     targetType: 'id',
@@ -533,6 +549,7 @@ export class GuidedTourManager {
             stateKey: 'historyTourStep',
             completeKey: 'historyTour.complete',
             containerSelector: '#' + DOM_IDS.HISTORY_MODAL_DIALOG,
+            promptContainerSelectors: [DOM_SELECTORS.HISTORY_MODAL],
             steps: [
                 {
                     targetType: 'selector',
@@ -572,6 +589,7 @@ export class GuidedTourManager {
             stateKey: 'clearedTasksTourStep',
             completeKey: 'clearedTasksTour.complete',
             containerSelector: '#' + DOM_IDS.HISTORY_MODAL_DIALOG,
+            promptContainerSelectors: [DOM_SELECTORS.HISTORY_MODAL],
             steps: [
                 {
                     targetType: 'selector',
@@ -610,6 +628,7 @@ export class GuidedTourManager {
             stateKey: 'achievementsTourStep',
             completeKey: 'achievementsTour.complete',
             containerSelector: '#' + DOM_IDS.ACHIEVEMENTS_MODAL_DIALOG,
+            promptContainerSelectors: [DOM_SELECTORS.ACHIEVEMENTS_MODAL],
             steps: [
                 {
                     targetType: 'selector',
@@ -1041,450 +1060,181 @@ export class GuidedTourManager {
     }
 
     /**
+     * Show a tour-prompt notification for one tour, unless that tour has already
+     * been started or completed.
+     *
+     * The twelve public `show*TourNotification()` methods below are thin wrappers
+     * over this. They were twelve near-identical bodies until v2.503; everything
+     * that actually varied is now a field on the tour definition
+     * (`containerSelector`, `promptContainerSelectors`, `promptMinCycles`,
+     * `promptMainViewOnly`).
+     *
+     * The one thing deliberately NOT moved is the pair of label keys. They stay
+     * LITERAL at each wrapper's call site so `validate:labels` can still see all
+     * 24 of them. Building a key from a per-tour prefix would work at runtime and
+     * silently drop out of that gate, which reports dynamic keys but never gates
+     * them — so the wrappers resolve their own strings and pass them in.
+     *
+     * @param {string} tourId - key into `this._tours`
+     * @param {string} message - already-resolved welcome message
+     * @param {string} buttonLabel - already-resolved action-button label
+     */
+    _showTourPrompt(tourId, message, buttonLabel) {
+        const tour = this._tours.get(tourId);
+        if (!tour) return;
+
+        const state = this.deps.AppState.get?.();
+        if ((state?.settings?.[tour.stateKey] ?? null) !== null) return; // Already started or done
+
+        // Tours that need data before they mean anything gate on cycle count.
+        // First-time users wait; returning users see the prompt on first open.
+        if (typeof tour.promptMinCycles === 'number'
+            && (state?.userProgress?.cyclesCompleted ?? 0) < tour.promptMinCycles) {
+            return;
+        }
+
+        // Tours that highlight main-view chrome stay silent in focus view's
+        // simplified layout. The panel still opens; only the prompt is withheld,
+        // and it returns once the user exits focus view.
+        if (tour.promptMainViewOnly && state?.settings?.focusModeActive) return;
+
+        const options = {
+            actionButton: {
+                label: buttonLabel,
+                onClick: () => this.startTour(tourId)
+            },
+            onDismiss: () => {
+                this._activeTourId = tourId;
+                this._markDone();
+                this._activeTourId = null;
+            }
+        };
+
+        const container = this._resolvePromptContainer(tour);
+        if (container) options.container = container;
+
+        this.deps.showNotification(message, 'info', UI_TIMEOUTS.NOTIFICATION_PERSISTENT, options);
+    }
+
+    /**
+     * Resolve where a tour's prompt notification should render.
+     *
+     * showModal() makes the global notification container inert, so a tour
+     * anchored to a <dialog> renders inside that dialog instead. Returns null —
+     * meaning "use the global container" — for tours with no containerSelector
+     * (stats, menu) and for dialogs not currently in the DOM.
+     *
+     * @param {object} tour - a tour definition from `this._tours`
+     * @returns {HTMLElement|null}
+     */
+    _resolvePromptContainer(tour) {
+        if (!tour.containerSelector) return null;
+
+        const dialog = this.deps.querySelector(tour.containerSelector);
+        if (!dialog) return null;
+
+        for (const selector of (tour.promptContainerSelectors || [])) {
+            const found = dialog.querySelector(selector);
+            if (found) return found;
+        }
+        return dialog;
+    }
+
+    /**
      * Show a notification prompting the user to take the stats panel tour.
      * Called by statsPanel on first open. No-op if already started or completed.
      */
     showStatsTourNotification() {
-        const statsTour = this._tours.get('stats');
-        if (!statsTour) return;
-
-        const state = this.deps.AppState.get?.();
-        const val = state?.settings?.[statsTour.stateKey] ?? null;
-        if (val !== null) return; // Already started or done
-
-        // First-time users: wait until at least one cycle is completed
-        // so the stats panel has meaningful data to tour.
-        // Returning users (cyclesCompleted >= 1) see it on first stats open.
-        const cyclesCompleted = state?.userProgress?.cyclesCompleted ?? 0;
-        if (cyclesCompleted < 1) return;
-
-        // Main-view only — the stats tour highlights main-view chrome and
-        // would feel out of place in focus view's simplified layout. The
-        // user can still open the stats panel in focus view; the tour
-        // notification just stays silent until they exit focus view and
-        // open stats again.
-        if (state?.settings?.focusModeActive) return;
-
-        this.deps.showNotification(
-            getLabel('statsTour.welcomeMessage'),
-            'info',
-            UI_TIMEOUTS.NOTIFICATION_PERSISTENT,
-            {
-                actionButton: {
-                    label: getLabel('statsTour.startButton'),
-                    onClick: () => this.startTour('stats')
-                },
-                onDismiss: () => {
-                    this._activeTourId = 'stats';
-                    this._markDone();
-                    this._activeTourId = null;
-                }
-            }
-        );
+        this._showTourPrompt('stats', getLabel('statsTour.welcomeMessage'), getLabel('statsTour.startButton'));
     }
 
     /**
      * Show a notification prompting the user to take the personalization tour.
      * Called by preferencesManager after showModal(). No-op if already started or completed.
-     * Uses the notification system's container option to render inside the dialog,
-     * since showModal() makes the global notification container inert.
      */
     showPersonalizationTourNotification() {
-        const prefsTour = this._tours.get('personalization');
-        if (!prefsTour) return;
-
-        const val = this.deps.AppState.get?.()?.settings?.[prefsTour.stateKey] ?? null;
-        if (val !== null) return; // Already started or done
-
-        // Render the notification inside the dialog's scroll area so it sits
-        // below the title/logo and scrolls with the content.
-        const dialog = prefsTour.containerSelector
-            ? this.deps.querySelector(prefsTour.containerSelector)
-            : null;
-        const container = dialog?.querySelector(DOM_SELECTORS.PREFERENCES_SCROLL_AREA)
-            || dialog?.querySelector(DOM_SELECTORS.PREFERENCES_MODAL_CONTENT)
-            || dialog;
-
-        this.deps.showNotification(
-            getLabel('prefsTour.welcomeMessage'),
-            'info',
-            UI_TIMEOUTS.NOTIFICATION_PERSISTENT,
-            {
-                container,
-                actionButton: {
-                    label: getLabel('prefsTour.startButton'),
-                    onClick: () => this.startTour('personalization')
-                },
-                onDismiss: () => {
-                    this._activeTourId = 'personalization';
-                    this._markDone();
-                    this._activeTourId = null;
-                }
-            }
-        );
+        this._showTourPrompt('personalization', getLabel('prefsTour.welcomeMessage'), getLabel('prefsTour.startButton'));
     }
 
     /**
      * Show a notification prompting the user to take the task options tour.
      * Called by taskOptionsCustomizer after showModal(). No-op if already started or completed.
-     * Uses the notification system's container option to render inside the dialog,
-     * since showModal() makes the global notification container inert.
      */
     showTaskOptionsTourNotification() {
-        const taskOptionsTour = this._tours.get('taskOptions');
-        if (!taskOptionsTour) return;
-
-        const val = this.deps.AppState.get?.()?.settings?.[taskOptionsTour.stateKey] ?? null;
-        if (val !== null) return; // Already started or done
-
-        // Render the notification inside the dialog's modal-body so it sits
-        // below the header and above the options grid.
-        const dialog = taskOptionsTour.containerSelector
-            ? this.deps.querySelector(taskOptionsTour.containerSelector)
-            : null;
-        const container = dialog?.querySelector(DOM_SELECTORS.TASK_OPTIONS_MODAL_BODY) || dialog;
-
-        this.deps.showNotification(
-            getLabel('taskOptionsTour.welcomeMessage'),
-            'info',
-            UI_TIMEOUTS.NOTIFICATION_PERSISTENT,
-            {
-                container,
-                actionButton: {
-                    label: getLabel('taskOptionsTour.startButton'),
-                    onClick: () => this.startTour('taskOptions')
-                },
-                onDismiss: () => {
-                    this._activeTourId = 'taskOptions';
-                    this._markDone();
-                    this._activeTourId = null;
-                }
-            }
-        );
+        this._showTourPrompt('taskOptions', getLabel('taskOptionsTour.welcomeMessage'), getLabel('taskOptionsTour.startButton'));
     }
 
     /**
      * Show a notification prompting the user to take the reminders tour.
      * Called by reminders module after showModal(). No-op if already started or completed.
-     * Uses the notification system's container option to render inside the dialog,
-     * since showModal() makes the global notification container inert.
      */
     showRemindersTourNotification() {
-        const remindersTour = this._tours.get('reminders');
-        if (!remindersTour) return;
-
-        const val = this.deps.AppState.get?.()?.settings?.[remindersTour.stateKey] ?? null;
-        if (val !== null) return; // Already started or done
-
-        // Render the notification inside the dialog's content wrapper
-        const dialog = remindersTour.containerSelector
-            ? this.deps.querySelector(remindersTour.containerSelector)
-            : null;
-        const container = dialog?.querySelector(DOM_SELECTORS.REMINDERS_MODAL_CONTENT) || dialog;
-
-        this.deps.showNotification(
-            getLabel('remindersTour.welcomeMessage'),
-            'info',
-            UI_TIMEOUTS.NOTIFICATION_PERSISTENT,
-            {
-                container,
-                actionButton: {
-                    label: getLabel('remindersTour.startButton'),
-                    onClick: () => this.startTour('reminders')
-                },
-                onDismiss: () => {
-                    this._activeTourId = 'reminders';
-                    this._markDone();
-                    this._activeTourId = null;
-                }
-            }
-        );
+        this._showTourPrompt('reminders', getLabel('remindersTour.welcomeMessage'), getLabel('remindersTour.startButton'));
     }
 
     /**
      * Show a notification prompting the user to take the menu tour.
      * Called by uiBoot when the hamburger menu opens. No-op if already started or completed.
-     * No container option needed — the menu is a <nav>, not a <dialog>.
+     * Renders in the global container — the menu is a <nav>, not a <dialog>.
      */
     showMenuTourNotification() {
-        const menuTour = this._tours.get('menu');
-        if (!menuTour) return;
-
-        const val = this.deps.AppState.get?.()?.settings?.[menuTour.stateKey] ?? null;
-        if (val !== null) return; // Already started or done
-
-        this.deps.showNotification(
-            getLabel('menuTour.welcomeMessage'),
-            'info',
-            UI_TIMEOUTS.NOTIFICATION_PERSISTENT,
-            {
-                actionButton: {
-                    label: getLabel('menuTour.startButton'),
-                    onClick: () => this.startTour('menu')
-                },
-                onDismiss: () => {
-                    this._activeTourId = 'menu';
-                    this._markDone();
-                    this._activeTourId = null;
-                }
-            }
-        );
+        this._showTourPrompt('menu', getLabel('menuTour.welcomeMessage'), getLabel('menuTour.startButton'));
     }
 
     /**
      * Show a notification prompting the user to take the settings tour.
      * Called by settingsUIManager after showModal(). No-op if already started or completed.
-     * Uses the notification system's container option to render inside the dialog,
-     * since showModal() makes the global notification container inert.
      */
     showSettingsTourNotification() {
-        const settingsTour = this._tours.get('settings');
-        if (!settingsTour) return;
-
-        const val = this.deps.AppState.get?.()?.settings?.[settingsTour.stateKey] ?? null;
-        if (val !== null) return; // Already started or done
-
-        // Render the notification inside the dialog's content wrapper
-        const dialog = settingsTour.containerSelector
-            ? this.deps.querySelector(settingsTour.containerSelector)
-            : null;
-        const container = dialog?.querySelector(DOM_SELECTORS.SETTINGS_MODAL_CONTENT) || dialog;
-
-        this.deps.showNotification(
-            getLabel('settingsTour.welcomeMessage'),
-            'info',
-            UI_TIMEOUTS.NOTIFICATION_PERSISTENT,
-            {
-                container,
-                actionButton: {
-                    label: getLabel('settingsTour.startButton'),
-                    onClick: () => this.startTour('settings')
-                },
-                onDismiss: () => {
-                    this._activeTourId = 'settings';
-                    this._markDone();
-                    this._activeTourId = null;
-                }
-            }
-        );
+        this._showTourPrompt('settings', getLabel('settingsTour.welcomeMessage'), getLabel('settingsTour.startButton'));
     }
 
     /**
      * Show a notification prompting the user to take the routine switcher tour.
      * Called by routineSwitcher after showModal(). No-op if already started or completed.
-     * Uses the notification system's container option to render inside the dialog,
-     * since showModal() makes the global notification container inert.
      */
     showRoutineSwitcherTourNotification() {
-        const rsTour = this._tours.get('routineSwitcher');
-        if (!rsTour) return;
-
-        const val = this.deps.AppState.get?.()?.settings?.[rsTour.stateKey] ?? null;
-        if (val !== null) return; // Already started or done
-
-        // Render the notification inside the dialog's content wrapper
-        const dialog = rsTour.containerSelector
-            ? this.deps.querySelector(rsTour.containerSelector)
-            : null;
-        const container = dialog?.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_MODAL_CONTENT) || dialog;
-
-        this.deps.showNotification(
-            getLabel('routineSwitcherTour.welcomeMessage'),
-            'info',
-            UI_TIMEOUTS.NOTIFICATION_PERSISTENT,
-            {
-                container,
-                actionButton: {
-                    label: getLabel('routineSwitcherTour.startButton'),
-                    onClick: () => this.startTour('routineSwitcher')
-                },
-                onDismiss: () => {
-                    this._activeTourId = 'routineSwitcher';
-                    this._markDone();
-                    this._activeTourId = null;
-                }
-            }
-        );
+        this._showTourPrompt('routineSwitcher', getLabel('routineSwitcherTour.welcomeMessage'), getLabel('routineSwitcherTour.startButton'));
     }
 
     /**
      * Show a notification prompting the user to take the recurring list tour.
      * Called by recurringPanel after openPanel(). No-op if already started or completed.
-     * Uses the notification system's container option to render inside the dialog.
      */
     showRecurringListTourNotification() {
-        const rlTour = this._tours.get('recurringList');
-        if (!rlTour) return;
-
-        const val = this.deps.AppState.get?.()?.settings?.[rlTour.stateKey] ?? null;
-        if (val !== null) return;
-
-        const dialog = rlTour.containerSelector
-            ? this.deps.querySelector(rlTour.containerSelector)
-            : null;
-        const container = dialog?.querySelector(`#${DOM_IDS.RECURRING_PANEL}`) || dialog;
-
-        this.deps.showNotification(
-            getLabel('recurringListTour.welcomeMessage'),
-            'info',
-            UI_TIMEOUTS.NOTIFICATION_PERSISTENT,
-            {
-                container,
-                actionButton: {
-                    label: getLabel('recurringListTour.startButton'),
-                    onClick: () => this.startTour('recurringList')
-                },
-                onDismiss: () => {
-                    this._activeTourId = 'recurringList';
-                    this._markDone();
-                    this._activeTourId = null;
-                }
-            }
-        );
+        this._showTourPrompt('recurringList', getLabel('recurringListTour.welcomeMessage'), getLabel('recurringListTour.startButton'));
     }
 
     /**
      * Show a notification prompting the user to take the recurring settings tour.
      * Called by recurringPanel when entering editing mode. No-op if already started or completed.
-     * Uses the notification system's container option to render inside the dialog.
      */
     showRecurringSettingsTourNotification() {
-        const rsTour = this._tours.get('recurringSettings');
-        if (!rsTour) return;
-
-        const val = this.deps.AppState.get?.()?.settings?.[rsTour.stateKey] ?? null;
-        if (val !== null) return;
-
-        const dialog = rsTour.containerSelector
-            ? this.deps.querySelector(rsTour.containerSelector)
-            : null;
-        const container = dialog?.querySelector(`#${DOM_IDS.RECURRING_PANEL}`) || dialog;
-
-        this.deps.showNotification(
-            getLabel('recurringSettingsTour.welcomeMessage'),
-            'info',
-            UI_TIMEOUTS.NOTIFICATION_PERSISTENT,
-            {
-                container,
-                actionButton: {
-                    label: getLabel('recurringSettingsTour.startButton'),
-                    onClick: () => this.startTour('recurringSettings')
-                },
-                onDismiss: () => {
-                    this._activeTourId = 'recurringSettings';
-                    this._markDone();
-                    this._activeTourId = null;
-                }
-            }
-        );
+        this._showTourPrompt('recurringSettings', getLabel('recurringSettingsTour.welcomeMessage'), getLabel('recurringSettingsTour.startButton'));
     }
 
     /**
      * Show a notification prompting the user to take the history tour.
      * Called by historyManager after openModal(). No-op if already started or completed.
-     * Uses the notification system's container option to render inside the dialog.
      */
     showHistoryTourNotification() {
-        const hTour = this._tours.get('history');
-        if (!hTour) return;
-
-        const val = this.deps.AppState.get?.()?.settings?.[hTour.stateKey] ?? null;
-        if (val !== null) return;
-
-        const dialog = hTour.containerSelector
-            ? this.deps.querySelector(hTour.containerSelector)
-            : null;
-        const container = dialog?.querySelector(DOM_SELECTORS.HISTORY_MODAL) || dialog;
-
-        this.deps.showNotification(
-            getLabel('historyTour.welcomeMessage'),
-            'info',
-            UI_TIMEOUTS.NOTIFICATION_PERSISTENT,
-            {
-                container,
-                actionButton: {
-                    label: getLabel('historyTour.startButton'),
-                    onClick: () => this.startTour('history')
-                },
-                onDismiss: () => {
-                    this._activeTourId = 'history';
-                    this._markDone();
-                    this._activeTourId = null;
-                }
-            }
-        );
+        this._showTourPrompt('history', getLabel('historyTour.welcomeMessage'), getLabel('historyTour.startButton'));
     }
 
     /**
      * Show a notification prompting the user to take the cleared tasks tour.
      * Called by historyManager when switching to the cleared tab. No-op if already started or completed.
-     * Uses the notification system's container option to render inside the dialog.
      */
     showClearedTasksTourNotification() {
-        const ctTour = this._tours.get('clearedTasks');
-        if (!ctTour) return;
-
-        const val = this.deps.AppState.get?.()?.settings?.[ctTour.stateKey] ?? null;
-        if (val !== null) return;
-
-        const dialog = ctTour.containerSelector
-            ? this.deps.querySelector(ctTour.containerSelector)
-            : null;
-        const container = dialog?.querySelector(DOM_SELECTORS.HISTORY_MODAL) || dialog;
-
-        this.deps.showNotification(
-            getLabel('clearedTasksTour.welcomeMessage'),
-            'info',
-            UI_TIMEOUTS.NOTIFICATION_PERSISTENT,
-            {
-                container,
-                actionButton: {
-                    label: getLabel('clearedTasksTour.startButton'),
-                    onClick: () => this.startTour('clearedTasks')
-                },
-                onDismiss: () => {
-                    this._activeTourId = 'clearedTasks';
-                    this._markDone();
-                    this._activeTourId = null;
-                }
-            }
-        );
+        this._showTourPrompt('clearedTasks', getLabel('clearedTasksTour.welcomeMessage'), getLabel('clearedTasksTour.startButton'));
     }
 
     /**
      * Show a notification prompting the user to take the achievements tour.
      * Called by achievementsManager after openModal(). No-op if already started or completed.
-     * Uses the notification system's container option to render inside the dialog.
      */
     showAchievementsTourNotification() {
-        const aTour = this._tours.get('achievements');
-        if (!aTour) return;
-
-        const val = this.deps.AppState.get?.()?.settings?.[aTour.stateKey] ?? null;
-        if (val !== null) return;
-
-        const dialog = aTour.containerSelector
-            ? this.deps.querySelector(aTour.containerSelector)
-            : null;
-        const container = dialog?.querySelector(DOM_SELECTORS.ACHIEVEMENTS_MODAL) || dialog;
-
-        this.deps.showNotification(
-            getLabel('achievementsTour.welcomeMessage'),
-            'info',
-            UI_TIMEOUTS.NOTIFICATION_PERSISTENT,
-            {
-                container,
-                actionButton: {
-                    label: getLabel('achievementsTour.startButton'),
-                    onClick: () => this.startTour('achievements')
-                },
-                onDismiss: () => {
-                    this._activeTourId = 'achievements';
-                    this._markDone();
-                    this._activeTourId = null;
-                }
-            }
-        );
+        this._showTourPrompt('achievements', getLabel('achievementsTour.welcomeMessage'), getLabel('achievementsTour.startButton'));
     }
 
     _getActiveStateKey() {

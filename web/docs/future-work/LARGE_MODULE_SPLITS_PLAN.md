@@ -4,7 +4,7 @@
 **Updated:** August 21 2026 — four previously-unassessed modules given verdicts; scripts brought into scope (`update-version.sh`); the last inline line counts removed, since the doc had retired them in principle but kept four in practice and all four had drifted. August 2026 — Priority 2 (statsPanel) SHIPPED (commit `806f8082`); line-count table retired (numbers rot — see [PROJECT_STATS.md](../PROJECT_STATS.md)). July 7, 2026 — god-module audit: added statsPanel (Priority 2), orchestrator assessment, false-positive list
 **Updated:** Aug 25 2026 — `guidedTourManager` assessed and the "borderline (sequential step content)" row RETIRED: it is **not** a god module (fan-out is 9 infrastructure deps and zero feature modules; one `innerHTML` in 1,962 lines), but half the file is data + repetition, so it opens as **Priority 9 — a dedup, not a split**.
 **Updated:** Aug 23 2026 — Priority 1 shipped; Priority 7 stage 1 (CSP hashes) shipped in v2.488 and the `?v=` stage re-scoped after checking what content hashing actually replaced; execution order, DONE condition and the pattern guidance all revised against what the work actually showed.
-**Status:** In progress — **Priorities 1, 2, 3 and 6 complete**; Priorities 4 and 5 open but TRIGGER-BASED (do not schedule them), plus 7 (`update-version.sh`, `restore.sh` stage next). **Priority 9 (`guidedTourManager`) OPENED Aug 25 2026 — a DEDUP, not a split: 50% of the file measured as declarative data + twelve near-identical prompt functions; not a god module, but over target and cheaply fixable.** **Priority 8 (`onboardingManager`) OPENED Aug 24 2026; CLOSED Aug 25 2026 — steps 1-3 shipped (v2.499 demo, v2.500 splash, v2.501 carousel): 2,534 → 1,052, eighteen new tests** — a god module the page had mislabelled "borderline" and left unscheduled. Priority 3 CLOSED Aug 24 2026 at 1,636 lines — **above the ~1,500 target, deliberately**; the remaining bulk is the 10-dep undo/redo execution core, recorded as a non-split with evidence. Priority 1 SHIPPED Aug 23 2026 in v2.484 (five extractions, 2,649 → 1,587 lines, 83 new tests). **Aug 21 2026 review:** added a DONE condition (~1,500-line target, everything else trigger-based); rewrote the per-extraction checklist around the gates that caught the two defects the completed splits shipped (`test:sw`, `validate:provides`); corrected the "provides stays the same" promise the statsPanel split falsified; pulled the release script's CSP stage forward from Priority 7
+**Status:** In progress — **Priorities 1, 2, 3 and 6 complete**; Priorities 4 and 5 open but TRIGGER-BASED (do not schedule them), plus 7 (`update-version.sh`, `restore.sh` stage next). **Priority 9 (`guidedTourManager`) OPENED Aug 25 2026 — a DEDUP, not a split: 50% of the file measured as declarative data + twelve near-identical prompt functions; not a god module, but over target and cheaply fixable. Move 1 SHIPPED v2.503 (1,962 → 1,712, 63 → 67 tests); move 2 (tour definitions → data module) open.** **Priority 8 (`onboardingManager`) OPENED Aug 24 2026; CLOSED Aug 25 2026 — steps 1-3 shipped (v2.499 demo, v2.500 splash, v2.501 carousel): 2,534 → 1,052, eighteen new tests** — a god module the page had mislabelled "borderline" and left unscheduled. Priority 3 CLOSED Aug 24 2026 at 1,636 lines — **above the ~1,500 target, deliberately**; the remaining bulk is the 10-dep undo/redo execution core, recorded as a non-split with evidence. Priority 1 SHIPPED Aug 23 2026 in v2.484 (five extractions, 2,649 → 1,587 lines, 83 new tests). **Aug 21 2026 review:** added a DONE condition (~1,500-line target, everything else trigger-based); rewrote the per-extraction checklist around the gates that caught the two defects the completed splits shipped (`test:sw`, `validate:provides`); corrected the "provides stays the same" promise the statsPanel split falsified; pulled the release script's CSP stage forward from Priority 7
 **Related:** [DI_MIGRATION_COMPLETION_PLAN.md](../archive/DI_MIGRATION_COMPLETION_PLAN.md), [ENFORCE_REQUIRES_ROLLOUT_PLAN.md](../archive/ENFORCE_REQUIRES_ROLLOUT_PLAN.md)
 
 ---
@@ -386,15 +386,51 @@ What the moves buy is that the twelfth tour stops costing ~37 lines of copied bo
 No new facade, no `FACADE_SUB_FILES` entry, no new `provides`, no change to any of the five wiring
 layers.
 
-1. **Generic `_showTourPrompt(tourId)` + twelve thin public wrappers.** Public API unchanged — all
-   fourteen `provides` names survive, so `validate:provides` and `validate:api` see no diff. The
-   per-tour differences become fields on the tour definition (`promptContainerSelector`,
-   `minCycles`, `mainViewOnly`). ≈443 → ≈130 lines.
+1. **Generic `_showTourPrompt(tourId)` + twelve thin public wrappers** — ✅ **SHIPPED v2.503.**
+   Public API unchanged; all fourteen `provides` names survive, and `validate:provides` /
+   `validate:api` saw no diff. Per-tour differences became tour-definition fields
+   (`promptContainerSelectors`, `promptMinCycles`, `promptMainViewOnly`). **1,962 → 1,712**
+   (−250), plus `_resolvePromptContainer()` and four new tests. See the post-mortem below.
 2. **Tour definitions → a data module.** 536 lines out. `defaultLabels.js` and `constants.js` are
    already permanently exempt as data, so this is consistent with the project rule rather than an
    exception to it.
 
-Combined: **≈1,116 lines**, under the ~1,500 target.
+Estimated after both: **≈1,180 lines**, under the ~1,500 target. (Move 1 estimated ≈310 lines saved
+and delivered 250 — the gap is docblocks kept verbatim, which was the right trade: they carry the
+"called by X, after showModal()" knowledge that nothing else records.)
+
+### Move 1 post-mortem (Aug 25 2026) — two things worth carrying forward
+
+**1. A declarative table can silently un-gate `validate:labels`, and the docblock counts too.**
+The obvious shape for this dedup is one label prefix per tour and
+``getLabel(`${prefix}.welcomeMessage`)`` inside the generic. That works at runtime and removes **24
+literal keys** from the label gate, which *reports* dynamic keys and never *gates* them — the exact
+silent-rot class the gate exists to close. So the twelve wrappers resolve their own labels and pass
+the strings in: `_showTourPrompt(tourId, message, buttonLabel)`. Proof of no regression is the
+gate's own counter, unchanged across the refactor at **1548 literal / 52 dynamic**.
+
+Then the gate caught the *documentation*: a `@param` example reading
+`getLabel('xTour.welcomeMessage')` was scanned as a real literal key and failed the build. The
+validator reads raw file text, comments included — which is a feature, not a quirk, but it means
+illustrative `getLabel(...)` calls cannot appear in prose. Reworded rather than exempted.
+
+**Apply this to `settingsUIManager` when its toggle table gets built**: the same shape wants
+`getLabel(`${key}.label`)` and would drop far more than 24 keys.
+
+**2. Every behaviour this move made declarative was untested — the dedup is what revealed it.**
+Before writing any new test, all four collapsed behaviours were mutated against the existing 63
+tests: dropping `promptMinCycles`, dropping `promptMainViewOnly`, dropping the first selector in
+the personalization fallback chain, and blanking the container resolver entirely. **All four
+survived, 63/63 green.** The one container assertion in the suite was negative-only ("the menu tour
+passes no container"), so no test ever checked that a dialog-anchored prompt renders inside its
+dialog — the thing that breaks when `showModal()` inerts the global container.
+
+Four tests were added and all five mutations (the four above plus dropping the dialog fallback) now
+fail. 63 → 67 tests.
+
+The generalisable point: **collapsing N copies into one is the moment to mutation-test, because it
+is the moment the copies' shared behaviour first has a single name.** Twelve copies of an untested
+guard read as covered; one field called `promptMinCycles` does not.
 
 ### Two costs recorded honestly, because move 2 is not mechanical
 
@@ -888,10 +924,10 @@ If revisited, the split is unusually low-risk precisely because it's pre-DI — 
 11. **Remaining `update-version.sh` stages** — `restore.sh` generation next; the `?v=` sweep was
     RE-SCOPED and demoted Aug 23 2026 (content hashing superseded most of it — see Scripts above),
     both trigger-based (Priority 7)
-12. **guidedTourManager prompt dedup** — Priority 9, move 1: one generic `_showTourPrompt(tourId)`
-    behind twelve unchanged public wrappers. Narrowest seam currently on this page — no new file, no
-    new `provides`, no wiring layer touched. Move 2 (tour definitions → data module) second, and only
-    if the `onEnter` predicates go declarative cleanly; otherwise record it as a non-split.
+12. ~~**guidedTourManager prompt dedup**~~ — Priority 9, move 1 — ✅ **SHIPPED v2.503** (1,962 →
+    1,712; no new file, no new `provides`, no wiring layer touched). Move 2 (tour definitions → data
+    module) next, and only if the `onEnter` predicates go declarative cleanly; otherwise record it as
+    a non-split. Read the move 1 post-mortem first — the label gate has a trap here.
 
 Sizes are deliberately not given here — see "When this plan is DONE" and measure fresh.
 
