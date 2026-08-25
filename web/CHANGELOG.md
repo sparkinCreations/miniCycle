@@ -1,3 +1,8 @@
+## [2.506] - 2026-08-25
+- test(meta): gate that every suite runner returns its counts
+- fix(restore): the first-run "Restore from a backup file" screen now accepts the backup Settings actually writes, and Settings → Restore now accepts the pre-boot rescue screen's export — until now each entry point took only the format the other rejected
+
+
 ## [2.505] - 2026-08-25
 - fix(tests): block the destructive Run All on non-test origins (it was wiping real routine data on minicycle.app) and restore the two statsPanel sub-module suites that silently reported 0/0
 

@@ -76,6 +76,91 @@ export async function runBackupRestoreManagerTests(resultsDiv) {
     });
 
     // ============================================
+    resultsDiv.innerHTML += '<h4 class="test-section">♻️ Restore — both backup formats</h4>';
+
+    // The app writes TWO backup shapes and, until v2.506, each restore entry point
+    // accepted only one of them: Settings took Create Backup's
+    // { schemaVersion, miniCycleData }, the first-run screen took the pre-boot
+    // rescue screen's { type:'miniCycle-backup', keys:{...} }, and neither took the
+    // other's. A user's own backup was rejected on the first-run screen while
+    // restoring fine from Settings — reported from a phone, invisible to every test.
+    await test('Settings restore accepts a pre-boot rescue-screen backup ({ type, keys })', async () => {
+        const inner = JSON.stringify({
+            schemaVersion: '2.5',
+            metadata: { version: '2.5', schemaVersion: '2.5', lastModified: Date.now(), createdAt: Date.now() },
+            settings: { onboardingCompleted: true },
+            data: { cycles: { rescued: { id: 'rescued', title: 'Rescued Routine', tasks: [], cycleCount: 2,
+                recurringTemplates: {}, history: { events: [], maxEvents: 100 },
+                clearedTasks: { entries: [], totalCleared: 0, autoPruneEnabled: false } } } },
+            appState: { activeCycleId: 'rescued' },
+            userProgress: { cyclesCompleted: 2 },
+            achievements: { unlocked: [], seen: {} }
+        });
+        const rescueFile = JSON.stringify({
+            type: 'miniCycle-backup',
+            appVersion: '2.5',
+            exportedAt: new Date().toISOString(),
+            keys: {
+                miniCycleData: inner,
+                currentTheme: 'dark-ocean',
+                // Not a key any exporter collects — must NOT be written back, so a
+                // hand-edited file can't use restore to set arbitrary storage.
+                evilKey: 'should-not-land'
+            }
+        });
+
+        localStorage.removeItem('miniCycleData');
+        localStorage.removeItem('currentTheme');
+        localStorage.removeItem('evilKey');
+
+        const notes = [];
+        mod.setBackupRestoreManagerDependencies({
+            AppState: { get: () => ({}), forceSave: () => {} },
+            showNotification: (msg) => notes.push(String(msg)),
+            // Confirm both prompts: the restore itself, and the "no safety backup" one
+            // that fires because BackupManager is absent here.
+            showConfirmationModal: ({ callback }) => callback(true),
+            safeAddEventListener: (el, ev, fn, opts) => el.addEventListener(ev, fn, opts)
+        });
+
+        const btn = document.createElement('button');
+        btn.id = 'restore-mini-cycles';   // DOM_IDS.RESTORE_MINI_CYCLES
+        document.body.appendChild(btn);
+
+        try {
+            mod.setupRestoreButton();
+            btn.click();
+
+            const input = document.getElementById('import-cycle-file-input');
+            if (!input) throw new Error('restore file input was never created');
+
+            const dt = new DataTransfer();
+            dt.items.add(new File([rescueFile], 'rescue.json', { type: 'application/json' }));
+            input.files = dt.files;
+            input.dispatchEvent(new Event('change'));
+
+            // FileReader + the confirm chain are async; poll rather than fixed-sleep.
+            for (let i = 0; i < 60 && localStorage.getItem('miniCycleData') === null; i++) {
+                await new Promise(r => setTimeout(r, 50));
+            }
+
+            const restored = localStorage.getItem('miniCycleData');
+            if (restored !== inner) {
+                throw new Error(`miniCycleData not restored from the rescue payload (got ${restored === null ? 'null' : 'different content'})`);
+            }
+            if (localStorage.getItem('currentTheme') !== 'dark-ocean') {
+                throw new Error(`theme key beside miniCycleData was dropped (got ${localStorage.getItem('currentTheme')})`);
+            }
+            if (localStorage.getItem('evilKey') !== null) {
+                throw new Error('a key no exporter collects was written back — the restorable-key filter is not applied');
+            }
+        } finally {
+            btn.remove();
+            document.getElementById('import-cycle-file-input')?.remove();
+        }
+    });
+
+    // ============================================
     resultsDiv.innerHTML += '<h4 class="test-section">🏭 Factory Reset</h4>';
 
     await test('factory reset: cancel keeps data; confirm clears miniCycle localStorage keys + notifies', async () => {
