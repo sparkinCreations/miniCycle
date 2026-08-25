@@ -1,3 +1,104 @@
+## [2.501] - 2026-08-25
+- refactor(onboarding): the welcome carousel moves to its own module. Priority 8
+  step 3, and the step that closes it. No behaviour change.
+
+  Carousel measured at **740** lines across **15** methods — the plan estimated
+  ~466 across 5. One contiguous region, so it moved as a single block.
+  **1,764 → 1,052**, under the plan's ~1,500 target.
+
+  Its 22 instance fields stayed on the manager, as the splash's did. Two methods
+  kept **thin delegators** there — `_scheduleFirstRunWelcomeAdvance` (called by
+  `onboardingSplash`) and `_setFirstRunWelcomeMessageText` (called by
+  `onboardingDemo`). That was the point: the sibling sub-modules keep addressing
+  the manager, so neither needed a single line changed and there is no
+  sub-module-to-sub-module edge to maintain.
+
+  **Priority 8 total: 2,534 → 1,052 across three sub-modules and eighteen new
+  tests**, in a file that had no coverage for any of the three clusters.
+
+  Also fixed here, found by the version counter rather than by the refactor: a
+  latent bug in `testingModal.tests.js`. It guarded against the app version
+  falling back to the schema version with a **substring** check, and
+  `'App Version: 2.500'.includes('App Version: 2.5')` is true — so it would have
+  failed spuriously on every release in the 2.5xx range. Now compares the whole
+  line. Verified by mutation that it still catches the real regression it was
+  written for.
+
+
+## [2.500] - 2026-08-25
+- refactor(onboarding): the first-run splash moves to its own module, and both
+  onboarding sub-modules switch to static imports. Priority 8 step 2. No
+  behaviour change.
+
+  Splash cluster measured at **329** lines — the plan's estimate said ~247,
+  because it counted two methods where there are five. Seam again narrow: one
+  outbound sibling call and one dependency. **2,065 → 1,764**, sub-module 350
+  lines, six new tests.
+
+  State was deliberately not migrated. The seven `_firstRunSplash*` fields stay
+  on the manager and are reached through the back-reference, so `destroy()` still
+  clears every timer it always cleared. `showWelcomeSplash()` and
+  `_hideFirstRunSplash()` stay on the manager as thin delegators: appInit calls
+  the first and two test files reach for both, so moving them wholesale would
+  have been an API change dressed up as a refactor.
+
+  **The load-point decision from v2.499 was wrong, and this step proved it.**
+  v2.499 loaded the demo sub-module with a dynamic import inside `init()`.
+  Applying the same shape to the splash broke **14 existing tests at once**: they
+  construct the manager directly and never await `init()`, so `this._splash` was
+  null on every synchronous entry point — and `_showFirstRunSplash` is reached
+  from appInit, not from an awaited path.
+
+  The fix is a precedent already documented in CLAUDE.md: **static import,
+  constructed in the constructor**, exactly as `notifications` →
+  `educationalTips`. There is no async init to hang a dynamic import on when the
+  entry points are synchronous, and builds have been content-hashed since v2.301,
+  so `?v=` was buying nothing. Both sub-modules were switched, which also removes
+  the window where `this._demo` could be null.
+
+  Net for onboarding so far: **2,534 → 1,764** across two sub-modules and twelve
+  new tests, in a file that had none for either cluster.
+
+
+## [2.499] - 2026-08-25
+- docs(splits): verdicts for onboardingManager (god module, Priority 8) and preferencesManager (not one)
+- docs(splits): close Priority 3 at 1,636 lines, with the non-split evidence
+- refactor(onboarding): the first-run interactive demo moves to its own module.
+  No behaviour change — this is Priority 8 step 1 of the large-module splits plan.
+
+  `onboardingManager.js` was 2,534 lines and had been mislabelled "borderline
+  (sequential step content)" for months. It is not step content: 13 lines of that
+  file are template-literal HTML. It is four interactive subsystems sharing a file.
+
+  The demo cluster was the narrowest seam in it, and re-measuring before the move
+  confirmed every number the plan predicted: 470 lines reaching **one** sibling
+  method (`_setFirstRunWelcomeMessageText`) and **one** dependency (`AppState`),
+  touching no instance state beyond `this.deps`. Moved verbatim into
+  `modules/ui/onboardingDemo.js` with two ownership rewrites, using the manager
+  back-reference pattern (`this.m`) — the seam needed no interface at all.
+
+  **2,534 → 2,065**, sub-module 512 lines, six new tests where there had been none.
+
+  Two decisions worth recording, both about seams rather than size:
+
+  - **The load point is set by the caller, not the cluster.** A lazy import at the
+    demo's own entry point would have kept 470 lines out of the boot graph, but the
+    welcome carousel renders two of these builders from *synchronous* slide
+    callbacks — there is no await down there to hang an import on. Loaded in
+    `init()` instead, and precached, so an offline first run doesn't reach the
+    network for it.
+  - **The delegating call sites are unguarded on purpose** — `this._demo._build…`,
+    not `this._demo?._build…`. Per rule 19, broken wiring must throw and name itself
+    rather than render an empty slide, which is precisely the silent feature loss
+    this codebase spent v2.481 chasing.
+
+  One hazard found the hard way and now added to the plan's checklist: a range-based
+  move sweeps the NEXT method's JSDoc into the sub-module. It happened three times in
+  this one move, and it is invisible — both files parse, lint is clean, and
+  `validate:comments` passes because the identifiers still exist. All three docblocks
+  were returned to their methods.
+
+
 ## [2.498] - 2026-08-24
 - refactor(undo): extract undoTransactionDiff.js — 276 pure lines of change description
 
