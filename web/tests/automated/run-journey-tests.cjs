@@ -117,6 +117,8 @@ let _pagesThisJourney = [];
  *        document. Used to simulate a browser whose IndexedDB surface differs from
  *        Chromium's — patching after boot is too late, the app reads it during init.
  * @param {*} [opts.initArg] Serialisable argument passed to initScript.
+ * @param {boolean} [opts.noNavigate] Return the page unnavigated, so the caller can
+ *        drive the first-run choice screen instead of having it consumed here.
  */
 async function openFresh(browser, baseURL, opts = {}) {
     const context = await browser.newContext();
@@ -149,6 +151,11 @@ async function openFresh(browser, baseURL, opts = {}) {
             page.__diWarnings.push(text.slice(0, 240));
         }
     });
+    // A journey that needs to SEE the first-run choice screen must navigate itself:
+    // everything below here consumes it (it clicks "learn" to seed a routine), so a
+    // second goto by the caller would arrive as a returning user.
+    if (opts.noNavigate) return { context, page };
+
     await page.goto(`${baseURL}/miniCycle.html`, { waitUntil: 'domcontentloaded', timeout: 20000 });
     await bootApp(page);
     // First run shows a CHOICE screen (create / sample / learn) — it does NOT
@@ -1082,6 +1089,104 @@ async function journeyReminderSettings(browser, baseURL) {
     return { name: 'reminder settings survive the quick-actions path', failures };
 }
 
+// ── Journey 11: first-run "Restore from a backup file" accepts BOTH formats ──
+// The app writes two backup shapes and, until v2.506, this screen accepted only
+// the pre-boot rescue one — so the backup a user actually made in Settings was
+// rejected here with "not a valid miniCycle backup" while restoring fine from
+// Settings. Reported from a phone; no test covered this screen's file handling.
+async function journeyFirstRunRestore(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+
+    const inner = JSON.stringify({
+        schemaVersion: '2.5',
+        metadata: { version: '2.5', schemaVersion: '2.5', lastModified: Date.now(), createdAt: Date.now() },
+        settings: { onboardingCompleted: true },
+        data: { cycles: { restored: { id: 'restored', title: 'Restored Routine', tasks: [], cycleCount: 4,
+            recurringTemplates: {}, history: { events: [], maxEvents: 100 },
+            clearedTasks: { entries: [], totalCleared: 0, autoPruneEnabled: false } } } },
+        appState: { activeCycleId: 'restored' },
+        userProgress: { cyclesCompleted: 4 },
+        achievements: { unlocked: [], seen: {} }
+    });
+
+    const FILES = [
+        {
+            label: 'Settings → Create Backup format',
+            name: 'settings-backup.json',
+            body: JSON.stringify({
+                schemaVersion: '2.5', miniCycleData: inner,
+                backupMetadata: { createdAt: Date.now(), version: '2.5', schemaVersion: '2.5', source: 'miniCycle App' }
+            }),
+            expectRestore: true
+        },
+        {
+            label: 'pre-boot rescue-screen format',
+            name: 'rescue-backup.json',
+            body: JSON.stringify({
+                type: 'miniCycle-backup', appVersion: '2.5', exportedAt: new Date().toISOString(),
+                keys: { miniCycleData: inner, currentTheme: 'dark-ocean', evilKey: 'should-not-land' }
+            }),
+            expectRestore: true
+        },
+        {
+            label: 'unrelated JSON',
+            name: 'not-a-backup.json',
+            body: JSON.stringify({ hello: 'world' }),
+            expectRestore: false
+        }
+    ];
+
+    for (const file of FILES) {
+        // noNavigate: openFresh's normal path clicks through the choice screen to
+        // seed a routine, which is exactly the screen under test here.
+        const { context, page } = await openFresh(browser, baseURL, { noNavigate: true });
+        try {
+            const alerts = [];
+            page.on('dialog', async (d) => { alerts.push(d.message()); await d.dismiss(); });
+
+            await page.goto(`${baseURL}/miniCycle.html`, { waitUntil: 'load' });
+            await page.waitForSelector('#first-run-restore', { state: 'visible', timeout: 20000 });
+
+            await page.setInputFiles('#first-run-restore-file', {
+                name: file.name, mimeType: 'application/json', buffer: Buffer.from(file.body)
+            });
+
+            // A valid file reloads the page; an invalid one alerts and stays put.
+            await page.waitForTimeout(3000);
+
+            const seen = await page.evaluate(() => {
+                let cycles = [];
+                try {
+                    const parsed = JSON.parse(localStorage.getItem('miniCycleData') || '{}');
+                    cycles = Object.keys((parsed.data && parsed.data.cycles) || {});
+                } catch (e) { /* unreadable — reported as "no cycles" below */ }
+                return { cycles, evil: localStorage.getItem('evilKey') };
+            });
+
+            const restored = seen.cycles.includes('restored');
+            record(`${file.label}: ${file.expectRestore ? 'restores' : 'is rejected'}`,
+                restored === file.expectRestore,
+                file.expectRestore
+                    ? `expected the routine to be restored; cycles=${JSON.stringify(seen.cycles)} alerts=${JSON.stringify(alerts)}`
+                    : `expected rejection but a routine was restored`);
+
+            if (!file.expectRestore) {
+                record(`${file.label}: tells the user why`, alerts.length > 0,
+                    'no alert shown — the file was silently ignored');
+            }
+
+            // Only keys an exporter collects may be written back, so a hand-edited
+            // file cannot use this screen to set arbitrary localStorage entries.
+            record(`${file.label}: writes no unexpected storage keys`, seen.evil === null,
+                `evilKey landed in localStorage as ${seen.evil}`);
+        } finally {
+            await context.close();
+        }
+    }
+
+    return { name: 'first-run restore accepts both backup formats', failures };
+}
+
 const JOURNEYS = [
     { name: 'core (add → persist → cycle → offline)', fn: journeyCore },
     { name: 'routine switching', fn: journeyRoutineSwitch },
@@ -1093,6 +1198,7 @@ const JOURNEYS = [
     { name: 'factory reset repeats cleanly', fn: journeyFactoryResetRepeat },
     { name: 'factory reset admits what it cannot verify', fn: journeyResetHonesty },
     { name: 'reminder settings survive the quick-actions path', fn: journeyReminderSettings },
+    { name: 'first-run restore accepts both backup formats', fn: journeyFirstRunRestore },
 ];
 
 async function run() {

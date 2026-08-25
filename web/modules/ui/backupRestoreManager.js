@@ -264,6 +264,81 @@ function collectLiteStorageSnapshot() {
     return hasLiteData ? liteStorage : null;
 }
 
+// Keys the exporters themselves collect — mirrors collectBackupEntries() in
+// orchestrator.js. Restoring only these means a hand-edited file cannot use a
+// backup to write arbitrary localStorage entries.
+const RESTORE_EXTRA_KEYS = Object.freeze(['lastUsedMiniCycle', 'milestoneUnlocks', 'darkModeEnabled', 'currentTheme']);
+
+function isRestorableStorageKey(name) {
+    return name.startsWith('miniCycle') || name.startsWith('__miniCycle') || RESTORE_EXTRA_KEYS.includes(name);
+}
+
+/**
+ * Convert the pre-boot rescue screen's export into the canonical backup shape.
+ *
+ * Two different backup formats exist. Create Backup (above) writes
+ * `{ schemaVersion, miniCycleData, liteStorage? }`; orchestrator.js's crash-screen
+ * `downloadDataBackup()` writes `{ type: 'miniCycle-backup', keys: {...raw localStorage} }`.
+ * Until v2.506 each restore entry point accepted only ONE of them — the first-run
+ * screen took the rescue shape and rejected every Settings backup, and this path
+ * did the reverse, so a crash-screen export could not be restored from anywhere a
+ * user with working data could reach.
+ *
+ * Normalizing up front (before sanitization) rather than adding a branch below is
+ * what keeps sanitize → validate → confirm → restore identical for both formats;
+ * a dedicated branch would have restored rescue backups UNSANITIZED, since
+ * sanitizeImportedData() only recognizes the canonical and legacy shapes.
+ *
+ * @param {object} payload - a parsed rescue-screen backup
+ * @returns {object} the same data in Create Backup's shape
+ */
+function rescuePayloadToBackupData(payload) {
+    const liteStorage = {};
+    const extraStorageKeys = {};
+    let hasLite = false;
+
+    for (const [name, value] of Object.entries(payload.keys)) {
+        if (typeof value !== 'string' || name === STORAGE_KEYS.DATA) continue;
+        if (LITE_STORAGE_KEYS.includes(name)) {
+            liteStorage[name] = value;
+            hasLite = true;
+        } else if (isRestorableStorageKey(name)) {
+            extraStorageKeys[name] = value;
+        }
+    }
+
+    const converted = {
+        schemaVersion: '2.5',
+        miniCycleData: payload.keys[STORAGE_KEYS.DATA],
+        backupMetadata: {
+            createdAt: payload.exportedAt,
+            version: payload.appVersion,
+            schemaVersion: '2.5',
+            source: 'miniCycle rescue screen'
+        }
+    };
+    if (hasLite) converted.liteStorage = liteStorage;
+    if (Object.keys(extraStorageKeys).length > 0) converted.extraStorageKeys = extraStorageKeys;
+    return converted;
+}
+
+/**
+ * Write the theme/progress keys a rescue export carries beside miniCycleData.
+ * No-op for Create Backup files, which have no such keys.
+ * @param {object|undefined} extraStorageKeys
+ * @returns {void}
+ */
+function restoreExtraStorageKeys(extraStorageKeys) {
+    if (!extraStorageKeys || typeof extraStorageKeys !== 'object' || Array.isArray(extraStorageKeys)) {
+        return;
+    }
+    for (const [name, value] of Object.entries(extraStorageKeys)) {
+        if (typeof value === 'string' && isRestorableStorageKey(name)) {
+            localStorage.setItem(name, value);
+        }
+    }
+}
+
 function restoreLiteStorageSnapshot(liteStorage) {
     if (!liteStorage || typeof liteStorage !== 'object' || Array.isArray(liteStorage)) {
         return;
@@ -564,6 +639,13 @@ async function processRestoreData(fileContent) {
         return;
     }
 
+    // Normalize the rescue-screen export into the canonical shape BEFORE anything
+    // below inspects it, so sanitize/validate/restore need no second branch.
+    if (backupData.type === 'miniCycle-backup' && backupData.keys
+        && typeof backupData.keys[STORAGE_KEYS.DATA] === 'string') {
+        backupData = rescuePayloadToBackupData(backupData);
+    }
+
     // Sanitize imported data (dynamic import to match settingsManager's versioned import)
     const version = _deps.AppMeta?.version;
     const { sanitizeImportedData } = await import(`../utils/dataSanitizer.js?v=${version}`);
@@ -654,6 +736,7 @@ async function processRestoreData(fileContent) {
 
                     localStorage.setItem(STORAGE_KEYS.DATA, backupData.miniCycleData);
                     restoreLiteStorageSnapshot(backupData.liteStorage);
+                    restoreExtraStorageKeys(backupData.extraStorageKeys);
                     _deps.showNotification("✅ " + getLabel('notify.backupRestored'), "success", UI_TIMEOUTS.NOTIFICATION_EXTENDED);
 
                     // Re-render UI in place — faster than location.reload() and works offline

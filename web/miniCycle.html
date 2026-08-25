@@ -90,7 +90,7 @@
 <!-- ✅ Translucent status bar shows body background-color on iOS -->
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" id="status-bar-style-meta">
 
-<meta name="app-version" content="2.505">
+<meta name="app-version" content="2.506">
 
 <!-- Content Security Policy -->
 <!-- CSP is served via HTTP header in netlify.toml (production) -->
@@ -128,17 +128,17 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- Preload critical CSS files (they load in parallel, not blocking) -->
-<link rel="preload" href="styles/main.css?v=2.505" as="style">
-<link rel="preload" href="styles/base/variables.css?v=2.505" as="style">
-<link rel="preload" href="styles/base/reset.css?v=2.505" as="style">
-<link rel="preload" href="styles/layout/app-container.css?v=2.505" as="style">
-<link rel="preload" href="styles/layout/header.css?v=2.505" as="style">
-<link rel="preload" href="styles/components/task-list.css?v=2.505" as="style">
+<link rel="preload" href="styles/main.css?v=2.506" as="style">
+<link rel="preload" href="styles/base/variables.css?v=2.506" as="style">
+<link rel="preload" href="styles/base/reset.css?v=2.506" as="style">
+<link rel="preload" href="styles/layout/app-container.css?v=2.506" as="style">
+<link rel="preload" href="styles/layout/header.css?v=2.506" as="style">
+<link rel="preload" href="styles/components/task-list.css?v=2.506" as="style">
 
 <!-- Async CSS loading - doesn't block render, app starts with inline critical CSS -->
-<link rel="stylesheet" href="styles/main.css?v=2.505" media="print" id="async-main-css">
+<link rel="stylesheet" href="styles/main.css?v=2.506" media="print" id="async-main-css">
 <script>(function(){var l=document.getElementById('async-main-css');if(!l)return;function apply(){l.media='all';}if(l.sheet){apply();}else{l.addEventListener('load',apply);}})();</script>
-<noscript><link rel="stylesheet" href="styles/main.css?v=2.505"></noscript>
+<noscript><link rel="stylesheet" href="styles/main.css?v=2.506"></noscript>
 <link rel="manifest" href="manifest.json">
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -149,7 +149,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- version.js MUST load synchronously BEFORE modulepreloads to set globalThis.APP_VERSION -->
-<script src="./version.js?v=2.505"></script>
+<script src="./version.js?v=2.506"></script>
 
 <!-- Build version = the version baked into THIS HTML document (the meta tag
      above). It is the honest "what am I actually running" signal. By contrast,
@@ -644,7 +644,7 @@
   }, LOAD_TIMEOUT_MS);
 })();
 </script>
-    <script src="boot-sw.js?v=2.505" defer></script>
+    <script src="boot-sw.js?v=2.506" defer></script>
 
 
 
@@ -884,11 +884,63 @@
       } catch (err) { /* CustomEvent constructor unsupported — boot proceeds without the signal */ }
     });
 
-    // Restore-from-backup (pairs with the error screen's backup button).
-    // Validates the file, writes the raw localStorage keys back, reloads —
-    // the reload takes the returning-user path with the restored data.
+    // Restore-from-backup. THE APP WRITES TWO DIFFERENT BACKUP FORMATS and both
+    // have to be accepted here:
+    //   • Settings -> Create Backup : { schemaVersion, miniCycleData: "<string>", liteStorage? }
+    //   • pre-boot rescue screen    : { type: 'miniCycle-backup', keys: { ...raw localStorage } }
+    // Until v2.506 this accepted ONLY the second, so every backup a user actually
+    // made was rejected here with "not a valid miniCycle backup" — while the same
+    // file restored fine from Settings. Reported from a phone, not caught by a test.
+    //
+    // Normalizing to ONE internal shape here is deliberate: the sessionStorage
+    // handoff stays single-format, so the pre-load applier in <head> keeps its
+    // single check and cannot drift out of sync with this list of formats.
+    // ES5 only — this is a pre-gate inline script (see the head banner).
     var restoreBtn = document.getElementById('first-run-restore');
     var restoreFile = document.getElementById('first-run-restore-file');
+
+    // Only keys the exporters themselves collect are restorable, so a hand-edited
+    // file cannot use this path to write arbitrary localStorage entries.
+    var RESTORE_EXTRA_KEYS = ['lastUsedMiniCycle', 'milestoneUnlocks', 'darkModeEnabled', 'currentTheme'];
+    function isRestorableKey(name) {
+      return name.indexOf('miniCycle') === 0
+          || name.indexOf('__miniCycle') === 0
+          || RESTORE_EXTRA_KEYS.indexOf(name) !== -1;
+    }
+
+    function collectStringKeys(source, into) {
+      var names = Object.keys(source), i, value;
+      for (i = 0; i < names.length; i++) {
+        value = source[names[i]];
+        if (typeof value === 'string' && isRestorableKey(names[i])) {
+          into[names[i]] = value;
+        }
+      }
+      return into;
+    }
+
+    // Returns a localStorage key/value map, or null if this is not a backup we know.
+    function normalizeBackupKeys(parsed) {
+      if (!parsed || typeof parsed !== 'object') return null;
+
+      // Rescue-screen export — already a raw localStorage map.
+      if (parsed.type === 'miniCycle-backup' && parsed.keys
+          && typeof parsed.keys.miniCycleData === 'string') {
+        return collectStringKeys(parsed.keys, {});
+      }
+
+      // Settings export — one stringified payload plus an optional lite snapshot.
+      if (typeof parsed.miniCycleData === 'string') {
+        var keys = { miniCycleData: parsed.miniCycleData };
+        if (parsed.liteStorage && typeof parsed.liteStorage === 'object') {
+          collectStringKeys(parsed.liteStorage, keys);
+        }
+        return keys;
+      }
+
+      return null;
+    }
+
     if (restoreBtn && restoreFile) {
       restoreBtn.addEventListener('click', function () { restoreFile.click(); });
       restoreFile.addEventListener('change', function () {
@@ -898,7 +950,8 @@
         reader.onload = function () {
           var parsed = null;
           try { parsed = JSON.parse(reader.result); } catch (err) { /* invalid JSON — the null check below shows the error */ }
-          if (!parsed || parsed.type !== 'miniCycle-backup' || !parsed.keys || !parsed.keys.miniCycleData) {
+          var keys = normalizeBackupKeys(parsed);
+          if (!keys) {
             alert('That file is not a valid miniCycle backup.');
             restoreFile.value = '';
             return;
@@ -907,7 +960,10 @@
           // code runs. Writing localStorage here would be clobbered by the
           // running app's save-on-unload during the reload.
           try {
-            sessionStorage.setItem('miniCycle_pendingRestore', reader.result);
+            sessionStorage.setItem('miniCycle_pendingRestore', JSON.stringify({
+              type: 'miniCycle-backup',
+              keys: keys
+            }));
           } catch (err) {
             alert('Restore failed: ' + err.message);
             return;
@@ -1959,7 +2015,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- Boot File Split (Dec 2025): Load via entrypoint which orchestrates all boot files -->
- <script type="module" src="miniCycle-main.js?v=2.505"></script>
+ <script type="module" src="miniCycle-main.js?v=2.506"></script>
 
 <script>
 // Sync About modal version with meta app-version
