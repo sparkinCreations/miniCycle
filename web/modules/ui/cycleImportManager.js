@@ -525,7 +525,7 @@ export async function processImportedData(fileContent) {
 
     // Security: Truncate tasks if exceeding limit (instead of rejecting)
     let tasksTruncated = false;
-    let originalTaskCount = importedData.tasks.length;
+    const originalTaskCount = importedData.tasks.length;
     if (importedData.tasks.length > MAX_TASK_COUNT) {
         console.warn(`Import truncating: ${importedData.tasks.length} tasks exceeds ${MAX_TASK_COUNT} limit, keeping first ${MAX_TASK_COUNT}`);
         importedData.tasks = importedData.tasks.slice(0, MAX_TASK_COUNT);

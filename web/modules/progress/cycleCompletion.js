@@ -583,7 +583,7 @@ export function checkMiniCycle(options = {}) {
     }
 
     const { lastUsedMiniCycle, savedMiniCycles } = cycleVars;
-    let cycleData = savedMiniCycles[lastUsedMiniCycle];
+    const cycleData = savedMiniCycles[lastUsedMiniCycle];
 
     if (!lastUsedMiniCycle || !cycleData) {
         console.warn("⚠️ No active miniCycle found.");

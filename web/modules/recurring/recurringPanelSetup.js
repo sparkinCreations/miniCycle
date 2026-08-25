@@ -255,14 +255,14 @@ export function setupHourlyMinuteWrapping(deps, onUpdate) {
     if (!minuteInput) return;
 
     deps.safeAddEventListener(minuteInput, 'input', () => {
-        let val = parseInt(minuteInput.value);
+        const val = parseInt(minuteInput.value);
         if (isNaN(val)) return;
         if (val > 59) { minuteInput.value = 0; onUpdate?.(); }
         else if (val < 0) { minuteInput.value = 59; onUpdate?.(); }
         else { onUpdate?.(); }
     });
     deps.safeAddEventListener(minuteInput, 'blur', () => {
-        let val = parseInt(minuteInput.value);
+        const val = parseInt(minuteInput.value);
         if (isNaN(val) || minuteInput.value === '') return;
         minuteInput.value = Math.max(0, Math.min(val, 59));
     });

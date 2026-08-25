@@ -663,7 +663,7 @@ export function fixTaskValidationIssues() {
 
         const cycles = JSON.parse(legacyData);
         let fixedTasks = 0;
-        let fixedDetails = [];
+        const fixedDetails = [];
 
         Object.keys(cycles).forEach(cycleName => {
             const cycle = cycles[cycleName];

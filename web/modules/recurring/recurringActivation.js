@@ -357,7 +357,7 @@ export async function applyRecurringToTaskSchema25(taskId, newSettings) {
         return;
     }
 
-    let task = cycleData.tasks.find(t => t.id === taskId);
+    const task = cycleData.tasks.find(t => t.id === taskId);
     if (!task) {
         console.error('❌ Task not found for applyRecurringToTaskSchema25:', taskId);
         return;

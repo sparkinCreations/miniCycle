@@ -87,6 +87,15 @@ jobs:
         working-directory: ./web
         run: npm run test:csp-sync
 
+      # The restore.sh stage of update-version.sh, extracted in v2.510 and tested
+      # (18 tests) but never run on a PR. Same argument as the CSP stage above:
+      # this generates the script a release is rolled back WITH, so a break in it
+      # is only discovered at the moment it is needed. Pure Python — no Node, no
+      # server, no browser.
+      - name: Restore-script generation (the rollback path a bad release depends on)
+        working-directory: ./web
+        run: npm run test:restore
+
   test:
     runs-on: ubuntu-latest
 

@@ -198,10 +198,10 @@ export class MiniCycleDueDates {
 
         // Get current overdue states from AppState
         const currentState = AppState.get();
-        let overdueTaskStates = { ...(currentState?.appState?.overdueTaskStates || {}) };
+        const overdueTaskStates = { ...(currentState?.appState?.overdueTaskStates || {}) };
 
         // ✅ Track tasks that just became overdue (by ID, display text for notification)
-        let newlyOverdueTasks = [];
+        const newlyOverdueTasks = [];
 
         // Completion state for the rows below, keyed by task id. Read from state
         // rather than the checkbox — rule 14: the DOM holds only what is
@@ -385,7 +385,7 @@ export class MiniCycleDueDates {
 
             this.toggleAutoReset._dueDateChangeHandler = async () => {
 
-                let autoReset = this.toggleAutoReset.checked;
+                const autoReset = this.toggleAutoReset.checked;
                 this.updateDueDateVisibility(autoReset);
 
                 const schemaData = this.deps.loadMiniCycleData();
@@ -425,7 +425,7 @@ export class MiniCycleDueDates {
         safeAdd(document, "change", this.handleDueDateChange);
 
         // ✅ Apply initial visibility state on load
-        let autoReset = this.toggleAutoReset.checked;
+        const autoReset = this.toggleAutoReset.checked;
         this.updateDueDateVisibility(autoReset);
 
     }
@@ -438,9 +438,9 @@ export class MiniCycleDueDates {
     handleDueDateChange = async (event) => {
         if (!event.target.classList.contains(DOM_CLASSES.DUE_DATE)) return;
 
-        let taskItem = event.target.closest(".task");
-        let taskId = taskItem?.dataset.taskId;
-        let dueDateValue = event.target.value;
+        const taskItem = event.target.closest(".task");
+        const taskId = taskItem?.dataset.taskId;
+        const dueDateValue = event.target.value;
 
         const schemaData = this.deps.loadMiniCycleData();
         if (!schemaData) {
@@ -532,7 +532,7 @@ export class MiniCycleDueDates {
             return;
         }
 
-        let overdueTasks = [...this.deps.querySelectorAll(DOM_SELECTORS.TASK)]
+        const overdueTasks = [...this.deps.querySelectorAll(DOM_SELECTORS.TASK)]
             .filter(task => task.classList.contains(DOM_CLASSES.OVERDUE_TASK))
             .map(task => task.querySelector(DOM_SELECTORS.TASK_TEXT)?.textContent)
             .filter(Boolean);
