@@ -1,11 +1,11 @@
 {
   "name": "minicycle-web",
-  "version": "2.510",
+  "version": "2.511",
   "description": "miniCycle - Turn Your Routine Into Progress",
   "type": "module",
   "private": true,
   "//": "=== TESTING NOTES ===",
-  "// Jest removed": "Jest was removed in favor of comprehensive Playwright browser tests (958 tests, 100% coverage). Browser tests are more appropriate for this project since all modules use browser APIs (DOM, localStorage, etc.). Jest tests were experimental, broken, and added no value over the existing browser test suite.",
+  "// Jest removed": "Jest was removed in favor of Playwright browser tests — more appropriate here since every module uses browser APIs (DOM, localStorage, etc.). Jest tests were experimental, broken, and added no value over the existing suite. Counts live in docs/PROJECT_STATS.md, never here: this note claimed '958 tests, 100% coverage' while the suite actually ran 3538 and measures no coverage at all.",
   "scripts": {
     "start": "python3 scripts/serve.py",
     "start:simple": "python3 -m http.server 8080",
@@ -21,7 +21,7 @@
     "test:a11y": "node tests/automated/run-a11y-tests.cjs",
     "test:manual": "python3 -m http.server 8080",
     "perf": "node tests/automated/run-performance-benchmarks.cjs",
-    "lint": "eslint modules/ service-worker.js miniCycle-main.js boot-sw.js --max-warnings=360",
+    "lint": "eslint modules/ service-worker.js miniCycle-main.js boot-sw.js --max-warnings=338",
     "lint:fix": "eslint modules/ --fix",
     "validate:di": "node scripts/validate-di-deps.js",
     "validate:legacy": "node scripts/validate-legacy-reads.js",

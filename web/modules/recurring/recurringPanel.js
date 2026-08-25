@@ -638,7 +638,7 @@ export class RecurringPanelManager {
             }
 
             const cycles = state.data?.cycles || {};
-            let cycleData = currentCycleData || cycles[activeCycleId];
+            const cycleData = currentCycleData || cycles[activeCycleId];
 
             if (!cycleData) {
                 console.warn('⚠️ No cycle data found for recurring panel');

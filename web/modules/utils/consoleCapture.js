@@ -239,7 +239,7 @@ export class MiniCycleConsoleCapture {
 
     // Enhanced log display with better filtering and search
     showAllCapturedLogs() {
-        let allLogs = [...this.consoleLogBuffer];
+        const allLogs = [...this.consoleLogBuffer];
         
         // Also try to get any stored logs from localStorage
         const storedBuffer = localStorage.getItem(STORAGE_KEYS.CONSOLE_CAPTURE_BUFFER);
@@ -313,7 +313,7 @@ export class MiniCycleConsoleCapture {
 
     // Enhanced error filtering with more sophisticated detection
     showMigrationErrorsOnly() {
-        let allLogs = [...this.consoleLogBuffer];
+        const allLogs = [...this.consoleLogBuffer];
         
         // Also get stored logs
         const storedBuffer = localStorage.getItem(STORAGE_KEYS.CONSOLE_CAPTURE_BUFFER);

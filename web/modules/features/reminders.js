@@ -1041,7 +1041,7 @@ export class MiniCycleReminders {
 
         this.deps.querySelectorAll(DOM_SELECTORS.TASK).forEach(taskItem => {
           const buttonContainer = taskItem.querySelector(DOM_SELECTORS.TASK_OPTIONS);
-          let reminderButton = buttonContainer?.querySelector(DOM_SELECTORS.ENABLE_TASK_REMINDERS);
+          const reminderButton = buttonContainer?.querySelector(DOM_SELECTORS.ENABLE_TASK_REMINDERS);
 
           const taskId = taskItem.dataset.taskId;
           if (!taskId) {

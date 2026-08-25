@@ -155,7 +155,7 @@ export function createDIModule(moduleName, schema = {}, options = {}) {
     let _injected = {};
 
     // Track what's been set for debugging
-    let _setKeys = new Set();
+    const _setKeys = new Set();
 
     // Cache for resolve() — invalidated on any mutation
     let _resolveCache = null;

@@ -984,7 +984,7 @@ export class TaskDOMManager {
             if (taskItem) {
                 const taskLabel = taskItem.querySelector(DOM_SELECTORS.TASK_TEXT);
                 if (taskLabel) {
-                    let existingIcon = taskLabel.querySelector(DOM_SELECTORS.RECURRING_INDICATOR);
+                    const existingIcon = taskLabel.querySelector(DOM_SELECTORS.RECURRING_INDICATOR);
 
                     if (isNowRecurring && !existingIcon) {
                         const icon = document.createElement("span");

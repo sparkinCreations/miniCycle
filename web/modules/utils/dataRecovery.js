@@ -42,7 +42,7 @@ export function attemptJsonSalvage(jsonString) {
         { name: 'direct-parse', fn: (str) => JSON.parse(str) },
 
         // 2. Strip control characters that can sneak into stored strings.
-        // eslint-disable-next-line no-control-regex
+         
         { name: 'remove-control-chars', fn: (str) => JSON.parse(str.replace(/[\x00-\x1F\x7F]/g, '')) },
 
         // 3. Repair truncation MID-STRING — the common case, which the plain
