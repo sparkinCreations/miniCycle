@@ -441,6 +441,56 @@ async function run() {
                 }
             }
 
+            // The carousel slide must be HORIZONTAL. #task-view's vertical
+            // anchoring differs by breakpoint — band-anchored (translateY 0)
+            // below 1024px, centred (translateY -50%) at and above it — so this
+            // asserts the three carousel states agree WITH EACH OTHER rather
+            // than against any fixed number. Whatever Y the shown state uses,
+            // both exits must use the same one, or the view travels diagonally.
+            //
+            // v2.512: #task-view.hide.hide-right (one id + TWO classes) outranked
+            // `body.focus-mode #task-view` (one id, one class, one element) and
+            // reimposed translate(-50%, -50%) on a band-anchored element. The
+            // right exit lifted 294px at 390x844 and 385px at 768x1024 — the
+            // routine slid to the upper-right corner instead of straight across.
+            // Nothing compared the states, so it shipped.
+            const slide = await page.evaluate(() => {
+                const el = document.getElementById('task-view');
+                if (!el) return null;
+                const keep = [...el.classList];
+                const prevTransition = el.style.transition;
+                const yOf = () => {
+                    const t = getComputedStyle(el).transform;
+                    if (t === 'none') return 0;
+                    const m = t.match(/matrix\(([^)]+)\)/);
+                    return m ? Math.round(parseFloat(m[1].split(',')[5])) : NaN;
+                };
+                const set = (add) => {
+                    el.classList.remove('show', 'hide', 'hide-left', 'hide-right');
+                    add.forEach(c => el.classList.add(c));
+                    void el.offsetHeight;   // settle style recalc
+                };
+                el.style.transition = 'none';  // read END states, not mid-flight
+                set(['show']);                 const show  = yOf();
+                set(['hide', 'hide-right']);   const right = yOf();
+                set(['hide', 'hide-left']);    const left  = yOf();
+                el.style.transition = prevTransition;
+                el.classList.remove('show', 'hide', 'hide-left', 'hide-right');
+                keep.forEach(c => el.classList.add(c));
+                return { show, right, left };
+            });
+
+            if (slide && Number.isFinite(slide.show)) {
+                record(vp, 'focus carousel slides horizontally (right exit)',
+                    slide.right === slide.show,
+                    `#task-view translateY ${slide.show} when shown but ${slide.right} exiting right `
+                    + `(${slide.right - slide.show}px of vertical travel — the slide is diagonal)`);
+                record(vp, 'focus carousel slides horizontally (left exit)',
+                    slide.left === slide.show,
+                    `#task-view translateY ${slide.show} when shown but ${slide.left} exiting left `
+                    + `(${slide.left - slide.show}px of vertical travel — the slide is diagonal)`);
+            }
+
             await page.evaluate(() => {
                 document.body.classList.remove('focus-mode');
                 document.dispatchEvent(new CustomEvent('focusMode:deactivated', { detail: {} }));
