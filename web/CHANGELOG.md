@@ -1,3 +1,7 @@
+## [2.512] - 2026-08-26
+- fix(focus-view): the routine no longer slides to the upper-right corner when swiping to the Task panel — the carousel's right-exit rule was reimposing translateY(-50%) on the band-anchored task view
+
+
 ## [2.511] - 2026-08-25
 - ci: run the restore-script generator tests on every PR
 - chore(lint): clear the 22 auto-fixable prefer-const warnings and lower the ratchet 360 → 338; drop the unverifiable '958 tests, 100% coverage' claim from package.json

@@ -1051,6 +1051,29 @@ body.focus-mode #complete-all-and-help-window-container {
         justify-content: safe center;
     }
 
+    /* The carousel's right-exit must keep the band's vertical anchoring.
+       #task-view.hide.hide-right (app-container.css) sets
+       `transform: translate(-50%, -50%)`, and one-id-plus-TWO-classes outranks
+       the one-id-one-class-one-element selector above — so it silently put back
+       the -50% Y the band model removes, and the view slid UP as it slid right:
+       measured translateY 0 -> -294px at 390x844 and 0 -> -385px at 768x1024,
+       with rect.y going 98 -> -196. Reported as "the routine goes to the upper
+       right corner instead of straight across".
+
+       main.css already fixes this same collision for `.hide` under
+       first-run-welcome-active / onboarding-active, and says why in as many
+       words: "the -50% Y would yank the view upward and read as a glitch".
+       That override predates the focus Task panel, so the directional
+       hide-right the carousel introduced was never covered.
+
+       Scoped to this media block ON PURPOSE: at >=1024px #task-view really is
+       centred, `.show` and `.hide-right` both measure translateY -196px, and an
+       unconditional X-only override would introduce there the exact jump it
+       removes here. The left exit (toward Stats) already measures flat. */
+    body.focus-mode #task-view.hide.hide-right {
+        transform: translateX(-50%);
+    }
+
     body.focus-mode #task-view .task-card {
         max-height: calc(100dvh - 80px);
     }
