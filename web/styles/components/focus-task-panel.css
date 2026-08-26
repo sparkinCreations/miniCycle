@@ -17,7 +17,10 @@ body:not(.focus-mode) #nav-dots .dot[aria-controls="focus-task-panel"] {
 #focus-task-panel {
     position: fixed;
     left: 50%;
-    top: 47%;
+    /* Mirrors #task-view's own base focus centring (focus-mode.css) rather than a
+       bare percentage, so the two carousel panels share one vertical centre. The
+       band override below takes it from here under 1024px. Was `top: 47%`. */
+    top: calc(50% - var(--focus-mode-top-offset));
     width: min(440px, 92vw);
     transform: translateX(-250%) translateY(-50%);
     opacity: 0;
@@ -176,10 +179,43 @@ body:not(.focus-mode) #nav-dots .dot[aria-controls="focus-task-panel"] {
     justify-content: center;
 }
 
-/* Focus mode hides the fixed header — nudge the card up slightly on small
-   screens, matching the stats panel's focus-mode adjustment. */
-@media (max-width: 768px) {
+/* Focus mode: centre the card on the MEASURED band, not on a percentage of the
+   viewport. The base `top: 47%` (and the `51%` this block used to carry below
+   768px) were the last focus-view geometry outside the band model, and
+   FOCUS_VIEW_LAYOUT.md is explicit that opting out of measured chrome is what
+   shipped the same bug three releases running.
+
+   It was not only drift. Measured against the band #task-view occupies:
+
+       phone-tall 375x812   band  98→655  panel 265→563   +37px off centre
+       phone-short 375x560  band  98→403  panel 137→435   +35px, 32px PAST THE NAV DOTS
+       phone-mid 390x667    band  98→510  panel 191→489   +36px
+       landscape 820x480    band  97→324  panel  80→371   above the chrome AND past the dots
+       tablet-portrait      band  97→956  panel 377→669    -4px
+       desktop 1280x800     band 169→561  panel 230→522   +11px
+
+   The card is `position: fixed` with `translateY(-50%)`, so centring it means
+   placing `top` at the band's midpoint; the transform stays identical across
+   .show/.hide/base, which is what keeps the carousel slide horizontal (v2.512).
+
+   On viewports under ~520px tall the card is simply TALLER than the band
+   (820x480: a 227px band, a 292px card), so centring reduces the overflow but
+   cannot remove it. That is the same content-does-not-fit case the layout suite
+   already names as known for #task-view, and the same product call: what focus
+   view drops when there is no room.
+
+   Scoped to under 1024px BECAUSE THAT IS WHERE #task-view IS BAND-ANCHORED. At
+   and above it #task-view reverts to `top: calc(50% - --focus-mode-top-offset)`,
+   which the base rule above already mirrors — centring the panel on a band the
+   other panel does not use put them 19px apart at 1280x800, against 11px before
+   this change. Matching whatever #task-view does at each breakpoint is the
+   invariant; the band is only how that is expressed below 1024. */
+@media (max-width: 1023px) {
     body.focus-mode #focus-task-panel {
-        top: 51%;
+        top: calc(var(--focus-band-top)
+                  + (100dvh
+                     - var(--nav-dots-clearance, var(--nav-dots-clearance-fallback))
+                     - var(--focus-band-bottom-gap)
+                     - var(--focus-band-top)) / 2);
     }
 }
