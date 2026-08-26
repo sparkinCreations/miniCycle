@@ -441,6 +441,36 @@ async function run() {
                 }
             }
 
+            // Both carousel panels must share ONE vertical centre. #task-view's
+            // centring differs by breakpoint (band-anchored below 1024px, centred
+            // above), so this compares the panels against EACH OTHER rather than
+            // against a number — the same reason the slide check below does.
+            //
+            // v2.513: #focus-task-panel was the last focus-view geometry outside
+            // the measured-chrome model, on `top: 47%` (51% below 768px). It sat
+            // 35-37px below #task-view's centre on phones and pushed 32px past the
+            // nav dots at 375x560. FOCUS_VIEW_LAYOUT.md names opting out of
+            // measured chrome as the cause of three consecutive shipped bugs.
+            const centres = await page.evaluate(() => {
+                const tv = document.getElementById('task-view');
+                const fp = document.getElementById('focus-task-panel');
+                if (!tv || !fp) return null;
+                const tvHad = tv.classList.contains('show');
+                const fpHad = fp.classList.contains('show');
+                tv.classList.add('show'); fp.classList.add('show');
+                void tv.offsetHeight;
+                const t = tv.getBoundingClientRect(), f = fp.getBoundingClientRect();
+                if (!tvHad) tv.classList.remove('show');
+                if (!fpHad) fp.classList.remove('show');
+                return { taskView: t.y + t.height / 2, panel: f.y + f.height / 2 };
+            });
+            if (centres) {
+                const drift = Math.round(centres.panel - centres.taskView);
+                record(vp, 'focus carousel panels share a vertical centre',
+                    Math.abs(drift) <= TOL,
+                    `#focus-task-panel centre is ${drift}px from #task-view's — the view jumps vertically between panels`);
+            }
+
             // The carousel slide must be HORIZONTAL. #task-view's vertical
             // anchoring differs by breakpoint — band-anchored (translateY 0)
             // below 1024px, centred (translateY -50%) at and above it — so this
