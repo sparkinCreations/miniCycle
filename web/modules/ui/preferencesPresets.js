@@ -85,18 +85,35 @@ function sanitizePresetColors(raw) {
 // The 'default' preset delegates entirely to resetAllColors() and never reads
 // its colors, so no copy is needed here.
 
-const QUICK_PRESETS = {
+/**
+ * Built-in quick presets.
+ *
+ * A FUNCTION, not a const object, and every getLabel key is a LITERAL. The
+ * tempting shape — a table of key strings, each resolved by building the key
+ * from the preset id — works at runtime and silently drops all 27 keys out of
+ * `validate:labels`,
+ * which reports dynamic keys but never gates them (the trap recorded for the
+ * tour prompts in v2.503). Resolving per call also means a theme's label
+ * overrides apply, which a module-load-time const would freeze.
+ *
+ * The preset.* label block existed since the labels were first written and was
+ * never wired to anything — this module rendered its own hardcoded copies of
+ * the same strings, free to drift from them.
+ *
+ * @returns {Object} preset key -> { name, shortName, title, swatch, colors }
+ */
+const quickPresets = () => ({
     default: {
-        name: 'Default',
-        shortName: 'Default',
-        title: 'Default blue theme',
+        name: getLabel('preset.defaultFull'),
+        shortName: getLabel('preset.default'),
+        title: getLabel('preset.defaultDesc'),
         swatch: ['#4c79ff', '#ffffff'],
         colors: {}
     },
     warm: {
-        name: 'Warm',
-        shortName: 'Warm',
-        title: 'Warm sunset colors',
+        name: getLabel('preset.warmFull'),
+        shortName: getLabel('preset.warm'),
+        title: getLabel('preset.warmDesc'),
         swatch: ['#ff6b6b', '#ffeaa7'],
         colors: {
             appBg: '#ff6b6b',
@@ -119,9 +136,9 @@ const QUICK_PRESETS = {
         }
     },
     cool: {
-        name: 'Cool',
-        shortName: 'Cool',
-        title: 'Cool ocean colors',
+        name: getLabel('preset.coolFull'),
+        shortName: getLabel('preset.cool'),
+        title: getLabel('preset.coolDesc'),
         swatch: ['#74b9ff', '#e8f8f5'],
         colors: {
             appBg: '#74b9ff',
@@ -144,9 +161,9 @@ const QUICK_PRESETS = {
         }
     },
     forest: {
-        name: 'Forest',
-        shortName: 'Forest',
-        title: 'Natural forest colors',
+        name: getLabel('preset.forestFull'),
+        shortName: getLabel('preset.forest'),
+        title: getLabel('preset.forestDesc'),
         swatch: ['#2d5016', '#d4edda'],
         colors: {
             appBg: '#2d5016',
@@ -169,9 +186,9 @@ const QUICK_PRESETS = {
         }
     },
     monochrome: {
-        name: 'Monochrome',
-        shortName: 'Mono',
-        title: 'Elegant grayscale',
+        name: getLabel('preset.monoFull'),
+        shortName: getLabel('preset.mono'),
+        title: getLabel('preset.monoDesc'),
         swatch: ['#2d3436', '#dfe6e9'],
         colors: {
             appBg: '#2d3436',
@@ -194,9 +211,9 @@ const QUICK_PRESETS = {
         }
     },
     professional: {
-        name: 'Professional',
-        shortName: 'Pro',
-        title: 'Clean minimal look',
+        name: getLabel('preset.proFull'),
+        shortName: getLabel('preset.pro'),
+        title: getLabel('preset.proDesc'),
         swatch: ['#007aff', '#b7c3d1'],
         colors: {
             appBg: '#b7c3d1',
@@ -221,9 +238,9 @@ const QUICK_PRESETS = {
         }
     },
     goldenGlow: {
-        name: 'Golden Glow',
-        shortName: 'Golden',
-        title: 'Golden glow theme',
+        name: getLabel('preset.goldenFull'),
+        shortName: getLabel('preset.golden'),
+        title: getLabel('preset.goldenDesc'),
         swatch: ['#d4a017', '#fffef5'],
         colors: {
             appBg: '#d4a017',
@@ -246,9 +263,9 @@ const QUICK_PRESETS = {
         }
     },
     darkOcean: {
-        name: 'Dark Ocean',
-        shortName: 'Ocean',
-        title: 'Dark ocean theme',
+        name: getLabel('preset.oceanFull'),
+        shortName: getLabel('preset.ocean'),
+        title: getLabel('preset.oceanDesc'),
         swatch: ['#0a2540', '#1a3a5c'],
         colors: {
             appBg: '#0a2540',
@@ -271,9 +288,9 @@ const QUICK_PRESETS = {
         }
     },
     berry: {
-        name: 'Berry',
-        shortName: 'Berry',
-        title: 'Berry purple theme',
+        name: getLabel('preset.berryFull'),
+        shortName: getLabel('preset.berry'),
+        title: getLabel('preset.berryDesc'),
         swatch: ['#7c3aed', '#faf5ff'],
         colors: {
             appBg: '#7c3aed',
@@ -295,7 +312,7 @@ const QUICK_PRESETS = {
             panelText: '#ffffff'
         }
     }
-};
+});
 
 // ============================================================================
 // QUICK PRESET APPLICATION
@@ -307,7 +324,7 @@ const QUICK_PRESETS = {
  * @param {Object} callbacks - { saveColor, resetAllColors, loadSavedColors, updatePreview, applyCustomColors, pushToUndoStack, updateUndoButton, isDefaultTheme, showNotification }
  */
 export function applyQuickPreset(presetKey, callbacks) {
-    const preset = QUICK_PRESETS[presetKey];
+    const preset = quickPresets()[presetKey];
     if (!preset) return;
 
     // Default preset should behave the same as Reset All
@@ -670,11 +687,11 @@ export function renderPresetsList(deps, callbacks) {
 
         item.innerHTML = `
             ${swatchHtml}
-            <span class="preferences-preset-name" title="Click to rename">${escapeHtml(preset.name)}</span>
+            <span class="preferences-preset-name" title="${getLabel('preset.renameHint')}">${escapeHtml(preset.name)}</span>
             <div class="preferences-preset-actions">
-                <button class="preferences-preset-btn load-btn" title="Load this preset">Load</button>
-                <button class="preferences-preset-btn export-btn" title="Export as code">Export</button>
-                <button class="preferences-preset-btn delete-btn" title="Delete this preset">Del</button>
+                <button class="preferences-preset-btn load-btn" title="${getLabel('preset.loadTitle')}">${getLabel('preset.loadAction')}</button>
+                <button class="preferences-preset-btn export-btn" title="${getLabel('preset.exportTitle')}">${getLabel('preset.exportAction')}</button>
+                <button class="preferences-preset-btn delete-btn" title="${getLabel('preset.deleteTitle')}">${getLabel('preset.deleteAction')}</button>
             </div>
         `;
 
@@ -777,7 +794,7 @@ export function escapeHtml(str) {
 // ============================================================================
 
 /**
- * Render quick preset buttons dynamically from QUICK_PRESETS data.
+ * Render quick preset buttons dynamically from quickPresets() data.
  * Called by preferencesManager.js before binding click handlers.
  * @param {HTMLElement} container - The grid container element
  */
@@ -785,7 +802,7 @@ export function renderQuickPresets(container) {
     if (!container) return;
     container.innerHTML = '';
 
-    Object.entries(QUICK_PRESETS).forEach(([key, preset]) => {
+    Object.entries(quickPresets()).forEach(([key, preset]) => {
         const btn = document.createElement('button');
         btn.className = 'quick-preset-btn';
         btn.dataset.preset = key;

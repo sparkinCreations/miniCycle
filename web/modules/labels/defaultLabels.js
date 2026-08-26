@@ -1827,7 +1827,32 @@ export const DEFAULT_LABELS = deepFreeze({
         ocean:        'Ocean',
         oceanDesc:    'Dark ocean theme',
         berry:        'Berry',
-        berryDesc:    'Berry purple theme'
+        berryDesc:    'Berry purple theme',
+
+        // Full names for the built-in presets. Four differ from the short name
+        // above (Monochrome/Mono, Professional/Pro, Golden Glow/Golden,
+        // Dark Ocean/Ocean) and reach the user through notify.themeApplied;
+        // the rest are listed anyway so the set is uniform rather than
+        // "look it up, and if it is missing reuse the short one".
+        defaultFull:  'Default',
+        warmFull:     'Warm',
+        coolFull:     'Cool',
+        forestFull:   'Forest',
+        monoFull:     'Monochrome',
+        proFull:      'Professional',
+        goldenFull:   'Golden Glow',
+        oceanFull:    'Dark Ocean',
+        berryFull:    'Berry',
+
+        // Saved-preset row (rendered as innerHTML — these are var-free, so
+        // interpolating them is safe per the getLabel/innerHTML rule).
+        renameHint:   'Click to rename',
+        loadTitle:    'Load this preset',
+        loadAction:   'Load',
+        exportTitle:  'Export as code',
+        exportAction: 'Export',
+        deleteTitle:  'Delete this preset',
+        deleteAction: 'Del'
     },
 
     // ========================================================================

@@ -723,7 +723,7 @@ export class MiniCycleReminders {
                     // Try ServiceWorker notification first (more reliable, works when tab is in background)
                     const registration = await navigator.serviceWorker?.getRegistration();
                     if (registration) {
-                        await registration.showNotification('miniCycle Reminder', {
+                        await registration.showNotification(getLabel('notify.reminderNotificationTitle'), {
                             body: notificationBody,
                             icon: './assets/images/logo/taskcycle_logo_blackandwhite_transparent.png',
                             tag: 'minicycle-reminder'

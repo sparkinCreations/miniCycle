@@ -1,3 +1,7 @@
+## [2.514] - 2026-08-26
+- fix(labels): wire the preset label block that was written and never used — preferencesPresets rendered its own hardcoded duplicates of all 27 strings — plus the saved-preset row's buttons and the second reminder-notification title
+
+
 ## [2.513] - 2026-08-26
 - fix(focus-view): centre the Task panel on the measured band instead of top: 47% — the last focus-view geometry outside the band model; it sat 35-37px below the routine card on phones and pushed 32px past the nav dots at 375x560
 
