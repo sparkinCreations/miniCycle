@@ -1187,6 +1187,132 @@ async function journeyFirstRunRestore(browser, baseURL) {
     return { name: 'first-run restore accepts both backup formats', failures };
 }
 
+// ── Journey 12: the first-run state contract (core-ready ≠ state-ready) ─────
+// appInit.waitForCore() resolving does NOT mean AppState has data. On a brand-new
+// origin AppState.init() deliberately returns with `data = null` and
+// `isInitialized = false`, so a post-await AppState.get() is null and a post-await
+// AppState.update() is a WARN-AND-RETURN no-op. Nothing asserted that before, which
+// is why it kept reading as a bug to anyone who found it. These four phases pin the
+// whole asymmetry down: empty origin → not ready; write → refused; first-run choice
+// seeds storage → ready; returning user → ready straight out of waitForCore().
+
+// Reach the app's OWN AppState singleton: import the module at the exact URL
+// coreBoot used, because ESM caches per URL and any other query string hands back
+// a SECOND, unwired module instance — getStateManager() would then hand out its
+// deps-less fallback and every reading below would describe that, not the app.
+// This does not fail silently: measured by pointing these imports at `?v=WRONG`,
+// 5 of the 10 assertions below invert (the stray appInit never resolves, so
+// waitForCore() times out to false, and the stray manager self-seeds a fallback
+// state so the empty-origin write assertions flip). A wrong handle looks like a
+// broken contract, not like a pass.
+async function readStateReadinessInPage() {
+    const url = (p) => {
+        const hashed = globalThis.__MC_MODULE_MAP && globalThis.__MC_MODULE_MAP[p];
+        return hashed || `${p}?v=${globalThis.APP_VERSION}`;
+    };
+    const { appInit } = await import(url('/modules/core/appInit.js'));
+    const { getStateManager } = await import(url('/modules/core/appState.js'));
+    const coreOk = await appInit.waitForCore();
+    const AppState = getStateManager();
+    return {
+        coreOk,
+        ready: AppState.isReady(),
+        dataIsNull: AppState.get() === null,
+        stored: localStorage.getItem('miniCycleData') !== null
+    };
+}
+
+async function attemptStateWriteInPage() {
+    const url = (p) => {
+        const hashed = globalThis.__MC_MODULE_MAP && globalThis.__MC_MODULE_MAP[p];
+        return hashed || `${p}?v=${globalThis.APP_VERSION}`;
+    };
+    const { getStateManager } = await import(url('/modules/core/appState.js'));
+    const AppState = getStateManager();
+    let applied = false;
+    try {
+        await AppState.update(() => { applied = true; }, true);
+    } catch (e) {
+        return { applied, ready: AppState.isReady(), threw: String(e && e.message) };
+    }
+    return { applied, ready: AppState.isReady(), threw: null };
+}
+
+async function journeyFirstRunStateContract(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+
+    // noNavigate: openFresh's normal path clicks "learn" to seed a routine, which
+    // is precisely the write this journey needs to observe from BOTH sides.
+    const { context, page } = await openFresh(browser, baseURL, { noNavigate: true });
+    try {
+        await page.goto(`${baseURL}/miniCycle.html`, { waitUntil: 'domcontentloaded', timeout: 20000 });
+        await page.waitForFunction(
+            () => !!document.querySelector('.first-run-btn[data-choice="learn"]'),
+            null, { timeout: 20000 }
+        );
+
+        // ── Phase 1: empty origin, core ready, state deliberately NOT ready ─────
+        const before = await page.evaluate(readStateReadinessInPage);
+        record('waitForCore() resolves on a brand-new origin', before.coreOk === true,
+            `waitForCore returned ${before.coreOk}`);
+        record('nothing has been persisted yet', before.stored === false,
+            'miniCycleData already exists before any choice was made');
+        record('core-ready does NOT imply state-ready', before.ready === false,
+            `AppState.isReady() was ${before.ready} — if this flipped to true, the ` +
+            'asymmetry documented in appInit.waitForCore() and CLAUDE.md is stale');
+        record('AppState.get() is null after waitForCore()', before.dataIsNull === true,
+            'get() returned data on an origin with none — post-await reads no longer need guarding, ' +
+            'so the guards added Aug 2026 (recurringPanel et al.) can be revisited');
+
+        // ── Phase 2: update() on an empty origin REFUSES the write ──────────────
+        // This is the half that is easy to get wrong. update() awaits its own
+        // init(), but init() creates nothing when storage is empty, so update()
+        // hits `if (!this.data)` and returns having applied nothing. A caller that
+        // "just writes" on first run silently loses the write.
+        const write = await page.evaluate(attemptStateWriteInPage);
+        record('update() on an empty origin applies nothing', write.applied === false,
+            `the producer RAN (applied=${write.applied}) — update() now self-initialises on an ` +
+            'empty origin; if that is intended, update the contract in CLAUDE.md and appInit.js');
+        record('update() does not throw when it refuses', write.threw === null,
+            `update() threw: ${write.threw}`);
+        record('a refused update leaves state not-ready', write.ready === false,
+            `isReady() became ${write.ready} after a refused write`);
+
+        // ── Phase 3: the first-run choice is what makes state ready ─────────────
+        await page.evaluate(() => {
+            const btn = document.querySelector('.first-run-btn[data-choice="learn"]');
+            if (btn && !btn.disabled) btn.click();
+        });
+        await page.waitForFunction(() => {
+            try {
+                const p = JSON.parse(localStorage.getItem('miniCycleData') || 'null');
+                const cycles = p && ((p.data && p.data.cycles) || p.cycles);
+                return cycles && Object.keys(cycles).length > 0;
+            } catch { return false; }
+        }, null, { timeout: 20000 });
+
+        const after = await page.evaluate(readStateReadinessInPage);
+        record('the first-run choice makes AppState ready', after.ready === true,
+            'isReady() is still false after a routine was persisted — either the first-run path ' +
+            'no longer adopts data, or this probe is holding a DIFFERENT module instance than the app');
+        record('AppState.get() returns data once ready', after.dataIsNull === false,
+            'isReady() is true but get() is null');
+
+        // ── Phase 4: the returning user — ready straight out of waitForCore() ───
+        await page.reload({ waitUntil: 'domcontentloaded', timeout: 20000 });
+        await page.waitForFunction(
+            () => document.documentElement.dataset.appLoaded === 'true', null, { timeout: 20000 });
+        const returning = await page.evaluate(readStateReadinessInPage);
+        record('a returning user IS state-ready after waitForCore()', returning.ready === true,
+            `isReady() was ${returning.ready} for a user whose data already exists — that would make ` +
+            'the null-guard the normal path rather than the first-run path');
+    } finally {
+        await context.close();
+    }
+
+    return { name: 'first-run state contract (core-ready ≠ state-ready)', failures };
+}
+
 const JOURNEYS = [
     { name: 'core (add → persist → cycle → offline)', fn: journeyCore },
     { name: 'routine switching', fn: journeyRoutineSwitch },
@@ -1199,6 +1325,7 @@ const JOURNEYS = [
     { name: 'factory reset admits what it cannot verify', fn: journeyResetHonesty },
     { name: 'reminder settings survive the quick-actions path', fn: journeyReminderSettings },
     { name: 'first-run restore accepts both backup formats', fn: journeyFirstRunRestore },
+    { name: 'first-run state contract (core-ready \u2260 state-ready)', fn: journeyFirstRunStateContract },
 ];
 
 async function run() {

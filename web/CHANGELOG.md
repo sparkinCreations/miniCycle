@@ -1,3 +1,7 @@
+## [2.516] - 2026-08-27
+- Pin the first-run state contract: core-ready is not state-ready. New test:journey case measures all four states (empty origin, refused write, after the first-run choice, returning user). quickActionsManager's appInit dep is now required() and read unguarded per CLAUDE.md #19.
+
+
 ## [2.515] - 2026-08-27
 - fix(history): cycle_completed logged the routine ID as its name — Schema 2.5 has no `name` field, so cycleData.name was always undefined
 

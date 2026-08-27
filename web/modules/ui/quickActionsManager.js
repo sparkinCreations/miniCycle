@@ -226,7 +226,7 @@ const ACTION_ICONS = {
 
 const di = createDIModule('QuickActionsManager', {
     AppState: required(),
-    appInit: optional(null),
+    appInit: required(),   // manifest declares this in `requires` — see the read in init()
     showNotification: required(),
     safeAddEventListener: optional(null),
     showStatsPanel: required(),
@@ -294,7 +294,15 @@ export class QuickActionsManager {
     async init() {
         if (this._initialized) return;
 
-        await _deps.appInit?.waitForCore();
+        // Unguarded on purpose (CLAUDE.md #19): appInit is `required()`, so `?.`
+        // here would silently skip the gate on a wiring failure instead of naming
+        // it. NOTE what this does NOT guarantee — core-ready is NOT state-ready.
+        // On a first run AppState has no data at this point, so _ensureData()'s
+        // update() below is refused and applies nothing; _getData() then serves
+        // defaults for the session and the seed lands on the next boot. Measured
+        // by the "first-run state contract" journey — do not assume the write here
+        // persists.
+        await _deps.appInit.waitForCore();
 
         // Ensure quickActions data exists in settings
         this._ensureData();

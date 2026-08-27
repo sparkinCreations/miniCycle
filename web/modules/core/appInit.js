@@ -143,6 +143,35 @@ class AppInit {
 		document.dispatchEvent(new Event('init:core-ready'));
 	}
 
+	/**
+	 * Resolve once core systems are up.
+	 *
+	 * WHAT THIS DOES NOT PROMISE: core-ready is NOT state-ready. On a first run
+	 * AppState.init() deliberately returns with `data = null` and
+	 * `isInitialized = false` (see appState._initializeInternal: "don't create data
+	 * if none exists"), and coreBoot marks core ready straight after — measured:
+	 * AppState.isReady() is false AT markCoreSystemsReady(). The first
+	 * AppState.update() adopts data via its own lazy init.
+	 *
+	 * So on a first run callers must GUARD READS (AppState.get() can be null) and
+	 * must not assume a WRITE lands either: AppState.update() awaits its own init(),
+	 * finds no data, warns "State not ready for updates" and returns WITHOUT running
+	 * the producer. A silent no-op, not a corrupting write — which is why the caller
+	 * audit in the catch below still concludes "don't bail".
+	 *
+	 * All four states (empty origin / refused write / after the first-run choice /
+	 * returning user) are measured and pinned by the "first-run state contract"
+	 * journey in `npm run test:journey`.
+	 *
+	 * Do NOT make this await AppState.isReady() to "close the gap": measured
+	 * Aug 2026, it deadlocks boot. State only becomes ready when something writes,
+	 * and every writer is a UI manager awaiting this gate — boot never completed
+	 * within 25s. The asymmetry is the design, not a defect.
+	 *
+	 * @param {number} [timeoutMs=10000] - Safety timeout
+	 * @returns {Promise<boolean>} true if core became ready; false if it timed out
+	 *          (DIAGNOSTIC — see the caller audit below; not for control flow)
+	 */
 	async waitForCore(timeoutMs = 10000) {
 		if (this.coreReady) {
 			return true;
@@ -174,10 +203,12 @@ class AppInit {
 			//
 			// CALLER AUDIT (Aug 2026) — why no caller branches on this, and why
 			// adding a bail-on-false would be a REGRESSION rather than a fix:
-			//   • WRITES are already safe. AppState.update() is async and awaits
-			//     its own init() before touching data, so a caller that proceeds
-			//     after `false` still writes correctly. The "lost write" this was
-			//     expected to prevent cannot happen through that path.
+			//   • WRITES cannot go WRONG here. AppState.update() awaits its own
+			//     init() before touching data: where data exists it writes
+			//     correctly, and on an empty origin it warns and returns without
+			//     running the producer at all (measured — see the first-run state
+			//     contract journey). Either way, proceeding after `false` cannot
+			//     produce the corrupted write that bailing was meant to prevent.
 			//   • READS are the real exposure: AppState.get() is synchronous and
 			//     returns null before init. Four post-await sites dereferenced it
 			//     unguarded (recurringPanel, recurringSettingsApplicator,
