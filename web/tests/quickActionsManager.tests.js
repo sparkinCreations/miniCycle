@@ -200,6 +200,48 @@ export async function runQuickActionsManagerTests(resultsDiv) {
         if (state.settings.quickActions.pinned[2] !== null) throw new Error('unpinAction should clear the slot');
     });
 
+    // A writer must never depend on the boot seed having happened. _ensureData()
+    // is best-effort: AppState.update() applies nothing while state has no data
+    // (core-ready is not state-ready), and a restore or cross-tab replacement can
+    // swap in settings without the block after init() has already run. These three
+    // used to `return` on a missing block, which dropped the write with no error
+    // and no log — the user pressed the control and nothing happened.
+    await test('cycleView writes even when settings.quickActions is absent', () => {
+        const { inst, state } = freshInstance({}); // no quickActions block
+        inst.cycleView('next');
+        const qa = state.settings.quickActions;
+        if (!qa) throw new Error('cycleView should have created the block');
+        // _getData()'s fallback view is 'recent' (index 1), so 'next' → 'frequent'.
+        if (qa.activeView !== 'frequent') throw new Error(`activeView should be frequent, got ${qa.activeView}`);
+    });
+
+    await test('pinAction writes even when settings.quickActions is absent', () => {
+        const { inst, state } = freshInstance({});
+        inst.pinAction(2, 'history');
+        if (state.settings.quickActions?.pinned[2] !== 'history') {
+            throw new Error(`pin dropped: ${JSON.stringify(state.settings.quickActions)}`);
+        }
+    });
+
+    await test('unpinAction writes even when settings.quickActions is absent', () => {
+        const { inst, state } = freshInstance({});
+        inst.unpinAction(0); // slot 0 is 'stats' in the defaults
+        if (state.settings.quickActions?.pinned[0] !== null) {
+            throw new Error(`unpin dropped: ${JSON.stringify(state.settings.quickActions)}`);
+        }
+    });
+
+    await test('writers repair a quickActions block with a missing pinned array', () => {
+        // Salvaged / hand-edited data can carry the block without its fields;
+        // the writers used to assume `.pinned` was an array and would throw.
+        const { inst, state } = freshInstance({ quickActions: { activeView: 'pinned' } });
+        inst.pinAction(1, 'history');
+        const pinned = state.settings.quickActions.pinned;
+        if (!Array.isArray(pinned) || pinned[1] !== 'history') {
+            throw new Error(`pinned not repaired: ${JSON.stringify(pinned)}`);
+        }
+    });
+
     await test('_ensureData seeds the default quickActions when absent', () => {
         const { inst, state } = freshInstance({}); // no quickActions
         inst._ensureData();

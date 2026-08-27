@@ -1313,6 +1313,114 @@ async function journeyFirstRunStateContract(browser, baseURL) {
     return { name: 'first-run state contract (core-ready ≠ state-ready)', failures };
 }
 
+// ── Journey 13: quick actions are writable during a FIRST-RUN session ───────
+// The other half of the state contract above, measured rather than assumed. The
+// worry was that quickActionsManager.init() runs while AppState is still empty
+// (making its _ensureData() seed a no-op) and that its writers, which used to
+// bail on `if (!s.settings?.quickActions) return;`, would then drop a brand-new
+// user's pins and view changes silently for the whole session.
+//
+// Measured: that does NOT happen. The UI_MANAGERS phase lands after boot has
+// persisted its first state, so `settings.quickActions` is already seeded before
+// a first-run user can reach the panel, and every write below survives a reload.
+// This journey exists to keep it that way — if the phase ever moves earlier, the
+// seed assertion here fails and says so instead of the panel going quietly dead.
+// (The writers no longer depend on that ordering either; quickActionsManager's
+// unit tests cover the block-absent case directly.)
+
+// Poll a page-side reader until it satisfies `ok`, so this waits on the real
+// persisted value rather than on a fixed sleep standing in for the debounced save.
+async function pollFor(read, ok, timeoutMs = 8000) {
+    const deadline = Date.now() + timeoutMs;
+    let last = await read();
+    while (!ok(last) && Date.now() < deadline) {
+        await new Promise(r => setTimeout(r, 200));
+        last = await read();
+    }
+    return last;
+}
+
+async function journeyFirstRunQuickActions(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    // The NORMAL openFresh path: it clicks the first-run choice, so this page is
+    // a genuine first-run session — the manager booted against empty state.
+    const { context, page } = await openFresh(browser, baseURL);
+    try {
+        const readQA = () => page.evaluate(() => {
+            try {
+                const p = JSON.parse(localStorage.getItem('miniCycleData') || 'null');
+                return (p && p.settings && p.settings.quickActions) || null;
+            } catch (e) { return null; }
+        });
+
+        // The boot seed WON the race — asserted, because everything after it
+        // depends on the ordering. If this ever comes back null, _ensureData()
+        // ran against empty state and a first-run user's panel is now writing
+        // into a block that does not exist.
+        const seeded = await readQA();
+        record('the boot seed lands before the user can reach the panel', seeded !== null,
+            'settings.quickActions is absent after first-run boot — the UI_MANAGERS phase now runs ' +
+            'before state is ready, so _ensureData() was refused');
+
+        // ── A view change, made AFTER state became ready ────────────────────
+        // VIEWS = ['pinned', 'recent', 'frequent']; the default view is 'recent',
+        // so one 'next' lands on 'frequent'.
+        const cycled = await page.evaluate(() => {
+            const btn = document.querySelector('.quick-actions-next');
+            if (!btn) return false;
+            btn.click();
+            return true;
+        });
+        record('the panel rendered its next-view control', cycled === true,
+            'no .quick-actions-next in the DOM — the panel never built its nav, so the rest of this journey is untested');
+
+        const afterCycle = await pollFor(readQA, (v) => v?.activeView === 'frequent');
+        record('a first-run view change is persisted', afterCycle?.activeView === 'frequent',
+            `settings.quickActions is ${JSON.stringify(afterCycle)} — the view change never reached storage`);
+
+        // ── A pin, through the real picker ──────────────────────────────────
+        // One more 'next' wraps to 'pinned', which is the view that renders empty
+        // slots; slot 0 holds the default 'stats' pin, so the first empty one is 1.
+        await page.evaluate(() => document.querySelector('.quick-actions-next')?.click());
+        await page.waitForFunction(
+            () => !!document.querySelector('.quick-actions-slot.empty'), null, { timeout: 8000 }
+        ).catch(() => { /* reported by the assertion below */ });
+
+        const picked = await page.evaluate(() => {
+            const slot = document.querySelector('.quick-actions-slot.empty');
+            if (!slot) return 'no-empty-slot';
+            slot.click();
+            const item = document.querySelector('.quick-actions-picker-item:not(.disabled)');
+            if (!item) return 'no-picker-item';
+            item.click();
+            return 'ok';
+        });
+        record('the picker opened from an empty slot', picked === 'ok',
+            `could not drive the pin flow: ${picked}`);
+
+        const afterPin = await pollFor(readQA, (v) => Array.isArray(v?.pinned) && v.pinned.some((id, i) => i > 0 && id));
+        record('a first-run pin is persisted', Array.isArray(afterPin?.pinned)
+            && afterPin.pinned.some((id, i) => i > 0 && id),
+            `pinned is ${JSON.stringify(afterPin?.pinned)} — pinAction's write never reached storage`);
+
+        // ── And it is still there for the user's next visit ─────────────────
+        await page.reload({ waitUntil: 'domcontentloaded', timeout: 20000 });
+        await page.waitForFunction(
+            () => document.documentElement.dataset.appLoaded === 'true', null, { timeout: 20000 });
+        const afterReload = await readQA();
+        record('the first-run session survives a reload', afterReload?.activeView === 'pinned'
+            && Array.isArray(afterReload?.pinned) && afterReload.pinned.some((id, i) => i > 0 && id),
+            `after reload settings.quickActions is ${JSON.stringify(afterReload)}`);
+
+        record('no starved dependencies', page.__diWarnings.length === 0,
+            `DI warnings: ${page.__diWarnings.join(' | ')}`);
+    } finally {
+        await context.close();
+    }
+
+    return { name: 'quick actions are writable during a first-run session', failures };
+}
+
 const JOURNEYS = [
     { name: 'core (add → persist → cycle → offline)', fn: journeyCore },
     { name: 'routine switching', fn: journeyRoutineSwitch },
@@ -1326,6 +1434,7 @@ const JOURNEYS = [
     { name: 'reminder settings survive the quick-actions path', fn: journeyReminderSettings },
     { name: 'first-run restore accepts both backup formats', fn: journeyFirstRunRestore },
     { name: 'first-run state contract (core-ready \u2260 state-ready)', fn: journeyFirstRunStateContract },
+    { name: 'quick actions are writable during a first-run session', fn: journeyFirstRunQuickActions },
 ];
 
 async function run() {

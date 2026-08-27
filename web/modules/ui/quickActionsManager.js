@@ -22,7 +22,7 @@ import { handleHorizontalArrowNav } from '../utils/keyboardNav.js';
 import { attachLongPressHint } from '../utils/longPressHint.js';
 // Uniform usage tracking — one delegated listener records every action-button click
 // (direct + the panel's synthetic clicks). See docs/archive/ACTION_DISPATCH_PLAN.md
-import { recordActionUsage, setupActionUsageTracking } from './actionUsage.js';
+import { recordActionUsage, setupActionUsageTracking, createQuickActionsDefaults, ensureQuickActions } from './actionUsage.js';
 
 // ============================================================================
 // CONSTANTS
@@ -296,12 +296,12 @@ export class QuickActionsManager {
 
         // Unguarded on purpose (CLAUDE.md #19): appInit is `required()`, so `?.`
         // here would silently skip the gate on a wiring failure instead of naming
-        // it. NOTE what this does NOT guarantee — core-ready is NOT state-ready.
-        // On a first run AppState has no data at this point, so _ensureData()'s
-        // update() below is refused and applies nothing; _getData() then serves
-        // defaults for the session and the seed lands on the next boot. Measured
-        // by the "first-run state contract" journey — do not assume the write here
-        // persists.
+        // it. NOTE what this does NOT guarantee — core-ready is NOT state-ready
+        // (see the first-run state contract journey), so _ensureData() below is a
+        // BEST-EFFORT seed: if AppState still has no data, its update() applies
+        // nothing and says nothing. Measured on a first run this phase does land
+        // after state is ready, so the seed normally wins — but that is timing,
+        // not a contract, which is why every writer ensures the block itself.
         await _deps.appInit.waitForCore();
 
         // Ensure quickActions data exists in settings
@@ -345,29 +345,17 @@ export class QuickActionsManager {
     // DATA MANAGEMENT
     // ========================================================================
 
+    // Best-effort boot seed. It is not the guarantee — every writer calls
+    // ensureQuickActions() for itself — because update() is a no-op whenever
+    // AppState has no data yet (CLAUDE.md: core-ready is not state-ready).
     _ensureData() {
-        const state = this.deps.AppState.get();
-        if (!state?.settings?.quickActions) {
-            this.deps.AppState.update(s => {
-                if (!s.settings) s.settings = {};
-                s.settings.quickActions = {
-                    pinned: ['stats', null, null, null, null],
-                    counts: {},
-                    recent: [],
-                    activeView: 'recent'
-                };
-            });
-        }
+        if (this.deps.AppState.get()?.settings?.quickActions) return;
+        this.deps.AppState.update(s => { ensureQuickActions(s); });
     }
 
     _getData() {
         const state = this.deps.AppState.get();
-        return state?.settings?.quickActions || {
-            pinned: ['stats', null, null, null, null],
-            counts: {},
-            recent: [],
-            activeView: 'recent'
-        };
+        return state?.settings?.quickActions || createQuickActionsDefaults();
     }
 
     _getActiveView() {
@@ -392,8 +380,7 @@ export class QuickActionsManager {
         const nextView = VIEWS[nextIndex];
 
         this.deps.AppState.update(s => {
-            if (!s.settings?.quickActions) return;
-            s.settings.quickActions.activeView = nextView;
+            ensureQuickActions(s).activeView = nextView;
         });
 
         this._renderAllPanels();
@@ -1049,8 +1036,7 @@ export class QuickActionsManager {
 
     pinAction(slotIndex, actionId) {
         this.deps.AppState.update(s => {
-            if (!s.settings?.quickActions) return;
-            s.settings.quickActions.pinned[slotIndex] = actionId;
+            ensureQuickActions(s).pinned[slotIndex] = actionId;
         });
 
         this._renderAllPanels();
@@ -1059,8 +1045,7 @@ export class QuickActionsManager {
 
     unpinAction(slotIndex) {
         this.deps.AppState.update(s => {
-            if (!s.settings?.quickActions) return;
-            s.settings.quickActions.pinned[slotIndex] = null;
+            ensureQuickActions(s).pinned[slotIndex] = null;
         });
 
         this._renderAllPanels();
