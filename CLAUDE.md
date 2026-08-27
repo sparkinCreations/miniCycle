@@ -338,7 +338,21 @@ orchestrator.js (sequence control + boot UI + early boot coordination)
 
 - **All DI wiring happens in featureBoot.js** via moduleLoader manifests
 - Wire dependencies BEFORE creating instances
-- Use `await appInit.waitForCore()` before accessing AppState
+- Use `await appInit.waitForCore()` before accessing AppState — but note what it
+  does **not** promise: **core-ready does not mean state-ready.** On a first run
+  `AppState.init()` deliberately returns with `data = null` and
+  `isInitialized = false` ("don't create data if none exists — let the main app
+  handle this"), so after `await waitForCore()` a brand-new user's `AppState.get()`
+  is still `null` and `isReady()` is still `false` — and `AppState.update()` is a
+  **no-op**: it awaits its own `init()`, finds no data, warns "State not ready for
+  updates" and returns *without running the producer*. State becomes ready when the
+  first-run choice screen persists a routine. A **returning** user, whose data is
+  already in storage, IS state-ready the moment `waitForCore()` resolves.
+  So on first run: **guard reads, and don't assume writes land.** Do NOT "fix" this
+  by making `waitForCore()` await `isReady()` — measured Aug 2026, that deadlocks
+  boot: state only becomes ready once something writes, and every writer is a UI
+  manager waiting on that same gate. All four states are pinned by the
+  **first-run state contract** journey in `npm run test:journey`.
 
 ### miniCycle.html Head — Two Load-Order Contracts
 

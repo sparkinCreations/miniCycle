@@ -1,3 +1,15 @@
+## [2.517] - 2026-08-27
+- Quick Actions writers seed settings.quickActions themselves instead of bailing on it, via a shared ensureQuickActions() in actionUsage.js. Not a user-visible bugfix — measured, the boot seed does win the race on a first run — but it removes the silent-drop trap and a throw on data whose pinned array is missing.
+
+
+## [2.516] - 2026-08-27
+- Pin the first-run state contract: core-ready is not state-ready. New test:journey case measures all four states (empty origin, refused write, after the first-run choice, returning user). quickActionsManager's appInit dep is now required() and read unguarded per CLAUDE.md #19.
+
+
+## [2.515] - 2026-08-27
+- fix(history): cycle_completed logged the routine ID as its name — Schema 2.5 has no `name` field, so cycleData.name was always undefined
+
+
 ## [2.514] - 2026-08-26
 - fix(labels): wire the preset label block that was written and never used — preferencesPresets rendered its own hardcoded duplicates of all 27 strings — plus the saved-preset row's buttons and the second reminder-notification title
 

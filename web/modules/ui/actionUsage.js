@@ -66,6 +66,47 @@ export const VALID_ACTION_IDS = Object.freeze(new Set([
 ]));
 
 /**
+ * The shape `settings.quickActions` is expected to have. One factory, because
+ * this literal used to be copied into four separate places.
+ * @returns {{pinned: (string|null)[], counts: Object, recent: string[], activeView: string}}
+ */
+export function createQuickActionsDefaults() {
+    return {
+        pinned: ['stats', null, null, null, null],
+        counts: {},
+        recent: [],
+        activeView: 'recent'
+    };
+}
+
+/**
+ * Ensure `settings.quickActions` (and each of its fields) exists on the state
+ * object INSIDE an AppState.update() producer, and hand it back.
+ *
+ * Every writer calls this rather than bailing on a missing block. A producer
+ * only ever runs on real state, so creating the block here always succeeds —
+ * whereas `if (!s.settings?.quickActions) return;` turned any state that lacked
+ * it into a silent dropped write with nothing logged. quickActionsManager's
+ * boot-time seed does normally win the race (measured: `settings.quickActions`
+ * is present before a first-run user can reach the panel), so this is belt-and-
+ * braces for the states that seed cannot cover — a restore or a cross-tab
+ * replacement that swaps in data without the block after init() has already run.
+ *
+ * @param {Object} s - the mutable state object handed to an update() producer
+ * @returns {{pinned: (string|null)[], counts: Object, recent: string[], activeView: string}}
+ */
+export function ensureQuickActions(s) {
+    if (!s.settings) s.settings = {};
+    if (!s.settings.quickActions) s.settings.quickActions = createQuickActionsDefaults();
+
+    const qa = s.settings.quickActions;
+    if (!Array.isArray(qa.pinned)) qa.pinned = createQuickActionsDefaults().pinned;
+    if (!qa.counts || typeof qa.counts !== 'object') qa.counts = {};
+    if (!Array.isArray(qa.recent)) qa.recent = [];
+    return qa;
+}
+
+/**
  * Record one use of an action — increments its frequency count and pushes it to the
  * front of the recent (MRU) list. The ONLY writer of `counts`/`recent`.
  * @param {Object} AppState - the AppState instance (has `.update`)
@@ -76,21 +117,10 @@ export function recordActionUsage(AppState, actionId) {
     if (!AppState?.update || !VALID_ACTION_IDS.has(actionId)) return;
 
     AppState.update(s => {
-        if (!s.settings) s.settings = {};
-        if (!s.settings.quickActions) {
-            s.settings.quickActions = {
-                pinned: ['stats', null, null, null, null],
-                counts: {},
-                recent: [],
-                activeView: 'recent'
-            };
-        }
-        const qa = s.settings.quickActions;
+        const qa = ensureQuickActions(s);
 
-        if (!qa.counts) qa.counts = {};
         qa.counts[actionId] = (qa.counts[actionId] || 0) + 1;
 
-        if (!qa.recent) qa.recent = [];
         qa.recent = qa.recent.filter(id => id !== actionId);
         qa.recent.unshift(actionId);
         if (qa.recent.length > MAX_RECENT) {
