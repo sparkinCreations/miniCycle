@@ -1,3 +1,7 @@
+## [2.515] - 2026-08-27
+- fix(history): cycle_completed logged the routine ID as its name — Schema 2.5 has no `name` field, so cycleData.name was always undefined
+
+
 ## [2.514] - 2026-08-26
 - fix(labels): wire the preset label block that was written and never used — preferencesPresets rendered its own hardcoded duplicates of all 27 strings — plus the saved-preset row's buttons and the second reminder-notification title
 
