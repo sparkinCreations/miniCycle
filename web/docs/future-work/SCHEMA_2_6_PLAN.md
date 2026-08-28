@@ -192,20 +192,43 @@ users something untrue about a format that did not change.
 
 **Rename A does touch it.** `deleteWhenCompleteSettings` and `deleteWhenComplete` are part of
 the published format (`mcyc.schema.json`, `schema/mcyc-2.5.schema.json`, and 8 mentions in
-`pages/mcyc-format.html`). Obligations:
+`pages/mcyc-format.html`).
 
-1. **`schema/mcyc-2.5.schema.json` must not change.** `pages/mcyc-format.html` publishes it
-   as *"Pinned to format 2.5. Never changes. Reference this from CI."* That is an external
-   promise to anyone validating shared files.
-2. Publish a new **`schema/mcyc-2.6.schema.json`** and add its row to the format page's
+**The rules here are already published**, on <https://minicycle.app/pages/mcyc-format>. They
+are a public commitment to anyone building on the format, not an internal convention this
+plan gets to set:
+
+> *"Our intent for anything built on this: existing files keep importing. New fields may be
+> added, so treat unknown keys as ignorable rather than as errors, which is also how the app
+> treats them."*
+>
+> *"Each format version gets its own permanent URL (`/schema/mcyc-2.5.schema.json` today),
+> and a version that has shipped is never edited in place. If the format reaches 2.6, that
+> becomes a new file and the 2.5 document stays exactly as it is."*
+
+The page names this exact scenario by version number, so Rename A's obligations are already
+decided:
+
+1. **`schema/mcyc-2.5.schema.json` is immutable.** Not "avoid changing" — the promise is that
+   anything pinned to it keeps validating as it did the day it was pinned.
+2. **Publish `schema/mcyc-2.6.schema.json`** beside it and add its row to the format page's
    version table.
-3. Update the rolling **`mcyc.schema.json`** to describe `autoClear`, keeping
-   `deleteWhenCompleteSettings` as an **accepted alias** — files already in the wild carry it.
-4. `cycleImportManager` accepts both keys; `mcycPayload` / `cycleExportManager` write only
-   `autoClear`.
+3. Update the rolling **`mcyc.schema.json`** to describe `autoClear`. Adding a field is
+   explicitly anticipated ("new fields may be added").
+4. **`cycleImportManager` accepts `deleteWhenCompleteSettings` permanently.** "Existing files
+   keep importing" has no end date, so this is an alias, not a deprecation window. Add one
+   import test per alias so a future cleanup that drops it fails loudly.
+5. `mcycPayload` / `cycleExportManager` write `autoClear`. Optionally *also* write the legacy
+   key for a few releases: the published promise only says unknown keys must not error, so an
+   older app reading a new file falls back to defaults and silently loses the author's choice
+   (measured — that is the documented default path). Dual-writing exceeds the commitment
+   rather than fulfilling it; worth it for shared files, but it is a product call, not an
+   obligation.
 
-**The `.mcyc` format version and the app schema version are independent lines** that both
-read "2.5" today. Do not bump one because the other moved.
+**Three version lines exist here, and they move independently:** the app data schema
+(`"2.5"`), the `.mcyc` format (no field in the document at all — detect by key presence), and
+the per-task integer `schemaVersion` (`2`). Do not bump one because another moved.
+`docs/reference/MCYC_FILE_FORMAT.md` conflated the first two until Aug 2026.
 
 ---
 

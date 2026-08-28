@@ -1,7 +1,37 @@
 # .mcyc File Format Documentation
 
-**Schema Version:** 2.5
-**Last Updated:** July 2026
+**Last Updated:** August 2026
+**Normative spec:** <https://minicycle.app/pages/mcyc-format> (source: `web/pages/mcyc-format.html`)
+
+> **This page is the long-form companion, not the specification.** The published page above
+> is what third parties build against and what carries miniCycle's compatibility commitments.
+> Where the two disagree, **the published page wins** and this file is the bug.
+>
+> **A `.mcyc` file is one routine.** Its root is `name` + `tasks` (plus optional `title`,
+> `autoReset`, `deleteCheckedTasks`, `cycleCount`, `theme`, `recurringTemplates`), matching
+> `/mcyc.schema.json`. Whole-app exports are a **different file type** — see
+> [Full-state `.json` backups](#full-state-json-backups-not-mcyc), which are *not* `.mcyc`
+> and are *not* accepted by the routine importer.
+
+### Compatibility commitment
+
+Quoted from the published spec, because it is a promise to anyone building on the format —
+not an internal convention that can be revised by editing this file:
+
+> *"Our intent for anything built on this: existing files keep importing. New fields may be
+> added, so treat unknown keys as ignorable rather than as errors, which is also how the app
+> treats them."*
+>
+> *"Each format version gets its own permanent URL (`/schema/mcyc-2.5.schema.json` today),
+> and a version that has shipped is never edited in place."*
+
+Two consequences worth stating plainly for anyone changing the importer:
+
+- **A key that has ever been written must keep importing — permanently.** A rename adds an
+  alias; it never replaces one. There is no deprecation window, because the commitment above
+  has no end date.
+- **A shipped `/schema/mcyc-*.schema.json` is immutable.** A new format version is a new file
+  beside the old one, never an edit to it.
 
 ---
 
@@ -13,7 +43,7 @@
   - [Method 2: Create Manually](#method-2-create-manually)
 - [File Structure](#file-structure)
   - [Simple Format (Single Cycle)](#simple-format-single-cycle)
-  - [Complete Format (Schema 2.5)](#complete-format-schema-25)
+- [Full-state `.json` backups (not .mcyc)](#full-state-json-backups-not-mcyc)
 - [Schema Reference](#schema-reference)
   - [Task Object](#task-object)
   - [Cycle Object](#cycle-object)
@@ -105,11 +135,13 @@ For developers or advanced users, you can create `.mcyc` files manually:
 
 ## File Structure
 
-miniCycle supports two file formats:
+A `.mcyc` file has exactly one shape: a single routine. (An older revision of this page
+described a second "complete" `.mcyc` variant; that was wrong — see
+[Full-state `.json` backups](#full-state-json-backups-not-mcyc).)
 
 ### Simple Format (Single Cycle)
 
-Used for individual cycle exports. Lightweight and easy to edit.
+The `.mcyc` format. Lightweight and easy to edit.
 
 ```json
 {
@@ -127,7 +159,7 @@ Used for individual cycle exports. Lightweight and easy to edit.
 | Property | Type | Required | Description |
 |----------|------|----------|-------------|
 | `name` | string | Yes | Unique identifier for the cycle |
-| `title` | string | Yes | Display name shown in UI |
+| `title` | string | No | Display name shown in UI. Falls back to `name` when omitted — `/mcyc.schema.json` requires only `name` and `tasks` |
 | `tasks` | array | Yes | Array of task objects |
 | `autoReset` | boolean | No | Auto-reset when all tasks complete (default: `true`) |
 | `cycleCount` | number | No | Number of times cycle completed (default: `0`) |
@@ -135,9 +167,30 @@ Used for individual cycle exports. Lightweight and easy to edit.
 
 ---
 
-### Complete Format (Schema 2.5)
+## Full-state `.json` backups (not .mcyc)
 
-Full application state export. Includes settings, metadata, and multiple cycles.
+**This is a different file type, and it is not a `.mcyc` file.** It is included here because
+people look for it on this page, but nothing exports it with a `.mcyc` extension and the
+routine importer rejects it.
+
+| | `.mcyc` routine | full-state backup |
+|---|---|---|
+| Extension | `.mcyc` | `.json` (forced by `backupRestoreManager`) |
+| Contains | one routine | the whole app document |
+| Written by | `cycleExportManager` via `buildMcycPayload()` | `backupRestoreManager` |
+| Read by | the routine import button (`processImportedData`) | Settings → Restore, and the pre-boot rescue screen |
+| Described by | `/mcyc.schema.json` | `docs/reference/SCHEMA_2_5.md` |
+
+`processImportedData` opens with a hard gate:
+
+```javascript
+if (!importedData.name || !Array.isArray(importedData.tasks)) { /* rejected */ }
+```
+
+A full-state file has neither key at its root, so **handing one to the routine importer
+produces "invalid format."** That is expected — restore it through Settings instead.
+
+Its shape follows the app's stored document (see `SCHEMA_2_5.md`, which is normative for it):
 
 ```json
 {
@@ -215,7 +268,8 @@ Every task in the `tasks` array uses this structure:
 
 ### Cycle Object
 
-When using the complete format, each cycle is stored in `data.cycles`:
+In a full-state backup each cycle is stored under `data.cycles` (in a `.mcyc`, the routine
+*is* the root object and there is no such map):
 
 ```json
 {
@@ -342,7 +396,8 @@ legacy alias when reading old files).
 
 ### Settings Object
 
-Application-wide settings (Complete format only):
+Application-wide settings. These live in a **full-state backup only** — a `.mcyc` carries no
+`settings` object:
 
 ```json
 {
@@ -1111,7 +1166,15 @@ python3 create_mcyc.py
 
 ---
 
-## Schema Version History
+## Version history
+
+**Two version lines exist and they move independently.** Conflating them is the single
+easiest mistake to make here.
+
+### App data schema — the stored document
+
+Versions the app's own state has passed through. This is what "Schema 2.5" refers to
+everywhere else in the docs, and it is *not* stamped on a `.mcyc` file.
 
 | Version | Date | Changes |
 |---------|------|---------|
@@ -1119,7 +1182,21 @@ python3 create_mcyc.py
 | **2.0** | Oct 2024 | Added recurring tasks, settings |
 | **1.0** | 2023 | Initial schema |
 
-**Backward Compatibility:** miniCycle automatically migrates older schemas to 2.5.
+Older stored data is migrated forward automatically on load (`migrationManager.js`).
+
+### `.mcyc` file format
+
+A `.mcyc` document carries **no format-version field**. Tasks inside it carry an integer
+`schemaVersion` (currently `2`) — a third, separate line again. Readers should detect
+capability by key presence, not by a version stamp.
+
+| Schema document | Status |
+|---|---|
+| [`/mcyc.schema.json`](https://minicycle.app/mcyc.schema.json) | Rolling; tracks the current format. May gain fields. |
+| [`/schema/mcyc-2.5.schema.json`](https://minicycle.app/schema/mcyc-2.5.schema.json) | Pinned and **immutable**. Pin this for CI. |
+
+**Backward compatibility:** existing files keep importing — see
+[Compatibility commitment](#compatibility-commitment) at the top of this page.
 
 ---
 
