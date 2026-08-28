@@ -1183,4 +1183,12 @@ python3 create_mcyc.py
 
 ---
 
+> **Planned change:** [SCHEMA_2_6_PLAN.md](../future-work/SCHEMA_2_6_PLAN.md) renames the
+> per-task `deleteWhenCompleteSettings` to `autoClear` and drops the derived
+> `deleteWhenComplete` mirror. That change **does** alter this format, so it adds a
+> `schema/mcyc-2.6.schema.json` and leaves the pinned 2.5 schema untouched. The
+> `cycles` → `routine` rename in that same plan does **not** affect this format.
+
+---
+
 **Happy task cycling! 🎯**
