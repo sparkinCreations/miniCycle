@@ -1,13 +1,79 @@
-# Large Module Splits Plan
+# Large Module Splits Plan — ✅ CLOSED
 
 **Date:** March 15, 2026
 **Updated:** August 21 2026 — four previously-unassessed modules given verdicts; scripts brought into scope (`update-version.sh`); the last inline line counts removed, since the doc had retired them in principle but kept four in practice and all four had drifted. August 2026 — Priority 2 (statsPanel) SHIPPED (commit `806f8082`); line-count table retired (numbers rot — see [PROJECT_STATS.md](../PROJECT_STATS.md)). July 7, 2026 — god-module audit: added statsPanel (Priority 2), orchestrator assessment, false-positive list
 **Updated:** Aug 25 2026 — `guidedTourManager` assessed and the "borderline (sequential step content)" row RETIRED: it is **not** a god module (fan-out is 9 infrastructure deps and zero feature modules; one `innerHTML` in 1,962 lines), but half the file was data + repetition. Opened as **Priority 9 — a dedup, not a split** and CLOSED the same day at 1,193 lines (v2.503 + v2.504), the first worked example on this page of the `settingsUIManager` remedy.
 **Updated:** Aug 23 2026 — Priority 1 shipped; Priority 7 stage 1 (CSP hashes) shipped in v2.488 and the `?v=` stage re-scoped after checking what content hashing actually replaced; execution order, DONE condition and the pattern guidance all revised against what the work actually showed.
-**Status:** In progress — **Priorities 1-9 all closed** — 4 SHIPPED and 5 recorded as a NON-SPLIT on Aug 25 2026; Priority 7's remaining `?v=` sweep is re-scoped and trigger-based. **No scheduled work remains on this page.** **Priority 9 (`guidedTourManager`) OPENED Aug 25 2026 — a DEDUP, not a split: 50% of the file measured as declarative data + twelve near-identical prompt functions; not a god module, but over target and cheaply fixable. ✅ CLOSED v2.504 — both moves shipped: 1,962 → 1,193, 63 → 70 tests, no new facade and no wiring layer touched.** **Priority 8 (`onboardingManager`) OPENED Aug 24 2026; CLOSED Aug 25 2026 — steps 1-3 shipped (v2.499 demo, v2.500 splash, v2.501 carousel): 2,534 → 1,052, eighteen new tests** — a god module the page had mislabelled "borderline" and left unscheduled. Priority 3 CLOSED Aug 24 2026 at 1,636 lines — **above the ~1,500 target, deliberately**; the remaining bulk is the 10-dep undo/redo execution core, recorded as a non-split with evidence. Priority 1 SHIPPED Aug 23 2026 in v2.484 (five extractions, 2,649 → 1,587 lines, 83 new tests). **Aug 21 2026 review:** added a DONE condition (~1,500-line target, everything else trigger-based); rewrote the per-extraction checklist around the gates that caught the two defects the completed splits shipped (`test:sw`, `validate:provides`); corrected the "provides stays the same" promise the statsPanel split falsified; pulled the release script's CSP stage forward from Priority 7
-**Related:** [DI_MIGRATION_COMPLETION_PLAN.md](../archive/DI_MIGRATION_COMPLETION_PLAN.md), [ENFORCE_REQUIRES_ROLLOUT_PLAN.md](../archive/ENFORCE_REQUIRES_ROLLOUT_PLAN.md)
+**Status: ✅ CLOSED — August 28 2026.** All nine priorities resolved; no scheduled work remains.
+Re-open nothing here. If the codebase drifts again, open a NEW plan rather than reviving this one —
+that is this document's own rule, and it is the last one it gets to enforce.
 
----
+## What this plan did
+
+**Nine priorities, seven splits, two recorded non-splits.**
+
+| # | Module | Outcome |
+|---|--------|---------|
+| 1 | `routineSwitcher` | SHIPPED v2.484 — 2,649 → 1,590, five sub-modules |
+| 2 | `statsPanel` | SHIPPED `806f8082` — gestures + rewards |
+| 3 | `undoRedoManager` | CLOSED v2.495-v2.498 — 2,306 → 1,636, three sub-modules |
+| 4 | `recurringPanel` | SHIPPED v2.518 — 1,754 → 1,521, sixth sub-module |
+| 5 | `taskDOM` | **NON-SPLIT** — measured, declined, evidence recorded |
+| 6 | `notifications` | SHIPPED v2.463 — `educationalTips` |
+| 7 | `update-version.sh` | Two stages extracted (CSP hashes, `restore.sh`); 2,528 → 2,362 |
+| 8 | `onboardingManager` | CLOSED v2.499-v2.501 — 2,534 → 1,052, three sub-modules |
+| 9 | `guidedTourManager` | CLOSED v2.504 — 1,962 → 1,193, a **dedup**, not a split |
+
+**15 sub-modules, ~5,360 lines**, plus two testable release-script stages (`csp_hash_sync.py`,
+`generate_restore_script.py`) that could previously only be exercised by cutting a real release.
+
+## What it got wrong, and what that is worth
+
+Every module this page *predicted* something about, it predicted wrong at least once. The
+predictions were made by reading; the corrections came from measuring.
+
+- **Sizes were wrong in both directions.** `undoIndexedDB` was estimated at ~190 lines and measured
+  320. The `taskDOM` wrapper region was ~450 and measured 531. Only Priority 4 landed close.
+- **Risk ratings did not survive contact.** Priority 3 rated its two seams identically; one reached
+  2 in-file functions and owned its state, the other reached 4 and called into the first.
+- **The named target was sometimes the wrong one.** Priority 3 scheduled `captureStateSnapshot` —
+  measured, it is the *least* extractable function in the file, while the five functions AROUND it
+  had zero dependencies. **Measure a function's neighbours before its body.**
+- **A verdict was flatly wrong.** `onboardingManager` sat unscheduled as "borderline (sequential
+  step content)" — 13 lines of template HTML in 2,534, and four interactive subsystems. The
+  identical label on `guidedTourManager` turned out to be right, for different reasons. Only
+  measuring told them apart.
+- **Two modules had no verdict at all** until Aug 24 2026, one of which was the largest non-data
+  module on the page.
+
+## What generalises
+
+1. **Seam width beats line count.** Two files closed above the ~1,500 target on purpose
+   (`undoRedoManager` at 1,636, `taskDOM` untouched) because the remaining code is genuinely
+   entangled. A recorded non-split with evidence is a result, not a failure.
+2. **"No deps" is not "pure."** `saveToUndoCache` and `loadFromUndoCache` declare zero dependencies
+   and touch `localStorage`; they stayed. Check globals, not just the DI surface.
+3. **Price the seam against the pattern the app already uses.** The same cluster is expensive as a
+   callback bag and free via `this.m`, and which applies depends on whether the parent is a class —
+   `undoRedoManager` has none, `onboardingManager` does.
+4. **Write the tests before the move, and make them fail once.** Every defect introduced during
+   these extractions was caught by a test written beforehand: a shadowed parameter, a dropped
+   fixture override, a `Set` that is an `Array` by the time callers see it, a `close` that only
+   *looked* like it cancelled pending writes.
+5. **The gates that caught real defects were `test:sw` and `validate:provides`,** neither of which
+   `npm test` runs.
+
+## Where the code stands
+
+Ten non-data modules remain over 1,500 lines and **every one carries a verdict**: deferred
+infrastructure (`moduleLoader`, `migrationManager`), already-split and trigger-based (`taskDOM`,
+`recurringPanel`, `notifications`, `routineSwitcher`), assessed not-a-god-module
+(`taskViewLayoutManager`, `quickActionsManager`, `preferencesManager`), and one closed above target
+with evidence (`undoRedoManager`).
+
+The one live follow-up is not a split: **`preferencesManager.setupEventListeners` is 459 lines** —
+23% of that file, 65 branches across 25 DOM ids — and wants extracting **in place**, next time
+someone is in that file for another reason.
 
 ## Problem
 
