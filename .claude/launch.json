@@ -4,23 +4,45 @@
     {
       "name": "miniCycle-web",
       "runtimeExecutable": "sh",
-      "runtimeArgs": ["-c", "python3 -m http.server \"${PORT:-8080}\""],
+      "runtimeArgs": [
+        "-c",
+        "python3 -m http.server \"${PORT:-8080}\""
+      ],
       "autoPort": true,
       "cwd": "web"
     },
     {
       "name": "miniCycle-web-alt",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "8081"],
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8081"
+      ],
       "port": 8081,
       "cwd": "web"
     },
     {
       "name": "miniCycle-dist",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "8082"],
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8082"
+      ],
       "port": 8082,
       "cwd": "web/dist"
+    },
+    {
+      "name": "miniCycle-tests-8080",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8080"
+      ],
+      "port": 8080,
+      "cwd": "web"
     }
   ]
 }

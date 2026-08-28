@@ -71,9 +71,24 @@ infrastructure (`moduleLoader`, `migrationManager`), already-split and trigger-b
 (`taskViewLayoutManager`, `quickActionsManager`, `preferencesManager`), and one closed above target
 with evidence (`undoRedoManager`).
 
-The one live follow-up is not a split: **`preferencesManager.setupEventListeners` is 459 lines** —
-23% of that file, 65 branches across 25 DOM ids — and wants extracting **in place**, next time
-someone is in that file for another reason.
+The one live follow-up was not a split, and is now **done**:
+**`preferencesManager.setupEventListeners` went 455 → 14 lines** (Aug 28 2026), broken into six
+per-concern private methods **in place** — no new file, no DI, no manifest entry, nothing to wire.
+
+Because it is pure code MOTION, the regression net is a **wiring snapshot** rather than behavioural
+tests: a spying `safeAddEventListener` records every `(element, event)` pair the method registers,
+and asserts the same set afterwards. That is the exact failure mode of moving 455 lines — not a
+crash, but one block quietly not running, leaving a control that silently does nothing. Verified by
+deleting a section: the test names it (`not wired: toggle-solid-stats-bg`).
+
+The method had **zero test references** before this. It now has four.
+
+**This is what "repetition, not spread" looks like when you fix it.** `_wireVisibilityToggles` is
+150 of the 447 moved lines and is eight near-identical blocks — that repetition is why
+`preferencesManager` is not a god module, and why the remedy was method extraction rather than a
+sub-module.
+
+**No follow-ups remain.**
 
 ## Problem
 

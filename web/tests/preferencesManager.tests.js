@@ -16,6 +16,117 @@ export async function runPreferencesManagerTests(resultsDiv) {
     // ============================================
     resultsDiv.innerHTML += '<h4 class="test-section">📦 Module Loading</h4>';
 
+    // =========================================================
+    // 🔌 setupEventListeners wiring snapshot — WRITTEN BEFORE THE REFACTOR
+    // =========================================================
+    // setupEventListeners is 459 lines, ~23% of this file, and had ZERO test
+    // references. It is being broken into per-concern private methods; that is
+    // pure code MOTION, so the invariant that matters is simple and total: the
+    // same set of (element, event) pairs must still be wired afterwards.
+    //
+    // This records the whole wiring map rather than asserting a handful of
+    // elements, because the failure mode of moving 459 lines is not a crash — it
+    // is one block quietly not running, leaving a control that silently does
+    // nothing. A count plus a full pair list catches exactly that.
+
+    /** Every id/selector the method wires, so the fixture DOM is complete. */
+    const PREF_WIRED_IDS = [
+        'open-preferences', 'personalization-btn', 'close-preferences-btn',
+        'preferences-open-themes', 'pref-pattern-color', 'pref-pattern-opacity',
+        'toggle-checkbox-fill', 'toggle-checkbox-incomplete', 'toggle-bg-pattern',
+        'toggle-solid-list-bg', 'toggle-solid-stats-bg', 'toggle-bg-image-visible',
+        'toggle-help-window', 'toggle-quick-actions', 'pref-toast-select',
+        'toggle-completion-animation', 'toggle-completion-toast', 'preferences-reset-all',
+        'pref-save-preset', 'pref-import-preset', 'preferences-undo',
+        'bg-image-upload', 'bg-image-upload-btn', 'bg-image-remove-btn', 'bg-image-mode'
+    ];
+
+    function prefFixture() {
+        const host = document.createElement('div');
+        host.id = 'pref-wiring-fixture';
+        host.innerHTML = PREF_WIRED_IDS.map(id =>
+            `<input type="checkbox" id="${id}">`).join('')
+            + '<div class="preferences-modal-content"></div>'
+            + '<div class="preferences-section"><div class="preferences-section-header"></div></div>'
+            + '<button class="quick-preset-btn"></button><button class="preferences-reset-btn"></button>';
+        document.body.appendChild(host);
+        return host;
+    }
+
+    /** Wire the manager with a spying safeAddEventListener and return the map. */
+    function captureWiring() {
+        const wired = [];
+        mod.setPreferencesManagerDependencies({
+            AppState: { get: () => ({ settings: {} }), update: () => {}, isReady: () => true },
+            getElementById: (id) => document.getElementById(id),
+            querySelector: (sel) => document.querySelector(sel),
+            querySelectorAll: (sel) => document.querySelectorAll(sel),
+            safeAddEventListener: (el, event) => {
+                wired.push(`${el?.id || el?.className || el?.nodeName || '?'}:${event}`);
+            },
+            showNotification: () => {}
+        });
+        const instance = new mod.PreferencesManager();
+        instance.setupEventListeners();
+        return wired;
+    }
+
+    await test('setupEventListeners wires a substantial, stable set of controls', async () => {
+        const host = prefFixture();
+        try {
+            const wired = captureWiring();
+            // Guards the whole point: if a moved block stops running, this drops.
+            if (wired.length < 20) {
+                throw new Error(`only ${wired.length} listener(s) wired — a block is not running: ${wired.join(', ')}`);
+            }
+        } finally { host.remove(); }
+    });
+
+    await test('setupEventListeners wires every toggle, input and action control', async () => {
+        // Named explicitly so a silently-skipped section names itself in the failure.
+        const host = prefFixture();
+        try {
+            const wired = captureWiring().join(' ');
+            const expected = [
+                'open-preferences', 'close-preferences-btn', 'preferences-open-themes',
+                'pref-pattern-color', 'pref-pattern-opacity',
+                'toggle-checkbox-fill', 'toggle-checkbox-incomplete', 'toggle-bg-pattern',
+                'toggle-solid-list-bg', 'toggle-solid-stats-bg', 'toggle-bg-image-visible',
+                'toggle-help-window', 'toggle-quick-actions',
+                'pref-toast-select', 'toggle-completion-animation', 'toggle-completion-toast',
+                'preferences-reset-all', 'pref-save-preset', 'pref-import-preset', 'preferences-undo'
+            ];
+            const missing = expected.filter(id => !wired.includes(id));
+            if (missing.length) throw new Error(`not wired: ${missing.join(', ')}`);
+        } finally { host.remove(); }
+    });
+
+    await test('setupEventListeners is idempotent in the wiring it reports', async () => {
+        // Two runs on the same DOM must produce the same map; a refactor that made
+        // one section conditional on first-run state would show up here.
+        const host = prefFixture();
+        try {
+            const a = captureWiring().sort().join('|');
+            const b = captureWiring().sort().join('|');
+            if (a !== b) throw new Error('the wiring map changed between two identical runs');
+        } finally { host.remove(); }
+    });
+
+    await test('setupEventListeners bails cleanly when safeAddEventListener is absent', async () => {
+        // First branch in the method: without the dep there is nothing safe to do.
+        const host = prefFixture();
+        try {
+            mod.setPreferencesManagerDependencies({
+                AppState: { get: () => ({ settings: {} }), update: () => {}, isReady: () => true },
+                getElementById: (id) => document.getElementById(id),
+                safeAddEventListener: null
+            });
+            let threw = null;
+            try { new mod.PreferencesManager().setupEventListeners(); } catch (e) { threw = e; }
+            if (threw) throw new Error(`should no-op without the dep, threw: ${threw.message}`);
+        } finally { host.remove(); }
+    });
+
     await test('setPreferencesManagerDependencies is exported as a function', () => {
         if (typeof mod.setPreferencesManagerDependencies !== 'function') throw new Error('Missing export');
     });

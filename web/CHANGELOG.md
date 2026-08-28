@@ -1,3 +1,11 @@
+## [2.519] - 2026-08-28
+- docs(splits): close the plan — nine priorities resolved, and what it got wrong
+- docs(mcyc): the internal format doc contradicted the published spec
+- docs(schema-2.6): rewrite the plan against measured reality
+- test: pin the delete-when-complete reconciliation that prevents task loss
+- refactor(preferences): setupEventListeners 455 -> 14 lines, six per-concern methods in place
+
+
 ## [2.518] - 2026-08-28
 - refactor(recurring): extract the add-recurring-task flow, closing Priority 4
 

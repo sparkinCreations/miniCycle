@@ -380,6 +380,25 @@ export class PreferencesManager {
             return;
         }
 
+        this._wireModalControls(safeAdd);
+        this._wireColorInputs(safeAdd);
+        this._wireVisibilityToggles(safeAdd);
+        this._wireCompletionFeedback(safeAdd);
+        this._wirePresetActions(safeAdd);
+        this._wireBackgroundAndSections(safeAdd);
+    }
+
+    /**
+     * Opening, closing and the themes hand-off.
+     *
+     * Split out of setupEventListeners (Aug 2026), which was 455 lines and
+     * 23% of this file with zero test coverage. Pure code motion: the wiring
+     * snapshot in preferencesManager.tests.js asserts the same (element, event)
+     * pairs are still registered, and names any section that stops running.
+     * @param {Function} safeAdd - the checked addEventListener from DI
+     * @returns {void}
+     */
+    _wireModalControls(safeAdd) {
         // Open preferences button (from menu)
         const openBtn = _deps.getElementById(DOM_IDS.OPEN_PREFERENCES);
         if (openBtn) {
@@ -430,6 +449,19 @@ export class PreferencesManager {
             safeAdd(openThemesBtn, 'click', openThemesBtn._clickHandler);
         }
 
+    }
+
+    /**
+     * Colour pickers, the pattern colour (which regenerates an SVG) and the opacity slider.
+     *
+     * Split out of setupEventListeners (Aug 2026), which was 455 lines and
+     * 23% of this file with zero test coverage. Pure code motion: the wiring
+     * snapshot in preferencesManager.tests.js asserts the same (element, event)
+     * pairs are still registered, and names any section that stops running.
+     * @param {Function} safeAdd - the checked addEventListener from DI
+     * @returns {void}
+     */
+    _wireColorInputs(safeAdd) {
         // Color inputs
         Object.keys(COLOR_MAP).forEach(inputId => {
             const input = _deps.getElementById(inputId);
@@ -461,6 +493,19 @@ export class PreferencesManager {
             safeAdd(patternOpacitySlider, 'input', patternOpacitySlider._inputHandler);
         }
 
+    }
+
+    /**
+     * The eight show/hide switches. Near-identical by design: each reads a setting, writes it back and re-applies. Repetition, not spread — the reason this file is NOT a god module.
+     *
+     * Split out of setupEventListeners (Aug 2026), which was 455 lines and
+     * 23% of this file with zero test coverage. Pure code motion: the wiring
+     * snapshot in preferencesManager.tests.js asserts the same (element, event)
+     * pairs are still registered, and names any section that stops running.
+     * @param {Function} safeAdd - the checked addEventListener from DI
+     * @returns {void}
+     */
+    _wireVisibilityToggles(safeAdd) {
         // Checkbox fill visibility toggle
         const checkboxFillToggle = _deps.getElementById(DOM_IDS.TOGGLE_CHECKBOX_FILL);
         if (checkboxFillToggle) {
@@ -609,6 +654,19 @@ export class PreferencesManager {
             }
         }
 
+    }
+
+    /**
+     * What the user sees when a routine completes: toast choice, animation and toast opt-outs.
+     *
+     * Split out of setupEventListeners (Aug 2026), which was 455 lines and
+     * 23% of this file with zero test coverage. Pure code motion: the wiring
+     * snapshot in preferencesManager.tests.js asserts the same (element, event)
+     * pairs are still registered, and names any section that stops running.
+     * @param {Function} safeAdd - the checked addEventListener from DI
+     * @returns {void}
+     */
+    _wireCompletionFeedback(safeAdd) {
         // Cycle completion toast select
         const toastSelect = _deps.getElementById(DOM_IDS.PREF_TOAST_SELECT);
         if (toastSelect) {
@@ -668,6 +726,19 @@ export class PreferencesManager {
             }
         }
 
+    }
+
+    /**
+     * Buttons that change many settings at once: per-section reset, reset-all, save/import preset, undo, and the quick presets.
+     *
+     * Split out of setupEventListeners (Aug 2026), which was 455 lines and
+     * 23% of this file with zero test coverage. Pure code motion: the wiring
+     * snapshot in preferencesManager.tests.js asserts the same (element, event)
+     * pairs are still registered, and names any section that stops running.
+     * @param {Function} safeAdd - the checked addEventListener from DI
+     * @returns {void}
+     */
+    _wirePresetActions(safeAdd) {
         // Reset buttons
         _deps.querySelectorAll(DOM_SELECTORS.PREFERENCES_RESET_BTN).forEach(btn => {
             const targetId = btn.dataset.target;
@@ -730,6 +801,19 @@ export class PreferencesManager {
             }
         });
 
+    }
+
+    /**
+     * Background image upload/remove/mode, checkmark style, and the collapsible-section chrome.
+     *
+     * Split out of setupEventListeners (Aug 2026), which was 455 lines and
+     * 23% of this file with zero test coverage. Pure code motion: the wiring
+     * snapshot in preferencesManager.tests.js asserts the same (element, event)
+     * pairs are still registered, and names any section that stops running.
+     * @param {Function} safeAdd - the checked addEventListener from DI
+     * @returns {void}
+     */
+    _wireBackgroundAndSections(safeAdd) {
         // Background image upload
         const bgImageUploadBtn = _deps.getElementById(DOM_IDS.BG_IMAGE_UPLOAD_BTN);
         const bgImageUpload = _deps.getElementById(DOM_IDS.BG_IMAGE_UPLOAD);
