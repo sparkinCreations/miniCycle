@@ -1421,6 +1421,134 @@ async function journeyFirstRunQuickActions(browser, baseURL) {
     return { name: 'quick actions are writable during a first-run session', failures };
 }
 
+// ── Journey 14: the delete-mirror reconciles, and KEEP is honoured ─────────
+// Two fields describe one behaviour: `deleteWhenCompleteSettings {cycle,todo}`
+// is the durable truth, `deleteWhenComplete` a flat mirror. They can arrive
+// DISAGREEING — measured: a shared .mcyc that omits both (the shape the public
+// schema tells authors to write) imports with mirror `true` and settings.cycle
+// `false`. And the two paths read different fields: taskDOM renders through
+// resolveDeleteWhenComplete() while taskCycleReset.js deletes on the raw mirror
+// (:340, :741).
+//
+// The reason that is safe is NOT obvious and nothing asserted it: boot
+// re-derives the mirror from the map and writes the corrected value back to
+// storage before the user can complete anything. This journey pins that
+// reconciliation explicitly, and then the outcome that depends on it — a task
+// whose stored setting says KEEP survives a cycle reset. Asserting only the
+// survival would let a silent removal of the write-back pass on luck.
+//
+// It seeds the SHAPE the importer produces rather than driving a file import;
+// the unit tests own "the importer emits this", this owns "the app reconciles
+// it and honours the user's setting".
+async function journeyImportedKeepOnReset(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const { context, page } = await openFresh(browser, baseURL);
+    try {
+        // Exactly what cycleImportManager produces for `{name, tasks:[{id,text}]}`:
+        // mirror true, per-mode settings {cycle:false, todo:true}.
+        await page.evaluate(() => {
+            const parsed = JSON.parse(localStorage.getItem('miniCycleData'));
+            const id = 'imported-routine';
+            parsed.data.cycles[id] = {
+                id,
+                title: 'Imported Routine',
+                autoReset: true,
+                deleteCheckedTasks: false,          // CYCLE mode — settings.cycle governs
+                cycleCount: 0,
+                recurringTemplates: {},
+                history: { events: [], maxEvents: 100 },
+                clearedTasks: { entries: [], totalCleared: 0, autoPruneEnabled: false },
+                tasks: [{
+                    id: 'imported-task-1',
+                    text: 'Keep me on reset',
+                    completed: false,
+                    dueDate: null,
+                    highPriority: false,
+                    priorityColor: null,
+                    remindersEnabled: false,
+                    recurring: false,
+                    recurringSettings: {},
+                    deleteWhenComplete: true,                              // the mirror
+                    deleteWhenCompleteSettings: { cycle: false, todo: true }, // the truth
+                    schemaVersion: 2
+                }]
+            };
+            parsed.appState.activeCycleId = id;
+            localStorage.setItem('miniCycleData', JSON.stringify(parsed));
+        });
+
+        await page.reload({ waitUntil: 'domcontentloaded', timeout: 20000 });
+        await bootApp(page);
+        await page.waitForTimeout(800);
+
+        const storedTasks = () => page.evaluate(() => {
+            try {
+                const p = JSON.parse(localStorage.getItem('miniCycleData'));
+                const c = p.data.cycles[p.appState.activeCycleId];
+                return (c.tasks || []).map(t => t.id);
+            } catch (e) { return null; }
+        });
+
+        record('the imported routine is active with its task', (await storedTasks() || []).includes('imported-task-1'),
+            `active routine tasks: ${JSON.stringify(await storedTasks())}`);
+
+        const beforeCount = await taskCount(page);
+        record('the task rendered', beforeCount >= 1, `${beforeCount} task rows`);
+
+        // THE MECHANISM. Boot must converge the flat mirror onto the canonical
+        // per-mode setting IN STORAGE — not just in the DOM dataset, because the
+        // reset path reads task data, not the element.
+        const reconciled = await page.evaluate(() => {
+            const p = JSON.parse(localStorage.getItem('miniCycleData'));
+            const t = p.data.cycles[p.appState.activeCycleId].tasks[0];
+            return { mirror: t.deleteWhenComplete, canonical: t.deleteWhenCompleteSettings.cycle };
+        });
+        record('boot reconciles the delete-mirror with the canonical setting',
+            reconciled.mirror === reconciled.canonical,
+            `stored deleteWhenComplete=${reconciled.mirror} but deleteWhenCompleteSettings.cycle=` +
+            `${reconciled.canonical} — the write-back that makes the two-field design safe is gone, ` +
+            'so the reset below is deciding on a stale mirror');
+
+        // Complete it — in cycle mode with autoReset on, that fires the reset.
+        await page.evaluate(() => {
+            const t = document.getElementById('toggleAutoReset');
+            if (t && !t.checked) { t.checked = true; t.dispatchEvent(new Event('change', { bubbles: true })); }
+        });
+        for (const b of await page.$$('#taskList li input[type="checkbox"]')) {
+            if (!(await b.isChecked())) await b.check();
+        }
+
+        let reset = false;
+        try {
+            await page.waitForFunction(() => {
+                try {
+                    const p = JSON.parse(localStorage.getItem('miniCycleData'));
+                    const c = p.data.cycles[p.appState.activeCycleId];
+                    return (c.cycleCount || 0) > 0;
+                } catch (e) { return false; }
+            }, null, { timeout: 15000 });
+            reset = true;
+        } catch (e) { /* recorded below */ }
+        record('completing the task ran a cycle reset', reset,
+            'cycleCount never incremented — the reset did not run, so the assertion below proves nothing');
+
+        // THE QUESTION. settings.cycle === false means "keep on reset".
+        const after = await storedTasks();
+        record('a task whose stored setting says KEEP survives the reset',
+            Array.isArray(after) && after.includes('imported-task-1'),
+            'the task was DELETED even though deleteWhenCompleteSettings.cycle is false (keep) — ' +
+            'taskCycleReset decides on the flat mirror, so this means the mirror was not reconciled ' +
+            `or the reset stopped consulting it correctly. Remaining task ids: ${JSON.stringify(after)}`);
+
+        record('no starved dependencies', page.__diWarnings.length === 0,
+            `DI warnings: ${page.__diWarnings.join(' | ')}`);
+    } finally {
+        await context.close();
+    }
+
+    return { name: 'imported delete-settings reconcile and KEEP is honoured', failures };
+}
+
 const JOURNEYS = [
     { name: 'core (add → persist → cycle → offline)', fn: journeyCore },
     { name: 'routine switching', fn: journeyRoutineSwitch },
@@ -1435,6 +1563,7 @@ const JOURNEYS = [
     { name: 'first-run restore accepts both backup formats', fn: journeyFirstRunRestore },
     { name: 'first-run state contract (core-ready \u2260 state-ready)', fn: journeyFirstRunStateContract },
     { name: 'quick actions are writable during a first-run session', fn: journeyFirstRunQuickActions },
+    { name: 'imported delete-settings reconcile and KEEP is honoured', fn: journeyImportedKeepOnReset },
 ];
 
 async function run() {

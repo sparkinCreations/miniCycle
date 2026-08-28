@@ -554,3 +554,5 @@ This schema structure is also used in `.mcyc` file exports/imports, ensuring con
 - [DATA_SCHEMA_GUIDE.md](DATA_SCHEMA_GUIDE.md) - Schema guide with data flow
 - [types.js](../../modules/core/types.js) - Canonical JSDoc type definitions
 - [minicycle-recurring-guide.md](RECURRING_SYSTEM_REFERENCE.md) - Recurring task implementation
+- [SCHEMA_2_6_PLAN.md](../future-work/SCHEMA_2_6_PLAN.md) - Planned successor: `deleteWhenComplete*` → `autoClear`,
+  and optionally `cycles` → `routine`. Nothing on this page is deprecated yet — 2.5 is what ships.
