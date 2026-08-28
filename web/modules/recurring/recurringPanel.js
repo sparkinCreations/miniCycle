@@ -26,6 +26,17 @@ import { createDIModule, required, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_SELECTORS, DATA_SELECTORS, DOM_CLASSES, UI_TIMEOUTS } from '../core/constants.js';
 import { ICONS } from '../utils/icons.js';
 import { getLabel } from '../labels/labelResolver.js';
+
+// Add-recurring-task flow (splits-plan Priority 4). Static import, matching the
+// other five sub-modules in this family; they are plain functions with no DI, so
+// there is nothing to wire at boot. `this.state` is handed over by REFERENCE —
+// the flow writes selectedTaskId / preservedCheckedIds back onto the parent.
+import {
+    setupAddTaskSection as _setupAddTaskSection,
+    updateConfirmButtonVisibility as _updateConfirmButtonVisibility,
+    populateAvailableTasks as _populateAvailableTasks,
+    handleConfirmAddRecurring as _handleConfirmAddRecurring
+} from './recurringPanelAddTask.js';
 import { animateDialogClose } from '../utils/dialogClose.js';
 // Boot-time helpers — single source of truth for button-visibility + info-link so
 // recurringIntegration can run them at boot WITHOUT loading this 2k-line panel.
@@ -1220,292 +1231,48 @@ export class RecurringPanelManager {
     // ============================================
 
     /**
-     * Setup the "Add Task" button and available tasks list
+     * Wire the add-recurring-task section.
+     * Delegates to recurringPanelAddTask module (Priority 4).
      */
     setupAddTaskSection() {
-        const addTaskBtn = this.deps.getElementById(DOM_IDS.ADD_RECURRING_TASK_BTN);
-        const availableTasksList = this.deps.getElementById(DOM_IDS.AVAILABLE_TASKS_LIST);
-        const confirmBtn = this.deps.getElementById(DOM_IDS.CONFIRM_ADD_RECURRING);
-
-        if (!addTaskBtn || !availableTasksList) {
-            console.warn('⚠️ Add task section elements not found');
-            return;
-        }
-
-        // Toggle available tasks list visibility
-        this.deps.safeAddEventListener(addTaskBtn, "click", () => {
-            const isHidden = availableTasksList.classList.contains(DOM_CLASSES.HIDDEN);
-
-            if (isHidden) {
-                // Populate and show the list
-                this.populateAvailableTasks();
-                availableTasksList.classList.remove(DOM_CLASSES.HIDDEN);
-                addTaskBtn.innerHTML = `<span class="icon" aria-hidden="true">${ICONS['times']}</span> ${getLabel('button.cancel')}`;
-            } else {
-                // Hide the list and reset
-                availableTasksList.classList.add(DOM_CLASSES.HIDDEN);
-                addTaskBtn.textContent = getLabel('recurring.addToRecurring');
-                if (confirmBtn) confirmBtn.classList.add(DOM_CLASSES.HIDDEN);
-            }
-        });
-
-        // Setup delegation for checkbox changes
-        const nonRecurringList = this.deps.getElementById(DOM_IDS.NON_RECURRING_TASKS);
-        if (nonRecurringList) {
-            this.deps.safeAddEventListener(nonRecurringList, "change", (e) => {
-                if (e.target.type === "checkbox") {
-                    const taskItem = e.target.closest(DATA_SELECTORS.TASK_ID_ELEMENT);
-                    if (taskItem) {
-                        taskItem.classList.toggle(DOM_CLASSES.SELECTED, e.target.checked);
-                    }
-                    this.updateConfirmButtonVisibility();
-                }
-            });
-
-            // Also allow clicking the row to toggle
-            this.deps.safeAddEventListener(nonRecurringList, "click", (e) => {
-                // Don't toggle if clicking directly on checkbox
-                if (e.target.type === "checkbox") return;
-
-                const taskItem = e.target.closest(DATA_SELECTORS.TASK_ID_ELEMENT);
-                if (!taskItem) return;
-
-                const checkbox = taskItem.querySelector(DOM_SELECTORS.TASK_CHECKBOX);
-                if (checkbox) {
-                    checkbox.checked = !checkbox.checked;
-                    taskItem.classList.toggle(DOM_CLASSES.SELECTED, checkbox.checked);
-                    this.updateConfirmButtonVisibility();
-                }
-            });
-        }
-
-        // Setup confirm button
-        if (confirmBtn) {
-            this.deps.safeAddEventListener(confirmBtn, "click", () => {
-                this.handleConfirmAddRecurring();
-            });
-        }
-
-        // Setup select all button
-        const selectAllBtn = this.deps.getElementById(DOM_IDS.SELECT_ALL_ADD_RECURRING);
-        if (selectAllBtn && nonRecurringList) {
-            this.deps.safeAddEventListener(selectAllBtn, "click", () => {
-                const checkboxes = nonRecurringList.querySelectorAll(DOM_SELECTORS.NON_RECURRING_CHECKBOX);
-                const anyUnchecked = Array.from(checkboxes).some(cb => !cb.checked);
-
-                checkboxes.forEach(cb => {
-                    cb.checked = anyUnchecked;
-                    const item = cb.closest(DATA_SELECTORS.TASK_ID_ELEMENT);
-                    if (item) item.classList.toggle(DOM_CLASSES.SELECTED, anyUnchecked);
-                });
-
-                selectAllBtn.textContent = anyUnchecked
-                    ? getLabel('recurring.deselectAll')
-                    : getLabel('recurring.selectAll');
-
-                this.updateConfirmButtonVisibility();
-            });
-        }
-
+        return _setupAddTaskSection(this.deps, this.state, this._addTaskCallbacks());
     }
 
     /**
-     * Update confirm button visibility based on selection
+     * Show/hide the confirm button and label it with the selected count.
+     * Delegates to recurringPanelAddTask module (Priority 4).
      */
     updateConfirmButtonVisibility() {
-        const confirmBtn = this.deps.getElementById(DOM_IDS.CONFIRM_ADD_RECURRING);
-        const selectedCount = this.deps.querySelectorAll(DOM_SELECTORS.NON_RECURRING_SELECTED).length;
-
-        if (confirmBtn) {
-            if (selectedCount > 0) {
-                confirmBtn.classList.remove(DOM_CLASSES.HIDDEN);
-                confirmBtn.textContent = selectedCount === 1
-                    ? getLabel('recurring.addToRecurringShort')
-                    : getLabel('recurring.addTasksToRecurring', { vars: { count: selectedCount } });
-            } else {
-                confirmBtn.classList.add(DOM_CLASSES.HIDDEN);
-            }
-        }
+        return _updateConfirmButtonVisibility(this.deps, this.state, this._addTaskCallbacks());
     }
 
     /**
-     * Populate the available (non-recurring) tasks list
+     * Populate the available (non-recurring) tasks list.
+     * Delegates to recurringPanelAddTask module (Priority 4).
      */
     populateAvailableTasks() {
-        const nonRecurringList = this.deps.getElementById(DOM_IDS.NON_RECURRING_TASKS);
-        const noTasksMessage = this.deps.getElementById(DOM_IDS.NO_AVAILABLE_TASKS);
-        const confirmBtn = this.deps.getElementById(DOM_IDS.CONFIRM_ADD_RECURRING);
-
-        if (!nonRecurringList || !noTasksMessage) {
-            console.warn('⚠️ Available tasks list elements not found');
-            return;
-        }
-
-        // Clear existing list, hide confirm button, reset select all
-        nonRecurringList.innerHTML = "";
-        if (confirmBtn) confirmBtn.classList.add(DOM_CLASSES.HIDDEN);
-        const selectAllBtn = this.deps.getElementById(DOM_IDS.SELECT_ALL_ADD_RECURRING);
-        if (selectAllBtn) selectAllBtn.textContent = getLabel('recurring.selectAll');
-
-        try {
-            if (!this.deps.AppState.isReady?.()) {
-                console.warn('⚠️ AppState not ready for populating available tasks');
-                noTasksMessage.classList.remove(DOM_CLASSES.HIDDEN);
-                noTasksMessage.textContent = getLabel('notify.taskLoadFailed');
-                return;
-            }
-
-            const state = this.deps.AppState.get();
-            const activeCycleId = state.appState?.activeCycleId;
-            const currentCycle = state.data?.cycles?.[activeCycleId];
-
-            if (!currentCycle) {
-                console.warn('⚠️ No active cycle found');
-                noTasksMessage.classList.remove(DOM_CLASSES.HIDDEN);
-                noTasksMessage.textContent = getLabel('notify.noRoutineLoaded');
-                return;
-            }
-
-            const allTasks = currentCycle.tasks || [];
-            const recurringTemplateIds = Object.keys(currentCycle.recurringTemplates || {});
-
-            // Filter to non-recurring tasks only (check both template AND task.recurring flag
-            // to match the per-task button check in taskButtons.js)
-            const nonRecurringTasks = allTasks.filter(task =>
-                task && task.id && task.text && !recurringTemplateIds.includes(task.id) && !task.recurring
-            );
-
-            if (nonRecurringTasks.length === 0) {
-                // Check if there are no tasks at all vs all are recurring
-                if (allTasks.length === 0) {
-                    noTasksMessage.textContent = getLabel('empty.noRoutineTasks');
-                } else {
-                    noTasksMessage.textContent = getLabel('notify.allTasksRecurring');
-                }
-                noTasksMessage.classList.remove(DOM_CLASSES.HIDDEN);
-                return;
-            }
-
-            // Hide "no tasks" message
-            noTasksMessage.classList.add(DOM_CLASSES.HIDDEN);
-
-            // Render non-recurring tasks with checkboxes
-            nonRecurringTasks.forEach(task => {
-                const li = document.createElement("li");
-                li.dataset.taskId = task.id;
-
-                const checkbox = document.createElement("input");
-                checkbox.type = "checkbox";
-                checkbox.id = `add-recurring-${task.id}`;
-                checkbox.setAttribute("aria-label", getLabel('recurring.selectTask', { vars: { name: task.text } }));
-
-                const textSpan = document.createElement("span");
-                textSpan.className = "task-text";
-                textSpan.textContent = task.text;
-
-                li.appendChild(checkbox);
-                li.appendChild(textSpan);
-                nonRecurringList.appendChild(li);
-            });
-
-        } catch (error) {
-            console.error('❌ Error populating available tasks:', error);
-            noTasksMessage.classList.remove(DOM_CLASSES.HIDDEN);
-            noTasksMessage.textContent = getLabel('notify.taskLoadError');
-        }
+        return _populateAvailableTasks(this.deps, this.state, this._addTaskCallbacks());
     }
 
     /**
-     * Handle confirming add selected tasks as recurring
-     * Adds all selected tasks with default recurring settings
+     * Commit the selected tasks as recurring.
+     * Delegates to recurringPanelAddTask module (Priority 4).
      */
     async handleConfirmAddRecurring() {
+        return _handleConfirmAddRecurring(this.deps, this.state, this._addTaskCallbacks());
+    }
 
-        try {
-            if (!this.deps.AppState.isReady?.()) {
-                console.error('❌ AppState not ready');
-                this.deps.showNotification(getLabel('notify.appNotReady'), 'error');
-                return;
-            }
-
-            // Get selected task IDs
-            const selectedItems = this.deps.querySelectorAll(DOM_SELECTORS.NON_RECURRING_SELECTED);
-            const selectedTaskIds = Array.from(selectedItems).map(li => li.dataset.taskId);
-
-            if (selectedTaskIds.length === 0) {
-                this.deps.showNotification(getLabel('notify.recurringNoTasksSelected'), 'warning');
-                return;
-            }
-
-            const state = this.deps.AppState.get();
-            const activeCycleId = state.appState?.activeCycleId;
-
-            if (!activeCycleId) {
-                console.error('❌ No active cycle');
-                this.deps.showNotification(getLabel('notify.recurringNoActiveCycle'), 'error');
-                return;
-            }
-
-            // Default recurring settings
-            const defaultSettings = this.deps.normalizeRecurringSettings({
-                frequency: 'daily',
-                recurIndefinitely: true
-            });
-
-            // Add each selected task to recurring templates via shared helper
-            await this.deps.updateAppState(draft => {
-                const cycle = draft.data.cycles[activeCycleId];
-
-                selectedTaskIds.forEach(taskId => {
-                    const task = cycle.tasks.find(t => t.id === taskId);
-                    if (task) {
-                        this.deps.activateTaskRecurringState(
-                            cycle, taskId, defaultSettings, this.deps.calculateNextOccurrence
-                        );
-                    }
-                });
-            }, true); // Immediate save
-
-            // Hide the available tasks list
-            const availableTasksList = this.deps.getElementById(DOM_IDS.AVAILABLE_TASKS_LIST);
-            const addTaskBtn = this.deps.getElementById(DOM_IDS.ADD_RECURRING_TASK_BTN);
-            const confirmBtn = this.deps.getElementById(DOM_IDS.CONFIRM_ADD_RECURRING);
-
-            if (availableTasksList) availableTasksList.classList.add(DOM_CLASSES.HIDDEN);
-            if (addTaskBtn) addTaskBtn.textContent = getLabel('recurring.addToRecurring');
-            if (confirmBtn) confirmBtn.classList.add(DOM_CLASSES.HIDDEN);
-
-            // If the user wasn't already editing settings, return to browsing
-            // so the panel refreshes cleanly without opening the settings form.
-            // If editing, preserve checked task IDs so they survive the re-render.
-            if (this.state.panelMode !== 'editing') {
-                this.state.selectedTaskId = null;
-                this.setPanelMode('browsing');
-            } else {
-                // Save checked IDs before DOM rebuild wipes them
-                this.state.preservedCheckedIds = Array.from(
-                    this.deps.querySelectorAll(DOM_SELECTORS.RECURRING_TASK_ITEM)
-                ).filter(el => {
-                    const cb = el.querySelector(DOM_SELECTORS.RECURRING_CHECK);
-                    return cb?.checked;
-                }).map(el => el.dataset.taskId);
-            }
-
-            // Refresh the panel to show new recurring tasks
-            await this.updateRecurringPanel();
-
-            // Refresh main task list from state
-            setTimeout(() => {
-                this.deps.refreshUIFromState?.();
-            }, 0);
-
-            const taskWord = getLabel('noun.task', { count: selectedTaskIds.length });
-            this.deps.showNotification(`🔁 ${getLabel('notify.recurringAdded', { vars: { count: selectedTaskIds.length, taskWord } })}`, 'success');
-
-        } catch (error) {
-            console.error('❌ Error adding tasks as recurring:', error);
-            this.deps.showNotification(getLabel('notify.recurringAddFailed'), 'error');
-        }
+    /**
+     * The two parent operations the add-task flow triggers. Built fresh per call
+     * so the arrows always close over the CURRENT instance methods — binding once
+     * in the constructor would freeze them past any later reassignment (the tests
+     * stub updateRecurringPanel exactly that way).
+     */
+    _addTaskCallbacks() {
+        return {
+            setPanelMode: (mode) => this.setPanelMode(mode),
+            updateRecurringPanel: () => this.updateRecurringPanel()
+        };
     }
 
     // ============================================

@@ -31,9 +31,9 @@
 // §1 VERSION IDENTITY (update-version.sh rewrites the three vars below — keep
 //    their exact `var NAME = …` shapes) + the build-injected module map.
 // ═══════════════════════════════════════════════════════════════════════════
-var APP_VERSION = '2.517';
-var CACHE_VERSION = 'v1360';
-var CACHE_VERSION_NUMBER = 1360; // Numeric version matching version.js (for synthetic fallback)
+var APP_VERSION = '2.518';
+var CACHE_VERSION = 'v1361';
+var CACHE_VERSION_NUMBER = 1361; // Numeric version matching version.js (for synthetic fallback)
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -229,6 +229,7 @@ var BOOT_CRITICAL = [
   './modules/recurring/recurringPanelForm.js',
   './modules/recurring/recurringPanelGrids.js',
   './modules/recurring/recurringPanelSetup.js',
+  './modules/recurring/recurringPanelAddTask.js',
   './modules/recurring/recurringPanelSummary.js',
   './modules/recurring/recurringSettings.js',
   './modules/recurring/recurringSettingsApplicator.js',

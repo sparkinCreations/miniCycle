@@ -49,6 +49,12 @@ function setupPanelDeps(overrides = {}) {
             return document.getElementById(map[name]) || null;
         })
     };
+    // Forward any override this fixture does not name explicitly. Without this the
+    // object above is an ALLOW-LIST: a test passing a dep it needs (for example
+    // activateTaskRecurringState) had it silently dropped, and the assertion then
+    // failed for a reason unrelated to the code under test. Spreading last preserves
+    // the existing `overrides.X || default` semantics for named keys.
+    Object.assign(defaultDeps, overrides);
     setRecurringPanelDependencies(defaultDeps);
     return defaultDeps;
 }
@@ -137,6 +143,166 @@ export async function runRecurringPanelTests(resultsDiv) {
     }
 
     // ===== INITIALIZATION TESTS =====
+    // =========================================================
+    // ➕ Add-recurring-task flow — WRITTEN BEFORE THE EXTRACTION
+    // =========================================================
+    // setupAddTaskSection / updateConfirmButtonVisibility / populateAvailableTasks /
+    // handleConfirmAddRecurring are moving to recurringPanelAddTask.js (splits-plan
+    // Priority 4). All four had ZERO test references.
+    //
+    // These deliberately drive the PARENT's methods rather than the new module, so
+    // the identical tests prove behaviour before the move and after it — the parent
+    // keeps delegating entry points either way.
+    resultsDiv.innerHTML += '<h4 class="test-section">➕ Add Recurring Tasks (pre-extraction)</h4>';
+
+    function addTaskDom() {
+        const host = document.createElement('div');
+        host.innerHTML = `
+            <ul id="non-recurring-tasks"></ul>
+            <p id="no-available-tasks"></p>
+            <button id="confirm-add-recurring"></button>
+            <button id="select-all-add-recurring"></button>
+            <button id="add-recurring-task-btn"></button>
+            <div id="available-tasks-list"></div>`;
+        document.body.appendChild(host);
+        return host;
+    }
+
+    function cycleState(tasks, templates = {}) {
+        return {
+            schemaVersion: '2.5',
+            data: { cycles: { c1: { title: 'c1', tasks, recurringTemplates: templates } } },
+            appState: { activeCycleId: 'c1' }
+        };
+    }
+
+    await test('confirm button hides when nothing is selected', async () => {
+        const host = addTaskDom();
+        try {
+            setupPanelDeps();
+            const panel = new RecurringPanelManager();
+            panel.updateConfirmButtonVisibility();
+            const btn = document.getElementById('confirm-add-recurring');
+            if (!btn.classList.contains('hidden')) throw new Error('confirm button should be hidden with 0 selected');
+        } finally { host.remove(); }
+    });
+
+    await test('confirm button shows and names the count when tasks are selected', async () => {
+        const host = addTaskDom();
+        try {
+            const list = document.getElementById('non-recurring-tasks');
+            list.innerHTML = '<li class="selected" data-task-id="t1"></li><li class="selected" data-task-id="t2"></li>';
+            setupPanelDeps();
+            const panel = new RecurringPanelManager();
+            panel.updateConfirmButtonVisibility();
+            const btn = document.getElementById('confirm-add-recurring');
+            if (btn.classList.contains('hidden')) throw new Error('confirm button should be visible with 2 selected');
+            if (!/2/.test(btn.textContent)) throw new Error(`expected the count in the label, got "${btn.textContent}"`);
+        } finally { host.remove(); }
+    });
+
+    await test('available list excludes tasks that are already recurring', async () => {
+        // Excluded two ways: present in recurringTemplates, OR carrying task.recurring.
+        // Missing either check offers the user a task that is already scheduled.
+        const host = addTaskDom();
+        try {
+            const state = cycleState(
+                [{ id: 't1', text: 'plain' },
+                 { id: 't2', text: 'templated' },
+                 { id: 't3', text: 'flagged', recurring: true }],
+                { t2: {} }
+            );
+            setupPanelDeps({ AppState: { get: () => state, update: () => {}, isReady: () => true } });
+            const panel = new RecurringPanelManager();
+            panel.populateAvailableTasks();
+            const items = document.querySelectorAll('#non-recurring-tasks li');
+            const ids = Array.from(items).map(li => li.dataset.taskId);
+            if (ids.length !== 1 || ids[0] !== 't1') {
+                throw new Error(`expected only t1 to be offered, got [${ids.join(', ')}]`);
+            }
+        } finally { host.remove(); }
+    });
+
+    await test('handleConfirmAddRecurring refuses when nothing is selected', async () => {
+        const host = addTaskDom();
+        try {
+            let notified = null, updated = false;
+            setupPanelDeps({
+                AppState: { get: () => cycleState([]), update: () => {}, isReady: () => true },
+                showNotification: (msg) => { notified = msg; },
+                updateAppState: () => { updated = true; }
+            });
+            const panel = new RecurringPanelManager();
+            await panel.handleConfirmAddRecurring();
+            if (updated) throw new Error('state was written with no tasks selected');
+            if (!notified) throw new Error('the user was not told why nothing happened');
+        } finally { host.remove(); }
+    });
+
+    await test('handleConfirmAddRecurring refuses when AppState is not ready', async () => {
+        const host = addTaskDom();
+        try {
+            document.getElementById('non-recurring-tasks').innerHTML =
+                '<li class="selected" data-task-id="t1"></li>';
+            let updated = false;
+            setupPanelDeps({
+                AppState: { get: () => cycleState([]), update: () => {}, isReady: () => false },
+                updateAppState: () => { updated = true; }
+            });
+            const panel = new RecurringPanelManager();
+            await panel.handleConfirmAddRecurring();
+            if (updated) throw new Error('state was written while AppState was not ready');
+        } finally { host.remove(); }
+    });
+
+    await test('handleConfirmAddRecurring activates every selected task', async () => {
+        const host = addTaskDom();
+        try {
+            document.getElementById('non-recurring-tasks').innerHTML =
+                '<li class="selected" data-task-id="t1"></li><li class="selected" data-task-id="t2"></li>';
+            const state = cycleState([{ id: 't1', text: 'a' }, { id: 't2', text: 'b' }, { id: 't3', text: 'c' }]);
+            const activated = [];
+            setupPanelDeps({
+                AppState: { get: () => state, update: () => {}, isReady: () => true },
+                updateAppState: async (fn) => { fn(state); },
+                activateTaskRecurringState: (cycle, taskId) => { activated.push(taskId); }
+            });
+            const panel = new RecurringPanelManager();
+            panel.updateRecurringPanel = async () => {};
+            await panel.handleConfirmAddRecurring();
+            if (activated.join(',') !== 't1,t2') {
+                throw new Error(`expected t1,t2 activated; got [${activated.join(', ')}]`);
+            }
+        } finally { host.remove(); }
+    });
+
+    await test('confirming while editing preserves the checked task ids', async () => {
+        // The DOM rebuild that follows wipes checkboxes. In editing mode the ids are
+        // stashed on state first so the re-render can restore them; losing that makes
+        // a user's selection silently vanish mid-edit.
+        const host = addTaskDom();
+        try {
+            document.getElementById('non-recurring-tasks').innerHTML =
+                '<li class="selected" data-task-id="t1"></li>';
+            const state = cycleState([{ id: 't1', text: 'a' }]);
+            setupPanelDeps({
+                AppState: { get: () => state, update: () => {}, isReady: () => true },
+                updateAppState: async (fn) => { fn(state); },
+                activateTaskRecurringState: () => {}
+            });
+            const panel = new RecurringPanelManager();
+            panel.updateRecurringPanel = async () => {};
+            panel.state.panelMode = 'editing';
+            await panel.handleConfirmAddRecurring();
+            if (!Array.isArray(panel.state.preservedCheckedIds)) {
+                // Reports the observed values: when this broke during the extraction it
+                // was panelMode="browsing", which is what exposed the shadowed parameter.
+                throw new Error('preservedCheckedIds=' + JSON.stringify(panel.state.preservedCheckedIds)
+                    + ' panelMode=' + JSON.stringify(panel.state.panelMode));
+            }
+        } finally { host.remove(); }
+    });
+
     resultsDiv.innerHTML += '<h4 class="test-section">🔧 Initialization</h4>';
 
     test('RecurringPanelManager class is defined', () => {

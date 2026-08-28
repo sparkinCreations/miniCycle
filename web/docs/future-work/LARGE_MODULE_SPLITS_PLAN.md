@@ -4,7 +4,7 @@
 **Updated:** August 21 2026 — four previously-unassessed modules given verdicts; scripts brought into scope (`update-version.sh`); the last inline line counts removed, since the doc had retired them in principle but kept four in practice and all four had drifted. August 2026 — Priority 2 (statsPanel) SHIPPED (commit `806f8082`); line-count table retired (numbers rot — see [PROJECT_STATS.md](../PROJECT_STATS.md)). July 7, 2026 — god-module audit: added statsPanel (Priority 2), orchestrator assessment, false-positive list
 **Updated:** Aug 25 2026 — `guidedTourManager` assessed and the "borderline (sequential step content)" row RETIRED: it is **not** a god module (fan-out is 9 infrastructure deps and zero feature modules; one `innerHTML` in 1,962 lines), but half the file was data + repetition. Opened as **Priority 9 — a dedup, not a split** and CLOSED the same day at 1,193 lines (v2.503 + v2.504), the first worked example on this page of the `settingsUIManager` remedy.
 **Updated:** Aug 23 2026 — Priority 1 shipped; Priority 7 stage 1 (CSP hashes) shipped in v2.488 and the `?v=` stage re-scoped after checking what content hashing actually replaced; execution order, DONE condition and the pattern guidance all revised against what the work actually showed.
-**Status:** In progress — **Priorities 1, 2, 3 and 6 complete**; Priorities 4 and 5 open but TRIGGER-BASED (do not schedule them), plus 7 (`update-version.sh`, `restore.sh` stage next). **Priority 9 (`guidedTourManager`) OPENED Aug 25 2026 — a DEDUP, not a split: 50% of the file measured as declarative data + twelve near-identical prompt functions; not a god module, but over target and cheaply fixable. ✅ CLOSED v2.504 — both moves shipped: 1,962 → 1,193, 63 → 70 tests, no new facade and no wiring layer touched.** **Priority 8 (`onboardingManager`) OPENED Aug 24 2026; CLOSED Aug 25 2026 — steps 1-3 shipped (v2.499 demo, v2.500 splash, v2.501 carousel): 2,534 → 1,052, eighteen new tests** — a god module the page had mislabelled "borderline" and left unscheduled. Priority 3 CLOSED Aug 24 2026 at 1,636 lines — **above the ~1,500 target, deliberately**; the remaining bulk is the 10-dep undo/redo execution core, recorded as a non-split with evidence. Priority 1 SHIPPED Aug 23 2026 in v2.484 (five extractions, 2,649 → 1,587 lines, 83 new tests). **Aug 21 2026 review:** added a DONE condition (~1,500-line target, everything else trigger-based); rewrote the per-extraction checklist around the gates that caught the two defects the completed splits shipped (`test:sw`, `validate:provides`); corrected the "provides stays the same" promise the statsPanel split falsified; pulled the release script's CSP stage forward from Priority 7
+**Status:** In progress — **Priorities 1-9 all closed** — 4 SHIPPED and 5 recorded as a NON-SPLIT on Aug 25 2026; Priority 7's remaining `?v=` sweep is re-scoped and trigger-based. **No scheduled work remains on this page.** **Priority 9 (`guidedTourManager`) OPENED Aug 25 2026 — a DEDUP, not a split: 50% of the file measured as declarative data + twelve near-identical prompt functions; not a god module, but over target and cheaply fixable. ✅ CLOSED v2.504 — both moves shipped: 1,962 → 1,193, 63 → 70 tests, no new facade and no wiring layer touched.** **Priority 8 (`onboardingManager`) OPENED Aug 24 2026; CLOSED Aug 25 2026 — steps 1-3 shipped (v2.499 demo, v2.500 splash, v2.501 carousel): 2,534 → 1,052, eighteen new tests** — a god module the page had mislabelled "borderline" and left unscheduled. Priority 3 CLOSED Aug 24 2026 at 1,636 lines — **above the ~1,500 target, deliberately**; the remaining bulk is the 10-dep undo/redo execution core, recorded as a non-split with evidence. Priority 1 SHIPPED Aug 23 2026 in v2.484 (five extractions, 2,649 → 1,587 lines, 83 new tests). **Aug 21 2026 review:** added a DONE condition (~1,500-line target, everything else trigger-based); rewrote the per-extraction checklist around the gates that caught the two defects the completed splits shipped (`test:sw`, `validate:provides`); corrected the "provides stays the same" promise the statsPanel split falsified; pulled the release script's CSP stage forward from Priority 7
 **Related:** [DI_MIGRATION_COMPLETION_PLAN.md](../archive/DI_MIGRATION_COMPLETION_PLAN.md), [ENFORCE_REQUIRES_ROLLOUT_PLAN.md](../archive/ENFORCE_REQUIRES_ROLLOUT_PLAN.md)
 
 ---
@@ -76,8 +76,8 @@ This doc no longer pins line/dep/method counts — every measured number in the 
 | undoRedoManager.js | **Priority 3** — ✅ **CLOSED** v2.498 (2,306 → 1,636; three sub-modules, 53 new tests; execution core is a recorded non-split — see below) |
 | statsPanel.js (`modules/features/`) | **God module** — Priority 2 — ✅ **SHIPPED** (commit `806f8082`, see below) |
 | guidedTourManager.js | Not a god module — **repetition + data, not spread** — **Priority 9 (a dedup, not a split) ✅ CLOSED** v2.504 (1,962 → 1,193; one data module, 7 new tests; see below) |
-| recurringPanel.js | Already split (5 sub-modules) |
-| taskDOM.js | Already split (6 sub-modules) |
+| recurringPanel.js | **Priority 4** — ✅ **SHIPPED** v2.511 (1,754 → 1,521; sixth sub-module `recurringPanelAddTask.js`, 7 new tests) |
+| taskDOM.js | **Priority 5** — ✅ **CLOSED as a NON-SPLIT** Aug 25 2026 (531-line region measured; 69 singleton refs, only 14 pure delegations — see below) |
 | moduleLoader.js | Deferred (boot infrastructure) |
 | migrationManager.js (`modules/routine/`) | Deferred (working code) |
 | orchestrator.js | Deferred (see below) |
@@ -857,7 +857,35 @@ Dynamic versioned imports — both reference module-level state and DI deps.
 
 ---
 
-## Priority 4: recurringPanel.js
+## Priority 4: recurringPanel.js — ✅ SHIPPED (Aug 25 2026)
+
+`recurringPanelAddTask.js` — the add-existing-tasks-to-recurring flow. **1,754 → 1,521**,
+7 new tests. Sixth sub-module in a family of five.
+
+**The estimate was right for once:** ~275 predicted, 285 measured (294 once
+`updateConfirmButtonVisibility` was pulled in with it — it belongs to the same flow and
+moving it dropped the outbound calls from 4 to 2).
+
+**Interface:** `(deps, panelState, cb)`. The `(deps, callbacks)` half is this family's existing
+convention — `recurringPanelSetup.js` is already called that way. `panelState` is the extension:
+the flow reads `panelMode` and writes `selectedTaskId` / `preservedCheckedIds`, so the parent's
+`this.state` is passed by REFERENCE, not copied.
+
+**Two traps this hit, both worth knowing before the next extraction of a class method:**
+
+1. **Parameter shadowing.** The parameter was first named `state` — but
+   `handleConfirmAddRecurring` already declares `const state = deps.AppState.get()` for the APP
+   state, which shadowed it from that line onward. The panel-mode check then read the app state,
+   the editing branch never ran, and the preserved selection was written onto the wrong object.
+   Converting `this.X` to a bare `X` can collide with locals; check before renaming.
+2. **The fixture silently dropped test overrides.** `setupPanelDeps` built its deps from an
+   explicit key list, so a test passing `activateTaskRecurringState` had it discarded and failed
+   for an unrelated reason. Now forwards unknown keys.
+
+Both were caught by tests written BEFORE the move, which is the whole argument for writing them
+first: they exercise the parent's methods, so the identical tests validate before and after.
+
+### Original assessment (retained)
 
 ### Current State
 
@@ -879,7 +907,23 @@ Already has 5 dynamic sub-modules:
 
 ---
 
-## Priority 5: taskDOM.js
+## Priority 5: taskDOM.js — ✅ CLOSED as a NON-SPLIT (Aug 25 2026)
+
+**Measured, then declined.** The region after the class is **531 lines** (the entry predicted
+~450), but it is not the "thin delegation wrapper" described: **36 functions**, only **14** pure
+`taskDOMManager.` delegations against **69** references to that singleton, and several of the
+larger ones (`taskToAddTaskOptions`, `loadTaskContext`, `createOrUpdateTaskData`) never touch the
+manager at all. It is a mixed bag of module-level helpers, not a compat shim.
+
+Extracting it would carry a module-level singleton across a file boundary — turning a private
+variable into a shared one — to move code that is already the simplest in the file. The entry's
+own assessment said it: *"reduces line count but doesn't reduce complexity."* That is still true,
+and it is a reason not to do it rather than a caveat about doing it.
+
+Recorded as a non-split with evidence, like Priority 3's undo/redo execution core and Priority 1's
+search/sort/filter cluster. Re-open only if that region gains a second responsibility.
+
+### Original assessment (retained)
 
 ### Current State
 

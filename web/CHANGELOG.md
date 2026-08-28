@@ -1,3 +1,7 @@
+## [2.518] - 2026-08-28
+- refactor(recurring): extract the add-recurring-task flow, closing Priority 4
+
+
 ## [2.517] - 2026-08-27
 - Quick Actions writers seed settings.quickActions themselves instead of bailing on it, via a shared ensureQuickActions() in actionUsage.js. Not a user-visible bugfix — measured, the boot seed does win the race on a first run — but it removes the silent-drop trap and a throw on data whose pinned array is missing.
 
