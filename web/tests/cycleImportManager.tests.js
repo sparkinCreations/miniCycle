@@ -242,6 +242,67 @@ export async function runCycleImportManagerTests(resultsDiv) {
         if (!tpl || 'defaultRecurTime' in tpl.recurringSettings) throw new Error('template must be built from normalized settings');
     });
 
+    // ── delete-when-complete: the canonical per-mode map ───────────────────
+    // Two fields describe one behaviour. `deleteWhenCompleteSettings {cycle,
+    // todo}` is the durable truth; `deleteWhenComplete` is a flat mirror that
+    // cycleMode.js calls a "legacy/transitional mirror" and the public .mcyc
+    // schema marks "DERIVED, so do not author this".
+    //
+    // MEASURED (Aug 2026): a shared file omitting both — the shape the schema
+    // tells authors to write — imports with the mirror at `true` and
+    // settings.cycle at `false`, i.e. they DISAGREE on arrival. That is not a
+    // bug, because boot re-derives the mirror from the map and writes the
+    // corrected value back before the user can act on it; the journey test
+    // "an imported task's keep-on-reset setting is honoured" pins that
+    // reconciliation and the survival that depends on it.
+    // So what is worth asserting HERE is the field that is actually durable:
+    // the per-mode map must be right, because every reconciliation reads it.
+    await test('import derives per-mode delete settings for a plain task', async () => {
+        const { state } = await runImport({
+            name: 'Delete Settings',
+            tasks: [{ id: 't1', text: 'Keep me on reset' }]   // omits BOTH delete fields
+        });
+        const cycle = importedCycle(state);
+        const t = cycle.tasks[0];
+
+        if (cycle.deleteCheckedTasks === true) {
+            throw new Error('precondition: import produced a to-do-mode routine, so settings.cycle no longer governs');
+        }
+        const st = t.deleteWhenCompleteSettings;
+        if (!st || typeof st.cycle !== 'boolean' || typeof st.todo !== 'boolean') {
+            throw new Error(`import must always produce a complete per-mode map, got ${JSON.stringify(st)}`);
+        }
+        // Non-recurring default: keep on a cycle reset, clear in to-do mode.
+        if (st.cycle !== false || st.todo !== true) {
+            throw new Error(`non-recurring default should be {cycle:false, todo:true}, got ${JSON.stringify(st)}`);
+        }
+    });
+
+    await test('import derives per-mode delete settings for a recurring task', async () => {
+        // Recurring tasks default the other way — always delete — because the
+        // template re-creates them. A regression here silently changes whether
+        // shared recurring routines accumulate duplicates.
+        const { state } = await runImport({
+            name: 'Recurring Delete Settings',
+            tasks: [{ id: 't1', text: 'Daily', recurring: true }]
+        });
+        const st = importedCycle(state).tasks[0].deleteWhenCompleteSettings;
+        if (!st || st.cycle !== true || st.todo !== true) {
+            throw new Error(`recurring default should be {cycle:true, todo:true}, got ${JSON.stringify(st)}`);
+        }
+    });
+
+    await test('an explicit per-mode map in the file is preserved, not overwritten by defaults', async () => {
+        const { state } = await runImport({
+            name: 'Explicit Delete Settings',
+            tasks: [{ id: 't1', text: 'Task', deleteWhenCompleteSettings: { cycle: true, todo: false } }]
+        });
+        const st = importedCycle(state).tasks[0].deleteWhenCompleteSettings;
+        if (st.cycle !== true || st.todo !== false) {
+            throw new Error(`author's explicit settings lost: ${JSON.stringify(st)}`);
+        }
+    });
+
     await test('importing over an existing routine name creates a unique title, not an overwrite', async () => {
         const seeded = { 'My Routine': { id: 'x', title: 'My Routine', tasks: [], recurringTemplates: {} } };
         const { state } = await runImport(
