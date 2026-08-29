@@ -646,6 +646,7 @@ export const DEFAULT_LABELS = deepFreeze({
         // State/data notifications
         dataCorrupted:           'Data was corrupted and has been reset. Your previous data could not be recovered.',
         multiTabConflict:        'Data updated from another tab. Your unsaved changes were overwritten.',
+        dataClearedElsewhere:    'All data was cleared in another tab. Refresh this tab to continue.',
         stateUpdateFailed:       'State update failed',
 
         // Task system notifications
@@ -2740,6 +2741,7 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'notify.storageFull',
     'notify.dataCorrupted',
     'notify.stateUpdateFailed',
+    'notify.dataClearedElsewhere',
     'notify.taskSystemInitFailed',
     'notify.dragDropWarning',
     'notify.milestoneAchieved',

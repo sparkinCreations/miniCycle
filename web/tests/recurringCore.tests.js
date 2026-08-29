@@ -1353,8 +1353,19 @@ export async function runRecurringCoreTests(resultsDiv) {
     });
 
     test('formats next occurrence (hours)', () => {
+        // 3h30m, NOT exactly 3h. formatNextOccurrence FLOORS
+        // (Math.floor(msUntil / 3600000)) against its own clock reading, taken a
+        // moment after the one here — so an exact 3h target is 2h59m59.999s by
+        // the time it is measured and floors to "2 hours". That made this test
+        // pass only when both readings landed in the SAME millisecond: measured
+        // at 6 failures per 200k iterations in a tight loop, and far more often
+        // in the real test, where module dispatch and label resolution sit
+        // between the two reads. It failed CI on an unrelated PR (Aug 2026).
+        //
+        // Half an hour of slack is deterministic rather than a variance
+        // allowance: any elapsed time under 30 minutes still floors to 3.
         const now = Date.now();
-        const next = now + (3 * 60 * 60 * 1000); // 3 hours from now
+        const next = now + (3 * 60 * 60 * 1000) + (30 * 60 * 1000);
 
         const formatted = formatNextOccurrence(next);
 
