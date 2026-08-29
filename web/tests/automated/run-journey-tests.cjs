@@ -1696,19 +1696,44 @@ async function journeyResetClearsRenderedState(browser, baseURL) {
                 const el = document.getElementById(id);
                 return el ? (el.textContent || '').trim().replace(/\s+/g, ' ') : '(absent)';
             };
+            // NOTE the id: progressBar is camelCase. A probe written against
+            // 'progress-bar' finds nothing, and a `|| {}` fallback then reports a
+            // clean-looking empty value BEFORE and AFTER — which is exactly how
+            // this surface was missed on the first pass. The before-state
+            // assertion below exists so a broken selector fails loudly instead.
+            const bar = document.getElementById('progressBar');
             return {
                 taskRows: document.querySelectorAll('#taskList li').length,
                 completedRows: document.querySelectorAll('#completedTaskList li').length,
                 title: t('mini-cycle-title'),
                 miniCycleCount: t('mini-cycle-count'),
                 perCycle: t('per-cycle-count'),
-                routineCycles: t('current-routine-cycle-count')
+                routineCycles: t('current-routine-cycle-count'),
+                progressBarExists: !!bar,
+                progressTransform: bar ? (bar.style.transform || '(unset)') : '(no #progressBar)'
             };
         });
+
+        // Tick a box so the progress bar is visibly FILLED going in. Without this
+        // the bar reads scaleX(0) before AND after and the assertion below is
+        // vacuous — it would pass against the very bug it exists to catch.
+        await page.evaluate(() => {
+            const row = document.getElementById('task-input-row');
+            if (row) row.classList.remove('hidden');
+        });
+        const boxes = await page.$$('#taskList li input[type="checkbox"]');
+        if (boxes[0]) await boxes[0].check().catch(() => {});
+        await page.waitForTimeout(1200);
 
         const before = await readCounters();
         record('the routine rendered its 42-cycle history', /42/.test(before.perCycle),
             `counters never showed the seeded value, so this journey proves nothing: ${JSON.stringify(before)}`);
+        record('the progress bar element is the one the app actually uses',
+            before.progressBarExists === true,
+            'no #progressBar in the DOM — the selector is wrong and the reset assertion below would be vacuous');
+        record('the progress bar is filled before the reset',
+            /scaleX\((?!0\))/.test(before.progressTransform),
+            `progress bar was not filled going in (${before.progressTransform}), so "empty after" proves nothing`);
 
         await runFactoryResetUI(page);
         await page.waitForTimeout(5500);
@@ -1728,6 +1753,11 @@ async function journeyResetClearsRenderedState(browser, baseURL) {
             `counters still show the deleted routine: ${JSON.stringify({
                 miniCycleCount: after.miniCycleCount, perCycle: after.perCycle,
                 routineCycles: after.routineCycles })}`);
+
+        record('the progress bar is emptied, not left at the old fill',
+            /^scaleX\(0\)$/.test(after.progressTransform),
+            `the bar still reads ${after.progressTransform} with ${after.taskRows} task rows — it holds its ` +
+            'fill in an INLINE transform, so clearing the task lists does not touch it');
 
         record('no starved dependencies', page.__diWarnings.length === 0,
             `DI warnings: ${page.__diWarnings.join(' | ')}`);
