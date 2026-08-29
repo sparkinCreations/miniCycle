@@ -196,6 +196,27 @@ async function run() {
         { name: 'settings modal',
           open: () => document.getElementById('open-settings')?.click(),
           ready: () => document.getElementById('settings-modal')?.open },
+        // Added Aug 2026. This panel was NOT audited, and its absence let an
+        // external review report "20 color inputs have no accessible names" —
+        // false, they are all named via label[for], but nothing in CI could say
+        // so either way. It is the most control-dense surface in the app, so it
+        // is the last one that should have been missing.
+        { name: 'personalization',
+          open: () => document.getElementById('personalization-btn')?.click(),
+          ready: () => document.getElementById('preferences-modal')?.open,
+          // The colour inputs live inside collapsible sections that are closed
+          // by default, so opening the modal alone audits a fraction of the
+          // controls. Expand everything, then REQUIRE a colour input to be laid
+          // out — an unmet `reveals` fails the surface rather than quietly
+          // auditing less than it claims to (same pattern as routine switcher).
+          prepare: () => document.querySelectorAll('#preferences-modal .collapsed')
+                        .forEach(el => el.classList.remove('collapsed')),
+          reveals: () => {
+              const el = document.querySelector('#preferences-modal input[type="color"]');
+              const r = el?.getBoundingClientRect();
+              return !!r && r.width > 0 && r.height > 0;
+          },
+          close: () => document.getElementById('preferences-modal')?.close() },
         { name: 'stats panel',
           open: () => document.querySelector('#nav-dots [aria-controls="stats-panel"]')?.click(),
           ready: () => document.getElementById('stats-panel')?.classList.contains('show'),
