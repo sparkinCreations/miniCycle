@@ -1767,6 +1767,68 @@ async function journeyResetClearsRenderedState(browser, baseURL) {
     return { name: 'a factory reset clears the state it had rendered', failures };
 }
 
+// ── Journey 17: a badge earned on one axis is not re-advertised on the other ─
+// Badges unlock on an OR (achievementsManager: `cyclesMet || tasksMet`), but the
+// progress readout scanned only the ACTIVE mode's axis. Reported Aug 2026: earn
+// Habit Tracker by clearing 5 tasks in To-Do mode, switch to Cycle mode with
+// zero cycles, and the panel said "Next badge: 5 more cycles" for a badge
+// already sitting unlocked on the same screen.
+//
+// The unit tests in statsPanel.tests.js cover resolveNextBadgeTier() itself and
+// would ALL STILL PASS if the wiring were reverted — measured, that is exactly
+// what the mutation run showed. This journey covers the wiring.
+async function journeyBadgeCrossAxis(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const { context, page } = await openFresh(browser, baseURL);
+    try {
+        // Habit Tracker (tier 5) earned by CLEARING, never by cycling.
+        await page.evaluate(() => {
+            const d = JSON.parse(localStorage.getItem('miniCycleData'));
+            const id = d.appState.activeCycleId;
+            d.data.cycles[id].deleteCheckedTasks = false;   // CYCLE mode
+            d.userProgress = d.userProgress || {};
+            d.userProgress.cyclesCompleted = 0;
+            d.userProgress.totalTasksCompleted = 5;
+            localStorage.setItem('miniCycleData', JSON.stringify(d));
+        });
+        await page.reload({ waitUntil: 'domcontentloaded', timeout: 25000 });
+        await bootApp(page);
+        await page.waitForTimeout(2000);
+        await page.evaluate(() =>
+            document.querySelector('#nav-dots [aria-controls="stats-panel"]')?.click());
+        await page.waitForTimeout(2000);
+
+        const seen = await page.evaluate(() => {
+            const el = document.getElementById('milestone-progress-text');
+            const bar = document.getElementById('stats-progress-bar');
+            return {
+                text: el ? (el.textContent || '').trim().replace(/\s+/g, ' ') : '(absent)',
+                aria: bar?.getAttribute('aria-label') || '(none)',
+                tier5Unlocked: !!document.querySelector('.badge[data-milestone="5"]')?.classList.contains('unlocked')
+            };
+        });
+
+        // Precondition: the badge really is earned, or the rest proves nothing.
+        record('the tier-5 badge is unlocked via cleared tasks', seen.tier5Unlocked === true,
+            'tier 5 is not showing as unlocked, so this journey is not exercising the cross-axis case');
+
+        record('cycle mode does not re-advertise a badge earned by clearing',
+            !/\b5 more\b/.test(seen.text),
+            `panel says "${seen.text}" — tier 5 is already unlocked, so the next badge is tier 25`);
+        record('it names the next UNEARNED tier instead', /25/.test(seen.text),
+            `expected the 25-cycle tier, got "${seen.text}"`);
+        record('the progress-bar aria-label agrees with the visible text',
+            /25/.test(seen.aria) && !/\bof 5\b/.test(seen.aria),
+            `aria-label is "${seen.aria}" while the text says "${seen.text}"`);
+
+        record('no starved dependencies', page.__diWarnings.length === 0,
+            `DI warnings: ${page.__diWarnings.join(' | ')}`);
+    } finally {
+        await context.close();
+    }
+    return { name: 'a badge earned by clearing is not re-advertised in cycle mode', failures };
+}
+
 const JOURNEYS = [
     { name: 'core (add → persist → cycle → offline)', fn: journeyCore },
     { name: 'routine switching', fn: journeyRoutineSwitch },
@@ -1784,6 +1846,7 @@ const JOURNEYS = [
     { name: 'imported delete-settings reconcile and KEEP is honoured', fn: journeyImportedKeepOnReset },
     { name: 'a factory reset survives a second open tab', fn: journeyResetTwoTabs },
     { name: 'a factory reset clears the state it had rendered', fn: journeyResetClearsRenderedState },
+    { name: 'a badge earned by clearing is not re-advertised in cycle mode', fn: journeyBadgeCrossAxis },
 ];
 
 async function run() {

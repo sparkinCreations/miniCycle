@@ -85,6 +85,65 @@ const _deps = new Proxy({}, {
  * @param {Object} dependencies - { showNotification, loadMiniCycleData, AppState, appInit, etc. }
  * @returns {void}
  */
+/**
+ * Which badge tier is next, and how far along the CURRENT mode's axis the user is.
+ *
+ * Badges unlock on an OR: achievementsManager.updateBadges() treats a tier as
+ * earned when `cyclesMet || tasksMet`. The progress readout did not honour that.
+ * It scanned only the active mode's axis, so a tier already earned on the OTHER
+ * axis was still advertised as the next one to earn.
+ *
+ * Measured example (tiers are cycles 5/25/50/75/100, tasks 5/125/250/375/500):
+ * clear 5 tasks in To-Do mode → milestone-5 unlocks via tasksMet. Switch to
+ * Cycle mode with 0 cycles → the old code picked the first CYCLE threshold above
+ * 0, which is 5, and said "Next badge: 5 more cycles" for a badge the user
+ * already had. It should name milestone-25.
+ *
+ * So the next tier is the first one unearned on EITHER axis, and the distance to
+ * it is measured on the axis the user is currently working.
+ *
+ * Progress is clamped to 0-100 on purpose: cross-axis unlocking means the
+ * current-axis count can sit BELOW the previous tier's threshold (5 tasks
+ * cleared, 0 cycles completed), which would otherwise produce a negative bar.
+ *
+ * @param {Object} args
+ * @param {number} args.cycles - lifetime cycles completed
+ * @param {number} args.cleared - lifetime tasks cleared
+ * @param {boolean} args.isToDoMode - whether To-Do mode is active
+ * @param {Array} args.tiers - MILESTONES.TIERS (ascending)
+ * @returns {{nextMilestone: number, previousMilestone: number, milestoneProgress: number, allUnlocked: boolean}}
+ */
+export function resolveNextBadgeTier({ cycles = 0, cleared = 0, isToDoMode = false, tiers = [] }) {
+    const axis = (t) => (isToDoMode ? t.tasks : t.cycles);
+    const current = isToDoMode ? cleared : cycles;
+    const earned = (t) => cycles >= t.cycles || cleared >= t.tasks;
+
+    const nextTier = tiers.find(t => !earned(t));
+    const lastTier = tiers.length ? tiers[tiers.length - 1] : null;
+
+    if (!nextTier) {
+        return {
+            nextMilestone: lastTier ? axis(lastTier) : 0,
+            previousMilestone: lastTier ? axis(lastTier) : 0,
+            milestoneProgress: 100,
+            allUnlocked: true
+        };
+    }
+
+    const nextMilestone = axis(nextTier);
+    // Baseline is the highest EARNED tier's threshold on this axis. Using the
+    // earned set (not the axis count) keeps the bar consistent with the tier the
+    // user actually just passed, whichever axis they passed it on.
+    const earnedOnAxis = tiers.filter(earned).map(axis);
+    const previousMilestone = earnedOnAxis.length ? Math.max(...earnedOnAxis) : 0;
+
+    const span = nextMilestone - previousMilestone;
+    const raw = span > 0 ? ((current - previousMilestone) / span) * 100 : 100;
+    const milestoneProgress = Math.min(100, Math.max(0, raw));
+
+    return { nextMilestone, previousMilestone, milestoneProgress, allUnlocked: false };
+}
+
 export function setStatsPanelDependencies(dependencies) {
     di.setDependencies(dependencies);
     // Invalidate cached deps if manager already exists
@@ -704,23 +763,18 @@ export class StatsPanelManager {
         const cycleMilestones = MILESTONES.TIERS.map(t => t.cycles);
         const taskMilestones = MILESTONES.TIERS.map(t => t.tasks);
 
-        let nextMilestone, previousMilestone, milestoneProgress;
-
-        if (isToDoMode) {
-            // To-Do mode: progress based on cleared tasks
-            nextMilestone = taskMilestones.find(m => m > globalTasksCleared) || taskMilestones[taskMilestones.length - 1];
-            previousMilestone = [...taskMilestones].reverse().find(m => m <= globalTasksCleared) || 0;
-            milestoneProgress = previousMilestone === nextMilestone
-                ? 100
-                : ((globalTasksCleared - previousMilestone) / (nextMilestone - previousMilestone)) * 100;
-        } else {
-            // Cycle mode: progress based on completed cycles
-            nextMilestone = cycleMilestones.find(m => m > globalCyclesCompleted) || cycleMilestones[cycleMilestones.length - 1];
-            previousMilestone = [...cycleMilestones].reverse().find(m => m <= globalCyclesCompleted) || 0;
-            milestoneProgress = previousMilestone === nextMilestone
-                ? 100
-                : ((globalCyclesCompleted - previousMilestone) / (nextMilestone - previousMilestone)) * 100;
-        }
+        // Badges unlock on an OR (cyclesMet || tasksMet), so the next target has
+        // to be the first tier unearned on EITHER axis — not the first threshold
+        // above the active axis's count, which re-advertised badges the user had
+        // already earned the other way. See resolveNextBadgeTier().
+        // previousMilestone is deliberately not destructured — the resolver uses
+        // it internally to compute milestoneProgress, and nothing here needs it.
+        const { nextMilestone, milestoneProgress } = resolveNextBadgeTier({
+            cycles: globalCyclesCompleted,
+            cleared: globalTasksCleared,
+            isToDoMode,
+            tiers: MILESTONES.TIERS
+        });
 
         const milestoneProgressPercent = milestoneProgress.toFixed(1) + "%";
 

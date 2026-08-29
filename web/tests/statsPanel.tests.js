@@ -678,6 +678,76 @@ export async function runStatsPanelTests(resultsDiv) {
     // navigatePanels got these guards only after it shipped broken. These two
     // sit on the same seam, so they get them before.
 
+    // ── Badge tiers unlock on an OR, so progress must honour BOTH axes ─────
+    // achievementsManager.updateBadges() earns a tier on `cyclesMet || tasksMet`.
+    // The progress readout used to scan only the ACTIVE mode's axis, so a tier
+    // already earned on the other axis was still advertised as the next target.
+    resultsDiv.innerHTML += '<h4 class="test-section">🏅 Badge tier resolution</h4>';
+
+    const TIERS = [
+        { id: 'milestone-5',   cycles: 5,   tasks: 5 },
+        { id: 'milestone-25',  cycles: 25,  tasks: 125 },
+        { id: 'milestone-50',  cycles: 50,  tasks: 250 },
+        { id: 'milestone-75',  cycles: 75,  tasks: 375 },
+        { id: 'milestone-100', cycles: 100, tasks: 500 }
+    ];
+
+    await test('a tier earned by CLEARING is not re-advertised in cycle mode', () => {
+        // The reported case: 5 tasks cleared in To-Do mode earns milestone-5.
+        // Switch to cycle mode with 0 cycles — the next badge is milestone-25
+        // (25 cycles), NOT milestone-5 again.
+        const r = module.resolveNextBadgeTier({ cycles: 0, cleared: 5, isToDoMode: false, tiers: TIERS });
+        if (r.nextMilestone !== 25) {
+            throw new Error(`expected the next badge to be 25 cycles, got ${r.nextMilestone} — ` +
+                'milestone-5 is already earned via cleared tasks');
+        }
+        if (r.allUnlocked) throw new Error('should not report all unlocked');
+    });
+
+    await test('a tier earned by CYCLING is not re-advertised in to-do mode', () => {
+        // The mirror image: 5 cycles earns milestone-5; in To-Do mode with 0
+        // cleared, the next badge is milestone-25 at 125 tasks, not 5.
+        const r = module.resolveNextBadgeTier({ cycles: 5, cleared: 0, isToDoMode: true, tiers: TIERS });
+        if (r.nextMilestone !== 125) {
+            throw new Error(`expected the next badge to be 125 cleared tasks, got ${r.nextMilestone}`);
+        }
+    });
+
+    await test('progress never goes negative when the axes disagree', () => {
+        // 5 cleared / 0 cycles: the earned baseline on the CYCLES axis is 5,
+        // but the user has 0 cycles. Unclamped that is (0-5)/(25-5) = -25%.
+        const r = module.resolveNextBadgeTier({ cycles: 0, cleared: 5, isToDoMode: false, tiers: TIERS });
+        if (r.milestoneProgress < 0 || r.milestoneProgress > 100) {
+            throw new Error(`progress out of range: ${r.milestoneProgress}`);
+        }
+    });
+
+    await test('ordinary same-axis progress still measures correctly', () => {
+        // No cross-axis involvement: 10 cycles, nothing cleared. Next is 25,
+        // baseline 5, so 10 sits (10-5)/(25-5) = 25% of the way.
+        const r = module.resolveNextBadgeTier({ cycles: 10, cleared: 0, isToDoMode: false, tiers: TIERS });
+        if (r.nextMilestone !== 25) throw new Error(`next should be 25, got ${r.nextMilestone}`);
+        if (r.previousMilestone !== 5) throw new Error(`previous should be 5, got ${r.previousMilestone}`);
+        if (Math.round(r.milestoneProgress) !== 25) {
+            throw new Error(`progress should be 25%, got ${r.milestoneProgress}`);
+        }
+    });
+
+    await test('a fresh user targets the first tier on the active axis', () => {
+        const cycleMode = module.resolveNextBadgeTier({ cycles: 0, cleared: 0, isToDoMode: false, tiers: TIERS });
+        if (cycleMode.nextMilestone !== 5) throw new Error(`cycle mode should target 5, got ${cycleMode.nextMilestone}`);
+        const todoMode = module.resolveNextBadgeTier({ cycles: 0, cleared: 0, isToDoMode: true, tiers: TIERS });
+        if (todoMode.nextMilestone !== 5) throw new Error(`to-do mode should target 5, got ${todoMode.nextMilestone}`);
+    });
+
+    await test('every tier earned across BOTH axes reports allUnlocked', () => {
+        // 100 cycles clears every cycles threshold, so all five are earned even
+        // with zero cleared tasks — the OR again.
+        const r = module.resolveNextBadgeTier({ cycles: 100, cleared: 0, isToDoMode: true, tiers: TIERS });
+        if (!r.allUnlocked) throw new Error('all five tiers are earned via cycles; expected allUnlocked');
+        if (r.milestoneProgress !== 100) throw new Error(`expected 100%, got ${r.milestoneProgress}`);
+    });
+
     await test('exposes showTaskView and showStatsPanel (panel-switch delegates)', () => {
         const statsPanel = new StatsPanelManager();
         for (const name of ['showTaskView', 'showStatsPanel']) {
