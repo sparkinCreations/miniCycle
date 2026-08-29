@@ -1549,6 +1549,194 @@ async function journeyImportedKeepOnReset(browser, baseURL) {
     return { name: 'imported delete-settings reconcile and KEEP is honoured', failures };
 }
 
+// ── Journey 15 + 16: what a factory reset must actually leave behind ───────
+// The reset is destructive, irreversible and hard to verify by eye, which is
+// exactly why both of these shipped: each looked correct in a single tab with an
+// empty routine.
+
+// Drive the real reset UI: menu → settings → factory reset → confirm.
+async function runFactoryResetUI(page) {
+    await page.evaluate(() => document.querySelector('.menu-button')?.click());
+    await page.waitForTimeout(600);
+    await page.evaluate(() =>
+        document.querySelectorAll('.menu-section.collapsed').forEach(s => s.classList.remove('collapsed')));
+    await page.evaluate(() => document.getElementById('open-settings')?.click());
+    await page.waitForTimeout(1200);
+    await page.evaluate(() => document.getElementById('factory-reset')?.click());
+    await page.waitForTimeout(1000);
+    await page.evaluate(() => document.querySelector('button.btn-confirm.btn-destructive')?.click());
+}
+
+// Seed a routine through the first-run choice, then dismiss the welcome overlay.
+async function seedViaLearnOn(page) {
+    await page.waitForFunction(
+        () => !!document.querySelector('.first-run-btn[data-choice="learn"]'), null, { timeout: 25000 });
+    await page.evaluate(() => document.querySelector('.first-run-btn[data-choice="learn"]')?.click());
+    await page.waitForFunction(() => {
+        try { return Object.keys(JSON.parse(localStorage.getItem('miniCycleData')).data.cycles).length > 0; }
+        catch (e) { return false; }
+    }, null, { timeout: 25000 });
+    await page.waitForTimeout(2500);
+    await page.evaluate(() => document.getElementById('first-run-welcome-dismiss')?.click());
+    await page.waitForTimeout(1200);
+}
+
+const storedCycleKeys = (page) => page.evaluate(() => {
+    try {
+        const d = JSON.parse(localStorage.getItem('miniCycleData') || 'null');
+        return d ? Object.keys(d.data.cycles) : null;
+    } catch (e) { return 'unreadable'; }
+});
+
+// ── Journey 15: a second tab must not resurrect the data ────────────────────
+// appState's cross-tab listener used to `return` on a removal (storage events
+// deliver newValue === null for removeItem), so another tab kept the whole
+// document in memory and the next save wrote it all back — silently undoing the
+// reset while the resetting tab reported "Factory Reset Complete". Both pages
+// share ONE context here, because that is what makes them two tabs on one origin.
+async function journeyResetTwoTabs(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const context = await browser.newContext();
+    await context.grantPermissions(['notifications'], { origin: baseURL });
+    try {
+        const A = await context.newPage();
+        const B = await context.newPage();
+        const cleared = [];
+        B.on('console', (m) => {
+            if (/cleared in another tab/i.test(m.text())) cleared.push(m.text().slice(0, 120));
+        });
+
+        await A.goto(`${baseURL}/miniCycle.html`, { waitUntil: 'domcontentloaded', timeout: 25000 });
+        await seedViaLearnOn(A);
+        const seeded = await storedCycleKeys(A);
+        record('tab A has a routine to destroy', Array.isArray(seeded) && seeded.length > 0,
+            `seeded cycles: ${JSON.stringify(seeded)}`);
+
+        // Tab B opens the same app and loads the same data.
+        await B.goto(`${baseURL}/miniCycle.html`, { waitUntil: 'domcontentloaded', timeout: 25000 });
+        await B.waitForFunction(
+            () => document.documentElement.dataset.appLoaded === 'true', null, { timeout: 25000 });
+        await B.waitForTimeout(1500);
+
+        await runFactoryResetUI(A);
+        await A.waitForTimeout(4500);
+
+        const afterReset = await storedCycleKeys(A);
+        record('the reset emptied storage', Array.isArray(afterReset) && afterReset.length === 0,
+            `storage still holds ${JSON.stringify(afterReset)}`);
+
+        record('the other tab noticed the wipe', cleared.length > 0,
+            'tab B never logged the cross-tab clear — it is still holding the deleted document, ' +
+            'so its next save will write every routine back');
+
+        // The in-memory copy is what does the damage, so assert on it directly.
+        const bMemory = await B.evaluate(async () => {
+            const url = (path) => (globalThis.__MC_MODULE_MAP && globalThis.__MC_MODULE_MAP[path])
+                || `${path}?v=${globalThis.APP_VERSION}`;
+            const { getStateManager } = await import(url('/modules/core/appState.js'));
+            const d = getStateManager().get();
+            return d ? Object.keys(d.data.cycles) : null;
+        });
+        record('the other tab is not holding the deleted routine', !(bMemory && bMemory.length > 0),
+            `tab B still has ${JSON.stringify(bMemory)} in memory`);
+
+        // Now the ordinary thing a user does in the tab they left open.
+        await B.evaluate(() => {
+            const row = document.getElementById('task-input-row');
+            if (row) row.classList.remove('hidden');
+        });
+        await B.fill('#taskInput', 'typed in the other tab after a reset').catch(() => {});
+        await B.click('#addTaskBtn').catch(() => {});
+        await B.waitForTimeout(2500);
+
+        const afterActivity = await storedCycleKeys(B);
+        record('activity in the other tab does not resurrect the data',
+            Array.isArray(afterActivity) && afterActivity.length === 0,
+            `the factory reset was UNDONE — storage is back to ${JSON.stringify(afterActivity)}`);
+    } finally {
+        await context.close();
+    }
+    return { name: 'a factory reset survives a second open tab', failures };
+}
+
+// ── Journey 16: the in-place re-render must show the dataless state ─────────
+// reloadWithLoader re-renders IN PLACE — there is no page reload — and every
+// routine-scoped updater only runs when a cycle EXISTS. A reset produces the one
+// state none of them handle, so surfaces keep the deleted routine's values. The
+// task list and the title were each fixed after reaching users; the stats
+// counters were still reading the old cycle count.
+async function journeyResetClearsRenderedState(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const { context, page } = await openFresh(browser, baseURL);
+    try {
+        // A routine with values worth going stale: a completed task and 42 cycles.
+        await page.evaluate(() => {
+            const d = JSON.parse(localStorage.getItem('miniCycleData'));
+            d.data.cycles.rich = {
+                id: 'rich', title: 'RICH ROUTINE', autoReset: true, deleteCheckedTasks: false,
+                cycleCount: 42, recurringTemplates: {},
+                history: { events: [], maxEvents: 100 },
+                clearedTasks: { entries: [], totalCleared: 7, autoPruneEnabled: false },
+                tasks: [{ id: 'a', text: 'DONE TASK', completed: true, dueDate: null, highPriority: false,
+                    priorityColor: null, remindersEnabled: false, recurring: false, recurringSettings: {},
+                    deleteWhenComplete: false, deleteWhenCompleteSettings: { cycle: false, todo: true },
+                    schemaVersion: 2 }]
+            };
+            d.appState.activeCycleId = 'rich';
+            d.userProgress = d.userProgress || {};
+            d.userProgress.cyclesCompleted = 42;
+            localStorage.setItem('miniCycleData', JSON.stringify(d));
+        });
+        await page.reload({ waitUntil: 'domcontentloaded', timeout: 25000 });
+        await bootApp(page);
+        await page.waitForTimeout(2000);
+
+        const readCounters = () => page.evaluate(() => {
+            const t = (id) => {
+                const el = document.getElementById(id);
+                return el ? (el.textContent || '').trim().replace(/\s+/g, ' ') : '(absent)';
+            };
+            return {
+                taskRows: document.querySelectorAll('#taskList li').length,
+                completedRows: document.querySelectorAll('#completedTaskList li').length,
+                title: t('mini-cycle-title'),
+                miniCycleCount: t('mini-cycle-count'),
+                perCycle: t('per-cycle-count'),
+                routineCycles: t('current-routine-cycle-count')
+            };
+        });
+
+        const before = await readCounters();
+        record('the routine rendered its 42-cycle history', /42/.test(before.perCycle),
+            `counters never showed the seeded value, so this journey proves nothing: ${JSON.stringify(before)}`);
+
+        await runFactoryResetUI(page);
+        await page.waitForTimeout(5500);
+
+        const after = await readCounters();
+        record('storage is empty after the reset',
+            (await storedCycleKeys(page) || []).length === 0,
+            'the reset did not clear storage, so the DOM assertions below are meaningless');
+        record('the task list is cleared', after.taskRows === 0, `${after.taskRows} rows remain`);
+        record('the completed list is cleared', after.completedRows === 0,
+            `${after.completedRows} completed rows remain — #completedTaskList is a SEPARATE element ` +
+            'from #taskList and needs its own clear');
+        record('the title no longer names the deleted routine', !/RICH ROUTINE/.test(after.title),
+            `title still reads "${after.title}"`);
+        record('the cycle counters read zero, not the deleted routine’s history',
+            !/42/.test(after.miniCycleCount + after.perCycle + after.routineCycles),
+            `counters still show the deleted routine: ${JSON.stringify({
+                miniCycleCount: after.miniCycleCount, perCycle: after.perCycle,
+                routineCycles: after.routineCycles })}`);
+
+        record('no starved dependencies', page.__diWarnings.length === 0,
+            `DI warnings: ${page.__diWarnings.join(' | ')}`);
+    } finally {
+        await context.close();
+    }
+    return { name: 'a factory reset clears the state it had rendered', failures };
+}
+
 const JOURNEYS = [
     { name: 'core (add → persist → cycle → offline)', fn: journeyCore },
     { name: 'routine switching', fn: journeyRoutineSwitch },
@@ -1564,6 +1752,8 @@ const JOURNEYS = [
     { name: 'first-run state contract (core-ready \u2260 state-ready)', fn: journeyFirstRunStateContract },
     { name: 'quick actions are writable during a first-run session', fn: journeyFirstRunQuickActions },
     { name: 'imported delete-settings reconcile and KEEP is honoured', fn: journeyImportedKeepOnReset },
+    { name: 'a factory reset survives a second open tab', fn: journeyResetTwoTabs },
+    { name: 'a factory reset clears the state it had rendered', fn: journeyResetClearsRenderedState },
 ];
 
 async function run() {

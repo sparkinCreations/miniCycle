@@ -1,3 +1,7 @@
+## [2.520] - 2026-08-29
+- fix(reset): a factory reset was silently undone by a second open tab, and left the deleted routine's cycle counts on screen. appState now drops its in-memory copy when another tab clears the data instead of ignoring the removal event; reloadWithLoader renders the dataless state (completed list + stats counters) alongside the task list and title it already cleared.
+
+
 ## [2.519] - 2026-08-28
 - docs(splits): close the plan — nine priorities resolved, and what it got wrong
 - docs(mcyc): the internal format doc contradicted the published spec

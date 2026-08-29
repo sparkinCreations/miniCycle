@@ -452,7 +452,46 @@ class MiniCycleState {
         // ✅ Multi-tab sync: Detect changes from other tabs via storage event
         this._storageHandler = (event) => {
             if (event.key !== STORAGE_KEYS.DATA) return;
-            if (!event.newValue) return;
+
+            // A REMOVAL (newValue === null) is another tab clearing the data —
+            // a factory reset, or a restore that clears before writing.
+            //
+            // This used to `return`, which left this tab holding the whole
+            // document in memory. The next save then wrote it all back and
+            // silently UNDID the reset. Measured Aug 2026 with two real tabs:
+            // storage went empty, this tab kept rendering its routine, and one
+            // ordinary edit restored every cycle — while the resetting tab had
+            // already reported "Factory Reset Complete".
+            //
+            // Drop the in-memory copy the same way backupRestoreManager's
+            // neutralizeAppState() does for the tab that RAN the reset. Cancel
+            // the pending save FIRST: a debounced write already queued would
+            // otherwise still land and resurrect the data.
+            //
+            // Listeners are deliberately NOT notified. They are written for
+            // (newState, oldState) with a real newState, and handing them null
+            // buys nothing here — the DOM is stale either way, which is what the
+            // notification tells the user. A restore's follow-up write arrives as
+            // its own event and is adopted below on its own merits.
+            if (!event.newValue) {
+                if (this.saveTimeout) {
+                    clearTimeout(this.saveTimeout);
+                    this.saveTimeout = null;
+                }
+                const hadData = this.data !== null;
+                this.data = null;
+                this.isDirty = false;
+                this.isInitialized = false;
+                if (hadData) {
+                    console.warn('⚠️ Multi-tab: data cleared in another tab — dropping in-memory state');
+                    this.deps.showNotification?.(
+                        getLabel('notify.dataClearedElsewhere'),
+                        'warning',
+                        UI_TIMEOUTS.NOTIFICATION_SLOW
+                    );
+                }
+                return;
+            }
 
             try {
                 const externalData = JSON.parse(event.newValue);

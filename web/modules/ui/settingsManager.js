@@ -248,7 +248,11 @@ function wireSubModuleDependencies(dependencies) {
         appInit: dependencies.appInit,
         showPromptModal: dependencies.showPromptModal,
         closeUndoIndexedDB: dependencies.closeUndoIndexedDB,
-        initUndoIndexedDB: dependencies.initUndoIndexedDB
+        initUndoIndexedDB: dependencies.initUndoIndexedDB,
+        // reloadWithLoader re-renders IN PLACE (there is no page reload), so the
+        // stats counters have to be told the data is gone — see the dataless
+        // re-render there.
+        updateStatsPanel: dependencies.updateStatsPanel
     });
 
     _subModules.setDataSanitizerDependencies({

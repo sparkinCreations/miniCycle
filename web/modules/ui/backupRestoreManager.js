@@ -108,12 +108,28 @@ function reloadWithLoader(logContext, options = {}) {
     setTimeout(async () => {
         try {
 
+            // ── Render the DATALESS state ──────────────────────────────────
+            // This function re-renders IN PLACE; there is no page reload. Every
+            // surface below is written by a routine-scoped updater that only runs
+            // when a cycle EXISTS, and a factory reset produces exactly the state
+            // none of them handle — so each one keeps showing the deleted
+            // routine's values until something else happens to re-render it.
+            //
+            // Two of these were fixed one at a time after they reached users (the
+            // task list, then the title). They are grouped here so the next
+            // surface is a line in this block rather than a third bug report.
+
             // Clear the task list DOM so stale tasks don't linger
             const taskList = document.getElementById(DOM_IDS.TASK_LIST);
             if (taskList) {
                 taskList.innerHTML = '';
                 document.body.classList.add(DOM_CLASSES.TASKS_EMPTY);
             }
+
+            // The completed list is a SEPARATE element — clearing #taskList does
+            // not touch it, so a completed task outlived the routine it belonged to.
+            const completedList = document.getElementById(DOM_IDS.COMPLETED_TASK_LIST);
+            if (completedList) completedList.innerHTML = '';
 
             // ...and the routine title, for the same reason. Both title writers
             // only run when a cycle EXISTS — routineLoader.updateCycleUIState()
@@ -128,6 +144,18 @@ function reloadWithLoader(logContext, options = {}) {
 
             const AppState = getAppStateInstance();
             AppState?.reload?.();
+
+            // Stats counters. updateStatsPanel() ALREADY computes zeros correctly
+            // when there is no active cycle — it just was not being called here, so
+            // three counters kept reading the deleted routine's cycle count
+            // (measured Aug 2026: "42 cycles Completed" with empty storage). Call
+            // it rather than writing "0" by hand, which would duplicate the label
+            // formatting and drift from it.
+            try {
+                await _deps.updateStatsPanel?.();
+            } catch (e) {
+                console.warn('Could not refresh stats after reset:', e);
+            }
 
             if (fullReinit && _deps.appInit?.runInitialSetup) {
                 // Full re-init: creates fresh data if needed, checks onboarding, loads UI
