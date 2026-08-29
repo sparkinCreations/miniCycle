@@ -285,18 +285,36 @@ export const DEFAULT_LABELS = deepFreeze({
         completion:         '{completed} of {total} {taskWord} Completed This {cycleWord}',
         cyclesCompleted:    '{count} {cycleWord} Completed',
         clearedTasks:       '{count} Cleared {taskWord}',
+        // ── REWARD VOCABULARY — keep these three distinct ──────────────────
+        // Measured Aug 2026, because the words had drifted into each other and
+        // the panel read like two competing answers to "what unlocks next?":
+        //
+        //   BADGE  — achievementsManager.updateBadges(): unlocked by
+        //            `cyclesMet || tasksMet`, so EITHER counter earns it.
+        //   THEME  — themes.js checkThemeUnlocks(): `progress >=
+        //            unlockAt.cycles` where progress is cyclesCompleted, so
+        //            ONLY cycles earn it. A To-Do-only user earns badges and
+        //            never themes — which is exactly why the two lines must
+        //            name their category rather than both starting "Next:".
+        //   MILESTONE — the numeric threshold itself (MILESTONES.TIERS), an
+        //            internal measure. Prefer naming what the user GETS in
+        //            user-facing text; "milestone" here leaked into the
+        //            progress-bar aria-label while the visible text beside it
+        //            said "badge" for the same number.
+        //
+        // Both systems are correct as implemented; only the wording was wrong.
         milestoneRewards:   'Milestone Rewards',
         achievementBadges:  'Achievement Badges',
         allRoutines:        'All Routines:',
         allRoutinesValue:   '{count} {cycleWord}',
-        progressToNext:     'Progress to next milestone',
-        progressCleared:    '{current} of {next} cleared {taskWord} to next milestone',
-        progressCycles:     '{current} of {next} {cycleWord} to next milestone',
+        progressToNext:     'Progress to next badge',
+        progressCleared:    '{current} of {next} cleared {taskWord} to next badge',
+        progressCycles:     '{current} of {next} {cycleWord} to next badge',
         globalDisplay:      '{cycles} {cycleText} / {cleared} {clearedText}',
         progressCircleAria: 'Current {cycleWord} {taskWord} completion',
         allBadgesUnlocked:  'All badges unlocked!',
-        clearedToMilestone: '{remaining} more cleared {taskWord} to next badge',
-        cyclesToMilestone:  '{remaining} more {cycleWord} to next badge',
+        clearedToMilestone: 'Next badge: {remaining} more cleared {taskWord}',
+        cyclesToMilestone:  'Next badge: {remaining} more {cycleWord}',
         history:            'History'
     },
 
@@ -1689,7 +1707,7 @@ export const DEFAULT_LABELS = deepFreeze({
 
         // Vocabulary theme unlock status (used in stats panel)
         themeCurrentPrefix: 'Theme',
-        nextThemeUnlock:    'Next: {name} — {count} more {cycleWord}',
+        nextThemeUnlock:    'Next theme: {name} — {count} more {cycleWord}',
         allThemesUnlocked:  'All themes unlocked!',
 
         // Vocabulary theme section heading (used in Themes modal)
@@ -2129,6 +2147,12 @@ export const DEFAULT_LABELS = deepFreeze({
 
     accessibility: {
         skipToContent: 'Skip to main content',
+        // Each of these sits in a colour row whose visible <label for=…> names
+        // the COLOR input beside it, leaving the on/off switch itself unnamed —
+        // a screen reader announced only "checkbox, checked". Found Aug 2026 by
+        // adding personalization to the a11y gate.
+        toggleCheckboxFill:     'Apply a custom checkbox fill colour',
+        toggleCheckboxEmpty:    'Apply a custom empty checkbox colour',
         badgeCoinSpin: 'Achievement badge coin, use arrow keys to spin',
         routineTitle: 'Routine name',
         taskCompleted: 'Task completed: {name}',
@@ -2618,6 +2642,8 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
 
     // Accessibility
     'accessibility.skipToContent',
+    'accessibility.toggleCheckboxFill',
+    'accessibility.toggleCheckboxEmpty',
     'accessibility.badgeCoinSpin',
     'accessibility.routineTitle',
     'accessibility.taskCompleted',

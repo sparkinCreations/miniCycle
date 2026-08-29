@@ -191,13 +191,23 @@ body.focus-mode .stats-panel {
     .stats-panel {
         max-width: 550px;
         padding: var(--space-6) var(--space-8);
+        /* Raise the vh cap on desktop so the panel stops scrolling internally
+           while empty screen sits below it. This is NOT a loosening of the edge
+           constraints: the real limit is the min() on .stats-panel-content
+           (100dvh - header - nav-dots - space-6), which still governs. The 63vh
+           token is tuned for phones, where it is the tighter of the two; on a
+           tall desktop viewport it was the ONLY thing binding, which is what
+           forced milestone graphics and progress figures to compete vertically.
+           The panel-overlap guard in test:layout covers all 7 viewports. */
+        --stats-panel-max-vh: 78vh;
     }
 }
 
 @media (min-width: 1280px) {
     .stats-panel {
-        max-width: 650px;
+        max-width: 720px;
         padding: 28px var(--space-10);
+        --stats-panel-max-vh: 82vh;
     }
 }
 

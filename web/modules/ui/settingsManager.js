@@ -42,6 +42,7 @@ const di = createDIModule('SettingsManager', {
     organizeCompletedTasks: optional(null),
     handleTaskListMovement: optional(null),
     updateCompletedTasksCount: optional(null),
+    updateProgressBar: optional(null),
     updateStatsPanel: optional(null),
     DataValidator: optional(null),
     calculateNextOccurrence: optional(null),
@@ -249,10 +250,11 @@ function wireSubModuleDependencies(dependencies) {
         showPromptModal: dependencies.showPromptModal,
         closeUndoIndexedDB: dependencies.closeUndoIndexedDB,
         initUndoIndexedDB: dependencies.initUndoIndexedDB,
-        // reloadWithLoader re-renders IN PLACE (there is no page reload), so the
-        // stats counters have to be told the data is gone — see the dataless
-        // re-render there.
-        updateStatsPanel: dependencies.updateStatsPanel
+        // reloadWithLoader re-renders IN PLACE (there is no page reload), so every
+        // routine-scoped surface has to be told the data is gone — see the
+        // dataless re-render there.
+        updateStatsPanel: dependencies.updateStatsPanel,
+        updateProgressBar: dependencies.updateProgressBar
     });
 
     _subModules.setDataSanitizerDependencies({

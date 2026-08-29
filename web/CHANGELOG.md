@@ -1,3 +1,12 @@
+## [2.522] - 2026-08-29
+- UX review follow-up: name the reward vocabulary (badges unlock on cycles OR cleared tasks, themes on cycles only) so Stats stops reading as competing answers; show the task-input bar on an empty routine so Focus View is not a dead end; add personalization to the a11y gate, which found and fixed two unnamed toggles; give the desktop Stats panel the vertical space it was leaving unused.
+
+
+## [2.521] - 2026-08-29
+- test(recurring): de-race the hours formatter test that failed CI
+- fix(reset): the progress bar kept the deleted routine's fill after a factory reset. It holds its value in an inline transform, so clearing the task lists never touched it; updateProgressBar() now runs as part of the dataless re-render.
+
+
 ## [2.520] - 2026-08-29
 - fix(reset): a factory reset was silently undone by a second open tab, and left the deleted routine's cycle counts on screen. appState now drops its in-memory copy when another tab clears the data instead of ignoring the removal event; reloadWithLoader renders the dataless state (completed list + stats counters) alongside the task list and title it already cleared.
 

@@ -623,7 +623,7 @@ export const PREFERENCES_MODAL_HTML = `<!-- Preferences Modal -->
                         <span class="pref-color-icon">&#x2611;&#xFE0F;</span>
                         <label for="pref-checkbox-bg">${getLabel('prefs.checkboxFill')}</label>
                         <span class="toggle-switch pref-toggle">
-                            <input type="checkbox" id="toggle-checkbox-fill" name="toggle-checkbox-fill" checked>
+                            <input type="checkbox" id="toggle-checkbox-fill" name="toggle-checkbox-fill" aria-label="${getLabel('accessibility.toggleCheckboxFill')}" checked>
                             <span class="toggle-slider"></span>
                         </span>
                         <input type="color" id="pref-checkbox-bg" value="#5db567" />
@@ -633,7 +633,7 @@ export const PREFERENCES_MODAL_HTML = `<!-- Preferences Modal -->
                         <span class="pref-color-icon">⬜</span>
                         <label for="pref-checkbox-incomplete-bg">${getLabel('prefs.checkboxEmpty')}</label>
                         <span class="toggle-switch pref-toggle">
-                            <input type="checkbox" id="toggle-checkbox-incomplete" name="toggle-checkbox-incomplete" checked>
+                            <input type="checkbox" id="toggle-checkbox-incomplete" name="toggle-checkbox-incomplete" aria-label="${getLabel('accessibility.toggleCheckboxEmpty')}" checked>
                             <span class="toggle-slider"></span>
                         </span>
                         <input type="color" id="pref-checkbox-incomplete-bg" value="#c8c8c8" />

@@ -349,9 +349,10 @@ export class ModeManager {
             toggleAutoReset.checked = autoReset;
             deleteCheckedTasks.checked = deleteChecked;
 
-            // Sync task input bar visibility with routine's saved preference
+            // Sync task input bar visibility with routine's saved preference,
+            // except on an empty routine — see _shouldShowTaskInput().
             if (this._updateTaskInputVisibility) {
-                this._updateTaskInputVisibility(currentCycle.showTaskInput === true);
+                this._updateTaskInputVisibility(this._shouldShowTaskInput(currentCycle));
             }
         } else {
             // ✅ Normal during Phase 2 - data loads in Phase 3
@@ -879,6 +880,29 @@ export class ModeManager {
     }
 
     /**
+     * Should the task-input bar be showing for this routine?
+     *
+     * Normally the routine's own `showTaskInput` preference decides, and hiding
+     * it by default is deliberate: miniCycle is for building a routine once and
+     * running it repeatedly, not for a permanent task inbox.
+     *
+     * The exception is an EMPTY routine. There is nothing to run yet, and Focus
+     * View has no visible add button — its empty state renders 'empty.noTasks'
+     * with a deliberately blank hint (focusTaskPanel.js) — so a new user whose
+     * preference is "hidden" is left with a dead end and no way out.
+     *
+     * This overrides the DISPLAY only. The stored preference is never written
+     * here, so it takes over again the moment the routine has a task.
+     *
+     * @param {Object|null} cycle - the active cycle, or null when there is none
+     * @returns {boolean} whether the input bar should be visible
+     */
+    _shouldShowTaskInput(cycle) {
+        if (cycle?.showTaskInput === true) return true;
+        return (cycle?.tasks?.length ?? 0) === 0;
+    }
+
+    /**
      * Setup quick actions button and dropdown menu
      * Handles toggle task input and create new routine actions
      */
@@ -986,11 +1010,12 @@ export class ModeManager {
                 });
             };
 
-            // Set initial state from per-routine setting (default: false = hidden)
+            // Set initial state from the per-routine setting (default: false =
+            // hidden), overridden for an empty routine — see _shouldShowTaskInput().
             const state = this.deps.AppState?.get();
             const activeCycleId = state?.appState?.activeCycleId;
             const activeCycle = activeCycleId ? state?.data?.cycles?.[activeCycleId] : null;
-            const initialVisible = activeCycle?.showTaskInput === true;
+            const initialVisible = this._shouldShowTaskInput(activeCycle);
             this._updateTaskInputVisibility(initialVisible);
 
             this.deps.safeAddEventListener(toggleTaskInputBtn, 'click', async () => {

@@ -157,6 +157,22 @@ function reloadWithLoader(logContext, options = {}) {
                 console.warn('Could not refresh stats after reset:', e);
             }
 
+            // The progress bar holds its fill in an INLINE style
+            // (progressBar.style.transform = scaleX(...)), so clearing the task
+            // lists above does not touch it — it kept showing the deleted
+            // routine's completion until a manual reload (reported Aug 2026,
+            // measured at scaleX(0.666667) with zero task rows).
+            //
+            // updateProgressBar() counts the rendered rows, and they are already
+            // cleared by this point, so calling it resolves to 0 with no special
+            // empty-state branch needed. It runs AFTER the list clears above for
+            // exactly that reason — moving it earlier would recompute the old fill.
+            try {
+                _deps.updateProgressBar?.();
+            } catch (e) {
+                console.warn('Could not reset the progress bar after reset:', e);
+            }
+
             if (fullReinit && _deps.appInit?.runInitialSetup) {
                 // Full re-init: creates fresh data if needed, checks onboarding, loads UI
                 await _deps.appInit.runInitialSetup();
