@@ -1,3 +1,7 @@
+## [2.523] - 2026-08-29
+- fix(achievements): a badge earned by clearing tasks was still advertised as the next target in cycle mode. Badges unlock on an OR (cycles OR cleared tasks) but the progress readout scanned only the active mode's axis, so Habit Tracker earned via 5 cleared tasks still read 'Next badge: 5 more cycles'. The next target is now the first tier unearned on either axis.
+
+
 ## [2.522] - 2026-08-29
 - UX review follow-up: name the reward vocabulary (badges unlock on cycles OR cleared tasks, themes on cycles only) so Stats stops reading as competing answers; show the task-input bar on an empty routine so Focus View is not a dead end; add personalization to the a11y gate, which found and fixed two unnamed toggles; give the desktop Stats panel the vertical space it was leaving unused.
 
