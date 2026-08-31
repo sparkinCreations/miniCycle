@@ -429,6 +429,32 @@ export function neutralizeAppState() {
 // ============================================================================
 
 /**
+ * Schema 2.5 JSON string for a backup, taken from live AppState.
+ * Persistence can fail (quota) while memory is still current; the file must
+ * still carry what the user sees, including when no previous stored document
+ * exists. Do not read localStorage for this — a failed save leaves it stale.
+ *
+ * @param {Object} AppState
+ * @returns {string|null}
+ */
+function serializeLiveMiniCycleData(AppState) {
+    const currentState = AppState?.get?.();
+    if (!currentState) return null;
+    let payload;
+    try {
+        payload = JSON.stringify(currentState);
+    } catch (serializeError) {
+        console.error('Could not serialize in-memory state for backup:', serializeError);
+        return null;
+    }
+    if (!validateSchema25PayloadString(payload)) {
+        console.error('In-memory state failed Schema 2.5 validation for backup');
+        return null;
+    }
+    return payload;
+}
+
+/**
  * Download the current app state as a .json backup file.
  * This is the core backup logic extracted for reuse by both the
  * settings backup button and the backup reminder module.
@@ -445,29 +471,22 @@ export function downloadBackupFile(options = {}) {
         return false;
     }
 
-    // Flush any pending debounced save so the file reflects what the user sees.
-    // save()/forceSave() write synchronously, so the localStorage read below is
-    // guaranteed fresh once this returns.
+    // Best-effort flush so disk matches memory when storage is writable.
+    // Quota (or any other write failure) must not block the export — the file
+    // is built from AppState, not from whatever localStorage last accepted.
     try { AppState.forceSave?.(); } catch (flushError) {
         console.warn('⚠️ Could not flush pending save before backup:', flushError);
-    }
-
-    if (!localStorage.getItem(STORAGE_KEYS.DATA)) {
-        console.error('Schema 2.5 data not found in localStorage');
-        _deps.showNotification(getLabel('notify.backupNoData'), 'error');
-        return false;
     }
 
     const defaultName = `mini-cycle-backup-${new Date().toISOString().slice(0, 10)}`;
 
     const createAndDownload = (fileName) => {
-        // Read at download time, not click time — the name prompt can sit open
-        // for minutes, and edits made meanwhile belong in the backup. Flush again
-        // so nothing is stuck behind the debounce.
+        // Snapshot at download time, not click time — the name prompt can sit
+        // open for minutes, and edits made meanwhile belong in the backup.
         try { AppState.forceSave?.(); } catch (flushError) {
             console.warn('⚠️ Could not flush pending save before backup:', flushError);
         }
-        const miniCycleData = localStorage.getItem(STORAGE_KEYS.DATA);
+        const miniCycleData = serializeLiveMiniCycleData(AppState);
         if (!miniCycleData) {
             _deps.showNotification(getLabel('notify.backupNoData'), 'error');
             return;

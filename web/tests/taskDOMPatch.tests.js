@@ -106,6 +106,39 @@ export async function runTaskDOMPatchTests(resultsDiv) {
         } finally { unmount(list); }
     });
 
+    await test('completed=false rewrites a stale "Completed" row aria-label (Undo path)', () => {
+        const list = mountList('t1');
+        try {
+            const el = list.querySelector('.task[data-task-id="t1"]');
+            el.querySelector('.task-text').textContent = 'Load the dishwasher';
+            el.classList.add('completed');
+            el.querySelector('input').checked = true;
+            el.setAttribute('aria-label', 'Load the dishwasher, Completed');
+            const p = make();
+            p.patchTask('t1', { completed: false, text: 'Load the dishwasher' }, ['completed']);
+            if (el.querySelector('input').checked) throw new Error('checkbox still checked');
+            const label = el.getAttribute('aria-label');
+            if (label !== 'Load the dishwasher, Not completed') {
+                throw new Error('aria-label still announces completed after Undo: ' + label);
+            }
+        } finally { unmount(list); }
+    });
+
+    await test('completed=true writes Completed into the row aria-label (Redo path)', () => {
+        const list = mountList('t1');
+        try {
+            const el = list.querySelector('.task[data-task-id="t1"]');
+            el.querySelector('.task-text').textContent = 'Load the dishwasher';
+            el.setAttribute('aria-label', 'Load the dishwasher, Not completed');
+            const p = make();
+            p.patchTask('t1', { completed: true, text: 'Load the dishwasher' }, ['completed']);
+            const label = el.getAttribute('aria-label');
+            if (label !== 'Load the dishwasher, Completed') {
+                throw new Error('aria-label not updated on Redo complete: ' + label);
+            }
+        } finally { unmount(list); }
+    });
+
     // ── patchTask: text (XSS-safe via sanitizeInput) ────────────────────────
     resultsDiv.innerHTML += '<h4 class="test-section">📝 text</h4>';
 

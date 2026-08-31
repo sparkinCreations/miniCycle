@@ -76,6 +76,139 @@ export async function runBackupRestoreManagerTests(resultsDiv) {
     });
 
     // ============================================
+    resultsDiv.innerHTML += '<h4 class="test-section">💾 Backup export — in-memory snapshot</h4>';
+
+    function makeExportableState(taskCount) {
+        const tasks = [];
+        for (let i = 0; i < taskCount; i++) {
+            tasks.push({ id: `t${i + 1}`, text: `Task ${i + 1}`, completed: false });
+        }
+        return {
+            schemaVersion: '2.5',
+            metadata: { version: '2.5', schemaVersion: '2.5', lastModified: Date.now(), createdAt: Date.now() },
+            settings: {},
+            data: {
+                cycles: {
+                    kitchen: {
+                        id: 'kitchen',
+                        title: 'Kitchen',
+                        tasks,
+                        cycleCount: 0,
+                        recurringTemplates: {},
+                        history: { events: [], maxEvents: 100 },
+                        clearedTasks: { entries: [], totalCleared: 0, autoPruneEnabled: false }
+                    }
+                }
+            },
+            appState: { activeCycleId: 'kitchen' },
+            userProgress: {},
+            achievements: { unlocked: [], seen: {} }
+        };
+    }
+
+    function captureBackupDownload(run) {
+        let payloadText = null;
+        const OrigBlob = window.Blob;
+        const origClick = HTMLAnchorElement.prototype.click;
+        const origCreate = URL.createObjectURL;
+        const origRevoke = URL.revokeObjectURL;
+        window.Blob = function (parts, opts) {
+            if (parts && typeof parts[0] === 'string') payloadText = parts[0];
+            return new OrigBlob(parts, opts);
+        };
+        URL.createObjectURL = () => 'blob:backup-test';
+        URL.revokeObjectURL = () => {};
+        HTMLAnchorElement.prototype.click = () => {};
+        try {
+            run();
+            return payloadText;
+        } finally {
+            window.Blob = OrigBlob;
+            HTMLAnchorElement.prototype.click = origClick;
+            URL.createObjectURL = origCreate;
+            URL.revokeObjectURL = origRevoke;
+        }
+    }
+
+    function wireExportDeps(liveState, { forceSave = () => {} } = {}) {
+        mod.setBackupRestoreManagerDependencies({
+            AppState: {
+                isReady: () => true,
+                get: () => liveState,
+                forceSave,
+                update: () => {}
+            },
+            showNotification: () => {},
+            showConfirmationModal: () => {},
+            safeAddEventListener: (el, ev, fn) => el.addEventListener(ev, fn),
+            AppMeta: { version: '2.523' }
+        });
+    }
+
+    await test('export includes in-memory edits when localStorage is stale after a quota failure', () => {
+        const live = makeExportableState(4);
+        const stale = makeExportableState(3);
+        localStorage.setItem('miniCycleData', JSON.stringify(stale));
+
+        const quota = new Error('simulated quota');
+        quota.name = 'QuotaExceededError';
+        wireExportDeps(live, {
+            forceSave: () => { throw quota; }
+        });
+
+        const raw = captureBackupDownload(() => {
+            if (mod.downloadBackupFile({ skipNamePrompt: true }) !== true) {
+                throw new Error('downloadBackupFile should still initiate on quota flush failure');
+            }
+        });
+        if (!raw) throw new Error('no backup blob was created');
+        const file = JSON.parse(raw);
+        const inner = JSON.parse(file.miniCycleData);
+        const stored = JSON.parse(localStorage.getItem('miniCycleData'));
+        if (stored.data.cycles.kitchen.tasks.length !== 3) {
+            throw new Error('fixture: localStorage should remain at the pre-quota 3-task document');
+        }
+        if (inner.data.cycles.kitchen.tasks.length !== 4) {
+            throw new Error(`backup used stale storage (${inner.data.cycles.kitchen.tasks.length} tasks) instead of live AppState`);
+        }
+    });
+
+    await test('export succeeds from memory when no previous stored document exists', () => {
+        localStorage.removeItem('miniCycleData');
+        const live = makeExportableState(4);
+        wireExportDeps(live, {
+            forceSave: () => { throw Object.assign(new Error('quota'), { name: 'QuotaExceededError' }); }
+        });
+
+        const raw = captureBackupDownload(() => {
+            mod.downloadBackupFile({ skipNamePrompt: true });
+        });
+        if (!raw) throw new Error('no backup blob was created with empty localStorage');
+        const inner = JSON.parse(JSON.parse(raw).miniCycleData);
+        if (inner.data.cycles.kitchen.tasks.length !== 4) {
+            throw new Error('empty localStorage should not block an in-memory export');
+        }
+        if (localStorage.getItem('miniCycleData') !== null) {
+            throw new Error('export must not require writing localStorage first');
+        }
+    });
+
+    await test('healthy-storage export still serializes live AppState (pending edits)', () => {
+        const live = makeExportableState(4);
+        const stale = makeExportableState(3);
+        localStorage.setItem('miniCycleData', JSON.stringify(stale));
+        wireExportDeps(live, { forceSave: () => {} });
+
+        const raw = captureBackupDownload(() => {
+            mod.downloadBackupFile({ skipNamePrompt: true });
+        });
+        const inner = JSON.parse(JSON.parse(raw).miniCycleData);
+        if (inner.data.cycles.kitchen.tasks.length !== 4) {
+            throw new Error('healthy flush path still must snapshot live state, not leftover storage');
+        }
+    });
+
+    // ============================================
     resultsDiv.innerHTML += '<h4 class="test-section">♻️ Restore — both backup formats</h4>';
 
     // The app writes TWO backup shapes and, until v2.506, each restore entry point
