@@ -139,6 +139,12 @@ export function resolveNextBadgeTier({ cycles = 0, cleared = 0, isToDoMode = fal
 
     const span = nextMilestone - previousMilestone;
     const raw = span > 0 ? ((current - previousMilestone) / span) * 100 : 100;
+    // The lower clamp is load-bearing, not boilerplate: because tiers unlock on
+    // an OR, `current` can sit BELOW previousMilestone. Earn tier 5 with 5
+    // cleared tasks, then read the bar in cycle mode with 0 cycles and the
+    // baseline is still 5 — (0 - 5) / (25 - 5) = -25%, a negative bar width.
+    // Removing Math.max(0, …) reintroduces that; it is reachable in normal use,
+    // not just from bad data.
     const milestoneProgress = Math.min(100, Math.max(0, raw));
 
     return { nextMilestone, previousMilestone, milestoneProgress, allUnlocked: false };

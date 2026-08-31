@@ -474,18 +474,18 @@ export function downloadBackupFile(options = {}) {
     // Best-effort flush so disk matches memory when storage is writable.
     // Quota (or any other write failure) must not block the export — the file
     // is built from AppState, not from whatever localStorage last accepted.
-    try { AppState.forceSave?.(); } catch (flushError) {
-        console.warn('⚠️ Could not flush pending save before backup:', flushError);
-    }
+    // No try/catch: forceSave() is async, so anything that fails inside it
+    // surfaces as a rejected promise a synchronous catch could never see.
+    // save() reports its own failures — quota raises the persistent
+    // storage-full warning that sends the user here in the first place.
+    AppState.forceSave?.();
 
     const defaultName = `mini-cycle-backup-${new Date().toISOString().slice(0, 10)}`;
 
     const createAndDownload = (fileName) => {
         // Snapshot at download time, not click time — the name prompt can sit
         // open for minutes, and edits made meanwhile belong in the backup.
-        try { AppState.forceSave?.(); } catch (flushError) {
-            console.warn('⚠️ Could not flush pending save before backup:', flushError);
-        }
+        AppState.forceSave?.();  // see note above — failures are reported by save()
         const miniCycleData = serializeLiveMiniCycleData(AppState);
         if (!miniCycleData) {
             _deps.showNotification(getLabel('notify.backupNoData'), 'error');

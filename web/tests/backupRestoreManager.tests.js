@@ -150,11 +150,13 @@ export async function runBackupRestoreManagerTests(resultsDiv) {
         const stale = makeExportableState(3);
         localStorage.setItem('miniCycleData', JSON.stringify(stale));
 
-        const quota = new Error('simulated quota');
-        quota.name = 'QuotaExceededError';
-        wireExportDeps(live, {
-            forceSave: () => { throw quota; }
-        });
+        // Production-shaped quota flush. The real forceSave() is async AND never
+        // throws: save() catches QuotaExceededError, raises the persistent
+        // storage-full warning and returns (appState.js _handleQuotaError), so
+        // the store is simply left at its last-accepted document. A synchronous
+        // throw here would exercise a path production cannot reach — it only
+        // ever hit the try/catch that used to wrap this call.
+        wireExportDeps(live, { forceSave: async () => { /* write rejected; storage untouched */ } });
 
         const raw = captureBackupDownload(() => {
             if (mod.downloadBackupFile({ skipNamePrompt: true }) !== true) {
@@ -176,9 +178,7 @@ export async function runBackupRestoreManagerTests(resultsDiv) {
     await test('export succeeds from memory when no previous stored document exists', () => {
         localStorage.removeItem('miniCycleData');
         const live = makeExportableState(4);
-        wireExportDeps(live, {
-            forceSave: () => { throw Object.assign(new Error('quota'), { name: 'QuotaExceededError' }); }
-        });
+        wireExportDeps(live, { forceSave: async () => { /* quota; nothing reaches storage */ } });
 
         const raw = captureBackupDownload(() => {
             mod.downloadBackupFile({ skipNamePrompt: true });
