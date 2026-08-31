@@ -1,3 +1,7 @@
+## [2.524] - 2026-08-31
+- fix: export live state on quota failure and keep Undo aria-labels in sync
+
+
 ## [2.523] - 2026-08-29
 - fix(achievements): a badge earned by clearing tasks was still advertised as the next target in cycle mode. Badges unlock on an OR (cycles OR cleared tasks) but the progress readout scanned only the active mode's axis, so Habit Tracker earned via 5 cleared tasks still read 'Next badge: 5 more cycles'. The next target is now the first tier unearned on either axis.
 
