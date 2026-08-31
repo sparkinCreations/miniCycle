@@ -21,6 +21,7 @@ import { ICONS } from '../utils/icons.js';
 // Local-midnight parse for date-only "YYYY-MM-DD" values — new Date() treats
 // them as UTC midnight, displaying the previous day in negative UTC offsets.
 import { parseDateAsLocal } from '../recurring/recurringDateUtils.js';
+import { applyTaskStatusLabel } from './taskUtils.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -103,11 +104,17 @@ export class TaskDOMPatch {
      * @private
      */
     _patchCompleted(taskElement, taskData) {
+        const completed = taskData.completed || false;
         const checkbox = taskElement.querySelector('input[type="checkbox"]');
         if (checkbox) {
-            checkbox.checked = taskData.completed || false;
+            checkbox.checked = completed;
         }
-        taskElement.classList.toggle(DOM_CLASSES.COMPLETED, taskData.completed || false);
+        taskElement.classList.toggle(DOM_CLASSES.COMPLETED, completed);
+        // Undo/redo uses this patch path for a completion-only change. The
+        // checkbox and class were updated here, but the row aria-label was
+        // left on the previous status — assistive tech then heard "Completed"
+        // on an unchecked box. applyTaskStatusLabel is the single writer.
+        applyTaskStatusLabel(taskElement, completed, { name: taskData.text });
     }
 
     /**
