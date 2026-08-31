@@ -1,3 +1,7 @@
+## [2.525] - 2026-08-31
+- fix(backup): drop the unreachable flush catch and fix its test doubles
+
+
 ## [2.524] - 2026-08-31
 - fix: export live state on quota failure and keep Undo aria-labels in sync
 
