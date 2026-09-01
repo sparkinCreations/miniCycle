@@ -272,8 +272,20 @@ export async function runRecurringCalculatorsTests(resultsDiv) {
         }
         const from = new Date(2026, 1, 10);
         const next = new Date(calculateNextOccurrence(normalized, from.getTime()));
-        if (next.getMonth() === 2 && next.getDate() === 1) {
-            throw new Error('degenerated to the 1st-of-next-month fallback');
+        // Assert against the day normalization actually chose, NOT a hardcoded
+        // date. Filtering 99 leaves days empty, and the empty-days default is
+        // TODAY's day-of-month — so on the 1st of any month the correct result
+        // IS Mar 1, indistinguishable from the degenerate fallback if you only
+        // look at the output date. (That false positive failed CI on Sep 1
+        // 2026.) Checking the mechanism holds on every calendar day, and still
+        // catches the original bug: an unfiltered 99 trips the days check above
+        // and lands on a date whose getDate() is not 99.
+        const defaultedDay = normalized.monthly.days[0];
+        if (!defaultedDay) {
+            throw new Error('filtered-out day must be replaced by a default, not left empty');
+        }
+        if (next.getDate() !== defaultedDay) {
+            throw new Error(`expected the normalized day ${defaultedDay}, got ${next.toDateString()}`);
         }
         // A valid day is still honoured exactly.
         const ok = settingsMod.normalizeRecurringSettings({
@@ -298,8 +310,16 @@ export async function runRecurringCalculatorsTests(resultsDiv) {
         }
         const from = new Date(2026, 1, 10);
         const next = new Date(calculateNextOccurrence(normalized, from.getTime()));
-        if (next.getFullYear() === 2027 && next.getMonth() === 0 && next.getDate() === 1) {
-            throw new Error('degenerated to the Jan-1-next-year month overflow');
+        // Same reasoning as the monthly case above. The empty-months default is
+        // TODAY's month, so on Jan 1 the correct answer IS Jan 1 of the next
+        // year and a hardcoded overflow check would cry wolf once a year.
+        // Assert the month normalization picked (1-based) instead.
+        const defaultedMonth = normalized.yearly.months[0];
+        if (!defaultedMonth) {
+            throw new Error('filtered-out month must be replaced by a default, not left empty');
+        }
+        if (next.getMonth() !== defaultedMonth - 1) {
+            throw new Error(`expected the normalized month ${defaultedMonth}, got ${next.toDateString()}`);
         }
     });
 
