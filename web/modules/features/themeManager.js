@@ -234,7 +234,8 @@ function _refreshLiveLensLabels() {
             : '🔄 ' + getLabel('action.completeCycle');
     }
 
-    // Empty state text ("No tasks yet" → "No habits yet" etc.)
+    // Empty state headline ("Your routine is empty" — no longer vocab-swapped,
+    // it names the routine rather than the missing tasks)
     const emptyState = _deps.getElementById(DOM_IDS.EMPTY_STATE);
     if (emptyState) {
         const emptyText = emptyState.querySelector(DOM_SELECTORS.EMPTY_STATE_TEXT);

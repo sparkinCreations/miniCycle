@@ -74,6 +74,32 @@ body:not(.focus-mode) #nav-dots .dot[aria-controls="focus-task-panel"] {
     overflow-wrap: anywhere;
 }
 
+/* Empty routine: no card, just the message on the background.
+   A white card drawn around "Your routine is empty" is a container calling
+   attention to its own emptiness — and it reads as a modal on a screen that
+   has none. Only the CHROME is dropped; the geometry (min-height, the fixed
+   `top` on the measured band, and the translateY that keeps the carousel
+   slide horizontal) is untouched on purpose — see FOCUS_VIEW_LAYOUT.md.
+   Text flips to the on-gradient treatment #empty-state already uses, because
+   the card's dark-on-white colour is unreadable once the white is gone.
+
+   The ALL-DONE state deliberately keeps its card: a finished routine still
+   has content behind it, it is not empty. */
+.focus-task-card.focus-task-empty {
+    background: none;
+    border-color: transparent;
+    border-left-color: transparent;
+    box-shadow: none;
+}
+
+.focus-task-card.focus-task-empty .focus-task-alldone-text {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.focus-task-card.focus-task-empty .focus-task-alldone-hint {
+    color: rgba(255, 255, 255, 0.7);
+}
+
 /* Browsing an already-completed task via prev/next (plan D4) */
 .focus-task-card.focus-task-completed .focus-task-text {
     opacity: 0.55;
