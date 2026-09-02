@@ -1,3 +1,8 @@
+## [2.529] - 2026-09-02
+- test(stats): stop the test-count manifest dirtying the tree on every run
+- Restored hidden-by-default for the input bar: the v2.522 empty-routine override defeated the teaching intent (miniCycle is a routine manager, and + already toggles the bar in Home view). Measured that Focus View was never a dead end — its empty state names the menu. The focus TASK panel, which really did render a blank hint, now gets that same guidance, and the empty-state headline reads 'Your routine is empty'.
+
+
 ## [2.528] - 2026-09-02
 - The empty state now says what the app is for — 'Build your routine once — then run it as many times as you like' — above a shorter hint that names the control for the current view. The static home-view hint had also drifted from its label; both now match.
 

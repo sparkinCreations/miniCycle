@@ -189,9 +189,16 @@ export class FocusTaskPanel {
             // hidden by CSS in auto mode, so it named a control that is not on
             // screen. getAllDoneHintKey() owns the mapping for both this panel
             // and the home-view empty state.
+            // Empty routine: this panel used to render '' here, so it showed the
+            // headline with nothing under it — the one Focus View surface with
+            // no way forward. (The Routine panel's #empty-state has named the
+            // ⋯ menu all along; measured Sep 2026.) Reuse that same copy so
+            // both panels point at the same control.
             alldoneHint.textContent = tasks.length
                 ? getLabel(getAllDoneHintKey(this._getActiveCycle().cycle))
-                : '';
+                : getLabel('empty.noTasksHintFocus', {
+                    vars: { menuIcon: '⋯', showHide: getLabel('focusMode.toggleInputBar') }
+                });
             card.classList.remove('focus-task-completed');
             card.style.removeProperty('--focus-task-priority');
             return;

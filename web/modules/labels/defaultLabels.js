@@ -999,7 +999,10 @@ export const DEFAULT_LABELS = deepFreeze({
     },
 
     empty: {
-        noTasks:              'No tasks yet',
+        // Says what is empty (the routine), not what is missing (tasks) — this
+        // is a routine manager, and the headline is the first place that reads
+        // as one. Carries no task noun, so vocab themes need no override.
+        noTasks:              'Your routine is empty',
         // The one-line "what is this app" under the headline. Deliberately
         // carries NO task/habit noun: it reads true under every vocab theme, so
         // themes.js does not override it and the four hints below stay purely

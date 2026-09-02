@@ -882,24 +882,27 @@ export class ModeManager {
     /**
      * Should the task-input bar be showing for this routine?
      *
-     * Normally the routine's own `showTaskInput` preference decides, and hiding
-     * it by default is deliberate: miniCycle is for building a routine once and
-     * running it repeatedly, not for a permanent task inbox.
+     * The routine's own `showTaskInput` preference decides, full stop. Hiding
+     * the bar by default is not an oversight, it is the teaching mechanism:
+     * miniCycle is a routine manager, not a to-do list. You build a routine
+     * once and then run it, so the input bar is scaffolding you put away when
+     * the routine is built. A bar that starts open is a bar users never learn
+     * to close.
      *
-     * The exception is an EMPTY routine. There is nothing to run yet, and Focus
-     * View has no visible add button — its empty state renders 'empty.noTasks'
-     * with a deliberately blank hint (focusTaskPanel.js) — so a new user whose
-     * preference is "hidden" is left with a dead end and no way out.
-     *
-     * This overrides the DISPLAY only. The stored preference is never written
-     * here, so it takes over again the moment the routine has a task.
+     * v2.522 added an "empty routine always shows the bar" override, on the
+     * belief that Focus View had no other way in. Measured Sep 2026, that was
+     * wrong: with the bar hidden, an empty routine in Focus View renders
+     * `.empty-state-hint-focus` — "Open the ⋯ menu at the top and tap
+     * Show/hide input bar" — and the ⋯ button is on screen. Guidance existed;
+     * the override only defeated the default the guidance was teaching. It is
+     * gone. Home view needs even less help: `+` toggles the bar, which is the
+     * gesture users already expect for adding a task.
      *
      * @param {Object|null} cycle - the active cycle, or null when there is none
      * @returns {boolean} whether the input bar should be visible
      */
     _shouldShowTaskInput(cycle) {
-        if (cycle?.showTaskInput === true) return true;
-        return (cycle?.tasks?.length ?? 0) === 0;
+        return cycle?.showTaskInput === true;
     }
 
     /**

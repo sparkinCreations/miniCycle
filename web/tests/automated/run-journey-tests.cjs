@@ -1860,9 +1860,16 @@ async function journeyNewRoutineHintMatchesBar(browser, baseURL) {
             };
         });
 
-        const before = await readState();
-        // Precondition: without a visible bar to start from, the stale-class case
-        // cannot arise and the rest of this journey proves nothing.
+        // Precondition: the stale-class bug only arises when the bar is SHOWING
+        // before creation, so open it first if it is not already.
+        let before = await readState();
+        if (!before.onScreen) {
+            await page.evaluate(() => document.getElementById('quick-actions-btn')?.click());
+            await page.waitForTimeout(500);
+            await page.evaluate(() => document.getElementById('toggle-task-input-btn')?.click());
+            await page.waitForTimeout(900);
+            before = await readState();
+        }
         record('the input bar is on screen before creating a routine', before.onScreen === true,
             `bar not visible at start (body.input-bar-visible=${before.bodyClass}) — journey cannot exercise the bug`);
 
@@ -1897,11 +1904,17 @@ async function journeyNewRoutineHintMatchesBar(browser, baseURL) {
             !(after.shown && after.shown.includes('visible') && !after.onScreen),
             `hint "${after.shown}" tells the user to type in a bar that is not on screen`);
 
-        // An empty routine must SHOW the bar (_shouldShowTaskInput), or Focus
-        // View is a dead end with no way to add the first task.
-        record('an empty new routine leaves the input bar available',
-            after.onScreen === true,
-            'a new routine hid the bar, re-creating the Focus View dead end');
+        // Hidden-by-default is the product's teaching mechanism, not an
+        // oversight: miniCycle is a routine manager, so the input bar is
+        // scaffolding you put away once the routine is built. A new routine
+        // must therefore start with it HIDDEN — and the hint must name the
+        // control that opens it (+ in Home, the ⋯ menu in Focus).
+        record('a new routine starts with the input bar hidden',
+            after.onScreen === false,
+            'a new routine opened the input bar; hidden-by-default is what teaches users to put it away');
+        record('the hint names a way to open the bar',
+            Boolean(after.shown) && !after.shown.includes('visible'),
+            `expected a bar-hidden hint naming + or the ⋯ menu, got "${after.shown}"`);
 
         record('no starved dependencies', page.__diWarnings.length === 0,
             `DI warnings: ${page.__diWarnings.join(' | ')}`);
