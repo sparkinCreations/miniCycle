@@ -1000,12 +1000,17 @@ export const DEFAULT_LABELS = deepFreeze({
 
     empty: {
         noTasks:              'No tasks yet',
+        // The one-line "what is this app" under the headline. Deliberately
+        // carries NO task/habit noun: it reads true under every vocab theme, so
+        // themes.js does not override it and the four hints below stay purely
+        // about the affordance instead of repeating this sentence four times.
+        routinePitch:         'Build your routine once — then run it as many times as you like.',
         // Four hints, one per (view × input-bar) state. The *Visible variants run
         // when the input bar is already on screen — pointing at the + button or
         // the ⋯ menu there would tell the user to HIDE the very bar they need.
-        noTasksHint:          'Press the + button to show the task bar to add a task or create a new routine',
+        noTasksHint:          'Press the + button to open the task bar and add your first task',
         noTasksHintVisible:   'Type your first task in the bar above and press Add',
-        noTasksHintFocus:     { touch: 'Open the {menuIcon} menu at the top and tap {showHide} to start adding tasks', pointer: 'Open the {menuIcon} menu at the top and click {showHide} to start adding tasks' },
+        noTasksHintFocus:     { touch: 'Open the {menuIcon} menu at the top and tap {showHide} to show the task bar', pointer: 'Open the {menuIcon} menu at the top and click {showHide} to show the task bar' },
         noTasksHintFocusVisible: 'Type your first task in the bar above and press Add',
         // Shown once, right after a brand-new user picks "Create My First Routine"
         // and names an empty routine — friendlier than the generic hint above.
@@ -2662,6 +2667,7 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
 
     // Empty states
     'empty.noTasks',
+    'empty.routinePitch',
     'empty.noTasksHint',
     'empty.noTasksHintVisible',
     'empty.noTasksHintFocus',

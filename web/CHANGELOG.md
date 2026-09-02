@@ -1,3 +1,7 @@
+## [2.528] - 2026-09-02
+- The empty state now says what the app is for — 'Build your routine once — then run it as many times as you like' — above a shorter hint that names the control for the current view. The static home-view hint had also drifted from its label; both now match.
+
+
 ## [2.527] - 2026-09-02
 - New routines no longer claim an input bar that isn't there: createNewMiniCycle hid the bar by hand and never cleared body.input-bar-visible, so the empty state said 'type in the bar above' with no bar — and hid the bar on an empty routine, re-creating the Focus View dead end.
 
