@@ -493,13 +493,23 @@ export class RoutineManager {
                 );
                 body.classList.add(DOM_CLASSES.AUTO_CYCLE_MODE);
 
-                const taskInputContainer = this.deps.querySelector(DOM_SELECTORS.TASK_INPUT);
-                if (taskInputContainer) {
-                    taskInputContainer.classList.add(DOM_CLASSES.HIDDEN);
-                    const toggleText = this.deps.getElementById(DOM_IDS.TOGGLE_TASK_INPUT_TEXT);
-                    if (toggleText) toggleText.textContent = getLabel('action.addTask');
-                    taskInputContainer.querySelectorAll('input, button').forEach(el => { el.tabIndex = -1; });
-                }
+                // Input bar: route through modeManager, never hand-rolled here.
+                //
+                // This used to add .hidden to the container, retitle the toggle
+                // and reset tabIndex itself — three of the FOUR things
+                // _updateTaskInputVisibility() does. The fourth is
+                // `body.input-bar-visible`, which CSS uses to pick between the
+                // four empty-state hints (focus-mode.css). Skipping it left the
+                // class true while the bar was hidden, so a brand-new routine
+                // greeted the user with "Type your first task in the bar above"
+                // pointing at a bar that was not there.
+                //
+                // Routing through syncModeFromToggles() also fixes what the
+                // hide itself broke: a new routine is empty, and
+                // _shouldShowTaskInput() shows the bar on an empty routine
+                // precisely so Focus View is not a dead end (v2.522). Hiding it
+                // here re-created that dead end for every new routine.
+                this.deps.syncModeFromToggles?.();
 
                 this.deps.hideMainMenu();
                 this.deps.updateProgressBar();
