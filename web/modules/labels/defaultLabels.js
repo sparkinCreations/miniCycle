@@ -1015,6 +1015,13 @@ export const DEFAULT_LABELS = deepFreeze({
         noTasksHintVisible:   'Type your first task in the bar above and press Add',
         noTasksHintFocus:     { touch: 'Open the {menuIcon} menu at the top and tap {showHide} to show the task bar', pointer: 'Open the {menuIcon} menu at the top and click {showHide} to show the task bar' },
         noTasksHintFocusVisible: 'Type your first task in the bar above and press Add',
+        // The focus TASK panel only. The input bar lives inside #task-view (the
+        // Routine panel), so on the Task panel it is slid off-screen with its
+        // container — measured: elementFromPoint at the bar's own rect returns
+        // nothing there. Telling someone to toggle the bar from here opens it on
+        // a panel they are not looking at, so this points at the panel that owns
+        // it instead. Building belongs on Routine; Task is the run surface.
+        noTasksHintSwipe:     { touch: 'Swipe to Routine to add your first task', pointer: 'Open Routine to add your first task' },
         // Shown once, right after a brand-new user picks "Create My First Routine"
         // and names an empty routine — friendlier than the generic hint above.
         // That flow reveals the input bar (appInit sets showTaskInput), so the
@@ -2675,6 +2682,7 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'empty.noTasksHintVisible',
     'empty.noTasksHintFocus',
     'empty.noTasksHintFocusVisible',
+    'empty.noTasksHintSwipe',
     'empty.firstStepHint',
     'empty.firstStepHintVisible',
     'empty.createFirst',

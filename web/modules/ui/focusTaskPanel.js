@@ -190,15 +190,17 @@ export class FocusTaskPanel {
             // screen. getAllDoneHintKey() owns the mapping for both this panel
             // and the home-view empty state.
             // Empty routine: this panel used to render '' here, so it showed the
-            // headline with nothing under it — the one Focus View surface with
-            // no way forward. (The Routine panel's #empty-state has named the
-            // ⋯ menu all along; measured Sep 2026.) Reuse that same copy so
-            // both panels point at the same control.
+            // headline with nothing under it. It briefly carried the Routine
+            // panel's "open the ⋯ menu and toggle the input bar" copy instead,
+            // which was worse than blank — the bar is a child of #task-view, so
+            // on THIS panel it is slid off-screen with its container (measured:
+            // elementFromPoint at the bar's own rect returns nothing here).
+            // Following that advice opened the bar on a panel the user was not
+            // looking at. Point at the panel that owns it instead: Task is the
+            // run surface, Routine is where a routine gets built.
             alldoneHint.textContent = tasks.length
                 ? getLabel(getAllDoneHintKey(this._getActiveCycle().cycle))
-                : getLabel('empty.noTasksHintFocus', {
-                    vars: { menuIcon: '⋯', showHide: getLabel('focusMode.toggleInputBar') }
-                });
+                : getLabel('empty.noTasksHintSwipe');
             card.classList.remove('focus-task-completed');
             // An EMPTY routine gets no card chrome — a white card wrapped around
             // "your routine is empty" is a container drawing attention to its own
