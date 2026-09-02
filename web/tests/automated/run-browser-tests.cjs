@@ -494,9 +494,23 @@ async function runAllTests() {
 function writeTestCountManifest(totalTests) {
     try {
         const manifestPath = path.join(__dirname, '..', '.test-count.json');
+        const fingerprint = testTreeFingerprint();
+
+        // Idempotent: rewrite ONLY when the count or the test tree actually
+        // changed. Stamping generatedAt on every run dirtied the working tree
+        // after any `npm test`, which is noise in `git status` for every
+        // contributor and an easy way to sweep a stray file into an unrelated
+        // commit. The timestamp now means "when this count last changed".
+        try {
+            const prev = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+            if (prev.totalTests === totalTests && prev.fingerprint === fingerprint) return;
+        } catch {
+            // No readable manifest yet — fall through and write one.
+        }
+
         fs.writeFileSync(manifestPath, JSON.stringify({
             totalTests,
-            fingerprint: testTreeFingerprint(),
+            fingerprint,
             generatedAt: new Date().toISOString(),
             note: 'Written by run-browser-tests.cjs; read by scripts/collect-stats.cjs. Do not hand-edit.'
         }, null, 2) + '\n');
