@@ -712,6 +712,10 @@ export const DOM_CLASSES = Object.freeze({
     HELP_WINDOW_SIDE: 'help-window-side',
     ONBOARDING_ACTIVE: 'onboarding-active',
     FOCUS_MODE: 'focus-mode',
+    // Focus task card, empty routine (no tasks at all) — drops the card's
+    // chrome so the message sits on the background rather than inside a card
+    // wrapped around nothing. NOT the all-done state, which keeps its card.
+    FOCUS_TASK_EMPTY: 'focus-task-empty',
     FIRST_RUN_WELCOME: 'first-run-welcome',
     FIRST_RUN_WELCOME_VISIBLE: 'first-run-welcome--visible',
     FIRST_RUN_WELCOME_ACTIVE: 'first-run-welcome-active',

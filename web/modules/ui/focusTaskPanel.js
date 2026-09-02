@@ -200,11 +200,17 @@ export class FocusTaskPanel {
                     vars: { menuIcon: '⋯', showHide: getLabel('focusMode.toggleInputBar') }
                 });
             card.classList.remove('focus-task-completed');
+            // An EMPTY routine gets no card chrome — a white card wrapped around
+            // "your routine is empty" is a container drawing attention to its own
+            // emptiness. The all-done state keeps the card: there IS a routine
+            // there, it is just finished.
+            card.classList.toggle(DOM_CLASSES.FOCUS_TASK_EMPTY, tasks.length === 0);
             card.style.removeProperty('--focus-task-priority');
             return;
         }
 
         alldone.classList.add(DOM_CLASSES.HIDDEN);
+        card.classList.remove(DOM_CLASSES.FOCUS_TASK_EMPTY);
         taskFacing.forEach(el => el.classList.remove(DOM_CLASSES.HIDDEN));
 
         const index = tasks.indexOf(task);
