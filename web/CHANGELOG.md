@@ -1,3 +1,7 @@
+## [2.531] - 2026-09-02
+- The focus Task panel's empty state now points at the Routine panel instead of the input-bar toggle. The bar is a child of #task-view, so on the Task panel it slides off-screen with its container — the old hint opened it on a panel the user could not see.
+
+
 ## [2.530] - 2026-09-02
 - The focus Task panel's empty state drops the card chrome — a white card wrapped around 'Your routine is empty' read as a modal around nothing. Only the chrome goes; the measured focus-view geometry is untouched. The all-done state keeps its card.
 
