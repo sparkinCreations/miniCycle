@@ -296,6 +296,73 @@ export async function runBackupRestoreManagerTests(resultsDiv) {
     // ============================================
     resultsDiv.innerHTML += '<h4 class="test-section">🏭 Factory Reset</h4>';
 
+    await test('factory reset: a failed pre-wipe backup blocks the wipe instead of deleting unprotected', async () => {
+        // The reset destroys localStorage, sessionStorage, caches AND every app
+        // IndexedDB database, so the downloaded file is the ONLY thing that can
+        // outlive it. If that export produces nothing, wiping anyway is
+        // unrecoverable data loss — so the reset must stop and say so.
+        const origIdbDelete = indexedDB.deleteDatabase;
+        const origSWGetRegs = navigator.serviceWorker && navigator.serviceWorker.getRegistrations;
+        const origCachesKeys = (typeof window.caches !== 'undefined') && window.caches.keys;
+        if (origSWGetRegs) navigator.serviceWorker.getRegistrations = async () => [];
+        if (origCachesKeys) window.caches.keys = async () => [];
+        let idbDeleteCalled = false;
+        indexedDB.deleteDatabase = () => {
+            idbDeleteCalled = true;
+            const req = {};
+            setTimeout(() => { if (req.onsuccess) req.onsuccess({}); }, 0);
+            return req;
+        };
+
+        localStorage.setItem('miniCycleData', JSON.stringify({ x: 1 }));
+
+        const resetBtn = document.createElement('button');
+        resetBtn.id = 'factory-reset';   // DOM_IDS.FACTORY_RESET
+        document.body.appendChild(resetBtn);
+
+        const notifications = [];
+        let confirmPromise = null;
+
+        // setupFactoryResetButton() guards against double-init at MODULE scope,
+        // so a second test sharing `mod` would silently get a no-op setup and
+        // assert against a button with no handler. Fresh import, fresh guard.
+        const resetMod = await import(`../modules/ui/backupRestoreManager.js?v=${cacheBuster}-resetblock`);
+
+        resetMod.setBackupRestoreManagerDependencies({
+            // isReady() true (so there IS data to lose) but get() returns null,
+            // which is exactly how serializeLiveMiniCycleData reports "could not
+            // build a backup".
+            AppState: { isReady: () => true, get: () => null, forceSave: () => {}, update: () => {}, reload: () => {} },
+            showNotification: (msg, type) => { notifications.push({ msg: String(msg), type }); },
+            showConfirmationModal: (opts) => { confirmPromise = opts.callback(true); },
+            safeAddEventListener: (el, ev, fn) => el.addEventListener(ev, fn),
+            appInit: { runInitialSetup: async () => {} },
+            closeAllModals: () => {}, hideMainMenu: () => {},
+            showLoader: () => {}, hideLoader: () => {}
+        });
+
+        try {
+            resetMod.setupFactoryResetButton();
+            resetBtn.click();
+            await confirmPromise;
+
+            if (localStorage.getItem('miniCycleData') === null) {
+                throw new Error('a failed backup must NOT wipe data');
+            }
+            if (idbDeleteCalled) {
+                throw new Error('a failed backup must not reach IndexedDB deletion');
+            }
+            if (!notifications.some(n => n.type === 'error')) {
+                throw new Error('a blocked reset must tell the user why');
+            }
+        } finally {
+            indexedDB.deleteDatabase = origIdbDelete;
+            if (origSWGetRegs) navigator.serviceWorker.getRegistrations = origSWGetRegs;
+            if (origCachesKeys) window.caches.keys = origCachesKeys;
+            resetBtn.remove();
+        }
+    });
+
     await test('factory reset: cancel keeps data; confirm clears miniCycle localStorage keys + notifies', async () => {
         // Stub the destructive browser globals so the reset does NOT unregister the real
         // service worker or delete real caches / IndexedDB for this shared test origin.
@@ -332,7 +399,18 @@ export async function runBackupRestoreManagerTests(resultsDiv) {
         let confirmOpts = null;
 
         mod.setBackupRestoreManagerDependencies({
-            AppState: { isReady: () => true, reload: () => {}, data: { cycles: {} } },
+            // Production-shaped: the reset now exports a backup BEFORE wiping,
+            // and that export reads get() and calls update(). A double without
+            // them fails the export, which correctly blocks the wipe — green
+            // here would mean testing a path the app cannot take.
+            AppState: {
+                isReady: () => true,
+                get: () => makeExportableState(2),
+                forceSave: () => {},
+                update: () => {},
+                reload: () => {},
+                data: { cycles: {} }
+            },
             showNotification: (msg, type) => { notifications.push({ msg: String(msg), type }); },
             showConfirmationModal: (opts) => { confirmOpts = opts; confirmPromise = opts.callback(confirmValue); },
             safeAddEventListener: (el, ev, fn) => el.addEventListener(ev, fn),

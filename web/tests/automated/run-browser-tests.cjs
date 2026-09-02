@@ -12,6 +12,7 @@
 const { chromium } = require('playwright');
 const fs = require('fs');
 const path = require('path');
+const { testTreeFingerprint } = require('../../scripts/test-tree-fingerprint.cjs');
 
 // Color codes for terminal output
 const colors = {
@@ -470,8 +471,39 @@ async function runAllTests() {
 
     console.log(`${colors.blue}${'='.repeat(60)}${colors.reset}\n`);
 
+    writeTestCountManifest(totalTests);
+
     // Exit with proper code for CI/CD
     process.exit(allPassed ? 0 : 1);
+}
+
+/**
+ * Publish the REAL test total for docs/PROJECT_STATS.md.
+ *
+ * collect-stats.cjs used to derive "Total Tests" by grepping /test\(/ across
+ * tests/ — 3756 against a runner total of 3567. The 189 phantom tests were
+ * regex calls (`re.test(...)`), files the runner never loads, and helper
+ * matches; no amount of regex tightening makes a static count authoritative,
+ * because only the runner knows which suites actually registered.
+ *
+ * So the runner writes what it counted, and collect-stats reads it. The
+ * fingerprint lets the reader tell a current count from one left behind by an
+ * older test tree — a stale number is worse than an honest fallback, because
+ * it looks precise.
+ */
+function writeTestCountManifest(totalTests) {
+    try {
+        const manifestPath = path.join(__dirname, '..', '.test-count.json');
+        fs.writeFileSync(manifestPath, JSON.stringify({
+            totalTests,
+            fingerprint: testTreeFingerprint(),
+            generatedAt: new Date().toISOString(),
+            note: 'Written by run-browser-tests.cjs; read by scripts/collect-stats.cjs. Do not hand-edit.'
+        }, null, 2) + '\n');
+    } catch (e) {
+        // Never fail a green test run over a stats file.
+        console.warn(`Could not write test-count manifest: ${e.message}`);
+    }
 }
 
 // Handle errors

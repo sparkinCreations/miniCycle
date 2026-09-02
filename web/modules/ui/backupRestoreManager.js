@@ -482,6 +482,9 @@ export function downloadBackupFile(options = {}) {
 
     const defaultName = `mini-cycle-backup-${new Date().toISOString().slice(0, 10)}`;
 
+    // Returns true only when a file was actually handed to the browser. The
+    // factory reset's pre-wipe safety net depends on this: it must not wipe
+    // after an export that quietly produced nothing.
     const createAndDownload = (fileName) => {
         // Snapshot at download time, not click time — the name prompt can sit
         // open for minutes, and edits made meanwhile belong in the backup.
@@ -489,7 +492,7 @@ export function downloadBackupFile(options = {}) {
         const miniCycleData = serializeLiveMiniCycleData(AppState);
         if (!miniCycleData) {
             _deps.showNotification(getLabel('notify.backupNoData'), 'error');
-            return;
+            return false;
         }
         const currentState = AppState.get();
         const liteStorage = collectLiteStorageSnapshot();
@@ -526,6 +529,7 @@ export function downloadBackupFile(options = {}) {
             if (!state.settings) state.settings = {};
             state.settings.lastFileBackupTimestamp = Date.now();
         });
+        return true;
     };
 
     if (!options.skipNamePrompt && _deps.showPromptModal) {
@@ -541,7 +545,10 @@ export function downloadBackupFile(options = {}) {
             }
         });
     } else {
-        createAndDownload(defaultName);
+        // Non-interactive path: hand back what actually happened. The prompt
+        // path still returns true for "prompt opened" — its result arrives
+        // later, in the callback.
+        return createAndDownload(defaultName);
     }
 
     return true;
@@ -969,6 +976,9 @@ export function setupFactoryResetButton() {
                 // name, so any key that does not carry it survives a "factory"
                 // reset — and pluginIntegrationGuide.js tells plugin authors to
                 // name keys exactly like this one. Add new plugin keys HERE.
+                // `npm run validate:reset` now gates this: every STORAGE_KEYS
+                // entry must be swept, listed here, or explicitly preserved, so
+                // key #26 fails CI instead of silently outliving the reset.
                 STORAGE_KEYS.TIME_TRACKER
             ];
             legacyKeysToRemove.forEach(key => localStorage.removeItem(key));
@@ -1178,6 +1188,31 @@ export function setupFactoryResetButton() {
                 const prevDisabled = resetBtn.disabled;
                 resetBtn.disabled = true;
                 try {
+                    // Safety net before an irreversible wipe. The reset clears
+                    // localStorage, sessionStorage, caches AND every app
+                    // IndexedDB database, so there is nowhere in the browser a
+                    // backup could survive — a downloaded file is the only
+                    // recovery path that outlives this click.
+                    //
+                    // Fail CLOSED on a real export failure: a reset that wipes
+                    // after silently failing to save anything is the exact
+                    // outcome this guards against. But "no data to export" is
+                    // not a failure — someone resetting an empty or broken
+                    // install has nothing to lose and must not be trapped, so
+                    // that case proceeds.
+                    // isReady() is already `isInitialized && data !== null`
+                    // (appState.js:174), so it alone answers "is there anything
+                    // to lose" — no second read needed.
+                    const hasDataToLose = Boolean(getAppStateInstance()?.isReady?.());
+                    if (hasDataToLose && !downloadBackupFile({ skipNamePrompt: true })) {
+                        _deps.showNotification(
+                            getLabel('notify.factoryResetBackupFailed'),
+                            'error',
+                            UI_TIMEOUTS.NOTIFICATION_LONG
+                        );
+                        return;
+                    }
+
                     await runFactoryReset();
                 } finally {
                     resetBtn.disabled = prevDisabled;

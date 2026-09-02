@@ -1,3 +1,8 @@
+## [2.526] - 2026-09-02
+- test(recurring): de-couple two normalization tests from today's date
+- Factory reset now downloads a backup before wiping, and a new validate:reset gate stops a storage key from silently surviving a reset. PROJECT_STATS test count now comes from the test runner instead of a grep.
+
+
 ## [2.525] - 2026-08-31
 - fix(backup): drop the unreachable flush catch and fix its test doubles
 

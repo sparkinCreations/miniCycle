@@ -632,6 +632,7 @@ export const DEFAULT_LABELS = deepFreeze({
         factoryResetComplete:    'Factory Reset Complete. Reloading...',
         factoryResetCancelled:   'Factory reset cancelled.',
         factoryResetPartial:     'Factory reset finished, but some stored data could not be removed. Close other miniCycle tabs and try again.',
+        factoryResetBackupFailed: 'Could not save a backup, so nothing was deleted. Check that downloads are allowed, then try again.',
         restoreCancelled:        'Restore cancelled.',
 
         // Import/export notifications
@@ -946,7 +947,7 @@ export const DEFAULT_LABELS = deepFreeze({
         restoreNoSafetyBackupMessage: 'A safety backup of your current data could not be created. If you restore now, your current routines will be replaced with no way to get them back. Restore anyway?',
         restoreNoSafetyBackupConfirm: 'Restore Anyway',
         factoryResetTitle:        'Factory Reset',
-        factoryResetMessage:      'This will DELETE ALL data, settings, and progress. Are you sure?',
+        factoryResetMessage:      'This will DELETE ALL data, settings, and progress. A backup file will be downloaded first. Are you sure?',
         factoryResetConfirm:      'Delete Everything',
         resetProgressMessage:     'This will reset this routine\'s cycle count and cleared tasks count to 0. History and cleared task entries will NOT be deleted. Global achievement progress will NOT be affected.',
         clearHistoryMessage:      'Are you sure you want to clear all history for this routine?',
@@ -2528,6 +2529,7 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'notify.factoryResetComplete',
     'notify.factoryResetCancelled',
     'notify.factoryResetPartial',
+    'notify.factoryResetBackupFailed',
     'notify.fileTooLarge',
     'notify.invalidJson',
     'notify.invalidFormat',
