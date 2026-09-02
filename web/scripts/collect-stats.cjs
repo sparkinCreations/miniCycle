@@ -20,6 +20,7 @@
 const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
+const { testTreeFingerprint } = require('./test-tree-fingerprint.cjs');
 
 const WEB = path.resolve(__dirname, '..');
 const p = (...parts) => path.join(WEB, ...parts);
@@ -46,6 +47,44 @@ function countMatchingLines(dir, ext, re) {
         for (const line of fs.readFileSync(f, 'utf8').split('\n')) if (re.test(line)) n++;
     }
     return n;
+}
+
+/**
+ * "Total Tests" — the number the module runner actually counted.
+ *
+ * This used to be `countMatchingLines('tests', '.js', /test\(/)`, which
+ * reported 3756 against a runner total of 3567. The 189 extra were regex calls
+ * (`re.test(...)`), files the runner never loads, and helper matches. A static
+ * grep cannot be authoritative here: only the runner knows which suites
+ * registered, so only the runner can count them.
+ *
+ * run-browser-tests.cjs writes tests/.test-count.json on every run. We use it
+ * when its fingerprint still matches the test tree on disk; otherwise the
+ * manifest predates the current suites and we fall back to the old grep with a
+ * warning — a number that is visibly approximate beats a stale one that looks
+ * exact.
+ */
+function readTestCount() {
+    const grepCount = () => countMatchingLines('tests', '.js', /test\(/);
+    const manifestPath = p('tests/.test-count.json');
+    let manifest;
+    try {
+        manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+    } catch {
+        console.warn('⚠️  tests/.test-count.json missing — falling back to the static grep.');
+        console.warn('   Run `npm test` to refresh it so PROJECT_STATS reports the real total.');
+        return grepCount();
+    }
+    if (manifest.fingerprint !== testTreeFingerprint()) {
+        console.warn('⚠️  tests/.test-count.json is stale (test files changed since it was written).');
+        console.warn('   Falling back to the static grep; run `npm test` to refresh it.');
+        return grepCount();
+    }
+    if (!Number.isInteger(manifest.totalTests) || manifest.totalTests <= 0) {
+        console.warn('⚠️  tests/.test-count.json has no usable total — falling back to the static grep.');
+        return grepCount();
+    }
+    return manifest.totalTests;
 }
 
 const lineCount = (file) => {
@@ -127,7 +166,7 @@ function collect() {
         // Keys consumed by the SparkinCreations homepage — do not rename.
         version: readVersion(),
         modules: moduleFiles.length,
-        tests: countMatchingLines('tests', '.js', /test\(/),
+        tests: readTestCount(),
         testFiles: countFiles('tests', '.tests.js'),
         lines: moduleLines,
         generated: new Date().toISOString().slice(0, 10),

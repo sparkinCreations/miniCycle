@@ -111,6 +111,18 @@
     color: rgba(255, 255, 255, 0.9);
 }
 
+/* The "what is this app" line. Sits between the headline and whichever hint is
+   showing, in every view/input-bar state — so it is styled once here and never
+   participates in the four-way swap. Slightly dimmer than the hint so the
+   actionable line stays the one that reads first. */
+.empty-state-pitch {
+    font-size: var(--font-size-sm);
+    color: rgba(255, 255, 255, 0.55);
+    max-width: 250px;
+    line-height: 1.4;
+    margin-bottom: var(--space-2);
+}
+
 /* Home-view hints. `.empty-state-hint` covers the input-bar-hidden state and
    `.empty-state-hint-visible` the bar-visible one; focus-mode.css owns the two
    focus variants and decides which of the four is displayed. */
@@ -165,6 +177,7 @@ body.all-tasks-complete .empty-state-alldone-hint {
 }
 
 body.all-tasks-complete .empty-state-text,
+body.all-tasks-complete .empty-state-pitch,
 body.all-tasks-complete .empty-state-hint,
 body.all-tasks-complete .empty-state-hint-visible,
 body.all-tasks-complete .empty-state-hint-focus,

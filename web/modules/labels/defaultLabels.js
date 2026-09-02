@@ -632,6 +632,7 @@ export const DEFAULT_LABELS = deepFreeze({
         factoryResetComplete:    'Factory Reset Complete. Reloading...',
         factoryResetCancelled:   'Factory reset cancelled.',
         factoryResetPartial:     'Factory reset finished, but some stored data could not be removed. Close other miniCycle tabs and try again.',
+        factoryResetBackupFailed: 'Could not save a backup, so nothing was deleted. Check that downloads are allowed, then try again.',
         restoreCancelled:        'Restore cancelled.',
 
         // Import/export notifications
@@ -946,7 +947,7 @@ export const DEFAULT_LABELS = deepFreeze({
         restoreNoSafetyBackupMessage: 'A safety backup of your current data could not be created. If you restore now, your current routines will be replaced with no way to get them back. Restore anyway?',
         restoreNoSafetyBackupConfirm: 'Restore Anyway',
         factoryResetTitle:        'Factory Reset',
-        factoryResetMessage:      'This will DELETE ALL data, settings, and progress. Are you sure?',
+        factoryResetMessage:      'This will DELETE ALL data, settings, and progress. A backup file will be downloaded first. Are you sure?',
         factoryResetConfirm:      'Delete Everything',
         resetProgressMessage:     'This will reset this routine\'s cycle count and cleared tasks count to 0. History and cleared task entries will NOT be deleted. Global achievement progress will NOT be affected.',
         clearHistoryMessage:      'Are you sure you want to clear all history for this routine?',
@@ -999,12 +1000,17 @@ export const DEFAULT_LABELS = deepFreeze({
 
     empty: {
         noTasks:              'No tasks yet',
+        // The one-line "what is this app" under the headline. Deliberately
+        // carries NO task/habit noun: it reads true under every vocab theme, so
+        // themes.js does not override it and the four hints below stay purely
+        // about the affordance instead of repeating this sentence four times.
+        routinePitch:         'Build your routine once — then run it as many times as you like.',
         // Four hints, one per (view × input-bar) state. The *Visible variants run
         // when the input bar is already on screen — pointing at the + button or
         // the ⋯ menu there would tell the user to HIDE the very bar they need.
-        noTasksHint:          'Press the + button to show the task bar to add a task or create a new routine',
+        noTasksHint:          'Press the + button to open the task bar and add your first task',
         noTasksHintVisible:   'Type your first task in the bar above and press Add',
-        noTasksHintFocus:     { touch: 'Open the {menuIcon} menu at the top and tap {showHide} to start adding tasks', pointer: 'Open the {menuIcon} menu at the top and click {showHide} to start adding tasks' },
+        noTasksHintFocus:     { touch: 'Open the {menuIcon} menu at the top and tap {showHide} to show the task bar', pointer: 'Open the {menuIcon} menu at the top and click {showHide} to show the task bar' },
         noTasksHintFocusVisible: 'Type your first task in the bar above and press Add',
         // Shown once, right after a brand-new user picks "Create My First Routine"
         // and names an empty routine — friendlier than the generic hint above.
@@ -2528,6 +2534,7 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'notify.factoryResetComplete',
     'notify.factoryResetCancelled',
     'notify.factoryResetPartial',
+    'notify.factoryResetBackupFailed',
     'notify.fileTooLarge',
     'notify.invalidJson',
     'notify.invalidFormat',
@@ -2660,6 +2667,7 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
 
     // Empty states
     'empty.noTasks',
+    'empty.routinePitch',
     'empty.noTasksHint',
     'empty.noTasksHintVisible',
     'empty.noTasksHintFocus',

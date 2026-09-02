@@ -1432,6 +1432,9 @@ export const DOM_SELECTORS = Object.freeze({
     // Home-view hint shown while the input bar is HIDDEN. The variant classes
     // below are separate tokens (never stacked on the same element), so this
     // selector keeps matching exactly one node — existing callers are unaffected.
+    // The vocabulary-neutral "what is this app" line above the hints. Always
+    // shown alongside whichever hint CSS picks; blacked out in all-tasks-complete.
+    EMPTY_STATE_PITCH: '.empty-state-pitch',
     EMPTY_STATE_HINT: '.empty-state-hint',
     EMPTY_STATE_HINT_VISIBLE: '.empty-state-hint-visible',
     // Shown INSTEAD of the text/hint pair above when body carries

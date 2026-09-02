@@ -68,6 +68,10 @@ jobs:
         working-directory: ./web
         run: npm run validate:provides
 
+      - name: Validate factory-reset coverage (no storage key may survive a reset)
+        working-directory: ./web
+        run: npm run validate:reset
+
       - name: Validate label & history-event registries (keys must resolve)
         working-directory: ./web
         run: npm run validate:labels

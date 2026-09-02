@@ -248,6 +248,11 @@ function _refreshLiveLensLabels() {
         // while hidden, same reason as the hint variants below.
         const emptyAllDone = emptyState.querySelector(DOM_SELECTORS.EMPTY_STATE_ALLDONE_TEXT);
         if (emptyAllDone) emptyAllDone.textContent = getLabel('focusTask.allDone');
+        // No vocab theme overrides the pitch today (it carries no task noun), but
+        // it is refreshed with the rest so a theme COULD override it without the
+        // line silently keeping the previous theme's copy.
+        const emptyPitch = emptyState.querySelector(DOM_SELECTORS.EMPTY_STATE_PITCH);
+        if (emptyPitch) emptyPitch.textContent = getLabel('empty.routinePitch');
         const emptyHint = emptyState.querySelector(DOM_SELECTORS.EMPTY_STATE_HINT);
         if (emptyHint) emptyHint.textContent = getLabel('empty.noTasksHint');
         const emptyHintVisible = emptyState.querySelector(DOM_SELECTORS.EMPTY_STATE_HINT_VISIBLE);

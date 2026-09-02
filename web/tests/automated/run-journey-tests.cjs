@@ -1829,6 +1829,88 @@ async function journeyBadgeCrossAxis(browser, baseURL) {
     return { name: 'a badge earned by clearing is not re-advertised in cycle mode', failures };
 }
 
+async function journeyNewRoutineHintMatchesBar(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const { context, page } = await openFresh(browser, baseURL);
+    try {
+        // The empty state carries FOUR hints; CSS picks one from
+        // body.input-bar-visible + body.focus-mode (focus-mode.css truth table).
+        // createNewMiniCycle used to hide the bar by hand — setting .hidden, the
+        // toggle text and tabIndex, but never the body class — so a new routine
+        // said "Type your first task in the bar above" with no bar on screen.
+        const readState = () => page.evaluate(() => {
+            const bar = document.querySelector('.task-input');
+            const box = bar ? bar.getBoundingClientRect() : null;
+            const cs = bar ? getComputedStyle(bar) : null;
+            const onScreen = Boolean(bar && cs.display !== 'none' &&
+                cs.visibility !== 'hidden' && box.height > 0 && box.width > 0);
+            const sels = ['.empty-state-hint', '.empty-state-hint-visible',
+                          '.empty-state-hint-focus', '.empty-state-hint-focus-visible'];
+            let shown = null;
+            for (const sel of sels) {
+                const el = document.querySelector(`#empty-state ${sel}`);
+                if (el && getComputedStyle(el).display !== 'none') { shown = sel; break; }
+            }
+            const es = document.getElementById('empty-state');
+            return {
+                onScreen,
+                bodyClass: document.body.classList.contains('input-bar-visible'),
+                emptyShown: Boolean(es && getComputedStyle(es).display !== 'none'),
+                shown,
+            };
+        });
+
+        const before = await readState();
+        // Precondition: without a visible bar to start from, the stale-class case
+        // cannot arise and the rest of this journey proves nothing.
+        record('the input bar is on screen before creating a routine', before.onScreen === true,
+            `bar not visible at start (body.input-bar-visible=${before.bodyClass}) — journey cannot exercise the bug`);
+
+        await page.evaluate(() => document.getElementById('quick-actions-btn')?.click());
+        await page.waitForTimeout(500);
+        await page.evaluate(() => document.getElementById('create-routine-btn')?.click());
+        await page.waitForTimeout(1000);
+        const opened = await page.evaluate(() => {
+            const dlg = [...document.querySelectorAll('dialog.miniCycle-prompt-dialog')].pop();
+            const input = dlg && (dlg.querySelector('#sample-creation-input') || dlg.querySelector('input'));
+            const btn = dlg && dlg.querySelector('.miniCycle-btn-confirm');
+            if (!input || !btn) return false;
+            input.value = 'Journey Routine';
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+            btn.click();
+            return true;
+        });
+        record('the create-routine dialog opened and accepted a name', opened === true,
+            'could not drive the routine-creation dialog');
+        await page.waitForTimeout(2200);
+
+        const after = await readState();
+        record('the new routine shows its empty state', after.emptyShown === true,
+            'a brand-new routine has no tasks, so #empty-state should be visible');
+
+        // The invariant, stated both ways so a failure names which half broke.
+        record('body.input-bar-visible matches the bar actually on screen',
+            after.bodyClass === after.onScreen,
+            `body.input-bar-visible=${after.bodyClass} but bar on screen=${after.onScreen} — ` +
+            'the CSS hint selector is reading a stale class');
+        record('the hint does not point at a bar the user cannot see',
+            !(after.shown && after.shown.includes('visible') && !after.onScreen),
+            `hint "${after.shown}" tells the user to type in a bar that is not on screen`);
+
+        // An empty routine must SHOW the bar (_shouldShowTaskInput), or Focus
+        // View is a dead end with no way to add the first task.
+        record('an empty new routine leaves the input bar available',
+            after.onScreen === true,
+            'a new routine hid the bar, re-creating the Focus View dead end');
+
+        record('no starved dependencies', page.__diWarnings.length === 0,
+            `DI warnings: ${page.__diWarnings.join(' | ')}`);
+    } finally {
+        await context.close();
+    }
+    return { name: "a new routine's empty-state hint matches the bar on screen", failures };
+}
+
 const JOURNEYS = [
     { name: 'core (add → persist → cycle → offline)', fn: journeyCore },
     { name: 'routine switching', fn: journeyRoutineSwitch },
@@ -1847,6 +1929,7 @@ const JOURNEYS = [
     { name: 'a factory reset survives a second open tab', fn: journeyResetTwoTabs },
     { name: 'a factory reset clears the state it had rendered', fn: journeyResetClearsRenderedState },
     { name: 'a badge earned by clearing is not re-advertised in cycle mode', fn: journeyBadgeCrossAxis },
+    { name: "a new routine's empty-state hint matches the bar on screen", fn: journeyNewRoutineHintMatchesBar },
 ];
 
 async function run() {
