@@ -41,7 +41,7 @@ const ALL_MODULES = [
     'dataSanitizer', 'storageUtils', 'storagePersistence', 'achievementsManager', 'historyManager',
     'recurringDateUtils', 'clearedTasksManager', 'taskCompletion', 'taskCRUD', 'dailyResetManager',
     'recurringMatcher', 'recurringCalculators', 'recurringActivation',
-    'preferencesManager', 'settingsUIManager', 'focusMode', 'taskSearch',
+    'preferencesManager', 'settingsUIManager', 'focusMode', 'taskSearch', 'announce',
     'quickActionsManager', 'actionUsage', 'backupRestoreManager', 'cycleExportManager',
     'cycleImportManager', 'shareManager', 'taskButtons', 'taskCycleReset', 'backupReminder',
     'orchestrator', 'diWiring', 'moduleLoader', 'moduleManifests', 'modalTemplates',

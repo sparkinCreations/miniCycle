@@ -2171,6 +2171,11 @@ export const DEFAULT_LABELS = deepFreeze({
         toggleCheckboxEmpty:    'Apply a custom empty checkbox colour',
         badgeCoinSpin: 'Achievement badge coin, use arrow keys to spin',
         routineTitle: 'Routine name',
+        // Spoken when the quick dark-mode button flips. The button's only state
+        // cue was its emoji (🌙 / ☀️), which aria-label overrides — so a screen
+        // reader had no way to know dark mode had turned on or off.
+        darkModeOn: 'Dark mode on',
+        darkModeOff: 'Dark mode off',
         taskCompleted: 'Task completed: {name}',
         taskUncompleted: 'Task uncompleted: {name}',
         cycleCompleted: 'Cycle completed',
@@ -2180,6 +2185,14 @@ export const DEFAULT_LABELS = deepFreeze({
         editRoutineName: 'Edit routine name',
         editPresetName: 'Edit preset name',
         taskAdded: 'Task added: {name}',
+        // Routine-level context changes. Creating, switching or renaming replaces
+        // the whole task list and the title, and none of it was announced —
+        // the title is a contenteditable whose aria-label names the FIELD
+        // ("Routine name"), never the value, so a screen-reader user's entire
+        // context could change in silence (measured Sep 2026).
+        routineCreated: 'Routine created: {name}',
+        routineSwitched: 'Switched to routine: {name}',
+        routineRenamed: 'Routine renamed to: {name}',
         taskViewOpened: 'Routine view opened',
         statsPanelOpened: 'Stats panel opened',
         focusTaskPanelOpened: 'Task view opened',
@@ -2672,6 +2685,11 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'accessibility.editRoutineName',
     'accessibility.editPresetName',
     'accessibility.taskAdded',
+    'accessibility.darkModeOn',
+    'accessibility.darkModeOff',
+    'accessibility.routineCreated',
+    'accessibility.routineSwitched',
+    'accessibility.routineRenamed',
     'accessibility.taskViewOpened',
     'accessibility.statsPanelOpened',
 

@@ -10,6 +10,7 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { LIMITS, DOM_IDS, APP_VERSION, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { announce } from '../utils/announce.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -215,6 +216,12 @@ async function handleMiniCycleTitleBlur() {
     if (!wasModified) {
         showNotification?.(getLabel('notify.renamedTo', { vars: { name: finalTitle } }), "success", UI_TIMEOUTS.NOTIFICATION_BRIEF);
     }
+
+    // Announce the new name. The title is a contenteditable whose aria-label
+    // names the FIELD ("Routine name"), not its value, and it carries no
+    // aria-live — so before this the rename was completely silent to a screen
+    // reader even though the visible heading changed (measured Sep 2026).
+    announce(getLabel('accessibility.routineRenamed', { vars: { name: finalTitle } }));
 }
 
 // ============================================================================

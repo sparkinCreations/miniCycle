@@ -1,3 +1,15 @@
+## [2.536] - 2026-09-03
+- The quick dark-mode button now exposes aria-pressed and announces the flip. It is a toggle whose only state cue was its emoji — which is decorative AND overridden by the button's own aria-label — so it announced identically whether dark mode was on or off: name and role present, value missing (WCAG 4.1.2). The a11y gate now checks toggle state, which name-and-role checks cannot see.
+
+
+## [2.535] - 2026-09-03
+- Screen-reader announcements now clear the live region before writing, so repeating the same message is a real empty-to-text transition. Assigning identical text is a DOM change a MutationObserver sees but a screen reader does not re-read, which is why 'Cycle complete!' twice, or completing the same task twice, sometimes said nothing. All eight announcement call sites now go through one announce() helper.
+
+
+## [2.534] - 2026-09-03
+- Screen-reader announcements for routine-level context changes. Creating, switching and renaming a routine each replace the title and the whole task list, and all three were silent — the title is a contenteditable whose aria-label names the field, not the value. Also drops the redundant aria-checked from the native task checkbox, which overrode its own implicit state, and extends the a11y gate + routine-switch journey to assert announcements.
+
+
 ## [2.533] - 2026-09-03
 - A failed version probe no longer reports as 'App is up to date'. checkForUpdates and the automatic verifyVersionFresh heal both treated a null serverVersion — offline, a non-200, or a body with no APP_VERSION — as a match, so a device whose probe keeps failing could never detect staleness and never healed. fetchServerVersion now checks res.ok, and both paths say the check could not be completed.
 

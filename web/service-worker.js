@@ -31,9 +31,9 @@
 // §1 VERSION IDENTITY (update-version.sh rewrites the three vars below — keep
 //    their exact `var NAME = …` shapes) + the build-injected module map.
 // ═══════════════════════════════════════════════════════════════════════════
-var APP_VERSION = '2.533';
-var CACHE_VERSION = 'v1376';
-var CACHE_VERSION_NUMBER = 1376; // Numeric version matching version.js (for synthetic fallback)
+var APP_VERSION = '2.536';
+var CACHE_VERSION = 'v1379';
+var CACHE_VERSION_NUMBER = 1379; // Numeric version matching version.js (for synthetic fallback)
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -146,6 +146,7 @@ var BOOT_CRITICAL = [
   './modules/core/types.js',
   // Utils - ALL utility modules
   './modules/utils/globalUtils.js',
+  './modules/utils/announce.js',
   './modules/utils/mcycPayload.js',
   './modules/utils/featureAvailability.js',
   './modules/utils/dataRecovery.js',

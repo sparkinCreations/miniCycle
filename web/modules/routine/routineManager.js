@@ -15,6 +15,7 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { announce } from '../utils/announce.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -543,9 +544,31 @@ export class RoutineManager {
 
                 if (finalResult) {
                     this.deps.showNotification(`✅ ${getLabel('notify.routineCreated', { vars: { name: finalResult.finalTitle } })}`, "success", UI_TIMEOUTS.NOTIFICATION_LONG);
+                    // Creating a routine replaces the title AND the entire task
+                    // list. None of that was announced: routineManager had zero
+                    // live-region writes, so a screen-reader user's whole context
+                    // changed in silence (measured Sep 2026). The visible
+                    // notification above does not help — it is not a live region
+                    // this module can rely on for assistive tech.
+                    this._announce('accessibility.routineCreated', finalResult.finalTitle);
                 }
             }
         });
+    }
+
+    /**
+     * Speak a routine-level context change into the shared #live-region.
+     *
+     * Routine create / switch / rename each replace the title and the whole task
+     * list, which is the largest context change the app has — and all three were
+     * silent to assistive tech until Sep 2026. Kept as one helper so a new
+     * routine-level action has an obvious place to announce from.
+     *
+     * @param {string} labelKey - accessibility.* label key
+     * @param {string} name - routine name to interpolate
+     */
+    _announce(labelKey, name) {
+        announce(getLabel(labelKey, { vars: { name } }), { getElementById: this.deps.getElementById });
     }
 
     /**

@@ -22,6 +22,7 @@ import { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS, COLORS, DOM_IDS, DOM_CLASSES, FO
 import { getLabel } from '../labels/labelResolver.js';
 import { normalizeFontSize } from '../utils/styleValidators.js';
 import { syncTaskDeleteWhenComplete } from '../utils/cycleMode.js';
+import { announce } from '../utils/announce.js';
 // NOTE: taskToAddTaskOptions injected via DI to avoid duplicate module loading
 
 // ============================================================================
@@ -384,7 +385,30 @@ function renderTasksToDOM(tasks = []) {
 function updateCycleUIState(currentCycle, settings) {
   const titleElement = document.getElementById(DOM_IDS.MINI_CYCLE_TITLE);
   if (titleElement) {
-    titleElement.textContent = currentCycle.title || getLabel('routine.untitledCycle');
+    // Announce a routine SWITCH. This is the single funnel every load path runs
+    // through, so announcing here covers the switcher, the menu, import and
+    // pull-to-refresh alike — but only when the routine actually CHANGES.
+    //
+    // Compare against the TITLE ELEMENT, not a module-scope tracker. A tracker
+    // goes stale the moment another path writes the title without coming
+    // through here — createNewMiniCycle does exactly that — and then switching
+    // BACK to the last routine this function loaded reads as "no change" and
+    // stays silent. Measured: create "Second Routine", switch to "Your First
+    // Routine", tracker still said "Your First Routine", nothing announced.
+    // The rendered title is what the user was actually on, so it cannot drift.
+    //
+    // An empty element means first paint — opening the app is not a context
+    // change worth speaking, and it would talk over the screen reader's own
+    // page-load announcement. Reloading the SAME routine is silent too.
+    const nextTitle = currentCycle.title || getLabel('routine.untitledCycle');
+    const shownTitle = titleElement.textContent.trim();
+    const isSwitch = shownTitle !== '' && shownTitle !== nextTitle;
+
+    titleElement.textContent = nextTitle;
+
+    if (isSwitch) {
+      announce(getLabel('accessibility.routineSwitched', { vars: { name: nextTitle } }));
+    }
   }
 
   const toggleAutoReset = document.getElementById(DOM_IDS.TOGGLE_AUTO_RESET);

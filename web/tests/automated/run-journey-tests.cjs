@@ -384,6 +384,16 @@ async function journeyRoutineSwitch(browser, baseURL) {
         record('title reflects new routine', newTitle !== origTitle && newTitle.length > 0, `title="${newTitle}"`);
 
         // Switch back to the original routine.
+        // Record what a screen reader is told while we do it: switching replaces
+        // the title AND the whole task list, and it was silent until Sep 2026.
+        await page.evaluate(() => {
+            window.__ann = [];
+            const lr = document.getElementById('live-region');
+            if (lr) new MutationObserver(() => {
+                const t = lr.textContent.trim();
+                if (t) window.__ann.push(t);
+            }).observe(lr, { childList: true, characterData: true, subtree: true });
+        });
         await clickEl(page, '#routine-switcher-btn');
         const origItem = `.mini-cycle-switch-item[data-cycle-key="${origId}"]`;
         await page.waitForSelector(origItem, { state: 'visible', timeout: 10000 });
@@ -410,6 +420,13 @@ async function journeyRoutineSwitch(browser, baseURL) {
         record('original routine tasks restored', (await taskCount(page)) === origTaskCount,
             `count=${await taskCount(page)}, expected ${origTaskCount}`);
         record('title restored to original', (await titleText(page)) === origTitle, `title="${await titleText(page)}"`);
+
+        // The announcement must survive bootApp()'s re-render above, so read it last.
+        const switchAnn = await page.evaluate(() => (window.__ann || []).slice());
+        record('the switch is announced to screen readers',
+            switchAnn.some(t => t.toLowerCase().includes('switched to routine')),
+            `#live-region said ${switchAnn.length ? JSON.stringify(switchAnn) : 'NOTHING'} — ` +
+            'the title and the whole task list changed with no announcement');
     } catch (e) {
         failures.push(`run error: ${e.message}`);
         console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);

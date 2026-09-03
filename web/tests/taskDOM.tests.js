@@ -335,7 +335,7 @@ export async function runTaskDOMTests(resultsDiv) {
         }
     });
 
-    await test('createTaskCheckbox adds ARIA attributes', () => {
+    await test('createTaskCheckbox is named, and does NOT override its own native state', () => {
         const manager = new TaskDOMManager(getDefaultDeps());
 
         const checkbox = manager.createTaskCheckbox('test-id', 'Test task', false);
@@ -344,8 +344,24 @@ export async function runTaskDOMTests(resultsDiv) {
             throw new Error('Should have aria-label');
         }
 
-        if (!checkbox.hasAttribute('aria-checked')) {
-            throw new Error('Should have aria-checked');
+        // This test used to REQUIRE aria-checked. It is a native
+        // <input type="checkbox">, which already exposes state from `checked` —
+        // and aria-checked OVERRIDES that implicit state rather than adding to
+        // it. So the attribute bought nothing, while any path that set .checked
+        // without also rewriting it would make a screen reader announce a stale
+        // value over a correct visual and native one. Asserting its ABSENCE
+        // keeps it from being reintroduced as a well-meaning "fix".
+        if (checkbox.hasAttribute('aria-checked')) {
+            throw new Error('A native checkbox must not carry aria-checked — it overrides the real state');
+        }
+
+        // The state a screen reader reads must still be the true one.
+        if (checkbox.checked !== false) {
+            throw new Error('completed=false should leave the native checkbox unchecked');
+        }
+        const checked = manager.createTaskCheckbox('test-id-2', 'Test task', true);
+        if (checked.checked !== true) {
+            throw new Error('completed=true should leave the native checkbox checked');
         }
     });
 
