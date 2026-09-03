@@ -43,6 +43,7 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { LIMITS, UI_TIMEOUTS, COLORS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { announce } from '../utils/announce.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -327,10 +328,7 @@ export async function addTaskImpl(taskText, options = {}, deps = {}) {
 
         // Announce task addition to screen readers (skip during bulk loading)
         if (!isLoading) {
-            const liveRegion = document.getElementById(DOM_IDS.LIVE_REGION);
-            if (liveRegion) {
-                liveRegion.textContent = getLabel('accessibility.taskAdded', { vars: { name: validatedInput } });
-            }
+            announce(getLabel('accessibility.taskAdded', { vars: { name: validatedInput } }));
         }
 
         // Update search visibility after adding task

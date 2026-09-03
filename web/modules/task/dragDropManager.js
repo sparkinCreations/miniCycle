@@ -9,6 +9,7 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { announce } from '../utils/announce.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -714,12 +715,9 @@ export class DragDropManager {
                 }
 
                 // Announce move to screen readers via live region
-                const liveRegion = document.getElementById(DOM_IDS.LIVE_REGION);
-                if (liveRegion) {
-                    liveRegion.textContent = getLabel(arrowClass === DOM_CLASSES.MOVE_UP
+                announce(getLabel(arrowClass === DOM_CLASSES.MOVE_UP
                         ? 'accessibility.taskMovedUp'
-                        : 'accessibility.taskMovedDown');
-                }
+                        : 'accessibility.taskMovedDown'));
 
             } else {
                 console.warn('⚠️ AppState not ready for arrow reordering');

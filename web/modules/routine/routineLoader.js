@@ -22,6 +22,7 @@ import { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS, COLORS, DOM_IDS, DOM_CLASSES, FO
 import { getLabel } from '../labels/labelResolver.js';
 import { normalizeFontSize } from '../utils/styleValidators.js';
 import { syncTaskDeleteWhenComplete } from '../utils/cycleMode.js';
+import { announce } from '../utils/announce.js';
 // NOTE: taskToAddTaskOptions injected via DI to avoid duplicate module loading
 
 // ============================================================================
@@ -406,10 +407,7 @@ function updateCycleUIState(currentCycle, settings) {
     titleElement.textContent = nextTitle;
 
     if (isSwitch) {
-      const liveRegion = document.getElementById(DOM_IDS.LIVE_REGION);
-      if (liveRegion) {
-        liveRegion.textContent = getLabel('accessibility.routineSwitched', { vars: { name: nextTitle } });
-      }
+      announce(getLabel('accessibility.routineSwitched', { vars: { name: nextTitle } }));
     }
   }
 

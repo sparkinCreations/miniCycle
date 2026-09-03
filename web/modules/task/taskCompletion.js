@@ -26,6 +26,7 @@ import { createDIModule, optional } from '../core/diBase.js';
 import { applyTaskStatusLabel } from './taskUtils.js';
 import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { announce } from '../utils/announce.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -171,13 +172,10 @@ export async function handleTaskCompletionChangeImpl(checkbox, deps = {}) {
             applyTaskStatusLabel(taskItem, isCompleted, { name: taskText });
 
             // Announce completion state to screen readers via live region
-            const getElementById = deps.getElementById || _deps.getElementById;
-            const liveRegion = getElementById(DOM_IDS.LIVE_REGION);
-            if (liveRegion) {
-                liveRegion.textContent = isCompleted
-                    ? getLabel('accessibility.taskCompleted', { vars: { name: taskText } })
-                    : getLabel('accessibility.taskUncompleted', { vars: { name: taskText } });
-            }
+            announce(isCompleted
+                ? getLabel('accessibility.taskCompleted', { vars: { name: taskText } })
+                : getLabel('accessibility.taskUncompleted', { vars: { name: taskText } }),
+                { getElementById: deps.getElementById || _deps.getElementById });
         }
 
         // Update help window if available (DI-pure, no window.* fallback)

@@ -15,6 +15,7 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { announce } from '../utils/announce.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -567,10 +568,7 @@ export class RoutineManager {
      * @param {string} name - routine name to interpolate
      */
     _announce(labelKey, name) {
-        const liveRegion = this.deps.getElementById(DOM_IDS.LIVE_REGION);
-        if (liveRegion) {
-            liveRegion.textContent = getLabel(labelKey, { vars: { name } });
-        }
+        announce(getLabel(labelKey, { vars: { name } }), { getElementById: this.deps.getElementById });
     }
 
     /**

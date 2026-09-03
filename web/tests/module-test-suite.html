@@ -457,6 +457,7 @@
             <option value="settingsUIManager">⚙️ Settings UI Manager</option>
             <option value="focusMode">🎯 Focus Mode</option>
             <option value="taskSearch">🔍 Task Search</option>
+            <option value="announce">📢 Announce</option>
             <option value="quickActionsManager">⚡ Quick Actions</option>
             <option value="actionUsage">⚡ Action Usage</option>
             <option value="backupRestoreManager">💾 Backup Restore</option>
@@ -641,6 +642,7 @@
         const { runSettingsUIManagerTests } = await import(`./settingsUIManager.tests.js?v=${cacheBuster}`);
         const { runFocusModeTests } = await import(`./focusMode.tests.js?v=${cacheBuster}`);
         const { runTaskSearchTests } = await import(`./taskSearch.tests.js?v=${cacheBuster}`);
+        const { runAnnounceTests } = await import(`./announce.tests.js?v=${cacheBuster}`);
         const { runQuickActionsManagerTests } = await import(`./quickActionsManager.tests.js?v=${cacheBuster}`);
         const { runActionUsageTests } = await import(`./actionUsage.tests.js?v=${cacheBuster}`);
         const { runBackupRestoreManagerTests } = await import(`./backupRestoreManager.tests.js?v=${cacheBuster}`);
@@ -1940,6 +1942,10 @@
                     await import(`../modules/ui/taskSearch.js?v=${cacheBuster}`);
                     currentModule = 'taskSearch';
                     resultsDiv.innerHTML = '<p>✅ TaskSearch loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'announce') {
+                    await import(`../modules/utils/announce.js?v=${cacheBuster}`);
+                    currentModule = 'announce';
+                    resultsDiv.innerHTML = '<p>✅ Announce loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'quickActionsManager') {
                     await import(`../modules/ui/quickActionsManager.js?v=${cacheBuster}`);
                     currentModule = 'quickActionsManager';
@@ -2252,6 +2258,8 @@
                 await runFocusModeTests(resultsDiv);
             } else if (currentModule === 'taskSearch') {
                 await runTaskSearchTests(resultsDiv);
+            } else if (currentModule === 'announce') {
+                await runAnnounceTests(resultsDiv);
             } else if (currentModule === 'quickActionsManager') {
                 await runQuickActionsManagerTests(resultsDiv);
             } else if (currentModule === 'actionUsage') {

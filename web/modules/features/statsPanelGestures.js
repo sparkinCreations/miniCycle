@@ -19,6 +19,7 @@ import { getLabel } from '../labels/labelResolver.js';
 import { DOM_CLASSES, DOM_IDS, EVENTS } from '../core/constants.js';
 import { PanelCarousel } from '../ui/panelCarousel.js';
 import { recordActionUsage } from '../ui/actionUsage.js';
+import { announce } from '../utils/announce.js';
 
 export class StatsPanelGestures {
     constructor(manager) {
@@ -342,9 +343,11 @@ export class StatsPanelGestures {
      * Initialize the view state
      */
     announceViewChange(message) {
-        if (this.m.elements.liveRegion) {
-            this.m.elements.liveRegion.textContent = message;
-        }
+        // Routed through announce() rather than writing this.m.elements.liveRegion
+        // directly. That cached reference was captured once at init — the only
+        // announcement path in the app that did not look the region up fresh —
+        // and a same-value overwrite is not reliably spoken (see announce.js).
+        announce(message, { getElementById: this.m.deps?.getElementById });
     }
 
     /**

@@ -50,6 +50,7 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION } from '../core/constants.js';
 import { getLabel, getIcon } from '../labels/labelResolver.js';
+import { announce } from '../utils/announce.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -132,8 +133,7 @@ export function showCompletionAnimation() {
     }
 
     // Announce to screen readers (theme-sensitive: adapts to active vocabulary theme)
-    const liveRegion = document.getElementById(DOM_IDS.LIVE_REGION);
-    if (liveRegion) liveRegion.textContent = getLabel('notify.cycleComplete');
+    announce(getLabel('notify.cycleComplete'));
 
     // Remove the animation after 1.5 seconds
     setTimeout(() => {
@@ -156,8 +156,7 @@ export function showClearAnimation() {
     document.body.appendChild(animation);
 
     // Announce to screen readers
-    const liveRegion = document.getElementById(DOM_IDS.LIVE_REGION);
-    if (liveRegion) liveRegion.textContent = getLabel('accessibility.tasksCleared');
+    announce(getLabel('accessibility.tasksCleared'));
 
     // Remove the animation after 1.5 seconds
     setTimeout(() => {
@@ -203,8 +202,7 @@ export function showMilestoneCelebrationOverlay(iconKey, headingKey, subtitleKey
     document.body.appendChild(overlay);
 
     // Announce to screen readers
-    const liveRegion = document.getElementById(DOM_IDS.LIVE_REGION);
-    if (liveRegion) liveRegion.textContent = getLabel(headingKey);
+    announce(getLabel(headingKey));
 
     // Dismiss on click/tap
     const dismiss = () => overlay.remove();
