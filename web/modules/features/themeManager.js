@@ -32,6 +32,7 @@ import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, STORAGE_KEYS, UI_TIMEOUTS, MILESTO
 import { createDIModule, optional } from '../core/diBase.js';
 import { getLabel, getIcon } from '../labels/labelResolver.js';
 import { isClickOnNotification } from '../ui/modalUtils.js';
+import { announce } from '../utils/announce.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -675,8 +676,26 @@ export class ThemeManager {
     updateQuickToggleIcon(isDark) {
         try {
             const currentQuickToggle = _deps.getElementById(DOM_IDS.QUICK_DARK_TOGGLE);
-            if (currentQuickToggle) {
-                currentQuickToggle.textContent = isDark ? getIcon('lightMode') : getIcon('darkMode');
+            if (!currentQuickToggle) return;
+
+            currentQuickToggle.textContent = isDark ? getIcon('lightMode') : getIcon('darkMode');
+
+            // The emoji was the ONLY state cue, and it is invisible to assistive
+            // tech twice over: it is decorative content, and the button's
+            // aria-label overrides its text entirely. So the control announced
+            // "Toggle dark mode, button" identically whether dark mode was on or
+            // off — name and role present, VALUE missing (WCAG 4.1.2).
+            // aria-pressed is what carries the state for a toggle button.
+            const next = String(Boolean(isDark));
+            const prev = currentQuickToggle.getAttribute('aria-pressed');
+            currentQuickToggle.setAttribute('aria-pressed', next);
+
+            // Announce only a real flip. `prev === null` is the first application
+            // (boot / setup), where the theme is not changing and speaking would
+            // talk over the page-load announcement.
+            if (prev !== null && prev !== next) {
+                announce(getLabel(isDark ? 'accessibility.darkModeOn' : 'accessibility.darkModeOff'),
+                    { getElementById: _deps.getElementById });
             }
         } catch (error) {
             console.warn('⚠️ Quick toggle icon update failed:', error.message);

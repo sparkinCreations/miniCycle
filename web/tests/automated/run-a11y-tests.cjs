@@ -360,6 +360,42 @@ async function run() {
             await page.waitForTimeout(2500);
         }, 'routine created');
 
+        // ── D. Toggle buttons expose their STATE ───────────────────────────
+        // A <button> with an accessible name passes both checks above, so a
+        // toggle that never says whether it is on or off sails through: name
+        // and role present, VALUE missing (WCAG 4.1.2). The quick dark-mode
+        // button had exactly that — its only state cue was the emoji, which is
+        // decorative AND overridden by its own aria-label, so it announced
+        // identically in both states.
+        const darkState = () => page.evaluate(() => {
+            const q = document.getElementById('quick-dark-toggle');
+            return q ? { pressed: q.getAttribute('aria-pressed'),
+                         dark: document.body.classList.contains('dark-mode') } : null;
+        });
+        const d0 = await darkState();
+        if (!d0) {
+            failures.push('quick dark toggle: #quick-dark-toggle not found, so its state was NOT audited');
+        } else if (d0.pressed === null) {
+            console.log(`   ${colors.red}❌ dark toggle — no aria-pressed${colors.reset}`);
+            failures.push('quick dark toggle: no aria-pressed, so a screen reader cannot tell whether '
+                + 'dark mode is on — the emoji is its only state cue and aria-label overrides it');
+        } else {
+            await page.evaluate(() => document.getElementById('quick-dark-toggle')?.click());
+            await page.waitForTimeout(1500);
+            const d1 = await darkState();
+            if (String(d1.dark) !== d1.pressed) {
+                console.log(`   ${colors.red}❌ dark toggle — aria-pressed out of sync${colors.reset}`);
+                failures.push(`quick dark toggle: aria-pressed="${d1.pressed}" but body dark-mode is ${d1.dark}`);
+            } else if (d1.pressed === d0.pressed) {
+                console.log(`   ${colors.red}❌ dark toggle — aria-pressed did not change${colors.reset}`);
+                failures.push(`quick dark toggle: aria-pressed stayed "${d0.pressed}" across a toggle`);
+            } else {
+                console.log(`   ${colors.green}✅ dark toggle exposes and updates aria-pressed${colors.reset}`);
+            }
+            await page.evaluate(() => document.getElementById('quick-dark-toggle')?.click());
+            await page.waitForTimeout(1200);
+        }
+
         await announceCase('routine renamed', async () => {
             await page.evaluate(() => {
                 const t = document.getElementById('mini-cycle-title');

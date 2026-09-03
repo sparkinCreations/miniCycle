@@ -1,3 +1,7 @@
+## [2.536] - 2026-09-03
+- The quick dark-mode button now exposes aria-pressed and announces the flip. It is a toggle whose only state cue was its emoji — which is decorative AND overridden by the button's own aria-label — so it announced identically whether dark mode was on or off: name and role present, value missing (WCAG 4.1.2). The a11y gate now checks toggle state, which name-and-role checks cannot see.
+
+
 ## [2.535] - 2026-09-03
 - Screen-reader announcements now clear the live region before writing, so repeating the same message is a real empty-to-text transition. Assigning identical text is a DOM change a MutationObserver sees but a screen reader does not re-read, which is why 'Cycle complete!' twice, or completing the same task twice, sometimes said nothing. All eight announcement call sites now go through one announce() helper.
 
