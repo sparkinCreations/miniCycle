@@ -172,10 +172,13 @@ export function initTaskSearch() {
                 const targetChip = (isAlreadyActive && btn.dataset.sort !== 'default') ? defaultSortChip : btn;
 
                 currentSort = targetChip.dataset.sort;
-                // Reset captured order when going back to default (allow fresh capture next time)
-                if (currentSort === 'default') {
-                    originalTaskOrder = null;
-                }
+                // Do NOT clear originalTaskOrder here. This used to null it
+                // before applyFiltersAndSort ran, and applySortToDOM's restore
+                // is guarded by `if (originalTaskOrder)` — so pressing Default
+                // destroyed the order it was about to restore and simply left
+                // the last sort's DOM order in place. applySortToDOM clears it
+                // itself, AFTER restoring (resetSearch() has always done it in
+                // that order).
                 filterRow.querySelectorAll(DOM_SELECTORS.SORT_CHIP).forEach(b => {
                     const selected = b === targetChip;
                     b.classList.toggle(DOM_CLASSES.ACTIVE, selected);
@@ -380,12 +383,15 @@ function matchesFilter(task) {
  */
 function applySortToDOM(tasks, taskList) {
     if (currentSort === 'default') {
-        // Restore original DOM order if we have a saved order
+        // Restore original DOM order if we have a saved order, THEN drop it so
+        // the next non-default sort captures the order as it stands now (a task
+        // added or dragged meanwhile belongs in the next baseline).
         if (originalTaskOrder) {
             originalTaskOrder.forEach(id => {
                 const el = taskList.querySelector(DATA_SELECTORS.elementByTaskId(id));
                 if (el) taskList.appendChild(el);
             });
+            originalTaskOrder = null;
         }
         return;
     }
