@@ -1,3 +1,11 @@
+## [2.533] - 2026-09-03
+- A failed version probe no longer reports as 'App is up to date'. checkForUpdates and the automatic verifyVersionFresh heal both treated a null serverVersion — offline, a non-200, or a body with no APP_VERSION — as a match, so a device whose probe keeps failing could never detect staleness and never healed. fetchServerVersion now checks res.ok, and both paths say the check could not be completed.
+
+
+## [2.532] - 2026-09-03
+- The Default sort chip did not restore the manual task order. Its click handler cleared originalTaskOrder before applySortToDOM ran, and the restore is guarded by that same variable — so pressing Default destroyed the order it was about to restore and left the last sort in place.
+
+
 ## [2.531] - 2026-09-02
 - The focus Task panel's empty state now points at the Routine panel instead of the input-bar toggle. The bar is a child of #task-view, so on the Task panel it slides off-screen with its container — the old hint opened it on a panel the user could not see.
 

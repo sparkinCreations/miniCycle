@@ -156,6 +156,16 @@ if ('serviceWorker' in navigator) {
         window.location.href = window.location.pathname + '?_cb=' + Date.now();
         return;
       }
+      if (!serverVersion) {
+        // Same trap as checkForUpdates, but silent and automatic: with a null
+        // serverVersion BOTH staleness flags above are false, so this used to
+        // log "Version verified" and return. A device whose version probe keeps
+        // failing therefore never detects staleness and never heals — on every
+        // focus, visibilitychange and pageshow, forever. Say what actually
+        // happened instead of claiming a verification that never ran.
+        console.warn('⚠️ Could not read the server version — staleness UNKNOWN, not verified');
+        return;
+      }
       console.log(`✅ Version verified: build ${buildVersion} (app ${APP_VERSION}, cache ${CACHE_VERSION})`);
     } catch (err) {
       console.warn('Version check failed (offline?):', err);
@@ -337,10 +347,20 @@ async function fetchServerVersion() {
       cache: 'no-store',
       headers: { 'Cache-Control': 'no-cache' }
     });
+    // res.ok matters: the SPA fallback in _redirects answers an unmatched path
+    // with miniCycle.html and a 404, and .text() on that body simply fails to
+    // match the APP_VERSION regex — indistinguishable from a real answer
+    // unless the status is checked.
+    if (!res.ok) {
+      console.warn(`Version probe returned HTTP ${res.status}`);
+      return null;
+    }
     const txt = await res.text();
     const m = txt.match(/APP_VERSION\s*=\s*['"]([^'"]+)['"]/);
+    if (!m) console.warn('Version probe body had no APP_VERSION');
     return m ? m[1] : null;
-  } catch {
+  } catch (err) {
+    console.warn('Version probe failed:', err && err.message);
     return null;
   }
 }
@@ -412,6 +432,14 @@ window.checkForUpdates = async function() {
         cancelText: "Later",
         callback: (confirmed) => { if (confirmed) applyUpdateAndReload(); }
       });
+    } else if (!serverVersion) {
+      // NEVER report "up to date" from a check that did not happen. serverVersion
+      // is null whenever the probe failed — offline, a non-200, or a body with no
+      // APP_VERSION — and the old catch-all `else` swallowed all of those and
+      // quoted the running version back as confirmation. That is the one message
+      // guaranteed to be wrong here: a user on a stale build asks precisely
+      // because they suspect it, and gets told it is current.
+      showNotification('⚠️ Couldn\'t reach the server to check for updates. Try again when you have a connection.', 'warning', 5000);
     } else {
       showNotification(`✅ App is up to date! (v${buildVersion})`, 'success', 3000);
     }
