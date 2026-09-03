@@ -1566,6 +1566,151 @@ async function journeyImportedKeepOnReset(browser, baseURL) {
     return { name: 'imported delete-settings reconcile and KEEP is honoured', failures };
 }
 
+// ── Journey: a .mcyc round-trip keeps recurring templates with no live task ──
+// A routine sitting BETWEEN occurrences is the normal resting state, not an edge
+// case: taskCycleReset removes the spawned instance from cycle.tasks and leaves
+// its template behind for recurringWatcher to respawn. Export has written
+// `recurringTemplates` since the first commit; import rebuilt that map from the
+// TASK LIST alone, so those routines lost their recurring tasks outright — no
+// task, no template, no error, and a success notification.
+//
+// This drives the REAL file-drop path rather than seeding storage, because the
+// bug lived in the import transform itself. It asserts the EFFECT (the routine
+// arrived, its ordinary task is present) alongside the question, so an import
+// that silently fails cannot pass by producing nothing.
+//
+// The last two records are the point of the fix: nothing is spawned at import
+// time, and the carried-over template is a shape the WATCHER acts on. Asserting
+// only "the template is in storage" would pass on a record the watcher ignores.
+async function journeyImportKeepsOrphanTemplates(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const { context, page } = await openFresh(browser, baseURL);
+    try {
+        const MCYC = {
+            name: 'between-occurrences',
+            title: 'Between Occurrences',
+            tasks: [{
+                id: 'plain-task', text: 'Make bed', completed: false, dueDate: null,
+                highPriority: false, priorityColor: null, remindersEnabled: false,
+                recurring: false, recurringSettings: {}, deleteWhenComplete: false,
+                deleteWhenCompleteSettings: { cycle: false, todo: true }, schemaVersion: 2
+            }],
+            // The template with NO live task — what a cycle reset leaves behind.
+            recurringTemplates: {
+                'orphan-task': {
+                    id: 'orphan-task', text: 'Water the plants', highPriority: true,
+                    priorityColor: null, remindersEnabled: false,
+                    recurringSettings: { frequency: 'hourly', indefinitely: true, time: null },
+                    nextScheduledOccurrence: '2020-01-01T09:00:00.000Z',
+                    createdAt: 1750000000000
+                }
+            },
+            autoReset: true, cycleCount: 7, deleteCheckedTasks: false,
+            taskOptionButtons: null, reminders: null, autoUncheckDaily: null,
+            createdAt: 1750000000000, theme: 'classic'
+        };
+
+        // openFresh() has already navigated and booted.
+        // Hand the page RAW JSON text: page.evaluate structured-clones its argument,
+        // and a __proto__-shaped key would not survive that round trip.
+        await page.evaluate((raw) => {
+            const dt = new DataTransfer();
+            dt.items.add(new File([raw], 'routine.mcyc', { type: 'application/json' }));
+            document.dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true, cancelable: true }));
+        }, JSON.stringify(MCYC));
+        await page.waitForTimeout(2000);
+
+        const mode = await page.evaluate(() => {
+            const norm = (b) => (b.textContent || '').replace(/\s+/g, ' ').trim();
+            const btn = [...document.querySelectorAll('button, .choice-option, [data-choice]')]
+                .filter(b => b.getClientRects().length > 0)
+                .find(b => /^Import with Progress/i.test(norm(b)));
+            if (btn) { btn.click(); return true; }
+            return false;
+        });
+        record('the import mode modal offered "Import with Progress"', mode,
+            'the choice modal never appeared — the drop was not handled, so nothing below is testing import');
+        await page.waitForTimeout(3000);
+
+        const imported = () => page.evaluate(() => {
+            try {
+                const p = JSON.parse(localStorage.getItem('miniCycleData'));
+                const c = p.data.cycles[p.appState.activeCycleId];
+                return {
+                    title: c.title,
+                    taskTexts: (c.tasks || []).map(t => t.text),
+                    templates: Object.values(c.recurringTemplates || {})
+                        .map(t => ({ text: t.text, next: t.nextScheduledOccurrence, count: t.occurrenceCount })),
+                    prototypeIntact: Object.getPrototypeOf({}) === Object.prototype
+                };
+            } catch (e) { return null; }
+        });
+
+        const after = await imported();
+        record('the dropped routine became the active routine', after && after.title === 'Between Occurrences',
+            `active routine is ${JSON.stringify(after && after.title)} — the import did not land`);
+        record('its ordinary task imported', !!after && after.taskTexts.includes('Make bed'),
+            `imported tasks: ${JSON.stringify(after && after.taskTexts)}`);
+
+        // THE QUESTION.
+        record('a recurring template with no live task survives the import',
+            !!after && after.templates.some(t => t.text === 'Water the plants'),
+            'the template was DROPPED — import rebuilt recurringTemplates from the task list only, so a ' +
+            'routine exported between occurrences loses its recurring tasks entirely, silently');
+
+        record('it is scheduled, not inert',
+            !!after && after.templates.length === 1 && after.templates.every(t => t.next != null),
+            'nextScheduledOccurrence is null/absent — recurringWatcher reads that as exhausted and will never fire it');
+
+        // Watcher-respawn semantics: import restores the SCHEDULE, not an instance.
+        record('no task is spawned at import time', !!after && !after.taskTexts.includes('Water the plants'),
+            `import spawned the instance itself: ${JSON.stringify(after && after.taskTexts)} — the watcher owns spawning`);
+
+        // THE MECHANISM. calculateNextOccurrence always returns a strictly future
+        // time, so nothing is due on arrival. Backdate it and reload, so the watcher
+        // reads the carried-over template cold from storage.
+        await page.evaluate(() => {
+            const p = JSON.parse(localStorage.getItem('miniCycleData'));
+            const c = p.data.cycles[p.appState.activeCycleId];
+            for (const k of Object.keys(c.recurringTemplates || {})) {
+                c.recurringTemplates[k].nextScheduledOccurrence = Date.now() - 60000;
+            }
+            localStorage.setItem('miniCycleData', JSON.stringify(p));
+        });
+        await page.reload({ waitUntil: 'domcontentloaded', timeout: 20000 });
+        await bootApp(page);
+
+        let spawned = false;
+        try {
+            await page.waitForFunction(() => {
+                try {
+                    const p = JSON.parse(localStorage.getItem('miniCycleData'));
+                    const c = p.data.cycles[p.appState.activeCycleId];
+                    return (c.tasks || []).some(t => t.text === 'Water the plants');
+                } catch (e) { return false; }
+            }, null, { timeout: 30000 });
+            spawned = true;
+        } catch (e) { /* recorded below */ }
+
+        const final = await imported();
+        record('the watcher respawns the task from the imported template', spawned,
+            'the template survived storage but the watcher never acted on it — the carried-over record is ' +
+            `missing a field recurringWatcher gates on. Tasks: ${JSON.stringify(final && final.taskTexts)}`);
+        record('the occurrence advanced',
+            !!final && final.templates.length === 1 && final.templates.every(t => t.count >= 1),
+            `occurrenceCount never incremented: ${JSON.stringify(final && final.templates)}`);
+        record('no prototype pollution from imported template keys', !!final && final.prototypeIntact,
+            'Object.prototype was modified by an imported recurringTemplates key');
+
+        record('no starved dependencies', page.__diWarnings.length === 0,
+            `DI warnings: ${page.__diWarnings.join(' | ')}`);
+    } finally {
+        await context.close();
+    }
+
+    return { name: 'import keeps recurring templates with no live task', failures };
+}
+
 // ── Journey 15 + 16: what a factory reset must actually leave behind ───────
 // The reset is destructive, irreversible and hard to verify by eye, which is
 // exactly why both of these shipped: each looked correct in a single tab with an
@@ -1942,6 +2087,7 @@ async function journeyNewRoutineHintMatchesBar(browser, baseURL) {
 }
 
 const JOURNEYS = [
+    { name: 'import keeps recurring templates with no live task', fn: journeyImportKeepsOrphanTemplates },
     { name: 'core (add → persist → cycle → offline)', fn: journeyCore },
     { name: 'routine switching', fn: journeyRoutineSwitch },
     { name: 'undo / redo', fn: journeyUndoRedo },
