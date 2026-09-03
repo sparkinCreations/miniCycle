@@ -83,6 +83,13 @@ const MAX_CYCLE_NAME_LENGTH = LIMITS.CYCLE_NAME_CHARACTER;
 // that every id the app itself generates (task-<ts>-..., legacy repairs)
 // round-trips, so the template-metadata merge below still matches by id.
 const SAFE_IMPORTED_TASK_ID = /^[A-Za-z0-9._:-]{1,64}$/;
+// `__proto__` and friends pass SAFE_IMPORTED_TASK_ID's character class but are
+// unusable as plain-object keys: `map['__proto__'] = t` sets the PROTOTYPE — the
+// write reads back fine, serialises to {}, and vanishes on reload (CLAUDE.md #18).
+// Imported task ids key cycle.recurringTemplates, so reject these and regenerate.
+const UNSAFE_OBJECT_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+const isSafeImportedTaskId = (id) =>
+    typeof id === 'string' && SAFE_IMPORTED_TASK_ID.test(id) && !UNSAFE_OBJECT_KEYS.has(id);
 
 /**
  * Validate an imported date string: ISO YYYY-MM-DD with optional time, and a
@@ -625,7 +632,7 @@ export async function processImportedData(fileContent) {
         const highPriority = task.highPriority === true;
         const validColor = isValidHex(task.priorityColor) ? task.priorityColor : null;
         const taskData = {
-            id: (typeof task.id === 'string' && SAFE_IMPORTED_TASK_ID.test(task.id))
+            id: isSafeImportedTaskId(task.id)
                 ? task.id
                 : `task-${importTimestamp}-${index}`,
             text: sanitizedText,
@@ -745,6 +752,86 @@ export async function processImportedData(fileContent) {
             ...generated,       // Override with our sanitized/generated data
             text: generated.text  // Explicitly ensure text is from sanitized source
         };
+    }
+
+    // Carry over templates that have NO live task instance.
+    //
+    // A routine sitting between occurrences is the normal resting state: cycle
+    // reset removes the spawned instance from cycle.tasks and leaves its template
+    // behind for recurringWatcher to respawn (taskCycleReset ->
+    // removeRecurringTasksFromCycle). The merge above rebuilds templates from the
+    // TASK LIST alone, so every such routine lost its recurring tasks outright on
+    // import - no task, no template, no error, and a success notification.
+    //
+    // Present since the first commit, where import hardcoded `recurringTemplates:
+    // {}` and never read the file's copy. The Nov 2025 task-derived rebuild
+    // repaired only the case where the instance happened to be live, which is what
+    // kept the remainder invisible. The duplicate-routine path already reached the
+    // same conclusion (routineSwitcherActions.js: "a template without a live task
+    // instance is normal - keep it").
+    //
+    // No task is spawned here on purpose: the watcher spawns it at the next
+    // occurrence, exactly as it would have in the routine this file came from.
+    //
+    // These entries never passed through task sanitization, so every field is
+    // re-derived through the same validators the task path uses - nothing is
+    // copied from the file untouched.
+    const importedTemplates =
+        (importedData.recurringTemplates && typeof importedData.recurringTemplates === 'object')
+            ? importedData.recurringTemplates
+            : {};
+    let orphanTemplateIndex = 0;
+    for (const [rawId, imported] of Object.entries(importedTemplates)) {
+        if (Object.prototype.hasOwnProperty.call(mergedTemplates, rawId)) continue;
+        if (!imported || typeof imported !== 'object') continue;
+        // A template with no recurrence rule can never fire. Skip it rather than
+        // invent a default schedule the user never chose.
+        if (!imported.recurringSettings || typeof imported.recurringSettings !== 'object') continue;
+        if (Object.keys(mergedTemplates).length >= MAX_TASK_COUNT) {
+            console.warn(`Import: recurring template limit (${MAX_TASK_COUNT}) reached, dropping the rest`);
+            break;
+        }
+
+        const orphanSettings = normalizeRecurringSettings(imported.recurringSettings);
+        if (orphanSettings.specificDates.dates.length > 0) {
+            orphanSettings.specificDates.dates = orphanSettings.specificDates.dates
+                .filter(d => validateImportedDate(d) !== null)
+                .slice(0, LIMITS.MAX_SPECIFIC_DATES);
+            if (orphanSettings.specificDates.dates.length === 0) {
+                orphanSettings.specificDates.enabled = false;
+            }
+        }
+
+        const orphanId = isSafeImportedTaskId(rawId)
+            ? rawId
+            : `task-${importTimestamp}-t${orphanTemplateIndex}`;
+        orphanTemplateIndex++;
+
+        const orphanHighPriority = imported.highPriority === true;
+        const orphanColor = isValidHex(imported.priorityColor) ? imported.priorityColor : null;
+
+        let orphanNextOccurrence = null;
+        if (typeof calculateNextOccurrence === 'function') {
+            try {
+                // Recomputed, never copied: the file's nextScheduledOccurrence is a
+                // timestamp from another device and is usually already in the past.
+                orphanNextOccurrence = calculateNextOccurrence(orphanSettings, Date.now());
+            } catch (error) {
+                console.warn(`Failed to schedule imported template ${orphanId}:`, error);
+            }
+        }
+
+        mergedTemplates[orphanId] = buildRecurringTemplate({
+            id: orphanId,
+            text: normalizeImportedText(imported.text || '', MAX_TASK_TEXT_LENGTH)
+                || getLabel('noun.untitledTask'),
+            dueDate: validateImportedDate(imported.dueDate),
+            highPriority: orphanHighPriority,
+            priorityColor: orphanColor || (orphanHighPriority ? COLORS.PRIORITY_DEFAULT : null),
+            remindersEnabled: imported.remindersEnabled === true,
+            recurringSettings: orphanSettings,
+            nextScheduledOccurrence: orphanNextOccurrence
+        });
     }
 
     // Sanitize taskOptionButtons — only allow known boolean keys
@@ -912,7 +999,7 @@ export async function processImportedData(fileContent) {
         });
     }
 
-    const recurringCount = Object.keys(recurringTemplates).length;
+    const recurringCount = Object.keys(mergedTemplates).length;
 
     // Fix #50-51: Store notification message in sessionStorage so it survives reload
     // The notification will be shown after the page reloads

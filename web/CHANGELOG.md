@@ -1,3 +1,7 @@
+## [2.537] - 2026-09-03
+- Import: keep recurring templates that have no live task instance. A routine exported between occurrences lost its recurring tasks entirely — import rebuilt recurringTemplates from the task list alone. Carried-over templates are re-sanitized and rescheduled; the watcher spawns the instance at the next occurrence.
+
+
 ## [2.536] - 2026-09-03
 - The quick dark-mode button now exposes aria-pressed and announces the flip. It is a toggle whose only state cue was its emoji — which is decorative AND overridden by the button's own aria-label — so it announced identically whether dark mode was on or off: name and role present, value missing (WCAG 4.1.2). The a11y gate now checks toggle state, which name-and-role checks cannot see.
 
