@@ -1,3 +1,7 @@
+## [2.534] - 2026-09-03
+- Screen-reader announcements for routine-level context changes. Creating, switching and renaming a routine each replace the title and the whole task list, and all three were silent — the title is a contenteditable whose aria-label names the field, not the value. Also drops the redundant aria-checked from the native task checkbox, which overrode its own implicit state, and extends the a11y gate + routine-switch journey to assert announcements.
+
+
 ## [2.533] - 2026-09-03
 - A failed version probe no longer reports as 'App is up to date'. checkForUpdates and the automatic verifyVersionFresh heal both treated a null serverVersion — offline, a non-200, or a body with no APP_VERSION — as a match, so a device whose probe keeps failing could never detect staleness and never healed. fetchServerVersion now checks res.ok, and both paths say the check could not be completed.
 

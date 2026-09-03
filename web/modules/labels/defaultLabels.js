@@ -2180,6 +2180,14 @@ export const DEFAULT_LABELS = deepFreeze({
         editRoutineName: 'Edit routine name',
         editPresetName: 'Edit preset name',
         taskAdded: 'Task added: {name}',
+        // Routine-level context changes. Creating, switching or renaming replaces
+        // the whole task list and the title, and none of it was announced —
+        // the title is a contenteditable whose aria-label names the FIELD
+        // ("Routine name"), never the value, so a screen-reader user's entire
+        // context could change in silence (measured Sep 2026).
+        routineCreated: 'Routine created: {name}',
+        routineSwitched: 'Switched to routine: {name}',
+        routineRenamed: 'Routine renamed to: {name}',
         taskViewOpened: 'Routine view opened',
         statsPanelOpened: 'Stats panel opened',
         focusTaskPanelOpened: 'Task view opened',
@@ -2672,6 +2680,9 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'accessibility.editRoutineName',
     'accessibility.editPresetName',
     'accessibility.taskAdded',
+    'accessibility.routineCreated',
+    'accessibility.routineSwitched',
+    'accessibility.routineRenamed',
     'accessibility.taskViewOpened',
     'accessibility.statsPanelOpened',
 

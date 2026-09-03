@@ -295,6 +295,80 @@ async function run() {
         await page.evaluate(() => document.querySelector('.history-action-btn')?.click());
         await page.waitForTimeout(1200);
         await check('history modal — recreate mode');
+
+        // ── C. Context changes reach the live region ────────────────────────
+        // Naming and operability say nothing about whether a screen reader is
+        // TOLD when something changes. A Sep 2026 audit found routine create,
+        // switch and rename were all completely silent: each replaces the title
+        // and the whole task list, and the title is a contenteditable whose
+        // aria-label names the FIELD ("Routine name"), never the value. No gate
+        // could see it, because no gate looked at #live-region.
+        //
+        // Each case asserts the ANNOUNCEMENT and the EFFECT. Without the effect
+        // check, a flow that silently failed to run would look identical to a
+        // flow that ran and announced nothing — and would pass.
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(800);
+        await page.evaluate(() => {
+            window.__ann = [];
+            const lr = document.getElementById('live-region');
+            if (lr) new MutationObserver(() => {
+                const t = lr.textContent.trim();
+                if (t) window.__ann.push(t);
+            }).observe(lr, { childList: true, characterData: true, subtree: true });
+        });
+        const announced = () => page.evaluate(() => {
+            const a = window.__ann.slice(); window.__ann.length = 0; return a;
+        });
+        const titleNow = () => page.evaluate(
+            () => document.getElementById('mini-cycle-title')?.textContent.trim() || '');
+
+        const announceCase = async (name, act, expectFragment) => {
+            await announced();                       // drain
+            const before = await titleNow();
+            await act();
+            const heard = await announced();
+            const after = await titleNow();
+            if (before === after) {
+                console.log(`   ${colors.red}❌ ${name} — no effect${colors.reset}`);
+                failures.push(`${name}: the routine title did not change, so this case did not exercise the flow`);
+                return;
+            }
+            const hit = heard.some(t => t.toLowerCase().includes(expectFragment));
+            if (!hit) {
+                console.log(`   ${colors.red}❌ ${name} — silent${colors.reset}`);
+                failures.push(`${name}: title changed "${before}" -> "${after}" but #live-region said `
+                    + `${heard.length ? JSON.stringify(heard) : 'NOTHING'} — a screen reader is not told the context changed`);
+            } else {
+                console.log(`   ${colors.green}✅ ${name} announced${colors.reset}`);
+            }
+        };
+
+        await announceCase('routine created', async () => {
+            await page.evaluate(() => document.getElementById('quick-actions-btn')?.click());
+            await page.waitForTimeout(600);
+            await page.evaluate(() => document.getElementById('create-routine-btn')?.click());
+            await page.waitForTimeout(1200);
+            await page.evaluate(() => {
+                const d = [...document.querySelectorAll('dialog.miniCycle-prompt-dialog')].pop();
+                const i = d?.querySelector('#sample-creation-input') || d?.querySelector('input');
+                if (!i) return;
+                i.value = 'A11y Probe Routine';
+                i.dispatchEvent(new Event('input', { bubbles: true }));
+                d.querySelector('.miniCycle-btn-confirm')?.click();
+            });
+            await page.waitForTimeout(2500);
+        }, 'routine created');
+
+        await announceCase('routine renamed', async () => {
+            await page.evaluate(() => {
+                const t = document.getElementById('mini-cycle-title');
+                t.textContent = 'A11y Renamed Routine';
+                t.dispatchEvent(new Event('input', { bubbles: true }));
+                t.dispatchEvent(new Event('blur', { bubbles: true }));
+            });
+            await page.waitForTimeout(2000);
+        }, 'renamed');
     } catch (e) {
         console.log(`   ${colors.red}❌ harness error: ${e.message}${colors.reset}`);
         failures.push(`harness error: ${e.message}`);

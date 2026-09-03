@@ -384,7 +384,33 @@ function renderTasksToDOM(tasks = []) {
 function updateCycleUIState(currentCycle, settings) {
   const titleElement = document.getElementById(DOM_IDS.MINI_CYCLE_TITLE);
   if (titleElement) {
-    titleElement.textContent = currentCycle.title || getLabel('routine.untitledCycle');
+    // Announce a routine SWITCH. This is the single funnel every load path runs
+    // through, so announcing here covers the switcher, the menu, import and
+    // pull-to-refresh alike — but only when the routine actually CHANGES.
+    //
+    // Compare against the TITLE ELEMENT, not a module-scope tracker. A tracker
+    // goes stale the moment another path writes the title without coming
+    // through here — createNewMiniCycle does exactly that — and then switching
+    // BACK to the last routine this function loaded reads as "no change" and
+    // stays silent. Measured: create "Second Routine", switch to "Your First
+    // Routine", tracker still said "Your First Routine", nothing announced.
+    // The rendered title is what the user was actually on, so it cannot drift.
+    //
+    // An empty element means first paint — opening the app is not a context
+    // change worth speaking, and it would talk over the screen reader's own
+    // page-load announcement. Reloading the SAME routine is silent too.
+    const nextTitle = currentCycle.title || getLabel('routine.untitledCycle');
+    const shownTitle = titleElement.textContent.trim();
+    const isSwitch = shownTitle !== '' && shownTitle !== nextTitle;
+
+    titleElement.textContent = nextTitle;
+
+    if (isSwitch) {
+      const liveRegion = document.getElementById(DOM_IDS.LIVE_REGION);
+      if (liveRegion) {
+        liveRegion.textContent = getLabel('accessibility.routineSwitched', { vars: { name: nextTitle } });
+      }
+    }
   }
 
   const toggleAutoReset = document.getElementById(DOM_IDS.TOGGLE_AUTO_RESET);

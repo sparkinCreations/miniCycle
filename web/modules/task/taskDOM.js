@@ -834,15 +834,21 @@ export class TaskDOMManager {
         checkbox.setAttribute("name", `task-complete-${assignedTaskId}`);
         checkbox.checked = completed;
         checkbox.setAttribute("aria-label", getLabel('action.markTaskComplete', { vars: { name: taskTextTrimmed } }));
-        checkbox.setAttribute("aria-checked", String(completed));
+        // NO aria-checked. This is a NATIVE <input type="checkbox">, which already
+        // exposes its state from the `checked` property — and aria-checked
+        // OVERRIDES that implicit state rather than supplementing it. So the
+        // attribute buys nothing here, while any path that sets .checked without
+        // also rewriting the attribute makes a screen reader announce the stale
+        // ARIA value over a correct visual and native one. It tracked correctly
+        // on every measured path (Sep 2026 audit), but it converted a class of
+        // impossible bug into a possible one for no benefit. The custom
+        // role="checkbox" DIVs elsewhere (onboardingDemo, modalTemplates) DO
+        // need aria-checked — they have no implicit state to inherit.
 
         // Add event listener using safe helper
         const addListener = this.deps.safeAddEventListener;
 
         addListener(checkbox, "change", () => {
-            // ✅ Keep aria-checked in sync with checked state
-            checkbox.setAttribute("aria-checked", String(checkbox.checked));
-
             // ✅ Enable undo system on first user interaction
             if (typeof this.deps.enableUndoSystemOnFirstInteraction === 'function') {
                 this.deps.enableUndoSystemOnFirstInteraction();
