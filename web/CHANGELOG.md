@@ -1,3 +1,8 @@
+## [2.539] - 2026-09-04
+- docs(future-work): correct STATE_TRUTH_MIGRATION #10, #24, #30
+- Recurring panel search: announce the result count to screen readers. Filtering changed the visible list with no announcement at all; only the zero-match case spoke. The live region lives inside the dialog because showModal() makes the body-level #live-region inert.
+
+
 ## [2.538] - 2026-09-04
 - Import: never attach a recurring template to a task that is present and non-recurring (closes a hole in v2.537's orphan carry-over). Recurring panel: add its own search over the template list, shown once the list is long enough to scroll, with a distinct no-matches message.
 

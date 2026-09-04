@@ -344,7 +344,8 @@ export async function runRecurringPanelEventsTests(resultsDiv) {
         <ul id="recurring-task-list">${texts.map((t, i) =>
             `<li class="recurring-task-item" data-task-id="t${i}">
                <span class="recurring-task-text">${t}</span></li>`).join('')}</ul>
-        <div id="recurring-no-matches" class="hidden"></div>`;
+        <div id="recurring-no-matches" class="hidden"></div>
+        <div id="recurring-search-status" role="status" aria-live="polite"></div>`;
 
     const NAMES = ['Water the plants', 'Take medication', 'Stretch',
                    'Wash dishes', 'Walk the dog', 'Water filter change'];
@@ -496,6 +497,94 @@ export async function runRecurringPanelEventsTests(resultsDiv) {
                 document.removeEventListener('keydown', onKey);
             }
             if (!reachedPanel) throw new Error('Escape was swallowed, so the panel can no longer be closed from the search box');
+        } finally { unmount(); }
+    });
+
+    // The result count must reach a screen reader. A sighted user watches the list
+    // shrink; without this, filtering 7 rows to 2 says nothing (measured). The
+    // region lives INSIDE the dialog because showModal() makes the body-level
+    // #live-region inert — see announce.js.
+    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+    const statusText = (deps) => deps.getElementById('recurring-search-status').textContent.trim();
+
+    await test('filtering announces the result count', async () => {
+        const deps = mount(SEARCH_HTML(NAMES));
+        try {
+            mod.applyRecurringSearch(deps, { searchQuery: 'water' });
+            await sleep(800);
+            const t = statusText(deps);
+            if (!/2 of 6/.test(t)) {
+                throw new Error(`expected a "2 of 6" count, got ${JSON.stringify(t)} — a screen-reader ` +
+                    'user is not told the list changed');
+            }
+        } finally { unmount(); }
+    });
+
+    await test('a single match is announced in the singular', async () => {
+        const deps = mount(SEARCH_HTML(NAMES));
+        try {
+            mod.applyRecurringSearch(deps, { searchQuery: 'stretch' });
+            await sleep(800);
+            const t = statusText(deps);
+            if (!/^1 of 6 .*matches$/.test(t)) throw new Error(`got ${JSON.stringify(t)}`);
+        } finally { unmount(); }
+    });
+
+    await test('clearing the query announces the full list is back', async () => {
+        const deps = mount(SEARCH_HTML(NAMES));
+        try {
+            mod.applyRecurringSearch(deps, { searchQuery: '' });
+            await sleep(800);
+            if (!/all 6/.test(statusText(deps))) throw new Error(`got ${JSON.stringify(statusText(deps))}`);
+        } finally { unmount(); }
+    });
+
+    await test('the announcement is debounced, not fired per keystroke', async () => {
+        const deps = mount(SEARCH_HTML(NAMES));
+        try {
+            const state = { searchQuery: '' };
+            mod.setupSearchDelegation(deps, state);
+            const input = deps.getElementById('recurring-search-input');
+            // Space the keystrokes out. Dispatching them synchronously would make
+            // this test vacuous: even a zero-delay timer has not fired by the
+            // assertion below, so it would pass with the debounce removed
+            // (verified — setting the delay to 0 left the whole suite green).
+            // 5 x 60ms = 300ms, still inside the 500ms window.
+            for (const v of ['w', 'wa', 'wat', 'wate', 'water']) {
+                input.value = v;
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+                await sleep(60);
+            }
+            // Mid-flight: nothing announced yet, or a screen reader would read
+            // every keystroke and be unusable while typing.
+            if (statusText(deps) !== '') {
+                throw new Error(`announced mid-typing: ${JSON.stringify(statusText(deps))} — ` +
+                    'the debounce is gone, so every keystroke reaches the live region');
+            }
+            await sleep(800);
+            if (!/2 of 6/.test(statusText(deps))) {
+                throw new Error(`no settled announcement, got ${JSON.stringify(statusText(deps))}`);
+            }
+        } finally { unmount(); }
+    });
+
+    await test('an identical consecutive count is still a real empty->text transition', async () => {
+        const deps = mount(SEARCH_HTML(NAMES));
+        try {
+            const status = deps.getElementById('recurring-search-status');
+            mod.applyRecurringSearch(deps, { searchQuery: 'water' });
+            await sleep(800);
+            const seen = [];
+            const obs = new MutationObserver(() => seen.push(status.textContent));
+            obs.observe(status, { childList: true, characterData: true, subtree: true });
+            // Same visible count via a different query — screen readers skip
+            // unchanged live-region content, so the region must be cleared first.
+            mod.applyRecurringSearch(deps, { searchQuery: 'wa' });
+            await sleep(800);
+            obs.disconnect();
+            if (!seen.includes('')) {
+                throw new Error(`region was never cleared between announcements. Saw: ${JSON.stringify(seen)}`);
+            }
         } finally { unmount(); }
     });
 

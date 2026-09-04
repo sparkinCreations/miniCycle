@@ -8,7 +8,7 @@
  * @version 1.0.0
  */
 
-import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, LIMITS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, LIMITS, DEBOUNCE } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { handleGridArrowNav, handleVerticalArrowNav } from '../utils/keyboardNav.js';
 
@@ -447,6 +447,60 @@ export function applyRecurringSearch(deps, state) {
             noMatches.textContent = getLabel('recurring.noMatches', { vars: { query: state.searchQuery.trim() } });
         }
     }
+
+    announceSearchResults(deps, state, visible, items.length);
+}
+
+/**
+ * Announce the result count to screen readers.
+ *
+ * A sighted user watches the list shrink; without this a screen-reader user gets
+ * no feedback at all — measured, filtering 7 rows down to 2 said nothing, and
+ * only the zero-match case spoke. That is the state-change-never-reaches-the-
+ * live-region class the v2.534-v2.536 work was about.
+ *
+ * The region lives INSIDE the dialog deliberately. `showModal()` marks everything
+ * outside the dialog inert and inert content leaves the accessibility tree, so
+ * utils/announce.js's body-level #live-region is unreadable while this panel is
+ * open — that module's docblock records two reverted attempts at working around
+ * it. A region inside the dialog subtree has no such problem.
+ *
+ * Debounced: announcing on every keystroke makes a screen reader unusable while
+ * typing.
+ *
+ * @param {Object} deps - {getElementById}
+ * @param {Object} state - Panel state (holds the debounce timer)
+ * @param {number} visible - Rows matching the query
+ * @param {number} total - Rows in the list
+ * @returns {void}
+ */
+function announceSearchResults(deps, state, visible, total) {
+    const status = deps.getElementById(DOM_IDS.RECURRING_SEARCH_STATUS);
+    if (!status || !state) return;
+
+    if (state._searchAnnounceTimer) clearTimeout(state._searchAnnounceTimer);
+
+    const query = (state.searchQuery || '').trim();
+    // Nothing to say before the user has searched, and on an empty list the
+    // panel's own empty state already speaks.
+    if (total === 0) { status.textContent = ''; return; }
+
+    const message = query === ''
+        ? getLabel('recurring.searchCleared', { vars: { total } })
+        : (visible === 1
+            ? getLabel('recurring.searchResultsOne', { vars: { total } })
+            : getLabel('recurring.searchResults', { vars: { count: visible, total } }));
+
+    state._searchAnnounceTimer = setTimeout(() => {
+        state._searchAnnounceTimer = null;
+        // Clear first so an identical consecutive message is still a real
+        // empty->text transition; screen readers skip unchanged content
+        // (utils/announce.js documents the same behaviour).
+        status.textContent = '';
+        const raf = (typeof requestAnimationFrame === 'function')
+            ? requestAnimationFrame : ((fn) => setTimeout(fn, 16));
+        raf(() => { status.textContent = message; });
+    }, DEBOUNCE.SEARCH_RESULT_ANNOUNCE);
 }
 
 /**

@@ -206,7 +206,8 @@ export const DEBOUNCE = Object.freeze({
     STATE_SAVE_FALLBACK: 100,      // 100ms - Fallback timeout if no requestIdleCallback
     UNDO_DB_WRITE: 3000,           // 3s - IndexedDB write debounce for undo
     UNDO_MIN_INTERVAL: 300,        // 300ms - Minimum interval between undo snapshots
-    CONCURRENT_MOD_CONFLICT: 1000  // 1s - Threshold for concurrent modification detection
+    CONCURRENT_MOD_CONFLICT: 1000, // 1s - Threshold for concurrent modification detection
+    SEARCH_RESULT_ANNOUNCE: 500    // 500ms - Wait for typing to settle before announcing a result count. Announcing per keystroke makes a screen reader unusable while typing
 });
 
 /**
@@ -1196,6 +1197,7 @@ export const DOM_IDS = Object.freeze({
     RECURRING_SEARCH_ROW: 'recurring-search-row',
     RECURRING_SEARCH_INPUT: 'recurring-search-input',
     RECURRING_NO_MATCHES: 'recurring-no-matches',
+    RECURRING_SEARCH_STATUS: 'recurring-search-status',
     RECURRING_SETTINGS_PANEL: 'recurring-settings-panel',
     RECURRING_SUMMARY_PREVIEW: 'recurring-summary-preview',
     CLOSE_RECURRING_PANEL: 'close-recurring-panel',

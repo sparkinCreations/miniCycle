@@ -1102,6 +1102,9 @@ export const DEFAULT_LABELS = deepFreeze({
         searchPlaceholder:    'Search recurring tasks',
         searchAriaLabel:      'Search recurring tasks',
         noMatches:            'No recurring tasks match \u201C{query}\u201D',
+        searchResults:        '{count} of {total} recurring tasks match',
+        searchResultsOne:     '1 of {total} recurring tasks matches',
+        searchCleared:        'Showing all {total} recurring tasks',
         addTaskTitle:         'Add a task from this routine to make it recurring',
         selectTasksHeader:    'Select tasks to make recurring:',
         noAvailableTasks:     'All tasks are already recurring, or no tasks exist in this routine.',
@@ -2629,6 +2632,9 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'recurring.searchPlaceholder',
     'recurring.searchAriaLabel',
     'recurring.noMatches',
+    'recurring.searchResults',
+    'recurring.searchResultsOne',
+    'recurring.searchCleared',
 
     // Task options customizer
     'taskOptions.customizeLabel',

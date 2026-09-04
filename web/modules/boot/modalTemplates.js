@@ -30,6 +30,10 @@ export const RECURRING_PANEL_HTML = `<!-- Recurring Panel Modal w/ Overlay -->
       </div>
       <ul id="recurring-task-list" role="listbox" aria-label="${getLabel('recurring.ariaTaskList')}"></ul>
       <div id="recurring-no-matches" class="recurring-no-matches hidden" role="status"></div>
+      <!-- Result count for screen readers. Lives INSIDE the dialog on purpose:
+           showModal() marks everything outside inert, so the body-level
+           #live-region cannot be read while this panel is open (see announce.js). -->
+      <div id="recurring-search-status" class="visually-hidden" role="status" aria-live="polite"></div>
       <div id="recurring-empty-state" class="recurring-empty-state hidden">
         <p>${getLabel('recurring.emptyState')}</p>
       </div>
