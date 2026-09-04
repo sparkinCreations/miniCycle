@@ -137,6 +137,23 @@ The parity comes from a *third* mechanism: `completedTasksManager.organize()` (i
 `organizeCompletedTasks`) sweeps `#taskList` after a render and moves completed rows down
 into the dropdown, and undo/redo calls it explicitly for the same reason.
 
+A second probe closed the obvious follow-up worry — that the renderers might differ on
+something `organize()` does **not** reconcile, which would be an unmasked live bug. Rendered
+a fully-decorated task both ways (high priority + custom colour, due date, recurring with a
+live template, reminders, delete-when-complete, move arrows on, dropdown on) and compared
+every property a renderer decides — classes, `data-*`, ARIA/role/draggable/tabindex,
+checkbox state and label, every button's classes and `aria-label`/`aria-pressed`, inputs,
+inline style vars, text:
+
+```
+t0: identical
+t1: identical
+```
+
+Nothing differs beyond list placement. So the duplication is **measured-clean debt**, not a
+latent bug: three probes against this band (#1, #4's symptom, #4's decoration parity) all
+came back clean.
+
 So this row is half right in a way that matters for how you fix it. The two renderers **do**
 still differ — the row's description of the code is accurate — but a reconciler downstream
 masks the difference, which is why no symptom is reachable. That changes the risk profile:
