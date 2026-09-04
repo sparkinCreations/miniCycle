@@ -306,6 +306,7 @@ export const LIMITS = Object.freeze({
     UNDO_CACHE_MAX_BYTES: 1000000, // Byte cap on the localStorage undo cache (~1MB of the ~5MB quota shared with main state); oldest snapshots shed first. REAL bytes: consumers compare string length × 2 (UTF-16), matching storageUtils' quota metering
     TASKS_PER_CYCLE: 150,          // Max tasks per cycle/routine
     MAX_SPECIFIC_DATES: 366,       // Max specificDates entries per recurring task (a year of dailies). Shared by BOTH producers — the .mcyc importer (which truncates) and the panel's Add button (which refuses and notifies). Was import-only, so the panel had no cap at all and the two disagreed
+    RECURRING_SEARCH_THRESHOLD: 5,  // Show the recurring panel's search only once the list is long enough to scroll past. Below this a search box is chrome, not help — the whole list is already on screen
     DYNAMIC_CACHE_ENTRIES: 100,    // Max entries in service worker dynamic cache
     NORMALIZATION_CACHE: 50,       // Max entries in recurring settings normalization cache
     ERROR_LOG: 50,                 // Max errors to keep in error log
@@ -1192,6 +1193,9 @@ export const DOM_IDS = Object.freeze({
     RECURRING_PANEL_OVERLAY: 'recurring-panel-overlay',
     RECURRING_PANEL: 'recurring-panel',
     RECURRING_TASK_LIST: 'recurring-task-list',
+    RECURRING_SEARCH_ROW: 'recurring-search-row',
+    RECURRING_SEARCH_INPUT: 'recurring-search-input',
+    RECURRING_NO_MATCHES: 'recurring-no-matches',
     RECURRING_SETTINGS_PANEL: 'recurring-settings-panel',
     RECURRING_SUMMARY_PREVIEW: 'recurring-summary-preview',
     CLOSE_RECURRING_PANEL: 'close-recurring-panel',

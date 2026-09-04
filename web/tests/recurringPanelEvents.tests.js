@@ -331,6 +331,179 @@ export async function runRecurringPanelEventsTests(resultsDiv) {
         try { mod.setupTaskListDelegation(deps, {}, {}); } finally { unmount(); }
     });
 
+    // ------------------------------------------------------------------
+    // Panel search. Scoped to THIS panel on purpose — the task-list search
+    // filters #taskList, and a template affords different actions than a task.
+    // ------------------------------------------------------------------
+    resultsDiv.innerHTML += '<h4 class="test-section">🔎 Panel Search</h4>';
+
+    const SEARCH_HTML = (texts) => `
+        <div id="recurring-search-row" class="hidden">
+          <input type="search" id="recurring-search-input" aria-label="Search recurring tasks">
+        </div>
+        <ul id="recurring-task-list">${texts.map((t, i) =>
+            `<li class="recurring-task-item" data-task-id="t${i}">
+               <span class="recurring-task-text">${t}</span></li>`).join('')}</ul>
+        <div id="recurring-no-matches" class="hidden"></div>`;
+
+    const NAMES = ['Water the plants', 'Take medication', 'Stretch',
+                   'Wash dishes', 'Walk the dog', 'Water filter change'];
+    const shownTexts = (deps) => Array.from(deps.querySelectorAll('.recurring-task-item'))
+        .filter(el => !el.classList.contains('hidden'))
+        .map(el => el.querySelector('.recurring-task-text').textContent);
+
+    await test('applyRecurringSearch and setupSearchDelegation are exported', () => {
+        if (typeof mod.applyRecurringSearch !== 'function') throw new Error('applyRecurringSearch missing');
+        if (typeof mod.setupSearchDelegation !== 'function') throw new Error('setupSearchDelegation missing');
+    });
+
+    await test('search row stays hidden below the threshold', () => {
+        const deps = mount(SEARCH_HTML(NAMES.slice(0, 3)));
+        try {
+            mod.applyRecurringSearch(deps, { searchQuery: '' });
+            const row = deps.getElementById('recurring-search-row');
+            if (!row.classList.contains('hidden')) {
+                throw new Error('search offered for a list that is entirely on screen');
+            }
+        } finally { unmount(); }
+    });
+
+    await test('search row appears at the threshold', () => {
+        const deps = mount(SEARCH_HTML(NAMES));
+        try {
+            mod.applyRecurringSearch(deps, { searchQuery: '' });
+            if (deps.getElementById('recurring-search-row').classList.contains('hidden')) {
+                throw new Error('search hidden on a list long enough to scroll');
+            }
+        } finally { unmount(); }
+    });
+
+    await test('a query filters to matching templates only', () => {
+        const deps = mount(SEARCH_HTML(NAMES));
+        try {
+            mod.applyRecurringSearch(deps, { searchQuery: 'water' });
+            const shown = shownTexts(deps);
+            if (shown.length !== 2 || !shown.every(t => /water/i.test(t))) {
+                throw new Error(`expected the two Water rows, got ${JSON.stringify(shown)}`);
+            }
+        } finally { unmount(); }
+    });
+
+    await test('search is case-insensitive', () => {
+        const deps = mount(SEARCH_HTML(NAMES));
+        try {
+            mod.applyRecurringSearch(deps, { searchQuery: 'WATER' });
+            if (shownTexts(deps).length !== 2) throw new Error('uppercase query did not match');
+        } finally { unmount(); }
+    });
+
+    await test('"no matches" is distinct from the empty state', () => {
+        const deps = mount(SEARCH_HTML(NAMES));
+        try {
+            mod.applyRecurringSearch(deps, { searchQuery: 'zzz' });
+            const nm = deps.getElementById('recurring-no-matches');
+            if (nm.classList.contains('hidden')) {
+                throw new Error('nothing matched but the user was told nothing');
+            }
+            if (!nm.textContent.includes('zzz')) {
+                throw new Error(`message does not name the query: ${nm.textContent}`);
+            }
+            // A user with six templates must never be told they have none.
+            if (/no recurring tasks yet/i.test(nm.textContent)) {
+                throw new Error('"no matches" is claiming the user has no recurring tasks');
+            }
+        } finally { unmount(); }
+    });
+
+    await test('"no matches" clears once the query matches again', () => {
+        const deps = mount(SEARCH_HTML(NAMES));
+        try {
+            mod.applyRecurringSearch(deps, { searchQuery: 'zzz' });
+            mod.applyRecurringSearch(deps, { searchQuery: 'water' });
+            if (!deps.getElementById('recurring-no-matches').classList.contains('hidden')) {
+                throw new Error('"no matches" still showing while rows match');
+            }
+        } finally { unmount(); }
+    });
+
+    await test('dropping below the threshold clears the query and unhides every row', () => {
+        const deps = mount(SEARCH_HTML(NAMES.slice(0, 3)));
+        try {
+            const state = { searchQuery: 'water' };
+            mod.applyRecurringSearch(deps, state);
+            // Otherwise rows stay filtered out with no visible control to undo it.
+            if (state.searchQuery !== '') throw new Error('stale query survived the search being hidden');
+            if (shownTexts(deps).length !== 3) {
+                throw new Error(`rows left hidden with no search box: ${JSON.stringify(shownTexts(deps))}`);
+            }
+        } finally { unmount(); }
+    });
+
+    await test('typing drives the filter through the input listener', () => {
+        const deps = mount(SEARCH_HTML(NAMES));
+        try {
+            const state = { searchQuery: '' };
+            mod.setupSearchDelegation(deps, state);
+            const input = deps.getElementById('recurring-search-input');
+            input.value = 'stretch';
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+            if (state.searchQuery !== 'stretch') throw new Error('query not recorded on state');
+            const shown = shownTexts(deps);
+            if (shown.length !== 1 || shown[0] !== 'Stretch') {
+                throw new Error(`expected only Stretch, got ${JSON.stringify(shown)}`);
+            }
+        } finally { unmount(); }
+    });
+
+    await test('Escape clears the query instead of closing the panel', () => {
+        const deps = mount(SEARCH_HTML(NAMES));
+        try {
+            const state = { searchQuery: '' };
+            mod.setupSearchDelegation(deps, state);
+            const input = deps.getElementById('recurring-search-input');
+            input.value = 'water';
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+
+            let escapeReachedPanel = false;
+            const onKey = () => { escapeReachedPanel = true; };
+            document.addEventListener('keydown', onKey);
+            try {
+                input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+            } finally {
+                document.removeEventListener('keydown', onKey);
+            }
+
+            if (input.value !== '') throw new Error('Escape did not clear the input');
+            if (state.searchQuery !== '') throw new Error('Escape did not clear the query');
+            if (shownTexts(deps).length !== NAMES.length) throw new Error('rows still filtered after Escape');
+            if (escapeReachedPanel) {
+                throw new Error('Escape propagated past the input — it would also close the panel');
+            }
+        } finally { unmount(); }
+    });
+
+    await test('Escape with an empty box is left alone for the panel to close', () => {
+        const deps = mount(SEARCH_HTML(NAMES));
+        try {
+            mod.setupSearchDelegation(deps, { searchQuery: '' });
+            const input = deps.getElementById('recurring-search-input');
+            let reachedPanel = false;
+            const onKey = () => { reachedPanel = true; };
+            document.addEventListener('keydown', onKey);
+            try {
+                input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+            } finally {
+                document.removeEventListener('keydown', onKey);
+            }
+            if (!reachedPanel) throw new Error('Escape was swallowed, so the panel can no longer be closed from the search box');
+        } finally { unmount(); }
+    });
+
+    await test('applyRecurringSearch no-ops when the list is missing', () => {
+        const deps = mount('<div></div>');
+        try { mod.applyRecurringSearch(deps, { searchQuery: 'x' }); } finally { unmount(); }
+    });
+
     const percentage = total.count ? Math.round((passed.count / total.count) * 100) : 0;
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;
     if (passed.count === total.count) {

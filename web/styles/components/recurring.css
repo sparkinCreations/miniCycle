@@ -976,6 +976,42 @@ button.add-recurring-task-btn:hover {
     padding: var(--space-2-5);
 }
 
+/* Panel search — scoped to this panel's own list (templates), separate from the
+   task-list search in #taskList. Only rendered once the list is long enough to
+   scroll; see LIMITS.RECURRING_SEARCH_THRESHOLD. */
+.recurring-search-row {
+    padding: 0 var(--space-2-5) var(--space-2);
+}
+
+.recurring-search-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: var(--space-2);
+    font-size: var(--font-size-sm);
+    color: var(--theme-input-text);
+    background: var(--theme-input-bg);
+    border: 1px solid var(--theme-input-border);
+    border-radius: var(--radius-md);
+    transition: border-color var(--transition-normal);
+}
+
+.recurring-search-input::placeholder {
+    color: var(--theme-input-placeholder);
+}
+
+.recurring-search-input:focus {
+    outline: none;
+    border-color: var(--theme-input-focus-border);
+}
+
+/* Distinct from .recurring-empty-state: "nothing matched" is not "you have none". */
+.recurring-no-matches {
+    text-align: center;
+    padding: var(--space-4) var(--space-2-5);
+    color: var(--theme-text-muted, var(--color-gray-600));
+    font-style: italic;
+}
+
 /* Empty state */
 .recurring-empty-state {
     text-align: center;

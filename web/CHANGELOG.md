@@ -1,3 +1,7 @@
+## [2.538] - 2026-09-04
+- Import: never attach a recurring template to a task that is present and non-recurring (closes a hole in v2.537's orphan carry-over). Recurring panel: add its own search over the template list, shown once the list is long enough to scroll, with a distinct no-matches message.
+
+
 ## [2.537] - 2026-09-03
 - Import: keep recurring templates that have no live task instance. A routine exported between occurrences lost its recurring tasks entirely — import rebuilt recurringTemplates from the task list alone. Carried-over templates are re-sanitized and rescheduled; the watcher spawns the instance at the next occurrence.
 

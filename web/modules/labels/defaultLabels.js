@@ -1099,6 +1099,9 @@ export const DEFAULT_LABELS = deepFreeze({
         ariaTimeOfDay:        'Time of day',
         ariaUse24HourFormat:  'Use 24-hour time format',
         emptyState:           'No recurring tasks yet.',
+        searchPlaceholder:    'Search recurring tasks',
+        searchAriaLabel:      'Search recurring tasks',
+        noMatches:            'No recurring tasks match \u201C{query}\u201D',
         addTaskTitle:         'Add a task from this routine to make it recurring',
         selectTasksHeader:    'Select tasks to make recurring:',
         noAvailableTasks:     'All tasks are already recurring, or no tasks exist in this routine.',
@@ -2623,6 +2626,9 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'modal.importAsTemplateDesc',
     'modal.importWithProgress',
     'modal.importWithProgressDesc',
+    'recurring.searchPlaceholder',
+    'recurring.searchAriaLabel',
+    'recurring.noMatches',
 
     // Task options customizer
     'taskOptions.customizeLabel',

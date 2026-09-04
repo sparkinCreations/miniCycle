@@ -780,9 +780,27 @@ export async function processImportedData(fileContent) {
         (importedData.recurringTemplates && typeof importedData.recurringTemplates === 'object')
             ? importedData.recurringTemplates
             : {};
+    // Ids belonging to a task in the FILE. "Orphan" means no task claims the id;
+    // a template keyed to a task that IS present is that task's business, and its
+    // own `recurring` flag already decided the matter above - if the task is
+    // recurring the merge loop generated a template, and if it is not, the stray
+    // entry must not resurrect one. Without this, importing a task with
+    // `recurring: false` alongside a template for its id produced a non-recurring
+    // task sitting beside a live template for itself (measured; introduced by the
+    // orphan carry-over in v2.537, whose only guard was mergedTemplates).
+    // Note: this reads the task array AFTER any MAX_TASK_COUNT truncation, so a
+    // template belonging to a truncated task is treated as an orphan. That is the
+    // kinder outcome - the recurring work survives - and the template total is
+    // capped by the same limit below.
+    const importedTaskIds = new Set(
+        (importedData.tasks || [])
+            .map(t => t && t.id)
+            .filter(id => typeof id === 'string')
+    );
     let orphanTemplateIndex = 0;
     for (const [rawId, imported] of Object.entries(importedTemplates)) {
         if (Object.prototype.hasOwnProperty.call(mergedTemplates, rawId)) continue;
+        if (importedTaskIds.has(rawId)) continue;
         if (!imported || typeof imported !== 'object') continue;
         // A template with no recurrence rule can never fire. Skip it rather than
         // invent a default schedule the user never chose.
