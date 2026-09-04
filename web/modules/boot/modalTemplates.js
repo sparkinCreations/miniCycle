@@ -21,7 +21,19 @@ export const RECURRING_PANEL_HTML = `<!-- Recurring Panel Modal w/ Overlay -->
     </div>
     <div class="recurring-scroll-area">
       <p class="recurring-panel-hint">${getLabel('recurring.panelHint')}</p>
+      <div id="recurring-search-row" class="recurring-search-row hidden">
+        <input type="search" id="recurring-search-input" class="recurring-search-input"
+               name="recurring-search-input" autocomplete="off"
+               placeholder="${getLabel('recurring.searchPlaceholder')}"
+               aria-label="${getLabel('recurring.searchAriaLabel')}"
+               aria-controls="recurring-task-list">
+      </div>
       <ul id="recurring-task-list" role="listbox" aria-label="${getLabel('recurring.ariaTaskList')}"></ul>
+      <div id="recurring-no-matches" class="recurring-no-matches hidden" role="status"></div>
+      <!-- Result count for screen readers. Lives INSIDE the dialog on purpose:
+           showModal() marks everything outside inert, so the body-level
+           #live-region cannot be read while this panel is open (see announce.js). -->
+      <div id="recurring-search-status" class="visually-hidden" role="status" aria-live="polite"></div>
       <div id="recurring-empty-state" class="recurring-empty-state hidden">
         <p>${getLabel('recurring.emptyState')}</p>
       </div>

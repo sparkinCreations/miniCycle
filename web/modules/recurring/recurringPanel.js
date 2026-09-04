@@ -723,6 +723,12 @@ export class RecurringPanelManager {
                 });
             }
 
+            // Re-apply the panel's search after the rows are rebuilt. The list is
+            // recreated on every update, so both the filter and the search row's
+            // own visibility have to be restored here or a re-render silently
+            // shows rows the user had filtered out.
+            _applyRecurringSearch?.(this.deps, this.state);
+
             this.updateRecurringSummary();
 
             // Reapply current panel mode after re-render
@@ -1436,6 +1442,7 @@ let _populateRecurringFormWithSettings = null;
 let _clearRecurringForm = null;
 // Events module functions
 let _initEventDelegation = null;
+let _applyRecurringSearch = null;
 // Setup module functions
 let _setupFrequencySelector = null;
 let _setupToggleVisibility = null;
@@ -1483,6 +1490,7 @@ export async function loadPanelSubModules(version) {
 
     // Events module
     _initEventDelegation = eventsModule.initEventDelegation;
+    _applyRecurringSearch = eventsModule.applyRecurringSearch;
 
     // Setup module
     _setupFrequencySelector = setupModule.setupFrequencySelector;

@@ -1,11 +1,15 @@
 # State-as-Truth Migration — Gen 1 leftovers on the cycle loop
 
-**Status:** Open plan (nothing in this doc has been implemented)  
-**Raised:** 2026-08-23 · **Against:** v2.483  
+**Status:** Open plan — P0/P1 untouched; #24 shipped and #30 verified closed (Sep 2026, v2.538)  
+**Raised:** 2026-08-23 · **Against:** v2.483 · **Amended:** 2026-09-04 against v2.538  
 **Source:** Independent code review of boot, AppState, DI, completion/reset, both task renderers, undo wrapper, drag-drop, reminders, daily reset, history, `.mcyc` payload, import, `featureBoot` API allow-lists, and `moduleLoader` `ENFORCE_REQUIRES`  
 **Premise:** The repaired modules are Gen 3 (state is truth). The **name of the app** — “all tasks done → reset” — is still Gen 1 (DOM `.checked`). That split is the work.
 
 > **Before acting on any row:** [REVIEW_PATTERNS.md](../reference/REVIEW_PATTERNS.md) §0 — findings here are reliably right about *location* and unreliably right about *mechanism*. Re-read the symbol, run the smallest probe, then fix. Line numbers will drift; prefer names.
+>
+> That warning has now been paid out once: **#10 described the mechanism backwards** and was
+> corrected in Sep 2026 only because someone probed it. It was right about the location and
+> wrong about which of the two paths corrupts. Probe before you fix.
 
 **Related (do not duplicate):**
 
@@ -127,11 +131,67 @@ Snapshots are a **cycle slice** (tasks, templates, title, modes, cycleCount, the
 
 **Fix:** One producer: increment + flags + history event. One wrapper snapshot. Keep `actualNewCount` in outer scope (already learned).
 
-### #10 Drag order from DOM; arrows from state
+### #10 Arrows index by DOM and splice state; drag resolves by id — CORRECTED Sep 2026
 
-**Where:** Arrow path: `AppState.update` reorders the array. `saveDragReorder`: `querySelectorAll` task ids on `#taskList`, then append `missingTasks` (completed-in-dropdown).
+> **This row was written backwards.** It read *"Drag order from DOM; arrows from state"*,
+> which is true of the arrow path's **write** and false of its **read**. Measured against
+> v2.538, the drag path is the safe one and the arrow path is the one that corrupts. A
+> fixer following the original text would have hardened the wrong half. §0 of
+> [REVIEW_PATTERNS.md](../reference/REVIEW_PATTERNS.md) exists for exactly this.
 
-**Fix:** After #4, active-list DOM order should match incomplete tasks; keep the merge. Prefer the drag model if you have ids without scraping. Do not scrape boot-path lists that still dump completed rows into `#taskList`.
+**Where:** `handleArrowClick` in `modules/task/dragDropManager.js` takes its index from the
+DOM and applies it to the state array:
+
+```js
+const allTasks = Array.from(taskList.children);
+const currentIndex = allTasks.indexOf(taskItem);
+...
+const [movedTask] = tasks.splice(currentIndex, 1);   // state array, DOM index
+```
+
+That holds only while `#taskList.children` and `cycle.tasks` are index-for-index identical.
+`saveDragReorder` in the same file already does it correctly — it maps task **ids** through
+a `Map` and explicitly appends `missingTasks` for rows not in the DOM. Same operation, two
+doors, one hardened ([REVIEW_PATTERNS.md](../reference/REVIEW_PATTERNS.md) §4).
+
+**Two triggers, both measured on v2.538:**
+
+1. **Completed-tasks dropdown.** `moveToCompleted` moves completed rows out of `#taskList`,
+   so the lists desynchronise:
+
+   ```
+   BEFORE            state:["A","B","C","D"]  taskList:["A","B","C","D"]
+   complete A        state:["A","B","C","D"]  taskList:["B","C","D"]  completed:["A"]
+   move-down on B    state:["B","A","C","D"]  taskList:["B","C","D"]
+                     expected ["A","C","B","D"]
+   ```
+
+   The arrow moved **A**, because B sat at DOM index 0. Note the DOM column does not change:
+   the user presses an arrow, sees nothing move, and the stored routine order changes anyway.
+
+2. **Any non-default sort** (one tap in search). Lengths match, order does not:
+
+   ```
+   state order : ["Zebra","Apple","Mango"]
+   DOM order   : ["Apple","Mango","Zebra"]
+   ```
+
+**Fix:** Resolve the task's position in `cycle.tasks` by `taskId` and compute the neighbour
+in state, the way `saveDragReorder` already does. Do not wait on #4 — see below.
+
+**Why this is not just a wrong number:** in a routine manager the task sequence *is* the
+routine, so this is silent corruption of the artifact the user built once to run many times,
+and it persists across every later cycle.
+
+**Scope correction:** the original fix note deferred this to #4 (*"after #4, active-list DOM
+order should match incomplete tasks"*). That closes trigger 1 only. Sorting reorders the DOM
+**within** the active list, so trigger 2 survives the entire P0 band. `sort` is not mentioned
+anywhere else in this document.
+
+**Superseded by:** [TASK_ORDERING_SYSTEM_PLAN.md](./TASK_ORDERING_SYSTEM_PLAN.md) — a
+persistent `order` field removes index arithmetic entirely and makes both triggers
+impossible. That is ~20 hours and a Schema 2.6 migration; this row is the small fix that
+should not wait for it.
 
 ### #11 `saveCycleData` replaces the whole cycle object
 
@@ -213,9 +273,32 @@ Snapshots are a **cycle slice** (tasks, templates, title, modes, cycleCount, the
 
 **Fix:** Same `generateId()` as CRUD if `task.id` is missing.
 
-### #24 Recurring templates vs tasks can orphan
+### #24 Recurring templates vs tasks can orphan — POLICY DECIDED Sep 2026 (v2.537–v2.538)
 
-**Fix:** Explicit policy on task delete (keep stamp vs delete template). On load: prune or show orphans in the recurring panel.
+> **Do not implement the original note.** It read *"On load: prune or show orphans"*, and
+> pruning is now the wrong answer — it would undo the v2.537 fix.
+
+**Policy:** a template with no live task instance is **normal**, not an error. It is the
+resting state of every routine between occurrences: `taskCycleReset` removes the spawned
+instance from `cycle.tasks` and leaves the template for `recurringWatcher` to respawn.
+`routineSwitcherActions.js` already said this at the duplicate-routine call site.
+
+**Shipped against this row:**
+
+- **v2.537** — `.mcyc` import carries orphan templates over instead of discarding them.
+  Import had rebuilt `recurringTemplates` from the task list alone since the first commit, so
+  a routine exported between occurrences lost its recurring tasks entirely, silently. No task
+  is spawned at import; the watcher owns spawning.
+- **v2.538** — import never attaches a template to a task that is present and non-recurring.
+  The task's own `recurring` flag is the authority.
+
+Both are pinned by journeys in `run-journey-tests.cjs` (*import keeps recurring templates with
+no live task*, *import never attaches a template to a non-recurring task*), mutation-checked.
+
+**Still open from this row:** the delete-side policy (keep stamp vs delete template) is
+*implemented* — `taskCRUD` deletes the template alongside the task, which is correct, or the
+watcher would resurrect it — but the notification says only "Task deleted: {name}" and never
+mentions that a recurrence was cancelled, which is the more consequential half.
 
 ### #25 `loadMiniCycleData` still in the living graph
 
@@ -249,15 +332,26 @@ Snapshots are a **cycle slice** (tasks, templates, title, modes, cycleCount, the
 
 **Fix:** Keep interpolate unescaped. Every `innerHTML` + vars must pre-escape (see `taskOptionsCustomizer`). Consider a validate/lint for `innerHTML` near `getLabel`.
 
+**Status Sep 2026:** the *class* is closed — re-enumerated all 15 template-literal `innerHTML`
+sinks, all safe (see #30). The **gate** is still missing, and that is what keeps this row open:
+nothing stops a new `getLabel`-vars → `innerHTML` sink from being added with user text.
+
 ### #29 `trusted: true` / `trustedHTML`
 
 **Where:** `notifications.js`.
 
 **Fix:** No new trusted sinks with user text. Enumerate callers when auditing.
 
-### #30 `routineSwitcher` innerHTML + `modeLabel`
+### #30 `routineSwitcher` innerHTML + `modeLabel` — ✅ RESOLVED Sep 2026 (verified, no code change)
 
-**Fix:** If `modeLabel` is always from `getLabel`, OK. If user/theme string: `textContent` or escape.
+`modeLabel` is always a `getLabel` result (an app constant naming the mode), never user or
+theme text, so the sink is safe as written.
+
+Verified by re-enumerating **every** template-literal `innerHTML` sink in `modules/` (15 of
+them): each interpolates `ICONS` / `getIcon()` or a var-free label, and
+`helpWindowManager.js` — the one that composes four fragments — escapes all four. This is the
+same conclusion the audit note in `labelResolver.js` records; it now has a second
+independent check.
 
 ### #31 `extractTaskDataFromDOM` is still a save-shaped scrape
 

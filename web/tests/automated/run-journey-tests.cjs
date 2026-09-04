@@ -1711,6 +1711,95 @@ async function journeyImportKeepsOrphanTemplates(browser, baseURL) {
     return { name: 'import keeps recurring templates with no live task', failures };
 }
 
+// ── Journey: import never attaches a template to a non-recurring task ───────
+// The v2.537 orphan carry-over guarded only against ids already in
+// mergedTemplates, never against ids belonging to an imported TASK. A file
+// carrying `recurring: false` on task X plus a recurringTemplates entry keyed X
+// therefore skipped the guard, and X arrived non-recurring with a live template
+// for its own id — an invariant the app's own write paths never produce (every
+// writer of `recurring = false` deletes the template in the same producer).
+//
+// The task's own flag is the authority: if it is recurring the merge loop
+// already generated a template, and if it is not, a stray entry must not
+// resurrect one.
+async function journeyImportTemplateTaskCollision(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const { context, page } = await openFresh(browser, baseURL);
+    try {
+        const MCYC = {
+            name: 'collision', title: 'Collision Routine',
+            tasks: [{
+                id: 'X', text: 'Make bed', completed: false, dueDate: null,
+                highPriority: false, priorityColor: null, remindersEnabled: false,
+                recurring: false, recurringSettings: {},          // the authority: NOT recurring
+                deleteWhenComplete: false,
+                deleteWhenCompleteSettings: { cycle: false, todo: true }, schemaVersion: 2
+            }],
+            recurringTemplates: {                                  // stray entry for the SAME id
+                'X': {
+                    id: 'X', text: 'Make bed',
+                    recurringSettings: { frequency: 'daily', indefinitely: true, time: null },
+                    nextScheduledOccurrence: '2020-01-01T09:00:00.000Z', createdAt: 1
+                }
+            },
+            autoReset: true, cycleCount: 0, deleteCheckedTasks: false,
+            taskOptionButtons: null, reminders: null, autoUncheckDaily: null,
+            createdAt: 1, theme: 'classic'
+        };
+
+        await page.evaluate((raw) => {
+            const dt = new DataTransfer();
+            dt.items.add(new File([raw], 'routine.mcyc', { type: 'application/json' }));
+            document.dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true, cancelable: true }));
+        }, JSON.stringify(MCYC));
+        await page.waitForTimeout(2000);
+
+        const mode = await page.evaluate(() => {
+            const norm = (b) => (b.textContent || '').replace(/\s+/g, ' ').trim();
+            const btn = [...document.querySelectorAll('button, .choice-option, [data-choice]')]
+                .filter(b => b.getClientRects().length > 0)
+                .find(b => /^Import with Progress/i.test(norm(b)));
+            if (btn) { btn.click(); return true; }
+            return false;
+        });
+        record('the import mode modal offered "Import with Progress"', mode,
+            'the choice modal never appeared — the drop was not handled, so nothing below is testing import');
+        await page.waitForTimeout(3000);
+
+        const after = await page.evaluate(() => {
+            try {
+                const p = JSON.parse(localStorage.getItem('miniCycleData'));
+                const c = p.data.cycles[p.appState.activeCycleId];
+                return {
+                    title: c.title,
+                    tasks: (c.tasks || []).map(t => ({ id: t.id, recurring: t.recurring === true })),
+                    templateKeys: Object.keys(c.recurringTemplates || {})
+                };
+            } catch (e) { return null; }
+        });
+
+        record('the routine imported', !!after && after.title === 'Collision Routine',
+            `active routine is ${JSON.stringify(after && after.title)} — the import did not land`);
+        record('the task arrived non-recurring, as the file says',
+            !!after && after.tasks.some(t => t.id === 'X' && t.recurring === false),
+            `task X: ${JSON.stringify(after && after.tasks)}`);
+
+        // THE QUESTION.
+        record('no template is attached to the non-recurring task',
+            !!after && !after.templateKeys.includes('X'),
+            'task X is NOT recurring but a template keyed X survived the import — the orphan ' +
+            'carry-over resurrected a schedule the task itself disclaims, a state the app\'s own ' +
+            `write paths never produce. Templates: ${JSON.stringify(after && after.templateKeys)}`);
+
+        record('no starved dependencies', page.__diWarnings.length === 0,
+            `DI warnings: ${page.__diWarnings.join(' | ')}`);
+    } finally {
+        await context.close();
+    }
+
+    return { name: 'import never attaches a template to a non-recurring task', failures };
+}
+
 // ── Journey 15 + 16: what a factory reset must actually leave behind ───────
 // The reset is destructive, irreversible and hard to verify by eye, which is
 // exactly why both of these shipped: each looked correct in a single tab with an
@@ -2087,6 +2176,7 @@ async function journeyNewRoutineHintMatchesBar(browser, baseURL) {
 }
 
 const JOURNEYS = [
+    { name: 'import never attaches a template to a non-recurring task', fn: journeyImportTemplateTaskCollision },
     { name: 'import keeps recurring templates with no live task', fn: journeyImportKeepsOrphanTemplates },
     { name: 'core (add → persist → cycle → offline)', fn: journeyCore },
     { name: 'routine switching', fn: journeyRoutineSwitch },

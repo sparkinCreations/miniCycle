@@ -331,6 +331,268 @@ export async function runRecurringPanelEventsTests(resultsDiv) {
         try { mod.setupTaskListDelegation(deps, {}, {}); } finally { unmount(); }
     });
 
+    // ------------------------------------------------------------------
+    // Panel search. Scoped to THIS panel on purpose — the task-list search
+    // filters #taskList, and a template affords different actions than a task.
+    // ------------------------------------------------------------------
+    resultsDiv.innerHTML += '<h4 class="test-section">🔎 Panel Search</h4>';
+
+    const SEARCH_HTML = (texts) => `
+        <div id="recurring-search-row" class="hidden">
+          <input type="search" id="recurring-search-input" aria-label="Search recurring tasks">
+        </div>
+        <ul id="recurring-task-list">${texts.map((t, i) =>
+            `<li class="recurring-task-item" data-task-id="t${i}">
+               <span class="recurring-task-text">${t}</span></li>`).join('')}</ul>
+        <div id="recurring-no-matches" class="hidden"></div>
+        <div id="recurring-search-status" role="status" aria-live="polite"></div>`;
+
+    const NAMES = ['Water the plants', 'Take medication', 'Stretch',
+                   'Wash dishes', 'Walk the dog', 'Water filter change'];
+    const shownTexts = (deps) => Array.from(deps.querySelectorAll('.recurring-task-item'))
+        .filter(el => !el.classList.contains('hidden'))
+        .map(el => el.querySelector('.recurring-task-text').textContent);
+
+    await test('applyRecurringSearch and setupSearchDelegation are exported', () => {
+        if (typeof mod.applyRecurringSearch !== 'function') throw new Error('applyRecurringSearch missing');
+        if (typeof mod.setupSearchDelegation !== 'function') throw new Error('setupSearchDelegation missing');
+    });
+
+    await test('search row stays hidden below the threshold', () => {
+        const deps = mount(SEARCH_HTML(NAMES.slice(0, 3)));
+        try {
+            mod.applyRecurringSearch(deps, { searchQuery: '' });
+            const row = deps.getElementById('recurring-search-row');
+            if (!row.classList.contains('hidden')) {
+                throw new Error('search offered for a list that is entirely on screen');
+            }
+        } finally { unmount(); }
+    });
+
+    await test('search row appears at the threshold', () => {
+        const deps = mount(SEARCH_HTML(NAMES));
+        try {
+            mod.applyRecurringSearch(deps, { searchQuery: '' });
+            if (deps.getElementById('recurring-search-row').classList.contains('hidden')) {
+                throw new Error('search hidden on a list long enough to scroll');
+            }
+        } finally { unmount(); }
+    });
+
+    await test('a query filters to matching templates only', () => {
+        const deps = mount(SEARCH_HTML(NAMES));
+        try {
+            mod.applyRecurringSearch(deps, { searchQuery: 'water' });
+            const shown = shownTexts(deps);
+            if (shown.length !== 2 || !shown.every(t => /water/i.test(t))) {
+                throw new Error(`expected the two Water rows, got ${JSON.stringify(shown)}`);
+            }
+        } finally { unmount(); }
+    });
+
+    await test('search is case-insensitive', () => {
+        const deps = mount(SEARCH_HTML(NAMES));
+        try {
+            mod.applyRecurringSearch(deps, { searchQuery: 'WATER' });
+            if (shownTexts(deps).length !== 2) throw new Error('uppercase query did not match');
+        } finally { unmount(); }
+    });
+
+    await test('"no matches" is distinct from the empty state', () => {
+        const deps = mount(SEARCH_HTML(NAMES));
+        try {
+            mod.applyRecurringSearch(deps, { searchQuery: 'zzz' });
+            const nm = deps.getElementById('recurring-no-matches');
+            if (nm.classList.contains('hidden')) {
+                throw new Error('nothing matched but the user was told nothing');
+            }
+            if (!nm.textContent.includes('zzz')) {
+                throw new Error(`message does not name the query: ${nm.textContent}`);
+            }
+            // A user with six templates must never be told they have none.
+            if (/no recurring tasks yet/i.test(nm.textContent)) {
+                throw new Error('"no matches" is claiming the user has no recurring tasks');
+            }
+        } finally { unmount(); }
+    });
+
+    await test('"no matches" clears once the query matches again', () => {
+        const deps = mount(SEARCH_HTML(NAMES));
+        try {
+            mod.applyRecurringSearch(deps, { searchQuery: 'zzz' });
+            mod.applyRecurringSearch(deps, { searchQuery: 'water' });
+            if (!deps.getElementById('recurring-no-matches').classList.contains('hidden')) {
+                throw new Error('"no matches" still showing while rows match');
+            }
+        } finally { unmount(); }
+    });
+
+    await test('dropping below the threshold clears the query and unhides every row', () => {
+        const deps = mount(SEARCH_HTML(NAMES.slice(0, 3)));
+        try {
+            const state = { searchQuery: 'water' };
+            mod.applyRecurringSearch(deps, state);
+            // Otherwise rows stay filtered out with no visible control to undo it.
+            if (state.searchQuery !== '') throw new Error('stale query survived the search being hidden');
+            if (shownTexts(deps).length !== 3) {
+                throw new Error(`rows left hidden with no search box: ${JSON.stringify(shownTexts(deps))}`);
+            }
+        } finally { unmount(); }
+    });
+
+    await test('typing drives the filter through the input listener', () => {
+        const deps = mount(SEARCH_HTML(NAMES));
+        try {
+            const state = { searchQuery: '' };
+            mod.setupSearchDelegation(deps, state);
+            const input = deps.getElementById('recurring-search-input');
+            input.value = 'stretch';
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+            if (state.searchQuery !== 'stretch') throw new Error('query not recorded on state');
+            const shown = shownTexts(deps);
+            if (shown.length !== 1 || shown[0] !== 'Stretch') {
+                throw new Error(`expected only Stretch, got ${JSON.stringify(shown)}`);
+            }
+        } finally { unmount(); }
+    });
+
+    await test('Escape clears the query instead of closing the panel', () => {
+        const deps = mount(SEARCH_HTML(NAMES));
+        try {
+            const state = { searchQuery: '' };
+            mod.setupSearchDelegation(deps, state);
+            const input = deps.getElementById('recurring-search-input');
+            input.value = 'water';
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+
+            let escapeReachedPanel = false;
+            const onKey = () => { escapeReachedPanel = true; };
+            document.addEventListener('keydown', onKey);
+            try {
+                input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+            } finally {
+                document.removeEventListener('keydown', onKey);
+            }
+
+            if (input.value !== '') throw new Error('Escape did not clear the input');
+            if (state.searchQuery !== '') throw new Error('Escape did not clear the query');
+            if (shownTexts(deps).length !== NAMES.length) throw new Error('rows still filtered after Escape');
+            if (escapeReachedPanel) {
+                throw new Error('Escape propagated past the input — it would also close the panel');
+            }
+        } finally { unmount(); }
+    });
+
+    await test('Escape with an empty box is left alone for the panel to close', () => {
+        const deps = mount(SEARCH_HTML(NAMES));
+        try {
+            mod.setupSearchDelegation(deps, { searchQuery: '' });
+            const input = deps.getElementById('recurring-search-input');
+            let reachedPanel = false;
+            const onKey = () => { reachedPanel = true; };
+            document.addEventListener('keydown', onKey);
+            try {
+                input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+            } finally {
+                document.removeEventListener('keydown', onKey);
+            }
+            if (!reachedPanel) throw new Error('Escape was swallowed, so the panel can no longer be closed from the search box');
+        } finally { unmount(); }
+    });
+
+    // The result count must reach a screen reader. A sighted user watches the list
+    // shrink; without this, filtering 7 rows to 2 says nothing (measured). The
+    // region lives INSIDE the dialog because showModal() makes the body-level
+    // #live-region inert — see announce.js.
+    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+    const statusText = (deps) => deps.getElementById('recurring-search-status').textContent.trim();
+
+    await test('filtering announces the result count', async () => {
+        const deps = mount(SEARCH_HTML(NAMES));
+        try {
+            mod.applyRecurringSearch(deps, { searchQuery: 'water' });
+            await sleep(800);
+            const t = statusText(deps);
+            if (!/2 of 6/.test(t)) {
+                throw new Error(`expected a "2 of 6" count, got ${JSON.stringify(t)} — a screen-reader ` +
+                    'user is not told the list changed');
+            }
+        } finally { unmount(); }
+    });
+
+    await test('a single match is announced in the singular', async () => {
+        const deps = mount(SEARCH_HTML(NAMES));
+        try {
+            mod.applyRecurringSearch(deps, { searchQuery: 'stretch' });
+            await sleep(800);
+            const t = statusText(deps);
+            if (!/^1 of 6 .*matches$/.test(t)) throw new Error(`got ${JSON.stringify(t)}`);
+        } finally { unmount(); }
+    });
+
+    await test('clearing the query announces the full list is back', async () => {
+        const deps = mount(SEARCH_HTML(NAMES));
+        try {
+            mod.applyRecurringSearch(deps, { searchQuery: '' });
+            await sleep(800);
+            if (!/all 6/.test(statusText(deps))) throw new Error(`got ${JSON.stringify(statusText(deps))}`);
+        } finally { unmount(); }
+    });
+
+    await test('the announcement is debounced, not fired per keystroke', async () => {
+        const deps = mount(SEARCH_HTML(NAMES));
+        try {
+            const state = { searchQuery: '' };
+            mod.setupSearchDelegation(deps, state);
+            const input = deps.getElementById('recurring-search-input');
+            // Space the keystrokes out. Dispatching them synchronously would make
+            // this test vacuous: even a zero-delay timer has not fired by the
+            // assertion below, so it would pass with the debounce removed
+            // (verified — setting the delay to 0 left the whole suite green).
+            // 5 x 60ms = 300ms, still inside the 500ms window.
+            for (const v of ['w', 'wa', 'wat', 'wate', 'water']) {
+                input.value = v;
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+                await sleep(60);
+            }
+            // Mid-flight: nothing announced yet, or a screen reader would read
+            // every keystroke and be unusable while typing.
+            if (statusText(deps) !== '') {
+                throw new Error(`announced mid-typing: ${JSON.stringify(statusText(deps))} — ` +
+                    'the debounce is gone, so every keystroke reaches the live region');
+            }
+            await sleep(800);
+            if (!/2 of 6/.test(statusText(deps))) {
+                throw new Error(`no settled announcement, got ${JSON.stringify(statusText(deps))}`);
+            }
+        } finally { unmount(); }
+    });
+
+    await test('an identical consecutive count is still a real empty->text transition', async () => {
+        const deps = mount(SEARCH_HTML(NAMES));
+        try {
+            const status = deps.getElementById('recurring-search-status');
+            mod.applyRecurringSearch(deps, { searchQuery: 'water' });
+            await sleep(800);
+            const seen = [];
+            const obs = new MutationObserver(() => seen.push(status.textContent));
+            obs.observe(status, { childList: true, characterData: true, subtree: true });
+            // Same visible count via a different query — screen readers skip
+            // unchanged live-region content, so the region must be cleared first.
+            mod.applyRecurringSearch(deps, { searchQuery: 'wa' });
+            await sleep(800);
+            obs.disconnect();
+            if (!seen.includes('')) {
+                throw new Error(`region was never cleared between announcements. Saw: ${JSON.stringify(seen)}`);
+            }
+        } finally { unmount(); }
+    });
+
+    await test('applyRecurringSearch no-ops when the list is missing', () => {
+        const deps = mount('<div></div>');
+        try { mod.applyRecurringSearch(deps, { searchQuery: 'x' }); } finally { unmount(); }
+    });
+
     const percentage = total.count ? Math.round((passed.count / total.count) * 100) : 0;
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;
     if (passed.count === total.count) {

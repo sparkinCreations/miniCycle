@@ -17,6 +17,11 @@ Implement a fractional indexing system for task ordering, where each task has a 
 2. **Recurring task restoration** - Recurring tasks reset to original position
 3. **User-facing numbering** - Enable "Task #1, #2, #3" display feature
 4. **Drag reorder persistence** - Order survives refresh without relying on array position
+5. **Index-arithmetic reorder bugs** - No code needs to map a DOM position onto an array
+   index, which is the live defect in
+   [STATE_TRUTH_MIGRATION.md](./STATE_TRUTH_MIGRATION.md) #10 (the move-up/down arrows
+   splice `cycle.tasks` at a DOM index; measured to move the wrong task whenever the
+   completed-tasks dropdown or a non-default sort is active)
 5. **Conflict resolution** - Decimal precision handles insertions gracefully
 
 ### Current Limitations
@@ -366,5 +371,8 @@ If critical issues found post-release:
 
 ## Related Documents
 
+- [STATE_TRUTH_MIGRATION.md](./STATE_TRUTH_MIGRATION.md) - #10 is a live bug this plan would
+  make structurally impossible. This plan is ~20 hours and a breaking schema change, so #10
+  should get its small id-based fix first rather than wait on it.
 - [SCHEMA_2_6_PLAN.md](./SCHEMA_2_6_PLAN.md) - Could bundle with schema update
 - [COMPLETED_TASKS_DROPDOWN.md](../features/COMPLETED_TASKS_DROPDOWN.md) - Current position handling
