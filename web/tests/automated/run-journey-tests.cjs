@@ -1800,6 +1800,132 @@ async function journeyImportTemplateTaskCollision(browser, baseURL) {
     return { name: 'import never attaches a template to a non-recurring task', failures };
 }
 
+// ── Journey: the reorder arrows move the task the user pointed at ───────────
+// The arrows used to take their index from #taskList.children and splice
+// cycle.tasks at it, which holds only while the two are index-for-index
+// identical. Two ordinary things break that, and the failure is silent: the DOM
+// does not change, so the user presses an arrow, sees nothing move, and the
+// stored routine order changes underneath them. In a routine manager the task
+// sequence IS the routine, so that is corruption of the artifact they built.
+//
+// Trigger 1: the completed-tasks dropdown moves completed rows OUT of #taskList.
+// Trigger 2: a non-default sort reorders the DOM within the active list.
+//
+// Seeds state directly rather than driving the UI to create tasks — the subject
+// is the arrow handler's index arithmetic, and each assertion checks the STORED
+// order, which is the thing that was wrong.
+async function journeyArrowReorderMovesTheRightTask(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const { context, page } = await openFresh(browser, baseURL);
+    try {
+        const seed = async (texts, opts = {}) => {
+            await page.evaluate(({ texts, opts }) => {
+                const d = JSON.parse(localStorage.getItem('miniCycleData'));
+                const c = d.data.cycles[d.appState.activeCycleId];
+                c.tasks = texts.map((t, i) => ({
+                    id: 't' + i, text: t, completed: false, dueDate: null, highPriority: false,
+                    priorityColor: null, remindersEnabled: false, recurring: false,
+                    recurringSettings: {}, deleteWhenComplete: false,
+                    deleteWhenCompleteSettings: { cycle: false, todo: true }, schemaVersion: 2
+                }));
+                c.recurringTemplates = {};
+                c.autoReset = false;              // completing must not fire a cycle reset here
+                c.deleteCheckedTasks = false;
+                d.settings = d.settings || {};
+                d.settings.showCompletedDropdown = !!opts.dropdown;
+                d.ui = d.ui || {};
+                d.ui.moveArrowsVisible = true;
+                localStorage.setItem('miniCycleData', JSON.stringify(d));
+            }, { texts, opts });
+            await page.reload({ waitUntil: 'domcontentloaded', timeout: 20000 });
+            await bootApp(page);
+            await page.waitForTimeout(600);
+        };
+
+        const stored = () => page.evaluate(() => {
+            const d = JSON.parse(localStorage.getItem('miniCycleData'));
+            return (d.data.cycles[d.appState.activeCycleId].tasks || []).map(t => t.text);
+        });
+        const domOrder = () => page.evaluate(() =>
+            [...document.querySelectorAll('#taskList .task .task-text')].map(e => e.textContent));
+
+        const pressArrow = (text, dir) => page.evaluate(({ text, dir }) => {
+            const row = [...document.querySelectorAll('#taskList .task')]
+                .find(r => r.querySelector('.task-text')?.textContent === text);
+            const btn = row?.querySelector(dir === 'up' ? '[class*="move-up"]' : '[class*="move-down"]');
+            if (!btn) return false;
+            btn.click();
+            return true;
+        }, { text, dir });
+
+        // ---- Trigger 1: completed row removed from #taskList ------------------
+        await seed(['A', 'B', 'C', 'D'], { dropdown: true });
+        record('four tasks seeded in order', JSON.stringify(await stored()) === '["A","B","C","D"]',
+            `stored: ${JSON.stringify(await stored())}`);
+
+        await page.evaluate(() => {
+            const row = [...document.querySelectorAll('#taskList .task')]
+                .find(r => r.querySelector('.task-text')?.textContent === 'A');
+            const cb = row?.querySelector('input[type="checkbox"]');
+            if (cb && !cb.checked) { cb.checked = true; cb.dispatchEvent(new Event('change', { bubbles: true })); }
+        });
+        await page.waitForTimeout(1500);
+
+        const dom1 = await domOrder();
+        record('completing A removed its row from the active list',
+            !dom1.includes('A') && dom1.length === 3,
+            `#taskList shows ${JSON.stringify(dom1)} — without this desync the journey proves nothing`);
+
+        const pressed1 = await pressArrow('B', 'down');
+        record('the move-down arrow on B was clickable', pressed1, 'no move-down button found on B');
+        await page.waitForTimeout(1500);
+
+        // THE QUESTION. B moves one place later; A must not move at all.
+        const after1 = await stored();
+        record('the arrow moved B, not the completed task above it',
+            JSON.stringify(after1) === '["A","C","B","D"]',
+            `expected ["A","C","B","D"], got ${JSON.stringify(after1)} — the arrow spliced state at the ` +
+            'DOM index, so it moved whichever task happened to sit at that position in cycle.tasks');
+
+        // ---- Trigger 2: a non-default sort reorders the DOM -------------------
+        await seed(['Zebra', 'Apple', 'Mango']);
+        const sortApplied = await page.evaluate(() => {
+            document.getElementById('task-search-toggle')?.click();
+            const chip = document.querySelector('.sort-chip[data-sort="az"]');
+            if (!chip) return null;
+            chip.click();
+            return true;
+        });
+        await page.waitForTimeout(1200);
+
+        const dom2 = await domOrder();
+        const state2 = await stored();
+        record('an A–Z sort put the DOM out of step with stored order',
+            !!sortApplied && JSON.stringify(dom2) !== JSON.stringify(state2),
+            `dom ${JSON.stringify(dom2)} vs stored ${JSON.stringify(state2)} — if these match, the sort ` +
+            'did not apply and the assertion below proves nothing');
+
+        const pressed2 = await pressArrow('Apple', 'down');
+        record('the move-down arrow on Apple was clickable', pressed2, 'no move-down button found on Apple');
+        await page.waitForTimeout(1500);
+
+        // Apple is followed on screen by Mango, so "down" means "put Apple after
+        // Mango" — recorded in the stored order, whatever the sorted view shows.
+        const after2 = await stored();
+        record('under a sort, the arrow reorders the task the user pointed at',
+            JSON.stringify(after2) === '["Zebra","Mango","Apple"]',
+            `expected ["Zebra","Mango","Apple"], got ${JSON.stringify(after2)} — the arrow used the sorted ` +
+            'DOM position as a state index, so it moved the wrong task');
+
+        record('no starved dependencies', page.__diWarnings.length === 0,
+            `DI warnings: ${page.__diWarnings.join(' | ')}`);
+    } finally {
+        await context.close();
+    }
+
+    return { name: 'reorder arrows move the task the user pointed at', failures };
+}
+
 // ── Journey 15 + 16: what a factory reset must actually leave behind ───────
 // The reset is destructive, irreversible and hard to verify by eye, which is
 // exactly why both of these shipped: each looked correct in a single tab with an
@@ -2176,6 +2302,7 @@ async function journeyNewRoutineHintMatchesBar(browser, baseURL) {
 }
 
 const JOURNEYS = [
+    { name: 'reorder arrows move the task the user pointed at', fn: journeyArrowReorderMovesTheRightTask },
     { name: 'import never attaches a template to a non-recurring task', fn: journeyImportTemplateTaskCollision },
     { name: 'import keeps recurring templates with no live task', fn: journeyImportKeepsOrphanTemplates },
     { name: 'core (add → persist → cycle → offline)', fn: journeyCore },

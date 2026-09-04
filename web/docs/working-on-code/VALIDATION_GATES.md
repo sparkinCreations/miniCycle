@@ -30,6 +30,7 @@
 | **appContext API surface + Quick Actions lists** | `npm run validate:api` | CI — `test.yml` | 🔴 Fails CI — every `get*Api()?.member` read must be a key of the object `featureBoot.js` registers. Those `*ApiObj` literals are hand-written allow-lists: a method the manifest genuinely delivers on `deps.<category>` is still dropped unless named there, the optional chain swallows it, and nothing warns because the manifest side succeeded. Also enforces that `ACTION_REGISTRY`, `VALID_ACTION_IDS` and `ACTION_BUTTON_MAP` agree — three hand-maintained lists where a miss means an action is never counted, with nothing thrown |
 | **Manifest `provides`** | `npm run validate:provides` | CI — `test.yml` | 🔴 Fails CI — every name in a manifest's `provides` must actually exist on the module, and no two manifests may claim the same name. Both halves fail silently today: `registerProvides()` SKIPS a name `findProvidedValue()` cannot locate, and where the loader calls the method on the instance instead, it resolves to `undefined` inside a consumer that guards with `?.`. That is the v2.347 statsPanel split — `navigatePanels` moved to the gestures sub-module, the facade never re-exported it, `gesturePanelManager` read `undefined` as "no carousel" and fell back BY DESIGN to two-panel behaviour. Nothing threw; three-panel swipe stayed broken on mobile until v2.387 and was found on a phone. Unsupplied names are ratcheted BY NAME (an allow-list, not a count — a count would let a new violation hide behind a fixed one); duplicate owners are gated at 0 |
 | **Label registries** | `npm run validate:labels` | CI — `test.yml` | 🔴 Fails CI — every literal `getLabel()` key must resolve in `defaultLabels.js`; every logged history event type must be in historyManager's icon+label maps |
+| **Duplicate object keys** | `npm run validate:keys` | CI — `test.yml` | 🔴 Fails CI — no object literal may define the same key twice. The later definition silently wins; the earlier is dead code |
 | **Changelog range** | `npm run test:changelog` | CI — `test.yml` | 🔴 Fails CI — a release entry must not re-list commits an earlier release already shipped; the boundary is the previous `## [x.y.z]` heading, NOT the last git tag — `git describe` answers from the local clone, and a clone whose tags lag the remote widens the range to the whole backlog (measured: v2.447–v2.449 shipped from a container stuck at v2.421) |
 | **CSP hash sync** | `npm run test:csp-sync` | CI — `test.yml` | 🔴 Fails CI — the hash stage of `update-version.sh`, extracted to `scripts/csp_hash_sync.py` (Aug 2026) so it can be tested at all. 17 cases, each a real failure mode: a script tag written in an HTML COMMENT corrupting the real block's hash (v2.316 blocked the async CSS loader), runtime-generated `document.write` scripts being dropped from the directive (v2.424 blocked the pre-boot cache clear), the `.htaccess` multi-line format, and idempotence. Both incidents shipped with every gate green, because every gate was blind to the same script. |
 | **HTML cache headers** | `npm run validate:cache` | CI — `test.yml` | 🔴 Fails CI — no HTML route may be served with a long cache. Netlify serves every `.html` at an EXTENSIONLESS canonical URL (`/games/foo.html` → `/games/foo`), which does not match the `*.html` header rule and falls through to the `/*` catch-all: `max-age=31536000`. One year, on a document. Measured live Aug 2026 — a deployed fix to `/games/minicycle-taskscramble` could not reach users because the route was cached under the catch-all. The server had the fix; the browser would not ask for it |
@@ -171,6 +172,43 @@ add a genuinely external API to `EXTERNAL_APIS` in
 [scripts/validate-comment-refs.js](../../scripts/validate-comment-refs.js).
 
 ---
+
+## 🔴 `validate:keys` — duplicate object keys (Sep 2026)
+
+**Checks one thing, gated at 0:** no object literal in `web/modules/**` defines the same
+key twice. Runs esbuild over the module tree with `bundle: false` and fails on any
+`duplicate-object-key` warning.
+
+**Why it exists:** a duplicate key is not a syntax error, not a lint error, and
+`validate:labels` passes right over it — that gate checks whether a key RESOLVES, and a
+shadowed key resolves fine, just to the wrong string. The later definition silently wins
+and the earlier one becomes dead code with nothing to mark it.
+
+Measured Sep 2026 against v2.539, `defaultLabels.js` defined `notify.reminderEnabled`
+twice:
+
+```
+line 684:  'Reminder enabled: {settings}'      <- dead
+line 879:  'Task reminders enabled!'           <- won
+```
+
+`reminders.js` computes the schedule ("every 2 hours") and passes it as `{settings}`.
+The winning definition has no placeholder, so the schedule was silently discarded: a user
+enabling reminders on a task was told they were on and never told when. Two labels
+written for two contexts, collapsed into one by a duplicate key.
+
+esbuild had been reporting all three duplicates on every build — three lines inside a
+hundred-line log that ends `✅ dist/ ready`. Nobody reads a warning that never fails
+anything. This gate turns that existing signal into a gate rather than adding a new
+analysis.
+
+**Fixing a hit:** decide which definition is correct, then rename or delete the other —
+never leave both. When two call sites genuinely need different text they need different
+keys; that is why `notify.reminderEnabledWithSettings` exists alongside
+`notify.reminderEnabled`.
+
+**Same family as** CLAUDE.md #18 and [REVIEW_PATTERNS.md](../reference/REVIEW_PATTERNS.md)
+§9 — a write that reads back fine and is quietly wrong.
 
 ## 🔴 `validate:labels` — the string registries (Aug 2026)
 

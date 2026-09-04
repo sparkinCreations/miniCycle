@@ -1,3 +1,7 @@
+## [2.540] - 2026-09-04
+- Reorder arrows: move the task the user pointed at. They took an index from #taskList.children and spliced cycle.tasks at it, so the completed-tasks dropdown or any non-default sort made them silently move the wrong task. Now resolved by task id, like saveDragReorder. Also: notify.reminderEnabled was defined twice, so the reminders notification dropped the schedule it had computed; new validate:keys gate fails CI on any duplicate object key.
+
+
 ## [2.539] - 2026-09-04
 - docs(future-work): correct STATE_TRUTH_MIGRATION #10, #24, #30
 - Recurring panel search: announce the result count to screen readers. Filtering changed the visible list with no announcement at all; only the zero-match case spoke. The live region lives inside the dialog because showModal() makes the body-level #live-region inert.

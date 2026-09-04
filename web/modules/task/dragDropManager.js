@@ -624,21 +624,40 @@ export class DragDropManager {
             // Prevent arrow reordering on completed tasks
             if (taskItem.querySelector(DOM_SELECTORS.TASK_INPUT_CHECKED)) return;
 
+            // Resolve the NEIGHBOUR from the DOM, then reorder state by ID.
+            //
+            // This used to take `currentIndex` from `taskList.children` and splice
+            // `cycle.tasks` at it, which is only correct while the two are
+            // index-for-index identical. Two ordinary things break that, and both
+            // moved the WRONG task with no visible feedback (measured, v2.538):
+            //
+            //   - the completed-tasks dropdown moves completed rows OUT of
+            //     #taskList (completedTasksManager.moveToCompleted), so the lists
+            //     desynchronise. state [A,B,C,D] with A completed, move-down on B
+            //     produced [B,A,C,D] instead of [A,C,B,D] — it moved A.
+            //   - a non-default sort reorders the DOM within the active list:
+            //     state [Zebra,Apple,Mango] renders as [Apple,Mango,Zebra].
+            //
+            // In a routine manager the task sequence IS the routine, so that was
+            // silent corruption of the thing the user built to run repeatedly.
+            // `saveDragReorder` below already did it correctly — it maps ids and
+            // preserves rows not in the DOM. Same operation, two doors; this is the
+            // one that was never hardened.
+            //
+            // The DOM still decides WHICH neighbour (it is what the user is looking
+            // at and pointing the arrow at); state decides where that lands.
             const taskList = document.getElementById(DOM_IDS.TASK_LIST);
-            const allTasks = Array.from(taskList.children);
-            const currentIndex = allTasks.indexOf(taskItem);
+            const rows = Array.from(taskList.children);
+            const domIndex = rows.indexOf(taskItem);
+            const movingUp = button.classList.contains(DOM_CLASSES.MOVE_UP);
+            const targetRow = movingUp ? rows[domIndex - 1] : rows[domIndex + 1];
 
-            let newIndex;
-            if (button.classList.contains(DOM_CLASSES.MOVE_UP)) {
-                newIndex = Math.max(0, currentIndex - 1);
-            } else {
-                newIndex = Math.min(allTasks.length - 1, currentIndex + 1);
-            }
+            // Already at the end of the list the user can see.
+            if (domIndex === -1 || !targetRow) return;
 
-            if (newIndex === currentIndex) return; // No movement needed
-
-            // Get task ID for state-driven active task tracking
             const taskId = taskItem.dataset.taskId;
+            const targetTaskId = targetRow.dataset.taskId;
+            if (!taskId || !targetTaskId) return;
 
             // Reorder via state system (state-first pattern)
             const AppState = this._getAppState();
@@ -652,10 +671,13 @@ export class DragDropManager {
                     const activeCycleId = state.appState.activeCycleId;
                     if (activeCycleId && state.data.cycles[activeCycleId]) {
                         const tasks = state.data.cycles[activeCycleId].tasks;
-                        if (tasks && currentIndex >= 0 && currentIndex < tasks.length) {
-                            // Remove task from current position and insert at new position
-                            const [movedTask] = tasks.splice(currentIndex, 1);
-                            tasks.splice(newIndex, 0, movedTask);
+                        const from = tasks ? tasks.findIndex(t => t.id === taskId) : -1;
+                        if (tasks && from !== -1 && tasks.some(t => t.id === targetTaskId)) {
+                            // Lift the task out first, THEN locate the target — its
+                            // index shifts when the moved task sat before it.
+                            const [movedTask] = tasks.splice(from, 1);
+                            const targetIndex = tasks.findIndex(t => t.id === targetTaskId);
+                            tasks.splice(movingUp ? targetIndex : targetIndex + 1, 0, movedTask);
                         }
                     }
                     // Set activeTaskId so rendering restores task options (state-driven UI)
