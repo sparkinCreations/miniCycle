@@ -1,9 +1,20 @@
 # Task Ordering System Plan
 
-**Status:** Planned
-**Priority:** Medium
+**Status:** Planned — not scheduled
+**Priority:** Low (was Medium; re-priced 2026-09-04, see below)
 **Estimated Effort:** 3-4 days
 **Breaking Changes:** Yes (schema change, requires migration)
+
+> **Re-priced Sep 2026 (v2.540).** The strongest *defect* argument for this plan is gone:
+> the index-arithmetic reorder bug it would have prevented was fixed directly, in about an
+> hour, without a schema change. What remains is position-restoration polish (problems 1–2,
+> currently handled by a `dataset.originalIndex` attribute that works) and problem 3, which
+> is a **feature** — numbered tasks — not a defect.
+>
+> That is a poor trade for a breaking migration that runs against every user's stored data.
+> Do this when you actually want task numbering; then the migration buys something visible.
+> `STATE_TRUTH_MIGRATION.md`'s own implementation order says the same thing from the other
+> direction: *"Do not start at schema 2.6 or UUID keys. Collapse Gen 1 on the loop first."*
 
 ---
 
@@ -17,12 +28,13 @@ Implement a fractional indexing system for task ordering, where each task has a 
 2. **Recurring task restoration** - Recurring tasks reset to original position
 3. **User-facing numbering** - Enable "Task #1, #2, #3" display feature
 4. **Drag reorder persistence** - Order survives refresh without relying on array position
-5. **Index-arithmetic reorder bugs** - No code needs to map a DOM position onto an array
-   index, which is the live defect in
-   [STATE_TRUTH_MIGRATION.md](./STATE_TRUTH_MIGRATION.md) #10 (the move-up/down arrows
-   splice `cycle.tasks` at a DOM index; measured to move the wrong task whenever the
-   completed-tasks dropdown or a non-default sort is active)
 5. **Conflict resolution** - Decimal precision handles insertions gracefully
+6. ~~**Index-arithmetic reorder bugs**~~ — **no longer a motivation.** This plan would make
+   them structurally impossible, but the one live instance
+   ([STATE_TRUTH_MIGRATION.md](./STATE_TRUTH_MIGRATION.md) #10, the move-up/down arrows
+   splicing `cycle.tasks` at a DOM index) was **fixed in v2.540** by resolving through task
+   ids instead. No code maps a DOM position onto an array index today. Kept listed so the
+   next reader does not re-derive it as a reason to start.
 
 ### Current Limitations
 
@@ -371,8 +383,9 @@ If critical issues found post-release:
 
 ## Related Documents
 
-- [STATE_TRUTH_MIGRATION.md](./STATE_TRUTH_MIGRATION.md) - #10 is a live bug this plan would
-  make structurally impossible. This plan is ~20 hours and a breaking schema change, so #10
-  should get its small id-based fix first rather than wait on it.
+- [STATE_TRUTH_MIGRATION.md](./STATE_TRUTH_MIGRATION.md) - #10 was the live bug this plan
+  would have made structurally impossible. It got the small id-based fix instead (v2.540),
+  which is the precedent worth noting: a targeted fix closed it in an hour where this plan
+  would have taken ~20 hours and a migration.
 - [SCHEMA_2_6_PLAN.md](./SCHEMA_2_6_PLAN.md) - Could bundle with schema update
 - [COMPLETED_TASKS_DROPDOWN.md](../features/COMPLETED_TASKS_DROPDOWN.md) - Current position handling
