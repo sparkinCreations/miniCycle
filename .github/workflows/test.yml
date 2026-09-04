@@ -76,6 +76,10 @@ jobs:
         working-directory: ./web
         run: npm run validate:labels
 
+      - name: Validate duplicate object keys (a shadowed key resolves, to the wrong value)
+        working-directory: ./web
+        run: npm run validate:keys
+
       - name: Validate cache headers (no HTML route may be long-cached)
         working-directory: ./web
         run: npm run validate:cache

@@ -1300,7 +1300,6 @@ export const DOM_IDS = Object.freeze({
     REDO_BTN: 'redo-btn',
     UNDO_REDO_BUTTONS: 'undo-redo-buttons',
     MENU_TOGGLE_INPUT_BAR: 'menu-toggle-input-bar',
-    MENU_ENTER_FOCUS_VIEW: 'menu-enter-focus-view',
     MODE_RADIO_GROUP: 'mode-radio-group',
 
     // ---- Quick Actions ----

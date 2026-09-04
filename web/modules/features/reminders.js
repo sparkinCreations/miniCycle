@@ -991,7 +991,7 @@ export class MiniCycleReminders {
                     ? getLabel('notify.reminderEveryFrequency', { vars: { freq, unit } })
                     : getLabel('notify.reminderCustomSettings');
 
-                const message = `🔔 ${getLabel('notify.reminderEnabled', { vars: { settings: settingsText } })}`;
+                const message = `🔔 ${getLabel('notify.reminderEnabledWithSettings', { vars: { settings: settingsText } })}`;
                 const notificationElement = this.deps.showNotification(
                     message,
                     "success",

@@ -463,7 +463,6 @@ export const DEFAULT_LABELS = deepFreeze({
         bgImageRemoved:         'Background image removed',
         bgImageRemoveFailed:    'Failed to remove background image',
         bgImageSet:             'Background image set',
-        taskOptionsReset:       'Reset to defaults',
         selectCycleFirst:       'Please select a routine first',
         selectRoutineFirst:     'Please select a routine first',
 
@@ -681,7 +680,7 @@ export const DEFAULT_LABELS = deepFreeze({
         reminderNotificationTitle: 'miniCycle Reminder',
         reminderTasksToComplete: 'You have tasks to complete:',
         reminderBackgroundBody: 'You have unfinished tasks in your routine',
-        reminderEnabled:         'Reminder enabled: {settings}',
+        reminderEnabledWithSettings: 'Reminder enabled: {settings}',
         reminderCustomSettings:  'Custom settings',
         reminderEveryFrequency:  'Every {freq} {unit}',
         reminderOpenSettings:    'Reminder Settings',
