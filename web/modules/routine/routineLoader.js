@@ -139,6 +139,12 @@ async function loadMiniCycle() {
     await saveCycleData(activeCycleId, currentCycle);
   }
 
+  // What the user is looking at RIGHT NOW, captured before the render awaits.
+  // updateCycleUIState uses it to decide whether this load is a routine SWITCH
+  // worth announcing; read after the await it can already be the new title.
+  const titleBeforeLoad =
+    document.getElementById(DOM_IDS.MINI_CYCLE_TITLE)?.textContent ?? '';
+
   // 2) Render tasks
   // ✅ FIXED: renderTasksToDOM now calls addTask with isLoading=true
   // This prevents addTask from pushing duplicate tasks to AppState
@@ -161,7 +167,7 @@ async function loadMiniCycle() {
   }
 
   // 3) Update UI state
-  updateCycleUIState(currentCycle, schemaData.settings || {});
+  updateCycleUIState(currentCycle, schemaData.settings || {}, titleBeforeLoad);
 
   // 4) Reminders
   await setupRemindersForCycle(schemaData.reminders || schemaData.customReminders || {});
@@ -397,7 +403,7 @@ async function renderTasksToDOM(tasks = []) {
 /**
  * Update UI state
  */
-function updateCycleUIState(currentCycle, settings) {
+function updateCycleUIState(currentCycle, settings, titleBeforeLoad = null) {
   const titleElement = document.getElementById(DOM_IDS.MINI_CYCLE_TITLE);
   if (titleElement) {
     // Announce a routine SWITCH. This is the single funnel every load path runs
@@ -412,11 +418,21 @@ function updateCycleUIState(currentCycle, settings) {
     // Routine", tracker still said "Your First Routine", nothing announced.
     // The rendered title is what the user was actually on, so it cannot drift.
     //
+    // But it must be READ BEFORE THE RENDER AWAITS, not here. loadMiniCycle now
+    // awaits the task render, and the switcher calls loadMiniCycle() WITHOUT
+    // awaiting it (a floating promise inside a setTimeout). During that gap
+    // another path — appInit's setup block — writes `currentCycle.title` into
+    // this same element from state, so by the time this line runs the element
+    // can already hold the NEW title, `isSwitch` reads false, and the switch is
+    // announced to nobody. Timing-dependent: green locally, failed on CI
+    // (PR #101, v2.541). loadMiniCycle captures the value up front and passes it
+    // in; the DOM read survives only as the fallback for direct callers.
+    //
     // An empty element means first paint — opening the app is not a context
     // change worth speaking, and it would talk over the screen reader's own
     // page-load announcement. Reloading the SAME routine is silent too.
     const nextTitle = currentCycle.title || getLabel('routine.untitledCycle');
-    const shownTitle = titleElement.textContent.trim();
+    const shownTitle = (titleBeforeLoad !== null ? titleBeforeLoad : titleElement.textContent).trim();
     const isSwitch = shownTitle !== '' && shownTitle !== nextTitle;
 
     titleElement.textContent = nextTitle;

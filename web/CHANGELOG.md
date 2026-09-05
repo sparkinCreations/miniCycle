@@ -1,3 +1,8 @@
+## [2.542] - 2026-09-05
+- docs(future-work): mark STATE_TRUTH_MIGRATION #4 fixed in v2.541
+- Fix a regression from v2.541: the routine-switch screen-reader announcement decided 'is this a switch' by reading the title element AFTER the newly-awaited render, and another path can write the new title into that element during the gap. Captured before the await instead.
+
+
 ## [2.541] - 2026-09-05
 - docs(future-work): record the decoration-parity evidence on P0 #4
 - docs(future-work): re-price P0 and the ordering plan against measurements

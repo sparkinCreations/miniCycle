@@ -16,6 +16,7 @@
  * ✅ Production Impact: LOW - Core data loading works, edge cases handled
  */
 
+import { DOM_IDS } from '../modules/core/constants.js';
 import {
     setupTestEnvironment,
     createMockAppState,
@@ -374,6 +375,63 @@ export async function runRoutineLoaderTests(resultsDiv, isPartOfSuite = false) {
     });
 
     // === UI STATE TESTS ===
+
+    // The routine-SWITCH announcement must not depend on when it happens to read
+    // the title element. loadMiniCycle awaits the task render now, and the
+    // switcher calls loadMiniCycle() WITHOUT awaiting it, so during that gap
+    // appInit's setup block can write the new title into the same element from
+    // state. Reading the element afterwards then sees the NEW title, decides
+    // "not a switch", and the whole task list changes silently.
+    //
+    // This is deterministic where the CI failure was not: it simulates the race
+    // by putting the new title in the DOM up front and asserting the captured
+    // value still drives the decision.
+    const withLiveRegion = async (fn) => {
+        const region = document.createElement('div');
+        region.id = DOM_IDS.LIVE_REGION;
+        region.setAttribute('aria-live', 'polite');
+        const title = document.createElement('div');
+        title.id = DOM_IDS.MINI_CYCLE_TITLE;
+        document.body.append(region, title);
+        try { return await fn({ region, title }); } finally { region.remove(); title.remove(); }
+    };
+    const settled = () => new Promise(r => setTimeout(r, 60));
+
+    await test('a routine switch is announced even if the title was already overwritten', async () => {
+        await withLiveRegion(async ({ region, title }) => {
+            // The race: something else already wrote the NEW title into the element.
+            title.textContent = 'Second Routine';
+            // What the user was actually looking at, captured before the render awaited.
+            updateCycleUIState({ title: 'Second Routine' }, {}, 'First Routine');
+            await settled();
+            if (!region.textContent.includes('Second Routine')) {
+                throw new Error('the switch was announced to nobody — the decision was made from ' +
+                    `the live DOM instead of the value captured before the render (region: "${region.textContent}")`);
+            }
+        });
+    });
+
+    await test('reloading the same routine stays silent', async () => {
+        await withLiveRegion(async ({ region, title }) => {
+            title.textContent = 'Same Routine';
+            updateCycleUIState({ title: 'Same Routine' }, {}, 'Same Routine');
+            await settled();
+            if (region.textContent.trim() !== '') {
+                throw new Error(`announced on a same-routine reload: "${region.textContent}"`);
+            }
+        });
+    });
+
+    await test('first paint is silent — an empty title is not a context change', async () => {
+        await withLiveRegion(async ({ region }) => {
+            updateCycleUIState({ title: 'Opened Routine' }, {}, '');
+            await settled();
+            if (region.textContent.trim() !== '') {
+                throw new Error(`announced on first paint: "${region.textContent}" — this would talk ` +
+                    "over the screen reader's own page-load announcement");
+            }
+        });
+    });
     resultsDiv.innerHTML += '<h4 class="test-section">🎛️ UI State</h4>';
 
     await test('handles missing UI elements gracefully', () => {
