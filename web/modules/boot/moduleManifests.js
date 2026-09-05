@@ -693,7 +693,7 @@ export const MODULE_MANIFESTS = {
         path: '../routine/routineLoader.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState', 'loadMiniCycleData'],
-        optionalDeps: ['helpWindowManager', 'refreshThemeLabels', 'syncModeFromToggles', 'updateRecurringInfoLink', 'addTask', 'catchUpMissedRecurringTasks', 'checkCompleteAllButton', 'completedTasksManager', 'createInitialSchema25Data', 'startReminders', 'syncAllTasksWithMode', 'taskToAddTaskOptions', 'updateMainMenuHeader', 'updateProgressBar', 'updateSearchVisibility', 'updateStatsPanel', 'updateThemeColor'],
+        optionalDeps: ['helpWindowManager', 'refreshThemeLabels', 'syncModeFromToggles', 'updateRecurringInfoLink', 'addTask', 'catchUpMissedRecurringTasks', 'checkCompleteAllButton', 'completedTasksManager', 'createInitialSchema25Data', 'startReminders', 'syncAllTasksWithMode', 'taskToAddTaskOptions', 'TaskRenderer', 'updateMainMenuHeader', 'updateProgressBar', 'updateSearchVisibility', 'updateStatsPanel', 'updateThemeColor'],
         provides: ['loadMiniCycle'],
         api: 'cycle',
         after: ['taskCore']

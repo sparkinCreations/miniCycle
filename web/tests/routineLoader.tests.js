@@ -295,15 +295,82 @@ export async function runRoutineLoaderTests(resultsDiv, isPartOfSuite = false) {
     // === DOM RENDERING TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">🎨 DOM Rendering</h4>';
 
-    await test('handles missing taskList element gracefully', () => {
+    await test('handles missing taskList element gracefully', async () => {
         const tasks = [{ id: 'task1', text: 'Test Task', completed: false }];
 
         setRoutineLoaderDependencies({
-            addTask: () => {}
+            addTask: () => {},
+            TaskRenderer: { renderTasks: async () => {} }
         });
 
         // Should not throw error when taskList doesn't exist
-        renderTasksToDOM(tasks);
+        await renderTasksToDOM(tasks);
+    });
+
+    // Boot/routine-switch must render through the SAME projector as undo/refresh
+    // (STATE_TRUTH_MIGRATION #4). This asserts the MECHANISM on purpose.
+    //
+    // The obvious black-box test — compare the boot DOM to the runtime DOM — is
+    // VACUOUS here, and was written and thrown away before this one: with the old
+    // forked renderer restored it still passed, because organize() re-partitions
+    // the completed list afterwards and the per-task decoration was already
+    // identical (both paths call taskToAddTaskOptions + addTask). Nothing
+    // observable distinguishes the two paths, so only the call can be pinned.
+    await test('boot rendering delegates to the shared TaskRenderer', async () => {
+        const tasks = [
+            { id: 'a', text: 'One', completed: false },
+            { id: 'b', text: 'Two', completed: true }
+        ];
+        const seen = [];
+        setRoutineLoaderDependencies({
+            addTask: () => { seen.push('addTask'); },
+            taskToAddTaskOptions: () => ({}),
+            TaskRenderer: { renderTasks: async (t) => { seen.push(['renderTasks', t]); } }
+        });
+
+        await renderTasksToDOM(tasks);
+
+        const call = seen.find(e => Array.isArray(e) && e[0] === 'renderTasks');
+        if (!call) {
+            throw new Error(`renderTasks was never called (saw: ${JSON.stringify(seen)}) — boot has ` +
+                'its own renderer again, so it will silently skip the completed/active partition, ' +
+                'drag handlers, active-task-option restore and reapplyActiveFilter');
+        }
+        if (call[1] !== tasks) {
+            throw new Error('renderTasks did not receive the task array it was given');
+        }
+        if (seen.includes('addTask')) {
+            throw new Error('boot called addTask directly as well as delegating — that is the ' +
+                'forked path back, rendering every task twice');
+        }
+    });
+
+    await test('a missing renderer leaves the rendered list intact, it does not blank it', async () => {
+        // An empty routine reads as DATA LOSS to the user, so the no-renderer path
+        // must leave what is on screen alone rather than clearing first and then
+        // discovering it cannot render. The old boot code did `innerHTML = ''`
+        // BEFORE checking its dependencies.
+        const list = document.createElement('ul');
+        list.id = 'taskList';
+        list.innerHTML = '<li class="task" data-task-id="already-here"></li>';
+        document.body.appendChild(list);
+
+        try {
+            setRoutineLoaderDependencies({
+                addTask: () => {},
+                taskToAddTaskOptions: () => ({}),
+                TaskRenderer: null
+            });
+
+            await renderTasksToDOM([{ id: 'a', text: 'One', completed: false }]);
+
+            if (!document.querySelector('#taskList [data-task-id="already-here"]')) {
+                throw new Error('the existing task row was wiped when no renderer was available — ' +
+                    'the user would see an empty routine and read it as lost data');
+            }
+        } finally {
+            list.remove();
+        }
     });
 
     // === UI STATE TESTS ===
