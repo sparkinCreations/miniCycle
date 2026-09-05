@@ -1,7 +1,7 @@
 # State-as-Truth Migration — Gen 1 leftovers on the cycle loop
 
-**Status:** Open plan — #10 FIXED (v2.540), #24 shipped, #30 verified closed; #1 and #4 probed and NOT reproduced  
-**Raised:** 2026-08-23 · **Against:** v2.483 · **Amended:** 2026-09-04 against v2.540  
+**Status:** Open plan — #4 and #10 FIXED (v2.541 / v2.540), #24 shipped, #30 verified closed; #1 probed and NOT reproduced  
+**Raised:** 2026-08-23 · **Against:** v2.483 · **Amended:** 2026-09-05 against v2.541  
 **Source:** Independent code review of boot, AppState, DI, completion/reset, both task renderers, undo wrapper, drag-drop, reminders, daily reset, history, `.mcyc` payload, import, `featureBoot` API allow-lists, and `moduleLoader` `ENFORCE_REQUIRES`  
 **Premise:** The repaired modules are Gen 3 (state is truth). The **name of the app** — “all tasks done → reset” — is still Gen 1 (DOM `.checked`). That split is the work.
 
@@ -62,7 +62,8 @@ Do not start at schema 2.6 or UUID keys. Collapse Gen 1 on the loop first.
 
 ## P0 — the name of the app is still on the DOM
 
-> **Probed Sep 2026 against v2.540 — neither #1 nor #4 reproduced.** The premise (DOM as
+> **Probed Sep 2026 against v2.540-v2.541 — neither #1 nor #4 reproduced; #4 was then fixed
+> anyway (v2.541) because the fork was small to close once measured.** The premise (DOM as
 > truth on the cycle loop) is accurate and the debt is real, but the two rows that name a
 > concrete failure did not produce one on the triggers this doc itself proposes. That does
 > not close them; it re-prices them. See the measured notes on each row below, and treat
@@ -111,7 +112,7 @@ function in the app, not a bug fix, and should be sequenced accordingly.
 
 **Fix:** Use `DOM_IDS` / `DOM_SELECTORS`. Trivial once #1–#2 stop needing the completed list for counting.
 
-### #4 Boot render ≠ runtime render
+### #4 Boot render ≠ runtime render — ✅ FIXED v2.541
 
 **Where:**
 
@@ -121,6 +122,40 @@ function in the app, not a bug fix, and should be sequenced accordingly.
 **Fix:** Boot and routine switch call the same projector as undo/refresh. Keep `isLoading` so add does not mint new ids. Runtime comments on why DOM order is load-bearing (drag-drop, arrows, un-complete) apply to first paint too.
 
 **Overlap:** Archived render-path unification claimed this shipped; only the **runtime** half did.
+
+**Done in v2.541.** `renderTasksToDOM` no longer renders; it delegates to
+`TaskRenderer.renderTasks()` and `loadMiniCycle` awaits it, so everything after step 2 runs
+against a finished DOM. The archived unification's remaining half is now shipped.
+
+Cleared before switching, each checked rather than assumed:
+
+| Risk | Finding |
+|---|---|
+| `renderTasks` unreachable from boot | `taskDOM` is Phase 3, `routineLoader` Phase 6 — and `uiOrchestrator`, also Phase 6, already declares `renderTasks` in `requires` |
+| `renderTasks` skips tasks with no `id` | `repairAndCleanTasks()` backfills ids at step 1, before the render |
+| Boot's `task.taskText` fallback lost | Dead code — the same repair migrates `taskText` → `text` and deletes it (this is #5's concern at this call site, already handled) |
+| `updateSearchVisibility` lost | `renderTasks` calls it too |
+
+Boot also *gains* what its copy lacked: the completed/active partition, the try/catch that
+preserves the existing list when a task element throws mid-build, drag handlers,
+active-task-option restore, and `reapplyActiveFilter()`.
+
+`organize()` in `loadMiniCycle` step 6 is now redundant on the success path — **measured**,
+identical DOM with and without. Kept deliberately (free, and still covers the path where
+`renderTasks` bails and preserves the existing DOM) with a comment saying so, so nobody
+reads its presence as evidence the render needs it.
+
+**The guard is a MECHANISM test, on purpose.** The obvious black-box guard — compare the
+boot DOM to the runtime DOM — was written first and is **vacuous**: with the forked renderer
+restored it still passed, because `organize()` re-partitions afterwards and the per-task
+decoration was already identical. It was deleted rather than shipped. `routineLoader.tests.js`
+now pins the call itself (`renderTasks` invoked, `addTask` NOT called directly) and the
+no-renderer path (an unavailable renderer must leave the list intact, never blank it —
+an empty routine reads as data loss). Both mutation-checked.
+
+**What this did NOT do:** there is no user-visible behavioural change. That is the whole
+point of the measurements above, and the reason the black-box test could not discriminate.
+This closed a fork that could drift, not a bug.
 
 **Measured Sep 2026 (v2.540) — the user-visible symptom did NOT reproduce, but the
 duplication is still real.** Seeded a completed task in state with the completed-dropdown enabled, so boot
