@@ -1,7 +1,7 @@
 # State-as-Truth Migration — Gen 1 leftovers on the cycle loop
 
-**Status:** Open plan — P0/P1 untouched; #24 shipped and #30 verified closed (Sep 2026, v2.538)  
-**Raised:** 2026-08-23 · **Against:** v2.483 · **Amended:** 2026-09-04 against v2.538  
+**Status:** Open plan — #4 and #10 FIXED (v2.541 / v2.540), #24 shipped, #30 verified closed; #1 probed and NOT reproduced  
+**Raised:** 2026-08-23 · **Against:** v2.483 · **Amended:** 2026-09-05 against v2.541  
 **Source:** Independent code review of boot, AppState, DI, completion/reset, both task renderers, undo wrapper, drag-drop, reminders, daily reset, history, `.mcyc` payload, import, `featureBoot` API allow-lists, and `moduleLoader` `ENFORCE_REQUIRES`  
 **Premise:** The repaired modules are Gen 3 (state is truth). The **name of the app** — “all tasks done → reset” — is still Gen 1 (DOM `.checked`). That split is the work.
 
@@ -62,6 +62,17 @@ Do not start at schema 2.6 or UUID keys. Collapse Gen 1 on the loop first.
 
 ## P0 — the name of the app is still on the DOM
 
+> **Probed Sep 2026 against v2.540-v2.541 — neither #1 nor #4 reproduced; #4 was then fixed
+> anyway (v2.541) because the fork was small to close once measured.** The premise (DOM as
+> truth on the cycle loop) is accurate and the debt is real, but the two rows that name a
+> concrete failure did not produce one on the triggers this doc itself proposes. That does
+> not close them; it re-prices them. See the measured notes on each row below, and treat
+> "verified fragile" as a weaker mandate than "verified broken" when sequencing this band
+> against work that has a reproduction (as #10 did).
+>
+> Not probed: #2 (progress bar), #3 (hardcoded ids), #5 (`taskText`). #3 and #5 are tidiness
+> and need no reproduction to justify; #2 shares #1's mechanism and would need its own probe.
+
 ### #1 Cycle complete is derived from checkboxes
 
 **Where:** `checkMiniCycle` in `modules/progress/cycleCompletion.js` — `allTasks.every(task => task.querySelector("input")?.checked)` over `#taskList` + `#completedTaskList` children.
@@ -69,6 +80,25 @@ Do not start at schema 2.6 or UUID keys. Collapse Gen 1 on the loop first.
 **Fix:** `areAllTasksComplete(cycle)` from `cycle.tasks` (state). Use for auto-reset, manual complete-button visibility, and any “is this routine done?” check. Do not treat a filtered/hidden **render** as the routine.
 
 **Tests:** Auto-cycle with completed dropdown on; filtered list; last checkbox after boot vs after undo.
+
+**Measured Sep 2026 (v2.540) — did NOT reproduce.** Ran this row's own "filtered list" case:
+three tasks, search filtered to one, completed the only visible task under Auto Cycle.
+
+```
+filtered to 1 of 3 -> {"children":3,"visible":1}
+after completing the only VISIBLE task -> {"cycleCount":0,"completed":1,"total":3}
+```
+
+The cycle did **not** fire with two tasks undone. Two reasons the obvious triggers are
+already covered: `checkMiniCycle` unions `#taskList` **and** `#completedTaskList`, so the
+completed-dropdown case is counted; and search hides rows with `display:none`, which leaves
+them as `children`, so a filtered row is still counted.
+
+That leaves the genuine exposure narrower than the row implies: a render window in which
+`#taskList` holds a *partial* projection (`innerHTML = ''` then repopulate) and a
+`checkMiniCycle` fires inside it. Hard to trigger deliberately, and not demonstrated. The
+fix is still correct — read `cycle.tasks` — but it is debt paydown on the highest-risk
+function in the app, not a bug fix, and should be sequenced accordingly.
 
 ### #2 Progress bar uses the same DOM walk
 
@@ -82,7 +112,7 @@ Do not start at schema 2.6 or UUID keys. Collapse Gen 1 on the loop first.
 
 **Fix:** Use `DOM_IDS` / `DOM_SELECTORS`. Trivial once #1–#2 stop needing the completed list for counting.
 
-### #4 Boot render ≠ runtime render
+### #4 Boot render ≠ runtime render — ✅ FIXED v2.541
 
 **Where:**
 
@@ -92,6 +122,79 @@ Do not start at schema 2.6 or UUID keys. Collapse Gen 1 on the loop first.
 **Fix:** Boot and routine switch call the same projector as undo/refresh. Keep `isLoading` so add does not mint new ids. Runtime comments on why DOM order is load-bearing (drag-drop, arrows, un-complete) apply to first paint too.
 
 **Overlap:** Archived render-path unification claimed this shipped; only the **runtime** half did.
+
+**Done in v2.541.** `renderTasksToDOM` no longer renders; it delegates to
+`TaskRenderer.renderTasks()` and `loadMiniCycle` awaits it, so everything after step 2 runs
+against a finished DOM. The archived unification's remaining half is now shipped.
+
+Cleared before switching, each checked rather than assumed:
+
+| Risk | Finding |
+|---|---|
+| `renderTasks` unreachable from boot | `taskDOM` is Phase 3, `routineLoader` Phase 6 — and `uiOrchestrator`, also Phase 6, already declares `renderTasks` in `requires` |
+| `renderTasks` skips tasks with no `id` | `repairAndCleanTasks()` backfills ids at step 1, before the render |
+| Boot's `task.taskText` fallback lost | Dead code — the same repair migrates `taskText` → `text` and deletes it (this is #5's concern at this call site, already handled) |
+| `updateSearchVisibility` lost | `renderTasks` calls it too |
+
+Boot also *gains* what its copy lacked: the completed/active partition, the try/catch that
+preserves the existing list when a task element throws mid-build, drag handlers,
+active-task-option restore, and `reapplyActiveFilter()`.
+
+`organize()` in `loadMiniCycle` step 6 is now redundant on the success path — **measured**,
+identical DOM with and without. Kept deliberately (free, and still covers the path where
+`renderTasks` bails and preserves the existing DOM) with a comment saying so, so nobody
+reads its presence as evidence the render needs it.
+
+**The guard is a MECHANISM test, on purpose.** The obvious black-box guard — compare the
+boot DOM to the runtime DOM — was written first and is **vacuous**: with the forked renderer
+restored it still passed, because `organize()` re-partitions afterwards and the per-task
+decoration was already identical. It was deleted rather than shipped. `routineLoader.tests.js`
+now pins the call itself (`renderTasks` invoked, `addTask` NOT called directly) and the
+no-renderer path (an unavailable renderer must leave the list intact, never blank it —
+an empty routine reads as data loss). Both mutation-checked.
+
+**What this did NOT do:** there is no user-visible behavioural change. That is the whole
+point of the measurements above, and the reason the black-box test could not discriminate.
+This closed a fork that could drift, not a bug.
+
+**Measured Sep 2026 (v2.540) — the user-visible symptom did NOT reproduce, but the
+duplication is still real.** Seeded a completed task in state with the completed-dropdown enabled, so boot
+had to place it with no runtime completion event involved, then forced a runtime re-render
+over the same unchanged state:
+
+```
+AFTER BOOT     {"taskList":["Open one","Open two"],"completedList":["Done already"]}
+AFTER RUNTIME  {"taskList":["Open one","Open two"],"completedList":["Done already"]}
+```
+
+Identical — but **not** because `renderTasksToDOM` learned to partition. It still doesn't.
+The parity comes from a *third* mechanism: `completedTasksManager.organize()` (injected as
+`organizeCompletedTasks`) sweeps `#taskList` after a render and moves completed rows down
+into the dropdown, and undo/redo calls it explicitly for the same reason.
+
+A second probe closed the obvious follow-up worry — that the renderers might differ on
+something `organize()` does **not** reconcile, which would be an unmasked live bug. Rendered
+a fully-decorated task both ways (high priority + custom colour, due date, recurring with a
+live template, reminders, delete-when-complete, move arrows on, dropdown on) and compared
+every property a renderer decides — classes, `data-*`, ARIA/role/draggable/tabindex,
+checkbox state and label, every button's classes and `aria-label`/`aria-pressed`, inputs,
+inline style vars, text:
+
+```
+t0: identical
+t1: identical
+```
+
+Nothing differs beyond list placement. So the duplication is **measured-clean debt**, not a
+latent bug: three probes against this band (#1, #4's symptom, #4's decoration parity) all
+came back clean.
+
+So this row is half right in a way that matters for how you fix it. The two renderers **do**
+still differ — the row's description of the code is accurate — but a reconciler downstream
+masks the difference, which is why no symptom is reachable. That changes the risk profile:
+unifying the renderers is safe cleanup rather than a bug fix, and anyone who unifies them
+must check whether `organize()` is still needed afterwards or becomes a redundant second
+pass over the same DOM.
 
 ### #5 Runtime drops `taskText`; boot still accepts it
 
@@ -131,13 +234,20 @@ Snapshots are a **cycle slice** (tasks, templates, title, modes, cycleCount, the
 
 **Fix:** One producer: increment + flags + history event. One wrapper snapshot. Keep `actualNewCount` in outer scope (already learned).
 
-### #10 Arrows index by DOM and splice state; drag resolves by id — CORRECTED Sep 2026
+### #10 Arrows index by DOM and splice state; drag resolves by id — ✅ FIXED v2.540
 
 > **This row was written backwards.** It read *"Drag order from DOM; arrows from state"*,
 > which is true of the arrow path's **write** and false of its **read**. Measured against
 > v2.538, the drag path is the safe one and the arrow path is the one that corrupts. A
 > fixer following the original text would have hardened the wrong half. §0 of
 > [REVIEW_PATTERNS.md](../reference/REVIEW_PATTERNS.md) exists for exactly this.
+>
+> **Fixed in v2.540.** `handleArrowClick` now resolves the neighbour from the DOM (what the
+> user pointed at) and reorders `cycle.tasks` by **task id**, the way `saveDragReorder`
+> already did. Pinned by the journey *"reorder arrows move the task the user pointed at"*,
+> which covers both triggers and asserts its preconditions; mutation-checked by restoring
+> the original index arithmetic. Kept here rather than deleted because the reasoning below
+> is the record of how the row came to be written backwards.
 
 **Where:** `handleArrowClick` in `modules/task/dragDropManager.js` takes its index from the
 DOM and applies it to the state array:

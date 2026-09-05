@@ -50,6 +50,7 @@ const di = createDIModule('RoutineLoader', {
   completedTasksManager: optional(null),  // For organizing completed tasks into dropdown
   refreshThemeLabels: optional(null),  // Re-apply vocab theme colors and labels on routine switch
   updateRecurringInfoLink: optional(null),  // Refresh recurring count below task list on routine switch
+  TaskRenderer: optional(null),  // The ONE task projector — boot/switch render through it (see renderTasksToDOM)
 });
 
 // Late-binding deps via Proxy (standard: _deps with underscore prefix)
@@ -138,11 +139,17 @@ async function loadMiniCycle() {
     await saveCycleData(activeCycleId, currentCycle);
   }
 
+  // What the user is looking at RIGHT NOW, captured before the render awaits.
+  // updateCycleUIState uses it to decide whether this load is a routine SWITCH
+  // worth announcing; read after the await it can already be the new title.
+  const titleBeforeLoad =
+    document.getElementById(DOM_IDS.MINI_CYCLE_TITLE)?.textContent ?? '';
+
   // 2) Render tasks
   // ✅ FIXED: renderTasksToDOM now calls addTask with isLoading=true
   // This prevents addTask from pushing duplicate tasks to AppState
   // It only creates DOM elements from the existing task data
-  renderTasksToDOM(currentCycle.tasks || []);
+  await renderTasksToDOM(currentCycle.tasks || []);
 
   // 2.5) Sync visual indicators with current mode
   // ✅ After rendering tasks, sync all delete-when-complete visual indicators (DI-pure)
@@ -160,7 +167,7 @@ async function loadMiniCycle() {
   }
 
   // 3) Update UI state
-  updateCycleUIState(currentCycle, schemaData.settings || {});
+  updateCycleUIState(currentCycle, schemaData.settings || {}, titleBeforeLoad);
 
   // 4) Reminders
   await setupRemindersForCycle(schemaData.reminders || schemaData.customReminders || {});
@@ -169,6 +176,13 @@ async function loadMiniCycle() {
   updateDependentComponents();
 
   // 6) Organize completed tasks into dropdown (if feature enabled)
+  //
+  // NOW REDUNDANT on the success path, and measured so: renderTasks() projects
+  // BOTH lists from state during its atomic swap, so this found nothing to move
+  // (identical DOM with and without, v2.541). Kept rather than deleted because it
+  // is free and still covers the one path the projection does not reach —
+  // renderTasks bails early and preserves the existing DOM when a task element
+  // throws mid-build. Do not read its presence as evidence the render needs it.
   _deps.completedTasksManager?.organize?.();
 
 }
@@ -354,35 +368,42 @@ function repairAndCleanTasks(currentCycle, cycleKey = 'unknown') {
  * Render tasks - calls addTask which will create DOM elements
  * BUT we need to make sure existing tasks keep their IDs and completion states
  */
-function renderTasksToDOM(tasks = []) {
-  const list = document.getElementById(DOM_IDS.TASK_LIST);
-  if (!list) return;
-
-  list.innerHTML = '';
-
-  // ✅ FIX: Don't call addTask during loading - it creates NEW tasks with NEW IDs
-  // Instead, render tasks directly to DOM from the data already in AppState
-
-  const taskToAddTaskOptions = _deps.taskToAddTaskOptions;
-  if (typeof taskToAddTaskOptions !== 'function') {
-    console.error('renderTasksToDOM: taskToAddTaskOptions not available - aborting to prevent task duplication');
+async function renderTasksToDOM(tasks = []) {
+  // ONE projector. Boot and routine-switch render through the same
+  // TaskRenderer.renderTasks() that undo/redo and refreshUIFromState use, rather
+  // than keeping a second, thinner copy here (STATE_TRUTH_MIGRATION #4).
+  //
+  // The per-task work was ALREADY shared — both paths called
+  // taskToAddTaskOptions() then addTask() — so this is not two renderers merging
+  // into one; it is a thin wrapper deleting itself in favour of the better one.
+  // What the boot copy lacked: the DocumentFragment build, the try/catch that
+  // preserves the existing list if a build throws mid-way, the completed/active
+  // partition projected from state, drag handlers, active-task-options restore,
+  // and reapplyActiveFilter() (which matters here — a routine switch with a
+  // search filter active used to leave every task visible under a query).
+  //
+  // Verified safe before switching, against v2.540:
+  //   - Availability: taskDOM is Phase 3, routineLoader Phase 6, and
+  //     uiOrchestrator (also Phase 6) already declares renderTasks in requires.
+  //   - No task can be dropped: renderTasks skips tasks with no `id`, and
+  //     repairAndCleanTasks() backfills ids at step 1, before this runs.
+  //   - `task.taskText` needed no fallback here: the same repair migrates
+  //     taskText -> text and deletes it, so `task.text` is always set by now.
+  const renderer = _deps.TaskRenderer;
+  if (!renderer?.renderTasks) {
+    // Not a silent degrade: with no renderer the user gets an EMPTY routine that
+    // looks like data loss. Say so loudly and leave the existing DOM alone.
+    console.error('renderTasksToDOM: TaskRenderer unavailable — task list not rendered');
     return;
   }
-  tasks.forEach(task => {
-    // Render task to DOM using shared options helper (injected via DI)
-    const options = taskToAddTaskOptions(task);
-    _deps.addTask(task.text || task.taskText || '', options);
-  });
 
-  // Update task search visibility based on count
-  _deps.updateSearchVisibility?.(tasks.length);
-
+  await renderer.renderTasks(tasks);
 }
 
 /**
  * Update UI state
  */
-function updateCycleUIState(currentCycle, settings) {
+function updateCycleUIState(currentCycle, settings, titleBeforeLoad = null) {
   const titleElement = document.getElementById(DOM_IDS.MINI_CYCLE_TITLE);
   if (titleElement) {
     // Announce a routine SWITCH. This is the single funnel every load path runs
@@ -397,11 +418,21 @@ function updateCycleUIState(currentCycle, settings) {
     // Routine", tracker still said "Your First Routine", nothing announced.
     // The rendered title is what the user was actually on, so it cannot drift.
     //
+    // But it must be READ BEFORE THE RENDER AWAITS, not here. loadMiniCycle now
+    // awaits the task render, and the switcher calls loadMiniCycle() WITHOUT
+    // awaiting it (a floating promise inside a setTimeout). During that gap
+    // another path — appInit's setup block — writes `currentCycle.title` into
+    // this same element from state, so by the time this line runs the element
+    // can already hold the NEW title, `isSwitch` reads false, and the switch is
+    // announced to nobody. Timing-dependent: green locally, failed on CI
+    // (PR #101, v2.541). loadMiniCycle captures the value up front and passes it
+    // in; the DOM read survives only as the fallback for direct callers.
+    //
     // An empty element means first paint — opening the app is not a context
     // change worth speaking, and it would talk over the screen reader's own
     // page-load announcement. Reloading the SAME routine is silent too.
     const nextTitle = currentCycle.title || getLabel('routine.untitledCycle');
-    const shownTitle = titleElement.textContent.trim();
+    const shownTitle = (titleBeforeLoad !== null ? titleBeforeLoad : titleElement.textContent).trim();
     const isSwitch = shownTitle !== '' && shownTitle !== nextTitle;
 
     titleElement.textContent = nextTitle;

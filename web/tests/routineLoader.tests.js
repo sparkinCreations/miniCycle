@@ -16,6 +16,7 @@
  * ✅ Production Impact: LOW - Core data loading works, edge cases handled
  */
 
+import { DOM_IDS } from '../modules/core/constants.js';
 import {
     setupTestEnvironment,
     createMockAppState,
@@ -295,18 +296,142 @@ export async function runRoutineLoaderTests(resultsDiv, isPartOfSuite = false) {
     // === DOM RENDERING TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">🎨 DOM Rendering</h4>';
 
-    await test('handles missing taskList element gracefully', () => {
+    await test('handles missing taskList element gracefully', async () => {
         const tasks = [{ id: 'task1', text: 'Test Task', completed: false }];
 
         setRoutineLoaderDependencies({
-            addTask: () => {}
+            addTask: () => {},
+            TaskRenderer: { renderTasks: async () => {} }
         });
 
         // Should not throw error when taskList doesn't exist
-        renderTasksToDOM(tasks);
+        await renderTasksToDOM(tasks);
+    });
+
+    // Boot/routine-switch must render through the SAME projector as undo/refresh
+    // (STATE_TRUTH_MIGRATION #4). This asserts the MECHANISM on purpose.
+    //
+    // The obvious black-box test — compare the boot DOM to the runtime DOM — is
+    // VACUOUS here, and was written and thrown away before this one: with the old
+    // forked renderer restored it still passed, because organize() re-partitions
+    // the completed list afterwards and the per-task decoration was already
+    // identical (both paths call taskToAddTaskOptions + addTask). Nothing
+    // observable distinguishes the two paths, so only the call can be pinned.
+    await test('boot rendering delegates to the shared TaskRenderer', async () => {
+        const tasks = [
+            { id: 'a', text: 'One', completed: false },
+            { id: 'b', text: 'Two', completed: true }
+        ];
+        const seen = [];
+        setRoutineLoaderDependencies({
+            addTask: () => { seen.push('addTask'); },
+            taskToAddTaskOptions: () => ({}),
+            TaskRenderer: { renderTasks: async (t) => { seen.push(['renderTasks', t]); } }
+        });
+
+        await renderTasksToDOM(tasks);
+
+        const call = seen.find(e => Array.isArray(e) && e[0] === 'renderTasks');
+        if (!call) {
+            throw new Error(`renderTasks was never called (saw: ${JSON.stringify(seen)}) — boot has ` +
+                'its own renderer again, so it will silently skip the completed/active partition, ' +
+                'drag handlers, active-task-option restore and reapplyActiveFilter');
+        }
+        if (call[1] !== tasks) {
+            throw new Error('renderTasks did not receive the task array it was given');
+        }
+        if (seen.includes('addTask')) {
+            throw new Error('boot called addTask directly as well as delegating — that is the ' +
+                'forked path back, rendering every task twice');
+        }
+    });
+
+    await test('a missing renderer leaves the rendered list intact, it does not blank it', async () => {
+        // An empty routine reads as DATA LOSS to the user, so the no-renderer path
+        // must leave what is on screen alone rather than clearing first and then
+        // discovering it cannot render. The old boot code did `innerHTML = ''`
+        // BEFORE checking its dependencies.
+        const list = document.createElement('ul');
+        list.id = 'taskList';
+        list.innerHTML = '<li class="task" data-task-id="already-here"></li>';
+        document.body.appendChild(list);
+
+        try {
+            setRoutineLoaderDependencies({
+                addTask: () => {},
+                taskToAddTaskOptions: () => ({}),
+                TaskRenderer: null
+            });
+
+            await renderTasksToDOM([{ id: 'a', text: 'One', completed: false }]);
+
+            if (!document.querySelector('#taskList [data-task-id="already-here"]')) {
+                throw new Error('the existing task row was wiped when no renderer was available — ' +
+                    'the user would see an empty routine and read it as lost data');
+            }
+        } finally {
+            list.remove();
+        }
     });
 
     // === UI STATE TESTS ===
+
+    // The routine-SWITCH announcement must not depend on when it happens to read
+    // the title element. loadMiniCycle awaits the task render now, and the
+    // switcher calls loadMiniCycle() WITHOUT awaiting it, so during that gap
+    // appInit's setup block can write the new title into the same element from
+    // state. Reading the element afterwards then sees the NEW title, decides
+    // "not a switch", and the whole task list changes silently.
+    //
+    // This is deterministic where the CI failure was not: it simulates the race
+    // by putting the new title in the DOM up front and asserting the captured
+    // value still drives the decision.
+    const withLiveRegion = async (fn) => {
+        const region = document.createElement('div');
+        region.id = DOM_IDS.LIVE_REGION;
+        region.setAttribute('aria-live', 'polite');
+        const title = document.createElement('div');
+        title.id = DOM_IDS.MINI_CYCLE_TITLE;
+        document.body.append(region, title);
+        try { return await fn({ region, title }); } finally { region.remove(); title.remove(); }
+    };
+    const settled = () => new Promise(r => setTimeout(r, 60));
+
+    await test('a routine switch is announced even if the title was already overwritten', async () => {
+        await withLiveRegion(async ({ region, title }) => {
+            // The race: something else already wrote the NEW title into the element.
+            title.textContent = 'Second Routine';
+            // What the user was actually looking at, captured before the render awaited.
+            updateCycleUIState({ title: 'Second Routine' }, {}, 'First Routine');
+            await settled();
+            if (!region.textContent.includes('Second Routine')) {
+                throw new Error('the switch was announced to nobody — the decision was made from ' +
+                    `the live DOM instead of the value captured before the render (region: "${region.textContent}")`);
+            }
+        });
+    });
+
+    await test('reloading the same routine stays silent', async () => {
+        await withLiveRegion(async ({ region, title }) => {
+            title.textContent = 'Same Routine';
+            updateCycleUIState({ title: 'Same Routine' }, {}, 'Same Routine');
+            await settled();
+            if (region.textContent.trim() !== '') {
+                throw new Error(`announced on a same-routine reload: "${region.textContent}"`);
+            }
+        });
+    });
+
+    await test('first paint is silent — an empty title is not a context change', async () => {
+        await withLiveRegion(async ({ region }) => {
+            updateCycleUIState({ title: 'Opened Routine' }, {}, '');
+            await settled();
+            if (region.textContent.trim() !== '') {
+                throw new Error(`announced on first paint: "${region.textContent}" — this would talk ` +
+                    "over the screen reader's own page-load announcement");
+            }
+        });
+    });
     resultsDiv.innerHTML += '<h4 class="test-section">🎛️ UI State</h4>';
 
     await test('handles missing UI elements gracefully', () => {
