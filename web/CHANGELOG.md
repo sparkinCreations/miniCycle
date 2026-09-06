@@ -1,3 +1,8 @@
+## [2.544] - 2026-09-06
+- docs(future-work): add Lite ↔ Full import and adopt plan documentation
+- fix(backup): back up miniCycleLiteFocusMode (the one written Lite key missing from every key list); document miniCycleLiteCount as a dead read
+
+
 ## [2.543] - 2026-09-06
 - fix(gate): es2020 syntax canary; late fallback honours force-full flag
 

@@ -62,7 +62,7 @@ Lite uses its own key namespace — completely independent from the full version
 | Key | Value | Purpose |
 |-----|-------|---------|
 | `miniCycleLite` | `{ title, tasks: [], autoReset, cycleCount, lastSaved }` | Task list and cycle count |
-| `miniCycleLiteCount` | Number | Cycle count source read when saving `miniCycleLite` |
+| `miniCycleLiteCount` | — | **Dead read.** `autoSave()` reads it into `cycleCount`, but nothing has ever written it, so `miniCycleLite.cycleCount` is always `0`. The real lifetime count is `miniCycleLiteCycles`. Not a backup key. |
 | `miniCycleLiteMode` | `auto-cycle` / `manual-cycle` / `todo-mode` | Current mode |
 | `miniCycleLiteTheme` | `default` / `dark` | Theme preference |
 | `miniCycleLiteCycles` | Number | Lifetime cycles completed |
@@ -71,7 +71,7 @@ Lite uses its own key namespace — completely independent from the full version
 | `miniCycleLite_celebratedBadges` | JSON array | Cycle milestones already celebrated |
 | `miniCycleLite_celebratedClearedBadges` | JSON array | Cleared-task milestones celebrated |
 | `miniCycleLiteNotifications` | `'off'` or absent | Notification toggle (absent = on) |
-| `miniCycleLiteFocusMode` | Flag | Focus mode (expanded/collapsed view) state |
+| `miniCycleLiteFocusMode` | `'on'` / `'off'` | Focus mode (expanded/collapsed view) state. Included in full-app backups since v2.544 (was the one written Lite key missing from `STORAGE_KEYS.LITE_*`) |
 
 ## Full Version Redirect System
 

@@ -40,7 +40,8 @@ un-freeze of Lite and should be a single bounded release.
 - Lite storage: `miniCycleLite` = `{ title, tasks: [{ id, text, completed, highPriority }],
   autoReset: true, cycleCount, lastSaved }` written by `autoSave()`
   (`lite/miniCycle-lite-scripts.js` ~1208); mode in `miniCycleLiteMode`
-  (`auto-cycle | manual-cycle | todo-mode`); count in `miniCycleLiteCount`.
+  (`auto-cycle | manual-cycle | todo-mode`); lifetime count in `miniCycleLiteCycles`
+  (`miniCycleLiteCount` is read by `autoSave()` but never written — always `0`).
   Lite renders task text via `textContent` (`addTask()` ~757) and already has
   `sanitizeInput()` (~2136: strips `<>"`, trims, caps at `TASK_LIMIT` = 100).
 - The full app already knows Lite: `STORAGE_KEYS.LITE_*` (`constants.js` ~580),
@@ -71,7 +72,7 @@ New `modules/utils/liteAdoptPayload.js`, modelled on `mcycPayload.js`:
                                 highPriority: t.highPriority === true })),
   autoReset:         mode !== 'todo-mode',
   deleteCheckedTasks: mode === 'todo-mode',
-  cycleCount: parseInt(liteStorage.miniCycleLiteCount, 10) || 0,
+  cycleCount: parseInt(liteStorage.miniCycleLiteCycles, 10) || 0,  // NOT miniCycleLiteCount (dead read)
 }
 ```
 
@@ -138,11 +139,16 @@ New `modules/utils/liteAdoptPayload.js`, modelled on `mcycPayload.js`:
 ### B5. Wiring checklist (the usual four layers + tests)
 
 - Labels in `defaultLabels.js` first (`validate:labels`); emoji separate from text.
-- Constants: `DOM_IDS.FIRST_RUN_ADOPT_LITE`, `STORAGE_KEYS.LITE_COUNT`
-  (`'miniCycleLiteCount'` — **currently missing** from `STORAGE_KEYS.LITE_*` and from
-  `LITE_STORAGE_KEYS` in `backupRestoreManager.js`, so Settings backups omit Lite's
-  cycle count today — fix as a prerequisite; `dataSanitizer.js` already has
-  `sanitizeNonNegativeIntegerString()` for it).
+- Constants: `DOM_IDS.FIRST_RUN_ADOPT_LITE`. (An earlier draft called
+  `miniCycleLiteCount` a missing backup key — it is not: Lite reads it and nothing
+  ever writes it, so `miniCycleLite.cycleCount` is always `0`. The builder must take
+  the count from `STORAGE_KEYS.LITE_CYCLES` (`miniCycleLiteCycles`), which is the real
+  lifetime count and is already backed up. The one Lite key that *was* missing,
+  `miniCycleLiteFocusMode`, was added as `STORAGE_KEYS.LITE_FOCUS_MODE` in v2.544.)
+- **The Lite key list exists in FOUR places** — `backupRestoreManager.js`
+  `LITE_STORAGE_KEYS`, `backupManager.js`, `testing/testing-modal-backup.js`, and the
+  `switch` in `dataSanitizer.js` `sanitizeLiteStorage()`. Any new Lite key goes in
+  all four or it silently isn't backed up / is stripped on restore.
 - If the first-run controller reaches module code through `appContext`, name the
   method in the relevant `*ApiObj` allow-list in `featureBoot.js` (`validate:api`).
 - New utils module: statically imported only by facade sub-modules / non-boot code →

@@ -586,6 +586,11 @@ export const STORAGE_KEYS = Object.freeze({
     LITE_CELEBRATED_BADGES: 'miniCycleLite_celebratedBadges',
     LITE_CELEBRATED_CLEARED_BADGES: 'miniCycleLite_celebratedClearedBadges',
     LITE_NOTIFICATIONS: 'miniCycleLiteNotifications',
+    // 'on' | 'off'. Lite's collapsed/expanded view preference — the one Lite key
+    // that was written but never listed here, so backups silently dropped it
+    // (Sep 2026). Lite's autoSave() also READS a "...LiteCount" key that nothing
+    // ever writes — a dead read that always yields 0 — so that one is NOT a key.
+    LITE_FOCUS_MODE: 'miniCycleLiteFocusMode',
     FORCE_FULL_VERSION: 'miniCycleForceFullVersion',
     // First-run choice screen. Written by the static handler in miniCycle.html
     // and re-written when a factory reset raises that screen again in place.

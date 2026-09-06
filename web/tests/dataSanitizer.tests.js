@@ -124,6 +124,50 @@ export async function runDataSanitizerTests(resultsDiv) {
         if (result === undefined) throw new Error('should return the (untouched) input');
     });
 
+    await test('liteStorage keeps miniCycleLiteFocusMode on/off and drops anything else', () => {
+        // The one written Lite key that was missing from every key list until v2.544 —
+        // backups silently dropped the view preference. 'on'/'off' are the only values
+        // Lite writes (FOCUS_MODE_KEY in miniCycle-lite-scripts.js).
+        const on = sanitizeImportedData({ liteStorage: { miniCycleLiteFocusMode: 'on' } });
+        if (on.liteStorage.miniCycleLiteFocusMode !== 'on') throw new Error("'on' should survive");
+        const off = sanitizeImportedData({ liteStorage: { miniCycleLiteFocusMode: 'off' } });
+        if (off.liteStorage.miniCycleLiteFocusMode !== 'off') throw new Error("'off' should survive");
+        const bogus = sanitizeImportedData({ liteStorage: { miniCycleLiteFocusMode: '<b>on</b>' } });
+        if ('miniCycleLiteFocusMode' in bogus.liteStorage) throw new Error('unknown value should be dropped');
+    });
+
+    await test('every STORAGE_KEYS.LITE_* key has a sanitizer case (a valid value survives restore)', async () => {
+        // The Lite key list lives in FOUR places (backupRestoreManager, backupManager,
+        // testing-modal-backup, and the switch in sanitizeLiteStorage). A LITE_* constant
+        // with no sanitizer case is silently stripped on restore — this pins the sanitizer
+        // half. Adding a LITE_* constant means adding a sample value here AND a case there.
+        const { STORAGE_KEYS } = await import(`../modules/core/constants.js?v=${cacheBuster}`);
+        const validSamples = {
+            LITE_DATA: JSON.stringify({ title: 'x', tasks: [] }),
+            LITE_MODE: 'auto-cycle',
+            LITE_THEME: 'dark',
+            LITE_CYCLES: '3',
+            LITE_LIFETIME_COMPLETED: '12',
+            LITE_TODO_DELETED: '4',
+            LITE_CELEBRATED_BADGES: JSON.stringify(['first-cycle']),
+            LITE_CELEBRATED_CLEARED_BADGES: JSON.stringify(['first-clear']),
+            LITE_NOTIFICATIONS: 'off',
+            LITE_FOCUS_MODE: 'on'
+        };
+        const liteConstNames = Object.keys(STORAGE_KEYS).filter(name => name.startsWith('LITE_'));
+        if (liteConstNames.length === 0) throw new Error('no LITE_* keys found in STORAGE_KEYS');
+        const liteStorage = {};
+        for (const name of liteConstNames) {
+            if (!(name in validSamples)) throw new Error(`STORAGE_KEYS.${name} has no sample value in this test — add one AND a sanitizeLiteStorage case`);
+            liteStorage[STORAGE_KEYS[name]] = validSamples[name];
+        }
+        const result = sanitizeImportedData({ liteStorage });
+        for (const name of liteConstNames) {
+            const key = STORAGE_KEYS[name];
+            if (!(key in result.liteStorage)) throw new Error(`${key} (STORAGE_KEYS.${name}) was stripped — sanitizeLiteStorage has no case for it`);
+        }
+    });
+
     await test('sanitizeImportedData preserves valid task fields while sanitizing text', () => {
         // Must use the BACKUP shape {schemaVersion, miniCycleData}. The old test passed
         // Schema-2.5 STATE shape, which matches NO sanitize branch — so nothing ran and it

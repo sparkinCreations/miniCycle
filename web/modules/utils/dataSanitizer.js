@@ -237,6 +237,11 @@ function sanitizeLiteStorage(backupData) {
                     sanitizedLiteStorage[key] = value;
                 }
                 break;
+            case 'miniCycleLiteFocusMode':
+                if (value === 'on' || value === 'off') {
+                    sanitizedLiteStorage[key] = value;
+                }
+                break;
             default:
                 break;
         }
