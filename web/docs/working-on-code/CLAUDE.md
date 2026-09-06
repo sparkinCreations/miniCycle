@@ -129,7 +129,7 @@ miniCycle-main.js (entrypoint)
 - `orchestrator.js` is mainly sequence control, plus boot UI feedback (loader/spinner/error rendering) and early boot coordination (e.g., wiring debugMode deps)
 - All UI setup consolidated into single `initUIBoot()` entrypoint in uiBoot.js
 - DI wiring happens in `featureBoot.js`
-- `miniCycle.html` has an **8-second safety net** — if `dataset.appBooted` isn't set within 8 seconds, it redirects to the lite version as a last-resort fallback
+- `miniCycle.html` has a **16-second safety net** — if `dataset.appBooted` isn't set within 16 seconds, it redirects to the lite version as a last-resort fallback (skipped when full is forced via `?mode=full` or the `miniCycleForceFullVersion` flag)
 
 ### appContext: Centralized Registry (Dec 2025)
 

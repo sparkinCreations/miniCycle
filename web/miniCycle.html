@@ -37,6 +37,12 @@
      merge it with neighbouring code. Everything below the "END OF ES5-ONLY
      REGION" banner may use modern syntax freely.
 
+     ONE deliberate exception: the ES2020 SYNTAX CANARY block directly above
+     the gate contains `?.` and `??` ON PURPOSE. It parses whole or dies whole,
+     and the gate reads its flag to catch engines the built-in checks admit
+     (iOS 12 has globalThis but not optional chaining). It is exempt from the
+     ES5 rule by its marker comment; nothing else is.
+
      Verify with acorn (ecmaVersion: 5) over every pre-gate inline block before
      shipping changes to the head.
 
@@ -50,10 +56,11 @@
        6. version-mismatch check + cache-clear interstitial
        7. modulepreload injection (map-aware, bare hashed URLs)
        8. pre-paint settings reader (single parse — dark mode / a11y / app bg)
-       9. ES3 feature gate  ← must be last of the PRE-GATE sequence, alone in its block
-      10. 60s load-timeout failsafe (INLINE on purpose — a load-failure net
+       9. ES2020 syntax canary (the one post-ES5 block; alone; sets a flag)
+      10. ES3 feature gate  ← must be last of the PRE-GATE sequence, alone in its block
+      11. 60s load-timeout failsafe (INLINE on purpose — a load-failure net
           must not depend on an external file loading; ES5)
-      11. boot-sw.js (EXTERNAL, defer) — SW registration, update management,
+      12. boot-sw.js (EXTERNAL, defer) — SW registration, update management,
           PWA install. Extracted Aug 2026: `defer` keeps it off the
           parse/first-paint path, and external files ride script-src 'self'
           so edits there no longer force CSP hash regeneration. Its tag must
@@ -90,7 +97,7 @@
 <!-- ✅ Translucent status bar shows body background-color on iOS -->
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" id="status-bar-style-meta">
 
-<meta name="app-version" content="2.542">
+<meta name="app-version" content="2.543">
 
 <!-- Content Security Policy -->
 <!-- CSP is served via HTTP header in netlify.toml (production) -->
@@ -128,17 +135,17 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- Preload critical CSS files (they load in parallel, not blocking) -->
-<link rel="preload" href="styles/main.css?v=2.542" as="style">
-<link rel="preload" href="styles/base/variables.css?v=2.542" as="style">
-<link rel="preload" href="styles/base/reset.css?v=2.542" as="style">
-<link rel="preload" href="styles/layout/app-container.css?v=2.542" as="style">
-<link rel="preload" href="styles/layout/header.css?v=2.542" as="style">
-<link rel="preload" href="styles/components/task-list.css?v=2.542" as="style">
+<link rel="preload" href="styles/main.css?v=2.543" as="style">
+<link rel="preload" href="styles/base/variables.css?v=2.543" as="style">
+<link rel="preload" href="styles/base/reset.css?v=2.543" as="style">
+<link rel="preload" href="styles/layout/app-container.css?v=2.543" as="style">
+<link rel="preload" href="styles/layout/header.css?v=2.543" as="style">
+<link rel="preload" href="styles/components/task-list.css?v=2.543" as="style">
 
 <!-- Async CSS loading - doesn't block render, app starts with inline critical CSS -->
-<link rel="stylesheet" href="styles/main.css?v=2.542" media="print" id="async-main-css">
+<link rel="stylesheet" href="styles/main.css?v=2.543" media="print" id="async-main-css">
 <script>(function(){var l=document.getElementById('async-main-css');if(!l)return;function apply(){l.media='all';}if(l.sheet){apply();}else{l.addEventListener('load',apply);}})();</script>
-<noscript><link rel="stylesheet" href="styles/main.css?v=2.542"></noscript>
+<noscript><link rel="stylesheet" href="styles/main.css?v=2.543"></noscript>
 <link rel="manifest" href="manifest.json">
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -149,7 +156,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- version.js MUST load synchronously BEFORE modulepreloads to set globalThis.APP_VERSION -->
-<script src="./version.js?v=2.542"></script>
+<script src="./version.js?v=2.543"></script>
 
 <!-- Build version = the version baked into THIS HTML document (the meta tag
      above). It is the honest "what am I actually running" signal. By contrast,
@@ -558,9 +565,26 @@
 <!-- NOTE: version.js and cache clearing script moved BEFORE modulepreload hints (line ~71) -->
 <!-- This ensures version check runs before browser starts prefetching modules -->
 
+<!-- ES2020 SYNTAX CANARY — the ONE deliberately post-ES5 block above the gate.
+     A script element parses in full or not at all, so on an engine without
+     optional chaining / nullish coalescing this whole block dies as a
+     SyntaxError, the flag is never set, and the gate below reads that as
+     'no-es2020-syntax'. That is the only way to parse-test syntax without
+     new Function (CSP forbids it). Keep it alone in its block and keep it
+     free of anything that could throw at RUNTIME — a runtime error would be
+     indistinguishable from the parse failure it exists to detect.
+     validate-inline.py exempts this block by the marker on its first line. -->
+<script>
+// @es2020-syntax-canary — see the comment above; validate-inline.py keys on this marker.
+(function () {
+  var n = null;
+  window.__ES2020SyntaxOk = (n?.x === undefined) && ((n ?? true) === true);
+})();
+</script>
+
 <script>
 
-// Minimal, ES3-safe feature gate: if arrow functions can't be parsed, go Lite.
+// Minimal, ES3-safe feature gate: if the browser can't run the es2020 build, go Lite.
 (function () {
   var needsLite = false;
   var reasons = [];
@@ -575,13 +599,29 @@
   }
 
   // The gate's floor must match the BUILD TARGET (es2020), not just ES2015.
-  // globalThis is the latest-arriving es2020 feature in every engine
-  // (Chrome 71, Firefox 65, Safari 12.1) — later than ES modules in all
-  // three — so this one check also covers the no-module band. Without it,
-  // browsers with Promise+fetch but no globalThis passed the gate, then
-  // version.js and the pre-gate version-check/modulepreload blocks threw
-  // ReferenceError and the es2020 modules white-screened (drift-review
-  // Lite-path finding, Aug 2026).
+  // Two es2020 floors, because they arrive in different releases:
+  //
+  //  SYNTAX — optional chaining / nullish coalescing: Chrome 80, Firefox 74,
+  //  Safari 13.1. esbuild leaves both verbatim at target es2020, so the
+  //  shipped module graph is a SyntaxError on anything older. The canary
+  //  block just above sets the flag only if the engine parsed `?.` and `??`.
+  //
+  //  BUILT-IN — globalThis: Chrome 71, Firefox 65, Safari 12.1 (later than
+  //  ES modules in all three, so this also covers the no-module band).
+  //  Without it, browsers with Promise+fetch but no globalThis passed the
+  //  gate, then version.js and the pre-gate version-check/modulepreload
+  //  blocks threw ReferenceError and white-screened (drift-review Lite-path
+  //  finding, Aug 2026).
+  //
+  // The built-in floor is the EARLIER one, so on its own it admitted the
+  // band in between — Chrome 71-79, Firefox 65-73, Safari 12.1-13.0, which
+  // is iOS 12, the last OS for the iPhone 5s / 6 / 6 Plus. Those devices
+  // passed the gate, hit a SyntaxError loading the modules, sat on the splash
+  // for 16 s and reached Lite via the no-boot net instead of here (Sep 2026).
+  if (!w.__ES2020SyntaxOk) {
+    needsLite = true;
+    reasons.push('no-es2020-syntax');
+  }
   if (typeof globalThis === 'undefined') {
     needsLite = true;
     reasons.push('no-globalthis');
@@ -644,7 +684,7 @@
   }, LOAD_TIMEOUT_MS);
 })();
 </script>
-    <script src="boot-sw.js?v=2.542" defer></script>
+    <script src="boot-sw.js?v=2.543" defer></script>
 
 
 
@@ -2020,7 +2060,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- Boot File Split (Dec 2025): Load via entrypoint which orchestrates all boot files -->
- <script type="module" src="miniCycle-main.js?v=2.542"></script>
+ <script type="module" src="miniCycle-main.js?v=2.543"></script>
 
 <script>
 // Sync About modal version with meta app-version
@@ -2062,7 +2102,17 @@ document.addEventListener('DOMContentLoaded', function () {
    <script>
 // Late fallback: only redirect if feature gate failed OR full app never even started booting.
 (function () {
-  if (location.search.indexOf('mode=full') !== -1) return; // user forced full
+  // Honour BOTH forced-full signals the feature gate honours. Lite's "Try Full
+  // Version" sets the storage flag and navigates with force=1, never mode=full,
+  // so reading only the URL here let the gate admit those users and then
+  // bounced every one of them back to Lite 16 s later as 'fallback' — on every
+  // load (Sep 2026). The 60 s load-timeout net above still catches a boot that
+  // genuinely never finishes, forced or not.
+  var forcedFull = (location.search.indexOf('mode=full') !== -1);
+  try {
+    forcedFull = forcedFull || localStorage.getItem('miniCycleForceFullVersion') === 'true';
+  } catch (e) { /* storage unavailable — keep the URL-derived value */ }
+  if (forcedFull) return; // user forced full
   setTimeout(function () {
     var needsLite = !!window.__FeatureGateNeedsLite; // default false if gate script didn't run
     if (needsLite) {

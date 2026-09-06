@@ -21,7 +21,7 @@
 | **Real-app gates** | `npm run test:layout` · `test:sw` · `test:meta` · `test:journey` | CI — `test.yml` | 🔴 Fails CI |
 | **Performance** | `npm run perf` | CI — `performance.yml` | 🔴 Fails CI |
 | **DI declarations** | `npm run validate:di` | CI — `test.yml` | 🟡 Partially gated (undeclared=0, nowhere=0, undeliverable=0, unused ratchet; facade advisory) |
-| **Inline scripts** | `npm run validate:inline` | CI — `test.yml` | 🔴 Fails CI — empty catch blocks in miniCycle.html inline scripts must carry an intent comment (ESLint's `no-empty` can't see the file — drift-review D-01) |
+| **Inline scripts** | `npm run validate:inline` | CI — `test.yml` | 🔴 Fails CI — empty catch blocks in miniCycle.html inline scripts must carry an intent comment (ESLint's `no-empty` can't see the file — drift-review D-01). Also the pre-gate contract: the feature gate pushes `no-globalthis` AND `no-es2020-syntax`; every block above the gate is ES5-clean with guarded `globalThis` reads — except exactly one `@es2020-syntax-canary` block, which must still contain `?.` and `??` (Sep 2026: `globalThis` alone admitted iOS 12 to a SyntaxError) |
 | **Comment references** | `npm run validate:comments` | CI — `test.yml` | 🔴 Fails CI — an identifier named in a comment must exist somewhere in the code |
 | **Accessibility semantics** | `npm run test:a11y` | CI — `test.yml` | 🔴 Fails CI — a focusable element with a click handler must carry an interactive role AND a key handler; every interactive element must have an accessible name |
 | **DI wiring gaps (runtime)** | `npm run test:journey` | CI — `test.yml` | 🔴 Fails CI — a `DI access` or `missing required dep` warning from the real app fails the journey that saw it |

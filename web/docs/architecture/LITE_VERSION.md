@@ -81,11 +81,15 @@ When the full version can't boot, it redirects to lite with URL parameters expla
 
 | Source (`src=`) | Trigger | Timeout |
 |-----------------|---------|---------|
-| `feature-gate` | Browser lacks required APIs (IndexedDB, Fetch, Promise, etc.) | Immediate |
+| `feature-gate` | Browser fails the es2020 floor — `reasons=` lists which: `no-promise`, `no-fetch`, `no-es2020-syntax` (the `?.`/`??` canary block failed to parse — Chrome < 80, Firefox < 74, Safari < 13.1 / iOS 12), `no-globalthis` | Immediate |
 | `load-timeout` | Full app didn't finish loading | 60 seconds |
-| `fallback` | Feature gate flagged the device but boot script ran as backup | 16 seconds |
+| `fallback` | Feature gate flagged the device but its redirect didn't happen (only reachable if the gate block was altered) | 16 seconds |
 | `no-boot` | No boot activity detected at all | 16 seconds |
 | `choice-slow` | User tapped "Taking a while? Try the Lite version" on the first-run/loading screen | User-initiated |
+
+**Forced full.** `?mode=full` in the URL *or* `localStorage.miniCycleForceFullVersion === 'true'` (set by Lite's Menu → Try Full Version, whose return URL carries `force=1`, not `mode=full`) skips both the feature gate and the 16 s fallback. The 60 s load-timeout net ignores forcing on purpose — a boot that never finishes still lands in Lite. Until Sep 2026 the 16 s fallback read only the URL, so every Try-Full user on a gated browser was bounced back to Lite as `fallback` on every load.
+
+**Syntax vs built-in floor.** The gate can't `new Function` under CSP, so es2020 *syntax* is probed by a one-line canary `<script>` above the gate that parses whole or dies whole. The built-in checks (`Promise`, `fetch`, `globalThis`) alone admitted Chrome 71–79 / Safari 12.1–13.0, which then hit a SyntaxError in the module graph and reached Lite 16 s later as `no-boot`. `npm run validate:inline` pins the canary and the gate's reasons.
 
 ### URL Pattern
 

@@ -22,6 +22,10 @@ narrow invariant that matters instead:
 Mirrors ESLint's `no-empty` + `allowEmptyCatch: false` in spirit: silence must
 be documented, not accidental.
 
+It also enforces the PRE-GATE CONTRACT (see validate_pre_gate_contract below):
+the feature gate's floor matches the es2020 build target, and every block
+above the gate parses as ES5 — except the one marked syntax canary.
+
 Scope: miniCycle.html only. lite/ is a frozen fallback (never maintained) and
 tests/module-test-suite.html is a test harness.
 
@@ -94,7 +98,7 @@ def main():
         for msg in gate_errors:
             print('     %s' % msg)
         return 1
-    print('✅ Pre-gate contract    gate floor includes no-globalthis; pre-gate blocks are ES5-clean with guarded globalThis reads')
+    print('✅ Pre-gate contract    gate floor includes no-globalthis + no-es2020-syntax; one syntax canary; other pre-gate blocks are ES5-clean with guarded globalThis reads')
     return 0
 
 
@@ -113,6 +117,24 @@ def main():
 #   3. No pre-gate inline script may contain post-ES5 syntax (arrows,
 #      const/let, template literals, optional chaining) — one modern token
 #      kills the whole block on the browsers the gate exists to catch.
+#
+# Plus the syntax floor (Sep 2026). globalThis is the es2020 BUILT-IN floor
+# (Chrome 71 / Safari 12.1) but optional chaining and nullish coalescing are
+# es2020 SYNTAX that lands later (Chrome 80 / Firefox 74 / Safari 13.1), and
+# esbuild ships both verbatim at target es2020. iOS 12 — the last OS for the
+# iPhone 5s/6 — has globalThis and not `?.`, so it passed the gate and hit a
+# SyntaxError in the module graph. Syntax can't be feature-detected without
+# new Function (CSP), so miniCycle.html carries ONE deliberately post-ES5
+# block above the gate: a canary that parses whole or dies whole and sets a
+# flag the gate reads. Two more invariants keep that honest:
+#
+#   4. Exactly one pre-gate block carries the CANARY_MARKER, and it contains
+#      both `?.` and `??` (a canary that no longer probes the syntax is a
+#      canary that always passes). It is exempt from invariant 3 and nothing
+#      else is.
+#   5. The gate block must read __ES2020SyntaxOk and push 'no-es2020-syntax'.
+
+CANARY_MARKER = '@es2020-syntax-canary'
 
 MODERN_TOKENS = [
     (re.compile(r'=>'), 'arrow function'),
@@ -143,16 +165,28 @@ def validate_pre_gate_contract(html):
         return ['feature gate not found (no __FeatureGateNeedsLite in miniCycle.html)']
 
     # Invariant 1: gate floor matches the build target.
-    gate_region = html[max(0, gate_start - 2000):gate_start]
+    gate_region = html[max(0, gate_start - 3000):gate_start]
     if "typeof globalThis === 'undefined'" not in gate_region or 'no-globalthis' not in gate_region:
-        errors.append("gate block must test typeof globalThis === 'undefined' and push 'no-globalthis' (es2020 floor)")
+        errors.append("gate block must test typeof globalThis === 'undefined' and push 'no-globalthis' (es2020 built-in floor)")
+    # Invariant 5: gate reads the syntax canary's flag.
+    if '__ES2020SyntaxOk' not in gate_region or 'no-es2020-syntax' not in gate_region:
+        errors.append("gate block must read __ES2020SyntaxOk and push 'no-es2020-syntax' (es2020 syntax floor)")
 
+    canaries = 0
     for sm in SCRIPT_RE.finditer(html):
         if sm.start() >= gate_start:
             break  # gate block and below — contract covers pre-gate only
         script = sm.group(1)
         base_line = html[:sm.start(1)].count('\n') + 1
         code = strip_js_noise(script)
+
+        # Invariant 4: the syntax canary — exempt from the ES5 rule, but only
+        # while it still probes the syntax it exists to probe.
+        if CANARY_MARKER in script:
+            canaries += 1
+            if '?.' not in code or '??' not in code:
+                errors.append('miniCycle.html:%d  syntax canary must contain both ?. and ?? (it no longer probes es2020 syntax)' % base_line)
+            continue
 
         # Invariant 2: guarded globalThis reads only. A bare use is legal only
         # AFTER a typeof guard on the same line (the `typeof globalThis !==
@@ -172,6 +206,9 @@ def validate_pre_gate_contract(html):
             if m:
                 line = base_line + code[:m.start()].count('\n')
                 errors.append('miniCycle.html:%d  post-ES5 syntax in pre-gate block: %s' % (line, name))
+
+    if canaries != 1:
+        errors.append('expected exactly one pre-gate block marked %s, found %d' % (CANARY_MARKER, canaries))
 
     return errors
 

@@ -150,8 +150,10 @@ period that actually contains the target.
 
 esbuild's `target: ['es2020']` transpiles **syntax, not built-ins**. A newer
 built-in (`Object.hasOwn`, `.at()`, `.replaceAll()`) ships verbatim and throws
-`TypeError` on browsers the feature gate deliberately admits (floor =
-`globalThis`: Chrome 71 / Safari 12.1). Playwright runs modern Chromium, so
+`TypeError` on browsers the feature gate deliberately admits (floor = es2020
+syntax via the `?.`/`??` canary + `globalThis`: Chrome 80 / Firefox 74 /
+Safari 13.1 — the syntax floor is the later one; `globalThis` alone admitted
+iOS 12, found Sep 2026). Playwright runs modern Chromium, so
 every test passes; lint has no target awareness. `.at(-1)` in undoRedoManager's
 snapshot capture silently broke Undo on Safari ≤ 15.3 for ~10 months — the
 wrapper's try/catch swallowed the throw, 3134/3134 tests green throughout.

@@ -368,6 +368,11 @@ Full explanation lives in the file-map banner at the top of `miniCycle.html`; th
    if the gate itself doesn't run, old devices get a white screen instead of the Lite
    redirect. **Keep the gate alone in its own `<script>` block.** (This was a live bug until
    Jul 2026: the gate shared a block with ~600 lines of ES6 and could never fire.)
+   **One deliberate exception:** the `@es2020-syntax-canary` block directly above the gate
+   contains `?.`/`??` on purpose — it parses whole or dies whole, and the gate reads its
+   flag as the *syntax* floor (`globalThis` is only the built-in floor; iOS 12 has it and
+   not `?.`, and passed the gate until Sep 2026). `validate:inline` exempts that one block
+   by marker and pins that it still probes both operators.
 
 2. **Order — never rearrange the gauntlet.** In particular: **never move modulepreload
    injection above `version.js`** (preloads would populate the module map with stale hashed

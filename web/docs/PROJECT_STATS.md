@@ -10,7 +10,7 @@
 > Other sites should fetch that rather than scraping this page — both come from
 > the same counter, so they cannot disagree.
 
-**Last Updated**: September 05, 2026
+**Last Updated**: September 06, 2026
 
 ---
 
@@ -18,7 +18,7 @@
 
 | Metric | Value |
 |--------|-------|
-| **App Version** | 2.542 |
+| **App Version** | 2.543 |
 | **Lite Version** | 2.092 (frozen) |
 | **Schema Version** | 2.5 |
 | **Total Modules** | 156 |
@@ -97,7 +97,7 @@
 
 | Fallback | Trigger | Location |
 |----------|---------|----------|
-| **8-second late fallback** | Feature gate needs lite OR boot never started within 8s | `miniCycle.html` (late fallback IIFE) |
+| **16-second late fallback** | Feature gate needs lite OR boot never started within 16s; skipped when full is forced (`?mode=full` or the `miniCycleForceFullVersion` flag) | `miniCycle.html` (late fallback IIFE) |
 | **60-second load timeout** | App loader still visible after 60s → redirect to lite | `miniCycle.html` (load timeout IIFE) |
 | **Boot failure counter** | 2+ consecutive boot failures → cache clear | `miniCycle.html` (boot failsafe IIFE) |
 | **Phase timeouts** | 15s/20s/15s per boot phase | `modules/core/constants.js` |
