@@ -144,6 +144,7 @@
   * [Feedback TODO (Jul 2026)](future-work/FEEDBACK_TODO_2026_07.md)
   * [i18n Language Packs](future-work/I18N_LANGUAGE_PACK_PLAN.md)
   * [Large Module Splits ✅ closed](future-work/LARGE_MODULE_SPLITS_PLAN.md)
+  * [Lite ↔ Full: .mcyc Import + Adopt Lite Data](future-work/LITE_MCYC_IMPORT_AND_ADOPT_PLAN.md)
   * [Module Deferral Audit](future-work/MODULE_DEFERRAL_AUDIT.md)
   * [Prompt Modal Theme Token Gap](future-work/PROMPT_MODAL_THEME_TOKEN_GAP.md)
   * [Recurring Tasks — P3 Follow-ups](future-work/RECURRING_TASKS_P3_FOLLOWUP.md)
