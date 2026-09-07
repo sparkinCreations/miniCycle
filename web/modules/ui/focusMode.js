@@ -196,6 +196,11 @@ export class FocusMode {
         // counterpart here. Settings was the one that did not, which left a
         // routine run in Focus View no way to reach it without exiting.
         const items = [
+            // First, in its own group: leaving for the Welcome Screen is a
+            // different KIND of action from the routine/view/bulk items below,
+            // and a group of its own is what makes the separator render after it
+            // (the loop below emits a divider whenever `group` changes).
+            { action: 'welcome-screen',  group: 'welcome', label: getLabel('focusMode.welcomeScreen') },
             { action: 'switch-mode',     group: 'routine', label: '' /* set dynamically in _refreshModeItemLabel */ },
             { action: 'switch-routines', group: 'routine', label: getLabel('focusMode.switchRoutines') },
             { action: 'create-routine',  group: 'routine', label: getLabel('focusMode.createRoutine') },
@@ -774,6 +779,17 @@ export class FocusMode {
                 // Wired to menuManager.deleteAllTasks which shows a confirmation modal
                 this.deps.deleteAllTasks?.();
                 break;
+            case 'welcome-screen': {
+                // Same pattern as 'settings' below: click the main-menu control,
+                // which a programmatic .click() reaches despite the menu being
+                // inert under focus mode. The Welcome Screen opens via
+                // showModal(), so it lands in the TOP LAYER and paints above the
+                // focus chrome — the same property 'settings' and
+                // 'switch-routines' already depend on.
+                const btn = this.deps.getElementById(DOM_IDS.MENU_OPEN_TITLE_SCREEN);
+                btn?.click();
+                break;
+            }
             case 'settings': {
                 // Click the existing #open-settings button, the same pattern
                 // quickActionsManager uses and the same one 'toggle-dark-mode'

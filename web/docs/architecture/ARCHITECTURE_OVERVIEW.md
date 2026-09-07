@@ -129,22 +129,28 @@ See [DI_PATTERNS.md](../working-on-code/DI_PATTERNS.md) for complete patterns an
 
 ## Project Structure (Simplified)
 
+> **File counts are deliberately not listed here.** They rot: this tree said
+> `ui/ (37 modules)` when there were 45, and `styles/ (44 files)` when there were
+> 46. See [PROJECT_STATS.md](../PROJECT_STATS.md), which is generated — same
+> reasoning that retired the line-count table in
+> [LARGE_MODULE_SPLITS_PLAN.md](../future-work/LARGE_MODULE_SPLITS_PLAN.md).
+
 ```
 web/
 ├── miniCycle.html                   # Main entry point
 ├── miniCycle-main.js                # Entrypoint (~50 lines)
 ├── service-worker.js                # PWA service worker
 │
-├── styles/                          # Modular CSS (44 files)
+├── styles/                          # Modular CSS (token-based)
 │   ├── main.css                     # Entry point - imports all modules
 │   ├── base/                        # Foundation (variables, reset, typography, animations)
 │   ├── layout/                      # Page structure (app-container, header, safe-areas)
-│   ├── components/                  # UI components (29 files)
+│   ├── components/                  # UI components
 │   ├── utilities/                   # Dark mode, helpers, responsive
 │   └── themes/                      # Theme system
 │
-├── modules/                          # 136 ES6 modules (all strict DI — see PROJECT_STATS.md)
-│   ├── boot/                        # Boot sequence (7 modules — Dec 2025 split)
+├── modules/                          # ES6 modules (all strict DI — see PROJECT_STATS.md)
+│   ├── boot/                        # Boot sequence (Dec 2025 split)
 │   │   ├── orchestrator.js          # Sequence control + boot UI + early coordination
 │   │   ├── coreBoot.js              # Core state & init
 │   │   ├── featureBoot.js           # Feature loading + DI wiring hub
@@ -152,14 +158,14 @@ web/
 │   │   ├── moduleLoader.js          # Manifest-driven module loading + DI delivery
 │   │   └── moduleManifests.js       # Per-module dependency declarations
 │   │
-│   ├── core/                        # Core systems (9 modules)
+│   ├── core/                        # Core systems
 │   │   ├── appState.js              # Centralized state management
 │   │   ├── appInit.js               # 2-phase initialization
 │   │   ├── appContext.js            # Grouped context APIs
 │   │   ├── diBase.js                # DI framework (createDIModule)
 │   │   └── constants.js             # App constants
 │   │
-│   ├── task/                        # Task system (13 modules)
+│   ├── task/                        # Task system
 │   │   ├── taskCore.js              # Task CRUD & business logic (facade)
 │   │   ├── taskDOM.js               # Task DOM coordination (facade)
 │   │   ├── taskRenderer.js          # Task element creation (runtime renders)
@@ -168,25 +174,25 @@ web/
 │   │   ├── taskUtils.js             # Task utilities
 │   │   └── dragDropManager.js       # State-based drag & drop (v1.606)
 │   │
-│   ├── routine/                     # Routine system (5 modules)
+│   ├── routine/                     # Routine system
 │   │   ├── routineLoader.js         # Data loading + boot-time task rendering
 │   │   ├── routineManager.js        # Routine CRUD
 │   │   ├── routineSwitcher.js       # Routine switching
 │   │   ├── modeManager.js           # Auto/Manual/To-Do modes
 │   │   └── migrationManager.js      # Schema migration
 │   │
-│   ├── labels/                      # Label system (3 modules)
+│   ├── labels/                      # Label system
 │   │   ├── defaultLabels.js         # ~591 label keys
 │   │   ├── labelResolver.js         # getLabel() with pluralization/interpolation
 │   │   └── themes.js                # Vocabulary theme system (per-routine labels + colors)
 │   │
-│   ├── recurring/                   # Recurring tasks (16 modules)
+│   ├── recurring/                   # Recurring tasks
 │   │   ├── recurringCore.js         # Recurring logic
 │   │   ├── recurringWatcher.js      # Scheduled spawn checks
 │   │   ├── recurringPanel.js        # Recurring UI
 │   │   └── recurringIntegration.js  # Integration layer
 │   │
-│   ├── ui/                          # UI modules (37 modules)
+│   ├── ui/                          # UI modules
 │   │   ├── modalManager.js          # Modal management
 │   │   ├── menuManager.js           # Main menu
 │   │   ├── settingsManager.js       # Settings panel
@@ -196,36 +202,38 @@ web/
 │   │   ├── taskOptionsCustomizer.js # Per-cycle buttons
 │   │   ├── pullToRefresh.js         # Mobile refresh
 │   │   ├── helpWindowManager.js     # Help system
+│   │   ├── titleScreen.js           # Welcome Screen (full-screen branded surface)
 │   │   └── gesturePanelManager.js   # Multi-platform gesture handling
 │   │
-│   ├── features/                    # Optional features (11 modules)
+│   ├── features/                    # Optional features
 │   │   ├── themeManager.js          # Theme management + modal
 │   │   ├── statsPanel.js            # Statistics panel
 │   │   ├── achievementsManager.js   # Achievement tracking + badge UI
 │   │   ├── historyManager.js        # History tracking + modal
 │   │   ├── clearedTasksManager.js   # Cleared tasks (To-Do mode + cycle reset auto-removes)
+│   │   ├── tipArchive.js            # Browsable archive of the loading tips
 │   │   ├── reminders.js             # Reminder system
 │   │   └── dueDates.js              # Due date management
 │   │
-│   ├── utils/                       # Utilities (19 modules)
+│   ├── utils/                       # Utilities
 │   │   ├── globalUtils.js           # Core utilities
 │   │   ├── notifications.js         # Toast notifications
 │   │   ├── deviceDetection.js       # Platform detection
 │   │   ├── consoleCapture.js        # Console logging
 │   │   └── errorHandler.js          # Error handling
 │   │
-│   ├── storage/                     # Storage (2 modules)
+│   ├── storage/                     # Storage
 │   │   ├── backupManager.js         # IndexedDB backups
 │   │   └── storagePersistence.js    # Durable-storage request (eviction protection)
 │   │
-│   ├── progress/                    # Progress (1 module)
+│   ├── progress/                    # Progress
 │   │   └── cycleCompletion.js       # Completion tracking
 │   │
-│   ├── testing/                     # Testing (9 modules)
+│   ├── testing/                     # Testing
 │   │   ├── testing-modal.js         # Test runner UI
 │   │   └── ...
 │   │
-│   └── other/                       # Plugins (3 modules)
+│   └── other/                       # Plugins
 │       ├── basicPluginSystem.js     # Plugin architecture
 │       └── ...
 │

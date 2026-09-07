@@ -183,11 +183,55 @@ runtime from `focusTaskPanel.js` via `getLabel()`.
 ### Color Contrast ⚠️
 
 **Target:** WCAG 2.1 AA Compliant
-- Text: Minimum 4.5:1 contrast ratio (not formally verified)
-- Large text: Minimum 3:1 contrast ratio (not formally verified)
-- UI components: Minimum 3:1 contrast ratio (not formally verified)
+- Text: Minimum 4.5:1 contrast ratio
+- Large text: Minimum 3:1 contrast ratio
+- UI components: Minimum 3:1 contrast ratio
 
-**Status:** Colors chosen for visibility, but formal contrast testing not yet completed.
+**Status:** Formally measured on the two photographic surfaces (below).
+Everything else is still "colors chosen for visibility" — chrome over solid theme
+backgrounds has not been swept.
+
+#### Measured: the branded screens over the desk photo (Sep 2026)
+
+Both the first-run choice screen and the Welcome Screen put white text over
+`Routine_Lists.webp`. Composited with the app's blue overlay, the backdrop under
+the content column is `rgb(174, 200, 248)` — nearly white. White text on that
+reaches only **1.69:1 even at full opacity**, so no amount of raising text
+opacity could fix it; the backdrop itself had to come down.
+
+| Surface | Before | After |
+|---|---|---|
+| Welcome Screen (tagline, legal, credit, use-case) | 1.47–1.69:1 | **5.35–5.96:1** |
+| First-run screen (descriptor, tagline, use-case, restore link) | 1.56–3.42:1 | **6.42–7.09:1** |
+
+Verified at ultrawide (3440), desktop (1440), phone (390) and short (900×600).
+
+**How to re-measure** — do not eyeball it, and do not model the gradient:
+
+1. Record each text element's rect, computed `color` and `opacity`.
+2. Set `visibility: hidden` on those elements.
+3. Screenshot the page, feed the PNG back into the page as a data URL, and sample
+   the canvas at each recorded rect. That is the true backdrop *behind* the text.
+4. Composite text colour over it at its opacity and apply the WCAG formula.
+
+Sampling *beside* a text run instead of behind it reports false failures whenever
+the scrim is narrower than the surrounding area — that mistake was made during
+this work and cost two rounds of chasing a non-existent regression.
+
+**The scrim, and what not to repeat** (`critical.css`, `title-screen.css`):
+
+- Size the radii in **% of the viewport**, not px. A px radius tuned on a 1440
+  screen reads as a distinct dark **oval** at 3440, where it is only 25% of the
+  width.
+- But a *small* % fails the other way: 34% of a 390px phone is 133px — narrower
+  than the fixed 300px content column, so the text sat outside its own scrim
+  (1.77:1).
+- Use **many stops on a smooth curve**, not four linear ones. Linear interpolation
+  produces Mach banding, and what reads as "an oval" is the falloff *rate*
+  changing, not the darkness. The current curve is `(1-t⁴)²`: flat through the
+  middle where the text sits, falling late, reaching zero with zero *slope* as
+  well as zero value. A plain bell curve was tried and failed — it thinned to
+  0.24 alpha at mid-radius and every viewport dropped below 4.5:1.
 
 ### High Contrast Mode ✅
 

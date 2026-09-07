@@ -360,3 +360,81 @@ the call site and the `?.` lives in `moduleLoader`).
 **Fix:** `Promise.resolve(hook(...)).catch(...)` — which `quickActionsManager` was
 already doing. **When reviewing:** a `typeof === 'function'` guard on a DI-supplied
 hook tells you nothing about what the call returns. Check the wrapper.
+
+---
+
+## 11. `provideInstance` is not a delivery route
+
+A manifest's `provideInstance: 'foo'` registers the instance on
+`deps.<category>.foo`. It does **not** make `foo` injectable into another module.
+Reaching it from elsewhere needs an explicit `depMappings` entry in
+`moduleLoader.js` — the house shape being a lazy opener alongside its neighbours:
+
+```js
+openTipArchive: (...args) => deps.features?.tipArchive?.openModal?.(...args),
+```
+
+Without that entry the dep resolves to `undefined`, the caller's `?.` swallows it,
+and at runtime the feature is simply absent — nothing throws, nothing warns.
+
+**There IS a gate, and it is not the one you would reach for.** `validate:di`
+skips `lazyRequires` by design (intentionally cross-phase), so it stays green.
+The battery that catches it is **`diWiring.tests.js` TEST 4** — "All lazyRequires
+deps have depMappings or CORE_DEPS entries" — which runs in the browser suite.
+Note its own history: that battery used to self-skip in the CLI runner, leaving
+this bug class with zero automated coverage, and was fixed to run in CI.
+
+Found Sep 2026: the Welcome Screen's rotating tip closed the overlay and opened
+nothing, because `tipArchive` had been injected by name with no route behind it.
+It was caught by a browser probe *before* the suite ran — the suite would have
+caught it too, which is the argument for running the suite rather than trusting
+`validate:*` alone.
+
+**Check:** for every cross-module instance you inject, grep `moduleLoader.js` for
+the name. If it is not in `depMappings`, it is not being delivered — and run the
+browser suite, not just the validators.
+
+---
+
+## 12. A shared class may be conditionally hidden
+
+Reusing a class for visual parity is the obvious move and can make a whole surface
+invisible. `critical.css` carries:
+
+```css
+html:not(.mc-first-run) .first-run-choice { display: none; }
+```
+
+`.first-run-choice` looks like the container class to reuse for any screen that
+should match the first-run screen — and a returning user never carries
+`mc-first-run`, so the reused surface renders nothing, silently.
+
+Found Sep 2026 while building the Welcome Screen; caught by reading the stylesheet
+before reusing, not by a test — no test would have failed, because the module
+mounts correctly and only the CSS hides it.
+
+**Check:** before reusing a class from another surface, grep the stylesheet for
+that class name and look for ancestor-state selectors (`html:not(...)`,
+`body.x`, `[aria-expanded]`) gating it. Self-contained inner classes
+(`.first-run-wordmark`, `.first-run-btn`) are safe; container classes usually are not.
+
+---
+
+## 13. Contrast over a photograph cannot be judged by eye or by model
+
+White text over `Routine_Lists.webp` measured **1.47:1** on two shipped surfaces
+— under a third of WCAG AA's 4.5:1 — and neither the developer nor a reviewer
+spotted it as a *failure*, only as "a bit faint". At full opacity it still only
+reached 1.69:1, so the instinct to "bump the opacity" cannot work.
+
+Two ways to measure it wrongly, both hit during the fix:
+
+- **Modelling the gradient.** A radius was read as a diameter, halving the
+  computed coverage.
+- **Sampling beside the text** instead of behind it. Where a scrim is narrower
+  than the surrounding area this reports failures that do not exist.
+
+**Do this instead:** record each element's rect/colour/opacity, hide the text,
+screenshot, feed the PNG back into the page as a data URL, and sample the canvas
+at the recorded rects. Full method and the scrim geometry rules are in
+[ACCESSIBILITY.md](../project-info/ACCESSIBILITY.md#color-contrast-).

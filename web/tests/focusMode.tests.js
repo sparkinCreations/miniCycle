@@ -252,6 +252,10 @@ export async function runFocusModeTests(resultsDiv) {
         const menuItems = document.querySelectorAll('.focus-mode-menu-item');
         const actions = Array.from(menuItems).map(el => el.dataset.action);
         const expected = [
+            // welcome-screen is FIRST and in a group of its own — leaving for the
+            // Welcome Screen is a different kind of action from the routine/view/
+            // bulk items, and the lone group is what renders the divider after it.
+            'welcome-screen',
             'switch-mode', 'switch-routines', 'create-routine',
             'toggle-input-bar', 'toggle-dark-mode', 'uncheck-all', 'delete-all',
             'settings', 'exit'
@@ -269,7 +273,7 @@ export async function runFocusModeTests(resultsDiv) {
         }
     });
 
-    await test('init() inserts a separator between each group (4 separators total)', () => {
+    await test('init() inserts a separator between each group (5 separators total)', () => {
         setupDOMScaffold();
         mod.setFocusModeDependencies({
             AppState: createMockAppState(),
@@ -285,9 +289,11 @@ export async function runFocusModeTests(resultsDiv) {
         instance.destroy();
         teardownDOMScaffold();
 
-        // Groups: routine | view | bulk | leave | exit → 4 separators
-        if (separators.length !== 4) {
-            throw new Error(`Expected 4 separators, got ${separators.length}`);
+        // Groups: welcome | routine | view | bulk | leave | exit → 5 separators.
+        // The count is derived from the group list, so adding an item to an
+        // EXISTING group must not change it — only a new group may.
+        if (separators.length !== 5) {
+            throw new Error(`Expected 5 separators, got ${separators.length}`);
         }
     });
 

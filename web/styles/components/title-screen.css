@@ -30,6 +30,20 @@
        one place. Routine_Lists.webp is not precached, so an offline visit falls
        back to the gradient alone — same as the first-run screen does today. */
     background:
+        /* Readability scrim, MEASURED not eyeballed: the desk photo composited
+           with the blue overlay below is rgb(174, 200, 248) under the centre
+           column — nearly white. White text on that reaches only 1.69:1 even at
+           FULL opacity, against WCAG AA's 4.5:1, so raising text opacity cannot
+           fix it; the backdrop has to come down. Sized in % of the VIEWPORT and
+           painted on this full-screen element so it fades to nothing with no box
+           edge to clip against — an ellipse on the narrow centre column left
+           visible vertical seams. The photo still reads at the edges; the
+           content is anchored without sitting in a card. */
+        radial-gradient(ellipse 70% 65% at 50% 45%,
+            rgba(0, 0, 0, 0.55) 0%,
+            rgba(0, 0, 0, 0.46) 40%,
+            rgba(0, 0, 0, 0.20) 75%,
+            rgba(0, 0, 0, 0) 100%),
         linear-gradient(135deg, rgba(76, 121, 255, 0.5), rgba(116, 192, 252, 0.45)),
         url('../../assets/images/Stock/Routine_Lists.webp') center/cover no-repeat;
 }
@@ -48,6 +62,7 @@
 }
 
 .title-screen-inner {
+    position: relative;
     margin: auto;
     display: flex;
     flex-direction: column;
@@ -78,7 +93,7 @@
     margin: var(--space-2) 0 0;
     text-align: center;
     color: white;
-    opacity: 0.8;
+    opacity: 0.92;
     font-size: var(--font-size-xs);
     text-shadow: var(--text-shadow-lg);
 }
@@ -110,7 +125,7 @@
 
 .title-screen-legal a {
     color: white;
-    opacity: 0.75;
+    opacity: 0.92;
     font-size: var(--font-size-xs);
     text-decoration: underline;
     text-underline-offset: 2px;
@@ -178,4 +193,16 @@
 
 #title-screen-close:hover {
     background: rgba(255, 255, 255, 0.16);
+}
+
+/* .first-run-tagline and .first-run-usecase-text set their own opacity in
+   critical.css, which the first-run screen shares. Override inside this surface
+   only — the first-run screen has the same contrast problem, but changing it is
+   a separate decision (see the note in WELCOME_SCREEN_PLAN.md). */
+#title-screen .first-run-tagline {
+    opacity: 0.95;
+}
+
+#title-screen .first-run-usecase-text.is-active {
+    opacity: 1;
 }

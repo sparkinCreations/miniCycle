@@ -1251,7 +1251,7 @@ export const DEFAULT_LABELS = deepFreeze({
         // Vocabulary-NEUTRAL: 'noun.routine' is lens-sensitive
         // (defaultLabels.js LENS_SENSITIVE_KEYS), so "Back to your routine" would
         // read differently under each of the 5 vocab themes.
-        close:           'Back',
+        close:           'Close',
         closeAria:       'Close the Welcome Screen',
         openAria:        'Open the Welcome Screen',
         tagline:         'Repeatable checklists that reset on completion',
@@ -1290,7 +1290,7 @@ export const DEFAULT_LABELS = deepFreeze({
         recurringTitle:          'Manage recurring tasks',
         inputBar:                'Input Bar',
         inputBarTitle:           'Show or hide the task input bar',
-        enterFocusView:          'Enter Focus View',
+        enterFocusView:          'Focus View',
         enterFocusViewTitle:     'Hide chrome and focus on the task list',
         modeRadioGroupAria:      'Switch routine mode',
         themes:                  'Themes',
@@ -1623,6 +1623,7 @@ export const DEFAULT_LABELS = deepFreeze({
         toggleDarkMode: 'Toggle dark mode',
         uncheckAll:     'Uncheck all',
         deleteAll:      'Delete all',
+        welcomeScreen:  'Welcome Screen',
         settings:       'Settings',
         exitItem:       'Exit Focus View',
         modeItemPrefix: 'Mode',

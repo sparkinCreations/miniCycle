@@ -1,18 +1,36 @@
-# Welcome Screen — a persistent branded surface + a browsable tip archive
+# Welcome Screen — a persistent branded surface + a browsable tip archive — ✅ CLOSED
 
-> **Status:** ✅ BUILT (Sep 2026) — all three parts implemented. Part 1 shipped in
-> v2.546; Parts 2 and 3 are in the working tree. **Five of this plan's
-> instructions turned out to be wrong once checked against the code — see
-> "Corrections found during implementation" below before trusting any section.** ·
-> **Severity:** Low — an additive UX surface, not a bug ·
-> **Proposed:** Sep 2026 (v2.543), from the question "should the first-run splash
-> be somewhere the user can always return to?"
+> **Status: ✅ CLOSED — September 2026.** All three parts built and shipped.
+> Part 1 (tip archive) in **v2.546**; Parts 2 and 3 (Welcome Screen + parked-surface
+> restore) in **v2.547**; UI refinements and the WCAG contrast work followed.
+> No scheduled work remains here.
 >
-> A full-screen **overlay** (not a route, not an exit) carrying the app's brand,
-> six primary destinations, and — the part that is genuinely new — an archive of
-> the loading tips a user can currently only glimpse for four seconds at boot.
-> The app still boots straight into the active routine. The overlay is shown at
-> boot **only** if the user deliberately parked there last session.
+> **Five of this plan's own instructions turned out to be wrong** once checked
+> against the code — they are kept, not edited away, under "Corrections found
+> during implementation" below. The reason each was wrong is the reusable part.
+>
+> Re-open nothing here. If this surface needs changing again, open a NEW plan.
+
+---
+
+## What this plan did
+
+| Part | Outcome |
+|---|---|
+| 1 — Tip archive | SHIPPED **v2.546**. `loading-tips.json` split into `firstRun`/`inApp` pools; browsable carousel in Help & Support (8s auto-advance, prev/next, arrow keys, pause control per WCAG 2.2.2, position counter, reshuffled per open). Fixed a live bug: the first-run screen was telling brand-new users to "click your progress badge". |
+| 2 — `titleScreen` module | SHIPPED **v2.547**. Full-screen `<dialog>`, visually identical to the first-run screen, reachable from the main menu and from the Focus View menu. Delegates every action to the menu control that already owns it — never reimplements. |
+| 3 — `lastSurface` restore | SHIPPED **v2.547**. Park on the Welcome Screen and the app boots back into it, measured at **325ms with zero exposed frames** — no flash of the routine. |
+| Follow-up — contrast | Both branded screens were failing WCAG AA badly (**1.47–3.42:1**, against 4.5:1). Now **5.35–7.09:1** across ultrawide/desktop/phone/short. See `docs/project-info/ACCESSIBILITY.md`. |
+| Follow-up — UI | Rotating use-case line and tip on the Welcome Screen; Import demoted to the recovery tier; footer-style credit line; menu row spacing, dividers and one-line labels; "Enter Focus View" → "Focus View"; Tips icon moved off the About icon. |
+
+### Cost, honestly
+
+Nine defects surfaced while building this, and **every one failed silently** — an
+empty modal, a bare button, a dead delegation target, a screen that would have
+been invisible to its own audience, a `"undefined"` CSS class, a dropped
+cross-module dependency. None threw. Four were caught by screenshots rather than
+by the 3,634-test suite. The scrim alone took five attempts, three of them wrong
+for reasons now recorded in `critical.css`.
 
 ---
 

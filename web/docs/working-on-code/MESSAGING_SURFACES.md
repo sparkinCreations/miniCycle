@@ -191,6 +191,26 @@ The help window is for ambient status, not step-by-step guidance. If a user need
 
 A notification ≠ a confirmation. If the user can lose data, they need a modal with explicit confirm/cancel — even if the action has undo.
 
+### "Writing one tip pool for two audiences"
+
+`loading-tips.json` fed the boot rotator on **every** screen, including the
+first-run choice screen — where the user has no routine, no tasks, and none of the
+UI the tips describe. A brand-new user on `minicycle.app` was told to *"Click your
+progress badge to see detailed completion stats"* (Sep 2026). Roughly two thirds
+of the pool pointed at things that did not exist yet.
+
+The file now carries **three audience-scoped lists** — `firstRun`, `inApp` and
+`useCases` — and each reader picks by audience. The boot rotator detects the
+first-run screen via `#first-run-restore`, an element that exists only there.
+
+**Check:** any message shown on more than one surface. Ask what is true for the
+user reading it *on each*, not just on the one you were designing.
+
+**Note:** these strings deliberately live outside `defaultLabels.js` and so are
+not covered by `validate:labels`. The pre-boot rotator runs before the label
+system exists, so the JSON is the only place both readers can reach; duplicating
+them into labels would create exactly the drift that gate cannot see.
+
 ### "Showing the same content in two surfaces"
 
 If the help window says `"Add your first task!"` and the empty state ALSO says `"Add your first task!"`, the user reads it twice and one of them feels redundant. Decide which surface owns that message and keep it single-source.

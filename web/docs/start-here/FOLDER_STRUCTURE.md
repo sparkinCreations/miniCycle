@@ -465,6 +465,7 @@ miniCycle-main.js (entrypoint)
 - `cycleExportManager.js` - Cycle export functionality
 - `cycleImportManager.js` - Cycle import functionality
 - `helpWindowManager.js` - Help window display
+- `titleScreen.js` - Welcome Screen: full-screen branded surface with the app's primary destinations, restored at boot if the user parked there
 - `pullToRefresh.js` - Pull-to-refresh gesture
 - `taskInteractions.js` - Task interaction handlers
 - `taskSearch.js` - Task search functionality
@@ -502,6 +503,7 @@ miniCycle-main.js (entrypoint)
 - `achievementsManager.js` - Achievement/badge system with OR-based unlocking
 - `historyManager.js` - Per-routine activity logging and history modal
 - `clearedTasksManager.js` - Cleared task tracking (To-Do mode + cycle reset auto-removes)
+- `tipArchive.js` - Browsable carousel of every loading tip (Help & Support)
 - `backupReminder.js` - Periodic backup reminder prompts
 - `uxRatings.js` - Star rating inside the feedback modal
 

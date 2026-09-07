@@ -1,3 +1,7 @@
+## [2.548] - 2026-09-07
+- fix(a11y): WCAG AA contrast on first-run and Welcome screens; menu polish and docs
+
+
 ## [2.547] - 2026-09-06
 - feat(welcome): Welcome Screen with parked-surface restore
 
