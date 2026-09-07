@@ -15,7 +15,7 @@
  * FUTURE:
  * - labelResolver.js will consume this as the default fallback
  * - Contextual lenses override specific keys (see LENS_SENSITIVE_KEYS)
- * - See docs/future-work/CONTEXTUAL_THEME_SYSTEM_PLAN.md
+ * - See docs/archive/CONTEXTUAL_THEME_SYSTEM_PLAN.md
  */
 
 // ============================================================================
@@ -247,6 +247,8 @@ export const DEFAULT_LABELS = deepFreeze({
         renameRoutine:      'Rename routine',
         renameRoutineMessage: 'Enter a new name for this routine:',
         deleteRoutine:      'Delete routine',
+        downloadRoutine:    'Download routine',
+        changeRoutineTheme: 'Change routine theme',
         preview:            'Preview',
         importExternal:     'Import Routine',
         storage:            'Routine Storage',
@@ -283,18 +285,36 @@ export const DEFAULT_LABELS = deepFreeze({
         completion:         '{completed} of {total} {taskWord} Completed This {cycleWord}',
         cyclesCompleted:    '{count} {cycleWord} Completed',
         clearedTasks:       '{count} Cleared {taskWord}',
+        // ── REWARD VOCABULARY — keep these three distinct ──────────────────
+        // Measured Aug 2026, because the words had drifted into each other and
+        // the panel read like two competing answers to "what unlocks next?":
+        //
+        //   BADGE  — achievementsManager.updateBadges(): unlocked by
+        //            `cyclesMet || tasksMet`, so EITHER counter earns it.
+        //   THEME  — themes.js checkThemeUnlocks(): `progress >=
+        //            unlockAt.cycles` where progress is cyclesCompleted, so
+        //            ONLY cycles earn it. A To-Do-only user earns badges and
+        //            never themes — which is exactly why the two lines must
+        //            name their category rather than both starting "Next:".
+        //   MILESTONE — the numeric threshold itself (MILESTONES.TIERS), an
+        //            internal measure. Prefer naming what the user GETS in
+        //            user-facing text; "milestone" here leaked into the
+        //            progress-bar aria-label while the visible text beside it
+        //            said "badge" for the same number.
+        //
+        // Both systems are correct as implemented; only the wording was wrong.
         milestoneRewards:   'Milestone Rewards',
         achievementBadges:  'Achievement Badges',
         allRoutines:        'All Routines:',
         allRoutinesValue:   '{count} {cycleWord}',
-        progressToNext:     'Progress to next milestone',
-        progressCleared:    '{current} of {next} cleared {taskWord} to next milestone',
-        progressCycles:     '{current} of {next} {cycleWord} to next milestone',
+        progressToNext:     'Progress to next badge',
+        progressCleared:    '{current} of {next} cleared {taskWord} to next badge',
+        progressCycles:     '{current} of {next} {cycleWord} to next badge',
         globalDisplay:      '{cycles} {cycleText} / {cleared} {clearedText}',
         progressCircleAria: 'Current {cycleWord} {taskWord} completion',
         allBadgesUnlocked:  'All badges unlocked!',
-        clearedToMilestone: '{remaining} more cleared {taskWord} to next badge',
-        cyclesToMilestone:  '{remaining} more {cycleWord} to next badge',
+        clearedToMilestone: 'Next badge: {remaining} more cleared {taskWord}',
+        cyclesToMilestone:  'Next badge: {remaining} more {cycleWord}',
         history:            'History'
     },
 
@@ -443,7 +463,6 @@ export const DEFAULT_LABELS = deepFreeze({
         bgImageRemoved:         'Background image removed',
         bgImageRemoveFailed:    'Failed to remove background image',
         bgImageSet:             'Background image set',
-        taskOptionsReset:       'Reset to defaults',
         selectCycleFirst:       'Please select a routine first',
         selectRoutineFirst:     'Please select a routine first',
 
@@ -536,11 +555,11 @@ export const DEFAULT_LABELS = deepFreeze({
         changeDueDateSet:        'Due date set',
         changeDueDateRemoved:    'Due date removed',
         changeDueDateChanged:    'Due date changed',
-        changeClearToggled:      'Clear on complete toggled',
+        changeClearToggled:      'Remove when complete changed',
         changeThemeChanged:      'Theme changed',
         changeCycleCount:        'Cycle count changed',
         changeClearedTasks:      'Cleared tasks changed',
-        changeMultiple:          '{count} changes',
+        changeMultiple:          { one: '{count} change', other: '{count} changes' },
         changeGeneric:           'Change',
         undoStorageFull:         'Storage full - undo history not saved. Consider exporting your data.',
         taskOptionsUpdated:      'Task options updated',
@@ -555,7 +574,13 @@ export const DEFAULT_LABELS = deepFreeze({
 
         // Theme notifications
         themeUnlocked:           '{name} theme unlocked!',
-        themeLockedOnImport:     'This routine uses the {name} theme — keep cycling to unlock it! Using Classic for now.',
+        // {fallback} is the theme actually applied — the user's own defaultTheme, not
+        // necessarily Classic. This said "Using Classic for now" unconditionally while
+        // the code resolved to settings.defaultTheme, so a user whose default was, say,
+        // Habit Tracker was told the wrong thing. Only observable once the import path's
+        // vocabThemeManager dep was restored (Aug 2026) — with it dead the message
+        // never fired at all.
+        themeLockedOnImport:     'This routine uses the {name} theme — keep cycling to unlock it! Using {fallback} for now.',
 
         // Boot/init notifications
         noRoutinesFound:         'No routines found. Create one or load a sample.',
@@ -605,6 +630,8 @@ export const DEFAULT_LABELS = deepFreeze({
         backupCorruptData:       'Backup data is corrupt.',
         factoryResetComplete:    'Factory Reset Complete. Reloading...',
         factoryResetCancelled:   'Factory reset cancelled.',
+        factoryResetPartial:     'Factory reset finished, but some stored data could not be removed. Close other miniCycle tabs and try again.',
+        factoryResetBackupFailed: 'Could not save a backup, so nothing was deleted. Check that downloads are allowed, then try again.',
         restoreCancelled:        'Restore cancelled.',
 
         // Import/export notifications
@@ -637,6 +664,7 @@ export const DEFAULT_LABELS = deepFreeze({
         // State/data notifications
         dataCorrupted:           'Data was corrupted and has been reset. Your previous data could not be recovered.',
         multiTabConflict:        'Data updated from another tab. Your unsaved changes were overwritten.',
+        dataClearedElsewhere:    'All data was cleared in another tab. Refresh this tab to continue.',
         stateUpdateFailed:       'State update failed',
 
         // Task system notifications
@@ -652,7 +680,7 @@ export const DEFAULT_LABELS = deepFreeze({
         reminderNotificationTitle: 'miniCycle Reminder',
         reminderTasksToComplete: 'You have tasks to complete:',
         reminderBackgroundBody: 'You have unfinished tasks in your routine',
-        reminderEnabled:         'Reminder enabled: {settings}',
+        reminderEnabledWithSettings: 'Reminder enabled: {settings}',
         reminderCustomSettings:  'Custom settings',
         reminderEveryFrequency:  'Every {freq} {unit}',
         reminderOpenSettings:    'Reminder Settings',
@@ -833,6 +861,11 @@ export const DEFAULT_LABELS = deepFreeze({
         // Pull-to-refresh notifications
         refreshFailed:           'Refresh failed',
         updateAvailableReload:   'App update available! Reload to update.',
+        // Same "which version am I moving to" answer the boot overlay and the
+        // pre-boot updating screen give. Used when the waiting service worker
+        // reports its version; the plain string above is the fallback for when
+        // it cannot be asked (no message channel, timeout, identical versions).
+        updateAvailableFromTo:   'Update available: version {from} → {to}. Reload to update.',
         refreshed:               'Refreshed',
 
         // Undo/redo notifications
@@ -913,7 +946,7 @@ export const DEFAULT_LABELS = deepFreeze({
         restoreNoSafetyBackupMessage: 'A safety backup of your current data could not be created. If you restore now, your current routines will be replaced with no way to get them back. Restore anyway?',
         restoreNoSafetyBackupConfirm: 'Restore Anyway',
         factoryResetTitle:        'Factory Reset',
-        factoryResetMessage:      'This will DELETE ALL data, settings, and progress. Are you sure?',
+        factoryResetMessage:      'This will DELETE ALL data, settings, and progress. A backup file will be downloaded first. Are you sure?',
         factoryResetConfirm:      'Delete Everything',
         resetProgressMessage:     'This will reset this routine\'s cycle count and cleared tasks count to 0. History and cleared task entries will NOT be deleted. Global achievement progress will NOT be affected.',
         clearHistoryMessage:      'Are you sure you want to clear all history for this routine?',
@@ -965,14 +998,29 @@ export const DEFAULT_LABELS = deepFreeze({
     },
 
     empty: {
-        noTasks:              'No tasks yet',
+        // Says what is empty (the routine), not what is missing (tasks) — this
+        // is a routine manager, and the headline is the first place that reads
+        // as one. Carries no task noun, so vocab themes need no override.
+        noTasks:              'Your routine is empty',
+        // The one-line "what is this app" under the headline. Deliberately
+        // carries NO task/habit noun: it reads true under every vocab theme, so
+        // themes.js does not override it and the four hints below stay purely
+        // about the affordance instead of repeating this sentence four times.
+        routinePitch:         'Build your routine once — then run it as many times as you like.',
         // Four hints, one per (view × input-bar) state. The *Visible variants run
         // when the input bar is already on screen — pointing at the + button or
         // the ⋯ menu there would tell the user to HIDE the very bar they need.
-        noTasksHint:          'Press the + button to show the task bar to add a task or create a new routine',
+        noTasksHint:          'Press the + button to open the task bar and add your first task',
         noTasksHintVisible:   'Type your first task in the bar above and press Add',
-        noTasksHintFocus:     { touch: 'Open the {menuIcon} menu at the top and tap {showHide} to start adding tasks', pointer: 'Open the {menuIcon} menu at the top and click {showHide} to start adding tasks' },
+        noTasksHintFocus:     { touch: 'Open the {menuIcon} menu at the top and tap {showHide} to show the task bar', pointer: 'Open the {menuIcon} menu at the top and click {showHide} to show the task bar' },
         noTasksHintFocusVisible: 'Type your first task in the bar above and press Add',
+        // The focus TASK panel only. The input bar lives inside #task-view (the
+        // Routine panel), so on the Task panel it is slid off-screen with its
+        // container — measured: elementFromPoint at the bar's own rect returns
+        // nothing there. Telling someone to toggle the bar from here opens it on
+        // a panel they are not looking at, so this points at the panel that owns
+        // it instead. Building belongs on Routine; Task is the run surface.
+        noTasksHintSwipe:     { touch: 'Swipe to Routine to add your first task', pointer: 'Open Routine to add your first task' },
         // Shown once, right after a brand-new user picks "Create My First Routine"
         // and names an empty routine — friendlier than the generic hint above.
         // That flow reveals the input bar (appInit sets showTaskInput), so the
@@ -1050,6 +1098,12 @@ export const DEFAULT_LABELS = deepFreeze({
         ariaTimeOfDay:        'Time of day',
         ariaUse24HourFormat:  'Use 24-hour time format',
         emptyState:           'No recurring tasks yet.',
+        searchPlaceholder:    'Search recurring tasks',
+        searchAriaLabel:      'Search recurring tasks',
+        noMatches:            'No recurring tasks match \u201C{query}\u201D',
+        searchResults:        '{count} of {total} recurring tasks match',
+        searchResultsOne:     '1 of {total} recurring tasks matches',
+        searchCleared:        'Showing all {total} recurring tasks',
         addTaskTitle:         'Add a task from this routine to make it recurring',
         selectTasksHeader:    'Select tasks to make recurring:',
         noAvailableTasks:     'All tasks are already recurring, or no tasks exist in this routine.',
@@ -1156,6 +1210,72 @@ export const DEFAULT_LABELS = deepFreeze({
     // 14. MENU SECTIONS
     // ========================================================================
 
+    // ========================================================================
+    // TIP ARCHIVE
+    // Chrome only. The TIPS THEMSELVES live in modules/labels/loading-tips.json
+    // and are deliberately NOT here: the pre-boot rotator in miniCycle.html runs
+    // before the label system exists, so the JSON is the one place both readers
+    // can reach. Two copies is exactly the drift validate:labels cannot see.
+    // ========================================================================
+
+    // ========================================================================
+    // WELCOME SCREEN  (code name: titleScreen)
+    // The identifier is `titleScreen` because `welcome` is already the
+    // codebase's word for first-run onboarding (20 FIRST_RUN_WELCOME_* classes,
+    // first-run-welcome.css, onboardingCarousel). The user-facing name is
+    // "Welcome Screen": to a user this is the branded screen they met on day one
+    // and can return to. See docs/future-work/WELCOME_SCREEN_PLAN.md.
+    // ========================================================================
+
+    titleScreen: {
+        name:            'Welcome Screen',
+        menuItem:        'Welcome Screen',
+        menuItemTitle:   'Return to the Welcome Screen',
+        wordmark:        'miniCycle',
+        descriptor:      'Routine Checklist Manager',
+        createRoutine:   'Create a new routine',
+        openRoutine:     'Open existing routine',
+        restoreBackup:   'Restore from a backup file',
+        userManual:      'User Manual',
+        // Footer-style credit line, mirroring #copyright in miniCycle.html.
+        // Year is computed, not baked, so it cannot go stale.
+        copyright:       '\u00A9 {year}',
+        company:         'sparkinCreations',
+        companyTitle:    'Visit the sparkinCreations website',
+        product:         'miniCycle',
+        productTitle:    'Open the miniCycle product page',
+        privacy:         'Privacy',
+        terms:           'Terms',
+        accessibility:   'Accessibility',
+        security:        'Security',
+        // Vocabulary-NEUTRAL: 'noun.routine' is lens-sensitive
+        // (defaultLabels.js LENS_SENSITIVE_KEYS), so "Back to your routine" would
+        // read differently under each of the 5 vocab themes.
+        close:           'Close',
+        closeAria:       'Close the Welcome Screen',
+        openAria:        'Open the Welcome Screen',
+        tagline:         'Repeatable checklists that reset on completion',
+        tipAria:         'Open all tips',
+        actionFailed:    'That option is unavailable right now.',
+    },
+
+    tipArchive: {
+        menuItem:         'Tips',
+        menuItemTitle:    'Browse every loading tip',
+        title:            'Tips',
+        prev:             'Previous tip',
+        next:             'Next tip',
+        pause:            'Pause',
+        play:             'Play',
+        pauseAria:        'Pause the tip rotation',
+        playAria:         'Resume the tip rotation',
+        position:         '{current} of {total}',
+        firstRunHeading:  'Getting started',
+        inAppHeading:     'Using the app',
+        close:            'Close',
+        loadFailed:       'Could not load the tips.',
+    },
+
     menu: {
         routineActions:          'Routine Actions',
         taskActions:             'Task Actions & Features',
@@ -1170,7 +1290,7 @@ export const DEFAULT_LABELS = deepFreeze({
         recurringTitle:          'Manage recurring tasks',
         inputBar:                'Input Bar',
         inputBarTitle:           'Show or hide the task input bar',
-        enterFocusView:          'Enter Focus View',
+        enterFocusView:          'Focus View',
         enterFocusViewTitle:     'Hide chrome and focus on the task list',
         modeRadioGroupAria:      'Switch routine mode',
         themes:                  'Themes',
@@ -1227,6 +1347,7 @@ export const DEFAULT_LABELS = deepFreeze({
         fontSizeExtraLarge:   'Extra Large',
         showHelpWindow:       'Show Help Window',
         showQuickActions:     'Show Quick Actions',
+        oneSectionAtATime:    'Open one menu section at a time',
         addRemoveTaskButtons: 'Add or Remove Task Buttons',
         enableNotifications:  'Enable Notifications',
         clearUndoHistory:     'Clear Undo History',
@@ -1445,6 +1566,7 @@ export const DEFAULT_LABELS = deepFreeze({
         nextView:       'Next view',
         completed:      'Completed',
         notCompleted:   'Not completed',
+        overdue:        'Overdue',
         saving:         'Saving...',
         hideTaskInput:  'Hide Task Input',
         addTaskToggle:  'Add Task',
@@ -1476,7 +1598,12 @@ export const DEFAULT_LABELS = deepFreeze({
         // view (taskUI.checkCompleteAllButton) and focus mode (CSS). This hint
         // describes what happens instead of instructing.
         allDoneHintAuto:  'This routine resets automatically',
-        dueLabel:         'Due {date}'
+        dueLabel:         'Due {date}',
+        // Reset indicators. Wording is mode-neutral on purpose: 'clear' only
+        // ever arises in cycle mode, and 'keep' arises in both, so neither
+        // needs a per-mode string.
+        indicatorClear:   'Removed when the cycle resets',
+        indicatorKeep:    'Kept when other tasks are removed'
     },
 
     focusMode: {
@@ -1496,6 +1623,8 @@ export const DEFAULT_LABELS = deepFreeze({
         toggleDarkMode: 'Toggle dark mode',
         uncheckAll:     'Uncheck all',
         deleteAll:      'Delete all',
+        welcomeScreen:  'Welcome Screen',
+        settings:       'Settings',
         exitItem:       'Exit Focus View',
         modeItemPrefix: 'Mode',
         modeAutoName:   'Auto Cycle',
@@ -1666,7 +1795,7 @@ export const DEFAULT_LABELS = deepFreeze({
 
         // Vocabulary theme unlock status (used in stats panel)
         themeCurrentPrefix: 'Theme',
-        nextThemeUnlock:    'Next: {name} — {count} more {cycleWord}',
+        nextThemeUnlock:    'Next theme: {name} — {count} more {cycleWord}',
         allThemesUnlocked:  'All themes unlocked!',
 
         // Vocabulary theme section heading (used in Themes modal)
@@ -1684,7 +1813,7 @@ export const DEFAULT_LABELS = deepFreeze({
         title:       'miniCycle',
         tagline:     'Turn Your Routine Into Progress',
         description: 'Your routine workflow companion — turn repeatable tasks into effortless cycles, stay focused, and build momentum.',
-        aria:        'About Task Cycle Mini',
+        aria:        'About miniCycle',
         closeAria:   'Close about modal'
     },
 
@@ -1805,7 +1934,32 @@ export const DEFAULT_LABELS = deepFreeze({
         ocean:        'Ocean',
         oceanDesc:    'Dark ocean theme',
         berry:        'Berry',
-        berryDesc:    'Berry purple theme'
+        berryDesc:    'Berry purple theme',
+
+        // Full names for the built-in presets. Four differ from the short name
+        // above (Monochrome/Mono, Professional/Pro, Golden Glow/Golden,
+        // Dark Ocean/Ocean) and reach the user through notify.themeApplied;
+        // the rest are listed anyway so the set is uniform rather than
+        // "look it up, and if it is missing reuse the short one".
+        defaultFull:  'Default',
+        warmFull:     'Warm',
+        coolFull:     'Cool',
+        forestFull:   'Forest',
+        monoFull:     'Monochrome',
+        proFull:      'Professional',
+        goldenFull:   'Golden Glow',
+        oceanFull:    'Dark Ocean',
+        berryFull:    'Berry',
+
+        // Saved-preset row (rendered as innerHTML — these are var-free, so
+        // interpolating them is safe per the getLabel/innerHTML rule).
+        renameHint:   'Click to rename',
+        loadTitle:    'Load this preset',
+        loadAction:   'Load',
+        exportTitle:  'Export as code',
+        exportAction: 'Export',
+        deleteTitle:  'Delete this preset',
+        deleteAction: 'Del'
     },
 
     // ========================================================================
@@ -1929,6 +2083,8 @@ export const DEFAULT_LABELS = deepFreeze({
         taskPriorityRemoved:       'Priority Removed',
         taskPriorityColorChanged:  'Priority Color Changed',
         themeChanged:         'Theme Changed',
+        undo:                 'Undo',
+        redo:                 'Redo',
         recreate:             'Recreate',
         clearedTotal:         'cleared total',
         showingRecent:        'Showing last {count} ({days} days)',
@@ -1969,6 +2125,11 @@ export const DEFAULT_LABELS = deepFreeze({
         reportProblem:    'Report Problem',
         updatingToLatest: 'Updating to latest version...',
         updatingDetail:   'This only takes a moment.',
+        // Version line on the updating overlay. `updatingFromTo` is the normal case
+        // (both versions known); `updatingFromOnly` covers the cache-recovery paths,
+        // which know the build that is running but not yet what the server will serve.
+        updatingFromTo:   'Version {from} → {to}',
+        updatingFromOnly: 'Currently on version {from}',
         dataRestored:     'Data restored after interrupted test run',
         updateAvailable:  'Update Available!',
         oldCachedVersion: 'Your browser has an old cached version.',
@@ -2074,8 +2235,19 @@ export const DEFAULT_LABELS = deepFreeze({
 
     accessibility: {
         skipToContent: 'Skip to main content',
+        // Each of these sits in a colour row whose visible <label for=…> names
+        // the COLOR input beside it, leaving the on/off switch itself unnamed —
+        // a screen reader announced only "checkbox, checked". Found Aug 2026 by
+        // adding personalization to the a11y gate.
+        toggleCheckboxFill:     'Apply a custom checkbox fill colour',
+        toggleCheckboxEmpty:    'Apply a custom empty checkbox colour',
         badgeCoinSpin: 'Achievement badge coin, use arrow keys to spin',
         routineTitle: 'Routine name',
+        // Spoken when the quick dark-mode button flips. The button's only state
+        // cue was its emoji (🌙 / ☀️), which aria-label overrides — so a screen
+        // reader had no way to know dark mode had turned on or off.
+        darkModeOn: 'Dark mode on',
+        darkModeOff: 'Dark mode off',
         taskCompleted: 'Task completed: {name}',
         taskUncompleted: 'Task uncompleted: {name}',
         cycleCompleted: 'Cycle completed',
@@ -2085,6 +2257,14 @@ export const DEFAULT_LABELS = deepFreeze({
         editRoutineName: 'Edit routine name',
         editPresetName: 'Edit preset name',
         taskAdded: 'Task added: {name}',
+        // Routine-level context changes. Creating, switching or renaming replaces
+        // the whole task list and the title, and none of it was announced —
+        // the title is a contenteditable whose aria-label names the FIELD
+        // ("Routine name"), never the value, so a screen-reader user's entire
+        // context could change in silence (measured Sep 2026).
+        routineCreated: 'Routine created: {name}',
+        routineSwitched: 'Switched to routine: {name}',
+        routineRenamed: 'Routine renamed to: {name}',
         taskViewOpened: 'Routine view opened',
         statsPanelOpened: 'Stats panel opened',
         focusTaskPanelOpened: 'Task view opened',
@@ -2448,6 +2628,8 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'notify.backupCorruptData',
     'notify.factoryResetComplete',
     'notify.factoryResetCancelled',
+    'notify.factoryResetPartial',
+    'notify.factoryResetBackupFailed',
     'notify.fileTooLarge',
     'notify.invalidJson',
     'notify.invalidFormat',
@@ -2513,6 +2695,12 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'modal.importAsTemplateDesc',
     'modal.importWithProgress',
     'modal.importWithProgressDesc',
+    'recurring.searchPlaceholder',
+    'recurring.searchAriaLabel',
+    'recurring.noMatches',
+    'recurring.searchResults',
+    'recurring.searchResultsOne',
+    'recurring.searchCleared',
 
     // Task options customizer
     'taskOptions.customizeLabel',
@@ -2525,6 +2713,8 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     // Focus task panel (one-task-at-a-time card — noun-bearing keys themeable)
     'nav.tabTask',
     'focusTask.panelAria',
+    'focusTask.indicatorClear',
+    'focusTask.indicatorKeep',
     'focusTask.completeTask',
     'focusTask.prevTask',
     'focusTask.nextTask',
@@ -2560,6 +2750,8 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
 
     // Accessibility
     'accessibility.skipToContent',
+    'accessibility.toggleCheckboxFill',
+    'accessibility.toggleCheckboxEmpty',
     'accessibility.badgeCoinSpin',
     'accessibility.routineTitle',
     'accessibility.taskCompleted',
@@ -2571,15 +2763,22 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'accessibility.editRoutineName',
     'accessibility.editPresetName',
     'accessibility.taskAdded',
+    'accessibility.darkModeOn',
+    'accessibility.darkModeOff',
+    'accessibility.routineCreated',
+    'accessibility.routineSwitched',
+    'accessibility.routineRenamed',
     'accessibility.taskViewOpened',
     'accessibility.statsPanelOpened',
 
     // Empty states
     'empty.noTasks',
+    'empty.routinePitch',
     'empty.noTasksHint',
     'empty.noTasksHintVisible',
     'empty.noTasksHintFocus',
     'empty.noTasksHintFocusVisible',
+    'empty.noTasksHintSwipe',
     'empty.firstStepHint',
     'empty.firstStepHintVisible',
     'empty.createFirst',
@@ -2642,6 +2841,7 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'nav.addTaskToggle',
     'nav.completed',
     'nav.notCompleted',
+    'nav.overdue',
 
     // Quick actions
     'quickAction.openRoutine',
@@ -2682,6 +2882,7 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'notify.storageFull',
     'notify.dataCorrupted',
     'notify.stateUpdateFailed',
+    'notify.dataClearedElsewhere',
     'notify.taskSystemInitFailed',
     'notify.dragDropWarning',
     'notify.milestoneAchieved',

@@ -29,9 +29,11 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
+import { applyTaskStatusLabel } from './taskUtils.js';
 import { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS, COLORS, DOM_IDS, DOM_SELECTORS, DATA_SELECTORS, DOM_CLASSES } from '../core/constants.js';
 import { ICONS } from '../utils/icons.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { resolveDeleteWhenComplete, getTaskResetIndicator } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -144,9 +146,16 @@ export class TaskDOMManager {
             // Mode management
             getCurrentMode: resolvedDeps.getCurrentMode || this.fallbackGetMode,
 
-            // Feature modules
-            dueDates: resolvedDeps.dueDates || this._warnMissingOptional('dueDates'),
-            reminders: resolvedDeps.reminders || this._warnMissingOptional('reminders'),
+            // Feature modules.
+            //
+            // `dueDates` and `reminders` used to sit here too. Neither was ever a
+            // depMappings key — only a provideInstance, which lands in the api bucket
+            // (deps.features.dueDates) and never as a top-level dep — so both resolved
+            // to _warnMissingOptional's `{}` on EVERY boot, with the warning suppressed
+            // because both are on the lateLoadingDeps list. "Late-loading" was hiding a
+            // permanent absence, not a temporary one. Nothing read either of them (the
+            // due-date input comes from the `createDueDateInput` FUNCTION below), so
+            // they were removed rather than given routes to serve dead code.
             recurringPanel: resolvedDeps.recurringPanel || this._warnMissingOptional('recurringPanel'),
 
             // Helper functions (use ?.() chaining when calling)
@@ -161,7 +170,6 @@ export class TaskDOMManager {
             handleTaskCompletionChange: resolvedDeps.handleTaskCompletionChange || null,
             checkMiniCycle: resolvedDeps.checkMiniCycle || null,
             triggerLogoBackground: resolvedDeps.triggerLogoBackground || null,
-            triggerLogoScan: resolvedDeps.triggerLogoScan || null,
             updateUndoRedoButtons: resolvedDeps.updateUndoRedoButtons || null,
 
             // Due dates module
@@ -298,7 +306,8 @@ export class TaskDOMManager {
                     get generateId() { return instanceDeps.generateId; },
                     get enableDragAndDropOnTask() { return instanceDeps.enableDragAndDropOnTask; },
                     get updateMoveArrowsVisibility() { return instanceDeps.updateMoveArrowsVisibility; },
-                    get saveTaskToSchema25() { return instanceDeps.saveTaskToSchema25; }
+                    get saveTaskToSchema25() { return instanceDeps.saveTaskToSchema25; },
+                    get calculateNextOccurrence() { return instanceDeps.calculateNextOccurrence; }
                 });
 
                 // Initialize validator module - no window.* fallbacks (Phase 2)
@@ -473,7 +482,10 @@ export class TaskDOMManager {
      */
     _warnMissingOptional(depName) {
         // These deps load in later boot phases - don't warn for expected late-loading deps
-        const lateLoadingDeps = ['dueDates', 'reminders', 'recurringPanel', 'taskCore'];
+        // Genuinely late-loading: both ARE depMappings keys, they just arrive after
+        // this Phase-3 module wires. Do not add a name here to silence a dep that has
+        // no route at all — that is what hid dueDates/reminders resolving to {} forever.
+        const lateLoadingDeps = ['recurringPanel', 'taskCore'];
         if (!lateLoadingDeps.includes(depName)) {
             console.warn(`⚠️ TaskDOMManager: Optional dependency ${depName} not injected`);
         }
@@ -565,10 +577,8 @@ export class TaskDOMManager {
         }
 
         // Accessibility: descriptive aria-label for screen readers
-        const completed = taskContext.completed || false;
-        const statusText = completed ? getLabel('nav.completed') : getLabel('nav.notCompleted');
-        const labelKey = recurring ? 'action.taskItemRecurring' : 'action.taskItemLabel';
-        taskItem.setAttribute('aria-label', getLabel(labelKey, { vars: { name: taskTextTrimmed, status: statusText } }));
+        applyTaskStatusLabel(taskItem, taskContext.completed || false,
+            { name: taskTextTrimmed, recurring });
 
         // Create three dots button if needed
         const threeDotsButton = this.createThreeDotsButton(taskItem, settings);
@@ -649,46 +659,30 @@ export class TaskDOMManager {
             : { cycle: false, todo: true }; // Use defaults if invalid
 
         // ✅ Decide active deleteWhenComplete strictly from settings when possible
-        // Priority: mode-specific setting (canonical) > legacy field > hard defaults
-        let finalDeleteWhenComplete;
-
-        // 1) Preferred: mode-specific setting (canonical source of truth)
-        if (typeof validSettings[currentMode] === 'boolean') {
-            finalDeleteWhenComplete = validSettings[currentMode];
-
-        // 2) Fallback: legacy/temporary field if settings are somehow missing
-        } else if (typeof deleteWhenComplete === 'boolean') {
-            finalDeleteWhenComplete = deleteWhenComplete;
-
-        // 3) Last-resort: hard defaults per mode
-        } else {
-            finalDeleteWhenComplete = currentMode === 'todo'
-                ? true   // To-Do default = delete
-                : false; // Cycle default = keep
-        }
+        // Priority: mode-specific setting (canonical) > legacy field > hard defaults.
+        // Shared with the Task view via utils/cycleMode.js — the same task must
+        // not show one indicator in the list and another on the card.
+        const finalDeleteWhenComplete = resolveDeleteWhenComplete({
+            settings: validSettings,
+            legacy: deleteWhenComplete,
+            mode: currentMode,
+            defaults: DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS
+        });
 
         // ✅ ALWAYS set the dataset attribute (for DOM sync)
         taskItem.dataset.deleteWhenComplete = finalDeleteWhenComplete.toString();
         taskItem.dataset.deleteWhenCompleteSettings = JSON.stringify(validSettings);
 
-        // ✅ Apply visual indicators based on mode
-        if (isToDoMode) {
-            // To-Do mode: show pin ONLY if opted OUT (deleteWhenComplete=false)
-            // Recurring tasks CAN show pin if user manually disabled deleteWhenComplete
-            if (!finalDeleteWhenComplete) {
-                taskItem.classList.add(DOM_CLASSES.KEPT_TASK);
-            }
-        } else {
-            // Cycle mode: show red X ONLY if opted IN (deleteWhenComplete=true)
-            // BUT recurring tasks never show ❌ (recurring symbol indicates deletion)
-            if (finalDeleteWhenComplete && !isRecurring) {
-                taskItem.classList.add(DOM_CLASSES.SHOW_DELETE_INDICATOR);
-            }
-            // Recurring tasks show pin 📌 if user manually disabled deleteWhenComplete
-            if (!finalDeleteWhenComplete && isRecurring) {
-                taskItem.classList.add(DOM_CLASSES.KEPT_TASK);
-            }
-        }
+        // ✅ Apply visual indicators. The per-mode rules (and the recurring
+        // special-cases in both directions) live in getTaskResetIndicator so the
+        // routine list and the Task view stay in agreement.
+        const resetIndicator = getTaskResetIndicator({
+            deleteWhenComplete: finalDeleteWhenComplete,
+            isRecurring,
+            mode: currentMode
+        });
+        if (resetIndicator === 'clear') taskItem.classList.add(DOM_CLASSES.SHOW_DELETE_INDICATOR);
+        if (resetIndicator === 'keep') taskItem.classList.add(DOM_CLASSES.KEPT_TASK);
 
         return taskItem;
     }
@@ -840,15 +834,21 @@ export class TaskDOMManager {
         checkbox.setAttribute("name", `task-complete-${assignedTaskId}`);
         checkbox.checked = completed;
         checkbox.setAttribute("aria-label", getLabel('action.markTaskComplete', { vars: { name: taskTextTrimmed } }));
-        checkbox.setAttribute("aria-checked", String(completed));
+        // NO aria-checked. This is a NATIVE <input type="checkbox">, which already
+        // exposes its state from the `checked` property — and aria-checked
+        // OVERRIDES that implicit state rather than supplementing it. So the
+        // attribute buys nothing here, while any path that sets .checked without
+        // also rewriting the attribute makes a screen reader announce the stale
+        // ARIA value over a correct visual and native one. It tracked correctly
+        // on every measured path (Sep 2026 audit), but it converted a class of
+        // impossible bug into a possible one for no benefit. The custom
+        // role="checkbox" DIVs elsewhere (onboardingDemo, modalTemplates) DO
+        // need aria-checked — they have no implicit state to inherit.
 
         // Add event listener using safe helper
         const addListener = this.deps.safeAddEventListener;
 
         addListener(checkbox, "change", () => {
-            // ✅ Keep aria-checked in sync with checked state
-            checkbox.setAttribute("aria-checked", String(checkbox.checked));
-
             // ✅ Enable undo system on first user interaction
             if (typeof this.deps.enableUndoSystemOnFirstInteraction === 'function') {
                 this.deps.enableUndoSystemOnFirstInteraction();
@@ -864,21 +864,16 @@ export class TaskDOMManager {
 
             // Note: autoSave removed - handleTaskCompletionChange already updates AppState
 
-            // Logo animation - scan effect in to-do mode, background flash otherwise.
-            // Mode is DERIVED from the active cycle's deleteCheckedTasks (same
-            // pattern as the completion handler below) — the previous code read
-            // AppState.getState() (method doesn't exist) and settings.isToDoMode
-            // (field doesn't exist), so optional chaining silently yielded
-            // undefined and the to-do scan branch never fired.
-            if (checkbox.checked) {
-                const logoState = this.deps.AppState?.get?.();
-                const logoCycle = logoState?.data?.cycles?.[logoState?.appState?.activeCycleId];
-                const isToDoMode = logoCycle?.deleteCheckedTasks === true;
-                if (isToDoMode && typeof this.deps.triggerLogoScan === 'function') {
-                    this.deps.triggerLogoScan(500);
-                } else if (typeof this.deps.triggerLogoBackground === 'function') {
-                    this.deps.triggerLogoBackground('green', 300);
-                }
+            // Completing a task glows the logo green in EVERY mode. Finishing
+            // a task is the same act whichever mode you're in, so the feedback
+            // is the same — there is deliberately no mode branch here.
+            //
+            // The blue scan line is a different signal entirely: it means tasks
+            // were CLEARED, and it belongs to taskCycleReset's clear path. It
+            // used to fire here too when in To-Do mode, which made every
+            // checkbox tick read as "your list was just cleared".
+            if (checkbox.checked && typeof this.deps.triggerLogoBackground === 'function') {
+                this.deps.triggerLogoBackground('green', 300);
             }
 
             // ✅ Update undo/redo button states
@@ -995,7 +990,7 @@ export class TaskDOMManager {
             if (taskItem) {
                 const taskLabel = taskItem.querySelector(DOM_SELECTORS.TASK_TEXT);
                 if (taskLabel) {
-                    let existingIcon = taskLabel.querySelector(DOM_SELECTORS.RECURRING_INDICATOR);
+                    const existingIcon = taskLabel.querySelector(DOM_SELECTORS.RECURRING_INDICATOR);
 
                     if (isNowRecurring && !existingIcon) {
                         const icon = document.createElement("span");

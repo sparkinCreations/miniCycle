@@ -15,6 +15,7 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { announce } from '../utils/announce.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -37,6 +38,7 @@ let _sampleManifestCache = null;
 // ============================================================================
 
 const di = createDIModule('RoutineManager', {
+    helpWindowManager: optional(null),
     AppState: optional(null),
     loadMiniCycleData: optional(null),
     showPromptModal: optional(null),
@@ -108,6 +110,13 @@ export class RoutineManager {
 
             // Theme
             refreshThemeLabels: resolvedDeps.refreshThemeLabels || null,
+
+            // Help window — forwarded explicitly. this.deps is rebuilt from this
+            // allow-list, so a dep the manifest DOES deliver is still dropped if
+            // it is not named here (same shape as taskCore's forward-through
+            // list, and the reason declaring it in the manifest alone changed
+            // nothing). Resolved as a factory by _clearHelpWindowTemporary().
+            helpWindowManager: resolvedDeps.helpWindowManager || null,
 
             // Mode sync (must run before refreshThemeLabels on new routine creation)
             syncModeFromToggles: resolvedDeps.syncModeFromToggles || null,
@@ -236,7 +245,10 @@ export class RoutineManager {
                     }, true);
 
                     if (typeof this.deps.onCycleCreated === 'function') {
-                        this.deps.onCycleCreated(finalTitle).catch(err => {
+                        // Promise.resolve(): the moduleLoader DI wrapper optional-chains its inner
+                        // call, so it yields undefined when the hook is unwired and `.catch` on
+                        // undefined throws here — inside a UI flow, after state already changed.
+                        Promise.resolve(this.deps.onCycleCreated(finalTitle)).catch(err => {
                             console.warn('⚠️ Undo system cycle creation notification failed:', err);
                         });
                     }
@@ -252,6 +264,8 @@ export class RoutineManager {
                     body.classList.add(DOM_CLASSES.AUTO_CYCLE_MODE);
 
                     this.deps.refreshThemeLabels?.();
+
+                    this._clearHelpWindowTemporary();
                     this.deps.updateRecurringInfoLink?.();
                     await this.deps.completeInitialSetup(finalTitle, appState.get());
 
@@ -359,7 +373,10 @@ export class RoutineManager {
 
         // ✅ Notify undo system of new cycle (fallback path)
         if (typeof this.deps.onCycleCreated === 'function') {
-            this.deps.onCycleCreated(finalTitle).catch(err => {
+            // Promise.resolve(): the moduleLoader DI wrapper optional-chains its inner
+            // call, so it yields undefined when the hook is unwired and `.catch` on
+            // undefined throws here — inside a UI flow, after state already changed.
+            Promise.resolve(this.deps.onCycleCreated(finalTitle)).catch(err => {
                 console.warn('⚠️ Undo system cycle creation notification failed:', err);
             });
         }
@@ -370,6 +387,28 @@ export class RoutineManager {
     /**
      * Create a new miniCycle from the main menu
      */
+    /**
+     * Release temporary help-window content when the active routine changes.
+     *
+     * showModeDescription() and showCustomizerTip() both hold
+     * isShowingModeDescription — for 30s and 10s respectively — and
+     * updateConstantMessage() early-returns for as long as it is set. Nothing
+     * released it on a routine change, so changing modes and then creating or
+     * switching a routine left the PREVIOUS routine's message on screen.
+     *
+     * Called from every refresh block in this file. Those blocks are hand-rolled
+     * copies of routineLoader.updateDependentComponents() — only one of the three
+     * reaches it via loadMiniCycle(), which is exactly why fixing it there alone
+     * did not work. Collapsing them is a wider change than this fix.
+     * @private
+     */
+    _clearHelpWindowTemporary() {
+        const mgr = typeof this.deps.helpWindowManager === 'function'
+            ? this.deps.helpWindowManager()
+            : this.deps.helpWindowManager;
+        mgr?.clearTemporaryMessage?.();
+    }
+
     createNewMiniCycle() {
 
         // ✅ Use state-based data access
@@ -455,19 +494,30 @@ export class RoutineManager {
                 );
                 body.classList.add(DOM_CLASSES.AUTO_CYCLE_MODE);
 
-                const taskInputContainer = this.deps.querySelector(DOM_SELECTORS.TASK_INPUT);
-                if (taskInputContainer) {
-                    taskInputContainer.classList.add(DOM_CLASSES.HIDDEN);
-                    const toggleText = this.deps.getElementById(DOM_IDS.TOGGLE_TASK_INPUT_TEXT);
-                    if (toggleText) toggleText.textContent = getLabel('action.addTask');
-                    taskInputContainer.querySelectorAll('input, button').forEach(el => { el.tabIndex = -1; });
-                }
+                // Input bar: route through modeManager, never hand-rolled here.
+                //
+                // This used to add .hidden to the container, retitle the toggle
+                // and reset tabIndex itself — three of the FOUR things
+                // _updateTaskInputVisibility() does. The fourth is
+                // `body.input-bar-visible`, which CSS uses to pick between the
+                // four empty-state hints (focus-mode.css). Skipping it left the
+                // class true while the bar was hidden, so a brand-new routine
+                // greeted the user with "Type your first task in the bar above"
+                // pointing at a bar that was not there.
+                //
+                // Routing through syncModeFromToggles() also fixes what the
+                // hide itself broke: a new routine is empty, and
+                // _shouldShowTaskInput() shows the bar on an empty routine
+                // precisely so Focus View is not a dead end (v2.522). Hiding it
+                // here re-created that dead end for every new routine.
+                this.deps.syncModeFromToggles?.();
 
                 this.deps.hideMainMenu();
                 this.deps.updateProgressBar();
                 this.deps.checkCompleteAllButton();
                 this.deps.updateMainMenuHeader();
                 this.deps.refreshThemeLabels?.();
+                this._clearHelpWindowTemporary();
 
                 const recurringLink = this.deps.getElementById(DOM_IDS.RECURRING_INFO_LINK);
                 if (recurringLink) recurringLink.classList.remove(DOM_CLASSES.SHOW);
@@ -484,16 +534,41 @@ export class RoutineManager {
                 }
 
                 if (finalResult && typeof this.deps.onCycleCreated === 'function') {
-                    this.deps.onCycleCreated(finalResult.storageKey).catch(err => {
+                    // Promise.resolve(): the moduleLoader DI wrapper optional-chains its inner
+                    // call, so it yields undefined when the hook is unwired and `.catch` on
+                    // undefined throws here — inside a UI flow, after state already changed.
+                    Promise.resolve(this.deps.onCycleCreated(finalResult.storageKey)).catch(err => {
                         console.warn('⚠️ Undo system cycle creation notification failed:', err);
                     });
                 }
 
                 if (finalResult) {
                     this.deps.showNotification(`✅ ${getLabel('notify.routineCreated', { vars: { name: finalResult.finalTitle } })}`, "success", UI_TIMEOUTS.NOTIFICATION_LONG);
+                    // Creating a routine replaces the title AND the entire task
+                    // list. None of that was announced: routineManager had zero
+                    // live-region writes, so a screen-reader user's whole context
+                    // changed in silence (measured Sep 2026). The visible
+                    // notification above does not help — it is not a live region
+                    // this module can rely on for assistive tech.
+                    this._announce('accessibility.routineCreated', finalResult.finalTitle);
                 }
             }
         });
+    }
+
+    /**
+     * Speak a routine-level context change into the shared #live-region.
+     *
+     * Routine create / switch / rename each replace the title and the whole task
+     * list, which is the largest context change the app has — and all three were
+     * silent to assistive tech until Sep 2026. Kept as one helper so a new
+     * routine-level action has an obvious place to announce from.
+     *
+     * @param {string} labelKey - accessibility.* label key
+     * @param {string} name - routine name to interpolate
+     */
+    _announce(labelKey, name) {
+        announce(getLabel(labelKey, { vars: { name } }), { getElementById: this.deps.getElementById });
     }
 
     /**
@@ -567,7 +642,10 @@ export class RoutineManager {
 
             // Notify undo system
             if (typeof this.deps.onCycleCreated === 'function') {
-                this.deps.onCycleCreated(finalTitle).catch(err => {
+                // Promise.resolve(): the moduleLoader DI wrapper optional-chains its inner
+                // call, so it yields undefined when the hook is unwired and `.catch` on
+                // undefined throws here — inside a UI flow, after state already changed.
+                Promise.resolve(this.deps.onCycleCreated(finalTitle)).catch(err => {
                     console.warn('⚠️ Undo system cycle creation notification failed:', err);
                 });
             }
@@ -600,6 +678,7 @@ export class RoutineManager {
                 this.deps.checkCompleteAllButton();
                 this.deps.updateMainMenuHeader();
                 this.deps.refreshThemeLabels?.();
+                this._clearHelpWindowTemporary();
                 this.deps.loadMiniCycle?.();
             }
 

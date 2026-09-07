@@ -16,6 +16,7 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { syncTaskDeleteWhenComplete } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -68,6 +69,9 @@ export class ModeManager {
         // from the live `di.resolve()` via the `deps` getter below.
         this.refreshDebounceTimer = null;
         this._initialized = false;
+        // Set while syncTogglesFromMode() is driving the toggles programmatically.
+        // See _refreshModeHelp() for why the toggle handlers must stand down then.
+        this._syncingTogglesFromMode = false;
     }
 
     /**
@@ -271,6 +275,41 @@ export class ModeManager {
     }
 
     /**
+     * Show the current mode's help description, the same way a mode-selector
+     * switch does.
+     *
+     * The selector is not the only way to change mode — the settings toggles are
+     * a second path, and they used to leave the help window alone entirely. That
+     * matters more than a missing description, because showModeDescription()
+     * holds `isShowingModeDescription` for 30 seconds and updateConstantMessage()
+     * early-returns for that whole time: switch mode by selector, then switch
+     * again by toggle inside 30s, and the window kept showing the FIRST mode's
+     * description. Measured: the selector path itself is not stale — help,
+     * body class and selector value all land in the same animation frame.
+     *
+     * Reads the mode from the selector rather than recomputing it: syncModeFromToggles()
+     * has already written the canonical mode there, so this cannot disagree with
+     * the rest of the UI.
+     *
+     * Callers must skip this when syncTogglesFromMode() is driving. That function
+     * flips the two toggles one at a time and each flip fires the toggle handler,
+     * so unguarded a single selector switch renders up to three descriptions —
+     * including the transient mode the half-applied toggles spell out (auto →
+     * to-do passes through manual-cycle). It calls showModeDescription() itself
+     * once the toggles agree.
+     * @returns {void}
+     */
+    _refreshModeHelp() {
+        const modeSelector = this.deps.getElementById(DOM_IDS.MODE_SELECTOR);
+        if (!modeSelector) return;
+
+        const helpMgr = this.deps.helpWindowManager?.();
+        if (helpMgr && typeof helpMgr.showModeDescription === 'function') {
+            helpMgr.showModeDescription(modeSelector.value);
+        }
+    }
+
+    /**
      * Sync mode from toggle states
      * Updates mode selector and UI based on current toggle settings
      */
@@ -310,9 +349,10 @@ export class ModeManager {
             toggleAutoReset.checked = autoReset;
             deleteCheckedTasks.checked = deleteChecked;
 
-            // Sync task input bar visibility with routine's saved preference
+            // Sync task input bar visibility with routine's saved preference,
+            // except on an empty routine — see _shouldShowTaskInput().
             if (this._updateTaskInputVisibility) {
-                this._updateTaskInputVisibility(currentCycle.showTaskInput === true);
+                this._updateTaskInputVisibility(this._shouldShowTaskInput(currentCycle));
             }
         } else {
             // ✅ Normal during Phase 2 - data loads in Phase 3
@@ -355,6 +395,52 @@ export class ModeManager {
     }
 
     /**
+     * Point every task's active `deleteWhenComplete` at the given mode's stored
+     * setting. Call this INSIDE an AppState producer — it mutates `cycle` in place.
+     *
+     * `deleteWhenComplete` is derived (`deleteWhenCompleteSettings[mode]`), so it
+     * must move in the SAME transaction as `cycle.deleteCheckedTasks`. When the two
+     * were split across separate writes, one mode switch produced two undo steps,
+     * and the first Undo left To-Do mode showing while every task carried the
+     * cycle-mode value.
+     *
+     * Idempotent: re-running for the mode already in effect changes nothing, so
+     * callers that only touched the autoReset toggle pay no cost.
+     *
+     * @param {Object} cycle - the cycle draft from inside the producer
+     * @param {'cycle'|'todo'} currentMode
+     */
+    syncTasksToMode(cycle, currentMode) {
+        if (!cycle?.tasks) return;
+        const DEFAULTS = this.deps.DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS;
+        // Per-key repair + re-derive lives in utils/cycleMode.js — routineLoader and
+        // taskButtons need the identical semantics on load and on un-recurring.
+        cycle.tasks.forEach(task => {
+            syncTaskDeleteWhenComplete(task, currentMode, DEFAULTS);
+        });
+    }
+
+    /**
+     * True when `cycle` already carries this exact mode transition — the flag and
+     * every task's derived value. Used to skip a redundant persist+notify when the
+     * mode-selector path has already written the same transition.
+     *
+     * @param {Object} cycle          the live cycle (read-only here)
+     * @param {boolean} isToDoMode    the mode being applied
+     * @param {'cycle'|'todo'} currentMode
+     * @returns {boolean}
+     */
+    isModeAlreadyApplied(cycle, isToDoMode, currentMode) {
+        if (!cycle || cycle.deleteCheckedTasks !== isToDoMode) return false;
+        return (cycle.tasks || []).every(task => {
+            const stored = task.deleteWhenCompleteSettings;
+            if (!stored || typeof stored !== 'object') return false;
+            if (typeof stored[currentMode] !== 'boolean') return false;
+            return !!task.deleteWhenComplete === stored[currentMode];
+        });
+    }
+
+    /**
      * Update storage from toggle states
      * Persists current toggle states to AppState
      */
@@ -381,12 +467,14 @@ export class ModeManager {
         const toggleAutoReset = this.deps.getElementById(DOM_IDS.TOGGLE_AUTO_RESET);
         const deleteCheckedTasks = this.deps.getElementById(DOM_IDS.DELETE_CHECKED_TASKS);
 
-        // ✅ Update through state system
+        // ✅ Update through state system — mode flags AND the per-task values they
+        // derive, in ONE producer, so the whole switch is a single undo step.
         AppState.update(state => {
             const cycle = state.data.cycles[activeCycle];
             if (cycle) {
                 cycle.autoReset = toggleAutoReset.checked;
                 cycle.deleteCheckedTasks = deleteCheckedTasks.checked;
+                this.syncTasksToMode(cycle, deleteCheckedTasks.checked ? 'todo' : 'cycle');
             }
         }, true); // immediate save
 
@@ -507,43 +595,52 @@ export class ModeManager {
         // ✅ Function to sync toggles from either selector (NESTED FUNCTION - stays inside)
         // ✅ FIXED: Made async to properly await storage update before UI sync
         const syncTogglesFromMode = async (selectedMode) => {
+            // Hold off the toggle handlers' own help refresh until the toggles
+            // agree — see _refreshModeHelp(). try/finally so an await that
+            // rejects can't strand the flag and mute the toggle path for good.
+            this._syncingTogglesFromMode = true;
+            try {
 
-            switch(selectedMode) {
-                case 'auto-cycle':
-                    toggleAutoReset.checked = true;
-                    deleteCheckedTasks.checked = false;
-                    break;
-                case 'manual-cycle':
-                    toggleAutoReset.checked = false;
-                    deleteCheckedTasks.checked = false;
-                    break;
-                case 'todo-mode':
-                    toggleAutoReset.checked = false;
-                    deleteCheckedTasks.checked = true;
-                    break;
-            }
+                switch(selectedMode) {
+                    case 'auto-cycle':
+                        toggleAutoReset.checked = true;
+                        deleteCheckedTasks.checked = false;
+                        break;
+                    case 'manual-cycle':
+                        toggleAutoReset.checked = false;
+                        deleteCheckedTasks.checked = false;
+                        break;
+                    case 'todo-mode':
+                        toggleAutoReset.checked = false;
+                        deleteCheckedTasks.checked = true;
+                        break;
+                }
 
-            // Update selector value
-            modeSelector.value = selectedMode;
+                // Update selector value
+                modeSelector.value = selectedMode;
 
-            // ✅ UPDATE STORAGE FIRST - must await to ensure data is saved before UI sync
-            await this.updateStorageFromToggles();
+                // ✅ UPDATE STORAGE FIRST - must await to ensure data is saved before UI sync
+                await this.updateStorageFromToggles();
 
-            // ✅ THEN trigger change events (but prevent them from updating storage again)
-            toggleAutoReset.dispatchEvent(new Event('change'));
-            deleteCheckedTasks.dispatchEvent(new Event('change'));
+                // ✅ THEN trigger change events (but prevent them from updating storage again)
+                toggleAutoReset.dispatchEvent(new Event('change'));
+                deleteCheckedTasks.dispatchEvent(new Event('change'));
 
-            // Update UI - now storage has correct values (MUST await to ensure body class is set)
-            await this.syncModeFromToggles();
+                // Update UI - now storage has correct values (MUST await to ensure body class is set)
+                await this.syncModeFromToggles();
 
-            // Check complete all button
-            if (this.deps.checkCompleteAllButton) {
-                this.deps.checkCompleteAllButton();
-            }
+                // Check complete all button
+                if (this.deps.checkCompleteAllButton) {
+                    this.deps.checkCompleteAllButton();
+                }
 
-            // ✅ Update recurring button visibility via module (DI-pure)
-            if (this.deps.recurringCore?.updateRecurringButtonVisibility) {
-                this.deps.recurringCore.updateRecurringButtonVisibility();
+                // ✅ Update recurring button visibility via module (DI-pure)
+                if (this.deps.recurringCore?.updateRecurringButtonVisibility) {
+                    this.deps.recurringCore.updateRecurringButtonVisibility();
+                }
+
+            } finally {
+                this._syncingTogglesFromMode = false;
             }
 
             // ✅ Show mode description in help window
@@ -597,9 +694,18 @@ export class ModeManager {
             }
         });
 
-        toggleAutoReset._modeChangeHandler = (e) => {
-            this.syncModeFromToggles();
+        toggleAutoReset._modeChangeHandler = async (e) => {
+            // Read the guard NOW, not after the await. dispatchEvent runs this
+            // handler synchronously only as far as its first await; by the time
+            // it resumes, syncTogglesFromMode()'s finally has already cleared the
+            // flag, so checking it later would always say "not driving".
+            const drivenBySelector = this._syncingTogglesFromMode;
+
+            // Awaited: syncModeFromToggles() is what writes the canonical mode to
+            // the selector, and _refreshModeHelp() reads it back from there.
+            await this.syncModeFromToggles();
             this.updateCycleModeDescription();
+            if (!drivenBySelector) this._refreshModeHelp();
 
             if (this.deps.checkCompleteAllButton) {
                 this.deps.checkCompleteAllButton();
@@ -610,9 +716,13 @@ export class ModeManager {
         };
         safeAdd(toggleAutoReset, 'change', toggleAutoReset._modeChangeHandler);
 
-        deleteCheckedTasks._modeChangeHandler = (e) => {
-            this.syncModeFromToggles();
+        deleteCheckedTasks._modeChangeHandler = async (e) => {
+            // Guard captured synchronously — see the toggleAutoReset handler above.
+            const drivenBySelector = this._syncingTogglesFromMode;
+
+            await this.syncModeFromToggles();
             this.updateCycleModeDescription();
+            if (!drivenBySelector) this._refreshModeHelp();
 
             if (this.deps.checkCompleteAllButton) {
                 this.deps.checkCompleteAllButton();
@@ -770,6 +880,32 @@ export class ModeManager {
     }
 
     /**
+     * Should the task-input bar be showing for this routine?
+     *
+     * The routine's own `showTaskInput` preference decides, full stop. Hiding
+     * the bar by default is not an oversight, it is the teaching mechanism:
+     * miniCycle is a routine manager, not a to-do list. You build a routine
+     * once and then run it, so the input bar is scaffolding you put away when
+     * the routine is built. A bar that starts open is a bar users never learn
+     * to close.
+     *
+     * v2.522 added an "empty routine always shows the bar" override, on the
+     * belief that Focus View had no other way in. Measured Sep 2026, that was
+     * wrong: with the bar hidden, an empty routine in Focus View renders
+     * `.empty-state-hint-focus` — "Open the ⋯ menu at the top and tap
+     * Show/hide input bar" — and the ⋯ button is on screen. Guidance existed;
+     * the override only defeated the default the guidance was teaching. It is
+     * gone. Home view needs even less help: `+` toggles the bar, which is the
+     * gesture users already expect for adding a task.
+     *
+     * @param {Object|null} cycle - the active cycle, or null when there is none
+     * @returns {boolean} whether the input bar should be visible
+     */
+    _shouldShowTaskInput(cycle) {
+        return cycle?.showTaskInput === true;
+    }
+
+    /**
      * Setup quick actions button and dropdown menu
      * Handles toggle task input and create new routine actions
      */
@@ -877,11 +1013,12 @@ export class ModeManager {
                 });
             };
 
-            // Set initial state from per-routine setting (default: false = hidden)
+            // Set initial state from the per-routine setting (default: false =
+            // hidden), overridden for an empty routine — see _shouldShowTaskInput().
             const state = this.deps.AppState?.get();
             const activeCycleId = state?.appState?.activeCycleId;
             const activeCycle = activeCycleId ? state?.data?.cycles?.[activeCycleId] : null;
-            const initialVisible = activeCycle?.showTaskInput === true;
+            const initialVisible = this._shouldShowTaskInput(activeCycle);
             this._updateTaskInputVisibility(initialVisible);
 
             this.deps.safeAddEventListener(toggleTaskInputBtn, 'click', async () => {
@@ -1147,30 +1284,32 @@ export class ModeManager {
                 // Store updated state to avoid race condition
                 let updatedCycle = null;
 
-                await AppState.update(state => {
-                    const cycle = state.data.cycles[activeCycle];
+                // The mode-selector path (syncTogglesFromMode) persists this exact
+                // transition and THEN dispatches a synthetic `change` that lands here.
+                // Re-running the producer changes nothing but still saves and notifies
+                // every subscriber, so detect that and skip straight to the UI sync.
+                // Detection is stateless on purpose: a suppression flag set around the
+                // dispatch would stick if anything threw in between, and a stuck flag
+                // means the real checkbox silently stops persisting — a far worse
+                // failure than one redundant write.
+                if (self.isModeAlreadyApplied(currentCycle, isToDoMode, currentMode)) {
+                    updatedCycle = currentCycle;
+                } else {
+                    await AppState.update(state => {
+                        const cycle = state.data.cycles[activeCycle];
 
-                    // Update mode
-                    cycle.deleteCheckedTasks = isToDoMode;
+                        // Update mode
+                        cycle.deleteCheckedTasks = isToDoMode;
 
-                    // ✅ Sync all tasks' deleteWhenComplete with mode-specific settings
-                    if (cycle.tasks) {
-                        cycle.tasks.forEach(task => {
-                            // Initialize or repair settings if missing/incomplete
-                            if (!task.deleteWhenCompleteSettings ||
-                                typeof task.deleteWhenCompleteSettings !== 'object' ||
-                                typeof task.deleteWhenCompleteSettings[currentMode] !== 'boolean') {
-                                task.deleteWhenCompleteSettings = { ...DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS };
-                            }
+                        // ✅ Sync all tasks' deleteWhenComplete with mode-specific
+                        // settings. Shared with updateStorageFromToggles() — one
+                        // helper, one copy.
+                        self.syncTasksToMode(cycle, currentMode);
 
-                            // Sync active value from mode-specific setting
-                            task.deleteWhenComplete = task.deleteWhenCompleteSettings[currentMode];
-                        });
-                    }
-
-                    // ✅ Capture updated cycle to avoid race condition
-                    updatedCycle = cycle;
-                }, true); // Immediate save
+                        // ✅ Capture updated cycle to avoid race condition
+                        updatedCycle = cycle;
+                    }, true); // Immediate save
+                }
 
                 // ✅ Update UI using centralized DOM sync with captured state
                 const syncAllTasksWithMode = self.deps.syncAllTasksWithMode;

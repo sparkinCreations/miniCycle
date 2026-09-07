@@ -7,9 +7,9 @@
      miniCycle.html — FILE MAP & LOAD-ORDER CONTRACTS
      ═══════════════════════════════════════════════════════════════════════════
 
-     This file is NOT disorganized — the head is an ordered boot gauntlet where
-     the sequence is load-bearing, and the ES5 syntax above the feature gate is a
-     deliberate parse-safety chain. Read the two contracts before editing.
+     The head is an ordered boot gauntlet where the sequence is load-bearing, and 
+     the ES5 syntax above the feature gate is a deliberate parse-safety chain. 
+     Read the two contracts before editing.
 
      NOTE: this banner sits AFTER <meta charset> on purpose. The HTML spec only
      guarantees encoding detection in the first 1024 bytes; a banner above the
@@ -37,6 +37,12 @@
      merge it with neighbouring code. Everything below the "END OF ES5-ONLY
      REGION" banner may use modern syntax freely.
 
+     ONE deliberate exception: the ES2020 SYNTAX CANARY block directly above
+     the gate contains `?.` and `??` ON PURPOSE. It parses whole or dies whole,
+     and the gate reads its flag to catch engines the built-in checks admit
+     (iOS 12 has globalThis but not optional chaining). It is exempt from the
+     ES5 rule by its marker comment; nothing else is.
+
      Verify with acorn (ecmaVersion: 5) over every pre-gate inline block before
      shipping changes to the head.
 
@@ -50,10 +56,11 @@
        6. version-mismatch check + cache-clear interstitial
        7. modulepreload injection (map-aware, bare hashed URLs)
        8. pre-paint settings reader (single parse — dark mode / a11y / app bg)
-       9. ES3 feature gate  ← must be last of the PRE-GATE sequence, alone in its block
-      10. 60s load-timeout failsafe (INLINE on purpose — a load-failure net
+       9. ES2020 syntax canary (the one post-ES5 block; alone; sets a flag)
+      10. ES3 feature gate  ← must be last of the PRE-GATE sequence, alone in its block
+      11. 60s load-timeout failsafe (INLINE on purpose — a load-failure net
           must not depend on an external file loading; ES5)
-      11. boot-sw.js (EXTERNAL, defer) — SW registration, update management,
+      12. boot-sw.js (EXTERNAL, defer) — SW registration, update management,
           PWA install. Extracted Aug 2026: `defer` keeps it off the
           parse/first-paint path, and external files ride script-src 'self'
           so edits there no longer force CSP hash regeneration. Its tag must
@@ -84,15 +91,12 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
-<!-- ✅ iOS status bar - uses body background-color with black-translucent -->
 <meta name="theme-color" content="#4c79ff" id="theme-color-meta">
 
-<!-- ✅ Translucent status bar shows body background-color on iOS -->
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" id="status-bar-style-meta">
 
-<meta name="app-version" content="2.411">
+<meta name="app-version" content="2.551">
 
-<!-- Content Security Policy -->
 <!-- CSP is served via HTTP header in netlify.toml (production) -->
 <!-- No <meta> CSP tag needed — Netlify headers handle it, and omitting it here allows local HTTP dev servers -->
 
@@ -100,7 +104,6 @@
 <meta name="description" content="miniCycle is a routine workflow companion that turns repeatable tasks into effortless cycles. Track progress, build momentum, and manage daily routines with auto-cycling task lists.">
 <link rel="canonical" href="https://minicycle.app/minicycle">
 
-<!-- Self-hosted fonts (no external requests) -->
 <!-- Preload the dominant weights so Poppins is available AT first paint. The
      bundled build inlines fonts.css, which makes first paint early enough that
      text would otherwise render in the fallback font and reflow when Poppins
@@ -114,9 +117,6 @@
 <link rel="icon" type="image/png" href="assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" />
 <link rel="apple-touch-icon" sizes="180x180" href="assets/images/logo/pwa-icons/icon-192.png" />
 <!-- Font Awesome removed - using inline SVG icons instead (see modules/utils/icons.js). fa-* classes are kept as the semantic source and swapped to inline <svg> at runtime by iconInit.js. -->
-<!-- Add cache busting version parameter -->
-<!-- Original CSS (for reference) -->
-<!-- <link rel="stylesheet" href="miniCycle-styles.css?v=2.411"> -->
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
      § BOOT GAUNTLET (head) — ORDERED. DO NOT REARRANGE.
@@ -130,18 +130,17 @@
          light mode / full motion / default background on every load.
      ═══════════════════════════════════════════════════════════════════════════ -->
 
-<!-- Preload critical CSS files (they load in parallel, not blocking) -->
-<link rel="preload" href="styles/main.css?v=2.411" as="style">
-<link rel="preload" href="styles/base/variables.css?v=2.411" as="style">
-<link rel="preload" href="styles/base/reset.css?v=2.411" as="style">
-<link rel="preload" href="styles/layout/app-container.css?v=2.411" as="style">
-<link rel="preload" href="styles/layout/header.css?v=2.411" as="style">
-<link rel="preload" href="styles/components/task-list.css?v=2.411" as="style">
+<link rel="preload" href="styles/main.css?v=2.551" as="style">
+<link rel="preload" href="styles/base/variables.css?v=2.551" as="style">
+<link rel="preload" href="styles/base/reset.css?v=2.551" as="style">
+<link rel="preload" href="styles/layout/app-container.css?v=2.551" as="style">
+<link rel="preload" href="styles/layout/header.css?v=2.551" as="style">
+<link rel="preload" href="styles/components/task-list.css?v=2.551" as="style">
 
 <!-- Async CSS loading - doesn't block render, app starts with inline critical CSS -->
-<link rel="stylesheet" href="styles/main.css?v=2.411" media="print" id="async-main-css">
+<link rel="stylesheet" href="styles/main.css?v=2.551" media="print" id="async-main-css">
 <script src="ext-boot/01.js"></script>
-<noscript><link rel="stylesheet" href="styles/main.css?v=2.411"></noscript>
+<noscript><link rel="stylesheet" href="styles/main.css?v=2.551"></noscript>
 <!-- [chrome-ext build] removed PWA manifest link -->
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -152,7 +151,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- version.js MUST load synchronously BEFORE modulepreloads to set globalThis.APP_VERSION -->
-<script src="./version.js?v=2.411"></script>
+<script src="./version.js?v=2.551"></script>
 
 <!-- Build version = the version baked into THIS HTML document (the meta tag
      above). It is the honest "what am I actually running" signal. By contrast,
@@ -234,7 +233,18 @@
 <!-- NOTE: version.js and cache clearing script moved BEFORE modulepreload hints (line ~71) -->
 <!-- This ensures version check runs before browser starts prefetching modules -->
 
+<!-- ES2020 SYNTAX CANARY — the ONE deliberately post-ES5 block above the gate.
+     A script element parses in full or not at all, so on an engine without
+     optional chaining / nullish coalescing this whole block dies as a
+     SyntaxError, the flag is never set, and the gate below reads that as
+     'no-es2020-syntax'. That is the only way to parse-test syntax without
+     new Function (CSP forbids it). Keep it alone in its block and keep it
+     free of anything that could throw at RUNTIME — a runtime error would be
+     indistinguishable from the parse failure it exists to detect.
+     validate-inline.py exempts this block by the marker on its first line. -->
 <script src="ext-boot/07.js"></script>
+
+<script src="ext-boot/08.js"></script>
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
      ⛔ END OF THE ES5-ONLY REGION. Everything BELOW this line may use modern
@@ -248,8 +258,8 @@
      to the 16-second late fallback and were logged as 'no-boot' rather than
      'feature-gate'. Keep the gate in its own block. (Fixed Jul 2026.)
      ═══════════════════════════════════════════════════════════════════════════ -->
-<script src="ext-boot/08.js"></script>
-    <script src="boot-sw.js?v=2.411" defer></script>
+<script src="ext-boot/09.js"></script>
+    <script src="boot-sw.js?v=2.551" defer></script>
 
 
 
@@ -269,7 +279,6 @@
      Do not push markup above this block.
      ═══════════════════════════════════════════════════════════════════════════ -->
 
-  <!-- Initial App Loader -->
   <div id="app-loader" role="status" aria-label="Application loading" aria-live="polite">
     <div id="loader-tip" class="loader-tip" aria-live="polite">
       <div class="loader-tip-header">💡 Tip:</div>
@@ -300,9 +309,9 @@
            stay top-anchored; buttons sit in the vertical middle). -->
       <div class="first-run-actions">
         <div class="first-run-buttons">
-          <button type="button" class="first-run-btn" data-choice="create" data-busy="Setting up your routine…">Create My First Routine</button>
-          <button type="button" class="first-run-btn" data-choice="sample" data-busy="Loading samples…">Load a Sample</button>
-          <button type="button" class="first-run-btn" data-choice="learn" data-busy="Starting the tour…">Learn How Cycles Work</button>
+          <button type="button" class="first-run-btn" data-choice="create" data-busy="Setting up your routine…" data-label="Create My First Routine">Create My First Routine</button>
+          <button type="button" class="first-run-btn" data-choice="sample" data-busy="Loading samples…" data-label="Load a Sample">Load a Sample</button>
+          <button type="button" class="first-run-btn" data-choice="learn" data-busy="Starting the tour…" data-label="Learn How Cycles Work">Learn How Cycles Work</button>
         </div>
         <!-- Wait-gated escape hatch: revealed only if boot exceeds ~10s and isn't done
              yet (see controller below). Not shown upfront — a new user can't reason
@@ -322,8 +331,7 @@
     </div>
   </div>
 
-  <!-- Loading tips rotation -->
-  <script src="ext-boot/09.js"></script>
+  <script src="ext-boot/10.js"></script>
 
   <!-- First-run choice screen controller (ES5-safe, like the other inline scripts).
        Shows the three-choice screen for brand-new users (no miniCycleData) while
@@ -331,9 +339,8 @@
        while data-awaiting-choice='true' and resumes on the 'firstrun:choice' event.
        If boot fails, orchestrator's showBootError() replaces the loader's content,
        which removes this screen — error UI takes precedence by construction. -->
-  <script src="ext-boot/10.js"></script>
+  <script src="ext-boot/11.js"></script>
 
-  <!-- Loading Overlay for Operations -->
   <div id="loading-overlay" class="loading-overlay" role="status" aria-label="Operation in progress">
     <div class="loading-spinner">
       <img src="assets/images/logo/minicycle_logo_icon.png" alt="Loading..." width="60" height="48" style="object-fit: contain;">
@@ -341,7 +348,7 @@
     </div>
   </div>
 
-  <div id="notification-container" popover="manual" aria-live="polite" aria-atomic="true" role="status"></div> <!-- Notification container --> 
+  <div id="notification-container" popover="manual" aria-live="polite" aria-atomic="true" role="status"></div>
 
 
   
@@ -353,11 +360,9 @@
      changing its focus handling.
      ═══════════════════════════════════════════════════════════════════════════ -->
 
-<!-- Fixed Header Container - wraps header and mode selector -->
 <div class="fixed-header-container">
   <header class="mini-cycle-header-row">
     <h1 class="visually-hidden">miniCycle Routine Manager</h1>
-    <!-- Logo and App Name -->
     <div class="header-branding">
       <img src="assets/images/logo/logo.png" alt="miniCycle" class="header-logo" width="40" height="36">
       <div class="app-name-group">
@@ -366,13 +371,10 @@
       </div>
     </div>
 
-    <!-- Menu Button -->
     <button class="menu-button" aria-label="Menu" aria-expanded="false" aria-controls="main-menu" title="Open menu">☰</button>
   </header>
 
-  <!-- Mode Selector (centered below header) -->
   <div class="mode-selector-wrapper">
-  <!-- Quick Actions Button (left side) -->
   <div class="quick-actions-container">
     <button id="quick-actions-btn" class="quick-actions-btn" aria-label="Quick actions" title="Quick actions">
       <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
@@ -402,23 +404,20 @@
   </button>
   </div>
 
-  <!-- Saving indicator (shown briefly when autosave runs) -->
   <div id="saving-indicator" class="saving-indicator">Saving...</div>
-</div><!-- /fixed-header-container -->
+</div>
 
 
     <!-- Main Menu Backdrop — fades in via CSS when .menu-container.visible -->
     <div id="main-menu-backdrop" class="main-menu-backdrop" aria-hidden="true"></div>
 
-    <!-- Main Menu -->
     <nav id="main-menu" class="menu-container has-corner-logo" data-modal data-menu>
         <div id="main-menu-header-row" class="main-menu-header-row">
             <div id="main-menu-header" class="main-menu-header">
-                <span id="main-menu-mini-cycle-title"></span>  <!-- miniCycle Title -->
-                <span id="current-date"></span>  <!-- Date will be inserted here -->
+                <span id="main-menu-mini-cycle-title"></span>
+                <span id="current-date"></span>
             </div>
-             <!-- About Section Trigger -->
-      <button id="open-about-modal" class="open-about-modal" aria-label="About Task Cycle Mini" title="About miniCycle">
+      <button id="open-about-modal" class="open-about-modal" aria-label="About miniCycle" title="About miniCycle">
         <i class="fas fa-info-circle" aria-hidden="true"></i>
         </button>
 
@@ -428,7 +427,6 @@
 
        
 
-            <!-- About Modal -->
             <dialog id="about-modal" class="modal" data-modal aria-labelledby="about-modal-title" aria-modal="true">
                 <div class="modal-content about-modal-content has-corner-logo">
                     <button class="close-modal" aria-label="Close about modal">&times;</button>
@@ -453,16 +451,14 @@
 
                     <div class="about-footer">
                         <p>Developed by <a href="https://sparkincreations.com" target="_blank" rel="noopener noreferrer">sparkinCreations</a></p>
-                        <p class="about-copyright">&copy; 2026 miniCycle&trade;</p>
+                        <p class="about-copyright">&copy; <span data-copyright-year>2026</span> miniCycle&trade;</p>
                         <p class="about-cache">Cache: <span id="about-sw-version">—</span></p>
                     </div>
                 </div>
             </dialog>
 
 
-            <!--Main Menu-->
         <div class="menu-sections">
-            <!-- Quick Actions Menu Row (mobile) -->
             <div class="menu-section quick-actions-menu-row" data-section="quick-actions">
                 <div class="quick-actions-header">
                     <button class="quick-actions-nav quick-actions-prev" aria-label="Previous view">&#x25C0;</button>
@@ -471,7 +467,6 @@
                 </div>
                 <div class="quick-actions-slots" id="quick-actions-menu-slots"></div>
             </div>
-            <!-- Routines Section -->
             <div class="menu-section collapsed" data-section="routines">
                 <div class="menu-section-header collapsible" role="button" tabindex="0" data-toggle="routines" aria-expanded="false" aria-label="Toggle Routine Actions section" aria-controls="menu-section-routines" title="Create, open, import, export, and share routines">
                     <span class="menu-section-label">
@@ -490,7 +485,6 @@
                 </div>
             </div>
 
-            <!-- Tasks Section (collapsed by default) -->
             <div class="menu-section collapsed" data-section="tasks">
                 <div class="menu-section-header collapsible" role="button" tabindex="0" data-toggle="tasks" aria-expanded="false" aria-label="Toggle Task Actions section" aria-controls="menu-section-tasks" title="Manage tasks, reminders, recurring schedules, and task options">
                     <span class="menu-section-label">
@@ -521,7 +515,6 @@
 
 
 
-            <!-- Rewards Section (collapsed by default) -->
             <div class="menu-section collapsed" data-section="rewards">
                 <div class="menu-section-header collapsible" role="button" tabindex="0" data-toggle="rewards" aria-expanded="false" aria-label="Toggle Rewards section" aria-controls="menu-section-rewards" title="Unlock themes and mini-games as you complete cycles">
                     <span class="menu-section-label">
@@ -540,7 +533,6 @@
                 </div>
             </div>
 
-            <!-- Help Section (collapsed by default) -->
             <div class="menu-section collapsed" data-section="help">
                 <div class="menu-section-header collapsible" role="button" tabindex="0" data-toggle="help" aria-expanded="false" aria-label="Toggle Help section" aria-controls="menu-section-help" title="User manual, feedback, updates, and sharing">
                     <span class="menu-section-label">
@@ -555,12 +547,12 @@
                     <button id="menu-lite-version" title="Switch to the lightweight version"><i class="fas fa-mobile-alt"></i>Lite Version</button>
                     <button id="share-app" title="Share miniCycle with someone" aria-label="Share miniCycle with someone"><i class="fas fa-share-nodes"></i>Share App</button>
                     <button id="menu-check-updates" title="Check for app updates"><i class="fas fa-sync-alt"></i>Check for Updates</button>
+                    <button id="open-tip-archive" title="Browse every loading tip"><i class="fas fa-lightbulb"></i><span class="menu-item-label">Tips</span></button>
                     <button id="menu-retake-tours" title="Reset and retake guided tours"><i class="fas fa-route"></i>Reset Tours</button>
                 </div>
             </div>
       
 
-            <!-- Legal Section (collapsed by default) -->
             <div class="menu-section collapsed" data-section="legal">
                 <div class="menu-section-header collapsible" role="button" tabindex="0" data-toggle="legal" aria-expanded="false" aria-label="Toggle Legal section" aria-controls="menu-section-legal" title="Privacy policy, terms of service, accessibility, and security">
                     <span class="menu-section-label">
@@ -577,7 +569,6 @@
                 </div>
             </div>
 
-                    <!-- App Section (collapsed by default) -->
             <div class="menu-section collapsed" data-section="app">
                 <div class="menu-section-header collapsible" role="button" tabindex="0" data-toggle="app" aria-expanded="false" aria-label="Toggle Settings section" aria-controls="menu-section-app" title="Customize colors, accessibility, and app preferences">
                     <span class="menu-section-label">
@@ -640,17 +631,20 @@
     </div>
 
     <div class="main-menu-primary-action-row">
+        <button id="menu-open-title-screen" class="menu-primary-action" type="button" title="Return to the Welcome Screen" aria-label="Open the Welcome Screen">
+            <i class="fas fa-door-ajar menu-primary-action-icon" aria-hidden="true"></i>
+            <span class="menu-item-label">Welcome Screen</span>
+        </button>
         <button id="menu-enter-focus-view" class="menu-primary-action" type="button" title="Enter Focus View" aria-label="Enter Focus View">
             <svg class="menu-primary-action-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
                 <!-- Four corner brackets — universal "expand to fill" affordance -->
                 <path d="M2 6V2h4M14 6V2h-4M2 10v4h4M14 10v4h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"/>
             </svg>
-            <span>Enter Focus View</span>
+            <span>Focus View</span>
         </button>
     </div>
 
     <button id="close-main-menu" aria-label="Close Main Menu">Close</button>
-    <!--<button id="exit-mini-cycle"><i class="fas fa-sign-out-alt"></i> Exit to Main Menu </button>-->
         
 </nav>
 
@@ -681,12 +675,10 @@
         </div>
       </dialog>
 
-        <!-- Reminders Modal -->
         <dialog id="reminders-modal" class="reminders-modal" data-modal aria-labelledby="reminders-modal-title" aria-modal="true">
             <div class="reminders-modal-content has-corner-logo">
                 <h2 id="reminders-modal-title">Reminders & Notifications</h2>
         
-                <!-- Toggle On/Off -->
                 <label class="settings-option">
                     <input type="checkbox" id="enableReminders" name="enableReminders" />
                     Enable Reminders
@@ -708,7 +700,6 @@
                     </details>
                 </div>
         
-                <!-- Frequency Section (only show if enabled) -->
                 <div id="frequency-section">
                     <label>
                         <input type="checkbox" id="indefiniteCheckbox" name="indefiniteCheckbox" />
@@ -733,7 +724,6 @@
                     </div>
                 </div>
         
-                <!-- Close Button -->
                 <button id="close-reminders-btn" class="settings-btn">Close</button>
             </div>
         </dialog>
@@ -742,7 +732,6 @@
 
 <!-- settings-modal injected at boot via modalTemplates.js -->
 
-        <!-- Testing Modal -->
 <dialog id="testing-modal" class="testing-modal" data-modal aria-labelledby="testing-modal-title" aria-modal="true">
     <div class="testing-modal-content">
         <div class="testing-modal-header">
@@ -751,14 +740,12 @@
         </div>
 
         <div class="testing-modal-body">
-            <!-- Tabs for different testing categories -->
             <div class="testing-tabs" role="tablist" aria-label="Testing categories">
                 <button class="testing-tab active" data-tab="diagnostics" role="tab" aria-selected="true" aria-controls="diagnostics-tab">📊 Diagnostics</button>
                 <button class="testing-tab" data-tab="debug" role="tab" aria-selected="false" aria-controls="debug-tab">🐛 Debug Info</button>
                 <button class="testing-tab" data-tab="automated-tests" role="tab" aria-selected="false" aria-controls="automated-tests-tab">🧪 Automated Tests</button>
             </div>
 
-            <!-- Diagnostics Tab -->
             <div id="diagnostics-tab" class="testing-tab-content active" role="tabpanel">
                 <div class="testing-section">
                     <h3>📋 Quick Health Check</h3>
@@ -791,7 +778,6 @@
                 </div>
             </div>
 
-            <!-- Debug Info Tab -->
             <div id="debug-tab" class="testing-tab-content" role="tabpanel">
                 <div class="testing-section">
                     <h3>🐛 Debug Information</h3>
@@ -817,15 +803,14 @@
 
             </div>
 
-            <!-- Automated Tests Tab -->
             <div id="automated-tests-tab" class="testing-tab-content" role="tabpanel">
                 <div class="testing-section">
                     <h3>🧪 Quick Test</h3>
                     <button id="run-all-automated-tests" class="test-btn test-primary">
                         🏁 Run All Tests
                     </button>
-                    <p class="testing-hint-text">
-                        Runs all 1600+ tests and shows pass/fail summary.
+                    <p id="quick-test-hint" class="testing-hint-text">
+                        Runs the full suite and shows a pass/fail summary.
                     </p>
                 </div>
 
@@ -834,7 +819,7 @@
                     <p class="testing-hint-text">
                         For detailed testing with individual module controls:
                     </p>
-                    <a href="https://minicycle.app/tests/module-test-suite.html" target="_blank" class="test-btn test-info">
+                    <a id="open-test-suite-link" href="https://minicycle.app/tests/module-test-suite.html" target="_blank" rel="noopener" class="test-btn test-info">
                         Open Test Suite Browser →
                     </a>
                     <p class="testing-hint-text">
@@ -845,7 +830,6 @@
         </div>
         
 
-        <!-- Results Area -->
         <div class="testing-results-area">
             <div class="testing-results-header">
                 <h3>📝 Test Results</h3>
@@ -872,7 +856,6 @@
 
 
 
-<!-- Local Storage Viewer Modal -->
 <dialog id="storage-viewer-overlay" class="storage-modal-overlay" aria-labelledby="storage-viewer-title" aria-modal="true">
   <div class="storage-modal-box">
     <div class="storage-modal-header" id="storage-viewer-title">📦 Local Storage Viewer</div>
@@ -889,20 +872,16 @@
   </div>
 </dialog>
 
-<!-- 🎨 Themes Panel Modal -->
 <dialog class="themes-modal" data-modal id="themes-modal" aria-labelledby="themes-modal-title" aria-modal="true">
     <div class="themes-modal-content has-corner-logo">
       <h2 id="themes-modal-title">🎨 Theme Settings</h2>
   
-      <!-- 🗣️ VOCABULARY THEMES -->
       <div id="vocab-theme-section">
         <!-- Vocabulary theme options injected by JS -->
       </div>
 
-      <!-- Divider Line -->
       <hr class="theme-divider" />
 
-      <!-- 🌙 Dark Mode Section -->
       <div id="dark-mode-section">
         <label class="custom-checkbox">
           <input type="checkbox" id="darkModeToggleThemes" name="darkModeToggleThemes">
@@ -918,12 +897,10 @@
 <!-- preferences-modal injected at boot via modalTemplates.js -->
 
 
-<!-- miniCycle Switch Modal -->
 <dialog id="routine-switcher-modal" class="mini-cycle-switch-modal" data-modal aria-labelledby="routine-switcher-title" aria-modal="true">
     <div class="mini-cycle-switch-modal-content has-corner-logo" autofocus tabindex="-1">
         <div class="mini-cycle-switch-title" id="routine-switcher-title">Open Routine</div>
 
-        <!-- Full-width controls above the two-panel area -->
         <input type="text" id="routine-search-input" class="routine-search-input" placeholder="Search routines..." autocomplete="off" aria-label="Search routines">
         <div class="routine-sort-filter-row">
             <div class="routine-filter-controls">
@@ -942,16 +919,13 @@
             </div>
         </div>
 
-        <!-- Two-panel body: left (list + actions) | right (desktop preview) -->
         <div class="routine-switcher-body">
-            <!-- Left panel — routine list -->
             <div class="routine-switcher-left">
                 <div class="routine-panel-title">Routines</div>
                 <div class="mini-cycle-switch-list" id="miniCycleList" role="listbox" aria-label="Routines"></div>
                 <div id="routine-list-hint" class="routine-list-hint"></div>
             </div>
 
-            <!-- Right panel — desktop task preview (hidden on mobile) -->
             <div class="routine-switcher-right">
                 <div id="desktop-preview-title" class="routine-panel-title">Preview</div>
                 <div id="desktop-preview-window" class="desktop-preview-window">
@@ -961,7 +935,6 @@
             </div>
         </div>
 
-        <!-- All buttons centered below the two-panel area -->
         <div id="switch-items-row" class="switch-items-row">
             <div class="switch-items-row-title">Routine Actions</div>
             <button id="switch-duplicate" class="switch-duplicate switch-buttons" title="Duplicate routine"><i class="fas fa-copy"></i><span class="switch-btn-label">Duplicate</span></button>
@@ -977,7 +950,6 @@
             <button id="miniCycleSwitchConfirm" class="mini-cycle-switch-btn open-btn">Open</button>
         </div>
 
-        <!-- Storage Bar -->
         <div class="storage-bar-container">
             <div class="storage-bar-header">
                 <div class="storage-bar-label-group">
@@ -1000,19 +972,15 @@
 
 
 
-<!-- Feedback Modal -->
 <dialog id="feedback-modal" class="feedback-modal" aria-labelledby="feedback-modal-title" data-modal aria-modal="true">
     <div class="feedback-modal-content has-corner-logo">
         <button class="close-feedback-modal" aria-label="Close feedback modal">&times;</button>
         <h2 id="feedback-modal-title">Provide Feedback</h2>
         <p>We appreciate your feedback! Let us know how we can improve miniCycle.</p>
 
-        <!-- Web3Forms API -->
         <form id="feedback-form" action="https://api.web3forms.com/submit" method="POST" novalidate>
-            <!-- Your Web3Forms Access Key -->
             <input type="hidden" name="access_key" value="691907ec-ad04-4447-9d45-861ee622a091">
 
-            <!-- Subject line for email identification -->
             <input type="hidden" name="subject" value="miniCycle Feedback">
 
             <!-- Web3Forms Honeypot Spam Protection -->
@@ -1037,19 +1005,15 @@
                 <input type="hidden" name="rating_tags" id="feedback-rating-tags-value" value="">
             </div>
 
-            <!-- Feedback Text -->
             <label for="feedback-text" class="visually-hidden">Your feedback</label>
             <textarea id="feedback-text" name="message" placeholder="Write your feedback here..." required minlength="10"></textarea>
 
-            <!-- Email (Optional, if you want users to provide their email) -->
             <label for="feedback-email" class="visually-hidden">Your email (optional)</label>
             <input type="email" id="feedback-email" name="email" placeholder="Your Email (optional)" autocomplete="email">
 
-            <!-- Show a success message instead of redirecting -->
             <button type="submit" id="submit-feedback">Submit</button>
         </form>
 
-        <!-- Thank You Message (Initially Hidden) -->
         <p id="thank-you-message" style="display: none; color: green; font-weight: bold;">
             ✅ Thank you for your feedback!
         </p>
@@ -1067,13 +1031,10 @@
 
 
 
-<!-- Task List & Stats Wrapper -->
 <main id="app-container" role="main" tabindex="-1">
-  <!-- Personalization Button (bottom left) -->
   <button id="personalization-btn" aria-label="Personalization" title="Personalize colors">
     🖌️
   </button>
-  <!-- Dark Mode Toggle (bottom right) -->
   <button id="quick-dark-toggle" aria-label="Toggle dark mode" title="Toggle dark mode">
     🌓
   </button>
@@ -1103,6 +1064,7 @@
         <div class="focus-task-indicators">
             <span id="focus-task-recurring-indicator" class="focus-task-indicator hidden" aria-hidden="true">🔁</span>
             <span id="focus-task-due-indicator" class="focus-task-indicator hidden"></span>
+            <span id="focus-task-reset-indicator" class="focus-task-indicator hidden" role="img"></span>
         </div>
         <button type="button" id="focus-task-complete-btn" class="focus-task-complete-btn"></button>
         <div class="focus-task-nav">
@@ -1143,7 +1105,6 @@
             </div>
         </div>
         <div class="task-list-container">
-        <!-- Search Input Row (appears below title when search is expanded) -->
         <div id="task-filter-sort-row" class="task-filter-sort-row hidden">
             <div class="filter-chip-group collapsed" role="group" aria-label="Filter tasks" aria-expanded="false">
                 <span class="chip-group-icon" aria-hidden="true">
@@ -1176,18 +1137,21 @@
             <span class="auto-uncheck-banner-icon" aria-hidden="true">🕛</span>
             <span id="auto-uncheck-banner-text" class="auto-uncheck-banner-text">All tasks auto-uncheck daily at 12:00 AM</span>
         </button>
-        <!--Tasks will go here-->
         <ul id="taskList" class="task-list" aria-label="Task list" aria-live="polite" aria-relevant="additions removals"></ul>
 
-        <!-- Empty State Message -->
         <div id="empty-state" class="empty-state">
             <div class="empty-state-icon">📋</div>
-            <div class="empty-state-text">No tasks yet</div>
+            <div class="empty-state-text">Your routine is empty</div>
+            <!-- What the app IS, in one line, shown in every view/input-bar state.
+                 Vocabulary-neutral on purpose (no "task"/"habit" noun), so vocab
+                 themes need no override and the four hints below stay purely
+                 about the affordance. Hidden in the all-tasks-complete state. -->
+            <div class="empty-state-pitch">Build your routine once — then run it as many times as you like.</div>
             <!-- Four hint variants: (home | focus) × (input bar hidden | visible).
                  CSS in focus-mode.css shows exactly one via body.focus-mode ×
                  body.input-bar-visible. The two focus variants are injected at
                  runtime by focusMode.js. -->
-            <div class="empty-state-hint">Press the <strong>+</strong> button to show the task bar to add a task or create a new routine</div>
+            <div class="empty-state-hint">Press the <strong>+</strong> button to open the task bar and add your first task</div>
             <div class="empty-state-hint-visible">Type your first task in the bar above and press Add</div>
             <!-- Completion variant: replaces the text + hint above when the routine
                  HAS tasks and all of them are complete. With the completed-tasks
@@ -1209,24 +1173,21 @@
             <div class="onboarding-placeholder-text">or try a sample</div>
         </div>
 
-        <!-- Completed Tasks Collapsible Section -->
         <div class="completed-tasks-section" id="completed-tasks-section">
-            <h3 class="completed-tasks-header clickable" id="completed-tasks-header" tabindex="0" aria-expanded="false" aria-label="Toggle completed tasks">
+            <button type="button" class="completed-tasks-header clickable" id="completed-tasks-header" aria-expanded="false" aria-label="Toggle completed tasks">
                 ✓ Completed (<span id="completed-count">0</span>) <span class="toggle-icon">▼</span>
-            </h3>
+            </button>
             <ul id="completedTaskList" class="completed-task-list"></ul>
         </div>
     </div>
-    </div><!-- end task-card -->
+    </div>
     <div class="progress-container">
         <div id="progressBar" class="progress-bar"></div>
     </div>
-    </div><!-- end task-card-group -->
+    </div>
     <div id="complete-all-and-help-window-container" class="complete-all-and-help-window-container">
-        <!-- Complete All Button -->
   <button id="completeAll" class="complete-all-btn" title="Complete all checked tasks">Complete</button>
     </div>
-    <!-- Quick Actions Panel - Inside task-view, positioned to left on desktop -->
     <div id="quick-actions-window" class="quick-actions-window">
         <div class="quick-actions-header">
             <button class="quick-actions-nav quick-actions-prev" title="Previous view" aria-label="Previous view">&#x25C0;</button>
@@ -1235,20 +1196,22 @@
         </div>
         <div class="quick-actions-slots" id="quick-actions-slots"></div>
     </div>
-    <!-- Help Window - Inside task-view, positioned to right on desktop -->
     <div id="help-window" class="help-window" role="status" aria-label="Help information">
         <p></p>
     </div>
 </div>
 
-    <!-- Stats Panel (Initially Hidden) -->
     <section id="stats-panel" class="stats-panel" role="tabpanel" aria-labelledby="stats-header" inert>
         <h2 id="stats-header">📊 Stats</h2>
+        <!-- Scroll surface lives HERE, not on the panel: the title above stays
+             pinned because it is outside the scroller (no sticky, no background
+             needed), and this wrapper's top mask fades content out before it
+             reaches the title — see .stats-panel-content in stats-panel.css. -->
+        <div class="stats-panel-content" id="stats-panel-content">
         <div class="current-routine-status" id="current-routine-status">
             <h3 class="clickable" tabindex="0" aria-expanded="true" aria-label="Toggle current routine details">
                 📋 Current Routine <span class="toggle-icon">▼</span>
             </h3>
-            <!-- Collapsible Details -->
             <p id="current-routine-name" class="current-routine-name"></p>
             <div id="current-cycle-doughnut-container" class="current-cycle-doughnut-container">
                 <svg class="current-cycle-doughnut" viewBox="0 0 100 100" role="img" aria-label="Current cycle task completion">
@@ -1300,6 +1263,7 @@
                 <div id="stats-progress-bar" class="progress-bar" role="progressbar" aria-label="Progress to next milestone" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
             </div>
         </div>
+        </div>
     </section>
 
     
@@ -1312,7 +1276,6 @@
 
 <div>
 <footer id="footer-container" role="contentinfo">
-<!-- ✅ Undo buttons here will group them logically with header -->
 <div id="undo-redo-buttons" class="undo-container">
 <button id="undo-btn" class="undo-redo-btn" hidden title="Undo last action">Undo</button>
 <button id="redo-btn" class="undo-redo-btn" hidden title="Redo last undone action">Redo</button>
@@ -1335,7 +1298,7 @@
 </nav>
 <ul class="footer-links" style="list-style: none; padding: 0; margin: 0 auto; display: flex; justify-content: center; align-items: center; width: fit-content;">
 <li id="copyright">
-  &copy; 2026 <a href="https://sparkincreations.com" target="_blank" rel="noopener noreferrer" title="Visit sparkinCreations website">sparkinCreations</a>
+  &copy; <span data-copyright-year>2026</span> <a href="https://sparkincreations.com" target="_blank" rel="noopener noreferrer" title="Visit sparkinCreations website">sparkinCreations</a>
   &bull;
   <a href="https://minicycle.app/pages/product.html" target="_blank" rel="noopener noreferrer" aria-label="miniCycle product page" title="Open the miniCycle product page">miniCycle<sup>™</sup></a>
 </li>
@@ -1352,7 +1315,6 @@
 
 
 
-<!-- 🔊 ARIA Live Region for announcing view changes -->
 <div id="live-region" aria-live="polite" style="position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden;"></div>
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -1365,9 +1327,9 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- Boot File Split (Dec 2025): Load via entrypoint which orchestrates all boot files -->
- <script type="module" src="miniCycle-main.js?v=2.411"></script>
+ <script type="module" src="miniCycle-main.js?v=2.551"></script>
 
-<script src="ext-boot/11.js"></script>
+<script src="ext-boot/12.js"></script>
    <!-- [chrome-ext build] removed inline script: late lite-version fallback redirect -->
 
 

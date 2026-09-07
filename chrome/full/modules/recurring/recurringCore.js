@@ -14,7 +14,7 @@
  *
  * @module recurring/recurringCore
  * @version 2.0.0
- * @see {@link file://../../../docs/developer-guides/DATA_SCHEMA_GUIDE.md} - Schema reference
+ * @see {@link file://docs/reference/DATA_SCHEMA_GUIDE.md} - Schema reference
  */
 
 /**

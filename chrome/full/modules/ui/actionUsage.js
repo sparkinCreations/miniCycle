@@ -5,11 +5,11 @@
  * driven by ONE place so every entry point tracks uniformly (the old bug: only 5 of
  * 22 actions counted usage from outside the quick-actions panel).
  *
- * Design (see docs/future-work/ACTION_DISPATCH_PLAN.md): most actions are triggered by
+ * Design (see docs/archive/ACTION_DISPATCH_PLAN.md): most actions are triggered by
  * clicking a DOM button, and the panel itself dispatches via `button.click()`. So a
  * single delegated click listener over ACTION_BUTTON_MAP catches BOTH direct user clicks
- * and the panel's synthetic clicks. The 3 function-dispatched panel cases
- * (stats/recurring/reminders) call `recordActionUsage` explicitly.
+ * and the panel's synthetic clicks. The 2 function-dispatched panel cases
+ * (stats/recurring) call `recordActionUsage` explicitly.
  *
  * Pure / side-effect-free (no module-level work) → safe to static-import anywhere.
  *
@@ -26,9 +26,11 @@ export const MAX_RECENT = 10;
  * `btn.click()` targets + alternate buttons like the menu's open-routine). A click on
  * any of these — by the user OR the panel's synthetic click — records the action.
  * Keep in sync with quickActionsManager.executeAction's `btn.click()` cases.
- * NOTE: stats/recurring/reminders are dispatched by the panel as function calls (no
- * btn.click), so they record explicitly in executeAction; their DIRECT buttons are
- * still mapped here so direct clicks track too.
+ * NOTE: stats/recurring are dispatched by the panel as function calls (no btn.click),
+ * so they record explicitly in executeAction; their DIRECT buttons are still mapped
+ * here so direct clicks track too. `reminders` used to be one of them — it now goes
+ * through btn.click() so the panel cannot bypass the modal's settings hydration, which
+ * means this map is its ONLY usage recorder (adding an explicit call would double-count).
  */
 export const ACTION_BUTTON_MAP = Object.freeze({
     [DOM_IDS.ROUTINE_SWITCHER_BTN]: 'open-routine',
@@ -64,6 +66,47 @@ export const VALID_ACTION_IDS = Object.freeze(new Set([
 ]));
 
 /**
+ * The shape `settings.quickActions` is expected to have. One factory, because
+ * this literal used to be copied into four separate places.
+ * @returns {{pinned: (string|null)[], counts: Object, recent: string[], activeView: string}}
+ */
+export function createQuickActionsDefaults() {
+    return {
+        pinned: ['stats', null, null, null, null],
+        counts: {},
+        recent: [],
+        activeView: 'recent'
+    };
+}
+
+/**
+ * Ensure `settings.quickActions` (and each of its fields) exists on the state
+ * object INSIDE an AppState.update() producer, and hand it back.
+ *
+ * Every writer calls this rather than bailing on a missing block. A producer
+ * only ever runs on real state, so creating the block here always succeeds —
+ * whereas `if (!s.settings?.quickActions) return;` turned any state that lacked
+ * it into a silent dropped write with nothing logged. quickActionsManager's
+ * boot-time seed does normally win the race (measured: `settings.quickActions`
+ * is present before a first-run user can reach the panel), so this is belt-and-
+ * braces for the states that seed cannot cover — a restore or a cross-tab
+ * replacement that swaps in data without the block after init() has already run.
+ *
+ * @param {Object} s - the mutable state object handed to an update() producer
+ * @returns {{pinned: (string|null)[], counts: Object, recent: string[], activeView: string}}
+ */
+export function ensureQuickActions(s) {
+    if (!s.settings) s.settings = {};
+    if (!s.settings.quickActions) s.settings.quickActions = createQuickActionsDefaults();
+
+    const qa = s.settings.quickActions;
+    if (!Array.isArray(qa.pinned)) qa.pinned = createQuickActionsDefaults().pinned;
+    if (!qa.counts || typeof qa.counts !== 'object') qa.counts = {};
+    if (!Array.isArray(qa.recent)) qa.recent = [];
+    return qa;
+}
+
+/**
  * Record one use of an action — increments its frequency count and pushes it to the
  * front of the recent (MRU) list. The ONLY writer of `counts`/`recent`.
  * @param {Object} AppState - the AppState instance (has `.update`)
@@ -74,21 +117,10 @@ export function recordActionUsage(AppState, actionId) {
     if (!AppState?.update || !VALID_ACTION_IDS.has(actionId)) return;
 
     AppState.update(s => {
-        if (!s.settings) s.settings = {};
-        if (!s.settings.quickActions) {
-            s.settings.quickActions = {
-                pinned: ['stats', null, null, null, null],
-                counts: {},
-                recent: [],
-                activeView: 'recent'
-            };
-        }
-        const qa = s.settings.quickActions;
+        const qa = ensureQuickActions(s);
 
-        if (!qa.counts) qa.counts = {};
         qa.counts[actionId] = (qa.counts[actionId] || 0) + 1;
 
-        if (!qa.recent) qa.recent = [];
         qa.recent = qa.recent.filter(id => id !== actionId);
         qa.recent.unshift(actionId);
         if (qa.recent.length > MAX_RECENT) {
@@ -106,9 +138,27 @@ export function recordActionUsage(AppState, actionId) {
 export function actionIdForClick(e) {
     const target = e?.target;
     if (!target?.closest) return null;
-    // closest ancestor (incl. self) carrying an id, then check the map.
-    const el = target.closest('[id]');
-    return el ? (ACTION_BUTTON_MAP[el.id] || null) : null;
+
+    // Walk up looking for a MAPPED id, not merely the NEAREST id. A mapped
+    // button can carry id-bearing children — the input toggle's own text label
+    // (#toggle-task-input-text), the achievements count badge
+    // (#achievement-count-badge) — and stopping at the first `[id]` ancestor
+    // found those instead, missed the map, and dropped the click. Measured:
+    // clicking #toggle-task-input-btn recorded; clicking its label did not,
+    // and the label is the larger tap target.
+    //
+    // hasOwnProperty, not truthiness: `el.id` is DOM-controlled, and a plain
+    // object literal answers 'constructor'/'toString' from Object.prototype
+    // (CLAUDE.md #18). Without this, id="constructor" would resolve to a
+    // function and be handed to callers as an action id.
+    let el = target.closest('[id]');
+    while (el) {
+        if (Object.prototype.hasOwnProperty.call(ACTION_BUTTON_MAP, el.id)) {
+            return ACTION_BUTTON_MAP[el.id];
+        }
+        el = el.parentElement ? el.parentElement.closest('[id]') : null;
+    }
+    return null;
 }
 
 // One global delegated listener records every action-button click (direct user clicks

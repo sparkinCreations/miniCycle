@@ -264,14 +264,40 @@ body.quick-actions-open #quick-actions-window {
     transform: rotate(-90deg);
 }
 
-.menu-section.collapsed .menu-section-grid {
-    display: none;
+/* Collapse/expand animation.
+   `display: none` cannot be transitioned, so the max-height transition that was
+   already declared here never ran. grid-template-rows 0fr→1fr animates to the
+   content's NATURAL height with no measured cap — a max-height cap either clips
+   tall sections or spends most of the duration above the visible range.
+   `visibility` keeps a closed section out of the tab order and the a11y tree
+   (display:none did that for free); transitioning it delays the hide until the
+   collapse finishes. Browsers too old for fr-interpolation (Safari <16, which
+   the feature gate still admits) skip the animation and apply the end state —
+   collapsed is still collapsed. Duration comes from --transition-normal, which
+   variables.css zeroes under prefers-reduced-motion. */
+.menu-section {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    transition: grid-template-rows var(--transition-fast) ease;
+}
+
+.menu-section.collapsed {
+    grid-template-rows: auto 0fr;
 }
 
 .menu-section-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: var(--space-1);
+    overflow: hidden;
+    min-height: 0;
+    transition: opacity var(--transition-fast) ease,
+                visibility var(--transition-fast);
+}
+
+.menu-section.collapsed .menu-section-grid {
+    opacity: 0;
+    visibility: hidden;
 }
 
 .menu-section-grid button,
@@ -438,7 +464,27 @@ body.quick-actions-open #quick-actions-window {
     margin-bottom: var(--space-1-75);
 }
 
+/* Hairline separating the mode area from Settings & Personalization above.
+   Only while EXPANDED: collapsed, the toggle reads as one more row in the stack
+   and a divider would just add noise; expanded, it becomes a block of its own
+   and needs the boundary. Driven off aria-expanded — the same signal this file
+   already uses for the chevron, the badge and the radio row — so there is no
+   extra class to keep in sync. Same colour recipe as the primary-action
+   hairlines below, so every divider in the drawer matches. */
+#mode-description-toggle[aria-expanded="true"]::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 1px;
+    background: color-mix(in srgb, currentColor 32%, transparent);
+    pointer-events: none;
+}
+
 .mode-description-toggle {
+    /* Positioned host for the expanded-state divider above. */
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -852,6 +898,10 @@ body.quick-actions-open #quick-actions-window {
        so the gradient fills the line cleanly (a single-color border-top
        can't render a horizontal gradient). */
     position: relative;
+    /* Two primary actions now share this row (Welcome Screen + Enter Focus View).
+       Without a gap they touch, and each one's `min-width: 60%` adds up to 120%
+       of the row — so they were squeezed rather than sized. */
+    gap: var(--space-2);
     padding-top: var(--space-2);
     /* Larger negative pull-up — cancels the 7px bottom margin on
        .mode-description-wrapper above AND eats into the toggle button's
@@ -872,6 +922,8 @@ body.quick-actions-open #quick-actions-window {
 }
 
 .menu-primary-action {
+    /* Positioned host for the sibling divider above. */
+    position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -888,6 +940,43 @@ body.quick-actions-open #quick-actions-window {
     cursor: pointer;
     transition: background var(--transition-fast) ease,
                 border-color var(--transition-fast) ease;
+}
+
+/* Keep each label on ONE line. A flex item may shrink below its content width,
+   so "Welcome Screen" wrapped to three lines even though its button was wide
+   enough for it (168px needed, 176px given). The row wraps instead of the text:
+   on a drawer too narrow for both, they stack rather than overflow. */
+.menu-primary-action > span:not(.icon) {
+    white-space: nowrap;
+}
+
+.main-menu-primary-action-row {
+    flex-wrap: wrap;
+}
+
+/* Hairline between the two primary actions, drawn in the row's gap. Same
+   colour recipe as the row's own top hairline above, so the two read as one
+   family. Only ever rendered between siblings, so a lone button has none. */
+.main-menu-primary-action-row .menu-primary-action + .menu-primary-action::before {
+    content: '';
+    position: absolute;
+    left: calc(-1 * var(--space-2) / 2);
+    top: 20%;
+    bottom: 20%;
+    width: 1px;
+    background: color-mix(in srgb, currentColor 32%, transparent);
+    pointer-events: none;
+}
+
+/* Alone: keep the deliberate 60% so it doesn't span the full drawer.
+   Sharing the row: split the space evenly instead of fighting over it. */
+.main-menu-primary-action-row .menu-primary-action:only-child {
+    min-width: 60%;
+}
+
+.main-menu-primary-action-row .menu-primary-action:not(:only-child) {
+    flex: 1 1 0;
+    min-width: 0;
 }
 
 .menu-primary-action:hover,

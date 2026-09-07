@@ -42,6 +42,7 @@ const di = createDIModule('SettingsManager', {
     organizeCompletedTasks: optional(null),
     handleTaskListMovement: optional(null),
     updateCompletedTasksCount: optional(null),
+    updateProgressBar: optional(null),
     updateStatsPanel: optional(null),
     DataValidator: optional(null),
     calculateNextOccurrence: optional(null),
@@ -53,6 +54,10 @@ const di = createDIModule('SettingsManager', {
     disableDebug: optional(null),
     isDebug: optional(null),
     clearAllUndoHistory: optional(null),
+    // Forward-through to backupRestoreManager's factory reset (close before
+    // deleting the DBs, reopen after so a repeat reset needs no page reload).
+    closeUndoIndexedDB: optional(null),
+    initUndoIndexedDB: optional(null),
     startGuidedTour: optional(null),
     updateHelpWindow: optional(null),
     loadMiniCycle: optional(null),
@@ -242,7 +247,14 @@ function wireSubModuleDependencies(dependencies) {
         hideMainMenu: dependencies.hideMainMenu,
         closeAllModals: dependencies.closeAllModals,
         appInit: dependencies.appInit,
-        showPromptModal: dependencies.showPromptModal
+        showPromptModal: dependencies.showPromptModal,
+        closeUndoIndexedDB: dependencies.closeUndoIndexedDB,
+        initUndoIndexedDB: dependencies.initUndoIndexedDB,
+        // reloadWithLoader re-renders IN PLACE (there is no page reload), so every
+        // routine-scoped surface has to be told the data is gone — see the
+        // dataless re-render there.
+        updateStatsPanel: dependencies.updateStatsPanel,
+        updateProgressBar: dependencies.updateProgressBar
     });
 
     _subModules.setDataSanitizerDependencies({
@@ -389,16 +401,16 @@ export class SettingsManager {
             time: null
         };
 
-        const AppState = _deps.AppState?.();
+        const AppState = _deps.AppState();
         if (AppState?.isReady?.()) {
             await AppState.update(state => {
                 if (!state.settings) state.settings = {};
                 state.settings.defaultRecurringSettings = defaultSettings;
             }, true);
-            _deps.showNotification?.(getLabel('notify.recurringDefaultReset'), "success");
+            _deps.showNotification(getLabel('notify.recurringDefaultReset'), "success");
         } else {
             console.error('AppState not ready - settings not saved');
-            _deps.showNotification?.(getLabel('notify.resetDefaultsFailed'), "error");
+            _deps.showNotification(getLabel('notify.resetDefaultsFailed'), "error");
         }
     }
 }

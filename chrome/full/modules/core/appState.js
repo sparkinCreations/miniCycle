@@ -6,9 +6,9 @@
  * debounced saves, subscriber notifications, and concurrent modification detection.
  *
  * @module core/appState
- * @see {@link file://../../../docs/developer-guides/DATA_SCHEMA_GUIDE.md} - Schema reference
- * @see {@link file://../../../docs/developer-guides/DI_PATTERNS.md} - Dependency injection
- * @see {@link file://../../../docs/developer-guides/ARCHITECTURE_OVERVIEW.md} - Architecture
+ * @see {@link file://docs/reference/DATA_SCHEMA_GUIDE.md} - Schema reference
+ * @see {@link file://docs/working-on-code/DI_PATTERNS.md} - Dependency injection
+ * @see {@link file://docs/architecture/ARCHITECTURE_OVERVIEW.md} - Architecture
  */
 
 /**
@@ -63,7 +63,7 @@ export function setAppStateDependencies(dependencies) {
  * - Race condition prevention during initialization
  *
  * @class MiniCycleState
- * @see {@link file://../../../docs/developer-guides/DATA_SCHEMA_GUIDE.md#how-data-flows}
+ * @see {@link file://docs/reference/DATA_SCHEMA_GUIDE.md#how-data-flows}
  */
 class MiniCycleState {
     /**
@@ -84,7 +84,15 @@ class MiniCycleState {
             showNotification: mergedDeps.showNotification || (() => {}),
             storage: mergedDeps.storage || localStorage,
             loadInitialData: mergedDeps.loadInitialData || (() => null),
-            createInitialData: mergedDeps.createInitialData || (() => this.createInitialState()),
+            // Wired by coreBoot to migrationManager.createInitialSchema25Data, but
+            // nothing in this class ever calls it — and that function writes
+            // miniCycleData to storage rather than returning it, so a caller would
+            // get undefined anyway. Kept as a pass-through so the boot wiring stays
+            // valid. The old local-fallback method it used to point at is gone: a
+            // 114-line duplicate of the initial shape that had already drifted badly
+            // from the real factory (missing unlockedThemes, most tour steps, the
+            // whole accessibility block) and that nothing could reach.
+            createInitialData: mergedDeps.createInitialData || null,
             addWindowListener: mergedDeps.addWindowListener || ((evt, fn) => window.addEventListener(evt, fn))
         };
 
@@ -444,7 +452,46 @@ class MiniCycleState {
         // ✅ Multi-tab sync: Detect changes from other tabs via storage event
         this._storageHandler = (event) => {
             if (event.key !== STORAGE_KEYS.DATA) return;
-            if (!event.newValue) return;
+
+            // A REMOVAL (newValue === null) is another tab clearing the data —
+            // a factory reset, or a restore that clears before writing.
+            //
+            // This used to `return`, which left this tab holding the whole
+            // document in memory. The next save then wrote it all back and
+            // silently UNDID the reset. Measured Aug 2026 with two real tabs:
+            // storage went empty, this tab kept rendering its routine, and one
+            // ordinary edit restored every cycle — while the resetting tab had
+            // already reported "Factory Reset Complete".
+            //
+            // Drop the in-memory copy the same way backupRestoreManager's
+            // neutralizeAppState() does for the tab that RAN the reset. Cancel
+            // the pending save FIRST: a debounced write already queued would
+            // otherwise still land and resurrect the data.
+            //
+            // Listeners are deliberately NOT notified. They are written for
+            // (newState, oldState) with a real newState, and handing them null
+            // buys nothing here — the DOM is stale either way, which is what the
+            // notification tells the user. A restore's follow-up write arrives as
+            // its own event and is adopted below on its own merits.
+            if (!event.newValue) {
+                if (this.saveTimeout) {
+                    clearTimeout(this.saveTimeout);
+                    this.saveTimeout = null;
+                }
+                const hadData = this.data !== null;
+                this.data = null;
+                this.isDirty = false;
+                this.isInitialized = false;
+                if (hadData) {
+                    console.warn('⚠️ Multi-tab: data cleared in another tab — dropping in-memory state');
+                    this.deps.showNotification?.(
+                        getLabel('notify.dataClearedElsewhere'),
+                        'warning',
+                        UI_TIMEOUTS.NOTIFICATION_SLOW
+                    );
+                }
+                return;
+            }
 
             try {
                 const externalData = JSON.parse(event.newValue);
@@ -628,7 +675,7 @@ class MiniCycleState {
      * await AppState.update(state => {
      *     state.data.cycles[cycleId].tasks.push(newTask);
      * }, true);
-     * @see {@link file://../../../docs/developer-guides/DATA_SCHEMA_GUIDE.md#how-data-flows}
+     * @see {@link file://docs/reference/DATA_SCHEMA_GUIDE.md#how-data-flows}
      */
     async update(updateFn, immediate = false) {
         if (!this.isInitialized) {
@@ -963,120 +1010,6 @@ class MiniCycleState {
         });
     }
 
-    /**
-     * Create a fresh initial state (Schema 2.5)
-     * Used for new users or when no valid data exists
-     * @returns {Schema25Data} Fresh initial state
-     */
-    createInitialState() {
-        return {
-            schemaVersion: "2.5",
-            metadata: {
-                createdAt: Date.now(),
-                lastModified: Date.now(),
-                migratedFrom: null,
-                migrationDate: null,
-                totalCyclesCreated: 0,
-                totalTasksCompleted: 0,
-                schemaVersion: "2.5"
-            },
-            settings: {
-                theme: 'default',
-                darkMode: false,
-                autoSave: true,
-                showThreeDots: false,
-                showTaskInput: false,
-                scrollToNewTask: true,
-                scrollOnLoad: false,
-                showCompletedDropdown: false,
-                completedTasksExpanded: false,
-                onboardingCompleted: false,
-                guidedTourStep: null,
-                statsTourStep: null,
-                prefsTourStep: null,
-                taskOptionsTourStep: null,
-                remindersTourStep: null,
-                menuTourStep: null,
-                settingsTourStep: null,
-                routineSwitcherTourStep: null,
-                recurringListTourStep: null,
-                recurringSettingsTourStep: null,
-                historyTourStep: null,
-                clearedTasksTourStep: null,
-                achievementsTourStep: null,
-                addTaskDiscovered: false,
-                dismissedEducationalTips: {},
-                defaultRecurringSettings: {
-                    frequency: "daily",
-                    indefinitely: true,
-                    time: null
-                },
-                unlockedThemes: [],
-                unlockedFeatures: [],
-                notificationPosition: { x: 0, y: 0 },
-                notificationPositionModified: false,
-                reducedMotion: false,
-                highContrast: false,
-                fontSize: '16',
-                debugMode: false,
-                testingModalResultsHeight: null,
-                modeDescriptionCollapsed: false,
-                customColors: {
-                    appBg: null,
-                    taskListBg: null,
-                    taskBg: null,
-                    taskText: null,
-                    titleBg: null,
-                    titleText: null,
-                    checkboxBg: null,
-                    checkmark: null,
-                    completeBtn: null,
-                    clearBtn: null,
-                    progressBar: null,
-                    statsBg: null,
-                    statsText: null
-                },
-                savedColorPresets: [],
-                menuCollapsedSections: {
-                    routines: false,
-                    tasks: true,
-                    app: true,
-                    rewards: true,
-                    help: true
-                },
-                settingsCollapsedSections: {
-                    display: false,
-                    behavior: true,
-                    data: true,
-                    reset: true,
-                    advanced: true
-                }
-            },
-            data: {
-                cycles: {} // ✅ This matches what autoSaveWithStateModule expects
-            },
-            appState: {
-                activeCycleId: null, // ✅ This matches what autoSaveWithStateModule expects
-                overdueTaskStates: {}
-            },
-            ui: {
-                moveArrowsVisible: false,
-                activeTaskId: null  // Task ID with options currently visible
-            },
-            userProgress: {
-                cyclesCompleted: 0,
-                rewardMilestones: []
-            },
-            customReminders: {
-                enabled: false,
-                indefinite: false,
-                dueDatesReminders: false,
-                repeatCount: 0,
-                frequencyValue: 30,
-                frequencyUnit: "minutes"
-            }
-        };
-    }
 
     /**
      * Tear down this instance: remove global listeners, flush pending saves,

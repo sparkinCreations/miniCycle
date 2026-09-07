@@ -53,7 +53,16 @@ const OPTIONAL = Symbol('optional');
 
 /**
  * Mark a dependency as required
- * If missing at resolve time, logs a warning (dev) or throws (strict mode)
+ *
+ * If missing at resolve time this WARNS and resolves to null — it does not throw.
+ * There is no "strict mode": ENFORCE_REQUIRES (moduleLoader.js) controls what the
+ * loader DELIVERS, not what resolve() does when a declared dep is absent. The
+ * STRICT_PHASES follow-up that would have thrown was never built and was dropped
+ * as unnecessary — see docs/archive/ENFORCE_REQUIRES_ROLLOUT_PLAN.md.
+ *
+ * The practical consequence is rule #19 in CLAUDE.md: read a required dep
+ * UNGUARDED, so a wiring failure throws at the point of use and names itself,
+ * rather than silently taking a branch that does nothing.
  * @returns {Object} Required marker
  * @example
  * const di = createDIModule('MyModule', {
@@ -146,7 +155,7 @@ export function createDIModule(moduleName, schema = {}, options = {}) {
     let _injected = {};
 
     // Track what's been set for debugging
-    let _setKeys = new Set();
+    const _setKeys = new Set();
 
     // Cache for resolve() — invalidated on any mutation
     let _resolveCache = null;
@@ -247,7 +256,21 @@ export function createDIModule(moduleName, schema = {}, options = {}) {
             };
             // Matches the original `overrides[key] ?? _injected[key]` precedence:
             // a null/undefined override falls through to the injected value.
-            const hasOverride = (key) => overrides[key] !== undefined && overrides[key] !== null;
+            //
+            // The enumerability check comes FIRST so this stays a pure probe. It is
+            // called for every key in both loops below, including keys the caller
+            // never supplied, and `overrides` is frequently the dependency object
+            // moduleLoader built — which carries non-enumerable accessors for the
+            // deps this module did NOT declare. Reading `overrides[key]` blind fired
+            // every one of those accessors as a side effect of asking "did you pass
+            // this?", reporting an entire catalogue of dep reads that never happened.
+            // Overrides are constructor-supplied plain objects, so a non-enumerable
+            // own property is never a real override.
+            const hasOverride = (key) => {
+                const descriptor = Object.getOwnPropertyDescriptor(overrides, key);
+                if (!descriptor || descriptor.enumerable === false) return false;
+                return overrides[key] !== undefined && overrides[key] !== null;
+            };
             const liveGetter = (key) => (hasOverride(key)
                 ? null
                 : Object.getOwnPropertyDescriptor(_injected, key)?.get);
@@ -272,8 +295,12 @@ export function createDIModule(moduleName, schema = {}, options = {}) {
                     continue;
                 }
 
-                // Priority: override > injected > default
-                const value = overrides[key] ?? _injected[key];
+                // Priority: override > injected > default.
+                // Routed through hasOverride() rather than reading `overrides[key]`
+                // directly — same precedence (a null/undefined override falls through),
+                // but it will not touch a non-enumerable property of the overrides
+                // object. See the hasOverride definition above for why that matters.
+                const value = hasOverride(key) ? overrides[key] : _injected[key];
 
                 if (marker[REQUIRED]) {
                     if (value === undefined || value === null) {
@@ -292,20 +319,39 @@ export function createDIModule(moduleName, schema = {}, options = {}) {
 
             // Also include any extra deps not in schema
             // (for backwards compatibility during migration).
-            // Object.keys, not Object.entries — entries() would invoke every
-            // getter and reintroduce the snapshot this fix removes.
-            for (const key of Object.keys(_injected)) {
+            // getOwnPropertyNames, not Object.keys — setDependencies copies
+            // descriptors, so `_injected` can hold NON-ENUMERABLE properties, and
+            // Object.keys silently dropped them here. That asymmetry (the setter
+            // accepts them, the resolver discards them) is what made moduleLoader's
+            // undeclared-dep warners invisible to every module that reads deps off
+            // the resolved object rather than off the built one — i.e. most of them.
+            // Enumerability is carried through from the source descriptor below, so
+            // a non-enumerable property stays invisible to spread/Object.keys on
+            // `resolved` too; it just stops being unreachable.
+            //
+            // Still names-then-descriptor, never Object.entries — entries() would
+            // invoke every getter and reintroduce the snapshot this fix removes.
+            for (const key of Object.getOwnPropertyNames(_injected)) {
                 if (key in resolved) continue;
                 if (hasOverride(key)) { resolved[key] = overrides[key]; continue; }
+                const descriptor = Object.getOwnPropertyDescriptor(_injected, key);
+                const enumerable = descriptor?.enumerable !== false;
                 const getter = liveGetter(key);
                 if (getter) {
                     Object.defineProperty(resolved, key, {
                         get: () => getter.call(_injected),
-                        enumerable: true,
+                        enumerable,
                         configurable: true
                     });
-                } else {
+                } else if (enumerable) {
                     resolved[key] = _injected[key];
+                } else {
+                    Object.defineProperty(resolved, key, {
+                        value: _injected[key],
+                        writable: true,
+                        enumerable: false,
+                        configurable: true
+                    });
                 }
             }
             for (const [key, value] of Object.entries(overrides)) {

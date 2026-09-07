@@ -89,6 +89,22 @@ html, body {
   font-family: 'Poppins', 'Poppins Fallback', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   opacity: 0.9;
 }
+/* Version line on the "Updating to latest version…" overlay (v2.425+).
+   Lives in critical.css alongside .loader-text because the overlay renders
+   during boot and cache recovery — before any non-critical stylesheet is
+   guaranteed to have loaded. Colour is a fixed white here, like its siblings:
+   the boot splash paints its own gradient and never sees the app theme. */
+.loader-version-line {
+  margin-top: 6px;
+  color: rgba(255, 255, 255, 0.9);
+  /* Fallback matters here: this overlay renders during boot and cache recovery,
+     which can precede variables.css. Same shape as the other critical.css rules. */
+  font-size: var(--font-size-sm, 13px);
+  font-weight: 600;
+  font-family: 'Poppins', 'Poppins Fallback', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
 .loader-bar-container {
   margin-top: 24px;
   width: 200px;
@@ -130,8 +146,12 @@ html.mc-first-run #app-loader .loader-bar-container {
 /* Top-anchor the header (logo + brand + tagline) near the top; the choice
    container then fills the rest of the height so the buttons can center in it. */
 html.mc-first-run #app-loader {
-  justify-content: flex-start;
-  padding-top: 8vh;
+  /* Centre logo + brand + actions AS ONE GROUP. Previously top-pinned at 8vh
+     with the actions auto-centred in the leftover height, which on a tall screen
+     parked the buttons far below the brand AND left the whole block riding high
+     with dead space beneath it. */
+  justify-content: center;
+  padding-top: 0;
 }
 /* Soft scrim behind the header text so white is legible over the LIGHT areas of
    the photo (the clipboard paper). Concentrated near the top now that the brand
@@ -140,8 +160,49 @@ html.mc-first-run #app-loader::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse 115% 48% at 50% 24%,
-              rgba(0, 0, 0, 0.42) 0%, rgba(0, 0, 0, 0.16) 48%, rgba(0, 0, 0, 0) 70%);
+  /* Taller and stronger than it was. MEASURED against the photo composited with
+     the blue overlay: the old ellipse (48% tall, 0.42 peak) left the tagline at
+     2.94:1, the use-case line at 3.42:1 and "Restore from a backup file" at
+     1.56:1 — the last because the falloff hit zero by 70% and that link sits at
+     78%. WCAG AA wants 4.5:1. Edges still fade out, so the photo keeps its airy
+     look; only the column the text occupies is anchored. */
+  /* Tight scrim: only the column the text actually occupies. A broad ellipse
+     dimmed the whole photo, which is the thing worth keeping. Sized in % of the
+     viewport and centred on the content group. Shaped to match the COLUMN: it is
+     narrow (a FIXED 300px, max 84vw) and tall (spans roughly 18%-82%), so the
+     ellipse is tall and narrow too — a wide, short one both missed the top and
+     bottom text AND dimmed photo nobody needs to read.
+     Radii are in % of the VIEWPORT and generous. A px radius sized to the text
+     column (430px) held the numbers but read as a distinct OVAL on a wide
+     display — at 3440px that is only 25% of the width, so the shape is obvious.
+     A small % (34%) failed the other way: 133px on a 390px phone, narrower than
+     the text it was meant to sit behind (1.77:1). 62% satisfies both — wide
+     enough on a large screen that there is no perceptible horizontal edge, and
+     still wider than the column on the narrowest phone.
+     SIXTEEN stops on a (1-t^4)^2 curve, not four linear ones. With few stops the
+     eye picks out the ellipse as a shape — linear interpolation between stops
+     produces Mach banding, and what reads as "an oval" is the falloff RATE
+     changing, not the darkness itself. This curve reaches zero with zero slope,
+     so there is no boundary to latch onto; the radius is generous for the same
+     reason (a longer falloff spread over more pixels). Verified by sampling REAL rendered pixels beside each text
+     run, not by modelling the gradient. */
+  background: radial-gradient(ellipse 62% 78% at 50% 50%,
+              rgba(0, 0, 0, 0.58) 0%,
+              rgba(0, 0, 0, 0.58) 10%,
+              rgba(0, 0, 0, 0.578) 20%,
+              rgba(0, 0, 0, 0.571) 30%,
+              rgba(0, 0, 0, 0.551) 40%,
+              rgba(0, 0, 0, 0.51) 50%,
+              rgba(0, 0, 0, 0.479) 55%,
+              rgba(0, 0, 0, 0.439) 60%,
+              rgba(0, 0, 0, 0.391) 65%,
+              rgba(0, 0, 0, 0.335) 70%,
+              rgba(0, 0, 0, 0.271) 75%,
+              rgba(0, 0, 0, 0.202) 80%,
+              rgba(0, 0, 0, 0.133) 85%,
+              rgba(0, 0, 0, 0.069) 90%,
+              rgba(0, 0, 0, 0.02) 95%,
+              rgba(0, 0, 0, 0) 100%);
   pointer-events: none;
 }
 /* Raise the text block above the scrim (these are static flex items; the tip,
@@ -181,7 +242,7 @@ html.mc-first-run #app-loader .loader-tip-header {
    group can vertically center in the leftover space (brand + tagline stay at the
    top of this zone, right under the logo). */
 html.mc-first-run #app-loader .first-run-choice {
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   margin-top: 14px;
   min-height: 0;
   padding-bottom: 56px; /* clear the bottom tip strip / progress bar */
@@ -241,7 +302,8 @@ html:not(.mc-first-run) .first-run-choice,
   line-height: 1.45;
   font-family: 'Poppins', 'Poppins Fallback', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   text-shadow: var(--text-shadow-lg);
-  opacity: 0.72;
+  /* Was 0.72 — measured 2.94:1 against the backdrop, under WCAG AA's 4.5:1. */
+  opacity: 0.92;
 }
 /* Rotating use-case line — the "that's me" hook, so it OUTRANKS the tagline
    (bigger + heavier). FIXED height + overflow hidden: swaps never shift the
@@ -383,7 +445,10 @@ html[data-app-loaded="true"] .first-run-lite {
   font-weight: 400;
   text-decoration: underline;
   text-underline-offset: 2px;
-  opacity: 0.6;
+  /* Was 0.6 (1.56:1), then 0.85 (3.92:1 measured on real pixels) — both under
+     WCAG AA's 4.5:1. At full strength it still reads as the quiet secondary
+     action: that comes from its size and underline, not from being faded out. */
+  opacity: 1;
   cursor: pointer;
   text-shadow: var(--text-shadow-lg);
 }
@@ -636,4 +701,4 @@ body.app-loading .fixed-header-container {
   visibility: hidden;
 }
 
-/* Footer mobile layout is defined in miniCycle-styles.css */
+/* Footer mobile layout is defined in components/footer.css */

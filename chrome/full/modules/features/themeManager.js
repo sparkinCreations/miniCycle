@@ -12,7 +12,7 @@
  * - Graceful degradation without dependencies
  *
  * @module features/themeManager
- * @see {@link file://../../../docs/developer-guides/DATA_SCHEMA_GUIDE.md} - Schema reference
+ * @see {@link file://docs/reference/DATA_SCHEMA_GUIDE.md} - Schema reference
  */
 
 /**
@@ -32,6 +32,7 @@ import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, STORAGE_KEYS, UI_TIMEOUTS, MILESTO
 import { createDIModule, optional } from '../core/diBase.js';
 import { getLabel, getIcon } from '../labels/labelResolver.js';
 import { isClickOnNotification } from '../ui/modalUtils.js';
+import { announce } from '../utils/announce.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -112,8 +113,14 @@ const VOCAB_THEME_CSS_VARS = {
 // When dark mode is toggled ON while a vocab theme is active, we clear the
 // direct body.style.background so dark mode CSS rules take over.
 // When dark mode is toggled OFF, we restore it.
-// CSS :not(.dark-mode) guards handle all --pref-* custom property vars automatically;
-// only the direct `background` property on body.style needs manual management.
+// Surfaces that must drop the preset in dark mode do it themselves: stats-panel.css
+// uses `body:not(.dark-mode)` guards, and themes-modal.css routes every read through
+// --modal-*-effective tokens that it redefines under body.dark-mode. This is NOT
+// automatic — a --pref-* read with no such guard keeps the preset colour in dark mode,
+// which is how the vocab-theme modal text ended up at 2.48:1 (Aug 2026). Note a plain
+// `body:not(.dark-mode)` guard cannot work on the same property, because the presets
+// below are set as INLINE styles on <body> and outrank any stylesheet rule.
+// Only the direct `background` property on body.style needs manual management.
 let _darkModeObserver = null;
 
 function _setupDarkModeObserver() {
@@ -228,7 +235,8 @@ function _refreshLiveLensLabels() {
             : '🔄 ' + getLabel('action.completeCycle');
     }
 
-    // Empty state text ("No tasks yet" → "No habits yet" etc.)
+    // Empty state headline ("Your routine is empty" — no longer vocab-swapped,
+    // it names the routine rather than the missing tasks)
     const emptyState = _deps.getElementById(DOM_IDS.EMPTY_STATE);
     if (emptyState) {
         const emptyText = emptyState.querySelector(DOM_SELECTORS.EMPTY_STATE_TEXT);
@@ -242,6 +250,11 @@ function _refreshLiveLensLabels() {
         // while hidden, same reason as the hint variants below.
         const emptyAllDone = emptyState.querySelector(DOM_SELECTORS.EMPTY_STATE_ALLDONE_TEXT);
         if (emptyAllDone) emptyAllDone.textContent = getLabel('focusTask.allDone');
+        // No vocab theme overrides the pitch today (it carries no task noun), but
+        // it is refreshed with the rest so a theme COULD override it without the
+        // line silently keeping the previous theme's copy.
+        const emptyPitch = emptyState.querySelector(DOM_SELECTORS.EMPTY_STATE_PITCH);
+        if (emptyPitch) emptyPitch.textContent = getLabel('empty.routinePitch');
         const emptyHint = emptyState.querySelector(DOM_SELECTORS.EMPTY_STATE_HINT);
         if (emptyHint) emptyHint.textContent = getLabel('empty.noTasksHint');
         const emptyHintVisible = emptyState.querySelector(DOM_SELECTORS.EMPTY_STATE_HINT_VISIBLE);
@@ -663,8 +676,26 @@ export class ThemeManager {
     updateQuickToggleIcon(isDark) {
         try {
             const currentQuickToggle = _deps.getElementById(DOM_IDS.QUICK_DARK_TOGGLE);
-            if (currentQuickToggle) {
-                currentQuickToggle.textContent = isDark ? getIcon('lightMode') : getIcon('darkMode');
+            if (!currentQuickToggle) return;
+
+            currentQuickToggle.textContent = isDark ? getIcon('lightMode') : getIcon('darkMode');
+
+            // The emoji was the ONLY state cue, and it is invisible to assistive
+            // tech twice over: it is decorative content, and the button's
+            // aria-label overrides its text entirely. So the control announced
+            // "Toggle dark mode, button" identically whether dark mode was on or
+            // off — name and role present, VALUE missing (WCAG 4.1.2).
+            // aria-pressed is what carries the state for a toggle button.
+            const next = String(Boolean(isDark));
+            const prev = currentQuickToggle.getAttribute('aria-pressed');
+            currentQuickToggle.setAttribute('aria-pressed', next);
+
+            // Announce only a real flip. `prev === null` is the first application
+            // (boot / setup), where the theme is not changing and speaking would
+            // talk over the page-load announcement.
+            if (prev !== null && prev !== next) {
+                announce(getLabel(isDark ? 'accessibility.darkModeOn' : 'accessibility.darkModeOff'),
+                    { getElementById: _deps.getElementById });
             }
         } catch (error) {
             console.warn('⚠️ Quick toggle icon update failed:', error.message);

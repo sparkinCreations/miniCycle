@@ -160,6 +160,29 @@ export class TaskRenderer {
      * Render tasks array to DOM using atomic replaceChildren.
      * Uses DocumentFragment for efficient batch DOM operations.
      *
+     * WHY DOM ORDER MATTERS — do not "simplify" this into one list.
+     *
+     * Three systems read DOM order directly, so where a node lives and what order
+     * it sits in are load-bearing, not cosmetic:
+     *
+     *  - Drag-drop excludes completed tasks via `closest('#completedTaskList')`
+     *    (dragDropManager.js). Completed nodes must actually land in the completed
+     *    list, with `draggable="false"`.
+     *  - Move-arrow boundary markers (IS_FIRST_TASK / IS_LAST_TASK) are computed
+     *    from the ACTIVE list's child order (_updateBoundaryMarkers). Building
+     *    completed tasks out of that list must leave the remaining order intact.
+     *  - Un-complete restoration uses `dataset.originalIndex` captured at
+     *    completion time (moveToActive). A task rendered straight into the
+     *    dropdown never had one, so it falls back to "append to end".
+     *
+     * This is precisely why a pure-CSS approach was rejected: grouping completed
+     * tasks to the bottom of a single list with flexbox `order` would decouple
+     * visual order from DOM order and break all three. Unifying the render keeps
+     * DOM order canonical.
+     *
+     * Rationale salvaged from docs/archive/RENDER_PATH_UNIFICATION.md, which was
+     * its only home — the archive is not somewhere anyone reads before editing this.
+     *
      * @param {Task[]} [tasksArray=[]] - Array of task objects to render
      * @returns {Promise<void>}
      */
@@ -211,7 +234,7 @@ export class TaskRenderer {
             // from state in one pass: partition the freshly-built nodes by task.completed and
             // replaceChildren each list. This makes the dropdown a projection of state rather
             // than a re-sort of the active list AFTER the fact (the seam that produced the
-            // duplicate-in-completed bug). See docs/future-work/RENDER_PATH_UNIFICATION.md.
+            // duplicate-in-completed bug). See docs/archive/RENDER_PATH_UNIFICATION.md.
             const ctm = this.deps.completedTasksManager;
             const completedList = this.deps.getElementById(DOM_IDS.COMPLETED_TASK_LIST);
             const dropdownEnabled = !!(completedList && ctm?.isEnabled?.());

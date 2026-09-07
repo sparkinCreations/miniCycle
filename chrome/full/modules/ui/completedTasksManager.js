@@ -80,6 +80,7 @@ export class CompletedTasksManager {
         // Add click handler for toggling
         this.deps.safeAddEventListener(header, 'click', () => this.toggle());
 
+
         // Restore saved collapsed state
         this.restoreState();
 
@@ -277,7 +278,7 @@ export class CompletedTasksManager {
      *
      * Why this exists: moveToCompleted() takes finished tasks OUT of #taskList,
      * so completing the last one leaves the list `:empty` and CSS shows
-     * #empty-state — whose default copy is first-run onboarding ("No tasks yet
+     * #empty-state — whose default copy is first-run onboarding ("Your routine is empty
      * / press + to add a task"). Someone who just finished their whole routine
      * was being told they had nothing.
      *

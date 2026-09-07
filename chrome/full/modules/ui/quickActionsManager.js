@@ -19,9 +19,10 @@ import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/consta
 const TOOLTIP_OFFSET_PX = 10;
 import { getLabel } from '../labels/labelResolver.js';
 import { handleHorizontalArrowNav } from '../utils/keyboardNav.js';
+import { attachLongPressHint } from '../utils/longPressHint.js';
 // Uniform usage tracking — one delegated listener records every action-button click
-// (direct + the panel's synthetic clicks). See docs/future-work/ACTION_DISPATCH_PLAN.md
-import { recordActionUsage, setupActionUsageTracking } from './actionUsage.js';
+// (direct + the panel's synthetic clicks). See docs/archive/ACTION_DISPATCH_PLAN.md
+import { recordActionUsage, setupActionUsageTracking, createQuickActionsDefaults, ensureQuickActions } from './actionUsage.js';
 
 // ============================================================================
 // CONSTANTS
@@ -41,7 +42,22 @@ const VIEW_TITLE_KEYS = {
 // ACTION REGISTRY (Phase 1: 5 actions)
 // ============================================================================
 
-const ACTION_REGISTRY = {
+/**
+ * Every quick action, keyed by id.
+ *
+ * NULL PROTOTYPE on purpose. Ids reach the lookups below from stored state —
+ * `settings.quickActions.recent` and `.pinned` survive reloads and come back
+ * through a restored backup — and a plain object literal answers 'constructor',
+ * 'toString' and '__proto__' from Object.prototype (CLAUDE.md #18). Every
+ * `if (ACTION_REGISTRY[id])` guard here would pass for those, and
+ * _createFilledSlot would then read `.labelKey` off a native function.
+ *
+ * Fixing it here rather than converting seven call sites to hasOwnProperty:
+ * one guarantee at the declaration cannot be forgotten by the next lookup
+ * someone adds. Object.entries/keys/freeze all work unchanged on a null-proto
+ * object; only inherited-key reads change, which is the point.
+ */
+const ACTION_REGISTRY = Object.assign(Object.create(null), {
     'stats': {
         labelKey: 'quickAction.stats',
         icon: 'stats',
@@ -176,7 +192,7 @@ const ACTION_REGISTRY = {
         handler: 'openTaskOrderGame',
         unlockKey: 'task-order-game'
     }
-};
+});
 
 // SVG icons for the action registry (inline to avoid dynamic icon imports)
 const ACTION_ICONS = {
@@ -210,7 +226,7 @@ const ACTION_ICONS = {
 
 const di = createDIModule('QuickActionsManager', {
     AppState: required(),
-    appInit: optional(null),
+    appInit: required(),   // manifest declares this in `requires` — see the read in init()
     showNotification: required(),
     safeAddEventListener: optional(null),
     showStatsPanel: required(),
@@ -278,7 +294,15 @@ export class QuickActionsManager {
     async init() {
         if (this._initialized) return;
 
-        await _deps.appInit?.waitForCore();
+        // Unguarded on purpose (CLAUDE.md #19): appInit is `required()`, so `?.`
+        // here would silently skip the gate on a wiring failure instead of naming
+        // it. NOTE what this does NOT guarantee — core-ready is NOT state-ready
+        // (see the first-run state contract journey), so _ensureData() below is a
+        // BEST-EFFORT seed: if AppState still has no data, its update() applies
+        // nothing and says nothing. Measured on a first run this phase does land
+        // after state is ready, so the seed normally wins — but that is timing,
+        // not a contract, which is why every writer ensures the block itself.
+        await _deps.appInit.waitForCore();
 
         // Ensure quickActions data exists in settings
         this._ensureData();
@@ -321,29 +345,17 @@ export class QuickActionsManager {
     // DATA MANAGEMENT
     // ========================================================================
 
+    // Best-effort boot seed. It is not the guarantee — every writer calls
+    // ensureQuickActions() for itself — because update() is a no-op whenever
+    // AppState has no data yet (CLAUDE.md: core-ready is not state-ready).
     _ensureData() {
-        const state = this.deps.AppState?.get();
-        if (!state?.settings?.quickActions) {
-            this.deps.AppState?.update(s => {
-                if (!s.settings) s.settings = {};
-                s.settings.quickActions = {
-                    pinned: ['stats', null, null, null, null],
-                    counts: {},
-                    recent: [],
-                    activeView: 'recent'
-                };
-            });
-        }
+        if (this.deps.AppState.get()?.settings?.quickActions) return;
+        this.deps.AppState.update(s => { ensureQuickActions(s); });
     }
 
     _getData() {
-        const state = this.deps.AppState?.get();
-        return state?.settings?.quickActions || {
-            pinned: ['stats', null, null, null, null],
-            counts: {},
-            recent: [],
-            activeView: 'recent'
-        };
+        const state = this.deps.AppState.get();
+        return state?.settings?.quickActions || createQuickActionsDefaults();
     }
 
     _getActiveView() {
@@ -367,9 +379,8 @@ export class QuickActionsManager {
 
         const nextView = VIEWS[nextIndex];
 
-        this.deps.AppState?.update(s => {
-            if (!s.settings?.quickActions) return;
-            s.settings.quickActions.activeView = nextView;
+        this.deps.AppState.update(s => {
+            ensureQuickActions(s).activeView = nextView;
         });
 
         this._renderAllPanels();
@@ -395,17 +406,17 @@ export class QuickActionsManager {
         const stateKey = tipKeys[view];
         if (!stateKey) return;
 
-        const state = this.deps.AppState?.get();
+        const state = this.deps.AppState.get();
         if (state?.settings?.[stateKey]) return; // Already shown
 
         // Mark as seen
-        this.deps.AppState?.update(s => {
+        this.deps.AppState.update(s => {
             if (!s.settings) s.settings = {};
             s.settings[stateKey] = true;
         });
 
         // Show the tip notification
-        this.deps.showNotification?.(
+        this.deps.showNotification(
             getLabel(tipLabelKeys[view]),
             'info',
             UI_TIMEOUTS.NOTIFICATION_MEDIUM
@@ -465,7 +476,13 @@ export class QuickActionsManager {
 
     _renderRecentActions(container) {
         const data = this._getData();
-        const recent = (data.recent || []).slice(0, SLOT_COUNT);
+        // Filter BEFORE slicing. Slicing first took the newest 5 ids and then
+        // dropped any the registry no longer defines, so one retired action
+        // left a hole even when valid entries sat below it in the list.
+        // _renderFrequentActions already had this order.
+        const recent = (data.recent || [])
+            .filter(id => ACTION_REGISTRY[id])
+            .slice(0, SLOT_COUNT);
 
         if (recent.length === 0) {
             const msg = document.createElement('div');
@@ -476,14 +493,10 @@ export class QuickActionsManager {
         }
 
         const fragment = document.createDocumentFragment();
-        let slotIndex = 0;
-        recent.forEach(actionId => {
-            if (ACTION_REGISTRY[actionId]) {
-                const slot = this._createFilledSlot(actionId, -1, true);
-                slot.setAttribute('tabindex', slotIndex === 0 ? '0' : '-1');
-                fragment.appendChild(slot);
-                slotIndex++;
-            }
+        recent.forEach((actionId, slotIndex) => {
+            const slot = this._createFilledSlot(actionId, -1, true);
+            slot.setAttribute('tabindex', slotIndex === 0 ? '0' : '-1');
+            fragment.appendChild(slot);
         });
         container.appendChild(fragment);
     }
@@ -594,14 +607,14 @@ export class QuickActionsManager {
 
     _isActionAvailable(action) {
         if (!action.unlockKey) return true;
-        const state = this.deps.AppState?.get();
+        const state = this.deps.AppState.get();
         const unlocked = state?.settings?.unlockedFeatures || [];
         return unlocked.includes(action.unlockKey);
     }
 
     _warnMissingDep(depName, actionId) {
         console.warn(`⚡ QuickActionsManager: '${depName}' is null — action '${actionId}' cannot execute`);
-        this.deps.showNotification?.(getLabel('notify.actionUnavailable'), 'warning', UI_TIMEOUTS.NOTIFICATION_LONG);
+        this.deps.showNotification(getLabel('notify.actionUnavailable'), 'warning', UI_TIMEOUTS.NOTIFICATION_LONG);
     }
 
     executeAction(actionId) {
@@ -621,10 +634,10 @@ export class QuickActionsManager {
                     }
                     recordActionUsage(this.deps.AppState, actionId);
                     this.deps.showStatsPanel();
-                    this.deps.hideMainMenu?.();
+                    this.deps.hideMainMenu();
                     break;
                 case 'switchMiniCycle': {
-                    this.deps.hideMainMenu?.();
+                    this.deps.hideMainMenu();
                     setTimeout(() => {
                         try {
                             const routineBtn = document.getElementById(DOM_IDS.ROUTINE_SWITCHER_BTN);
@@ -641,7 +654,7 @@ export class QuickActionsManager {
                     break;
                 }
                 case 'openRecurringPanel':
-                    if (!this.deps.recurringPanel?.openPanel) {
+                    if (!this.deps.recurringPanel.openPanel) {
                         this._warnMissingDep('recurringPanel.openPanel', actionId);
                         break;
                     }
@@ -649,7 +662,7 @@ export class QuickActionsManager {
                     setTimeout(() => {
                         try {
                             this.deps.recurringPanel.openPanel();
-                            this.deps.hideMainMenu?.();
+                            this.deps.hideMainMenu();
                         } catch (err) {
                             console.error(`⚡ Quick action '${actionId}' failed:`, err);
                             this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
@@ -657,17 +670,24 @@ export class QuickActionsManager {
                     }, 0);
                     break;
                 case 'openRemindersModal': {
-                    recordActionUsage(this.deps.AppState, actionId);
+                    // Click the real button instead of calling modal.showModal() here.
+                    // showModal() skipped reminders.js's openRemindersModal(), which is
+                    // the ONLY caller of loadRemindersSettings() — so this path showed a
+                    // form still at its HTML defaults, and the next save wrote those
+                    // defaults over the user's stored settings. Delegating also matches
+                    // every other action in this switch.
+                    // Usage is recorded by the delegated listener (actionUsage.js maps
+                    // OPEN_REMINDERS_MODAL), so do NOT call recordActionUsage here —
+                    // that would double-count.
+                    this.deps.hideMainMenu();
                     setTimeout(() => {
                         try {
-                            const modal = this.deps.getModal?.('reminders') || this.deps.getElementById(DOM_IDS.REMINDERS_MODAL);
-                            if (modal && !modal.open) {
-                                modal._previousFocus = document.activeElement;
-                                modal.showModal();
-                            } else if (!modal) {
-                                this._warnMissingDep('reminders modal', actionId);
+                            const btn = document.getElementById(DOM_IDS.OPEN_REMINDERS_MODAL);
+                            if (btn) {
+                                btn.click();
+                            } else {
+                                this._warnMissingDep(DOM_IDS.OPEN_REMINDERS_MODAL, actionId);
                             }
-                            this.deps.hideMainMenu?.();
                         } catch (err) {
                             console.error(`⚡ Quick action '${actionId}' failed:`, err);
                             this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
@@ -676,7 +696,7 @@ export class QuickActionsManager {
                     break;
                 }
                 case 'openSettings': {
-                    this.deps.hideMainMenu?.();
+                    this.deps.hideMainMenu();
                     setTimeout(() => {
                         try {
                             const settingsBtn = document.getElementById(DOM_IDS.OPEN_SETTINGS);
@@ -693,7 +713,7 @@ export class QuickActionsManager {
                     break;
                 }
                 case 'openHistory': {
-                    this.deps.hideMainMenu?.();
+                    this.deps.hideMainMenu();
                     setTimeout(() => {
                         try {
                             const btn = document.getElementById(DOM_IDS.HISTORY_BTN);
@@ -710,7 +730,7 @@ export class QuickActionsManager {
                     break;
                 }
                 case 'openAchievements': {
-                    this.deps.hideMainMenu?.();
+                    this.deps.hideMainMenu();
                     setTimeout(() => {
                         try {
                             const btn = document.getElementById(DOM_IDS.ACHIEVEMENT_BADGES_BTN);
@@ -727,7 +747,7 @@ export class QuickActionsManager {
                     break;
                 }
                 case 'completeAll': {
-                    this.deps.hideMainMenu?.();
+                    this.deps.hideMainMenu();
                     setTimeout(() => {
                         try {
                             const btn = document.getElementById(DOM_IDS.COMPLETE_ALL);
@@ -760,7 +780,7 @@ export class QuickActionsManager {
                     break;
                 }
                 case 'openPersonalization': {
-                    this.deps.hideMainMenu?.();
+                    this.deps.hideMainMenu();
                     setTimeout(() => {
                         try {
                             const btn = document.getElementById(DOM_IDS.PERSONALIZATION_BTN);
@@ -777,7 +797,7 @@ export class QuickActionsManager {
                     break;
                 }
                 case 'openHelp': {
-                    this.deps.hideMainMenu?.();
+                    this.deps.hideMainMenu();
                     setTimeout(() => {
                         try {
                             const btn = document.getElementById(DOM_IDS.TOGGLE_HELP_WINDOW);
@@ -794,7 +814,7 @@ export class QuickActionsManager {
                     break;
                 }
                 case 'openGames': {
-                    this.deps.hideMainMenu?.();
+                    this.deps.hideMainMenu();
                     setTimeout(() => {
                         try {
                             const btn = document.getElementById(DOM_IDS.OPEN_GAMES_PANEL);
@@ -811,7 +831,7 @@ export class QuickActionsManager {
                     break;
                 }
                 case 'openFeedback': {
-                    this.deps.hideMainMenu?.();
+                    this.deps.hideMainMenu();
                     setTimeout(() => {
                         try {
                             const btn = document.getElementById(DOM_IDS.OPEN_FEEDBACK_MODAL);
@@ -828,7 +848,7 @@ export class QuickActionsManager {
                     break;
                 }
                 case 'openSearch': {
-                    this.deps.hideMainMenu?.();
+                    this.deps.hideMainMenu();
                     setTimeout(() => {
                         try {
                             const btn = document.getElementById(DOM_IDS.TASK_SEARCH_BTN);
@@ -845,7 +865,7 @@ export class QuickActionsManager {
                     break;
                 }
                 case 'openUserManual': {
-                    this.deps.hideMainMenu?.();
+                    this.deps.hideMainMenu();
                     setTimeout(() => {
                         try {
                             const btn = document.getElementById(DOM_IDS.OPEN_USER_MANUAL);
@@ -862,7 +882,7 @@ export class QuickActionsManager {
                     break;
                 }
                 case 'toggleTaskInput': {
-                    this.deps.hideMainMenu?.();
+                    this.deps.hideMainMenu();
                     setTimeout(() => {
                         try {
                             const btn = document.getElementById(DOM_IDS.TOGGLE_TASK_INPUT_BTN);
@@ -879,7 +899,7 @@ export class QuickActionsManager {
                     break;
                 }
                 case 'newRoutine': {
-                    this.deps.hideMainMenu?.();
+                    this.deps.hideMainMenu();
                     setTimeout(() => {
                         try {
                             const btn = document.getElementById(DOM_IDS.NEW_MINI_CYCLE);
@@ -896,7 +916,7 @@ export class QuickActionsManager {
                     break;
                 }
                 case 'shareRoutine': {
-                    this.deps.hideMainMenu?.();
+                    this.deps.hideMainMenu();
                     // Call the share flow DIRECTLY (Aug 2026 gesture fix): the old
                     // path clicked the main-menu Share button inside a setTimeout —
                     // a programmatic click carries no user activation, so
@@ -910,7 +930,7 @@ export class QuickActionsManager {
                             // async flow — catch rejections too, not just sync throws
                             Promise.resolve(this.deps.shareCurrentRoutine()).catch((err) => {
                                 console.error(`⚡ Quick action '${actionId}' failed:`, err);
-                                this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
+                                this.deps.showNotification(getLabel('notify.actionFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
                             });
                         } catch (err) {
                             console.error(`⚡ Quick action '${actionId}' failed:`, err);
@@ -936,7 +956,7 @@ export class QuickActionsManager {
                     break;
                 }
                 case 'exportData': {
-                    this.deps.hideMainMenu?.();
+                    this.deps.hideMainMenu();
                     setTimeout(() => {
                         try {
                             const btn = document.getElementById(DOM_IDS.EXPORT_MINI_CYCLE);
@@ -953,7 +973,7 @@ export class QuickActionsManager {
                     break;
                 }
                 case 'openTaskOrderGame': {
-                    this.deps.hideMainMenu?.();
+                    this.deps.hideMainMenu();
                     setTimeout(() => {
                         try {
                             const btn = document.getElementById(DOM_IDS.OPEN_TASK_ORDER_GAME);
@@ -970,7 +990,7 @@ export class QuickActionsManager {
                     break;
                 }
                 case 'openTaskOptions': {
-                    this.deps.hideMainMenu?.();
+                    this.deps.hideMainMenu();
                     setTimeout(() => {
                         try {
                             const btn = document.getElementById(DOM_IDS.OPEN_TASK_OPTIONS_CUSTOMIZER);
@@ -987,7 +1007,7 @@ export class QuickActionsManager {
                     break;
                 }
                 case 'openThemesPanel': {
-                    this.deps.hideMainMenu?.();
+                    this.deps.hideMainMenu();
                     setTimeout(() => {
                         try {
                             const btn = document.getElementById(DOM_IDS.OPEN_THEMES_PANEL);
@@ -1015,9 +1035,8 @@ export class QuickActionsManager {
     // ========================================================================
 
     pinAction(slotIndex, actionId) {
-        this.deps.AppState?.update(s => {
-            if (!s.settings?.quickActions) return;
-            s.settings.quickActions.pinned[slotIndex] = actionId;
+        this.deps.AppState.update(s => {
+            ensureQuickActions(s).pinned[slotIndex] = actionId;
         });
 
         this._renderAllPanels();
@@ -1025,9 +1044,8 @@ export class QuickActionsManager {
     }
 
     unpinAction(slotIndex) {
-        this.deps.AppState?.update(s => {
-            if (!s.settings?.quickActions) return;
-            s.settings.quickActions.pinned[slotIndex] = null;
+        this.deps.AppState.update(s => {
+            ensureQuickActions(s).pinned[slotIndex] = null;
         });
 
         this._renderAllPanels();
@@ -1380,22 +1398,25 @@ export class QuickActionsManager {
     // LONG-PRESS (mobile tooltip + remove)
     // ========================================================================
 
+    /**
+     * Long-press a slot to see what its icon means.
+     *
+     * Delegated to the shared helper so the press ALSO suppresses the click
+     * the browser fires on touchend. Before that, holding a slot showed the
+     * tooltip and ran the action — asking what an icon does performed it, which
+     * is the opposite of what the gesture is for.
+     *
+     * The tooltip stays local rather than using the helper's bubble: this one
+     * carries an unpin control for the pinned view, so it is a menu, not a hint.
+     */
     _addLongPressHandler(element, actionId, slotIndex, isAutoView) {
-        let timer = null;
-
-        element.addEventListener('touchstart', (e) => {
-            timer = setTimeout(() => {
-                this._showTooltip(element, actionId, slotIndex, isAutoView);
-            }, 500);
-        }, { passive: true });
-
-        element.addEventListener('touchend', () => {
-            clearTimeout(timer);
-        }, { passive: true });
-
-        element.addEventListener('touchmove', () => {
-            clearTimeout(timer);
-        }, { passive: true });
+        // Detach is unused on purpose. Slots are rebuilt on every render, so the
+        // listeners are discarded with the element they were attached to —
+        // holding the detach functions would mean retaining closures over
+        // elements that no longer exist, which is the leak, not the fix.
+        attachLongPressHint(element, {
+            onLongPress: () => this._showTooltip(element, actionId, slotIndex, isAutoView),
+        });
     }
 
     _createTooltip() {

@@ -1,0 +1,243 @@
+/* =============================================================================
+   WELCOME SCREEN  (modules/ui/titleScreen.js — code name: titleScreen)
+   =============================================================================
+
+   Deliberately NOT reusing .first-run-choice from critical.css. That class is
+   hidden by `html:not(.mc-first-run) .first-run-choice { display: none }`, and a
+   returning user never carries `mc-first-run` — the surface would be invisible
+   to exactly the audience it exists for, silently.
+
+   The INNER classes from critical.css (.first-run-wordmark, .first-run-descriptor,
+   .first-run-btn, .first-run-buttons) ARE reused: they are self-contained, and
+   sharing them is what keeps this screen and the first-run screen visually
+   identical instead of drifting into two half-matching designs. That is why this
+   surface repeats #app-loader's background treatment below — those classes are
+   white-on-dark and need it.
+   ============================================================================= */
+
+#title-screen.title-screen {
+    /* A <dialog> is UA-sized to its content; override to fill the viewport. */
+    width: 100vw;
+    max-width: 100vw;
+    height: 100dvh;
+    max-height: 100dvh;
+    margin: 0;
+    padding: 0;
+    border: none;
+    overflow: auto;
+    color: white;
+    /* Same treatment as #app-loader in critical.css, so the two screens read as
+       one place. Routine_Lists.webp is not precached, so an offline visit falls
+       back to the gradient alone — same as the first-run screen does today. */
+    background:
+        /* Readability scrim, MEASURED not eyeballed: the desk photo composited
+           with the blue overlay below is rgb(174, 200, 248) under the centre
+           column — nearly white. White text on that reaches only 1.69:1 even at
+           FULL opacity, against WCAG AA's 4.5:1, so raising text opacity cannot
+           fix it; the backdrop has to come down. Sized in % of the VIEWPORT and
+           painted on this full-screen element so it fades to nothing with no box
+           edge to clip against — an ellipse on the narrow centre column left
+           visible vertical seams. The photo still reads at the edges; the
+           content is anchored without sitting in a card. */
+        radial-gradient(ellipse 70% 65% at 50% 45%,
+            rgba(0, 0, 0, 0.55) 0%,
+            rgba(0, 0, 0, 0.46) 40%,
+            rgba(0, 0, 0, 0.20) 75%,
+            rgba(0, 0, 0, 0) 100%),
+        linear-gradient(135deg, rgba(76, 121, 255, 0.5), rgba(116, 192, 252, 0.45)),
+        url('../../assets/images/Stock/Routine_Lists.webp') center/cover no-repeat;
+}
+
+/* modals.css enumerates which dialog classes flip to flex; this one is not in
+   that list, so state its own open/closed display. */
+#title-screen.title-screen[open] {
+    display: flex;
+    /* Column so .title-screen-inner can centre in the remaining space while the
+       footer holds the bottom edge. */
+    flex-direction: column;
+}
+#title-screen.title-screen:not([open]) {
+    display: none;
+}
+
+#title-screen.title-screen::backdrop {
+    background: rgba(0, 0, 0, 0.4);
+}
+
+.title-screen-inner {
+    position: relative;
+    margin: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 300px;
+    max-width: 84vw;
+    padding: var(--space-6) 0 0;
+}
+
+/* Matches #app-loader's .loader-logo placement so the two screens line up. */
+.title-screen-logo {
+    display: block;
+    margin: 0 auto var(--space-3);
+    filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.3));
+}
+
+.title-screen-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    margin-top: var(--space-5);
+}
+
+/* Credit line, mirroring the app footer's #copyright. Sits with the legal row as
+   the reference tier, beneath the actions. */
+.title-screen-credit {
+    margin: 0;
+    text-align: center;
+    color: white;
+    opacity: 0.92;
+    font-size: var(--font-size-xs);
+    text-shadow: var(--text-shadow-lg);
+}
+
+.title-screen-credit a {
+    color: white;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.title-screen-credit a:hover,
+.title-screen-credit a:focus-visible {
+    opacity: 1;
+}
+
+.title-screen-credit sup {
+    font-size: 0.7em;
+}
+
+/* Secondary tier: reference links, not destinations you act on. Small, quiet,
+   and wrapping so four of them survive a narrow viewport. */
+.title-screen-legal {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-2) var(--space-3);
+    margin-top: 0;
+}
+
+.title-screen-legal a {
+    color: white;
+    opacity: 0.92;
+    font-size: var(--font-size-xs);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.title-screen-legal a:hover,
+.title-screen-legal a:focus-visible {
+    opacity: 1;
+}
+
+/* An <a> styled as .first-run-btn does NOT inherit a button's default centring —
+   .first-run-btn sets no text-align, and buttons only centre because the UA
+   stylesheet says so. Without this the "Official website" link sits left. */
+.title-screen-inner a.first-run-btn {
+    display: block;
+    text-align: center;
+    text-decoration: none;
+}
+
+/* Rotating tip. Occupies the slot the first-run screen gives its use-case line,
+   with the same unhurried rhythm — the audience differs, the cadence should not.
+   Chip treatment copied from .loader-tip in critical.css so the tip reads the
+   same on both screens; a fixed min-height stops the layout shifting as tips of
+   different lengths swap in. */
+.title-screen-tip {
+    display: block;
+    width: 300px;
+    max-width: 80vw;
+    min-height: 2.6em;
+    margin: var(--space-4) auto 0;
+    padding: 10px 24px;
+    border: none;
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.25);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: white;
+    opacity: 0.85;
+    font-size: var(--font-size-sm);
+    line-height: 1.4;
+    text-align: center;
+    cursor: pointer;
+    transition: background var(--transition-fast) ease, opacity var(--transition-fast) ease;
+}
+
+.title-screen-tip:hover,
+.title-screen-tip:focus-visible {
+    background: rgba(0, 0, 0, 0.38);
+    opacity: 1;
+}
+
+/* Quieter than the white action buttons — leaving is not the primary act here. */
+#title-screen-close {
+    margin-top: var(--space-5);
+    padding: var(--space-2-5) var(--space-5);
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: white;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    cursor: pointer;
+    transition: background var(--transition-fast) ease;
+}
+
+#title-screen-close:hover {
+    background: rgba(255, 255, 255, 0.16);
+}
+
+/* .first-run-tagline and .first-run-usecase-text set their own opacity in
+   critical.css, which the first-run screen shares. Override inside this surface
+   only — the first-run screen has the same contrast problem, but changing it is
+   a separate decision (see the note in WELCOME_SCREEN_PLAN.md). */
+#title-screen .first-run-tagline {
+    opacity: 0.95;
+}
+
+#title-screen .first-run-usecase-text.is-active {
+    opacity: 1;
+}
+
+/* Reference footer: credit + legal, pinned to the bottom of the overlay.
+   Narrow viewports stack the two rows — the credit line alone is ~250px, so
+   forcing one line on a phone would wrap mid-list and read worse. */
+.title-screen-footer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+    width: 100%;
+    padding: 0 var(--space-4) var(--space-5);
+}
+
+/* Desktop: one row, and a step up in size. Being an overlay-level sibling (not
+   inside the 300px column) is what makes a single row possible. */
+@media (min-width: 1024px) {
+    .title-screen-footer {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: var(--space-2) var(--space-5);
+    }
+
+    .title-screen-footer .title-screen-credit,
+    .title-screen-footer .title-screen-legal a {
+        font-size: var(--font-size-sm);
+    }
+
+    .title-screen-footer .title-screen-legal {
+        gap: var(--space-2) var(--space-5);
+    }
+}

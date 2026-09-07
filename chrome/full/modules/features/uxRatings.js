@@ -27,6 +27,12 @@ const di = createDIModule('UXRatings', {
     appInit: required(),
     safeAddEventListener: required(),
     AppMeta: optional(null),
+    // Modal lookup goes through the registry so modalRegistry stays the single
+    // definition of HOW each modal is found — this module used getElementById
+    // directly, which quietly diverges the day a modal's def changes method or
+    // key. Optional with a null default: uxRatings is a leaf feature and a
+    // missing registry must not take out the whole feedback form.
+    getModal: optional(null),
     // DOM access helpers (testable, avoids direct document.* calls)
     getElementById: optional((id) => document.getElementById(id)),
     querySelectorAll: optional((sel) => document.querySelectorAll(sel)),
@@ -162,7 +168,11 @@ export class UXRatings {
 
     _wireFormHooks() {
         const form = this.deps.getElementById(DOM_IDS.FEEDBACK_FORM);
-        const dialog = this.deps.getElementById(DOM_IDS.FEEDBACK_MODAL);
+        // Registry first; the direct lookup is the fallback for a boot where the
+        // registry never wired. Both resolve the same element today — the
+        // registry def for `feedback` is `{ method: 'id', key: FEEDBACK_MODAL }`.
+        const dialog = this.deps.getModal?.('feedback')
+            || this.deps.getElementById(DOM_IDS.FEEDBACK_MODAL);
 
         // Persist locally on submit. modalManager's handler runs first and only
         // blocks submission when BOTH the rating is empty and the text is short,

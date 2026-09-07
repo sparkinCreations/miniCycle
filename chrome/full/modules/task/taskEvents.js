@@ -438,7 +438,7 @@ export class TaskEvents {
         // ✅ Add recurring icon to task label if not already present
         const taskLabel = taskEl.querySelector(DOM_SELECTORS.TASK_TEXT);
         if (taskLabel) {
-            let existingIcon = taskLabel.querySelector(DOM_SELECTORS.RECURRING_INDICATOR);
+            const existingIcon = taskLabel.querySelector(DOM_SELECTORS.RECURRING_INDICATOR);
             if (!existingIcon) {
                 const icon = document.createElement("span");
                 icon.className = "recurring-indicator";

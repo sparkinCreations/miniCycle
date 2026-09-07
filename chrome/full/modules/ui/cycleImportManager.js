@@ -21,6 +21,7 @@ import { getLabel } from '../labels/labelResolver.js';
 // matcher's concern is memo-cache identity shared with recurringCore, which
 // import doesn't need; the cost is one duplicate cache, nothing behavioral.
 import { normalizeRecurringSettings } from '../recurring/recurringSettings.js';
+import { buildRecurringTemplate } from '../recurring/recurringTemplate.js';
 import { isValidHex } from '../utils/styleValidators.js';
 
 // ============================================================================
@@ -82,6 +83,13 @@ const MAX_CYCLE_NAME_LENGTH = LIMITS.CYCLE_NAME_CHARACTER;
 // that every id the app itself generates (task-<ts>-..., legacy repairs)
 // round-trips, so the template-metadata merge below still matches by id.
 const SAFE_IMPORTED_TASK_ID = /^[A-Za-z0-9._:-]{1,64}$/;
+// `__proto__` and friends pass SAFE_IMPORTED_TASK_ID's character class but are
+// unusable as plain-object keys: `map['__proto__'] = t` sets the PROTOTYPE — the
+// write reads back fine, serialises to {}, and vanishes on reload (CLAUDE.md #18).
+// Imported task ids key cycle.recurringTemplates, so reject these and regenerate.
+const UNSAFE_OBJECT_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+const isSafeImportedTaskId = (id) =>
+    typeof id === 'string' && SAFE_IMPORTED_TASK_ID.test(id) && !UNSAFE_OBJECT_KEYS.has(id);
 
 /**
  * Validate an imported date string: ISO YYYY-MM-DD with optional time, and a
@@ -202,7 +210,7 @@ export function setupImportButtons() {
             localStorage.removeItem('miniCycle_importNotification');
             const { message, type } = JSON.parse(pending);
             if (message) {
-                _deps.showNotification?.(message, type || 'success', UI_TIMEOUTS.NOTIFICATION_EXTENDED);
+                _deps.showNotification(message, type || 'success', UI_TIMEOUTS.NOTIFICATION_EXTENDED);
             }
         }
     } catch (e) {
@@ -265,7 +273,7 @@ export function setupImportButtons() {
             }
 
             if (file.name.endsWith(".tcyc")) {
-                _deps.showNotification?.(getLabel('notify.tcycNotSupported'));
+                _deps.showNotification(getLabel('notify.tcycNotSupported'));
                 fileInput.remove();
                 fileInput = null;
                 resetPickerState();
@@ -274,7 +282,7 @@ export function setupImportButtons() {
 
             // Security: File size limit to prevent memory exhaustion
             if (file.size > MAX_FILE_SIZE_BYTES) {
-                _deps.showNotification?.(getLabel('notify.fileTooLarge'), "error");
+                _deps.showNotification(getLabel('notify.fileTooLarge'), "error");
                 console.warn(`Import rejected: file size ${(file.size / 1024 / 1024).toFixed(2)}MB exceeds 10MB limit`);
                 fileInput.remove();
                 fileInput = null;
@@ -431,7 +439,7 @@ export function setupDragDropImport() {
 
         // Warn if multiple files dropped
         if (files.length > 1) {
-            _deps.showNotification?.(getLabel('notify.importOneFileOnly'), 'warning');
+            _deps.showNotification(getLabel('notify.importOneFileOnly'), 'warning');
             return;
         }
 
@@ -439,19 +447,19 @@ export function setupDragDropImport() {
 
         // Validate file extension
         if (!isValidImportFile(file)) {
-            _deps.showNotification?.(getLabel('notify.importDropMcyc'), 'warning');
+            _deps.showNotification(getLabel('notify.importDropMcyc'), 'warning');
             return;
         }
 
         // Reject .tcyc files (shouldn't happen with extension check, but be safe)
         if (file.name.endsWith('.tcyc')) {
-            _deps.showNotification?.(getLabel('notify.tcycNotSupported'));
+            _deps.showNotification(getLabel('notify.tcycNotSupported'));
             return;
         }
 
         // Security: File size limit
         if (file.size > MAX_FILE_SIZE_BYTES) {
-            _deps.showNotification?.(getLabel('notify.fileTooLarge'), 'error');
+            _deps.showNotification(getLabel('notify.fileTooLarge'), 'error');
             console.warn(`Import rejected: file size ${(file.size / 1024 / 1024).toFixed(2)}MB exceeds 10MB limit`);
             return;
         }
@@ -467,12 +475,39 @@ export function setupDragDropImport() {
             }
         };
         reader.onerror = () => {
-            _deps.showNotification?.(getLabel('notify.importReadError'), 'error');
+            _deps.showNotification(getLabel('notify.importReadError'), 'error');
             console.error('FileReader error:', reader.error);
         };
         reader.readAsText(file);
     });
 
+}
+
+/**
+ * Look up a vocab theme definition without trusting `?.` to guard the call.
+ *
+ * `vocabThemeManager` is delivered as a **Proxy** whose `get` trap forwards to
+ * `deps.features.vocabThemeManager`. The Proxy object itself is always truthy, so
+ * `_deps.vocabThemeManager?.getThemeDefinition(x)` short-circuits on the dep being
+ * absent but NOT on the method being absent — if the underlying manager is missing,
+ * the trap returns `undefined` and the call throws "is not a function" mid-import,
+ * after the user has already picked an import mode. Check the method, not the object.
+ *
+ * @param {string} themeId - Vocab theme id from the imported file
+ * @returns {Object|null} Theme definition, or null if unavailable/unknown
+ */
+function getThemeDefinitionSafe(themeId) {
+    const manager = _deps.vocabThemeManager;
+    if (!manager || typeof manager.getThemeDefinition !== 'function') return null;
+    try {
+        // Called as a METHOD, not through an extracted reference: the depMappings
+        // Proxy binds what it hands back, but a directly-injected manager (tests,
+        // future wiring) would lose `this` if the function were pulled off first.
+        return manager.getThemeDefinition(themeId) ?? null;
+    } catch (err) {
+        console.warn('Theme lookup failed during import:', err.message);
+        return null;
+    }
 }
 
 /**
@@ -491,13 +526,13 @@ export async function processImportedData(fileContent) {
     }
 
     if (!importedData.name || !Array.isArray(importedData.tasks)) {
-        _deps.showNotification?.(getLabel('notify.invalidFormat'));
+        _deps.showNotification(getLabel('notify.invalidFormat'));
         return;
     }
 
     // Security: Truncate tasks if exceeding limit (instead of rejecting)
     let tasksTruncated = false;
-    let originalTaskCount = importedData.tasks.length;
+    const originalTaskCount = importedData.tasks.length;
     if (importedData.tasks.length > MAX_TASK_COUNT) {
         console.warn(`Import truncating: ${importedData.tasks.length} tasks exceeds ${MAX_TASK_COUNT} limit, keeping first ${MAX_TASK_COUNT}`);
         importedData.tasks = importedData.tasks.slice(0, MAX_TASK_COUNT);
@@ -510,7 +545,7 @@ export async function processImportedData(fileContent) {
         const storageCheck = canAddToStorage(estimatedSize);
         if (!storageCheck.allowed) {
             console.warn('Storage quota exceeded. Cannot import routine.');
-            _deps.showNotification?.(
+            _deps.showNotification(
                 typeof getStorageShortageMessage === 'function'
                     ? getStorageShortageMessage(storageCheck.shortfall)
                     : getLabel('notify.importNoStorage'),
@@ -533,7 +568,7 @@ export async function processImportedData(fileContent) {
 
     if (!appState?.isReady?.()) {
         console.error("AppState not ready for import");
-        _deps.showNotification?.(getLabel('notify.importAppNotReady'), "error");
+        _deps.showNotification(getLabel('notify.importAppNotReady'), "error");
         return;
     }
 
@@ -597,7 +632,7 @@ export async function processImportedData(fileContent) {
         const highPriority = task.highPriority === true;
         const validColor = isValidHex(task.priorityColor) ? task.priorityColor : null;
         const taskData = {
-            id: (typeof task.id === 'string' && SAFE_IMPORTED_TASK_ID.test(task.id))
+            id: isSafeImportedTaskId(task.id)
                 ? task.id
                 : `task-${importTimestamp}-${index}`,
             text: sanitizedText,
@@ -645,18 +680,16 @@ export async function processImportedData(fileContent) {
                 if (typeof calculateNextOccurrence === 'function') {
                     nextOccurrence = calculateNextOccurrence(task.recurringSettings, Date.now());
                 }
-                recurringTemplates[task.id] = {
+                recurringTemplates[task.id] = buildRecurringTemplate({
                     id: task.id,
                     text: task.text,
                     dueDate: task.dueDate || null,
                     highPriority: task.highPriority || false,
                     priorityColor: task.priorityColor || (task.highPriority ? COLORS.PRIORITY_DEFAULT : null),
                     remindersEnabled: task.remindersEnabled || false,
-                    recurring: true,
                     recurringSettings: structuredClone(task.recurringSettings),
-                    nextScheduledOccurrence: nextOccurrence,
-                    schemaVersion: 2
-                };
+                    nextScheduledOccurrence: nextOccurrence
+                });
             } catch (error) {
                 console.warn(`Failed to create template for task ${task.id}:`, error);
             }
@@ -721,6 +754,104 @@ export async function processImportedData(fileContent) {
         };
     }
 
+    // Carry over templates that have NO live task instance.
+    //
+    // A routine sitting between occurrences is the normal resting state: cycle
+    // reset removes the spawned instance from cycle.tasks and leaves its template
+    // behind for recurringWatcher to respawn (taskCycleReset ->
+    // removeRecurringTasksFromCycle). The merge above rebuilds templates from the
+    // TASK LIST alone, so every such routine lost its recurring tasks outright on
+    // import - no task, no template, no error, and a success notification.
+    //
+    // Present since the first commit, where import hardcoded `recurringTemplates:
+    // {}` and never read the file's copy. The Nov 2025 task-derived rebuild
+    // repaired only the case where the instance happened to be live, which is what
+    // kept the remainder invisible. The duplicate-routine path already reached the
+    // same conclusion (routineSwitcherActions.js: "a template without a live task
+    // instance is normal - keep it").
+    //
+    // No task is spawned here on purpose: the watcher spawns it at the next
+    // occurrence, exactly as it would have in the routine this file came from.
+    //
+    // These entries never passed through task sanitization, so every field is
+    // re-derived through the same validators the task path uses - nothing is
+    // copied from the file untouched.
+    const importedTemplates =
+        (importedData.recurringTemplates && typeof importedData.recurringTemplates === 'object')
+            ? importedData.recurringTemplates
+            : {};
+    // Ids belonging to a task in the FILE. "Orphan" means no task claims the id;
+    // a template keyed to a task that IS present is that task's business, and its
+    // own `recurring` flag already decided the matter above - if the task is
+    // recurring the merge loop generated a template, and if it is not, the stray
+    // entry must not resurrect one. Without this, importing a task with
+    // `recurring: false` alongside a template for its id produced a non-recurring
+    // task sitting beside a live template for itself (measured; introduced by the
+    // orphan carry-over in v2.537, whose only guard was mergedTemplates).
+    // Note: this reads the task array AFTER any MAX_TASK_COUNT truncation, so a
+    // template belonging to a truncated task is treated as an orphan. That is the
+    // kinder outcome - the recurring work survives - and the template total is
+    // capped by the same limit below.
+    const importedTaskIds = new Set(
+        (importedData.tasks || [])
+            .map(t => t && t.id)
+            .filter(id => typeof id === 'string')
+    );
+    let orphanTemplateIndex = 0;
+    for (const [rawId, imported] of Object.entries(importedTemplates)) {
+        if (Object.prototype.hasOwnProperty.call(mergedTemplates, rawId)) continue;
+        if (importedTaskIds.has(rawId)) continue;
+        if (!imported || typeof imported !== 'object') continue;
+        // A template with no recurrence rule can never fire. Skip it rather than
+        // invent a default schedule the user never chose.
+        if (!imported.recurringSettings || typeof imported.recurringSettings !== 'object') continue;
+        if (Object.keys(mergedTemplates).length >= MAX_TASK_COUNT) {
+            console.warn(`Import: recurring template limit (${MAX_TASK_COUNT}) reached, dropping the rest`);
+            break;
+        }
+
+        const orphanSettings = normalizeRecurringSettings(imported.recurringSettings);
+        if (orphanSettings.specificDates.dates.length > 0) {
+            orphanSettings.specificDates.dates = orphanSettings.specificDates.dates
+                .filter(d => validateImportedDate(d) !== null)
+                .slice(0, LIMITS.MAX_SPECIFIC_DATES);
+            if (orphanSettings.specificDates.dates.length === 0) {
+                orphanSettings.specificDates.enabled = false;
+            }
+        }
+
+        const orphanId = isSafeImportedTaskId(rawId)
+            ? rawId
+            : `task-${importTimestamp}-t${orphanTemplateIndex}`;
+        orphanTemplateIndex++;
+
+        const orphanHighPriority = imported.highPriority === true;
+        const orphanColor = isValidHex(imported.priorityColor) ? imported.priorityColor : null;
+
+        let orphanNextOccurrence = null;
+        if (typeof calculateNextOccurrence === 'function') {
+            try {
+                // Recomputed, never copied: the file's nextScheduledOccurrence is a
+                // timestamp from another device and is usually already in the past.
+                orphanNextOccurrence = calculateNextOccurrence(orphanSettings, Date.now());
+            } catch (error) {
+                console.warn(`Failed to schedule imported template ${orphanId}:`, error);
+            }
+        }
+
+        mergedTemplates[orphanId] = buildRecurringTemplate({
+            id: orphanId,
+            text: normalizeImportedText(imported.text || '', MAX_TASK_TEXT_LENGTH)
+                || getLabel('noun.untitledTask'),
+            dueDate: validateImportedDate(imported.dueDate),
+            highPriority: orphanHighPriority,
+            priorityColor: orphanColor || (orphanHighPriority ? COLORS.PRIORITY_DEFAULT : null),
+            remindersEnabled: imported.remindersEnabled === true,
+            recurringSettings: orphanSettings,
+            nextScheduledOccurrence: orphanNextOccurrence
+        });
+    }
+
     // Sanitize taskOptionButtons — only allow known boolean keys
     let safeTaskOptionButtons = null;
     if (importedData.taskOptionButtons && typeof importedData.taskOptionButtons === 'object') {
@@ -779,7 +910,7 @@ export async function processImportedData(fileContent) {
 
     if (importedTheme === 'classic' || unlockedThemes.includes(importedTheme)) {
         resolvedTheme = importedTheme;
-    } else if (_deps.vocabThemeManager?.getThemeDefinition(importedTheme)) {
+    } else if (getThemeDefinitionSafe(importedTheme)) {
         // Theme exists but user hasn't unlocked it yet
         resolvedTheme = currentState?.settings?.defaultTheme ?? 'classic';
         themeWasDowngraded = true;
@@ -878,12 +1009,15 @@ export async function processImportedData(fileContent) {
     // a snapshot from the old cycle and switch the user back to it.
     // Same pattern routineManager uses after creating a new routine.
     if (typeof _deps.onCycleCreated === 'function') {
-        _deps.onCycleCreated(finalCycleTitle).catch(err => {
+        // Promise.resolve(): the moduleLoader DI wrapper optional-chains its inner
+        // call, so it yields undefined when the hook is unwired and `.catch` on
+        // undefined throws here — inside a UI flow, after state already changed.
+        Promise.resolve(_deps.onCycleCreated(finalCycleTitle)).catch(err => {
             console.warn('Failed to initialize undo stack for imported cycle:', err);
         });
     }
 
-    const recurringCount = Object.keys(recurringTemplates).length;
+    const recurringCount = Object.keys(mergedTemplates).length;
 
     // Fix #50-51: Store notification message in sessionStorage so it survives reload
     // The notification will be shown after the page reloads
@@ -891,8 +1025,11 @@ export async function processImportedData(fileContent) {
     let messageType = 'success';
 
     if (themeWasDowngraded) {
-        const themeName = _deps.vocabThemeManager?.getThemeDefinition(importedTheme)?.name ?? importedTheme;
-        importMessage = getLabel('notify.themeLockedOnImport', { vars: { name: themeName } });
+        const themeName = getThemeDefinitionSafe(importedTheme)?.name ?? importedTheme;
+        // Name the theme actually applied. resolvedTheme is the user's defaultTheme
+        // here, which is not always Classic — the label used to claim it was.
+        const fallbackName = getThemeDefinitionSafe(resolvedTheme)?.name ?? resolvedTheme;
+        importMessage = getLabel('notify.themeLockedOnImport', { vars: { name: themeName, fallback: fallbackName } });
         messageType = 'info';
     } else if (tasksTruncated) {
         const truncatedCount = originalTaskCount - MAX_TASK_COUNT;
@@ -916,7 +1053,7 @@ export async function processImportedData(fileContent) {
         setTimeout(() => {
             _deps.loadMiniCycle();
             _deps.hideLoader?.();
-            _deps.showNotification?.(importMessage, messageType, UI_TIMEOUTS.NOTIFICATION_EXTENDED);
+            _deps.showNotification(importMessage, messageType, UI_TIMEOUTS.NOTIFICATION_EXTENDED);
         }, 400);
     } else {
         // Fallback: full page reload if loadMiniCycle not wired

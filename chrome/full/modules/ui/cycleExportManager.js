@@ -77,7 +77,7 @@ export async function exportMiniCycleData(miniCycleData, cycleName) {
             });
             if (result.handled) {
                 if (!result.cancelled) {
-                    _deps.showNotification?.("✅ " + getLabel('notify.exportSuccess', { vars: { name: cycleName } }), "success", 3000);
+                    _deps.showNotification("✅ " + getLabel('notify.exportSuccess', { vars: { name: cycleName } }), "success", 3000);
                 }
                 return;
             }
@@ -97,7 +97,7 @@ export async function exportMiniCycleData(miniCycleData, cycleName) {
                 await writable.write(dataBlob);
                 await writable.close();
 
-                _deps.showNotification?.("✅ " + getLabel('notify.exportSuccess', { vars: { name: cycleName } }), "success", 3000);
+                _deps.showNotification("✅ " + getLabel('notify.exportSuccess', { vars: { name: cycleName } }), "success", 3000);
                 return;
             } catch (pickerError) {
                 // User cancelled the save dialog — not an error
@@ -167,7 +167,7 @@ export function setupExportButton() {
 
         if (!schemaData) {
             console.error('Schema 2.5 data required for export');
-            _deps.showNotification?.(getLabel('notify.exportNoData'), "error");
+            _deps.showNotification(getLabel('notify.exportNoData'), "error");
             return;
         }
 
@@ -175,7 +175,7 @@ export function setupExportButton() {
         const cycle = cycles[activeCycle];
 
         if (!activeCycle || !cycle) {
-            _deps.showNotification?.(getLabel('notify.exportNoActiveCycle'));
+            _deps.showNotification(getLabel('notify.exportNoActiveCycle'));
             return;
         }
 

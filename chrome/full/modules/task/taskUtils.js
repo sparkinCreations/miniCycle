@@ -26,6 +26,8 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
+import { buildRecurringTemplate } from '../recurring/recurringTemplate.js';
+import { getLabel } from '../labels/labelResolver.js';
 import {
     DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS,
     DEFAULT_RECURRING_DELETE_SETTINGS,
@@ -46,7 +48,10 @@ const di = createDIModule('TaskUtils', {
     remindOverdueTasks: optional(null),
     enableDragAndDropOnTask: optional(null),
     updateMoveArrowsVisibility: optional(null),
-    saveTaskToSchema25: optional(null)
+    saveTaskToSchema25: optional(null),
+    // Needed to stamp nextScheduledOccurrence on templates created here.
+    // Forwarded from taskDOM (facade sub-module); see the template literal below.
+    calculateNextOccurrence: optional(null)
 });
 
 // Late-binding deps via Proxy
@@ -319,20 +324,22 @@ export class TaskUtils {
             };
 
             // Recurring template (built pure; committed alongside the task below)
-            const templateData = (recurring && recurringSettings) ? {
+            const templateData = (recurring && recurringSettings) ? buildRecurringTemplate({
                 id: assignedTaskId,
                 text: taskTextTrimmed,
-                recurring: true,
                 recurringSettings: structuredClone(recurringSettings),
                 highPriority: highPriority || false,
                 priorityColor: priorityColor || (highPriority ? COLORS.PRIORITY_DEFAULT : null),
                 dueDate: dueDate || null,
                 remindersEnabled: remindersEnabled || false,
-                deleteWhenComplete: true, // Recurring tasks always auto-remove
-                deleteWhenCompleteSettings: { ...DEFAULT_RECURRING_DELETE_SETTINGS },
-                lastTriggeredTimestamp: null,
-                schemaVersion: 2
-            } : null;
+                // Without this the template never fires — recurringWatcher gates on
+                // `nextScheduledOccurrence == null`, which matches undefined too.
+                // Reached by the Cleared Tasks "Recreate" flow (v2.431 fix); the
+                // builder warns if it is ever missing again.
+                nextScheduledOccurrence: _deps.calculateNextOccurrence
+                    ? _deps.calculateNextOccurrence(recurringSettings, Date.now())
+                    : null
+            }) : null;
 
             // Only commit if NOT loading (prevents duplicate tasks — the load
             // path renders tasks that already exist in state)
@@ -495,6 +502,39 @@ function createOrUpdateTaskData(taskContext) {
 // ============================================
 // Exports
 // ============================================
+
+
+/**
+ * Write a task row's accessible name from its completion state.
+ *
+ * The single definition of this label. It was previously rebuilt inline at task
+ * creation (taskDOM) and on toggle (taskCompletion), and the cycle-reset path —
+ * which unchecks `checkbox.checked` directly rather than going through either —
+ * had no third copy and so silently left the old status behind. Every row read
+ * "Completed" to a screen reader while its checkbox was unchecked, which is
+ * worse than no label: it states the opposite of the control's real state.
+ *
+ * `name` and `recurring` are derived from the element when not supplied, so a
+ * caller that only knows "this row is now unchecked" can still call it.
+ *
+ * `opts.status` overrides the completed/not-completed wording for states that
+ * are neither — currently only "overdue". It must already be resolved through
+ * getLabel; passing a raw string is how this row ended up announcing a
+ * lowercase, untranslated "overdue" next to properly-cased siblings.
+ *
+ * @param {HTMLElement} taskItem - The task <li>
+ * @param {boolean} completed - New completion state
+ * @param {{name?: string, recurring?: boolean, status?: string}} [opts]
+ * @returns {void}
+ */
+export function applyTaskStatusLabel(taskItem, completed, opts = {}) {
+    if (!taskItem) return;
+    const name = opts.name ?? (taskItem.querySelector(DOM_SELECTORS.TASK_TEXT)?.textContent || '');
+    const recurring = opts.recurring ?? taskItem.classList.contains(DOM_CLASSES.RECURRING);
+    const status = opts.status ?? (completed ? getLabel('nav.completed') : getLabel('nav.notCompleted'));
+    const labelKey = recurring ? 'action.taskItemRecurring' : 'action.taskItemLabel';
+    taskItem.setAttribute('aria-label', getLabel(labelKey, { vars: { name, status } }));
+}
 
 // DI-pure module (no window.* fallbacks for dependencies)
 

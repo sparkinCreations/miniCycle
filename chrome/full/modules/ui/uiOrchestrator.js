@@ -12,8 +12,8 @@
  * - Monitors frame budget (warns if flush > 16ms)
  *
  * @module ui/uiOrchestrator
- * @see {@link file://../../../docs/developer-guides/ASYNC_UI_PATTERNS.md} - UI patterns
- * @see {@link file://../../../docs/developer-guides/ARCHITECTURE_OVERVIEW.md} - Architecture
+ * @see {@link file://docs/working-on-code/ASYNC_UI_PATTERNS.md} - UI patterns
+ * @see {@link file://docs/architecture/ARCHITECTURE_OVERVIEW.md} - Architecture
  */
 
 /**

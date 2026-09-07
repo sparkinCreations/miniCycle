@@ -12,7 +12,7 @@
  * - Minimum interval between snapshots
  *
  * @module ui/undoRedoManager
- * @see {@link file://../../../docs/developer-guides/ARCHITECTURE_OVERVIEW.md} - Architecture
+ * @see {@link file://docs/architecture/ARCHITECTURE_OVERVIEW.md} - Architecture
  */
 
 /**
@@ -30,6 +30,72 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { LIMITS, DEBOUNCE, DOM_IDS, APP_VERSION, UI_TIMEOUTS } from '../core/constants.js';
+
+// Change description for undo/redo notifications (Pattern 2, pure). Split out
+// Aug 2026. `describeChange` is re-exported from there for tests only; the
+// parent calls `computeTransactionDiff`, which is the entry point.
+import { computeTransactionDiff } from './undoTransactionDiff.js';
+
+// Re-exported because it was part of this module's public surface before the
+// split and the test suite imports it from here. Not a `provides` name.
+export { computeTransactionDiff };
+
+// Pure snapshot helpers (Pattern 2). No DI, no state, no side effects — a plain
+// static import is safe, and nothing here needs wiring. Split out Aug 2026;
+// see the header of that file for why these, and not captureStateSnapshot.
+// Boot-critical by virtue of this import: it is in BOOT_CRITICAL.
+import {
+  sanitizeSnapshot,
+  filterValidSnapshots,
+  buildSnapshotSignature,
+  snapshotsEqual
+} from './undoSnapshotUtils.js';
+
+// Re-exported because all three were part of this module's public surface
+// before the split and the test suite imports them from here. None is a
+// `provides` name, so unlike the undoIndexedDB re-exports these are a
+// compatibility surface rather than a registerProvides requirement.
+export { filterValidSnapshots, buildSnapshotSignature, snapshotsEqual };
+
+// Durable per-cycle undo persistence, split out Aug 2026 (Priority 3,
+// LARGE_MODULE_SPLITS_PLAN.md). STATIC, not a dynamic Pattern-1 import: these
+// run from synchronous paths — including the beforeunload flush — where
+// awaiting an import is impossible, and this module has no async init to hang
+// one on. Same call made for notifications.js -> educationalTips.js.
+//
+// CONSEQUENCE: a static import from a boot-critical module makes the target
+// boot-critical. undoIndexedDB.js is in BOOT_CRITICAL in service-worker.js;
+// run `npm run test:sw` if you touch either file — no other gate covers it.
+import {
+  setUndoIndexedDBDependencies,
+  initUndoIndexedDB,
+  closeUndoIndexedDB,
+  saveUndoStackToIndexedDB,
+  loadUndoStackFromIndexedDB,
+  deleteUndoStackFromIndexedDB,
+  renameUndoStackInIndexedDB,
+  clearAllUndoHistoryFromIndexedDB,
+  cancelPendingDbWrite,
+  flushPendingWritesSync,
+  forceSaveStackSync,
+  cancelAllPendingWrites
+} from './undoIndexedDB.js';
+
+// RE-EXPORT, not decoration. `initUndoIndexedDB` and `closeUndoIndexedDB` are
+// named in this module's `provides` list in moduleManifests.js, and
+// registerProvides SILENTLY SKIPS a name it cannot find on the module — the
+// failure that broke three-panel swipe for forty releases after the v2.347
+// statsPanel split. The rest are re-exported because existing callers and the
+// test suite import them from here. `validate:provides` gates the first two.
+export {
+  initUndoIndexedDB,
+  closeUndoIndexedDB,
+  saveUndoStackToIndexedDB,
+  loadUndoStackFromIndexedDB,
+  deleteUndoStackFromIndexedDB,
+  renameUndoStackInIndexedDB,
+  clearAllUndoHistoryFromIndexedDB
+};
 
 // ============ CONSTANTS (from centralized constants.js) ============
 const UNDO_LIMIT = LIMITS.UNDO_STACK;
@@ -132,63 +198,8 @@ function loadFromUndoCache(expectedCycleId) {
 }
 
 
-/**
- * Validate a single snapshot belongs to the expected cycle
- * @param {Object} snapshot - The snapshot to validate
- * @param {string} expectedCycleId - The cycle ID it should belong to
- * @returns {boolean} True if valid
- */
-function validateSnapshot(snapshot, expectedCycleId) {
-  if (!snapshot || typeof snapshot !== 'object') return false;
-  if (!snapshot.activeCycleId) return false;
-  if (snapshot.activeCycleId !== expectedCycleId) return false;
-  if (!Array.isArray(snapshot.tasks)) return false;
-  return true;
-}
 
-// Known valid theme IDs (avoids importing side-effectful themes.js)
-const VALID_THEME_IDS = new Set(['classic', 'habit-tracker', 'fitness', 'scholar', 'cleaning']);
 
-/**
- * Sanitize a snapshot before restoring to prevent corrupted data from entering state.
- * Clamps numeric fields, validates task entries, and normalizes theme IDs.
- * @param {Object} snapshot - The snapshot to sanitize
- * @returns {Object} The sanitized snapshot (mutated in place for efficiency)
- */
-function sanitizeSnapshot(snapshot) {
-  if (!snapshot || typeof snapshot !== 'object') return snapshot;
-
-  // Clamp cycleCount to non-negative integer
-  if ('cycleCount' in snapshot) {
-    const cc = snapshot.cycleCount;
-    snapshot.cycleCount = (Number.isFinite(cc) && cc >= 0) ? Math.floor(cc) : 0;
-  }
-
-  // Validate theme is a known ID
-  if ('theme' in snapshot) {
-    if (!VALID_THEME_IDS.has(snapshot.theme)) {
-      snapshot.theme = 'classic';
-    }
-  }
-
-  // Sanitize clearedTasks
-  if (snapshot.clearedTasks && typeof snapshot.clearedTasks === 'object') {
-    const tc = snapshot.clearedTasks.totalCleared;
-    snapshot.clearedTasks.totalCleared = (Number.isFinite(tc) && tc >= 0) ? Math.floor(tc) : 0;
-    if (!Array.isArray(snapshot.clearedTasks.entries)) {
-      snapshot.clearedTasks.entries = [];
-    }
-  }
-
-  // Validate task entries — filter out malformed tasks
-  if (Array.isArray(snapshot.tasks)) {
-    snapshot.tasks = snapshot.tasks.filter(t =>
-      t && typeof t === 'object' && typeof t.id === 'string' && typeof t.text === 'string'
-    );
-  }
-
-  return snapshot;
-}
 
 /**
  * Relabel snapshots for a renamed cycle. Snapshots embed the cycle identity
@@ -212,25 +223,6 @@ function relabelSnapshotsForCycle(snapshots, newCycleId) {
   });
 }
 
-/**
- * Filter snapshots to only include those belonging to the specified cycle
- * @param {Array} snapshots - Array of snapshots to filter
- * @param {string} cycleId - The cycle ID to filter for
- * @returns {Array} Filtered array of valid snapshots
- */
-export function filterValidSnapshots(snapshots, cycleId) {
-  if (!Array.isArray(snapshots)) return [];
-  if (!cycleId) return [];
-
-  const valid = snapshots.filter(snap => validateSnapshot(snap, cycleId));
-  const removed = snapshots.length - valid.length;
-
-  if (removed > 0) {
-    console.warn(`🧹 Filtered out ${removed} invalid snapshots (wrong cycleId or malformed)`);
-  }
-
-  return valid;
-}
 
 /**
  * Clear the undo cache (used on cycle deletion or factory reset)
@@ -317,6 +309,16 @@ const _deps = new Proxy({}, {
  */
 export function setUndoRedoManagerDependencies(overrides = {}) {
   di.setDependencies(overrides);
+
+  // Wire the IndexedDB sub-module from the SAME call, so the two can never end
+  // up half-wired. showNotification goes through a getter on purpose: diBase
+  // uses defineProperties precisely to preserve these, and a plain read here
+  // would capture undefined at boot, before featureBoot supplies it.
+  setUndoIndexedDBDependencies({
+    get showNotification() { return _deps.showNotification; },
+    saveToUndoCache,
+    relabelSnapshotsForCycle
+  });
 }
 
 function assertInjected(name, value) {
@@ -582,7 +584,7 @@ export function captureStateSnapshot(state) {
   // recreations / wake-time catch-up). These aren't user actions — capturing them
   // puts a system-created task at the top of the undo stack, so the user's next Undo
   // removes the recurring task (which then silently reappears on the next tick).
-  // See docs/future-work/ARCHITECTURE REVIEW FINDINGS.md §1.2.
+  // See docs/archive/ARCHITECTURE_REVIEW_FINDINGS.md §1.2.
   // NOTE: the primary mechanism is now the { system: true } option on
   // AppState.update, checked in the wrapper before this function is even
   // called; this ambient-flag check remains as a fallback for direct callers
@@ -677,321 +679,9 @@ export function captureStateSnapshot(state) {
   );
 }
 
-/**
- * Build snapshot signature for comparison
- */
-export function buildSnapshotSignature(s) {
-  if (!s) return '';
-  return JSON.stringify({
-    c: s.activeCycleId,
-    t: (s.tasks || []).map(t => ({
-      id: t.id, txt: t.text, c: !!t.completed, p: !!t.highPriority, d: t.dueDate || null,
-      r: !!t.recurring, re: !!t.remindersEnabled, dwc: !!t.deleteWhenComplete, pc: t.priorityColor || null,
-      // Settings OBJECTS, not just their booleans — an edit touching only
-      // these would otherwise dedup-skip its snapshot (same class of bug as
-      // the taskViewLayout omission below).
-      rs: t.recurringSettings ? JSON.stringify(t.recurringSettings) : null,
-      dws: t.deleteWhenCompleteSettings ? JSON.stringify(t.deleteWhenCompleteSettings) : null
-    })),
-    ti: s.title || '',
-    ar: !!s.autoReset,
-    dc: !!s.deleteCheckedTasks,
-    cc: s.cycleCount || 0,
-    th: s.theme || 'classic',
-    rt: Object.keys(s.recurringTemplates || {}).sort().map(k => {
-      const tmpl = s.recurringTemplates[k];
-      return { id: k, rs: JSON.stringify(tmpl?.recurringSettings || {}) };
-    }),
-    ct: s.clearedTasks?.totalCleared || 0,
-    // Task view layout — without this in the signature, a layout-only
-    // change (drag-end or dock-back) would dedup against the previous
-    // snapshot and never push, leaving the move outside undo history.
-    tvl: JSON.stringify(s.taskViewLayout?.positions || {})
-  });
-}
 
-/**
- * Analyze what changed between two snapshots
- * Returns a descriptive message like "Task added" or "Task reordered"
- */
-function describeChange(fromSnapshot, toSnapshot) {
-  if (!fromSnapshot || !toSnapshot) return getLabel('notify.changeGeneric');
 
-  const changes = [];
-  const fromTasks = fromSnapshot.tasks || [];
-  const toTasks = toSnapshot.tasks || [];
 
-  // Cycle-level changes
-  if (fromSnapshot.title !== toSnapshot.title) {
-    changes.push(getLabel('notify.changeCycleRenamed'));
-  }
-  if (fromSnapshot.autoReset !== toSnapshot.autoReset ||
-      fromSnapshot.deleteCheckedTasks !== toSnapshot.deleteCheckedTasks) {
-    changes.push(getLabel('notify.changeModeChanged'));
-  }
-  if ((fromSnapshot.theme || 'classic') !== (toSnapshot.theme || 'classic')) {
-    changes.push(getLabel('notify.changeThemeChanged'));
-  }
-  if ((fromSnapshot.cycleCount || 0) !== (toSnapshot.cycleCount || 0)) {
-    changes.push(getLabel('notify.changeCycleCount'));
-  }
-  if ((fromSnapshot.clearedTasks?.totalCleared || 0) !== (toSnapshot.clearedTasks?.totalCleared || 0)) {
-    changes.push(getLabel('notify.changeClearedTasks'));
-  }
-
-  // Task count changes
-  const countDiff = toTasks.length - fromTasks.length;
-  if (countDiff > 0) {
-    changes.push(countDiff === 1 ? getLabel('notify.changeTaskAdded') : getLabel('notify.changeTasksAdded', { vars: { count: countDiff } }));
-  } else if (countDiff < 0) {
-    const deleted = Math.abs(countDiff);
-    changes.push(deleted === 1 ? getLabel('notify.changeTaskDeleted') : getLabel('notify.changeTasksDeleted', { vars: { count: deleted } }));
-  }
-
-  // Per-task modifications
-  const fromTaskMap = new Map(fromTasks.map(t => [t.id, t]));
-  const toTaskMap = new Map(toTasks.map(t => [t.id, t]));
-
-  // Track per-field change counts to avoid duplicate labels
-  const fieldCounts = {
-    edited: 0, completed: 0, uncompleted: 0,
-    prioritySet: 0, priorityRemoved: 0, priorityColor: 0,
-    recurringOn: 0, recurringOff: 0,
-    remindersOn: 0, remindersOff: 0,
-    dueDateSet: 0, dueDateRemoved: 0, dueDateChanged: 0,
-    clearToggled: 0
-  };
-
-  for (const [id, toTask] of toTaskMap) {
-    const fromTask = fromTaskMap.get(id);
-    if (!fromTask) continue;
-
-    if (fromTask.text !== toTask.text) fieldCounts.edited++;
-    if (!fromTask.completed && toTask.completed) fieldCounts.completed++;
-    if (fromTask.completed && !toTask.completed) fieldCounts.uncompleted++;
-    if (fromTask.highPriority !== toTask.highPriority) {
-      if (toTask.highPriority) fieldCounts.prioritySet++;
-      else fieldCounts.priorityRemoved++;
-    }
-    if (fromTask.highPriority && toTask.highPriority &&
-        (fromTask.priorityColor || null) !== (toTask.priorityColor || null)) {
-      fieldCounts.priorityColor++;
-    }
-    if (!!fromTask.recurring !== !!toTask.recurring) {
-      if (toTask.recurring) fieldCounts.recurringOn++;
-      else fieldCounts.recurringOff++;
-    }
-    if (!!fromTask.remindersEnabled !== !!toTask.remindersEnabled) {
-      if (toTask.remindersEnabled) fieldCounts.remindersOn++;
-      else fieldCounts.remindersOff++;
-    }
-    if ((fromTask.dueDate || null) !== (toTask.dueDate || null)) {
-      if (!fromTask.dueDate && toTask.dueDate) fieldCounts.dueDateSet++;
-      else if (fromTask.dueDate && !toTask.dueDate) fieldCounts.dueDateRemoved++;
-      else fieldCounts.dueDateChanged++;
-    }
-    if (!!fromTask.deleteWhenComplete !== !!toTask.deleteWhenComplete) {
-      fieldCounts.clearToggled++;
-    }
-  }
-
-  // Map field counts to labels (first match per field type)
-  if (fieldCounts.edited > 0) changes.push(getLabel('notify.changeTaskEdited'));
-  if (fieldCounts.completed > 0) {
-    changes.push(fieldCounts.completed === 1 ? getLabel('notify.changeTaskCompleted') : getLabel('notify.changeTasksCompleted', { vars: { count: fieldCounts.completed } }));
-  }
-  if (fieldCounts.uncompleted > 0) {
-    changes.push(fieldCounts.uncompleted === 1 ? getLabel('notify.changeTaskUncompleted') : getLabel('notify.changeTasksUncompleted', { vars: { count: fieldCounts.uncompleted } }));
-  }
-  if (fieldCounts.prioritySet > 0) changes.push(getLabel('notify.changePrioritySet'));
-  if (fieldCounts.priorityRemoved > 0) changes.push(getLabel('notify.changePriorityRemoved'));
-  if (fieldCounts.priorityColor > 0) changes.push(getLabel('notify.changePriorityColor'));
-  if (fieldCounts.recurringOn > 0) changes.push(getLabel('notify.changeRecurringEnabled'));
-  if (fieldCounts.recurringOff > 0) changes.push(getLabel('notify.changeRecurringDisabled'));
-  if (fieldCounts.remindersOn > 0) changes.push(getLabel('notify.changeRemindersEnabled'));
-  if (fieldCounts.remindersOff > 0) changes.push(getLabel('notify.changeRemindersDisabled'));
-  if (fieldCounts.dueDateSet > 0) changes.push(getLabel('notify.changeDueDateSet'));
-  if (fieldCounts.dueDateRemoved > 0) changes.push(getLabel('notify.changeDueDateRemoved'));
-  if (fieldCounts.dueDateChanged > 0) changes.push(getLabel('notify.changeDueDateChanged'));
-  if (fieldCounts.clearToggled > 0) changes.push(getLabel('notify.changeClearToggled'));
-
-  // Check for reordering (only if no other task-level changes found)
-  if (changes.length === 0) {
-    const fromOrder = fromTasks.map(t => t.id).join(',');
-    const toOrder = toTasks.map(t => t.id).join(',');
-    if (fromOrder !== toOrder) {
-      changes.push(getLabel('notify.changeTasksReordered'));
-    }
-  }
-
-  // Return result
-  if (changes.length === 0) return getLabel('notify.changeGeneric');
-  if (changes.length === 1) return changes[0];
-  // Compound: show primary change + count
-  return changes[0] + ' + ' + getLabel('notify.changeMultiple', { vars: { count: changes.length - 1 } });
-}
-
-/**
- * Compute a structured transaction diff between two snapshots
- * Used by UIOrchestrator to decide patch vs full render
- * @param {Object} fromSnapshot - Previous state snapshot
- * @param {Object} toSnapshot - New state snapshot
- * @returns {Object} Transaction diff with actionable metadata
- */
-export function computeTransactionDiff(fromSnapshot, toSnapshot) {
-  const diff = {
-    kind: 'undo', // or 'redo' - set by caller
-    cycleChanged: false,
-    themeChanged: false,
-    recurringChanged: false,
-    clearedTasksChanged: false,
-    taskCountChanged: false,
-    taskOrderChanged: false,
-    changedTaskIds: [],
-    addedTaskIds: [],
-    removedTaskIds: [],
-    fieldsChanged: new Set(),
-    requiresFullRender: false,
-    description: describeChange(fromSnapshot, toSnapshot)
-  };
-
-  if (!fromSnapshot || !toSnapshot) {
-    diff.requiresFullRender = true;
-    return diff;
-  }
-
-  const fromTasks = fromSnapshot.tasks || [];
-  const toTasks = toSnapshot.tasks || [];
-
-  // Check for cycle-level changes (require full render)
-  if (fromSnapshot.activeCycleId !== toSnapshot.activeCycleId) {
-    diff.cycleChanged = true;
-    diff.requiresFullRender = true;
-    return diff;
-  }
-
-  if (fromSnapshot.title !== toSnapshot.title ||
-      fromSnapshot.autoReset !== toSnapshot.autoReset ||
-      fromSnapshot.deleteCheckedTasks !== toSnapshot.deleteCheckedTasks) {
-    diff.cycleChanged = true;
-    // Cycle metadata changes don't require full task re-render
-  }
-
-  // Check theme changes (requires vocab theme refresh)
-  if ((fromSnapshot.theme || 'classic') !== (toSnapshot.theme || 'classic')) {
-    diff.themeChanged = true;
-  }
-
-  // Check recurring template changes (requires recurring panel refresh)
-  if (JSON.stringify(fromSnapshot.recurringTemplates || {}) !==
-      JSON.stringify(toSnapshot.recurringTemplates || {})) {
-    diff.recurringChanged = true;
-  }
-
-  // Check cleared tasks changes (requires history refresh)
-  if (JSON.stringify(fromSnapshot.clearedTasks || null) !==
-      JSON.stringify(toSnapshot.clearedTasks || null)) {
-    diff.clearedTasksChanged = true;
-  }
-
-  // Check task count changes
-  if (fromTasks.length !== toTasks.length) {
-    diff.taskCountChanged = true;
-  }
-
-  // Build task maps
-  const fromTaskMap = new Map(fromTasks.map(t => [t.id, t]));
-  const toTaskMap = new Map(toTasks.map(t => [t.id, t]));
-
-  // Find added tasks
-  for (const [id] of toTaskMap) {
-    if (!fromTaskMap.has(id)) {
-      diff.addedTaskIds.push(id);
-    }
-  }
-
-  // Find removed tasks
-  for (const [id] of fromTaskMap) {
-    if (!toTaskMap.has(id)) {
-      diff.removedTaskIds.push(id);
-    }
-  }
-
-  // Check for order changes
-  const fromOrder = fromTasks.map(t => t.id).join(',');
-  const toOrder = toTasks.map(t => t.id).join(',');
-  if (fromOrder !== toOrder) {
-    diff.taskOrderChanged = true;
-  }
-
-  // Find modified tasks and what fields changed
-  for (const [id, toTask] of toTaskMap) {
-    const fromTask = fromTaskMap.get(id);
-    if (!fromTask) continue; // new task, already in addedTaskIds
-
-    const taskFieldsChanged = [];
-
-    if (fromTask.text !== toTask.text) {
-      taskFieldsChanged.push('text');
-    }
-    if (fromTask.completed !== toTask.completed) {
-      taskFieldsChanged.push('completed');
-    }
-    if (fromTask.highPriority !== toTask.highPriority) {
-      taskFieldsChanged.push('highPriority');
-    }
-    if ((fromTask.priorityColor || null) !== (toTask.priorityColor || null)) {
-      taskFieldsChanged.push('priorityColor');
-    }
-    if (fromTask.dueDate !== toTask.dueDate) {
-      taskFieldsChanged.push('dueDate');
-    }
-    if (fromTask.recurring !== toTask.recurring) {
-      taskFieldsChanged.push('recurring');
-    }
-    if (fromTask.remindersEnabled !== toTask.remindersEnabled) {
-      taskFieldsChanged.push('remindersEnabled');
-    }
-    if (fromTask.deleteWhenComplete !== toTask.deleteWhenComplete) {
-      taskFieldsChanged.push('deleteWhenComplete');
-    }
-
-    if (taskFieldsChanged.length > 0) {
-      diff.changedTaskIds.push(id);
-      taskFieldsChanged.forEach(f => diff.fieldsChanged.add(f));
-    }
-  }
-
-  // Convert Set to Array for JSON serialization
-  diff.fieldsChanged = [...diff.fieldsChanged];
-
-  // Determine if full render is needed
-  // Full render required if: tasks added/removed, order changed, or many tasks modified
-  if (diff.addedTaskIds.length > 0 ||
-      diff.removedTaskIds.length > 0 ||
-      diff.taskOrderChanged ||
-      diff.changedTaskIds.length > 5) { // Threshold: patch up to 5 tasks, else full render
-    diff.requiresFullRender = true;
-  }
-
-  return diff;
-}
-
-/**
- * Compare two snapshots for equality
- * Uses cached signatures if available for performance
- */
-export function snapshotsEqual(a, b) {
-  if (!a || !b) return false;
-
-  // ✅ Use cached signatures if available
-  if (a._sig && b._sig) {
-    return a._sig === b._sig;
-  }
-
-  // Fallback to building (shouldn't happen often)
-  return buildSnapshotSignature(a) === buildSnapshotSignature(b);
-}
 
 // ============ UNDO/REDO OPERATIONS ============
 
@@ -1702,7 +1392,7 @@ export async function initUndoSystemForApp() {
 
   try {
     // 1. Always initialize IndexedDB (even if no active cycle yet — first-time users
-    //    complete onboarding later, and cycle lifecycle hooks need undoDB ready)
+    //    complete onboarding later, and cycle lifecycle hooks need the DB ready)
     const dbReady = initUndoIndexedDB();
 
     // 2. Get current active cycle
@@ -1766,26 +1456,10 @@ export async function initUndoSystemForApp() {
       document.removeEventListener('visibilitychange', _visibilityFlushHandler);
     }
     _beforeunloadHandler = () => {
-      // Flush EVERY pending debounced write synchronously (not just the active
-      // cycle's) so a fast switch-then-close can't drop a scheduled write.
-      dbWriteTimers.forEach((entry, cid) => {
-        clearTimeout(entry.timer);
-        if (undoDB && cid) {
-          try {
-            const tx = undoDB.transaction(["undoStacks"], "readwrite");
-            tx.objectStore("undoStacks").put({
-              cycleId: cid,
-              undoStack: entry.undoSnap,
-              redoStack: entry.redoSnap,
-              lastUpdated: Date.now(),
-              version: APP_VERSION
-            });
-          } catch (e) {
-            console.warn('⚠️ Failed to flush pending undo write:', e);
-          }
-        }
-      });
-      dbWriteTimers.clear();
+      // Flush EVERY pending debounced write (not just the active cycle's) so a
+      // fast switch-then-close can't drop a scheduled write, then force-save the
+      // active cycle. Both live in undoIndexedDB.js, which owns the connection.
+      flushPendingWritesSync();
 
       const cycleId = _deps.AppGlobalState.activeCycleIdForUndo;
       const undoStack = _deps.AppGlobalState.activeUndoStack || [];
@@ -1793,26 +1467,7 @@ export async function initUndoSystemForApp() {
 
       // Always save to cache on unload (instant for next boot)
       saveToUndoCache(cycleId, undoStack, redoStack);
-
-      // Also save to IndexedDB if available
-      if (cycleId && undoDB) {
-        try {
-          const transaction = undoDB.transaction(["undoStacks"], "readwrite");
-          const objectStore = transaction.objectStore("undoStacks");
-
-          const data = {
-            cycleId,
-            undoStack,
-            redoStack,
-            lastUpdated: Date.now(),
-            version: APP_VERSION
-          };
-
-          objectStore.put(data);
-        } catch (e) {
-          console.warn('⚠️ Failed to force-save undo history:', e);
-        }
-      }
+      forceSaveStackSync(cycleId, undoStack, redoStack);
     };
     _visibilityFlushHandler = () => {
       if (document.visibilityState === 'hidden') _beforeunloadHandler?.();
@@ -1838,7 +1493,6 @@ export async function initUndoSystemForApp() {
 
 // ============ INDEXEDDB PERSISTENCE ============
 
-let undoDB = null;  // Database connection
 
 // Per-cycle debounced IndexedDB write timers, keyed by cycleId.
 // A SINGLE shared timer used to let a save for one cycle cancel another cycle's
@@ -1847,298 +1501,14 @@ let undoDB = null;  // Database connection
 // record. Keying by cycleId keeps cycles independent. Each entry also carries the
 // call-time array snapshots so beforeunload can flush every pending write.
 // Map<cycleId, { timer:number, undoSnap:Array, redoSnap:Array }>
-const dbWriteTimers = new Map();
 
-/**
- * Cancel a cycle's pending debounced IndexedDB write, if any. Used on
- * delete/rename so a late write can't recreate the deleted record or misfile
- * the renamed one.
- * @param {string} cycleId
- */
-function cancelPendingDbWrite(cycleId) {
-  const entry = dbWriteTimers.get(cycleId);
-  if (entry) {
-    clearTimeout(entry.timer);
-    dbWriteTimers.delete(cycleId);
-  }
-}
 
-/**
- * Initialize IndexedDB for undo history persistence
- * Gracefully degrades if IndexedDB unavailable (private browsing)
- */
-export async function initUndoIndexedDB() {
-  try {
-    return new Promise((resolve, reject) => {
-      // Timeout to prevent indefinite hangs
-      const timeout = setTimeout(() => {
-        console.warn('⚠️ initUndoIndexedDB timed out');
-        undoDB = null;
-        resolve(false);
-      }, 5000);
 
-      const request = indexedDB.open("miniCycleUndoHistory", 1);
 
-      request.onerror = () => {
-        clearTimeout(timeout);
-        console.warn('⚠️ IndexedDB unavailable - undo limited to session only');
-        undoDB = null;
-        resolve(false);
-      };
 
-      request.onsuccess = (event) => {
-        clearTimeout(timeout);
-        undoDB = event.target.result;
-        resolve(true);
-      };
 
-      request.onblocked = () => {
-        clearTimeout(timeout);
-        console.warn('⚠️ IndexedDB blocked - undo limited to session only');
-        undoDB = null;
-        resolve(false);
-      };
 
-      request.onupgradeneeded = (event) => {
-        const db = event.target.result;
 
-        // Create object store if it doesn't exist
-        if (!db.objectStoreNames.contains("undoStacks")) {
-          const objectStore = db.createObjectStore("undoStacks", { keyPath: "cycleId" });
-        }
-      };
-    });
-  } catch (e) {
-    console.warn('⚠️ IndexedDB initialization failed:', e);
-    undoDB = null;
-    return false;
-  }
-}
-
-/**
- * Save undo/redo stacks to both localStorage cache (immediate) and IndexedDB (debounced)
- */
-export function saveUndoStackToIndexedDB(cycleId, undoStack, redoStack, options = {}) {
-  if (!cycleId) return;
-
-  // Save to localStorage cache unless explicitly skipped (e.g., during cycle switching)
-  if (!options.skipCache) {
-    saveToUndoCache(cycleId, undoStack, redoStack);
-  }
-
-  // Graceful degradation if IndexedDB unavailable
-  if (!undoDB) return;
-
-  // Snapshot the arrays at CALL time. captureStateSnapshot mutates the live
-  // stack in place (push/shift), so serializing at fire time could otherwise
-  // persist a state that no longer matches this call. (Belt-and-suspenders — the
-  // cross-cycle switch path reassigns, but a copy is cheap and removes the class.)
-  const undoSnap = Array.isArray(undoStack) ? [...undoStack] : [];
-  const redoSnap = Array.isArray(redoStack) ? [...redoStack] : [];
-
-  // Debounce IndexedDB writes PER CYCLE (see dbWriteTimers) — only cancel this
-  // cycle's own pending write, never another cycle's.
-  cancelPendingDbWrite(cycleId);
-
-  const timer = setTimeout(async () => {
-    dbWriteTimers.delete(cycleId);
-    try {
-      const transaction = undoDB.transaction(["undoStacks"], "readwrite");
-      const objectStore = transaction.objectStore("undoStacks");
-
-      const data = {
-        cycleId,
-        undoStack: undoSnap,
-        redoStack: redoSnap,
-        lastUpdated: Date.now(),
-        version: APP_VERSION
-      };
-
-      const request = objectStore.put(data);
-
-      await new Promise((resolve, reject) => {
-        request.onsuccess = () => {
-          resolve();
-        };
-
-        request.onerror = () => {
-          console.warn(`⚠️ Failed to save undo history for "${cycleId}"`);
-          reject(request.error);
-        };
-      });
-    } catch (e) {
-      console.error('❌ IndexedDB write failed:', e);
-
-      if (e.name === 'QuotaExceededError') {
-        console.error('💾 Storage quota exceeded - undo history not saved');
-        if (_deps.showNotification) {
-          _deps.showNotification(
-            '⚠️ ' + getLabel('notify.undoStorageFull'),
-            'warning',
-            UI_TIMEOUTS.NOTIFICATION_SLOW
-          );
-        }
-      }
-    }
-  }, UNDO_DB_WRITE_DEBOUNCE_MS);
-
-  dbWriteTimers.set(cycleId, { timer, undoSnap, redoSnap });
-}
-
-/**
- * Load undo/redo stacks from IndexedDB
- */
-export async function loadUndoStackFromIndexedDB(cycleId) {
-  if (!undoDB) {
-    return { undoStack: [], redoStack: [] };  // Graceful degradation
-  }
-  if (!cycleId) {
-    return { undoStack: [], redoStack: [] };
-  }
-
-  try {
-    return new Promise((resolve) => {
-      // Timeout to prevent indefinite hangs
-      const timeout = setTimeout(() => {
-        console.warn(`⚠️ loadUndoStackFromIndexedDB timed out for "${cycleId}"`);
-        resolve({ undoStack: [], redoStack: [] });
-      }, 5000);
-
-      const transaction = undoDB.transaction(["undoStacks"], "readonly");
-      const objectStore = transaction.objectStore("undoStacks");
-      const request = objectStore.get(cycleId);
-
-      request.onsuccess = (event) => {
-        clearTimeout(timeout);
-        const data = event.target.result;
-        if (data) {
-          resolve({
-            undoStack: data.undoStack || [],
-            redoStack: data.redoStack || []
-          });
-        } else {
-          resolve({ undoStack: [], redoStack: [] });
-        }
-      };
-
-      request.onerror = () => {
-        clearTimeout(timeout);
-        console.warn(`⚠️ Failed to load undo history for "${cycleId}"`);
-        resolve({ undoStack: [], redoStack: [] });
-      };
-    });
-  } catch (e) {
-    console.warn('⚠️ IndexedDB read error:', e);
-    return { undoStack: [], redoStack: [] };
-  }
-}
-
-/**
- * Delete undo/redo stacks from IndexedDB
- */
-export async function deleteUndoStackFromIndexedDB(cycleId) {
-  if (!undoDB) return;
-  if (!cycleId) return;
-
-  try {
-    const transaction = undoDB.transaction(["undoStacks"], "readwrite");
-    const objectStore = transaction.objectStore("undoStacks");
-    const request = objectStore.delete(cycleId);
-
-    // Wrap the callback-based request so callers actually await completion
-    // and failures reach the error boundary
-    await new Promise((resolve, reject) => {
-      request.onsuccess = () => {
-        resolve();
-      };
-
-      request.onerror = () => {
-        console.warn(`⚠️ Failed to delete undo history for "${cycleId}"`);
-        reject(request.error);
-      };
-    });
-  } catch (e) {
-    console.error('❌ IndexedDB delete failed:', e);
-  }
-}
-
-/**
- * Rename cycle's undo/redo stacks in IndexedDB
- */
-export async function renameUndoStackInIndexedDB(oldCycleId, newCycleId) {
-  if (!undoDB) return;
-  if (!oldCycleId || !newCycleId) return;
-
-  try {
-    // Load old data
-    const oldData = await loadUndoStackFromIndexedDB(oldCycleId);
-
-    // Save under new key
-    const transaction = undoDB.transaction(["undoStacks"], "readwrite");
-    const objectStore = transaction.objectStore("undoStacks");
-
-    // Relabel every snapshot, not just the storage key — snapshots embed
-    // activeCycleId and title (key=title in this app). A verbatim copy left
-    // each one carrying the OLD id, so validateSnapshot's strict-equality
-    // check rejected the entire migrated history on the next filtered load
-    // (silent total wipe), and any snapshot that DID survive an unfiltered
-    // path would restore the old title into the renamed cycle on Undo,
-    // breaking the key=title invariant.
-    const newData = {
-      cycleId: newCycleId,
-      undoStack: relabelSnapshotsForCycle(oldData.undoStack, newCycleId),
-      redoStack: relabelSnapshotsForCycle(oldData.redoStack, newCycleId),
-      lastUpdated: Date.now(),
-      version: APP_VERSION
-    };
-
-    // Wrap the callback-based request so callers actually await completion
-    // and failures reach the error boundary
-    const putRequest = objectStore.put(newData);
-    await new Promise((resolve, reject) => {
-      putRequest.onsuccess = () => resolve();
-      putRequest.onerror = () => reject(putRequest.error);
-    });
-
-    // Delete old key
-    const deleteRequest = objectStore.delete(oldCycleId);
-    await new Promise((resolve, reject) => {
-      deleteRequest.onsuccess = () => resolve();
-      deleteRequest.onerror = () => reject(deleteRequest.error);
-    });
-
-  } catch (e) {
-    console.error('❌ IndexedDB rename failed:', e);
-  }
-}
-
-/**
- * Clear all undo history from IndexedDB (factory reset)
- */
-export async function clearAllUndoHistoryFromIndexedDB() {
-  if (!undoDB) return;
-
-  try {
-    const transaction = undoDB.transaction(["undoStacks"], "readwrite");
-    const objectStore = transaction.objectStore("undoStacks");
-    const request = objectStore.clear();
-
-    // Wrap the callback-based request so callers actually await completion
-    // and failures reach the error boundary
-    await new Promise((resolve, reject) => {
-      request.onsuccess = () => {
-        resolve();
-      };
-
-      request.onerror = () => {
-        console.warn('⚠️ Failed to clear undo history');
-        reject(request.error);
-      };
-    });
-  } catch (e) {
-    console.warn('⚠️ IndexedDB clear error:', e);
-  }
-}
 
 /**
  * Clear ALL undo/redo history: in-memory stacks, localStorage cache, and IndexedDB.
@@ -2150,8 +1520,7 @@ export async function clearAllUndoHistoryFromIndexedDB() {
  */
 export async function clearAllUndoHistory() {
   // 1. Cancel ALL pending debounced IndexedDB writes that would re-save old data
-  dbWriteTimers.forEach(entry => clearTimeout(entry.timer));
-  dbWriteTimers.clear();
+  cancelAllPendingWrites();
 
   // 2. Guard against snapshot recapture during cleanup
   if (_deps.AppGlobalState) {
@@ -2200,8 +1569,7 @@ function destroyUndoRedoManager() {
     _visibilityFlushHandler = null;
   }
   // Cancel any pending debounced writes so they don't fire after teardown.
-  dbWriteTimers.forEach(entry => clearTimeout(entry.timer));
-  dbWriteTimers.clear();
+  cancelAllPendingWrites();
   _initialized.undoRedoUI = false;
   _initialized.undoRedoKeyboard = false;
 }
@@ -2257,6 +1625,8 @@ export async function initUndoRedoManager(dependencies = {}) {
     // Cache helpers
     clearUndoCache,
     clearAllUndoHistory,
+    closeUndoIndexedDB,
+    initUndoIndexedDB,
     // Cleanup
     destroy: destroyUndoRedoManager
   };

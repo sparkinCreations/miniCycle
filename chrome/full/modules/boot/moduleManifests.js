@@ -103,10 +103,17 @@ export const MODULE_MANIFESTS = {
         path: '../labels/labelResolver.js',
         phase: PHASES.CORE_UTILS,
         requires: [],
-        // No optionalDeps — getActiveLens/getRoutineLens were removed (April 2026):
-        // they're injection hooks set externally (not from depMappings) and the
-        // unified vocabThemeManager handles lens resolution internally now.
-        optionalDeps: [],
+        // getActiveLens/getRoutineLens were removed (April 2026): they're injection
+        // hooks set externally (not from depMappings) and the unified
+        // vocabThemeManager handles lens resolution internally now.
+        //
+        // isTouchDevice IS a depMappings dep — an optional override for isTouchPrimary(),
+        // which picks the touch vs pointer wording of device-variant labels ("tap" vs
+        // "click"). Undeclared it still arrives today via the broad depMappings assign,
+        // so the override is live; under ENFORCE_REQUIRES it would silently stop
+        // arriving and every such label would quietly fall back to the `(pointer: coarse)`
+        // media query instead. Declaring it keeps the shipped behaviour identical.
+        optionalDeps: ['isTouchDevice'],
         provides: ['getLabel', 'getLabelOrFallback', 'hasLabel', 'isLensSensitive', 'getLabels', 'getCategoryLabels', 'getLensSensitiveKeys', 'getLabelDiagnostics'],
         api: 'labels',
         optional: false,
@@ -251,7 +258,15 @@ export const MODULE_MANIFESTS = {
         phase: PHASES.TASK_MANAGEMENT,
         requires: ['showNotification', 'AppState', 'appInit', 'getModal'],
         optionalDeps: ['historyManager', 'clearedTasksManager', 'achievementsManager', 'gesturePanelManager', 'vocabThemeManager', 'focusTaskPanel', 'hideMainMenu', 'isDraggingNotification', 'isOverlayActive', 'setupDarkModeToggle', 'updateThemeColor', 'showStatsTourNotification'],
-        provides: ['showStatsPanel', 'showTaskView', 'navigatePanels', 'updateStatsPanel', 'openHistoryModal', 'openClearedTasksModal', 'openAchievementsModal'],
+        // openHistoryModal / openClearedTasksModal / openAchievementsModal are NOT
+        // listed here. The facade defines methods by those names, but they are
+        // launchers it calls on itself -- the DI names belong to historyManager /
+        // clearedTasksManager / achievementsManager, which declare them in their own
+        // `provides` and which the loader's depMappings actually route to. Claiming
+        // them here registered a second, unreachable copy under deps.ui (no ui API
+        // allow-list entry, no consumer) and left a `provides` contract that lies to
+        // the next person splitting this module. Removed Aug 2026.
+        provides: ['showStatsPanel', 'showTaskView', 'navigatePanels', 'updateStatsPanel'],
         provideInstance: 'statsPanelManager',
         api: 'ui'
     },
@@ -260,7 +275,60 @@ export const MODULE_MANIFESTS = {
         path: '../task/taskDOM.js',
         phase: PHASES.TASK_MANAGEMENT,
         requires: ['appInit', 'AppState', 'generateId', 'sanitizeInput', 'TaskOptionsVisibilityController', 'showTaskOptions', 'hideTaskOptions', 'attachKeyboardTaskOptionToggle', 'triggerLogoBackground'],
-        optionalDeps: ['saveTaskToSchema25', 'showNotification', 'taskCore'],
+        // FORWARD-THROUGH deps. taskDOM does not call most of these itself — it hands
+        // them to its dynamically-imported sub-modules (taskRenderer / taskEvents /
+        // taskValidation / taskUtils), which are deliberately absent from this manifest
+        // (facade pattern; adding them would double-initialise).
+        //
+        // They live here because the loader only routes what a manifest declares once
+        // ENFORCE_REQUIRES is on. Until then the broad `Object.assign(result, depMappings)`
+        // hands every module the whole catalogue, which hides the gap: flipping the flag
+        // stalled boot outright, with TaskRenderer reporting eight missing deps
+        // (validate:di's amber FACADE FORWARD-THROUGH bucket predicted exactly this).
+        //
+        // optionalDeps, not requires, on purpose: most resolve LATER than this phase
+        // (taskCore, cycleCompletion, undoRedoManager, routineLoader, menuManager are
+        // Phase 5-6 against taskDOM's Phase 3) and arrive by post-init injection, which
+        // propagates into the renderer via injectDependency(). The construction site
+        // guards them with `|| null` for exactly that reason — declaring them `requires`
+        // would assert an availability that does not hold when the sub-modules are built.
+        optionalDeps: [
+            'saveTaskToSchema25', 'showNotification', 'taskCore',
+            'DEFAULT_TASK_OPTION_BUTTONS', 'addTask', 'checkCompleteAllButton',
+            'checkMiniCycle', 'checkOverdueTasks', 'createDueDateInput',
+            'enableDragAndDropOnTask', 'enableUndoSystemOnFirstInteraction',
+            'handleRecurringTaskActivation', 'handleRecurringTaskDeactivation',
+            'handleTaskCompletionChange', 'helpWindowManager', 'loadMiniCycle',
+            'recurringPanel', 'setupReminderButtonHandler', 'taskOptionsCustomizer',
+            'updateArrowsInDOM', 'updateMainMenuHeader',
+            'updateMoveArrowsVisibility', 'updateProgressBar', 'updateRecurringInfoLink',
+            'updateRecurringPanelButtonVisibility', 'updateStatsPanel', 'updateUndoRedoButtons',
+            // These three taskDOM both PROVIDES and consumes: it forwards them to its
+            // sub-modules, and the loader routes them back in from the task api bucket.
+            // Self-referential, but safe — all three depMappings entries are late-binding
+            // wrappers (`(...args) => deps.task?.X?.(...args)`), so nothing dereferences
+            // the taskDOM instance at its own wire time; they resolve on first call.
+            // setupRecurringButtonHandler is the load-bearing one: undeclared, the
+            // recurring button's listener is never attached, so clicking it does nothing
+            // at all — no template, no error, no warning. That was the last of the five
+            // journeys failing under ENFORCE_REQUIRES.
+            'handleTaskButtonClick', 'revealTaskButtons', 'setupRecurringButtonHandler',
+            // Also forwarded (surfaced once validate:di learned taskDOM's resolvedDeps
+            // alias). None broke a journey, but they are the same latent class.
+            //
+            // `dueDates` is deliberately NOT here. taskDOM reads it
+            // (`resolvedDeps.dueDates || this._warnMissingOptional('dueDates')`) but it is
+            // only a provideInstance — it reaches the api bucket as deps.features.dueDates
+            // and is not a top-level depMappings key, so declaring it fails the diWiring
+            // suite's "every optionalDep has a real route" check. validate:di counts
+            // provideInstance names as routes and so accepts it; the runtime test is the
+            // stricter, more truthful one. Giving it an actual route is its own change.
+            'captureStateSnapshot', 'incrementCycleCount', 'showCompletionAnimation',
+            // Forwarded to taskUtils so templates created on the add-task path
+            // carry nextScheduledOccurrence — without it recurringWatcher reads
+            // the template as exhausted and it never fires.
+            'calculateNextOccurrence'
+        ],
         provides: [
             'createTaskDOMElements', 'setupTaskInteractions', 'refreshUIFromState',
             'loadTaskContext', 'createOrUpdateTaskData', 'finalizeTaskCreation',
@@ -354,7 +422,10 @@ export const MODULE_MANIFESTS = {
         path: '../routine/routineSwitcher.js',
         phase: PHASES.CYCLE,
         requires: ['appInit', 'AppState', 'showNotification', 'showPromptModal', 'showCycleCreationModal', 'getModal'],
-        optionalDeps: ['onCycleRenamed', 'onCycleDeleted', 'onCycleSwitched', 'vocabThemeManager', 'checkCompleteAllButton', 'updateStatsPanel', 'updateMainMenuHeader', 'refreshThemeLabels', 'logHistoryEvent', 'exportMiniCycleData', 'hideMainMenu', 'showRoutineSwitcherTourNotification', 'hasActiveNotifications', 'isTouchDevice', 'loadMiniCycle', 'showConfirmationModal', 'updateReminderButtons'],
+        // checkCompleteAllButton + updateStatsPanel removed Aug 2026: the module
+        // declared them and never called them. The post-switch refresh runs in
+        // routineLoader.updateDependentComponents(), reached via loadMiniCycle().
+        optionalDeps: ['onCycleRenamed', 'onCycleDeleted', 'onCycleSwitched', 'vocabThemeManager', 'updateMainMenuHeader', 'refreshThemeLabels', 'logHistoryEvent', 'exportMiniCycleData', 'hideMainMenu', 'showRoutineSwitcherTourNotification', 'hasActiveNotifications', 'isTouchDevice', 'loadMiniCycle', 'showConfirmationModal', 'updateReminderButtons'],
         provides: ['switchMiniCycle', 'renameMiniCycle', 'deleteMiniCycle'],
         api: 'cycle',
         after: ['routineManager', 'onboardingManager']
@@ -364,7 +435,7 @@ export const MODULE_MANIFESTS = {
         path: '../routine/routineManager.js',
         phase: PHASES.CYCLE,
         requires: ['appInit', 'AppState', 'showNotification', 'showPromptModal', 'updateMainMenuHeader'],
-        optionalDeps: ['refreshThemeLabels', 'onCycleCreated', 'syncModeFromToggles', 'updateRecurringInfoLink', 'loadMiniCycle', 'DEFAULT_TASK_OPTION_BUTTONS', 'checkCompleteAllButton', 'completeInitialSetup', 'hideMainMenu', 'updateProgressBar'],
+        optionalDeps: ['helpWindowManager', 'refreshThemeLabels', 'onCycleCreated', 'syncModeFromToggles', 'updateRecurringInfoLink', 'loadMiniCycle', 'DEFAULT_TASK_OPTION_BUTTONS', 'checkCompleteAllButton', 'completeInitialSetup', 'hideMainMenu', 'updateProgressBar'],
         provides: ['showCycleCreationModal', 'createNewMiniCycle', 'preloadGettingStartedCycle', 'preloadInitialRunCycle'],
         api: 'cycle',
         after: ['menuManager']  // Needs hideMainMenu and updateMainMenuHeader from menuManager
@@ -388,7 +459,7 @@ export const MODULE_MANIFESTS = {
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState', 'showNotification', 'safeAddEventListener', 'refreshUIFromState', 'UIOrchestrator', 'requestUIUpdate'],
         optionalDeps: ['logHistoryEvent', 'organizeCompletedTasks', 'refreshHistoryIfOpen', 'updateRecurringInfoLink', 'updateHelpWindow', 'syncModeFromToggles', 'refreshThemeLabels', 'updateRecurringPanel', 'refreshTaskViewLayout', 'AppGlobalState'],
-        provides: ['performStateBasedUndo', 'performStateBasedRedo', 'captureStateSnapshot', 'updateUndoRedoButtons', 'enableUndoSystemOnFirstInteraction', 'wrapAppStateForUndo', 'setupStateBasedUndoRedo', 'initUndoSystemForApp', 'onCycleCreated', 'onCycleRenamed', 'onCycleDeleted', 'onCycleSwitched', 'clearAllUndoHistory'],
+        provides: ['performStateBasedUndo', 'performStateBasedRedo', 'captureStateSnapshot', 'updateUndoRedoButtons', 'enableUndoSystemOnFirstInteraction', 'wrapAppStateForUndo', 'setupStateBasedUndoRedo', 'initUndoSystemForApp', 'onCycleCreated', 'onCycleRenamed', 'onCycleDeleted', 'onCycleSwitched', 'clearAllUndoHistory', 'closeUndoIndexedDB', 'initUndoIndexedDB'],
         api: 'undo',
         after: ['taskDOM', 'uiOrchestrator']
     },
@@ -398,7 +469,7 @@ export const MODULE_MANIFESTS = {
         phase: PHASES.CYCLE,  // Phase 5 (not Phase 6 UI_MANAGERS) because routineManager needs it in same phase
         requires: ['appInit', 'AppState', 'showNotification'],
         optionalDeps: ['activateFocusMode', 'checkCompleteAllButton', 'checkGamesUnlock', 'createNewMiniCycle', 'enableUndoSystemOnFirstInteraction', 'loadMiniCycle', 'organizeCompletedTasks', 'recurringPanel', 'showConfirmationModal', 'showPromptModal', 'switchMiniCycle', 'trackAction', 'updateCycleData', 'updateCycleModeDescription', 'updateProgressBar', 'updateStatsPanel', 'updateUndoRedoButtons'],
-        provides: ['hideMainMenu', 'updateMainMenuHeader', 'clearAllTasks', 'deleteAllTasks'],
+        provides: ['hideMainMenu', 'updateMainMenuHeader', 'clearAllTasks', 'deleteAllTasks', 'applyMenuSectionOpenState'],
         api: 'ui',            // Exports to deps.ui — api category != phase
         singleton: true
     },
@@ -407,7 +478,24 @@ export const MODULE_MANIFESTS = {
         path: '../ui/settingsManager.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState', 'showNotification', 'getModal'],
-        optionalDeps: ['clearAllUndoHistory', 'loadMiniCycle', 'showLoader', 'hideLoader', 'closeAllModals', 'hasActiveNotifications', 'hideMainMenu', 'BackupManager', 'DataValidator', 'calculateNextOccurrence', 'disableDebug', 'enableDebug', 'isDebug', 'handleTaskListMovement', 'organizeCompletedTasks', 'onCycleCreated', 'performSchema25Migration', 'refreshTaskListUI', 'resetDefaultRecurringSettings', 'setupDarkModeToggle', 'setupQuickDarkToggle', 'showConfirmationModal', 'showPromptModal', 'showSettingsTourNotification', 'startGuidedTour', 'toggleHoverTaskOptions', 'updateCompletedTasksCount', 'updateHelpWindow', 'updateMoveArrowsVisibility', 'updateStatsPanel'],
+        // vocabThemeManager is also FORWARD-THROUGH → cycleImportManager, which uses
+        // it to tell "theme the user hasn't unlocked yet" apart from "theme that does
+        // not exist". Dead since v2.418, an unlocked-theme import silently resolved to
+        // 'classic' instead of the user's own defaultTheme, and the notification
+        // explaining why never fired. Same restore as showChoiceModal below.
+        //
+        // showChoiceModal is FORWARD-THROUGH, not used by the facade itself: it is
+        // handed to cycleImportManager (Template vs With-Progress import) and
+        // shareManager (Routine-only vs With-history share). Both guard with
+        // `typeof _deps.showChoiceModal === 'function'` and fall back silently, so
+        // when ENFORCE_REQUIRES stopped routing undeclared deps in v2.418 the two
+        // modals simply stopped appearing — import always took 'template', share
+        // always excluded history — with no error anywhere. Restored Aug 2026 after
+        // the undeclared-dep access audit named it. It has no manifest `provides`
+        // entry because featureBoot assigns it directly
+        // (`deps.utils.showChoiceModal = …`) during the early notifications init,
+        // which is why the depMappings route resolves but nothing declares it.
+        optionalDeps: ['clearAllUndoHistory', 'closeUndoIndexedDB', 'initUndoIndexedDB', 'loadMiniCycle', 'showLoader', 'hideLoader', 'closeAllModals', 'hasActiveNotifications', 'hideMainMenu', 'BackupManager', 'DataValidator', 'calculateNextOccurrence', 'disableDebug', 'enableDebug', 'isDebug', 'handleTaskListMovement', 'organizeCompletedTasks', 'onCycleCreated', 'performSchema25Migration', 'refreshTaskListUI', 'resetDefaultRecurringSettings', 'setupDarkModeToggle', 'setupQuickDarkToggle', 'showChoiceModal', 'showConfirmationModal', 'showPromptModal', 'showSettingsTourNotification', 'startGuidedTour', 'toggleHoverTaskOptions', 'updateCompletedTasksCount', 'updateHelpWindow', 'updateMoveArrowsVisibility', 'updateProgressBar', 'updateStatsPanel', 'vocabThemeManager'],
         provides: ['syncCurrentSettingsToStorage', 'exportMiniCycleData', 'downloadBackupFile', 'shareCurrentRoutine'],
         provideInstance: 'settingsManager',
         api: 'ui',
@@ -531,6 +619,19 @@ export const MODULE_MANIFESTS = {
         after: ['menuManager', 'statsPanel']
     },
 
+    titleScreen: {
+        path: '../ui/titleScreen.js',
+        phase: PHASES.UI_MANAGERS,
+        requires: ['AppState', 'safeAddEventListener'],
+        optionalDeps: ['showNotification', 'hideMainMenu'],
+        // tipArchive is Phase 7 (FEATURES) — later than this module. Only reached
+        // when the user clicks the rotating tip, so it is a lazy cross-phase dep.
+        lazyRequires: ['openTipArchive'],
+        provides: [],
+        provideInstance: 'titleScreen',
+        api: 'ui'
+    },
+
     helpWindowManager: {
         path: '../ui/helpWindowManager.js',
         phase: PHASES.UI_MANAGERS,
@@ -572,7 +673,29 @@ export const MODULE_MANIFESTS = {
         path: '../task/taskCore.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState', 'showNotification', 'sanitizeInput', 'removeRecurringTasksFromCycle'],
-        optionalDeps: ['AppGlobalState', 'showCompletionAnimation', 'showClearAnimation', 'handleTaskListMovement', 'logHistoryEvent', 'showMilestoneCelebrationOverlay', 'checkBackupReminderOnTaskClear', 'DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS', 'DEFAULT_TASK_OPTION_BUTTONS', 'animateProgressBarEmpty', 'animateProgressBarFill', 'checkCompleteAllButton', 'checkMiniCycle', 'checkOverdueTasks', 'enableDragAndDropOnTask', 'incrementCycleCount', 'isPerformingUndoRedo', 'isTouchDevice', 'pluginManager', 'recurringPanel', 'updateArrowsInDOM', 'updateMainMenuHeader', 'updateMoveArrowsVisibility', 'updateProgressBar', 'updateRecurringPanelButtonVisibility', 'updateStatsPanel', 'updateCompletedTasksCount'],
+        // The tail of this list is FORWARD-THROUGH: taskCore does not call these, it
+        // hands them to its taskCRUD / taskCompletion / taskCycleReset sub-modules
+        // (taskCore.js, `resolvedDeps.…`), which are absent from this manifest by
+        // design (facade pattern). Undeclared, they arrive null under ENFORCE_REQUIRES.
+        //
+        // The task-creation chain is the load-bearing part: validateAndSanitizeTaskInput
+        // → loadTaskContext → createOrUpdateTaskData → createTaskDOMElements →
+        // setupTaskInteractions → finalizeTaskCreation. Each is an early-return guard,
+        // so a single missing link kills every add — and surfaces only as a 10s
+        // waitForFunction timeout in the journeys, because a starved dep warns rather
+        // than throwing and `pageerror` never fires.
+        //
+        // taskDOM provides most of them and taskCore is Phase 6 with `after: ['taskDOM']`,
+        // so they are available by then — they simply were not routed. Note validate:di
+        // could not see this gap: its facade detection knows `this.deps` / `_deps` /
+        // `this.m.dependencies` / `this._rawDeps`, but taskCore reads a local
+        // `resolvedDeps` alias 41 times.
+        optionalDeps: ['AppGlobalState', 'showCompletionAnimation', 'showClearAnimation', 'handleTaskListMovement', 'logHistoryEvent', 'showMilestoneCelebrationOverlay', 'recordMultipleClearedTasks', 'triggerLogoScan', 'checkAchievements', 'startReminders', 'checkBackupReminderOnTaskClear', 'DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS', 'DEFAULT_TASK_OPTION_BUTTONS', 'animateProgressBarEmpty', 'animateProgressBarFill', 'checkCompleteAllButton', 'checkMiniCycle', 'checkOverdueTasks', 'enableDragAndDropOnTask', 'incrementCycleCount', 'isPerformingUndoRedo', 'isTouchDevice', 'pluginManager', 'recurringPanel', 'updateArrowsInDOM', 'updateMainMenuHeader', 'updateMoveArrowsVisibility', 'updateProgressBar', 'updateRecurringPanelButtonVisibility', 'updateStatsPanel', 'updateCompletedTasksCount', 'requestUIUpdate',
+            'validateAndSanitizeTaskInput', 'loadTaskContext', 'createOrUpdateTaskData',
+            'createTaskDOMElements', 'setupTaskInteractions', 'finalizeTaskCreation',
+            'captureStateSnapshot', 'enableUndoSystemOnFirstInteraction', 'updateUndoRedoButtons',
+            'refreshUIFromState', 'helpWindowManager', 'recurringCore',
+            'showConfirmationModal', 'showPromptModal'],
         provides: ['addTask', 'editTask', 'deleteTask', 'toggleTaskPriority', 'handleTaskCompletionChange', 'resetTasks', 'saveTaskToSchema25', 'handleCompleteAllTasks'],
         provideInstance: 'taskCore',
         api: 'task',
@@ -583,7 +706,7 @@ export const MODULE_MANIFESTS = {
         path: '../routine/routineLoader.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState', 'loadMiniCycleData'],
-        optionalDeps: ['refreshThemeLabels', 'syncModeFromToggles', 'updateRecurringInfoLink', 'addTask', 'catchUpMissedRecurringTasks', 'checkCompleteAllButton', 'completedTasksManager', 'createInitialSchema25Data', 'startReminders', 'syncAllTasksWithMode', 'taskToAddTaskOptions', 'updateMainMenuHeader', 'updateProgressBar', 'updateSearchVisibility', 'updateStatsPanel', 'updateThemeColor'],
+        optionalDeps: ['helpWindowManager', 'refreshThemeLabels', 'syncModeFromToggles', 'updateRecurringInfoLink', 'addTask', 'catchUpMissedRecurringTasks', 'checkCompleteAllButton', 'completedTasksManager', 'createInitialSchema25Data', 'startReminders', 'syncAllTasksWithMode', 'taskToAddTaskOptions', 'TaskRenderer', 'updateMainMenuHeader', 'updateProgressBar', 'updateSearchVisibility', 'updateStatsPanel', 'updateThemeColor'],
         provides: ['loadMiniCycle'],
         api: 'cycle',
         after: ['taskCore']
@@ -634,6 +757,16 @@ export const MODULE_MANIFESTS = {
         after: ['statsPanel']
     },
 
+    tipArchive: {
+        path: '../features/tipArchive.js',
+        phase: PHASES.FEATURES,
+        requires: [],
+        optionalDeps: ['showNotification', 'hideMainMenu'],
+        provides: [],
+        provideInstance: 'tipArchive',
+        api: 'features'
+    },
+
     clearedTasksManager: {
         path: '../features/clearedTasksManager.js',
         phase: PHASES.FEATURES,
@@ -660,7 +793,10 @@ export const MODULE_MANIFESTS = {
         path: '../features/uxRatings.js',
         phase: PHASES.FEATURES,
         requires: ['appInit', 'AppState', 'safeAddEventListener'],
-        optionalDeps: ['AppMeta'],
+        // getModal: the feedback dialog is looked up through modalRegistry rather
+        // than by id, so the registry stays the single definition of how it is
+        // found. Optional — a leaf feature must not hard-require the registry.
+        optionalDeps: ['AppMeta', 'getModal'],
         provides: [],
         provideInstance: 'uxRatings',
         api: 'features'

@@ -4,7 +4,7 @@
  * One-task-at-a-time card for focus view — the routine's "current step."
  * Carousel panel at index 0 (left of the routine list). Focus-view-only and
  * gated behind onboarding; Phase 2 registers it with the panel carousel.
- * See docs/future-work/FOCUS_TASK_VIEW_PLAN.md (Phase 1, decisions D2–D5).
+ * See docs/archive/FOCUS_TASK_VIEW_PLAN.md (Phase 1, decisions D2–D5).
  *
  * Behavior contract:
  *  - Shows the FIRST INCOMPLETE task in list order (D2). ‹ › browse the full
@@ -24,9 +24,11 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS, DATA_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, GESTURE } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DATA_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, GESTURE,
+         DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
-import { getCycleMode, getAllDoneHintKey } from '../utils/cycleMode.js';
+import { getCycleMode, getAllDoneHintKey, getDeleteSettingsMode,
+         resolveDeleteWhenComplete, getTaskResetIndicator } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION
@@ -100,7 +102,7 @@ export class FocusTaskPanel {
             this._celebrationTimer = null;
         }
         if (this._subscribed) {
-            this.deps.AppState?.unsubscribe?.(SUBSCRIBER_KEY, this._onStateChange);
+            this.deps.AppState.unsubscribe?.(SUBSCRIBER_KEY, this._onStateChange);
             this._subscribed = false;
         }
         const { completeBtn, prevBtn, nextBtn, panel } = this.elements;
@@ -126,7 +128,7 @@ export class FocusTaskPanel {
     // ------------------------------------------------------------------
 
     _getActiveCycle(state = null) {
-        const s = state || this.deps.AppState?.get?.();
+        const s = state || this.deps.AppState.get?.();
         const cycleId = s?.appState?.activeCycleId;
         const cycle = cycleId ? s?.data?.cycles?.[cycleId] : null;
         return { cycleId: cycleId ?? null, cycle: cycle ?? null };
@@ -159,7 +161,8 @@ export class FocusTaskPanel {
 
     render() {
         const { panel, card, position, text, completeBtn, prevBtn, nextBtn,
-                alldone, alldoneText, alldoneHint, recurringIndicator, dueIndicator } = this.elements;
+                alldone, alldoneText, alldoneHint, recurringIndicator, dueIndicator,
+                resetIndicator } = this.elements;
         if (!panel) return;
 
         // A celebration in progress owns the card until its timer ends
@@ -186,15 +189,30 @@ export class FocusTaskPanel {
             // hidden by CSS in auto mode, so it named a control that is not on
             // screen. getAllDoneHintKey() owns the mapping for both this panel
             // and the home-view empty state.
+            // Empty routine: this panel used to render '' here, so it showed the
+            // headline with nothing under it. It briefly carried the Routine
+            // panel's "open the ⋯ menu and toggle the input bar" copy instead,
+            // which was worse than blank — the bar is a child of #task-view, so
+            // on THIS panel it is slid off-screen with its container (measured:
+            // elementFromPoint at the bar's own rect returns nothing here).
+            // Following that advice opened the bar on a panel the user was not
+            // looking at. Point at the panel that owns it instead: Task is the
+            // run surface, Routine is where a routine gets built.
             alldoneHint.textContent = tasks.length
                 ? getLabel(getAllDoneHintKey(this._getActiveCycle().cycle))
-                : '';
+                : getLabel('empty.noTasksHintSwipe');
             card.classList.remove('focus-task-completed');
+            // An EMPTY routine gets no card chrome — a white card wrapped around
+            // "your routine is empty" is a container drawing attention to its own
+            // emptiness. The all-done state keeps the card: there IS a routine
+            // there, it is just finished.
+            card.classList.toggle(DOM_CLASSES.FOCUS_TASK_EMPTY, tasks.length === 0);
             card.style.removeProperty('--focus-task-priority');
             return;
         }
 
         alldone.classList.add(DOM_CLASSES.HIDDEN);
+        card.classList.remove(DOM_CLASSES.FOCUS_TASK_EMPTY);
         taskFacing.forEach(el => el.classList.remove(DOM_CLASSES.HIDDEN));
 
         const index = tasks.indexOf(task);
@@ -217,6 +235,7 @@ export class FocusTaskPanel {
 
         // Indicators
         recurringIndicator.classList.toggle(DOM_CLASSES.HIDDEN, !task.recurring);
+        this._renderResetIndicator(resetIndicator, task);
         if (task.dueDate) {
             dueIndicator.textContent = getLabel('focusTask.dueLabel', { vars: { date: task.dueDate } });
             dueIndicator.classList.remove(DOM_CLASSES.HIDDEN);
@@ -261,7 +280,7 @@ export class FocusTaskPanel {
         // userProgress (stats home), NOT quickActions counts — those drive
         // the quick-actions MRU UI and must only contain action-button ids.
         if (!wasCompleted) {
-            this.deps.AppState?.update?.(s => {
+            this.deps.AppState.update?.(s => {
                 if (!s.userProgress) s.userProgress = {};
                 s.userProgress.focusTaskCompletions = (s.userProgress.focusTaskCompletions || 0) + 1;
             });
@@ -289,7 +308,7 @@ export class FocusTaskPanel {
     // ------------------------------------------------------------------
 
     _subscribe() {
-        if (!this.deps.AppState?.subscribe) return;
+        if (!this.deps.AppState.subscribe) return;
         this.deps.AppState.subscribe(SUBSCRIBER_KEY, this._onStateChange);
         this._subscribed = true;
     }
@@ -361,6 +380,51 @@ export class FocusTaskPanel {
     // Wiring
     // ------------------------------------------------------------------
 
+    /**
+     * 🧹 / 📌 — whether this task survives a reset or clear.
+     *
+     * The rule is NOT "show what deleteWhenComplete says": it differs per mode
+     * and special-cases recurring tasks in both directions, so it is derived by
+     * getTaskResetIndicator, shared with the routine list (taskDOM). Without
+     * that sharing the same task could show 🧹 in the list and nothing here.
+     *
+     * Given a name rather than aria-hidden (as the recurring glyph is) because
+     * this one carries information the card shows nowhere else.
+     */
+    _renderResetIndicator(el, task) {
+        if (!el) return;
+
+        const state = this.deps.AppState.get();
+        const cycle = state?.data?.cycles?.[state?.appState?.activeCycleId];
+        const mode = getDeleteSettingsMode(cycle);
+
+        const indicator = getTaskResetIndicator({
+            deleteWhenComplete: resolveDeleteWhenComplete({
+                settings: task.deleteWhenCompleteSettings,
+                legacy: task.deleteWhenComplete,
+                mode,
+                defaults: DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS
+            }),
+            isRecurring: !!task.recurring,
+            mode
+        });
+
+        if (!indicator) {
+            el.classList.add(DOM_CLASSES.HIDDEN);
+            el.textContent = '';
+            el.removeAttribute('aria-label');
+            el.removeAttribute('title');
+            return;
+        }
+
+        const isClear = indicator === 'clear';
+        const name = getLabel(isClear ? 'focusTask.indicatorClear' : 'focusTask.indicatorKeep');
+        el.textContent = isClear ? '🧹' : '📌';
+        el.setAttribute('aria-label', name);
+        el.setAttribute('title', name);
+        el.classList.remove(DOM_CLASSES.HIDDEN);
+    }
+
     _cacheElements() {
         const byId = this.deps.getElementById;
         this.elements = {
@@ -369,6 +433,7 @@ export class FocusTaskPanel {
             text: byId(DOM_IDS.FOCUS_TASK_TEXT),
             recurringIndicator: byId(DOM_IDS.FOCUS_TASK_RECURRING_INDICATOR),
             dueIndicator: byId(DOM_IDS.FOCUS_TASK_DUE_INDICATOR),
+            resetIndicator: byId(DOM_IDS.FOCUS_TASK_RESET_INDICATOR),
             completeBtn: byId(DOM_IDS.FOCUS_TASK_COMPLETE_BTN),
             prevBtn: byId(DOM_IDS.FOCUS_TASK_PREV_BTN),
             nextBtn: byId(DOM_IDS.FOCUS_TASK_NEXT_BTN),

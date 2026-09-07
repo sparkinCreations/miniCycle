@@ -6,30 +6,51 @@
  * input, Quick Actions panel, status bubble (help window), and Complete
  * Cycle button — within the bounded #task-view rectangle.
  *
- * Phase 2: drag mechanic + hover-revealed handle for the two simple cases
- * (`task-card-group` and the Complete Cycle container). Architecture
- * supports more draggables — additional elements with non-trivial
- * positioning (side panels, input bar) ship in Phase 2b.
+ * SHIPPED (this banner described a Phase-2 prototype until Aug 2026, long after
+ * the rest landed — it claimed two draggables and no persistence while the file
+ * below already had five and an AppState writer. Corrected against the code):
  *
- * Persistence (Phase 3), undo (Phase 4), reset (Phase 5), and the remaining
- * draggables (Phase 2b) are not yet wired — drag positions are in-memory
- * and lost on reload.
+ *  - All five draggables in `DRAGGABLES` are wired, not two.
+ *  - Positions PERSIST to `state.settings.taskViewLayout.positions`, keyed per
+ *    draggable — they survive reload.
+ *  - Undo captures a pre-drag snapshot, and position writes are COALESCED
+ *    through `_queuePositionWrite` → `_flushPositionWrites` so one gesture (and
+ *    one burst of gestures within UI_TIMEOUTS.LAYOUT_COALESCE_WINDOW) is one
+ *    undo entry, not one per element moved.
+ *  - Reset ships: `resetTaskViewLayout()` backs the "Reset Task View Layout"
+ *    button in settings.
+ *  - Dock/snap zones let an element drop back into normal flex flow.
+ *  - Covered by tests/taskViewLayoutManager.tests.js.
+ *
+ * Saved positions are validated and clamped on apply (`_applySavedPosition`):
+ * they are global and stored in pixels, so a layout arranged on a wide display
+ * must not strand an element off-screen when reopened on a smaller one.
+ *
+ * Gating: desktop-only (`_isDesktop` — non-touch, >= BREAKPOINTS.DESKTOP_MIN,
+ * and `(hover: hover) and (pointer: fine)`) AND home-view only; focus view has
+ * its own deliberate top-clearance layout that customization must not override.
  *
  * Pattern: Simple Instance + per-element registry
  *
- * Reference: notifications.js:925-1119 (the drag implementation we're
- * generalising — pointer-capture, threshold, click-swallow, idempotency).
+ * Reference: notifications.js (the drag implementation this generalises —
+ * pointer-capture, threshold, click-swallow, idempotency).
  *
- * See: docs/future-work/TASK_VIEW_CUSTOMIZATION_PLAN.md
+ * See: docs/archive/TASK_VIEW_CUSTOMIZATION_PLAN.md — the originating plan, moved
+ * to archive in the Aug 2026 future-work cleanup. This banner still pointed at
+ * its old docs/future-work/ path.
  *
  * @module ui/taskViewLayoutManager
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_CLASSES, DOM_SELECTORS, Z_INDEX, LIMITS, LAYOUT_PLAY_AREA_INSETS, UI_TIMEOUTS, EVENTS, BREAKPOINTS } from '../core/constants.js';
+import { DOM_IDS, DOM_CLASSES, DOM_SELECTORS, Z_INDEX, LIMITS, LAYOUT_PLAY_AREA_INSETS, LAYOUT_DOCK_ZONES, UI_TIMEOUTS, EVENTS, BREAKPOINTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { getIcon } from '../utils/icons.js';
 import { isTouchDevice } from '../utils/deviceDetection.js';
+// Names only — the VALUES are published on :root by headerLayoutManager, which
+// measures the real chrome. Importing the names rather than re-declaring the
+// strings keeps one source of truth if either variable is ever renamed.
+import { HEADER_HEIGHT_VAR, NAV_DOTS_CLEARANCE_VAR } from './headerLayoutManager.js';
 
 const di = createDIModule('TaskViewLayoutManager', {
     AppState: optional(null),
@@ -50,7 +71,7 @@ let taskViewLayoutManagerInstance = null;
 
 /**
  * Per-draggable configuration. Add entries here as more elements are wired in.
- * For Phase 2 only the two simple in-flow elements are registered.
+ * All five entries below are live; this note used to say only two were.
  *
  * `dock` (optional) defines a snap-back zone: when the user drops the
  * element with its center inside the zone, inline positioning is cleared
@@ -70,13 +91,14 @@ let taskViewLayoutManagerInstance = null;
  * when the host is a small button you don't want to overlay (the handle
  * floats just outside the host's left edge, vertically centered).
  *
- * `dock.tolerancePx` — vertical depth of the snap-back band adjacent to
- * the anchor.
- * `dock.widthFraction` — horizontal width of the snap zone, expressed as
- * a fraction of the anchor's current width (0..1, centered on anchor).
- * Defaults to 1.0 (full anchor width) if omitted.
+ * `dock.tolerancePx` / `dock.widthFraction` — the snap band's depth and its
+ * width as a fraction of the anchor (0..1, centred). These are FEEL knobs, so
+ * the numbers live in `LAYOUT_DOCK_ZONES` in constants.js and are spread in
+ * below; tune them there, not here. `widthFraction` defaults to 1.0 (full
+ * anchor width) if a zone omits it.
  * `dock.side` — which edge of the anchor the snap zone hugs. `'bottom'`
- * places the band below; `'top'` above.
+ * places the band below; `'top'` above. Stays here: it is structural, not a
+ * tunable.
  *
  * @type {Array<{
  *   key: string,
@@ -88,7 +110,7 @@ let taskViewLayoutManagerInstance = null;
  *       | { self: true, tolerancePx: number, widthFraction?: number }
  * }>}
  */
-const DRAGGABLES = [
+export const DRAGGABLES = [
     {
         key: 'task-card-group',
         elementId: DOM_IDS.TASK_CARD_GROUP,
@@ -109,8 +131,7 @@ const DRAGGABLES = [
         // with it; independently-placed satellites are left where they are.
         dock: {
             self: true,
-            tolerancePx: 160,
-            widthFraction: 0.5
+            ...LAYOUT_DOCK_ZONES.TASK_CARD_GROUP
         }
     },
     {
@@ -126,8 +147,7 @@ const DRAGGABLES = [
         dock: {
             relativeToId: DOM_IDS.TASK_CARD_GROUP,
             side: 'top',
-            tolerancePx: 80,
-            widthFraction: 0.7
+            ...LAYOUT_DOCK_ZONES.ADD_TASK_INPUT
         }
     },
     {
@@ -140,8 +160,7 @@ const DRAGGABLES = [
         // (no dependents), so no cascade — just returns itself to flex flow.
         dock: {
             self: true,
-            tolerancePx: 90,
-            widthFraction: 0.8
+            ...LAYOUT_DOCK_ZONES.QUICK_ACTIONS_PANEL
         }
     },
     {
@@ -152,8 +171,7 @@ const DRAGGABLES = [
         // Self-home dock: snaps back to its own default position. Independent.
         dock: {
             self: true,
-            tolerancePx: 90,
-            widthFraction: 0.8
+            ...LAYOUT_DOCK_ZONES.STATUS_BUBBLE
         }
     },
     {
@@ -174,8 +192,7 @@ const DRAGGABLES = [
         dock: {
             relativeToId: DOM_IDS.TASK_CARD_GROUP,
             side: 'bottom',
-            tolerancePx: 80,
-            widthFraction: 0.7
+            ...LAYOUT_DOCK_ZONES.COMPLETE_CYCLE_BTN
         }
     }
 ];
@@ -204,6 +221,9 @@ export class TaskViewLayoutManager {
         /** @type {(() => void) | null} Abort fn for the currently-active drag. */
         this._activeDrag = null;
         this._dragInterruptHandler = null;
+        /** @type {Map<string, object|null>} Queued position writes; null = delete. */
+        this._pendingWrites = new Map();
+        this._coalesceTimer = null;
     }
 
     get deps() {
@@ -277,7 +297,13 @@ export class TaskViewLayoutManager {
         // drag's chrome (the dragging handle + the "Drop to dock" snap
         // indicator), leaving it stuck visible across orientations. Abort
         // any active drag on these signals so the chrome can't orphan.
-        this._dragInterruptHandler = () => this._abortActiveDrag();
+        // Also flush any coalesced position write — these signals are the last
+        // chance to persist before the page may go away, and a dropped write
+        // would silently lose the drag the user just made.
+        this._dragInterruptHandler = () => {
+            this._abortActiveDrag();
+            this._flushPositionWrites();
+        };
         document.addEventListener('visibilitychange', this._dragInterruptHandler);
         window.addEventListener('pagehide', this._dragInterruptHandler);
 
@@ -327,6 +353,87 @@ export class TaskViewLayoutManager {
             indicator.classList.remove(DOM_CLASSES.TVL_SNAP_TARGET_VISIBLE);
             indicator.classList.remove(DOM_CLASSES.TVL_SNAP_TARGET_ACTIVE);
         }
+    }
+
+    /**
+     * The rectangle a drag may not leave, in viewport-absolute pixels.
+     *
+     * Top and bottom come from the measurements headerLayoutManager publishes on
+     * `:root` rather than from fixed numbers. The top boundary is the real bottom
+     * of `.fixed-header-container` — the wrapper holding the header AND the mode
+     * selector — which is the same value `#app-container` reserves as padding, so
+     * the drag boundary finally agrees with the layout the rest of the app uses.
+     *
+     * The old constants were a guess and were wrong: `top: 90` against a measured
+     * 135px of chrome, so an element could be dragged 45px UNDER the fixed header
+     * and 20px into the mode-selector row, where it read as clipped. A fixed
+     * number cannot track this — the chrome grows with the vocab theme's header
+     * subtitle, with font size, and (per headerLayoutManager's own notes) is
+     * badly underestimated on a real iOS header.
+     *
+     * LAYOUT_PLAY_AREA_INSETS remains the fallback: headerLayoutManager retries
+     * until the variables are published, so there is a window at boot where they
+     * do not exist yet. Left/right stay constant — they are plain edge gutters
+     * with nothing to measure against.
+     *
+     * Called ONCE per drag (cached on dragState), never per pointermove:
+     * getComputedStyle forces a style resolve, and doing that every frame for a
+     * value that cannot change mid-drag is pure waste.
+     *
+     * @returns {{top: number, bottom: number, left: number, right: number}}
+     */
+    _measurePlayArea() {
+        let top = null;
+        let bottom = null;
+        try {
+            // One getComputedStyle call, both variables read off it.
+            const rootStyle = getComputedStyle(document.documentElement);
+            const parsePx = (raw) => {
+                const px = parseFloat(raw);
+                return Number.isFinite(px) && px > 0 ? px : null;
+            };
+            top = parsePx(rootStyle.getPropertyValue(HEADER_HEIGHT_VAR));
+            bottom = parsePx(rootStyle.getPropertyValue(NAV_DOTS_CLEARANCE_VAR));
+        } catch (_) {
+            // No computed style available — fall back to the constants below.
+        }
+        return {
+            top: top ?? LAYOUT_PLAY_AREA_INSETS.top,
+            bottom: bottom ?? LAYOUT_PLAY_AREA_INSETS.bottom,
+            left: LAYOUT_PLAY_AREA_INSETS.left,
+            right: LAYOUT_PLAY_AREA_INSETS.right
+        };
+    }
+
+    /**
+     * How far a follower group extends beyond its anchor on each side.
+     *
+     * The anchor's drag clamp is tightened by these amounts so the WHOLE group
+     * stays inside the play area. Followers are positioned from the anchor's
+     * already-clamped spot plus their captured offset and are never clamped
+     * themselves, so without this, pushing the task card to the top boundary
+     * shoved the Add-task input — which docks ABOVE it, i.e. a negative offset —
+     * straight under the header. Measured before the fix: anchor correctly at
+     * 135, follower at 75, 60px behind the mode-selector banner.
+     *
+     * Clamping each follower independently would be the wrong fix — it would
+     * stretch the very gaps the follower system exists to preserve. Holding the
+     * anchor back keeps the group rigid and in bounds: the card now stops 60px
+     * short of the boundary so its input lands exactly on it.
+     *
+     * @param {Array<{relativeOffsetLeft:number, relativeOffsetTop:number, width:number, height:number}>} followingDeps
+     * @param {DOMRect|{width:number, height:number}} anchorRect - Anchor's rect at drag start
+     * @returns {{top:number, bottom:number, left:number, right:number}} Non-negative overhangs
+     */
+    _measureGroupInset(followingDeps, anchorRect) {
+        const inset = { top: 0, bottom: 0, left: 0, right: 0 };
+        for (const dep of followingDeps || []) {
+            inset.top = Math.max(inset.top, -dep.relativeOffsetTop);
+            inset.bottom = Math.max(inset.bottom, dep.relativeOffsetTop + dep.height - anchorRect.height);
+            inset.left = Math.max(inset.left, -dep.relativeOffsetLeft);
+            inset.right = Math.max(inset.right, dep.relativeOffsetLeft + dep.width - anchorRect.width);
+        }
+        return inset;
     }
 
     _isDesktop() {
@@ -385,12 +492,99 @@ export class TaskViewLayoutManager {
         const widthRaw = parseFloat(element.style.width);
         if (!Number.isFinite(left) || !Number.isFinite(top)) return;
         const width = Number.isFinite(widthRaw) ? widthRaw : null;
+        this._queuePositionWrite(config.key, { left, top, width, customized });
+    }
 
-        // Flip the undo system out of isInitializing so the wrapper captures
-        // a pre-drag snapshot. Without this, the very first drag of a session
-        // is silently dropped from the undo stack.
+    _clearSavedPosition(key) {
+        this._clearSavedPositions([key]);
+    }
+
+    /**
+     * Delete one or more saved positions. Skips keys that are not actually
+     * persisted, so a no-op dock (or the caller's redundant follow-up clear)
+     * never produces a stray undo entry.
+     */
+    _clearSavedPositions(keys) {
+        if (!this.deps.AppState?.update || !keys?.length) return;
+        const positions = this._readPositions();
+        const present = keys.filter(
+            (k) => positions && Object.prototype.hasOwnProperty.call(positions, k)
+        );
+        // A pending write for this key counts as "persisted" — it is about to be.
+        // Without this, dropping an element back home inside the coalesce window
+        // would skip the delete and let the queued position land anyway.
+        const pending = keys.filter((k) => this._pendingWrites.has(k) && !present.includes(k));
+        const targets = present.concat(pending);
+        if (!targets.length) return;
+        for (const key of targets) this._queuePositionWrite(key, null);
+    }
+
+    // ========================================================================
+    // COALESCED POSITION WRITES
+    // ========================================================================
+
+    /**
+     * Queue one position write (`value`) or delete (`value === null`), to be
+     * applied with every other queued change in a SINGLE AppState.update.
+     *
+     * Two separate problems this solves, both of which produced one undo entry
+     * per element instead of one per user gesture:
+     *
+     *  1. WITHIN a gesture. Dropping an anchor that pulls dependents called
+     *     _saveElementPosition once per element — anchor plus each follower —
+     *     and every call was its own AppState.update, so undoing one drag of the
+     *     task card took as many presses as it had followers. The delete path
+     *     already batched for exactly this reason ("one undo entry, not one per
+     *     key"); the save path never did.
+     *  2. ACROSS gestures. Nudging an element repeatedly pushed a full snapshot
+     *     per drop, flooding the undo stack so that undo could no longer reach
+     *     past a few seconds of fiddling.
+     *
+     * The DOM is already updated by the drag itself, so deferring the state
+     * write costs nothing visually. A queued write is FLUSHED on teardown and
+     * page hide (so the last drag is never lost) and DISCARDED on reset and on
+     * undo-restore (so it cannot land after the state it was meant to describe
+     * and quietly undo it).
+     *
+     * @param {string} key - Draggable key
+     * @param {{left:number, top:number, width:(number|null), customized:boolean}|null} value
+     *        Position to store, or null to delete the key.
+     * @returns {void}
+     */
+    _queuePositionWrite(key, value) {
+        // Last write for a key wins — a drag then a dock-home inside one window
+        // correctly collapses to just the delete.
+        this._pendingWrites.set(key, value);
+        clearTimeout(this._coalesceTimer);
+        this._coalesceTimer = setTimeout(
+            () => this._flushPositionWrites(),
+            UI_TIMEOUTS.LAYOUT_COALESCE_WINDOW
+        );
+    }
+
+    /**
+     * Apply every queued position write in one AppState.update — one undo entry
+     * for the whole burst. Safe to call at any time; a no-op when nothing is
+     * queued, so it never captures a stray snapshot.
+     * @returns {void}
+     */
+    _flushPositionWrites() {
+        clearTimeout(this._coalesceTimer);
+        this._coalesceTimer = null;
+        if (!this._pendingWrites.size) return;
+        // Check AppState BEFORE consuming the queue. Draining first and then
+        // bailing would silently destroy the user's last drag if state happened
+        // to be unavailable at this instant; leaving it queued lets a later
+        // flush still persist it.
+        if (!this.deps.AppState?.update) return;
+        const writes = new Map(this._pendingWrites);
+        this._pendingWrites.clear();
+
+        // Flip the undo system out of isInitializing so the wrapper captures a
+        // pre-drag snapshot. Without this the first drag of a session is silently
+        // dropped from the undo stack. Done here, not at queue time, so a burst
+        // that collapses to nothing never enables undo for no reason.
         this.deps.enableUndoSystemOnFirstInteraction?.();
-
         try {
             this.deps.AppState.update((state) => {
                 if (!state.settings) return;
@@ -400,53 +594,88 @@ export class TaskViewLayoutManager {
                 if (!state.settings.taskViewLayout.positions) {
                     state.settings.taskViewLayout.positions = {};
                 }
-                state.settings.taskViewLayout.positions[config.key] = {
-                    left, top, width, customized
-                };
+                const positions = state.settings.taskViewLayout.positions;
+                for (const [key, value] of writes) {
+                    if (value === null) delete positions[key];
+                    else positions[key] = value;
+                }
             }, true);
         } catch (err) {
-            console.warn('TaskViewLayoutManager: failed to save position', config.key, err);
+            console.warn('TaskViewLayoutManager: failed to flush position writes',
+                [...writes.keys()], err);
         }
-    }
-
-    _clearSavedPosition(key) {
-        this._clearSavedPositions([key]);
     }
 
     /**
-     * Delete one or more saved positions in a SINGLE AppState.update, so a
-     * cascade (homing the card + its followers) is one undo entry, not one per
-     * key. Skips the update — and the first-interaction undo enable — entirely
-     * when none of the keys are actually persisted, so a no-op dock (or the
-     * caller's redundant follow-up clear) never captures a stray undo snapshot.
+     * Drop queued writes without applying them. Used when the state they
+     * describe is being replaced wholesale (undo restore, reset) — otherwise a
+     * write queued before the change lands after it and resurrects a position
+     * the user just removed.
+     * @returns {void}
      */
-    _clearSavedPositions(keys) {
-        if (!this.deps.AppState?.update || !keys?.length) return;
-        const positions = this._readPositions();
-        const present = keys.filter(
-            (k) => positions && Object.prototype.hasOwnProperty.call(positions, k)
-        );
-        if (!present.length) return;
-        // A dock-home is a user action that should produce an undo entry.
-        this.deps.enableUndoSystemOnFirstInteraction?.();
-        try {
-            this.deps.AppState.update((state) => {
-                const pos = state.settings?.taskViewLayout?.positions;
-                if (!pos) return;
-                for (const k of present) delete pos[k];
-            }, true);
-        } catch (err) {
-            console.warn('TaskViewLayoutManager: failed to clear saved positions', present, err);
-        }
+    _discardPendingWrites() {
+        clearTimeout(this._coalesceTimer);
+        this._coalesceTimer = null;
+        this._pendingWrites.clear();
     }
 
+    /**
+     * Apply one saved position to its element.
+     *
+     * Validates and clamps HERE rather than in the callers, because the two
+     * callers disagreed: refreshTaskViewLayout() checked Number.isFinite first,
+     * _loadAndApplyPositions() passed anything object-shaped straight through.
+     * A corrupt entry (`{left: null, top: 'oops'}` — a bad import, a hand-edited
+     * backup) therefore set position:absolute with right/bottom:auto and NO
+     * coordinates on the boot path, yanking the element out of flex flow with
+     * nothing to anchor it. Verified by execution before this guard existed.
+     *
+     * Coordinates are also clamped into the visible play area. Positions are
+     * global and stored in pixels, so a layout arranged on a wide display and
+     * reopened on a laptop could place an element — and its drag handle — fully
+     * off-screen, leaving no way back except the settings Reset button. Measured:
+     * a saved {left: 9000, top: 4000} put #task-card-group at (9350, 4446) in a
+     * 1400x900 viewport.
+     *
+     * @param {string} key - Draggable key
+     * @param {object} pos - Saved position record
+     * @returns {void}
+     */
     _applySavedPosition(key, pos) {
         const entry = this._registry.get(key);
         if (!entry || !entry.element) return;
+        if (!pos || !Number.isFinite(pos.left) || !Number.isFinite(pos.top)) return;
         const el = entry.element;
+
+        // Clamp so the element keeps a grabbable overlap with the play area.
+        //
+        // Deliberately measured in WRAPPER-RELATIVE space, against the wrapper's own
+        // width/height. The obvious alternative — reuse the drag handler's
+        // viewport-absolute clamp — is wrong here: getBoundingClientRect() moves with
+        // SCROLL, so restoring a layout while the page happened to be scrolled would
+        // drag every saved element toward the viewport. Caught by a test whose
+        // wrapper sat ~2275px down the page: an in-bounds `top: 70` came back as
+        // -2205. Wrapper dimensions are scroll-independent, so this is stable.
+        //
+        // Negative coordinates are legitimate (the drag clamp can produce them when
+        // the wrapper's origin sits inside the play area), so the bound is "at least
+        // LAYOUT_MIN_VISIBLE_OVERLAP px must remain inside the wrapper" rather than
+        // "must be >= 0".
+        const wrapperRect = this._wrapper?.getBoundingClientRect();
+        let left = pos.left;
+        let top = pos.top;
+        if (wrapperRect) {
+            const rect = el.getBoundingClientRect();
+            const width = Number.isFinite(pos.width) ? pos.width : rect.width;
+            const height = rect.height;
+            const overlap = LIMITS.LAYOUT_MIN_VISIBLE_OVERLAP;
+            left = clamp(pos.left, overlap - width, Math.max(overlap - width, wrapperRect.width - overlap));
+            top = clamp(pos.top, overlap - height, Math.max(overlap - height, wrapperRect.height - overlap));
+        }
+
         el.style.position = 'absolute';
-        el.style.left = `${pos.left}px`;
-        el.style.top = `${pos.top}px`;
+        el.style.left = `${left}px`;
+        el.style.top = `${top}px`;
         el.style.right = 'auto';
         el.style.bottom = 'auto';
         el.style.transform = 'none';
@@ -479,15 +708,34 @@ export class TaskViewLayoutManager {
      */
     resetTaskViewLayout() {
         if (!this.deps.AppState?.update) return false;
-        try {
-            this.deps.AppState.update((state) => {
-                if (state.settings?.taskViewLayout?.positions) {
-                    state.settings.taskViewLayout.positions = {};
-                }
-            }, true);
-        } catch (err) {
-            console.warn('TaskViewLayoutManager: failed to clear saved positions', err);
-            return false;
+        // Drop queued writes first — a drag persisted after the reset would
+        // resurrect exactly the position the user asked to clear.
+        this._discardPendingWrites();
+
+        // Only write when there is something to clear. The update ran
+        // unconditionally before, so resetting an already-default layout still
+        // captured an undo snapshot the user could step back into for no visible
+        // change — the same stray-snapshot problem _clearSavedPositions guards
+        // against by skipping keys that are not persisted. The DOM sweep below
+        // still runs either way, since inline styles can exist without a saved
+        // position (a dependent pulled along by an anchor drag).
+        const positions = this._readPositions();
+        if (positions && Object.keys(positions).length > 0) {
+            // Reset is a user action and the most destructive one here, so it must
+            // be undoable even as the first interaction of a session. Its siblings
+            // (the save and delete paths, both through _flushPositionWrites)
+            // already did this; this one did not.
+            this.deps.enableUndoSystemOnFirstInteraction?.();
+            try {
+                this.deps.AppState.update((state) => {
+                    if (state.settings?.taskViewLayout?.positions) {
+                        state.settings.taskViewLayout.positions = {};
+                    }
+                }, true);
+            } catch (err) {
+                console.warn('TaskViewLayoutManager: failed to clear saved positions', err);
+                return false;
+            }
         }
         // Clear inline drag styles so all elements snap back to default.
         this._clearAllCustomPositions();
@@ -513,6 +761,10 @@ export class TaskViewLayoutManager {
      */
     refreshTaskViewLayout() {
         if (!this.deps.AppState?.get) return false;
+        // The caller has just replaced state wholesale (undo/redo restore). A
+        // write queued before that restore describes the pre-restore layout, so
+        // letting it land would immediately undo the undo.
+        this._discardPendingWrites();
         if (!this._shouldApplyLayout()) {
             this._clearAllCustomPositions();
             return true;
@@ -696,7 +948,10 @@ export class TaskViewLayoutManager {
                 followingDeps.push({
                     entry: depEntry,
                     relativeOffsetLeft: depRect.left - elementRect.left,
-                    relativeOffsetTop: depRect.top - elementRect.top
+                    relativeOffsetTop: depRect.top - elementRect.top,
+                    // Needed to keep followers inside the play area — see groupInset.
+                    width: depRect.width,
+                    height: depRect.height
                 });
             }
 
@@ -721,6 +976,24 @@ export class TaskViewLayoutManager {
                 seedTopAbs: elementRect.top,
                 wrapperRect,
                 followingDeps,
+                // Measured once here, not per pointermove — the chrome cannot
+                // change mid-drag, and getComputedStyle forces a style resolve.
+                playArea: this._measurePlayArea(),
+                // How far the follower group extends beyond the anchor on each
+                // side. The anchor's clamp is tightened by this so the WHOLE group
+                // stays in the play area.
+                //
+                // Followers were positioned from the anchor's already-clamped spot
+                // plus their captured offset and never clamped themselves, so
+                // pushing the task card up to the boundary shoved the Add-task
+                // input — which docks ABOVE it, i.e. a negative offset — straight
+                // under the header. Measured: anchor correctly at 135, follower at
+                // 75, 60px behind the mode-selector banner.
+                //
+                // Clamping each follower independently would be the wrong fix: it
+                // would stretch the gaps the follower system exists to preserve.
+                // Constraining the anchor keeps the group rigid AND in bounds.
+                groupInset: this._measureGroupInset(followingDeps, elementRect),
                 started: false
             };
 
@@ -755,11 +1028,19 @@ export class TaskViewLayoutManager {
             const desiredAbsTop = ev.clientY - dragState.offsetY;
 
             // Clamp to the play-area rect so users can't drag elements
-            // off-screen or under the header/footer.
-            const minAbsLeft = LAYOUT_PLAY_AREA_INSETS.left;
-            const maxAbsLeft = window.innerWidth - dragState.elementWidth - LAYOUT_PLAY_AREA_INSETS.right;
-            const minAbsTop = LAYOUT_PLAY_AREA_INSETS.top;
-            const maxAbsTop = window.innerHeight - dragState.elementHeight - LAYOUT_PLAY_AREA_INSETS.bottom;
+            // off-screen or under the header/mode selector/footer. The top and
+            // bottom bounds are the chrome's MEASURED size (see _measurePlayArea),
+            // captured once at drag start.
+            const playArea = dragState.playArea;
+            const group = dragState.groupInset;
+            const minAbsLeft = playArea.left + group.left;
+            const minAbsTop = playArea.top + group.top;
+            // Math.max keeps max >= min when a group is taller/wider than the play
+            // area; clamp() would otherwise pin to a bound below its own minimum.
+            const maxAbsLeft = Math.max(minAbsLeft,
+                window.innerWidth - dragState.elementWidth - playArea.right - group.right);
+            const maxAbsTop = Math.max(minAbsTop,
+                window.innerHeight - dragState.elementHeight - playArea.bottom - group.bottom);
 
             const clampedAbsLeft = clamp(desiredAbsLeft, minAbsLeft, maxAbsLeft);
             const clampedAbsTop = clamp(desiredAbsTop, minAbsTop, maxAbsTop);
@@ -848,7 +1129,7 @@ export class TaskViewLayoutManager {
                 window.addEventListener('click', swallowClick, { capture: true, once: true });
                 setTimeout(() => {
                     window.removeEventListener('click', swallowClick, { capture: true });
-                }, 50);
+                }, UI_TIMEOUTS.LAYOUT_CLICK_SWALLOW);
             }
 
             dragState = null;
@@ -1243,6 +1524,16 @@ export class TaskViewLayoutManager {
     }
 
     destroy() {
+        // End any in-flight drag FIRST. _beginDrag sets body.style.userSelect =
+        // 'none' and only _endDrag clears it, so tearing down mid-drag (boot
+        // retry calls destroyAllModules) left the whole page unselectable until
+        // reload. _abortActiveDrag also clears orphaned drag chrome.
+        this._abortActiveDrag();
+        this._activeDrag = null;
+        // Persist anything still coalescing — otherwise the last drag before a
+        // boot retry is silently lost.
+        this._flushPositionWrites();
+
         if (this._resizeHandler) {
             window.removeEventListener('resize', this._resizeHandler);
             this._resizeHandler = null;

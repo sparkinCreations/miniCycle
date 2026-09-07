@@ -15,7 +15,7 @@
  *
  * **Available data at hook point:**
  * - `actualNewCount` - The new cycle count for this routine
- * - `cycleData.name` - The routine name
+ * - `cycleData.title` - The routine name (Schema 2.5 has no `name` field)
  * - `globalCyclesCompleted` - Total cycles across ALL routines
  * - `totalTasksCompleted` - Total tasks completed (for OR-based achievements)
  *
@@ -24,7 +24,7 @@
  * // Log history event (line 200-205)
  * deps.logHistoryEvent('cycle_completed', {
  *     cycleCount: actualNewCount,
- *     cycleName: cycleData.name || activeCycle
+ *     cycleName: cycleData.title || activeCycle
  * });
  *
  * // Check achievements (line 208-209)
@@ -50,6 +50,7 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION } from '../core/constants.js';
 import { getLabel, getIcon } from '../labels/labelResolver.js';
+import { announce } from '../utils/announce.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -132,8 +133,7 @@ export function showCompletionAnimation() {
     }
 
     // Announce to screen readers (theme-sensitive: adapts to active vocabulary theme)
-    const liveRegion = document.getElementById(DOM_IDS.LIVE_REGION);
-    if (liveRegion) liveRegion.textContent = getLabel('notify.cycleComplete');
+    announce(getLabel('notify.cycleComplete'));
 
     // Remove the animation after 1.5 seconds
     setTimeout(() => {
@@ -156,8 +156,7 @@ export function showClearAnimation() {
     document.body.appendChild(animation);
 
     // Announce to screen readers
-    const liveRegion = document.getElementById(DOM_IDS.LIVE_REGION);
-    if (liveRegion) liveRegion.textContent = getLabel('accessibility.tasksCleared');
+    announce(getLabel('accessibility.tasksCleared'));
 
     // Remove the animation after 1.5 seconds
     setTimeout(() => {
@@ -203,8 +202,7 @@ export function showMilestoneCelebrationOverlay(iconKey, headingKey, subtitleKey
     document.body.appendChild(overlay);
 
     // Announce to screen readers
-    const liveRegion = document.getElementById(DOM_IDS.LIVE_REGION);
-    if (liveRegion) liveRegion.textContent = getLabel(headingKey);
+    announce(getLabel(headingKey));
 
     // Dismiss on click/tap
     const dismiss = () => overlay.remove();
@@ -405,7 +403,11 @@ export function incrementCycleCount(miniCycleName, savedMiniCycles) {
     if (typeof deps.logHistoryEvent === 'function') {
         deps.logHistoryEvent('cycle_completed', {
             cycleCount: actualNewCount,
-            cycleName: cycleData.name || activeCycle
+            // Schema 2.5 names the field `title`; there is no `name`, so this
+            // read was always undefined and every event logged the cycle ID.
+            // Harmless to date only because nothing renders cycleName (the one
+            // other use is a local in shareManager, which already reads .title).
+            cycleName: cycleData.title || activeCycle
         });
     }
 
@@ -583,7 +585,7 @@ export function checkMiniCycle(options = {}) {
     }
 
     const { lastUsedMiniCycle, savedMiniCycles } = cycleVars;
-    let cycleData = savedMiniCycles[lastUsedMiniCycle];
+    const cycleData = savedMiniCycles[lastUsedMiniCycle];
 
     if (!lastUsedMiniCycle || !cycleData) {
         console.warn("⚠️ No active miniCycle found.");

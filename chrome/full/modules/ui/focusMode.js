@@ -15,7 +15,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_CLASSES, DOM_SELECTORS, UI_TIMEOUTS, EVENTS } from '../core/constants.js';
+import { DOM_IDS, DOM_CLASSES, DOM_SELECTORS, UI_TIMEOUTS, EVENTS, Z_INDEX } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { getIcon } from '../utils/icons.js';
 
@@ -70,6 +70,8 @@ export class FocusMode {
         this._keyHandler = null;
         this._undoRedoOriginalParent = null;
         this._undoRedoNextSibling = null;
+        /** @type {HTMLElement|null} Control that opened focus view; focus returns here on exit. */
+        this._focusReturnEl = null;
         this._navDotsOriginalParent = null;
         this._navDotsNextSibling = null;
         this._menuBtn = null;
@@ -182,8 +184,23 @@ export class FocusMode {
         // Items grouped semantically. A horizontal separator is inserted
         // wherever the `group` value changes between consecutive items.
         // Groups: 'routine' (mode + routine management), 'view' (UI toggles),
-        // 'bulk' (task data ops), 'exit' (dismiss).
+        // 'bulk' (task data ops), 'leave' (go elsewhere), 'exit' (dismiss).
+        //
+        // Settings sits in 'leave' rather than 'view': the 'view' items are
+        // in-place toggles that keep you on the card, while Settings opens a
+        // full modal over it — the same "go somewhere else" shape as Exit.
+        //
+        // It belongs in this menu at all because Focus View makes the ⋯ menu the
+        // ONLY menu: focus-mode.css gives the main ☰ button `pointer-events:
+        // none` and puts this trigger over it, so every other ☰ entry has a
+        // counterpart here. Settings was the one that did not, which left a
+        // routine run in Focus View no way to reach it without exiting.
         const items = [
+            // First, in its own group: leaving for the Welcome Screen is a
+            // different KIND of action from the routine/view/bulk items below,
+            // and a group of its own is what makes the separator render after it
+            // (the loop below emits a divider whenever `group` changes).
+            { action: 'welcome-screen',  group: 'welcome', label: getLabel('focusMode.welcomeScreen') },
             { action: 'switch-mode',     group: 'routine', label: '' /* set dynamically in _refreshModeItemLabel */ },
             { action: 'switch-routines', group: 'routine', label: getLabel('focusMode.switchRoutines') },
             { action: 'create-routine',  group: 'routine', label: getLabel('focusMode.createRoutine') },
@@ -191,6 +208,7 @@ export class FocusMode {
             { action: 'toggle-dark-mode', group: 'view',    label: getLabel('focusMode.toggleDarkMode') },
             { action: 'uncheck-all',     group: 'bulk',    label: getLabel('focusMode.uncheckAll') },
             { action: 'delete-all',      group: 'bulk',    label: getLabel('focusMode.deleteAll'), destructive: true },
+            { action: 'settings',        group: 'leave',   label: getLabel('focusMode.settings') },
             { action: 'exit',            group: 'exit',    label: getLabel('focusMode.exitItem') },
         ];
 
@@ -723,7 +741,7 @@ export class FocusMode {
 
     /**
      * Run the action associated with a menu item, then close the menu.
-     * @param {'switch-mode'|'switch-routines'|'create-routine'|'toggle-input-bar'|'toggle-dark-mode'|'uncheck-all'|'delete-all'|'exit'} action
+     * @param {'switch-mode'|'switch-routines'|'create-routine'|'toggle-input-bar'|'toggle-dark-mode'|'uncheck-all'|'delete-all'|'settings'|'exit'} action
      */
     _handleMenuAction(action) {
         this._closeMenu();
@@ -761,6 +779,33 @@ export class FocusMode {
                 // Wired to menuManager.deleteAllTasks which shows a confirmation modal
                 this.deps.deleteAllTasks?.();
                 break;
+            case 'welcome-screen': {
+                // Same pattern as 'settings' below: click the main-menu control,
+                // which a programmatic .click() reaches despite the menu being
+                // inert under focus mode. The Welcome Screen opens via
+                // showModal(), so it lands in the TOP LAYER and paints above the
+                // focus chrome — the same property 'settings' and
+                // 'switch-routines' already depend on.
+                const btn = this.deps.getElementById(DOM_IDS.MENU_OPEN_TITLE_SCREEN);
+                btn?.click();
+                break;
+            }
+            case 'settings': {
+                // Click the existing #open-settings button, the same pattern
+                // quickActionsManager uses and the same one 'toggle-dark-mode'
+                // above uses: the button lives in the main menu, which focus
+                // mode makes unreachable, but a programmatic .click() bypasses
+                // both `inert` and pointer-events and runs the real handler.
+                //
+                // The settings modal opens via showModal(), so it lands in the
+                // browser's TOP LAYER and paints above the focus chrome despite
+                // that chrome sitting at z-index 100000 against the modal's
+                // 1000. Verified in Focus View, not assumed. 'switch-routines'
+                // above already relies on the same property.
+                const btn = this.deps.getElementById(DOM_IDS.OPEN_SETTINGS);
+                btn?.click();
+                break;
+            }
             case 'exit':
                 this.deactivate();
                 break;
@@ -779,15 +824,185 @@ export class FocusMode {
     }
 
     /**
+     * Put keyboard focus on focus view's primary control after activation.
+     *
+     * Preference order: the focus-view actions menu button (its own entry point),
+     * then the task input, then the task list. All are outside the inert chrome, so
+     * whichever exists is a valid landing spot. Falls back to doing nothing rather
+     * than focusing something inert — that would drop focus to <body> again.
+     * @returns {void}
+     */
+    _moveFocusIntoFocusView() {
+        const { getElementById } = this.deps;
+        const candidates = [
+            getElementById(DOM_IDS.FOCUS_MODE_MENU_BTN),
+            getElementById(DOM_IDS.TASK_INPUT),
+            getElementById(DOM_IDS.TASK_LIST)
+        ];
+        for (const el of candidates) {
+            if (!el || el.inert || el.closest('[inert]')) continue;
+            if (typeof el.checkVisibility === 'function' &&
+                !el.checkVisibility({ visibilityProperty: true })) continue;
+            try { el.focus({ preventScroll: true }); } catch { continue; }
+            if (document.activeElement === el) return;
+        }
+    }
+
+    /**
+     * Hand focus back to whatever opened focus view.
+     *
+     * Exiting used to leave activeElement on <body> (measured on the menu-item exit
+     * path), so a keyboard user's next Tab restarted from the top of the document
+     * instead of resuming near the control they came from.
+     * @returns {void}
+     */
+    _restoreFocusAfterExit() {
+        const target = this._focusReturnEl;
+        this._focusReturnEl = null;
+        const usable = (el) => el && el.isConnected && !el.inert && !el.closest('[inert]') &&
+            (typeof el.checkVisibility !== 'function' || el.checkVisibility({ visibilityProperty: true }));
+        const fallback = this.deps.getElementById(DOM_IDS.FOCUS_MODE_BTN);
+        for (const el of [target, fallback]) {
+            if (!usable(el)) continue;
+            try { el.focus({ preventScroll: true }); } catch { continue; }
+            if (document.activeElement === el) return;
+        }
+    }
+
+    /**
      * Collect the chrome elements that are visually hidden in focus mode.
      * Returned elements get `inert` toggled so keyboard / screen-reader
      * users don't tab into invisible chrome.
      * @returns {HTMLElement[]}
      */
+    /**
+     * Developer diagnostic overlay for the Focus View clearance geometry.
+     *
+     * Renders ONLY when the URL carries ?layoutdebug=1, so it costs nothing in
+     * normal use. It exists because the clearance arithmetic depends on values
+     * that cannot be reproduced off-device: env(safe-area-inset-top) is 0 in
+     * every headless browser, and whether iOS RESOLVES the max-height calc at
+     * all (as opposed to dropping it as invalid) is not observable from here.
+     * The decisive line is `view.maxHeight` — a length means the cap applied,
+     * `none` means the declaration was dropped and the card sizes to content.
+     *
+     * Text here is developer-facing diagnostic output, not product copy, so it
+     * is deliberately not routed through getLabel().
+     */
+    _renderLayoutDebug() {
+        if (!this._layoutDebugEnabled()) return;
+
+        const overlay = this._ensureLayoutDebugOverlay();
+        if (!overlay) return;
+        overlay.textContent = this._collectLayoutDebugLines().join('\n');
+    }
+
+    _layoutDebugEnabled() {
+        try {
+            return new URLSearchParams(globalThis.location?.search || '').has('layoutdebug');
+        } catch {
+            return false;
+        }
+    }
+
+    _ensureLayoutDebugOverlay() {
+        let overlay = document.getElementById(DOM_IDS.LAYOUT_DEBUG_OVERLAY);
+        if (overlay) return overlay;
+
+        overlay = document.createElement('pre');
+        overlay.id = DOM_IDS.LAYOUT_DEBUG_OVERLAY;
+        overlay.setAttribute('aria-hidden', 'true');
+        overlay.style.cssText = [
+            'position:fixed', 'left:4px', 'right:4px', 'bottom:4px',
+            'margin:0', 'padding:8px', 'border-radius:8px',
+            'background:rgba(0,0,0,0.82)', 'color:#0f0',
+            'font:11px/1.35 ui-monospace,Menlo,monospace',
+            'white-space:pre', 'overflow:auto', 'max-height:45dvh',
+            'pointer-events:auto', `z-index:${Z_INDEX.DEBUG}`
+        ].join(';');
+
+        // Tap to dismiss. Tracked so destroy()/deactivate() can remove it.
+        this._layoutDebugDismiss = () => this._removeLayoutDebug();
+        overlay.addEventListener('click', this._layoutDebugDismiss);
+
+        // Values change with rotation and with the dynamic viewport.
+        this._layoutDebugResize = () => this._renderLayoutDebug();
+        globalThis.addEventListener('resize', this._layoutDebugResize);
+        globalThis.visualViewport?.addEventListener('resize', this._layoutDebugResize);
+
+        document.body.appendChild(overlay);
+        return overlay;
+    }
+
+    _collectLayoutDebugLines() {
+        const round = (n) => (typeof n === 'number' && isFinite(n) ? Math.round(n) : n);
+        const rect = (el) => {
+            if (!el) return null;
+            const r = el.getBoundingClientRect();
+            return { top: round(r.top), bottom: round(r.bottom), h: round(r.height) };
+        };
+
+        // env() is only resolvable by asking the engine to lay something out.
+        const meter = document.createElement('div');
+        meter.style.cssText = 'position:fixed;top:0;left:0;width:1px;visibility:hidden;'
+            + 'height:env(safe-area-inset-top, 0px)';
+        document.body.appendChild(meter);
+        const safeTop = round(meter.getBoundingClientRect().height);
+        meter.remove();
+
+        const view = document.getElementById(DOM_IDS.TASK_VIEW);
+        const card = view?.querySelector(DOM_SELECTORS.TASK_CARD);
+        const exitBtn = document.getElementById(DOM_IDS.FOCUS_MODE_EXIT_BTN);
+        const viewCS = view ? getComputedStyle(view) : null;
+        const rootCS = getComputedStyle(document.documentElement);
+
+        const viewBox = rect(view);
+        const cardBox = rect(card);
+        const exitBox = rect(exitBtn);
+
+        return [
+            `miniCycle ${globalThis.APP_VERSION} cache ${globalThis.CACHE_VERSION}`,
+            `viewport      ${round(globalThis.innerWidth)}x${round(globalThis.innerHeight)}`
+                + `  visual ${round(globalThis.visualViewport?.height)}`,
+            `env safe-top  ${safeTop}`,
+            `--focus-top-chrome  ${rootCS.getPropertyValue('--focus-top-chrome').trim() || '(unset)'}`,
+            `view.maxHeight      ${viewCS?.maxHeight ?? '(no #task-view)'}   <-- none = cap dropped`,
+            `view.height/top     ${viewCS?.height} / ${viewCS?.top}`,
+            `view.position       ${viewCS?.position}`,
+            `view.transform      ${viewCS?.transform}`,
+            `view  rect   ${JSON.stringify(viewBox)}`,
+            `card  rect   ${JSON.stringify(cardBox)}`,
+            `exit  rect   ${JSON.stringify(exitBox)}`,
+            `inset(view->card)   ${viewBox && cardBox ? cardBox.top - viewBox.top : 'n/a'}`,
+            `CLEARANCE           ${cardBox && exitBox ? cardBox.top - exitBox.bottom : 'n/a'}`,
+            '(tap to dismiss)'
+        ];
+    }
+
+    _removeLayoutDebug() {
+        const overlay = document.getElementById(DOM_IDS.LAYOUT_DEBUG_OVERLAY);
+        if (overlay && this._layoutDebugDismiss) {
+            overlay.removeEventListener('click', this._layoutDebugDismiss);
+        }
+        if (this._layoutDebugResize) {
+            globalThis.removeEventListener('resize', this._layoutDebugResize);
+            globalThis.visualViewport?.removeEventListener('resize', this._layoutDebugResize);
+            this._layoutDebugResize = null;
+        }
+        this._layoutDebugDismiss = null;
+        overlay?.remove();
+    }
+
     _getInertChromeElements() {
         const { getElementById, querySelector } = this.deps;
         const elements = [
-            querySelector(`.${DOM_CLASSES.FIXED_HEADER_CONTAINER}`),
+            // The header's chrome children, NOT .fixed-header-container itself —
+            // `inert` on the container would also make .header-branding inert, and
+            // inertness cannot be cancelled from inside. Keep this list in step with
+            // the focus-mode hide list in styles/components/focus-mode.css.
+            querySelector(DOM_SELECTORS.MENU_BUTTON),
+            querySelector(DOM_SELECTORS.MODE_SELECTOR_WRAPPER),
+            getElementById(DOM_IDS.SAVING_INDICATOR),
             getElementById(DOM_IDS.SLIDE_LEFT),
             getElementById(DOM_IDS.SLIDE_RIGHT),
             getElementById(DOM_IDS.QUICK_ACTIONS_WINDOW),
@@ -860,6 +1075,12 @@ export class FocusMode {
             body.appendChild(navDots);
         }
 
+        // Remember who opened focus view so deactivate() can hand focus back.
+        // Captured BEFORE the inert sweep below, because the opener is usually
+        // #focus-mode-btn, which that sweep is about to remove from the tab order.
+        const opener = document.activeElement;
+        this._focusReturnEl = (opener && opener !== document.body) ? opener : null;
+
         // Make hidden chrome inert — removes it from the tab order and the
         // accessibility tree so keyboard / screen-reader users don't land on
         // invisible buttons. Done after undo-redo reparent so the footer's
@@ -867,6 +1088,19 @@ export class FocusMode {
         for (const el of this._getInertChromeElements()) {
             el.inert = true;
         }
+
+        // Hand focus to focus view's own control.
+        //
+        // Inerting a subtree that CONTAINS the focused element silently drops focus
+        // to <body> — measured: activating from the keyboard left activeElement as
+        // BODY, so the next Tab restarted from the top of the document and the user
+        // got no announcement that the view had changed. `inert` correctly hides the
+        // chrome; nothing was picking focus back up afterwards.
+        //
+        // Deliberately NOT a focus trap: the chrome is already inert, so the tab
+        // ring is naturally confined to focus view's live controls. Adding a manual
+        // trap on top would be redundant and would fight the browser.
+        this._moveFocusIntoFocusView();
 
         this.deps.AppState?.update?.(state => {
             state.settings.focusModeActive = true;
@@ -879,6 +1113,13 @@ export class FocusMode {
         document.dispatchEvent(new CustomEvent(EVENTS.FOCUS_MODE_ACTIVATED, {
             detail: { restoring }
         }));
+
+        // No-op unless ?layoutdebug=1. Deferred past the enter transition so the
+        // rects it reports are the settled ones, not mid-animation.
+        if (this._layoutDebugEnabled()) {
+            this._layoutDebugTimer = setTimeout(
+                () => this._renderLayoutDebug(), UI_TIMEOUTS.TRANSITION_FALLBACK);
+        }
     }
 
     /**
@@ -887,6 +1128,8 @@ export class FocusMode {
      * then reparents button back to #task-view after the animation.
      */
     deactivate() {
+        this._removeLayoutDebug();
+
         if (!this._active) return;
         this._active = false;
         // If the three-dots menu was open when focus mode was toggled off,
@@ -959,6 +1202,14 @@ export class FocusMode {
                 this._navDotsOriginalParent = null;
                 this._navDotsNextSibling = null;
             }
+
+            // Hand focus back to whatever opened focus view — LAST, deliberately.
+            // Three things above would each defeat an earlier call: the opener is
+            // hidden while body still carries .focus-mode, it sits in a subtree that
+            // is inert until the loop above clears it, and this timeout REPARENTS
+            // this._button (the usual opener), which blurs it. Restoring here is the
+            // first point where the target is visible, focusable and settled.
+            this._restoreFocusAfterExit();
         }, 400);
 
         const settings = this.deps.AppState?.get?.()?.settings;
@@ -999,6 +1250,11 @@ export class FocusMode {
      * Clean up all event listeners.
      */
     destroy() {
+        if (this._layoutDebugTimer) {
+            clearTimeout(this._layoutDebugTimer);
+            this._layoutDebugTimer = null;
+        }
+        this._removeLayoutDebug();
         if (this._button && this._clickHandler) {
             this._button.removeEventListener('click', this._clickHandler);
         }

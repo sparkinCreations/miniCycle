@@ -172,7 +172,7 @@ export class AchievementsManager {
                 // the flag already set). Returning true suppresses the generic
                 // "Achievement Unlocked" so the user never gets two
                 // notifications for one unlock (same fix as the theme path).
-                const state = this.deps.AppState?.get?.();
+                const state = this.deps.AppState.get?.();
                 const wasUnlocked = (state?.settings?.unlockedFeatures || []).includes('task-order-game');
                 if (this.deps.unlockMiniGame) {
                     this.deps.unlockMiniGame(milestone.reward);
@@ -592,7 +592,7 @@ export class AchievementsManager {
         });
 
         // One-time hint to tap/click badges for more info
-        const state = this.deps.AppState?.get?.();
+        const state = this.deps.AppState.get?.();
         if (state && !state.settings?.badgeHintShown) {
             const badgesEl = this.deps.querySelector(DOM_SELECTORS.BADGES_CONTAINER);
             if (badgesEl) {

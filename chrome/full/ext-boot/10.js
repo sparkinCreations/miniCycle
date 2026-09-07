@@ -1,115 +1,85 @@
-(function () {
-    // The DECISION (and the pending-restore hand-off it depends on) now happens
-    // in the head's pre-paint reader, which records it as `mc-first-run` on
-    // <html>; critical.css lays the screen out from the first frame. This
-    // controller owns BEHAVIOUR only — reading the class instead of re-deriving
-    // it keeps one source of truth and, critically, keeps the reveal out of the
-    // post-paint phase where it used to cost ~0.2 CLS.
-    if (!document.documentElement.classList.contains('mc-first-run')) return;
+(function() {
+    var el = document.getElementById('loader-tip');
+    if (!el) return;
+    var text = el.querySelector('.loader-tip-text');
+    if (!text) return;
 
-    var loader = document.getElementById('app-loader');
-    var choice = document.getElementById('first-run-choice');
-    if (!loader || !choice) return;
+    // Suppress the tip when it would sit on top of (or crowd) the first-run
+    // "Restore from a backup file" link. On a short viewport the tip's
+    // bottom-anchored strip and the bottom of the choice column meet, and the
+    // two render over each other. Measured rather than guessed at a breakpoint:
+    // whether they collide depends on the viewport, the browser's own chrome,
+    // and how many lines the current tip wraps to — a media query cannot see
+    // any of that. The tip is decorative, so it yields.
+    //
+    // Measuring is safe before showing: the tip is position:absolute and only
+    // opacity-hidden, so it is laid out and has a real rect either way, which
+    // is what lets this decide without a visible flash.
+    var MIN_TIP_GAP = 8; // px of clear air required below the restore link
 
-    // Kept for JS that inspects the loader's mode; styling no longer depends on
-    // it (critical.css keys off html.mc-first-run so it applies pre-paint).
-    loader.classList.add('first-run-mode');
-    loader.setAttribute('data-awaiting-choice', 'true');
-    try { performance.mark('mc:firstrun:choiceShown'); } catch (e) { /* Performance API unavailable — marks are diagnostics only */ }
-
-    // Rotating use-case line (under the tagline) — same rhythm as the bottom
-    // tips: fade out, swap, fade in. Stops once the screen is dismissed.
-    var useCases = [
-      '✈️ Pre-flight checklists',
-      '🩺 Hourly nurse rounds',
-      '🔍 QA inspections',
-      '🍳 Opening & closing procedures',
-      '🧹 Cleaning rounds',
-      '🌅 Morning routines',
-      '💪 Workout circuits',
-      '📦 Packing lists you reuse'
-    ];
-    var useCaseA = document.getElementById('first-run-usecase-text');
-    var useCaseB = document.getElementById('first-run-usecase-text-b');
-    if (useCaseA && useCaseB) {
-      var uc = 0;
-      var showingA = true;
-      var ucTimer = setInterval(function () {
-        // Stop when the choice screen is gone (loader dismissed after a pick).
-        if (getComputedStyle(loader).display === 'none') { clearInterval(ucTimer); return; }
-        uc = (uc + 1) % useCases.length;
-        var incoming = showingA ? useCaseB : useCaseA;
-        var outgoing = showingA ? useCaseA : useCaseB;
-        // True crossfade: the incoming layer fades IN at the same time the
-        // outgoing fades OUT (both animate together), so a line is always on
-        // screen — no blank frame between use cases.
-        incoming.textContent = useCases[uc];
-        incoming.classList.add('is-active');
-        outgoing.classList.remove('is-active');
-        showingA = !showingA;
-      }, 2800);
+    function tipWouldCollide() {
+      var restore = document.getElementById('first-run-restore');
+      if (!restore) return false;              // not the first-run screen
+      var rr = restore.getBoundingClientRect();
+      if (rr.height <= 0) return false;        // present but not rendered
+      var tr = el.getBoundingClientRect();
+      if (tr.height <= 0) return false;
+      return tr.top < rr.bottom + MIN_TIP_GAP;
     }
-    // NOTE: the Lite escape hatch reveal is CSS-driven (animation-delay), NOT a
-    // JS timer. A slow boot saturates the main thread, so a setTimeout would be
-    // starved until boot finishes — defeating the hint on exactly the devices
-    // that need it. CSS animations run off the main thread, so the reveal fires
-    // on time even mid-boot. If boot finishes first, the whole loader fades out
-    // before the delay elapses, so the link is never seen. See critical.css.
 
-    choice.addEventListener('click', function (e) {
-      var btn = e.target && e.target.closest ? e.target.closest('.first-run-btn') : null;
-      if (!btn || btn.disabled) return;
-      var value = btn.getAttribute('data-choice');
-      try { sessionStorage.setItem('miniCycle_firstRunChoice', value); } catch (err) { /* storage unavailable — same-tab routing degrades gracefully */ }
-      // Durable flag (survives relaunch) so a reload after choosing doesn't
-      // re-show the choice screen — the gate above reads it. sessionStorage
-      // handles same-tab routing; localStorage handles the cross-launch gate.
-      try { localStorage.setItem('miniCycle_firstRunChoiceMade', '1'); } catch (err) { /* storage unavailable — worst case the choice screen re-shows */ }
-      try { performance.mark('mc:firstrun:choiceTapped'); } catch (err) { /* Performance API unavailable — marks are diagnostics only */ }
+    function showTip() {
+      if (tipWouldCollide()) {
+        el.classList.remove('visible');
+        return;
+      }
+      el.classList.add('visible');
+    }
 
-      // Button takeover: the tapped button becomes the progress surface.
-      var btns = choice.querySelectorAll('.first-run-btn');
-      for (var i = 0; i < btns.length; i++) { btns[i].disabled = true; }
-      btn.classList.add('is-chosen');
-      btn.textContent = btn.getAttribute('data-busy') || 'Setting up…';
+    // Rotation, orientation and the browser hiding its own toolbar all change
+    // the answer, so re-decide rather than latching the first result.
+    function onViewportChange() { showTip(); }
+    window.addEventListener('resize', onViewportChange);
+    window.addEventListener('orientationchange', onViewportChange);
 
-      loader.setAttribute('data-awaiting-choice', 'false');
-      try {
-        document.dispatchEvent(new CustomEvent('firstrun:choice', { detail: { choice: value } }));
-      } catch (err) { /* CustomEvent constructor unsupported — boot proceeds without the signal */ }
-    });
-
-    // Restore-from-backup (pairs with the error screen's backup button).
-    // Validates the file, writes the raw localStorage keys back, reloads —
-    // the reload takes the returning-user path with the restored data.
-    var restoreBtn = document.getElementById('first-run-restore');
-    var restoreFile = document.getElementById('first-run-restore-file');
-    if (restoreBtn && restoreFile) {
-      restoreBtn.addEventListener('click', function () { restoreFile.click(); });
-      restoreFile.addEventListener('change', function () {
-        var file = restoreFile.files && restoreFile.files[0];
-        if (!file) return;
-        var reader = new FileReader();
-        reader.onload = function () {
-          var parsed = null;
-          try { parsed = JSON.parse(reader.result); } catch (err) { /* invalid JSON — the null check below shows the error */ }
-          if (!parsed || parsed.type !== 'miniCycle-backup' || !parsed.keys || !parsed.keys.miniCycleData) {
-            alert('That file is not a valid miniCycle backup.');
-            restoreFile.value = '';
+    fetch('./modules/labels/loading-tips.json')
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        // Shape is { firstRun: [...], inApp: [...] }, NOT a bare array.
+        // Audience matters: on the first-run choice screen the user has no
+        // routine, no tasks and no UI to point at, so an instructional tip
+        // ("click your progress badge") is simply false there. Reuse the same
+        // #first-run-restore probe tipWouldCollide() already does — that
+        // element exists ONLY on the choice screen, so it is a free signal.
+        // A missing pool just yields no tips; these are decorative.
+        var onFirstRun = !!document.getElementById('first-run-restore');
+        var tips = data && (onFirstRun ? data.firstRun : data.inApp);
+        if (!tips || !tips.length) return;
+        var i = Math.floor(Math.random() * tips.length);
+        text.textContent = tips[i];
+        showTip();
+        var rotation = setInterval(function() {
+          // Stop rotating once the app has booted (loader is gone) — otherwise this
+          // timer runs forever, mutating a hidden/detached element. uiBoot.js sets
+          // dataset.appLoaded='true' on a successful boot. Exception: while the
+          // first-run choice screen is awaiting a pick, boot may be done but the
+          // loader is still visible — keep the tips rotating.
+          var loaderEl = document.getElementById('app-loader');
+          var awaitingChoice = loaderEl && loaderEl.getAttribute('data-awaiting-choice') === 'true';
+          if (document.documentElement.dataset.appLoaded === 'true' && !awaitingChoice) {
+            clearInterval(rotation);
+            window.removeEventListener('resize', onViewportChange);
+            window.removeEventListener('orientationchange', onViewportChange);
             return;
           }
-          // Hand off via sessionStorage; the NEXT load applies it before any app
-          // code runs. Writing localStorage here would be clobbered by the
-          // running app's save-on-unload during the reload.
-          try {
-            sessionStorage.setItem('miniCycle_pendingRestore', reader.result);
-          } catch (err) {
-            alert('Restore failed: ' + err.message);
-            return;
-          }
-          location.reload();
-        };
-        reader.readAsText(file);
-      });
-    }
+          el.classList.remove('visible');
+          setTimeout(function() {
+            i = (i + 1) % tips.length;
+            text.textContent = tips[i];
+            // Re-measure per tip: a three-line tip collides where a one-line
+            // tip does not, which is visible in the reported screenshots.
+            showTip();
+          }, 400);
+        }, 4000);
+      })
+      .catch(function() { /* boot tips are decorative — a failed fetch just shows none */ });
   })();

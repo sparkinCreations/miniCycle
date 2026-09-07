@@ -407,6 +407,57 @@ export class PullToRefresh {
      * Default refresh behavior
      * Checks SW updates, refreshes UI, checks recurring tasks
      */
+    /**
+     * Ask a service worker which app version it is, over a one-shot MessageChannel.
+     *
+     * Used to name the incoming version in the "update available" notice. The
+     * WAITING worker is the right thing to ask: it reports the build the user
+     * would actually get on reload, which fetching version.js does not guarantee
+     * (a CDN can still be serving something else). It also costs no network call.
+     *
+     * Resolves null rather than rejecting on every failure path — no port, a
+     * worker that never replies, a malformed answer — because the caller has a
+     * perfectly good version-less message to fall back to. An update notice must
+     * never be blocked by a diagnostic.
+     *
+     * @param {ServiceWorker} worker - Usually registration.waiting
+     * @returns {Promise<string|null>} The worker's APP_VERSION, or null
+     */
+    _askWorkerVersion(worker) {
+        return new Promise((resolve) => {
+            if (!worker || typeof globalThis.MessageChannel !== 'function') {
+                resolve(null);
+                return;
+            }
+            let settled = false;
+            const finish = (value) => {
+                if (settled) return;
+                settled = true;
+                clearTimeout(timer);
+                resolve(value);
+            };
+            // A worker that never answers must not leave this pending forever —
+            // the caller awaits it before showing the notice.
+            const timer = setTimeout(() => finish(null), UI_TIMEOUTS.SW_VERSION_QUERY);
+            try {
+                const channel = new globalThis.MessageChannel();
+                channel.port1.onmessage = (event) => {
+                    const raw = event?.data?.appVersion;
+                    // Same-origin and therefore trusted, but still bounded: a
+                    // malformed value would land in a user-facing string.
+                    const version = typeof raw === 'string'
+                        ? raw.replace(/[^0-9A-Za-z.\-_]/g, '').slice(0, 16)
+                        : '';
+                    finish(version || null);
+                };
+                worker.postMessage({ type: 'GET_VERSION' }, [channel.port2]);
+            } catch (err) {
+                console.warn('SW version query failed:', err);
+                finish(null);
+            }
+        });
+    }
+
     async defaultRefresh() {
         const results = {
             swUpdate: false,
@@ -441,7 +492,18 @@ export class PullToRefresh {
                         results.swUpdate = true;
                         // SW updates are owned by the version gate + verifyVersionFresh
                         // flow — just inform the user; don't prompt a competing update.
-                        this.deps.showNotification(getLabel('notify.updateAvailableReload'), 'info', UI_TIMEOUTS.NOTIFICATION_SLOW);
+                        //
+                        // Name the versions when we can, matching the boot overlay and
+                        // the pre-boot updating screen. The WAITING worker knows its own
+                        // APP_VERSION and answers GET_VERSION, so this needs no network
+                        // call — and unlike fetching version.js it reports the build the
+                        // user would actually get, which is the point.
+                        const toVersion = await this._askWorkerVersion(registration.waiting);
+                        const fromVersion = globalThis.APP_VERSION;
+                        const message = (toVersion && fromVersion && toVersion !== fromVersion)
+                            ? getLabel('notify.updateAvailableFromTo', { vars: { from: fromVersion, to: toVersion } })
+                            : getLabel('notify.updateAvailableReload');
+                        this.deps.showNotification(message, 'info', UI_TIMEOUTS.NOTIFICATION_SLOW);
                     }
                 }
             } catch (err) {

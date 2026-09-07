@@ -111,6 +111,18 @@
     color: rgba(255, 255, 255, 0.9);
 }
 
+/* The "what is this app" line. Sits between the headline and whichever hint is
+   showing, in every view/input-bar state — so it is styled once here and never
+   participates in the four-way swap. Slightly dimmer than the hint so the
+   actionable line stays the one that reads first. */
+.empty-state-pitch {
+    font-size: var(--font-size-sm);
+    color: rgba(255, 255, 255, 0.55);
+    max-width: 250px;
+    line-height: 1.4;
+    margin-bottom: var(--space-2);
+}
+
 /* Home-view hints. `.empty-state-hint` covers the input-bar-hidden state and
    `.empty-state-hint-visible` the bar-visible one; focus-mode.css owns the two
    focus variants and decides which of the four is displayed. */
@@ -165,6 +177,7 @@ body.all-tasks-complete .empty-state-alldone-hint {
 }
 
 body.all-tasks-complete .empty-state-text,
+body.all-tasks-complete .empty-state-pitch,
 body.all-tasks-complete .empty-state-hint,
 body.all-tasks-complete .empty-state-hint-visible,
 body.all-tasks-complete .empty-state-hint-focus,
@@ -279,6 +292,15 @@ body.onboarding-active .complete-all-and-help-window-container {
 }
 
 .completed-tasks-header {
+    /* Was an <h3 role="button">, which the validator rejects — button is not a
+       permitted role on a heading. It is a disclosure control, so it is now a
+       real <button>: valid, natively operable by Enter and Space, and it let the
+       hand-written keydown handler go. These four lines undo the UA button
+       styling the <h3> never had. */
+    border: none;
+    width: 100%;
+    font-family: inherit;
+    text-align: center;
     font-size: var(--font-size-sm);
     font-weight: 600;
     color: rgba(255, 255, 255, 0.8);

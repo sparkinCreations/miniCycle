@@ -146,6 +146,11 @@ body.dark-mode:not([data-theme]) {
     --theme-modal-glass-bg-soft: rgba(255, 255, 255, 0.10);
     --theme-modal-text: var(--theme-text-primary);
     --theme-modal-border: var(--dark-button-hover-bg);
+    /* The one --theme-modal-* token this block was missing. Without it a light
+       colour theme kept its light modal-header colour (golden-glow: #fff9e0)
+       while --theme-modal-text above went to #f0f0f0. Matches --modal-header-bg
+       so the modal heading sits flush with the modal body in dark mode. */
+    --theme-modal-header-bg: #2b2b2b;
     --theme-card-bg: #2e2e2e;
     --theme-card-border: var(--dark-button-hover-bg);
     --theme-input-bg: #3a3a3a;

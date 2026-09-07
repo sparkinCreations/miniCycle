@@ -385,6 +385,31 @@ function isTouchDevice() {
   return hasTouchEvents || touchPoints > 0;
 }
 
+/**
+ * Detect whether the device can accept touch input AT ALL — a strictly weaker
+ * question than isTouchDevice().
+ *
+ * isTouchDevice() asks "is touch the PRIMARY input?" and answers false the moment
+ * a fine pointer exists, which is correct for its callers (drag layout, tap-vs-click
+ * wording). But it makes a touchscreen laptop indistinguishable from a mouse-only
+ * desktop, and those machines get used in tablet mode where the trackpad is not
+ * reachable. `any-pointer: coarse` is the right signal: it is true when a coarse
+ * pointer is available, regardless of which one is primary.
+ *
+ * Do NOT swap isTouchDevice() for this — its consumers depend on the stricter
+ * meaning, and widening it would (for one) disable the drag layout on laptops
+ * that handle it fine.
+ *
+ * @returns {boolean} True if a coarse (touch) pointer is available
+ */
+function isTouchCapable() {
+  const coarseAvailable = window.matchMedia?.("(any-pointer: coarse)")?.matches ?? false;
+  const hasTouchEvents = "ontouchstart" in window;
+  const touchPoints = navigator.maxTouchPoints || navigator.msMaxTouchPoints;
+
+  return coarseAvailable || hasTouchEvents || touchPoints > 0;
+}
+
 // DI-pure module (no window.* fallbacks for dependencies)
 
 // ES6 exports (DeviceDetectionManager class already exported at line 19)
@@ -395,5 +420,6 @@ export {
   autoRedetectOnVersionChange,
   reportDeviceCompatibility,
   testDeviceDetection,
-  isTouchDevice
+  isTouchDevice,
+  isTouchCapable
 };

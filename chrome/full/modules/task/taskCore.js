@@ -13,8 +13,8 @@
  * - Uses dynamic versioned imports to avoid duplicate module loading
  *
  * @module task/taskCore
- * @see {@link file://../../../docs/developer-guides/ARCHITECTURE_OVERVIEW.md} - Architecture
- * @see {@link file://../../../docs/developer-guides/DI_PATTERNS.md} - DI patterns
+ * @see {@link file://docs/architecture/ARCHITECTURE_OVERVIEW.md} - Architecture
+ * @see {@link file://docs/working-on-code/DI_PATTERNS.md} - DI patterns
  */
 
 /**
@@ -67,6 +67,10 @@ const di = createDIModule('TaskCore', {
     updateStatsPanel: optional(null),
     updateProgressBar: optional(null),
     checkCompleteAllButton: optional(null),
+    // Forward-through to taskCRUD / taskCycleReset: the To-Do "Clear Completed"
+    // path refreshes stats ONLY through this, so an undeclared dep left the panel
+    // showing pre-clear counts with no error (v2.443).
+    requestUIUpdate: optional(null),
     updateMainMenuHeader: optional(null),
     checkOverdueTasks: optional(null),
     updateArrowsInDOM: optional(null),

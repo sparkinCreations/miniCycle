@@ -8,7 +8,8 @@
  * @version 1.0.0
  */
 
-import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, LIMITS, DEBOUNCE } from '../core/constants.js';
+import { getLabel } from '../labels/labelResolver.js';
 import { handleGridArrowNav, handleVerticalArrowNav } from '../utils/keyboardNav.js';
 
 // ============================================================================
@@ -41,6 +42,9 @@ export function initEventDelegation(deps, state, callbacks) {
 
     // Setup delegation for task list items
     setupTaskListDelegation(deps, state, callbacks);
+
+    // Setup the panel's own search
+    setupSearchDelegation(deps, state);
 
     state._eventDelegationInitialized = true;
     return true;
@@ -382,3 +386,146 @@ function selectTaskItem(item, deps, state, callbacks) {
     }
 }
 
+// ============================================================================
+// PANEL SEARCH
+// ============================================================================
+
+/**
+ * Filter the recurring list in place.
+ *
+ * Scoped to THIS panel on purpose. The task-list search filters `#taskList`, and
+ * the two surfaces hold different objects: a task can be checked off, a template
+ * can only be rescheduled or removed. One search spanning both would return rows
+ * that mean different things and afford different actions, so each surface
+ * searches what it owns.
+ *
+ * Reads the rendered rows because that is exactly what it filters — visibility of
+ * elements already on screen. It never decides anything about DATA; the panel
+ * renders from `cycle.recurringTemplates`, which stays the source of truth.
+ *
+ * @param {Object} deps - {getElementById, querySelectorAll}
+ * @param {Object} state - Panel state (holds the active query across re-renders)
+ * @returns {void}
+ */
+export function applyRecurringSearch(deps, state) {
+    const list = deps.getElementById(DOM_IDS.RECURRING_TASK_LIST);
+    if (!list) return;
+
+    const input = deps.getElementById(DOM_IDS.RECURRING_SEARCH_INPUT);
+    const row = deps.getElementById(DOM_IDS.RECURRING_SEARCH_ROW);
+    const noMatches = deps.getElementById(DOM_IDS.RECURRING_NO_MATCHES);
+
+    const items = Array.from(list.querySelectorAll(DOM_SELECTORS.RECURRING_TASK_ITEM));
+
+    // Below the threshold the whole list is already on screen, so a search box is
+    // chrome rather than help. Hiding it also clears any stale query, otherwise
+    // removing tasks down past the threshold could leave rows filtered out with
+    // no visible control to undo it.
+    if (row) {
+        const show = items.length >= LIMITS.RECURRING_SEARCH_THRESHOLD;
+        row.classList.toggle(DOM_CLASSES.HIDDEN, !show);
+        if (!show && state) state.searchQuery = '';
+        if (!show && input) input.value = '';
+    }
+
+    const query = (state?.searchQuery || '').toLowerCase().trim();
+    let visible = 0;
+    items.forEach(item => {
+        const text = item.querySelector(DOM_SELECTORS.RECURRING_TASK_TEXT)?.textContent?.toLowerCase() || '';
+        const match = query === '' || text.includes(query);
+        item.classList.toggle(DOM_CLASSES.HIDDEN, !match);
+        if (match) visible++;
+    });
+
+    // "No recurring tasks yet" and "nothing matched your search" are different
+    // facts; conflating them would tell a user with 20 templates that they have
+    // none. Separate element, and only one can be showing.
+    if (noMatches) {
+        const showNoMatches = query !== '' && visible === 0 && items.length > 0;
+        noMatches.classList.toggle(DOM_CLASSES.HIDDEN, !showNoMatches);
+        if (showNoMatches) {
+            noMatches.textContent = getLabel('recurring.noMatches', { vars: { query: state.searchQuery.trim() } });
+        }
+    }
+
+    announceSearchResults(deps, state, visible, items.length);
+}
+
+/**
+ * Announce the result count to screen readers.
+ *
+ * A sighted user watches the list shrink; without this a screen-reader user gets
+ * no feedback at all — measured, filtering 7 rows down to 2 said nothing, and
+ * only the zero-match case spoke. That is the state-change-never-reaches-the-
+ * live-region class the v2.534-v2.536 work was about.
+ *
+ * The region lives INSIDE the dialog deliberately. `showModal()` marks everything
+ * outside the dialog inert and inert content leaves the accessibility tree, so
+ * utils/announce.js's body-level #live-region is unreadable while this panel is
+ * open — that module's docblock records two reverted attempts at working around
+ * it. A region inside the dialog subtree has no such problem.
+ *
+ * Debounced: announcing on every keystroke makes a screen reader unusable while
+ * typing.
+ *
+ * @param {Object} deps - {getElementById}
+ * @param {Object} state - Panel state (holds the debounce timer)
+ * @param {number} visible - Rows matching the query
+ * @param {number} total - Rows in the list
+ * @returns {void}
+ */
+function announceSearchResults(deps, state, visible, total) {
+    const status = deps.getElementById(DOM_IDS.RECURRING_SEARCH_STATUS);
+    if (!status || !state) return;
+
+    if (state._searchAnnounceTimer) clearTimeout(state._searchAnnounceTimer);
+
+    const query = (state.searchQuery || '').trim();
+    // Nothing to say before the user has searched, and on an empty list the
+    // panel's own empty state already speaks.
+    if (total === 0) { status.textContent = ''; return; }
+
+    const message = query === ''
+        ? getLabel('recurring.searchCleared', { vars: { total } })
+        : (visible === 1
+            ? getLabel('recurring.searchResultsOne', { vars: { total } })
+            : getLabel('recurring.searchResults', { vars: { count: visible, total } }));
+
+    state._searchAnnounceTimer = setTimeout(() => {
+        state._searchAnnounceTimer = null;
+        // Clear first so an identical consecutive message is still a real
+        // empty->text transition; screen readers skip unchanged content
+        // (utils/announce.js documents the same behaviour).
+        status.textContent = '';
+        const raf = (typeof requestAnimationFrame === 'function')
+            ? requestAnimationFrame : ((fn) => setTimeout(fn, 16));
+        raf(() => { status.textContent = message; });
+    }, DEBOUNCE.SEARCH_RESULT_ANNOUNCE);
+}
+
+/**
+ * Wire the panel's search input. One delegated listener, added through
+ * safeAddEventListener so a panel re-open cannot stack duplicates.
+ * @param {Object} deps - {getElementById, querySelectorAll, safeAddEventListener}
+ * @param {Object} state - Panel state
+ * @returns {void}
+ */
+export function setupSearchDelegation(deps, state) {
+    const input = deps.getElementById(DOM_IDS.RECURRING_SEARCH_INPUT);
+    if (!input) return;
+
+    deps.safeAddEventListener(input, 'input', () => {
+        state.searchQuery = input.value || '';
+        applyRecurringSearch(deps, state);
+    });
+
+    // Escape clears rather than closing the panel — a filtered list with a
+    // dismissed keyboard is otherwise hard to reset on touch.
+    deps.safeAddEventListener(input, 'keydown', (event) => {
+        if (event.key !== 'Escape' || !input.value) return;
+        event.stopPropagation();
+        input.value = '';
+        state.searchQuery = '';
+        applyRecurringSearch(deps, state);
+    });
+}

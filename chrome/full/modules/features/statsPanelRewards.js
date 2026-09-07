@@ -228,26 +228,11 @@ export class StatsPanelRewards {
         this.m.saveCollapsiblePreference('milestonesExpanded', newExpanded);
     }
 
-    /**
-     * Handle Current Routine toggle click
-     */
-    openThemesPanel() {
-        if (this.m.elements.themesModal) {
-            this.m.elements.themesModal._previousFocus = this.m.rawDeps.getActiveElement();
-            if (!this.m.elements.themesModal.open) this.m.elements.themesModal.showModal();
-            this.m.dependencies.hideMainMenu();
-        }
-    }
-
-    /**
-     * Close themes panel
-     */
-    closeThemesPanel() {
-        if (this.m.elements.themesModal?.open) {
-            this.m.elements.themesModal.close();
-            this.m.elements.themesModal._previousFocus?.focus({ focusVisible: false });
-        }
-    }
+    // openThemesPanel() / closeThemesPanel() were removed in the Aug 2026 seam audit.
+    // They bound a SECOND handler to the same buttons themeManager already owns, which
+    // made both the modal's hydration and its focus-restore target depend on listener
+    // registration order. themeManager is the single owner now; nothing here should
+    // reach for those buttons again.
 
     // ==========================================
     // 📜 HISTORY & ACHIEVEMENTS MODAL METHODS

@@ -470,13 +470,16 @@ export class TaskOptionsCustomizer {
                             ${isChecked ? 'checked' : ''}
                             ${isDisabled ? 'disabled' : ''}
                             class="option-checkbox"
+                            aria-labelledby="option-${option.key}-label"
+                            aria-describedby="option-${option.key}-description"
                         >
                         <span class="custom-checkbox"></span>
                     </div>
                     <div class="option-compact-content">
                         <span class="option-icon">${option.icon}</span>
-                        <span class="option-label">${label}</span>
+                        <span class="option-label" id="option-${option.key}-label">${label}</span>
                         ${isDisabled ? `<span class="always-visible-badge">${getLabel('taskOptions.alwaysBadge')}</span>` : ''}
+                        <span id="option-${option.key}-description" class="sr-only">${description}</span>
                     </div>
                 </div>
             `;

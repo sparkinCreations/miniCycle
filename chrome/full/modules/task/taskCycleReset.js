@@ -50,6 +50,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
+import { applyTaskStatusLabel } from './taskUtils.js';
 import { TASK_TIMEOUTS, UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, MILESTONES } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
@@ -351,6 +352,10 @@ function resetTasksData(context, deps) {
         if (disableTaskAnimation) {
             // Skip animation, just reset immediately
             if (checkbox) checkbox.checked = false;
+            // The accessible name is NOT derived from checkbox.checked — it is a
+            // written attribute, so unchecking without this leaves every row
+            // announcing "Completed" over an unchecked box.
+            applyTaskStatusLabel(taskEl, false);
             taskEl.classList.remove(DOM_CLASSES.OVERDUE_TASK);
             if (dueDateInput) {
                 dueDateInput.value = "";
@@ -361,6 +366,7 @@ function resetTasksData(context, deps) {
             trackTimeout(setTimeout(() => {
                 taskEl.classList.add(DOM_CLASSES.TASK_RESETTING);
                 if (checkbox) checkbox.checked = false;
+                applyTaskStatusLabel(taskEl, false);
                 taskEl.classList.remove(DOM_CLASSES.OVERDUE_TASK);
                 if (dueDateInput) {
                     dueDateInput.value = "";
@@ -419,7 +425,38 @@ function resetTasksData(context, deps) {
                     }
                 });
             }
+
+            // Count the deleteWhenComplete tasks this reset just removed.
+            //
+            // This path and deleteCompletedTasksImpl both clear tasks and both
+            // archive them, but only that one was advancing the counter — so in
+            // To-Do mode, where finishing the last task completes the CYCLE and
+            // lands here instead, totalTasksCompleted never moved and no
+            // task-count achievement could ever unlock. The archive filled up
+            // while the number behind it stayed at zero.
+            //
+            // tasksToDelete is already non-recurring: the collection loop above
+            // returns early on DOM_CLASSES.RECURRING. That matches the rule the
+            // sibling path documents — a recurring occurrence is scheduled to
+            // return, so it must not inflate this total, and it still reaches
+            // achievements through the cycle-completion path.
+            if (tasksToDelete.length > 0) {
+                if (!state.userProgress) state.userProgress = {};
+                state.userProgress.totalTasksCompleted =
+                    (state.userProgress.totalTasksCompleted || 0) + tasksToDelete.length;
+            }
         }, true); // immediate save - required for stats panel to read correct data
+
+        // Re-check achievements against the new total, mirroring the sibling
+        // path. Without this the unlock waits for some later event to happen to
+        // call it, which for a To-Do user may be never.
+        if (tasksToDelete.length > 0 && typeof _deps.checkAchievements === 'function') {
+            const updatedState = AppState.get();
+            _deps.checkAchievements(
+                updatedState.userProgress?.cyclesCompleted || 0,
+                updatedState.userProgress?.totalTasksCompleted || 0
+            );
+        }
     } else {
         console.warn('⚠️ AppState not ready for cycle reset - state may be lost');
     }
@@ -717,25 +754,42 @@ export async function deleteCompletedTasksImpl(activeCycleId, cycleData, taskLis
         return { aborted: true, reason: 'no_tasks' };
     }
 
-    // Count recurring tasks among those being deleted
-    const recurringDeleteCount = tasksToDelete.filter(({ taskId }) => {
-        const task = cycleData.tasks?.find(t => t.id === taskId);
-        return task?.recurring === true;
-    }).length;
+    // Partition the batch by recurrence ONCE — both the Cleared Tasks archive and the
+    // achievement counter below key off this.
+    //
+    // A recurring occurrence is not a task the user finished with: it is scheduled to
+    // come back. Archiving it offered a "restore" for something that restores itself,
+    // and counting it inflated the cleared-task achievement total. Recurring tasks still
+    // contribute to CYCLE achievements — that path is untouched.
+    //
+    // Both exclusions matter and they are separate writes to separate state:
+    // `cycle.clearedTasks` (the archive) and `userProgress.totalTasksCompleted` (what
+    // achievementsManager reads). Filtering only one leaves the other wrong.
+    const isRecurringTask = (taskId) =>
+        cycleData.tasks?.find(t => t.id === taskId)?.recurring === true;
+    const nonRecurringToDelete = tasksToDelete.filter(({ taskId }) => !isRecurringTask(taskId));
+    const recurringDeleteCount = tasksToDelete.length - nonRecurringToDelete.length;
 
     // Trigger logo scan effect for to-do mode task clearing
     if (typeof _deps.triggerLogoScan === 'function') {
         _deps.triggerLogoScan(500);
     }
 
-    // Record cleared tasks before deleting (for history tracking)
-    const tasksToRecord = tasksToDelete
+    // Record cleared tasks before deleting (for history tracking).
+    // Recurring occurrences are excluded — see the partition above.
+    const tasksToRecord = nonRecurringToDelete
         .map(({ taskId }) => cycleData.tasks?.find(t => t.id === taskId))
         .filter(Boolean)
         .map(buildClearedRecord);
 
-    if (tasksToRecord.length > 0 && typeof _deps.recordMultipleClearedTasks === 'function') {
-        _deps.recordMultipleClearedTasks(tasksToRecord);
+    // Accept a caller override like the cycle-reset path does (see the sibling
+    // `deps.recordMultipleClearedTasks || _deps...` above). This path read only the
+    // module-level dep, so a caller-supplied recorder was silently ignored — which also
+    // made the archive untestable without mutating module DI, and a test that mocked it
+    // via the params object passed while asserting nothing.
+    const recordClearedFn = deps.recordMultipleClearedTasks || _deps.recordMultipleClearedTasks;
+    if (tasksToRecord.length > 0 && typeof recordClearedFn === 'function') {
+        recordClearedFn(tasksToRecord);
     }
 
     // Log history event for tasks cleared
@@ -796,9 +850,15 @@ export async function deleteCompletedTasksImpl(activeCycleId, cycleData, taskLis
             if (cycle?.tasks) {
                 cycle.tasks = cycle.tasks.filter(t => !taskIdsToDelete.includes(t.id));
             }
-            // Update total tasks completed count for achievements
+            // Update total tasks completed count for achievements.
+            // Counts NON-RECURRING clears only — a recurring occurrence is scheduled to
+            // return, so counting it inflated the cleared-task milestones. This is the
+            // second of the two writes the recurrence partition above governs; the other
+            // is the Cleared Tasks archive. Recurring tasks still reach achievements via
+            // the cycle-completion path.
             if (!state.userProgress) state.userProgress = {};
-            state.userProgress.totalTasksCompleted = (state.userProgress.totalTasksCompleted || 0) + taskIdsToDelete.length;
+            state.userProgress.totalTasksCompleted =
+                (state.userProgress.totalTasksCompleted || 0) + nonRecurringToDelete.length;
         }, true);
 
         // Check for new achievements (OR-based: cycles OR tasks can unlock)

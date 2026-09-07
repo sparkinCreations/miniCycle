@@ -110,6 +110,12 @@ export const UI_TIMEOUTS = Object.freeze({
     FOCUS_DELAY_SHORT: 50,         // 50ms - Focus an element shortly after it appears (inputs/edit fields)
     SAVE_DEFER: 50,                // 50ms - Defer a state save to the next tick so DOM/state settles first
     RESIZE_DEBOUNCE: 150,          // 150ms - Window resize debounce
+    LONG_PRESS_HINT: 500,          // 500ms - Hold an icon-only control this long before its label appears (matches the task drag long-press so one hold feels the same everywhere)
+    LONG_PRESS_CLICK_GUARD: 300,   // 300ms - Window in which the synthetic click after a long-press is swallowed, so asking what an icon does never also does it
+    HINT_DISMISS_ARM: 100,         // 100ms - Delay before a shown long-press hint starts listening for the touch that dismisses it, so the press that raised it cannot also close it
+    LAYOUT_CLICK_SWALLOW: 50,      // 50ms - Task View Layout: window in which the synthesized click after a drag is swallowed
+    SW_VERSION_QUERY: 1500,        // 1500ms - give up asking a service worker for its version; the message may never be answered, and the caller falls back to a version-less notice
+    LAYOUT_COALESCE_WINDOW: 500,   // 500ms - Task View Layout: merge position writes from rapid successive drags into ONE AppState.update (one undo entry per burst, not per drag)
     ANIMATION_SHORT: 200,          // 200ms - Short animation / transition delay
     NOTIFICATION_FADE: 300,        // 300ms - Notification removal animation
     MODAL_ANIMATION: 500,          // 500ms - Modal open/close animation
@@ -133,6 +139,8 @@ export const UI_TIMEOUTS = Object.freeze({
     FOCUS_TASK_CELEBRATION: 2000,  // 2000ms - Focus task panel cycle-complete card celebration before showing task 1 (FOCUS_TASK_VIEW_PLAN D5)
     TOOLTIP_HIDE: 3000,            // 3000ms - Tooltip auto-hide delay
     FIRST_RUN_WELCOME_SLIDE_HOLD: 8000,    // 8000ms - How long each first-run welcome banner slide is visible before auto-advance
+    TITLE_SCREEN_USECASE_HOLD: 2800,       // 2800ms - Welcome Screen use-case crossfade. Matches the first-run screen's inline rotator: it is the same line doing the same job, and the two screens are meant to feel identical.
+    TIP_ARCHIVE_SLIDE_HOLD: 8000,          // 8000ms - How long one tip stays up in the tip archive before auto-advancing. Matches FIRST_RUN_WELCOME_SLIDE_HOLD: same job (read one short line, unhurried) so the two should not drift apart. Deliberately far slower than the 4s BOOT rotator, which the user is not expected to read completely.
     FIRST_RUN_SPLASH_WATCHDOG: 12000,      // 12000ms - Hard ceiling on the typewriter splash. Its phase chain hangs off animationend, which never fires if the char animations are disabled or interrupted; this guarantees the splash always fades and its completion promise always resolves (the create/sample picks open their dialog on it)
 
     // Cycle-demo SVG choreography (slide 3) — relative offsets WITHIN one
@@ -200,7 +208,8 @@ export const DEBOUNCE = Object.freeze({
     STATE_SAVE_FALLBACK: 100,      // 100ms - Fallback timeout if no requestIdleCallback
     UNDO_DB_WRITE: 3000,           // 3s - IndexedDB write debounce for undo
     UNDO_MIN_INTERVAL: 300,        // 300ms - Minimum interval between undo snapshots
-    CONCURRENT_MOD_CONFLICT: 1000  // 1s - Threshold for concurrent modification detection
+    CONCURRENT_MOD_CONFLICT: 1000, // 1s - Threshold for concurrent modification detection
+    SEARCH_RESULT_ANNOUNCE: 500    // 500ms - Wait for typing to settle before announcing a result count. Announcing per keystroke makes a screen reader unusable while typing
 });
 
 /**
@@ -212,7 +221,12 @@ export const INTERVALS = Object.freeze({
     RECURRING_WATCHER_IDLE: 7200000,    // 2h - Recurring watcher interval when no templates exist
     BACKUP_DAILY: 86400000,             // 24h - Default daily auto-backup interval
     BACKUP_SESSION_MIN: 300000,         // 5min - Minimum gap between auto-backups within a single session
-    BACKUP_TEST_MIN: 300000             // 5min - Minimum gap before re-running backup integrity tests
+    BACKUP_TEST_MIN: 300000,            // 5min - Minimum gap before re-running backup integrity tests
+    // Foreground cadence for the daily auto-uncheck. Only covers the app sitting
+    // open ACROSS the scheduled minute — a backgrounded tab has its timers
+    // throttled or suspended, and visibilitychange is the catch-up for that.
+    DAILY_RESET_TICK: 30000,            // 30s - Daily auto-uncheck check interval (active: at least one routine has it enabled)
+    DAILY_RESET_TICK_IDLE: 7200000      // 2h - Daily auto-uncheck interval when NO routine has it enabled. Mirrors RECURRING_WATCHER_IDLE. Correctness never rests on this tick — init() and visibilitychange both run the same idempotent catch-up check — so a slow idle poll costs nothing but wakeups
 });
 
 /**
@@ -269,12 +283,33 @@ export const SCHEMA = Object.freeze({
     CURRENT_TASK: 2
 });
 
+/**
+ * Default reminder settings — the single source of truth shared by the READER
+ * (the reader in dataAccess.js substitutes this when `customReminders` is absent)
+ * and every WRITER (reminders.updateReminderSettings merges onto it).
+ *
+ * Lives here rather than in dataAccess.js because this module is pure — it imports
+ * nothing — so a writer can depend on the defaults without pulling in the legacy,
+ * stateful data-access layer and its versioned/unversioned module-instance hazard.
+ *
+ * Frozen to prevent accidental mutation; spread when assigning to create a fresh copy.
+ */
+export const DEFAULT_REMINDERS = Object.freeze({
+    enabled: false,
+    indefinite: false,
+    dueDatesReminders: false,
+    repeatCount: 0,
+    frequencyValue: 30,
+    frequencyUnit: "minutes"
+});
+
 export const LIMITS = Object.freeze({
     MAX_TIMEOUT_MS: 2147483647,    // Largest setTimeout delay (~24.8 days). Above this the delay overflows a signed 32-bit int and the timer fires IMMEDIATELY — clamp and re-arm for anything longer (reminders.js scheduleNextReminder)
     UNDO_STACK: 20,                // Max items in undo/redo stack
     UNDO_CACHE_MAX_BYTES: 1000000, // Byte cap on the localStorage undo cache (~1MB of the ~5MB quota shared with main state); oldest snapshots shed first. REAL bytes: consumers compare string length × 2 (UTF-16), matching storageUtils' quota metering
     TASKS_PER_CYCLE: 150,          // Max tasks per cycle/routine
     MAX_SPECIFIC_DATES: 366,       // Max specificDates entries per recurring task (a year of dailies). Shared by BOTH producers — the .mcyc importer (which truncates) and the panel's Add button (which refuses and notifies). Was import-only, so the panel had no cap at all and the two disagreed
+    RECURRING_SEARCH_THRESHOLD: 5,  // Show the recurring panel's search only once the list is long enough to scroll past. Below this a search box is chrome, not help — the whole list is already on screen
     DYNAMIC_CACHE_ENTRIES: 100,    // Max entries in service worker dynamic cache
     NORMALIZATION_CACHE: 50,       // Max entries in recurring settings normalization cache
     ERROR_LOG: 50,                 // Max errors to keep in error log
@@ -300,6 +335,7 @@ export const LIMITS = Object.freeze({
     RECURRING_OVERSLEEP_FACTOR: 2,       // Watch tick counts as overslept when the gap since the last tick exceeds this multiple of the expected interval (device sleep / tab freeze) — the tick then delegates to catch-up
     LAYOUT_DRAG_THRESHOLD: 5,             // px - Task View Layout: pointer travel before drag starts (forgive hover jitter)
     LAYOUT_DOCK_GAP: 20,                  // px - Task View Layout: vertical gap between an anchor element and its docked dependent
+    LAYOUT_MIN_VISIBLE_OVERLAP: 40,       // px - Task View Layout: how much of a restored element must stay inside #task-view, so a layout saved on a wider display can never strand it (and its drag handle) out of reach
     NATIVE_REMINDER_SCHEDULE_MAX: 24      // Max future reminder occurrences pre-scheduled as native notifications (iOS caps pending local notifications at 64 app-wide)
 });
 
@@ -310,6 +346,33 @@ export const LIMITS = Object.freeze({
  * can't slide under the header, footer, or off-screen.
  * @constant {Object}
  */
+/**
+ * Snap-back ("dock") zone geometry per Task View draggable, keyed to the
+ * `key` of each entry in taskViewLayoutManager's DRAGGABLES registry.
+ *
+ * `tolerancePx`   — vertical depth of the snap band. Drop an element with its
+ *                   centre inside and it re-docks instead of staying free.
+ * `widthFraction` — horizontal width of that band as a fraction of the anchor's
+ *                   current width (0..1, centred on the anchor).
+ *
+ * These are feel knobs — how forgiving the snap is — so they live here with the
+ * other tunables rather than inline in the registry.
+ *
+ * Deliberately NOT de-duplicated: two pairs share values today (90/0.8 and
+ * 80/0.7), but they describe unrelated elements. Collapsing them into shared
+ * entries would mean tuning the status bubble silently re-tunes Quick Actions.
+ * @constant {Object}
+ */
+export const LAYOUT_DOCK_ZONES = Object.freeze({
+    // Big, forgiving band — the task card is the anchor everything else docks to,
+    // so homing it should not require precision.
+    TASK_CARD_GROUP:     Object.freeze({ tolerancePx: 160, widthFraction: 0.5 }),
+    ADD_TASK_INPUT:      Object.freeze({ tolerancePx: 80,  widthFraction: 0.7 }),
+    QUICK_ACTIONS_PANEL: Object.freeze({ tolerancePx: 90,  widthFraction: 0.8 }),
+    STATUS_BUBBLE:       Object.freeze({ tolerancePx: 90,  widthFraction: 0.8 }),
+    COMPLETE_CYCLE_BTN:  Object.freeze({ tolerancePx: 80,  widthFraction: 0.7 })
+});
+
 export const LAYOUT_PLAY_AREA_INSETS = Object.freeze({
     top: 90,        // header + mode pill clearance
     bottom: 90,     // nav-dots + footer clearance
@@ -470,6 +533,7 @@ export const Z_INDEX = Object.freeze({
     MODAL: 1000,             // Standard modals
     MODAL_HIGH: 2000,        // High-priority modals (storage, onboarding)
     OVERLAY_CRITICAL: 10000, // Import/migration error overlays
+    LONG_PRESS_HINT: 1001,   // Long-press label bubble — one above MODAL, matching .quick-actions-tooltip's calc(var(--z-modal) + 1). Inside a showModal() dialog the top layer decides instead; see longPressHint._ensureHintElement
     TOUR_OVERLAY: 10500,     // Guided tour overlay
     TOUR_TOOLTIP: 10501,     // Guided tour tooltip
     DEBUG: 99999,            // Debug utilities
@@ -524,7 +588,16 @@ export const STORAGE_KEYS = Object.freeze({
     LITE_CELEBRATED_BADGES: 'miniCycleLite_celebratedBadges',
     LITE_CELEBRATED_CLEARED_BADGES: 'miniCycleLite_celebratedClearedBadges',
     LITE_NOTIFICATIONS: 'miniCycleLiteNotifications',
+    // 'on' | 'off'. Lite's collapsed/expanded view preference — the one Lite key
+    // that was written but never listed here, so backups silently dropped it
+    // (Sep 2026). Lite's autoSave() also READS a "...LiteCount" key that nothing
+    // ever writes — a dead read that always yields 0 — so that one is NOT a key.
+    LITE_FOCUS_MODE: 'miniCycleLiteFocusMode',
     FORCE_FULL_VERSION: 'miniCycleForceFullVersion',
+    // First-run choice screen. Written by the static handler in miniCycle.html
+    // and re-written when a factory reset raises that screen again in place.
+    FIRST_RUN_CHOICE_SESSION: 'miniCycle_firstRunChoice',
+    FIRST_RUN_CHOICE_MADE: 'miniCycle_firstRunChoiceMade',
     CONSOLE_CAPTURE_ENABLED: 'miniCycle_enableAutoConsoleCapture',
     CONSOLE_CAPTURE_BUFFER: 'miniCycle_capturedConsoleBuffer',
     TIME_TRACKER: 'timeTrackerData'
@@ -557,6 +630,7 @@ export const DOM_CLASSES = Object.freeze({
     // ---- Visibility ----
     HIDDEN: 'hidden',
     VISIBLE: 'visible',
+    LONG_PRESS_HINT: 'long-press-hint',
     SHOW: 'show',
     HIDE: 'hide',
     HIDE_LEFT: 'hide-left',    // panel carousel: hidden panel sits left of the active one
@@ -647,6 +721,10 @@ export const DOM_CLASSES = Object.freeze({
     HELP_WINDOW_SIDE: 'help-window-side',
     ONBOARDING_ACTIVE: 'onboarding-active',
     FOCUS_MODE: 'focus-mode',
+    // Focus task card, empty routine (no tasks at all) — drops the card's
+    // chrome so the message sits on the background rather than inside a card
+    // wrapped around nothing. NOT the all-done state, which keeps its card.
+    FOCUS_TASK_EMPTY: 'focus-task-empty',
     FIRST_RUN_WELCOME: 'first-run-welcome',
     FIRST_RUN_WELCOME_VISIBLE: 'first-run-welcome--visible',
     FIRST_RUN_WELCOME_ACTIVE: 'first-run-welcome-active',
@@ -677,6 +755,10 @@ export const DOM_CLASSES = Object.freeze({
     CYCLE_DEMO_DIVIDER: 'cycle-demo__divider',
     CYCLE_DEMO_SUBTITLE: 'cycle-demo__subtitle',
     CYCLE_DEMO_ARROW: 'cycle-demo__arrow',
+    FIRST_RUN_MODE: 'first-run-mode',       // on #app-loader while the choice screen is up
+    MC_FIRST_RUN: 'mc-first-run',           // on <html>; critical.css lays the screen out from it
+    FIRST_RUN_BTN: 'first-run-btn',
+    FIRST_RUN_BTN_CHOSEN: 'is-chosen',
     FIRST_RUN_SPLASH: 'first-run-splash',
     FIRST_RUN_SPLASH_VISIBLE: 'first-run-splash--visible',
     FIRST_RUN_SPLASH_FADING: 'first-run-splash--fading',
@@ -689,6 +771,52 @@ export const DOM_CLASSES = Object.freeze({
     FIXED_HEADER_CONTAINER: 'fixed-header-container',
     DROPDOWN_OPEN: 'dropdown-open',
     REFRESHING: 'refreshing',
+
+    // ---- Modals (generic) ----
+    // The shared dialog shell from styles/components/modals.css. Reusable by any
+    // modal that needs no bespoke chrome — see features/tipArchive.js.
+    MODAL: 'modal',
+    MODAL_CONTENT: 'modal-content',
+
+    // ---- Tip Archive ----
+    // Label span inside a menu button. iconInit.js wraps the icon in its OWN
+    // <span class="icon">, so a module setting button text MUST target this
+    // class — a bare querySelector('span') hits the icon wrapper and wipes the SVG.
+    MENU_ITEM_LABEL: 'menu-item-label',
+    // Bespoke shell + has-corner-logo: the house pattern every other modal uses
+    // (themes / preferences / settings / feedback). Bare .modal-content is a
+    // different visual language and reads as foreign beside them.
+    TIP_ARCHIVE_MODAL_CONTENT: 'tip-archive-modal-content',
+    TIP_ARCHIVE_BODY: 'tip-archive-body',
+    HAS_CORNER_LOGO: 'has-corner-logo',
+    // House class for a modal's primary/close action: full-width, --color-primary.
+    // Used by the reminders, settings and preferences modals.
+    SETTINGS_BTN: 'settings-btn',
+    // ---- Welcome Screen (modules/ui/titleScreen.js) ----
+    // NOTE: deliberately NOT reusing .first-run-choice. critical.css hides it
+    // with `html:not(.mc-first-run) .first-run-choice { display: none }`, and a
+    // returning user never carries that class — the surface would be invisible
+    // to exactly the audience it is built for, with nothing thrown.
+    TITLE_SCREEN: 'title-screen',
+    TITLE_SCREEN_INNER: 'title-screen-inner',
+    TITLE_SCREEN_LOGO: 'title-screen-logo',
+    TITLE_SCREEN_TIP: 'title-screen-tip',
+    TITLE_SCREEN_TAGLINE: 'title-screen-tagline',
+    TITLE_SCREEN_CREDIT: 'title-screen-credit',
+    TITLE_SCREEN_FOOTER: 'title-screen-footer',
+    // Crossfade state on .first-run-usecase-text (critical.css). Not the same as
+    // ACTIVE ('active') above — that one is unrelated task/panel state.
+    IS_ACTIVE: 'is-active',
+    TITLE_SCREEN_ACTIONS: 'title-screen-actions',
+    TITLE_SCREEN_LEGAL: 'title-screen-legal',
+    TIP_ARCHIVE_STAGE: 'tip-archive-stage',
+    TIP_ARCHIVE_TEXT: 'tip-archive-text',
+    TIP_ARCHIVE_KICKER: 'tip-archive-kicker',
+    TIP_ARCHIVE_NAV: 'tip-archive-nav',
+    TIP_ARCHIVE_NAV_BTN: 'tip-archive-nav-btn',
+    TIP_ARCHIVE_PAUSE_BTN: 'tip-archive-pause-btn',
+    TIP_ARCHIVE_POSITION: 'tip-archive-position',
+    TIP_ARCHIVE_FADING: 'tip-archive-fading',
 
     // ---- Empty State ----
     // The empty-state hint varies across TWO axes: which view is active
@@ -847,6 +975,9 @@ export const DOM_CLASSES = Object.freeze({
 export const DOM_IDS = Object.freeze({
     // ---- Task ----
     TASK_LIST: 'taskList',
+    // Developer diagnostic overlay, rendered only when the URL carries
+    // ?layoutdebug=1. See focusMode._renderLayoutDebug().
+    LAYOUT_DEBUG_OVERLAY: 'layout-debug-overlay',
     TASK_INPUT: 'taskInput',
     ADD_TASK_BTN: 'addTaskBtn',
     COMPLETE_ALL: 'completeAll',
@@ -873,9 +1004,30 @@ export const DOM_IDS = Object.freeze({
     MENU_TASK_OPTIONS: 'menu-task-options',
     MENU_ENTER_FOCUS_VIEW: 'menu-enter-focus-view',
     OPEN_USER_MANUAL: 'open-user-manual',
-    EXIT_MINI_CYCLE: 'exit-mini-cycle',
+    OPEN_TIP_ARCHIVE: 'open-tip-archive',
+    MENU_OPEN_TITLE_SCREEN: 'menu-open-title-screen',
+    TITLE_SCREEN: 'title-screen',
+    TITLE_SCREEN_CLOSE: 'title-screen-close',
+    TITLE_SCREEN_CREATE_ROUTINE: 'title-screen-create-routine',
+    TITLE_SCREEN_OPEN_ROUTINE: 'title-screen-open-routine',
+    TITLE_SCREEN_RESTORE_BACKUP: 'title-screen-restore-backup',
+    TITLE_SCREEN_USER_MANUAL: 'title-screen-user-manual',
+    TITLE_SCREEN_WEBSITE: 'title-screen-website',
+    TITLE_SCREEN_TIP_BTN: 'title-screen-tip-btn',
+    TITLE_SCREEN_USECASE_A: 'title-screen-usecase-a',
+    TITLE_SCREEN_USECASE_B: 'title-screen-usecase-b',
+    TIP_ARCHIVE_MODAL: 'tip-archive-modal',
+    TIP_ARCHIVE_CLOSE: 'tip-archive-close',
+    TIP_ARCHIVE_TEXT: 'tip-archive-text',
+    TIP_ARCHIVE_PREV: 'tip-archive-prev',
+    TIP_ARCHIVE_NEXT: 'tip-archive-next',
+    TIP_ARCHIVE_PLAYPAUSE: 'tip-archive-playpause',
+    TIP_ARCHIVE_POSITION: 'tip-archive-position',
     SAVE_AS_MINI_CYCLE: 'save-as-mini-cycle',
     OPEN_MINI_CYCLE: 'open-mini-cycle',
+    // Wired by cycleImportManager (which still matches it by literal string).
+    IMPORT_MINI_CYCLE: 'import-mini-cycle',
+    // Wired by cycleImportManager (which still matches it by literal string).
     CLEAR_MINI_CYCLE_TASKS: 'clear-mini-cycle-tasks',
     DELETE_ALL_MINI_CYCLE_TASKS: 'delete-all-mini-cycle-tasks',
     AUTO_UNCHECK_DAILY_TOGGLE: 'auto-uncheck-daily-toggle',
@@ -913,6 +1065,7 @@ export const DOM_IDS = Object.freeze({
     TOGGLE_QUICK_ACTIONS: 'toggle-quick-actions',
     SETTINGS_TOGGLE_HELP_WINDOW: 'settings-toggle-help-window',
     SETTINGS_TOGGLE_QUICK_ACTIONS: 'settings-toggle-quick-actions',
+    SETTINGS_TOGGLE_ONE_SECTION: 'settings-toggle-one-section',
 
     // ---- Accessibility Settings ----
     TOGGLE_REDUCED_MOTION: 'toggle-reduced-motion',
@@ -1069,6 +1222,9 @@ export const DOM_IDS = Object.freeze({
     FIRST_RUN_WELCOME_NEXT: 'first-run-welcome-next',
     FIRST_RUN_SPLASH: 'first-run-splash',
     FIRST_RUN_SPLASH_TITLE: 'first-run-splash-title',
+    // Static first-run choice screen (create / sample / learn). Lives in
+    // miniCycle.html and is re-shown in place after a factory reset.
+    FIRST_RUN_CHOICE: 'first-run-choice',
     LIVE_REGION: 'live-region',
     SLIDE_LEFT: 'slide-left',
     SLIDE_RIGHT: 'slide-right',
@@ -1112,6 +1268,10 @@ export const DOM_IDS = Object.freeze({
     RECURRING_PANEL_OVERLAY: 'recurring-panel-overlay',
     RECURRING_PANEL: 'recurring-panel',
     RECURRING_TASK_LIST: 'recurring-task-list',
+    RECURRING_SEARCH_ROW: 'recurring-search-row',
+    RECURRING_SEARCH_INPUT: 'recurring-search-input',
+    RECURRING_NO_MATCHES: 'recurring-no-matches',
+    RECURRING_SEARCH_STATUS: 'recurring-search-status',
     RECURRING_SETTINGS_PANEL: 'recurring-settings-panel',
     RECURRING_SUMMARY_PREVIEW: 'recurring-summary-preview',
     CLOSE_RECURRING_PANEL: 'close-recurring-panel',
@@ -1214,7 +1374,6 @@ export const DOM_IDS = Object.freeze({
     REDO_BTN: 'redo-btn',
     UNDO_REDO_BUTTONS: 'undo-redo-buttons',
     MENU_TOGGLE_INPUT_BAR: 'menu-toggle-input-bar',
-    MENU_ENTER_FOCUS_VIEW: 'menu-enter-focus-view',
     MODE_RADIO_GROUP: 'mode-radio-group',
 
     // ---- Quick Actions ----
@@ -1223,6 +1382,7 @@ export const DOM_IDS = Object.freeze({
     QUICK_ACTIONS_MENU_SLOTS: 'quick-actions-menu-slots',
     QUICK_ACTIONS_PICKER_OVERLAY: 'quick-actions-picker-overlay',
     QUICK_ACTIONS_TOOLTIP: 'quick-actions-tooltip',
+    LONG_PRESS_HINT: 'long-press-hint',
     QUICK_ACTIONS_BTN: 'quick-actions-btn',
     // Focus task panel (one task at a time — FOCUS_TASK_VIEW_PLAN Phase 1)
     FOCUS_TASK_PANEL: 'focus-task-panel',
@@ -1230,6 +1390,9 @@ export const DOM_IDS = Object.freeze({
     FOCUS_TASK_TEXT: 'focus-task-text',
     FOCUS_TASK_RECURRING_INDICATOR: 'focus-task-recurring-indicator',
     FOCUS_TASK_DUE_INDICATOR: 'focus-task-due-indicator',
+    // One element for both reset states — they are mutually exclusive by
+    // construction (see getTaskResetIndicator), so a single slot enforces that.
+    FOCUS_TASK_RESET_INDICATOR: 'focus-task-reset-indicator',
     FOCUS_TASK_COMPLETE_BTN: 'focus-task-complete-btn',
     FOCUS_TASK_PREV_BTN: 'focus-task-prev-btn',
     FOCUS_TASK_NEXT_BTN: 'focus-task-next-btn',
@@ -1287,6 +1450,8 @@ export const DOM_IDS = Object.freeze({
     TEST_STATUS_TEXT: 'test-status-text',
     TEST_TIME_ESTIMATE: 'test-time-estimate',
     TEST_RUNNER_TITLE: 'test-runner-title',
+    OPEN_TEST_SUITE_LINK: 'open-test-suite-link',
+    QUICK_TEST_HINT: 'quick-test-hint',
     SEARCH_TEST_RESULTS: 'search-test-results',
     STORAGE_VIEWER_OVERLAY: 'storage-viewer-overlay',
     CLOSE_STORAGE_VIEWER_BTN: 'close-storage-viewer-btn',
@@ -1340,11 +1505,19 @@ export const DOM_SELECTORS = Object.freeze({
     // Fixed header + mode-selector wrapper — measured by headerLayoutManager to
     // publish --header-total-height (note: this is a CLASS, not an id).
     FIXED_HEADER_CONTAINER: '.fixed-header-container',
+    // The band that actually PAINTS at the top (backdrop-filter: blur(5px)).
+    // Not the same as FIXED_HEADER_CONTAINER, which is transparent and also
+    // spans the mode-selector wrapper that focus mode hides. Measured by
+    // headerLayoutManager to publish --focus-chrome-bottom.
+    MINI_CYCLE_HEADER_ROW: '.mini-cycle-header-row',
     COMPLETE_ALL_BTN: '.complete-all-btn',
     EMPTY_STATE_TEXT: '.empty-state-text',
     // Home-view hint shown while the input bar is HIDDEN. The variant classes
     // below are separate tokens (never stacked on the same element), so this
     // selector keeps matching exactly one node — existing callers are unaffected.
+    // The vocabulary-neutral "what is this app" line above the hints. Always
+    // shown alongside whichever hint CSS picks; blacked out in all-tasks-complete.
+    EMPTY_STATE_PITCH: '.empty-state-pitch',
     EMPTY_STATE_HINT: '.empty-state-hint',
     EMPTY_STATE_HINT_VISIBLE: '.empty-state-hint-visible',
     // Shown INSTEAD of the text/hint pair above when body carries
@@ -1403,6 +1576,9 @@ export const DOM_SELECTORS = Object.freeze({
 
     // ---- Modals (general) ----
     DATA_MODAL: '[data-modal]',
+    // Every element whose text is just the current copyright year. Markup carries
+    // a literal year as the no-JS fallback; uiBoot overwrites it at boot.
+    COPYRIGHT_YEAR: '[data-copyright-year]',
     CLOSE_MODAL: '.close-modal',
 
     // ---- Routine Switcher ----
@@ -1614,6 +1790,9 @@ export const DOM_SELECTORS = Object.freeze({
     LOADER_BAR: '.loader-bar',
     LOADING_SPINNER_TEXT: '.loading-spinner-text',
     HEADER_BRANDING: '.header-branding',
+    // Focus view hides the header's chrome children individually rather than the
+    // whole .fixed-header-container, so the branding lockup can stay visible.
+    MODE_SELECTOR_WRAPPER: '.mode-selector-wrapper',
     HEADER_BRANDING_LOGO: '.header-branding .header-logo',
     HEADER_LOGO: '.header-logo',
     PULL_REFRESH_ICON: '.pull-refresh-icon',
@@ -1688,6 +1867,11 @@ export const DATA_SELECTORS = Object.freeze({
     settingsSectionByName: (name) => `.settings-section[data-section="${name}"]`,
     preferencesSectionByName: (name) => `.preferences-section[data-section="${name}"], .preferences-preview-section[data-section="${name}"]`,
     cycleByKey: (key) => `[data-cycle-key="${CSS.escape(key)}"]`,
+    // Educational tips are addressed by element id, not a data attribute.
+    // CSS.escape for the same reason as the builders above: tip ids are author-
+    // supplied strings, and an id starting with a digit or containing a colon is
+    // a thrown DOMException rather than a miss.
+    tipById: (id) => `#tip-${CSS.escape(id)}`,
     // Data attribute names (for setAttribute/removeAttribute/getAttribute)
     ATTR_RECURRING_SETTINGS: 'data-recurring-settings'
 });

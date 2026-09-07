@@ -28,6 +28,7 @@ import { updateThemeColor } from '../features/themeManager.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { applyHelpWindowVisibility, applyQuickActionsVisibility, loadPanelVisibility, resetPanelVisibility } from './panelVisibilityHelpers.js';
 import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
+import { toggleSectionExpanded, setSectionExpanded, collapseAllSections, usesExclusiveSections, isCollapseAllClick } from '../utils/collapsibleSections.js';
 import { normalizeHex } from '../utils/styleValidators.js';
 import { isClickOnNotification } from './modalUtils.js';
 
@@ -379,6 +380,25 @@ export class PreferencesManager {
             return;
         }
 
+        this._wireModalControls(safeAdd);
+        this._wireColorInputs(safeAdd);
+        this._wireVisibilityToggles(safeAdd);
+        this._wireCompletionFeedback(safeAdd);
+        this._wirePresetActions(safeAdd);
+        this._wireBackgroundAndSections(safeAdd);
+    }
+
+    /**
+     * Opening, closing and the themes hand-off.
+     *
+     * Split out of setupEventListeners (Aug 2026), which was 455 lines and
+     * 23% of this file with zero test coverage. Pure code motion: the wiring
+     * snapshot in preferencesManager.tests.js asserts the same (element, event)
+     * pairs are still registered, and names any section that stops running.
+     * @param {Function} safeAdd - the checked addEventListener from DI
+     * @returns {void}
+     */
+    _wireModalControls(safeAdd) {
         // Open preferences button (from menu)
         const openBtn = _deps.getElementById(DOM_IDS.OPEN_PREFERENCES);
         if (openBtn) {
@@ -429,6 +449,19 @@ export class PreferencesManager {
             safeAdd(openThemesBtn, 'click', openThemesBtn._clickHandler);
         }
 
+    }
+
+    /**
+     * Colour pickers, the pattern colour (which regenerates an SVG) and the opacity slider.
+     *
+     * Split out of setupEventListeners (Aug 2026), which was 455 lines and
+     * 23% of this file with zero test coverage. Pure code motion: the wiring
+     * snapshot in preferencesManager.tests.js asserts the same (element, event)
+     * pairs are still registered, and names any section that stops running.
+     * @param {Function} safeAdd - the checked addEventListener from DI
+     * @returns {void}
+     */
+    _wireColorInputs(safeAdd) {
         // Color inputs
         Object.keys(COLOR_MAP).forEach(inputId => {
             const input = _deps.getElementById(inputId);
@@ -460,6 +493,19 @@ export class PreferencesManager {
             safeAdd(patternOpacitySlider, 'input', patternOpacitySlider._inputHandler);
         }
 
+    }
+
+    /**
+     * The eight show/hide switches. Near-identical by design: each reads a setting, writes it back and re-applies. Repetition, not spread — the reason this file is NOT a god module.
+     *
+     * Split out of setupEventListeners (Aug 2026), which was 455 lines and
+     * 23% of this file with zero test coverage. Pure code motion: the wiring
+     * snapshot in preferencesManager.tests.js asserts the same (element, event)
+     * pairs are still registered, and names any section that stops running.
+     * @param {Function} safeAdd - the checked addEventListener from DI
+     * @returns {void}
+     */
+    _wireVisibilityToggles(safeAdd) {
         // Checkbox fill visibility toggle
         const checkboxFillToggle = _deps.getElementById(DOM_IDS.TOGGLE_CHECKBOX_FILL);
         if (checkboxFillToggle) {
@@ -608,6 +654,19 @@ export class PreferencesManager {
             }
         }
 
+    }
+
+    /**
+     * What the user sees when a routine completes: toast choice, animation and toast opt-outs.
+     *
+     * Split out of setupEventListeners (Aug 2026), which was 455 lines and
+     * 23% of this file with zero test coverage. Pure code motion: the wiring
+     * snapshot in preferencesManager.tests.js asserts the same (element, event)
+     * pairs are still registered, and names any section that stops running.
+     * @param {Function} safeAdd - the checked addEventListener from DI
+     * @returns {void}
+     */
+    _wireCompletionFeedback(safeAdd) {
         // Cycle completion toast select
         const toastSelect = _deps.getElementById(DOM_IDS.PREF_TOAST_SELECT);
         if (toastSelect) {
@@ -667,6 +726,19 @@ export class PreferencesManager {
             }
         }
 
+    }
+
+    /**
+     * Buttons that change many settings at once: per-section reset, reset-all, save/import preset, undo, and the quick presets.
+     *
+     * Split out of setupEventListeners (Aug 2026), which was 455 lines and
+     * 23% of this file with zero test coverage. Pure code motion: the wiring
+     * snapshot in preferencesManager.tests.js asserts the same (element, event)
+     * pairs are still registered, and names any section that stops running.
+     * @param {Function} safeAdd - the checked addEventListener from DI
+     * @returns {void}
+     */
+    _wirePresetActions(safeAdd) {
         // Reset buttons
         _deps.querySelectorAll(DOM_SELECTORS.PREFERENCES_RESET_BTN).forEach(btn => {
             const targetId = btn.dataset.target;
@@ -729,6 +801,19 @@ export class PreferencesManager {
             }
         });
 
+    }
+
+    /**
+     * Background image upload/remove/mode, checkmark style, and the collapsible-section chrome.
+     *
+     * Split out of setupEventListeners (Aug 2026), which was 455 lines and
+     * 23% of this file with zero test coverage. Pure code motion: the wiring
+     * snapshot in preferencesManager.tests.js asserts the same (element, event)
+     * pairs are still registered, and names any section that stops running.
+     * @param {Function} safeAdd - the checked addEventListener from DI
+     * @returns {void}
+     */
+    _wireBackgroundAndSections(safeAdd) {
         // Background image upload
         const bgImageUploadBtn = _deps.getElementById(DOM_IDS.BG_IMAGE_UPLOAD_BTN);
         const bgImageUpload = _deps.getElementById(DOM_IDS.BG_IMAGE_UPLOAD);
@@ -773,6 +858,33 @@ export class PreferencesManager {
         this.initCheckmarkStyleOptions();
 
         // Collapsible sections
+        // Click the modal's own chrome (not a section) to close everything. The
+        // live preview is excluded from the sweep for the same reason it is
+        // excluded from the accordion — it is not one of the sections you pick.
+        // Bound to the modal CONTENT, not the scroll area — the title and footer
+        // sit outside that wrapper and a click there is equally "not a section".
+        const modalContent = _deps.querySelector(DOM_SELECTORS.PREFERENCES_MODAL_CONTENT);
+        if (modalContent) {
+            const scrollArea = modalContent;
+            scrollArea._collapseAllClickHandler = (e) => {
+                if (!isCollapseAllClick(e, scrollArea, DOM_SELECTORS.PREFERENCES_SECTION)) return;
+                if (e.target.closest(DOM_SELECTORS.PREFERENCES_PREVIEW_SECTION)) return;
+                // Accordion mode only. With it off the user has deliberately
+                // opened several sections, and a stray tap on padding would wipe
+                // that. This mirrors the carve-out the original light-dismiss
+                // convention already had (uiBoot's handleGlobalClickForTaskButtons
+                // keeps `selected` while the recurring panel is open): sweep
+                // transient decoration, defer to deliberate state.
+                if (!usesExclusiveSections(_deps.AppState?.get()?.settings)) return;
+                collapseAllSections(
+                    _deps.querySelectorAll(DOM_SELECTORS.PREFERENCES_SECTION),
+                    DOM_SELECTORS.PREFERENCES_SECTION_HEADER
+                );
+                this.saveCollapsedStates();
+            };
+            _deps.safeAddEventListener?.(scrollArea, 'click', scrollArea._collapseAllClickHandler);
+        }
+
         _deps.querySelectorAll(DOM_SELECTORS.PREFERENCES_SECTION_HEADER_COLLAPSIBLE).forEach(header => {
             header._clickHandler = () => this.toggleSection(header);
             safeAdd(header, 'click', header._clickHandler);
@@ -1775,12 +1887,21 @@ export class PreferencesManager {
      */
     toggleSection(header) {
         const section = header.closest(DOM_SELECTORS.PREFERENCES_SECTION) || header.closest(DOM_SELECTORS.PREFERENCES_PREVIEW_SECTION);
-        if (section) {
-            section.classList.toggle(DOM_CLASSES.COLLAPSED);
-            const isCollapsed = section.classList.contains(DOM_CLASSES.COLLAPSED);
-            header.setAttribute('aria-expanded', (!isCollapsed).toString());
-            this.saveCollapsedStates();
-        }
+        if (!section) return;
+
+        // The live preview is NOT part of the accordion, in either mode. It
+        // previews the thing you are editing, so closing it when you open a
+        // section would hide the feedback you opened the section to get. It is
+        // excluded by being left out of `siblings`, and toggling it exclusively
+        // would close whichever section you were working in — so it toggles
+        // plainly whatever the setting says.
+        const isPreview = !section.matches(DOM_SELECTORS.PREFERENCES_SECTION);
+        toggleSectionExpanded(section, {
+            siblings: isPreview ? [] : _deps.querySelectorAll(DOM_SELECTORS.PREFERENCES_SECTION),
+            headerSelector: DOM_SELECTORS.PREFERENCES_SECTION_HEADER,
+            exclusive: !isPreview && usesExclusiveSections(_deps.AppState?.get()?.settings)
+        });
+        this.saveCollapsedStates();
     }
 
     /**
@@ -1809,22 +1930,28 @@ export class PreferencesManager {
             }
         }
 
+        if (usesExclusiveSections(state?.settings)) {
+            // Accordion: the settings sections open fully collapsed. The live
+            // preview is deliberately not in this sweep — its own default
+            // (expanded on desktop, collapsed on mobile) is applied above and
+            // must survive.
+            collapseAllSections(
+                _deps.querySelectorAll(DOM_SELECTORS.PREFERENCES_SECTION),
+                DOM_SELECTORS.PREFERENCES_SECTION_HEADER
+            );
+            return;
+        }
+
         if (!collapsedSections) return;
 
-        // Apply saved collapsed states
+        // Accordion off — restore what was left open, as before.
         Object.entries(collapsedSections).forEach(([sectionName, isCollapsed]) => {
             const section = _deps.querySelector(DATA_SELECTORS.preferencesSectionByName(sectionName));
-            if (section) {
-                if (isCollapsed) {
-                    section.classList.add(DOM_CLASSES.COLLAPSED);
-                } else {
-                    section.classList.remove(DOM_CLASSES.COLLAPSED);
-                }
-                const header = section.querySelector(DOM_SELECTORS.PREFERENCES_SECTION_HEADER);
-                if (header) {
-                    header.setAttribute('aria-expanded', (!isCollapsed).toString());
-                }
-            }
+            if (!section) return;
+            setSectionExpanded(section, !isCollapsed, {
+                headerSelector: DOM_SELECTORS.PREFERENCES_SECTION_HEADER,
+                exclusive: false
+            });
         });
     }
 

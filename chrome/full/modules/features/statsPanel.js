@@ -28,10 +28,9 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { UI_TIMEOUTS, CHART, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION } from '../core/constants.js';
 import { getLabel, getIcon } from '../labels/labelResolver.js';
-import { recordActionUsage } from '../ui/actionUsage.js';
 // Pure utility class (no side effects/module state) — safe static import.
 // Owns the ordered panel registry; statsPanel registers its panels into it.
-// See docs/future-work/FOCUS_TASK_VIEW_PLAN.md Phase 0.
+// See docs/archive/FOCUS_TASK_VIEW_PLAN.md Phase 0.
 // PanelCarousel is now imported by statsPanelGestures.js (D-03 split).
 
 // ============================================================================
@@ -86,6 +85,71 @@ const _deps = new Proxy({}, {
  * @param {Object} dependencies - { showNotification, loadMiniCycleData, AppState, appInit, etc. }
  * @returns {void}
  */
+/**
+ * Which badge tier is next, and how far along the CURRENT mode's axis the user is.
+ *
+ * Badges unlock on an OR: achievementsManager.updateBadges() treats a tier as
+ * earned when `cyclesMet || tasksMet`. The progress readout did not honour that.
+ * It scanned only the active mode's axis, so a tier already earned on the OTHER
+ * axis was still advertised as the next one to earn.
+ *
+ * Measured example (tiers are cycles 5/25/50/75/100, tasks 5/125/250/375/500):
+ * clear 5 tasks in To-Do mode → milestone-5 unlocks via tasksMet. Switch to
+ * Cycle mode with 0 cycles → the old code picked the first CYCLE threshold above
+ * 0, which is 5, and said "Next badge: 5 more cycles" for a badge the user
+ * already had. It should name milestone-25.
+ *
+ * So the next tier is the first one unearned on EITHER axis, and the distance to
+ * it is measured on the axis the user is currently working.
+ *
+ * Progress is clamped to 0-100 on purpose: cross-axis unlocking means the
+ * current-axis count can sit BELOW the previous tier's threshold (5 tasks
+ * cleared, 0 cycles completed), which would otherwise produce a negative bar.
+ *
+ * @param {Object} args
+ * @param {number} args.cycles - lifetime cycles completed
+ * @param {number} args.cleared - lifetime tasks cleared
+ * @param {boolean} args.isToDoMode - whether To-Do mode is active
+ * @param {Array} args.tiers - MILESTONES.TIERS (ascending)
+ * @returns {{nextMilestone: number, previousMilestone: number, milestoneProgress: number, allUnlocked: boolean}}
+ */
+export function resolveNextBadgeTier({ cycles = 0, cleared = 0, isToDoMode = false, tiers = [] }) {
+    const axis = (t) => (isToDoMode ? t.tasks : t.cycles);
+    const current = isToDoMode ? cleared : cycles;
+    const earned = (t) => cycles >= t.cycles || cleared >= t.tasks;
+
+    const nextTier = tiers.find(t => !earned(t));
+    const lastTier = tiers.length ? tiers[tiers.length - 1] : null;
+
+    if (!nextTier) {
+        return {
+            nextMilestone: lastTier ? axis(lastTier) : 0,
+            previousMilestone: lastTier ? axis(lastTier) : 0,
+            milestoneProgress: 100,
+            allUnlocked: true
+        };
+    }
+
+    const nextMilestone = axis(nextTier);
+    // Baseline is the highest EARNED tier's threshold on this axis. Using the
+    // earned set (not the axis count) keeps the bar consistent with the tier the
+    // user actually just passed, whichever axis they passed it on.
+    const earnedOnAxis = tiers.filter(earned).map(axis);
+    const previousMilestone = earnedOnAxis.length ? Math.max(...earnedOnAxis) : 0;
+
+    const span = nextMilestone - previousMilestone;
+    const raw = span > 0 ? ((current - previousMilestone) / span) * 100 : 100;
+    // The lower clamp is load-bearing, not boilerplate: because tiers unlock on
+    // an OR, `current` can sit BELOW previousMilestone. Earn tier 5 with 5
+    // cleared tasks, then read the bar in cycle mode with 0 cycles and the
+    // baseline is still 5 — (0 - 5) / (25 - 5) = -25%, a negative bar width.
+    // Removing Math.max(0, …) reintroduces that; it is reachable in normal use,
+    // not just from bad data.
+    const milestoneProgress = Math.min(100, Math.max(0, raw));
+
+    return { nextMilestone, previousMilestone, milestoneProgress, allUnlocked: false };
+}
+
 export function setStatsPanelDependencies(dependencies) {
     di.setDependencies(dependencies);
     // Invalidate cached deps if manager already exists
@@ -368,10 +432,9 @@ export class StatsPanelManager {
             goldenUnlockMessage: getById(DOM_IDS.GOLDEN_UNLOCK_MESSAGE),
             gameUnlockMessage: getById(DOM_IDS.GAME_UNLOCK_MESSAGE),
             themeUnlockStatus: getById(DOM_IDS.THEME_UNLOCK_STATUS),
-            // Theme panel elements
-            openThemesPanel: getById(DOM_IDS.OPEN_THEMES_PANEL),
+            // Theme panel elements. The open/close BUTTONS are deliberately absent —
+            // themeManager binds them; see setupUIEvents.
             get themesModal() { return _deps.getModal('themes'); },
-            closeThemesBtn: getById(DOM_IDS.CLOSE_THEMES_BTN),
             quickDarkToggle: getById(DOM_IDS.QUICK_DARK_TOGGLE)
         };
 
@@ -408,11 +471,10 @@ export class StatsPanelManager {
             handleNavPillClick: this._gestures.handleNavPillClick.bind(this._gestures),
             // UI event handlers
             handleSlideLeftClick: () => this.showTaskView(),
-            handleSlideRightClick: () => {
-                // Slide gesture isn't a mapped button — record stats usage directly.
-                recordActionUsage(_deps.AppState, 'stats');
-                this.showStatsPanel();
-            },
+            // Usage is recorded in statsPanelGestures._onStatsPanelShown, which
+            // every entry point reaches. Recording here too would double-count
+            // this one path in `counts`.
+            handleSlideRightClick: () => this.showStatsPanel(),
             handleSlideArrowKeydown: (e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
@@ -422,9 +484,7 @@ export class StatsPanelManager {
             // Theme event handlers
             handleCurrentRoutineToggle: () => this.handleCurrentRoutineToggle(),
             handleThemeToggleClick: () => this._rewards.handleThemeToggleClick(),
-            handleQuickDarkToggle: () => this.handleQuickDarkToggle(),
-            handleOpenThemesPanel: () => this._rewards.openThemesPanel(),
-            handleCloseThemesPanel: () => this._rewards.closeThemesPanel()
+            handleQuickDarkToggle: () => this.handleQuickDarkToggle()
         };
 
         // NOTE: Gesture events (touch, mouse, wheel, pointer, keyboard) are now
@@ -531,13 +591,18 @@ export class StatsPanelManager {
         }
             */
 
-        // Theme panel buttons
-        if (this.elements.openThemesPanel) {
-            safeAdd(this.elements.openThemesPanel, "click", this.boundHandlers.handleOpenThemesPanel);
-        }
-        if (this.elements.closeThemesBtn) {
-            safeAdd(this.elements.closeThemesBtn, "click", this.boundHandlers.handleCloseThemesPanel);
-        }
+        // The themes modal's open/close buttons are NOT bound here. themeManager owns
+        // them (setupThemesPanelWithData), and binding a second handler to the same
+        // elements made two things depend on listener registration order:
+        //   - themeManager hydrates the modal (renderVocabThemes) only inside its
+        //     `if (!open)` branch, so whichever handler opened the dialog first
+        //     decided whether the content was refreshed at all;
+        //   - this module set `_previousFocus` UNconditionally, so running second it
+        //     overwrote themeManager's capture with an element inside the now-open
+        //     dialog, sending focus into a closed dialog on restore.
+        // Neither surfaced, because renderVocabThemes is also driven centrally by
+        // refreshThemeLabels. One owner per control removes the coin-flip. (Aug 2026
+        // seam audit.)
     }
 
     /**
@@ -704,23 +769,18 @@ export class StatsPanelManager {
         const cycleMilestones = MILESTONES.TIERS.map(t => t.cycles);
         const taskMilestones = MILESTONES.TIERS.map(t => t.tasks);
 
-        let nextMilestone, previousMilestone, milestoneProgress;
-
-        if (isToDoMode) {
-            // To-Do mode: progress based on cleared tasks
-            nextMilestone = taskMilestones.find(m => m > globalTasksCleared) || taskMilestones[taskMilestones.length - 1];
-            previousMilestone = [...taskMilestones].reverse().find(m => m <= globalTasksCleared) || 0;
-            milestoneProgress = previousMilestone === nextMilestone
-                ? 100
-                : ((globalTasksCleared - previousMilestone) / (nextMilestone - previousMilestone)) * 100;
-        } else {
-            // Cycle mode: progress based on completed cycles
-            nextMilestone = cycleMilestones.find(m => m > globalCyclesCompleted) || cycleMilestones[cycleMilestones.length - 1];
-            previousMilestone = [...cycleMilestones].reverse().find(m => m <= globalCyclesCompleted) || 0;
-            milestoneProgress = previousMilestone === nextMilestone
-                ? 100
-                : ((globalCyclesCompleted - previousMilestone) / (nextMilestone - previousMilestone)) * 100;
-        }
+        // Badges unlock on an OR (cyclesMet || tasksMet), so the next target has
+        // to be the first tier unearned on EITHER axis — not the first threshold
+        // above the active axis's count, which re-advertised badges the user had
+        // already earned the other way. See resolveNextBadgeTier().
+        // previousMilestone is deliberately not destructured — the resolver uses
+        // it internally to compute milestoneProgress, and nothing here needs it.
+        const { nextMilestone, milestoneProgress } = resolveNextBadgeTier({
+            cycles: globalCyclesCompleted,
+            cleared: globalTasksCleared,
+            isToDoMode,
+            tiers: MILESTONES.TIERS
+        });
 
         const milestoneProgressPercent = milestoneProgress.toFixed(1) + "%";
 
@@ -1172,13 +1232,6 @@ export class StatsPanelManager {
             this._milestoneHeaderKeydownHandler = null;
             this._milestoneHeaderEl = null;
         }
-        if (this.elements.openThemesPanel) {
-            this.elements.openThemesPanel.removeEventListener("click", this.boundHandlers.handleOpenThemesPanel);
-        }
-        if (this.elements.closeThemesBtn) {
-            this.elements.closeThemesBtn.removeEventListener("click", this.boundHandlers.handleCloseThemesPanel);
-        }
-
         // Remove setupDataReadyListener listeners
         if (this.boundHandlers.handleCycleReady) {
             document.removeEventListener('cycle:ready', this.boundHandlers.handleCycleReady);

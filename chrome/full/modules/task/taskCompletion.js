@@ -23,8 +23,10 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
+import { applyTaskStatusLabel } from './taskUtils.js';
 import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { announce } from '../utils/announce.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -164,21 +166,16 @@ export async function handleTaskCompletionChangeImpl(checkbox, deps = {}) {
                 handleTaskListMovement(taskItem, isCompleted);
             }
 
-            // Update task item aria-label to reflect new status
             const taskText = taskItem.querySelector(DOM_SELECTORS.TASK_TEXT)?.textContent || '';
-            const statusText = isCompleted ? getLabel('nav.completed') : getLabel('nav.notCompleted');
-            const isRecurring = taskItem.classList.contains(DOM_CLASSES.RECURRING);
-            const labelKey = isRecurring ? 'action.taskItemRecurring' : 'action.taskItemLabel';
-            taskItem.setAttribute('aria-label', getLabel(labelKey, { vars: { name: taskText, status: statusText } }));
+
+            // Update task item aria-label to reflect new status
+            applyTaskStatusLabel(taskItem, isCompleted, { name: taskText });
 
             // Announce completion state to screen readers via live region
-            const getElementById = deps.getElementById || _deps.getElementById;
-            const liveRegion = getElementById(DOM_IDS.LIVE_REGION);
-            if (liveRegion) {
-                liveRegion.textContent = isCompleted
-                    ? getLabel('accessibility.taskCompleted', { vars: { name: taskText } })
-                    : getLabel('accessibility.taskUncompleted', { vars: { name: taskText } });
-            }
+            announce(isCompleted
+                ? getLabel('accessibility.taskCompleted', { vars: { name: taskText } })
+                : getLabel('accessibility.taskUncompleted', { vars: { name: taskText } }),
+                { getElementById: deps.getElementById || _deps.getElementById });
         }
 
         // Update help window if available (DI-pure, no window.* fallback)

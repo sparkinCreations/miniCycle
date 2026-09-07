@@ -21,7 +21,19 @@ export const RECURRING_PANEL_HTML = `<!-- Recurring Panel Modal w/ Overlay -->
     </div>
     <div class="recurring-scroll-area">
       <p class="recurring-panel-hint">${getLabel('recurring.panelHint')}</p>
+      <div id="recurring-search-row" class="recurring-search-row hidden">
+        <input type="search" id="recurring-search-input" class="recurring-search-input"
+               name="recurring-search-input" autocomplete="off"
+               placeholder="${getLabel('recurring.searchPlaceholder')}"
+               aria-label="${getLabel('recurring.searchAriaLabel')}"
+               aria-controls="recurring-task-list">
+      </div>
       <ul id="recurring-task-list" role="listbox" aria-label="${getLabel('recurring.ariaTaskList')}"></ul>
+      <div id="recurring-no-matches" class="recurring-no-matches hidden" role="status"></div>
+      <!-- Result count for screen readers. Lives INSIDE the dialog on purpose:
+           showModal() marks everything outside inert, so the body-level
+           #live-region cannot be read while this panel is open (see announce.js). -->
+      <div id="recurring-search-status" class="visually-hidden" role="status" aria-live="polite"></div>
       <div id="recurring-empty-state" class="recurring-empty-state hidden">
         <p>${getLabel('recurring.emptyState')}</p>
       </div>
@@ -623,7 +635,7 @@ export const PREFERENCES_MODAL_HTML = `<!-- Preferences Modal -->
                         <span class="pref-color-icon">&#x2611;&#xFE0F;</span>
                         <label for="pref-checkbox-bg">${getLabel('prefs.checkboxFill')}</label>
                         <span class="toggle-switch pref-toggle">
-                            <input type="checkbox" id="toggle-checkbox-fill" name="toggle-checkbox-fill" checked>
+                            <input type="checkbox" id="toggle-checkbox-fill" name="toggle-checkbox-fill" aria-label="${getLabel('accessibility.toggleCheckboxFill')}" checked>
                             <span class="toggle-slider"></span>
                         </span>
                         <input type="color" id="pref-checkbox-bg" value="#5db567" />
@@ -633,7 +645,7 @@ export const PREFERENCES_MODAL_HTML = `<!-- Preferences Modal -->
                         <span class="pref-color-icon">⬜</span>
                         <label for="pref-checkbox-incomplete-bg">${getLabel('prefs.checkboxEmpty')}</label>
                         <span class="toggle-switch pref-toggle">
-                            <input type="checkbox" id="toggle-checkbox-incomplete" name="toggle-checkbox-incomplete" checked>
+                            <input type="checkbox" id="toggle-checkbox-incomplete" name="toggle-checkbox-incomplete" aria-label="${getLabel('accessibility.toggleCheckboxEmpty')}" checked>
                             <span class="toggle-slider"></span>
                         </span>
                         <input type="color" id="pref-checkbox-incomplete-bg" value="#c8c8c8" />
@@ -838,6 +850,13 @@ export const SETTINGS_MODAL_HTML = `            <!-- Settings Modal -->
                                 <span class="toggle-slider"></span>
                             </span>
                             <span>${getLabel('settings.showQuickActions')}</span>
+                        </label>
+                        <label class="settings-option">
+                            <span class="toggle-switch">
+                                <input type="checkbox" id="settings-toggle-one-section" name="settings-toggle-one-section" checked>
+                                <span class="toggle-slider"></span>
+                            </span>
+                            <span>${getLabel('settings.oneSectionAtATime')}</span>
                         </label>
                         <button id="open-task-options-customizer" class="settings-btn"><span class="icon-text">+/-</span> ${getLabel('settings.addRemoveTaskButtons')}</button>
                     </div>

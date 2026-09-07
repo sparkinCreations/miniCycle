@@ -11,7 +11,7 @@
  * NO legacy fallbacks - strict DI only
  *
  * @module ui/settingsUIManager
- * @see {@link file://../../../docs/developer-guides/DI_PATTERNS.md} - DI patterns
+ * @see {@link file://docs/working-on-code/DI_PATTERNS.md} - DI patterns
  */
 
 /**
@@ -24,6 +24,7 @@ import { getLabel } from '../labels/labelResolver.js';
 import { isValidHex, normalizeFontSize } from '../utils/styleValidators.js';
 import { loadPanelVisibility } from './panelVisibilityHelpers.js';
 import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
+import { toggleSectionExpanded, setSectionExpanded, isSectionExpanded, collapseAllSections, usesExclusiveSections, isCollapseAllClick } from '../utils/collapsibleSections.js';
 import { isClickOnNotification } from './modalUtils.js';
 
 // ============================================================================
@@ -171,6 +172,10 @@ export function setupSettingsMenu() {
 
     const openSettings = (event) => {
         event.stopPropagation();
+        // Re-apply section state on every open, not just at setup. In accordion
+        // mode the modal must open fully collapsed each time; setting it up once
+        // meant the second open still showed whatever was left expanded.
+        loadSettingsCollapsedStates();
         // Usage tracked by the delegated listener (actionUsage.js, OPEN_SETTINGS).
         if (isNativeDialog && !settingsModal.open) {
             settingsModal._previousFocus = document.activeElement;
@@ -255,19 +260,52 @@ function setupSettingsCollapsibleSections() {
     // Cache collapsible sections once and reuse in load/save
     const collapsibleSections = document.querySelectorAll(DOM_SELECTORS.SETTINGS_SECTION_COLLAPSIBLE);
 
-    // Load saved collapsed states using cached sections
+    // Every toggle below routes through this. `exclusive` is a getter, not a
+    // captured boolean: these handlers are bound once and the setting can change
+    // while they are live.
+    const opts = {
+        siblings: collapsibleSections,
+        headerSelector: DOM_SELECTORS.SETTINGS_SECTION_HEADER,
+        get exclusive() {
+            return usesExclusiveSections(_deps.AppState.get()?.settings);
+        }
+    };
+
+    // Put the modal into its opening state (all collapsed)
     loadSettingsCollapsedStates(collapsibleSections);
 
     // Find the settings modal for delegated arrow nav
     const settingsModal = document.querySelector(DOM_SELECTORS.SETTINGS_MODAL);
+
+    // Click the modal's own chrome (not a section) to close everything.
+    // Bound to the scroll area rather than the dialog: a click on the dialog
+    // element itself is the backdrop, which already closes the modal.
+    // Bound to the modal CONTENT, not the scroll area: the title, the tour
+    // banner and the footer all sit outside the scroll area, and a click there
+    // is just as much "not a section" as a click on the padding below.
+    // Not the <dialog> itself — that is the backdrop, which already closes.
+    const modalContent = settingsModal?.querySelector(DOM_SELECTORS.SETTINGS_MODAL_CONTENT);
+    if (modalContent) {
+        replaceStoredEventListener(modalContent, 'click', '__miniCycleSettingsCollapseAllClickHandler', (e) => {
+            if (!isCollapseAllClick(e, modalContent, DOM_SELECTORS.SETTINGS_SECTION)) return;
+                // Accordion mode only. With it off the user has deliberately
+                // opened several sections, and a stray tap on padding would wipe
+                // that. This mirrors the carve-out the original light-dismiss
+                // convention already had (uiBoot's handleGlobalClickForTaskButtons
+                // keeps `selected` while the recurring panel is open): sweep
+                // transient decoration, defer to deliberate state.
+            if (!usesExclusiveSections(_deps.AppState.get()?.settings)) return;
+            collapseAllSections(collapsibleSections, DOM_SELECTORS.SETTINGS_SECTION_HEADER);
+            saveSettingsCollapsedStates(collapsibleSections);
+        });
+    }
 
     sectionHeaders.forEach(header => {
         replaceStoredEventListener(header, 'click', '__miniCycleSettingsSectionClickHandler', (e) => {
             e.stopPropagation();
             const section = header.closest(DOM_SELECTORS.SETTINGS_SECTION);
             if (section) {
-                section.classList.toggle(DOM_CLASSES.COLLAPSED);
-                header.setAttribute('aria-expanded', String(!section.classList.contains(DOM_CLASSES.COLLAPSED)));
+                toggleSectionExpanded(section, opts);
                 saveSettingsCollapsedStates(collapsibleSections);
             }
         });
@@ -277,23 +315,20 @@ function setupSettingsCollapsibleSections() {
                 e.preventDefault();
                 const section = header.closest(DOM_SELECTORS.SETTINGS_SECTION);
                 if (section) {
-                    section.classList.toggle(DOM_CLASSES.COLLAPSED);
-                    header.setAttribute('aria-expanded', String(!section.classList.contains(DOM_CLASSES.COLLAPSED)));
+                    toggleSectionExpanded(section, opts);
                     saveSettingsCollapsedStates(collapsibleSections);
                 }
             } else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
                 const section = header.closest(DOM_SELECTORS.SETTINGS_SECTION);
                 if (!section) return;
-                const isCollapsed = section.classList.contains(DOM_CLASSES.COLLAPSED);
+                const isCollapsed = !isSectionExpanded(section);
                 if (e.key === 'ArrowRight' && isCollapsed) {
                     e.preventDefault();
-                    section.classList.remove(DOM_CLASSES.COLLAPSED);
-                    header.setAttribute('aria-expanded', 'true');
+                    setSectionExpanded(section, true, opts);
                     saveSettingsCollapsedStates(collapsibleSections);
                 } else if (e.key === 'ArrowLeft' && !isCollapsed) {
                     e.preventDefault();
-                    section.classList.add(DOM_CLASSES.COLLAPSED);
-                    header.setAttribute('aria-expanded', 'false');
+                    setSectionExpanded(section, false, opts);
                     saveSettingsCollapsedStates(collapsibleSections);
                 }
             } else if (settingsModal && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
@@ -311,26 +346,27 @@ function setupSettingsCollapsibleSections() {
  * @returns {void}
  */
 function loadSettingsCollapsedStates(sections) {
-    const state = _deps.AppState?.get();
-    const collapsedStates = state?.settings?.settingsCollapsedSections;
+    const state = _deps.AppState.get();
+    const sectionElements = sections || document.querySelectorAll(DOM_SELECTORS.SETTINGS_SECTION_COLLAPSIBLE);
 
+    if (usesExclusiveSections(state?.settings)) {
+        // Accordion: open fully collapsed, ignoring the stored map. The map is
+        // still written on every toggle, so turning the setting off restores the
+        // old behaviour from real data rather than a blank slate.
+        collapseAllSections(sectionElements, DOM_SELECTORS.SETTINGS_SECTION_HEADER);
+        return;
+    }
+
+    const collapsedStates = state?.settings?.settingsCollapsedSections;
     if (!collapsedStates) return;
 
-    const sectionElements = sections || document.querySelectorAll(DOM_SELECTORS.SETTINGS_SECTION_COLLAPSIBLE);
     sectionElements.forEach(section => {
         const sectionName = section.dataset.section;
         if (sectionName && collapsedStates[sectionName] !== undefined) {
-            const isCollapsed = collapsedStates[sectionName];
-            if (isCollapsed) {
-                section.classList.add(DOM_CLASSES.COLLAPSED);
-            } else {
-                section.classList.remove(DOM_CLASSES.COLLAPSED);
-            }
-            // Sync aria-expanded on the header
-            const sectionHeader = section.querySelector(DOM_SELECTORS.SETTINGS_SECTION_HEADER_COLLAPSIBLE);
-            if (sectionHeader) {
-                sectionHeader.setAttribute('aria-expanded', String(!isCollapsed));
-            }
+            setSectionExpanded(section, !collapsedStates[sectionName], {
+                headerSelector: DOM_SELECTORS.SETTINGS_SECTION_HEADER,
+                exclusive: false
+            });
         }
     });
 }
@@ -350,7 +386,7 @@ function saveSettingsCollapsedStates(sections) {
         }
     });
 
-    _deps.AppState?.update(state => {
+    _deps.AppState.update(state => {
         if (!state.settings) state.settings = {};
         state.settings.settingsCollapsedSections = collapsedStates;
     });
@@ -398,12 +434,12 @@ export function setupMoveArrowsToggle() {
 
     // Load current state
     let moveArrowsEnabled = false;
-    const AppState = _deps.AppState?.();
+    const AppState = _deps.AppState();
     if (AppState?.isReady?.()) {
         const currentState = AppState.get();
         moveArrowsEnabled = currentState?.ui?.moveArrowsVisible || false;
     } else {
-        const schemaData = _deps.loadMiniCycleData?.();
+        const schemaData = _deps.loadMiniCycleData();
         moveArrowsEnabled = schemaData?.settings?.showMoveArrows || false;
     }
 
@@ -412,7 +448,7 @@ export function setupMoveArrowsToggle() {
     moveArrowsToggle._changeHandler = async () => {
         const enabled = moveArrowsToggle.checked;
 
-        const AppState = _deps.AppState?.();
+        const AppState = _deps.AppState();
         if (AppState?.isReady?.()) {
             await AppState.update(state => {
                 if (!state.ui) state.ui = {};
@@ -420,7 +456,7 @@ export function setupMoveArrowsToggle() {
             }, true);
         } else {
             console.error('AppState not ready - setting not saved');
-            _deps.showNotification?.(getLabel('notify.settingSaveFailed'), 'error');
+            _deps.showNotification(getLabel('notify.settingSaveFailed'), 'error');
             moveArrowsToggle.checked = !enabled;
             return;
         }
@@ -459,7 +495,7 @@ export function setupThreeDotsToggle() {
     const threeDotsToggle = document.getElementById(DOM_IDS.TOGGLE_THREE_DOTS);
     if (!threeDotsToggle) return;
 
-    const schemaData = _deps.loadMiniCycleData?.();
+    const schemaData = _deps.loadMiniCycleData();
     if (!schemaData) {
         console.error('Schema 2.5 data required for three dots toggle');
         return;
@@ -472,7 +508,7 @@ export function setupThreeDotsToggle() {
     threeDotsToggle._changeHandler = async () => {
         const enabled = threeDotsToggle.checked;
 
-        const AppState = _deps.AppState?.();
+        const AppState = _deps.AppState();
         if (AppState?.isReady?.()) {
             await AppState.update(state => {
                 if (!state.settings) state.settings = {};
@@ -480,7 +516,7 @@ export function setupThreeDotsToggle() {
             }, true);
         } else {
             console.error('AppState not ready - setting not saved');
-            _deps.showNotification?.(getLabel('notify.settingSaveFailed'), 'error');
+            _deps.showNotification(getLabel('notify.settingSaveFailed'), 'error');
             threeDotsToggle.checked = !enabled;
             return;
         }
@@ -492,7 +528,7 @@ export function setupThreeDotsToggle() {
         // Show tip when disabling on touch devices
         if (!enabled && ('ontouchstart' in window)) {
             setTimeout(() => {
-                _deps.showNotification?.('💡 ' + getLabel('notify.threeDotsDisabledTip'), 'info', UI_TIMEOUTS.NOTIFICATION_EXTENDED);
+                _deps.showNotification('💡 ' + getLabel('notify.threeDotsDisabledTip'), 'info', UI_TIMEOUTS.NOTIFICATION_EXTENDED);
             }, 300);
         }
     };
@@ -503,6 +539,57 @@ export function setupThreeDotsToggle() {
 /**
  * Setup completed dropdown toggle
  */
+/**
+ * Toggle: "Open one menu section at a time".
+ *
+ * One switch for the main menu, the settings modal and the personalization
+ * modal — nobody wants the menu to accordion while settings remembers.
+ *
+ * ON  — one section open at a time, every surface opens fully collapsed.
+ * OFF — the pre-v2.452 behaviour: open as many as you like, and each surface
+ *       reopens showing whatever you left open.
+ *
+ * Takes effect the next time each surface OPENS, deliberately. Applying it live
+ * would collapse the Display section out from under the finger that just
+ * flipped this toggle.
+ *
+ * Persistence is unaffected either way: every surface keeps writing its
+ * *CollapsedSections map on each toggle, so switching this off restores the old
+ * behaviour from real data rather than a blank slate.
+ * @returns {void}
+ */
+export function setupOneSectionAtATimeToggle() {
+    if (!_deps.safeAddEventListener) {
+        console.error('SettingsUIManager: safeAddEventListener dependency not injected');
+        return;
+    }
+
+    const toggle = document.getElementById(DOM_IDS.SETTINGS_TOGGLE_ONE_SECTION);
+    if (!toggle) return;
+
+    const AppState = _deps.AppState();
+    if (AppState?.isReady?.()) {
+        toggle.checked = usesExclusiveSections(AppState.get()?.settings);
+    }
+
+    toggle._changeHandler = async () => {
+        const enabled = toggle.checked;
+        const AppState = _deps.AppState();
+        if (!AppState?.isReady?.()) {
+            console.error('AppState not ready - setting not saved');
+            _deps.showNotification(getLabel('notify.settingSaveFailed'), 'error');
+            toggle.checked = !enabled;
+            return;
+        }
+        await AppState.update(state => {
+            if (!state.settings) state.settings = {};
+            state.settings.oneMenuSectionAtATime = enabled;
+        }, true);
+    };
+
+    _deps.safeAddEventListener(toggle, 'change', toggle._changeHandler);
+}
+
 export function setupCompletedDropdownToggle() {
     // ✅ Idempotency guard
     if (_initialized.completedDropdownToggle) {
@@ -520,7 +607,7 @@ export function setupCompletedDropdownToggle() {
     if (!completedDropdownToggle) return;
 
     let completedDropdownEnabled = false;
-    const AppState = _deps.AppState?.();
+    const AppState = _deps.AppState();
     if (AppState?.isReady?.()) {
         const currentState = AppState.get();
         completedDropdownEnabled = currentState?.settings?.showCompletedDropdown || false;
@@ -531,10 +618,10 @@ export function setupCompletedDropdownToggle() {
     completedDropdownToggle._changeHandler = async () => {
         const enabled = completedDropdownToggle.checked;
 
-        const AppState = _deps.AppState?.();
+        const AppState = _deps.AppState();
         if (!AppState?.isReady?.()) {
             console.error('AppState not ready - setting not saved');
-            _deps.showNotification?.(getLabel('notify.settingSaveFailed'), 'error');
+            _deps.showNotification(getLabel('notify.settingSaveFailed'), 'error');
             completedDropdownToggle.checked = !enabled;
             return;
         }
@@ -583,7 +670,7 @@ export function setupHelpWindowToggle() {
     if (!toggle) return;
 
     // Load current state
-    const AppState = _deps.AppState?.();
+    const AppState = _deps.AppState();
     if (AppState?.isReady?.()) {
         const currentState = AppState.get();
         loadPanelVisibility(currentState?.settings?.customColors);
@@ -592,7 +679,7 @@ export function setupHelpWindowToggle() {
     toggle._changeHandler = async () => {
         const visible = toggle.checked;
 
-        const AppState = _deps.AppState?.();
+        const AppState = _deps.AppState();
         if (AppState?.isReady?.()) {
             await AppState.update(state => {
                 if (!state.settings) state.settings = {};
@@ -600,7 +687,7 @@ export function setupHelpWindowToggle() {
                 state.settings.customColors.showHelpWindow = visible;
             }, true);
         } else {
-            _deps.showNotification?.(getLabel('notify.settingSaveFailed'), 'error');
+            _deps.showNotification(getLabel('notify.settingSaveFailed'), 'error');
             toggle.checked = !visible;
             return;
         }
@@ -631,7 +718,7 @@ export function setupQuickActionsToggle() {
     if (!toggle) return;
 
     // Load current state
-    const AppState = _deps.AppState?.();
+    const AppState = _deps.AppState();
     if (AppState?.isReady?.()) {
         const currentState = AppState.get();
         loadPanelVisibility(currentState?.settings?.customColors);
@@ -640,7 +727,7 @@ export function setupQuickActionsToggle() {
     toggle._changeHandler = async () => {
         const visible = toggle.checked;
 
-        const AppState = _deps.AppState?.();
+        const AppState = _deps.AppState();
         if (AppState?.isReady?.()) {
             await AppState.update(state => {
                 if (!state.settings) state.settings = {};
@@ -648,7 +735,7 @@ export function setupQuickActionsToggle() {
                 state.settings.customColors.showQuickActions = visible;
             }, true);
         } else {
-            _deps.showNotification?.(getLabel('notify.settingSaveFailed'), 'error');
+            _deps.showNotification(getLabel('notify.settingSaveFailed'), 'error');
             toggle.checked = !visible;
             return;
         }
@@ -678,7 +765,7 @@ export function setupScrollToNewTaskToggle() {
 
     // Default to true (enabled) if not set
     let scrollEnabled = true;
-    const AppState = _deps.AppState?.();
+    const AppState = _deps.AppState();
     if (AppState?.isReady?.()) {
         const currentState = AppState.get();
         // Use nullish coalescing - default to true if undefined
@@ -690,7 +777,7 @@ export function setupScrollToNewTaskToggle() {
     scrollToggle._changeHandler = async () => {
         const enabled = scrollToggle.checked;
 
-        const AppState = _deps.AppState?.();
+        const AppState = _deps.AppState();
         if (AppState?.isReady?.()) {
             await AppState.update(state => {
                 if (!state.settings) state.settings = {};
@@ -698,7 +785,7 @@ export function setupScrollToNewTaskToggle() {
             }, true);
         } else {
             console.error('AppState not ready - setting not saved');
-            _deps.showNotification?.(getLabel('notify.settingSaveFailed'), 'error');
+            _deps.showNotification(getLabel('notify.settingSaveFailed'), 'error');
             scrollToggle.checked = !enabled;
             return;
         }
@@ -722,7 +809,7 @@ export function setupScrollOnLoadToggle() {
 
     // Default to false (disabled for performance)
     let scrollEnabled = false;
-    const AppState = _deps.AppState?.();
+    const AppState = _deps.AppState();
     if (AppState?.isReady?.()) {
         const currentState = AppState.get();
         scrollEnabled = currentState?.settings?.scrollOnLoad || false;
@@ -733,7 +820,7 @@ export function setupScrollOnLoadToggle() {
     scrollToggle._changeHandler = async () => {
         const enabled = scrollToggle.checked;
 
-        const AppState = _deps.AppState?.();
+        const AppState = _deps.AppState();
         if (AppState?.isReady?.()) {
             await AppState.update(state => {
                 if (!state.settings) state.settings = {};
@@ -741,7 +828,7 @@ export function setupScrollOnLoadToggle() {
             }, true);
         } else {
             console.error('AppState not ready - setting not saved');
-            _deps.showNotification?.(getLabel('notify.settingSaveFailed'), 'error');
+            _deps.showNotification(getLabel('notify.settingSaveFailed'), 'error');
             scrollToggle.checked = !enabled;
             return;
         }
@@ -777,10 +864,10 @@ export function setupDebugModeToggle() {
 
         if (enabled) {
             _deps.enableDebug?.();
-            _deps.showNotification?.(getLabel('notify.debugEnabled'), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
+            _deps.showNotification(getLabel('notify.debugEnabled'), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
         } else {
             _deps.disableDebug?.();
-            _deps.showNotification?.(getLabel('notify.debugDisabled'), 'info', UI_TIMEOUTS.NOTIFICATION_LONG);
+            _deps.showNotification(getLabel('notify.debugDisabled'), 'info', UI_TIMEOUTS.NOTIFICATION_LONG);
         }
     };
 
@@ -814,16 +901,16 @@ export function setupResetRecurringButton() {
             time: null
         };
 
-        const AppState = _deps.AppState?.();
+        const AppState = _deps.AppState();
         if (AppState?.isReady?.()) {
             await AppState.update(state => {
                 if (!state.settings) state.settings = {};
                 state.settings.defaultRecurringSettings = defaultSettings;
             }, true);
-            _deps.showNotification?.(getLabel('notify.recurringDefaultReset'), "success");
+            _deps.showNotification(getLabel('notify.recurringDefaultReset'), "success");
         } else {
             console.error('AppState not ready - settings not saved');
-            _deps.showNotification?.(getLabel('notify.resetDefaultsFailed'), "error");
+            _deps.showNotification(getLabel('notify.resetDefaultsFailed'), "error");
         }
     };
 
@@ -857,7 +944,7 @@ export function setupResetAchievementProgressButton() {
         // Use confirmation modal if available, otherwise use browser confirm
         const doReset = async () => {
 
-            const AppState = _deps.AppState?.();
+            const AppState = _deps.AppState();
             if (AppState?.isReady?.()) {
                 await AppState.update(state => {
                     // Reset global achievement tracking
@@ -880,10 +967,10 @@ export function setupResetAchievementProgressButton() {
                 // Refresh stats panel to reflect changes
                 _deps.updateStatsPanel?.();
 
-                _deps.showNotification?.(getLabel('notify.achievementReset'), "success");
+                _deps.showNotification(getLabel('notify.achievementReset'), "success");
             } else {
                 console.error('AppState not ready - achievement reset failed');
-                _deps.showNotification?.(getLabel('notify.achievementResetFailed'), "error");
+                _deps.showNotification(getLabel('notify.achievementResetFailed'), "error");
             }
         };
 
@@ -906,7 +993,7 @@ export function setupResetAchievementProgressButton() {
                     if (confirmed) {
                         await doReset();
                     } else {
-                        _deps.showNotification?.(getLabel('notify.achievementResetCancelled'), "info", UI_TIMEOUTS.NOTIFICATION_SHORT);
+                        _deps.showNotification(getLabel('notify.achievementResetCancelled'), "info", UI_TIMEOUTS.NOTIFICATION_SHORT);
                     }
                 }
             });
@@ -949,7 +1036,7 @@ export function setupClearUndoHistoryButton() {
             // (No undoSizeBytes zeroing anymore — the field lost its only
             // reader in drift-review C-09 and is no longer written anywhere.)
             _deps.updateHelpWindow?.();
-            _deps.showNotification?.(getLabel('notify.undoHistoryCleared'), 'success');
+            _deps.showNotification(getLabel('notify.undoHistoryCleared'), 'success');
         };
 
         if (showConfirmationModal) {
@@ -996,9 +1083,9 @@ export function setupRetakeGuidedTourButton() {
     if (!btn) return;
 
     btn._clickHandler = async () => {
-        const appState = _deps.AppState?.();
+        const appState = _deps.AppState();
         if (!appState?.isReady?.()) {
-            _deps.showNotification?.(getLabel('notify.appStateNotReady'), 'error');
+            _deps.showNotification(getLabel('notify.appStateNotReady'), 'error');
             return;
         }
 
@@ -1026,7 +1113,7 @@ export function setupRetakeGuidedTourButton() {
         document.getElementById(DOM_IDS.CLOSE_SETTINGS)?.click();
 
         // Ask user if they want to start the tour instead of launching immediately
-        _deps.showNotification?.(
+        _deps.showNotification(
             getLabel('tour.toursReset'),
             'info',
             null,
@@ -1047,7 +1134,7 @@ export function setupRetakeGuidedTourButton() {
  */
 export async function syncCurrentSettingsToStorage() {
 
-    const schemaData = _deps.loadMiniCycleData?.();
+    const schemaData = _deps.loadMiniCycleData();
 
     if (!schemaData) {
         console.error('Schema 2.5 data required for syncCurrentSettingsToStorage');
@@ -1068,7 +1155,7 @@ export async function syncCurrentSettingsToStorage() {
         return;
     }
 
-    const AppState = _deps.AppState?.();
+    const AppState = _deps.AppState();
     if (AppState?.isReady?.()) {
         await AppState.update(state => {
             const cycle = state?.data?.cycles?.[activeCycle];
@@ -1113,7 +1200,7 @@ export function setupReducedMotionToggle() {
     const toggle = document.getElementById(DOM_IDS.TOGGLE_REDUCED_MOTION);
     if (!toggle) return;
 
-    const schemaData = _deps.loadMiniCycleData?.();
+    const schemaData = _deps.loadMiniCycleData();
     const enabled = schemaData?.settings?.reducedMotion || false;
     toggle.checked = enabled;
     document.body.classList.toggle(DOM_CLASSES.REDUCED_MOTION, enabled);
@@ -1122,7 +1209,7 @@ export function setupReducedMotionToggle() {
     toggle._changeHandler = async () => {
         const enabled = toggle.checked;
 
-        const AppState = _deps.AppState?.();
+        const AppState = _deps.AppState();
         if (AppState?.isReady?.()) {
             await AppState.update(state => {
                 if (!state.settings) state.settings = {};
@@ -1130,7 +1217,7 @@ export function setupReducedMotionToggle() {
             }, true);
         } else {
             console.error('AppState not ready - setting not saved');
-            _deps.showNotification?.(getLabel('notify.settingSaveFailed'), 'error');
+            _deps.showNotification(getLabel('notify.settingSaveFailed'), 'error');
             toggle.checked = !enabled;
             return;
         }
@@ -1138,7 +1225,7 @@ export function setupReducedMotionToggle() {
         document.body.classList.toggle(DOM_CLASSES.REDUCED_MOTION, enabled);
         document.documentElement.classList.toggle(DOM_CLASSES.REDUCED_MOTION, enabled);
 
-        _deps.showNotification?.(
+        _deps.showNotification(
             enabled ? getLabel('notify.reducedMotionEnabled') : getLabel('notify.reducedMotionDisabled'),
             'info',
             UI_TIMEOUTS.NOTIFICATION_SHORT
@@ -1168,7 +1255,7 @@ export function setupHighContrastToggle() {
     const toggle = document.getElementById(DOM_IDS.TOGGLE_HIGH_CONTRAST);
     if (!toggle) return;
 
-    const schemaData = _deps.loadMiniCycleData?.();
+    const schemaData = _deps.loadMiniCycleData();
     const enabled = schemaData?.settings?.highContrast || false;
     toggle.checked = enabled;
     document.body.classList.toggle(DOM_CLASSES.HIGH_CONTRAST, enabled);
@@ -1176,7 +1263,7 @@ export function setupHighContrastToggle() {
     toggle._changeHandler = async () => {
         const enabled = toggle.checked;
 
-        const AppState = _deps.AppState?.();
+        const AppState = _deps.AppState();
         if (AppState?.isReady?.()) {
             await AppState.update(state => {
                 if (!state.settings) state.settings = {};
@@ -1184,14 +1271,14 @@ export function setupHighContrastToggle() {
             }, true);
         } else {
             console.error('AppState not ready - setting not saved');
-            _deps.showNotification?.(getLabel('notify.settingSaveFailed'), 'error');
+            _deps.showNotification(getLabel('notify.settingSaveFailed'), 'error');
             toggle.checked = !enabled;
             return;
         }
 
         document.body.classList.toggle(DOM_CLASSES.HIGH_CONTRAST, enabled);
 
-        _deps.showNotification?.(
+        _deps.showNotification(
             enabled ? getLabel('notify.highContrastEnabled') : getLabel('notify.highContrastDisabled'),
             'info',
             UI_TIMEOUTS.NOTIFICATION_SHORT
@@ -1221,7 +1308,7 @@ export function setupFontSizeSelect() {
     const select = document.getElementById(DOM_IDS.FONT_SIZE_SELECT);
     if (!select) return;
 
-    const schemaData = _deps.loadMiniCycleData?.();
+    const schemaData = _deps.loadMiniCycleData();
     const savedSize = schemaData?.settings?.fontSize || String(FONT_SIZE.DEFAULT_PX);
     select.value = savedSize;
     // Validate before it reaches setProperty — settings.fontSize is a plain
@@ -1235,7 +1322,7 @@ export function setupFontSizeSelect() {
     select._changeHandler = async () => {
         const size = select.value;
 
-        const AppState = _deps.AppState?.();
+        const AppState = _deps.AppState();
         if (AppState?.isReady?.()) {
             await AppState.update(state => {
                 if (!state.settings) state.settings = {};
@@ -1243,7 +1330,7 @@ export function setupFontSizeSelect() {
             }, true);
         } else {
             console.error('AppState not ready - setting not saved');
-            _deps.showNotification?.(getLabel('notify.settingSaveFailed'), 'error');
+            _deps.showNotification(getLabel('notify.settingSaveFailed'), 'error');
             select.value = String(FONT_SIZE.DEFAULT_PX);
             return;
         }
@@ -1258,7 +1345,7 @@ export function setupFontSizeSelect() {
         }
 
         const labelKey = FONT_SIZE_LABELS[size] || 'settings.fontSizeDefault';
-        _deps.showNotification?.(
+        _deps.showNotification(
             getLabel('notify.fontSizeChanged', { vars: { size: getLabel(labelKey) } }),
             'info',
             UI_TIMEOUTS.NOTIFICATION_SHORT
@@ -1282,7 +1369,7 @@ export function setupNotificationsToggle() {
     const toggle = document.getElementById(DOM_IDS.TOGGLE_NOTIFICATIONS);
     if (!toggle) return;
 
-    const schemaData = _deps.loadMiniCycleData?.();
+    const schemaData = _deps.loadMiniCycleData();
     // Default true — notifications on unless user has explicitly disabled
     const enabled = schemaData?.settings?.notificationsEnabled ?? true;
     toggle.checked = enabled;
@@ -1290,20 +1377,20 @@ export function setupNotificationsToggle() {
     toggle._changeHandler = async () => {
         const enabled = toggle.checked;
 
-        const AppState = _deps.AppState?.();
+        const AppState = _deps.AppState();
         if (AppState?.isReady?.()) {
             await AppState.update(state => {
                 if (!state.settings) state.settings = {};
                 state.settings.notificationsEnabled = enabled;
             }, true);
         } else {
-            _deps.showNotification?.(getLabel('notify.settingSaveFailed'), 'error');
+            _deps.showNotification(getLabel('notify.settingSaveFailed'), 'error');
             toggle.checked = !enabled;
             return;
         }
 
         // Always show this one confirmation regardless of new state
-        _deps.showNotification?.(
+        _deps.showNotification(
             enabled ? getLabel('notify.notificationsEnabled') : getLabel('notify.notificationsDisabled'),
             'info',
             UI_TIMEOUTS.NOTIFICATION_SHORT
@@ -1321,7 +1408,7 @@ export function setupNotificationsToggle() {
  *    its individual color across reloads.
  */
 export function applyPriorityColor() {
-    const schemaData = _deps.loadMiniCycleData?.();
+    const schemaData = _deps.loadMiniCycleData();
     if (!schemaData) return;
 
     // 1. Global default — validated here rather than trusted from upstream.
@@ -1356,6 +1443,7 @@ export function initAllToggles() {
     setupCompletedDropdownToggle();
     setupHelpWindowToggle();
     setupQuickActionsToggle();
+    setupOneSectionAtATimeToggle();
     setupScrollToNewTaskToggle();
     setupScrollOnLoadToggle();
     setupDebugModeToggle();

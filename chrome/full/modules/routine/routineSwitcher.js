@@ -12,7 +12,7 @@
  * - Undo/redo stack management on switch
  *
  * @module routine/routineSwitcher
- * @see {@link file://../../../docs/developer-guides/DATA_SCHEMA_GUIDE.md} - Schema reference
+ * @see {@link file://docs/reference/DATA_SCHEMA_GUIDE.md} - Schema reference
  */
 
 /**
@@ -25,7 +25,13 @@ import { createDIModule, optional } from '../core/diBase.js';
 import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, APP_VERSION } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
+import { attachLongPressHint } from '../utils/longPressHint.js';
 import { buildMcycPayload } from '../utils/mcycPayload.js';
+import * as themePicker from './routineSwitcherThemePicker.js';
+import * as preview from './routineSwitcherPreview.js';
+import * as listTransforms from './routineSwitcherListTransforms.js';
+import { validateAndRepairCycleData } from './routineSwitcherRepair.js';
+import { RoutineSwitcherActions } from './routineSwitcherActions.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -53,12 +59,16 @@ const di = createDIModule('RoutineSwitcher', {
     showConfirmationModal: optional(null),
     sanitizeInput: optional((str) => str),
     loadMiniCycle: optional(null),
-    updateProgressBar: optional(() => {}),
-    updateStatsPanel: optional(() => {}),
-    checkCompleteAllButton: optional(() => {}),
+    // No post-switch UI refresh deps here on purpose. Switching delegates to
+    // loadMiniCycle(), and routineLoader's updateDependentComponents() already
+    // fires updateProgressBar / checkCompleteAllButton / updateStatsPanel /
+    // updateMainMenuHeader / refreshThemeLabels for the newly active routine.
+    // This module declared updateProgressBar, updateStatsPanel,
+    // checkCompleteAllButton, updateUndoRedoButtons and initialSetup and never
+    // called any of them — removed Aug 2026, after the undeclared-dep access audit
+    // flagged the two that had no manifest entry either. If a refresh ever IS
+    // needed here, add the call, the schema entry and the manifest entry together.
     updateReminderButtons: optional(() => {}),
-    updateUndoRedoButtons: optional(() => {}),
-    initialSetup: optional(() => {}),
     showCycleCreationModal: optional(() => {}),
     getElementById: optional((id) => document.getElementById(id)),
     querySelector: optional((sel) => document.querySelector(sel)),
@@ -112,8 +122,24 @@ export class RoutineSwitcher {
         // drops/moves the highlight can't make a destructive action target the wrong routine.
         this._selectedCycleKey = null;
 
+        // Handed to routineSwitcherPreview so the review dialog can read the
+        // switcher's selection without the sub-module owning that state.
+        // Constructed here, not in an async init: tests build this class directly
+        // and immediately call deleteMiniCycle(), so a lazily-loaded sub-module
+        // would be null on that path. Safe because the class holds no state.
+        this._actions = new RoutineSwitcherActions(this);
+
+        this._previewCallbacks = {
+            getSelectedItem: () => this._getSelectedItem()
+        };
+
         this.loadMiniCycleListTimeout = null;
         this._idleSaveScheduled = false;
+
+        // Detach functions for the Routine Actions long-press hints. The switcher
+        // re-runs its wiring on every open, so these are replaced rather than
+        // appended — see _attachActionHints().
+        this._actionHintDetachers = [];
 
         // Sort preference: 'alpha', 'recent', or 'size'
         this._sortMode = 'alpha';
@@ -248,6 +274,14 @@ export class RoutineSwitcher {
             safeAdd(downloadButton, "click", downloadButton._clickHandler);
         }
 
+        // ✅ Long-press hints for the Routine Actions row.
+        //
+        // On mobile .switch-btn-label is display:none (routine-switcher.css), so
+        // these five are icon-only — and `title` never surfaces on touch, which
+        // left the icons unexplained on exactly the devices that show them bare.
+        // A hold names the button and activates nothing; a tap still acts.
+        this._attachActionHints();
+
         // Theme picker button (only wired once; shows/hides the picker for the selected routine)
         const themeBtn = this.deps.getElementById(DOM_IDS.SWITCH_THEME_BTN);
         if (themeBtn) {
@@ -291,663 +325,40 @@ export class RoutineSwitcher {
 
     }
 
-    /**
-     * Rename a miniCycle (inline edit)
-     */
-    renameMiniCycle() {
+    // ── Routine actions ─────────────────────────────────────────────────────
+    // Delete / duplicate / download / rename and the inline-edit flow live in
+    // routineSwitcherActions.js (splits-plan Priority 1), following the same
+    // manager-back-reference pattern as statsPanel's sub-modules. These stay as
+    // thin methods because three of them are this module's public `provides`
+    // and the rest are called from the list-item handlers.
 
-        const selectedCycle = this._getSelectedItem();
+    renameMiniCycle() { return this._actions.renameMiniCycle(); }
+    deleteMiniCycle() { return this._actions.deleteMiniCycle(); }
+    duplicateMiniCycle() { return this._actions.duplicateMiniCycle(); }
+    downloadMiniCycle() { return this._actions.downloadMiniCycle(); }
+    _buildExportPayload(...args) { return this._actions._buildExportPayload(...args); }
+    _startInlineEdit(...args) { return this._actions._startInlineEdit(...args); }
+    _editRoutineModal(...args) { return this._actions._editRoutineModal(...args); }
+    _teardownInlineEdit(...args) { return this._actions._teardownInlineEdit(...args); }
+    _commitRename(...args) { return this._actions._commitRename(...args); }
 
-        if (!selectedCycle) {
-            console.warn('⚠️ No cycle selected for rename');
-            this.deps.showNotification(getLabel('notify.selectToRename'), "info", UI_TIMEOUTS.NOTIFICATION_BRIEF);
-            return;
-        }
+    // Module-level bindings populated by initRoutineSwitcher()'s dynamic imports.
+    // Exposed so the actions sub-module can reach them through `this.m` — the
+    // same way statsPanel exposes its dynamically-loaded MILESTONES config.
+    // Kept as pass-throughs (not stored) so they stay live if init runs later.
+    getObjectSizeBytes(cycle) { return getObjectSizeBytes(cycle); }
+    getUniqueCycleName(name, cycles) { return getUniqueCycleName(name, cycles); }
+    adjustStorageEstimate(bytes) { return adjustStorageEstimate(bytes); }
+    updateStorageBarUIEstimated(...args) { return updateStorageBarUIEstimated(...args); }
 
-        // ✅ Use state-based data access
-        if (!this.deps.AppState?.isReady?.()) {
-            console.error('❌ AppState not ready for renameMiniCycle');
-            this.deps.showNotification('⚠️ ' + getLabel('notify.appNotReady'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
-            return;
-        }
 
-        const currentState = this.deps.AppState.get();
-        if (!currentState) {
-            console.error('❌ No state data available for renameMiniCycle');
-            this.deps.showNotification('⚠️ ' + getLabel('notify.dataNotAvailable'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
-            return;
-        }
 
-        const cycleKey = selectedCycle.dataset.cycleKey;
-        const currentCycle = currentState.data?.cycles?.[cycleKey];
 
-        if (!cycleKey || !currentCycle) {
-            console.error('❌ Invalid cycle selection:', { cycleKey, hasCycle: !!currentCycle });
-            this.deps.showNotification('⚠️ ' + getLabel('notify.invalidCycleSelection'), "error", UI_TIMEOUTS.NOTIFICATION_BRIEF);
-            return;
-        }
 
-        // ✅ Use inline edit (same as duplicate)
-        this._startInlineEdit(selectedCycle, cycleKey);
-    }
 
-    /**
-     * Delete a miniCycle
-     */
-    deleteMiniCycle() {
 
-        const selectedCycle = this._getSelectedItem();
-        if (!selectedCycle) {
-            console.warn('⚠️ No cycle selected for deletion');
-            this.deps.showNotification("⚠ " + getLabel('switcher.noSelectedForDelete'));
-            return;
-        }
 
-        // ✅ Use state-based data access
-        if (!this.deps.AppState?.isReady?.()) {
-            console.error('❌ AppState not ready for deleteMiniCycle');
-            this.deps.showNotification('⚠️ ' + getLabel('notify.appNotReady'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
-            return;
-        }
 
-        const currentState = this.deps.AppState.get();
-        if (!currentState) {
-            console.error('❌ No state data available for deleteMiniCycle');
-            this.deps.showNotification('⚠️ ' + getLabel('notify.dataNotAvailable'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
-            return;
-        }
-
-        const { data, appState } = currentState;
-        const cycles = data.cycles || {};
-        const activeCycle = appState.activeCycleId;
-        const cycleKey = selectedCycle.dataset.cycleKey;
-        const currentCycle = cycles[cycleKey];
-
-        if (!cycleKey || !currentCycle) {
-            console.error('❌ Invalid cycle selection:', { cycleKey, hasCycle: !!currentCycle });
-            this.deps.showNotification('⚠️ ' + getLabel('notify.invalidCycleSelection'), "error", UI_TIMEOUTS.NOTIFICATION_BRIEF);
-            return;
-        }
-
-        const cycleToDelete = currentCycle.title;
-
-        // Calculate the size of the routine being deleted (for storage estimate)
-        const routineSizeBytes = getObjectSizeBytes(currentCycle);
-
-        this.deps.showConfirmationModal({
-            title: getLabel('switcher.deleteTitle'),
-            message: "❌ " + getLabel('switcher.deleteMessage', { vars: { name: cycleToDelete } }),
-            confirmText: getLabel('button.delete'),
-            cancelText: getLabel('button.cancel'),
-            destructive: true,
-            callback: (confirmed) => {
-                if (!confirmed) {
-                    return;
-                }
-
-                // Track if we're deleting the active cycle
-                const wasActiveCycle = cycleKey === activeCycle;
-                let newActiveCycleName = null;
-
-                // ✅ Update through state system
-                this.deps.AppState.update(state => {
-                    // Remove the selected miniCycle
-                    delete state.data.cycles[cycleKey];
-
-                    // If the deleted cycle was the active one, handle fallback
-                    if (wasActiveCycle) {
-                        const remainingCycleKeys = Object.keys(state.data.cycles);
-
-                        if (remainingCycleKeys.length > 0) {
-                            // Switch to the first available miniCycle
-                            const newActiveCycleKey = remainingCycleKeys[0];
-                            state.appState.activeCycleId = newActiveCycleKey;
-
-                            const newActiveCycle = state.data.cycles[newActiveCycleKey];
-                            newActiveCycleName = newActiveCycle.title;
-                        } else {
-                            state.appState.activeCycleId = null;
-                        }
-                    }
-
-                }, true); // immediate save
-
-                // ✅ Update storage estimate (subtract deleted routine size)
-                adjustStorageEstimate(-routineSizeBytes);
-                const barElement = this.deps.getElementById(DOM_IDS.STORAGE_BAR_FILL);
-                const textElement = this.deps.getElementById(DOM_IDS.STORAGE_BAR_TEXT);
-                if (barElement && textElement) {
-                    updateStorageBarUIEstimated(barElement, textElement);
-                }
-
-                // ✅ Notify undo system of cycle deletion (DI-pure)
-                if (typeof this.deps.onCycleDeleted === 'function') {
-                    this.deps.onCycleDeleted(cycleKey).catch(err => {
-                        console.warn('⚠️ Undo system cycle deletion notification failed:', err);
-                    });
-                }
-
-                // ✅ Check if any cycles remain
-                const finalState = this.deps.AppState.get();
-                const remainingCycles = Object.keys(finalState.data.cycles);
-
-                if (remainingCycles.length === 0) {
-                    // No cycles left — return the EXISTING user to the neutral
-                    // create-routine flow (not the new-user onboarding).
-                    setTimeout(() => {
-                        this.hideSwitchMiniCycleModal();
-
-                        // ✅ FIX: Query DOM elements fresh inside setTimeout (not stale from outer scope)
-                        const taskList = this.deps.getElementById(DOM_IDS.TASK_LIST);
-                        const toggleAutoReset = this.deps.getElementById(DOM_IDS.TOGGLE_AUTO_RESET);
-
-                        if (taskList) {
-                            taskList.innerHTML = "";
-                            this.deps.getBody().classList.add(DOM_CLASSES.TASKS_EMPTY);
-                        }
-                        if (toggleAutoReset) toggleAutoReset.checked = false;
-
-                        // Deleting your last routine is an explicit action by an
-                        // EXISTING user — not a reason to replay the brand-new-user
-                        // onboarding ("Welcome to miniCycle" + tour walkthrough), which
-                        // is what showOnboarding() renders. Show the neutral "Create a
-                        // Routine" dialog instead: it offers Load Sample, and cancelling
-                        // it loads the getting-started sample, so the app is never left
-                        // empty. (Reported on r/websitefeedback — deleting the last
-                        // routine surfaced the new-user welcome.)
-                        setTimeout(() => {
-                            if (typeof this.deps.showCycleCreationModal === 'function') {
-                                this.deps.showCycleCreationModal();
-                            } else {
-                                console.warn('⚠️ showCycleCreationModal unavailable after deleting last routine');
-                            }
-                        }, 500);
-                    }, 300);
-                } else {
-                    // Keep modal open - just refresh the list
-                    this.loadMiniCycleList();
-
-                    // If we deleted the active cycle, update background UI to show new active
-                    if (wasActiveCycle && typeof this.deps.loadMiniCycle === 'function') {
-                        this.deps.loadMiniCycle();
-                    }
-
-                    // Select first remaining routine
-                    setTimeout(() => {
-                        const firstCycle = this.deps.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM);
-                        if (firstCycle) {
-                            firstCycle.classList.add(DOM_CLASSES.SELECTED);
-                            firstCycle.click();
-                        }
-                    }, 50);
-                }
-
-                if (wasActiveCycle && newActiveCycleName) {
-                    this.deps.showNotification('🗑️ ' + getLabel('notify.cycleDeletedSwitch', { vars: { deleted: cycleToDelete, active: newActiveCycleName } }), "info", UI_TIMEOUTS.NOTIFICATION_EXTENDED);
-                } else {
-                    this.deps.showNotification('🗑️ ' + getLabel('notify.cycleDeleted', { vars: { name: cycleToDelete } }));
-                }
-            }
-        });
-    }
-
-    /**
-     * Download the selected routine as a .mcyc file with confirmation
-     */
-    downloadMiniCycle() {
-        const selected = this._getSelectedItem();
-        if (!selected) {
-            this.deps.showNotification(getLabel('switcher.selectFirst'), 'info', UI_TIMEOUTS.NOTIFICATION_SHORT);
-            return;
-        }
-
-        const cycleKey = selected.dataset.cycleKey;
-        const currentState = this.deps.AppState?.get();
-        const cycleData = currentState?.data?.cycles?.[cycleKey];
-        if (!cycleData) return;
-
-        const cycleName = cycleData.title || cycleKey;
-
-        this.deps.showConfirmationModal({
-            title: getLabel('switcher.downloadConfirmTitle'),
-            message: getLabel('switcher.downloadConfirmMessage', { vars: { name: cycleName } }),
-            confirmText: getLabel('routine.download'),
-            cancelText: getLabel('button.cancel'),
-            destructive: false,
-            callback: (confirmed) => {
-                if (!confirmed) return;
-                const exportData = this._buildExportPayload(cycleKey, cycleData);
-                if (typeof this.deps.exportMiniCycleData === 'function') {
-                    this.deps.exportMiniCycleData(exportData, cycleName);
-                }
-            }
-        });
-    }
-
-    /**
-     * Build export payload from cycle data via the single shared builder
-     * (drift-review D-02 — this used to be a third hand-rolled copy that had
-     * silently dropped priorityColor AND autoUncheckDaily).
-     *
-     * includeHistory is true for now — this is the "download routine" path and
-     * whether it should carry history (backup semantics) or strip it (share
-     * semantics, like shareManager) is an open product decision. Flipping it
-     * is a one-word change here.
-     * @param {string} cycleKey - The cycle key/ID
-     * @param {Object} cycle - The cycle data from AppState
-     * @returns {Object} Export-ready data object
-     * @private
-     */
-    _buildExportPayload(cycleKey, cycle) {
-        return buildMcycPayload(cycleKey, cycle, { includeHistory: true });
-    }
-
-    /**
-     * Duplicate the selected miniCycle and show it in inline edit mode
-     */
-    duplicateMiniCycle() {
-
-        const selectedCycle = this._getSelectedItem();
-
-        if (!selectedCycle) {
-            console.warn('⚠️ No cycle selected for duplication');
-            this.deps.showNotification(getLabel('notify.selectToDuplicate'), "info", UI_TIMEOUTS.NOTIFICATION_BRIEF);
-            return;
-        }
-
-        // ✅ Use state-based data access
-        if (!this.deps.AppState?.isReady?.()) {
-            console.error('❌ AppState not ready for duplicateMiniCycle');
-            this.deps.showNotification('⚠️ ' + getLabel('notify.appNotReady'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
-            return;
-        }
-
-        const currentState = this.deps.AppState.get();
-        if (!currentState) {
-            console.error('❌ No state data available for duplicateMiniCycle');
-            this.deps.showNotification('⚠️ ' + getLabel('notify.dataNotAvailable'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
-            return;
-        }
-
-        const { data } = currentState;
-        const cycles = data.cycles || {};
-        const cycleKey = selectedCycle.dataset.cycleKey;
-        const originalCycle = cycles[cycleKey];
-
-        if (!cycleKey || !originalCycle) {
-            console.error('❌ Invalid cycle selection:', { cycleKey, hasCycle: !!originalCycle });
-            this.deps.showNotification('⚠️ ' + getLabel('notify.invalidCycleSelection'), "error", UI_TIMEOUTS.NOTIFICATION_BRIEF);
-            return;
-        }
-
-        // ✅ Generate unique name for the copy
-        const baseName = `${originalCycle.title} Copy`;
-        const { name: uniqueName } = getUniqueCycleName(baseName, cycles);
-
-        // ✅ Deep copy the cycle data
-        const copiedCycle = structuredClone(originalCycle);
-        copiedCycle.title = uniqueName;
-        copiedCycle.createdAt = Date.now();
-        delete copiedCycle.lastModified; // Show "Created" until actual changes are made
-        copiedCycle.cycleCount = 0; // Reset cycle count for the copy
-
-        // Fresh history for a fresh routine — the clone otherwise inherits the
-        // original's full event log (cycle completions that never happened here).
-        // clearedTasks entries reset too, but autoPrune is a preference and travels.
-        delete copiedCycle.history;
-        if (copiedCycle.clearedTasks && typeof copiedCycle.clearedTasks === 'object') {
-            copiedCycle.clearedTasks = {
-                ...copiedCycle.clearedTasks,
-                entries: [],
-                totalCleared: 0
-            };
-        }
-
-        // ✅ Generate new IDs for all tasks to avoid conflicts — and remap
-        // recurringTemplates in lockstep. The map is keyed by task id and each
-        // template carries its task's id; leaving it un-remapped severed every
-        // taskId↔template link in the copy (watcher spawned duplicates, deleting
-        // a copied recurring task couldn't remove its template, template edits
-        // never synced).
-        if (Array.isArray(copiedCycle.tasks)) {
-            const now = Date.now();
-            const idRemap = new Map();
-            copiedCycle.tasks = copiedCycle.tasks.map((task, index) => {
-                const newId = `task-${now}-${index}-${Math.floor(Math.random() * 10000)}`; // Fix #74: add index to prevent collision
-                if (task.id) idRemap.set(task.id, newId);
-                return { ...task, id: newId };
-            });
-
-            if (copiedCycle.recurringTemplates && typeof copiedCycle.recurringTemplates === 'object') {
-                copiedCycle.recurringTemplates = Object.fromEntries(
-                    Object.entries(copiedCycle.recurringTemplates)
-                        .filter(([, template]) => template && typeof template === 'object')
-                        .map(([oldId, template], templateIndex) => {
-                            // A template without a live task instance is normal
-                            // (deleted instance pending recreation) — keep it,
-                            // under a fresh id so the copy never shares ids with
-                            // the original routine.
-                            const newId = idRemap.get(oldId) || `task-${now}-t${templateIndex}-${Math.floor(Math.random() * 10000)}`;
-                            return [newId, { ...template, id: newId }];
-                        })
-                );
-            }
-        }
-
-        // ✅ Update through state system
-        this.deps.AppState.update(state => {
-            state.data.cycles[uniqueName] = copiedCycle;
-            state.metadata.totalCyclesCreated = (state.metadata.totalCyclesCreated || 0) + 1;
-        }, true); // immediate save
-
-        // ✅ Update storage estimate (add duplicated routine size)
-        const duplicatedSizeBytes = getObjectSizeBytes(copiedCycle);
-        adjustStorageEstimate(duplicatedSizeBytes);
-        const barElement = this.deps.getElementById(DOM_IDS.STORAGE_BAR_FILL);
-        const textElement = this.deps.getElementById(DOM_IDS.STORAGE_BAR_TEXT);
-        if (barElement && textElement) {
-            updateStorageBarUIEstimated(barElement, textElement);
-        }
-
-        // ✅ Refresh the list and put the new item in inline edit mode
-        this.loadMiniCycleList();
-
-        // Wait for list to render, then find and edit the new item
-        setTimeout(() => {
-            const newItem = [...this.deps.querySelectorAll(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM)]
-                .find(item => item.dataset.cycleKey === uniqueName);
-
-            if (newItem) {
-                // Select the new item
-                this.deps.querySelectorAll(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM).forEach(item => item.classList.remove(DOM_CLASSES.SELECTED));
-                newItem.classList.add(DOM_CLASSES.SELECTED);
-                this._selectedCycleKey = newItem.dataset.cycleKey; // keep source of truth in sync
-
-                // Show the switch items row
-                const switchItemsRow = this.deps.getElementById(DOM_IDS.SWITCH_ITEMS_ROW);
-                if (switchItemsRow) {
-                    switchItemsRow.style.display = "flex";
-                }
-
-                // Update preview
-                this.updatePreview(uniqueName);
-
-                // ✅ Put the item in inline edit mode
-                this._startInlineEdit(newItem, uniqueName);
-
-            }
-        }, 100);
-
-        this.deps.showNotification('📋 ' + getLabel('notify.routineDuplicated', { vars: { name: uniqueName } }), "success", UI_TIMEOUTS.NOTIFICATION_SHORT);
-    }
-
-    /**
-     * Start inline editing for a cycle item
-     * @param {HTMLElement} listItem - The list item element
-     * @param {string} cycleKey - The cycle key being edited
-     */
-    _startInlineEdit(listItem, cycleKey) {
-        const titleSpan = listItem.querySelector(DOM_SELECTORS.CYCLE_ITEM_TITLE);
-        if (!titleSpan) return;
-
-        const currentName = titleSpan.textContent;
-
-        // On touch devices, use a modal dialog instead of inline editing
-        const isTouchDevice = this.deps.isTouchDevice;
-        if (typeof isTouchDevice === 'function' && isTouchDevice()) {
-            this._editRoutineModal(listItem, cycleKey, titleSpan, currentName);
-            return;
-        }
-
-        // Create input element
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.className = 'cycle-item-edit-input';
-        input.value = currentName;
-        input.setAttribute('aria-label', getLabel('accessibility.editRoutineName'));
-
-        // Add focus overlay to dim the modal
-        const dialog = this.deps.getElementById(DOM_IDS.ROUTINE_SWITCHER_MODAL);
-        const overlay = document.createElement('div');
-        overlay.className = DOM_CLASSES.EDIT_FOCUS_OVERLAY;
-        if (dialog) {
-            dialog.style.position = 'relative';
-            dialog.appendChild(overlay);
-        }
-        listItem.classList.add(DOM_CLASSES.EDIT_FOCUS_TARGET);
-        // Double rAF ensures browser registers initial opacity:0 before transitioning
-        requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add(DOM_CLASSES.EDIT_FOCUS_ACTIVE)));
-
-        // Replace title span with input
-        titleSpan.style.display = 'none';
-        titleSpan.parentNode.insertBefore(input, titleSpan.nextSibling);
-
-        // Focus and select all text
-        input.focus();
-        input.select();
-
-        // Handle blur (save on blur)
-        const handleBlur = () => {
-            const newValue = input.value;
-            this._teardownInlineEdit(input, titleSpan);
-            this._commitRename(cycleKey, newValue, currentName);
-        };
-
-        // Handle keydown (Enter to save, Escape to cancel)
-        const handleKeydown = (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                input.blur();
-            } else if (e.key === 'Escape') {
-                e.preventDefault();
-                // Restore original name
-                input.value = currentName;
-                input.blur();
-            }
-        };
-
-        input.addEventListener('blur', handleBlur, { once: true });
-        input.addEventListener('keydown', handleKeydown);
-    }
-
-    /**
-     * Mobile-only modal dialog for renaming routines.
-     * Uses the same .miniCycle-prompt-dialog pattern as routine creation.
-     *
-     * @param {HTMLElement} listItem - The routine list item element
-     * @param {string} cycleKey - The cycle key being renamed
-     * @param {HTMLElement} titleSpan - The title span element
-     * @param {string} currentName - Current routine name
-     * @private
-     */
-    _editRoutineModal(listItem, cycleKey, titleSpan, currentName) {
-        const editDialog = document.createElement('dialog');
-        editDialog.className = 'miniCycle-prompt-dialog';
-        editDialog.setAttribute('role', 'dialog');
-        editDialog.setAttribute('aria-modal', 'true');
-
-        const box = document.createElement('div');
-        box.className = 'miniCycle-prompt-box';
-
-        const titleEl = document.createElement('div');
-        titleEl.className = 'miniCycle-prompt-title';
-        titleEl.textContent = getLabel('switcher.renameRoutine');
-        box.appendChild(titleEl);
-
-        const messageEl = document.createElement('div');
-        messageEl.className = 'miniCycle-prompt-message';
-        messageEl.textContent = getLabel('switcher.renameRoutineMessage');
-        box.appendChild(messageEl);
-
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.className = 'miniCycle-prompt-input';
-        input.value = currentName;
-        input.setAttribute('aria-label', getLabel('accessibility.editRoutineName'));
-        box.appendChild(input);
-
-        const buttons = document.createElement('div');
-        buttons.className = 'miniCycle-prompt-buttons';
-
-        const cancelBtn = document.createElement('button');
-        cancelBtn.type = 'button';
-        cancelBtn.className = 'miniCycle-btn-cancel';
-        cancelBtn.textContent = getLabel('button.cancel');
-
-        const saveBtn = document.createElement('button');
-        saveBtn.type = 'button';
-        saveBtn.className = 'miniCycle-btn-confirm';
-        saveBtn.textContent = getLabel('button.save');
-
-        buttons.appendChild(cancelBtn);
-        buttons.appendChild(saveBtn);
-        box.appendChild(buttons);
-        editDialog.appendChild(box);
-        const body = this.deps.getBody?.() || document.body;
-        body.appendChild(editDialog);
-
-        // ── Event handlers ──
-        const handleSave = () => {
-            const value = input.value.trim();
-            if (!value) {
-                input.classList.add(DOM_CLASSES.MINICYCLE_INPUT_ERROR);
-                input.focus();
-                return;
-            }
-            cleanup();
-            editDialog.close();
-            editDialog.remove();
-            this._commitRename(cycleKey, value, currentName);
-        };
-
-        const handleCancel = () => {
-            cleanup();
-            editDialog.close();
-            editDialog.remove();
-        };
-
-        const handleKeydown = (e) => {
-            if (e.key === 'Enter') { e.preventDefault(); handleSave(); }
-        };
-
-        const handleDialogCancel = (e) => {
-            e.preventDefault();
-            handleCancel();
-        };
-
-        const handleBackdropClick = (e) => {
-            if (e.target === editDialog) handleCancel();
-        };
-
-        // Wire listeners
-        saveBtn.addEventListener('click', handleSave);
-        cancelBtn.addEventListener('click', handleCancel);
-        input.addEventListener('keydown', handleKeydown);
-        editDialog.addEventListener('cancel', handleDialogCancel);
-        editDialog.addEventListener('click', handleBackdropClick);
-
-        const cleanup = () => {
-            saveBtn.removeEventListener('click', handleSave);
-            cancelBtn.removeEventListener('click', handleCancel);
-            input.removeEventListener('keydown', handleKeydown);
-            editDialog.removeEventListener('cancel', handleDialogCancel);
-            editDialog.removeEventListener('click', handleBackdropClick);
-        };
-
-        editDialog.showModal();
-        input.focus();
-        input.select();
-    }
-
-    /**
-     * Tear down inline edit UI (input, overlay, focus target class).
-     * Called after inline edit completes or cancels. Not used for modal edit.
-     * @param {HTMLInputElement} input - The inline input element
-     * @param {HTMLElement} titleSpan - The title span to restore
-     * @returns {void}
-     * @private
-     */
-    _teardownInlineEdit(input, titleSpan) {
-        input.remove();
-        titleSpan.style.display = '';
-        const listItem = titleSpan.closest(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM);
-        if (listItem) listItem.classList.remove(DOM_CLASSES.EDIT_FOCUS_TARGET);
-        const overlay = titleSpan.closest('dialog')?.querySelector(DOM_SELECTORS.EDIT_FOCUS_OVERLAY);
-        if (overlay) {
-            overlay.classList.remove(DOM_CLASSES.EDIT_FOCUS_ACTIVE);
-            const removeOverlay = () => overlay.remove();
-            overlay.addEventListener('transitionend', removeOverlay, { once: true });
-            setTimeout(removeOverlay, UI_TIMEOUTS.EDIT_OVERLAY_REMOVE);
-        }
-    }
-
-    /**
-     * Commit a routine rename — validates, handles collisions, updates AppState,
-     * refreshes the list, and notifies undo system.
-     * Shared by both inline edit and modal edit paths.
-     * @param {string} oldKey - The original cycle key
-     * @param {string} rawNewName - The new name (will be sanitized)
-     * @param {string} oldName - The original display name (for no-change detection)
-     * @returns {void}
-     * @private
-     */
-    _commitRename(oldKey, rawNewName, oldName) {
-        const newName = this.deps.sanitizeInput(rawNewName.trim());
-
-        // If name unchanged or empty, do nothing
-        if (!newName || newName === oldName) {
-            return;
-        }
-
-        // Get unique name if there's a collision (but not with self)
-        const currentState = this.deps.AppState.get();
-        const cycles = { ...currentState.data.cycles };
-        delete cycles[oldKey];
-
-        const { name: uniqueName, wasModified } = getUniqueCycleName(newName, cycles);
-
-        if (wasModified) {
-            this.deps.showNotification('⚠️ ' + getLabel('notify.nameExists', { vars: { name: uniqueName } }), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
-        }
-
-        // Update through state system
-        this.deps.AppState.update(state => {
-            const cycleData = state.data.cycles[oldKey];
-            if (!cycleData) return;
-
-            const updatedCycle = { ...cycleData, title: uniqueName };
-            state.data.cycles[uniqueName] = updatedCycle;
-            delete state.data.cycles[oldKey];
-
-            if (state.appState.activeCycleId === oldKey) {
-                state.appState.activeCycleId = uniqueName;
-            }
-
-        }, true);
-
-        // Notify undo system of cycle rename
-        if (typeof this.deps.onCycleRenamed === 'function') {
-            this.deps.onCycleRenamed(oldKey, uniqueName).catch(err => {
-                console.warn('⚠️ Undo system cycle rename notification failed:', err);
-            });
-        }
-
-        // Refresh the list and re-select
-        this.loadMiniCycleList();
-        setTimeout(() => {
-            const renamedItem = [...this.deps.querySelectorAll(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM)]
-                .find(item => item.dataset.cycleKey === uniqueName);
-            if (renamedItem) {
-                renamedItem.classList.add(DOM_CLASSES.SELECTED);
-                renamedItem.click();
-            }
-        }, 50);
-
-        // Re-apply theme labels/colors in case the active routine was renamed
-        this.deps.refreshThemeLabels?.();
-
-        this.deps.showNotification('✅ ' + getLabel('notify.routineRenamed', { vars: { name: uniqueName } }), "success", UI_TIMEOUTS.NOTIFICATION_SHORT);
-    }
 
     /**
      * Hide switch miniCycle modal
@@ -956,129 +367,23 @@ export class RoutineSwitcher {
      * Toggle the theme picker for the given routine.
      * @param {string} cycleKey
      */
+    // ── Theme picker ────────────────────────────────────────────────────────
+    // The rendering, selection and teardown live in routineSwitcherThemePicker.js
+    // (splits-plan Priority 1). These stay as thin methods because six call sites
+    // in this class already read as `this.toggleThemePicker(...)`, and because the
+    // module's public wrapper API is unchanged. Deps are passed through live, so
+    // late-injected deps still reach the picker.
+
     toggleThemePicker(cycleKey) {
-        const picker = this.deps.getElementById(DOM_IDS.THEME_PICKER_ROW);
-        const themeBtn = this.deps.getElementById(DOM_IDS.SWITCH_THEME_BTN);
-        if (!picker) return;
-
-        const isOpen = !picker.classList.contains(DOM_CLASSES.HIDDEN);
-        if (isOpen) {
-            this.closeThemePicker();
-        } else {
-            this.openThemePicker(cycleKey);
-        }
+        themePicker.toggleThemePicker(this.deps, cycleKey);
     }
 
-    /**
-     * Render and show the theme picker for a given routine.
-     * @param {string} cycleKey
-     */
     openThemePicker(cycleKey) {
-        const vtm = this.deps.vocabThemeManager;
-        const picker = this.deps.getElementById(DOM_IDS.THEME_PICKER_ROW);
-        if (!picker || !vtm) return;
-
-        // Update theme button active state
-        const themeBtn = this.deps.getElementById(DOM_IDS.SWITCH_THEME_BTN);
-        themeBtn?.setAttribute('aria-expanded', 'true');
-
-        const state = this.deps.AppState?.get();
-        const cycle = state?.data?.cycles?.[cycleKey];
-        const currentThemeId = cycle?.theme ?? 'classic';
-        const unlocked = new Set(vtm.getUnlockedThemeIds());
-
-        // Clear existing chips and their listeners
-        picker.innerHTML = '';
-        picker._clickHandlers = picker._clickHandlers ?? [];
-        picker._clickHandlers.forEach(({ el, fn }) => el.removeEventListener('click', fn));
-        picker._clickHandlers = [];
-
-        // Add title
-        const title = document.createElement('div');
-        title.className = 'theme-picker-title';
-        title.textContent = getLabel('switcher.themePickerTitle');
-        picker.appendChild(title);
-
-        // Chips container (bordered area)
-        const chipsContainer = document.createElement('div');
-        chipsContainer.className = 'theme-picker-chips';
-
-        // Build a chip for each unlocked theme only
-        const themeIds = ['classic', 'habit-tracker', 'fitness', 'scholar', 'cleaning'];
-        themeIds.forEach(id => {
-            if (!unlocked.has(id)) return; // hide locked themes entirely
-
-            const def = vtm.getThemeDefinition(id);
-            if (!def) return;
-
-            const isCurrent = id === currentThemeId;
-
-            const chip = document.createElement('button');
-            chip.className = 'theme-chip';
-            chip.setAttribute('role', 'radio');
-            chip.setAttribute('aria-checked', String(isCurrent));
-            chip.setAttribute('title', def.description);
-
-            const icon = def.icons?.celebrate ?? (id === 'classic' ? '✨' : '');
-            chip.innerHTML = [
-                icon ? `<span class="theme-chip-icon" aria-hidden="true">${icon}</span>` : '',
-                `<span class="theme-chip-name">${def.name}</span>`
-            ].join('');
-
-            const handler = (e) => {
-                e.stopPropagation();
-                this._selectTheme(cycleKey, id, def);
-            };
-            chip.addEventListener('click', handler);
-            picker._clickHandlers.push({ el: chip, fn: handler });
-
-            chipsContainer.appendChild(chip);
-        });
-
-        picker.appendChild(chipsContainer);
-        picker.classList.remove(DOM_CLASSES.HIDDEN);
+        themePicker.openThemePicker(this.deps, cycleKey);
     }
 
-    /**
-     * Apply a theme to a routine and close the picker.
-     * @param {string} cycleKey
-     * @param {string} themeId
-     * @param {Object} def - Theme definition object
-     */
-    _selectTheme(cycleKey, themeId, def) {
-        const vtm = this.deps.vocabThemeManager;
-        if (!vtm) return;
-
-        const success = vtm.setRoutineTheme(cycleKey, themeId);
-        if (success) {
-            const icon = def.icons?.celebrate ?? '🎨';
-            this.deps.showNotification(
-                `${icon} ${getLabel('notify.themeApplied', { vars: { name: def.name } })}`,
-                'success', UI_TIMEOUTS.NOTIFICATION_LONG
-            );
-            this.deps.logHistoryEvent?.('theme_changed', { themeName: def.name, themeId });
-            // refreshThemeLabels handles all label updates + applies vocab theme color preset
-            this.deps.refreshThemeLabels?.();
-            // Re-render picker to update which chip is highlighted (don't close it)
-            this.openThemePicker(cycleKey);
-        }
-    }
-
-    /**
-     * Hide and reset the theme picker.
-     */
     closeThemePicker() {
-        const picker = this.deps.getElementById(DOM_IDS.THEME_PICKER_ROW);
-        const themeBtn = this.deps.getElementById(DOM_IDS.SWITCH_THEME_BTN);
-        if (picker) {
-            picker.classList.add(DOM_CLASSES.HIDDEN);
-            // Clean up chip listeners
-            if (picker._clickHandlers) {
-                picker._clickHandlers.forEach(({ el, fn }) => el.removeEventListener('click', fn));
-                picker._clickHandlers = [];
-            }
-        }
-        themeBtn?.setAttribute('aria-expanded', 'false');
+        themePicker.closeThemePicker(this.deps);
     }
 
     hideSwitchMiniCycleModal() {
@@ -1199,7 +504,10 @@ export class RoutineSwitcher {
 
         // ✅ Notify undo system of cycle switch (DI-pure)
         if (typeof this.deps.onCycleSwitched === 'function') {
-            this.deps.onCycleSwitched(cycleKey).catch(err => {
+            // Promise.resolve(): the moduleLoader DI wrapper optional-chains its inner
+            // call, so it yields undefined when the hook is unwired and `.catch` on
+            // undefined throws here — inside a UI flow, after state already changed.
+            Promise.resolve(this.deps.onCycleSwitched(cycleKey)).catch(err => {
                 console.warn('⚠️ Undo context switch failed:', err);
             });
         }
@@ -1242,125 +550,9 @@ export class RoutineSwitcher {
      * @returns {boolean} True if repairs were made, false if data was already valid
      */
     _validateAndRepairCycleData(cycleKey) {
-        const currentState = this.deps.AppState.get();
-        const originalCycle = currentState?.data?.cycles?.[cycleKey];
-
-        if (!originalCycle) {
-            console.warn(`⚠️ Cycle not found for validation: ${cycleKey}`);
-            return false;
-        }
-
-        // ✅ Clone the cycle to avoid mutating state outside AppState.update()
-        const cycle = structuredClone(originalCycle);
-        let repaired = false;
-
-        // Ensure tasks is an array
-        if (!Array.isArray(cycle.tasks)) {
-            console.warn(`⚠️ Cycle "${cycleKey}" has invalid tasks - resetting to empty array`);
-            cycle.tasks = [];
-            repaired = true;
-        }
-
-        // Validate and repair each task
-        const validTasks = [];
-        for (const task of cycle.tasks) {
-            if (!task || typeof task !== 'object') {
-                console.warn('⚠️ Skipping invalid task (not an object)');
-                repaired = true;
-                continue;
-            }
-
-            // Generate ID if missing. Suffix entropy matches the main generator
-            // (globalUtils generateHashId): this loop runs synchronously, so every
-            // repaired task shares the same millisecond — a 0-999 suffix had ~17%
-            // birthday-collision odds at 20 tasks, and a collision makes
-            // drag-reorder silently drop a task (find-by-id resolves both to the
-            // first match).
-            if (!task.id || typeof task.id !== 'string') {
-                task.id = `task-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
-                console.warn(`⚠️ Generated missing task ID: ${task.id}`);
-                repaired = true;
-            }
-
-            // Default text to empty string if missing
-            if (typeof task.text !== 'string') {
-                task.text = task.text ? String(task.text) : '';
-                repaired = true;
-            }
-
-            // Default boolean fields
-            if (typeof task.completed !== 'boolean') {
-                task.completed = Boolean(task.completed);
-                repaired = true;
-            }
-            if (typeof task.highPriority !== 'boolean') {
-                task.highPriority = Boolean(task.highPriority);
-                repaired = true;
-            }
-            if (typeof task.remindersEnabled !== 'boolean') {
-                task.remindersEnabled = Boolean(task.remindersEnabled);
-                repaired = true;
-            }
-            if (typeof task.recurring !== 'boolean') {
-                task.recurring = Boolean(task.recurring);
-                repaired = true;
-            }
-
-            // Default dueDate to null
-            if (task.dueDate === undefined) {
-                task.dueDate = null;
-                repaired = true;
-            }
-
-            // (deleteWhenComplete is optional — undefined is a valid state; a
-            // dead self-assignment lived here until v2.365.)
-            if (!task.deleteWhenCompleteSettings || typeof task.deleteWhenCompleteSettings !== 'object') {
-                task.deleteWhenCompleteSettings = { cycle: false, todo: true };
-                repaired = true;
-            }
-
-            // Ensure recurringSettings is an object if task is recurring
-            if (task.recurring && (!task.recurringSettings || typeof task.recurringSettings !== 'object')) {
-                task.recurringSettings = {};
-                repaired = true;
-            }
-
-            validTasks.push(task);
-        }
-
-        // Update tasks if any were removed or repaired
-        if (validTasks.length !== cycle.tasks.length || repaired) {
-            cycle.tasks = validTasks;
-            repaired = true;
-        }
-
-        // Ensure cycle has required fields
-        if (!cycle.title || typeof cycle.title !== 'string') {
-            cycle.title = cycleKey; // Use key as fallback title
-            repaired = true;
-        }
-        if (typeof cycle.cycleCount !== 'number' || cycle.cycleCount < 0) {
-            cycle.cycleCount = 0;
-            repaired = true;
-        }
-        if (typeof cycle.autoReset !== 'boolean') {
-            cycle.autoReset = true; // Default to auto-cycle mode
-            repaired = true;
-        }
-        if (typeof cycle.deleteCheckedTasks !== 'boolean') {
-            cycle.deleteCheckedTasks = false;
-            repaired = true;
-        }
-
-        // ✅ Apply repairs through AppState.update() - never mutate outside transaction
-        if (repaired) {
-            this.deps.AppState.update(state => {
-                state.data.cycles[cycleKey] = cycle;
-            }, true);
-        }
-
-        return repaired;
+        return validateAndRepairCycleData(this.deps.AppState, cycleKey);
     }
+
 
     /**
      * Persist sort/filter preferences to AppState (deferred save).
@@ -1478,107 +670,16 @@ export class RoutineSwitcher {
      * @param {string} cycleName - Cycle storage key
      * @returns {void}
      */
+    // ── Preview ─────────────────────────────────────────────────────────────
+    // Rendering, reset and the review dialog live in routineSwitcherPreview.js
+    // (splits-plan Priority 1). The selection infrastructure below stays here —
+    // it is switcher state, not preview rendering — and the two functions that
+    // need it receive it through `_previewCallbacks`.
+
     updatePreview(cycleName) {
-        if (!this.deps.AppState?.isReady?.()) {
-            console.error('❌ AppState not ready for updatePreview');
-            return;
-        }
-
-        const currentState = this.deps.AppState.get();
-        if (!currentState) {
-            console.error('❌ No state data available for updatePreview');
-            return;
-        }
-
-        const cycles = currentState.data?.cycles || {};
-        const cycleData = cycles[cycleName];
-
-        function escapeText(str) {
-            const temp = document.createElement("div");
-            temp.textContent = str;
-            return temp.innerHTML;
-        }
-
-        // Build task HTML and date (shared across both panels)
-        let tasksHTML = '';
-        let dateLabel = '';
-        let formattedDate = '';
-
-        if (cycleData?.tasks) {
-            tasksHTML = cycleData.tasks
-                .map(task => `<div class="preview-task">${task.completed ? "✔️" : "___"} ${escapeText(task.text)}</div>`)
-                .join("");
-
-            const timestamp = cycleData.lastModified || cycleData.createdAt;
-            if (timestamp) {
-                const date = new Date(timestamp);
-                formattedDate = date.toLocaleDateString(undefined, {
-                    year: 'numeric', month: 'short', day: 'numeric'
-                });
-                dateLabel = cycleData.lastModified ? getLabel('switcher.modified') : getLabel('switcher.created');
-            }
-        }
-
-        const contentHTML = tasksHTML
-            ? `<strong>${getLabel('switcher.tasksPreviewLabel')}:</strong><br>${tasksHTML}`
-            : '';
-        const dateHTML = (dateLabel && formattedDate)
-            ? `<div class="desktop-preview-date">${dateLabel}: ${formattedDate}</div>`
-            : '';
-        const noTasksLabel = getLabel('empty.noTasksPreview');
-
-        // --- Mobile preview panel ---
-        const previewWindow = this.deps.getElementById(DOM_IDS.SWITCH_PREVIEW_WINDOW);
-        if (previewWindow) {
-            if (tasksHTML) {
-                previewWindow.innerHTML = contentHTML;
-            } else {
-                previewWindow.innerHTML = '<br>';
-                const msg = document.createElement('strong');
-                msg.textContent = noTasksLabel;
-                previewWindow.appendChild(msg);
-            }
-        }
-
-        // Mobile date display (below preview)
-        let dateDisplay = this.deps.getElementById(DOM_IDS.SWITCH_PREVIEW_DATE);
-        if (!dateDisplay && previewWindow) {
-            dateDisplay = document.createElement("div");
-            dateDisplay.id = DOM_IDS.SWITCH_PREVIEW_DATE;
-            dateDisplay.className = "switch-preview-date";
-            previewWindow.parentNode.insertBefore(dateDisplay, previewWindow.nextSibling);
-        }
-        if (dateDisplay) {
-            dateDisplay.textContent = (dateLabel && formattedDate) ? `${dateLabel}: ${formattedDate}` : '';
-        }
-
-        // --- Desktop preview panel ---
-        const desktopPreview = this.deps.getElementById(DOM_IDS.DESKTOP_PREVIEW_WINDOW);
-        if (desktopPreview) {
-            if (tasksHTML) {
-                desktopPreview.innerHTML = contentHTML + dateHTML;
-            } else {
-                desktopPreview.innerHTML = '';
-                const msg = document.createElement('strong');
-                msg.textContent = noTasksLabel;
-                desktopPreview.appendChild(msg);
-            }
-        }
-
-        // Desktop preview title
-        const previewTitle = this.deps.getElementById(DOM_IDS.DESKTOP_PREVIEW_TITLE);
-        if (previewTitle) {
-            previewTitle.textContent = cycleData?.title || cycleName || getLabel('switcher.preview');
-        }
-
-        // Desktop preview hint
-        const hint = this.deps.getElementById(DOM_IDS.DESKTOP_PREVIEW_HINT);
-        if (hint) {
-            const isMobile = window.matchMedia('(max-width: 767px)').matches;
-            hint.textContent = getLabel(isMobile ? 'switcher.doubleTapEnlarge' : 'switcher.doubleClickEnlarge');
-            hint.style.display = 'block';
-        }
+        preview.updatePreview(this.deps, cycleName);
     }
+
 
     /**
      * The cycle key currently selected in the switcher (source of truth — NOT the DOM class).
@@ -1675,140 +776,25 @@ export class RoutineSwitcher {
      * @returns {void}
      */
     _resetPreview() {
-        // Mobile preview
-        const previewWindow = this.deps.getElementById(DOM_IDS.SWITCH_PREVIEW_WINDOW);
-        if (previewWindow) {
-            previewWindow.innerHTML = '';
-        }
-        const dateDisplay = this.deps.getElementById(DOM_IDS.SWITCH_PREVIEW_DATE);
-        if (dateDisplay) {
-            dateDisplay.textContent = '';
-        }
-
-        // Desktop preview
-        const desktopPreview = this.deps.getElementById(DOM_IDS.DESKTOP_PREVIEW_WINDOW);
-        if (desktopPreview) {
-            desktopPreview.textContent = getLabel('switcher.selectPreview');
-        }
-        const previewTitle = this.deps.getElementById(DOM_IDS.DESKTOP_PREVIEW_TITLE);
-        if (previewTitle) {
-            previewTitle.textContent = getLabel('switcher.preview');
-        }
-        const hint = this.deps.getElementById(DOM_IDS.DESKTOP_PREVIEW_HINT);
-        if (hint) {
-            hint.style.display = 'none';
-        }
+        preview.resetPreview(this.deps);
     }
+
 
     /**
      * Setup double-click on preview windows to open in a review modal
      */
     setupPreviewPopout() {
-        const previewWindow = this.deps.getElementById(DOM_IDS.SWITCH_PREVIEW_WINDOW);
-        const desktopPreview = this.deps.getElementById(DOM_IDS.DESKTOP_PREVIEW_WINDOW);
-
-        const safeAdd = this.deps.safeAddEventListener;
-        if (!safeAdd) return;
-
-        // Show subtle hint below inline preview if user hasn't used the feature yet
-        if (previewWindow) {
-            const _state = this.deps.AppState?.get();
-            const _dismissed = _state?.settings?.dismissedEducationalTips?.['tip.routinePreview'];
-            if (!_dismissed) {
-                let hint = document.getElementById('switch-preview-hint');
-                if (!hint) {
-                    hint = document.createElement('div');
-                    hint.id = 'switch-preview-hint';
-                    hint.className = 'switch-preview-hint';
-                    hint.textContent = getLabel('notify.routinePreviewTip');
-                    previewWindow.insertAdjacentElement('afterend', hint);
-                }
-            }
-
-            safeAdd(previewWindow, "dblclick", () => this._openPreviewReviewModal());
-        }
-
-        // Also attach to desktop preview panel
-        if (desktopPreview) {
-            // Stop click propagation so clicks inside the preview don't bubble up
-            // to the modal and deselect the currently selected routine
-            if (!desktopPreview._clickHandler) {
-                desktopPreview._clickHandler = (e) => e.stopPropagation();
-            }
-            safeAdd(desktopPreview, "click", desktopPreview._clickHandler);
-            safeAdd(desktopPreview, "dblclick", () => this._openPreviewReviewModal());
-        }
+        preview.setupPreviewPopout(this.deps, this._previewCallbacks);
     }
+
 
     /**
      * Open the full-screen review modal for the currently selected routine's tasks
      */
     _openPreviewReviewModal() {
-        // Dismiss hint on first use
-        const hintEl = document.getElementById('switch-preview-hint');
-        if (hintEl) {
-            hintEl.remove();
-            this.deps.AppState?.update(s => {
-                if (!s.settings.dismissedEducationalTips) s.settings.dismissedEducationalTips = {};
-                s.settings.dismissedEducationalTips['tip.routinePreview'] = true;
-            }, false);
-        }
-
-        const selected = this._getSelectedItem();
-        if (!selected) return;
-
-        const cycleKey = selected.dataset.cycleKey;
-        const currentState = this.deps.AppState?.get();
-        const cycleData = currentState?.data?.cycles?.[cycleKey];
-        if (!cycleData?.tasks) return;
-
-        const cycleName = cycleData.title || cycleKey;
-        const timestamp = cycleData.lastModified || cycleData.createdAt;
-        const dateStr = timestamp
-            ? new Date(timestamp).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
-            : '';
-        const dateLabel = cycleData.lastModified ? getLabel('switcher.modified') : getLabel('switcher.created');
-
-        const escDiv = document.createElement("div");
-        const escapeText = (str) => { escDiv.textContent = str; return escDiv.innerHTML; };
-
-        const completedCount = cycleData.tasks.filter(t => t.completed).length;
-        const taskRows = cycleData.tasks.map(task => {
-            const check = task.completed ? '&#10004;' : '&mdash;';
-            const cls = task.completed ? ' completed' : '';
-            return `<div class="preview-modal-task${cls}"><span class="preview-modal-check">${check}</span> ${escapeText(task.text)}</div>`;
-        }).join('');
-
-        // Remove existing preview modal if any
-        const existing = document.getElementById(DOM_IDS.PREVIEW_REVIEW_OVERLAY);
-        if (existing) existing.remove();
-
-        // Create modal as native dialog for proper top-layer stacking
-        const overlay = document.createElement('dialog');
-        overlay.id = 'preview-review-overlay';
-        overlay.className = 'preview-review-dialog';
-        overlay.innerHTML = `
-            <div class="modal-content preview-review-modal">
-                <button class="close-modal preview-review-close" aria-label="${getLabel('button.close')}">&times;</button>
-                <h3 class="preview-review-title">${escapeText(cycleName)}</h3>
-                <div class="preview-review-meta">
-                    ${cycleData.tasks.length} task${cycleData.tasks.length !== 1 ? 's' : ''} &middot; ${completedCount} completed${dateStr ? ` &middot; ${dateLabel}: ${dateStr}` : ''}
-                </div>
-                <div class="preview-review-body">${taskRows}</div>
-            </div>
-        `;
-
-        document.body.appendChild(overlay);
-        overlay.showModal();
-
-        // Close handlers
-        const close = () => { if (overlay.open) overlay.close(); overlay.remove(); };
-        overlay.querySelector(DOM_SELECTORS.PREVIEW_REVIEW_CLOSE).addEventListener('click', close);
-        overlay.addEventListener('click', (e) => {
-            e.stopPropagation(); // prevent routine switcher's document-level handler from closing
-            if (e.target === overlay) close();
-        });
+        preview.openPreviewReviewModal(this.deps, this._previewCallbacks);
     }
+
 
     /**
      * Load miniCycle list (debounced wrapper)
@@ -2167,6 +1153,63 @@ export class RoutineSwitcher {
     }
 
     /**
+     * Attach a long-press hint to each Routine Actions button.
+     *
+     * Idempotent: switchMiniCycle() re-runs this wiring on every open, so a previous
+     * attachment is detached before re-attaching rather than stacking a second
+     * set of touch listeners on the same button.
+     *
+     * Labels resolve at press time through getLabel, so a hint reflects the
+     * current language rather than whatever was current when the modal first
+     * opened. The buttons' own title attributes stay as they are — they are the
+     * desktop hover affordance, and this is the touch one.
+     *
+     * This also pins the ACCESSIBLE NAME, which is not the same job. Measured
+     * with Chromium's accessibility tree: because `.switch-btn-label` is
+     * `display: none` under the mobile breakpoint — and display:none removes
+     * text from the accessibility tree, not just from view — the same button
+     * was announced as "Duplicate" on desktop and "Duplicate routine" on
+     * mobile, the latter coming from `title`, which is the LAST resort in the
+     * accessible-name algorithm and the one assistive tech is least reliably
+     * configured to read.
+     *
+     * Naming from the same label key as the hint fixes both: one name at every
+     * width, from a real `aria-label` rather than a fallback, and it cannot
+     * drift from what the hint says because there is only one string. Buttons
+     * that already carry a deliberate aria-label (the theme picker) keep it.
+     * @returns {void}
+     */
+    _attachActionHints() {
+        const hints = [
+            [DOM_IDS.SWITCH_DUPLICATE, 'switcher.duplicateRoutine'],
+            [DOM_IDS.SWITCH_RENAME, 'switcher.renameRoutine'],
+            [DOM_IDS.SWITCH_DELETE, 'switcher.deleteRoutine'],
+            [DOM_IDS.SWITCH_DOWNLOAD, 'switcher.downloadRoutine'],
+            [DOM_IDS.SWITCH_THEME_BTN, 'switcher.changeRoutineTheme'],
+        ];
+
+        this._actionHintDetachers.forEach(detach => detach());
+        this._actionHintDetachers = [];
+
+        for (const [id, labelKey] of hints) {
+            const btn = this.deps.getElementById(id);
+            if (!btn) continue;
+            // Re-applied on every open so the name follows the current language,
+            // exactly like the hint text it is drawn from.
+            if (!btn.dataset.ariaLabelFixed && btn.hasAttribute('aria-label')) {
+                // Authored deliberately in the markup — leave it alone.
+                btn.dataset.ariaLabelFixed = 'authored';
+            } else {
+                btn.dataset.ariaLabelFixed = 'derived';
+                btn.setAttribute('aria-label', getLabel(labelKey));
+            }
+            this._actionHintDetachers.push(
+                attachLongPressHint(btn, { getText: () => getLabel(labelKey) })
+            );
+        }
+    }
+
+    /**
      * Setup search input for filtering routines
      */
     setupSearchInput() {
@@ -2335,37 +1378,20 @@ export class RoutineSwitcher {
      * @param {Array} cycleEntries - Array of [key, cycleData] entries
      * @returns {Array} Sorted array
      */
-    _sortCycles(cycleEntries) {
-        const isAsc = this._sortDirection === 'asc';
+    // ── List transforms ─────────────────────────────────────────────────────
+    // The pure ordering/filtering lives in routineSwitcherListTransforms.js
+    // (splits-plan Priority 1). The mode STATE stays here — it is persisted in
+    // _savePreferences and read by list rendering — so it is passed in per call
+    // rather than owned by the sub-module.
 
-        if (this._sortMode === 'recent') {
-            // Sort by lastModified, fall back to createdAt
-            // asc = newest first, desc = oldest first
-            return cycleEntries.sort((a, b) => {
-                const aTime = a[1].lastModified || a[1].createdAt || 0;
-                const bTime = b[1].lastModified || b[1].createdAt || 0;
-                return isAsc ? bTime - aTime : aTime - bTime;
-            });
-        } else if (this._sortMode === 'size') {
-            // Sort by file size
-            // asc = largest first, desc = smallest first
-            return cycleEntries.sort((a, b) => {
-                const aSize = getObjectSizeBytes(a[1]);
-                const bSize = getObjectSizeBytes(b[1]);
-                return isAsc ? bSize - aSize : aSize - bSize;
-            });
-        } else {
-            // Default: alphabetical by title
-            // asc = A-Z, desc = Z-A
-            // Strip leading emojis (including ZWJ sequences) so sort uses the text, not emoji code points
-            const stripLeadingEmoji = (text) => text.replace(/^[\p{Extended_Pictographic}\uFE0F\u200D\s]+/u, '');
-            return cycleEntries.sort((a, b) => {
-                const aTitle = stripLeadingEmoji((a[1].title || a[0]).toLowerCase());
-                const bTitle = stripLeadingEmoji((b[1].title || b[0]).toLowerCase());
-                return isAsc ? aTitle.localeCompare(bTitle) : bTitle.localeCompare(aTitle);
-            });
-        }
+    _sortCycles(cycleEntries) {
+        return listTransforms.sortCycles(cycleEntries, {
+            mode: this._sortMode,
+            direction: this._sortDirection,
+            sizeOf: getObjectSizeBytes
+        });
     }
+
 
     /**
      * Setup filter dropdown
@@ -2398,14 +1424,9 @@ export class RoutineSwitcher {
      * @returns {string} 'auto', 'manual', or 'todo'
      */
     _getCycleMode(cycleData) {
-        if (cycleData.deleteCheckedTasks) {
-            return 'todo';
-        } else if (cycleData.autoReset) {
-            return 'auto';
-        } else {
-            return 'manual';
-        }
+        return listTransforms.getCycleMode(cycleData);
     }
+
 
     /**
      * Filter cycles based on current filter mode
@@ -2413,14 +1434,9 @@ export class RoutineSwitcher {
      * @returns {Array} Filtered array
      */
     _filterCycles(cycleEntries) {
-        if (this._filterMode === 'all') {
-            return cycleEntries;
-        }
-
-        return cycleEntries.filter(([key, cycleData]) => {
-            return this._getCycleMode(cycleData) === this._filterMode;
-        });
+        return listTransforms.filterCycles(cycleEntries, this._filterMode);
     }
+
 
     /**
      * Schedule an idle-time save for durability without blocking UI

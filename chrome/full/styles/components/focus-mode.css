@@ -9,7 +9,9 @@
    ============================================================================= */
 
 /* Selectors map to constants.js:
-   .fixed-header-container  → DOM_CLASSES.FIXED_HEADER_CONTAINER
+   .menu-button             → DOM_SELECTORS.MENU_BUTTON
+   .mode-selector-wrapper   → DOM_SELECTORS.MODE_SELECTOR_WRAPPER
+   #saving-indicator        → DOM_IDS.SAVING_INDICATOR
    #slide-left              → DOM_IDS.SLIDE_LEFT
    #slide-right             → DOM_IDS.SLIDE_RIGHT
    #quick-actions-window    → DOM_IDS.QUICK_ACTIONS_WINDOW
@@ -135,18 +137,35 @@ body.focus-mode #task-view .task-list-container {
     max-height: calc(100dvh - var(--focus-task-list-reduction-desktop));
 }
 
-/* Chrome elements fade in/out */
-.fixed-header-container,
+/* Chrome elements fade in/out.
+
+   --focus-chrome-fade exists so the fade duration and the visibility delay
+   below cannot drift apart: the delay MUST equal the fade, or the chrome either
+   vanishes mid-fade or lingers in the tab order after it. */
+.mini-cycle-header-row .menu-button,
+.mode-selector-wrapper,
+#saving-indicator,
 #slide-left,
 #slide-right,
 #quick-actions-window,
 #footer-container,
 #personalization-btn,
 #quick-dark-toggle {
-    transition: opacity 0.3s ease;
+    --focus-chrome-fade: 0.3s;
+    /* Coming BACK: visibility flips at 0s so the fade-in is visible from frame one. */
+    transition: opacity var(--focus-chrome-fade) ease, visibility 0s;
 }
 
-body.focus-mode .fixed-header-container,
+/* The header's CHROME children are hidden individually — NOT the whole
+   .fixed-header-container — so .header-branding stays visible in focus view.
+   It has to be this way round: a descendant can override an ancestor's
+   `visibility`, but it can NEVER override an ancestor's `opacity` (opacity
+   applies to the composited subtree), and `inert` on an ancestor is likewise
+   not cancellable from within. Exempting the logo inside a hidden container
+   is therefore impossible; the container must not be the thing hidden. */
+body.focus-mode .mini-cycle-header-row .menu-button,
+body.focus-mode .mode-selector-wrapper,
+body.focus-mode #saving-indicator,
 body.focus-mode #slide-left,
 body.focus-mode #slide-right,
 body.focus-mode #quick-actions-window,
@@ -155,6 +174,91 @@ body.focus-mode #personalization-btn,
 body.focus-mode #quick-dark-toggle {
     opacity: 0;
     pointer-events: none;
+    /* visibility:hidden is what actually removes this chrome from the
+       accessibility tree and the tab order.
+    
+       focusMode.js also sets `inert` on exactly these elements, and its comment
+       states the intent: "so keyboard / screen-reader users don't land on
+       invisible buttons." But `inert` needs Chrome 102 / Safari 15.5, while the
+       app's feature gate admits Chrome 71 / Safari 12.1 — so on browsers inside
+       that band the protection silently did not happen and the faded-out chrome
+       stayed focusable and announced. opacity and pointer-events do not help:
+       opacity:0 leaves a control in the tree, and pointer-events only blocks the
+       mouse, not Tab or a screen reader.
+    
+       visibility is supported everywhere, so this closes the band. `inert` stays
+       — it also blocks clicks and is the clearer signal of intent where supported.
+    
+       The 0.3s delay lets the fade finish before the element leaves the tree;
+       without it the chrome would disappear instantly instead of fading. */
+    visibility: hidden;
+    transition: opacity var(--focus-chrome-fade) ease,
+                visibility 0s linear var(--focus-chrome-fade);
+}
+
+/* =============================================================================
+   FOCUS MODE — BRANDING: THE MARK ALONE
+   ============================================================================= */
+
+/* The logo MARK stays; the wordmark and the "ROUTINE MANAGER" subtitle do not.
+   Both are identity/descriptor elements aimed at someone who does not yet know
+   the app — this view is for someone mid-routine who does. Dropping them also
+   returns the vertical breathing room that is most of why focus view reads calm.
+   Hiding the group (not the two children) keeps .header-branding's flex gap from
+   leaving a hole where they were. */
+body.focus-mode .app-name-group {
+    display: none;
+}
+
+/* Sized up so the mark reads as a deliberate anchor rather than an orphaned icon
+   once it stands alone (25px base -> 36px).
+
+   HEIGHT, NOT transform: the logo carries the cycle-reset coin flip
+   (.logo-spin), the green/red flash feedback (.logo-flash-*) and a :hover
+   scale — all of which animate `transform`. Scaling here would be overwritten
+   mid-animation and the mark would snap back to base size on every cycle reset.
+
+   `width: auto` is explicit because a narrow-viewport rule in header.css pins
+   width to 28px; without it the taller mark would be squashed. */
+body.focus-mode .header-logo {
+    --focus-logo-height: 36px;
+    height: var(--focus-logo-height);
+    width: auto;
+}
+
+/* Lift the mark to sit on the same optical line as the ✕ / ⋯ buttons.
+   Measured at 390x844: the buttons centre at y=31 while .header-branding
+   centres at y=41, because it is centred on the HEADER ROW (and a narrow-
+   viewport rule pushes it further down by half the safe-area inset). Ten
+   pixels low reads as misaligned against two elements it sits between.
+
+   v2.470 backs the lift off to 4px on device feedback that a full 10px sat too
+   high. That is a deliberate 6px below the buttons' optical line, not a
+   miscalculation of it — the derivation below still gives 10px.
+
+   margin-top, NOT transform: .header-branding already uses
+   translate(-50%, -50%) to centre itself, so overriding transform here would
+   mean restating that centring. A negative margin composes with the existing
+   absolute positioning and leaves the transform alone.
+
+   THE 10px IS SAFE-AREA INDEPENDENT — do not "fix" it with an env() term.
+   With S = env(safe-area-inset-top):
+       buttons   top: S + 12, height 38        -> centre  S + 31
+       branding  row padding grows by S, so the row is (82 + S) tall, and
+                 top: 50% + S/2                -> centre  (82+S)/2 + S/2 = 41 + S
+   The difference is 41 + S - (S + 31) = 10px for every S. That cancellation is
+   exactly what header.css's `+ env(...)/2` rule is there to produce, so adding
+   another safe-area term here would over-correct on notched devices only —
+   the hardest place to notice it. */
+body.focus-mode .header-branding {
+    --focus-logo-rise: 4px;
+    margin-top: calc(-1 * var(--focus-logo-rise));
+}
+
+/* Transition lives on the base selector so the resize eases BOTH ways — a rule
+   inside body.focus-mode simply stops applying on exit, which would snap. */
+.header-logo {
+    transition: height var(--transition-normal) ease;
 }
 
 /* Help window stays visible in focus mode, but strip the leading
@@ -539,26 +643,39 @@ body.focus-mode .focus-mode-mode-modal {
 @media (max-width: 1023px) {
     body.focus-mode #focus-mode-menu-btn,
     body.focus-mode #focus-mode-exit-btn {
-        top: calc(env(safe-area-inset-top) + 12px);
+        top: calc(env(safe-area-inset-top, 0px) + var(--focus-btn-top));
         width: 56px;
-        height: 38px;
+        height: var(--focus-btn-height);
     }
     body.focus-mode #focus-mode-menu-btn { right: 12px; }
     body.focus-mode #focus-mode-exit-btn { left: 12px; }
 
-    /* Top-clearance is now provided by #task-view's padding-top (see rule
-       above) so the layout works whether the input bar is visible or
-       hidden. Just zero the normal-mode margins on #task-input-row and
-       .task-card so they don't stack on top of that padding. */
+    /* Top-clearance comes from #task-view's max-height (see rule above),
+       which is what positions the centred wrapper. Zero the normal-mode
+       margins on #task-input-row and .task-card so they don't push the card
+       below the wrapper edge the clearance equation assumes. */
     body.focus-mode #task-input-row {
         margin-top: 0;
+    }
+
+    /* Let the card size to its CONTENT inside the band instead of growing to
+       fill it. #task-card-group is flex: 1 1 auto by default, and flex-grow
+       consumes the free space before justify-content can centre anything — so
+       a two-task routine still rendered as tall as an eight-task one, pinned
+       to the band's top edge. Shrink is left intact: a list longer than the
+       band still collapses to fill it exactly, so the full-list geometry is
+       unchanged. */
+    body.focus-mode #task-card-group {
+        flex-grow: 0;
     }
     body.focus-mode #task-view .task-card {
         margin-top: 0;
     }
 
     body.focus-mode #focus-mode-menu {
-        top: calc(env(safe-area-inset-top) + 64px);
+        /* Sits below the buttons — derived from where they end rather than
+           restating 12 + 38 + 14 as a literal 64px. */
+        top: calc(var(--focus-top-chrome) + var(--focus-btn-gap));
         right: 12px;
         min-width: 200px;
     }
@@ -882,11 +999,79 @@ body.focus-mode #complete-all-and-help-window-container {
        preserve flex space in this configuration, so we can't rely on
        margin on #task-input-row alone). */
     body.focus-mode #task-view {
-        top: calc(50% + 25px);
-        transform: translate(-50%, -50%);
-        max-height: calc(100dvh - 10px);
-        padding-top: calc(env(safe-area-inset-top, 0px) + 25px);
-        box-sizing: border-box;
+        /* BAND-ANCHORED, not centred. The view occupies exactly the space
+           between the painted chrome and the nav dots, so both edges are set
+           by construction and neither can drift:
+
+               top    = chromeBottom + cardGap          (--focus-band-top)
+               bottom = 100dvh - navDotsClearance - gap
+
+           Both inputs are MEASURED on the live elements (--focus-chrome-bottom
+           and --nav-dots-clearance, published by headerLayoutManager), which is
+           what makes this hold across surfaces: an in-app browser reports
+           env(safe-area-inset-top) 0 where the installed app reports 61, and
+           the chrome that paints is .mini-cycle-header-row, not the ✕ / ⋯
+           buttons it contains.
+
+           The previous centred model (top: 50% + 25px with the height derived
+           so the top edge cleared the chrome) assumed 50dvh + 25 sat near the
+           band's centre. At 820x480 the band is 81 -> 349, centred on 215,
+           against an element centred on 265 — so clearing the top forced the
+           bottom past the nav dots. Reverting to centring will reintroduce
+           that; the layout suite's focus-view checks are the guard. */
+        top: var(--focus-band-top);
+        bottom: calc(var(--nav-dots-clearance, var(--nav-dots-clearance-fallback))
+                     + var(--focus-band-bottom-gap));
+        transform: translateX(-50%);
+
+        /* top + bottom + height:auto makes the element OCCUPY the band rather
+           than be capped by it. That distinction matters: with only a
+           max-height the element is content-sized, so a short routine sat at
+           the band's top edge with all the slack below it — v2.473's reported
+           "should be more centered". A content-sized box also gives
+           justify-content nothing to distribute. #task-view paints nothing of
+           its own, so filling the band is invisible; the content centres
+           inside it, and a full list still fills it exactly as before. */
+        height: auto;
+        max-height: none;
+
+        /* Centre the WHOLE group — input bar, card, help window — as one block.
+           `safe` is load-bearing: with content taller than the band the free
+           space goes negative and plain `center` overflows BOTH edges, which
+           put the card back under the header at 820x480. `safe` falls back to
+           flex-start exactly then. On engines that don't support the keyword
+           the declaration is dropped and alignment defaults to flex-start,
+           which is the same conservative outcome, so the floor degrades safely.
+
+           This must live on the CONTAINER, not as `margin-top: auto` on
+           #task-card-group: an auto margin there absorbs the slack BETWEEN the
+           input bar and the card, pinning the bar to the band's top edge while
+           the card floats down — 141px apart on a two-task routine, against a
+           constant 16px in Home view. */
+        justify-content: safe center;
+    }
+
+    /* The carousel's right-exit must keep the band's vertical anchoring.
+       #task-view.hide.hide-right (app-container.css) sets
+       `transform: translate(-50%, -50%)`, and one-id-plus-TWO-classes outranks
+       the one-id-one-class-one-element selector above — so it silently put back
+       the -50% Y the band model removes, and the view slid UP as it slid right:
+       measured translateY 0 -> -294px at 390x844 and 0 -> -385px at 768x1024,
+       with rect.y going 98 -> -196. Reported as "the routine goes to the upper
+       right corner instead of straight across".
+
+       main.css already fixes this same collision for `.hide` under
+       first-run-welcome-active / onboarding-active, and says why in as many
+       words: "the -50% Y would yank the view upward and read as a glitch".
+       That override predates the focus Task panel, so the directional
+       hide-right the carousel introduced was never covered.
+
+       Scoped to this media block ON PURPOSE: at >=1024px #task-view really is
+       centred, `.show` and `.hide-right` both measure translateY -196px, and an
+       unconditional X-only override would introduce there the exact jump it
+       removes here. The left exit (toward Stats) already measures flat. */
+    body.focus-mode #task-view.hide.hide-right {
+        transform: translateX(-50%);
     }
 
     body.focus-mode #task-view .task-card {
@@ -896,6 +1081,14 @@ body.focus-mode #complete-all-and-help-window-container {
     body.focus-mode #task-view .task-list-container {
         /* Tunable via --focus-task-list-reduction-mobile in variables.css. */
         max-height: calc(100dvh - var(--focus-task-list-reduction-mobile));
+
+        /* The list's normal 200px floor is taller than the whole band on a
+           short landscape viewport (820x480: the band is 97 -> 324, and the
+           card-group's floor alone exceeds it), so the content overflowed
+           #task-view and was clipped by its overflow: hidden — with the help
+           window landing over the nav dots. Inside the band the list is the
+           element that should absorb the shortage: it already scrolls. */
+        min-height: 0;
     }
 
     /* Focus mode: fixed to bottom-right of viewport.
