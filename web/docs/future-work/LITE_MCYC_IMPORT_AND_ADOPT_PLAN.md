@@ -1,6 +1,8 @@
 # Lite ↔ Full: `.mcyc` Import in Lite + "Adopt Lite Data" in the Full App
 
-> **Status:** 📋 PLANNED — not started ·
+> **Status:** 📋 PLANNED — prerequisite shipped (v2.544, Sep 2026: `miniCycleLiteFocusMode`
+> added to `STORAGE_KEYS.LITE_*` and all four Lite key lists; `dataSanitizer.tests.js` pins
+> every `LITE_*` key has a sanitizer case). Parts A and B not started ·
 > **Severity:** Medium — a stranded-user gap, not a bug ·
 > **Found:** Sep 2026, while reviewing the feature-gate → Lite path (v2.543).
 >
@@ -20,7 +22,8 @@
 | **B. Full app offers to adopt the Lite list** | ✅ Yes — first | "Used Lite for a while, now on a phone that runs full" is the main migration need, and it's the same origin — the full app can read `miniCycleLite` directly. Zero file handling, zero frozen-code changes, fully testable. |
 | **Lite writes `.mcyc`** (export) | ❌ No | Makes a frozen ES5 file a producer of a living format. Concrete hazard: `cycleImportManager.js:650` defaults `deleteWhenComplete: task.deleteWhenComplete !== false` — a minimal producer that omits the field imports as `true`. Plus `<a download>` of a Blob is unreliable on iOS 12 Safari, the exact device class Lite serves. Same-device migration is covered by B. |
 
-**Build order: B, then A.** B is maintained code with journeys; A is the one
+**Build order: B, then A.** The only prerequisite (the Lite backup key gap, B5) is
+done — v2.544. B is maintained code with journeys; A is the one
 un-freeze of Lite and should be a single bounded release.
 
 ---
