@@ -1210,6 +1210,31 @@ export const DEFAULT_LABELS = deepFreeze({
     // 14. MENU SECTIONS
     // ========================================================================
 
+    // ========================================================================
+    // TIP ARCHIVE
+    // Chrome only. The TIPS THEMSELVES live in modules/labels/loading-tips.json
+    // and are deliberately NOT here: the pre-boot rotator in miniCycle.html runs
+    // before the label system exists, so the JSON is the one place both readers
+    // can reach. Two copies is exactly the drift validate:labels cannot see.
+    // ========================================================================
+
+    tipArchive: {
+        menuItem:         'Tips',
+        menuItemTitle:    'Browse every loading tip',
+        title:            'Tips',
+        prev:             'Previous tip',
+        next:             'Next tip',
+        pause:            'Pause',
+        play:             'Play',
+        pauseAria:        'Pause the tip rotation',
+        playAria:         'Resume the tip rotation',
+        position:         '{current} of {total}',
+        firstRunHeading:  'Getting started',
+        inAppHeading:     'Using the app',
+        close:            'Close',
+        loadFailed:       'Could not load the tips.',
+    },
+
     menu: {
         routineActions:          'Routine Actions',
         taskActions:             'Task Actions & Features',

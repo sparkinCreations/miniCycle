@@ -31,9 +31,9 @@
 // §1 VERSION IDENTITY (update-version.sh rewrites the three vars below — keep
 //    their exact `var NAME = …` shapes) + the build-injected module map.
 // ═══════════════════════════════════════════════════════════════════════════
-var APP_VERSION = '2.545';
-var CACHE_VERSION = 'v1388';
-var CACHE_VERSION_NUMBER = 1388; // Numeric version matching version.js (for synthetic fallback)
+var APP_VERSION = '2.546';
+var CACHE_VERSION = 'v1389';
+var CACHE_VERSION_NUMBER = 1389; // Numeric version matching version.js (for synthetic fallback)
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -258,6 +258,7 @@ var BOOT_CRITICAL = [
   './modules/ui/panelVisibilityHelpers.js',
   './modules/ui/notificationDialogHost.js',
   // Features - remaining
+  './modules/features/tipArchive.js',
   './modules/features/clearedTasksManager.js',
   './modules/features/historyManager.js',
   // Storage

@@ -442,6 +442,7 @@
             <option value="diBase">💉 DI Base</option>
             <option value="themes">🎨 Vocab Themes</option>
             <option value="dataSanitizer">🧹 Data Sanitizer</option>
+            <option value="tipArchive">💡 Tip Archive</option>
             <option value="storageUtils">💾 Storage Utils</option>
             <option value="achievementsManager">🏆 Achievements Manager</option>
             <option value="historyManager">📜 History Manager</option>
@@ -626,6 +627,7 @@
         const { runDiBaseTests } = await import(`./diBase.tests.js?v=${cacheBuster}`);
         const { runThemesTests } = await import(`./themes.tests.js?v=${cacheBuster}`);
         const { runDataSanitizerTests } = await import(`./dataSanitizer.tests.js?v=${cacheBuster}`);
+        const { runTipArchiveTests } = await import(`./tipArchive.tests.js?v=${cacheBuster}`);
         const { runStorageUtilsTests } = await import(`./storageUtils.tests.js?v=${cacheBuster}`);
         const { runAchievementsManagerTests } = await import(`./achievementsManager.tests.js?v=${cacheBuster}`);
         const { runHistoryManagerTests } = await import(`./historyManager.tests.js?v=${cacheBuster}`);
@@ -1878,6 +1880,10 @@
                     await import(`../modules/utils/dataSanitizer.js?v=${cacheBuster}`);
                     currentModule = 'dataSanitizer';
                     resultsDiv.innerHTML = '<p>✅ DataSanitizer loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'tipArchive') {
+                    await import(`../modules/features/tipArchive.js?v=${cacheBuster}`);
+                    currentModule = 'tipArchive';
+                    resultsDiv.innerHTML = '<p>✅ TipArchive loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'storageUtils') {
                     await import(`../modules/utils/storageUtils.js?v=${cacheBuster}`);
                     currentModule = 'storageUtils';
@@ -2226,6 +2232,8 @@
                 await runThemesTests(resultsDiv);
             } else if (currentModule === 'dataSanitizer') {
                 await runDataSanitizerTests(resultsDiv);
+            } else if (currentModule === 'tipArchive') {
+                await runTipArchiveTests(resultsDiv);
             } else if (currentModule === 'storageUtils') {
                 await runStorageUtilsTests(resultsDiv);
             } else if (currentModule === 'achievementsManager') {
@@ -2607,6 +2615,7 @@
                 { name: 'DiBase', key: 'diBase', runFn: runDiBaseTests, importPath: '../modules/core/diBase.js' },
                 { name: 'Themes', key: 'themes', runFn: runThemesTests, importPath: '../modules/labels/themes.js' },
                 { name: 'DataSanitizer', key: 'dataSanitizer', runFn: runDataSanitizerTests, importPath: '../modules/utils/dataSanitizer.js' },
+                { name: 'TipArchive', key: 'tipArchive', runFn: runTipArchiveTests, importPath: '../modules/features/tipArchive.js' },
                 { name: 'StorageUtils', key: 'storageUtils', runFn: runStorageUtilsTests, importPath: '../modules/utils/storageUtils.js' },
                 { name: 'AchievementsManager', key: 'achievementsManager', runFn: runAchievementsManagerTests, importPath: '../modules/features/achievementsManager.js' },
                 { name: 'HistoryManager', key: 'historyManager', runFn: runHistoryManagerTests, importPath: '../modules/features/historyManager.js' },

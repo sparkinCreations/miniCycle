@@ -95,7 +95,7 @@
 
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" id="status-bar-style-meta">
 
-<meta name="app-version" content="2.545">
+<meta name="app-version" content="2.546">
 
 <!-- CSP is served via HTTP header in netlify.toml (production) -->
 <!-- No <meta> CSP tag needed — Netlify headers handle it, and omitting it here allows local HTTP dev servers -->
@@ -130,17 +130,17 @@
          light mode / full motion / default background on every load.
      ═══════════════════════════════════════════════════════════════════════════ -->
 
-<link rel="preload" href="styles/main.css?v=2.545" as="style">
-<link rel="preload" href="styles/base/variables.css?v=2.545" as="style">
-<link rel="preload" href="styles/base/reset.css?v=2.545" as="style">
-<link rel="preload" href="styles/layout/app-container.css?v=2.545" as="style">
-<link rel="preload" href="styles/layout/header.css?v=2.545" as="style">
-<link rel="preload" href="styles/components/task-list.css?v=2.545" as="style">
+<link rel="preload" href="styles/main.css?v=2.546" as="style">
+<link rel="preload" href="styles/base/variables.css?v=2.546" as="style">
+<link rel="preload" href="styles/base/reset.css?v=2.546" as="style">
+<link rel="preload" href="styles/layout/app-container.css?v=2.546" as="style">
+<link rel="preload" href="styles/layout/header.css?v=2.546" as="style">
+<link rel="preload" href="styles/components/task-list.css?v=2.546" as="style">
 
 <!-- Async CSS loading - doesn't block render, app starts with inline critical CSS -->
-<link rel="stylesheet" href="styles/main.css?v=2.545" media="print" id="async-main-css">
+<link rel="stylesheet" href="styles/main.css?v=2.546" media="print" id="async-main-css">
 <script>(function(){var l=document.getElementById('async-main-css');if(!l)return;function apply(){l.media='all';}if(l.sheet){apply();}else{l.addEventListener('load',apply);}})();</script>
-<noscript><link rel="stylesheet" href="styles/main.css?v=2.545"></noscript>
+<noscript><link rel="stylesheet" href="styles/main.css?v=2.546"></noscript>
 <link rel="manifest" href="manifest.json">
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -151,7 +151,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- version.js MUST load synchronously BEFORE modulepreloads to set globalThis.APP_VERSION -->
-<script src="./version.js?v=2.545"></script>
+<script src="./version.js?v=2.546"></script>
 
 <!-- Build version = the version baked into THIS HTML document (the meta tag
      above). It is the honest "what am I actually running" signal. By contrast,
@@ -679,7 +679,7 @@
   }, LOAD_TIMEOUT_MS);
 })();
 </script>
-    <script src="boot-sw.js?v=2.545" defer></script>
+    <script src="boot-sw.js?v=2.546" defer></script>
 
 
 
@@ -796,7 +796,16 @@
 
     fetch('./modules/labels/loading-tips.json')
       .then(function(r) { return r.json(); })
-      .then(function(tips) {
+      .then(function(data) {
+        // Shape is { firstRun: [...], inApp: [...] }, NOT a bare array.
+        // Audience matters: on the first-run choice screen the user has no
+        // routine, no tasks and no UI to point at, so an instructional tip
+        // ("click your progress badge") is simply false there. Reuse the same
+        // #first-run-restore probe tipWouldCollide() already does — that
+        // element exists ONLY on the choice screen, so it is a free signal.
+        // A missing pool just yields no tips; these are decorative.
+        var onFirstRun = !!document.getElementById('first-run-restore');
+        var tips = data && (onFirstRun ? data.firstRun : data.inApp);
         if (!tips || !tips.length) return;
         var i = Math.floor(Math.random() * tips.length);
         text.textContent = tips[i];
@@ -1215,6 +1224,7 @@
                     <button id="menu-lite-version" title="Switch to the lightweight version"><i class="fas fa-mobile-alt"></i>Lite Version</button>
                     <button id="share-app" title="Share miniCycle with someone" aria-label="Share miniCycle with someone"><i class="fas fa-share-nodes"></i>Share App</button>
                     <button id="menu-check-updates" title="Check for app updates"><i class="fas fa-sync-alt"></i>Check for Updates</button>
+                    <button id="open-tip-archive" title="Browse every loading tip"><i class="fas fa-info-circle"></i><span class="menu-item-label">Tips</span></button>
                     <button id="menu-retake-tours" title="Reset and retake guided tours"><i class="fas fa-route"></i>Reset Tours</button>
                 </div>
             </div>
@@ -1990,7 +2000,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- Boot File Split (Dec 2025): Load via entrypoint which orchestrates all boot files -->
- <script type="module" src="miniCycle-main.js?v=2.545"></script>
+ <script type="module" src="miniCycle-main.js?v=2.546"></script>
 
 <script>
 // Sync About modal version with meta app-version

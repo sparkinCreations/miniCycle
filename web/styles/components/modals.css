@@ -881,3 +881,173 @@ body.dark-mode .btn-choice:hover {
 /* NOTE: Recurring task styles are defined in recurring.css */
 
 /* NOTE: Games modal dark mode styles are defined in games.css */
+
+/* =============================================================================
+   TIP ARCHIVE  (modules/features/tipArchive.js)
+   ============================================================================= */
+
+/* Match the house modal shell (themes / preferences / settings): a titled
+   header band, --modal-*-effective tokens, radius-xl and shadow-modal. The bare
+   .modal-content shell this used at first is a different visual language —
+   radius-lg, shadow-lg, glass-bg, no header band — so the Tips modal read as
+   foreign next to every other dialog in the app. */
+.tip-archive-modal-content {
+    padding: 0;
+    border-radius: var(--radius-xl);
+    background: var(--modal-bg-effective);
+    color: var(--modal-text-effective);
+    box-shadow:
+        var(--shadow-modal),
+        inset 0 1px 1px rgba(255, 255, 255, 0.25);
+    overflow: hidden;
+}
+
+.tip-archive-modal-content h2 {
+    margin: 0;
+    padding: var(--space-4-5) var(--space-6);
+    background: var(--modal-header-bg-effective);
+    color: var(--modal-text-effective);
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    border-bottom: 1px solid var(--modal-border-effective);
+}
+
+/* The header band is edge-to-edge, so the body needs its own inset back. */
+.tip-archive-body {
+    padding: var(--space-4) var(--space-6) var(--space-4);
+}
+
+/* One tip at a time, mirroring the loading screen. A fixed min-height keeps the
+   modal from resizing as tips of different lengths swap in — a box that jumps
+   under the Next button is worse than a little empty space. */
+.tip-archive-stage {
+    min-height: 5.5em;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    margin: 0 0 var(--space-4);
+}
+
+/* Re-triggered on every card change to animate the new tip in. Deliberately an
+   ANIMATION, not a JS-timed fade: no setTimeout has to be kept in sync with a
+   CSS duration, and --transition-normal collapses to 0ms under
+   prefers-reduced-motion, so the effect disappears on its own. */
+.tip-archive-fading {
+    animation: tipArchiveIn var(--transition-normal) ease;
+}
+
+@keyframes tipArchiveIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: none; }
+}
+
+.tip-archive-kicker {
+    margin: 0 0 var(--space-2);
+    font-size: var(--font-size-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+    color: var(--accent-color, var(--color-primary));
+    opacity: 0.85;
+}
+
+/* The tip is the reason the modal exists — with the intro gone, give it the
+   visual weight to match. */
+.tip-archive-text {
+    margin: 0;
+    line-height: 1.5;
+    font-size: var(--font-size-lg);
+}
+
+.tip-archive-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-3);
+    margin-bottom: 0;
+}
+
+/* Circular, so prev/next read as a matched pair rather than two grey slabs.
+   44px keeps the touch target intact. */
+.tip-archive-nav-btn {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    /* A tint, NOT a border: --modal-border-effective resolves to `transparent`
+       under the default theme, so a bordered chip renders as a bare glyph with
+       no affordance. --overlay-light is the token meant for chips like this. */
+    border: none;
+    border-radius: var(--radius-full, 50%);
+    background: var(--overlay-light, rgba(0, 0, 0, 0.06));
+    color: inherit;
+    font-size: var(--font-size-lg);
+    line-height: 1;
+    cursor: pointer;
+    transition: background var(--transition-fast) ease, border-color var(--transition-fast) ease;
+}
+
+.tip-archive-nav-btn:hover {
+    background: var(--overlay-medium, rgba(0, 0, 0, 0.12));
+}
+
+/* Close matches the house modal-close treatment (#close-reminders-btn,
+   #close-main-menu): the theme-aware --menu-close-* tokens, not .settings-btn's
+   --color-primary. .settings-btn supplies the full-width shape; this supplies
+   the colour and seats it flush against the modal's bottom edge. No corner
+   radius is declared — .tip-archive-modal-content has overflow:hidden, so the
+   shell clips the button to its own radius and the two can never disagree. */
+#tip-archive-close {
+    margin: 0;
+    padding: var(--space-3-5);
+    border-radius: 0;
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    background: var(--menu-close-bg, var(--color-steel-blue));
+    color: var(--menu-close-text, var(--color-white));
+}
+
+#tip-archive-close:hover {
+    background: var(--menu-close-hover-bg, var(--color-steel-blue));
+    transform: none;
+}
+
+/* Pause is a PLAYBACK control, so it lives with prev/next rather than beside
+   the modal's Close action. Quieter than the arrows — it is the least-used of
+   the three. */
+/* Centre transport control, between the arrows. Same circular chip so the three
+   read as one set; the icon is a touch smaller than the chevrons because a solid
+   glyph carries more visual weight than a stroke at the same size. */
+.tip-archive-pause-btn {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-full, 50%);
+    background: var(--overlay-light, rgba(0, 0, 0, 0.06));
+    color: inherit;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background var(--transition-fast) ease;
+}
+
+.tip-archive-pause-btn:hover {
+    background: var(--overlay-medium, rgba(0, 0, 0, 0.12));
+}
+
+.tip-archive-pause-btn .icon,
+.tip-archive-pause-btn svg {
+    width: 14px;
+    height: 14px;
+    display: block;
+}
+
+.tip-archive-position {
+    margin: 0 0 var(--space-2);
+    text-align: center;
+    font-size: var(--font-size-sm);
+    opacity: 0.75;
+    font-variant-numeric: tabular-nums;  /* stops the counter jittering as it counts up */
+}

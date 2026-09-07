@@ -1,3 +1,8 @@
+## [2.546] - 2026-09-06
+- docs(future-work): Lite import/adopt plan — prerequisite shipped in v2.544
+- feat(tips): browsable tip archive carousel; split loading tips by audience
+
+
 ## [2.545] - 2026-09-06
 - docs(future-work): add Welcome Screen and Tip Archive documentation
 - chore: remove dead exit-mini-cycle button and trim 76 low-value HTML comments

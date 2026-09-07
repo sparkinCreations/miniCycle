@@ -744,6 +744,16 @@ export const MODULE_MANIFESTS = {
         after: ['statsPanel']
     },
 
+    tipArchive: {
+        path: '../features/tipArchive.js',
+        phase: PHASES.FEATURES,
+        requires: [],
+        optionalDeps: ['showNotification', 'hideMainMenu'],
+        provides: [],
+        provideInstance: 'tipArchive',
+        api: 'features'
+    },
+
     clearedTasksManager: {
         path: '../features/clearedTasksManager.js',
         phase: PHASES.FEATURES,

@@ -139,6 +139,7 @@ export const UI_TIMEOUTS = Object.freeze({
     FOCUS_TASK_CELEBRATION: 2000,  // 2000ms - Focus task panel cycle-complete card celebration before showing task 1 (FOCUS_TASK_VIEW_PLAN D5)
     TOOLTIP_HIDE: 3000,            // 3000ms - Tooltip auto-hide delay
     FIRST_RUN_WELCOME_SLIDE_HOLD: 8000,    // 8000ms - How long each first-run welcome banner slide is visible before auto-advance
+    TIP_ARCHIVE_SLIDE_HOLD: 8000,          // 8000ms - How long one tip stays up in the tip archive before auto-advancing. Matches FIRST_RUN_WELCOME_SLIDE_HOLD: same job (read one short line, unhurried) so the two should not drift apart. Deliberately far slower than the 4s BOOT rotator, which the user is not expected to read completely.
     FIRST_RUN_SPLASH_WATCHDOG: 12000,      // 12000ms - Hard ceiling on the typewriter splash. Its phase chain hangs off animationend, which never fires if the char animations are disabled or interrupted; this guarantees the splash always fades and its completion promise always resolves (the create/sample picks open their dialog on it)
 
     // Cycle-demo SVG choreography (slide 3) — relative offsets WITHIN one
@@ -770,6 +771,35 @@ export const DOM_CLASSES = Object.freeze({
     DROPDOWN_OPEN: 'dropdown-open',
     REFRESHING: 'refreshing',
 
+    // ---- Modals (generic) ----
+    // The shared dialog shell from styles/components/modals.css. Reusable by any
+    // modal that needs no bespoke chrome — see features/tipArchive.js.
+    MODAL: 'modal',
+    MODAL_CONTENT: 'modal-content',
+
+    // ---- Tip Archive ----
+    // Label span inside a menu button. iconInit.js wraps the icon in its OWN
+    // <span class="icon">, so a module setting button text MUST target this
+    // class — a bare querySelector('span') hits the icon wrapper and wipes the SVG.
+    MENU_ITEM_LABEL: 'menu-item-label',
+    // Bespoke shell + has-corner-logo: the house pattern every other modal uses
+    // (themes / preferences / settings / feedback). Bare .modal-content is a
+    // different visual language and reads as foreign beside them.
+    TIP_ARCHIVE_MODAL_CONTENT: 'tip-archive-modal-content',
+    TIP_ARCHIVE_BODY: 'tip-archive-body',
+    HAS_CORNER_LOGO: 'has-corner-logo',
+    // House class for a modal's primary/close action: full-width, --color-primary.
+    // Used by the reminders, settings and preferences modals.
+    SETTINGS_BTN: 'settings-btn',
+    TIP_ARCHIVE_STAGE: 'tip-archive-stage',
+    TIP_ARCHIVE_TEXT: 'tip-archive-text',
+    TIP_ARCHIVE_KICKER: 'tip-archive-kicker',
+    TIP_ARCHIVE_NAV: 'tip-archive-nav',
+    TIP_ARCHIVE_NAV_BTN: 'tip-archive-nav-btn',
+    TIP_ARCHIVE_PAUSE_BTN: 'tip-archive-pause-btn',
+    TIP_ARCHIVE_POSITION: 'tip-archive-position',
+    TIP_ARCHIVE_FADING: 'tip-archive-fading',
+
     // ---- Empty State ----
     // The empty-state hint varies across TWO axes: which view is active
     // (home vs focus) and whether the task input bar is currently showing.
@@ -956,6 +986,14 @@ export const DOM_IDS = Object.freeze({
     MENU_TASK_OPTIONS: 'menu-task-options',
     MENU_ENTER_FOCUS_VIEW: 'menu-enter-focus-view',
     OPEN_USER_MANUAL: 'open-user-manual',
+    OPEN_TIP_ARCHIVE: 'open-tip-archive',
+    TIP_ARCHIVE_MODAL: 'tip-archive-modal',
+    TIP_ARCHIVE_CLOSE: 'tip-archive-close',
+    TIP_ARCHIVE_TEXT: 'tip-archive-text',
+    TIP_ARCHIVE_PREV: 'tip-archive-prev',
+    TIP_ARCHIVE_NEXT: 'tip-archive-next',
+    TIP_ARCHIVE_PLAYPAUSE: 'tip-archive-playpause',
+    TIP_ARCHIVE_POSITION: 'tip-archive-position',
     SAVE_AS_MINI_CYCLE: 'save-as-mini-cycle',
     OPEN_MINI_CYCLE: 'open-mini-cycle',
     CLEAR_MINI_CYCLE_TASKS: 'clear-mini-cycle-tasks',
