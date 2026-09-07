@@ -1,3 +1,7 @@
+## [2.549] - 2026-09-07
+- docs: record deploy-verification chain and shim caching rationale
+
+
 ## [2.548] - 2026-09-07
 - fix(a11y): WCAG AA contrast on first-run and Welcome screens; menu polish and docs
 

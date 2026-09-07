@@ -277,6 +277,49 @@ Full source test suite is unaffected by the pipeline and must stay green: `npm t
 
 ---
 
+## Verifying a LIVE deploy — do not grep source paths
+
+`curl`ing a source path on production tells you almost nothing, and it will
+convince you a shipped change is missing. There are **three** layers between
+`modules/utils/icons.js` and its code:
+
+```
+/modules/utils/icons.js              ~220–450 B  stable-path SHIM  (testing modal only)
+   └─ /build/modules/utils/icons-<HASH>.js   ~220 B  re-export STUB
+        └─ /build/chunks/chunk-<HASH>.js     ~28 KB  the actual code
+```
+
+Both upper layers return **200 with the right content-type**, so a naive check
+looks like it worked and a `grep` for your new code finds nothing. Sep 2026: this
+produced a false "the lightbulb icon did not ship" scare — the icon was in the
+shared chunk the whole time. A second trap sits alongside it: esbuild **code-splits**,
+so a module's own hashed file may contain nothing but re-exports, and its hash will
+not change even when its source did.
+
+**Verify like this instead:**
+
+1. **Artifact shape first** (the CLAUDE.md rule) — HTML `src` points into `/build/`,
+   `/package.json` 404s. This proves a real build, not a half-dark deploy.
+2. **Version** — `curl -s https://minicycle.app/ | grep -o 'version.js?v=[0-9.]*'`.
+3. **Content that lives in the HTML** — inlined `critical.css`, markup, labels. These
+   are greppable directly and are the cheapest real evidence.
+4. **Module code** — follow the chain, or skip it: open the page and assert the
+   behaviour. A browser check is faster and more honest than three hops of `curl`.
+
+Boot modules are the exception: they resolve through `__MC_MODULE_MAP` in
+`version.js` (`no-store`), so the map gives you their real hashed URLs directly:
+
+```bash
+curl -s "https://minicycle.app/version.js?v=$(date +%s)" | grep -o '"/modules/boot/[^"]*":"[^"]*"'
+```
+
+**Superseded hashes are purged.** After a deploy the previous build's hashed URLs
+404 immediately (verified live). That is expected — it is also why an old service
+worker still resident in a tab logs `CRITICAL: Failed to precache boot files`
+during an upgrade; see the comment at that log in `service-worker.js`.
+
+---
+
 ## Interactions to keep in mind
 
 | System | Interaction |

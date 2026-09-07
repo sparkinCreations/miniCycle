@@ -438,3 +438,28 @@ Two ways to measure it wrongly, both hit during the fix:
 screenshot, feed the PNG back into the page as a data URL, and sample the canvas
 at the recorded rects. Full method and the scrim geometry rules are in
 [ACCESSIBILITY.md](../project-info/ACCESSIBILITY.md#color-contrast-).
+
+---
+
+## 14. A 200 from a content-hashed build proves nothing
+
+Production serves three layers for one module: a stable-path **shim** (~220 B,
+testing-modal only), a hashed **re-export stub** (~220 B), and the shared **chunk**
+that holds the code. The first two return `200 application/javascript`, so a
+`curl` + `grep` check reports success on the fetch and failure on the content —
+and reads as "my change did not ship".
+
+Two compounding traps:
+
+- esbuild **code-splits**, so a module's own hashed file can be pure re-exports.
+  Its hash then does **not** change even when its source did.
+- Superseded hashes are **purged** — the previous build's URLs 404 straight after
+  a deploy, so an old hash you noted earlier is not a valid probe.
+
+Sep 2026: this produced a false "the icon did not ship" investigation; the icon was
+in the shared chunk throughout.
+
+**Check:** verify by artifact shape and by content that lives in the HTML
+(inlined `critical.css`, markup, labels), or just open the page and assert the
+behaviour. Only follow the chunk chain when you actually need to.
+Full method: [BUILD_PROCESS.md](../deployment/BUILD_PROCESS.md).

@@ -297,6 +297,19 @@
   [headers.values]
     Cache-Control = "public, max-age=86400"
 
+# Source-path JS. In the DEPLOYED build these are not the modules — they are the
+# ~220-byte "stable-path shims" build-web.cjs emits, each forwarding to the real
+# content-hashed file under /build/. They exist for the in-browser testing modal,
+# which imports by source path; they are deliberately NOT precached, and
+# production never loads them (build-web.cjs FAILS THE BUILD if any
+# source-relative dynamic import survives the rewrite pass, because reaching a
+# shim at runtime would yield a second module instance — the v2.313 class).
+#
+# A day-long cache on a file containing a hard-coded hash looks like the stale-
+# artifact trap that "/" and "/minicycle" above were fixed for, and it is not:
+# nothing on the user path fetches these, and the shims forward `?v=`, so each
+# app version requests a distinct URL anyway. Investigated and dismissed Sep 2026
+# — read build-web.cjs before "fixing" this.
 [[headers]]
   for = "/modules/*.js"
   [headers.values]
@@ -308,9 +321,16 @@
     Cache-Control = "public, max-age=86400"
 
 # Hashed build output (entries + chunks + CSS bundle, entry-hashing phase) —
-# content-addressed filenames, safe to cache forever. This is what makes the
-# SW-precache double-fetch free: precache requests hit the browser HTTP cache,
-# and unchanged files cost nothing across deploys.
+# content-addressed filenames, safe to cache forever.
+#
+# NOTE: this rule used to be justified by "SW precache requests hit the browser
+# HTTP cache, so unchanged files cost nothing across deploys". That is no longer
+# true — service-worker.js builds precache requests with `cache: 'reload'`
+# (reloadRequest()), which deliberately BYPASSES the HTTP cache so a reinstall
+# can never bake in a stale response. The immutable header is still correct, just
+# for the plain reason: the filename contains the content hash, so the URL can
+# only ever return one body. Superseded hashes are purged by the next deploy and
+# 404 — verified against live minicycle.app, Sep 2026.
 [[headers]]
   for = "/build/*"
   [headers.values]

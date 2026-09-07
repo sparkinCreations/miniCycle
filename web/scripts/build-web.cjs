@@ -429,6 +429,12 @@ function rewriteHtml(moduleMap, cssBundle) {
 }
 
 function emitShims(moduleMap, exportsByHashed) {
+  // NOTE FOR ANYONE VERIFYING A DEPLOY: these shims are why `curl`ing a source
+  // path like /modules/utils/icons.js returns ~220 bytes of forwarder rather than
+  // the module, and why grepping it for your change finds nothing. The chain is
+  // shim -> hashed re-export stub -> shared chunk (the code). See
+  // docs/deployment/BUILD_PROCESS.md, "Verifying a LIVE deploy".
+  //
   // Stable-path shims so the production testing modal's direct source-path
   // imports (tests import '../modules/x.js?v=<buster>') resolve.
   //

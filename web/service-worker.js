@@ -31,9 +31,9 @@
 // §1 VERSION IDENTITY (update-version.sh rewrites the three vars below — keep
 //    their exact `var NAME = …` shapes) + the build-injected module map.
 // ═══════════════════════════════════════════════════════════════════════════
-var APP_VERSION = '2.548';
-var CACHE_VERSION = 'v1391';
-var CACHE_VERSION_NUMBER = 1391; // Numeric version matching version.js (for synthetic fallback)
+var APP_VERSION = '2.549';
+var CACHE_VERSION = 'v1392';
+var CACHE_VERSION_NUMBER = 1392; // Numeric version matching version.js (for synthetic fallback)
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -474,6 +474,21 @@ self.addEventListener('install', function (event) {
       }).then(function(results) {
         var missing = results.filter(function(f) { return f !== null; });
         if (missing.length > 0) {
+          // EXPECTED DURING AN UPGRADE — do not chase this on its own.
+          //
+          // BOOT_CRITICAL is build-injected with content-hashed /build/ URLs, and
+          // a deploy PURGES the previous build's hashes (verified live: superseded
+          // hashes 404 immediately). So an OLD service worker still resident in a
+          // tab, re-running install after a new deploy, asks for hashes that no
+          // longer exist and lands here. The incoming SW then installs against the
+          // current hashes and reports "Precache complete … Failed: 0".
+          //
+          // How to tell the two apart in a console: check the script version in
+          // the log's source column. `service-worker.js?v=<OLD>` reporting this,
+          // followed by `?v=<NEW>` reporting a clean precache, is the benign race.
+          // The SAME version reporting it twice, or an activated SW reporting it,
+          // is a real build problem — a file in BOOT_CRITICAL that the build did
+          // not emit.
           console.error('⚠️ CRITICAL: Failed to precache boot files:', missing);
         }
         return self.skipWaiting();
