@@ -1,3 +1,7 @@
+## [2.553] - 2026-09-07
+- fix(switcher): constrain the picker so Close never leaves the screen
+
+
 ## [2.552] - 2026-09-07
 - feat(history): record how a cycle was completed and what a clear removed
 
