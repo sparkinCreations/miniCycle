@@ -1,3 +1,7 @@
+## [2.550] - 2026-09-07
+- fix(welcome): restore link now restores all routines, not a single import
+
+
 ## [2.549] - 2026-09-07
 - docs: record deploy-verification chain and shim caching rationale
 
