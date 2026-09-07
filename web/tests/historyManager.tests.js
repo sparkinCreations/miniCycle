@@ -378,6 +378,168 @@ export async function runHistoryManagerTests(resultsDiv) {
     });
 
     // ============================================
+    resultsDiv.innerHTML += '<h4 class="test-section">📝 Completion breakdown rendering</h4>';
+
+    await test('breakdown renders both sides with exact counts', () => {
+        const hm = new HistoryManager();
+        const html = hm._renderEvent({
+            type: 'cycle_completed', timestamp: Date.now(),
+            details: {
+                cycleCount: 12, _cycleNoun: 'cycle',
+                manualCount: 2, autoCount: 2,
+                manualNames: ['Make coffee', 'Stretch'],
+                autoNames: ['Dishes', 'Laundry'],
+                _checkedLabel: 'Checked off', _buttonLabel: 'Completed by Complete Cycle'
+            }
+        });
+        if (!html.includes('history-completion-split')) throw new Error('breakdown block missing');
+        if (!html.includes('Checked off (2)')) throw new Error('manual side missing or miscounted');
+        if (!html.includes('Completed by Complete Cycle (2)')) throw new Error('button side missing or miscounted');
+        if (!html.includes('Make coffee') || !html.includes('Laundry')) throw new Error('task names missing');
+    });
+
+    await test('an ordinary completion renders no breakdown', () => {
+        const hm = new HistoryManager();
+        const html = hm._renderEvent({
+            type: 'cycle_completed', timestamp: Date.now(),
+            details: { cycleCount: 11, _cycleNoun: 'cycle' }
+        });
+        if (html.includes('history-completion-split')) {
+            throw new Error('a cycle with no breakdown must not render the block');
+        }
+        if (!html.includes('Cycle #11')) throw new Error('the cycle number line regressed');
+    });
+
+    await test('truncated name lists report the remainder', () => {
+        // Names are capped at capture; the count stays exact, so the renderer
+        // must account for the difference or the event silently under-reports.
+        const hm = new HistoryManager();
+        const html = hm._renderEvent({
+            type: 'cycle_completed', timestamp: Date.now(),
+            details: {
+                cycleCount: 3, _cycleNoun: 'cycle',
+                // MIXED on purpose: an all-one-side split collapses to a summary
+                // line with no names, so truncation is only reachable from here.
+                manualCount: 1, autoCount: 5,
+                manualNames: ['Stretch'], autoNames: ['A', 'B'],
+                _checkedLabel: 'Checked off',
+                _buttonLabel: 'Completed by Complete Cycle'
+            }
+        });
+        if (!html.includes('(5)')) throw new Error('exact count must survive truncation');
+        if (!html.includes('3 more')) throw new Error('remainder not reported');
+    });
+
+    await test('all-button completions collapse to one summary line', () => {
+        // A 20-task routine must not print 20 names to say one thing.
+        const hm = new HistoryManager();
+        const html = hm._renderEvent({
+            type: 'cycle_completed', timestamp: Date.now(),
+            details: {
+                cycleCount: 4, _cycleNoun: 'cycle',
+                manualCount: 0, autoCount: 20,
+                manualNames: [], autoNames: ['A', 'B', 'C'],
+                _allByButtonLabel: 'All 20 tasks completed by Complete Cycle'
+            }
+        });
+        if (!html.includes('All 20 tasks completed by Complete Cycle')) {
+            throw new Error('summary line missing');
+        }
+        if (html.includes('>A<') || html.includes('A, B, C')) {
+            throw new Error('names must not be listed when one side is empty');
+        }
+    });
+
+    await test('all-manual completions collapse to one summary line', () => {
+        const hm = new HistoryManager();
+        const html = hm._renderEvent({
+            type: 'cycle_completed', timestamp: Date.now(),
+            details: {
+                cycleCount: 5, _cycleNoun: 'cycle',
+                manualCount: 6, autoCount: 0,
+                manualNames: ['A', 'B'], autoNames: [],
+                _allCheckedOffLabel: 'All 6 tasks checked off'
+            }
+        });
+        if (!html.includes('All 6 tasks checked off')) throw new Error('summary line missing');
+        if (html.includes('A, B')) throw new Error('names must not be listed when one side is empty');
+    });
+
+    await test('a natural completion still renders no breakdown at all', () => {
+        // No button press means no captured breakdown; the distinction between
+        // "checked the last box myself" and "pressed the button with everything
+        // checked" is carried by presence, so this must stay bare.
+        const hm = new HistoryManager();
+        const html = hm._renderEvent({
+            type: 'cycle_completed', timestamp: Date.now(),
+            details: { cycleCount: 9, _cycleNoun: 'cycle' }
+        });
+        if (html.includes('history-completion-split')) {
+            throw new Error('a natural completion must carry no breakdown block');
+        }
+    });
+
+    await test('cleared tasks list their names alongside the count', () => {
+        const hm = new HistoryManager();
+        const html = hm._renderEvent({
+            type: 'tasks_cleared', timestamp: Date.now(),
+            details: {
+                tasksCleared: 5, _taskNoun: 'tasks',
+                clearedNames: ['Email inbox', 'Pay rent'],
+                _clearedLabel: 'Cleared'
+            }
+        });
+        if (!html.includes('5 tasks')) throw new Error('the count line regressed');
+        if (!html.includes('Email inbox') || !html.includes('Pay rent')) {
+            throw new Error('cleared task names missing');
+        }
+        if (!html.includes('3 more')) throw new Error('remainder not reported');
+    });
+
+    await test('cleared events logged before names existed still render', () => {
+        // Backward compatibility: history already on disk has no clearedNames.
+        const hm = new HistoryManager();
+        const html = hm._renderEvent({
+            type: 'tasks_cleared', timestamp: Date.now(),
+            details: { tasksCleared: 3, _taskNoun: 'tasks' }
+        });
+        if (!html.includes('3 tasks')) throw new Error('legacy cleared event lost its count');
+        if (html.includes('history-completion-split')) {
+            throw new Error('legacy event must not render an empty name block');
+        }
+    });
+
+    await test('cleared task names are HTML-escaped', () => {
+        const hm = new HistoryManager();
+        const html = hm._renderEvent({
+            type: 'tasks_cleared', timestamp: Date.now(),
+            details: { tasksCleared: 1, _taskNoun: 'task', clearedNames: ['<img src=x onerror=alert(1)>'] }
+        });
+        if (html.includes('<img src=x')) throw new Error('cleared names reached the HTML unescaped');
+    });
+
+    await test('task names in the breakdown are HTML-escaped', () => {
+        // Task text is user input and _renderEvent builds an HTML string.
+        const hm = new HistoryManager();
+        const html = hm._renderEvent({
+            type: 'cycle_completed', timestamp: Date.now(),
+            details: {
+                cycleCount: 1, _cycleNoun: 'cycle',
+                manualCount: 1, autoCount: 1,
+                manualNames: ['<img src=x onerror=alert(1)>'],
+                autoNames: ['<script>alert(2)</script>'],
+                _checkedLabel: 'Checked off', _buttonLabel: 'Completed by Complete Cycle'
+            }
+        });
+        if (html.includes('<img src=x') || html.includes('<script>alert(2)')) {
+            throw new Error('task names reached the HTML unescaped — XSS via task text');
+        }
+        if (!html.includes('&lt;img') && !html.includes('&lt;script')) {
+            throw new Error('expected escaped entities in the output');
+        }
+    });
+
+    // ============================================
     // 📊 RESULTS
     // ============================================
     const percentage = Math.round((passed.count / total.count) * 100);

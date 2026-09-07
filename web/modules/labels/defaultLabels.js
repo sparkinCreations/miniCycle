@@ -2071,6 +2071,18 @@ export const DEFAULT_LABELS = deepFreeze({
         dateYesterday:        'Yesterday',
         dateEarlier:          'Earlier',
         cycleCompleted:       'Cycle Completed',
+        // Manual-vs-button breakdown on a cycle completed with unchecked tasks.
+        // {action} is the Complete Cycle button's own label, so the two always
+        // agree — including under a vocabulary lens, which renames both.
+        checkedByYou:         'Checked off',
+        completedByButton:    'Completed by {action}',
+        andMoreTasks:         '+{count} more',
+        // One-line summaries for the all-or-nothing cases, so a 20-task routine
+        // does not print 20 names to say one thing.
+        allByButton:          'All {count} {noun} completed by {action}',
+        allCheckedOff:        'All {count} {noun} checked off',
+        // To-Do mode: which tasks the Clear button removed.
+        clearedTaskNames:     'Cleared',
         tasksCleared:         'Tasks Cleared',
         cycleReset:           'Cycle Reset',
         achievementUnlocked:  'Achievement Unlocked',
@@ -2866,6 +2878,11 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     // History
     'history.clearedTasks',
     'history.cycleCompleted',
+    'history.checkedByYou',
+    'history.completedByButton',
+    'history.allByButton',
+    'history.allCheckedOff',
+    'history.clearedTaskNames',
     'history.tasksCleared',
     'history.cycleReset',
     'history.taskAdded',

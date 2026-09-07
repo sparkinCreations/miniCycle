@@ -51,7 +51,7 @@
 
 import { createDIModule, optional } from '../core/diBase.js';
 import { applyTaskStatusLabel } from './taskUtils.js';
-import { TASK_TIMEOUTS, UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, MILESTONES } from '../core/constants.js';
+import { TASK_TIMEOUTS, UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, MILESTONES, LIMITS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -137,6 +137,76 @@ function setResettingFlag(value, deps = {}) {
     const gs = deps.AppGlobalState || _deps.AppGlobalState;
     if (gs) gs.isResetting = value;
 }
+/**
+ * Manual-vs-button completion breakdown, captured by markAllTasksCompleteImpl and
+ * consumed by resetTasksImpl one tick later.
+ *
+ * Why a module-level handoff rather than a parameter: the two functions are in
+ * this file, but the history event is logged by cycleCompletion.incrementCycleCount,
+ * three calls downstream (mass-complete -> checkMiniCycle/scheduled reset ->
+ * resetTasksImpl -> incrementCycleCount). By the time anything downstream runs,
+ * every task reads completed:true, so the split is UNRECOVERABLE — it exists only
+ * in the instant before the mass-complete write. Capture it there or not at all.
+ *
+ * Guarded by cycle id AND a TTL: a breakdown stranded by a declined due-date
+ * modal must never attach itself to a later, unrelated cycle completion.
+ *
+ * @type {{cycleId: string, capturedAt: number, manualCount: number, autoCount: number,
+ *         manualNames: string[], autoNames: string[]} | null}
+ */
+let _pendingCompletionSplit = null;
+
+/**
+ * Record which tasks the user checked vs which the Complete Cycle button finished.
+ *
+ * Captures on EVERY button press, including when one side is empty. That is the
+ * point: this function only runs from markAllTasksCompleteImpl, so its presence
+ * is itself the signal that the button was pressed. A cycle that completes
+ * naturally (the user checks the last box in Auto Cycle mode) never reaches here
+ * and carries no breakdown at all — which is how the renderer tells
+ * "finished the last one myself" apart from "pressed the button with everything
+ * already checked". Collapsing the empty-side cases here would erase that.
+ *
+ * @param {string} cycleId - Active cycle id, re-verified at consumption
+ * @param {Array<{text?: string, completed?: boolean}>} tasks - Tasks BEFORE the mass-complete
+ * @returns {void}
+ */
+function captureCompletionSplit(cycleId, tasks) {
+    if (!cycleId || !Array.isArray(tasks) || tasks.length === 0) {
+        _pendingCompletionSplit = null;
+        return;
+    }
+    const manual = tasks.filter(t => t?.completed === true);
+    const auto = tasks.filter(t => t?.completed !== true);
+    const names = (list) => list
+        .slice(0, LIMITS.HISTORY_EVENT_TASK_NAMES)
+        .map(t => String(t?.text ?? ''))
+        .filter(Boolean);
+    _pendingCompletionSplit = {
+        cycleId,
+        capturedAt: Date.now(),
+        manualCount: manual.length,
+        autoCount: auto.length,
+        manualNames: names(manual),
+        autoNames: names(auto)
+    };
+}
+
+/**
+ * Take the pending breakdown if it belongs to this cycle and is still fresh.
+ * Always clears, so a rejected breakdown cannot linger into the next completion.
+ *
+ * @param {string} cycleId - Cycle the reset is completing
+ * @returns {Object|null} the breakdown, or null when absent/stale/mismatched
+ */
+function consumeCompletionSplit(cycleId) {
+    const split = _pendingCompletionSplit;
+    _pendingCompletionSplit = null;
+    if (!split || split.cycleId !== cycleId) return null;
+    if (Date.now() - split.capturedAt > TASK_TIMEOUTS.COMPLETION_SPLIT_TTL) return null;
+    return split;
+}
+
 const activeTimeouts = new Set();
 
 /**
@@ -630,8 +700,13 @@ export async function resetTasksImpl(deps = {}) {
         moveCompletedTasksBack(context, mergedDeps);
 
         // Step 6: Increment cycle count (handles animation + milestones)
+        // Third argument carries the manual-vs-button completion breakdown so the
+        // cycle_completed history event can say which tasks the user actually
+        // checked. Consume unconditionally — even when there is no incrementer —
+        // so a captured split can never outlive the reset that owns it.
+        const completionSplit = consumeCompletionSplit(activeCycle);
         if (typeof mergedDeps.incrementCycleCount === 'function') {
-            mergedDeps.incrementCycleCount(activeCycle, cycles);
+            mergedDeps.incrementCycleCount(activeCycle, cycles, completionSplit);
         }
 
         // Step 7: Animate progress bar empty (delegated to cycleCompletion)
@@ -794,8 +869,23 @@ export async function deleteCompletedTasksImpl(activeCycleId, cycleData, taskLis
 
     // Log history event for tasks cleared
     if (typeof _deps.logHistoryEvent === 'function') {
+        // Names as well as the count, so the Events feed says WHAT was cleared
+        // instead of only how many. The Cleared Tasks archive holds fuller
+        // records, but it excludes recurring occurrences and auto-prunes at 90
+        // days, so it is not a substitute for the timeline entry.
+        //
+        // Capped for the same reason the cycle breakdown is: task text is user
+        // data and 100 uncapped events would outgrow the storage quota. The
+        // count stays exact and the renderer reports the remainder.
+        const clearedNames = tasksToDelete
+            .slice(0, LIMITS.HISTORY_EVENT_TASK_NAMES)
+            .map(({ taskId }) => cycleData.tasks?.find(t => t.id === taskId)?.text)
+            .filter(Boolean)
+            .map(String);
+
         _deps.logHistoryEvent('tasks_cleared', {
-            tasksCleared: tasksToDelete.length
+            tasksCleared: tasksToDelete.length,
+            clearedNames
         });
     }
 
@@ -928,12 +1018,22 @@ export function markAllTasksCompleteImpl(cycleData, taskList, resetTasksFn, deps
     // auto-reset completion guard) disagreed with the visible checkboxes.
     const AppState = deps.AppState || _deps.AppState;
     if (AppState?.isReady?.()) {
+        // Capture the manual-vs-button split BEFORE the write below flips every
+        // task to completed. This is the only instant it is knowable.
+        const preState = AppState.get();
+        const preCycleId = preState?.appState?.activeCycleId;
+        captureCompletionSplit(preCycleId, preState?.data?.cycles?.[preCycleId]?.tasks);
+
         AppState.update(state => {
             const cycle = state.data?.cycles?.[state.appState?.activeCycleId];
             if (cycle?.tasks) {
                 cycle.tasks.forEach(task => { task.completed = true; });
             }
         });
+    } else {
+        // No readable state means no knowable split; make sure a previous one
+        // cannot survive to be misattributed.
+        captureCompletionSplit(null, null);
     }
 
     taskList.querySelectorAll(".task input").forEach(task => task.checked = true);

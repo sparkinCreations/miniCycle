@@ -108,8 +108,35 @@ export class HistoryManager {
         if (type === 'cycle_completed') {
             details._cycleNoun = getLabel('noun.cycle', { count: 1 });
         }
+        // Same snapshot-at-log-time rule as _eventLabel above: a cycle finished
+        // under the Fitness lens keeps that wording after the user switches away.
+        if (type === 'cycle_completed' && details.autoCount !== undefined) {
+            details._checkedLabel = getLabel('history.checkedByYou');
+            details._buttonLabel = getLabel('history.completedByButton', {
+                vars: { action: getLabel('action.completeCycle') }
+            });
+            // Snapshot the collapsed forms too — the renderer picks one of the
+            // three shapes, and all of them must survive a later lens switch.
+            if (details.manualCount === 0) {
+                details._allByButtonLabel = getLabel('history.allByButton', {
+                    vars: {
+                        count: details.autoCount,
+                        noun: getLabel('noun.task', { count: details.autoCount }),
+                        action: getLabel('action.completeCycle')
+                    }
+                });
+            } else if (details.autoCount === 0) {
+                details._allCheckedOffLabel = getLabel('history.allCheckedOff', {
+                    vars: {
+                        count: details.manualCount,
+                        noun: getLabel('noun.task', { count: details.manualCount })
+                    }
+                });
+            }
+        }
         if (type === 'tasks_cleared' && details.tasksCleared !== undefined) {
             details._taskNoun = getLabel('noun.task', { count: details.tasksCleared });
+            details._clearedLabel = getLabel('history.clearedTaskNames');
         }
         if ((type === 'recurring_tasks_removed' || type === 'tasks_removed_on_reset') && details.count !== undefined) {
             details._taskNoun = getLabel('noun.task', { count: details.count });
@@ -777,6 +804,107 @@ export class HistoryManager {
     }
 
     /**
+     * Render the names of tasks a To-Do mode clear removed.
+     *
+     * Returns '' for events logged before this shipped, so old history keeps
+     * rendering its plain count rather than showing an empty list.
+     *
+     * @param {Object} details - Event details
+     * @returns {string} HTML fragment, or ''
+     * @private
+     */
+    _renderClearedNames(details) {
+        const shown = Array.isArray(details?.clearedNames) ? details.clearedNames : [];
+        if (shown.length === 0) return '';
+
+        const listed = shown.map(n => this._escapeHtml(n)).join(', ');
+        const remainder = (details.tasksCleared ?? shown.length) - shown.length;
+        const more = remainder > 0
+            ? this._escapeHtml(getLabel('history.andMoreTasks', { vars: { count: remainder } }))
+            : '';
+        const tail = [listed, more].filter(Boolean).join(', ');
+        const label = details._clearedLabel || getLabel('history.clearedTaskNames');
+
+        return `<div class="history-completion-split">`
+             + `<div class="history-completion-line">`
+             + `<span class="history-completion-label">${this._escapeHtml(label)}</span>`
+             + `<span class="history-completion-names">${tail}</span>`
+             + `</div></div>`;
+    }
+
+    /**
+     * Render the manual-vs-button breakdown for a cycle completed with unchecked
+     * tasks. Returns '' for ordinary completions, which carry no breakdown.
+     *
+     * Counts are exact; the name lists are capped at capture time
+     * (LIMITS.HISTORY_EVENT_TASK_NAMES) because task text is user data and 100
+     * history events holding every name would outgrow the storage quota. Where
+     * the list is short, "+N more" reports the remainder.
+     *
+     * Every task name goes through _escapeHtml — this builds an HTML string and
+     * the names are user input.
+     *
+     * @param {Object} details - Event details
+     * @returns {string} HTML fragment, or '' when there is nothing to show
+     * @private
+     */
+    _renderCompletionSplit(details) {
+        if (!details || details.autoCount === undefined) return '';
+
+        const line = (labelText, count, names) => {
+            if (!count) return '';
+            const shown = Array.isArray(names) ? names : [];
+            const listed = shown.map(n => this._escapeHtml(n)).join(', ');
+            const remainder = count - shown.length;
+            const more = remainder > 0
+                ? getLabel('history.andMoreTasks', { vars: { count: remainder } })
+                : '';
+            const tail = [listed, this._escapeHtml(more)].filter(Boolean).join(', ');
+            return `<div class="history-completion-line">`
+                 + `<span class="history-completion-label">${this._escapeHtml(labelText)} (${count})</span>`
+                 + (tail ? `<span class="history-completion-names">${tail}</span>` : '')
+                 + `</div>`;
+        };
+
+        // All-or-nothing cases collapse to ONE summary line. Listing 20 names to
+        // say "the button did all of them" is the same sentence written 20 times,
+        // and the names add nothing the count does not already carry.
+        const summary = (text) =>
+            `<div class="history-completion-split">`
+          + `<div class="history-completion-line">`
+          + `<span class="history-completion-label">${this._escapeHtml(text)}</span>`
+          + `</div></div>`;
+
+        if (details.manualCount === 0 && details.autoCount > 0) {
+            return summary(details._allByButtonLabel || getLabel('history.allByButton', {
+                vars: {
+                    count: details.autoCount,
+                    noun: getLabel('noun.task', { count: details.autoCount }),
+                    action: getLabel('action.completeCycle')
+                }
+            }));
+        }
+        if (details.autoCount === 0 && details.manualCount > 0) {
+            return summary(details._allCheckedOffLabel || getLabel('history.allCheckedOff', {
+                vars: {
+                    count: details.manualCount,
+                    noun: getLabel('noun.task', { count: details.manualCount })
+                }
+            }));
+        }
+
+        const checkedLabel = details._checkedLabel || getLabel('history.checkedByYou');
+        const buttonLabel = details._buttonLabel || getLabel('history.completedByButton', {
+            vars: { action: getLabel('action.completeCycle') }
+        });
+
+        const body = line(checkedLabel, details.manualCount, details.manualNames)
+                   + line(buttonLabel, details.autoCount, details.autoNames);
+
+        return body ? `<div class="history-completion-split">${body}</div>` : '';
+    }
+
+    /**
      * Render a single event
      * @private
      */
@@ -828,9 +956,15 @@ export class HistoryManager {
                 const cycleNoun = this._escapeHtml(event.details._cycleNoun) || getLabel('noun.cycle', { count: 1 });
                 const capitalized = cycleNoun.charAt(0).toUpperCase() + cycleNoun.slice(1);
                 detailText = `${capitalized} #${event.details.cycleCount}`;
+                detailText += this._renderCompletionSplit(event.details);
             } else if (event.details.tasksCleared !== undefined) {
                 const taskNoun = this._escapeHtml(event.details._taskNoun) || getLabel('noun.task', { count: event.details.tasksCleared });
                 detailText = `${event.details.tasksCleared} ${taskNoun}`;
+                // Appended INSIDE this branch, not added as a new one below: a
+                // tasks_cleared event always defines tasksCleared, so a later
+                // `else if (clearedNames)` branch could never be reached. Same
+                // trap as the priority-dot bug noted below.
+                detailText += this._renderClearedNames(event.details);
             } else if (event.details.achievementId) {
                  detailText = this._escapeHtml(event.details.achievementName || event.details.achievementId);
             } else if (event.details.oldName !== undefined) {

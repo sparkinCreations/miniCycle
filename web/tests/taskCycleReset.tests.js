@@ -543,6 +543,162 @@ export async function runTaskCycleResetTests(resultsDiv) {
     });
 
     // ============================================
+    resultsDiv.innerHTML += '<h4 class="test-section">📝 Manual vs button completion breakdown</h4>';
+
+    // Shared rig: 4 tasks, 2 already checked by the user. Manual Cycle mode
+    // (autoReset false) is the case the breakdown exists for.
+    const splitRig = (tasks, cycleId = 'c1') => {
+        const taskList = document.createElement('ul');
+        document.body.appendChild(taskList);
+        const stateObj = {
+            appState: { activeCycleId: cycleId },
+            metadata: { lastModified: 0 },
+            data: { cycles: { [cycleId]: { autoReset: false, tasks, recurringTemplates: {} } } },
+            settings: {}, userProgress: {}
+        };
+        const calls = [];
+        const deps = {
+            AppState: { isReady: () => true, get: () => stateObj, update: async (p) => { p(stateObj); return stateObj; } },
+            captureStateSnapshot: () => {},
+            isPerformingUndoRedo: () => false,
+            querySelector: () => taskList,
+            querySelectorAll: () => [],
+            checkMiniCycle: () => {},
+            incrementCycleCount: (...args) => calls.push(args)
+        };
+        return { taskList, stateObj, calls, deps, cycleData: stateObj.data.cycles[cycleId] };
+    };
+
+    await test('breakdown separates user-checked tasks from button-completed ones', async () => {
+        const h = splitRig([
+            { id: 'a', text: 'Make coffee', completed: true },
+            { id: 'b', text: 'Stretch', completed: true },
+            { id: 'c', text: 'Dishes', completed: false },
+            { id: 'd', text: 'Laundry', completed: false }
+        ]);
+        try {
+            mod.markAllTasksCompleteImpl(h.cycleData, h.taskList, null, h.deps);
+            await mod.resetTasksImpl(h.deps);
+            const split = h.calls[0]?.[2];
+            if (!split) throw new Error('incrementCycleCount received no breakdown as its 3rd argument');
+            if (split.manualCount !== 2 || split.autoCount !== 2) {
+                throw new Error(`expected 2 manual / 2 auto, got ${split.manualCount} / ${split.autoCount}`);
+            }
+            if (split.manualNames.join(',') !== 'Make coffee,Stretch') {
+                throw new Error(`manual names wrong: ${JSON.stringify(split.manualNames)}`);
+            }
+            if (split.autoNames.join(',') !== 'Dishes,Laundry') {
+                throw new Error(`button names wrong: ${JSON.stringify(split.autoNames)}`);
+            }
+        } finally {
+            mod.clearAllTimeouts();
+            h.taskList.remove();
+        }
+    });
+
+    await test('pressing the button with everything already checked records autoCount 0', async () => {
+        // Captured even though one side is empty: the breakdown's PRESENCE is
+        // what says the button was pressed, and the renderer collapses this to
+        // "All 2 tasks checked off". Bailing here would make it indistinguishable
+        // from a cycle that completed naturally.
+        const h = splitRig([
+            { id: 'a', text: 'Make coffee', completed: true },
+            { id: 'b', text: 'Stretch', completed: true }
+        ]);
+        try {
+            mod.markAllTasksCompleteImpl(h.cycleData, h.taskList, null, h.deps);
+            await mod.resetTasksImpl(h.deps);
+            const split = h.calls[0]?.[2];
+            if (!split) throw new Error('a button press must always record a breakdown');
+            if (split.manualCount !== 2 || split.autoCount !== 0) {
+                throw new Error(`expected 2 manual / 0 auto, got ${split.manualCount} / ${split.autoCount}`);
+            }
+        } finally {
+            mod.clearAllTimeouts();
+            h.taskList.remove();
+        }
+    });
+
+    await test('pressing the button with nothing checked records manualCount 0', async () => {
+        const h = splitRig([
+            { id: 'a', text: 'Make coffee', completed: false },
+            { id: 'b', text: 'Stretch', completed: false }
+        ]);
+        try {
+            mod.markAllTasksCompleteImpl(h.cycleData, h.taskList, null, h.deps);
+            await mod.resetTasksImpl(h.deps);
+            const split = h.calls[0]?.[2];
+            if (!split) throw new Error('expected a breakdown');
+            if (split.manualCount !== 0 || split.autoCount !== 2) {
+                throw new Error(`expected 0 manual / 2 auto, got ${split.manualCount} / ${split.autoCount}`);
+            }
+        } finally {
+            mod.clearAllTimeouts();
+            h.taskList.remove();
+        }
+    });
+
+    await test('a reset with no preceding Complete Cycle carries no breakdown', async () => {
+        // Auto Cycle mode completing naturally (user checks the last box) never
+        // runs the mass-complete, so there is nothing to attribute.
+        const h = splitRig([{ id: 'a', text: 'Make coffee', completed: true }]);
+        try {
+            await mod.resetTasksImpl(h.deps);
+            if (h.calls[0]?.[2]) throw new Error('a natural completion must carry no breakdown');
+        } finally {
+            mod.clearAllTimeouts();
+            h.taskList.remove();
+        }
+    });
+
+    await test('a breakdown never attaches to a different cycle', async () => {
+        // Guards the stranded-capture case: the user presses Complete Cycle,
+        // declines the due-date modal, then switches routines and completes THAT
+        // one. Without the cycle-id check the first routine's task names would be
+        // reported as belonging to the second.
+        const h = splitRig([
+            { id: 'a', text: 'Make coffee', completed: true },
+            { id: 'b', text: 'Dishes', completed: false }
+        ], 'c1');
+        try {
+            mod.markAllTasksCompleteImpl(h.cycleData, h.taskList, null, h.deps);
+            // Reset a DIFFERENT cycle than the one the breakdown was captured for.
+            h.stateObj.appState.activeCycleId = 'c2';
+            h.stateObj.data.cycles.c2 = { autoReset: false, tasks: [{ id: 'z', text: 'Other', completed: true }], recurringTemplates: {} };
+            await mod.resetTasksImpl(h.deps);
+            if (h.calls[0]?.[2]) throw new Error('a breakdown captured for c1 must not be logged against c2');
+        } finally {
+            mod.clearAllTimeouts();
+            h.taskList.remove();
+        }
+    });
+
+    await test('stored task names are capped so history cannot outgrow storage', async () => {
+        // 150 tasks x 500 chars x 100 events would exceed the localStorage quota
+        // outright, so the name lists are truncated at capture. Counts stay exact.
+        const { LIMITS } = await import(`../modules/core/constants.js?v=${cacheBuster}`);
+        const many = Array.from({ length: LIMITS.HISTORY_EVENT_TASK_NAMES + 7 }, (_, i) => ({
+            id: `t${i}`, text: `Task ${i}`, completed: false
+        }));
+        const h = splitRig([{ id: 'done', text: 'Done', completed: true }, ...many]);
+        try {
+            mod.markAllTasksCompleteImpl(h.cycleData, h.taskList, null, h.deps);
+            await mod.resetTasksImpl(h.deps);
+            const split = h.calls[0]?.[2];
+            if (!split) throw new Error('expected a breakdown');
+            if (split.autoCount !== many.length) {
+                throw new Error(`count must stay exact: expected ${many.length}, got ${split.autoCount}`);
+            }
+            if (split.autoNames.length !== LIMITS.HISTORY_EVENT_TASK_NAMES) {
+                throw new Error(`names must cap at ${LIMITS.HISTORY_EVENT_TASK_NAMES}, got ${split.autoNames.length}`);
+            }
+        } finally {
+            mod.clearAllTimeouts();
+            h.taskList.remove();
+        }
+    });
+
+    // ============================================
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;
     if (passed.count === total.count) {
