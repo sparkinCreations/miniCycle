@@ -411,7 +411,7 @@ which regenerates them in `netlify.toml`.
 
 ## HIDDEN SUB-MODULE FACADE PATTERN
 
-Five facade modules dynamically import their sub-modules during `init()` instead of declaring them in `moduleManifests.js`. This is **intentional** — do NOT add these sub-modules to the manifest (it would cause duplicate initialization).
+Seven facade modules load their sub-modules themselves instead of declaring them in `moduleManifests.js`. This is **intentional** — do NOT add these sub-modules to the manifest (it would cause duplicate initialization). Some load dynamically inside `init()`, some are static imports at the top of the facade; the table says which.
 
 | Facade | Sub-Modules |
 |--------|-------------|
@@ -420,11 +420,15 @@ Five facade modules dynamically import their sub-modules during `init()` instead
 | `taskDOM` | taskValidation, taskUtils, taskRenderer, taskEvents |
 | `preferencesManager` | preferencesBgImage, preferencesPresets |
 | `statsPanel` | statsPanelGestures, statsPanelRewards |
-| `notifications` | educationalTips *(static import, not dynamic — see below)* |
+| `notifications` | educationalTips *(static import — see below)* |
+| `onboardingManager` | onboardingSplash, onboardingDemo, onboardingCarousel *(all three STATIC imports, constructed in the manager's constructor)* |
+| `routineSwitcher` | routineSwitcherActions *(static import)* |
 
-**Why:** Sub-modules are tightly coupled to their facade. Dynamic imports with `?v=${APP_VERSION}` cache busting ensure fresh loads.
+**Why:** Sub-modules are tightly coupled to their facade. Where the import is dynamic, `?v=${APP_VERSION}` cache busting ensures fresh loads.
 
-**`notifications` → `educationalTips` differs** (Aug 2026 split): it is a **static** `import` at the top of `notifications.js`, not a dynamic one. The class is constructed in `MiniCycleNotifications`'s constructor, so there is no async init to hang a dynamic import on, and builds have been content-hashed since v2.301 so `?v=` buys nothing. The consequence to remember: a static import from a boot-critical module makes the target boot-critical too, so `educationalTips.js` is in `BOOT_CRITICAL` — run `test:sw` if you touch it. It reaches callers via a **re-export** from `notifications.js`; drop that line and importers silently get `undefined` (guarded in `notifications.tests.js`). The facade wires DI to each sub-module via its own `wireSubModuleDependencies()` — except `statsPanel`, whose sub-modules hold a back-reference to the manager (`this.m`) and reach its deps via `this.m.dependencies` / `this.m.rawDeps` (`validate:di` scans those files via `FACADE_SUB_FILES`).
+**Static beats dynamic wherever the facade is reached synchronously.** `onboardingManager` imports all three of its sub-modules statically (lines 30–32) and constructs them in its constructor, because a dynamic import in `init()` left `this._splash` null on every synchronous entry point and broke 14 tests — `appInit` reaches the onboarding flow synchronously. Same reasoning as `notifications` → `educationalTips`. ⚠️ The headers of `onboardingSplash.js` and `onboardingDemo.js` still describe themselves as dynamically imported; the imports are static. Trust the import statement, not the header.
+
+**`notifications` → `educationalTips` differs** (Aug 2026 split): it is a **static** `import` at the top of `notifications.js`, not a dynamic one. The class is constructed in `MiniCycleNotifications`'s constructor, so there is no async init to hang a dynamic import on, and builds have been content-hashed since v2.301 so `?v=` buys nothing. The consequence to remember: a static import from a boot-critical module makes the target boot-critical too, so `educationalTips.js` is in `BOOT_CRITICAL` — run `test:sw` if you touch it. It reaches callers via a **re-export** from `notifications.js`; drop that line and importers silently get `undefined` (guarded in `notifications.tests.js`). The facade wires DI to each sub-module via its own `wireSubModuleDependencies()` — except `statsPanel` and `routineSwitcher`, whose sub-modules hold a back-reference to the manager (`this.m`) and reach its deps via `this.m.dependencies` / `this.m.rawDeps` (`validate:di` scans those two facades' files via `FACADE_SUB_FILES`). The `onboardingManager` sub-modules also use a `this.m` back-reference but read `this.m.deps`, which `FACADE_SUB_FILES` does not cover.
 
 **Testing note:** Tests for sub-modules import them directly with `?v=${cacheBuster}`. The facade's `init()` may create a singleton — tests that need fresh instances should use the sub-module's exported class/functions directly, not through the facade.
 

@@ -157,8 +157,7 @@ export class MenuManager {
         // Cache DOM elements (will be set in init)
         this.elements = {
             menu: null,
-            menuButton: null,
-            exitMiniCycle: null
+            menuButton: null
         };
     }
 
@@ -175,7 +174,6 @@ export class MenuManager {
             // Cache DOM elements
             this.elements.menu = this.deps.querySelector(DOM_SELECTORS.MENU_CONTAINER);
             this.elements.menuButton = this.deps.querySelector(DOM_SELECTORS.MENU_BUTTON);
-            this.elements.exitMiniCycle = this.deps.getElementById(DOM_IDS.EXIT_MINI_CYCLE);
 
             // Setup menu
             this.setupMainMenu();
@@ -245,10 +243,6 @@ export class MenuManager {
         replaceStoredEventListener(closeBtn, "click", "__miniCycleMenuManagerClickHandler", () => this.closeMainMenu());
 
         this.deps.checkGamesUnlock();
-
-        replaceStoredEventListener(this.elements.exitMiniCycle, "click", "__miniCycleMenuManagerClickHandler", () => {
-            window.location.href = "../index.html";
-        });
 
         // Setup collapsible menu sections
         this.setupCollapsibleSections();

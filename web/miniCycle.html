@@ -91,15 +91,12 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
-<!-- ✅ iOS status bar - uses body background-color with black-translucent -->
 <meta name="theme-color" content="#4c79ff" id="theme-color-meta">
 
-<!-- ✅ Translucent status bar shows body background-color on iOS -->
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" id="status-bar-style-meta">
 
-<meta name="app-version" content="2.544">
+<meta name="app-version" content="2.545">
 
-<!-- Content Security Policy -->
 <!-- CSP is served via HTTP header in netlify.toml (production) -->
 <!-- No <meta> CSP tag needed — Netlify headers handle it, and omitting it here allows local HTTP dev servers -->
 
@@ -107,7 +104,6 @@
 <meta name="description" content="miniCycle is a routine workflow companion that turns repeatable tasks into effortless cycles. Track progress, build momentum, and manage daily routines with auto-cycling task lists.">
 <link rel="canonical" href="https://minicycle.app/minicycle">
 
-<!-- Self-hosted fonts (no external requests) -->
 <!-- Preload the dominant weights so Poppins is available AT first paint. The
      bundled build inlines fonts.css, which makes first paint early enough that
      text would otherwise render in the fallback font and reflow when Poppins
@@ -134,18 +130,17 @@
          light mode / full motion / default background on every load.
      ═══════════════════════════════════════════════════════════════════════════ -->
 
-<!-- Preload critical CSS files (they load in parallel, not blocking) -->
-<link rel="preload" href="styles/main.css?v=2.544" as="style">
-<link rel="preload" href="styles/base/variables.css?v=2.544" as="style">
-<link rel="preload" href="styles/base/reset.css?v=2.544" as="style">
-<link rel="preload" href="styles/layout/app-container.css?v=2.544" as="style">
-<link rel="preload" href="styles/layout/header.css?v=2.544" as="style">
-<link rel="preload" href="styles/components/task-list.css?v=2.544" as="style">
+<link rel="preload" href="styles/main.css?v=2.545" as="style">
+<link rel="preload" href="styles/base/variables.css?v=2.545" as="style">
+<link rel="preload" href="styles/base/reset.css?v=2.545" as="style">
+<link rel="preload" href="styles/layout/app-container.css?v=2.545" as="style">
+<link rel="preload" href="styles/layout/header.css?v=2.545" as="style">
+<link rel="preload" href="styles/components/task-list.css?v=2.545" as="style">
 
 <!-- Async CSS loading - doesn't block render, app starts with inline critical CSS -->
-<link rel="stylesheet" href="styles/main.css?v=2.544" media="print" id="async-main-css">
+<link rel="stylesheet" href="styles/main.css?v=2.545" media="print" id="async-main-css">
 <script>(function(){var l=document.getElementById('async-main-css');if(!l)return;function apply(){l.media='all';}if(l.sheet){apply();}else{l.addEventListener('load',apply);}})();</script>
-<noscript><link rel="stylesheet" href="styles/main.css?v=2.544"></noscript>
+<noscript><link rel="stylesheet" href="styles/main.css?v=2.545"></noscript>
 <link rel="manifest" href="manifest.json">
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -156,7 +151,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- version.js MUST load synchronously BEFORE modulepreloads to set globalThis.APP_VERSION -->
-<script src="./version.js?v=2.544"></script>
+<script src="./version.js?v=2.545"></script>
 
 <!-- Build version = the version baked into THIS HTML document (the meta tag
      above). It is the honest "what am I actually running" signal. By contrast,
@@ -684,7 +679,7 @@
   }, LOAD_TIMEOUT_MS);
 })();
 </script>
-    <script src="boot-sw.js?v=2.544" defer></script>
+    <script src="boot-sw.js?v=2.545" defer></script>
 
 
 
@@ -703,7 +698,6 @@
      Do not push markup above this block.
      ═══════════════════════════════════════════════════════════════════════════ -->
 
-  <!-- Initial App Loader -->
   <div id="app-loader" role="status" aria-label="Application loading" aria-live="polite">
     <div id="loader-tip" class="loader-tip" aria-live="polite">
       <div class="loader-tip-header">💡 Tip:</div>
@@ -756,7 +750,6 @@
     </div>
   </div>
 
-  <!-- Loading tips rotation -->
   <script>
   (function() {
     var el = document.getElementById('loader-tip');
@@ -1016,7 +1009,6 @@
   })();
   </script>
 
-  <!-- Loading Overlay for Operations -->
   <div id="loading-overlay" class="loading-overlay" role="status" aria-label="Operation in progress">
     <div class="loading-spinner">
       <img src="assets/images/logo/minicycle_logo_icon.png" alt="Loading..." width="60" height="48" style="object-fit: contain;">
@@ -1024,7 +1016,7 @@
     </div>
   </div>
 
-  <div id="notification-container" popover="manual" aria-live="polite" aria-atomic="true" role="status"></div> <!-- Notification container --> 
+  <div id="notification-container" popover="manual" aria-live="polite" aria-atomic="true" role="status"></div>
 
 
   
@@ -1036,11 +1028,9 @@
      changing its focus handling.
      ═══════════════════════════════════════════════════════════════════════════ -->
 
-<!-- Fixed Header Container - wraps header and mode selector -->
 <div class="fixed-header-container">
   <header class="mini-cycle-header-row">
     <h1 class="visually-hidden">miniCycle Routine Manager</h1>
-    <!-- Logo and App Name -->
     <div class="header-branding">
       <img src="assets/images/logo/logo.png" alt="miniCycle" class="header-logo" width="40" height="36">
       <div class="app-name-group">
@@ -1049,13 +1039,10 @@
       </div>
     </div>
 
-    <!-- Menu Button -->
     <button class="menu-button" aria-label="Menu" aria-expanded="false" aria-controls="main-menu" title="Open menu">☰</button>
   </header>
 
-  <!-- Mode Selector (centered below header) -->
   <div class="mode-selector-wrapper">
-  <!-- Quick Actions Button (left side) -->
   <div class="quick-actions-container">
     <button id="quick-actions-btn" class="quick-actions-btn" aria-label="Quick actions" title="Quick actions">
       <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
@@ -1085,22 +1072,19 @@
   </button>
   </div>
 
-  <!-- Saving indicator (shown briefly when autosave runs) -->
   <div id="saving-indicator" class="saving-indicator">Saving...</div>
-</div><!-- /fixed-header-container -->
+</div>
 
 
     <!-- Main Menu Backdrop — fades in via CSS when .menu-container.visible -->
     <div id="main-menu-backdrop" class="main-menu-backdrop" aria-hidden="true"></div>
 
-    <!-- Main Menu -->
     <nav id="main-menu" class="menu-container has-corner-logo" data-modal data-menu>
         <div id="main-menu-header-row" class="main-menu-header-row">
             <div id="main-menu-header" class="main-menu-header">
-                <span id="main-menu-mini-cycle-title"></span>  <!-- miniCycle Title -->
-                <span id="current-date"></span>  <!-- Date will be inserted here -->
+                <span id="main-menu-mini-cycle-title"></span>
+                <span id="current-date"></span>
             </div>
-             <!-- About Section Trigger -->
       <button id="open-about-modal" class="open-about-modal" aria-label="About miniCycle" title="About miniCycle">
         <i class="fas fa-info-circle" aria-hidden="true"></i>
         </button>
@@ -1111,7 +1095,6 @@
 
        
 
-            <!-- About Modal -->
             <dialog id="about-modal" class="modal" data-modal aria-labelledby="about-modal-title" aria-modal="true">
                 <div class="modal-content about-modal-content has-corner-logo">
                     <button class="close-modal" aria-label="Close about modal">&times;</button>
@@ -1143,9 +1126,7 @@
             </dialog>
 
 
-            <!--Main Menu-->
         <div class="menu-sections">
-            <!-- Quick Actions Menu Row (mobile) -->
             <div class="menu-section quick-actions-menu-row" data-section="quick-actions">
                 <div class="quick-actions-header">
                     <button class="quick-actions-nav quick-actions-prev" aria-label="Previous view">&#x25C0;</button>
@@ -1154,7 +1135,6 @@
                 </div>
                 <div class="quick-actions-slots" id="quick-actions-menu-slots"></div>
             </div>
-            <!-- Routines Section -->
             <div class="menu-section collapsed" data-section="routines">
                 <div class="menu-section-header collapsible" role="button" tabindex="0" data-toggle="routines" aria-expanded="false" aria-label="Toggle Routine Actions section" aria-controls="menu-section-routines" title="Create, open, import, export, and share routines">
                     <span class="menu-section-label">
@@ -1173,7 +1153,6 @@
                 </div>
             </div>
 
-            <!-- Tasks Section (collapsed by default) -->
             <div class="menu-section collapsed" data-section="tasks">
                 <div class="menu-section-header collapsible" role="button" tabindex="0" data-toggle="tasks" aria-expanded="false" aria-label="Toggle Task Actions section" aria-controls="menu-section-tasks" title="Manage tasks, reminders, recurring schedules, and task options">
                     <span class="menu-section-label">
@@ -1204,7 +1183,6 @@
 
 
 
-            <!-- Rewards Section (collapsed by default) -->
             <div class="menu-section collapsed" data-section="rewards">
                 <div class="menu-section-header collapsible" role="button" tabindex="0" data-toggle="rewards" aria-expanded="false" aria-label="Toggle Rewards section" aria-controls="menu-section-rewards" title="Unlock themes and mini-games as you complete cycles">
                     <span class="menu-section-label">
@@ -1223,7 +1201,6 @@
                 </div>
             </div>
 
-            <!-- Help Section (collapsed by default) -->
             <div class="menu-section collapsed" data-section="help">
                 <div class="menu-section-header collapsible" role="button" tabindex="0" data-toggle="help" aria-expanded="false" aria-label="Toggle Help section" aria-controls="menu-section-help" title="User manual, feedback, updates, and sharing">
                     <span class="menu-section-label">
@@ -1243,7 +1220,6 @@
             </div>
       
 
-            <!-- Legal Section (collapsed by default) -->
             <div class="menu-section collapsed" data-section="legal">
                 <div class="menu-section-header collapsible" role="button" tabindex="0" data-toggle="legal" aria-expanded="false" aria-label="Toggle Legal section" aria-controls="menu-section-legal" title="Privacy policy, terms of service, accessibility, and security">
                     <span class="menu-section-label">
@@ -1260,7 +1236,6 @@
                 </div>
             </div>
 
-                    <!-- App Section (collapsed by default) -->
             <div class="menu-section collapsed" data-section="app">
                 <div class="menu-section-header collapsible" role="button" tabindex="0" data-toggle="app" aria-expanded="false" aria-label="Toggle Settings section" aria-controls="menu-section-app" title="Customize colors, accessibility, and app preferences">
                     <span class="menu-section-label">
@@ -1333,7 +1308,6 @@
     </div>
 
     <button id="close-main-menu" aria-label="Close Main Menu">Close</button>
-    <button id="exit-mini-cycle"><i class="fas fa-sign-out-alt"></i> Exit to Main Menu </button>
         
 </nav>
 
@@ -1364,12 +1338,10 @@
         </div>
       </dialog>
 
-        <!-- Reminders Modal -->
         <dialog id="reminders-modal" class="reminders-modal" data-modal aria-labelledby="reminders-modal-title" aria-modal="true">
             <div class="reminders-modal-content has-corner-logo">
                 <h2 id="reminders-modal-title">Reminders & Notifications</h2>
         
-                <!-- Toggle On/Off -->
                 <label class="settings-option">
                     <input type="checkbox" id="enableReminders" name="enableReminders" />
                     Enable Reminders
@@ -1391,7 +1363,6 @@
                     </details>
                 </div>
         
-                <!-- Frequency Section (only show if enabled) -->
                 <div id="frequency-section">
                     <label>
                         <input type="checkbox" id="indefiniteCheckbox" name="indefiniteCheckbox" />
@@ -1416,7 +1387,6 @@
                     </div>
                 </div>
         
-                <!-- Close Button -->
                 <button id="close-reminders-btn" class="settings-btn">Close</button>
             </div>
         </dialog>
@@ -1425,7 +1395,6 @@
 
 <!-- settings-modal injected at boot via modalTemplates.js -->
 
-        <!-- Testing Modal -->
 <dialog id="testing-modal" class="testing-modal" data-modal aria-labelledby="testing-modal-title" aria-modal="true">
     <div class="testing-modal-content">
         <div class="testing-modal-header">
@@ -1434,14 +1403,12 @@
         </div>
 
         <div class="testing-modal-body">
-            <!-- Tabs for different testing categories -->
             <div class="testing-tabs" role="tablist" aria-label="Testing categories">
                 <button class="testing-tab active" data-tab="diagnostics" role="tab" aria-selected="true" aria-controls="diagnostics-tab">📊 Diagnostics</button>
                 <button class="testing-tab" data-tab="debug" role="tab" aria-selected="false" aria-controls="debug-tab">🐛 Debug Info</button>
                 <button class="testing-tab" data-tab="automated-tests" role="tab" aria-selected="false" aria-controls="automated-tests-tab">🧪 Automated Tests</button>
             </div>
 
-            <!-- Diagnostics Tab -->
             <div id="diagnostics-tab" class="testing-tab-content active" role="tabpanel">
                 <div class="testing-section">
                     <h3>📋 Quick Health Check</h3>
@@ -1474,7 +1441,6 @@
                 </div>
             </div>
 
-            <!-- Debug Info Tab -->
             <div id="debug-tab" class="testing-tab-content" role="tabpanel">
                 <div class="testing-section">
                     <h3>🐛 Debug Information</h3>
@@ -1500,7 +1466,6 @@
 
             </div>
 
-            <!-- Automated Tests Tab -->
             <div id="automated-tests-tab" class="testing-tab-content" role="tabpanel">
                 <div class="testing-section">
                     <h3>🧪 Quick Test</h3>
@@ -1528,7 +1493,6 @@
         </div>
         
 
-        <!-- Results Area -->
         <div class="testing-results-area">
             <div class="testing-results-header">
                 <h3>📝 Test Results</h3>
@@ -1555,7 +1519,6 @@
 
 
 
-<!-- Local Storage Viewer Modal -->
 <dialog id="storage-viewer-overlay" class="storage-modal-overlay" aria-labelledby="storage-viewer-title" aria-modal="true">
   <div class="storage-modal-box">
     <div class="storage-modal-header" id="storage-viewer-title">📦 Local Storage Viewer</div>
@@ -1572,20 +1535,16 @@
   </div>
 </dialog>
 
-<!-- 🎨 Themes Panel Modal -->
 <dialog class="themes-modal" data-modal id="themes-modal" aria-labelledby="themes-modal-title" aria-modal="true">
     <div class="themes-modal-content has-corner-logo">
       <h2 id="themes-modal-title">🎨 Theme Settings</h2>
   
-      <!-- 🗣️ VOCABULARY THEMES -->
       <div id="vocab-theme-section">
         <!-- Vocabulary theme options injected by JS -->
       </div>
 
-      <!-- Divider Line -->
       <hr class="theme-divider" />
 
-      <!-- 🌙 Dark Mode Section -->
       <div id="dark-mode-section">
         <label class="custom-checkbox">
           <input type="checkbox" id="darkModeToggleThemes" name="darkModeToggleThemes">
@@ -1601,12 +1560,10 @@
 <!-- preferences-modal injected at boot via modalTemplates.js -->
 
 
-<!-- miniCycle Switch Modal -->
 <dialog id="routine-switcher-modal" class="mini-cycle-switch-modal" data-modal aria-labelledby="routine-switcher-title" aria-modal="true">
     <div class="mini-cycle-switch-modal-content has-corner-logo" autofocus tabindex="-1">
         <div class="mini-cycle-switch-title" id="routine-switcher-title">Open Routine</div>
 
-        <!-- Full-width controls above the two-panel area -->
         <input type="text" id="routine-search-input" class="routine-search-input" placeholder="Search routines..." autocomplete="off" aria-label="Search routines">
         <div class="routine-sort-filter-row">
             <div class="routine-filter-controls">
@@ -1625,16 +1582,13 @@
             </div>
         </div>
 
-        <!-- Two-panel body: left (list + actions) | right (desktop preview) -->
         <div class="routine-switcher-body">
-            <!-- Left panel — routine list -->
             <div class="routine-switcher-left">
                 <div class="routine-panel-title">Routines</div>
                 <div class="mini-cycle-switch-list" id="miniCycleList" role="listbox" aria-label="Routines"></div>
                 <div id="routine-list-hint" class="routine-list-hint"></div>
             </div>
 
-            <!-- Right panel — desktop task preview (hidden on mobile) -->
             <div class="routine-switcher-right">
                 <div id="desktop-preview-title" class="routine-panel-title">Preview</div>
                 <div id="desktop-preview-window" class="desktop-preview-window">
@@ -1644,7 +1598,6 @@
             </div>
         </div>
 
-        <!-- All buttons centered below the two-panel area -->
         <div id="switch-items-row" class="switch-items-row">
             <div class="switch-items-row-title">Routine Actions</div>
             <button id="switch-duplicate" class="switch-duplicate switch-buttons" title="Duplicate routine"><i class="fas fa-copy"></i><span class="switch-btn-label">Duplicate</span></button>
@@ -1660,7 +1613,6 @@
             <button id="miniCycleSwitchConfirm" class="mini-cycle-switch-btn open-btn">Open</button>
         </div>
 
-        <!-- Storage Bar -->
         <div class="storage-bar-container">
             <div class="storage-bar-header">
                 <div class="storage-bar-label-group">
@@ -1683,19 +1635,15 @@
 
 
 
-<!-- Feedback Modal -->
 <dialog id="feedback-modal" class="feedback-modal" aria-labelledby="feedback-modal-title" data-modal aria-modal="true">
     <div class="feedback-modal-content has-corner-logo">
         <button class="close-feedback-modal" aria-label="Close feedback modal">&times;</button>
         <h2 id="feedback-modal-title">Provide Feedback</h2>
         <p>We appreciate your feedback! Let us know how we can improve miniCycle.</p>
 
-        <!-- Web3Forms API -->
         <form id="feedback-form" action="https://api.web3forms.com/submit" method="POST" novalidate>
-            <!-- Your Web3Forms Access Key -->
             <input type="hidden" name="access_key" value="691907ec-ad04-4447-9d45-861ee622a091">
 
-            <!-- Subject line for email identification -->
             <input type="hidden" name="subject" value="miniCycle Feedback">
 
             <!-- Web3Forms Honeypot Spam Protection -->
@@ -1720,19 +1668,15 @@
                 <input type="hidden" name="rating_tags" id="feedback-rating-tags-value" value="">
             </div>
 
-            <!-- Feedback Text -->
             <label for="feedback-text" class="visually-hidden">Your feedback</label>
             <textarea id="feedback-text" name="message" placeholder="Write your feedback here..." required minlength="10"></textarea>
 
-            <!-- Email (Optional, if you want users to provide their email) -->
             <label for="feedback-email" class="visually-hidden">Your email (optional)</label>
             <input type="email" id="feedback-email" name="email" placeholder="Your Email (optional)" autocomplete="email">
 
-            <!-- Show a success message instead of redirecting -->
             <button type="submit" id="submit-feedback">Submit</button>
         </form>
 
-        <!-- Thank You Message (Initially Hidden) -->
         <p id="thank-you-message" style="display: none; color: green; font-weight: bold;">
             ✅ Thank you for your feedback!
         </p>
@@ -1750,13 +1694,10 @@
 
 
 
-<!-- Task List & Stats Wrapper -->
 <main id="app-container" role="main" tabindex="-1">
-  <!-- Personalization Button (bottom left) -->
   <button id="personalization-btn" aria-label="Personalization" title="Personalize colors">
     🖌️
   </button>
-  <!-- Dark Mode Toggle (bottom right) -->
   <button id="quick-dark-toggle" aria-label="Toggle dark mode" title="Toggle dark mode">
     🌓
   </button>
@@ -1827,7 +1768,6 @@
             </div>
         </div>
         <div class="task-list-container">
-        <!-- Search Input Row (appears below title when search is expanded) -->
         <div id="task-filter-sort-row" class="task-filter-sort-row hidden">
             <div class="filter-chip-group collapsed" role="group" aria-label="Filter tasks" aria-expanded="false">
                 <span class="chip-group-icon" aria-hidden="true">
@@ -1860,10 +1800,8 @@
             <span class="auto-uncheck-banner-icon" aria-hidden="true">🕛</span>
             <span id="auto-uncheck-banner-text" class="auto-uncheck-banner-text">All tasks auto-uncheck daily at 12:00 AM</span>
         </button>
-        <!--Tasks will go here-->
         <ul id="taskList" class="task-list" aria-label="Task list" aria-live="polite" aria-relevant="additions removals"></ul>
 
-        <!-- Empty State Message -->
         <div id="empty-state" class="empty-state">
             <div class="empty-state-icon">📋</div>
             <div class="empty-state-text">Your routine is empty</div>
@@ -1898,7 +1836,6 @@
             <div class="onboarding-placeholder-text">or try a sample</div>
         </div>
 
-        <!-- Completed Tasks Collapsible Section -->
         <div class="completed-tasks-section" id="completed-tasks-section">
             <button type="button" class="completed-tasks-header clickable" id="completed-tasks-header" aria-expanded="false" aria-label="Toggle completed tasks">
                 ✓ Completed (<span id="completed-count">0</span>) <span class="toggle-icon">▼</span>
@@ -1906,16 +1843,14 @@
             <ul id="completedTaskList" class="completed-task-list"></ul>
         </div>
     </div>
-    </div><!-- end task-card -->
+    </div>
     <div class="progress-container">
         <div id="progressBar" class="progress-bar"></div>
     </div>
-    </div><!-- end task-card-group -->
+    </div>
     <div id="complete-all-and-help-window-container" class="complete-all-and-help-window-container">
-        <!-- Complete All Button -->
   <button id="completeAll" class="complete-all-btn" title="Complete all checked tasks">Complete</button>
     </div>
-    <!-- Quick Actions Panel - Inside task-view, positioned to left on desktop -->
     <div id="quick-actions-window" class="quick-actions-window">
         <div class="quick-actions-header">
             <button class="quick-actions-nav quick-actions-prev" title="Previous view" aria-label="Previous view">&#x25C0;</button>
@@ -1924,13 +1859,11 @@
         </div>
         <div class="quick-actions-slots" id="quick-actions-slots"></div>
     </div>
-    <!-- Help Window - Inside task-view, positioned to right on desktop -->
     <div id="help-window" class="help-window" role="status" aria-label="Help information">
         <p></p>
     </div>
 </div>
 
-    <!-- Stats Panel (Initially Hidden) -->
     <section id="stats-panel" class="stats-panel" role="tabpanel" aria-labelledby="stats-header" inert>
         <h2 id="stats-header">📊 Stats</h2>
         <!-- Scroll surface lives HERE, not on the panel: the title above stays
@@ -1942,7 +1875,6 @@
             <h3 class="clickable" tabindex="0" aria-expanded="true" aria-label="Toggle current routine details">
                 📋 Current Routine <span class="toggle-icon">▼</span>
             </h3>
-            <!-- Collapsible Details -->
             <p id="current-routine-name" class="current-routine-name"></p>
             <div id="current-cycle-doughnut-container" class="current-cycle-doughnut-container">
                 <svg class="current-cycle-doughnut" viewBox="0 0 100 100" role="img" aria-label="Current cycle task completion">
@@ -1994,7 +1926,7 @@
                 <div id="stats-progress-bar" class="progress-bar" role="progressbar" aria-label="Progress to next milestone" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
             </div>
         </div>
-        </div> <!-- /.stats-panel-content -->
+        </div>
     </section>
 
     
@@ -2007,7 +1939,6 @@
 
 <div>
 <footer id="footer-container" role="contentinfo">
-<!-- ✅ Undo buttons here will group them logically with header -->
 <div id="undo-redo-buttons" class="undo-container">
 <button id="undo-btn" class="undo-redo-btn" hidden title="Undo last action">Undo</button>
 <button id="redo-btn" class="undo-redo-btn" hidden title="Redo last undone action">Redo</button>
@@ -2047,7 +1978,6 @@
 
 
 
-<!-- 🔊 ARIA Live Region for announcing view changes -->
 <div id="live-region" aria-live="polite" style="position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden;"></div>
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -2060,7 +1990,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- Boot File Split (Dec 2025): Load via entrypoint which orchestrates all boot files -->
- <script type="module" src="miniCycle-main.js?v=2.544"></script>
+ <script type="module" src="miniCycle-main.js?v=2.545"></script>
 
 <script>
 // Sync About modal version with meta app-version

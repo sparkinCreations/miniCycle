@@ -1,3 +1,8 @@
+## [2.545] - 2026-09-06
+- docs(future-work): add Welcome Screen and Tip Archive documentation
+- chore: remove dead exit-mini-cycle button and trim 76 low-value HTML comments
+
+
 ## [2.544] - 2026-09-06
 - docs(future-work): add Lite ↔ Full import and adopt plan documentation
 - fix(backup): back up miniCycleLiteFocusMode (the one written Lite key missing from every key list); document miniCycleLiteCount as a dead read

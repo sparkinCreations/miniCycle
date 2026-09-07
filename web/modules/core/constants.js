@@ -956,7 +956,6 @@ export const DOM_IDS = Object.freeze({
     MENU_TASK_OPTIONS: 'menu-task-options',
     MENU_ENTER_FOCUS_VIEW: 'menu-enter-focus-view',
     OPEN_USER_MANUAL: 'open-user-manual',
-    EXIT_MINI_CYCLE: 'exit-mini-cycle',
     SAVE_AS_MINI_CYCLE: 'save-as-mini-cycle',
     OPEN_MINI_CYCLE: 'open-mini-cycle',
     CLEAR_MINI_CYCLE_TASKS: 'clear-mini-cycle-tasks',

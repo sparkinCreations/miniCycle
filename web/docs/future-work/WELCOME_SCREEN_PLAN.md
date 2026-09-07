@@ -394,13 +394,18 @@ TITLE_SCREEN_WEBSITE: 'title-screen-website',
 No selector string may be hardcoded in the module — `DOM_IDS`, `DOM_CLASSES`,
 `DOM_SELECTORS` or `DATA_SELECTORS` only.
 
-### Cleanup this enables
+### Cleanup already done (Sep 2026)
 
-`EXIT_MINI_CYCLE` (`constants.js:959`) and its three references in
-`modules/ui/menuManager.js` (`:161`, `:178`, `:249`) are live wiring against
-`#exit-mini-cycle`, an element **commented out in the initial commit** and never
-shipped. Its handler navigates to `../index.html` — a hub page from when miniCycle
-was part of TaskCycle, which no longer exists. Delete all four with Part 2.
+`#exit-mini-cycle` — the "Exit to Main Menu" button — has been **removed**, along
+with `EXIT_MINI_CYCLE` in `constants.js` and its three references in
+`modules/ui/menuManager.js`. It dated from when miniCycle shipped inside TaskCycle
+and its handler navigated to `../index.html`, a hub page that no longer exists
+after the app was extracted to stand on its own.
+
+That button was the closest thing the app had to the affordance this plan
+describes, and its destination is exactly what the Welcome Screen replaces: a
+place to leave a routine for. When Part 2 lands, the menu entry it once occupied
+is where `titleScreen` should be reachable from.
 
 ---
 
