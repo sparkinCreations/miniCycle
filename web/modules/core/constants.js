@@ -803,6 +803,7 @@ export const DOM_CLASSES = Object.freeze({
     TITLE_SCREEN_TIP: 'title-screen-tip',
     TITLE_SCREEN_TAGLINE: 'title-screen-tagline',
     TITLE_SCREEN_CREDIT: 'title-screen-credit',
+    TITLE_SCREEN_FOOTER: 'title-screen-footer',
     // Crossfade state on .first-run-usecase-text (critical.css). Not the same as
     // ACTIVE ('active') above — that one is unrelated task/panel state.
     IS_ACTIVE: 'is-active',
@@ -1009,7 +1010,7 @@ export const DOM_IDS = Object.freeze({
     TITLE_SCREEN_CLOSE: 'title-screen-close',
     TITLE_SCREEN_CREATE_ROUTINE: 'title-screen-create-routine',
     TITLE_SCREEN_OPEN_ROUTINE: 'title-screen-open-routine',
-    TITLE_SCREEN_IMPORT_BACKUP: 'title-screen-import-backup',
+    TITLE_SCREEN_RESTORE_BACKUP: 'title-screen-restore-backup',
     TITLE_SCREEN_USER_MANUAL: 'title-screen-user-manual',
     TITLE_SCREEN_WEBSITE: 'title-screen-website',
     TITLE_SCREEN_TIP_BTN: 'title-screen-tip-btn',
@@ -1575,6 +1576,9 @@ export const DOM_SELECTORS = Object.freeze({
 
     // ---- Modals (general) ----
     DATA_MODAL: '[data-modal]',
+    // Every element whose text is just the current copyright year. Markup carries
+    // a literal year as the no-JS fallback; uiBoot overwrites it at boot.
+    COPYRIGHT_YEAR: '[data-copyright-year]',
     CLOSE_MODAL: '.close-modal',
 
     // ---- Routine Switcher ----

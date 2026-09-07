@@ -78,7 +78,7 @@ export async function runTitleScreenTests(resultsDiv) {
         // control that already owns them. A missing constant is `undefined`, and
         // getElementById(undefined) fails silently.
         const targets = [
-            'NEW_MINI_CYCLE', 'OPEN_MINI_CYCLE', 'IMPORT_MINI_CYCLE',
+            'NEW_MINI_CYCLE', 'OPEN_MINI_CYCLE', 'RESTORE_MINI_CYCLES',
             'OPEN_USER_MANUAL', 'MENU_OPEN_TITLE_SCREEN'
         ];
         targets.forEach((key) => {
@@ -87,6 +87,58 @@ export async function runTitleScreenTests(resultsDiv) {
                 throw new Error(`DOM_IDS.${key} is ${JSON.stringify(value)} — delegation would silently no-op`);
             }
         });
+    });
+
+    await test('the recovery link restores ALL routines, not a single import', async () => {
+        // This is the regression that shipped: the link was wired to
+        // IMPORT_MINI_CYCLE (#import-mini-cycle, "Import a routine from a file"),
+        // which adds ONE .mcyc routine alongside the existing ones. A user
+        // arriving at the Welcome Screen to recover a backup got a single-routine
+        // importer instead. The guard above could not catch it — IMPORT_MINI_CYCLE
+        // is a real, non-empty id — so pin which control is actually clicked.
+        //
+        // Spy in the CAPTURE phase on document rather than adding a listener to a
+        // stand-in element: #restore-mini-cycles is already in the DOM (settings
+        // template, injected before Phase 2), so a stand-in would be a duplicate
+        // id — getElementById returns the FIRST match, the click would reach the
+        // real button, and the suite would open a file picker. Capturing lets us
+        // observe the click and stop it before backupRestoreManager's handler runs.
+        let hit = null;
+        const spy = (e) => {
+            const el = e.target instanceof Element ? e.target.closest('button') : null;
+            if (el && el.id === DOM_IDS.RESTORE_MINI_CYCLES) {
+                hit = el.id;
+                e.preventDefault();
+                e.stopImmediatePropagation();
+            }
+        };
+        document.addEventListener('click', spy, true);
+
+        // Only stand one up if the settings template is absent (isolated runs).
+        const existing = document.getElementById(DOM_IDS.RESTORE_MINI_CYCLES);
+        let stub = null;
+        if (!existing) {
+            stub = document.createElement('button');
+            stub.id = DOM_IDS.RESTORE_MINI_CYCLES;
+            document.body.appendChild(stub);
+        }
+
+        titleScreen.open();
+        try {
+            const link = document.getElementById(DOM_IDS.TITLE_SCREEN_RESTORE_BACKUP);
+            if (!link) throw new Error('recovery link missing');
+            link.click();
+            // _delegate() defers through setTimeout(0) so the overlay closes
+            // first — assert on the next macrotask, not synchronously.
+            await new Promise((resolve) => setTimeout(resolve, 50));
+            if (hit !== DOM_IDS.RESTORE_MINI_CYCLES) {
+                throw new Error(`click did not reach #${DOM_IDS.RESTORE_MINI_CYCLES} (saw ${JSON.stringify(hit)})`);
+            }
+        } finally {
+            titleScreen.close();
+            document.removeEventListener('click', spy, true);
+            if (stub) stub.remove();
+        }
     });
 
     // ============================================
@@ -102,7 +154,7 @@ export async function runTitleScreenTests(resultsDiv) {
             const actions = dialog.querySelectorAll('.first-run-btn');
             if (actions.length !== 3) throw new Error(`expected 3 primary actions, got ${actions.length}`);
             // Import is a recovery path and must stay visually demoted.
-            const importBtn = document.getElementById(DOM_IDS.TITLE_SCREEN_IMPORT_BACKUP);
+            const importBtn = document.getElementById(DOM_IDS.TITLE_SCREEN_RESTORE_BACKUP);
             if (!importBtn) throw new Error('import action missing');
             if (importBtn.classList.contains('first-run-btn')) {
                 throw new Error('import is styled as a primary action — it is a recovery path');

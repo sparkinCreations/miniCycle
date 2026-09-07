@@ -184,6 +184,33 @@ export async function runUIBootTests(resultsDiv) {
     });
 
     // Summary
+    // ===== COPYRIGHT YEAR =====
+    resultsDiv.innerHTML += '<h4 class="test-section">\u00A9 Copyright Year</h4>';
+
+    await test('stampCopyrightYear fills every [data-copyright-year] with the CURRENT year', async () => {
+        const { stampCopyrightYear } = await import(
+            ((globalThis.__MC_MODULE_MAP || {})['/modules/boot/uiBoot.js'] || '../modules/boot/uiBoot.js') + '?v=' + Date.now());
+        // The markup ships a literal year as its no-JS fallback, so a broken stamp
+        // is invisible — the page just keeps showing last year's number. Inject a
+        // different year so the assertion cannot pass on the fallback.
+        const host = document.createElement('div');
+        host.innerHTML = '<span data-copyright-year>1999</span><span data-copyright-year>1999</span>';
+        document.body.appendChild(host);
+
+        const RealDate = Date;
+        try {
+            globalThis.Date = class extends RealDate { getFullYear() { return 2031; } };
+            stampCopyrightYear();
+            const values = [...host.querySelectorAll('[data-copyright-year]')].map(el => el.textContent);
+            if (values.some(v => v !== '2031')) {
+                throw new Error(`expected every element to read 2031, got ${JSON.stringify(values)}`);
+            }
+        } finally {
+            globalThis.Date = RealDate;
+            host.remove();
+        }
+    });
+
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${Math.round(passed.count/total.count*100)}%)</h3>`;
 
     return { passed: passed.count, total: total.count };

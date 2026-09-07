@@ -15,6 +15,32 @@ const ICONS = {
     // Info circle - used for info buttons
     'info-circle': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor"><path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM216 336h24V272H216c-13.3 0-24-10.7-24-24s10.7-24 24-24h48c13.3 0 24 10.7 24 24v88h8c13.3 0 24 10.7 24 24s-10.7 24-24 24H216c-13.3 0-24-10.7-24-24s10.7-24 24-24zm40-208a32 32 0 1 1 0 64 32 32 0 1 1 0-64z"/></svg>',
 
+    // Door ajar - the Welcome Screen entry. A threshold you pass through, which
+    // is what that surface is: you enter it and leave through one of its actions.
+    //
+    // Three parts, and it needs all three. Drop any one and it stops reading as a
+    // door at the size it ACTUALLY renders (22px in the menu row - measured, not
+    // assumed; judging these at 16px sends you to the wrong answer):
+    //
+    //   1. FRAME - the second path is a hollow rectangle (fill-rule evenodd), an
+    //      opening the panel is hinged into. Without it the panel is just a
+    //      tapered blob beside a bar; earlier versions shipped exactly that and
+    //      read as a flag, or as a pause button when the taper was weak.
+    //   2. PERSPECTIVE TAPER - the panel's free edge (left) is taller than its
+    //      hinge edge (right), so the silhouette is non-rectangular and the panel
+    //      reads as swung toward the viewer. Deliberately hard for that reason.
+    //   3. KNOB - punched as a CUTOUT in the panel path via fill-rule evenodd,
+    //      not drawn as a filled circle. A filled knob would need its own colour
+    //      and these icons are currentColor-only, so it would break on any theme
+    //      whose menu background is not the one it was picked against. As a hole
+    //      it inherits the background for free. It lands ~2px wide at 22px, which
+    //      is enough - a knob on a bare rectangle was unreadable, but a knob on a
+    //      tapered panel inside a frame survives.
+    //
+    // No arrow, on purpose: the arrow is what turns a door into "sign out". This
+    // means threshold, not exit.
+    'door-ajar': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor"><path fill-rule="evenodd" d="M56 24 L272 96 V416 L56 488 Z M108 236 a26 26 0 1 0 0 52 a26 26 0 1 0 0 -52 Z"/><path fill-rule="evenodd" d="M272 72 H448 V440 H272 Z M312 112 H408 V440 H312 Z"/></svg>',
+
     // Lightbulb - the Tips entry. Built from primitives (circle + two rounded
     // base bands) rather than a traced glyph, same approach as play/pause below:
     // exact at any size, nothing to get subtly wrong from memory. The app already
@@ -276,6 +302,7 @@ export function replaceFA(element) {
  * @type {Object<string, string>}
  */
 export const FA_MAP = {
+    'fa-door-ajar': 'door-ajar',
     'fa-lightbulb': 'lightbulb',
     'fa-play': 'play',
     'fa-pause': 'pause',

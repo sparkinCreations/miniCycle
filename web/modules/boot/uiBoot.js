@@ -834,6 +834,26 @@ export function handleTryLiteVersionClick(deps) {
 }
 
 /**
+ * Fill every [data-copyright-year] element with the current year.
+ *
+ * The markup ships a literal year so a no-JS or pre-boot render is still correct
+ * rather than blank; this overwrites it once the app is up. Same shape as the
+ * about-modal version badge, which also ships a placeholder and is stamped at
+ * runtime — see modalManager's ABOUT_VERSION handling.
+ *
+ * Static pages outside the app (blog, pages/, legal/) still carry hardcoded
+ * years; they have no boot to hang this on.
+ *
+ * @returns {void}
+ */
+export function stampCopyrightYear() {
+  const year = String(new Date().getFullYear());
+  document.querySelectorAll(DOM_SELECTORS.COPYRIGHT_YEAR).forEach((el) => {
+    el.textContent = year;
+  });
+}
+
+/**
  * Setup user manual link handler
  * @param {Object} GlobalUtils - GlobalUtils module reference
  */
@@ -1158,6 +1178,8 @@ export async function initUIBoot({ GlobalUtils, deps, appContextMod }) {
   attachMenuButtonListener(GlobalUtils, menuButton, menu);
   attachGlobalEventListeners(GlobalUtils);
   setupDeferredFeatureTriggers(deps);
+
+  stampCopyrightYear();
 
   // Hide loader and focus input
   hideAppLoader();

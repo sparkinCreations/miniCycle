@@ -387,13 +387,29 @@ class TitleScreen {
         );
         actions.appendChild(buttons);
 
-        // Importing a backup is a RECOVERY path, not a daily action — same tier
+        // Restoring a backup is a RECOVERY path, not a daily action — same tier
         // and same treatment as "Restore from a backup file" on the first-run
         // screen, which sits below the pills as a quiet link.
+        //
+        // Delegates to RESTORE_MINI_CYCLES ("Restore All Routines"), NOT to
+        // IMPORT_MINI_CYCLE. They are different features and the ids read alike:
+        // #import-mini-cycle takes ONE .mcyc routine and adds it alongside the
+        // existing ones; #restore-mini-cycles takes a whole backup file and
+        // replaces everything, which is what the first-run link does and what a
+        // user arriving here to recover their data is asking for. This shipped
+        // pointed at the import for two releases — the delegation guard below in
+        // titleScreen.tests.js only checked the id was a real non-empty string,
+        // which IMPORT_MINI_CYCLE is, so nothing failed. The guard now pins the
+        // target, not just its shape.
+        //
+        // #restore-mini-cycles lives in SETTINGS_MODAL_HTML, but orchestrator
+        // injects that template before Phase 2 and backupRestoreManager binds the
+        // listener at init — so this works without Settings ever being opened
+        // (verified live, not assumed).
         actions.appendChild(this._buildAction(
-            DOM_IDS.TITLE_SCREEN_IMPORT_BACKUP,
-            'titleScreen.importBackup',
-            DOM_IDS.IMPORT_MINI_CYCLE,
+            DOM_IDS.TITLE_SCREEN_RESTORE_BACKUP,
+            'titleScreen.restoreBackup',
+            DOM_IDS.RESTORE_MINI_CYCLES,
             'first-run-restore'
         ));
 
@@ -441,10 +457,6 @@ class TitleScreen {
             a.textContent = getLabel(labelKey);
             legal.appendChild(a);
         });
-        inner.appendChild(legal);
-        // Credit sits BELOW the legal row: those are the pages a user might act
-        // on, the credit is attribution.
-        inner.appendChild(credit);
 
         // The tip line doubles as the way into the full archive — this surface was
         // meant to be where a user catches tips they missed, not just a menu.
@@ -470,7 +482,19 @@ class TitleScreen {
         this._bind(closeBtn, 'click', () => this.close());
         inner.appendChild(closeBtn);
 
+        // Reference tier LAST, below the close action — the conventional footer
+        // position. Order matches the app's own footer (#copyright in
+        // miniCycle.html): credit first, then the legal pages. Wrapped so desktop
+        // can lay the two out as a single row; narrow viewports stack them.
+        // NOT a child of .title-screen-inner: that column is capped at 300px, so a
+        // footer inside it could never form one row. It is a sibling pinned to the
+        // bottom of the overlay, which is also where "footer" belongs.
+        const footer = document.createElement('div');
+        footer.className = DOM_CLASSES.TITLE_SCREEN_FOOTER;
+        footer.append(credit, legal);
+
         this.overlay.appendChild(inner);
+        this.overlay.appendChild(footer);
         document.body.appendChild(this.overlay);
 
         this.overlay._previousFocus = document.activeElement;

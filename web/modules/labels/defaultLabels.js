@@ -1235,7 +1235,7 @@ export const DEFAULT_LABELS = deepFreeze({
         descriptor:      'Routine Checklist Manager',
         createRoutine:   'Create a new routine',
         openRoutine:     'Open existing routine',
-        importBackup:    'Import a backup',
+        restoreBackup:   'Restore from a backup file',
         userManual:      'User Manual',
         // Footer-style credit line, mirroring #copyright in miniCycle.html.
         // Year is computed, not baked, so it cannot go stale.

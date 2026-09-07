@@ -52,6 +52,9 @@
    that list, so state its own open/closed display. */
 #title-screen.title-screen[open] {
     display: flex;
+    /* Column so .title-screen-inner can centre in the remaining space while the
+       footer holds the bottom edge. */
+    flex-direction: column;
 }
 #title-screen.title-screen:not([open]) {
     display: none;
@@ -69,7 +72,7 @@
     align-items: center;
     width: 300px;
     max-width: 84vw;
-    padding: var(--space-6) 0;
+    padding: var(--space-6) 0 0;
 }
 
 /* Matches #app-loader's .loader-logo placement so the two screens line up. */
@@ -90,7 +93,7 @@
 /* Credit line, mirroring the app footer's #copyright. Sits with the legal row as
    the reference tier, beneath the actions. */
 .title-screen-credit {
-    margin: var(--space-2) 0 0;
+    margin: 0;
     text-align: center;
     color: white;
     opacity: 0.92;
@@ -120,7 +123,7 @@
     flex-wrap: wrap;
     justify-content: center;
     gap: var(--space-2) var(--space-3);
-    margin-top: var(--space-5);
+    margin-top: 0;
 }
 
 .title-screen-legal a {
@@ -205,4 +208,36 @@
 
 #title-screen .first-run-usecase-text.is-active {
     opacity: 1;
+}
+
+/* Reference footer: credit + legal, pinned to the bottom of the overlay.
+   Narrow viewports stack the two rows — the credit line alone is ~250px, so
+   forcing one line on a phone would wrap mid-list and read worse. */
+.title-screen-footer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+    width: 100%;
+    padding: 0 var(--space-4) var(--space-5);
+}
+
+/* Desktop: one row, and a step up in size. Being an overlay-level sibling (not
+   inside the 300px column) is what makes a single row possible. */
+@media (min-width: 1024px) {
+    .title-screen-footer {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: var(--space-2) var(--space-5);
+    }
+
+    .title-screen-footer .title-screen-credit,
+    .title-screen-footer .title-screen-legal a {
+        font-size: var(--font-size-sm);
+    }
+
+    .title-screen-footer .title-screen-legal {
+        gap: var(--space-2) var(--space-5);
+    }
 }
