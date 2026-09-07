@@ -533,6 +533,76 @@ async function run() {
             record(vp, `dialogs fit viewport (${dlg.results.length} checked)`,
                 over.length === 0,
                 over.map(d => `${d.label} width=${d.width} right=${d.right} — ${d.over}px past ${dlg.W}`).join('; '));
+
+            // --- Routine switcher: Close must never leave the screen --------------
+            // The picker is taller than a short viewport. It used to solve that by
+            // making the WHOLE dialog the scroller (overflow-y: auto on
+            // .mini-cycle-switch-modal-content), which put the Close button — the
+            // last child — below the fold with no visible affordance to scroll to
+            // it. Measured at 1280x600: its bottom sat at 677px in a 600px viewport.
+            //
+            // The contract now is: the shell is capped and clips, and ONLY the list
+            // and preview scroll. Assert all three parts, because fixing one without
+            // the others silently reintroduces the bug — capping the shell without
+            // `min-height: 0` on the flexible row leaves it overflowing anyway
+            // (a flex item's default min-height is `auto`, which refuses to shrink).
+            {
+                const sw = await page.evaluate(() => {
+                    const d = document.getElementById('routine-switcher-modal');
+                    if (!d) return { missing: true };
+                    const wasOpen = d.open;
+                    if (!wasOpen) d.showModal();
+                    const content = d.querySelector('.mini-cycle-switch-modal-content');
+                    const list = document.getElementById('miniCycleList');
+                    const close = document.getElementById('miniCycleSwitchClose');
+                    if (!content || !list || !close) { if (!wasOpen) d.close(); return { missing: true }; }
+
+                    // Overfill the list so the scroll region is genuinely overflowing;
+                    // an empty picker fits anywhere and would pass vacuously.
+                    const restore = list.innerHTML;
+                    list.innerHTML = Array.from({ length: 40 }, (_, i) =>
+                        `<div class="mini-cycle-switch-item" role="option">Routine ${i + 1}</div>`).join('');
+
+                    const cr = content.getBoundingClientRect();
+                    const br = close.getBoundingClientRect();
+                    const out = {
+                        missing: false,
+                        shellScrolls: content.scrollHeight > content.clientHeight + 1,
+                        listScrolls: list.scrollHeight > list.clientHeight + 1,
+                        closeTop: Math.round(br.top),
+                        closeBottom: Math.round(br.bottom),
+                        shellBottom: Math.round(cr.bottom),
+                        vh: window.innerHeight
+                    };
+                    list.innerHTML = restore;
+                    if (!wasOpen) d.close();
+                    return out;
+                });
+
+                if (!sw.missing) {
+                    record(vp, 'routine switcher: Close button is fully on screen',
+                        sw.closeTop >= 0 && sw.closeBottom <= sw.vh + TOL,
+                        `Close spans ${sw.closeTop}-${sw.closeBottom}px in a ${sw.vh}px viewport`);
+
+                    record(vp, 'routine switcher: the dialog itself does not scroll',
+                        !sw.shellScrolls,
+                        'the shell is the scroller again — Close is the last child, so it goes below the fold');
+
+                    record(vp, 'routine switcher: the routine list is the scroller',
+                        sw.listScrolls,
+                        'an overfilled list did not scroll — it is being allowed to grow instead, '
+                        + 'which pushes the fixed rows off-screen');
+
+                    // The Close button bleeds past the shell horizontally on purpose
+                    // (negative margins + overflow clipping) but must not hang below
+                    // it: the shell clips rather than scrolls now, so a vertical
+                    // overhang is cut off permanently instead of being scrollable to.
+                    record(vp, 'routine switcher: Close does not overhang the shell',
+                        sw.closeBottom <= sw.shellBottom + TOL,
+                        `Close bottom ${sw.closeBottom}px vs shell bottom ${sw.shellBottom}px — `
+                        + 'the overhang is clipped away, not scrollable');
+                }
+            }
         }
 
         // --- Modal contrast across every colour layer -------------------------

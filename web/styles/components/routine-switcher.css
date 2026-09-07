@@ -105,8 +105,25 @@ dialog.mini-cycle-switch-modal::backdrop {
     min-width: 300px;
     max-width: 400px;
     text-align: center;
-    max-height: 90vh;
-    overflow-y: auto;
+    /* Column flex, NOT positional grid rows: the modal has nine children and one
+       of them (#theme-picker-row) is conditionally shown, so any rule that
+       assigns the flexible row by POSITION lands on the wrong element the moment
+       the theme picker opens. The flexible region is named directly instead —
+       see .routine-switcher-body below. */
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    /* vh first as the fallback: dvh is unsupported on Safari < 15.4, which the
+       feature gate still admits. An unsupported max-height is DROPPED, not
+       ignored gracefully — the modal would then have no height cap at all and
+       overflow worse than before the fix. */
+    max-height: calc(100vh - var(--space-4));
+    max-height: calc(100dvh - var(--space-4));
+    /* Was `overflow-y: auto`, which made the ENTIRE dialog the scroller — so the
+       Close button, being the last child, scrolled off the bottom of the screen
+       (measured: at 1280x600 its bottom sat at 677px in a 600px viewport).
+       Only the list and preview scroll now. */
+    overflow: hidden;
     overflow-x: hidden;          /* content should fit width; never show a horizontal bar */
     overscroll-behavior: contain;
     /* Dual-strategy scrollbar styling:
@@ -276,6 +293,10 @@ input.routine-search-input:focus {
 
 .mini-cycle-switch-list {
     max-height: 240px;
+    /* `0 1 auto` not `1 1 auto`: shrink when the viewport is short, but never
+       stretch a three-routine list to fill the panel. */
+    flex: 0 1 auto;
+    min-height: 0;
     overflow-y: auto;
     overflow-x: hidden;
     border: 1px solid var(--border-blue-subtle-hover);
@@ -695,8 +716,16 @@ input.routine-search-input:focus {
     padding: var(--space-3-5);
     border: none;
     border-radius: 0 0 var(--radius-15) var(--radius-15);
-    margin: var(--space-2-5) -25px -20px;
+    /* Horizontal -25px against 15px padding is DELIBERATE: the extra 10px per
+       side is clipped by the shell's overflow, which is how this button goes
+       edge-to-edge. The bottom margin used to be -20px, which hung the button
+       past the shell's box; that was survivable only while the whole dialog
+       scrolled. Now that the shell clips instead of scrolling, an overhang is
+       cut off permanently — 20px of a 55px button — so it sits flush at 0 and
+       the shell's border-radius rounds its corners for free. */
+    margin: var(--space-2-5) -25px 0;
     width: calc(100% + 50px);
+    flex-shrink: 0;
     cursor: pointer;
     transition: background var(--transition-fast) ease;
     display: block;
@@ -919,12 +948,24 @@ input.routine-search-input:focus {
    TWO-PANEL BODY (flex container for left + right panels)
    ============================================================================= */
 
+/* The one flexible row: absorbs whatever height the fixed rows leave over.
+   min-height: 0 is the load-bearing part — a flex item's default min-height is
+   `auto`, which refuses to shrink below its content, so without it the modal
+   still overflows no matter what max-height the shell carries. */
 .routine-switcher-body {
-    display: block;
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
 }
 
 .routine-switcher-left {
     min-width: 0;
+    /* Column flex so the list below can shrink; on mobile this panel is the only
+       visible child of the body, so this is equivalent to the old `display: block`. */
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
 }
 
 /* Panel titles — hidden on mobile, shown on desktop */
@@ -1010,23 +1051,41 @@ input.routine-search-input:focus {
 
     .routine-switcher-body {
         display: flex;
+        /* MUST be restated: the base rule sets `column` so the mobile panel can
+           shrink, and `display: flex` alone would inherit it here — silently
+           stacking the list above the preview on desktop. */
+        flex-direction: row;
         gap: var(--space-4);
-        align-items: flex-start;
+        /* Was flex-start, which sized both panels to their content and left the
+           body unable to give its height to them. Stretch lets each panel fill
+           the flexible row so the list and preview can scroll inside it. */
+        align-items: stretch;
     }
 
     .routine-switcher-left {
         flex: 2;
         min-width: 0;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
     }
 
     .routine-switcher-left .mini-cycle-switch-list {
-        min-height: 240px;
+        /* Was `min-height: 240px`, which pinned a floor the modal could never
+           shrink past — the max-height on the shell would have been overruled by
+           it. Now 240px is the PREFERRED size (flex-basis) and it can shrink on
+           short screens and grow on tall ones. */
+        flex: 1 1 240px;
+        min-height: 0;
+        max-height: none;
     }
 
     .routine-switcher-right {
-        display: block;
+        display: flex;
+        flex-direction: column;
         flex: 1;
         flex-shrink: 0;
+        min-height: 0;
     }
 
     .routine-panel-title {
@@ -1042,9 +1101,13 @@ input.routine-search-input:focus {
         text-align: center;
     }
 
-    /* Preview matches the list height */
+    /* Preview matches the list height — same flex basis, so the two panels stay
+       level while both remain free to shrink. A fixed `height: 240px` here would
+       reintroduce the floor removed from the list above. */
     .routine-switcher-right .desktop-preview-window {
-        height: 240px;
+        flex: 1 1 240px;
+        min-height: 0;
+        overflow-y: auto;
     }
 
     /* Hide the inline mobile preview on desktop — right panel handles it */
@@ -1052,6 +1115,41 @@ input.routine-search-input:focus {
     .switch-preview-date,
     .switch-preview-hint {
         display: none;
+    }
+}
+
+/* =============================================================================
+   SHORT VIEWPORTS — buy the list back some height
+   =============================================================================
+   The shell is capped and only the list/preview scroll, so on a short window
+   every pixel the fixed rows spend comes straight out of the list. Measured at
+   1280x450 before this block: the list collapsed to 13px — still reachable, but
+   useless. Trimming the fixed rows' vertical padding costs nothing visually and
+   is the difference between a scrollable list and a sliver. Appearance is
+   otherwise unchanged; no element is hidden or moved. */
+
+@media (max-height: 760px) {
+    .mini-cycle-switch-modal-content {
+        padding-top: var(--space-2);
+    }
+
+    .mini-cycle-switch-title {
+        padding: var(--space-1) 0;
+        margin-bottom: var(--space-1-5);
+    }
+
+    .routine-sort-filter-row {
+        margin: var(--space-1-5) 0;
+    }
+
+    .switch-items-row {
+        padding: var(--space-1-5) 0;
+        margin-top: var(--space-1-5);
+    }
+
+    .storage-bar-container {
+        margin-top: var(--space-2);
+        padding: var(--space-1-5) var(--space-2-5);
     }
 }
 
