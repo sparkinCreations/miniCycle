@@ -1,3 +1,7 @@
+## [2.552] - 2026-09-07
+- feat(history): record how a cycle was completed and what a clear removed
+
+
 ## [2.550] - 2026-09-07
 - fix(welcome): restore link now restores all routines, not a single import
 
