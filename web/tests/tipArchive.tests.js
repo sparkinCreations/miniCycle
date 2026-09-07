@@ -227,6 +227,8 @@ export async function runTipArchiveTests(resultsDiv) {
     await test('closeModal is safe to call when nothing is open', () => {
         tipArchive.closeModal();
         tipArchive.closeModal();
+        if (tipArchive.modalOverlay !== null) throw new Error('modalOverlay reference left dangling');
+        if (document.getElementById('tip-archive-modal')) throw new Error('a redundant close left a modal behind');
     });
 
     await test('init() labels the button WITHOUT destroying its icon', async () => {

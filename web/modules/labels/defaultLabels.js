@@ -1218,6 +1218,47 @@ export const DEFAULT_LABELS = deepFreeze({
     // can reach. Two copies is exactly the drift validate:labels cannot see.
     // ========================================================================
 
+    // ========================================================================
+    // WELCOME SCREEN  (code name: titleScreen)
+    // The identifier is `titleScreen` because `welcome` is already the
+    // codebase's word for first-run onboarding (20 FIRST_RUN_WELCOME_* classes,
+    // first-run-welcome.css, onboardingCarousel). The user-facing name is
+    // "Welcome Screen": to a user this is the branded screen they met on day one
+    // and can return to. See docs/future-work/WELCOME_SCREEN_PLAN.md.
+    // ========================================================================
+
+    titleScreen: {
+        name:            'Welcome Screen',
+        menuItem:        'Welcome Screen',
+        menuItemTitle:   'Return to the Welcome Screen',
+        wordmark:        'miniCycle',
+        descriptor:      'Routine Checklist Manager',
+        createRoutine:   'Create a new routine',
+        openRoutine:     'Open existing routine',
+        importBackup:    'Import a backup',
+        userManual:      'User Manual',
+        // Footer-style credit line, mirroring #copyright in miniCycle.html.
+        // Year is computed, not baked, so it cannot go stale.
+        copyright:       '\u00A9 {year}',
+        company:         'sparkinCreations',
+        companyTitle:    'Visit the sparkinCreations website',
+        product:         'miniCycle',
+        productTitle:    'Open the miniCycle product page',
+        privacy:         'Privacy',
+        terms:           'Terms',
+        accessibility:   'Accessibility',
+        security:        'Security',
+        // Vocabulary-NEUTRAL: 'noun.routine' is lens-sensitive
+        // (defaultLabels.js LENS_SENSITIVE_KEYS), so "Back to your routine" would
+        // read differently under each of the 5 vocab themes.
+        close:           'Back',
+        closeAria:       'Close the Welcome Screen',
+        openAria:        'Open the Welcome Screen',
+        tagline:         'Repeatable checklists that reset on completion',
+        tipAria:         'Open all tips',
+        actionFailed:    'That option is unavailable right now.',
+    },
+
     tipArchive: {
         menuItem:         'Tips',
         menuItemTitle:    'Browse every loading tip',

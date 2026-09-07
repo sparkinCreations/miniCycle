@@ -31,9 +31,9 @@
 // §1 VERSION IDENTITY (update-version.sh rewrites the three vars below — keep
 //    their exact `var NAME = …` shapes) + the build-injected module map.
 // ═══════════════════════════════════════════════════════════════════════════
-var APP_VERSION = '2.546';
-var CACHE_VERSION = 'v1389';
-var CACHE_VERSION_NUMBER = 1389; // Numeric version matching version.js (for synthetic fallback)
+var APP_VERSION = '2.547';
+var CACHE_VERSION = 'v1390';
+var CACHE_VERSION_NUMBER = 1390; // Numeric version matching version.js (for synthetic fallback)
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -257,6 +257,7 @@ var BOOT_CRITICAL = [
   './modules/ui/undoTransactionDiff.js',
   './modules/ui/panelVisibilityHelpers.js',
   './modules/ui/notificationDialogHost.js',
+  './modules/ui/titleScreen.js',
   // Features - remaining
   './modules/features/tipArchive.js',
   './modules/features/clearedTasksManager.js',
@@ -334,6 +335,7 @@ var CSS_FILES = [
   './styles/components/menu.css?v=' + APP_VERSION,
   './styles/components/quick-actions.css?v=' + APP_VERSION,
   './styles/components/long-press-hint.css?v=' + APP_VERSION,
+  './styles/components/title-screen.css?v=' + APP_VERSION,
   './styles/utilities/helpers.css?v=' + APP_VERSION,
   './styles/utilities/responsive.css?v=' + APP_VERSION,
   './styles/utilities/dark-mode.css?v=' + APP_VERSION,

@@ -619,6 +619,19 @@ export const MODULE_MANIFESTS = {
         after: ['menuManager', 'statsPanel']
     },
 
+    titleScreen: {
+        path: '../ui/titleScreen.js',
+        phase: PHASES.UI_MANAGERS,
+        requires: ['AppState', 'safeAddEventListener'],
+        optionalDeps: ['showNotification', 'hideMainMenu'],
+        // tipArchive is Phase 7 (FEATURES) — later than this module. Only reached
+        // when the user clicks the rotating tip, so it is a lazy cross-phase dep.
+        lazyRequires: ['openTipArchive'],
+        provides: [],
+        provideInstance: 'titleScreen',
+        api: 'ui'
+    },
+
     helpWindowManager: {
         path: '../ui/helpWindowManager.js',
         phase: PHASES.UI_MANAGERS,

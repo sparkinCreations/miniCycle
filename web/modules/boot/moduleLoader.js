@@ -1654,6 +1654,12 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         clearClearedTasks: (...args) => deps.features?.clearedTasksManager?.clearAll?.(...args),
         openClearedTasksModal: (...args) => deps.features?.clearedTasksManager?.openModal?.(...args),
 
+        // Tip archive (from deps.features) — same lazy shape as the modal openers
+        // above. A provideInstance name is NOT automatically injectable: without
+        // an entry here the dep resolves to undefined and the caller's `?.`
+        // silently drops the feature.
+        openTipArchive: (...args) => deps.features?.tipArchive?.openModal?.(...args),
+
         // Achievements manager (from deps.features) - use Proxy for lazy resolution
         achievementsManager: new Proxy({}, {
             get(target, prop) {

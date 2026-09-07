@@ -139,6 +139,7 @@ export const UI_TIMEOUTS = Object.freeze({
     FOCUS_TASK_CELEBRATION: 2000,  // 2000ms - Focus task panel cycle-complete card celebration before showing task 1 (FOCUS_TASK_VIEW_PLAN D5)
     TOOLTIP_HIDE: 3000,            // 3000ms - Tooltip auto-hide delay
     FIRST_RUN_WELCOME_SLIDE_HOLD: 8000,    // 8000ms - How long each first-run welcome banner slide is visible before auto-advance
+    TITLE_SCREEN_USECASE_HOLD: 2800,       // 2800ms - Welcome Screen use-case crossfade. Matches the first-run screen's inline rotator: it is the same line doing the same job, and the two screens are meant to feel identical.
     TIP_ARCHIVE_SLIDE_HOLD: 8000,          // 8000ms - How long one tip stays up in the tip archive before auto-advancing. Matches FIRST_RUN_WELCOME_SLIDE_HOLD: same job (read one short line, unhurried) so the two should not drift apart. Deliberately far slower than the 4s BOOT rotator, which the user is not expected to read completely.
     FIRST_RUN_SPLASH_WATCHDOG: 12000,      // 12000ms - Hard ceiling on the typewriter splash. Its phase chain hangs off animationend, which never fires if the char animations are disabled or interrupted; this guarantees the splash always fades and its completion promise always resolves (the create/sample picks open their dialog on it)
 
@@ -791,6 +792,22 @@ export const DOM_CLASSES = Object.freeze({
     // House class for a modal's primary/close action: full-width, --color-primary.
     // Used by the reminders, settings and preferences modals.
     SETTINGS_BTN: 'settings-btn',
+    // ---- Welcome Screen (modules/ui/titleScreen.js) ----
+    // NOTE: deliberately NOT reusing .first-run-choice. critical.css hides it
+    // with `html:not(.mc-first-run) .first-run-choice { display: none }`, and a
+    // returning user never carries that class — the surface would be invisible
+    // to exactly the audience it is built for, with nothing thrown.
+    TITLE_SCREEN: 'title-screen',
+    TITLE_SCREEN_INNER: 'title-screen-inner',
+    TITLE_SCREEN_LOGO: 'title-screen-logo',
+    TITLE_SCREEN_TIP: 'title-screen-tip',
+    TITLE_SCREEN_TAGLINE: 'title-screen-tagline',
+    TITLE_SCREEN_CREDIT: 'title-screen-credit',
+    // Crossfade state on .first-run-usecase-text (critical.css). Not the same as
+    // ACTIVE ('active') above — that one is unrelated task/panel state.
+    IS_ACTIVE: 'is-active',
+    TITLE_SCREEN_ACTIONS: 'title-screen-actions',
+    TITLE_SCREEN_LEGAL: 'title-screen-legal',
     TIP_ARCHIVE_STAGE: 'tip-archive-stage',
     TIP_ARCHIVE_TEXT: 'tip-archive-text',
     TIP_ARCHIVE_KICKER: 'tip-archive-kicker',
@@ -987,6 +1004,17 @@ export const DOM_IDS = Object.freeze({
     MENU_ENTER_FOCUS_VIEW: 'menu-enter-focus-view',
     OPEN_USER_MANUAL: 'open-user-manual',
     OPEN_TIP_ARCHIVE: 'open-tip-archive',
+    MENU_OPEN_TITLE_SCREEN: 'menu-open-title-screen',
+    TITLE_SCREEN: 'title-screen',
+    TITLE_SCREEN_CLOSE: 'title-screen-close',
+    TITLE_SCREEN_CREATE_ROUTINE: 'title-screen-create-routine',
+    TITLE_SCREEN_OPEN_ROUTINE: 'title-screen-open-routine',
+    TITLE_SCREEN_IMPORT_BACKUP: 'title-screen-import-backup',
+    TITLE_SCREEN_USER_MANUAL: 'title-screen-user-manual',
+    TITLE_SCREEN_WEBSITE: 'title-screen-website',
+    TITLE_SCREEN_TIP_BTN: 'title-screen-tip-btn',
+    TITLE_SCREEN_USECASE_A: 'title-screen-usecase-a',
+    TITLE_SCREEN_USECASE_B: 'title-screen-usecase-b',
     TIP_ARCHIVE_MODAL: 'tip-archive-modal',
     TIP_ARCHIVE_CLOSE: 'tip-archive-close',
     TIP_ARCHIVE_TEXT: 'tip-archive-text',
@@ -996,6 +1024,9 @@ export const DOM_IDS = Object.freeze({
     TIP_ARCHIVE_POSITION: 'tip-archive-position',
     SAVE_AS_MINI_CYCLE: 'save-as-mini-cycle',
     OPEN_MINI_CYCLE: 'open-mini-cycle',
+    // Wired by cycleImportManager (which still matches it by literal string).
+    IMPORT_MINI_CYCLE: 'import-mini-cycle',
+    // Wired by cycleImportManager (which still matches it by literal string).
     CLEAR_MINI_CYCLE_TASKS: 'clear-mini-cycle-tasks',
     DELETE_ALL_MINI_CYCLE_TASKS: 'delete-all-mini-cycle-tasks',
     AUTO_UNCHECK_DAILY_TOGGLE: 'auto-uncheck-daily-toggle',

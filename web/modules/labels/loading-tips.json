@@ -1,5 +1,5 @@
 {
-  "_comment": "Two audiences. firstRun: shown on the first-run choice screen, where the user has no routine, no tasks and no UI to point at — only statements that are TRUE for a stranger. inApp: shown on every later boot, and free to reference UI. Both pools render in full in the tip archive. Not routed through getLabel(): the pre-boot rotator runs before labels exist.",
+  "_comment": "Three lists. firstRun: shown on the first-run choice screen, where the user has no routine, no tasks and no UI to point at — only statements that are TRUE for a stranger. inApp: shown on every later boot and on the Welcome Screen, free to reference UI. useCases: the rotating \"that's me\" hook. Not routed through getLabel(): the pre-boot rotator runs before labels exist. NOTE: miniCycle.html's first-run controller carries its OWN copy of useCases as an inline ES5 array (it must paint before any fetch resolves) — keep the two in sync.",
   "firstRun": [
     "Auto Cycle mode resets tasks automatically when all are completed",
     "Manual Cycle mode lets you reset tasks at your own pace",
@@ -23,5 +23,15 @@
     "Set up recurring tasks to auto-add them on a schedule",
     "Export your routine as a .mcyc file to share with others",
     "Use the 🧹 broom button to auto-clear specific tasks on reset or when clearing completed"
+  ],
+  "useCases": [
+    "✈️ Pre-flight checklists",
+    "🩺 Hourly nurse rounds",
+    "🔍 QA inspections",
+    "🍳 Opening & closing procedures",
+    "🧹 Cleaning rounds",
+    "🌅 Morning routines",
+    "💪 Workout circuits",
+    "📦 Packing lists you reuse"
   ]
 }

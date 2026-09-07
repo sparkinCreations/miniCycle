@@ -1,6 +1,9 @@
 # Welcome Screen — a persistent branded surface + a browsable tip archive
 
-> **Status:** 📋 PLANNED — not started ·
+> **Status:** ✅ BUILT (Sep 2026) — all three parts implemented. Part 1 shipped in
+> v2.546; Parts 2 and 3 are in the working tree. **Five of this plan's
+> instructions turned out to be wrong once checked against the code — see
+> "Corrections found during implementation" below before trusting any section.** ·
 > **Severity:** Low — an additive UX surface, not a bug ·
 > **Proposed:** Sep 2026 (v2.543), from the question "should the first-run splash
 > be somewhere the user can always return to?"
@@ -24,6 +27,46 @@
 | **Sharing code with the first-run choice screen** | ❌ No | Their constraints do not reconcile — see "Why not one component" below. Share the CSS and brand markup; keep the modules separate. |
 
 **Build order: 1 → 2 → 3.** Each ships independently.
+
+---
+
+## Corrections found during implementation
+
+This plan was written before the code was read closely. Every item below is a
+place the plan said one thing and the codebase required another. They are kept
+rather than silently edited, because the *reason* each was wrong is the reusable
+part.
+
+| Plan said | Reality |
+|---|---|
+| Register in `modalRegistry` | **Do not.** `MODAL_NAMES` feeds `closeAllModals()`, called from `modalManager.js`'s Escape handler — registering lets Escape dismiss a *parked* surface, which this plan argues against. The registry's own header excludes instance-managed modals. |
+| Add `Z_INDEX.TITLE_SCREEN: 900` | **Unnecessary.** That value was reasoned for a plain `<div>`. A `showModal()` dialog lives in the TOP LAYER and ignores z-index. Every delegation target is also a `<dialog>`, so later `showModal()` calls stack above correctly. |
+| "Legal & Terms" is one button | **Four pages** — privacy, terms, accessibility, security — all `<a target="_blank">`. Shipped as a small link row. |
+| New stylesheet → `CSS_FILES` | **Also needs an `@import` in `styles/main.css`**, version-stamped like its neighbours. A file precached but not imported styles nothing. |
+| Part 3 needs a pre-paint reader block (ES5, above the gate, CSP hash) | **None of it.** The overlay is a JS-created `<dialog>`, so pre-paint CSS cannot reveal it — `mc-first-run` works only because `#first-run-choice` is static markup. And `#app-loader` already covers boot: `hideAppLoader()` runs at the END of uiBoot and waits another 500ms, while `titleScreen.init()` is Phase 6. Measured: overlay up at **325ms, zero exposed frames across 89 samples**. Part 3 touched no inline script, no ES5, no CSP hash. |
+
+### Traps hit while building
+
+- **`.first-run-choice` cannot be reused.** `critical.css` carries
+  `html:not(.mc-first-run) .first-run-choice { display: none }`. A returning user
+  never has that class, so reusing it would have made the Welcome Screen
+  invisible to exactly its audience, silently. Only the self-contained inner
+  classes (`.first-run-wordmark`, `.first-run-btn`, `.first-run-restore`,
+  `.first-run-usecase`) are safe to share.
+- **A `provideInstance` name is NOT automatically injectable.** It lands on
+  `deps.<category>.<name>`; reaching another module needs an explicit
+  `depMappings` entry in `moduleLoader.js`. Without one the dep is `undefined`
+  and the caller's `?.` drops the feature silently. `validate:di` cannot catch
+  this for a `lazyRequires` dep — it skips those by design.
+- **`DOM_IDS.IMPORT_MINI_CYCLE` did not exist** (the import button is wired by
+  literal string in `cycleImportManager`). `getElementById(undefined)` returns
+  null and the button does nothing.
+- **`DOM_CLASSES.IS_ACTIVE` did not exist** — only `ACTIVE: 'active'`, which is
+  unrelated. `classList.add(undefined)` adds the literal string `"undefined"`.
+- **A new module must be added to `BOOT_CRITICAL`**, not just its stylesheet to
+  `CSS_FILES`. The `test:sw` drift guard is the only thing that catches it.
+
+Every one of these failed *silently*. None threw.
 
 ---
 
@@ -213,13 +256,14 @@ titleScreen: deps.ui?.titleScreen,
 Omit this and the manifest still succeeds, nothing warns, and the feature is
 simply absent. `validate:api` gates it.
 
-### Modal registry — `modules/ui/modalRegistry.js`
+### Modal registry — ⚠️ DO NOT REGISTER
 
-```javascript
-titleScreen: { method: 'id', key: DOM_IDS.TITLE_SCREEN, cacheable: false, closeMethod: 'close' },
-```
-
-Use `cacheable: false` if the markup is built at runtime.
+The original instruction here was to add a `MODAL_DEFS` entry. That is wrong.
+`MODAL_NAMES` feeds `closeAllModals()`, which `modalManager.js` calls from its
+global Escape handler — registering would let Escape dismiss a surface the user
+deliberately parked on. The registry's own header already excludes
+instance-managed modals (`achievementsManager`, `historyManager`,
+`clearedTasksManager`); `tipArchive` and `titleScreen` follow the same rule.
 
 ### Listener + focus contract
 
@@ -238,31 +282,29 @@ session; when it is the parked surface, require an explicit action.
 
 ## Part 3 — `lastSurface` persistence (build last)
 
-### Read — pre-paint, `miniCycle.html`
+### Read — ⚠️ NO pre-paint block needed
 
-A new numbered block beside "1. Dark mode", reusing the `settings` object the
-reader has already parsed:
+The original instruction here was a numbered ES5 block in `miniCycle.html`'s
+pre-paint reader, setting a class on `<html>`. **None of that is required**, for
+two reasons:
+
+1. The overlay is built in JS as a `<dialog>`. Pre-paint CSS cannot reveal an
+   element that does not exist yet — `mc-first-run` works only because
+   `#first-run-choice` is static markup in the HTML.
+2. `#app-loader` already covers the viewport through boot. `hideAppLoader()`
+   runs at the END of uiBoot and waits a further 500ms before dismissing, while
+   `titleScreen.init()` runs in Phase 6. A `showModal()` dialog is in the top
+   layer, above the loader's `z-index: 99999`, so the overlay is up before the
+   loader fades out behind it.
+
+Restore therefore happens in `init()`:
 
 ```javascript
-// 5. Welcome Screen — the user parked here last session.
-try {
-  if (settings && settings.lastSurface === 'titleScreen') {
-    root.classList.add('mc-title-screen-open');
-  }
-} catch (e) { /* overlay reveals post-boot if this fails */ }
+if (this._parkedHere()) this.open();
 ```
 
-Constraints, all hard:
-
-- **ES5 only** — no `const`/`let`, arrow functions, template literals, `?.`, `??`
-  or shorthand. A script is parsed in full before any of it runs, so one modern
-  token kills the whole block on an old browser. Verify with acorn
-  `ecmaVersion: 5` before shipping.
-- **Must stay above the feature gate**, and the gate stays alone in its block.
-- Editing this file's inline scripts changes their CSP hashes → ship via
-  `cd web && ./scripts/update-version.sh --auto --push --changelog`.
-- The class goes on `<html>` so `critical.css` can act pre-paint, matching how
-  `mc-first-run` already works.
+Measured on the real app: **overlay up at 325ms; zero frames where the routine
+was exposed, across 89 samples.** No flash, no inline-script edit, no CSP churn.
 
 ### Write — the module
 

@@ -95,7 +95,7 @@
 
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" id="status-bar-style-meta">
 
-<meta name="app-version" content="2.546">
+<meta name="app-version" content="2.547">
 
 <!-- CSP is served via HTTP header in netlify.toml (production) -->
 <!-- No <meta> CSP tag needed — Netlify headers handle it, and omitting it here allows local HTTP dev servers -->
@@ -130,17 +130,17 @@
          light mode / full motion / default background on every load.
      ═══════════════════════════════════════════════════════════════════════════ -->
 
-<link rel="preload" href="styles/main.css?v=2.546" as="style">
-<link rel="preload" href="styles/base/variables.css?v=2.546" as="style">
-<link rel="preload" href="styles/base/reset.css?v=2.546" as="style">
-<link rel="preload" href="styles/layout/app-container.css?v=2.546" as="style">
-<link rel="preload" href="styles/layout/header.css?v=2.546" as="style">
-<link rel="preload" href="styles/components/task-list.css?v=2.546" as="style">
+<link rel="preload" href="styles/main.css?v=2.547" as="style">
+<link rel="preload" href="styles/base/variables.css?v=2.547" as="style">
+<link rel="preload" href="styles/base/reset.css?v=2.547" as="style">
+<link rel="preload" href="styles/layout/app-container.css?v=2.547" as="style">
+<link rel="preload" href="styles/layout/header.css?v=2.547" as="style">
+<link rel="preload" href="styles/components/task-list.css?v=2.547" as="style">
 
 <!-- Async CSS loading - doesn't block render, app starts with inline critical CSS -->
-<link rel="stylesheet" href="styles/main.css?v=2.546" media="print" id="async-main-css">
+<link rel="stylesheet" href="styles/main.css?v=2.547" media="print" id="async-main-css">
 <script>(function(){var l=document.getElementById('async-main-css');if(!l)return;function apply(){l.media='all';}if(l.sheet){apply();}else{l.addEventListener('load',apply);}})();</script>
-<noscript><link rel="stylesheet" href="styles/main.css?v=2.546"></noscript>
+<noscript><link rel="stylesheet" href="styles/main.css?v=2.547"></noscript>
 <link rel="manifest" href="manifest.json">
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -151,7 +151,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- version.js MUST load synchronously BEFORE modulepreloads to set globalThis.APP_VERSION -->
-<script src="./version.js?v=2.546"></script>
+<script src="./version.js?v=2.547"></script>
 
 <!-- Build version = the version baked into THIS HTML document (the meta tag
      above). It is the honest "what am I actually running" signal. By contrast,
@@ -679,7 +679,7 @@
   }, LOAD_TIMEOUT_MS);
 })();
 </script>
-    <script src="boot-sw.js?v=2.546" defer></script>
+    <script src="boot-sw.js?v=2.547" defer></script>
 
 
 
@@ -866,6 +866,9 @@
 
     // Rotating use-case line (under the tagline) — same rhythm as the bottom
     // tips: fade out, swap, fade in. Stops once the screen is dismissed.
+    // Counterpart list lives in modules/labels/loading-tips.json ("useCases"),
+    // which the Welcome Screen reads. Kept inline here because this line must
+    // paint before any fetch could resolve — keep the two in sync.
     var useCases = [
       '✈️ Pre-flight checklists',
       '🩺 Hourly nurse rounds',
@@ -1308,6 +1311,10 @@
     </div>
 
     <div class="main-menu-primary-action-row">
+        <button id="menu-open-title-screen" class="menu-primary-action" type="button" title="Return to the Welcome Screen" aria-label="Open the Welcome Screen">
+            <i class="fas fa-compass menu-primary-action-icon" aria-hidden="true"></i>
+            <span class="menu-item-label">Welcome Screen</span>
+        </button>
         <button id="menu-enter-focus-view" class="menu-primary-action" type="button" title="Enter Focus View" aria-label="Enter Focus View">
             <svg class="menu-primary-action-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
                 <!-- Four corner brackets — universal "expand to fill" affordance -->
@@ -2000,7 +2007,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- Boot File Split (Dec 2025): Load via entrypoint which orchestrates all boot files -->
- <script type="module" src="miniCycle-main.js?v=2.546"></script>
+ <script type="module" src="miniCycle-main.js?v=2.547"></script>
 
 <script>
 // Sync About modal version with meta app-version

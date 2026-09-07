@@ -40,11 +40,11 @@
             'sha256-LTYY6KPr23DATWI4jgxSAgcvURRhVdBmhdfbH20OpMo=' \
             'sha256-dUD5gjYa6vypcmpf5dJhZdh6QgSlrC5q3QEIAsZeObs=' \
             'sha256-RkQgkI5CWTSJ5Vvq0mz/3qxZ7F0sPgQaB1aY/FKZzzo=' \
-            'sha256-fEQGdlUdgVo62Zxq1KyoU838C8TjMu+ZT6aHEpY4BS0=' \
+            'sha256-Vu/kdV6NXFACA+olUgMAg801Tyj2JPbQwS+ClF5oEoI=' \
             'sha256-CicEbIPNk0+rCHo6rhXiQN3oT5ds6OCjAW/XaAPmYgQ=' \
             'sha256-dNZXvRE15nyDDVyigE5Xhv6ux+6/AAQy+W/JARvbcaM=' \
             'sha256-QpkPeUhcvkEgamsLQnX7k8hY+gb4DX1E+xrcb23bhJo=' \
-            'sha256-tx49X+pOLuuRhPzweU2Y8+UfOyzIGG2KGoBy7BFJ6Zo=' \
+            'sha256-UtGnZacbdYbScGIP9/K3IEhekx4mMpBnPsxCfyELtMo=' \
             'sha256-640meEnOenpColBQdyAuD707TeH3jPOOM4rKJiXun9k='; \
         style-src 'self' 'unsafe-inline'; \
         font-src 'self'; \

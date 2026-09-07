@@ -443,6 +443,7 @@ function registerGroupedApisFromLoader(deps, appContextMod, coreResult) {
     updateThemeColor: deps.features?.updateThemeColor,
     trackAction: deps.ui?.trackAction,
     getModal: deps.ui?.getModal,
+    titleScreen: deps.ui?.titleScreen,
     initCompletedTasksSection: () => deps.ui?.completedTasksManager?.init?.(),
     showMenuTourNotification: deps.ui?.showMenuTourNotification,
     // Forwarded explicitly. This object is an allow-list, so a method the

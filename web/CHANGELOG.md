@@ -1,3 +1,7 @@
+## [2.547] - 2026-09-06
+- feat(welcome): Welcome Screen with parked-surface restore
+
+
 ## [2.546] - 2026-09-06
 - docs(future-work): Lite import/adopt plan — prerequisite shipped in v2.544
 - feat(tips): browsable tip archive carousel; split loading tips by audience
