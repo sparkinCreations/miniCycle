@@ -484,6 +484,10 @@ export class GuidedTourManager {
         }
 
         if (guidedTourStep === null) {
+            // Same opt-in gate as the feature prompts: this is the "first enter
+            // Home View" welcome. The resume branch above is deliberately NOT
+            // gated — the user started that tour themselves.
+            if (!this._promptsEnabled(state)) return;
             this._showWelcomeNotification();
         }
     }
@@ -561,11 +565,66 @@ export class GuidedTourManager {
      * @param {string} message - already-resolved welcome message
      * @param {string} buttonLabel - already-resolved action-button label
      */
+    /**
+     * Are automatic tour prompts switched on?
+     *
+     * Defaults to OFF: an absent flag means a user who has never asked for them,
+     * which is every existing install at the time this shipped.
+     *
+     * @param {object} [state] - pre-read AppState, to avoid a second get()
+     * @returns {boolean}
+     * @private
+     */
+    _promptsEnabled(state) {
+        const s = state ?? this.deps.AppState.get?.();
+        return s?.settings?.tourPromptsEnabled === true;
+    }
+
+    /**
+     * Switch prompts on and clear every tour's progress so they all come back.
+     *
+     * The stateKeys are derived from TOUR_DEFINITIONS rather than listed by hand.
+     * Two buttons trigger this (the menu's and the settings modal's) and each
+     * used to carry its own copy of a 16-name list, so adding a tour meant
+     * remembering to edit both — the "fix it in one place, miss the copy" trap.
+     * Now a new tour is covered the moment it is defined.
+     *
+     * @returns {Promise<void>}
+     */
+    async enableTourPrompts() {
+        const AppState = this.deps.AppState;
+        if (!AppState?.isReady?.()) return;
+
+        await AppState.update((state) => {
+            if (!state.settings) state.settings = {};
+            state.settings.tourPromptsEnabled = true;
+            for (const [, tour] of TOUR_DEFINITIONS) {
+                if (tour.stateKey) state.settings[tour.stateKey] = null;
+            }
+            // Quick Actions view tips are prompts of the same family, surfaced by
+            // quickActionsManager rather than by a tour definition.
+            state.settings.quickActionsTipPinned = false;
+            state.settings.quickActionsTipRecent = false;
+            state.settings.quickActionsTipFrequent = false;
+        }, true);
+    }
+
     _showTourPrompt(tourId, message, buttonLabel) {
         const tour = this._tours.get(tourId);
         if (!tour) return;
 
         const state = this.deps.AppState.get?.();
+
+        // Opt-in since Sep 2026. Every feature used to prompt the first time it
+        // was opened, so exploring the app in one sitting meant being interrupted
+        // a dozen times mid-task — the most common complaint about the tours.
+        // Prompts now appear only after the user asks for them via
+        // "Enable Tour Prompts". Note this gates the PROMPT, not the tour:
+        // startTour() still runs on demand, and an abandoned tour still offers to
+        // resume (see _showWelcomeOrResumeNotification), because the user opted
+        // into that one by starting it.
+        if (!this._promptsEnabled(state)) return;
+
         if ((state?.settings?.[tour.stateKey] ?? null) !== null) return; // Already started or done
 
         // Tours that need data before they mean anything gate on cycle count.
@@ -1188,6 +1247,14 @@ export function showAchievementsTourNotification() {
  * Destroys the singleton and resets it to null for test isolation.
  * @returns {void}
  */
+/**
+ * Turn on automatic tour prompts and reset every tour so they reappear.
+ * @returns {Promise<void>|undefined}
+ */
+export function enableTourPrompts() {
+    return guidedTourManager?.enableTourPrompts?.();
+}
+
 export function _resetForTesting() {
     guidedTourManager?.destroy?.();
     guidedTourManager = null;

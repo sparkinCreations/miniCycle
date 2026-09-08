@@ -59,6 +59,7 @@ const di = createDIModule('SettingsManager', {
     closeUndoIndexedDB: optional(null),
     initUndoIndexedDB: optional(null),
     startGuidedTour: optional(null),
+    enableTourPrompts: optional(null),
     updateHelpWindow: optional(null),
     loadMiniCycle: optional(null),
     showLoader: optional(null),
@@ -204,6 +205,7 @@ function wireSubModuleDependencies(dependencies) {
         isDebug: dependencies.isDebug,
         clearAllUndoHistory: dependencies.clearAllUndoHistory,
         startGuidedTour: dependencies.startGuidedTour,
+        enableTourPrompts: dependencies.enableTourPrompts,
         updateHelpWindow: dependencies.updateHelpWindow,
         showSettingsTourNotification: dependencies.showSettingsTourNotification,
         hasActiveNotifications: dependencies.hasActiveNotifications

@@ -171,6 +171,59 @@ export async function runModalManagerTests(resultsDiv) {
         }
     });
 
+    await test('ESC leaves an open <dialog> to the browser so its cancel event fires', async () => {
+        // A native <dialog> fires `cancel` then `close` on ESC, and dialogs hang
+        // real behaviour off `cancel` — the routine-creation prompt loads a
+        // starter routine there so a user who backs out is not left with zero
+        // routines. closeAllModals() calls .close() directly, which fires `close`
+        // WITHOUT `cancel`, so routing ESC through it preempted the browser and
+        // skipped that: measured, Cancel produced a routine and ESC produced none.
+        const mm = new ModalManager();
+        mm.setupGlobalKeyHandlers();
+
+        const dialog = document.createElement('dialog');
+        dialog.className = 'miniCycle-prompt-dialog';
+        document.body.appendChild(dialog);
+        dialog.showModal();
+
+        let closedByHandler = false;
+        const origClose = dialog.close.bind(dialog);
+        dialog.close = (...args) => { closedByHandler = true; return origClose(...args); };
+
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+        await new Promise((r) => setTimeout(r, 30));
+
+        try {
+            if (closedByHandler) {
+                throw new Error('ESC called dialog.close() directly — the cancel event never fires, '
+                    + 'so any fallback wired to it is silently skipped');
+            }
+        } finally {
+            dialog.close = origClose;
+            if (dialog.open) dialog.close();
+            dialog.remove();
+        }
+    });
+
+    await test('a programmatic closeAllModals still closes ephemeral prompt dialogs', async () => {
+        // The ESC exit above must NOT weaken this: "close everything" is a
+        // different intent from "the user backed out", and closeAllModals is what
+        // routine switching and reset rely on to clear the screen.
+        const mm = new ModalManager();
+        const dialog = document.createElement('dialog');
+        dialog.className = 'miniCycle-prompt-dialog';
+        document.body.appendChild(dialog);
+        dialog.showModal();
+
+        await mm.closeAllModals();
+        const stillOpen = dialog.open;
+        dialog.remove();
+
+        if (stillOpen) {
+            throw new Error('closeAllModals must still close ephemeral prompt dialogs');
+        }
+    });
+
     // ===== CLOSE ALL MODALS TESTS =====
 
     resultsDiv.innerHTML += '<h4 class="test-section">🚪 Close All Modals</h4>';
@@ -643,11 +696,21 @@ export async function runModalManagerTests(resultsDiv) {
         // Call setupGlobalKeyHandlers
         mm.setupGlobalKeyHandlers();
 
-        // Simulate ESC key press to verify handler is attached
+        // Attachment is asserted DIRECTLY, via the captured handler. It used to be
+        // inferred from "the dialog closed", which only held because the handler
+        // closed native dialogs itself — the very behaviour that swallowed their
+        // `cancel` event and broke the routine-creation fallback. A synthetic
+        // KeyboardEvent never triggers the browser's own dialog-ESC either, so
+        // that inference could not survive the fix.
         const escEvent = new KeyboardEvent('keydown', { key: 'Escape' });
         document.dispatchEvent(escEvent);
 
-        const handlerWorks = !modal.open;
+        // setupGlobalKeyHandlers attaches via replaceStoredEventListener(document, …),
+        // NOT the injected safeAddEventListener — so the mock above never captured
+        // anything and `keyHandler` was always undefined. The old assertion only
+        // passed because the real handler closed the dialog, which is the behaviour
+        // being removed. Assert the stored listener itself instead.
+        const handlerWorks = typeof document.__miniCycleModalManagerGlobalKeyHandler === 'function';
 
         // Cleanup
         if (modal.open) modal.close();
@@ -657,16 +720,22 @@ export async function runModalManagerTests(resultsDiv) {
         }
 
         if (!handlerWorks) {
-            throw new Error('ESC key handler should be attached');
+            throw new Error('ESC key handler should be attached to document');
         }
     });
 
-    test('ESC key closes modals', () => {
-        // Create native <dialog> modal
-        const modal = document.createElement('dialog');
-        modal.id = 'feedback-modal';
+    test('ESC key closes NON-dialog modals', () => {
+        // Non-dialog modals are what this handler actually owns. Native <dialog>
+        // elements are deliberately left to the browser so their `cancel` event
+        // fires first — covered by its own test above. This used to assert on a
+        // <dialog>, which passed only because the handler was closing it directly.
+        // display:flex is what isModalOpen() checks for a non-dialog registry modal
+        // regardless of its closeMethod, so this does not depend on which class a
+        // particular def happens to toggle.
+        const modal = document.createElement('div');
+        modal.id = 'recurring-panel-overlay';
+        modal.style.display = 'flex';
         document.body.appendChild(modal);
-        modal.showModal(); // Open it natively
 
         // Mock safeAddEventListener as a dependency
         let keyHandler;
@@ -682,21 +751,26 @@ export async function runModalManagerTests(resultsDiv) {
             safeAddEventListener: localMockSafeAdd
         });
 
+        // Spy on closeAllModals rather than inspecting registry internals: the
+        // contract is "ESC still routes non-dialog modals through the sweep",
+        // and which class each def happens to toggle is not this test's business.
+        let sweepCalled = 0;
+        const origSweep = mm.closeAllModals.bind(mm);
+        mm.closeAllModals = (...args) => { sweepCalled++; return origSweep(...args); };
         mm.setupGlobalKeyHandlers();
 
-        // Simulate ESC key press
         const escEvent = new KeyboardEvent('keydown', { key: 'Escape' });
         document.dispatchEvent(escEvent);
 
-        if (modal.open) {
-            throw new Error('ESC key should close modals');
-        }
-
         // Cleanup
-        if (modal.open) modal.close();
+        mm.closeAllModals = origSweep;
         modal.remove();
         if (keyHandler) {
             document.removeEventListener('keydown', keyHandler);
+        }
+
+        if (sweepCalled === 0) {
+            throw new Error('ESC should still sweep non-dialog modals via closeAllModals');
         }
     });
 

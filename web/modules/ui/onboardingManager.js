@@ -308,26 +308,27 @@ export class OnboardingManager {
             UI_TIMEOUTS.NOTIFICATION_PERSISTENT
         );
 
-        // "sample" (template) users loaded a prebuilt routine rather than
-        // building their own, so on their first Focus View exit they get the
-        // merged Home View welcome — "Start a blank routine" (make it yours)
-        // plus the Home View tour. The "create" path deliberately skips this:
-        // those users already built their own routine, so guidedTourManager's
-        // lighter "Want a quick tour?" prompt (scheduled off
-        // onboarding:setup-complete) is the right first-exit nudge for them.
-        if (choice === 'sample') {
-            this._attachSampleFirstExitWelcome();
-        }
+        // EVERY first-run choice gets the Home View welcome on first Focus View
+        // exit — this is the one moment a new user is told Home View exists.
+        //
+        // "create" used to be excluded on the reasoning that guidedTourManager's
+        // lighter "Want a quick tour?" prompt covered it. That prompt became
+        // opt-in (Sep 2026) and now defaults to OFF, so the exclusion left those
+        // users with NOTHING on first exit — measured: create and sample both
+        // produced zero notifications, only "learn" survived. The condition
+        // depended on a behaviour in another module, which is exactly the kind of
+        // coupling that rots silently.
+        this._attachFirstExitWelcome();
     }
 
     /**
      * One-shot listener: show the merged Home View welcome the first time a
-     * "sample" first-run user leaves Focus View. Idempotent — a second call is
-     * a no-op while a handler is still pending. Auto-removes on fire (once) and
-     * is torn down defensively in destroy().
+     * first-run user leaves Focus View, whichever choice they made. Idempotent —
+     * a second call is a no-op while a handler is still pending. Auto-removes on
+     * fire (once) and is torn down defensively in destroy().
      * @private
      */
-    _attachSampleFirstExitWelcome() {
+    _attachFirstExitWelcome() {
         if (this._sampleFirstExitHandler) return;
         this._sampleFirstExitHandler = () => {
             this._sampleFirstExitHandler = null;
@@ -349,6 +350,13 @@ export class OnboardingManager {
      * @private
      */
     _showHomeViewWelcomeNotification() {
+        // Two paths can reach this in one session — the first-session lifecycle
+        // ("learn") and the first-exit listener (create/sample) — and appInit can
+        // re-arm the lifecycle mid-first-run on reload. Showing the same welcome
+        // twice reads as a bug, so fire at most once per session.
+        if (this._homeViewWelcomeShown) return;
+        this._homeViewWelcomeShown = true;
+
         this.deps.markTourWelcomeShown?.();
         this.deps.showNotification?.(
             getLabel('homeView.welcomeNotification'),

@@ -142,6 +142,50 @@ export async function runOnboardingManagerTests(resultsDiv) {
 
     // ===== APPSTATE INTEGRATION TESTS (DI-Pure) =====
 
+    resultsDiv.innerHTML += '<h4 class="test-section">🏠 Home View invitation</h4>';
+
+    await test('first focus-view exit invites the user regardless of tour prompts', async () => {
+        // Tour prompts became opt-in (Sep 2026) and default to OFF. This
+        // invitation is NOT one of them: it is the single offer a brand-new user
+        // gets on leaving Focus View for the first time, and it is how they learn
+        // the app has a Home View at all. It reaches showNotification directly
+        // rather than through guidedTourManager's prompt gate — easy to "tidy"
+        // into that gate later and silently strand every new user, so pin it with
+        // prompts explicitly disabled.
+        const mockState = {
+            settings: { onboardingCompleted: false, tourPromptsEnabled: false },
+            data: { cycles: {} }
+        };
+        const shown = [];
+        setOnboardingManagerDependencies(createMockDeps({
+            AppState: {
+                isReady: () => true,
+                get: () => mockState,
+                update: (fn) => { fn(mockState); }
+            },
+            showNotification: (msg, type, dur, opts) => shown.push({ msg, opts })
+        }));
+        const om = new OnboardingManager();
+        om.armFirstSessionLifecycle();
+
+        document.dispatchEvent(new Event('focusMode:deactivated'));
+        await new Promise((r) => setTimeout(r, 30));
+
+        if (shown.length === 0) {
+            throw new Error('no invitation shown on first focus-view exit');
+        }
+        // Both routes out of the welcome must survive: start a routine, or take
+        // the tour. The tour button is the only entry point to the Home View tour
+        // now that prompts no longer offer it automatically.
+        const withTour = shown.find((n) => n.opts?.secondaryActionButton);
+        if (!withTour) {
+            throw new Error('invitation lost its tour action — that is now the only way in');
+        }
+        if (!withTour.opts?.actionButton) {
+            throw new Error('invitation lost its primary "start a routine" action');
+        }
+    });
+
     resultsDiv.innerHTML += '<h4 class="test-section">💾 AppState Integration (DI)</h4>';
 
     await test('completeOnboarding updates AppState (DI)', () => {
@@ -1214,7 +1258,7 @@ export async function runOnboardingManagerTests(resultsDiv) {
         om.destroy();
     });
 
-    await test('startFocusViewForNewRoutine("create") does NOT show merged welcome on focus exit', async () => {
+    await test('startFocusViewForNewRoutine("create") DOES show merged welcome on focus exit', async () => {
         const state = { settings: {}, data: { cycles: {} } };
         const notifications = [];
         let tourWelcomeMarked = 0;
@@ -1235,11 +1279,18 @@ export async function runOnboardingManagerTests(resultsDiv) {
         await om.startFocusViewForNewRoutine('create');
         document.dispatchEvent(new CustomEvent('focusMode:deactivated'));
 
-        if (notifications.filter(isMergedWelcome).length !== 0) {
-            throw new Error('Create path must not show the merged welcome — guidedTourManager owns its first-exit prompt');
+        // Inverted Sep 2026. "create" used to be excluded here because
+        // guidedTourManager's lighter first-exit prompt covered it — but that
+        // prompt became opt-in and now defaults to OFF, so the exclusion left
+        // create users with NOTHING on their first exit. The exclusion depended
+        // on a behaviour owned by another module, which is what made it rot
+        // silently. Every first-run choice now gets the welcome.
+        const merged = notifications.filter(isMergedWelcome).length;
+        if (merged !== 1) {
+            throw new Error(`Create path must show the merged welcome exactly once, got ${merged}`);
         }
-        if (tourWelcomeMarked !== 0) {
-            throw new Error('Create path should not suppress the auto tour-welcome');
+        if (tourWelcomeMarked !== 1) {
+            throw new Error('showing the merged welcome must suppress the delayed auto tour-welcome');
         }
 
         om.destroy();

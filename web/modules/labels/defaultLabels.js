@@ -1378,9 +1378,13 @@ export const DEFAULT_LABELS = deepFreeze({
         step3:           'Your at-a-glance status — shows the current mode, tasks remaining, and tips.',
         step4:           'Customize colors, backgrounds, and themes here. The 🌙 moon button on the opposite side switches light and dark mode.',
         step5:           'Switch between your routines — each has its own tasks and cycle count.',
+        step6:           'Everything else lives in this menu. Want prompts like this for other features? Turn on Enable Tour Prompts under Help & Support.',
         complete:        'You\'re all set! Enjoy building your routines.',
-        retakeTour:      'Reset All Tours',
-        toursReset:      'All tours have been reset! Want to take the guided tour now?',
+        retakeTour:      'Enable Tour Prompts',
+        // Prompts are opt-in (Sep 2026), so this fires on ENABLING them, not on a
+        // bare reset. Kept as a separate key from the old toursReset wording so a
+        // stale translation cannot claim tours were merely "reset".
+        promptsEnabled:  'Tour prompts are on. You will be offered a tour the first time you open each feature.',
         startTourAction: 'Start Tour',
         closeDialogHint: 'Close the open dialog to start the tour'
     },

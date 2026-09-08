@@ -284,15 +284,31 @@ export class MiniCycleNotifications {
       // interpolate unescaped user content into innerHTML.
       const escapedMessage = getEscapeHtml(this.deps)(message);
 
+      // Titled notifications carry "Title\n\nBody". Wrap the title in its own
+      // element rather than relying on CSS ::first-line, which bolds the first
+      // RENDERED line — so a title wide enough to wrap got split, and "Welcome to
+      // Home View" shipped as a bold "Welcome to Home" above an unbolded "View".
+      // Panel width and label length both vary (vocab themes rename things and
+      // usually make them longer), so ::first-line was never a safe proxy for
+      // "the title". Splitting the ESCAPED string is safe — no unescaped content
+      // is reintroduced. Messages with no blank-line separator keep the old
+      // ::first-line behaviour, which still holds for short single-line titles.
+      const isTitled = String(options?.className || '').split(/\s+/).includes('notification-titled');
+      const titleBreak = isTitled ? escapedMessage.indexOf('\n\n') : -1;
+      const bodyMarkup = titleBreak > 0
+        ? `<span class="notification-title">${escapedMessage.slice(0, titleBreak)}</span>`
+          + escapedMessage.slice(titleBreak + 2)
+        : escapedMessage;
+
       // Always escape user content, regardless of structure
       // When an action button is present, wrap message in a span so both sit in a flex-column
       const hasAction = !!(options?.actionButton);
       notification.innerHTML = hasAction
         ? `<div class="notification-content notification-has-action">
-             <span class="notification-message">${escapedMessage}</span>
+             <span class="notification-message">${bodyMarkup}</span>
            </div>
            <button class="close-btn" title="${getLabel('button.close')}" aria-label="${getLabel('notify.closeNotification')}">✖</button>`
-        : `<div class="notification-content">${escapedMessage}</div>
+        : `<div class="notification-content">${bodyMarkup}</div>
            <button class="close-btn" title="${getLabel('button.close')}" aria-label="${getLabel('notify.closeNotification')}">✖</button>`;
 
       // Track cleanup function for timeouts

@@ -48,6 +48,24 @@
         url('../../assets/images/Stock/Routine_Lists.webp') center/cover no-repeat;
 }
 
+/* Match the first-run loader on narrow screens.
+   critical.css anchors that screen's photo `left center` under 768px while both
+   screens use `center` above it, so the Welcome Screen — which had no mobile
+   override at all — showed a different crop of the same image on phones. Same
+   photo, same scrim, same treatment; only the anchor differed. */
+@media (max-width: 768px) {
+    #title-screen.title-screen {
+        background:
+            radial-gradient(ellipse 70% 65% at 50% 45%,
+                rgba(0, 0, 0, 0.55) 0%,
+                rgba(0, 0, 0, 0.46) 40%,
+                rgba(0, 0, 0, 0.20) 75%,
+                rgba(0, 0, 0, 0) 100%),
+            linear-gradient(135deg, rgba(76, 121, 255, 0.5), rgba(116, 192, 252, 0.45)),
+            url('../../assets/images/Stock/Routine_Lists.webp') left center/cover no-repeat;
+    }
+}
+
 /* modals.css enumerates which dialog classes flip to flex; this one is not in
    that list, so state its own open/closed display. */
 #title-screen.title-screen[open] {

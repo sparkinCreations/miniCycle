@@ -1089,32 +1089,16 @@ export function setupRetakeGuidedTourButton() {
             return;
         }
 
-        await appState.update((state) => {
-            if (!state.settings) state.settings = {};
-            state.settings.guidedTourStep = null;
-            state.settings.statsTourStep = null;
-            state.settings.prefsTourStep = null;
-            state.settings.taskOptionsTourStep = null;
-            state.settings.remindersTourStep = null;
-            state.settings.menuTourStep = null;
-            state.settings.settingsTourStep = null;
-            state.settings.routineSwitcherTourStep = null;
-            state.settings.recurringListTourStep = null;
-            state.settings.recurringSettingsTourStep = null;
-            state.settings.historyTourStep = null;
-            state.settings.clearedTasksTourStep = null;
-            state.settings.achievementsTourStep = null;
-            // Reset Quick Actions view tips
-            state.settings.quickActionsTipPinned = false;
-            state.settings.quickActionsTipRecent = false;
-            state.settings.quickActionsTipFrequent = false;
-        }, true);
+        // Shared with the main menu's button — see guidedTourManager.
+        // enableTourPrompts(), which derives the key list from TOUR_DEFINITIONS
+        // so the two call sites cannot drift apart.
+        await _deps.enableTourPrompts?.();
 
         document.getElementById(DOM_IDS.CLOSE_SETTINGS)?.click();
 
         // Ask user if they want to start the tour instead of launching immediately
         _deps.showNotification(
-            getLabel('tour.toursReset'),
+            getLabel('tour.promptsEnabled'),
             'info',
             null,
             {

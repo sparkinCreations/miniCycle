@@ -139,6 +139,11 @@ export async function runGuidedTourManagerTests(resultsDiv) {
             settings: {
                 onboardingCompleted: true,
                 guidedTourStep: null,
+                // Prompts are opt-in in production (Sep 2026) and default to OFF.
+                // The suite below is about what a prompt DOES once it fires, so
+                // the fixture opts in; the gate itself is covered by its own
+                // section at the end, which overrides this back to false.
+                tourPromptsEnabled: true,
                 ...stateOverrides.settings
             },
             userProgress: {
@@ -1869,6 +1874,111 @@ export async function runGuidedTourManagerTests(resultsDiv) {
         }
 
         dialog.remove();
+    });
+
+    resultsDiv.innerHTML += '<h4 class="test-section">Opt-in prompt gate</h4>';
+
+    await test('feature prompts stay silent when tour prompts are off', async () => {
+        // The complaint this shipped for: every feature prompted the first time it
+        // was opened, so exploring the app meant a dozen interruptions. Prompts are
+        // now opt-in, and OFF is the default for every existing install.
+        const manager = await createManager({
+            settings: { tourPromptsEnabled: false, menuTourStep: null, statsTourStep: null }
+        });
+        manager.showMenuTourNotification();
+        manager.showStatsTourNotification();
+        if (notifications.length !== 0) {
+            throw new Error(`expected no prompts while disabled, got ${notifications.length}`);
+        }
+    });
+
+    await test('an absent flag counts as off, not on', async () => {
+        // Every install predating this has no such key. Reading it loosely
+        // (truthy/undefined confusion) would prompt exactly the users who
+        // complained, so the check is strict === true.
+        const manager = await createManager({ settings: { menuTourStep: null } });
+        delete mockState.settings.tourPromptsEnabled;
+        manager.showMenuTourNotification();
+        if (notifications.length !== 0) {
+            throw new Error(`an unset flag must not prompt, got ${notifications.length}`);
+        }
+    });
+
+    await test('feature prompts fire once enabled', async () => {
+        const manager = await createManager({
+            settings: { tourPromptsEnabled: true, menuTourStep: null }
+        });
+        manager.showMenuTourNotification();
+        if (notifications.length !== 1) {
+            throw new Error(`expected 1 prompt once enabled, got ${notifications.length}`);
+        }
+    });
+
+    await test('the home-view welcome respects the gate', async () => {
+        // This is the "first enter Home View" prompt. It is a separate code path
+        // from the feature prompts and was gated separately.
+        const manager = await createManager({
+            settings: { tourPromptsEnabled: false, guidedTourStep: null }
+        });
+        manager._showWelcomeOrResumeNotification();
+        if (notifications.length !== 0) {
+            throw new Error(`welcome must stay silent while disabled, got ${notifications.length}`);
+        }
+    });
+
+    await test('an abandoned tour still offers to resume while prompts are off', async () => {
+        // Deliberately NOT gated: a numeric step means the user started this tour
+        // themselves. Suppressing the resume would strand them mid-tour with no
+        // way back, which is a different bug from the one being fixed.
+        const manager = await createManager({
+            settings: { tourPromptsEnabled: false, guidedTourStep: 2 }
+        });
+        manager._showWelcomeOrResumeNotification();
+        if (notifications.length !== 1) {
+            throw new Error(`expected the resume offer regardless of the gate, got ${notifications.length}`);
+        }
+    });
+
+    await test('enableTourPrompts turns the flag on and clears every tour', async () => {
+        // The key list is derived from TOUR_DEFINITIONS rather than hand-written,
+        // because two buttons trigger this and each used to carry its own copy.
+        const manager = await createManager({
+            settings: {
+                tourPromptsEnabled: false,
+                guidedTourStep: 'done', statsTourStep: 'done', menuTourStep: 4,
+                achievementsTourStep: 'done', quickActionsTipPinned: true
+            }
+        });
+        await manager.enableTourPrompts();
+        if (mockState.settings.tourPromptsEnabled !== true) {
+            throw new Error('prompts were not switched on');
+        }
+        for (const key of ['guidedTourStep', 'statsTourStep', 'menuTourStep', 'achievementsTourStep']) {
+            if (mockState.settings[key] !== null) {
+                throw new Error(`${key} should be cleared, got ${JSON.stringify(mockState.settings[key])}`);
+            }
+        }
+        if (mockState.settings.quickActionsTipPinned !== false) {
+            throw new Error('quick-action view tips should reset alongside the tours');
+        }
+    });
+
+    await test('enableTourPrompts clears every tour the definitions declare', async () => {
+        // Guards the derivation itself: add a tour and it is covered automatically.
+        // A hand-written list would silently miss it, leaving one tour un-resettable.
+        const { TOUR_DEFINITIONS } = await import(`../modules/ui/guidedTourDefinitions.js?v=${cacheBuster}`);
+        const manager = await createManager({ settings: { tourPromptsEnabled: false } });
+        for (const [, tour] of TOUR_DEFINITIONS) {
+            if (tour.stateKey) mockState.settings[tour.stateKey] = 'done';
+        }
+        await manager.enableTourPrompts();
+        const missed = [];
+        for (const [id, tour] of TOUR_DEFINITIONS) {
+            if (tour.stateKey && mockState.settings[tour.stateKey] !== null) missed.push(id);
+        }
+        if (missed.length) {
+            throw new Error(`tours not cleared: ${missed.join(', ')}`);
+        }
     });
 
     const percentage = Math.round((passed.count / total.count) * 100);

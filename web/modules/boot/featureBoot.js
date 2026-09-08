@@ -451,9 +451,10 @@ function registerGroupedApisFromLoader(deps, appContextMod, coreResult) {
     // here — and nothing warns, because the manifest side succeeded. uiBoot's
     // menu-open handler calls this to re-collapse sections on every open.
     applyMenuSectionOpenState: deps.ui?.applyMenuSectionOpenState,
-    // Lazy wrapper (call-time resolve) so the menu "Reset Tours → Start Tour"
-    // action reaches guidedTourManager.startGuidedTour regardless of boot order.
-    startGuidedTour: (...args) => deps.ui?.startGuidedTour?.(...args)
+    // Lazy wrappers (call-time resolve) so the menu's "Enable Tour Prompts →
+    // Start Tour" action reaches guidedTourManager regardless of boot order.
+    startGuidedTour: (...args) => deps.ui?.startGuidedTour?.(...args),
+    enableTourPrompts: (...args) => deps.ui?.enableTourPrompts?.(...args)
   };
   appContextMod.setContextValue('uiApi', uiApiObj);
   appContextMod.registerApi('ui', uiApiObj);

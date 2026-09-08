@@ -703,12 +703,14 @@ The welcome banner + splash + `_attachFirstSessionLifecycle` described above bel
 | First-run choice | First focus-exit prompt | Owner |
 |---|---|---|
 | **learn** | Merged "Welcome to Home View" — **Start a blank routine** + **Start Tour** | `onboardingManager._showHomeViewWelcomeNotification()` (via the first-session lifecycle) |
-| **sample** | Same merged "Welcome to Home View" notification | `onboardingManager._attachSampleFirstExitWelcome()` → `_showHomeViewWelcomeNotification()` |
-| **create** | Lighter "Want a quick tour of Home View?" + **Take a Quick Tour** | `guidedTourManager` (deferred off `onboarding:setup-complete`, which `routineManager` dispatches on the create path only) |
+| **sample** | Same merged "Welcome to Home View" notification | `onboardingManager._attachFirstExitWelcome()` → `_showHomeViewWelcomeNotification()` |
+| **create** | Same merged "Welcome to Home View" notification | `onboardingManager._attachFirstExitWelcome()` → `_showHomeViewWelcomeNotification()` |
 
-**Why sample differs from create:** a "sample" user loaded a *prebuilt template* rather than building their own routine, so offering **Start a blank routine** (make it yours) alongside the tour is the right nudge. A "create" user already built their own routine, so the redundant "start blank" is dropped in favor of the lighter tour-only prompt. (Before this split the sample path fired *nothing* on first exit — its tour prompt was never scheduled because `onboarding:setup-complete` isn't dispatched on the sample path.)
+**All three choices now get the same prompt (Sep 2026).** "create" used to be excluded here and given a lighter "Want a quick tour of Home View?" from `guidedTourManager` instead, on the reasoning that a user who built their own routine did not need "start a blank routine" offered back to them. That reasoning depended on a behaviour owned by *another module* — and when tour prompts became opt-in and defaulted to OFF, that lighter prompt stopped firing, leaving create users with **nothing** on their first exit. Measured before the fix: create produced zero notifications while learn produced the welcome.
 
-`_showHomeViewWelcomeNotification()` is shared by the learn and sample paths and calls `markTourWelcomeShown()` so guidedTourManager's delayed auto tour-welcome doesn't stack on top of the merged notification (which already offers the tour). The sample listener is one-shot (`{ once: true }`), idempotent while pending, and torn down in `destroy()`.
+The lesson generalises: an exclusion justified by "the other system covers it" silently becomes a gap the day the other system changes. Every first-run choice now arms the same listener.
+
+`_showHomeViewWelcomeNotification()` is shared by all three paths and calls `markTourWelcomeShown()` so guidedTourManager's delayed auto tour-welcome doesn't stack on top of the merged notification (which already offers the tour). It also fires **at most once per session** — the learn path arms it through the first-session lifecycle while create/sample arm the first-exit listener, and `appInit` can re-arm the lifecycle mid-first-run on reload, so two routes could otherwise show the same welcome twice. The listener is one-shot (`{ once: true }`), idempotent while pending, and torn down in `destroy()`.
 
 **Suppressing the generic "Back in Home View" toast on the graduation exit.** `focusMode.deactivate()` normally fires a `focusMode.deactivated` ("Back in Home View") toast on every exit — but on the *first-run* exit that would be redundant noise stacked under the onboarding prompt above. It detects that exit two ways:
 
