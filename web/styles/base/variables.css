@@ -295,6 +295,15 @@
      colour and clears it at 4.86:1. Pinned by the menu-contrast gate. */
   --menu-button-text:     #081d3a;
   --menu-button-hover-bg: rgba(0, 0, 0, 0.1);
+  /* Fill for the SOLID close buttons — the menu bar, the routine picker's, and
+     the themes/preferences modals'. A vocab theme overrides it via
+     --pref-menu-accent; this is the classic/default value.
+     Deliberately NOT --theme-button-primary-bg (#4c79ff), which carries its
+     white label at only 3.83:1 — below AA, in the theme every user sees.
+     #3d7ab5 is the app's steel blue and clears it at 4.52:1. That is a thin
+     margin, so treat it as a floor: anything lighter fails. Pinned by the
+     menu-contrast gate. */
+  --menu-action-bg:       #3d7ab5;
   --menu-close-bg:        var(--color-steel-blue);
   --menu-close-text:      var(--color-white);
   --menu-close-hover-bg:  #326a9e;

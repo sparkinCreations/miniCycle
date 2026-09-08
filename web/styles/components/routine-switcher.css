@@ -709,7 +709,7 @@ input.routine-search-input:focus {
    ============================================================================= */
 
 .close-routine-switcher {
-    background: var(--menu-close-bg, var(--color-steel-blue));
+    background: var(--close-btn-effective);
     color: var(--menu-close-text, var(--color-white));
     font-size: var(--font-size-lg);
     font-weight: 700;

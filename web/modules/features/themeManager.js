@@ -113,6 +113,7 @@ const VOCAB_THEME_CSS_VARS = {
     // chrome, not a modal — reusing modalBg would have flattened it.
     menuBg:               '--pref-menu-bg',
     menuText:             '--pref-menu-text',
+    menuAccent:           '--pref-menu-accent',
 };
 
 // ─── Dark-mode / vocab-theme restore ─────────────────────────────────────────

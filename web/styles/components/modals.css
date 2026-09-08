@@ -396,7 +396,32 @@ dialog.quick-actions-picker-overlay[open] {
 
 /* =============================================================================
    CLOSE BUTTONS
-   ============================================================================= */
+   =============================================================================
+   Shared fill for the SOLID close buttons — the menu's bottom bar, the routine
+   picker's, and the themes/preferences modals'. The bare "x" closers below are
+   transparent and unaffected.
+
+   Declared on BODY, not :root: themeManager writes --pref-* as inline styles on
+   <body>, and a custom property resolves against the element that DECLARES it,
+   so a :root declaration cannot see body's inline value.
+
+   Previously these read `var(--theme-button-bg, var(--color-primary))`, which
+   resolves to #4c79ff and carries a white label at only 3.83:1 — below AA, in
+   the default theme every user sees. --menu-action-bg is the same blue deepened
+   to 6.40:1. */
+body {
+    --close-btn-effective: var(--pref-menu-accent, var(--menu-action-bg));
+}
+
+/* Dark surfaces drop the preset layer: --pref-menu-accent is authored against a
+   LIGHT themed surface. Same theme list as themes-modal.css and menu.css — a new
+   dark theme must be added to all three, and the menu-contrast gate in
+   run-layout-overlap-tests.cjs fails the day one is missed. */
+body.dark-mode,
+:root[data-theme="dark"] body,
+:root[data-theme="dark-ocean"] body {
+    --close-btn-effective: var(--menu-action-bg);
+}
 
 .close-modal {
     position: absolute;

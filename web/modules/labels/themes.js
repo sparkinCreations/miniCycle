@@ -125,12 +125,17 @@ export const THEME_DEFINITIONS = {
             celebrationShadow:    'rgba(192, 82, 21, 0.4)',
             priorityColor:        '#b04e12',
             modalBg:              'rgba(255, 225, 195, 0.82)',   // warm amber glass — matches theme palette
-            modalText:            '#3d1a00',
+            modalText:            '#3d1a00',                    // dark brown — same as taskText for consistency
             // Main menu gradient — its own, not modalBg: the menu is chrome and
             // keeps the pale-to-saturated shape of the default blue menu.
             // Measured against menuText: 13.96:1 top / 7.18:1 bottom (AA needs 4.5:1).
             menuBg:               'linear-gradient(180deg, #fff0e0 0%, #e0a463 100%)',
-            menuText:             '#3d1a00',                     // dark brown — same as taskText for consistency
+            menuText:             '#3d1a00',
+            // Menu action buttons (Welcome Screen / Focus View / Close). Its OWN key
+            // because no existing preset colour works across all themes: completeBtn
+            // and clearBtn carry white text at only 2.4-3.0:1 on fitness and cleaning.
+            // deep amber-brown — white text 7.14:1.
+            menuAccent:           '#8a4513',
             modalBorder:          'rgba(192, 128, 64, 0.25)',    // warm amber border
             taskOptionsBg:        'rgba(255, 220, 180, 0.85)',   // warm amber — matches taskBg tone
             taskOptionsBorder:    'rgba(192, 128, 64, 0.35)',    // amber border — visible on warm bg
@@ -224,12 +229,17 @@ export const THEME_DEFINITIONS = {
             celebrationShadow:    'rgba(30, 140, 82, 0.4)',
             priorityColor:        '#1e8c52',
             modalBg:              'rgba(220, 248, 232, 0.82)',   // soft mint glass — matches theme palette
-            modalText:            '#0d2b1a',
+            modalText:            '#0d2b1a',                    // dark green — same as taskText for consistency
             // Main menu gradient — its own, not modalBg: the menu is chrome and
             // keeps the pale-to-saturated shape of the default blue menu.
             // Measured against menuText: 13.63:1 top / 6.73:1 bottom (AA needs 4.5:1).
             menuBg:               'linear-gradient(180deg, #e3f7ec 0%, #5cbf8a 100%)',
-            menuText:             '#0d2b1a',                     // dark green — same as taskText for consistency
+            menuText:             '#0d2b1a',
+            // Menu action buttons (Welcome Screen / Focus View / Close). Its OWN key
+            // because no existing preset colour works across all themes: completeBtn
+            // and clearBtn carry white text at only 2.4-3.0:1 on fitness and cleaning.
+            // deep forest — white text 6.47:1.
+            menuAccent:           '#146c3f',
             modalBorder:          'rgba(30, 140, 82, 0.25)',     // green border
             taskOptionsBg:        'rgba(200, 240, 218, 0.85)',   // soft sage — matches taskBg tone
             taskOptionsBorder:    'rgba(30, 140, 82, 0.35)',     // green border — visible on sage bg
@@ -323,12 +333,17 @@ export const THEME_DEFINITIONS = {
             celebrationShadow:    'rgba(61, 53, 181, 0.4)',
             priorityColor:        '#3d35b5',
             modalBg:              'rgba(216, 213, 255, 0.82)',   // soft periwinkle glass — matches theme palette
-            modalText:            '#1e1b4b',
+            modalText:            '#1e1b4b',                    // dark indigo — same as taskText for consistency
             // Main menu gradient — its own, not modalBg: the menu is chrome and
             // keeps the pale-to-saturated shape of the default blue menu.
             // Measured against menuText: 13.54:1 top / 5.90:1 bottom (AA needs 4.5:1).
             menuBg:               'linear-gradient(180deg, #eceaff 0%, #9a95e0 100%)',
-            menuText:             '#1e1b4b',                     // dark indigo — same as taskText for consistency
+            menuText:             '#1e1b4b',
+            // Menu action buttons (Welcome Screen / Focus View / Close). Its OWN key
+            // because no existing preset colour works across all themes: completeBtn
+            // and clearBtn carry white text at only 2.4-3.0:1 on fitness and cleaning.
+            // indigo — white text 8.13:1.
+            menuAccent:           '#4c3fa8',
             modalBorder:          'rgba(61, 53, 181, 0.25)',     // indigo border
             taskOptionsBg:        'rgba(216, 213, 255, 0.85)',   // soft periwinkle — matches taskBg tone
             taskOptionsBorder:    'rgba(61, 53, 181, 0.35)',     // indigo border — visible on periwinkle bg
@@ -422,12 +437,17 @@ export const THEME_DEFINITIONS = {
             celebrationShadow:    'rgba(10, 141, 181, 0.4)',
             priorityColor:        '#0a8db5',
             modalBg:              'rgba(200, 240, 252, 0.82)',   // soft aqua glass — matches theme palette
-            modalText:            '#0c2b33',
+            modalText:            '#0c2b33',                    // dark teal — same as taskText for consistency
             // Main menu gradient — its own, not modalBg: the menu is chrome and
             // keeps the pale-to-saturated shape of the default blue menu.
             // Measured against menuText: 13.33:1 top / 7.42:1 bottom (AA needs 4.5:1).
             menuBg:               'linear-gradient(180deg, #e0f6fe 0%, #5ec4e0 100%)',
-            menuText:             '#0c2b33',                     // dark teal — same as taskText for consistency
+            menuText:             '#0c2b33',
+            // Menu action buttons (Welcome Screen / Focus View / Close). Its OWN key
+            // because no existing preset colour works across all themes: completeBtn
+            // and clearBtn carry white text at only 2.4-3.0:1 on fitness and cleaning.
+            // deep ocean — white text 5.89:1.
+            menuAccent:           '#0a6d8a',
             modalBorder:          'rgba(10, 141, 181, 0.25)',    // teal border
             taskOptionsBg:        'rgba(185, 235, 248, 0.85)',   // soft aqua — matches taskBg tone
             taskOptionsBorder:    'rgba(10, 141, 181, 0.35)',    // teal border — visible on aqua bg

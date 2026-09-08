@@ -861,7 +861,7 @@ async function run() {
                 for (const vocab of [null, ...vocabIds]) {
                     for (const ct of colourThemes) {
                         for (const dark of [false, true]) {
-                            [...body.style].filter(n => n.startsWith('--pref-menu-'))
+                            ['--pref-menu-bg', '--pref-menu-text', '--pref-menu-accent']
                                 .forEach(n => body.style.removeProperty(n));
                             body.className = body.className.split(/\s+/)
                                 .filter(c => c && !/^(dark-mode|theme-)/.test(c)).join(' ');
@@ -872,6 +872,7 @@ async function run() {
                                 const cp = THEME_DEFINITIONS[vocab].colorPreset;
                                 if (cp.menuBg) body.style.setProperty('--pref-menu-bg', cp.menuBg);
                                 if (cp.menuText) body.style.setProperty('--pref-menu-text', cp.menuText);
+                                if (cp.menuAccent) body.style.setProperty('--pref-menu-accent', cp.menuAccent);
                             }
                             const cs = getComputedStyle(body);
                             const grad = cs.getPropertyValue('--menu-bg-effective').trim();
@@ -887,6 +888,31 @@ async function run() {
                                 const t = ratio(text, stop), h = ratio(head, stop);
                                 if (t < worst) { worst = t; culprit = 'button text'; }
                                 if (h < worst) { worst = h; culprit = 'section heading'; }
+                            }
+
+                            // The three action buttons own a solid fill, so they are
+                            // measured against their OWN background rather than the
+                            // gradient. They were the last part of the menu still
+                            // reading the button token chain instead of the menu one
+                            // — a blue pill on a green Fitness menu — so check the
+                            // themed fill actually carries their white label.
+                            // The two action buttons are deliberately TRANSPARENT — they read
+                            // as menu rows, so their label sits on the gradient and is checked
+                            // against the worse stop. The close bars own a solid fill and are
+                            // checked against that. Resolve which applies per element rather
+                            // than assuming, so flipping one back to a fill still gets measured.
+                            for (const id of ['menu-open-title-screen', 'menu-enter-focus-view', 'close-main-menu']) {
+                                const el = document.getElementById(id);
+                                if (!el) continue;
+                                const es = getComputedStyle(el);
+                                const bgN = (es.backgroundColor.match(/[\d.]+/g) || []).map(Number);
+                                const opaque = bgN.length >= 3 && (bgN.length < 4 || bgN[3] === 1);
+                                const fg = toRgb(es.color);
+                                const surfaces = opaque ? [bgN.slice(0, 3)] : stops;
+                                for (const surf of surfaces) {
+                                    const r2 = ratio(fg, surf);
+                                    if (r2 < worst) { worst = r2; culprit = '#' + id; }
+                                }
                             }
                             results.push({ vocab: vocab || 'classic', ct: ct || 'none', dark,
                                 worst: +worst.toFixed(2), culprit, stops: stops.length });
@@ -911,29 +937,6 @@ async function run() {
                 probe.results.length > 0 && probe.vocabIds.length > 0,
                 `${probe.results.length} combination(s) from ${probe.vocabIds.length} preset(s) `
                 + `x ${probe.colourThemes.length} colour theme(s) x 2 modes`);
-
-            // The two primary actions carry white text and MUST own an opaque
-            // background — they sit on the gradient otherwise, where white
-            // measured 3.47:1 on the default and 2.17:1 on a light themed one.
-            // They rendered transparent for months because --theme-button-bg is
-            // defined as an undefined var, so the steel-blue fallback beside it
-            // could never fire. Assert the background, not the colour: that is
-            // the thing that silently went missing.
-            const actionBg = await page.evaluate(() => {
-                const out = [];
-                for (const id of ['menu-open-title-screen', 'menu-enter-focus-view']) {
-                    const el = document.getElementById(id);
-                    if (!el) continue;
-                    const c = getComputedStyle(el).backgroundColor;
-                    const n = (c.match(/[\d.]+/g) || []).map(Number);
-                    out.push({ id, colour: c, alpha: n.length > 3 ? n[3] : 1 });
-                }
-                return out;
-            });
-            for (const a of actionBg) {
-                record(vp, `menu: #${a.id} has an opaque background`, a.alpha === 1,
-                    `background-color is ${a.colour} — white label is sitting directly on the menu gradient`);
-            }
 
             for (const r of probe.results.filter(x => !x.unresolved)) {
                 record(vp, `menu: ${r.vocab} preset, ${r.ct} theme, ${r.dark ? 'dark' : 'light'} meets AA (4.5:1)`,
