@@ -1567,6 +1567,7 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         // inside buildModuleDependencies, so deps.core is already populated by this point.
         DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS: deps.core?.DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS,
         performSchema25Migration: deps.core?.performSchema25Migration,
+        enableTourPrompts: (...args) => deps.ui?.enableTourPrompts?.(...args),
         showStatsTourNotification: (...args) => deps.ui?.showStatsTourNotification?.(...args),
         showPersonalizationTourNotification: (...args) => deps.ui?.showPersonalizationTourNotification?.(...args),
         showTaskOptionsTourNotification: (...args) => deps.ui?.showTaskOptionsTourNotification?.(...args),

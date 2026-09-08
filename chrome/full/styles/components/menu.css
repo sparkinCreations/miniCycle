@@ -7,10 +7,54 @@
    MENU CONTAINER
    ============================================================================= */
 
+/* ---------------------------------------------------------------------------
+   Menu colour tokens (the --modal-*-effective pattern, applied to the menu)
+   ---------------------------------------------------------------------------
+   themeManager writes --pref-menu-* as INLINE styles on <body> when a vocab
+   theme is active; these tokens are ours to resolve. Read the effective token,
+   never --pref-menu-* directly — a raw --pref read has no dark-mode guard, which
+   is exactly how the vocab-theme modal text reached 2.48:1 (Aug 2026).
+
+   Order: preset -> theme -> default. `classic` ships no colorPreset, so it falls
+   straight through to the default blue and is unaffected.
+
+   Declared on BODY, not :root — themeManager sets --pref-* as inline styles on
+   <body>, and a custom property resolves against the element that DECLARES it,
+   so a :root declaration cannot see body's inline value. themes-modal.css hit
+   this exact trap first and documents it; this block was written on :root and
+   measured the default blue for every theme before being moved here.
+   -------------------------------------------------------------------------- */
+body {
+    --menu-bg-effective:   var(--pref-menu-bg, var(--menu-bg, linear-gradient(180deg, #e3f2fd 0%, #4a90c2 100%)));
+    --menu-text-effective: var(--pref-menu-text, var(--menu-button-text, var(--theme-text-on-surface)));
+    /* Section headers were #555, which measured 2.15:1 against the default
+       gradient's bottom stop — a pre-existing AA failure, and worse on every
+       themed stop. #081d3a is the colour the menu header already uses and is the
+       only neutral that clears 4.5:1 at the bottom of the default gradient. */
+    --menu-heading-effective: var(--pref-menu-text, var(--menu-section-header, #081d3a));
+    /* Action-button fill (Welcome Screen / Focus View / Close). These carry WHITE
+       labels, so this must stay dark enough for 4.5:1 — which is why each preset
+       ships its own menuAccent rather than reusing completeBtn/clearBtn (those
+       measure 2.4-3.0:1 against white on fitness and cleaning). */
+}
+
+/* Dark surfaces drop the preset layer entirely: --pref-menu-* is authored for a
+   LIGHT menu, so keeping it here would paint dark-mode chrome with light-mode
+   text. Same list as themes-modal.css — a new dark theme must be added here too,
+   and the theme-contrast gate in run-layout-overlap-tests.cjs fails the day one
+   is missed. */
+body.dark-mode,
+:root[data-theme="dark"] body,
+:root[data-theme="dark-ocean"] body {
+    --menu-bg-effective:      var(--menu-bg, linear-gradient(180deg, #1e293b 0%, #0f172a 100%));
+    --menu-text-effective:    var(--menu-button-text, var(--theme-text-on-surface));
+    --menu-heading-effective: var(--menu-section-header, #b8c4d4);
+}
+
 .menu-container {
     font-size: var(--font-size-sm);
     font-weight: bold;
-    background: var(--menu-bg, linear-gradient(180deg, #e3f2fd 0%, #4a90c2 100%));
+    background: var(--menu-bg-effective);
     position: fixed;
     top: calc(env(safe-area-inset-top, 0px) + 50px);
     right: 10px;
@@ -179,7 +223,7 @@ body.quick-actions-open #quick-actions-window {
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    color: var(--menu-section-header, #555);
+    color: var(--menu-heading-effective);
     margin-bottom: var(--space-2);
     padding-left: var(--space-1);
 }
@@ -217,7 +261,7 @@ body.quick-actions-open #quick-actions-window {
 
 .menu-section-toggle {
     font-size: 10px;
-    color: var(--menu-section-header, #555);
+    color: var(--menu-heading-effective);
     transition: transform var(--transition-fast) ease;
     opacity: 0.7;
 }
@@ -385,7 +429,7 @@ body.quick-actions-open #quick-actions-window {
 .menu-section-grid #menu-task-options .icon-text {
     font-size: 16px;
     font-weight: 900;
-    color: #555;
+    color: var(--menu-heading-effective);
     min-width: 18px;
 }
 
@@ -427,7 +471,9 @@ body.quick-actions-open #quick-actions-window {
     font-weight: 500;
     text-align: left;
     background: none;
-    color: var(--color-black);
+    /* Themed: this sat on the gradient as literal black with no token, so a
+       vocab theme recoloured the menu underneath it and this stayed put. */
+    color: var(--menu-text-effective);
     border: none;
     border-radius: var(--radius-5);
     transition: background var(--transition-fast) ease-in-out, transform var(--transition-fast);
@@ -495,7 +541,7 @@ body.quick-actions-open #quick-actions-window {
     border-radius: var(--radius-md);
     font-size: 12px; /* base — badge inherits from this so "Manual Cycle" stays readable */
     font-weight: 600;
-    color: #555;
+    color: var(--menu-heading-effective);
     cursor: pointer;
     transition: background var(--transition-fast) ease;
 }
@@ -748,7 +794,7 @@ body.quick-actions-open #quick-actions-window {
     top: 50%;
     transform: translateY(-50%);
     font-size: 32px;
-    color: var(--color-black);
+    color: var(--menu-text-effective);
     font-weight: bold;
     padding: var(--space-2-5) var(--space-3-75);
     border-radius: var(--radius-5);
@@ -930,16 +976,47 @@ body.quick-actions-open #quick-actions-window {
     gap: var(--space-1-5);
     min-width: 60%;
     padding: var(--space-2) var(--space-4);
-    background: var(--theme-button-bg, var(--color-steel-blue));
-    color: var(--theme-button-text, var(--color-white));
-    /* Light border carries the "clickable" cue — no drop shadow. */
-    border: var(--space-px) solid color-mix(in srgb, var(--color-white) 35%, transparent);
+    background: transparent;
+    color: var(--menu-text-effective);
+    /* Hairline carries the "clickable" cue — no drop shadow. currentColor, not a
+       fixed white: a 35% white hairline is invisible on a light themed gradient. */
+    border: var(--space-px) solid color-mix(in srgb, currentColor 28%, transparent);
     border-radius: var(--radius-md);
     font-size: var(--font-size-sm);
     font-weight: 600;
     cursor: pointer;
     transition: background var(--transition-fast) ease,
                 border-color var(--transition-fast) ease;
+}
+
+/* Restated under .menu-container purely for SPECIFICITY: `.menu-container button`
+   is 0,2,0 and beats `.menu-primary-action` at 0,1,0, so the base rule above
+   loses on every property it and this one both set. These rows are transparent by
+   design, so the LABEL carries the contrast — white measured 1.9:1 on a light
+   themed gradient, which is why the colour follows --menu-text-effective.
+   Pinned by the per-theme AA sweep in run-layout-overlap-tests.cjs. */
+.menu-container .menu-primary-action {
+    /* Transparent on purpose: these read as menu rows, not raised buttons, so the
+       label sits straight on the gradient. That makes the TEXT colour the thing
+       carrying contrast — it must follow the theme (white on a light amber or
+       mint gradient measures ~1.9:1), which is why this reads
+       --menu-text-effective rather than the white the button chain supplied. */
+    background: transparent;
+    color: var(--menu-text-effective);
+    /* currentColor, not a fixed white: a 35% white hairline vanishes on a light
+       themed gradient. This tracks whatever the themed label colour is. */
+    border-color: color-mix(in srgb, currentColor 28%, transparent);
+}
+
+.menu-container .menu-primary-action:hover,
+.menu-container .menu-primary-action:focus-visible {
+    /* Tint from the label colour so the hover reads on every gradient. */
+    background: color-mix(in srgb, currentColor 12%, transparent);
+    border-color: color-mix(in srgb, currentColor 45%, transparent);
+}
+
+.menu-container .menu-primary-action:active {
+    background: color-mix(in srgb, currentColor 20%, transparent);
 }
 
 /* Keep each label on ONE line. A flex item may shrink below its content width,
@@ -979,16 +1056,6 @@ body.quick-actions-open #quick-actions-window {
     min-width: 0;
 }
 
-.menu-primary-action:hover,
-.menu-primary-action:focus-visible {
-    background: color-mix(in srgb, var(--theme-button-bg, var(--color-steel-blue)) 82%, var(--color-white));
-    border-color: color-mix(in srgb, var(--color-white) 50%, transparent);
-}
-
-.menu-primary-action:active {
-    background: color-mix(in srgb, var(--theme-button-bg, var(--color-steel-blue)) 92%, var(--color-black));
-}
-
 /* Inline SVG icon — fixed pixel dimensions render predictably without
    Font Awesome's font-metric resistance. SVG attributes width/height set
    the box; CSS reinforces them in case any global rule tries to override. */
@@ -1020,7 +1087,11 @@ body.quick-actions-open #quick-actions-window {
     margin-bottom: calc(-1 * var(--space-2-5));
     margin-top: var(--space-2);
     padding: var(--space-3-5);
-    background: var(--menu-close-bg, var(--color-steel-blue));
+    /* Same accent as the primary actions above: leaving Close on steel blue while
+       those follow the theme gave the menu two competing accent colours, which
+       reads worse than either choice on its own. --menu-close-bg still wins where
+       a colour theme sets it (dark-mode, golden-glow), so those are untouched. */
+    background: var(--close-btn-effective);
     color: var(--menu-close-text, var(--color-white));
     border: none;
     border-radius: 0 0 var(--radius-md) var(--radius-md);

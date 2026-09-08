@@ -563,7 +563,21 @@ export class ModalManager {
                         return;
                     }
 
-                    // Native <dialog> elements handle their own ESC (close event fires automatically).
+                    // Native <dialog> elements handle their own ESC, and they rely on
+                    // the `cancel` event the browser fires first — the routine-creation
+                    // prompt loads a starter routine there so a user who backs out is
+                    // not left with nothing. closeAllModals() calls .close() directly,
+                    // which fires `close` WITHOUT `cancel`, so routing ESC through it
+                    // preempted the browser and silently skipped that fallback:
+                    // measured, Cancel produced "Getting Started 🚀" while ESC left
+                    // zero routines. Bail out and let the dialog own its own ESC.
+                    //
+                    // Only ESC takes this exit. A programmatic closeAllModals() still
+                    // closes these dialogs, and must — "close everything" is not the
+                    // same intent as "the user backed out", and firing cancel there
+                    // would create routines during a routine switch.
+                    if (document.querySelector('dialog[open]')) return;
+
                     // This handler covers non-dialog cleanup: task options, recurring panels, notifications, etc.
                     if (hasOpenModal) {
                         this.closeAllModals();

@@ -214,6 +214,35 @@
     margin-top: var(--space-0-5);
 }
 
+/* Manual-vs-button breakdown under a cycle completed with unchecked tasks.
+   Inherits colour from .history-event-details so dark mode needs no extra rule. */
+.history-completion-split {
+    margin-top: var(--space-1);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-0-5);
+}
+
+.history-completion-line {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+    font-size: var(--font-size-xs);
+    line-height: 1.4;
+}
+
+.history-completion-label {
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* Task names are user text of any length — let them wrap and never push the
+   event row into horizontal scroll. */
+.history-completion-names {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
 .history-event-timestamp {
     font-size: var(--font-size-xs);
     color: var(--color-gray-600);

@@ -209,11 +209,24 @@
     white-space: pre-line;
 }
 
-/* Bold-title variant — bolds the first wrapped line of the message so
-   notifications with a "Title\n\nBody" structure read like a heading.
-   Opt-in via showNotification(..., { className: 'notification-titled' }). */
-.notification.notification-titled .notification-message::first-line,
-.notification.notification-titled .notification-content::first-line {
+/* Bold-title variant for notifications with a "Title\n\nBody" structure.
+   Opt-in via showNotification(..., { className: 'notification-titled' }).
+
+   The title gets its OWN element (notifications.js splits on the blank line),
+   because ::first-line bolds the first RENDERED line — a title that wraps was
+   left half-bold, which is how "Welcome to Home View" shipped as a bold
+   "Welcome to Home" over an unbolded "View". display:block keeps the body on
+   its own line now that the separator is consumed by the split. */
+.notification.notification-titled .notification-title {
+    display: block;
+    font-weight: var(--font-weight-bold);
+    margin-bottom: var(--space-2);
+}
+
+/* Fallback for titled messages with no blank-line separator — single-line
+   titles that cannot wrap, so ::first-line is still accurate for them. */
+.notification.notification-titled .notification-message:not(:has(.notification-title))::first-line,
+.notification.notification-titled .notification-content:not(:has(.notification-title))::first-line {
     font-weight: var(--font-weight-bold);
 }
 

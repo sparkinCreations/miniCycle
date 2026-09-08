@@ -1,3 +1,7 @@
+## [2.557] - 2026-09-08
+- feat(onboarding): opt-in tour prompts, first-run hierarchy, ESC fallback fix
+
+
 ## [2.556] - 2026-09-07
 - feat(menu): menu and close buttons follow vocab theme colours
 

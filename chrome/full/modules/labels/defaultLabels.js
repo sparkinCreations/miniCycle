@@ -1378,9 +1378,13 @@ export const DEFAULT_LABELS = deepFreeze({
         step3:           'Your at-a-glance status — shows the current mode, tasks remaining, and tips.',
         step4:           'Customize colors, backgrounds, and themes here. The 🌙 moon button on the opposite side switches light and dark mode.',
         step5:           'Switch between your routines — each has its own tasks and cycle count.',
+        step6:           'Everything else lives in this menu. Want prompts like this for other features? Turn on Enable Tour Prompts under Help & Support.',
         complete:        'You\'re all set! Enjoy building your routines.',
-        retakeTour:      'Reset All Tours',
-        toursReset:      'All tours have been reset! Want to take the guided tour now?',
+        retakeTour:      'Enable Tour Prompts',
+        // Prompts are opt-in (Sep 2026), so this fires on ENABLING them, not on a
+        // bare reset. Kept as a separate key from the old toursReset wording so a
+        // stale translation cannot claim tours were merely "reset".
+        promptsEnabled:  'Tour prompts are on. You will be offered a tour the first time you open each feature.',
         startTourAction: 'Start Tour',
         closeDialogHint: 'Close the open dialog to start the tour'
     },
@@ -2071,6 +2075,18 @@ export const DEFAULT_LABELS = deepFreeze({
         dateYesterday:        'Yesterday',
         dateEarlier:          'Earlier',
         cycleCompleted:       'Cycle Completed',
+        // Manual-vs-button breakdown on a cycle completed with unchecked tasks.
+        // {action} is the Complete Cycle button's own label, so the two always
+        // agree — including under a vocabulary lens, which renames both.
+        checkedByYou:         'Checked off',
+        completedByButton:    'Completed by {action}',
+        andMoreTasks:         '+{count} more',
+        // One-line summaries for the all-or-nothing cases, so a 20-task routine
+        // does not print 20 names to say one thing.
+        allByButton:          'All {count} {noun} completed by {action}',
+        allCheckedOff:        'All {count} {noun} checked off',
+        // To-Do mode: which tasks the Clear button removed.
+        clearedTaskNames:     'Cleared',
         tasksCleared:         'Tasks Cleared',
         cycleReset:           'Cycle Reset',
         achievementUnlocked:  'Achievement Unlocked',
@@ -2866,6 +2882,11 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     // History
     'history.clearedTasks',
     'history.cycleCompleted',
+    'history.checkedByYou',
+    'history.completedByButton',
+    'history.allByButton',
+    'history.allCheckedOff',
+    'history.clearedTaskNames',
     'history.tasksCleared',
     'history.cycleReset',
     'history.taskAdded',

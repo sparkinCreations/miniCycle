@@ -881,7 +881,7 @@ export function setupUserManual(_GlobalUtils) {
 }
 
 /**
- * Setup menu "Reset Tours" button handler (Help & Support section)
+ * Setup menu "Enable Tour Prompts" button handler (Help & Support section)
  */
 export function setupMenuRetakeTours() {
   const btn = document.getElementById(DOM_IDS.MENU_RETAKE_TOURS);
@@ -891,27 +891,11 @@ export function setupMenuRetakeTours() {
     const AppState = getAppState();
     if (!AppState?.isReady?.()) return;
 
-    // Reset ALL tour progress
-    await AppState.update((state) => {
-      if (!state.settings) state.settings = {};
-      state.settings.guidedTourStep = null;
-      state.settings.statsTourStep = null;
-      state.settings.prefsTourStep = null;
-      state.settings.taskOptionsTourStep = null;
-      state.settings.remindersTourStep = null;
-      state.settings.menuTourStep = null;
-      state.settings.settingsTourStep = null;
-      state.settings.routineSwitcherTourStep = null;
-      state.settings.recurringListTourStep = null;
-      state.settings.recurringSettingsTourStep = null;
-      state.settings.historyTourStep = null;
-      state.settings.clearedTasksTourStep = null;
-      state.settings.achievementsTourStep = null;
-      // Reset Quick Actions view tips
-      state.settings.quickActionsTipPinned = false;
-      state.settings.quickActionsTipRecent = false;
-      state.settings.quickActionsTipFrequent = false;
-    }, true);
+    // Switch prompts ON and clear every tour's progress. The key list used to be
+    // spelled out here AND in settingsUIManager's copy of this button; it now
+    // derives from TOUR_DEFINITIONS inside guidedTourManager, so a new tour
+    // cannot be forgotten by one of the two call sites.
+    await getUiApi()?.enableTourPrompts?.();
 
     // Hide menu
     try {
@@ -923,7 +907,7 @@ export function setupMenuRetakeTours() {
     // Ask user if they want to start the tour
     const showNotification = getShowNotification();
     showNotification?.(
-      getLabel('tour.toursReset'),
+      getLabel('tour.promptsEnabled'),
       'info',
       null,
       {

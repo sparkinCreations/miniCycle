@@ -95,7 +95,7 @@
 
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" id="status-bar-style-meta">
 
-<meta name="app-version" content="2.556">
+<meta name="app-version" content="2.557">
 
 <!-- CSP is served via HTTP header in netlify.toml (production) -->
 <!-- No <meta> CSP tag needed — Netlify headers handle it, and omitting it here allows local HTTP dev servers -->
@@ -130,17 +130,17 @@
          light mode / full motion / default background on every load.
      ═══════════════════════════════════════════════════════════════════════════ -->
 
-<link rel="preload" href="styles/main.css?v=2.556" as="style">
-<link rel="preload" href="styles/base/variables.css?v=2.556" as="style">
-<link rel="preload" href="styles/base/reset.css?v=2.556" as="style">
-<link rel="preload" href="styles/layout/app-container.css?v=2.556" as="style">
-<link rel="preload" href="styles/layout/header.css?v=2.556" as="style">
-<link rel="preload" href="styles/components/task-list.css?v=2.556" as="style">
+<link rel="preload" href="styles/main.css?v=2.557" as="style">
+<link rel="preload" href="styles/base/variables.css?v=2.557" as="style">
+<link rel="preload" href="styles/base/reset.css?v=2.557" as="style">
+<link rel="preload" href="styles/layout/app-container.css?v=2.557" as="style">
+<link rel="preload" href="styles/layout/header.css?v=2.557" as="style">
+<link rel="preload" href="styles/components/task-list.css?v=2.557" as="style">
 
 <!-- Async CSS loading - doesn't block render, app starts with inline critical CSS -->
-<link rel="stylesheet" href="styles/main.css?v=2.556" media="print" id="async-main-css">
+<link rel="stylesheet" href="styles/main.css?v=2.557" media="print" id="async-main-css">
 <script>(function(){var l=document.getElementById('async-main-css');if(!l)return;function apply(){l.media='all';}if(l.sheet){apply();}else{l.addEventListener('load',apply);}})();</script>
-<noscript><link rel="stylesheet" href="styles/main.css?v=2.556"></noscript>
+<noscript><link rel="stylesheet" href="styles/main.css?v=2.557"></noscript>
 <link rel="manifest" href="manifest.json">
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -151,7 +151,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- version.js MUST load synchronously BEFORE modulepreloads to set globalThis.APP_VERSION -->
-<script src="./version.js?v=2.556"></script>
+<script src="./version.js?v=2.557"></script>
 
 <!-- Build version = the version baked into THIS HTML document (the meta tag
      above). It is the honest "what am I actually running" signal. By contrast,
@@ -679,7 +679,7 @@
   }, LOAD_TIMEOUT_MS);
 })();
 </script>
-    <script src="boot-sw.js?v=2.556" defer></script>
+    <script src="boot-sw.js?v=2.557" defer></script>
 
 
 
@@ -2019,7 +2019,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- Boot File Split (Dec 2025): Load via entrypoint which orchestrates all boot files -->
- <script type="module" src="miniCycle-main.js?v=2.556"></script>
+ <script type="module" src="miniCycle-main.js?v=2.557"></script>
 
 <script>
 // Sync About modal version with meta app-version

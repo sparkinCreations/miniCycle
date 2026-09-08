@@ -265,7 +265,7 @@ body.dark-mode,
     width: 100%;
     margin: 0;
     padding: var(--space-3-5);
-    background: var(--theme-button-bg, var(--color-primary));
+    background: var(--close-btn-effective);
     color: var(--theme-button-text, var(--color-white));
     border: none;
     border-radius: 0;
@@ -1352,7 +1352,7 @@ dialog.preferences-modal::backdrop {
     width: 100%;
     margin: 0;
     padding: var(--space-3-5);
-    background: var(--theme-button-bg, var(--color-primary));
+    background: var(--close-btn-effective);
     color: var(--theme-button-text, var(--color-white));
     border: none;
     border-radius: 0;

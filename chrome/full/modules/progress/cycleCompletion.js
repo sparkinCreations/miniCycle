@@ -313,7 +313,7 @@ function handleMilestoneUnlocks(miniCycleName, globalCyclesCompleted) {
  * @param {Object} savedMiniCycles - Deprecated, kept for backwards compatibility
  * @returns {void}
  */
-export function incrementCycleCount(miniCycleName, savedMiniCycles) {
+export function incrementCycleCount(miniCycleName, savedMiniCycles, completionSplit = null) {
 
     if (!deps.AppState?.isReady?.()) {
         console.error('❌ AppState not ready for incrementCycleCount');
@@ -401,14 +401,29 @@ export function incrementCycleCount(miniCycleName, savedMiniCycles) {
 
     // Log history event
     if (typeof deps.logHistoryEvent === 'function') {
-        deps.logHistoryEvent('cycle_completed', {
+        const details = {
             cycleCount: actualNewCount,
             // Schema 2.5 names the field `title`; there is no `name`, so this
             // read was always undefined and every event logged the cycle ID.
             // Harmless to date only because nothing renders cycleName (the one
             // other use is a local in shareManager, which already reads .title).
             cycleName: cycleData.title || activeCycle
-        });
+        };
+
+        // Present only when the cycle was completed with the Complete Cycle
+        // button (taskCycleReset captures it just before the mass-complete). A
+        // cycle that completes naturally — the user checks the last box in Auto
+        // Cycle mode — carries no breakdown, so ordinary completions stay
+        // uncluttered. Either count may legitimately be 0; the renderer collapses
+        // those to a one-line summary rather than listing every task.
+        if (completionSplit) {
+            details.manualCount = completionSplit.manualCount;
+            details.autoCount = completionSplit.autoCount;
+            details.manualNames = completionSplit.manualNames;
+            details.autoNames = completionSplit.autoNames;
+        }
+
+        deps.logHistoryEvent('cycle_completed', details);
     }
 
     // Check for new achievements (OR-based: cycles OR tasks can unlock)

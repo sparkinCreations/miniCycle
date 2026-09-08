@@ -95,7 +95,7 @@
 
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" id="status-bar-style-meta">
 
-<meta name="app-version" content="2.551">
+<meta name="app-version" content="2.557">
 
 <!-- CSP is served via HTTP header in netlify.toml (production) -->
 <!-- No <meta> CSP tag needed — Netlify headers handle it, and omitting it here allows local HTTP dev servers -->
@@ -130,17 +130,17 @@
          light mode / full motion / default background on every load.
      ═══════════════════════════════════════════════════════════════════════════ -->
 
-<link rel="preload" href="styles/main.css?v=2.551" as="style">
-<link rel="preload" href="styles/base/variables.css?v=2.551" as="style">
-<link rel="preload" href="styles/base/reset.css?v=2.551" as="style">
-<link rel="preload" href="styles/layout/app-container.css?v=2.551" as="style">
-<link rel="preload" href="styles/layout/header.css?v=2.551" as="style">
-<link rel="preload" href="styles/components/task-list.css?v=2.551" as="style">
+<link rel="preload" href="styles/main.css?v=2.557" as="style">
+<link rel="preload" href="styles/base/variables.css?v=2.557" as="style">
+<link rel="preload" href="styles/base/reset.css?v=2.557" as="style">
+<link rel="preload" href="styles/layout/app-container.css?v=2.557" as="style">
+<link rel="preload" href="styles/layout/header.css?v=2.557" as="style">
+<link rel="preload" href="styles/components/task-list.css?v=2.557" as="style">
 
 <!-- Async CSS loading - doesn't block render, app starts with inline critical CSS -->
-<link rel="stylesheet" href="styles/main.css?v=2.551" media="print" id="async-main-css">
+<link rel="stylesheet" href="styles/main.css?v=2.557" media="print" id="async-main-css">
 <script src="ext-boot/01.js"></script>
-<noscript><link rel="stylesheet" href="styles/main.css?v=2.551"></noscript>
+<noscript><link rel="stylesheet" href="styles/main.css?v=2.557"></noscript>
 <!-- [chrome-ext build] removed PWA manifest link -->
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -151,7 +151,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- version.js MUST load synchronously BEFORE modulepreloads to set globalThis.APP_VERSION -->
-<script src="./version.js?v=2.551"></script>
+<script src="./version.js?v=2.557"></script>
 
 <!-- Build version = the version baked into THIS HTML document (the meta tag
      above). It is the honest "what am I actually running" signal. By contrast,
@@ -259,7 +259,7 @@
      'feature-gate'. Keep the gate in its own block. (Fixed Jul 2026.)
      ═══════════════════════════════════════════════════════════════════════════ -->
 <script src="ext-boot/09.js"></script>
-    <script src="boot-sw.js?v=2.551" defer></script>
+    <script src="boot-sw.js?v=2.557" defer></script>
 
 
 
@@ -309,9 +309,21 @@
            stay top-anchored; buttons sit in the vertical middle). -->
       <div class="first-run-actions">
         <div class="first-run-buttons">
-          <button type="button" class="first-run-btn" data-choice="create" data-busy="Setting up your routine…" data-label="Create My First Routine">Create My First Routine</button>
-          <button type="button" class="first-run-btn" data-choice="sample" data-busy="Loading samples…" data-label="Load a Sample">Load a Sample</button>
-          <button type="button" class="first-run-btn" data-choice="learn" data-busy="Starting the tour…" data-label="Learn How Cycles Work">Learn How Cycles Work</button>
+          <!-- Order and weight are deliberate. "Cycles" is the one idea the whole
+               product rests on, and the tagline above already concedes it needs
+               explaining ("not one-and-done to-dos") — a user who skips it builds
+               a to-do list, watches it reset, and concludes the app is broken.
+               This is not a docs detour either: the learn path ends in a working
+               routine in Focus View, same as the other two.
+               Three identically-styled pills gave equal weight to three different
+               commitments at the moment the user knows least; primary/secondary
+               does the choosing work for them. Sample sits above Create because
+               someone who declines the explainer wants to SEE it working, and a
+               blank routine is the weakest second impression.
+               Handlers key off data-choice, never position. -->
+          <button type="button" class="first-run-btn first-run-btn-primary" data-choice="learn" data-busy="Starting the tour…" data-label="Learn How Cycles Work">Learn How Cycles Work</button>
+          <button type="button" class="first-run-btn first-run-btn-secondary" data-choice="sample" data-busy="Loading samples…" data-label="Load a Sample">Load a Sample</button>
+          <button type="button" class="first-run-btn first-run-btn-secondary" data-choice="create" data-busy="Setting up your routine…" data-label="Create My First Routine">Create My First Routine</button>
         </div>
         <!-- Wait-gated escape hatch: revealed only if boot exceeds ~10s and isn't done
              yet (see controller below). Not shown upfront — a new user can't reason
@@ -548,7 +560,7 @@
                     <button id="share-app" title="Share miniCycle with someone" aria-label="Share miniCycle with someone"><i class="fas fa-share-nodes"></i>Share App</button>
                     <button id="menu-check-updates" title="Check for app updates"><i class="fas fa-sync-alt"></i>Check for Updates</button>
                     <button id="open-tip-archive" title="Browse every loading tip"><i class="fas fa-lightbulb"></i><span class="menu-item-label">Tips</span></button>
-                    <button id="menu-retake-tours" title="Reset and retake guided tours"><i class="fas fa-route"></i>Reset Tours</button>
+                    <button id="menu-retake-tours" title="Turn on tour prompts for major features"><i class="fas fa-route"></i>Enable Tour Prompts</button>
                 </div>
             </div>
       
@@ -1327,7 +1339,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- Boot File Split (Dec 2025): Load via entrypoint which orchestrates all boot files -->
- <script type="module" src="miniCycle-main.js?v=2.551"></script>
+ <script type="module" src="miniCycle-main.js?v=2.557"></script>
 
 <script src="ext-boot/12.js"></script>
    <!-- [chrome-ext build] removed inline script: late lite-version fallback redirect -->

@@ -87,7 +87,13 @@ export const TASK_TIMEOUTS = Object.freeze({
     RESET_LOCK_RELEASE: 1500,     // 1.5s - Release reset lock
     DELETE_NOTIFICATION: 2500,    // 2.5s - Delete notification duration
     ANIMATION_FILL: 200,          // 200ms - Progress bar fill animation
-    ANIMATION_EMPTY: 300          // 300ms - Progress bar empty animation
+    ANIMATION_EMPTY: 300,         // 300ms - Progress bar empty animation
+    // How long a captured manual/button completion breakdown stays valid before
+    // resetTasks discards it. The reset that consumes it is scheduled CORE_INIT
+    // after the mass-complete and then awaits fill animations, so this must
+    // comfortably exceed that — but stay short enough that a breakdown stranded
+    // by a declined due-date modal can never attach to a LATER cycle.
+    COMPLETION_SPLIT_TTL: 15000   // 15s
 });
 
 /**
@@ -333,6 +339,12 @@ export const LIMITS = Object.freeze({
     MAX_MIGRATION_BACKUPS: 2,            // Max per-prefix migration backups (pre_migration_/migration_) kept; each is a full-dataset copy, created per migration and never otherwise pruned
     MAX_AUTO_MIGRATION_BACKUPS: 5,       // Max auto_migration_backup_ entries kept in miniCycleBackupIndex (index-managed, separate from the per-prefix cap above)
     RECURRING_OVERSLEEP_FACTOR: 2,       // Watch tick counts as overslept when the gap since the last tick exceeds this multiple of the expected interval (device sleep / tab freeze) — the tick then delegates to catch-up
+    // Max task names stored on ONE history event's completion breakdown (per
+    // side). Names are user text, so this is a STORAGE cap, not a display one:
+    // TASKS_PER_CYCLE (150) x TASK_CHARACTER (500) x MAX_EVENTS (100) is ~7.5MB
+    // uncapped, against a ~5MB localStorage quota. Counts are always exact; only
+    // the name list is truncated, and the renderer says "+N more".
+    HISTORY_EVENT_TASK_NAMES: 12,
     LAYOUT_DRAG_THRESHOLD: 5,             // px - Task View Layout: pointer travel before drag starts (forgive hover jitter)
     LAYOUT_DOCK_GAP: 20,                  // px - Task View Layout: vertical gap between an anchor element and its docked dependent
     LAYOUT_MIN_VISIBLE_OVERLAP: 40,       // px - Task View Layout: how much of a restored element must stay inside #task-view, so a layout saved on a wider display can never strand it (and its drag handle) out of reach

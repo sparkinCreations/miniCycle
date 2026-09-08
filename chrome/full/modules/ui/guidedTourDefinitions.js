@@ -73,6 +73,22 @@ export const TOUR_DEFINITIONS = Object.freeze([
                 messageKey: 'tour.step5',
                 position: 'auto',
                 skipWhenHidden: 'computedDisplay'
+            },
+            // Closing step. Tour prompts became opt-in (Sep 2026) and default to
+            // OFF, so finishing THIS tour is the moment a user has demonstrated
+            // they want guidance — and the only other bridge to the remaining 12
+            // feature tours is one rotating loading tip. Points at the menu
+            // because that is where "Enable Tour Prompts" lives.
+            //
+            // 'selector', not 'id': the hamburger carries class="menu-button" and
+            // has no id, so DOM_IDS.MENU_BUTTON would resolve to nothing and the
+            // step would silently anchor to the page instead of the control.
+            {
+                targetType: 'selector',
+                target: DOM_SELECTORS.MENU_BUTTON,
+                messageKey: 'tour.step6',
+                position: 'auto',
+                skipWhenHidden: 'computedDisplay'
             }
         ]
     }],
