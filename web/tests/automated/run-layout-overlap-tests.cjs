@@ -597,10 +597,20 @@ async function run() {
                     // (negative margins + overflow clipping) but must not hang below
                     // it: the shell clips rather than scrolls now, so a vertical
                     // overhang is cut off permanently instead of being scrollable to.
-                    record(vp, 'routine switcher: Close does not overhang the shell',
-                        sw.closeBottom <= sw.shellBottom + TOL,
+                    // Flush, not merely "not overhanging". The button is a
+                    // full-bleed footer: it spans the shell's full width and sits
+                    // on its bottom edge, with the shell's border-radius rounding
+                    // its corners. A gap BELOW it exposes a strip of card and
+                    // reads as a misaligned button — which is what the mobile
+                    // `padding` shorthand reintroduced at <=480px once the
+                    // compensating -20px margin was removed. An overhang is just
+                    // as wrong in the other direction: the shell clips rather
+                    // than scrolls now, so it would be cut off permanently.
+                    record(vp, 'routine switcher: Close sits flush with the shell bottom',
+                        Math.abs(sw.shellBottom - sw.closeBottom) <= TOL,
                         `Close bottom ${sw.closeBottom}px vs shell bottom ${sw.shellBottom}px — `
-                        + 'the overhang is clipped away, not scrollable');
+                        + `${sw.shellBottom - sw.closeBottom}px of card showing below the button `
+                        + '(negative = the button overhangs and is clipped away)');
                 }
             }
         }

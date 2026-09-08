@@ -1173,7 +1173,12 @@ input.routine-search-input:focus {
 @media (max-width: 480px) {
     .mini-cycle-switch-modal-content {
         width: 85%;
-        padding: var(--space-3);
+        /* Bottom MUST stay 0. The `padding` shorthand here used to clobber the
+           base rule's `... 0` bottom, and the Close button's old -20px bottom
+           margin happened to swallow the difference. With that margin gone the
+           padding shows as a strip of card below the button, which reads as a
+           misaligned button rather than the full-bleed footer it is. */
+        padding: var(--space-3) var(--space-3) 0;
     }
 
     .mini-cycle-switch-title {
