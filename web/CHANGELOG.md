@@ -1,3 +1,7 @@
+## [2.554] - 2026-09-07
+- fix(switcher): Close button sits flush on mobile
+
+
 ## [2.553] - 2026-09-07
 - fix(switcher): constrain the picker so Close never leaves the screen
 
