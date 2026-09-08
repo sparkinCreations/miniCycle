@@ -810,6 +810,140 @@ async function run() {
             }
         }
 
+        // --- Main menu contrast across every colour layer ---------------------
+        // The menu joined vocab theming in Sep 2026 (it was the only major surface
+        // that ignored it), which puts it under the same three-layer stack as the
+        // modal above: vocab preset --pref-menu-*, colour theme, dark mode.
+        //
+        // It cannot be measured the way the modal is. The menu's background is a
+        // GRADIENT, i.e. a background-image, so `backgroundColor` is transparent
+        // and effBg() walks straight past it to whatever is behind — every ratio
+        // would be computed against the wrong surface. So assert on the TOKENS:
+        // resolve --menu-bg-effective, take both gradient stops, and check the
+        // text and heading tokens against the worse of the two. A gradient is
+        // monotonic in luminance between its stops, so passing at both ends means
+        // passing everywhere along it.
+        {
+            const vp = { name: 'menu-contrast', width: 390, height: 844 };
+            const probe = await page.evaluate(async () => {
+                const srgb = (c) => { c /= 255; return c <= 0.03928 ? c/12.92 : Math.pow((c+0.055)/1.055, 2.4); };
+                const lum = (r) => 0.2126*srgb(r[0]) + 0.7152*srgb(r[1]) + 0.0722*srgb(r[2]);
+                const ratio = (a, b) => { const la = lum(a), lb = lum(b);
+                    return (Math.max(la,lb) + 0.05) / (Math.min(la,lb) + 0.05); };
+                const toRgb = (str) => {
+                    const t = (str || '').trim();
+                    if (t.startsWith('#')) { let h = t.slice(1);
+                        if (h.length === 3) h = h.split('').map(c => c + c).join('');
+                        return [0,2,4].map(i => parseInt(h.slice(i, i+2), 16)); }
+                    const n = (t.match(/[\d.]+/g) || []).map(Number);
+                    return n.slice(0, 3);
+                };
+
+                // Read the theme lists from the app, not a hand list, so a new
+                // vocab theme or colour theme is covered the day it lands.
+                const cb = Date.now();
+                const { THEME_DEFINITIONS } = await import(`/modules/labels/themes.js?v=${cb}`);
+                const vocabIds = Object.keys(THEME_DEFINITIONS)
+                    .filter(id => THEME_DEFINITIONS[id] && THEME_DEFINITIONS[id].colorPreset);
+                const colourThemes = [null];
+                for (const sheet of document.styleSheets) {
+                    let rules; try { rules = sheet.cssRules; } catch { continue; }
+                    for (const r of rules || []) {
+                        const m = r.selectorText && r.selectorText.match(/\[data-theme="([^"]+)"\]/);
+                        if (m && !colourThemes.includes(m[1])) colourThemes.push(m[1]);
+                    }
+                }
+
+                const body = document.body, root = document.documentElement;
+                const savedClass = body.className;
+                const savedTheme = root.dataset.theme;
+                const results = [];
+                for (const vocab of [null, ...vocabIds]) {
+                    for (const ct of colourThemes) {
+                        for (const dark of [false, true]) {
+                            [...body.style].filter(n => n.startsWith('--pref-menu-'))
+                                .forEach(n => body.style.removeProperty(n));
+                            body.className = body.className.split(/\s+/)
+                                .filter(c => c && !/^(dark-mode|theme-)/.test(c)).join(' ');
+                            delete root.dataset.theme;
+                            if (dark) body.classList.add('dark-mode');
+                            if (ct) { body.classList.add('theme-' + ct); root.dataset.theme = ct; }
+                            if (vocab) {
+                                const cp = THEME_DEFINITIONS[vocab].colorPreset;
+                                if (cp.menuBg) body.style.setProperty('--pref-menu-bg', cp.menuBg);
+                                if (cp.menuText) body.style.setProperty('--pref-menu-text', cp.menuText);
+                            }
+                            const cs = getComputedStyle(body);
+                            const grad = cs.getPropertyValue('--menu-bg-effective').trim();
+                            const stops = (grad.match(/rgba?\([^)]+\)|#[0-9a-fA-F]{3,8}/g) || []).map(toRgb);
+                            const text = toRgb(cs.getPropertyValue('--menu-text-effective'));
+                            const head = toRgb(cs.getPropertyValue('--menu-heading-effective'));
+                            if (!stops.length || !text.length || !head.length) {
+                                results.push({ vocab: vocab || 'classic', ct: ct || 'none', dark, unresolved: true });
+                                continue;
+                            }
+                            let worst = Infinity, culprit = '';
+                            for (const stop of stops) {
+                                const t = ratio(text, stop), h = ratio(head, stop);
+                                if (t < worst) { worst = t; culprit = 'button text'; }
+                                if (h < worst) { worst = h; culprit = 'section heading'; }
+                            }
+                            results.push({ vocab: vocab || 'classic', ct: ct || 'none', dark,
+                                worst: +worst.toFixed(2), culprit, stops: stops.length });
+                        }
+                    }
+                }
+                body.className = savedClass;
+                if (savedTheme) root.dataset.theme = savedTheme; else delete root.dataset.theme;
+                [...body.style].filter(n => n.startsWith('--pref-menu-'))
+                    .forEach(n => body.style.removeProperty(n));
+                return { results, vocabIds, colourThemes };
+            });
+
+            // A gradient that resolves to nothing means the token chain broke —
+            // that is a silent full-surface failure, not a pass.
+            const unresolved = probe.results.filter(r => r.unresolved);
+            record(vp, 'menu colour tokens resolve in every theme combination',
+                unresolved.length === 0,
+                unresolved.map(r => `${r.vocab}/${r.ct}/${r.dark ? 'dark' : 'light'}`).join(', '));
+
+            record(vp, 'menu contrast sweep covers every theme',
+                probe.results.length > 0 && probe.vocabIds.length > 0,
+                `${probe.results.length} combination(s) from ${probe.vocabIds.length} preset(s) `
+                + `x ${probe.colourThemes.length} colour theme(s) x 2 modes`);
+
+            // The two primary actions carry white text and MUST own an opaque
+            // background — they sit on the gradient otherwise, where white
+            // measured 3.47:1 on the default and 2.17:1 on a light themed one.
+            // They rendered transparent for months because --theme-button-bg is
+            // defined as an undefined var, so the steel-blue fallback beside it
+            // could never fire. Assert the background, not the colour: that is
+            // the thing that silently went missing.
+            const actionBg = await page.evaluate(() => {
+                const out = [];
+                for (const id of ['menu-open-title-screen', 'menu-enter-focus-view']) {
+                    const el = document.getElementById(id);
+                    if (!el) continue;
+                    const c = getComputedStyle(el).backgroundColor;
+                    const n = (c.match(/[\d.]+/g) || []).map(Number);
+                    out.push({ id, colour: c, alpha: n.length > 3 ? n[3] : 1 });
+                }
+                return out;
+            });
+            for (const a of actionBg) {
+                record(vp, `menu: #${a.id} has an opaque background`, a.alpha === 1,
+                    `background-color is ${a.colour} — white label is sitting directly on the menu gradient`);
+            }
+
+            for (const r of probe.results.filter(x => !x.unresolved)) {
+                record(vp, `menu: ${r.vocab} preset, ${r.ct} theme, ${r.dark ? 'dark' : 'light'} meets AA (4.5:1)`,
+                    r.worst >= 4.5,
+                    `${r.worst}:1 on the ${r.culprit} against the worse of ${r.stops} gradient stop(s) — `
+                    + 'a --pref-menu-* value is surviving into a surface it was not drawn for, '
+                    + 'or a gradient stop is too dark for its paired text');
+            }
+        }
+
         // --- Safe-area inset change (padding-only header growth) --------------
         // The header's height moves through padding:
         //   padding: calc(env(safe-area-inset-top, 0px) + 28px) ...

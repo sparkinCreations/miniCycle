@@ -283,9 +283,17 @@
   --menu-date-text:       rgba(0, 0, 0, 0.5);
   --menu-section-bg:      rgba(255, 255, 255, 0.5);
   --menu-section-border:  rgba(255, 255, 255, 0.3);
-  --menu-section-header:  #555555;
+  /* #555555 until Sep 2026, which measured 2.15:1 against the bottom of the
+     default menu gradient (#4a90c2) — a long-standing AA failure. #081d3a is
+     the colour the menu header already uses and the only neutral that clears
+     4.5:1 there (4.86:1). Pinned by the menu-contrast gate in
+     run-layout-overlap-tests.cjs. */
+  --menu-section-header:  #081d3a;
   --menu-button-bg:       rgba(0, 0, 0, 0.04);
-  --menu-button-text:     #333333;
+  /* #333333 until Sep 2026 — 3.65:1 against the bottom of the default menu
+     gradient (#4a90c2), below AA. #081d3a matches the menu header/section
+     colour and clears it at 4.86:1. Pinned by the menu-contrast gate. */
+  --menu-button-text:     #081d3a;
   --menu-button-hover-bg: rgba(0, 0, 0, 0.1);
   --menu-close-bg:        var(--color-steel-blue);
   --menu-close-text:      var(--color-white);

@@ -107,6 +107,12 @@ const VOCAB_THEME_CSS_VARS = {
     taskOptionsBorder:    '--pref-task-options-border',
     taskOptionsHoverBg:   '--pref-task-options-hover-bg',
     panelAccent:          '--pref-panel-accent',
+    // The main menu. Added Sep 2026: the menu was the ONLY major surface that
+    // ignored vocab-theme colours, so a cognac-amber Habit Tracker app carried an
+    // ice-blue menu floating on top of it. Its own gradient because the menu is
+    // chrome, not a modal — reusing modalBg would have flattened it.
+    menuBg:               '--pref-menu-bg',
+    menuText:             '--pref-menu-text',
 };
 
 // ─── Dark-mode / vocab-theme restore ─────────────────────────────────────────

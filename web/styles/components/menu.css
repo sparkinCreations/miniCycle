@@ -7,10 +7,50 @@
    MENU CONTAINER
    ============================================================================= */
 
+/* ---------------------------------------------------------------------------
+   Menu colour tokens (the --modal-*-effective pattern, applied to the menu)
+   ---------------------------------------------------------------------------
+   themeManager writes --pref-menu-* as INLINE styles on <body> when a vocab
+   theme is active; these tokens are ours to resolve. Read the effective token,
+   never --pref-menu-* directly — a raw --pref read has no dark-mode guard, which
+   is exactly how the vocab-theme modal text reached 2.48:1 (Aug 2026).
+
+   Order: preset -> theme -> default. `classic` ships no colorPreset, so it falls
+   straight through to the default blue and is unaffected.
+
+   Declared on BODY, not :root — themeManager sets --pref-* as inline styles on
+   <body>, and a custom property resolves against the element that DECLARES it,
+   so a :root declaration cannot see body's inline value. themes-modal.css hit
+   this exact trap first and documents it; this block was written on :root and
+   measured the default blue for every theme before being moved here.
+   -------------------------------------------------------------------------- */
+body {
+    --menu-bg-effective:   var(--pref-menu-bg, var(--menu-bg, linear-gradient(180deg, #e3f2fd 0%, #4a90c2 100%)));
+    --menu-text-effective: var(--pref-menu-text, var(--menu-button-text, var(--theme-text-on-surface)));
+    /* Section headers were #555, which measured 2.15:1 against the default
+       gradient's bottom stop — a pre-existing AA failure, and worse on every
+       themed stop. #081d3a is the colour the menu header already uses and is the
+       only neutral that clears 4.5:1 at the bottom of the default gradient. */
+    --menu-heading-effective: var(--pref-menu-text, var(--menu-section-header, #081d3a));
+}
+
+/* Dark surfaces drop the preset layer entirely: --pref-menu-* is authored for a
+   LIGHT menu, so keeping it here would paint dark-mode chrome with light-mode
+   text. Same list as themes-modal.css — a new dark theme must be added here too,
+   and the theme-contrast gate in run-layout-overlap-tests.cjs fails the day one
+   is missed. */
+body.dark-mode,
+:root[data-theme="dark"] body,
+:root[data-theme="dark-ocean"] body {
+    --menu-bg-effective:      var(--menu-bg, linear-gradient(180deg, #1e293b 0%, #0f172a 100%));
+    --menu-text-effective:    var(--menu-button-text, var(--theme-text-on-surface));
+    --menu-heading-effective: var(--menu-section-header, #b8c4d4);
+}
+
 .menu-container {
     font-size: var(--font-size-sm);
     font-weight: bold;
-    background: var(--menu-bg, linear-gradient(180deg, #e3f2fd 0%, #4a90c2 100%));
+    background: var(--menu-bg-effective);
     position: fixed;
     top: calc(env(safe-area-inset-top, 0px) + 50px);
     right: 10px;
@@ -179,7 +219,7 @@ body.quick-actions-open #quick-actions-window {
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    color: var(--menu-section-header, #555);
+    color: var(--menu-heading-effective);
     margin-bottom: var(--space-2);
     padding-left: var(--space-1);
 }
@@ -217,7 +257,7 @@ body.quick-actions-open #quick-actions-window {
 
 .menu-section-toggle {
     font-size: 10px;
-    color: var(--menu-section-header, #555);
+    color: var(--menu-heading-effective);
     transition: transform var(--transition-fast) ease;
     opacity: 0.7;
 }
@@ -385,7 +425,7 @@ body.quick-actions-open #quick-actions-window {
 .menu-section-grid #menu-task-options .icon-text {
     font-size: 16px;
     font-weight: 900;
-    color: #555;
+    color: var(--menu-heading-effective);
     min-width: 18px;
 }
 
@@ -427,7 +467,9 @@ body.quick-actions-open #quick-actions-window {
     font-weight: 500;
     text-align: left;
     background: none;
-    color: var(--color-black);
+    /* Themed: this sat on the gradient as literal black with no token, so a
+       vocab theme recoloured the menu underneath it and this stayed put. */
+    color: var(--menu-text-effective);
     border: none;
     border-radius: var(--radius-5);
     transition: background var(--transition-fast) ease-in-out, transform var(--transition-fast);
@@ -495,7 +537,7 @@ body.quick-actions-open #quick-actions-window {
     border-radius: var(--radius-md);
     font-size: 12px; /* base — badge inherits from this so "Manual Cycle" stays readable */
     font-weight: 600;
-    color: #555;
+    color: var(--menu-heading-effective);
     cursor: pointer;
     transition: background var(--transition-fast) ease;
 }
@@ -748,7 +790,7 @@ body.quick-actions-open #quick-actions-window {
     top: 50%;
     transform: translateY(-50%);
     font-size: 32px;
-    color: var(--color-black);
+    color: var(--menu-text-effective);
     font-weight: bold;
     padding: var(--space-2-5) var(--space-3-75);
     border-radius: var(--radius-5);
@@ -930,7 +972,17 @@ body.quick-actions-open #quick-actions-window {
     gap: var(--space-1-5);
     min-width: 60%;
     padding: var(--space-2) var(--space-4);
-    background: var(--theme-button-bg, var(--color-steel-blue));
+    /* --theme-button-primary-bg, NOT --theme-button-bg. The latter is defined in
+       variables.css as `var(--theme-button-primary-bg)` with no fallback of its
+       own, and --theme-button-primary-bg is never defined anywhere — so
+       --theme-button-bg resolves to an INVALID value. It still counts as
+       "defined", so the `, var(--color-steel-blue)` fallback here never fired and
+       these buttons rendered TRANSPARENT with white text: 3.47:1 on the default
+       gradient, and 2.17:1 once themed gradients made the surface light. Reading
+       the primary var directly lets the fallback work. (--theme-button-bg is
+       still broken for guided-tour.css and task-list.css — separate surfaces,
+       not touched here.) */
+    background: var(--theme-button-primary-bg, var(--color-steel-blue));
     color: var(--theme-button-text, var(--color-white));
     /* Light border carries the "clickable" cue — no drop shadow. */
     border: var(--space-px) solid color-mix(in srgb, var(--color-white) 35%, transparent);
@@ -940,6 +992,24 @@ body.quick-actions-open #quick-actions-window {
     cursor: pointer;
     transition: background var(--transition-fast) ease,
                 border-color var(--transition-fast) ease;
+}
+
+/* Scoped under .menu-container to outrank `.menu-container button { background:
+   none }` (0,2,0 beats .menu-primary-action's 0,1,0). Without this the rule above
+   loses and these buttons render transparent — white label straight on the menu
+   gradient at 3.47:1, or 2.17:1 once a themed gradient makes it light. Pinned by
+   the "has an opaque background" check in run-layout-overlap-tests.cjs. */
+.menu-container .menu-primary-action {
+    background: var(--theme-button-primary-bg, var(--color-steel-blue));
+}
+
+.menu-container .menu-primary-action:hover,
+.menu-container .menu-primary-action:focus-visible {
+    background: color-mix(in srgb, var(--theme-button-primary-bg, var(--color-steel-blue)) 82%, var(--color-white));
+}
+
+.menu-container .menu-primary-action:active {
+    background: color-mix(in srgb, var(--theme-button-primary-bg, var(--color-steel-blue)) 92%, var(--color-black));
 }
 
 /* Keep each label on ONE line. A flex item may shrink below its content width,
@@ -981,12 +1051,12 @@ body.quick-actions-open #quick-actions-window {
 
 .menu-primary-action:hover,
 .menu-primary-action:focus-visible {
-    background: color-mix(in srgb, var(--theme-button-bg, var(--color-steel-blue)) 82%, var(--color-white));
+    background: color-mix(in srgb, var(--theme-button-primary-bg, var(--color-steel-blue)) 82%, var(--color-white));
     border-color: color-mix(in srgb, var(--color-white) 50%, transparent);
 }
 
 .menu-primary-action:active {
-    background: color-mix(in srgb, var(--theme-button-bg, var(--color-steel-blue)) 92%, var(--color-black));
+    background: color-mix(in srgb, var(--theme-button-primary-bg, var(--color-steel-blue)) 92%, var(--color-black));
 }
 
 /* Inline SVG icon — fixed pixel dimensions render predictably without
