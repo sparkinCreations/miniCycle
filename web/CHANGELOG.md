@@ -1,3 +1,7 @@
+## [2.556] - 2026-09-07
+- feat(menu): menu and close buttons follow vocab theme colours
+
+
 ## [2.555] - 2026-09-07
 - feat(menu): main menu follows vocab theme colours
 
