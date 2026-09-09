@@ -1,3 +1,7 @@
+## [2.558] - 2026-09-09
+- build(chrome): package the extension zip as part of the build
+
+
 ## [2.557] - 2026-09-08
 - feat(onboarding): opt-in tour prompts, first-run hierarchy, ESC fallback fix
 
