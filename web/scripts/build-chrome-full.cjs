@@ -36,6 +36,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { execFileSync } = require('child_process');
 
 const WEB_ROOT = path.resolve(__dirname, '..');              // .../web
 const REPO_ROOT = path.resolve(WEB_ROOT, '..');              // repo root
@@ -556,6 +557,70 @@ function pruneJunk() {
   if (removed) log(`pruned ${removed} OS junk file(s) (.DS_Store / Thumbs.db)`);
 }
 
+/**
+ * Sweep iCloud's "<name> 2" duplicate dirs/files out of the build.
+ *
+ * update-version.sh runs the repo-wide sweep BEFORE the platform builds, which
+ * cannot help: iCloud mints these while the build is still writing files, so
+ * fresh duplicates appear after that sweep and before the zip. The published
+ * chrome/full-2.328.zip carries `examples 2/`, `legal 3/` and `modules 3/`
+ * exactly this way. Sweeping here — the last thing before packaging — is the
+ * only point where the output is known settled.
+ *
+ * Deletes only when the original sibling exists, same rule as
+ * scripts/sweep-icloud-cruft.cjs.
+ */
+function pruneICloudDuplicates() {
+  const DUP = /^(.*?) [23](\.[^.]+)?$/;
+  let removed = 0;
+  const walk = (dir) => {
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, e.name);
+      const m = DUP.exec(e.name);
+      if (m) {
+        const original = path.join(dir, m[1] + (m[2] || ''));
+        if (fs.existsSync(original)) {
+          fs.rmSync(full, { recursive: true, force: true });
+          removed += 1;
+          continue;
+        }
+      }
+      if (e.isDirectory()) walk(full);
+    }
+  };
+  walk(OUT);
+  if (removed) log(`pruned ${removed} iCloud duplicate(s) before packaging`);
+}
+
+/**
+ * Zip the build into chrome/full-<version>.zip, ready for the Web Store.
+ *
+ * Added Sep 2026. The build produced only the directory, so every upload was
+ * zipped by hand — and the newest zip on disk sat months behind the build. A
+ * stale full-2.259.zip was uploaded by mistake and the store rejected it for
+ * having a LOWER version than the published 2.328. Packaging here keeps the
+ * artifact and the build in lockstep by construction.
+ *
+ * Entries must sit at the archive ROOT (manifest.json at top level), so the zip
+ * is created from inside OUT with `.` rather than zipping the folder itself.
+ */
+function packageZip(version) {
+  const zipPath = path.join(REPO_ROOT, 'chrome', `full-${version}.zip`);
+  if (fs.existsSync(zipPath)) fs.rmSync(zipPath);
+  try {
+    execFileSync('zip', ['-rqX', zipPath, '.', '-x', '.DS_Store', '*/.DS_Store', '__MACOSX/*'], {
+      cwd: OUT,
+      stdio: ['ignore', 'ignore', 'pipe']
+    });
+  } catch (err) {
+    // Non-fatal: the unpacked build is still valid and loadable. Say so loudly
+    // rather than letting a silent miss send someone to an old zip again.
+    log(`⚠️  zip failed (${err.message.trim()}) — package chrome/full/ by hand before uploading`);
+    return;
+  }
+  log(`packaged ${path.relative(REPO_ROOT, zipPath)} — ${human(fs.statSync(zipPath).size)}`);
+}
+
 // ── run ──────────────────────────────────────────────────────────────────────
 function main() {
   log(`source: ${WEB_ROOT}`);
@@ -573,7 +638,9 @@ function main() {
   copyGames();
   writeManifestAndBackground(version);
   pruneJunk();
+  pruneICloudDuplicates();
   assertSingleManifest();
+  packageZip(version);
 
   log(`done — ${human(dirSize(OUT))} total`);
   log('load unpacked: chrome://extensions -> Developer mode -> Load unpacked -> chrome/full/');
