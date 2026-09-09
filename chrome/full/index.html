@@ -95,7 +95,7 @@
 
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" id="status-bar-style-meta">
 
-<meta name="app-version" content="2.558">
+<meta name="app-version" content="2.559">
 
 <!-- CSP is served via HTTP header in netlify.toml (production) -->
 <!-- No <meta> CSP tag needed — Netlify headers handle it, and omitting it here allows local HTTP dev servers -->
@@ -130,17 +130,17 @@
          light mode / full motion / default background on every load.
      ═══════════════════════════════════════════════════════════════════════════ -->
 
-<link rel="preload" href="styles/main.css?v=2.558" as="style">
-<link rel="preload" href="styles/base/variables.css?v=2.558" as="style">
-<link rel="preload" href="styles/base/reset.css?v=2.558" as="style">
-<link rel="preload" href="styles/layout/app-container.css?v=2.558" as="style">
-<link rel="preload" href="styles/layout/header.css?v=2.558" as="style">
-<link rel="preload" href="styles/components/task-list.css?v=2.558" as="style">
+<link rel="preload" href="styles/main.css?v=2.559" as="style">
+<link rel="preload" href="styles/base/variables.css?v=2.559" as="style">
+<link rel="preload" href="styles/base/reset.css?v=2.559" as="style">
+<link rel="preload" href="styles/layout/app-container.css?v=2.559" as="style">
+<link rel="preload" href="styles/layout/header.css?v=2.559" as="style">
+<link rel="preload" href="styles/components/task-list.css?v=2.559" as="style">
 
 <!-- Async CSS loading - doesn't block render, app starts with inline critical CSS -->
-<link rel="stylesheet" href="styles/main.css?v=2.558" media="print" id="async-main-css">
+<link rel="stylesheet" href="styles/main.css?v=2.559" media="print" id="async-main-css">
 <script src="ext-boot/01.js"></script>
-<noscript><link rel="stylesheet" href="styles/main.css?v=2.558"></noscript>
+<noscript><link rel="stylesheet" href="styles/main.css?v=2.559"></noscript>
 <!-- [chrome-ext build] removed PWA manifest link -->
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -151,7 +151,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- version.js MUST load synchronously BEFORE modulepreloads to set globalThis.APP_VERSION -->
-<script src="./version.js?v=2.558"></script>
+<script src="./version.js?v=2.559"></script>
 
 <!-- Build version = the version baked into THIS HTML document (the meta tag
      above). It is the honest "what am I actually running" signal. By contrast,
@@ -259,7 +259,7 @@
      'feature-gate'. Keep the gate in its own block. (Fixed Jul 2026.)
      ═══════════════════════════════════════════════════════════════════════════ -->
 <script src="ext-boot/09.js"></script>
-    <script src="boot-sw.js?v=2.558" defer></script>
+    <script src="boot-sw.js?v=2.559" defer></script>
 
 
 
@@ -1339,7 +1339,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- Boot File Split (Dec 2025): Load via entrypoint which orchestrates all boot files -->
- <script type="module" src="miniCycle-main.js?v=2.558"></script>
+ <script type="module" src="miniCycle-main.js?v=2.559"></script>
 
 <script src="ext-boot/12.js"></script>
    <!-- [chrome-ext build] removed inline script: late lite-version fallback redirect -->
