@@ -1132,6 +1132,95 @@ export async function runOnboardingManagerTests(resultsDiv) {
         if (outcome !== 'settled') throw new Error('destroy must settle the splash promise, not strand awaiting callers');
     });
 
+    await test('showWelcomeSplash adopts a pre-boot #first-run-splash instead of mounting a second one', async () => {
+        clearSplashDom();
+        // Mirror what miniCycle.html's showPrebootSplash mounts at tap time:
+        // the marker class plus at least one char span the module can read.
+        const preboot = document.createElement('div');
+        preboot.id = 'first-run-splash';
+        preboot.className = 'first-run-splash first-run-splash--preboot';
+        const ch = document.createElement('span');
+        ch.className = 'first-run-splash__char';
+        ch.textContent = 'W';
+        preboot.appendChild(ch);
+        document.body.appendChild(preboot);
+
+        const state = { settings: {}, data: { cycles: {} } };
+        setOnboardingManagerDependencies(createMockDeps({
+            AppState: { isReady: () => true, get: () => state, update: (fn) => { fn(state); return state; } }
+        }));
+        const om = new OnboardingManager();
+
+        const done = om.showWelcomeSplash();
+
+        const splashes = document.querySelectorAll('#first-run-splash');
+        if (splashes.length !== 1) throw new Error(`expected exactly one splash, found ${splashes.length}`);
+        if (splashes[0] !== preboot) throw new Error('module must adopt the pre-boot splash element, not replace it');
+        if (typeof done?.then !== 'function') throw new Error('adopted splash must still return the completion promise');
+
+        // Same contract as a fresh splash: hide ⇒ element removed ⇒ promise settles.
+        om._hideFirstRunSplash();
+        const outcome = await Promise.race([
+            done.then(() => 'settled'),
+            new Promise(r => setTimeout(() => r('timeout'), SPLASH_SETTLE_TIMEOUT_MS))
+        ]);
+        if (outcome !== 'settled') throw new Error('adopted splash promise should settle after hide');
+        if (preboot.isConnected) throw new Error('adopted splash should be removed from the DOM');
+
+        om.destroy();
+    });
+
+    await test('showWelcomeSplash honours a pre-boot tap-to-skip request immediately', async () => {
+        clearSplashDom();
+        const preboot = document.createElement('div');
+        preboot.id = 'first-run-splash';
+        preboot.className = 'first-run-splash first-run-splash--preboot';
+        preboot.setAttribute('data-skip', '1'); // user tapped before boot arrived
+        const ch = document.createElement('span');
+        ch.className = 'first-run-splash__char';
+        ch.textContent = 'W';
+        preboot.appendChild(ch);
+        document.body.appendChild(preboot);
+
+        const state = { settings: {}, data: { cycles: {} } };
+        setOnboardingManagerDependencies(createMockDeps({
+            AppState: { isReady: () => true, get: () => state, update: (fn) => { fn(state); return state; } }
+        }));
+        const om = new OnboardingManager();
+
+        const done = om.showWelcomeSplash();
+        // No hide() call here: the skip request alone must settle it.
+        const outcome = await Promise.race([
+            done.then(() => 'settled'),
+            new Promise(r => setTimeout(() => r('timeout'), SPLASH_SETTLE_TIMEOUT_MS))
+        ]);
+        if (outcome !== 'settled') throw new Error('a pre-boot skip must settle the splash without waiting out the cascade');
+        if (preboot.isConnected) throw new Error('skipped splash should be removed from the DOM');
+        om.destroy();
+    });
+
+    await test('showWelcomeSplash removes a stranded pre-boot splash when the welcome was already dismissed', async () => {
+        clearSplashDom();
+        const preboot = document.createElement('div');
+        preboot.id = 'first-run-splash';
+        preboot.className = 'first-run-splash first-run-splash--preboot';
+        document.body.appendChild(preboot);
+
+        const state = { settings: { firstRunWelcomeDismissed: true }, data: { cycles: {} } };
+        setOnboardingManagerDependencies(createMockDeps({
+            AppState: { isReady: () => true, get: () => state, update: (fn) => { fn(state); return state; } }
+        }));
+        const om = new OnboardingManager();
+
+        await om.showWelcomeSplash(); // resolves immediately by contract
+        if (!preboot.classList.contains('first-run-splash--fading')) {
+            throw new Error('dismissed state must start fading the pre-boot splash, not leave it covering the app');
+        }
+        await new Promise(r => setTimeout(r, SPLASH_SETTLE_TIMEOUT_MS));
+        if (preboot.isConnected) throw new Error('pre-boot splash should be removed after its fade');
+        om.destroy();
+    });
+
     await test('showWelcomeSplash no-ops once the welcome has been dismissed', async () => {
         const state = { settings: { firstRunWelcomeDismissed: true }, data: { cycles: {} } };
         setOnboardingManagerDependencies(createMockDeps({

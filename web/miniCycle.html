@@ -918,6 +918,92 @@
     // on time even mid-boot. If boot finishes first, the whole loader fades out
     // before the delay elapses, so the link is never seen. See critical.css.
 
+    // Pre-boot welcome splash for the create/sample picks. Mounts the SAME
+    // #first-run-splash the onboarding module builds (ids, classes, per-char
+    // --char-index / --letter-pos, --last-char-index on the container) the
+    // moment the user taps, so the letter cascade runs while the module graph
+    // is still downloading instead of after boot finishes. onboardingSplash
+    // adopts this element via the --preboot marker class and settles its
+    // completion promise when the already-running animation ends, so the
+    // creation dialog opens at max(boot, splash) rather than boot + splash.
+    // Measured before this: ~7 s from tap to dialog on wifi, ~14 s on slow 4G,
+    // with ~5 s of that the splash queued behind boot. ES5 only (pre-gate).
+    // The title is hardcoded: the label system is not loaded yet, and the
+    // first run always speaks the default vocabulary.
+    function showPrebootSplash() {
+      if (document.getElementById('first-run-splash')) return;
+      var titleText = 'Welcome to miniCycle';
+      var splash = document.createElement('div');
+      splash.id = 'first-run-splash';
+      splash.className = 'first-run-splash first-run-splash--preboot';
+      splash.setAttribute('aria-live', 'polite');
+      var title = document.createElement('h2');
+      title.id = 'first-run-splash-title';
+      title.className = 'first-run-splash__title';
+      title.setAttribute('aria-label', titleText);
+      var words = titleText.split(' ');
+      var lineTexts = [words.slice(0, words.length - 1).join(' '), words[words.length - 1]];
+      var globalCharIndex = 0;
+      var maxCharIndex = 0;
+      for (var li = 0; li < lineTexts.length; li++) {
+        var line = document.createElement('div');
+        line.className = 'first-run-splash__line';
+        var chars = lineTexts[li].split('');
+        var lineCenter = (chars.length - 1) / 2;
+        var wordGroup = null;
+        for (var ci = 0; ci < chars.length; ci++) {
+          var charIndex = globalCharIndex++;
+          if (charIndex > maxCharIndex) maxCharIndex = charIndex;
+          var ch = chars[ci];
+          var isSpace = ch === ' ';
+          var span = document.createElement('span');
+          span.className = 'first-run-splash__char' + (isSpace ? ' first-run-splash__char--space' : '');
+          span.style.setProperty('--char-index', String(charIndex));
+          span.style.setProperty('--letter-pos', String(ci - lineCenter));
+          span.setAttribute('aria-hidden', 'true');
+          span.textContent = ch;
+          if (isSpace) {
+            wordGroup = null;
+            line.appendChild(span);
+          } else {
+            if (!wordGroup) {
+              wordGroup = document.createElement('span');
+              wordGroup.className = 'first-run-splash__word';
+              line.appendChild(wordGroup);
+            }
+            wordGroup.appendChild(span);
+          }
+        }
+        title.appendChild(line);
+      }
+      splash.appendChild(title);
+      splash.style.setProperty('--last-char-index', String(maxCharIndex));
+      document.body.appendChild(splash);
+      try { performance.mark('mc:firstrun:splashMounted'); } catch (err) { /* Performance API unavailable — marks are diagnostics only */ }
+      // Same-session flag: if this splash is gone by the time the module runs
+      // (watchdog below, or boot error cleanup), the module must NOT play a
+      // second one. Consumed by onboardingSplash on adoption or skip.
+      try { sessionStorage.setItem('miniCycle_prebootSplash', '1'); } catch (err) { /* storage unavailable — worst case the module plays its own splash */ }
+      // Tap-to-skip works before the module is here: record the request and
+      // let the module honour it the moment it adopts the element.
+      splash.addEventListener('pointerdown', function () {
+        splash.setAttribute('data-skip', '1');
+      });
+      // Safety net: if boot never adopts this element (module graph failed,
+      // rescue screen, or a very slow boot), fade it out so nothing important
+      // is left covered. 12 s is the same ceiling the module gives its own
+      // splash and lands before the 16 s Lite fallback. Adoption clears the
+      // guard; if boot arrives later, the session flag above stops the module
+      // from playing a second splash, so the dialog simply opens on boot.
+      setTimeout(function () {
+        if (splash.getAttribute('data-adopted') === '1' || !splash.parentNode) return;
+        splash.classList.add('first-run-splash--fading');
+        setTimeout(function () {
+          if (splash.parentNode) splash.parentNode.removeChild(splash);
+        }, 700);
+      }, 12000);
+    }
+
     choice.addEventListener('click', function (e) {
       var btn = e.target && e.target.closest ? e.target.closest('.first-run-btn') : null;
       if (!btn || btn.disabled) return;
@@ -928,6 +1014,7 @@
       // handles same-tab routing; localStorage handles the cross-launch gate.
       try { localStorage.setItem('miniCycle_firstRunChoiceMade', '1'); } catch (err) { /* storage unavailable — worst case the choice screen re-shows */ }
       try { performance.mark('mc:firstrun:choiceTapped'); } catch (err) { /* Performance API unavailable — marks are diagnostics only */ }
+      if (value === 'create' || value === 'sample') showPrebootSplash();
 
       // Button takeover: the tapped button becomes the progress surface.
       var btns = choice.querySelectorAll('.first-run-btn');
