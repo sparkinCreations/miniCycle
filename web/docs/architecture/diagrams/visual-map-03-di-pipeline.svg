@@ -1,0 +1,177 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 842" width="1000" height="842" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11">
+  <title>miniCycle dependency injection: the four-step pipeline a dependency travels, where a miss fails silently, the facade forward-through, and the gates</title>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8a97b3"/></marker>
+    <marker id="arrow-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#3b63d8"/></marker>
+    <marker id="arrow-warn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b8860b"/></marker>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="120%"><feDropShadow dx="0" dy="1" stdDeviation="1.4" flood-color="#1b2540" flood-opacity="0.10"/></filter>
+  </defs>
+  <rect width="1000" height="842" rx="16" fill="#f6f7fb"/>
+  <circle cx="44" cy="36" r="15" fill="#3b63d8"/>
+  <text x="44" y="41" text-anchor="middle" font-size="13" font-weight="700" fill="#ffffff">3</text>
+  <text x="70" y="33" font-size="17" font-weight="700" fill="#1b2540">How a dependency reaches module code</text>
+  <text x="70" y="51" font-size="11.5" fill="#6b7893">Four layers, in order. Miss any one and the module sees undefined — no error, no warning.</text>
+  <line x1="28" y1="68" x2="972" y2="68" stroke="#d5dbe8"/>
+  <g data-box="1">
+    <rect x="28.0" y="84" width="218.0" height="175.1" rx="10" fill="#ffffff" stroke="#d5dbe8" filter="url(#shadow)"/>
+    <path d="M28.0,94 a10,10 0 0 1 10,-10 h198.0 a10,10 0 0 1 10,10 v16 h-218.0 z" fill="#3b63d8"/>
+    <circle cx="44.0" cy="97" r="9" fill="#ffffff"/>
+    <text x="44.0" y="100.5" text-anchor="middle" font-size="10" font-weight="700" fill="#3b63d8">1</text>
+    <text x="60.0" y="101.5" font-size="12" font-weight="700" fill="#ffffff">Manifest declares</text>
+    <text x="40.0" y="128.0" xml:space="preserve" font-size="10.5" font-family="Menlo, Consolas, 'Courier New', monospace" fill="#1b2540">boot/moduleManifests.js</text>
+    <text x="40.0" y="148.1" xml:space="preserve" font-size="11" fill="#2a3550">requires — same or earlier phase</text>
+    <text x="40.0" y="163.5" xml:space="preserve" font-size="11" fill="#2a3550">optionalDeps — cross-phase, may</text>
+    <text x="40.0" y="178.9" xml:space="preserve" font-size="11" fill="#2a3550">be null</text>
+    <text x="40.0" y="194.3" xml:space="preserve" font-size="11" fill="#2a3550">lazyRequires — later phase, called</text>
+    <text x="40.0" y="209.8" xml:space="preserve" font-size="11" fill="#2a3550">late</text>
+    <text x="40.0" y="229.7" xml:space="preserve" font-size="10.5" fill="#6b7893">DOM helpers (CORE_DEPS) need no</text>
+    <text x="40.0" y="244.4" xml:space="preserve" font-size="10.5" fill="#6b7893">entry</text>
+  </g>
+  <path d="M247.0,171.55 L269.0,171.55" stroke="#8a97b3" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+  <g data-box="1">
+    <rect x="270.0" y="84" width="218.0" height="175.1" rx="10" fill="#ffffff" stroke="#d5dbe8" filter="url(#shadow)"/>
+    <path d="M270.0,94 a10,10 0 0 1 10,-10 h198.0 a10,10 0 0 1 10,10 v16 h-218.0 z" fill="#3b63d8"/>
+    <circle cx="286.0" cy="97" r="9" fill="#ffffff"/>
+    <text x="286.0" y="100.5" text-anchor="middle" font-size="10" font-weight="700" fill="#3b63d8">2</text>
+    <text x="302.0" y="101.5" font-size="12" font-weight="700" fill="#ffffff">depMappings routes</text>
+    <text x="282.0" y="128.0" xml:space="preserve" font-size="10.5" font-family="Menlo, Consolas, 'Courier New', monospace" fill="#1b2540">boot/featureBoot.js</text>
+    <text x="282.0" y="148.1" xml:space="preserve" font-size="11" fill="#2a3550">name → resolver, usually a</text>
+    <text x="282.0" y="163.5" xml:space="preserve" font-size="11" fill="#2a3550">late-binding wrapper:</text>
+    <text x="282.0" y="178.5" xml:space="preserve" font-size="10.5" font-family="Menlo, Consolas, 'Courier New', monospace" fill="#1b2540">(...a)=&gt;deps.task?.X?.(...a)</text>
+    <text x="282.0" y="198.2" xml:space="preserve" font-size="10.5" fill="#6b7893">resolves on first call, not at wire time</text>
+  </g>
+  <path d="M489.0,171.55 L511.0,171.55" stroke="#8a97b3" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+  <g data-box="1">
+    <rect x="512.0" y="84" width="218.0" height="175.1" rx="10" fill="#ffffff" stroke="#d5dbe8" filter="url(#shadow)"/>
+    <path d="M512.0,94 a10,10 0 0 1 10,-10 h198.0 a10,10 0 0 1 10,10 v16 h-218.0 z" fill="#3b63d8"/>
+    <circle cx="528.0" cy="97" r="9" fill="#ffffff"/>
+    <text x="528.0" y="100.5" text-anchor="middle" font-size="10" font-weight="700" fill="#3b63d8">3</text>
+    <text x="544.0" y="101.5" font-size="12" font-weight="700" fill="#ffffff">Setter accepts</text>
+    <text x="524.0" y="128.0" xml:space="preserve" font-size="10.5" font-family="Menlo, Consolas, 'Courier New', monospace" fill="#1b2540">setMyModuleDependencies()</text>
+    <text x="524.0" y="148.1" xml:space="preserve" font-size="11" fill="#2a3550">generated by createDIModule() in</text>
+    <text x="524.0" y="163.5" xml:space="preserve" font-size="11" fill="#2a3550">diBase.js</text>
+    <text x="524.0" y="178.9" xml:space="preserve" font-size="11" fill="#2a3550">copies property descriptors so</text>
+    <text x="524.0" y="194.3" xml:space="preserve" font-size="11" fill="#2a3550">getters stay lazy</text>
+    <text x="524.0" y="214.3" xml:space="preserve" font-size="10.5" font-weight="700" fill="#b3261e">never spread deps — a spread runs</text>
+    <text x="524.0" y="229.0" xml:space="preserve" font-size="10.5" font-weight="700" fill="#b3261e">the getters now</text>
+  </g>
+  <path d="M731.0,171.55 L753.0,171.55" stroke="#8a97b3" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+  <g data-box="1">
+    <rect x="754.0" y="84" width="218.0" height="175.1" rx="10" fill="#ffffff" stroke="#d5dbe8" filter="url(#shadow)"/>
+    <path d="M754.0,94 a10,10 0 0 1 10,-10 h198.0 a10,10 0 0 1 10,10 v16 h-218.0 z" fill="#3b63d8"/>
+    <circle cx="770.0" cy="97" r="9" fill="#ffffff"/>
+    <text x="770.0" y="100.5" text-anchor="middle" font-size="10" font-weight="700" fill="#3b63d8">4</text>
+    <text x="786.0" y="101.5" font-size="12" font-weight="700" fill="#ffffff">deps getter exposes</text>
+    <text x="766.0" y="128.0" xml:space="preserve" font-size="10.5" font-family="Menlo, Consolas, 'Courier New', monospace" fill="#1b2540">get deps() → di.resolve()</text>
+    <text x="766.0" y="148.1" xml:space="preserve" font-size="11" fill="#2a3550">required() missing → warns,</text>
+    <text x="766.0" y="163.5" xml:space="preserve" font-size="11" fill="#2a3550">resolves null</text>
+    <text x="766.0" y="178.9" xml:space="preserve" font-size="11" fill="#2a3550">optional(default) missing → the</text>
+    <text x="766.0" y="194.3" xml:space="preserve" font-size="11" fill="#2a3550">default</text>
+    <text x="766.0" y="209.8" xml:space="preserve" font-size="11" fill="#2a3550">{ strict: true } → throws instead</text>
+    <text x="766.0" y="229.7" xml:space="preserve" font-size="10.5" fill="#6b7893">check the getter really exposes the</text>
+    <text x="766.0" y="244.4" xml:space="preserve" font-size="10.5" fill="#6b7893">name</text>
+  </g>
+  <path d="M863.0,259.1 L863.0,277.1" stroke="#3b63d8" stroke-width="1.5" fill="none" marker-end="url(#arrow-accent)"/>
+  <g data-box="1">
+    <rect x="28" y="281.1" width="600" height="103.6" rx="10" fill="#fff7e3" stroke="#e2b93b" filter="url(#shadow)"/>
+    <text x="40" y="303.90000000000003" font-size="12" font-weight="700" fill="#1b2540">Rule 19 — never optional-chain a required() dep</text>
+    <text x="40" y="320.9" xml:space="preserve" font-size="10.5" fill="#6b4f00">deps.thing?.() on a required dep writes a branch that only runs when wiring is broken, and that branch does nothing:</text>
+    <text x="40" y="335.6" xml:space="preserve" font-size="10.5" fill="#6b4f00">the feature is quietly missing.</text>
+    <text x="40" y="355.3" xml:space="preserve" font-size="10.5" fill="#6b4f00">v2.418 lost import-mode, share-mode and theme-on-import for a day exactly this way, and a runtime audit found it,</text>
+    <text x="40" y="370.0" xml:space="preserve" font-size="10.5" fill="#6b4f00">not a test. Let it throw where it happens so the failure names itself. validate:chains gates it (catch blocks exempt).</text>
+  </g>
+  <g data-box="1">
+    <rect x="644" y="281.1" width="328" height="103.6" rx="10" fill="#f4f6fa" stroke="#d5dbe8" filter="url(#shadow)"/>
+    <text x="656" y="303.90000000000003" font-size="12" font-weight="700" fill="#1b2540">Module code</text>
+    <text x="656" y="320.9" xml:space="preserve" font-size="10.5" font-family="Menlo, Consolas, 'Courier New', monospace" fill="#1b2540">this.deps.showNotification(m)</text>
+    <text x="656" y="335.6" xml:space="preserve" font-size="10.5" fill="#6b7893">// required: read unguarded</text>
+    <text x="656" y="355.3" xml:space="preserve" font-size="10.5" font-family="Menlo, Consolas, 'Courier New', monospace" fill="#1b2540">this.deps.helpWindow?.open()</text>
+    <text x="656" y="370.0" xml:space="preserve" font-size="10.5" fill="#6b7893">// optional: a guard is fine</text>
+  </g>
+  <text x="28" y="420.70000000000005" font-size="10.5" font-weight="700" letter-spacing="1.2" fill="#6b7893">FACADES FORWARD DEPS TO SUB-MODULES THE MANIFEST NEVER LISTS (ON PURPOSE — LISTING THEM DOUBLE-INITIALISES)</text>
+  <g data-box="1">
+    <rect x="28" y="432.70000000000005" width="210" height="105.7" rx="10" fill="#ffffff" stroke="#d5dbe8" filter="url(#shadow)"/>
+    <text x="40" y="455.50000000000006" font-size="12" font-weight="700" fill="#1b2540">taskDOM (facade)</text>
+    <text x="40" y="473.0" xml:space="preserve" font-size="11" fill="#2a3550">its manifest optionalDeps carry</text>
+    <text x="40" y="488.4" xml:space="preserve" font-size="11" fill="#2a3550">forward-through names it never</text>
+    <text x="40" y="503.8" xml:space="preserve" font-size="11" fill="#2a3550">calls itself</text>
+    <text x="40" y="523.7" xml:space="preserve" font-size="10.5" font-family="Menlo, Consolas, 'Courier New', monospace" fill="#1b2540">wireSubModuleDependencies()</text>
+  </g>
+  <g data-box="1">
+    <rect x="278" y="432.55000000000007" width="118" height="22" rx="11.0" fill="#ffffff" stroke="#d5dbe8"/>
+    <text x="337.0" y="447.2" text-anchor="middle" font-size="10.5" fill="#1b2540">taskRenderer</text>
+  </g>
+  <path d="M239,485.55000000000007 L258,485.55000000000007 L258,443.55000000000007 L277,443.55000000000007" stroke="#8a97b3" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+  <g data-box="1">
+    <rect x="278" y="460.55000000000007" width="118" height="22" rx="11.0" fill="#ffffff" stroke="#d5dbe8"/>
+    <text x="337.0" y="475.2" text-anchor="middle" font-size="10.5" fill="#1b2540">taskEvents</text>
+  </g>
+  <path d="M239,485.55000000000007 L258,485.55000000000007 L258,471.55000000000007 L277,471.55000000000007" stroke="#8a97b3" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+  <g data-box="1">
+    <rect x="278" y="488.55000000000007" width="118" height="22" rx="11.0" fill="#ffffff" stroke="#d5dbe8"/>
+    <text x="337.0" y="503.2" text-anchor="middle" font-size="10.5" fill="#1b2540">taskValidation</text>
+  </g>
+  <path d="M239,485.55000000000007 L258,485.55000000000007 L258,499.55000000000007 L277,499.55000000000007" stroke="#8a97b3" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+  <g data-box="1">
+    <rect x="278" y="516.5500000000001" width="118" height="22" rx="11.0" fill="#ffffff" stroke="#d5dbe8"/>
+    <text x="337.0" y="531.2" text-anchor="middle" font-size="10.5" fill="#1b2540">taskUtils</text>
+  </g>
+  <path d="M239,485.55000000000007 L258,485.55000000000007 L258,527.5500000000001 L277,527.5500000000001" stroke="#8a97b3" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+  <g data-box="1">
+    <rect x="420" y="432.70000000000005" width="552.0" height="182" rx="10" fill="#ffffff" stroke="#d5dbe8" filter="url(#shadow)"/>
+    <text x="432" y="453.70000000000005" font-size="12" font-weight="700" fill="#1b2540">The eight facades and what each one loads</text>
+    <text x="432.0" y="475.70000000000005" font-size="10.5" font-weight="700" fill="#1b2540">settingsManager</text>
+    <text x="432.0" y="487.70000000000005" font-size="9.5" fill="#6b7893">settingsUI · cycleExport · cycleImport · backupRestore ·</text>
+    <text x="432.0" y="498.70000000000005" font-size="9.5" fill="#6b7893">dataSanitizer · shareManager</text>
+    <text x="432.0" y="512.7" font-size="10.5" font-weight="700" fill="#1b2540">taskCore</text>
+    <text x="432.0" y="524.7" font-size="9.5" fill="#6b7893">taskCRUD · taskCompletion · taskCycleReset</text>
+    <text x="432.0" y="549.7" font-size="10.5" font-weight="700" fill="#1b2540">taskDOM</text>
+    <text x="432.0" y="561.7" font-size="9.5" fill="#6b7893">taskRenderer · taskEvents · taskValidation · taskUtils</text>
+    <text x="432.0" y="586.7" font-size="10.5" font-weight="700" fill="#1b2540">preferencesManager</text>
+    <text x="432.0" y="598.7" font-size="9.5" fill="#6b7893">bgImage · presets</text>
+    <text x="702.0" y="475.70000000000005" font-size="10.5" font-weight="700" fill="#1b2540">statsPanel</text>
+    <text x="702.0" y="487.70000000000005" font-size="9.5" fill="#6b7893">gestures · rewards  (reach the manager via this.m)</text>
+    <text x="702.0" y="512.7" font-size="10.5" font-weight="700" fill="#1b2540">notifications</text>
+    <text x="702.0" y="524.7" font-size="9.5" fill="#6b7893">educationalTips  — STATIC import</text>
+    <text x="702.0" y="549.7" font-size="10.5" font-weight="700" fill="#1b2540">onboardingManager</text>
+    <text x="702.0" y="561.7" font-size="9.5" fill="#6b7893">splash · demo · carousel  — STATIC imports</text>
+    <text x="702.0" y="586.7" font-size="10.5" font-weight="700" fill="#1b2540">routineSwitcher</text>
+    <text x="702.0" y="598.7" font-size="9.5" fill="#6b7893">routineSwitcherActions  — STATIC import</text>
+  </g>
+  <text x="28" y="636.7" font-size="10.5" fill="#6b7893">A static import from a boot-critical module makes the target boot-critical too — add it to BOOT_CRITICAL in service-worker.js and run npm run test:sw.</text>
+  <text x="28" y="670.7" font-size="10.5" font-weight="700" letter-spacing="1.2" fill="#6b7893">GATES THAT MAKE EACH FAILURE CLASS IMPOSSIBLE TO SHIP</text>
+  <g data-box="1">
+    <rect x="28.0" y="682.7" width="179.2" height="65.2" rx="10" fill="#e8f5ee" stroke="#7cc49a" filter="url(#shadow)"/>
+    <text x="38.0" y="703.5" font-size="12" font-weight="700" fill="#1b2540">validate:di</text>
+    <text x="38.0" y="720.5" xml:space="preserve" font-size="10.5" fill="#1e5e3a">undeclared · nowhere ·</text>
+    <text x="38.0" y="735.2" xml:space="preserve" font-size="10.5" fill="#1e5e3a">undeliverable = 0</text>
+  </g>
+  <g data-box="1">
+    <rect x="219.2" y="682.7" width="179.2" height="65.2" rx="10" fill="#e8f5ee" stroke="#7cc49a" filter="url(#shadow)"/>
+    <text x="229.2" y="703.5" font-size="12" font-weight="700" fill="#1b2540">validate:chains</text>
+    <text x="229.2" y="720.5" xml:space="preserve" font-size="10.5" fill="#1e5e3a">no ?. on a required() dep</text>
+  </g>
+  <g data-box="1">
+    <rect x="410.4" y="682.7" width="179.2" height="65.2" rx="10" fill="#e8f5ee" stroke="#7cc49a" filter="url(#shadow)"/>
+    <text x="420.4" y="703.5" font-size="12" font-weight="700" fill="#1b2540">validate:provides</text>
+    <text x="420.4" y="720.5" xml:space="preserve" font-size="10.5" fill="#1e5e3a">every provides name exists; no</text>
+    <text x="420.4" y="735.2" xml:space="preserve" font-size="10.5" fill="#1e5e3a">duplicates</text>
+  </g>
+  <g data-box="1">
+    <rect x="601.5999999999999" y="682.7" width="179.2" height="65.2" rx="10" fill="#e8f5ee" stroke="#7cc49a" filter="url(#shadow)"/>
+    <text x="611.5999999999999" y="703.5" font-size="12" font-weight="700" fill="#1b2540">validate:api</text>
+    <text x="611.5999999999999" y="720.5" xml:space="preserve" font-size="10.5" fill="#1e5e3a">appContext reads resolve;</text>
+    <text x="611.5999999999999" y="735.2" xml:space="preserve" font-size="10.5" fill="#1e5e3a">*ApiObj are allow-lists</text>
+  </g>
+  <g data-box="1">
+    <rect x="792.8" y="682.7" width="179.2" height="65.2" rx="10" fill="#e8f5ee" stroke="#7cc49a" filter="url(#shadow)"/>
+    <text x="802.8" y="703.5" font-size="12" font-weight="700" fill="#1b2540">diWiring tests</text>
+    <text x="802.8" y="720.5" xml:space="preserve" font-size="10.5" fill="#1e5e3a">runtime: every optionalDep has</text>
+    <text x="802.8" y="735.2" xml:space="preserve" font-size="10.5" fill="#1e5e3a">a real route</text>
+  </g>
+  <g data-box="1">
+    <rect x="28" y="767.9000000000001" width="944" height="46.7" rx="10" fill="#eef3ff" stroke="#3b63d8"/>
+    <text x="38" y="788.4" xml:space="preserve" font-size="11" fill="#2a3550">Read next:  MAKING_CODE_CHANGES.md  ·  DI_PATTERNS.md  ·  HIDDEN_CODEBASE_INSIGHTS.md  ·  DEPENDENCY_MAP.md</text>
+    <text x="38" y="802.3" xml:space="preserve" font-size="9.5" fill="#6b7893">DI is the third architecture. Plain ES imports were tried in Nov 2025 and split instances across ?v= URLs — do not propose going back.</text>
+  </g>
+</svg>

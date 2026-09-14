@@ -47,6 +47,7 @@
 * **Architecture** _(why it's built this way)_
   * [Architecture Decision Records](ARCHITECTURE_DECISIONS.md)
   * [Architecture Overview](architecture/ARCHITECTURE_OVERVIEW.md)
+  * [Codebase Visual Map](architecture/CODEBASE_VISUAL_MAP.md)
   * [Module System Guide](architecture/MODULE_SYSTEM_GUIDE.md)
   * [Module Loader Guide](architecture/MODULE_LOADER_GUIDE.md)
   * [AppInit System](architecture/APPINIT_SYSTEM.md)

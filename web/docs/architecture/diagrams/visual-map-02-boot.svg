@@ -1,0 +1,180 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 664" width="1000" height="664" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11">
+  <title>miniCycle boot sequence: three orchestrator phases, the eight loader phases inside Phase 2, and the per-module lifecycle</title>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8a97b3"/></marker>
+    <marker id="arrow-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#3b63d8"/></marker>
+    <marker id="arrow-warn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b8860b"/></marker>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="120%"><feDropShadow dx="0" dy="1" stdDeviation="1.4" flood-color="#1b2540" flood-opacity="0.10"/></filter>
+  </defs>
+  <rect width="1000" height="664" rx="16" fill="#f6f7fb"/>
+  <circle cx="44" cy="36" r="15" fill="#3b63d8"/>
+  <text x="44" y="41" text-anchor="middle" font-size="13" font-weight="700" fill="#ffffff">2</text>
+  <text x="70" y="33" font-size="17" font-weight="700" fill="#1b2540">Boot sequence</text>
+  <text x="70" y="51" font-size="11.5" fill="#6b7893">orchestrator.js runBootSequence(): three timed phases, then what happens to every module inside Phase 2.</text>
+  <line x1="28" y1="68" x2="972" y2="68" stroke="#d5dbe8"/>
+  <line x1="48" y1="92" x2="952" y2="92" stroke="#d5dbe8" stroke-width="6" stroke-linecap="round"/>
+  <g data-box="1">
+    <rect x="28.0" y="108" width="224.0" height="85.3" rx="10" fill="#ffffff" stroke="#d5dbe8" filter="url(#shadow)"/>
+    <text x="40.0" y="130.8" font-size="12" font-weight="700" fill="#1b2540">Phase 1 · Core</text>
+    <text x="40.0" y="147.8" xml:space="preserve" font-size="10.5" fill="#6b7893">coreBoot.js · 15 s timeout</text>
+    <text x="40.0" y="162.9" xml:space="preserve" font-size="11" fill="#2a3550">AppState.init, GlobalUtils, migration</text>
+  </g>
+  <g data-box="1">
+    <rect x="268.0" y="108" width="224.0" height="85.3" rx="10" fill="#f4f6fa" stroke="#d5dbe8" filter="url(#shadow)"/>
+    <text x="280.0" y="130.8" font-size="12" font-weight="700" fill="#1b2540">Server version gate</text>
+    <text x="280.0" y="147.8" xml:space="preserve" font-size="10.5" fill="#6b7893">fetch overlaps Phase 1</text>
+    <text x="280.0" y="162.9" xml:space="preserve" font-size="11" fill="#2a3550">stale build → updating overlay</text>
+  </g>
+  <g data-box="1">
+    <rect x="508.0" y="108" width="224.0" height="85.3" rx="10" fill="#eef3ff" stroke="#3b63d8" filter="url(#shadow)"/>
+    <text x="520.0" y="130.8" font-size="12" font-weight="700" fill="#1b2540">Phase 2 · Features</text>
+    <text x="520.0" y="147.8" xml:space="preserve" font-size="10.5" fill="#6b7893">featureBoot.js · 20 s timeout</text>
+    <text x="520.0" y="162.9" xml:space="preserve" font-size="11" fill="#2a3550">dialog modals injected, then the</text>
+    <text x="520.0" y="178.3" xml:space="preserve" font-size="11" fill="#2a3550">loader</text>
+  </g>
+  <g data-box="1">
+    <rect x="748.0" y="108" width="224.0" height="85.3" rx="10" fill="#ffffff" stroke="#d5dbe8" filter="url(#shadow)"/>
+    <text x="760.0" y="130.8" font-size="12" font-weight="700" fill="#1b2540">Phase 3 · UI</text>
+    <text x="760.0" y="147.8" xml:space="preserve" font-size="10.5" fill="#6b7893">uiBoot.js · 15 s timeout</text>
+    <text x="760.0" y="162.9" xml:space="preserve" font-size="11" fill="#2a3550">listeners wired, loader hidden</text>
+  </g>
+  <circle cx="140.0" cy="92" r="7" fill="#3b63d8" stroke="#f6f7fb" stroke-width="2"/>
+  <circle cx="380.0" cy="92" r="7" fill="#9aa9c7" stroke="#f6f7fb" stroke-width="2"/>
+  <circle cx="620.0" cy="92" r="7" fill="#3b63d8" stroke="#f6f7fb" stroke-width="2"/>
+  <circle cx="860.0" cy="92" r="7" fill="#3b63d8" stroke="#f6f7fb" stroke-width="2"/>
+  <path d="M620.0,193.3 L620.0,213.3" stroke="#3b63d8" stroke-width="1.5" fill="none" marker-end="url(#arrow-accent)"/>
+  <text x="28" y="229.3" font-size="10.5" font-weight="700" letter-spacing="1.2" fill="#6b7893">INSIDE PHASE 2 — MODULELOADER WALKS MODULEMANIFESTS.JS IN EIGHT LOAD PHASES</text>
+  <g data-box="1">
+    <rect x="28.0" y="241.3" width="111.0" height="48" rx="8" fill="#eef3ff" stroke="#c5d3f5"/>
+    <circle cx="42.0" cy="256.3" r="8" fill="#3b63d8"/>
+    <text x="42.0" y="259.8" text-anchor="middle" font-size="9.5" font-weight="700" fill="#ffffff">1</text>
+    <text x="55.0" y="260.3" font-size="10" font-weight="700" fill="#1b2540">CORE_UTILS</text>
+    <text x="38.0" y="278.3" font-size="9.5" fill="#6b7893">errors · labels · notify</text>
+  </g>
+  <path d="M140.0,265.3 L146.0,265.3" stroke="#8a97b3" stroke-width="1.2"/>
+  <g data-box="1">
+    <rect x="147.0" y="241.3" width="111.0" height="48" rx="8" fill="#eef3ff" stroke="#c5d3f5"/>
+    <circle cx="161.0" cy="256.3" r="8" fill="#3b63d8"/>
+    <text x="161.0" y="259.8" text-anchor="middle" font-size="9.5" font-weight="700" fill="#ffffff">2</text>
+    <text x="174.0" y="260.3" font-size="10" font-weight="700" fill="#1b2540">THEME_VISUAL</text>
+    <text x="157.0" y="278.3" font-size="9.5" fill="#6b7893">themes · onboarding</text>
+  </g>
+  <path d="M259.0,265.3 L265.0,265.3" stroke="#8a97b3" stroke-width="1.2"/>
+  <g data-box="1">
+    <rect x="266.0" y="241.3" width="111.0" height="48" rx="8" fill="#eef3ff" stroke="#c5d3f5"/>
+    <circle cx="280.0" cy="256.3" r="8" fill="#3b63d8"/>
+    <text x="280.0" y="259.8" text-anchor="middle" font-size="9.5" font-weight="700" fill="#ffffff">3</text>
+    <text x="293.0" y="260.3" font-size="10" font-weight="700" fill="#1b2540">TASK_MGMT</text>
+    <text x="276.0" y="278.3" font-size="9.5" fill="#6b7893">taskDOM · drag-drop</text>
+  </g>
+  <path d="M378.0,265.3 L384.0,265.3" stroke="#8a97b3" stroke-width="1.2"/>
+  <g data-box="1">
+    <rect x="385.0" y="241.3" width="111.0" height="48" rx="8" fill="#eef3ff" stroke="#c5d3f5"/>
+    <circle cx="399.0" cy="256.3" r="8" fill="#3b63d8"/>
+    <text x="399.0" y="259.8" text-anchor="middle" font-size="9.5" font-weight="700" fill="#ffffff">4</text>
+    <text x="412.0" y="260.3" font-size="10" font-weight="700" fill="#1b2540">RECURRING</text>
+    <text x="395.0" y="278.3" font-size="9.5" fill="#6b7893">recurring · due dates</text>
+  </g>
+  <path d="M497.0,265.3 L503.0,265.3" stroke="#8a97b3" stroke-width="1.2"/>
+  <g data-box="1">
+    <rect x="504.0" y="241.3" width="111.0" height="48" rx="8" fill="#eef3ff" stroke="#c5d3f5"/>
+    <circle cx="518.0" cy="256.3" r="8" fill="#3b63d8"/>
+    <text x="518.0" y="259.8" text-anchor="middle" font-size="9.5" font-weight="700" fill="#ffffff">5</text>
+    <text x="531.0" y="260.3" font-size="10" font-weight="700" fill="#1b2540">CYCLE</text>
+    <text x="514.0" y="278.3" font-size="9.5" fill="#6b7893">routines · modes</text>
+  </g>
+  <path d="M616.0,265.3 L622.0,265.3" stroke="#8a97b3" stroke-width="1.2"/>
+  <g data-box="1">
+    <rect x="623.0" y="241.3" width="111.0" height="48" rx="8" fill="#eef3ff" stroke="#c5d3f5"/>
+    <circle cx="637.0" cy="256.3" r="8" fill="#3b63d8"/>
+    <text x="637.0" y="259.8" text-anchor="middle" font-size="9.5" font-weight="700" fill="#ffffff">6</text>
+    <text x="650.0" y="260.3" font-size="10" font-weight="700" fill="#1b2540">UI_MANAGERS</text>
+    <text x="633.0" y="278.3" font-size="9.5" fill="#6b7893">menu · settings · undo</text>
+  </g>
+  <path d="M735.0,265.3 L741.0,265.3" stroke="#8a97b3" stroke-width="1.2"/>
+  <g data-box="1">
+    <rect x="742.0" y="241.3" width="111.0" height="48" rx="8" fill="#eef3ff" stroke="#c5d3f5"/>
+    <circle cx="756.0" cy="256.3" r="8" fill="#3b63d8"/>
+    <text x="756.0" y="259.8" text-anchor="middle" font-size="9.5" font-weight="700" fill="#ffffff">7</text>
+    <text x="769.0" y="260.3" font-size="10" font-weight="700" fill="#1b2540">FEATURES</text>
+    <text x="752.0" y="278.3" font-size="9.5" fill="#6b7893">stats · help · effects</text>
+  </g>
+  <path d="M854.0,265.3 L860.0,265.3" stroke="#8a97b3" stroke-width="1.2"/>
+  <g data-box="1">
+    <rect x="861.0" y="241.3" width="111.0" height="48" rx="8" fill="#f4f6fa" stroke="#d5dbe8"/>
+    <circle cx="875.0" cy="256.3" r="8" fill="#9aa9c7"/>
+    <text x="875.0" y="259.8" text-anchor="middle" font-size="9.5" font-weight="700" fill="#ffffff">8</text>
+    <text x="888.0" y="260.3" font-size="10" font-weight="700" fill="#1b2540">TESTING</text>
+    <text x="871.0" y="278.3" font-size="9.5" fill="#6b7893">optional · may fail</text>
+  </g>
+  <text x="28" y="311.3" font-size="10.5" fill="#6b7893">Modules in one phase import in parallel. Wiring and init run one at a time, so same-phase providers have registered before a consumer wires.</text>
+  <text x="28" y="345.3" font-size="10.5" font-weight="700" letter-spacing="1.2" fill="#6b7893">PER-MODULE LIFECYCLE — LOADMODULE() THEN INITIALIZEMODULE()</text>
+  <g data-box="1">
+    <rect x="28.0" y="357.3" width="161.6" height="81.9" rx="10" fill="#ffffff" stroke="#d5dbe8" filter="url(#shadow)"/>
+    <circle cx="48.0" cy="373.7" r="9" fill="#3b63d8"/>
+    <text x="48.0" y="377.2" text-anchor="middle" font-size="10" font-weight="700" fill="#ffffff">1</text>
+    <text x="63.0" y="379.1" font-size="12" font-weight="700" fill="#1b2540">import()</text>
+    <text x="39.0" y="396.1" xml:space="preserve" font-size="10.5" fill="#6b7893">manifest.path with ?v=</text>
+    <text x="39.0" y="410.8" xml:space="preserve" font-size="10.5" fill="#6b7893">perf mark recorded</text>
+  </g>
+  <path d="M190.6,398.25 L222.6,398.25" stroke="#8a97b3" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+  <g data-box="1">
+    <rect x="223.6" y="357.3" width="161.6" height="81.9" rx="10" fill="#ffffff" stroke="#d5dbe8" filter="url(#shadow)"/>
+    <circle cx="243.6" cy="373.7" r="9" fill="#3b63d8"/>
+    <text x="243.6" y="377.2" text-anchor="middle" font-size="10" font-weight="700" fill="#ffffff">2</text>
+    <text x="258.6" y="379.1" font-size="12" font-weight="700" fill="#1b2540">build deps</text>
+    <text x="234.6" y="396.1" xml:space="preserve" font-size="10.5" fill="#6b7893">only what the manifest</text>
+    <text x="234.6" y="410.8" xml:space="preserve" font-size="10.5" fill="#6b7893">declares</text>
+    <text x="234.6" y="425.5" xml:space="preserve" font-size="10.5" font-family="Menlo, Consolas, 'Courier New', monospace" fill="#1b2540">ENFORCE_REQUIRES on</text>
+  </g>
+  <path d="M386.2,398.25 L418.2,398.25" stroke="#8a97b3" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+  <g data-box="1">
+    <rect x="419.2" y="357.3" width="161.6" height="81.9" rx="10" fill="#ffffff" stroke="#d5dbe8" filter="url(#shadow)"/>
+    <circle cx="439.2" cy="373.7" r="9" fill="#3b63d8"/>
+    <text x="439.2" y="377.2" text-anchor="middle" font-size="10" font-weight="700" fill="#ffffff">3</text>
+    <text x="454.2" y="379.1" font-size="12" font-weight="700" fill="#1b2540">setXDependencies()</text>
+    <text x="430.2" y="396.1" xml:space="preserve" font-size="10.5" font-family="Menlo, Consolas, 'Courier New', monospace" fill="#1b2540">Object.defineProperties</text>
+    <text x="430.2" y="410.8" xml:space="preserve" font-size="10.5" fill="#6b7893">getters stay lazy</text>
+  </g>
+  <path d="M581.8,398.25 L613.8,398.25" stroke="#8a97b3" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+  <g data-box="1">
+    <rect x="614.8" y="357.3" width="161.6" height="81.9" rx="10" fill="#ffffff" stroke="#d5dbe8" filter="url(#shadow)"/>
+    <circle cx="634.8" cy="373.7" r="9" fill="#3b63d8"/>
+    <text x="634.8" y="377.2" text-anchor="middle" font-size="10" font-weight="700" fill="#ffffff">4</text>
+    <text x="649.8" y="379.1" font-size="12" font-weight="700" fill="#1b2540">init(deps)</text>
+    <text x="625.8" y="396.1" xml:space="preserve" font-size="10.5" fill="#6b7893">constructs the instance</text>
+    <text x="625.8" y="410.8" xml:space="preserve" font-size="10.5" fill="#6b7893">facades load sub-modules</text>
+    <text x="625.8" y="425.5" xml:space="preserve" font-size="10.5" fill="#6b7893">here</text>
+  </g>
+  <path d="M777.4,398.25 L809.4,398.25" stroke="#8a97b3" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+  <g data-box="1">
+    <rect x="810.4" y="357.3" width="161.6" height="81.9" rx="10" fill="#ffffff" stroke="#d5dbe8" filter="url(#shadow)"/>
+    <circle cx="830.4" cy="373.7" r="9" fill="#3b63d8"/>
+    <text x="830.4" y="377.2" text-anchor="middle" font-size="10" font-weight="700" fill="#ffffff">5</text>
+    <text x="845.4" y="379.1" font-size="12" font-weight="700" fill="#1b2540">registerProvides()</text>
+    <text x="821.4" y="396.1" xml:space="preserve" font-size="10.5" font-family="Menlo, Consolas, 'Courier New', monospace" fill="#1b2540">provides[] → deps.api</text>
+    <text x="821.4" y="410.8" xml:space="preserve" font-size="10.5" font-family="Menlo, Consolas, 'Courier New', monospace" fill="#1b2540">instance → deps.api.x</text>
+  </g>
+  <g data-box="1">
+    <rect x="28" y="465.20000000000005" width="464.0" height="118.3" rx="10" fill="#fff7e3" stroke="#e2b93b" filter="url(#shadow)"/>
+    <text x="40" y="488.00000000000006" font-size="12" font-weight="700" fill="#1b2540">Core-ready is not state-ready</text>
+    <text x="40" y="505.0" xml:space="preserve" font-size="10.5" fill="#6b4f00">After waitForCore() a returning user has data and isReady() is true. A first-run user has</text>
+    <text x="40" y="519.7" xml:space="preserve" font-size="10.5" fill="#6b4f00">data = null: get() returns null and update() is a no-op until the first-run screen persists a</text>
+    <text x="40" y="534.4" xml:space="preserve" font-size="10.5" fill="#6b4f00">routine.</text>
+    <text x="40" y="554.1" xml:space="preserve" font-size="10.5" fill="#6b4f00">Guard reads; do not assume writes land. Do not make waitForCore() await isReady() —</text>
+    <text x="40" y="568.8" xml:space="preserve" font-size="10.5" fill="#6b4f00">that deadlocks boot (measured Aug 2026). Pinned by the first-run state contract journey.</text>
+  </g>
+  <g data-box="1">
+    <rect x="508.0" y="465.20000000000005" width="464.0" height="118.3" rx="10" fill="#e8f5ee" stroke="#7cc49a" filter="url(#shadow)"/>
+    <text x="520.0" y="488.00000000000006" font-size="12" font-weight="700" fill="#1b2540">Safety nets around the sequence</text>
+    <text x="520.0" y="505.0" xml:space="preserve" font-size="10.5" fill="#1e5e3a">16 s late fallback: gate wanted lite, or boot never started → lite/</text>
+    <text x="520.0" y="519.7" xml:space="preserve" font-size="10.5" fill="#1e5e3a">60 s load timeout: #app-loader still visible → lite/</text>
+    <text x="520.0" y="534.4" xml:space="preserve" font-size="10.5" fill="#1e5e3a">Boot failure counter: 2 consecutive failures → caches cleared, retry</text>
+    <text x="520.0" y="549.1" xml:space="preserve" font-size="10.5" fill="#1e5e3a">destroyAllModules() on retry calls every module&#x27;s destroy()</text>
+    <text x="520.0" y="568.8" xml:space="preserve" font-size="10.5" fill="#6b7893">Phase timeouts live in core/constants.js (BOOT_TIMEOUTS).</text>
+  </g>
+  <g data-box="1">
+    <rect x="28" y="603.5" width="944" height="33.4" rx="10" fill="#eef3ff" stroke="#3b63d8"/>
+    <text x="38" y="624.0" xml:space="preserve" font-size="11" fill="#2a3550">Read next:  MODULE_LOADER_GUIDE.md  ·  APPINIT_EXPLAINED.md  ·  APPINIT_SYSTEM.md  ·  ERROR_RECOVERY.md</text>
+  </g>
+</svg>

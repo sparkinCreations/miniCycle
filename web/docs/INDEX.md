@@ -82,6 +82,11 @@
 - Task cycling system, state management, recurring tasks
 - Undo/redo, task options customizer, mode manager
 
+#### [CODEBASE_VISUAL_MAP.md](architecture/CODEBASE_VISUAL_MAP.md)
+**What it is**: The whole codebase on five diagrams (layers, boot, DI pipeline, state flow, shipping)
+**Read if**: You want the shape of the system before reading any detailed guide
+**Time**: 10 minutes
+
 #### [MODULE_SYSTEM_GUIDE.md](architecture/MODULE_SYSTEM_GUIDE.md)
 **What it is**: Guide to the 4 module patterns used in miniCycle
 **Read if**: You're creating or modifying modules

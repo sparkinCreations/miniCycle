@@ -1,0 +1,247 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 789" width="1000" height="789" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11">
+  <title>miniCycle codebase layers: HTML gauntlet, entrypoint, three boot phases, module directories, persistence</title>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8a97b3"/></marker>
+    <marker id="arrow-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#3b63d8"/></marker>
+    <marker id="arrow-warn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b8860b"/></marker>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="120%"><feDropShadow dx="0" dy="1" stdDeviation="1.4" flood-color="#1b2540" flood-opacity="0.10"/></filter>
+  </defs>
+  <rect width="1000" height="789" rx="16" fill="#f6f7fb"/>
+  <circle cx="44" cy="36" r="15" fill="#3b63d8"/>
+  <text x="44" y="41" text-anchor="middle" font-size="13" font-weight="700" fill="#ffffff">1</text>
+  <text x="70" y="33" font-size="17" font-weight="700" fill="#1b2540">The codebase in five layers</text>
+  <text x="70" y="51" font-size="11.5" fill="#6b7893">What loads, in what order, and where the code and the data live. Follow the spine top to bottom.</text>
+  <line x1="28" y1="68" x2="972" y2="68" stroke="#d5dbe8"/>
+  <circle cx="60" cy="98" r="13" fill="#3b63d8"/>
+  <text x="60" y="102.5" text-anchor="middle" font-size="12" font-weight="700" fill="#ffffff">1</text>
+  <text x="82" y="95" font-size="12.5" font-weight="700" fill="#1b2540">miniCycle.html</text>
+  <text x="82" y="110" font-size="10" fill="#6b7893">ordered head</text>
+  <text x="82" y="123" font-size="10" fill="#6b7893">scripts, ES5 only</text>
+  <text x="82" y="136" font-size="10" fill="#6b7893">above the gate</text>
+  <g data-box="1">
+    <rect x="190.0" y="84" width="143.6" height="69.2" rx="10" fill="#ffffff" stroke="#d5dbe8" filter="url(#shadow)"/>
+    <text x="202.0" y="106.8" font-size="12" font-weight="700" fill="#1b2540">version.js?v=</text>
+    <text x="202.0" y="123.8" xml:space="preserve" font-size="10.5" fill="#6b7893">publishes</text>
+    <text x="202.0" y="138.5" xml:space="preserve" font-size="10.5" fill="#6b7893">APP_VERSION</text>
+  </g>
+  <path d="M334.6,118.6 L348.6,118.6" stroke="#8a97b3" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+  <g data-box="1">
+    <rect x="349.6" y="84" width="143.6" height="69.2" rx="10" fill="#ffffff" stroke="#d5dbe8" filter="url(#shadow)"/>
+    <text x="361.6" y="106.8" font-size="12" font-weight="700" fill="#1b2540">pre-paint settings</text>
+    <text x="361.6" y="123.8" xml:space="preserve" font-size="10.5" fill="#6b7893">theme applied before</text>
+    <text x="361.6" y="138.5" xml:space="preserve" font-size="10.5" fill="#6b7893">first paint</text>
+  </g>
+  <path d="M494.20000000000005,118.6 L508.20000000000005,118.6" stroke="#8a97b3" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+  <g data-box="1">
+    <rect x="509.2" y="84" width="143.6" height="69.2" rx="10" fill="#ffffff" stroke="#d5dbe8" filter="url(#shadow)"/>
+    <text x="521.2" y="106.8" font-size="12" font-weight="700" fill="#1b2540">modulepreload</text>
+    <text x="521.2" y="123.8" xml:space="preserve" font-size="10.5" fill="#6b7893">hashed URLs from the</text>
+    <text x="521.2" y="138.5" xml:space="preserve" font-size="10.5" fill="#6b7893">module map</text>
+  </g>
+  <path d="M653.8,118.6 L667.8,118.6" stroke="#8a97b3" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+  <g data-box="1">
+    <rect x="668.8" y="84" width="143.6" height="69.2" rx="10" fill="#ffffff" stroke="#d5dbe8" filter="url(#shadow)"/>
+    <text x="680.8" y="106.8" font-size="12" font-weight="700" fill="#1b2540">es2020 canary</text>
+    <text x="680.8" y="123.8" xml:space="preserve" font-size="10.5" fill="#6b7893">?. and ?? parse whole</text>
+    <text x="680.8" y="138.5" xml:space="preserve" font-size="10.5" fill="#6b7893">or die whole</text>
+  </g>
+  <path d="M813.4,118.6 L827.4,118.6" stroke="#8a97b3" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+  <g data-box="1">
+    <rect x="828.4" y="84" width="143.6" height="69.2" rx="10" fill="#eef3ff" stroke="#3b63d8" filter="url(#shadow)"/>
+    <text x="840.4" y="106.8" font-size="12" font-weight="700" fill="#1b2540">feature gate</text>
+    <text x="840.4" y="123.8" xml:space="preserve" font-size="10.5" fill="#6b7893">runs LAST, alone in its</text>
+    <text x="840.4" y="138.5" xml:space="preserve" font-size="10.5" fill="#6b7893">block</text>
+  </g>
+  <path d="M900.1999999999999,153.2 L900.1999999999999,175.2" stroke="#b8860b" stroke-width="1.5" fill="none" stroke-dasharray="4 3" marker-end="url(#arrow-warn)"/>
+  <g data-box="1">
+    <rect x="806.36015" y="177.2" width="187.6797" height="22" rx="11.0" fill="#fff7e3" stroke="#e2b93b"/>
+    <text x="900.1999999999999" y="191.7" text-anchor="middle" font-size="10" fill="#6b4f00">old browser → lite/ (frozen fallback)</text>
+  </g>
+  <circle cx="60" cy="233.2" r="13" fill="#3b63d8"/>
+  <text x="60" y="237.7" text-anchor="middle" font-size="12" font-weight="700" fill="#ffffff">2</text>
+  <text x="82" y="230.2" font-size="12.5" font-weight="700" fill="#1b2540">Entrypoint</text>
+  <text x="82" y="245.2" font-size="10" fill="#6b7893">one file, one</text>
+  <text x="82" y="258.2" font-size="10" fill="#6b7893">dynamic import</text>
+  <g data-box="1">
+    <rect x="190" y="219.2" width="250" height="54.5" rx="10" fill="#ffffff" stroke="#d5dbe8" filter="url(#shadow)"/>
+    <text x="202" y="242.0" font-size="12" font-weight="700" fill="#1b2540">miniCycle-main.js</text>
+    <text x="202" y="259.0" xml:space="preserve" font-size="10.5" fill="#6b7893">the only script the HTML loads</text>
+  </g>
+  <path d="M441,246.45 L499,246.45" stroke="#8a97b3" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+  <rect x="448.49587" y="232.45" width="43.0" height="14" rx="4" fill="#f6f7fb"/>
+  <text x="470.0" y="242.95" text-anchor="middle" font-size="9.5" fill="#6b7893">import()</text>
+  <g data-box="1">
+    <rect x="500" y="219.2" width="300" height="54.5" rx="10" fill="#ffffff" stroke="#d5dbe8" filter="url(#shadow)"/>
+    <text x="512" y="242.0" font-size="12" font-weight="700" fill="#1b2540">modules/boot/orchestrator.js</text>
+    <text x="512" y="259.0" xml:space="preserve" font-size="10.5" fill="#6b7893">sequence · timeouts · retry · boot UI</text>
+  </g>
+  <circle cx="60" cy="317.7" r="13" fill="#3b63d8"/>
+  <text x="60" y="322.2" text-anchor="middle" font-size="12" font-weight="700" fill="#ffffff">3</text>
+  <text x="82" y="314.7" font-size="12.5" font-weight="700" fill="#1b2540">Boot phases</text>
+  <text x="82" y="329.7" font-size="10" fill="#6b7893">each phase has a</text>
+  <text x="82" y="342.7" font-size="10" fill="#6b7893">timeout</text>
+  <g data-box="1">
+    <rect x="190.0" y="303.7" width="250.0" height="88.8" rx="10" fill="#ffffff" stroke="#d5dbe8" filter="url(#shadow)"/>
+    <path d="M190.0,313.7 a10,10 0 0 1 10,-10 h230.0 a10,10 0 0 1 10,10 v16 h-250.0 z" fill="#3b63d8"/>
+    <text x="315.0" y="321.2" text-anchor="middle" font-size="12" font-weight="700" fill="#ffffff">Phase 1 · coreBoot.js</text>
+    <text x="202.0" y="348.1" xml:space="preserve" font-size="11" fill="#2a3550">AppState, GlobalUtils, migration</text>
+    <text x="202.0" y="363.1" xml:space="preserve" font-size="10.5" fill="#6b7893">waitForCore() resolves here</text>
+    <text x="202.0" y="377.8" xml:space="preserve" font-size="10.5" fill="#6b4f00">first run: state is still null (by design)</text>
+  </g>
+  <path d="M441.0,348.09999999999997 L455.0,348.09999999999997" stroke="#8a97b3" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+  <g data-box="1">
+    <rect x="456.0" y="303.7" width="250.0" height="88.8" rx="10" fill="#ffffff" stroke="#d5dbe8" filter="url(#shadow)"/>
+    <path d="M456.0,313.7 a10,10 0 0 1 10,-10 h230.0 a10,10 0 0 1 10,10 v16 h-250.0 z" fill="#3b63d8"/>
+    <text x="581.0" y="321.2" text-anchor="middle" font-size="12" font-weight="700" fill="#ffffff">Phase 2 · featureBoot.js</text>
+    <text x="468.0" y="348.1" xml:space="preserve" font-size="11" fill="#2a3550">moduleLoader reads moduleManifests.js</text>
+    <text x="468.0" y="363.1" xml:space="preserve" font-size="10.5" fill="#6b7893">topological sort · 8 load phases</text>
+    <text x="468.0" y="377.8" xml:space="preserve" font-size="10.5" fill="#1e5e3a">all dependency wiring happens here</text>
+  </g>
+  <path d="M707.0,348.09999999999997 L721.0,348.09999999999997" stroke="#8a97b3" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+  <g data-box="1">
+    <rect x="722.0" y="303.7" width="250.0" height="88.8" rx="10" fill="#ffffff" stroke="#d5dbe8" filter="url(#shadow)"/>
+    <path d="M722.0,313.7 a10,10 0 0 1 10,-10 h230.0 a10,10 0 0 1 10,10 v16 h-250.0 z" fill="#3b63d8"/>
+    <text x="847.0" y="321.2" text-anchor="middle" font-size="12" font-weight="700" fill="#ffffff">Phase 3 · uiBoot.js</text>
+    <text x="734.0" y="348.1" xml:space="preserve" font-size="11" fill="#2a3550">event listeners, UI finalisation</text>
+    <text x="734.0" y="363.1" xml:space="preserve" font-size="10.5" fill="#6b7893">loader hidden, app interactive</text>
+    <text x="734.0" y="377.8" xml:space="preserve" font-size="10.5" fill="#6b7893">sets the appBooted flag</text>
+  </g>
+  <circle cx="60" cy="436.5" r="13" fill="#3b63d8"/>
+  <text x="60" y="441.0" text-anchor="middle" font-size="12" font-weight="700" fill="#ffffff">4</text>
+  <text x="82" y="433.5" font-size="12.5" font-weight="700" fill="#1b2540">modules/</text>
+  <text x="82" y="448.5" font-size="10" fill="#6b7893">158 modules, strict</text>
+  <text x="82" y="461.5" font-size="10" fill="#6b7893">DI, no window.*</text>
+  <text x="82" y="474.5" font-size="10" fill="#6b7893">fallbacks</text>
+  <g data-box="1">
+    <rect x="190.0" y="422.5" width="146.8" height="44" rx="8" fill="#ffffff" stroke="#d5dbe8" filter="url(#shadow)"/>
+    <text x="200.0" y="440.5" font-size="11.5" font-weight="700" fill="#1b2540">core/</text>
+    <rect x="308.9" y="430.5" width="17.9" height="16" rx="8" fill="#eef3ff"/>
+    <text x="317.8" y="442.0" text-anchor="middle" font-size="10" font-weight="700" fill="#3b63d8">9</text>
+    <text x="200.0" y="456.5" font-size="10" fill="#6b7893">appState, diBase, constants</text>
+  </g>
+  <g data-box="1">
+    <rect x="348.8" y="422.5" width="146.8" height="44" rx="8" fill="#ffffff" stroke="#d5dbe8" filter="url(#shadow)"/>
+    <text x="358.8" y="440.5" font-size="11.5" font-weight="700" fill="#1b2540">boot/</text>
+    <rect x="467.7" y="430.5" width="17.9" height="16" rx="8" fill="#eef3ff"/>
+    <text x="476.6" y="442.0" text-anchor="middle" font-size="10" font-weight="700" fill="#3b63d8">7</text>
+    <text x="358.8" y="456.5" font-size="10" fill="#6b7893">orchestrator, loader, manifests</text>
+  </g>
+  <g data-box="1">
+    <rect x="507.6" y="422.5" width="146.8" height="44" rx="8" fill="#ffffff" stroke="#d5dbe8" filter="url(#shadow)"/>
+    <text x="517.6" y="440.5" font-size="11.5" font-weight="700" fill="#1b2540">task/</text>
+    <rect x="620.5" y="430.5" width="23.9" height="16" rx="8" fill="#eef3ff"/>
+    <text x="632.5" y="442.0" text-anchor="middle" font-size="10" font-weight="700" fill="#3b63d8">13</text>
+    <text x="517.6" y="456.5" font-size="10" fill="#6b7893">CRUD, DOM, events, drag</text>
+  </g>
+  <g data-box="1">
+    <rect x="666.4000000000001" y="422.5" width="146.8" height="44" rx="8" fill="#ffffff" stroke="#d5dbe8" filter="url(#shadow)"/>
+    <text x="676.4000000000001" y="440.5" font-size="11.5" font-weight="700" fill="#1b2540">routine/</text>
+    <rect x="779.3" y="430.5" width="23.9" height="16" rx="8" fill="#eef3ff"/>
+    <text x="791.3" y="442.0" text-anchor="middle" font-size="10" font-weight="700" fill="#3b63d8">10</text>
+    <text x="676.4000000000001" y="456.5" font-size="10" fill="#6b7893">switcher, loader, modes</text>
+  </g>
+  <g data-box="1">
+    <rect x="825.2" y="422.5" width="146.8" height="44" rx="8" fill="#ffffff" stroke="#d5dbe8" filter="url(#shadow)"/>
+    <text x="835.2" y="440.5" font-size="11.5" font-weight="700" fill="#1b2540">recurring/</text>
+    <rect x="938.1" y="430.5" width="23.9" height="16" rx="8" fill="#eef3ff"/>
+    <text x="950.1" y="442.0" text-anchor="middle" font-size="10" font-weight="700" fill="#3b63d8">18</text>
+    <text x="835.2" y="456.5" font-size="10" fill="#6b7893">watcher, matcher, panel</text>
+  </g>
+  <g data-box="1">
+    <rect x="190.0" y="476.5" width="146.8" height="44" rx="8" fill="#ffffff" stroke="#d5dbe8" filter="url(#shadow)"/>
+    <text x="200.0" y="494.5" font-size="11.5" font-weight="700" fill="#1b2540">ui/</text>
+    <rect x="302.9" y="484.5" width="23.9" height="16" rx="8" fill="#eef3ff"/>
+    <text x="314.9" y="496.0" text-anchor="middle" font-size="10" font-weight="700" fill="#3b63d8">45</text>
+    <text x="200.0" y="510.5" font-size="10" fill="#6b7893">modals, menus, settings, undo</text>
+  </g>
+  <g data-box="1">
+    <rect x="348.8" y="476.5" width="146.8" height="44" rx="8" fill="#ffffff" stroke="#d5dbe8" filter="url(#shadow)"/>
+    <text x="358.8" y="494.5" font-size="11.5" font-weight="700" fill="#1b2540">features/</text>
+    <rect x="461.7" y="484.5" width="23.9" height="16" rx="8" fill="#eef3ff"/>
+    <text x="473.7" y="496.0" text-anchor="middle" font-size="10" font-weight="700" fill="#3b63d8">12</text>
+    <text x="358.8" y="510.5" font-size="10" fill="#6b7893">themes, stats, history</text>
+  </g>
+  <g data-box="1">
+    <rect x="507.6" y="476.5" width="146.8" height="44" rx="8" fill="#ffffff" stroke="#d5dbe8" filter="url(#shadow)"/>
+    <text x="517.6" y="494.5" font-size="11.5" font-weight="700" fill="#1b2540">utils/</text>
+    <rect x="620.5" y="484.5" width="23.9" height="16" rx="8" fill="#eef3ff"/>
+    <text x="632.5" y="496.0" text-anchor="middle" font-size="10" font-weight="700" fill="#3b63d8">25</text>
+    <text x="517.6" y="510.5" font-size="10" fill="#6b7893">notifications, device, icons</text>
+  </g>
+  <g data-box="1">
+    <rect x="666.4000000000001" y="476.5" width="146.8" height="44" rx="8" fill="#ffffff" stroke="#d5dbe8" filter="url(#shadow)"/>
+    <text x="676.4000000000001" y="494.5" font-size="11.5" font-weight="700" fill="#1b2540">labels/</text>
+    <rect x="785.3" y="484.5" width="17.9" height="16" rx="8" fill="#eef3ff"/>
+    <text x="794.2" y="496.0" text-anchor="middle" font-size="10" font-weight="700" fill="#3b63d8">3</text>
+    <text x="676.4000000000001" y="510.5" font-size="10" fill="#6b7893">defaultLabels, getLabel()</text>
+  </g>
+  <g data-box="1">
+    <rect x="825.2" y="476.5" width="146.8" height="44" rx="8" fill="#ffffff" stroke="#d5dbe8" filter="url(#shadow)"/>
+    <text x="835.2" y="494.5" font-size="11.5" font-weight="700" fill="#1b2540">storage/</text>
+    <rect x="944.1" y="484.5" width="17.9" height="16" rx="8" fill="#eef3ff"/>
+    <text x="953.0" y="496.0" text-anchor="middle" font-size="10" font-weight="700" fill="#3b63d8">2</text>
+    <text x="835.2" y="510.5" font-size="10" fill="#6b7893">IndexedDB backup, persist</text>
+  </g>
+  <g data-box="1">
+    <rect x="190.0" y="530.5" width="146.8" height="44" rx="8" fill="#ffffff" stroke="#d5dbe8" filter="url(#shadow)"/>
+    <text x="200.0" y="548.5" font-size="11.5" font-weight="700" fill="#1b2540">testing/</text>
+    <rect x="308.9" y="538.5" width="17.9" height="16" rx="8" fill="#eef3ff"/>
+    <text x="317.8" y="550.0" text-anchor="middle" font-size="10" font-weight="700" fill="#3b63d8">9</text>
+    <text x="200.0" y="564.5" font-size="10" fill="#6b7893">in-app test modal</text>
+  </g>
+  <g data-box="1">
+    <rect x="348.8" y="530.5" width="146.8" height="44" rx="8" fill="#ffffff" stroke="#d5dbe8" filter="url(#shadow)"/>
+    <text x="358.8" y="548.5" font-size="11.5" font-weight="700" fill="#1b2540">platform/</text>
+    <rect x="467.7" y="538.5" width="17.9" height="16" rx="8" fill="#eef3ff"/>
+    <text x="476.6" y="550.0" text-anchor="middle" font-size="10" font-weight="700" fill="#3b63d8">1</text>
+    <text x="358.8" y="564.5" font-size="10" fill="#6b7893">capacitorBridge</text>
+  </g>
+  <g data-box="1">
+    <rect x="507.6" y="530.5" width="146.8" height="44" rx="8" fill="#ffffff" stroke="#d5dbe8" filter="url(#shadow)"/>
+    <text x="517.6" y="548.5" font-size="11.5" font-weight="700" fill="#1b2540">progress/ · other/</text>
+    <rect x="626.5" y="538.5" width="17.9" height="16" rx="8" fill="#eef3ff"/>
+    <text x="635.4" y="550.0" text-anchor="middle" font-size="10" font-weight="700" fill="#3b63d8">4</text>
+    <text x="517.6" y="564.5" font-size="10" fill="#6b7893">cycle completion · plugins</text>
+  </g>
+  <circle cx="60" cy="618.5" r="13" fill="#3b63d8"/>
+  <text x="60" y="623.0" text-anchor="middle" font-size="12" font-weight="700" fill="#ffffff">5</text>
+  <text x="82" y="615.5" font-size="12.5" font-weight="700" fill="#1b2540">Persistence</text>
+  <text x="82" y="630.5" font-size="10" fill="#6b7893">one document, one</text>
+  <text x="82" y="643.5" font-size="10" fill="#6b7893">write path</text>
+  <g data-box="1">
+    <rect x="190.0" y="604.5" width="183.5" height="84.6" rx="10" fill="#ffffff" stroke="#d5dbe8" filter="url(#shadow)"/>
+    <text x="202.0" y="627.3" font-size="12" font-weight="700" fill="#1b2540">AppState</text>
+    <text x="202.0" y="644.8" xml:space="preserve" font-size="11" fill="#2a3550">single Schema 2.5 document</text>
+    <text x="202.0" y="659.7" xml:space="preserve" font-size="10.5" fill="#6b7893">get() live ref · update() only</text>
+    <text x="202.0" y="674.4" xml:space="preserve" font-size="10.5" fill="#6b7893">writer</text>
+  </g>
+  <g data-box="1">
+    <rect x="389.5" y="604.5" width="183.5" height="84.6" rx="10" fill="#ffffff" stroke="#d5dbe8" filter="url(#shadow)"/>
+    <text x="401.5" y="627.3" font-size="12" font-weight="700" fill="#1b2540">localStorage</text>
+    <text x="401.5" y="644.8" xml:space="preserve" font-size="11" fill="#2a3550">primary store</text>
+    <text x="401.5" y="659.7" xml:space="preserve" font-size="10.5" fill="#6b7893">600 ms debounced save</text>
+  </g>
+  <g data-box="1">
+    <rect x="589.0" y="604.5" width="183.5" height="84.6" rx="10" fill="#ffffff" stroke="#d5dbe8" filter="url(#shadow)"/>
+    <text x="601.0" y="627.3" font-size="12" font-weight="700" fill="#1b2540">IndexedDB</text>
+    <text x="601.0" y="644.8" xml:space="preserve" font-size="11" fill="#2a3550">backupManager mirror</text>
+    <text x="601.0" y="659.7" xml:space="preserve" font-size="10.5" fill="#6b7893">undo snapshots</text>
+  </g>
+  <g data-box="1">
+    <rect x="788.5" y="604.5" width="183.5" height="84.6" rx="10" fill="#ffffff" stroke="#d5dbe8" filter="url(#shadow)"/>
+    <text x="800.5" y="627.3" font-size="12" font-weight="700" fill="#1b2540">service-worker.js</text>
+    <text x="800.5" y="644.8" xml:space="preserve" font-size="11" fill="#2a3550">offline shell</text>
+    <text x="800.5" y="659.7" xml:space="preserve" font-size="10.5" fill="#6b7893">BOOT_CRITICAL precache</text>
+  </g>
+  <path d="M374.5,646.8 L388.5,646.8" stroke="#8a97b3" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+  <path d="M574.0,646.8 L588.0,646.8" stroke="#8a97b3" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+  <line x1="60" y1="111" x2="60" y2="220.2" stroke="#3b63d8" stroke-width="2" stroke-dasharray="1 4" stroke-linecap="round"/>
+  <line x1="60" y1="246.2" x2="60" y2="304.7" stroke="#3b63d8" stroke-width="2" stroke-dasharray="1 4" stroke-linecap="round"/>
+  <line x1="60" y1="330.7" x2="60" y2="423.5" stroke="#3b63d8" stroke-width="2" stroke-dasharray="1 4" stroke-linecap="round"/>
+  <line x1="60" y1="449.5" x2="60" y2="605.5" stroke="#3b63d8" stroke-width="2" stroke-dasharray="1 4" stroke-linecap="round"/>
+  <g data-box="1">
+    <rect x="28" y="715.1" width="944" height="46.7" rx="10" fill="#eef3ff" stroke="#3b63d8"/>
+    <text x="38" y="735.6" xml:space="preserve" font-size="11" fill="#2a3550">Read next:  MODULE_LOADER_GUIDE.md  ·  DI_PATTERNS.md  ·  DATA_SCHEMA_GUIDE.md  ·  FOLDER_STRUCTURE.md</text>
+    <text x="38" y="749.5" xml:space="preserve" font-size="9.5" fill="#6b7893">Directory counts are from v2.560 — the live numbers are in PROJECT_STATS.md</text>
+  </g>
+</svg>

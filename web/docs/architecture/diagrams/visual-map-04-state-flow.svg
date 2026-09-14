@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 753" width="1000" height="753" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11">
+  <title>miniCycle state flow: one task completion from tap to persisted state and re-render</title>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8a97b3"/></marker>
+    <marker id="arrow-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#3b63d8"/></marker>
+    <marker id="arrow-warn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b8860b"/></marker>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="120%"><feDropShadow dx="0" dy="1" stdDeviation="1.4" flood-color="#1b2540" flood-opacity="0.10"/></filter>
+  </defs>
+  <rect width="1000" height="753" rx="16" fill="#f6f7fb"/>
+  <circle cx="44" cy="36" r="15" fill="#3b63d8"/>
+  <text x="44" y="41" text-anchor="middle" font-size="13" font-weight="700" fill="#ffffff">4</text>
+  <text x="70" y="33" font-size="17" font-weight="700" fill="#1b2540">One interaction, end to end</text>
+  <text x="70" y="51" font-size="11.5" fill="#6b7893">The user completes a task. Everything that writes state goes through the same door.</text>
+  <line x1="28" y1="68" x2="972" y2="68" stroke="#d5dbe8"/>
+  <g data-box="1">
+    <rect x="28" y="84" width="330" height="54.5" rx="10" fill="#ffffff" stroke="#d5dbe8" filter="url(#shadow)"/>
+    <circle cx="49" cy="101.4" r="9" fill="#3b63d8"/>
+    <text x="49" y="104.9" text-anchor="middle" font-size="10" font-weight="700" fill="#ffffff">1</text>
+    <text x="64" y="106.8" font-size="12" font-weight="700" fill="#1b2540">Tap on a task row</text>
+    <text x="40" y="123.8" xml:space="preserve" font-size="10.5" fill="#6b7893">delegated click handler in taskDOM / taskEvents</text>
+  </g>
+  <g data-box="1">
+    <rect x="28" y="160.5" width="330" height="54.5" rx="10" fill="#ffffff" stroke="#d5dbe8" filter="url(#shadow)"/>
+    <circle cx="49" cy="177.9" r="9" fill="#3b63d8"/>
+    <text x="49" y="181.4" text-anchor="middle" font-size="10" font-weight="700" fill="#ffffff">2</text>
+    <text x="64" y="183.3" font-size="12" font-weight="700" fill="#1b2540">handleTaskCompletionChange(checkbox)</text>
+    <text x="40" y="200.3" xml:space="preserve" font-size="10.5" fill="#6b7893">task/taskCompletion.js, behind the taskCore facade</text>
+  </g>
+  <g data-box="1">
+    <rect x="28" y="237.0" width="330" height="54.5" rx="10" fill="#ffffff" stroke="#d5dbe8" filter="url(#shadow)"/>
+    <circle cx="49" cy="254.4" r="9" fill="#3b63d8"/>
+    <text x="49" y="257.9" text-anchor="middle" font-size="10" font-weight="700" fill="#ffffff">3</text>
+    <text x="64" y="259.8" font-size="12" font-weight="700" fill="#1b2540">captureStateSnapshot(currentState)</text>
+    <text x="40" y="276.8" xml:space="preserve" font-size="10.5" fill="#6b7893">undo system · skipped while an undo/redo is running</text>
+  </g>
+  <g data-box="1">
+    <rect x="28" y="313.5" width="330" height="136.5" rx="10" fill="#eef3ff" stroke="#3b63d8" filter="url(#shadow)"/>
+    <circle cx="49" cy="330.9" r="9" fill="#3b63d8"/>
+    <text x="49" y="334.4" text-anchor="middle" font-size="10" font-weight="700" fill="#ffffff">4</text>
+    <text x="64" y="336.3" font-size="12" font-weight="700" fill="#1b2540">AppState.update(producer, immediate?)</text>
+    <text x="40" y="353.8" xml:space="preserve" font-size="11" fill="#2a3550">1  oldData = structuredClone(this.data)</text>
+    <text x="40" y="369.1" xml:space="preserve" font-size="11" fill="#2a3550">2  producer(this.data) mutates in place</text>
+    <text x="40" y="384.5" xml:space="preserve" font-size="11" fill="#2a3550">3  metadata.lastModified + lastModifiedBy (tab id)</text>
+    <text x="40" y="399.9" xml:space="preserve" font-size="11" fill="#2a3550">4  scheduleSave(immediate) — 600 ms debounce</text>
+    <text x="40" y="415.3" xml:space="preserve" font-size="11" fill="#2a3550">5  notifyListeners(new, old)</text>
+    <text x="40" y="435.3" xml:space="preserve" font-size="10.5" font-weight="700" fill="#b3261e">on throw: data = oldData, error notification, rethrow</text>
+  </g>
+  <g data-box="1">
+    <rect x="28" y="472.0" width="330" height="69.2" rx="10" fill="#ffffff" stroke="#d5dbe8" filter="url(#shadow)"/>
+    <circle cx="49" cy="489.4" r="9" fill="#3b63d8"/>
+    <text x="49" y="492.9" text-anchor="middle" font-size="10" font-weight="700" fill="#ffffff">5</text>
+    <text x="64" y="494.8" font-size="12" font-weight="700" fill="#1b2540">Follow-ups in the same handler</text>
+    <text x="40" y="511.8" xml:space="preserve" font-size="10.5" fill="#6b7893">handleTaskListMovement · checkOverdueTasks</text>
+    <text x="40" y="526.5" xml:space="preserve" font-size="10.5" fill="#6b7893">watchRecurringTasks · helpWindowManager hints</text>
+  </g>
+  <path d="M193.0,139.5 L193.0,159.5" stroke="#8a97b3" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+  <path d="M193.0,216.0 L193.0,236.0" stroke="#8a97b3" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+  <path d="M193.0,292.5 L193.0,312.5" stroke="#8a97b3" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+  <path d="M193.0,451.0 L193.0,471.0" stroke="#8a97b3" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+  <g data-box="1">
+    <rect x="375.0" y="313.5" width="280" height="54.5" rx="10" fill="#ffffff" stroke="#d5dbe8" filter="url(#shadow)"/>
+    <text x="387.0" y="336.3" font-size="12" font-weight="700" fill="#1b2540">save() → localStorage</text>
+    <text x="387.0" y="353.3" xml:space="preserve" font-size="10.5" fill="#6b7893">then backupManager mirrors to IndexedDB</text>
+  </g>
+  <path d="M359,340.75 L374.0,340.75" stroke="#8a97b3" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+  <g data-box="1">
+    <rect x="375.0" y="382.0" width="280" height="101.4" rx="10" fill="#ffffff" stroke="#d5dbe8" filter="url(#shadow)"/>
+    <text x="387.0" y="404.8" font-size="12" font-weight="700" fill="#1b2540">Subscribers — AppState.subscribe()</text>
+    <text x="387.0" y="422.2" xml:space="preserve" font-size="11" fill="#2a3550">undoRedoManager — tracks the transaction</text>
+    <text x="387.0" y="437.6" xml:space="preserve" font-size="11" fill="#2a3550">dailyResetManager — schedule checks</text>
+    <text x="387.0" y="453.0" xml:space="preserve" font-size="11" fill="#2a3550">focusTaskPanel — re-reads its task</text>
+    <text x="387.0" y="468.4" xml:space="preserve" font-size="11" fill="#2a3550">onboardingManager · demo · carousel</text>
+  </g>
+  <g data-box="1">
+    <rect x="375.0" y="497.4" width="280" height="83.9" rx="10" fill="#f4f6fa" stroke="#d5dbe8" filter="url(#shadow)"/>
+    <text x="387.0" y="520.1999999999999" font-size="12" font-weight="700" fill="#1b2540">Rendering is explicit</text>
+    <text x="387.0" y="537.2" xml:space="preserve" font-size="10.5" fill="#6b7893">Not a subscriber. Callers re-render through</text>
+    <text x="387.0" y="551.9" xml:space="preserve" font-size="10.5" fill="#6b7893">refreshUIFromState() or renderTasks() after the</text>
+    <text x="387.0" y="566.6" xml:space="preserve" font-size="10.5" fill="#6b7893">update resolves.</text>
+  </g>
+  <g data-box="1">
+    <rect x="672.0" y="84" width="300" height="249.2" rx="10" fill="#f4f6fa" stroke="#d5dbe8" filter="url(#shadow)"/>
+    <text x="684.0" y="106.8" font-size="12" font-weight="700" fill="#1b2540">The Schema 2.5 document</text>
+    <text x="684.0" y="123.8" xml:space="preserve" font-size="10.5" font-family="Menlo, Consolas, 'Courier New', monospace" fill="#1b2540">state.schemaVersion   &quot;2.5&quot;</text>
+    <text x="684.0" y="138.5" xml:space="preserve" font-size="10.5" font-family="Menlo, Consolas, 'Courier New', monospace" fill="#1b2540">state.metadata        { lastModified }</text>
+    <text x="684.0" y="153.2" xml:space="preserve" font-size="10.5" font-family="Menlo, Consolas, 'Courier New', monospace" fill="#1b2540">state.appState.activeCycleId</text>
+    <text x="684.0" y="167.9" xml:space="preserve" font-size="10.5" font-family="Menlo, Consolas, 'Courier New', monospace" fill="#1b2540">state.data.cycles[id]</text>
+    <text x="684.0" y="182.6" xml:space="preserve" font-size="10.5" font-family="Menlo, Consolas, 'Courier New', monospace" fill="#1b2540">.title              (no `name`)</text>
+    <text x="684.0" y="197.3" xml:space="preserve" font-size="10.5" font-family="Menlo, Consolas, 'Courier New', monospace" fill="#1b2540">.tasks[]            Task objects</text>
+    <text x="684.0" y="212.0" xml:space="preserve" font-size="10.5" font-family="Menlo, Consolas, 'Courier New', monospace" fill="#1b2540">.cycleCount         resets so far</text>
+    <text x="684.0" y="226.7" xml:space="preserve" font-size="10.5" font-family="Menlo, Consolas, 'Courier New', monospace" fill="#1b2540">.recurringTemplates keyed by taskId</text>
+    <text x="684.0" y="241.4" xml:space="preserve" font-size="10.5" font-family="Menlo, Consolas, 'Courier New', monospace" fill="#1b2540">.history            { events[] }</text>
+    <text x="684.0" y="256.1" xml:space="preserve" font-size="10.5" font-family="Menlo, Consolas, 'Courier New', monospace" fill="#1b2540">.clearedTasks       { entries[] }</text>
+    <text x="684.0" y="270.8" xml:space="preserve" font-size="10.5" font-family="Menlo, Consolas, 'Courier New', monospace" fill="#1b2540">state.settings        theme, darkMode</text>
+    <text x="684.0" y="285.5" xml:space="preserve" font-size="10.5" font-family="Menlo, Consolas, 'Courier New', monospace" fill="#1b2540">state.userProgress    milestones</text>
+    <text x="684.0" y="300.2" xml:space="preserve" font-size="10.5" font-family="Menlo, Consolas, 'Courier New', monospace" fill="#1b2540">state.achievements    { unlocked[] }</text>
+    <text x="684.0" y="318.9" xml:space="preserve" font-size="9.5" fill="#6b7893">full reference: reference/DATA_SCHEMA_GUIDE.md</text>
+  </g>
+  <g data-box="1">
+    <rect x="672.0" y="347.19999999999993" width="300" height="138.0" rx="10" fill="#fff7e3" stroke="#e2b93b" filter="url(#shadow)"/>
+    <text x="684.0" y="369.99999999999994" font-size="12" font-weight="700" fill="#1b2540">Rules this flow enforces</text>
+    <text x="684.0" y="387.0" xml:space="preserve" font-size="10.5" fill="#6b4f00">get() is a live reference. Mutate it before update() and</text>
+    <text x="684.0" y="401.7" xml:space="preserve" font-size="10.5" fill="#6b4f00">the undo snapshot is already wrong (rule 13).</text>
+    <text x="684.0" y="421.4" xml:space="preserve" font-size="10.5" fill="#6b4f00">Never count or read completion from the DOM: it holds</text>
+    <text x="684.0" y="436.1" xml:space="preserve" font-size="10.5" fill="#6b4f00">only the active routine&#x27;s rendered rows (rule 14).</text>
+    <text x="684.0" y="455.8" xml:space="preserve" font-size="10.5" fill="#6b4f00">User text goes through textContent, never innerHTML</text>
+    <text x="684.0" y="470.5" xml:space="preserve" font-size="10.5" fill="#6b4f00">(rule 7).</text>
+  </g>
+  <g data-box="1">
+    <rect x="28" y="603.3" width="944" height="69.2" rx="10" fill="#e8f5ee" stroke="#7cc49a" filter="url(#shadow)"/>
+    <text x="40" y="626.0999999999999" font-size="12" font-weight="700" fill="#1b2540">Why one door matters</text>
+    <text x="40" y="643.1" xml:space="preserve" font-size="10.5" fill="#1e5e3a">Undo, autosave, multi-tab metadata and the error rollback all hang off update(). A new writer inherits all four for free. dataAccess.js (loadMiniCycleData, autoSave) is a legacy wrapper</text>
+    <text x="40" y="657.8" xml:space="preserve" font-size="10.5" fill="#1e5e3a">around the same state — read it, do not add consumers.</text>
+  </g>
+  <g data-box="1">
+    <rect x="28" y="692.5" width="944" height="33.4" rx="10" fill="#eef3ff" stroke="#3b63d8"/>
+    <text x="38" y="713.0" xml:space="preserve" font-size="11" fill="#2a3550">Read next:  DATA_SCHEMA_GUIDE.md  ·  UNDO_REDO_ARCHITECTURE.md  ·  HISTORY_SYSTEM.md  ·  EVENT_LISTENER_GUIDE.md  ·  ASYNC_UI_PATTERNS.md</text>
+  </g>
+</svg>

@@ -1,0 +1,140 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 730" width="1000" height="730" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11">
+  <title>miniCycle shipping pipeline: local loop, validation gates, the release script, CI, the Netlify build, and the live surfaces</title>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8a97b3"/></marker>
+    <marker id="arrow-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#3b63d8"/></marker>
+    <marker id="arrow-warn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b8860b"/></marker>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="120%"><feDropShadow dx="0" dy="1" stdDeviation="1.4" flood-color="#1b2540" flood-opacity="0.10"/></filter>
+  </defs>
+  <rect width="1000" height="730" rx="16" fill="#f6f7fb"/>
+  <circle cx="44" cy="36" r="15" fill="#3b63d8"/>
+  <text x="44" y="41" text-anchor="middle" font-size="13" font-weight="700" fill="#ffffff">5</text>
+  <text x="70" y="33" font-size="17" font-weight="700" fill="#1b2540">From edit to production</text>
+  <text x="70" y="51" font-size="11.5" fill="#6b7893">A push to main is a deploy. App code ships only through the release script.</text>
+  <line x1="28" y1="68" x2="972" y2="68" stroke="#d5dbe8"/>
+  <g data-box="1">
+    <rect x="28" y="84" width="230" height="83.9" rx="10" fill="#ffffff" stroke="#d5dbe8" filter="url(#shadow)"/>
+    <circle cx="49" cy="101.4" r="9" fill="#3b63d8"/>
+    <text x="49" y="104.9" text-anchor="middle" font-size="10" font-weight="700" fill="#ffffff">1</text>
+    <text x="64" y="106.8" font-size="12" font-weight="700" fill="#1b2540">Local loop (from web/)</text>
+    <text x="40" y="123.8" xml:space="preserve" font-size="10.5" font-family="Menlo, Consolas, 'Courier New', monospace" fill="#1b2540">npm start → localhost:8080</text>
+    <text x="40" y="138.5" xml:space="preserve" font-size="10.5" font-family="Menlo, Consolas, 'Courier New', monospace" fill="#1b2540">npm test — 3665 tests</text>
+    <text x="40" y="153.2" xml:space="preserve" font-size="10.5" font-family="Menlo, Consolas, 'Courier New', monospace" fill="#1b2540">npm run lint</text>
+  </g>
+  <g data-box="1">
+    <rect x="288" y="84" width="684" height="88.9" rx="10" fill="#e8f5ee" stroke="#7cc49a" filter="url(#shadow)"/>
+    <circle cx="309" cy="101.4" r="9" fill="#3b63d8"/>
+    <text x="309" y="104.9" text-anchor="middle" font-size="10" font-weight="700" fill="#ffffff">2</text>
+    <text x="324" y="106.8" font-size="12" font-weight="700" fill="#1b2540">Gates — each exists because the bug it blocks once shipped</text>
+    <text x="300" y="123.8" xml:space="preserve" font-size="10.5" fill="#1e5e3a">validate:  csp · html · docs · di · comments · builtins · labels · keys · chains · api · inline · cache · provides · reset</text>
+    <text x="300" y="138.5" xml:space="preserve" font-size="10.5" fill="#1e5e3a">test:  sw (precache drift) · layout (7 viewports) · meta · journey · a11y · changelog</text>
+    <text x="300" y="158.2" xml:space="preserve" font-size="10.5" fill="#6b7893">All run in CI (test.yml). validate:csp is the hard pre-push gate. Reference: working-on-code/VALIDATION_GATES.md</text>
+  </g>
+  <path d="M259,125.95 L287,125.95" stroke="#8a97b3" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+  <path d="M500.0,172.9 L500.0,192.9" stroke="#3b63d8" stroke-width="1.5" fill="none" marker-end="url(#arrow-accent)"/>
+  <g data-box="1">
+    <rect x="28" y="196.9" width="944" height="162.1" rx="10" fill="#ffffff" stroke="#3b63d8" filter="url(#shadow)"/>
+    <path d="M28,206.9 a10,10 0 0 1 10,-10 h924 a10,10 0 0 1 10,10 v16 h-944 z" fill="#3b63d8"/>
+    <circle cx="44" cy="209.9" r="9" fill="#ffffff"/>
+    <text x="44" y="213.4" text-anchor="middle" font-size="10" font-weight="700" fill="#3b63d8">3</text>
+    <text x="60" y="214.4" font-size="12" font-weight="700" fill="#ffffff">cd web &amp;&amp; ./scripts/update-version.sh --auto --push --changelog   — the only way app code ships</text>
+  </g>
+  <g data-box="1">
+    <rect x="42.0" y="236.9" width="144.3" height="46" rx="8" fill="#eef3ff" stroke="#c5d3f5"/>
+    <text x="114.2" y="255.9" text-anchor="middle" font-size="10.5" font-weight="700" fill="#1b2540">version.js</text>
+    <text x="114.2" y="271.9" text-anchor="middle" font-size="9.5" fill="#6b7893">APP + CACHE version</text>
+  </g>
+  <path d="M187.3,259.9 L195.3,259.9" stroke="#8a97b3" stroke-width="1.2" marker-end="url(#arrow)"/>
+  <g data-box="1">
+    <rect x="196.3" y="236.9" width="144.3" height="46" rx="8" fill="#eef3ff" stroke="#c5d3f5"/>
+    <text x="268.5" y="255.9" text-anchor="middle" font-size="10.5" font-weight="700" fill="#1b2540">stamps</text>
+    <text x="268.5" y="271.9" text-anchor="middle" font-size="9.5" fill="#6b7893">SW · HTML · CSS · manifests</text>
+  </g>
+  <path d="M341.7,259.9 L349.7,259.9" stroke="#8a97b3" stroke-width="1.2" marker-end="url(#arrow)"/>
+  <g data-box="1">
+    <rect x="350.7" y="236.9" width="144.3" height="46" rx="8" fill="#eef3ff" stroke="#c5d3f5"/>
+    <text x="422.8" y="255.9" text-anchor="middle" font-size="10.5" font-weight="700" fill="#1b2540">stats</text>
+    <text x="422.8" y="271.9" text-anchor="middle" font-size="9.5" fill="#6b7893">collect-stats → PROJECT_STATS</text>
+  </g>
+  <path d="M496.0,259.9 L504.0,259.9" stroke="#8a97b3" stroke-width="1.2" marker-end="url(#arrow)"/>
+  <g data-box="1">
+    <rect x="505.0" y="236.9" width="144.3" height="46" rx="8" fill="#eef3ff" stroke="#c5d3f5"/>
+    <text x="577.2" y="255.9" text-anchor="middle" font-size="10.5" font-weight="700" fill="#1b2540">validation</text>
+    <text x="577.2" y="271.9" text-anchor="middle" font-size="9.5" fill="#6b7893">then a restore script</text>
+  </g>
+  <path d="M650.3,259.9 L658.3,259.9" stroke="#8a97b3" stroke-width="1.2" marker-end="url(#arrow)"/>
+  <g data-box="1">
+    <rect x="659.3" y="236.9" width="144.3" height="46" rx="8" fill="#eef3ff" stroke="#c5d3f5"/>
+    <text x="731.5" y="255.9" text-anchor="middle" font-size="10.5" font-weight="700" fill="#1b2540">CSP hashes</text>
+    <text x="731.5" y="271.9" text-anchor="middle" font-size="9.5" fill="#6b7893">inline scripts → netlify.toml</text>
+  </g>
+  <path d="M804.7,259.9 L812.7,259.9" stroke="#8a97b3" stroke-width="1.2" marker-end="url(#arrow)"/>
+  <g data-box="1">
+    <rect x="813.7" y="236.9" width="144.3" height="46" rx="8" fill="#eef3ff" stroke="#c5d3f5"/>
+    <text x="885.8" y="255.9" text-anchor="middle" font-size="10.5" font-weight="700" fill="#1b2540">changelog · tag · push</text>
+    <text x="885.8" y="271.9" text-anchor="middle" font-size="9.5" fill="#6b7893">pre-push CSP gate first</text>
+  </g>
+  <g data-box="1">
+    <rect x="29" y="290.9" width="942" height="54.1" fill="none" stroke="none"/>
+    <text x="42" y="304.9" font-size="10.5" font-weight="700" fill="#b3261e">A bare git push of app code is a half-dark deploy: hashed bundles and HTML disagree, caches overwrite non-atomically, and there is no version signal.</text>
+    <text x="42" y="319.6" font-size="10.5" fill="#6b7893">Docs-only pushes are fine. After every --push confirm that git rev-list --left-right --count origin/main...HEAD prints 0 0 — the tag can push even when the branch is rejected.</text>
+    <text x="42" y="334.3" font-size="10.5" fill="#6b7893">Platform snapshots on demand: --chrome (extension), --ios and --android (Capacitor). Web deploys continuously; platforms lag by design.</text>
+  </g>
+  <path d="M500.0,359.0 L500.0,379.0" stroke="#3b63d8" stroke-width="1.5" fill="none" marker-end="url(#arrow-accent)"/>
+  <g data-box="1">
+    <rect x="28" y="383.0" width="210" height="105.0" rx="10" fill="#ffffff" stroke="#d5dbe8" filter="url(#shadow)"/>
+    <circle cx="49" cy="400.4" r="9" fill="#3b63d8"/>
+    <text x="49" y="403.9" text-anchor="middle" font-size="10" font-weight="700" fill="#ffffff">4</text>
+    <text x="64" y="405.8" font-size="12" font-weight="700" fill="#1b2540">GitHub main</text>
+    <text x="40" y="423.2" xml:space="preserve" font-size="11" fill="#2a3550">CI: .github/workflows/test.yml</text>
+    <text x="40" y="438.6" xml:space="preserve" font-size="11" fill="#2a3550">5 suites + every validator</text>
+    <text x="40" y="458.6" xml:space="preserve" font-size="10.5" fill="#6b7893">CI reports; it does not gate. Netlify</text>
+    <text x="40" y="473.3" xml:space="preserve" font-size="10.5" fill="#6b7893">builds in parallel.</text>
+  </g>
+  <g data-box="1">
+    <rect x="268" y="383.0" width="434" height="131.5" rx="10" fill="#ffffff" stroke="#d5dbe8" filter="url(#shadow)"/>
+    <circle cx="289" cy="400.4" r="9" fill="#3b63d8"/>
+    <text x="289" y="403.9" text-anchor="middle" font-size="10" font-weight="700" fill="#ffffff">5</text>
+    <text x="304" y="405.8" font-size="12" font-weight="700" fill="#1b2540">Netlify build — repo-root netlify.toml is the authority</text>
+    <text x="280" y="422.8" xml:space="preserve" font-size="10.5" font-family="Menlo, Consolas, 'Courier New', monospace" fill="#1b2540">node scripts/build-web.cjs → web/dist/</text>
+    <text x="280" y="437.9" xml:space="preserve" font-size="11" fill="#2a3550">dist/build/** — every JS entry, chunk and the CSS bundle, content-hashed</text>
+    <text x="280" y="453.3" xml:space="preserve" font-size="11" fill="#2a3550">dist/modules/**.js — stable-path shims (export * from the hashed file)</text>
+    <text x="280" y="468.7" xml:space="preserve" font-size="11" fill="#2a3550">HTML rewritten to hashed URLs; inline script bytes untouched, so CSP holds</text>
+    <text x="280" y="484.1" xml:space="preserve" font-size="11" fill="#2a3550">docs/ curated (no archive, future-work, incidents) · stats.json · SW precache</text>
+    <text x="280" y="499.5" xml:space="preserve" font-size="11" fill="#2a3550">list</text>
+  </g>
+  <g data-box="1">
+    <rect x="732" y="383.0" width="240" height="136.5" rx="10" fill="#ffffff" stroke="#d5dbe8" filter="url(#shadow)"/>
+    <circle cx="753" cy="400.4" r="9" fill="#3b63d8"/>
+    <text x="753" y="403.9" text-anchor="middle" font-size="10" font-weight="700" fill="#ffffff">6</text>
+    <text x="768" y="405.8" font-size="12" font-weight="700" fill="#1b2540">Live surfaces</text>
+    <text x="744" y="423.2" xml:space="preserve" font-size="11" fill="#2a3550">miniCycle.app — production PWA</text>
+    <text x="744" y="438.6" xml:space="preserve" font-size="11" fill="#2a3550">docs.minicycle.app — this docs site</text>
+    <text x="744" y="454.0" xml:space="preserve" font-size="11" fill="#2a3550">test.minicycle.app — staging + in-app</text>
+    <text x="744" y="469.4" xml:space="preserve" font-size="11" fill="#2a3550">tests</text>
+    <text x="744" y="484.8" xml:space="preserve" font-size="11" fill="#2a3550">minicycleapp.com — product page</text>
+    <text x="744" y="504.8" xml:space="preserve" font-size="10.5" fill="#6b7893">web/_redirects owns path redirects</text>
+  </g>
+  <path d="M239,451.25 L267,451.25" stroke="#8a97b3" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+  <path d="M703,451.25 L731,451.25" stroke="#8a97b3" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+  <g data-box="1">
+    <rect x="28" y="543.5" width="464.0" height="103.6" rx="10" fill="#fff7e3" stroke="#e2b93b" filter="url(#shadow)"/>
+    <text x="40" y="566.3" font-size="12" font-weight="700" fill="#1b2540">Verify a deploy by artifact shape, never by version number</text>
+    <text x="40" y="583.3" xml:space="preserve" font-size="10.5" fill="#6b4f00">HTML script src points into /build/ with a hash</text>
+    <text x="40" y="598.0" xml:space="preserve" font-size="10.5" fill="#6b4f00">/package.json returns 404 — source files are not served</text>
+    <text x="40" y="612.7" xml:space="preserve" font-size="10.5" fill="#6b4f00">HTML routes carry a short cache; validate:cache guards the /* catch-all</text>
+    <text x="40" y="632.4" xml:space="preserve" font-size="10.5" fill="#6b7893">Details: deployment/BUILD_PROCESS.md</text>
+  </g>
+  <g data-box="1">
+    <rect x="508.0" y="543.5" width="464.0" height="105.7" rx="10" fill="#eef3ff" stroke="#3b63d8" filter="url(#shadow)"/>
+    <text x="520.0" y="566.3" font-size="12" font-weight="700" fill="#1b2540">What the client does on its next visit</text>
+    <text x="520.0" y="583.8" xml:space="preserve" font-size="11" fill="#2a3550">service-worker.js serves the shell cache-first for an instant open</text>
+    <text x="520.0" y="599.1" xml:space="preserve" font-size="11" fill="#2a3550">version.js?v= is fetched live; verifyVersionFresh() compares and heals</text>
+    <text x="520.0" y="614.5" xml:space="preserve" font-size="11" fill="#2a3550">old HTML can only name old hashes, so a mixed module graph cannot exist</text>
+    <text x="520.0" y="634.5" xml:space="preserve" font-size="10.5" fill="#6b7893">Details: deployment/SERVICE_WORKER_UPDATE_STRATEGY.md</text>
+  </g>
+  <g data-box="1">
+    <rect x="28" y="669.2" width="944" height="33.4" rx="10" fill="#eef3ff" stroke="#3b63d8"/>
+    <text x="38" y="689.7" xml:space="preserve" font-size="11" fill="#2a3550">Read next:  BUILD_PROCESS.md  ·  UPDATE-VERSION-GUIDE.md  ·  VALIDATION_GATES.md  ·  SERVICE_WORKER_UPDATE_STRATEGY.md  ·  DEPLOYMENT.md</text>
+  </g>
+</svg>
