@@ -38,8 +38,6 @@
  *     }
  * }
  * ```
- *
- * @version 1.0.0
  */
 
 /** @type {string} Version marker for cache debugging (derives from Single Source of Truth) */

@@ -1,3 +1,12 @@
+## [2.560] - 2026-09-14
+- docs(diBase): improve documentation clarity and accuracy for dependency markers and usage
+- fix(tests): update test count and metadata in .test-count.json
+- fix(onboarding): safety nets for the pre-boot welcome splash
+- perf(onboarding): start the welcome splash at the tap, not after boot
+- fix(notifications): keep titled cards in column layout inside dialogs
+- TODO(changelog): uncommitted work shipped in this release — describe it here
+
+
 ## [2.558] - 2026-09-09
 - build(chrome): package the extension zip as part of the build
 

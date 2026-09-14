@@ -10,7 +10,7 @@
 > Other sites should fetch that rather than scraping this page — both come from
 > the same counter, so they cannot disagree.
 
-**Last Updated**: September 09, 2026
+**Last Updated**: September 14, 2026
 
 ---
 
@@ -18,11 +18,11 @@
 
 | Metric | Value |
 |--------|-------|
-| **App Version** | 2.559 |
+| **App Version** | 2.560 |
 | **Lite Version** | 2.092 (frozen) |
 | **Schema Version** | 2.5 |
 | **Total Modules** | 158 |
-| **Total Tests** | 3662 |
+| **Total Tests** | 3665 |
 | **Test Pass Rate** | 100% |
 | **CSS Files** | 46 |
 | **JSDoc Blocks** | 1463 |
@@ -61,11 +61,11 @@
 | File | Lines | Purpose |
 |------|-------|---------|
 | `miniCycle-main.js` | ~50 | Entrypoint |
-| `modules/boot/orchestrator.js` | ~1277 | Sequence control + boot UI + early coordination |
+| `modules/boot/orchestrator.js` | ~1282 | Sequence control + boot UI + early coordination |
 | `modules/boot/coreBoot.js` | ~788 | Core state & init |
 | `modules/boot/featureBoot.js` | ~627 | DI wiring hub |
 | `modules/boot/uiBoot.js` | ~1202 | UI handlers |
-| **Total** | **~3944** | |
+| **Total** | **~3949** | |
 
 ---
 
@@ -73,7 +73,7 @@
 
 | Category | Tests |
 |----------|-------|
-| Total Tests | 3662 |
+| Total Tests | 3665 |
 | Test Files | 148 |
 | Pass Rate | 100% |
 | Platforms Tested | Mac, iPad, iPhone |
