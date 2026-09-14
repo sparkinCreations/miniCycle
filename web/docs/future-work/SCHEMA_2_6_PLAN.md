@@ -250,8 +250,8 @@ writing **only the 2.5 fields**:
 
 | Helper | What it does on 2.5 data |
 |---|---|
-| `getPriorityLevel(task, swatchSets)` | level from `highPriority` + the stored hex; flagged with no or unknown colour → `'high'` *(an unknown colour should use the colour-family rule — update before wiring into the UI)* |
-| `getPriorityColor(task, swatches, swatchSets)` | display colour: a swatch colour follows the current theme, no colour → the theme's High; a custom hex is still shown as stored *(should become its family level's theme colour — same update)* |
+| `getPriorityLevel(task, swatchSets)` | level from `highPriority` + the stored hex: a swatch colour → its level, a non-swatch colour → its colour family's level (`getLevelForColorFamily`), no colour → `'high'` |
+| `getPriorityColor(task, swatches, swatchSets)` | display colour: always the current theme's swatch for the task's level — a swatch colour follows the theme, a custom hex shows its family's swatch, no colour → the theme's High |
 | `setPriorityLevel(task, level, swatches)` | writes `highPriority` and the theme's swatch hex; `null` turns priority off and keeps the colour, like the toggle |
 | `comparePriority(a, b, swatchSets)` | sort order high → medium → low → none |
 | `getPrioritySwatches(theme)` / `collectSwatchSets(THEME_DEFINITIONS)` | the active theme's set (defaults for classic) / every theme's set |
@@ -630,12 +630,12 @@ risky stored-format change small and last.
 2. **Theme presets → High swatch** — ✅ *done Sep 2026.* Each theme's `colorPreset.priorityColor`
    now equals its High swatch (fitness's green default is gone), guarded by a test in
    `themes.tests.js`.
-3. **Colour-family rule in the helpers.** Update `utils/priorityLevel.js` so an unknown hex takes
-   its colour family's level (the hue rule in *Priority levels*) and `getPriorityColor` shows
-   that level's theme colour instead of the stored hex. The rule's tuning values — the hue
-   anchors (0°, 50°, 125°), the 45° range, and the saturation and lightness cutoffs — go in
-   `core/constants.js` (CLAUDE.md rule #5), not inline in the helper. Pin the measured examples
-   in `priorityLevel.tests.js` and mutation-verify them.
+3. **Colour-family rule in the helpers** — ✅ *done Sep 2026.* `getLevelForColorFamily()` in
+   `utils/priorityLevel.js` gives an unknown hex its family's level; `getPriorityLevel` falls
+   through to it and `getPriorityColor` now always shows the level's theme swatch, never the
+   stored hex. Tuning values live in `PRIORITY_COLOR_FAMILY` (`core/constants.js`). The
+   measured examples are pinned in `priorityLevel.tests.js` and mutation-verified (an
+   always-high rule fails them).
 4. **Wire the helpers into the UI** — visible behaviour change, still on 2.5 data:
    - the picker labels its swatches High / Medium / Low and the accessible name states the level
    - renderers (`taskDOM`, `taskDOMPatch`, `focusTaskPanel`) take their colour from

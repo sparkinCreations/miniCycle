@@ -54,6 +54,28 @@ export const COLORS = Object.freeze({
 export const PRIORITY_LEVELS = Object.freeze(['high', 'medium', 'low']);
 
 /**
+ * Colour-family rule for a priority colour that is NOT one of the swatches (a
+ * hand-written .mcyc can carry any hex). Tuning values for
+ * utils/priorityLevel.js — see SCHEMA_2_6_PLAN.md "Priority levels":
+ *   1. an exact swatch match wins (any theme, or the defaults)
+ *   2. no clear colour (saturation or lightness outside the bounds) → high
+ *   3. otherwise the nearest hue anchor within MAX_HUE_DISTANCE → its level
+ *   4. farther than that from every anchor (blues, purples) → high
+ * Hue anchors are degrees on the HSL wheel; saturation/lightness are 0–1.
+ * Measured Sep 2026: pink/maroon → high, orange/gold/olive/lime → medium,
+ * teal → low, blue/purple/navy/gray/black/white → high; every real swatch
+ * classifies to its own level by hue alone.
+ * @constant {Object}
+ */
+export const PRIORITY_COLOR_FAMILY = Object.freeze({
+    HUE_ANCHORS: Object.freeze({ high: 0, medium: 50, low: 125 }),
+    MAX_HUE_DISTANCE: 45,
+    MIN_SATURATION: 0.25,
+    MIN_LIGHTNESS: 0.10,
+    MAX_LIGHTNESS: 0.92
+});
+
+/**
  * Priority picker swatches for themes that define none of their own (classic).
  * Every other theme's set lives in THEME_DEFINITIONS[id].priorityColors, with the
  * same `level` tags. Red = high, yellow = medium, green = low.

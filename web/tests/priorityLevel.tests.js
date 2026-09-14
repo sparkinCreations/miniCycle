@@ -9,7 +9,7 @@ export async function runPriorityLevelTests(resultsDiv) {
     const cacheBuster = window.testCacheBuster || Date.now();
     const mod = await import(`../modules/utils/priorityLevel.js?v=${cacheBuster}`);
     const { normalizePriorityHex, isPriorityLevel, getPrioritySwatches, collectSwatchSets,
-            getLevelForHex, getPriorityLevel, getPriorityColor, setPriorityLevel, comparePriority } = mod;
+            getLevelForHex, getLevelForColorFamily, getPriorityLevel, getPriorityColor, setPriorityLevel, comparePriority } = mod;
     const { PRIORITY_LEVELS, DEFAULT_PRIORITY_SWATCHES, COLORS } =
         await import(`../modules/core/constants.js?v=${cacheBuster}`);
     const { THEME_DEFINITIONS } = await import(`../modules/labels/themes.js?v=${cacheBuster}`);
@@ -127,12 +127,59 @@ export async function runPriorityLevelTests(resultsDiv) {
         if (getPriorityLevel({ highPriority: true, priorityColor: '#C0392B' }, allSets) !== 'high') throw new Error('fitness red, upper case');
     });
 
-    await test('a custom, non-swatch colour counts as high', () => {
-        // The .mcyc schema allows any hex, and a theme preset's priorityColor
-        // (fitness: #1e8c52) is not a swatch.
-        if (getPriorityLevel({ highPriority: true, priorityColor: '#1e8c52' }, allSets) !== 'high') {
-            throw new Error('custom colour should be high');
+    await test('a custom, non-swatch colour takes the level of its colour family', () => {
+        // The .mcyc schema allows any hex. A green that is not a swatch (the old
+        // fitness preset, #1e8c52) is still green — Low — not High.
+        if (getPriorityLevel({ highPriority: true, priorityColor: '#1e8c52' }, allSets) !== 'low') {
+            throw new Error('a non-swatch green should be Low by colour family');
         }
+        if (getPriorityLevel({ highPriority: true, priorityColor: '#ff8c00' }, allSets) !== 'medium') {
+            throw new Error('a non-swatch orange should be Medium by colour family');
+        }
+    });
+
+    // ── getLevelForColorFamily ───────────────────────────────────────────────
+    resultsDiv.innerHTML += '<h4 class="test-section">🌈 getLevelForColorFamily</h4>';
+
+    await test('maps the measured custom colours to their families (pinned)', () => {
+        // Decided Sep 2026 over nearest-colour, which mapped navy → High via a dark
+        // red swatch and gray/black/white → Low. These are the measured outcomes.
+        const expected = {
+            '#ff69b4': 'high',   // pink
+            '#800000': 'high',   // maroon
+            '#ff8c00': 'medium', // orange
+            '#daa520': 'medium', // gold
+            '#808000': 'medium', // olive
+            '#9acd32': 'medium', // lime
+            '#1abc9c': 'low',    // teal
+            '#3498db': 'high',   // blue — no family
+            '#8e44ad': 'high',   // purple — no family
+            '#1f3a93': 'high',   // navy — no family
+            '#808080': 'high',   // gray — no clear colour
+            '#000000': 'high',   // black — no clear colour
+            '#ffffff': 'high'    // white — no clear colour
+        };
+        for (const [hex, want] of Object.entries(expected)) {
+            const got = getLevelForColorFamily(hex);
+            if (got !== want) throw new Error(`${hex} → ${got}, expected ${want}`);
+        }
+    });
+
+    await test('every real swatch classifies to its own level by hue alone', () => {
+        // Rule 1 (exact match) and rule 3 (hue family) must never disagree today.
+        for (const set of [DEFAULT_PRIORITY_SWATCHES, ...allSets]) {
+            for (const swatch of set) {
+                const got = getLevelForColorFamily(swatch.hex);
+                if (got !== swatch.level) throw new Error(`swatch ${swatch.hex} is ${swatch.level} but hue says ${got}`);
+            }
+        }
+    });
+
+    await test('getLevelForColorFamily returns null only for a non-colour', () => {
+        for (const bad of ['red', '', null, undefined, '#12345']) {
+            if (getLevelForColorFamily(bad) !== null) throw new Error(`expected null for ${JSON.stringify(bad)}`);
+        }
+        if (getLevelForColorFamily('#ABC') === null) throw new Error('shorthand hex is a colour');
     });
 
     await test('getLevelForHex knows the defaults even with no theme sets passed', () => {
@@ -154,9 +201,13 @@ export async function runPriorityLevelTests(resultsDiv) {
         if (getPriorityColor(medium, habit, allSets) !== '#7a4d00') throw new Error('fitness yellow in habit-tracker');
     });
 
-    await test('a custom colour is shown as stored', () => {
-        if (getPriorityColor({ highPriority: true, priorityColor: '#1E8C52' }, fitness, allSets) !== '#1e8c52') {
-            throw new Error('custom colour should pass through');
+    await test('a custom colour shows its family level in the current theme, never as stored', () => {
+        // A hand-written green shows the theme's Low swatch; an olive its Medium.
+        if (getPriorityColor({ highPriority: true, priorityColor: '#1E8C52' }, fitness, allSets) !== '#27ae60') {
+            throw new Error('custom green should show the fitness Low swatch');
+        }
+        if (getPriorityColor({ highPriority: true, priorityColor: '#808000' }, habit, allSets) !== '#7a4d00') {
+            throw new Error('custom olive should show the habit-tracker Medium swatch');
         }
     });
 

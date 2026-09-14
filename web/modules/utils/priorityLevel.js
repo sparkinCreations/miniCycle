@@ -23,7 +23,7 @@
  * @module utils/priorityLevel
  */
 
-import { PRIORITY_LEVELS, DEFAULT_PRIORITY_SWATCHES } from '../core/constants.js';
+import { PRIORITY_LEVELS, DEFAULT_PRIORITY_SWATCHES, PRIORITY_COLOR_FAMILY } from '../core/constants.js';
 
 const HEX_PATTERN = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
 
@@ -96,14 +96,70 @@ export function getLevelForHex(hex, swatchSets = []) {
 }
 
 /**
+ * Hue (degrees), saturation and lightness (0–1) of a normalised hex colour.
+ * @param {string} hex - 6-digit lower-case hex from normalizePriorityHex
+ * @returns {{h: number, s: number, l: number}}
+ */
+function hexToHsl(hex) {
+    const n = parseInt(hex.slice(1), 16);
+    const r = ((n >> 16) & 255) / 255;
+    const g = ((n >> 8) & 255) / 255;
+    const b = (n & 255) / 255;
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    const l = (max + min) / 2;
+    const d = max - min;
+    if (d === 0) return { h: 0, s: 0, l };
+    const s = d / (1 - Math.abs(2 * l - 1));
+    let h;
+    if (max === r) h = ((g - b) / d) % 6;
+    else if (max === g) h = (b - r) / d + 2;
+    else h = (r - g) / d + 4;
+    h = (h * 60 + 360) % 360;
+    return { h, s, l };
+}
+
+/** Shortest distance between two hues on the 360° wheel. */
+function hueDistance(a, b) {
+    const d = Math.abs(a - b) % 360;
+    return d > 180 ? 360 - d : d;
+}
+
+/**
+ * The level a NON-swatch colour belongs to, by colour family (hue).
+ *
+ * A nearest-colour match was measured and rejected: theme swatches are darkened
+ * for contrast, so lightness decided the match (navy → high via a dark red; gray,
+ * black and white → low). Hue is what a person reads as "red / yellow / green".
+ * Colours with no clear hue, and hues that belong to no family (blues, purples),
+ * are 'high' — which is what on/off priority has always meant.
+ *
+ * @param {*} hex
+ * @returns {'high'|'medium'|'low'|null} null only when `hex` is not a colour at all
+ */
+export function getLevelForColorFamily(hex) {
+    const clean = normalizePriorityHex(hex);
+    if (!clean) return null;
+    const { HUE_ANCHORS, MAX_HUE_DISTANCE, MIN_SATURATION, MIN_LIGHTNESS, MAX_LIGHTNESS } = PRIORITY_COLOR_FAMILY;
+    const { h, s, l } = hexToHsl(clean);
+    if (s < MIN_SATURATION || l < MIN_LIGHTNESS || l > MAX_LIGHTNESS) return 'high';
+    let nearest = null;
+    let nearestDistance = Infinity;
+    for (const level of PRIORITY_LEVELS) {
+        const distance = hueDistance(h, HUE_ANCHORS[level]);
+        if (distance < nearestDistance) { nearest = level; nearestDistance = distance; }
+    }
+    return nearestDistance <= MAX_HUE_DISTANCE ? nearest : 'high';
+}
+
+/**
  * A task's priority level.
  *
  * Not flagged → null, whatever colour it still remembers (turning priority off
  * keeps the colour, exactly like the task toggle). Flagged with a known swatch
- * colour → that swatch's level. Flagged with no colour, or a colour that is not a
- * swatch (the .mcyc schema allows any hex, and a theme colour preset's
- * priorityColor is not a swatch either) → 'high', because on/off priority has
- * always meant high.
+ * colour → that swatch's level. Flagged with a colour that is not a swatch (the
+ * .mcyc schema allows any hex) → the level of its colour family
+ * (getLevelForColorFamily). Flagged with no colour → 'high'.
  *
  * @param {Object|null|undefined} task
  * @param {Array<Array<{level: string, hex: string}>>} [swatchSets=[]] - see collectSwatchSets
@@ -111,7 +167,9 @@ export function getLevelForHex(hex, swatchSets = []) {
  */
 export function getPriorityLevel(task, swatchSets = []) {
     if (!task?.highPriority) return null;
-    return getLevelForHex(task.priorityColor, swatchSets) ?? 'high';
+    return getLevelForHex(task.priorityColor, swatchSets)
+        ?? getLevelForColorFamily(task.priorityColor)
+        ?? 'high';
 }
 
 /**
@@ -129,10 +187,11 @@ function swatchHexForLevel(swatches, level) {
 /**
  * The colour to DISPLAY for a task's priority under the current theme.
  *
- * A swatch colour follows the theme: a task given habit-tracker's dark red shows
- * the current theme's red. A custom, non-swatch colour is shown as stored, because
- * it was a deliberate choice this helper cannot map. A flagged task with no colour
- * shows the current theme's High swatch.
+ * Always the current theme's swatch for the task's level: a task given
+ * habit-tracker's dark red shows the current theme's red, and a custom non-swatch
+ * colour shows its colour family's swatch (a hand-written olive shows the theme's
+ * Medium). Nothing is shown as stored — the stored hex is only ever a way to
+ * find the level. A flagged task with no colour shows the theme's High.
  *
  * @param {Object|null|undefined} task
  * @param {Array<{level: string, hex: string}>|null|undefined} swatches - current theme (getPrioritySwatches)
@@ -142,10 +201,6 @@ function swatchHexForLevel(swatches, level) {
 export function getPriorityColor(task, swatches, swatchSets = []) {
     const level = getPriorityLevel(task, swatchSets);
     if (!level) return null;
-    if (!getLevelForHex(task.priorityColor, swatchSets)) {
-        const custom = normalizePriorityHex(task.priorityColor);
-        if (custom) return custom;
-    }
     return swatchHexForLevel(swatches, level);
 }
 
