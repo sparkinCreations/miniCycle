@@ -1,3 +1,9 @@
+## [2.562] - 2026-09-14
+- refactor(progress): read completion, due dates and progress from AppState
+- chore: untrack web/archive, exclude it from the build, ignore pptx
+- docs: add codebase visual map and diagrams
+
+
 ## [2.561] - 2026-09-14
 - docs(di): correct inaccurate comments in moduleLoader and diBase
 
