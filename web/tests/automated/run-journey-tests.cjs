@@ -2378,7 +2378,67 @@ async function journeyCompleteButtonSurvivesDropdown(browser, baseURL) {
     return { name: 'the Complete Cycle button survives every task moving to the dropdown', failures };
 }
 
+// ── Journey: data written by a NEWER build is never overwritten ─────────────
+// Reproduced Sep 2026 (SCHEMA_2_6_PLAN "Built to adapt"): a 2.6 document booted
+// into the first-run screen, and a tab with 2.5 in memory saved its state OVER the
+// newer document — routine and all. Now: boot shows the reload notice and leaves
+// storage byte-identical; a stale tab's save refuses and the newer document stays.
+async function journeyNewerDataNeverOverwritten(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const newerDoc = {
+        schemaVersion: '2.6',
+        metadata: { createdAt: 1, lastModified: 9999999999999, schemaVersion: '2.6', totalCyclesCreated: 1 },
+        settings: { theme: 'default', darkMode: false },
+        data: { cycles: { 'Future Routine': { id: 'Future Routine', title: 'Future Routine', tasks: [{ id: 'f1', text: 'Future task', completed: false, schemaVersion: 2 }], cycleCount: 7, autoReset: true, deleteCheckedTasks: false, recurringTemplates: {} } } },
+        appState: { activeCycleId: 'Future Routine' }, userProgress: { cyclesCompleted: 7 }
+    };
+    const raw = JSON.stringify(newerDoc);
+
+    // Part 1: boot straight onto newer data.
+    const { context, page } = await openFresh(browser, baseURL, {
+        noNavigate: true,
+        initScript: (doc) => { if (!localStorage.getItem('__seeded')) { localStorage.setItem('miniCycleData', doc); localStorage.setItem('__seeded', '1'); } },
+        initArg: raw
+    });
+    try {
+        await page.goto(`${baseURL}/miniCycle.html`, { waitUntil: 'domcontentloaded', timeout: 20000 });
+        await page.waitForFunction(() => document.documentElement.dataset.appLoaded === 'true', null, { timeout: 20000 });
+        await page.waitForTimeout(2000);
+        const boot = await page.evaluate(() => ({
+            storageUnchanged: localStorage.getItem('miniCycleData'),
+            notice: !!document.getElementById('newer-data-notice'),
+            noticeHasReload: !!document.querySelector('#newer-data-notice button'),
+            corruptionModal: !!document.getElementById('data-corruption-modal')
+        }));
+        record('boot leaves the newer document byte-identical', boot.storageUnchanged === raw, 'storage was rewritten during boot');
+        record('boot shows the newer-data notice with a reload action', boot.notice && boot.noticeHasReload, JSON.stringify({ notice: boot.notice, reload: boot.noticeHasReload }));
+        record('boot does not offer the destructive corruption modal', !boot.corruptionModal, 'data-corruption-modal present');
+    } finally {
+        await context.close();
+    }
+
+    // Part 2: a stale tab with valid 2.5 in memory meets the newer document in storage.
+    const second = await openFresh(browser, baseURL);
+    try {
+        const p2 = second.page;
+        await p2.evaluate((doc) => localStorage.setItem('miniCycleData', doc), raw);
+        await addTask(p2, 'Stale tab task');
+        await p2.waitForTimeout(3000); // past the save debounce
+        const after = await p2.evaluate(() => {
+            const s = localStorage.getItem('miniCycleData');
+            let p = null; try { p = JSON.parse(s); } catch { /* unreadable */ }
+            return { same: s, version: p && p.schemaVersion, hasFuture: !!(p && p.data && p.data.cycles['Future Routine']) };
+        });
+        record('a stale tab does not save over the newer document', after.same === raw, `storage now version=${after.version}, Future Routine kept=${after.hasFuture}`);
+        record('no starved dependencies', p2.__diWarnings.length === 0, `DI warnings: ${p2.__diWarnings.join(' | ')}`);
+    } finally {
+        await second.context.close();
+    }
+    return { name: 'data written by a newer build is never overwritten', failures };
+}
+
 const JOURNEYS = [
+    { name: 'data written by a newer build is never overwritten', fn: journeyNewerDataNeverOverwritten },
     { name: 'the Complete Cycle button survives every task moving to the dropdown', fn: journeyCompleteButtonSurvivesDropdown },
     { name: 'reorder arrows move the task the user pointed at', fn: journeyArrowReorderMovesTheRightTask },
     { name: 'import never attaches a template to a non-recurring task', fn: journeyImportTemplateTaskCollision },

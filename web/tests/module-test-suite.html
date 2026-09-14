@@ -515,6 +515,7 @@
             <option value="styleValidators">🎨 Style Validators</option>
             <option value="cycleMode">🔁 Cycle Mode</option>
             <option value="priorityLevel">📶 Priority Level</option>
+            <option value="schemaVersion">🔢 Schema Version</option>
             <option value="panelCarousel">🎠 Panel Carousel</option>
             <option value="focusTaskPanel">🎯 Focus Task Panel</option>
             <option value="recurringPanelEvents">📅 Recurring Panel Events</option>
@@ -699,6 +700,7 @@
         const { runStyleValidatorsTests } = await import(`./styleValidators.tests.js?v=${cacheBuster}`);
         const { runCycleModeTests } = await import(`./cycleMode.tests.js?v=${cacheBuster}`);
         const { runPriorityLevelTests } = await import(`./priorityLevel.tests.js?v=${cacheBuster}`);
+        const { runSchemaVersionTests } = await import(`./schemaVersion.tests.js?v=${cacheBuster}`);
         const { runPanelCarouselTests } = await import(`./panelCarousel.tests.js?v=${cacheBuster}`);
         const { runFocusTaskPanelTests } = await import(`./focusTaskPanel.tests.js?v=${cacheBuster}`);
         const { runRecurringPanelEventsTests } = await import(`./recurringPanelEvents.tests.js?v=${cacheBuster}`);
@@ -2000,7 +2002,7 @@
                     await import(`../modules/features/uxRatings.js?v=${cacheBuster}`);
                     currentModule = 'uxRatings';
                     resultsDiv.innerHTML = '<p>✅ UXRatings loaded. Click "Run Tests" to begin.</p>';
-                } else if (['diWiring','orchestrator','moduleLoader','moduleManifests','modalTemplates','appContext','dataAccess','appGlobalState','migrationFacade','types','modalRegistry','modalUtils','panelVisibilityHelpers','gesturePanelManager','titleManager','headerLayoutManager','featureAvailability','dataRecovery','uiOrchestrator','preferencesBgImage','preferencesPresets','taskDOMPatch','debugMode','iconInit','icons','keyboardNav','collapsibleSections','educationalTips','routineSwitcherThemePicker','routineSwitcherPreview','routineSwitcherListTransforms','routineSwitcherRepair','routineSwitcherActions','onboardingDemo','onboardingSplash','onboardingCarousel','longPressHint','mcycPayload','bootSw','nameUtils','styleValidators','cycleMode','priorityLevel','undoSnapshotUtils','undoTransactionDiff','panelCarousel','focusTaskPanel','recurringPanelEvents','recurringPanelForm','recurringPanelGrids','recurringPanelSetup','recurringPanelSummary','recurringSettings','recurringSettingsApplicator','recurringWatcher','statsPanelGestures','statsPanelRewards','taskViewLayoutManager'].includes(moduleName)) {
+                } else if (['diWiring','orchestrator','moduleLoader','moduleManifests','modalTemplates','appContext','dataAccess','appGlobalState','migrationFacade','types','modalRegistry','modalUtils','panelVisibilityHelpers','gesturePanelManager','titleManager','headerLayoutManager','featureAvailability','dataRecovery','uiOrchestrator','preferencesBgImage','preferencesPresets','taskDOMPatch','debugMode','iconInit','icons','keyboardNav','collapsibleSections','educationalTips','routineSwitcherThemePicker','routineSwitcherPreview','routineSwitcherListTransforms','routineSwitcherRepair','routineSwitcherActions','onboardingDemo','onboardingSplash','onboardingCarousel','longPressHint','mcycPayload','bootSw','nameUtils','styleValidators','cycleMode','priorityLevel','schemaVersion','undoSnapshotUtils','undoTransactionDiff','panelCarousel','focusTaskPanel','recurringPanelEvents','recurringPanelForm','recurringPanelGrids','recurringPanelSetup','recurringPanelSummary','recurringSettings','recurringSettingsApplicator','recurringWatcher','statsPanelGestures','statsPanelRewards','taskViewLayoutManager'].includes(moduleName)) {
                     const pathMap = {
                         diWiring: '../modules/boot/moduleLoader.js',
                         orchestrator: '../modules/boot/orchestrator.js',
@@ -2050,6 +2052,7 @@
                         styleValidators: '../modules/utils/styleValidators.js',
                         cycleMode: '../modules/utils/cycleMode.js',
                         priorityLevel: '../modules/utils/priorityLevel.js',
+                        schemaVersion: '../modules/utils/schemaVersion.js',
                         panelCarousel: '../modules/ui/panelCarousel.js',
                         focusTaskPanel: '../modules/ui/focusTaskPanel.js',
                         recurringPanelEvents: '../modules/recurring/recurringPanelEvents.js',
@@ -2347,6 +2350,7 @@
             } else if (currentModule === 'styleValidators') { await runStyleValidatorsTests(resultsDiv);
             } else if (currentModule === 'cycleMode') { await runCycleModeTests(resultsDiv);
             } else if (currentModule === 'priorityLevel') { await runPriorityLevelTests(resultsDiv);
+            } else if (currentModule === 'schemaVersion') { await runSchemaVersionTests(resultsDiv);
             } else if (currentModule === 'panelCarousel') { await runPanelCarouselTests(resultsDiv);
             } else if (currentModule === 'focusTaskPanel') { await runFocusTaskPanelTests(resultsDiv);
             } else if (currentModule === 'recurringPanelEvents') { await runRecurringPanelEventsTests(resultsDiv);
@@ -2693,6 +2697,7 @@
                 { name: 'StyleValidators', key: 'styleValidators', runFn: runStyleValidatorsTests, importPath: '../modules/utils/styleValidators.js' },
                 { name: 'CycleMode', key: 'cycleMode', runFn: runCycleModeTests, importPath: '../modules/utils/cycleMode.js' },
                 { name: 'PriorityLevel', key: 'priorityLevel', runFn: runPriorityLevelTests, importPath: '../modules/utils/priorityLevel.js' },
+                { name: 'SchemaVersion', key: 'schemaVersion', runFn: runSchemaVersionTests, importPath: '../modules/utils/schemaVersion.js' },
                 { name: 'PanelCarousel', key: 'panelCarousel', runFn: runPanelCarouselTests, importPath: '../modules/ui/panelCarousel.js' },
                 { name: 'FocusTaskPanel', key: 'focusTaskPanel', runFn: runFocusTaskPanelTests, importPath: '../modules/ui/focusTaskPanel.js' },
                 { name: 'RecurringPanelEvents', key: 'recurringPanelEvents', runFn: runRecurringPanelEventsTests, importPath: '../modules/recurring/recurringPanelEvents.js' },

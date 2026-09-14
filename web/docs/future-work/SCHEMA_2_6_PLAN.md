@@ -388,16 +388,29 @@ previous plan, which never mentioned it.
    A lagging Android, iOS or Chrome build, or a tab left open across the release, reaches exactly
    these paths.
 
+**Probed Sep 2026 (v2.564) — the two inferred outcomes above, measured.** Seeding a `2.6`
+document and booting: the build showed the first-run choice screen with the data intact, and
+the "learn" choice changed nothing, because `AppState.update()` refuses while `data` is null —
+a dead end, not an overwrite. The **stale-tab case reproduced exactly**: a tab with valid 2.5 in
+memory added a task, and its debounced save replaced the 2.6 document — version back to 2.5,
+the newer routine gone, `lastModifiedBy` the stale tab.
+
 **Requirements for 2.6.**
 
-- **One shared version check** replaces the exact-match comparisons and classifies data as
-  *current*, *older* (migrate it) or *newer than this build*. It must **parse the version into
-  numbers** (major, minor) before comparing — never compare the strings, because `"2.5" > "2.10"`
-  is true (`STATE_TRUTH_MIGRATION.md` #22).
-- **Newer data is never overwritten.** A build that meets it opens read-only or refuses with a
-  clear message; `init` must never fall through to first-run, and `save` must never write over
-  it. **This must ship in a release before 2.6 changes the stored format**, so every build that
-  can meet 2.6 data already knows to stand down.
+- **One shared version check** ✅ *built Sep 2026:* `utils/schemaVersion.js` —
+  `classifyStoredVersion()` returns *current* / *older* / *newer* / *unknown*, comparing parsed
+  numbers, never strings (`"2.5" > "2.10"`; `STATE_TRUTH_MIGRATION.md` #22). `AppState` uses it
+  at init, reload, save and the cross-tab handler. The remaining exact-match checks in
+  `dataRecovery`, `dataValidator`, `dataSanitizer`, `backupRestoreManager` and `migrationManager`
+  still say "2.5"; they are restore/import paths that reject rather than overwrite, and they
+  move onto the classifier when 2.6's migration is written.
+- **Newer data is never overwritten** ✅ *built Sep 2026, decided as refuse-with-a-message:*
+  `AppState` neither adopts a newer document (init, reload, cross-tab) nor writes over it
+  (`save()` refuses and keeps the edit dirty), latches `isBlockedByNewerData()`, and warns once
+  with a Reload action; `appInit.showNewerDataNotice()` replaces the first-run / corruption flows
+  with a single Reload button. Pinned by `appState.tests.js` and the journey *"data written by a
+  newer build is never overwritten"*. **Must reach the platform builds before 2.6 changes the
+  stored format.**
 - **Migrations chain one version at a time** (2.5 → 2.6, later 2.6 → 2.7) instead of 2.6-named
   copies of the 2.5 functions, so the next change is one more step.
 - **New `.mcyc` objects are open by default.** A closed object needs a written reason.
@@ -611,9 +624,9 @@ drift guard walks every module file and fails unless it is precached or in `PREC
 they deliver the user-visible priority improvements and the safety net early, and keep the
 risky stored-format change small and last.
 
-1. **Forward-compatibility release.** Ship the shared version check and the "never overwrite
-   newer data" behaviour (see *Built to adapt*) on its own, and let it reach the platform builds,
-   so no build that can meet 2.6 data will destroy it. It must be out before step 7.
+1. **Forward-compatibility release** — ✅ *code landed Sep 2026 (see Built to adapt)*. Ship it and
+   let it reach the platform builds, so no build that can meet 2.6 data will destroy it. It must
+   be out before step 7.
 2. **Theme presets → High swatch.** Set each theme's `colorPreset.priorityColor` to its High
    swatch and add the test that keeps them equal for every theme.
 3. **Colour-family rule in the helpers.** Update `utils/priorityLevel.js` so an unknown hex takes

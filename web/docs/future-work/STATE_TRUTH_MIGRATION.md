@@ -279,7 +279,10 @@ test that renders a pre-repair task carrying only `taskText`.
 
 **Fix:** Law stays: never mutate the return. Optional: freeze in debug builds, or `getCopy()`. Grep for assignment / `.push` on `get()` results after any nearby change (CLAUDE.md #13).
 
-### #7 `update()` rollback does not redraw
+### #7 `update()` rollback does not redraw — ✅ FIXED Sep 2026
+
+*(After restoring the clone, `update()` now calls `notifyListeners(abandoned, restored)`, so
+subscribers redraw against the state that actually exists. Pinned in `appState.tests.js`.)*
 
 **Where:** `update()` `catch` restores the clone, shows `notify.stateUpdateFailed`, rethrows — **no** `notifyListeners`.
 
@@ -376,7 +379,12 @@ should not wait for it.
 
 **Fix:** Mutate fields on the existing cycle inside `update()`. Never assign a stale clone over watcher/recurring writes.
 
-### #12 `setAppStateDependencies` spreads
+### #12 `setAppStateDependencies` spreads — ✅ FIXED Sep 2026
+
+*(Now `Object.defineProperties` over the descriptors, like every other setter; a getter dep
+set before its value exists binds late. Pinned in `appState.tests.js`. The constructor still
+merges `_deps` per instance by spread — that is a per-instance snapshot by design, not the
+setter bug.)*
 
 **Where:** `appState.js` — `_deps = { ..._deps, ...dependencies }`.
 
@@ -445,7 +453,12 @@ naming there — but users' data is migrated once. Still sequenced after this pl
 
 **Fix:** Live tasks always `text`. Cleared entries always `taskText`. One import/load normalizer. Ties to #5.
 
-### #22 `schemaVersion` is the string `"2.5"`
+### #22 `schemaVersion` is the string `"2.5"` — ✅ PARTLY FIXED Sep 2026
+
+*(`utils/schemaVersion.js` compares parsed numbers, and `AppState` classifies stored data
+through it at init, reload, save and cross-tab — the forward-compatibility release in
+`SCHEMA_2_6_PLAN.md`. The restore/import paths still use `=== '2.5'`; they reject rather than
+overwrite, and move onto the classifier with the 2.6 migration.)*
 
 **Fix:** Equality only, or integer/`{major,minor}`. Never `>` string versions (`"2.5" > "2.10"`).
 

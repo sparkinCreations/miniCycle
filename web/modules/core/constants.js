@@ -1451,6 +1451,7 @@ export const DOM_IDS = Object.freeze({
 
     // ---- Loading & UI ----
     APP_LOADER: 'app-loader',
+    NEWER_DATA_NOTICE: 'newer-data-notice',   // appInit.showNewerDataNotice — storage written by a newer build
     LOADER_TIP: 'loader-tip',
     PROGRESS_BAR: 'progressBar',
     LOADING_OVERLAY: 'loading-overlay',

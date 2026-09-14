@@ -663,6 +663,9 @@ export const DEFAULT_LABELS = deepFreeze({
 
         // State/data notifications
         dataCorrupted:           'Data was corrupted and has been reset. Your previous data could not be recovered.',
+        // Storage holds a document from a NEWER app version; this build refuses to
+        // adopt or overwrite it. {version} is the stored schemaVersion.
+        dataFromNewerVersion:    'Your data was saved by a newer version of miniCycle (data version {version}). Changes are not being saved. Reload to update the app.',
         multiTabConflict:        'Data updated from another tab. Your unsaved changes were overwritten.',
         dataClearedElsewhere:    'All data was cleared in another tab. Refresh this tab to continue.',
         stateUpdateFailed:       'State update failed',
@@ -923,6 +926,8 @@ export const DEFAULT_LABELS = deepFreeze({
         removeRecurringConfirm: 'Remove',
         liteVersionTitle:   'Switch to Lite Version',
         liteVersionConfirm: 'Try Lite Version',
+        newerDataTitle:     'Saved by a Newer Version',
+        newerDataMessage:   'Your routines were saved by a newer version of miniCycle (data version {version}), which this version of the app cannot read yet.\n\nNothing has been changed. Reload to update the app and pick up where you left off.',
         liteVersionCancel:  'Stay Here',
         resetAchievementsTitle:   'Reset Achievement Progress',
         resetAchievementsMessage: 'This will reset all achievement badges and global progress to 0. Your individual routine stats and history will NOT be affected. Are you sure?',
@@ -1543,6 +1548,7 @@ export const DEFAULT_LABELS = deepFreeze({
         done:       'Done',
         import:     'Import',
         create:     'Create',
+        reload:     'Reload',
         enable:     'Enable',
         loadSample: 'Load Sample',
         back:       'Back'

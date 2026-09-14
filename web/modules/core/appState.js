@@ -25,9 +25,10 @@ import {
     DEFAULT_RECURRING_DELETE_SETTINGS,
     DEBOUNCE,
     DOM_IDS,
-    STORAGE_KEYS, UI_TIMEOUTS, DOM_CLASSES } from './constants.js';
+    STORAGE_KEYS, UI_TIMEOUTS, DOM_CLASSES, SCHEMA } from './constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { recoverCorruptedData } from '../utils/dataRecovery.js';
+import { classifyStoredVersion } from '../utils/schemaVersion.js';
 
 // NOTE: The in-app test runner now executes on a SEPARATE ORIGIN (test.minicycle.app),
 // so its storage is physically isolated from real user data. The former test-mode
@@ -50,7 +51,11 @@ let _deps = {};
  * @param {Object} [dependencies.AppMeta] - Application metadata containing version
  */
 export function setAppStateDependencies(dependencies) {
-    _deps = { ..._deps, ...dependencies };
+    if (!dependencies || typeof dependencies !== 'object') return;
+    // defineProperties, not spread: a spread evaluates getter-style deps at
+    // call time and freezes the value, which breaks late binding. Same rule as
+    // every other setter (CLAUDE.md #2; STATE_TRUTH_MIGRATION #12).
+    Object.defineProperties(_deps, Object.getOwnPropertyDescriptors(dependencies));
 }
 
 /**
@@ -110,6 +115,10 @@ class MiniCycleState {
         // while the user keeps working (review F-001). Reset on successful
         // save so a later episode notifies again.
         this._quotaNotified = false;
+        // Set when storage holds data written by a NEWER app version. While set,
+        // this build neither adopts that data nor writes over it — see
+        // _blockOnNewerData(). Cleared only by a reload into a build that reads it.
+        this.blockedByNewerData = null;
         this._savingIndicatorTimeout = null; // For hiding indicator after save
         this._persistenceListenersRegistered = false; // Guard against duplicate global listeners on re-init
         // Per-tab identity for concurrent-modification detection: timestamps alone
@@ -220,6 +229,12 @@ class MiniCycleState {
                     );
                     return this.data;
                 }
+                if (classifyStoredVersion(parsed) === 'newer') {
+                    this._blockOnNewerData(parsed.schemaVersion);
+                    this.data = null;
+                    this.isInitialized = false;
+                    return null;
+                }
                 if (this.validateSchema25Structure(parsed)) {
                     this.data = this._ensureMetadata(parsed);
                     this.isInitialized = true;
@@ -298,20 +313,8 @@ class MiniCycleState {
             try {
                 stored = this.deps.storage.getItem(STORAGE_KEYS.DATA);
                 if (stored) {
-                    const parsed = JSON.parse(stored);
-                    // ✅ Validate the structure before using
-                    if (this.validateSchema25Structure(parsed)) {
-                        existingData = parsed;
-                    } else {
-                        // Parsed fine but wrong shape — try to salvage before discarding.
-                        console.warn('⚠️ Existing data structure is invalid — attempting recovery');
-                        const recovery = recoverCorruptedData(stored, { storage: this.deps.storage });
-                        if (recovery.recovered && this.validateSchema25Structure(recovery.data)) {
-                            existingData = recovery.data;
-                            this._persistRepairedData(existingData);
-                            this._notifyDataRepaired(recovery);
-                        }
-                    }
+                    // JSON.parse throws land in the catch below, as before.
+                    existingData = this._adoptStoredDocument(stored);
                 }
             } catch (parseError) {
                 console.warn('⚠️ Could not parse existing data — attempting recovery:', parseError);
@@ -495,6 +498,12 @@ class MiniCycleState {
 
             try {
                 const externalData = JSON.parse(event.newValue);
+                // Another tab upgraded and wrote a newer document: stop here —
+                // do not adopt it, and (via _blockOnNewerData) stop saving over it.
+                if (classifyStoredVersion(externalData) === 'newer') {
+                    this._blockOnNewerData(externalData.schemaVersion);
+                    return;
+                }
                 // Never adopt malformed external data — a corrupt write from
                 // another tab would otherwise replace valid in-memory state.
                 if (!this.validateSchema25Structure(externalData)) {
@@ -594,6 +603,90 @@ class MiniCycleState {
      * @param {Schema25Data} data - Repaired state to persist
      * @private
      */
+    /**
+     * Decide what a parsed-but-not-yet-adopted stored document becomes at init.
+     * Three outcomes: a NEWER-build document is left untouched (blocked, returns
+     * null — no "recovery" either, since that rewrites storage); a valid 2.5
+     * document is adopted as-is; anything else goes through corruption recovery.
+     * Throws on unparseable JSON, which init's catch handles as before.
+     * @param {string} stored - Raw storage string
+     * @returns {Object|null} The document to adopt, or null for "no data"
+     * @private
+     */
+    _adoptStoredDocument(stored) {
+        const parsed = JSON.parse(stored);
+        if (classifyStoredVersion(parsed) === 'newer') {
+            this._blockOnNewerData(parsed.schemaVersion);
+            return null;
+        }
+        // ✅ Validate the structure before using
+        if (this.validateSchema25Structure(parsed)) return parsed;
+
+        // Parsed fine but wrong shape — try to salvage before discarding.
+        console.warn('⚠️ Existing data structure is invalid — attempting recovery');
+        const recovery = recoverCorruptedData(stored, { storage: this.deps.storage });
+        if (recovery.recovered && this.validateSchema25Structure(recovery.data)) {
+            this._persistRepairedData(recovery.data);
+            this._notifyDataRepaired(recovery);
+            return recovery.data;
+        }
+        return null;
+    }
+
+    /**
+     * Storage holds a document written by a newer build than this one.
+     * Latches the block, warns once, and offers a reload — the only way out is
+     * a build that reads that version. Never touches storage.
+     * @param {*} version - The stored document's schemaVersion, for the message
+     * @private
+     */
+    _blockOnNewerData(version) {
+        if (this.blockedByNewerData) return;
+        this.blockedByNewerData = { version: String(version ?? '?') };
+        console.warn(`⚠️ Stored data is schema ${this.blockedByNewerData.version}, newer than this build (${SCHEMA.CURRENT}) — not adopting it and not writing over it`);
+        this.deps.showNotification?.(
+            getLabel('notify.dataFromNewerVersion', { vars: { version: this.blockedByNewerData.version } }),
+            'warning',
+            UI_TIMEOUTS.NOTIFICATION_OVERLAY,
+            {
+                actionButton: {
+                    label: getLabel('button.reload'),
+                    onClick: () => globalThis.location?.reload?.()
+                }
+            }
+        );
+    }
+
+    /**
+     * True when storage currently holds a newer-version document; latches the
+     * block as a side effect so later saves refuse without re-parsing.
+     * @returns {boolean}
+     * @private
+     */
+    _refuseIfStoredIsNewer() {
+        if (this.blockedByNewerData) return true;
+        try {
+            const stored = this.deps.storage.getItem(STORAGE_KEYS.DATA);
+            if (!stored) return false;
+            const parsed = JSON.parse(stored);
+            if (classifyStoredVersion(parsed) !== 'newer') return false;
+            this._blockOnNewerData(parsed.schemaVersion);
+            return true;
+        } catch {
+            // Unparseable storage is the corruption path's business, not this one's.
+            return false;
+        }
+    }
+
+    /**
+     * Whether this build is refusing to touch storage because it holds data from
+     * a newer app version. Callers show the reload notice instead of first-run.
+     * @returns {{version: string}|null}
+     */
+    isBlockedByNewerData() {
+        return this.blockedByNewerData;
+    }
+
     _persistRepairedData(data) {
         try {
             this.deps.storage.setItem(STORAGE_KEYS.DATA, JSON.stringify(data));
@@ -711,7 +804,13 @@ class MiniCycleState {
             return result; // Return any result from updateFn
         } catch (error) {
             console.error('❌ State update failed:', error);
+            // The producer may have half-mutated the live tree before throwing.
+            // Restore the clone, then tell subscribers — without this the screen
+            // stayed on a mutation that had already been undone
+            // (STATE_TRUTH_MIGRATION #7).
+            const abandoned = this.data;
             this.data = oldData;
+            this.notifyListeners(abandoned, this.data);
             this.deps.showNotification(getLabel('notify.stateUpdateFailed'), 'error');
             throw error; // Re-throw so caller knows update failed
         }
@@ -756,6 +855,15 @@ class MiniCycleState {
         }
 
         if (!this.data) {
+            return;
+        }
+
+        // Never write over data a NEWER build saved. A tab left open across a
+        // release still holds valid old-version state in memory; measured Sep
+        // 2026, its debounced save replaced the newer document — routine and all
+        // — because the version gate below only knew "invalid". The edits stay
+        // dirty in memory (honest: they were not saved) and the user is told.
+        if (this._refuseIfStoredIsNewer()) {
             return;
         }
 

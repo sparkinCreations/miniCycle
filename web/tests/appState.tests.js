@@ -196,6 +196,69 @@ export async function runAppStateTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
+    // ── Forward compatibility: data written by a NEWER build ─────────────────
+    // Reproduced Sep 2026 before these guards: init treated a 2.6 document as
+    // invalid (first-run screen over intact data), and a tab with 2.5 in memory
+    // SAVED over the newer document. Every guard here refuses to touch it.
+    const newerDoc = () => ({
+        schemaVersion: '2.6',
+        metadata: { createdAt: 1, lastModified: 5, schemaVersion: '2.6', totalCyclesCreated: 1 },
+        settings: { theme: 'default' },
+        data: { cycles: { future: { id: 'future', title: 'Future', tasks: [], cycleCount: 42, autoReset: true, deleteCheckedTasks: false, recurringTemplates: {} } } },
+        appState: { activeCycleId: 'future' }, userProgress: { cyclesCompleted: 42 }
+    });
+
+    await test('init refuses to adopt newer-version data and leaves storage byte-identical', async () => {
+        const raw = JSON.stringify(newerDoc());
+        localStorage.setItem('miniCycleData', raw);
+        const warnings = [];
+        const sm = createStateManager({ showNotification: (msg, type) => warnings.push(`${type}: ${msg}`) });
+        const result = await sm.init();
+        if (result !== null || sm.get() !== null) throw new Error('newer data must not be adopted');
+        if (sm.isReady()) throw new Error('state must not report ready');
+        if (!sm.isBlockedByNewerData() || sm.isBlockedByNewerData().version !== '2.6') {
+            throw new Error(`block flag should carry the version, got ${JSON.stringify(sm.isBlockedByNewerData())}`);
+        }
+        if (localStorage.getItem('miniCycleData') !== raw) throw new Error('storage was modified by init (recovery must not run on newer data)');
+        if (warnings.length !== 1 || !/newer version/i.test(warnings[0])) throw new Error(`expected one newer-version warning, got ${JSON.stringify(warnings)}`);
+    });
+
+    await test('save() refuses to write over newer-version data written by another tab', async () => {
+        localStorage.setItem('miniCycleData', JSON.stringify({ ...createMockData(), schemaVersion: '2.5' }));
+        const warnings = [];
+        const sm = createStateManager({ showNotification: (msg, type) => warnings.push(`${type}: ${msg}`) });
+        await sm.init();
+        if (!sm.isReady()) throw new Error('fixture: 2.5 data should load');
+
+        // Another tab (a newer build) replaces storage.
+        const raw = JSON.stringify(newerDoc());
+        localStorage.setItem('miniCycleData', raw);
+
+        // This stale tab has a dirty edit and tries to save it.
+        sm.data.settings.theme = 'stale-edit';
+        sm.isDirty = true;
+        sm.save();
+
+        if (localStorage.getItem('miniCycleData') !== raw) throw new Error('save() overwrote the newer document');
+        if (!sm.isDirty) throw new Error('the unsaved edit must stay dirty — it was not written');
+        if (!sm.isBlockedByNewerData()) throw new Error('save() should latch the block');
+        sm.isDirty = true;
+        sm.save(); // a second save must not warn again
+        if (warnings.filter(w => /newer version/i.test(w)).length !== 1) throw new Error(`expected exactly one warning, got ${JSON.stringify(warnings)}`);
+    });
+
+    await test('a cross-tab write of newer-version data is not adopted', async () => {
+        localStorage.setItem('miniCycleData', JSON.stringify({ ...createMockData(), schemaVersion: '2.5' }));
+        const sm = createStateManager({ showNotification: () => {} });
+        await sm.init();
+        if (!sm.isReady()) throw new Error('fixture: 2.5 data should load');
+        const before = JSON.stringify(sm.get());
+        window.dispatchEvent(new StorageEvent('storage', { key: 'miniCycleData', newValue: JSON.stringify(newerDoc()) }));
+        await new Promise(r => setTimeout(r, 50));
+        if (JSON.stringify(sm.get()) !== before) throw new Error('in-memory state changed on a newer-version cross-tab write');
+        if (!sm.isBlockedByNewerData()) throw new Error('the cross-tab write should latch the block so later saves refuse');
+    });
+
     await test('init loads existing Schema 2.5 data', async () => {
         const stateManager = createStateManager();
         await stateManager.init();
@@ -390,6 +453,47 @@ export async function runAppStateTests(resultsDiv, isPartOfSuite = false) {
 
         if (stateManager.data.settings.theme !== originalTheme) {
             throw new Error('update should rollback on error');
+        }
+    });
+
+    await test('update rollback notifies subscribers with the restored state', async () => {
+        // A producer can half-mutate the live tree before it throws; the rollback
+        // restores the clone. Subscribers must hear about it, or the screen keeps
+        // showing a change that no longer exists (STATE_TRUTH_MIGRATION #7).
+        const stateManager = createStateManager();
+        await stateManager.init();
+        const originalTheme = stateManager.data.settings.theme;
+        const seen = [];
+        stateManager.subscribe('rollback-redraw', (newData, oldData) => seen.push({ newTheme: newData.settings.theme, oldTheme: oldData.settings.theme }));
+
+        try {
+            await stateManager.update(state => {
+                state.settings.theme = 'will-fail';
+                throw new Error('Intentional error');
+            });
+        } catch (e) { /* expected */ }
+
+        if (seen.length !== 1) throw new Error(`subscribers should be notified exactly once on rollback, got ${seen.length}`);
+        if (seen[0].newTheme !== originalTheme) throw new Error(`newData should be the RESTORED state (${originalTheme}), got ${seen[0].newTheme}`);
+        if (seen[0].oldTheme !== 'will-fail') throw new Error('oldData should be the abandoned half-mutation');
+    });
+
+    await test('setAppStateDependencies keeps getter-style deps live', () => {
+        // The old spread read the getter at SET time — here, while it was still
+        // null — so the instance fell back to a no-op notifier. defineProperties
+        // keeps the getter, and the instance sees whatever it returns when built.
+        let notifier = null;
+        setAppStateDependencies({ get showNotification() { return notifier; } });
+        notifier = () => 'late-bound';
+        try {
+            resetStateManager();
+            const sm = createStateManager();
+            if (sm.deps.showNotification() !== 'late-bound') {
+                throw new Error('a getter dep set before its value existed should still bind late');
+            }
+        } finally {
+            setAppStateDependencies({ showNotification: () => {} });
+            resetStateManager();
         }
     });
 
