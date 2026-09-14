@@ -8,7 +8,9 @@ export async function runCycleModeTests(resultsDiv) {
     const cacheBuster = window.testCacheBuster || Date.now();
     const mod = await import(`../modules/utils/cycleMode.js?v=${cacheBuster}`);
     const { getCycleMode, getAllDoneHintKey, getDeleteSettingsMode, syncTaskDeleteWhenComplete,
-            resolveDeleteWhenComplete, getTaskResetIndicator } = mod;
+            resolveDeleteWhenComplete, getTaskResetIndicator,
+            getRoutines, getActiveRoutineId, getRoutine, getActiveRoutine, setActiveRoutineId,
+            getAutoClearMode, syncTaskAutoClear, resolveAutoClear, getAutoClear, setAutoClear } = mod;
     const { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS: DEFAULTS } =
         await import(`../modules/core/constants.js?v=${cacheBuster}`);
     const { DEFAULT_LABELS } = await import(`../modules/labels/defaultLabels.js?v=${cacheBuster}`);
@@ -265,6 +267,158 @@ export async function runCycleModeTests(resultsDiv) {
                 throw new Error(`${JSON.stringify(args)} -> ${got}, expected ${want}`);
             }
         }
+    });
+
+    // ── Naming helpers: routine ──────────────────────────────────────────────
+    resultsDiv.innerHTML += '<h4 class="test-section">🗂️ Routine helpers (read/write the stored cycle keys)</h4>';
+
+    // Schema 2.5 shape: routines live under data.cycles, the open one in appState.activeCycleId
+    const makeState = () => ({
+        data: { cycles: {
+            r1: { title: 'Morning', cycleCount: 3, tasks: [{ id: 't1' }] },
+            r2: { title: 'Evening', cycleCount: 0, tasks: [] }
+        } },
+        appState: { activeCycleId: 'r1' }
+    });
+
+    await test('getRoutines and getActiveRoutineId read the stored keys', () => {
+        const state = makeState();
+        if (getRoutines(state) !== state.data.cycles) throw new Error('getRoutines should return data.cycles');
+        if (getActiveRoutineId(state) !== 'r1') throw new Error(`getActiveRoutineId: ${getActiveRoutineId(state)}`);
+    });
+
+    await test('getActiveRoutine returns the open routine itself, so producer edits land in state', () => {
+        const state = makeState();
+        const routine = getActiveRoutine(state);
+        if (routine !== state.data.cycles.r1) throw new Error('should return the stored routine object, not a copy');
+        routine.cycleCount += 1;
+        if (state.data.cycles.r1.cycleCount !== 4) throw new Error('an edit through the helper did not reach state');
+    });
+
+    await test('getRoutine finds a routine by id and returns null for an unknown id', () => {
+        const state = makeState();
+        if (getRoutine(state, 'r2')?.title !== 'Evening') throw new Error('r2 not found');
+        if (getRoutine(state, 'missing') !== null) throw new Error('unknown id should be null');
+        if (getRoutine(state, null) !== null || getRoutine(state, '') !== null) throw new Error('empty id should be null');
+    });
+
+    await test('getRoutine ignores inherited names like constructor and toString', () => {
+        // The routines map is a plain object — a truthiness lookup would "find" these.
+        const state = makeState();
+        for (const name of ['constructor', 'toString', '__proto__', 'hasOwnProperty']) {
+            if (getRoutine(state, name) !== null) throw new Error(`"${name}" was treated as a routine`);
+        }
+    });
+
+    await test('routine helpers return null instead of throwing when data is missing', () => {
+        for (const bad of [null, undefined, {}, { data: {} }, { appState: {} }]) {
+            if (getRoutines(bad) !== null) throw new Error(`getRoutines for ${JSON.stringify(bad)}`);
+            if (getActiveRoutineId(bad) !== null) throw new Error(`getActiveRoutineId for ${JSON.stringify(bad)}`);
+            if (getActiveRoutine(bad) !== null) throw new Error(`getActiveRoutine for ${JSON.stringify(bad)}`);
+        }
+        const pointingNowhere = makeState();
+        pointingNowhere.appState.activeCycleId = 'gone';
+        if (getActiveRoutine(pointingNowhere) !== null) throw new Error('an id with no routine should be null');
+    });
+
+    await test('setActiveRoutineId writes activeCycleId and creates appState if needed', () => {
+        const state = makeState();
+        setActiveRoutineId(state, 'r2');
+        if (state.appState.activeCycleId !== 'r2') throw new Error('activeCycleId not written');
+        if (getActiveRoutine(state)?.title !== 'Evening') throw new Error('helper did not follow the new id');
+
+        const bare = { data: { cycles: {} } };
+        setActiveRoutineId(bare, 'r9');
+        if (bare.appState?.activeCycleId !== 'r9') throw new Error('appState should be created');
+
+        setActiveRoutineId(null, 'r1'); // must not throw
+    });
+
+    await test('routine helpers never add new keys to stored data', () => {
+        // The stored schema keeps its names until Schema 2.6 — an alias key would be
+        // saved alongside the real one and drift from it after a reload.
+        const state = makeState();
+        getActiveRoutine(state);
+        setActiveRoutineId(state, 'r2');
+        const saved = JSON.stringify(state);
+        for (const newName of ['routines', 'activeRoutineId', 'routineId']) {
+            if (saved.includes(`"${newName}"`)) throw new Error(`stored data gained a "${newName}" key`);
+        }
+    });
+
+    // ── Naming helpers: autoClear ────────────────────────────────────────────
+    resultsDiv.innerHTML += '<h4 class="test-section">🧹 autoClear helpers (Clear on Reset / Marked for Clearing)</h4>';
+
+    const cycleRoutine = { autoReset: true };
+    const todoRoutine = { deleteCheckedTasks: true };
+
+    await test('autoClear names are the existing helpers, not copies that could drift', () => {
+        if (getAutoClearMode !== getDeleteSettingsMode) throw new Error('getAutoClearMode');
+        if (syncTaskAutoClear !== syncTaskDeleteWhenComplete) throw new Error('syncTaskAutoClear');
+        if (resolveAutoClear !== resolveDeleteWhenComplete) throw new Error('resolveAutoClear');
+    });
+
+    await test('getAutoClear answers for the routine\'s current mode', () => {
+        const task = { deleteWhenCompleteSettings: { cycle: true, todo: false }, deleteWhenComplete: true };
+        if (getAutoClear(task, cycleRoutine, DEFAULTS) !== true) throw new Error('Clear on Reset (cycle) should be on');
+        if (getAutoClear(task, todoRoutine, DEFAULTS) !== false) throw new Error('Marked for Clearing (todo) should be off');
+    });
+
+    await test('getAutoClear falls back to the flat field, then the mode default', () => {
+        if (getAutoClear({ deleteWhenComplete: true }, cycleRoutine, DEFAULTS) !== true) {
+            throw new Error('flat field should be used when there is no settings map');
+        }
+        if (getAutoClear({}, todoRoutine, DEFAULTS) !== DEFAULTS.todo) throw new Error('todo default');
+        if (getAutoClear({}, cycleRoutine, DEFAULTS) !== DEFAULTS.cycle) throw new Error('cycle default');
+    });
+
+    await test('setAutoClear makes the same write as the task toggle and keeps the other mode', () => {
+        // taskButtons.js writes task.deleteWhenCompleteSettings[mode] AND task.deleteWhenComplete.
+        const task = { deleteWhenCompleteSettings: { cycle: false, todo: false }, deleteWhenComplete: false };
+        const written = setAutoClear(task, cycleRoutine, true, DEFAULTS);
+        if (written !== 'cycle') throw new Error(`wrote mode ${written}`);
+        if (task.deleteWhenCompleteSettings.cycle !== true) throw new Error('per-mode setting not written');
+        if (task.deleteWhenComplete !== true) throw new Error('flat mirror not written');
+        if (task.deleteWhenCompleteSettings.todo !== false) throw new Error('the To-Do setting was changed');
+
+        setAutoClear(task, todoRoutine, true, DEFAULTS);
+        if (task.deleteWhenCompleteSettings.cycle !== true) throw new Error('turning on To-Do lost the Cycle setting');
+        if (getAutoClear(task, todoRoutine, DEFAULTS) !== true) throw new Error('round trip in To-Do mode');
+        if (getAutoClear(task, cycleRoutine, DEFAULTS) !== true) throw new Error('round trip in Cycle mode');
+    });
+
+    await test('setAutoClear repairs a missing or invalid settings map before writing', () => {
+        const task = { deleteWhenCompleteSettings: 'garbage' };
+        setAutoClear(task, cycleRoutine, true, DEFAULTS);
+        if (task.deleteWhenCompleteSettings.cycle !== true) throw new Error('value not written after repair');
+        if (task.deleteWhenCompleteSettings.todo !== DEFAULTS.todo) throw new Error('other mode not defaulted');
+    });
+
+    await test('setAutoClear never modifies the frozen defaults object', () => {
+        // A task can end up holding DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS by reference;
+        // editing it in place would throw in strict mode (or silently corrupt defaults).
+        const task = { deleteWhenCompleteSettings: DEFAULTS };
+        const before = JSON.stringify(DEFAULTS);
+        setAutoClear(task, cycleRoutine, !DEFAULTS.cycle, DEFAULTS);
+        if (JSON.stringify(DEFAULTS) !== before) throw new Error('the shared defaults object was changed');
+        if (task.deleteWhenCompleteSettings === DEFAULTS) throw new Error('task should get its own settings object');
+        if (task.deleteWhenCompleteSettings.cycle !== !DEFAULTS.cycle) throw new Error('value not written');
+    });
+
+    await test('setAutoClear only writes the stored field names', () => {
+        const task = { id: 't1' };
+        setAutoClear(task, todoRoutine, false, DEFAULTS);
+        const saved = JSON.stringify(task);
+        if (saved.includes('"autoClear"')) throw new Error('stored task gained an "autoClear" key');
+        if (!saved.includes('"deleteWhenComplete"')) throw new Error('flat field missing');
+        if (!saved.includes('"deleteWhenCompleteSettings"')) throw new Error('settings map missing');
+    });
+
+    await test('setAutoClear is inert for a missing task or missing defaults', () => {
+        if (setAutoClear(null, cycleRoutine, true, DEFAULTS) !== null) throw new Error('null task');
+        const task = {};
+        if (setAutoClear(task, cycleRoutine, true, null) !== null) throw new Error('missing defaults');
+        if ('deleteWhenComplete' in task) throw new Error('task was written without defaults');
     });
 
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed</h3>`;

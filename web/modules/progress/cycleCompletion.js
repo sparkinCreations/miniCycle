@@ -51,6 +51,7 @@ import { createDIModule, optional } from '../core/diBase.js';
 import { UI_TIMEOUTS, DOM_IDS, DOM_CLASSES, APP_VERSION } from '../core/constants.js';
 import { getLabel, getIcon } from '../labels/labelResolver.js';
 import { announce } from '../utils/announce.js';
+import { getActiveRoutine } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -102,14 +103,7 @@ export function setCycleCompletionDependencies(dependencies) {
  * @returns {Array|null} Array of tasks or null
  */
 export function getActiveRoutineTasks() {
-    const state = deps.AppState?.get?.();
-    if (!state) return null;
-
-    const cycleId = state.appState?.activeCycleId;
-    if (!cycleId) return null;
-
-    const cycle = state.data?.cycles?.[cycleId];
-    return cycle?.tasks ?? null;
+    return getActiveRoutine(deps.AppState?.get?.())?.tasks ?? null;
 }
 
 /**
