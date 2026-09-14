@@ -52,7 +52,7 @@ independent changes with very different payoffs, and they should be judged separ
 
 |                          | **A · `deleteWhenComplete*` → `autoClear`** | **B · `cycles` → `routine`** |
 |--------------------------|---------------------------------------------|------------------------------|
-| Scope (filtered)         | **473 hits / 54 files**                     | **643 hits / 117 files** (`activeCycleId` alone) |
+| Scope                    | moderate — measure when work starts         | the widest of the changes — measure when work starts |
 | What it fixes            | a live collision with a different feature   | terminology drift            |
 | Aligns with              | the existing `clearedTasks` schema noun     | nothing already in the schema |
 | UI vocabulary today      | already says "clear"                        | already says "routine"       |
@@ -216,6 +216,8 @@ settings.priorityColor = '#b8860b'     →      settings.defaultPriority = 'medi
   4. anything farther from every anchor (blues, purples) → `'high'`, which is what on/off
      priority has always meant
 
+  These numbers are tuning values: they live in `core/constants.js`, not inline in the code.
+
   Measured outcomes: pink `#ff69b4` and maroon `#800000` → High; orange `#ff8c00`, gold
   `#daa520`, olive `#808000` and lime `#9acd32` → Medium; teal `#1abc9c` → Low; blue `#3498db`,
   purple `#8e44ad`, navy `#1f3a93`, gray, black and white → High. All nine real swatches also
@@ -286,9 +288,11 @@ written against the wrong shape and would have thrown on real data; write it aga
 
 ## The gate you must not miss
 
-**`appState.validateSchema25Structure()` (`modules/core/appState.js:572`) decides whether
-stored data is adopted at all.** It has **9 call sites** — first load, corruption recovery,
-cross-tab foreign writes, and restore.
+**`appState.validateSchema25Structure()` (`modules/core/appState.js`) decides whether
+stored data is adopted at all.** It is called from first load, corruption recovery, cross-tab
+foreign writes, save-time conflict checks, and restore — list every call site with
+`grep -rn "validateSchema25Structure(" web/modules` when the work starts rather than trusting a
+count here.
 
 If it is not taught about 2.6, every 2.6 payload is rejected as invalid and the app behaves
 as though the user has no data. This is the single highest-consequence omission in the
@@ -317,9 +321,9 @@ previous plan, which never mentioned it.
    to new mode keys: `"additionalProperties": { "type": "boolean" }`.
 2. **"Ignored" means dropped.** `cycleImportManager` rebuilds each task from a fixed field list,
    so fields a newer app added do not survive an import into an older one — which is why the
-   exporter dual-writes (`.mcyc` obligation 5). Whether 2.6 should carry unknown task fields
-   through import and export is a decision still to make; if it does, pass them through only
-   after the same sanitising as known fields.
+   exporter dual-writes (`.mcyc` obligation 5). **Decided Sep 2026: 2.6 does not carry unknown
+   task fields through import and export** unless a real need appears. If one does, pass them
+   through only after the same sanitising as known fields.
 3. **Exact version checks make an older build destructive.** Every check is
    `schemaVersion === '2.5'` — the `appState` gate, `dataRecovery.js`, `dataValidator.js`,
    `dataSanitizer.js`, `backupRestoreManager.js`, `migrationManager.js`. What a 2.5 build does
@@ -398,8 +402,8 @@ detection, auto-migration, or a *"file format updated"* notification for it; tha
 users something untrue about a format that did not change.
 
 **Rename A does touch it.** `deleteWhenCompleteSettings` and `deleteWhenComplete` are part of
-the published format (`mcyc.schema.json`, `schema/mcyc-2.5.schema.json`, and 8 mentions in
-`pages/mcyc-format.html`).
+the published format (`mcyc.schema.json`, `schema/mcyc-2.5.schema.json`, and several mentions
+in `pages/mcyc-format.html`).
 
 **Priority levels touch it too.** `highPriority` and `priorityColor` appear in
 `mcyc.schema.json`, `schema/mcyc-2.5.schema.json` and `pages/mcyc-format.html`. The obligations
@@ -502,7 +506,7 @@ sort, via the `high-priority` class) · `labels/themes.js` (swatches) · `labels
 `games/miniCycle-taskGame.js` · `games/miniCycle-taskOrder.js` · `games/miniCycle-taskScramble.js` ·
 `modules/testing/testing-modal-{analysis,backup,debug,diagnostics}.js` ·
 `scripts/collect-stats.cjs` · `scripts/capture-store-screenshots.cjs` · `pages/product.html` ·
-**~30 `tests/*.tests.js` files**
+**many `tests/*.tests.js` files** (list them with a grep for the renamed fields when work starts)
 
 **Labels.** Rename A should also retire `taskOption.markedForClearing` /
 `taskOption.clearOnReset` as *separate* keys only if the UI genuinely stops distinguishing
@@ -566,8 +570,10 @@ risky stored-format change small and last.
    swatch and add the test that keeps them equal for every theme.
 3. **Colour-family rule in the helpers.** Update `utils/priorityLevel.js` so an unknown hex takes
    its colour family's level (the hue rule in *Priority levels*) and `getPriorityColor` shows
-   that level's theme colour instead of the stored hex. Pin the measured examples in
-   `priorityLevel.tests.js` and mutation-verify them.
+   that level's theme colour instead of the stored hex. The rule's tuning values — the hue
+   anchors (0°, 50°, 125°), the 45° range, and the saturation and lightness cutoffs — go in
+   `core/constants.js` (CLAUDE.md rule #5), not inline in the helper. Pin the measured examples
+   in `priorityLevel.tests.js` and mutation-verify them.
 4. **Wire the helpers into the UI** — visible behaviour change, still on 2.5 data:
    - the picker labels its swatches High / Medium / Low and the accessible name states the level
    - renderers (`taskDOM`, `taskDOMPatch`, `focusTaskPanel`) take their colour from
@@ -595,12 +601,21 @@ semantics; it does not block and is not scheduled.
 
 The previous "2–3 days" estimate was built on a six-file surface and is not survivable.
 
-- **Rename A** — 473 hits / 54 files, plus the published-schema work and the field collapse.
+**No counts are pinned here** — they go stale. `docs/PROJECT_STATS.md` is the source of truth for
+codebase size; measure each change's own surface when its work starts, for example:
+
+```bash
+cd web
+grep -rhoE '\bdeleteWhenComplete[A-Za-z]*\b' modules tests | wc -l     # Rename A
+grep -rhoE '\bactiveCycleId\b|\.cycles\b' modules tests | wc -l        # Rename B
+grep -rhoE '\b(highPriority|priorityColor|wasHighPriority)\b' modules tests | wc -l   # Priority
+```
+
+- **Rename A** — moderate surface, plus the published-schema work and the field collapse.
   The collapse is the careful part: the two deletion sites in `taskCycleReset.js` must move to
   the resolver in the same change that removes the mirror.
-- **Rename B** — 643 hits / 117 files for `activeCycleId` alone, mechanical but wide, and the
-  review pass dominates.
-- **Priority levels** — ~165 sites by the August 2026 count, plus converting every stored copy
+- **Rename B** — the widest surface, mechanical but broad, and the review pass dominates.
+- **Priority levels** — a surface comparable to Rename A, plus converting every stored copy
   (tasks, recurring templates, cleared-task entries, history details), switching the picker,
   search and renderers onto the level, and the `.mcyc` format work shared with Rename A. The
   transitional helpers in `utils/priorityLevel.js` already hold the swatch mapping; the
@@ -615,14 +630,14 @@ surfaces above as the real work.
 
 | Risk | Mitigation |
 |---|---|
-| `validateSchema25Structure` not updated → all 2.6 data rejected as invalid | Update it and all 9 call sites in the same change; add a journey booting a migrated payload |
+| `validateSchema25Structure` not updated → all 2.6 data rejected as invalid | Update it and every call site in the same change; add a journey booting a migrated payload |
 | Reconciler removed during the sweep before the field collapse lands | Do not touch `routineLoader.js:320` until `autoClear` is single-field; journey *"imported delete-settings reconcile and KEEP is honoured"* fails loudly if it goes |
 | Frozen `schema/mcyc-2.5.schema.json` edited | It is a published external contract — add 2.6 beside it, never edit it |
 | Backups in IndexedDB and the two rescue-screen formats still hold 2.5 | Restore must migrate on read, not assume the current version |
 | Data loss during migration | Automatic backup first; validate after; `test:restore` covers the rollback generator |
 | Half-migrated stored data if a sweep is partial | One migration function, one version bump, no field-by-field rollout |
 | Priority converted on tasks but not on recurring templates, cleared-task entries or history | Convert all four in the one migration; the priority journey recreates a recurring and a cleared task and asserts the level survives |
-| Persisted undo history restores pre-migration snapshots — `undoIndexedDB.js` keeps undo stacks in the `miniCycleUndoHistory` IndexedDB (`undoStacks` store, keyed by `cycleId`) and reloads them on boot and routine switch; the snapshots hold 2.5 priority and delete fields, and the key itself is a Rename B name | Migrate or clear persisted undo history at the version bump (all three changes) |
+| Persisted undo history restores pre-migration snapshots — `undoIndexedDB.js` keeps undo stacks in the `miniCycleUndoHistory` IndexedDB (`undoStacks` store, keyed by `cycleId`) and reloads them on boot and routine switch; the snapshots hold 2.5 priority and delete fields, and the key itself is a Rename B name | **Clear** persisted undo history at the version bump (decided Sep 2026 — far simpler than migrating snapshots, and losing undo across a version bump is acceptable); applies to all three changes |
 | A custom hex in a shared `.mcyc` maps to a surprising level | Decided: the hue colour-family rule, not nearest-colour (which mapped navy to High and black to Low); tests pin the measured examples for every family and the "no clear colour → High" fallback |
 | A theme's `colorPreset.priorityColor` contradicts the level colours (fitness: a green default) | Decided: set it to the theme's High swatch; a test in `priorityLevel.tests.js` keeps the two equal for every theme |
 | An older build (lagging platform build, or a tab open across the release) meets 2.6 stored data and treats the user as new, or saves its 2.5 state over it | Ship the forward-compatibility release first; a journey seeds data with a newer `schemaVersion` and asserts it is neither overwritten on load nor on save |
@@ -633,7 +648,7 @@ surfaces above as the real work.
 ## Success criteria
 
 - [ ] 2.5 data migrates with zero loss, verified on a real backup
-- [ ] `validateSchema25Structure` (or its successor) accepts 2.6 at all 9 call sites
+- [ ] `validateSchema25Structure` (or its successor) accepts 2.6 at every call site
 - [ ] `autoClear` is a single field; no mirror remains; `taskCycleReset` reads via the resolver
 - [ ] `schema/mcyc-2.5.schema.json` byte-identical; `schema/mcyc-2.6.schema.json` published;
       format page lists both
@@ -642,7 +657,7 @@ surfaces above as the real work.
       details; every theme's swatch colours map to the right level
 - [ ] Importer accepts `highPriority` / `priorityColor` **and** `priority`
 - [ ] Picker labels, accessible names and "Priority First" sort are level-aware;
-      persisted undo history migrated or cleared
+      persisted undo history cleared at the version bump
 - [ ] A non-swatch colour from a `.mcyc` imports as its colour family's level (hue rule), with
       the measured examples pinned by tests; `priorityLevel.js` uses the same rule
 - [ ] Every theme's `colorPreset.priorityColor` equals its High swatch, guarded by a test
