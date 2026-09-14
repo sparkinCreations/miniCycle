@@ -353,9 +353,20 @@ async function recreateDueTasks(activeCycleId, templates, taskList, now, extraEl
 
         await commitSystemUpdate(draft => {
             const cycle = draft.data.cycles[activeCycleId];
-            tasksToActuallyAdd.forEach(taskData => {
-                cycle.tasks.push({ ...taskData, dateCreated: now.toISOString() });
-            });
+            // Put each instance back where its template says it sat (recorded when
+            // the previous instance was removed, or at activation/import). Ascending
+            // order so earlier inserts shift later targets correctly; a template with
+            // no position, or one past the end, appends — the old behaviour.
+            const positionOf = (taskData) => {
+                const p = templates[taskData.id]?.position;
+                return Number.isInteger(p) && p >= 0 ? p : Number.MAX_SAFE_INTEGER;
+            };
+            [...tasksToActuallyAdd]
+                .sort((a, b) => positionOf(a) - positionOf(b))
+                .forEach(taskData => {
+                    const at = Math.min(positionOf(taskData), cycle.tasks.length);
+                    cycle.tasks.splice(at, 0, { ...taskData, dateCreated: now.toISOString() });
+                });
             Object.entries(committedUpdates).forEach(([templateId, updatedTemplate]) => {
                 cycle.recurringTemplates[templateId] = updatedTemplate;
             });

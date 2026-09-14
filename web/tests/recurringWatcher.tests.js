@@ -138,6 +138,50 @@ export async function runRecurringWatcherTests(resultsDiv) {
         eq(cyc.recurringTemplates.t1.nextScheduledOccurrence, NOW + 60000, 'next occurrence advanced');
     });
 
+    await test('catchUp recreates a task at its template position, not at the bottom', async () => {
+        // The reported bug: recurring tasks always came back last. A template that
+        // remembers its position gets its instance spliced back there.
+        const as = cycleState({ t1: dueTemplate('t1', { position: 1 }) }, [{ id: 'a' }, { id: 'b' }, { id: 'c' }]);
+        mod.setRecurringWatcherDependencies(makeDeps({ AppState: as }));
+        const r = await mod.catchUpMissedRecurringTasks();
+        eq(r.added, 1, 'added one');
+        eq(as.get().data.cycles.c1.tasks.map(t => t.id).join(','), 'a,t1,b,c', 'inserted at index 1');
+    });
+
+    await test('catchUp keeps recreated tasks in position order when several are due', async () => {
+        // Inserted ascending, so the earlier insert shifts the later target correctly.
+        const as = cycleState({
+            t2: dueTemplate('t2', { position: 3 }),
+            t0: dueTemplate('t0', { position: 0 })
+        }, [{ id: 'a' }, { id: 'b' }]);
+        mod.setRecurringWatcherDependencies(makeDeps({ AppState: as }));
+        const r = await mod.catchUpMissedRecurringTasks();
+        eq(r.added, 2, 'added two');
+        eq(as.get().data.cycles.c1.tasks.map(t => t.id).join(','), 't0,a,b,t2', 'each at its own index');
+    });
+
+    await test('catchUp appends when the position is unknown or past the end', async () => {
+        // Templates written before the field existed have no position; a routine
+        // that shrank can leave a position past the end. Both append — the old behaviour.
+        const as = cycleState({
+            tNull: dueTemplate('tNull'),
+            tFar: dueTemplate('tFar', { position: 99 })
+        }, [{ id: 'a' }]);
+        mod.setRecurringWatcherDependencies(makeDeps({ AppState: as }));
+        const r = await mod.catchUpMissedRecurringTasks();
+        eq(r.added, 2, 'added two');
+        const ids = as.get().data.cycles.c1.tasks.map(t => t.id);
+        eq(ids[0], 'a', 'existing task stays first');
+        eq(ids.length, 3, 'both appended after it');
+    });
+
+    await test('catchUp keeps template.position across the recreation update', async () => {
+        const as = cycleState({ t1: dueTemplate('t1', { position: 0 }) }, [{ id: 'a' }]);
+        mod.setRecurringWatcherDependencies(makeDeps({ AppState: as }));
+        await mod.catchUpMissedRecurringTasks();
+        eq(as.get().data.cycles.c1.recurringTemplates.t1.position, 0, 'position survives buildTemplateUpdate');
+    });
+
     await test('catchUp skips template when matching task already exists', async () => {
         const as = cycleState({ t1: dueTemplate('t1') }, [{ id: 't1', text: 'existing' }]);
         mod.setRecurringWatcherDependencies(makeDeps({ AppState: as }));

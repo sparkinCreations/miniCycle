@@ -91,9 +91,13 @@ export function activateTaskRecurringState(cycle, taskId, normalizedSettings, ca
         cycle.recurringTemplates = {};
     }
 
+    // Where the task sits now is where its recreated instances should return to.
+    const taskIndex = cycle.tasks.findIndex(t => t.id === taskId);
+
     cycle.recurringTemplates[taskId] = buildRecurringTemplate({
         id: taskId,
         text: task?.text || cycle.recurringTemplates[taskId]?.text || getLabel('noun.untitledTask'),
+        position: taskIndex >= 0 ? taskIndex : cycle.recurringTemplates[taskId]?.position ?? null,
         recurringSettings: structuredClone(normalizedSettings),
         highPriority: task?.highPriority || false,
         priorityColor: task?.priorityColor || null,
@@ -500,12 +504,16 @@ export function removeRecurringTasksFromCycle(taskElements, cycleData) {
             // recurring domain); the producer applies the plain values.
             if (cycleData?.recurringTemplates?.[taskId]) {
                 const template = cycleData.recurringTemplates[taskId];
+                // Remember where the task sat, so the watcher can put the next
+                // instance back there instead of at the bottom of the routine.
+                const position = (cycleData.tasks || []).findIndex(t => t.id === taskId);
                 plan.templateUpdates[taskId] = {
                     nextScheduledOccurrence: Deps.calculateNextOccurrence(
                         template.recurringSettings,
                         Date.now()
                     ),
-                    lastTriggeredTimestamp: null
+                    lastTriggeredTimestamp: null,
+                    position: position >= 0 ? position : (template.position ?? null)
                 };
             }
         }

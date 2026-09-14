@@ -673,7 +673,7 @@ export async function processImportedData(fileContent) {
     const recurringTemplates = {};
     const calculateNextOccurrence = _deps.calculateNextOccurrence;
 
-    mappedTasks.forEach(task => {
+    mappedTasks.forEach((task, index) => {
         if (task.recurring && task.recurringSettings) {
             try {
                 let nextOccurrence = null;
@@ -683,6 +683,9 @@ export async function processImportedData(fileContent) {
                 recurringTemplates[task.id] = buildRecurringTemplate({
                     id: task.id,
                     text: task.text,
+                    // The file's task order is the author's order — recreated
+                    // instances go back to this spot, not the bottom of the routine.
+                    position: index,
                     dueDate: task.dueDate || null,
                     highPriority: task.highPriority || false,
                     priorityColor: task.priorityColor || (task.highPriority ? COLORS.PRIORITY_DEFAULT : null),

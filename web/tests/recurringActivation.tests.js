@@ -58,6 +58,7 @@ export async function runRecurringActivationTests(resultsDiv) {
         if (!tmpl) throw new Error('template should be created keyed by taskId');
         if (tmpl.recurring !== true) throw new Error('template.recurring should be true');
         if (tmpl.text !== 'Water plants') throw new Error('template should carry the task text');
+        if (tmpl.position !== 0) throw new Error(`template.position should be the task's index (0), got ${tmpl.position}`);
         if (tmpl.highPriority !== true || tmpl.priorityColor !== '#f00') throw new Error('template should copy priority fields');
         if (tmpl.occurrenceCount !== 0) throw new Error('new template should start at occurrenceCount 0');
         if (tmpl.nextScheduledOccurrence !== 424242) throw new Error('template should use calcFn output for nextScheduledOccurrence');
@@ -120,6 +121,28 @@ export async function runRecurringActivationTests(resultsDiv) {
         if (!plan || !plan.removedIds.includes('task-1')) throw new Error('plan.removedIds should contain the recurring task');
         if (plan.removedIds.includes('task-2')) throw new Error('non-recurring task must not be planned for removal');
         if (document.body.contains(el)) throw new Error('recurring task element should be removed from DOM');
+    });
+
+    await test('removeRecurringTasksFromCycle plans the template position from the task\'s index in state', () => {
+        // Recurring tasks came back at the BOTTOM after every reset: the removal
+        // forgot where the task sat, and the watcher appended. The plan now carries
+        // the index so the producer stores it on the template.
+        const el = document.createElement('div');
+        el.className = 'recurring';
+        el.dataset.taskId = 'task-1';
+        el.innerHTML = '<input type="checkbox" checked>';
+        document.body.appendChild(el);
+
+        const cycle = {
+            tasks: [{ id: 'task-0' }, { id: 'task-1', deleteWhenComplete: true }, { id: 'task-2' }],
+            recurringTemplates: { 'task-1': { id: 'task-1', recurringSettings: { frequency: 'daily' } } }
+        };
+        setRecurringActivationDependencies({ calculateNextOccurrence: () => 424242 });
+        const plan = removeRecurringTasksFromCycle([el], cycle);
+
+        if (plan.templateUpdates['task-1']?.position !== 1) {
+            throw new Error(`plan should carry position 1 (second in the list), got ${JSON.stringify(plan.templateUpdates['task-1'])}`);
+        }
     });
 
     await test('removeRecurringTasksFromCycle plans a KEEP for deleteWhenComplete=false (checkbox unchecked, state untouched)', () => {

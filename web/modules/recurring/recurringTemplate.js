@@ -72,7 +72,12 @@ export function buildRecurringTemplate({
     deleteWhenComplete = true,
     deleteWhenCompleteSettings = null,
     occurrenceCount = 0,
-    lastTriggeredTimestamp = null
+    lastTriggeredTimestamp = null,
+    // Index in routine.tasks where a recreated instance should land. Recorded when
+    // the instance is removed (cycle reset, To-Do clear) and at activation/import;
+    // null means "unknown", and the watcher appends as it always did. Without it
+    // every recurring task came back at the bottom of the routine.
+    position = null
 } = {}) {
     if (nextScheduledOccurrence == null) {
         // Not thrown: a data path should not explode mid-write. But say it out
@@ -97,6 +102,7 @@ export function buildRecurringTemplate({
         occurrenceCount,
         lastTriggeredTimestamp,
         nextScheduledOccurrence: nextScheduledOccurrence ?? null,
+        position: Number.isInteger(position) && position >= 0 ? position : null,
         schemaVersion: RECURRING_TEMPLATE_SCHEMA_VERSION
     };
 }

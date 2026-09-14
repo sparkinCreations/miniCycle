@@ -32,12 +32,23 @@ export async function runRecurringTemplateTests(resultsDiv) {
             'id', 'text', 'recurring', 'recurringSettings', 'dueDate', 'highPriority',
             'priorityColor', 'remindersEnabled', 'deleteWhenComplete',
             'deleteWhenCompleteSettings', 'occurrenceCount', 'lastTriggeredTimestamp',
-            'nextScheduledOccurrence', 'schemaVersion'
+            'nextScheduledOccurrence', 'position', 'schemaVersion'
         ];
         const missing = required.filter(k => !(k in t));
         assert(missing.length === 0, `missing field(s): ${missing.join(', ')}`);
         assertEq(t.recurring, true, 'recurring must be true');
         assertEq(t.schemaVersion, RECURRING_TEMPLATE_SCHEMA_VERSION, 'schemaVersion');
+    });
+
+    await test('position defaults to null and only keeps a non-negative integer', () => {
+        // null means "append" — the watcher's old behaviour, and what every
+        // template written before the field existed reads as.
+        assertEq(buildRecurringTemplate(base()).position, null, 'default');
+        assertEq(buildRecurringTemplate({ ...base(), position: 0 }).position, 0, 'zero is a real position');
+        assertEq(buildRecurringTemplate({ ...base(), position: 3 }).position, 3, 'integer kept');
+        for (const bad of [-1, 1.5, '2', NaN, undefined]) {
+            assertEq(buildRecurringTemplate({ ...base(), position: bad }).position, null, `invalid ${String(bad)} → null`);
+        }
     });
 
     await test('a template built with no scheduling never fires — and says so', () => {

@@ -125,10 +125,16 @@ cycle.recurringTemplates["task-123"] = {
   recurring: true,
   recurringSettings: { /* same as above */ },
   lastTriggeredTimestamp: "2025-01-15T09:00:00Z",
-  nextScheduledOccurrence: 1737019200000  // Unix timestamp for next occurrence
+  nextScheduledOccurrence: 1737019200000,  // Unix timestamp for next occurrence
+  position: 1                              // index in cycle.tasks to recreate at (null = append)
 }
 ```
 **Purpose:** The "master copy" used to recreate the task on schedule. Includes optimization field for fast checking.
+
+`position` (Sep 2026) is where the recreated instance is inserted in the routine. It is recorded
+whenever an instance leaves the task list — cycle reset, To-Do clear — and set at activation and
+on `.mcyc` import (the file's task order). Before it existed the watcher always appended, so
+every recurring task drifted to the bottom of the routine after each reset.
 
 ### The Lifecycle of a Recurring Task
 

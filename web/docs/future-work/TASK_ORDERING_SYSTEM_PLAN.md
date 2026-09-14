@@ -16,6 +16,22 @@
 > `STATE_TRUTH_MIGRATION.md`'s own implementation order says the same thing from the other
 > direction: *"Do not start at schema 2.6 or UUID keys. Collapse Gen 1 on the loop first."*
 
+> **Two corrections, Sep 2026.**
+>
+> **Problem 2 is fixed without this plan.** Recurring tasks came back at the bottom because the
+> watcher appended and nothing remembered where the task sat. Templates now carry `position`
+> (recorded on cycle reset and To-Do clear, set at activation and on `.mcyc` import), and the
+> watcher splices the recreated instance back there — see `RECURRING_SYSTEM_REFERENCE.md`. That
+> leaves problem 1 (handled by `dataset.originalIndex`) and problem 3, numbering.
+>
+> **"Breaking, requires migration" is wrong for the `order` field.** Its own migration rule is
+> "missing → array position + 1", which is a *default*, not a migration: readers treat a missing
+> `order` as the array index and writers fill it in as tasks are touched. Under the open-schema
+> rule in `SCHEMA_2_6_PLAN.md` that is an additive field with no version bump and no `.mcyc`
+> impact, so this plan does **not** ride the 2.6 migration. Order matters to a routine manager —
+> the order of steps *is* the routine — so do this when task numbering is wanted, after
+> `STATE_TRUTH_MIGRATION.md` P1 (it writes to the same paths P1 stabilises).
+
 ---
 
 ## Overview

@@ -486,6 +486,7 @@ function resetTasksData(context, deps) {
                     if (template) {
                         template.nextScheduledOccurrence = upd.nextScheduledOccurrence;
                         template.lastTriggeredTimestamp = upd.lastTriggeredTimestamp;
+                        if (Number.isInteger(upd.position)) template.position = upd.position;
                     }
                 });
                 cycle.tasks.forEach(task => {
@@ -938,6 +939,13 @@ export async function deleteCompletedTasksImpl(activeCycleId, cycleData, taskLis
         await AppState.update(state => {
             const cycle = state.data.cycles[activeCycleId];
             if (cycle?.tasks) {
+                // A cleared recurring instance comes back later — record where it
+                // sat so the watcher can recreate it in place, not at the bottom.
+                cycle.tasks.forEach((t, index) => {
+                    if (t.recurring && taskIdsToDelete.includes(t.id) && cycle.recurringTemplates?.[t.id]) {
+                        cycle.recurringTemplates[t.id].position = index;
+                    }
+                });
                 cycle.tasks = cycle.tasks.filter(t => !taskIdsToDelete.includes(t.id));
             }
             // Update total tasks completed count for achievements.

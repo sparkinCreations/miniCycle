@@ -649,8 +649,10 @@ risky stored-format change small and last.
    with dual-written exports during the transition window. Build the migration as ordered,
    separately tested steps inside one function and one version bump — never as separate
    releases.
-8. **`TASK_ORDERING_SYSTEM_PLAN.md` is downstream** — its task object is declared
-   "Schema 2.6+", so it waits on the migration.
+8. **`TASK_ORDERING_SYSTEM_PLAN.md` is independent of the migration** (corrected Sep 2026). Its
+   `order` field is additive with a default, so it needs no version bump and does not ride
+   this bus; its recurring-position problem was fixed separately by `template.position`. Do it
+   when task numbering is wanted, after `STATE_TRUTH_MIGRATION.md` P1.
 
 `APPSTATE_MERGE_STATES.md` notes a schema change is a natural moment to revisit merge
 semantics; it does not block and is not scheduled.

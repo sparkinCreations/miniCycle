@@ -589,6 +589,67 @@ export async function runTaskCycleResetTests(resultsDiv) {
         return { taskList, stateObj, calls, deps, cycleData: stateObj.data.cycles[cycleId] };
     };
 
+    await test('a reset stores the planned template position so the recurring task returns in place', async () => {
+        // The producer applies the recurring plan; the plan now carries the index the
+        // removed instance sat at. Without this write the watcher appends and the
+        // task comes back at the bottom of the routine.
+        const h = splitRig([
+            { id: 'a', text: 'A', completed: true },
+            { id: 'r', text: 'Recurring', completed: true, recurring: true, deleteWhenComplete: true },
+            { id: 'b', text: 'B', completed: true }
+        ]);
+        h.cycleData.recurringTemplates = { r: { id: 'r', recurringSettings: { frequency: 'daily' }, nextScheduledOccurrence: 1 } };
+        h.deps.removeRecurringTasksFromCycle = () => ({
+            removedIds: ['r'], keptIds: [],
+            templateUpdates: { r: { nextScheduledOccurrence: 2, lastTriggeredTimestamp: null, position: 1 } }
+        });
+        try {
+            await mod.resetTasksImpl(h.deps);
+            const tmpl = h.stateObj.data.cycles.c1.recurringTemplates.r;
+            if (tmpl.position !== 1) throw new Error(`template.position should be 1, got ${tmpl.position}`);
+            if (h.stateObj.data.cycles.c1.tasks.some(t => t.id === 'r')) throw new Error('the recurring instance should have been removed');
+        } finally {
+            mod.clearAllTimeouts();
+            h.taskList.remove();
+        }
+    });
+
+    await test('a To-Do clear records where a cleared recurring instance sat', async () => {
+        const container = document.createElement('div');
+        const taskList = document.createElement('ul');
+        for (const id of ['x', 'r']) {
+            const li = document.createElement('li');
+            li.className = 'task';
+            li.dataset.taskId = id;
+            const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = true;
+            li.appendChild(cb);
+            taskList.appendChild(li);
+        }
+        container.appendChild(taskList);
+        document.body.appendChild(container);
+
+        const stateObj = {
+            appState: { activeCycleId: 'c1' },
+            data: { cycles: { c1: {
+                tasks: [
+                    { id: 'x', text: 'X', completed: true, deleteWhenComplete: true },
+                    { id: 'r', text: 'R', completed: true, deleteWhenComplete: true, recurring: true }
+                ],
+                recurringTemplates: { r: { id: 'r', recurringSettings: { frequency: 'daily' } } }
+            } } },
+            userProgress: {}
+        };
+        const AppState = { isReady: () => true, get: () => stateObj, update: async (p) => { p(stateObj); return stateObj; } };
+        try {
+            await mod.deleteCompletedTasksImpl('c1', stateObj.data.cycles.c1, taskList, { AppState });
+            const tmpl = stateObj.data.cycles.c1.recurringTemplates.r;
+            if (tmpl.position !== 1) throw new Error(`template.position should be 1 (second in the list), got ${tmpl.position}`);
+        } finally {
+            mod.clearAllTimeouts();
+            container.remove();
+        }
+    });
+
     await test('breakdown separates user-checked tasks from button-completed ones', async () => {
         const h = splitRig([
             { id: 'a', text: 'Make coffee', completed: true },

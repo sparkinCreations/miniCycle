@@ -145,6 +145,12 @@ export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
                             || existingTemplate?.deleteWhenCompleteSettings
                             || null,
                         recurringSettings: structuredClone(settings),
+                        // Where the task sits now, or the last recorded spot if it is
+                        // not currently in the list — recreated instances return there.
+                        position: (() => {
+                            const index = cycle.tasks.findIndex(t => t.id === taskId);
+                            return index >= 0 ? index : existingTemplate?.position ?? null;
+                        })(),
                         // Preserved across a settings edit — re-applying must not
                         // reset progress toward a finite recurrence count.
                         occurrenceCount: existingTemplate?.occurrenceCount ?? 0,
