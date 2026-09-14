@@ -186,8 +186,9 @@ the published `.mcyc` schema like Rename A, and can ship with either rename or o
 4. **Theme presets carry a conflicting colour.** Each theme's `colorPreset.priorityColor`
    (fitness: `#1e8c52`, a green) sets the root `--task-priority-color` CSS variable
    (`themeManager.js`). Flagged tasks write an inline value that overrides it, so it rarely
-   shows — but under levels, a green "High" default contradicts green = low. Make it the
-   theme's High swatch, or retire it.
+   shows — but under levels, a green "High" default contradicts green = low. **Decided Sep 2026:
+   point each theme's `colorPreset.priorityColor` at that theme's High swatch**, and add a test
+   that keeps the two equal. This needs no schema change, so it can ship before 2.6.
 
 ### 2.6 shape
 
@@ -196,12 +197,22 @@ the published `.mcyc` schema like Rename A, and can ship with either rename or o
 task.highPriority = true               →      task.priority = 'medium'   // 'high' | 'medium' | 'low' | null
 task.priorityColor = '#b8860b'         →      (removed — colour derived from the theme at render)
 settings.priorityColor = '#b8860b'     →      settings.defaultPriority = 'medium'
+                                              task.customPriorityColor = '#8e44ad'   // optional; only for a non-swatch colour from a .mcyc
 ```
 
 - **Migration and import:** `highPriority: false` → `null`. Flagged with a known swatch hex (any
-  theme, or the defaults) → that swatch's level. Flagged with no hex or an unknown one →
-  `'high'`. An unknown custom hex is **lost**. No UI ever produced one, but a hand-written
-  `.mcyc` can carry one — see the `.mcyc` section for what that means for the published promise.
+  theme, or the defaults) → that swatch's level, no custom colour. Flagged with no hex → `'high'`.
+  Flagged with an **unknown** hex → `'high'` **plus** `customPriorityColor` set to that hex.
+- **Custom colours survive (decided Sep 2026).** No UI ever produced a non-swatch colour, but a
+  hand-written `.mcyc` can carry one, and the author's choice is kept in the optional
+  `customPriorityColor` field (name proposed). Rules:
+  - it is shown **instead of** the theme colour, and does not follow theme switches — the one
+    deliberate exception to "colour comes from the theme"
+  - the task still has a level (High on import), so sorting and the accessible name keep working
+  - picking a swatch in the app sets the level and **clears** `customPriorityColor`; the app never
+    creates one itself
+  - `getPriorityColor()` in `utils/priorityLevel.js` already behaves this way on 2.5 data (a
+    non-swatch hex is shown as stored)
 - **Priority is stored in more than tasks** (measured Sep 2026), and every copy must convert in
   the same migration:
   - recurring templates — `recurringTemplates[id].highPriority` / `.priorityColor`, written by
@@ -330,11 +341,12 @@ the published format (`mcyc.schema.json`, `schema/mcyc-2.5.schema.json`, and 8 m
 `mcyc.schema.json`, `schema/mcyc-2.5.schema.json` and `pages/mcyc-format.html`. The obligations
 below apply to them exactly as to Rename A — the importer accepts `highPriority` /
 `priorityColor` permanently, and the exporter writes `priority` — so publish both changes in
-the same `mcyc-2.6.schema.json`. One extra decision is needed first: the 2.5 schema accepts
-**any** hex, so a hand-written file can hold a custom colour. Under the migration rule it still
-imports — as High — but the colour is gone. That honours "existing files keep importing" but not
-the author's colour; decide whether a custom colour should survive (for example as an optional
-override field) before 2.6 is published. The sample routines in `examples/routines/` use the 2.5
+the same `mcyc-2.6.schema.json`. The 2.5 schema accepts **any** hex, so a hand-written file can
+hold a custom colour; **decided Sep 2026, it survives.** A non-swatch hex imports as High with
+`customPriorityColor` set, so both the file and the author's colour are kept. The 2.6 schema
+declares `customPriorityColor` as an optional hex, the exporter writes it only when present, and
+the format page should say that swatch colours follow the reader's theme while a custom colour
+does not. The sample routines in `examples/routines/` use the 2.5
 fields; they keep importing through the permanent alias, and should be converted when 2.6 ships
 so the examples show the current format.
 
@@ -517,8 +529,8 @@ surfaces above as the real work.
 | Half-migrated stored data if a sweep is partial | One migration function, one version bump, no field-by-field rollout |
 | Priority converted on tasks but not on recurring templates, cleared-task entries or history | Convert all four in the one migration; the priority journey recreates a recurring and a cleared task and asserts the level survives |
 | Persisted undo history restores pre-migration snapshots — `undoIndexedDB.js` keeps undo stacks in the `miniCycleUndoHistory` IndexedDB (`undoStacks` store, keyed by `cycleId`) and reloads them on boot and routine switch; the snapshots hold 2.5 priority and delete fields, and the key itself is a Rename B name | Migrate or clear persisted undo history at the version bump (all three changes) |
-| A custom hex in a shared `.mcyc` silently becomes plain High | Decide before publishing 2.6 whether a custom colour survives; state the outcome on the format page |
-| A theme's `colorPreset.priorityColor` contradicts the level colours (fitness: a green default) | Point it at the theme's High swatch, or retire it, in the same change |
+| A custom hex in a shared `.mcyc` is lost in migration or import | Decided: it survives as `customPriorityColor` (level High); an import test with a non-swatch hex asserts the colour is kept, and one with a swatch hex asserts no custom colour is created |
+| A theme's `colorPreset.priorityColor` contradicts the level colours (fitness: a green default) | Decided: set it to the theme's High swatch; a test in `priorityLevel.tests.js` keeps the two equal for every theme |
 
 ---
 
@@ -534,7 +546,10 @@ surfaces above as the real work.
       details; every theme's swatch colours map to the right level
 - [ ] Importer accepts `highPriority` / `priorityColor` **and** `priority`
 - [ ] Picker labels, accessible names and "Priority First" sort are level-aware;
-      `colorPreset.priorityColor` resolved; persisted undo history migrated or cleared
+      persisted undo history migrated or cleared
+- [ ] A non-swatch colour from a `.mcyc` survives as `customPriorityColor`; picking a swatch
+      clears it
+- [ ] Every theme's `colorPreset.priorityColor` equals its High swatch, guarded by a test
 - [ ] Full suite and every gate green (see [Testing](#testing))
 - [ ] New migration tests, each mutation-verified
 - [ ] `SCHEMA_2_5.md`, `DATA_SCHEMA_GUIDE.md`, `MCYC_FILE_FORMAT.md`, `CLAUDE.md` updated;
