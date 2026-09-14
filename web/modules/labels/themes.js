@@ -144,9 +144,9 @@ export const THEME_DEFINITIONS = {
         },
         // Priority picker options — darkened for contrast on warm amber taskBg (#ffd0a0)
         priorityColors: [
-            { hex: '#8b1a1a', labelKey: 'notify.priorityColorRed' },
-            { hex: '#7a4d00', labelKey: 'notify.priorityColorYellow' },
-            { hex: '#1a5c2e', labelKey: 'notify.priorityColorGreen' },
+            { level: 'high',   hex: '#8b1a1a', labelKey: 'notify.priorityColorRed' },
+            { level: 'medium', hex: '#7a4d00', labelKey: 'notify.priorityColorYellow' },
+            { level: 'low',    hex: '#1a5c2e', labelKey: 'notify.priorityColorGreen' },
         ],
         preview: {
             tagline:      'Build streaks, track habits',
@@ -248,9 +248,9 @@ export const THEME_DEFINITIONS = {
         },
         // Priority picker options — improved contrast on white taskBg (#ffffff)
         priorityColors: [
-            { hex: '#c0392b', labelKey: 'notify.priorityColorRed' },
-            { hex: '#b8860b', labelKey: 'notify.priorityColorYellow' },
-            { hex: '#27ae60', labelKey: 'notify.priorityColorGreen' },
+            { level: 'high',   hex: '#c0392b', labelKey: 'notify.priorityColorRed' },
+            { level: 'medium', hex: '#b8860b', labelKey: 'notify.priorityColorYellow' },
+            { level: 'low',    hex: '#27ae60', labelKey: 'notify.priorityColorGreen' },
         ],
         preview: {
             tagline:      'Track workouts, build routines',
@@ -352,9 +352,9 @@ export const THEME_DEFINITIONS = {
         },
         // Priority picker options — improved contrast on white taskBg (#ffffff)
         priorityColors: [
-            { hex: '#c0392b', labelKey: 'notify.priorityColorRed' },
-            { hex: '#b8860b', labelKey: 'notify.priorityColorYellow' },
-            { hex: '#27ae60', labelKey: 'notify.priorityColorGreen' },
+            { level: 'high',   hex: '#c0392b', labelKey: 'notify.priorityColorRed' },
+            { level: 'medium', hex: '#b8860b', labelKey: 'notify.priorityColorYellow' },
+            { level: 'low',    hex: '#27ae60', labelKey: 'notify.priorityColorGreen' },
         ],
         preview: {
             tagline:      'Study topics, track sessions',
@@ -456,9 +456,9 @@ export const THEME_DEFINITIONS = {
         },
         // Priority picker options — improved contrast on white taskBg (#ffffff)
         priorityColors: [
-            { hex: '#c0392b', labelKey: 'notify.priorityColorRed' },
-            { hex: '#b8860b', labelKey: 'notify.priorityColorYellow' },
-            { hex: '#27ae60', labelKey: 'notify.priorityColorGreen' },
+            { level: 'high',   hex: '#c0392b', labelKey: 'notify.priorityColorRed' },
+            { level: 'medium', hex: '#b8860b', labelKey: 'notify.priorityColorYellow' },
+            { level: 'low',    hex: '#27ae60', labelKey: 'notify.priorityColorGreen' },
         ],
         preview: {
             tagline:      'Tackle chores, run clean sweeps',

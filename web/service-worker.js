@@ -167,6 +167,7 @@ var BOOT_CRITICAL = [
   './modules/utils/collapsibleSections.js',
   './modules/utils/styleValidators.js',
   './modules/utils/cycleMode.js',
+  './modules/utils/priorityLevel.js',
   // Task modules - ALL task functionality
   './modules/task/taskCore.js',
   './modules/task/taskDOM.js',

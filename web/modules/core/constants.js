@@ -44,6 +44,27 @@ export const COLORS = Object.freeze({
     PRIORITY_DEFAULT: '#dc3545'  // Red — fallback when task.priorityColor and settings.priorityColor are both absent
 });
 
+/**
+ * Priority levels, highest first — this order IS the sort order.
+ * Schema 2.5 still stores priority as `highPriority` + a `priorityColor` hex; the
+ * helpers in utils/priorityLevel.js translate between the two until Schema 2.6
+ * stores the level itself (docs/future-work/SCHEMA_2_6_PLAN.md).
+ * @constant {ReadonlyArray<'high'|'medium'|'low'>}
+ */
+export const PRIORITY_LEVELS = Object.freeze(['high', 'medium', 'low']);
+
+/**
+ * Priority picker swatches for themes that define none of their own (classic).
+ * Every other theme's set lives in THEME_DEFINITIONS[id].priorityColors, with the
+ * same `level` tags. Red = high, yellow = medium, green = low.
+ * @constant {ReadonlyArray<{level: string, hex: string, labelKey: string}>}
+ */
+export const DEFAULT_PRIORITY_SWATCHES = Object.freeze([
+    Object.freeze({ level: 'high',   hex: COLORS.PRIORITY_DEFAULT, labelKey: 'notify.priorityColorRed' }),
+    Object.freeze({ level: 'medium', hex: '#facc15',               labelKey: 'notify.priorityColorYellow' }),
+    Object.freeze({ level: 'low',    hex: '#28a745',               labelKey: 'notify.priorityColorGreen' })
+]);
+
 // ============================================================================
 // TIMEOUTS (milliseconds)
 // ============================================================================

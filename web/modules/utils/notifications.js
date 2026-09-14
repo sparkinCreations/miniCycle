@@ -35,7 +35,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { UI_TIMEOUTS, COLORS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, BREAKPOINTS } from '../core/constants.js';
+import { UI_TIMEOUTS, COLORS, DEFAULT_PRIORITY_SWATCHES, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, BREAKPOINTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { reshowPopover } from './popoverUtils.js';
 import { EducationalTipManager } from './educationalTips.js';
@@ -1340,13 +1340,10 @@ async setDefaultPosition(notificationContainer) {
   showPriorityColorPickerNotification(currentColor = COLORS.PRIORITY_DEFAULT, duration = 8000, taskId = null, onColorSelect = null) {
     const vocabThemeId = document.documentElement.dataset?.vocabTheme;
     const activeThemeDef = (vocabThemeId && vocabThemeId !== 'classic') ? _deps.vocabThemeManager?.getThemeDefinition(vocabThemeId) : null;
-    const colorSwatches = activeThemeDef?.priorityColors
-      ? activeThemeDef.priorityColors.map(c => ({ hex: c.hex, label: getLabel(c.labelKey) }))
-      : [
-          { hex: COLORS.PRIORITY_DEFAULT, label: getLabel('notify.priorityColorRed') },
-          { hex: '#facc15', label: getLabel('notify.priorityColorYellow') },
-          { hex: '#28a745', label: getLabel('notify.priorityColorGreen') },
-        ];
+    // Theme swatches, or the shared defaults (classic) — one source, so the
+    // priority helpers in utils/priorityLevel.js can never disagree with the picker.
+    const colorSwatches = (activeThemeDef?.priorityColors || DEFAULT_PRIORITY_SWATCHES)
+      .map(c => ({ hex: c.hex, label: getLabel(c.labelKey) }));
 
     const swatchesHTML = colorSwatches.map(c => {
       const isSelected = c.hex === currentColor;
