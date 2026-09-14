@@ -191,9 +191,9 @@ the published `.mcyc` schema like Rename A, and can ship with either rename or o
 4. **Theme presets carry a conflicting colour.** Each theme's `colorPreset.priorityColor`
    (fitness: `#1e8c52`, a green) sets the root `--task-priority-color` CSS variable
    (`themeManager.js`). Flagged tasks write an inline value that overrides it, so it rarely
-   shows — but under levels, a green "High" default contradicts green = low. **Decided Sep 2026:
-   point each theme's `colorPreset.priorityColor` at that theme's High swatch**, and add a test
-   that keeps the two equal. This needs no schema change, so it can ship before 2.6.
+   shows — but under levels, a green "High" default contradicts green = low. **Decided and done
+   Sep 2026: each theme's `colorPreset.priorityColor` is its High swatch**, guarded by a test in
+   `themes.tests.js`. No schema change was needed.
 
 ### 2.6 shape
 
@@ -627,8 +627,9 @@ risky stored-format change small and last.
 1. **Forward-compatibility release** — ✅ *code landed Sep 2026 (see Built to adapt)*. Ship it and
    let it reach the platform builds, so no build that can meet 2.6 data will destroy it. It must
    be out before step 7.
-2. **Theme presets → High swatch.** Set each theme's `colorPreset.priorityColor` to its High
-   swatch and add the test that keeps them equal for every theme.
+2. **Theme presets → High swatch** — ✅ *done Sep 2026.* Each theme's `colorPreset.priorityColor`
+   now equals its High swatch (fitness's green default is gone), guarded by a test in
+   `themes.tests.js`.
 3. **Colour-family rule in the helpers.** Update `utils/priorityLevel.js` so an unknown hex takes
    its colour family's level (the hue rule in *Priority levels*) and `getPriorityColor` shows
    that level's theme colour instead of the stored hex. The rule's tuning values — the hue

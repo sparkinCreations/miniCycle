@@ -123,7 +123,7 @@ export const THEME_DEFINITIONS = {
             panelText:            '#ffffff',  // on appBg — 4.71:1 ✓
             celebrationBg:        'rgba(192, 82, 21, 0.97)',   // fiery orange popup
             celebrationShadow:    'rgba(192, 82, 21, 0.4)',
-            priorityColor:        '#b04e12',
+            priorityColor:        '#8b1a1a',                    // = this theme's High swatch (priorityColors below); a test keeps them equal
             modalBg:              'rgba(255, 225, 195, 0.82)',   // warm amber glass — matches theme palette
             modalText:            '#3d1a00',                    // dark brown — same as taskText for consistency
             // Main menu gradient — its own, not modalBg: the menu is chrome and
@@ -227,7 +227,7 @@ export const THEME_DEFINITIONS = {
             panelText:            '#ffffff',
             celebrationBg:        'rgba(30, 140, 82, 0.97)',
             celebrationShadow:    'rgba(30, 140, 82, 0.4)',
-            priorityColor:        '#1e8c52',
+            priorityColor:        '#c0392b',                    // = this theme's High swatch; was a green that contradicted green = Low
             modalBg:              'rgba(220, 248, 232, 0.82)',   // soft mint glass — matches theme palette
             modalText:            '#0d2b1a',                    // dark green — same as taskText for consistency
             // Main menu gradient — its own, not modalBg: the menu is chrome and
@@ -331,7 +331,7 @@ export const THEME_DEFINITIONS = {
             panelText:            '#ffffff',
             celebrationBg:        'rgba(61, 53, 181, 0.97)',
             celebrationShadow:    'rgba(61, 53, 181, 0.4)',
-            priorityColor:        '#3d35b5',
+            priorityColor:        '#c0392b',                    // = this theme's High swatch
             modalBg:              'rgba(216, 213, 255, 0.82)',   // soft periwinkle glass — matches theme palette
             modalText:            '#1e1b4b',                    // dark indigo — same as taskText for consistency
             // Main menu gradient — its own, not modalBg: the menu is chrome and
@@ -435,7 +435,7 @@ export const THEME_DEFINITIONS = {
             panelText:            '#ffffff',
             celebrationBg:        'rgba(10, 141, 181, 0.97)',
             celebrationShadow:    'rgba(10, 141, 181, 0.4)',
-            priorityColor:        '#0a8db5',
+            priorityColor:        '#c0392b',                    // = this theme's High swatch
             modalBg:              'rgba(200, 240, 252, 0.82)',   // soft aqua glass — matches theme palette
             modalText:            '#0c2b33',                    // dark teal — same as taskText for consistency
             // Main menu gradient — its own, not modalBg: the menu is chrome and

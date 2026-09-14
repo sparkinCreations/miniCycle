@@ -343,6 +343,27 @@ export async function runThemesTests(resultsDiv) {
     });
 
     // ============================================
+    // 🎨 PRIORITY COLOUR CONSISTENCY
+    // ============================================
+    resultsDiv.innerHTML += '<h4 class="test-section">🎨 Priority colour consistency</h4>';
+
+    await test('every theme preset priorityColor equals that theme\'s High swatch', () => {
+        // Priority is a level (High = red). A preset default of a different colour
+        // — fitness shipped a GREEN one — contradicts green = Low the moment the
+        // swatch colours mean levels. Decided Sep 2026: the preset IS the High swatch.
+        const themed = Object.values(THEME_DEFINITIONS)
+            .filter(t => t?.colorPreset?.priorityColor !== undefined);
+        if (themed.length === 0) throw new Error('no theme carries colorPreset.priorityColor — fixture is wrong');
+        for (const theme of themed) {
+            const high = (theme.priorityColors || []).find(s => s.level === 'high');
+            if (!high) throw new Error(`${theme.id} has a preset priorityColor but no High swatch to match`);
+            if (theme.colorPreset.priorityColor.toLowerCase() !== high.hex.toLowerCase()) {
+                throw new Error(`${theme.id}: preset priorityColor ${theme.colorPreset.priorityColor} ≠ High swatch ${high.hex}`);
+            }
+        }
+    });
+
+    // ============================================
     // 📊 RESULTS
     // ============================================
     const percentage = Math.round((passed.count / total.count) * 100);
