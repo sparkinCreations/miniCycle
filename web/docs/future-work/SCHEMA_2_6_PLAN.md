@@ -288,6 +288,62 @@ previous plan, which never mentioned it.
 
 ---
 
+## Built to adapt — forward compatibility (verified Sep 2026)
+
+2.6 must stay as adaptable as 2.5 — and fix the places where 2.5 is not.
+
+**What 2.5 gets right — keep it.**
+
+- The `.mcyc` schemas are open: `additionalProperties: true` at the root, on tasks and on
+  `recurringSettings`, and the format page promises unknown keys are ignored, not errors.
+- Every shipped format version has its own permanent, immutable schema URL.
+- The stored-data gate checks only the keys it needs (`schemaVersion`, `data.cycles`,
+  `appState`), so extra keys never make data invalid.
+- Cross-tab sync ignores external data it cannot validate instead of adopting it.
+
+**Where 2.5 is not adaptable — fix it in 2.6.**
+
+1. **One closed object in the published format.** `deleteWhenCompleteSettings` is
+   `additionalProperties: false`, so a third mode key fails strict validation — even though
+   `syncTaskDeleteWhenComplete` in `cycleMode.js` is written to carry one. Make `autoClear` open
+   to new mode keys: `"additionalProperties": { "type": "boolean" }`.
+2. **"Ignored" means dropped.** `cycleImportManager` rebuilds each task from a fixed field list,
+   so fields a newer app added do not survive an import into an older one — which is why the
+   exporter dual-writes (`.mcyc` obligation 5). Whether 2.6 should carry unknown task fields
+   through import and export is a decision still to make; if it does, pass them through only
+   after the same sanitising as known fields.
+3. **Exact version checks make an older build destructive.** Every check is
+   `schemaVersion === '2.5'` — the `appState` gate, `dataRecovery.js`, `dataValidator.js`,
+   `dataSanitizer.js`, `backupRestoreManager.js`, `migrationManager.js`. What a 2.5 build does
+   when it meets newer stored data, read from the code:
+   - **first load** (`appState.init`): the gate fails, the 2.5-only recovery fails, and `data`
+     is set to `null` — the user is treated as brand new, and the first-run flow then writes a
+     new document over the newer one *(that last write is inferred from the first-run flow, not
+     executed)*
+   - **saving** (`appState.save`): a foreign write that fails the gate is not adopted, and the
+     stale tab's 2.5 state is written over it — the code comment calls that the correct outcome
+     for *malformed* data, which newer data is not
+   - **migration detection** (`checkMigrationNeeded`): does not recognise the newer version and
+     falls through to legacy-data detection *(outcome not traced)*
+   - **cross-tab sync and full-data import**: rejected safely
+
+   A lagging Android, iOS or Chrome build, or a tab left open across the release, reaches exactly
+   these paths.
+
+**Requirements for 2.6.**
+
+- **One shared version check** replaces the exact-match comparisons and classifies data as
+  *current*, *older* (migrate it) or *newer than this build*.
+- **Newer data is never overwritten.** A build that meets it opens read-only or refuses with a
+  clear message; `init` must never fall through to first-run, and `save` must never write over
+  it. **This must ship in a release before 2.6 changes the stored format**, so every build that
+  can meet 2.6 data already knows to stand down.
+- **Migrations chain one version at a time** (2.5 → 2.6, later 2.6 → 2.7) instead of 2.6-named
+  copies of the 2.5 functions, so the next change is one more step.
+- **New `.mcyc` objects are open by default.** A closed object needs a written reason.
+
+---
+
 ## The reconciler you must not break
 
 Rename A removes a field. Before removing it, understand what currently holds the design
@@ -340,8 +396,8 @@ the published format (`mcyc.schema.json`, `schema/mcyc-2.5.schema.json`, and 8 m
 **Priority levels touch it too.** `highPriority` and `priorityColor` appear in
 `mcyc.schema.json`, `schema/mcyc-2.5.schema.json` and `pages/mcyc-format.html`. The obligations
 below apply to them exactly as to Rename A — the importer accepts `highPriority` /
-`priorityColor` permanently, and the exporter writes `priority` — so publish both changes in
-the same `mcyc-2.6.schema.json`. The 2.5 schema accepts **any** hex, so a hand-written file can
+`priorityColor` permanently, and the exporter writes `priority` (plus the 2.5 fields during the
+transition window — obligation 5) — so publish both changes in the same `mcyc-2.6.schema.json`. The 2.5 schema accepts **any** hex, so a hand-written file can
 hold a custom colour; **decided Sep 2026, it survives.** A non-swatch hex imports as High with
 `customPriorityColor` set, so both the file and the author's colour are kept. The 2.6 schema
 declares `customPriorityColor` as an optional hex, the exporter writes it only when present, and
@@ -374,12 +430,19 @@ decided:
 4. **`cycleImportManager` accepts `deleteWhenCompleteSettings` permanently.** "Existing files
    keep importing" has no end date, so this is an alias, not a deprecation window. Add one
    import test per alias so a future cleanup that drops it fails loudly.
-5. `mcycPayload` / `cycleExportManager` write `autoClear`. Optionally *also* write the legacy
-   key for a few releases: the published promise only says unknown keys must not error, so an
-   older app reading a new file falls back to defaults and silently loses the author's choice
-   (measured — that is the documented default path). Dual-writing exceeds the commitment
-   rather than fulfilling it; worth it for shared files, but it is a product call, not an
-   obligation.
+5. **`mcycPayload` / `cycleExportManager` write the 2.6 fields and, during a transition window,
+   the 2.5 fields too — decided Sep 2026.** The published promise only says unknown keys must
+   not error, so an older app reading a new file falls back to defaults and silently loses the
+   author's choice (measured — that is the documented default path). The Android, iOS and
+   Chrome builds are on-demand snapshots that lag the web app, so that older reader is real.
+   A 2.6 export therefore also writes:
+   - `deleteWhenCompleteSettings` / `deleteWhenComplete` beside `autoClear`
+   - `highPriority` / `priorityColor` beside `priority` — the colour is the level's default
+     swatch, or `customPriorityColor` when set
+
+   Rules: when both are present the importer **prefers the 2.6 field**, so the duplicate never
+   needs reconciling. The window closes only when every shipped platform build can read 2.6 —
+   tie it to platform releases, not a count of web releases.
 
 **Three version lines exist here, and they move independently:** the app data schema
 (`"2.5"`), the `.mcyc` format (no field in the document at all — detect by key presence), and
@@ -488,9 +551,12 @@ drift guard walks every module file and fails unless it is precached or in `PREC
    UUID map keys with `title` as the display name**. Today cycles are keyed by name, which is
    both what that plan wants to change and a CLAUDE.md #18 prototype-pollution hazard. Doing
    Rename B first means renaming a map whose keying is about to change anyway.
-2. **This plan.** Rename A and Priority levels first, together — both change the published
+2. **A forward-compatibility release, before any stored-format change.** Ship the shared
+   version check and the "never overwrite newer data" behaviour (see *Built to adapt*) on its
+   own, and let it reach the platform builds, so no build that can meet 2.6 data will destroy it.
+3. **This plan.** Rename A and Priority levels first, together — both change the published
    `.mcyc` format, so they share one format bump. Rename B optional and after them.
-3. **`TASK_ORDERING_SYSTEM_PLAN.md` is downstream** — its task object is declared
+4. **`TASK_ORDERING_SYSTEM_PLAN.md` is downstream** — its task object is declared
    "Schema 2.6+", so it waits on whichever renames land.
 
 `APPSTATE_MERGE_STATES.md` notes a schema change is a natural moment to revisit merge
@@ -531,6 +597,8 @@ surfaces above as the real work.
 | Persisted undo history restores pre-migration snapshots — `undoIndexedDB.js` keeps undo stacks in the `miniCycleUndoHistory` IndexedDB (`undoStacks` store, keyed by `cycleId`) and reloads them on boot and routine switch; the snapshots hold 2.5 priority and delete fields, and the key itself is a Rename B name | Migrate or clear persisted undo history at the version bump (all three changes) |
 | A custom hex in a shared `.mcyc` is lost in migration or import | Decided: it survives as `customPriorityColor` (level High); an import test with a non-swatch hex asserts the colour is kept, and one with a swatch hex asserts no custom colour is created |
 | A theme's `colorPreset.priorityColor` contradicts the level colours (fitness: a green default) | Decided: set it to the theme's High swatch; a test in `priorityLevel.tests.js` keeps the two equal for every theme |
+| An older build (lagging platform build, or a tab open across the release) meets 2.6 stored data and treats the user as new, or saves its 2.5 state over it | Ship the forward-compatibility release first; a journey seeds data with a newer `schemaVersion` and asserts it is neither overwritten on load nor on save |
+| A 2.6 `.mcyc` opened in an older build silently loses clear and priority settings | Exporter dual-writes the 2.5 fields until every platform build reads 2.6; importer prefers the 2.6 field when both are present |
 
 ---
 
@@ -550,6 +618,11 @@ surfaces above as the real work.
 - [ ] A non-swatch colour from a `.mcyc` survives as `customPriorityColor`; picking a swatch
       clears it
 - [ ] Every theme's `colorPreset.priorityColor` equals its High swatch, guarded by a test
+- [ ] One shared version check replaces every `schemaVersion === '2.5'`; data newer than the
+      build is never overwritten, and that behaviour shipped before the format changed
+- [ ] Migrations chain per version; `autoClear` and any new `.mcyc` objects are open to new keys
+- [ ] Exports dual-write the 2.5 fields during the transition window; the importer prefers 2.6
+      fields when both are present
 - [ ] Full suite and every gate green (see [Testing](#testing))
 - [ ] New migration tests, each mutation-verified
 - [ ] `SCHEMA_2_5.md`, `DATA_SCHEMA_GUIDE.md`, `MCYC_FILE_FORMAT.md`, `CLAUDE.md` updated;
