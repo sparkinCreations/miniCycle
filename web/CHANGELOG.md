@@ -1,3 +1,10 @@
+## [2.566] - 2026-09-14
+- refactor(migration): retire the pre-2.5 migration
+- feat(priority): show priority as a level in the active theme's colours
+- feat(priority): map a custom priority colour to its colour family
+- fix(themes): preset priorityColor is each theme's High swatch
+
+
 ## [2.565] - 2026-09-14
 - fix(state): never adopt or overwrite data written by a newer build
 

@@ -18,14 +18,14 @@
 
 | Metric | Value |
 |--------|-------|
-| **App Version** | 2.565 |
+| **App Version** | 2.566 |
 | **Lite Version** | 2.092 (frozen) |
 | **Schema Version** | 2.5 |
-| **Total Modules** | 160 |
-| **Total Tests** | 16 |
+| **Total Modules** | 159 |
+| **Total Tests** | 124 |
 | **Test Pass Rate** | 100% |
 | **CSS Files** | 46 |
-| **JSDoc Blocks** | 1495 |
+| **JSDoc Blocks** | 1472 |
 | **Documentation Files** | 249 |
 | **DI Completion** | 100% |
 | **Custom window.* Globals (modules)** | 0 |
@@ -39,7 +39,7 @@
 | Directory | Count | Purpose |
 |-----------|-------|---------|
 | `boot/` | 7 | Boot sequence, orchestration, module loading |
-| `core/` | 9 | AppState, appInit, appContext, DI base, constants |
+| `core/` | 8 | AppState, appInit, appContext, DI base, constants |
 | `task/` | 13 | Task CRUD, DOM, events, drag-drop, validation |
 | `routine/` | 10 | Routine management, switching, migration |
 | `recurring/` | 18 | Recurring task scheduling, panel, activation |
@@ -52,7 +52,7 @@
 | `platform/` | 1 | capacitorBridge — native shell for iOS/Android; no-op on web |
 | `testing/` | 9 | Test infrastructure |
 | `other/` | 3 | Plugins, experimental |
-| **Total** | **160** | |
+| **Total** | **159** | |
 
 ---
 
@@ -61,11 +61,11 @@
 | File | Lines | Purpose |
 |------|-------|---------|
 | `miniCycle-main.js` | ~50 | Entrypoint |
-| `modules/boot/orchestrator.js` | ~1282 | Sequence control + boot UI + early coordination |
-| `modules/boot/coreBoot.js` | ~788 | Core state & init |
+| `modules/boot/orchestrator.js` | ~1281 | Sequence control + boot UI + early coordination |
+| `modules/boot/coreBoot.js` | ~777 | Core state & init |
 | `modules/boot/featureBoot.js` | ~627 | DI wiring hub |
 | `modules/boot/uiBoot.js` | ~1202 | UI handlers |
-| **Total** | **~3949** | |
+| **Total** | **~3937** | |
 
 ---
 
@@ -73,8 +73,8 @@
 
 | Category | Tests |
 |----------|-------|
-| Total Tests | 16 |
-| Test Files | 150 |
+| Total Tests | 124 |
+| Test Files | 149 |
 | Pass Rate | 100% |
 | Platforms Tested | Mac, iPad, iPhone |
 
