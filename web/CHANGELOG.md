@@ -1,3 +1,14 @@
+## [2.564] - 2026-09-14
+- refactor(task): one read-side helper for legacy taskText
+- fix(recurring): recreate recurring tasks in place, not at the bottom
+- fix(ui): decide the Complete Cycle button from state, not the rendered list
+- docs(schema): update 2.6 plan to include migration details and clarify priority storage changes
+- docs(schema): clarify scope and impact of renames and priority levels in 2.6 plan
+- docs(schema): update 2.6 plan to clarify priority color handling and migration rules
+- docs(schema): enhance 2.6 plan with forward compatibility requirements and adaptability fixes
+- docs(schema): update 2.6 plan to retain custom priority colors and align theme presets
+
+
 ## [2.563] - 2026-09-14
 - feat(examples): add morning routine example
 - docs(product): add September what's new entries
