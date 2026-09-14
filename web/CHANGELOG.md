@@ -1,3 +1,7 @@
+## [2.561] - 2026-09-14
+- docs(di): correct inaccurate comments in moduleLoader and diBase
+
+
 ## [2.560] - 2026-09-14
 - docs(diBase): improve documentation clarity and accuracy for dependency markers and usage
 - fix(tests): update test count and metadata in .test-count.json
