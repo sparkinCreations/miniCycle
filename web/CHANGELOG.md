@@ -1,3 +1,7 @@
+## [2.565] - 2026-09-14
+- fix(state): never adopt or overwrite data written by a newer build
+
+
 ## [2.564] - 2026-09-14
 - refactor(task): one read-side helper for legacy taskText
 - fix(recurring): recreate recurring tasks in place, not at the bottom
