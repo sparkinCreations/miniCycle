@@ -32,18 +32,23 @@ export async function runTaskDOMTests(resultsDiv) {
     const mockSanitizeInput = createMockSanitizeInput();
 
     // Set up module-level dependencies
+    // Priority colour stub — the colour rule itself is tested in taskDOMPatch/themes.
+    const mockVocabThemeManager = { getTaskPriorityColor: (task) => (task?.highPriority ? '#dc3545' : null) };
+
     setTaskDOMManagerDependencies({
         sanitizeInput: mockSanitizeInput,
         showNotification: () => {},
         loadMiniCycleData: () => null,
-        safeAddEventListener: env.deps.safeAddEventListener
+        safeAddEventListener: env.deps.safeAddEventListener,
+        vocabThemeManager: mockVocabThemeManager
     });
 
     // Helper to get default dependencies for TaskDOMManager constructor
     const getDefaultDeps = () => ({
         sanitizeInput: mockSanitizeInput,
         showNotification: () => {},
-        AppState: createMockAppState()
+        AppState: createMockAppState(),
+        vocabThemeManager: mockVocabThemeManager
     });
 
     resultsDiv.innerHTML = '<h2>🎨 TaskDOM Tests</h2><h3>Running tests...</h3>';
@@ -455,6 +460,42 @@ export async function runTaskDOMTests(resultsDiv) {
         if (taskItem.getAttribute('draggable') !== 'true') {
             throw new Error('Should be draggable');
         }
+    });
+
+    // this.deps is a HAND-WRITTEN map of resolvedDeps. A dep declared in the DI
+    // schema but missing from that map is undefined on this.deps, and the create
+    // path throws the first time it paints a flagged task.
+    await test('vocabThemeManager reaches this.deps (the hand-written dep map)', () => {
+        const manager = new TaskDOMManager(getDefaultDeps());
+        if (manager.deps.vocabThemeManager !== mockVocabThemeManager) {
+            throw new Error('vocabThemeManager is declared but not mapped onto this.deps');
+        }
+    });
+
+    await test('refreshTaskPriorityColors repaints every rendered task of the active routine from state', () => {
+        const tasks = [
+            { id: 'rp-1', highPriority: true, priorityColor: '#8b1a1a' },
+            { id: 'rp-2', highPriority: false },
+            { id: 'rp-offscreen', highPriority: true }
+        ];
+        const state = { data: { cycles: { r1: { tasks } } }, appState: { activeCycleId: 'r1' } };
+        const manager = new TaskDOMManager({ ...getDefaultDeps(), AppState: { get: () => state, isReady: () => true } });
+        const calls = [];
+        manager.patcher = { patchTask: (id, data, fields) => { calls.push(`${id}:${fields.join('+')}`); return true; } };
+        const host = document.createElement('ul');
+        ['rp-1', 'rp-2'].forEach(id => {
+            const li = document.createElement('li');
+            li.className = 'task';
+            li.dataset.taskId = id;
+            host.appendChild(li);
+        });
+        document.body.appendChild(host);
+        try {
+            manager.refreshTaskPriorityColors();
+            if (calls.join(',') !== 'rp-1:priorityColor,rp-2:priorityColor') {
+                throw new Error(`expected both rendered tasks repainted (and not the unrendered one), got ${calls.join(',')}`);
+            }
+        } finally { host.remove(); }
     });
 
     await test('createMainTaskElement adds high-priority class when highPriority=true', () => {

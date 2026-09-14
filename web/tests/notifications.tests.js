@@ -1062,6 +1062,64 @@ export async function runNotificationsTests(resultsDiv) {
         }
     });
 
+    // ===== PRIORITY PICKER =====
+    // Swatches are LEVELS. The picker names them High / Medium / Low (visible text
+    // and accessible name) and selects by level, so a colour picked under another
+    // theme lights up the matching swatch. Swatch colours come from the theme
+    // manager, never a theme id read off the DOM.
+    resultsDiv.innerHTML += '<h4 class="test-section">🚩 Priority picker</h4>';
+
+    const openPicker = (currentColor) => {
+        // The picker mounts into the FIRST #notification-container; drop any an
+        // earlier test left behind so the assertions read this picker.
+        document.querySelectorAll('#notification-container').forEach(el => el.remove());
+        const container = createNotificationContainer();
+        const notifications = new window.MiniCycleNotifications();
+        notifications.showPriorityColorPickerNotification(currentColor, 8000, null, null);
+        const buttons = [...container.querySelectorAll('.priority-color-btn')];
+        return { container, buttons };
+    };
+
+    await test('priority picker names each swatch by level and checks the current level', () => {
+        setupMockGlobals();
+        setNotificationsDependencies({ vocabThemeManager: null });   // defaults path
+        const { container, buttons } = openPicker('#facc15');
+        try {
+            const names = buttons.map(b => b.getAttribute('aria-label')).join(',');
+            if (names !== 'High,Medium,Low') throw new Error(`accessible names should be High,Medium,Low — got ${names}`);
+            const visible = buttons.map(b => b.querySelector('.priority-swatch-label')?.textContent).join(',');
+            if (visible !== 'High,Medium,Low') throw new Error(`visible labels should be High,Medium,Low — got ${visible}`);
+            const checked = buttons.filter(b => b.getAttribute('aria-checked') === 'true').map(b => b.dataset.level);
+            if (checked.join(',') !== 'medium') throw new Error(`only Medium should be checked — got ${checked.join(',')}`);
+        } finally { container.remove(); }
+    });
+
+    await test('priority picker uses the theme manager\'s swatches and selects a foreign theme\'s colour by level', () => {
+        setupMockGlobals();
+        const habitSwatches = [
+            { level: 'high', hex: '#8b1a1a', labelKey: 'notify.priorityHigh' },
+            { level: 'medium', hex: '#7a4d00', labelKey: 'notify.priorityMedium' },
+            { level: 'low', hex: '#1a5c2e', labelKey: 'notify.priorityLow' }
+        ];
+        setNotificationsDependencies({
+            vocabThemeManager: {
+                getPrioritySwatches: () => habitSwatches,
+                // classic's Low green → low
+                getTaskPriorityLevel: (task) => (task.priorityColor === '#28a745' ? 'low' : 'high')
+            }
+        });
+        const { container, buttons } = openPicker('#28a745');
+        try {
+            const colours = buttons.map(b => b.dataset.color).join(',');
+            if (colours !== '#8b1a1a,#7a4d00,#1a5c2e') throw new Error(`swatches should be the manager's — got ${colours}`);
+            const checked = buttons.filter(b => b.getAttribute('aria-checked') === 'true').map(b => b.dataset.level);
+            if (checked.join(',') !== 'low') throw new Error(`classic green should select Low — got ${checked.join(',')}`);
+        } finally {
+            container.remove();
+            setNotificationsDependencies({ vocabThemeManager: null });
+        }
+    });
+
     // Summary
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;

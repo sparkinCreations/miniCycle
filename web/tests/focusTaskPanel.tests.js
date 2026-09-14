@@ -8,6 +8,7 @@ import { setupTestEnvironment, createProtectedTest } from './testHelpers.js';
 export async function runFocusTaskPanelTests(resultsDiv) {
     const cacheBuster = window.testCacheBuster || Date.now();
     const mod = await import(`../modules/ui/focusTaskPanel.js?v=${cacheBuster}`);
+    const themesMod = await import(`../modules/labels/themes.js?v=${cacheBuster}`);
     const { FocusTaskPanel, setFocusTaskPanelDependencies } = mod;
 
     resultsDiv.innerHTML = '<h2>FocusTaskPanel Tests</h2><h3>Running tests...</h3>';
@@ -80,7 +81,10 @@ export async function runFocusTaskPanelTests(resultsDiv) {
             _emit: (newState, oldState) => { internal = newState; subs.get('focusTaskPanel')?.(newState, oldState); },
             _subCount: () => subs.size
         };
-        setFocusTaskPanelDependencies({ AppState, appInit: null, ...extraDeps });
+        // A real VocabThemeManager reading the same mock state: the card's priority
+        // accent is the task's level under the routine's theme.
+        themesMod.setVocabThemeManagerDependencies({ AppState });
+        setFocusTaskPanelDependencies({ AppState, appInit: null, vocabThemeManager: new themesMod.VocabThemeManager(), ...extraDeps });
         const panel = new FocusTaskPanel();
         await panel.init();
         return { panel, AppState, setState: (s) => { internal = s; } };
@@ -407,10 +411,18 @@ export async function runFocusTaskPanelTests(resultsDiv) {
     await test('priority accent variable set for high-priority task, removed otherwise', async () => {
         const host = buildPanelFixture();
         try {
-            const { panel, AppState } = await makeManager(makeState([T('a', false, { highPriority: true, priorityColor: '#123456' })]));
+            // Stored as habit-tracker's dark red; the routine is classic, so the
+            // card shows classic's High — the same colour the task row shows.
+            const { panel, AppState } = await makeManager(makeState([T('a', false, { highPriority: true, priorityColor: '#8b1a1a' })]));
             const card = host.querySelector('.focus-task-card');
-            if (card.style.getPropertyValue('--focus-task-priority') !== '#123456') {
-                throw new Error('Priority var not applied');
+            if (card.style.getPropertyValue('--focus-task-priority') !== '#dc3545') {
+                throw new Error(`Priority var should be classic's High, got ${card.style.getPropertyValue('--focus-task-priority')}`);
+            }
+            const themed = makeState([T('a', false, { highPriority: true, priorityColor: '#facc15' })]);
+            themed.data.cycles.r1.theme = 'habit-tracker';
+            AppState._emit(themed, AppState.get());
+            if (card.style.getPropertyValue('--focus-task-priority') !== '#7a4d00') {
+                throw new Error(`Medium under habit-tracker should be #7a4d00, got ${card.style.getPropertyValue('--focus-task-priority')}`);
             }
             const oldState = AppState.get();
             AppState._emit(makeState([T('a')]), oldState);

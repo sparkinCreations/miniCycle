@@ -87,6 +87,22 @@ export async function runTaskSearchTests(resultsDiv) {
     // ============================================
     resultsDiv.innerHTML += '<h4 class="test-section">🔁 reapplyActiveFilter</h4>';
 
+    // Priority chip + sort read the task's level from state through a real
+    // VocabThemeManager (classic routine).
+    const themesMod = await import(`../modules/labels/themes.js?v=${cacheBuster}`);
+    const stateWith = (tasks) => {
+        const state = {
+            settings: { defaultTheme: 'classic' },
+            data: { cycles: { r1: { tasks, theme: 'classic' } } },
+            appState: { activeCycleId: 'r1' }
+        };
+        return { get: () => state };
+    };
+    const themes = (() => {
+        themesMod.setVocabThemeManagerDependencies({ AppState: stateWith([]) });
+        return new themesMod.VocabThemeManager();
+    })();
+
     /** Fresh #taskList with three tasks; returns a per-task display reader. */
     function buildList() {
         document.getElementById('search-probe-root')?.remove();
@@ -101,6 +117,8 @@ export async function runTaskSearchTests(resultsDiv) {
             </ul>`;
         document.body.appendChild(root);
         mod.setTaskSearchDependencies({
+            AppState: stateWith([{ id: 'a' }, { id: 'b' }, { id: 'c' }]),
+            vocabThemeManager: themes,
             getElementById: (id) => document.getElementById(id),
             querySelectorAll: (s) => document.querySelectorAll(s),
             getBody: () => document.body,
@@ -174,6 +192,8 @@ export async function runTaskSearchTests(resultsDiv) {
             </ul>`;
         document.body.appendChild(root);
         mod.setTaskSearchDependencies({
+            AppState: stateWith([{ id: 'a' }, { id: 'b' }, { id: 'c' }]),
+            vocabThemeManager: themes,
             getElementById: (id) => document.getElementById(id),
             querySelectorAll: (sel) => document.querySelectorAll(sel),
             getBody: () => document.body,
@@ -243,6 +263,80 @@ export async function runTaskSearchTests(resultsDiv) {
             }
         } finally {
             list.cleanup();
+        }
+    });
+
+    // ============================================
+    // 🚩 Priority chip + "Priority First" — levels, from state
+    //
+    // Both used to read the DOM's high-priority class, which is only on/off:
+    // Medium and Low tied with High, and sort kept manual order among them.
+    // ============================================
+    await test('Priority First orders High, Medium, Low, then none; the Priority chip hides only unflagged tasks', async () => {
+        // A separate module instance: initTaskSearch() guards on a module-level
+        // isInitialized, so chips bound by an earlier test are dead to this DOM.
+        const fresh = await import(`../modules/ui/taskSearch.js?v=${cacheBuster}-priority`);
+        document.getElementById('priority-probe-root')?.remove();
+        const root = document.createElement('div');
+        root.id = 'priority-probe-root';
+        root.innerHTML = `
+            <div id="task-search-container">
+              <button id="task-search-btn"></button>
+              <div id="task-search-input-row">
+                <input id="task-search-input" type="text" />
+                <button id="task-search-clear"></button>
+              </div>
+              <div id="task-filter-sort-row">
+                <div class="filter-chip-group collapsed">
+                  <button class="filter-chip active" data-filter="all" aria-pressed="true">All</button>
+                  <button class="filter-chip" data-filter="priority" aria-pressed="false">Priority</button>
+                </div>
+                <div class="sort-chip-group">
+                  <button class="sort-chip active" data-sort="default" aria-pressed="true">Default</button>
+                  <button class="sort-chip" data-sort="priority" aria-pressed="false">Priority</button>
+                </div>
+              </div>
+            </div>
+            <ul id="taskList">
+              <li class="task" data-task-id="low"><span class="task-text">low</span></li>
+              <li class="task" data-task-id="none"><span class="task-text">none</span></li>
+              <li class="task" data-task-id="high"><span class="task-text">high</span></li>
+              <li class="task" data-task-id="medium"><span class="task-text">medium</span></li>
+            </ul>`;
+        document.body.appendChild(root);
+        // No high-priority classes in the DOM on purpose: the answer must come from state.
+        fresh.setTaskSearchDependencies({
+            AppState: stateWith([
+                { id: 'low', highPriority: true, priorityColor: '#28a745' },
+                { id: 'none', highPriority: false, priorityColor: '#dc3545' },
+                { id: 'high', highPriority: true, priorityColor: '#8b1a1a' },   // habit-tracker's High
+                { id: 'medium', highPriority: true, priorityColor: '#facc15' }
+            ]),
+            vocabThemeManager: themes,
+            getElementById: (id) => document.getElementById(id),
+            querySelectorAll: (sel) => document.querySelectorAll(sel),
+            getBody: () => document.body,
+            safeAddEventListener: (el, e, fn) => el?.addEventListener(e, fn)
+        });
+        fresh.resetSearch();
+        fresh.initTaskSearch();
+        const order = () => [...document.querySelectorAll('#taskList .task')].map(el => el.dataset.taskId).join(',');
+        const shown = () => [...document.querySelectorAll('#taskList .task')]
+            .filter(el => el.style.display !== 'none').map(el => el.dataset.taskId).join(',');
+        try {
+            root.querySelector('.sort-chip[data-sort="priority"]').click();
+            if (order() !== 'high,medium,low,none') {
+                throw new Error(`Priority First should be high,medium,low,none — got ${order()}`);
+            }
+            const chip = root.querySelector('.filter-chip[data-filter="priority"]');
+            chip.click();   // collapsed group: first click expands
+            chip.click();   // second click selects
+            if (shown() !== 'high,medium,low') {
+                throw new Error(`Priority chip should show the three flagged tasks — got ${shown()}`);
+            }
+        } finally {
+            fresh.resetSearch();
+            root.remove();
         }
     });
 

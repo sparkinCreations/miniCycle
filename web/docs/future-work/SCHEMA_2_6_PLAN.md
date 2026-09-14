@@ -165,6 +165,9 @@ the published `.mcyc` schema like Rename A, and can ship with either rename or o
 
 ### What 2.5 does (measured Sep 2026)
 
+*Measured before step 4. The picker labels, display colour and search changed in step 4 — see
+*Ordering*. The stored fields below are unchanged until the migration.*
+
 - A task stores `highPriority` (boolean) and `priorityColor` (hex). `mcyc-2.5.schema.json` says
   the colour is *"ignored unless highPriority is true"*, and accepts **any** hex.
 - The picker (`showPriorityColorPickerNotification` in `notifications.js`) offers the active
@@ -260,10 +263,10 @@ Supporting data: `PRIORITY_LEVELS` and `DEFAULT_PRIORITY_SWATCHES` in `constants
 the picker's fallback, so the two cannot drift), and a `level` on every theme `priorityColors`
 entry. Tests guard that every theme defines each level once and that no hex means two levels.
 
-**Not wired in yet.** Rendering, the picker and search still use the 2.5 fields directly.
-Switching them onto these helpers is steps 3–4 of the agreed sequence (*Ordering*): first add the
-colour-family rule to the helpers, then wire them in. That changes visible behaviour: priority
-colours start following the theme, and "Priority First" becomes level-aware.
+**Wired in (Sep 2026, step 4 of *Ordering*).** The UI reaches these helpers through
+`VocabThemeManager`, which supplies the active routine's swatches and every theme's set, so no
+caller passes swatch sets itself. Priority colours follow the theme, and "Priority First" is
+level-aware.
 
 ---
 
@@ -636,12 +639,23 @@ risky stored-format change small and last.
    stored hex. Tuning values live in `PRIORITY_COLOR_FAMILY` (`core/constants.js`). The
    measured examples are pinned in `priorityLevel.tests.js` and mutation-verified (an
    always-high rule fails them).
-4. **Wire the helpers into the UI** — visible behaviour change, still on 2.5 data:
-   - the picker labels its swatches High / Medium / Low and the accessible name states the level
+4. **Wire the helpers into the UI** — ✅ *done Sep 2026*, still on 2.5 data. `VocabThemeManager`
+   (`labels/themes.js`) wraps the helpers with the active routine's theme —
+   `getPrioritySwatches`, `getTaskPriorityLevel`, `getTaskPriorityColor`, `setTaskPriorityLevel`,
+   `compareTaskPriority` — and every surface asks it:
+   - the picker labels its swatches High / Medium / Low (visible text and accessible name) and
+     checks the swatch by level, so a colour picked under another theme selects its level
    - renderers (`taskDOM`, `taskDOMPatch`, `focusTaskPanel`) take their colour from
-     `getPriorityColor`, which also retires the three disagreeing fallbacks
+     `getTaskPriorityColor`, retiring the three disagreeing fallbacks; the priority toggle
+     (`taskCRUD`) stores the level's swatch for the active theme
+   - a theme switch repaints the list (`refreshTaskPriorityColors`, called by `themeManager`),
+     and `applyPriorityColor` (`settingsUIManager`) no longer re-applies stored hexes at startup
    - search's Priority filter and "Priority First" sort use the level from state instead of the
      `high-priority` class
+
+   Guarded by the touched modules' unit tests and the *priority levels follow the theme* journey.
+   Still showing a stored hex: the history and cleared-task dots (`historyManager`,
+   `clearedTasksManager`). They render archived entries and move to levels with the 2.6 migration.
 5. **Retire the pre-2.5 migration** (decided Sep 2026). Remove the legacy migration and rollback,
    keep the boot entry and initial-state creation. No leftover-data UI: pre-2.5 predates the
    public launch, so legacy keys are simply left untouched and a legacy backup file gets the

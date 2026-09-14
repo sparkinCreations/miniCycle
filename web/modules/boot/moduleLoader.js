@@ -1469,6 +1469,9 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         finalizeTaskCreation: (...args) => deps.task?.finalizeTaskCreation?.(...args),
         refreshTaskListUI: (...args) => deps.task?.refreshTaskListUI?.(...args),
         renderTasks: (...args) => deps.task?.renderTasks?.(...args),
+        // Repaints priority accents after a vocab theme change (themeManager) —
+        // they are the task's level under the ACTIVE theme, not a stored hex
+        refreshTaskPriorityColors: (...args) => deps.task?.refreshTaskPriorityColors?.(...args),
         addTask: (...args) => deps.task?.addTask?.(...args),
         resetTasks: (...args) => deps.task?.resetTasks?.(...args),
         handleTaskCompletionChange: (...args) => deps.task?.handleTaskCompletionChange?.(...args),

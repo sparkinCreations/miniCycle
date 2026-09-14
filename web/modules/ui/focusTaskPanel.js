@@ -37,6 +37,8 @@ import { getCycleMode, getAllDoneHintKey, getDeleteSettingsMode,
 
 const di = createDIModule('FocusTaskPanel', {
     AppState: required(),
+    // Priority accent = the task's LEVEL under the active theme (utils/priorityLevel.js)
+    vocabThemeManager: required(),
     appInit: optional(null),
     // Completion-path companions (same trio the task-list tap uses)
     checkMiniCycle: optional(null),
@@ -227,9 +229,12 @@ export class FocusTaskPanel {
         card.classList.toggle('focus-task-completed', isCompleted);
         completeBtn.textContent = getLabel(isCompleted ? 'focusTask.uncompleteTask' : 'focusTask.completeTask');
 
-        // Priority accent (border-left via CSS var; transparent when not flagged)
-        if (task.highPriority) {
-            card.style.setProperty('--focus-task-priority', task.priorityColor || 'var(--color-red)');
+        // Priority accent (border-left via CSS var; transparent when not flagged).
+        // The level's swatch under the active theme, never the stored hex — the
+        // same rule the task list follows, so the card and the row always agree.
+        const priorityColor = this.deps.vocabThemeManager.getTaskPriorityColor(task);
+        if (priorityColor) {
+            card.style.setProperty('--focus-task-priority', priorityColor);
         } else {
             card.style.removeProperty('--focus-task-priority');
         }

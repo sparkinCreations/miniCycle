@@ -40,8 +40,8 @@
  * @property {HTMLElement|null} [targetContainer=null] - Custom container element
  */
 
-import { createDIModule, optional } from '../core/diBase.js';
-import { LIMITS, UI_TIMEOUTS, COLORS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION } from '../core/constants.js';
+import { createDIModule, required, optional } from '../core/diBase.js';
+import { LIMITS, UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { announce } from '../utils/announce.js';
 
@@ -82,6 +82,8 @@ const di = createDIModule('TaskCRUD', {
     startReminders: optional(null),
     // Notifications instance for color picker notification
     notifications: optional(null),
+    // Priority is a LEVEL stored as the active theme's swatch (utils/priorityLevel.js)
+    vocabThemeManager: required(),
     // History logging
     logHistoryEvent: optional(null)
 });
@@ -828,22 +830,28 @@ export async function toggleTaskPriorityImpl(taskItem, deps = {}) {
             button.setAttribute("aria-pressed", newHighPriority.toString());
         }
 
-        // Apply or clear per-task priority color via CSS custom property
+        // Priority is a LEVEL (utils/priorityLevel.js). Turning it on keeps the
+        // level the task last had, else the level of the last colour picked
+        // anywhere (settings.priorityColor), else High — stored as the ACTIVE
+        // theme's swatch hex, which is also what the row shows. Resolved now so
+        // it is persisted even if the user dismisses the picker without choosing.
+        let resolvedColor = null;
         if (newHighPriority) {
-            // Use task's own saved color, falling back to global default
-            const taskColor = task.priorityColor ?? currentState?.settings?.priorityColor ?? COLORS.PRIORITY_DEFAULT;
-            taskItem.style.setProperty('--task-priority-color', taskColor);
+            const themes = _deps.vocabThemeManager;
+            const draft = { highPriority: true, priorityColor: task.priorityColor ?? currentState?.settings?.priorityColor };
+            themes.setTaskPriorityLevel(draft, themes.getTaskPriorityLevel(draft));
+            resolvedColor = draft.priorityColor;
+        }
+
+        // Apply or clear per-task priority color via CSS custom property
+        if (resolvedColor) {
+            taskItem.style.setProperty('--task-priority-color', resolvedColor);
         } else {
             taskItem.style.removeProperty('--task-priority-color');
         }
 
         // ✅ Use AppState only (no localStorage fallback) - DI-pure
         if (AppState?.isReady?.()) {
-            // Resolve the color now so it's persisted even if the user
-            // dismisses the color picker without clicking a swatch
-            const resolvedColor = newHighPriority
-                ? (task.priorityColor ?? currentState?.settings?.priorityColor ?? COLORS.PRIORITY_DEFAULT)
-                : null;
 
             AppState.update(state => {
                 const cid = state.appState.activeCycleId;
@@ -864,7 +872,6 @@ export async function toggleTaskPriorityImpl(taskItem, deps = {}) {
             if (newHighPriority) {
                 // Show color picker notification with a callback that saves the chosen color
                 const notifications = _deps.notifications;
-                const taskColor = task.priorityColor ?? currentState?.settings?.priorityColor ?? COLORS.PRIORITY_DEFAULT;
                 if (notifications?.showPriorityColorPickerNotification) {
                     // onColorSelect closes over AppState and taskId — reliable save path
                     const onColorSelect = async (color) => {
@@ -891,13 +898,13 @@ export async function toggleTaskPriorityImpl(taskItem, deps = {}) {
                             });
                         }
                     };
-                    notifications.showPriorityColorPickerNotification(taskColor, 8000, taskId, onColorSelect);
+                    notifications.showPriorityColorPickerNotification(resolvedColor, 8000, taskId, onColorSelect);
                 } else {
                     _deps.showNotification?.(getLabel('notify.priorityEnabled'), 'warning', UI_TIMEOUTS.NOTIFICATION_BRIEF);
                 }
                 _deps.logHistoryEvent?.('task_priority_set', {
                     taskName: task.text,
-                    priorityColor: taskColor
+                    priorityColor: resolvedColor
                 });
             } else {
                 _deps.showNotification?.(getLabel('notify.priorityRemoved'), 'info', UI_TIMEOUTS.NOTIFICATION_BRIEF);

@@ -145,7 +145,7 @@ export const MODULE_MANIFESTS = {
         path: '../features/themeManager.js',
         phase: PHASES.THEME_VISUAL,
         requires: ['appInit', 'showNotification', 'getModal'],
-        optionalDeps: ['vocabThemeManager', 'checkCompleteAllButton', 'updateStatsPanel', 'updateMainMenuHeader', 'updateHelpWindow', 'refreshFocusActionButton', 'applyCustomColors', 'logHistoryEvent', 'hideMainMenu'],
+        optionalDeps: ['vocabThemeManager', 'checkCompleteAllButton', 'updateStatsPanel', 'updateMainMenuHeader', 'updateHelpWindow', 'refreshFocusActionButton', 'refreshTaskPriorityColors', 'applyCustomColors', 'logHistoryEvent', 'hideMainMenu'],
         provides: ['applyTheme', 'updateThemeColor', 'setupDarkModeToggle', 'setupQuickDarkToggle', 'initThemesPanel', 'refreshThemeToggles', 'setupThemesPanel', 'renderVocabThemes'],
         provideInstance: 'themeManager',
         api: 'features',
@@ -274,7 +274,9 @@ export const MODULE_MANIFESTS = {
     taskDOM: {
         path: '../task/taskDOM.js',
         phase: PHASES.TASK_MANAGEMENT,
-        requires: ['appInit', 'AppState', 'generateId', 'sanitizeInput', 'TaskOptionsVisibilityController', 'showTaskOptions', 'hideTaskOptions', 'attachKeyboardTaskOptionToggle', 'triggerLogoBackground'],
+        // vocabThemeManager: priority colours are the task's LEVEL under the active
+        // theme (utils/priorityLevel.js); Phase 2, so safe to require here.
+        requires: ['appInit', 'AppState', 'generateId', 'sanitizeInput', 'TaskOptionsVisibilityController', 'showTaskOptions', 'hideTaskOptions', 'attachKeyboardTaskOptionToggle', 'triggerLogoBackground', 'vocabThemeManager'],
         // FORWARD-THROUGH deps. taskDOM does not call most of these itself — it hands
         // them to its dynamically-imported sub-modules (taskRenderer / taskEvents /
         // taskValidation / taskUtils), which are deliberately absent from this manifest
@@ -336,7 +338,7 @@ export const MODULE_MANIFESTS = {
             'renderTasks', 'refreshTaskListUI', 'createTaskButtonContainer', 'handleTaskButtonClick',
             'setupRecurringButtonHandler', 'revealTaskButtons', 'taskToAddTaskOptions',
             'patchTask', 'removeTask', 'applyTaskOrder', 'syncBoundaryMarkers',
-            'syncRecurringStateToDOM', 'toggleHoverTaskOptions'
+            'syncRecurringStateToDOM', 'toggleHoverTaskOptions', 'refreshTaskPriorityColors'
         ],
         provideInstance: 'taskDOMManager',
         api: 'task',
@@ -602,7 +604,8 @@ export const MODULE_MANIFESTS = {
     taskSearch: {
         path: '../ui/taskSearch.js',
         phase: PHASES.UI_MANAGERS,
-        requires: ['appInit'],
+        // AppState + vocabThemeManager: the Priority chip and sort read the level from state
+        requires: ['appInit', 'AppState', 'vocabThemeManager'],
         provides: ['initTaskSearch', 'updateSearchVisibility', 'resetSearch', 'reapplyActiveFilter'],
         api: 'ui',
         after: ['taskDOM']
@@ -644,7 +647,8 @@ export const MODULE_MANIFESTS = {
     focusTaskPanel: {
         path: '../ui/focusTaskPanel.js',
         phase: PHASES.UI_MANAGERS,
-        requires: ['appInit', 'AppState'],
+        // vocabThemeManager: the card's priority accent is the task's level under the active theme
+        requires: ['appInit', 'AppState', 'vocabThemeManager'],
         // Completion-path companions — same trio the task-list tap uses
         optionalDeps: ['checkMiniCycle', 'enableUndoSystemOnFirstInteraction', 'safeAddEventListener'],
         provides: [],
@@ -672,7 +676,9 @@ export const MODULE_MANIFESTS = {
     taskCore: {
         path: '../task/taskCore.js',
         phase: PHASES.UI_MANAGERS,
-        requires: ['appInit', 'AppState', 'showNotification', 'sanitizeInput', 'removeRecurringTasksFromCycle'],
+        // vocabThemeManager is FORWARD-THROUGH → taskCRUD (the priority toggle
+        // stores a level as the active theme's swatch).
+        requires: ['appInit', 'AppState', 'showNotification', 'sanitizeInput', 'removeRecurringTasksFromCycle', 'vocabThemeManager'],
         // The tail of this list is FORWARD-THROUGH: taskCore does not call these, it
         // hands them to its taskCRUD / taskCompletion / taskCycleReset sub-modules
         // (taskCore.js, `resolvedDeps.…`), which are absent from this manifest by

@@ -8,6 +8,20 @@ export async function runTaskDOMPatchTests(resultsDiv) {
     const cacheBuster = window.testCacheBuster || Date.now();
     const mod = await import(`../modules/task/taskDOMPatch.js?v=${cacheBuster}`);
     const { TaskDOMPatch } = mod;
+    const themesMod = await import(`../modules/labels/themes.js?v=${cacheBuster}`);
+
+    // A REAL VocabThemeManager whose active routine uses `themeId` — priority
+    // colour is the task's level under the active theme, so the fixture must
+    // decide the theme rather than stub the answer.
+    const themesFor = (themeId = 'classic') => {
+        const state = {
+            settings: { defaultTheme: 'classic' },
+            data: { cycles: { r1: { tasks: [], theme: themeId } } },
+            appState: { activeCycleId: 'r1' }
+        };
+        themesMod.setVocabThemeManagerDependencies({ AppState: { get: () => state } });
+        return new themesMod.VocabThemeManager();
+    };
 
     resultsDiv.innerHTML = '<h2>TaskDOMPatch Tests</h2><h3>Running tests...</h3>';
     let passed = { count: 0 }, total = { count: 0 };
@@ -42,7 +56,9 @@ export async function runTaskDOMPatchTests(resultsDiv) {
     };
     const unmount = (el) => { if (el && el.parentNode) el.parentNode.removeChild(el); };
 
-    const make = (deps = {}) => new TaskDOMPatch(deps);
+    // `??` matters: every VocabThemeManager shares its module's DI, so building the
+    // classic default AFTER a caller's themed manager would silently re-theme it.
+    const make = (deps = {}) => new TaskDOMPatch({ ...deps, vocabThemeManager: deps.vocabThemeManager ?? themesFor('classic') });
 
     // ── exports / load checks (kept) ────────────────────────────────────────
     resultsDiv.innerHTML += '<h4 class="test-section">📦 Module Loading</h4>';
@@ -188,10 +204,10 @@ export async function runTaskDOMPatchTests(resultsDiv) {
         const list = mountList('t1');
         try {
             const p = make();
-            p.patchTask('t1', { highPriority: true, priorityColor: '#ff0000' }, ['highPriority']);
+            p.patchTask('t1', { highPriority: true, priorityColor: '#28a745' }, ['highPriority']);
             const el = list.querySelector('.task[data-task-id="t1"]');
             if (!el.classList.contains('high-priority')) throw new Error('high-priority class missing');
-            if (el.style.getPropertyValue('--task-priority-color') !== '#ff0000') throw new Error('css var not set');
+            if (el.style.getPropertyValue('--task-priority-color') !== '#28a745') throw new Error('css var not set');
             const btn = el.querySelector('.priority-btn');
             if (btn.getAttribute('aria-pressed') !== 'true') throw new Error('aria-pressed wrong');
             if (!btn.classList.contains('priority-active')) throw new Error('priority-active missing');
@@ -227,9 +243,31 @@ export async function runTaskDOMPatchTests(resultsDiv) {
         const list = mountList('t1');
         try {
             const p = make();
-            p.patchTask('t1', { highPriority: true, priorityColor: '#123456' }, ['priorityColor']);
+            p.patchTask('t1', { highPriority: true, priorityColor: '#facc15' }, ['priorityColor']);
             const el = list.querySelector('.task[data-task-id="t1"]');
-            if (el.style.getPropertyValue('--task-priority-color') !== '#123456') throw new Error('color not applied');
+            if (el.style.getPropertyValue('--task-priority-color') !== '#facc15') throw new Error('color not applied');
+        } finally { unmount(list); }
+    });
+
+    // The stored hex only FINDS the level; what is shown is the active theme's
+    // swatch for it. Before Sep 2026 the raw hex was shown, so a task flagged
+    // under habit-tracker kept its dark red after switching to classic, and a
+    // hand-written .mcyc colour was shown as-is.
+    await test('shows the ACTIVE theme\'s swatch for the level, not the stored hex', () => {
+        const list = mountList('t1');
+        try {
+            const el = list.querySelector('.task[data-task-id="t1"]');
+            const shown = (themeId, priorityColor) => {
+                make({ vocabThemeManager: themesFor(themeId) })
+                    .patchTask('t1', { highPriority: true, priorityColor }, ['priorityColor']);
+                return el.style.getPropertyValue('--task-priority-color');
+            };
+            // habit-tracker's High, shown under classic → classic's High
+            if (shown('classic', '#8b1a1a') !== '#dc3545') throw new Error(`habit red under classic: ${shown('classic', '#8b1a1a')}`);
+            // classic's Medium, shown under habit-tracker → habit-tracker's Medium
+            if (shown('habit-tracker', '#facc15') !== '#7a4d00') throw new Error(`yellow under habit-tracker: ${shown('habit-tracker', '#facc15')}`);
+            // a non-swatch colour → its colour family's swatch (teal → Low, measured in the plan)
+            if (shown('classic', '#1abc9c') !== '#28a745') throw new Error(`teal under classic: ${shown('classic', '#1abc9c')}`);
         } finally { unmount(list); }
     });
 

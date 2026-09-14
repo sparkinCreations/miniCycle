@@ -363,6 +363,48 @@ export async function runThemesTests(resultsDiv) {
         }
     });
 
+    // The manager is the one place that knows the ACTIVE routine's theme, so the
+    // renderers, toggle, search and picker all ask it (utils/priorityLevel.js).
+    const managerOnTheme = (themeId) => {
+        const AppState = createMockAppState({
+            data: { cycles: { 'cycle-1': { tasks: [], theme: themeId } } }
+        });
+        setVocabThemeManagerDependencies({ AppState });
+        return new VocabThemeManager();
+    };
+
+    await test('getPrioritySwatches follows the active routine\'s theme', () => {
+        const classic = managerOnTheme('classic').getPrioritySwatches();
+        if (classic.map(s => s.level).join(',') !== 'high,medium,low') throw new Error('classic swatches not ordered by level');
+        const habit = managerOnTheme('habit-tracker').getPrioritySwatches();
+        if (habit.find(s => s.level === 'high').hex !== THEME_DEFINITIONS['habit-tracker'].priorityColors.find(s => s.level === 'high').hex) {
+            throw new Error('habit-tracker should use its own swatches');
+        }
+    });
+
+    await test('getTaskPriorityColor shows the active theme\'s swatch for a colour picked under ANY theme', () => {
+        const fitnessMedium = THEME_DEFINITIONS.fitness.priorityColors.find(s => s.level === 'medium').hex;
+        const habitMedium = THEME_DEFINITIONS['habit-tracker'].priorityColors.find(s => s.level === 'medium').hex;
+        const shown = managerOnTheme('habit-tracker').getTaskPriorityColor({ highPriority: true, priorityColor: fitnessMedium });
+        if (shown !== habitMedium) throw new Error(`fitness Medium under habit-tracker should show ${habitMedium}, got ${shown}`);
+        if (managerOnTheme('classic').getTaskPriorityColor({ highPriority: false, priorityColor: fitnessMedium }) !== null) {
+            throw new Error('an unflagged task has no display colour');
+        }
+    });
+
+    await test('setTaskPriorityLevel stores the active theme\'s swatch; compareTaskPriority orders by level', () => {
+        const vtm = managerOnTheme('fitness');
+        const task = { highPriority: false, priorityColor: null };
+        if (!vtm.setTaskPriorityLevel(task, 'low')) throw new Error('setTaskPriorityLevel refused a valid level');
+        const fitnessLow = THEME_DEFINITIONS.fitness.priorityColors.find(s => s.level === 'low').hex;
+        if (!task.highPriority || task.priorityColor !== fitnessLow) throw new Error(`stored ${JSON.stringify(task)}`);
+        if (vtm.getTaskPriorityLevel(task) !== 'low') throw new Error('level did not round-trip');
+        const high = { highPriority: true, priorityColor: '#dc3545' };
+        const none = { highPriority: false };
+        const sorted = [none, task, high].sort((a, b) => vtm.compareTaskPriority(a, b));
+        if (sorted[0] !== high || sorted[1] !== task || sorted[2] !== none) throw new Error('compareTaskPriority order wrong');
+    });
+
     // ============================================
     // 📊 RESULTS
     // ============================================

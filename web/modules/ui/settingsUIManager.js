@@ -19,7 +19,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, UI_TIMEOUTS, FONT_SIZE } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, FONT_SIZE } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { isValidHex, normalizeFontSize } from '../utils/styleValidators.js';
 import { loadPanelVisibility } from './panelVisibilityHelpers.js';
@@ -1385,33 +1385,25 @@ export function setupNotificationsToggle() {
 }
 
 /**
- * Apply saved priority colors on startup.
- * 1. Sets --priority-color on :root (global default for tasks without a specific color).
- * 2. Scans all rendered high-priority task elements and sets --task-priority-color
- *    per-element from the task's own saved priorityColor, so each task remembers
- *    its individual color across reloads.
+ * Apply the saved global priority colour on startup: sets --priority-color on
+ * :root, the CSS fallback for a flagged task that carries no per-task colour var.
+ *
+ * Per-task colours are deliberately NOT applied here. The renderers (taskDOM,
+ * taskDOMPatch) paint every flagged task from its priority LEVEL under the
+ * active theme (vocabThemeManager.getTaskPriorityColor); a startup pass writing
+ * the raw stored hex over that would undo the theme mapping for the whole list.
  */
 export function applyPriorityColor() {
     const schemaData = _deps.loadMiniCycleData();
     if (!schemaData) return;
 
-    // 1. Global default — validated here rather than trusted from upstream.
-    // The per-task copy is hex-checked on import (cycleImportManager) and again
-    // in historyManager; this global copy was checked nowhere.
+    // Validated here rather than trusted from upstream. The per-task copy is
+    // hex-checked on import (cycleImportManager) and again in historyManager;
+    // this global copy was checked nowhere.
     const globalColor = schemaData.settings?.priorityColor;
     if (isValidHex(globalColor)) {
         document.documentElement.style.setProperty('--priority-color', globalColor);
     }
-
-    // 2. Per-task colors — scan tasks that have their own saved color
-    const activeCycle = schemaData.activeCycle;
-    const tasks = schemaData.cycles?.[activeCycle]?.tasks || [];
-    tasks.forEach(task => {
-        if (task.highPriority && task.priorityColor) {
-            const el = document.querySelector(DATA_SELECTORS.elementByTaskId(task.id));
-            if (el) el.style.setProperty('--task-priority-color', task.priorityColor);
-        }
-    });
 }
 
 /**

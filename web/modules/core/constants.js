@@ -82,9 +82,9 @@ export const PRIORITY_COLOR_FAMILY = Object.freeze({
  * @constant {ReadonlyArray<{level: string, hex: string, labelKey: string}>}
  */
 export const DEFAULT_PRIORITY_SWATCHES = Object.freeze([
-    Object.freeze({ level: 'high',   hex: COLORS.PRIORITY_DEFAULT, labelKey: 'notify.priorityColorRed' }),
-    Object.freeze({ level: 'medium', hex: '#facc15',               labelKey: 'notify.priorityColorYellow' }),
-    Object.freeze({ level: 'low',    hex: '#28a745',               labelKey: 'notify.priorityColorGreen' })
+    Object.freeze({ level: 'high',   hex: COLORS.PRIORITY_DEFAULT, labelKey: 'notify.priorityHigh' }),
+    Object.freeze({ level: 'medium', hex: '#facc15',               labelKey: 'notify.priorityMedium' }),
+    Object.freeze({ level: 'low',    hex: '#28a745',               labelKey: 'notify.priorityLow' })
 ]);
 
 // ============================================================================

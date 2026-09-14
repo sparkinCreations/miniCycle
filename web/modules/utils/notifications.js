@@ -37,6 +37,7 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { UI_TIMEOUTS, COLORS, DEFAULT_PRIORITY_SWATCHES, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, BREAKPOINTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { getPriorityLevel } from './priorityLevel.js';
 import { reshowPopover } from './popoverUtils.js';
 import { EducationalTipManager } from './educationalTips.js';
 
@@ -1338,19 +1339,25 @@ async setDefaultPosition(notificationContainer) {
    * @param {Function|null} [onColorSelect=null] - Callback(color) to persist the chosen color
    */
   showPriorityColorPickerNotification(currentColor = COLORS.PRIORITY_DEFAULT, duration = 8000, taskId = null, onColorSelect = null) {
-    const vocabThemeId = document.documentElement.dataset?.vocabTheme;
-    const activeThemeDef = (vocabThemeId && vocabThemeId !== 'classic') ? _deps.vocabThemeManager?.getThemeDefinition(vocabThemeId) : null;
-    // Theme swatches, or the shared defaults (classic) — one source, so the
-    // priority helpers in utils/priorityLevel.js can never disagree with the picker.
-    const colorSwatches = (activeThemeDef?.priorityColors || DEFAULT_PRIORITY_SWATCHES)
-      .map(c => ({ hex: c.hex, label: getLabel(c.labelKey) }));
+    // Swatches are LEVELS (High / Medium / Low) in the active theme's colours,
+    // from the theme manager — never a theme id read off the DOM — or the shared
+    // defaults before the manager is wired. Same source the renderers map
+    // through (utils/priorityLevel.js), so picker and list cannot disagree.
+    // Selection is by level, so a task coloured under another theme still
+    // lights up the matching swatch here.
+    const themes = _deps.vocabThemeManager;
+    const colorSwatches = (themes?.getPrioritySwatches?.() || DEFAULT_PRIORITY_SWATCHES)
+      .map(c => ({ level: c.level, hex: c.hex, label: getLabel(c.labelKey) }));
+    const probe = { highPriority: true, priorityColor: currentColor };
+    const currentLevel = themes?.getTaskPriorityLevel?.(probe) ?? getPriorityLevel(probe);
 
     const swatchesHTML = colorSwatches.map(c => {
-      const isSelected = c.hex === currentColor;
+      const isSelected = c.level === currentLevel;
       const dotOpacity = isSelected ? '1' : '0';
       const swatchOutline = isSelected ? '2px solid rgba(255,255,255,0.9)' : '2px solid transparent';
       return `<button class="priority-color-btn"
                        data-color="${c.hex}"
+                       data-level="${c.level}"
                        role="radio"
                        aria-checked="${isSelected}"
                        aria-label="${c.label}"
@@ -1360,6 +1367,7 @@ async setDefaultPosition(notificationContainer) {
           <span class="priority-radio-dot" style="width:4px;height:4px;border-radius:50%;background:white;display:block;opacity:${dotOpacity};transition:opacity 0.15s;"></span>
         </span>
         <span class="priority-swatch" style="width:20px;height:20px;border-radius:50%;background:${c.hex};display:block;flex-shrink:0;border:1px solid rgba(0,0,0,0.35);outline:${swatchOutline};outline-offset:1px;transition:outline 0.15s;"></span>
+        <span class="priority-swatch-label" style="font-size:0.8em;">${c.label}</span>
       </button>`;
     }).join('');
 
@@ -1370,7 +1378,7 @@ async setDefaultPosition(notificationContainer) {
         <div class="priority-color-options"
              role="radiogroup"
              aria-label="${getLabel('notify.priorityColorPicker')}"
-             style="display:flex;gap:10px;align-items:center;">
+             style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
           ${swatchesHTML}
         </div>
         <button class="notification-close"

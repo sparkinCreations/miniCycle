@@ -23,6 +23,10 @@
 
 import { createDIModule, optional } from '../core/diBase.js';
 import { setLabelResolverDependencies } from './labelResolver.js';
+import {
+    getPrioritySwatches, collectSwatchSets, getPriorityLevel, getPriorityColor,
+    setPriorityLevel, comparePriority
+} from '../utils/priorityLevel.js';
 
 // ============================================================================
 // THEME DEFINITIONS
@@ -144,9 +148,9 @@ export const THEME_DEFINITIONS = {
         },
         // Priority picker options — darkened for contrast on warm amber taskBg (#ffd0a0)
         priorityColors: [
-            { level: 'high',   hex: '#8b1a1a', labelKey: 'notify.priorityColorRed' },
-            { level: 'medium', hex: '#7a4d00', labelKey: 'notify.priorityColorYellow' },
-            { level: 'low',    hex: '#1a5c2e', labelKey: 'notify.priorityColorGreen' },
+            { level: 'high',   hex: '#8b1a1a', labelKey: 'notify.priorityHigh' },
+            { level: 'medium', hex: '#7a4d00', labelKey: 'notify.priorityMedium' },
+            { level: 'low',    hex: '#1a5c2e', labelKey: 'notify.priorityLow' },
         ],
         preview: {
             tagline:      'Build streaks, track habits',
@@ -248,9 +252,9 @@ export const THEME_DEFINITIONS = {
         },
         // Priority picker options — improved contrast on white taskBg (#ffffff)
         priorityColors: [
-            { level: 'high',   hex: '#c0392b', labelKey: 'notify.priorityColorRed' },
-            { level: 'medium', hex: '#b8860b', labelKey: 'notify.priorityColorYellow' },
-            { level: 'low',    hex: '#27ae60', labelKey: 'notify.priorityColorGreen' },
+            { level: 'high',   hex: '#c0392b', labelKey: 'notify.priorityHigh' },
+            { level: 'medium', hex: '#b8860b', labelKey: 'notify.priorityMedium' },
+            { level: 'low',    hex: '#27ae60', labelKey: 'notify.priorityLow' },
         ],
         preview: {
             tagline:      'Track workouts, build routines',
@@ -352,9 +356,9 @@ export const THEME_DEFINITIONS = {
         },
         // Priority picker options — improved contrast on white taskBg (#ffffff)
         priorityColors: [
-            { level: 'high',   hex: '#c0392b', labelKey: 'notify.priorityColorRed' },
-            { level: 'medium', hex: '#b8860b', labelKey: 'notify.priorityColorYellow' },
-            { level: 'low',    hex: '#27ae60', labelKey: 'notify.priorityColorGreen' },
+            { level: 'high',   hex: '#c0392b', labelKey: 'notify.priorityHigh' },
+            { level: 'medium', hex: '#b8860b', labelKey: 'notify.priorityMedium' },
+            { level: 'low',    hex: '#27ae60', labelKey: 'notify.priorityLow' },
         ],
         preview: {
             tagline:      'Study topics, track sessions',
@@ -456,9 +460,9 @@ export const THEME_DEFINITIONS = {
         },
         // Priority picker options — improved contrast on white taskBg (#ffffff)
         priorityColors: [
-            { level: 'high',   hex: '#c0392b', labelKey: 'notify.priorityColorRed' },
-            { level: 'medium', hex: '#b8860b', labelKey: 'notify.priorityColorYellow' },
-            { level: 'low',    hex: '#27ae60', labelKey: 'notify.priorityColorGreen' },
+            { level: 'high',   hex: '#c0392b', labelKey: 'notify.priorityHigh' },
+            { level: 'medium', hex: '#b8860b', labelKey: 'notify.priorityMedium' },
+            { level: 'low',    hex: '#27ae60', labelKey: 'notify.priorityLow' },
         ],
         preview: {
             tagline:      'Tackle chores, run clean sweeps',
@@ -484,6 +488,10 @@ const di = createDIModule('VocabThemeManager', {
  * @returns {void}
  */
 export const setVocabThemeManagerDependencies = di.setDependencies;
+
+// Every theme's priority swatch set, for recognising a colour picked under ANY
+// theme (utils/priorityLevel.js). THEME_DEFINITIONS is frozen data, so once.
+const PRIORITY_SWATCH_SETS = collectSwatchSets(THEME_DEFINITIONS);
 
 // ============================================================================
 // THEME MANAGER
@@ -714,6 +722,60 @@ export class VocabThemeManager {
      */
     getThemeDefinition(themeId) {
         return THEME_DEFINITIONS[themeId] ?? null;
+    }
+
+    // ── Priority levels ──────────────────────────────────────────────────
+    // Task priority is a LEVEL (high / medium / low) shown as the ACTIVE
+    // routine's theme swatch; the stored 2.5 hex is only how the level is found
+    // (utils/priorityLevel.js). This manager is the one place that knows which
+    // theme is active, so the renderers, the toggle, search and the picker ask
+    // here instead of reading a theme id off the DOM.
+
+    /**
+     * The picker swatches for the active routine's theme (the shared defaults
+     * for classic).
+     * @returns {ReadonlyArray<{level: string, hex: string, labelKey: string}>}
+     */
+    getPrioritySwatches() {
+        return getPrioritySwatches(this.getActiveTheme());
+    }
+
+    /**
+     * @param {Object|null|undefined} task
+     * @returns {'high'|'medium'|'low'|null} null when the task is not flagged
+     */
+    getTaskPriorityLevel(task) {
+        return getPriorityLevel(task, PRIORITY_SWATCH_SETS);
+    }
+
+    /**
+     * The colour to DISPLAY for a task's priority under the active theme.
+     * @param {Object|null|undefined} task
+     * @returns {string|null} null when the task is not flagged
+     */
+    getTaskPriorityColor(task) {
+        return getPriorityColor(task, this.getPrioritySwatches(), PRIORITY_SWATCH_SETS);
+    }
+
+    /**
+     * Write a level into a task's stored 2.5 fields as the active theme's swatch.
+     * Mutates `task` — call it inside an AppState.update() producer.
+     * @param {Object} task
+     * @param {'high'|'medium'|'low'|null} level - null turns priority off
+     * @returns {boolean} false (and no write) for an unknown level
+     */
+    setTaskPriorityLevel(task, level) {
+        return setPriorityLevel(task, level, this.getPrioritySwatches());
+    }
+
+    /**
+     * Sort comparator: high, then medium, then low, then no priority.
+     * @param {Object} a
+     * @param {Object} b
+     * @returns {number}
+     */
+    compareTaskPriority(a, b) {
+        return comparePriority(a, b, PRIORITY_SWATCH_SETS);
     }
 
     /**

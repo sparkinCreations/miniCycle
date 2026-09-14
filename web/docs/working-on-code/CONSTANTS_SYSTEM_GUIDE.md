@@ -308,10 +308,15 @@ Default color fallbacks for JS code. CSS equivalents live in `variables.css`.
 ```javascript
 import { COLORS } from '../core/constants.js';
 
-// Use as last-resort fallback in the priority color resolution chain:
-// task.priorityColor → settings.priorityColor (toggle-time only) → COLORS.PRIORITY_DEFAULT
-const resolvedColor = task.priorityColor ?? COLORS.PRIORITY_DEFAULT;
+// Last-resort fallback when a stored colour fails validation (historyManager)
+const safeColor = isValidHex(entry.priorityColor) ? entry.priorityColor : COLORS.PRIORITY_DEFAULT;
 ```
+
+**Not for on-screen task priority.** Since Sep 2026 priority is a level (High / Medium / Low)
+shown as the active routine's theme swatch: renderers call
+`vocabThemeManager.getTaskPriorityColor(task)`, and the toggle stores the level's swatch via
+`setTaskPriorityLevel` (helpers in `utils/priorityLevel.js`). `PRIORITY_DEFAULT` is classic's
+High swatch (`DEFAULT_PRIORITY_SWATCHES`).
 
 | Constant | Value | CSS Equivalent | Purpose |
 |----------|-------|----------------|---------|

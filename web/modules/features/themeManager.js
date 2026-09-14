@@ -54,6 +54,7 @@ const di = createDIModule('ThemeManager', {
     updateMainMenuHeader: optional(null),
     updateHelpWindow: optional(null),
     refreshFocusActionButton: optional(null),
+    refreshTaskPriorityColors: optional(null),
     applyCustomColors: optional(null),
     logHistoryEvent: optional(null),
     getBody: optional(() => document.body),
@@ -212,6 +213,10 @@ function _refreshLiveLensLabels() {
     // Focus-mode action button — refreshes data-label + aria so vocab
     // themes can rename "Cycle"/"Clear" while focus mode is active.
     _deps.refreshFocusActionButton?.();
+    // Priority accents are the task's LEVEL under the active theme
+    // (utils/priorityLevel.js), so a theme change must repaint them — nothing
+    // else re-renders the list for a theme switch.
+    _deps.refreshTaskPriorityColors?.();
 
     // Task input placeholder ("Add task" → "Add habit" etc.)
     const taskInputEl = _deps.getElementById(DOM_IDS.TASK_INPUT);

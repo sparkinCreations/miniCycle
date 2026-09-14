@@ -230,9 +230,14 @@ if (count >= LIMITS.MAX_TASKS) { ... }            // numeric caps
 ```javascript
 import { COLORS } from '../core/constants.js';
 
-// Priority color fallback chain: task color → COLORS.PRIORITY_DEFAULT
-const resolvedColor = task.priorityColor ?? COLORS.PRIORITY_DEFAULT;
+// Last-resort fallback when a stored colour fails validation (historyManager)
+const safeColor = isValidHex(entry.priorityColor) ? entry.priorityColor : COLORS.PRIORITY_DEFAULT;
 ```
+
+A task's priority colour **on screen** is not resolved from the stored hex at all: priority is a
+level (High / Medium / Low) shown as the active routine's theme swatch —
+`vocabThemeManager.getTaskPriorityColor(task)` (helpers in `utils/priorityLevel.js`, plan in
+`web/docs/future-work/SCHEMA_2_6_PLAN.md`).
 
 **NEVER** hardcode `setTimeout(fn, 3000)`, `if (x > 100)`, or `'#dc3545'` when the value is a tunable behavior knob or default color. If the right constant doesn't exist yet, **add it to `constants.js`** in the appropriate `Object.freeze({...})` block with a comment describing what it tunes.
 

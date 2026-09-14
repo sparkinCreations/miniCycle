@@ -2437,7 +2437,114 @@ async function journeyNewerDataNeverOverwritten(browser, baseURL) {
     return { name: 'data written by a newer build is never overwritten', failures };
 }
 
+// Priority is a LEVEL shown in the active routine's theme colours (SCHEMA_2_6_PLAN.md
+// step 4). Before Sep 2026 each surface showed the raw stored hex: a task flagged
+// under one theme kept that theme's red after a switch, a startup pass re-applied
+// the stored hex over the list, and search could only tell flagged from not.
+// Seeds colours from TWO themes, then checks the boot render, the live repaint on a
+// theme switch, a reload, Priority First, and the picker naming and storing a level.
+async function journeyPriorityLevelsFollowTheme(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const { context, page } = await openFresh(browser, baseURL);
+    const ids = ['pl-low', 'pl-none', 'pl-high', 'pl-medium'];
+    const colours = () => page.evaluate((ids) => Object.fromEntries(ids.map(id => {
+        const el = document.querySelector(`.task[data-task-id="${id}"]`);
+        return [id, el ? el.style.getPropertyValue('--task-priority-color') : 'missing'];
+    })), ids);
+    const same = (got, want) => Object.keys(want).every(k => got[k] === want[k]);
+    try {
+        await page.evaluate(() => {
+            const d = JSON.parse(localStorage.getItem('miniCycleData'));
+            const c = d.data.cycles[d.appState.activeCycleId];
+            const task = (id, highPriority, priorityColor) => ({
+                id, text: id, completed: false, dueDate: null, highPriority, priorityColor,
+                remindersEnabled: false, recurring: false, recurringSettings: {},
+                deleteWhenComplete: false, deleteWhenCompleteSettings: { cycle: false, todo: true }, schemaVersion: 2
+            });
+            c.tasks = [
+                task('pl-low', true, '#28a745'),       // classic Low
+                task('pl-none', false, null),
+                task('pl-high', true, '#8b1a1a'),      // habit-tracker High — a DIFFERENT theme's colour
+                task('pl-medium', true, '#facc15')     // classic Medium
+            ];
+            c.recurringTemplates = {};
+            c.theme = 'classic';
+            d.settings = d.settings || {};
+            d.settings.unlockedThemes = ['classic', 'habit-tracker'];
+            delete d.settings.priorityColor;
+            localStorage.setItem('miniCycleData', JSON.stringify(d));
+        });
+        await page.reload({ waitUntil: 'domcontentloaded', timeout: 20000 });
+        await bootApp(page);
+        await page.waitForTimeout(800);
+
+        const classic = { 'pl-high': '#dc3545', 'pl-medium': '#facc15', 'pl-low': '#28a745', 'pl-none': '' };
+        let got = await colours();
+        record('boot render shows each level in classic colours (habit-tracker red → classic red)', same(got, classic), JSON.stringify(got));
+
+        // Live theme switch through the real themes panel.
+        await openMenu(page);
+        await clickEl(page, '#open-themes-panel');
+        await clickEl(page, 'input[name="vocab-theme-selection"][value="habit-tracker"]');
+        const habit = { 'pl-high': '#8b1a1a', 'pl-medium': '#7a4d00', 'pl-low': '#1a5c2e', 'pl-none': '' };
+        await page.waitForFunction(() => document.querySelector('.task[data-task-id="pl-medium"]')
+            ?.style.getPropertyValue('--task-priority-color') === '#7a4d00', null, { timeout: 8000 }).catch(() => {});
+        got = await colours();
+        record('switching the theme repaints every flagged task in the new theme\'s colours', same(got, habit), JSON.stringify(got));
+
+        await page.reload({ waitUntil: 'domcontentloaded', timeout: 20000 });
+        await bootApp(page);
+        await page.waitForTimeout(800);
+        got = await colours();
+        record('after reload the list still shows the theme\'s colours (no startup pass restores stored hex)', same(got, habit), JSON.stringify(got));
+
+        // Priority First — High, Medium, Low, then none, from state.
+        await clickEl(page, '#task-search-btn');
+        await clickEl(page, '.sort-chip[data-sort="priority"]');
+        const order = await page.evaluate(() => [...document.querySelectorAll('#taskList > .task')].map(el => el.dataset.taskId).join(','));
+        record('Priority First orders High, Medium, Low, then none', order === 'pl-high,pl-medium,pl-low,pl-none', order);
+        await clickEl(page, '.sort-chip[data-sort="default"]');
+
+        // Flag the unflagged task: the picker names levels and stores the chosen one.
+        await clickEl(page, '.task[data-task-id="pl-none"] .priority-btn');
+        await page.waitForSelector('.priority-color-btn', { state: 'attached', timeout: 8000 });
+        const picker = await page.evaluate(() => {
+            const btns = [...document.querySelectorAll('.priority-color-btn')];
+            return {
+                names: btns.map(b => b.getAttribute('aria-label')).join(','),
+                checked: btns.filter(b => b.getAttribute('aria-checked') === 'true').map(b => b.dataset.level).join(',')
+            };
+        });
+        record('picker names its swatches High, Medium, Low', picker.names === 'High,Medium,Low', picker.names);
+        record('a newly flagged task starts at High', picker.checked === 'high', `checked=${picker.checked}`);
+        await clickEl(page, '.priority-color-btn[data-level="low"]');
+        await page.waitForFunction(() => {
+            try {
+                const d = JSON.parse(localStorage.getItem('miniCycleData'));
+                const t = d.data.cycles[d.appState.activeCycleId].tasks.find(x => x.id === 'pl-none');
+                return t && t.highPriority === true && t.priorityColor === '#1a5c2e';
+            } catch { return false; }
+        }, null, { timeout: 8000 }).catch(() => {});
+        const stored = await page.evaluate(() => {
+            const d = JSON.parse(localStorage.getItem('miniCycleData'));
+            const t = d.data.cycles[d.appState.activeCycleId].tasks.find(x => x.id === 'pl-none');
+            return { highPriority: t.highPriority, priorityColor: t.priorityColor };
+        });
+        got = await colours();
+        record('choosing Low stores habit-tracker\'s Low swatch and shows it',
+            stored.highPriority === true && stored.priorityColor === '#1a5c2e' && got['pl-none'] === '#1a5c2e',
+            `stored=${JSON.stringify(stored)} shown=${got['pl-none']}`);
+    } catch (e) {
+        failures.push(`run error: ${e.message}`);
+        console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);
+    } finally {
+        await context.close();
+    }
+    return { name: 'priority levels follow the theme', failures };
+}
+
 const JOURNEYS = [
+    { name: 'priority levels follow the theme', fn: journeyPriorityLevelsFollowTheme },
     { name: 'data written by a newer build is never overwritten', fn: journeyNewerDataNeverOverwritten },
     { name: 'the Complete Cycle button survives every task moving to the dropdown', fn: journeyCompleteButtonSurvivesDropdown },
     { name: 'reorder arrows move the task the user pointed at', fn: journeyArrowReorderMovesTheRightTask },

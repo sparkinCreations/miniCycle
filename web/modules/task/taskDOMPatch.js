@@ -15,8 +15,8 @@
  * @see {@link module:task/taskDOM} - Main DOM manager
  */
 
-import { createDIModule, optional } from '../core/diBase.js';
-import { COLORS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS } from '../core/constants.js';
+import { createDIModule, required, optional } from '../core/diBase.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS } from '../core/constants.js';
 import { ICONS } from '../utils/icons.js';
 // Local-midnight parse for date-only "YYYY-MM-DD" values — new Date() treats
 // them as UTC midnight, displaying the previous day in negative UTC offsets.
@@ -29,7 +29,9 @@ import { applyTaskStatusLabel } from './taskUtils.js';
 
 const di = createDIModule('TaskDOMPatch', {
     sanitizeInput: optional(null),
-    AppState: optional(null)
+    AppState: optional(null),
+    // Priority colour = the task's LEVEL under the active theme (see _applyPriorityColor)
+    vocabThemeManager: required()
 });
 
 /**
@@ -143,15 +145,7 @@ export class TaskDOMPatch {
         const isHighPriority = taskData.highPriority || false;
         taskElement.classList.toggle(DOM_CLASSES.HIGH_PRIORITY, isHighPriority);
 
-        // Apply or clear per-task priority color via CSS custom property
-        // Use task's own color or the default red — settings.priorityColor is only
-        // baked into per-task color at toggle time, not re-applied on every render
-        if (isHighPriority) {
-            const resolvedColor = taskData.priorityColor ?? COLORS.PRIORITY_DEFAULT;
-            taskElement.style.setProperty('--task-priority-color', resolvedColor);
-        } else {
-            taskElement.style.removeProperty('--task-priority-color');
-        }
+        this._applyPriorityColor(taskElement, taskData);
 
         const priorityBtn = taskElement.querySelector(DOM_SELECTORS.PRIORITY_BTN);
         if (priorityBtn) {
@@ -165,9 +159,20 @@ export class TaskDOMPatch {
      * @private
      */
     _patchPriorityColor(taskElement, taskData) {
-        if (taskData.highPriority) {
-            const resolvedColor = taskData.priorityColor ?? COLORS.PRIORITY_DEFAULT;
-            taskElement.style.setProperty('--task-priority-color', resolvedColor);
+        this._applyPriorityColor(taskElement, taskData);
+    }
+
+    /**
+     * Paint the per-task priority var from the task's LEVEL under the active
+     * theme — never the stored hex, which may have been picked under another
+     * theme. Cleared when the task is not flagged. Same rule as taskDOM's
+     * create path, focusTaskPanel and the picker (utils/priorityLevel.js).
+     * @private
+     */
+    _applyPriorityColor(taskElement, taskData) {
+        const color = this.deps.vocabThemeManager.getTaskPriorityColor(taskData);
+        if (color) {
+            taskElement.style.setProperty('--task-priority-color', color);
         } else {
             taskElement.style.removeProperty('--task-priority-color');
         }

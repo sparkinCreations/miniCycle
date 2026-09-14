@@ -89,7 +89,10 @@ const di = createDIModule('TaskCore', {
     AppMeta: optional(null),
     DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS: optional(null),
     DEFAULT_TASK_OPTION_BUTTONS: optional(null),
-    isTouchDevice: optional(null)
+    isTouchDevice: optional(null),
+    // FORWARD-THROUGH to taskCRUD (wireSubModuleDependencies): the priority
+    // toggle stores a LEVEL as the active theme's swatch (utils/priorityLevel.js)
+    vocabThemeManager: optional(null)
 });
 
 // Late-binding deps via Proxy

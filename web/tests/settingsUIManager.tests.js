@@ -102,8 +102,11 @@ export async function runSettingsUIManagerTests(resultsDiv) {
         }
     });
 
-    await test('applyPriorityColor sets the global var and each task colored var', () => {
+    await test('applyPriorityColor sets the global var and leaves per-task colours to the renderers', () => {
         // No idempotency guard / no listener — purely loadMiniCycleData-driven.
+        // Per-task colours are the task's LEVEL under the active theme, painted by
+        // taskDOM / taskDOMPatch. This pass used to write the raw stored hex over
+        // them on startup, undoing the theme mapping for the whole list.
         mod.setSettingsUIManagerDependencies({
             loadMiniCycleData: () => ({
                 settings: { priorityColor: '#ff0000' },
@@ -119,8 +122,8 @@ export async function runSettingsUIManagerTests(resultsDiv) {
             if (document.documentElement.style.getPropertyValue('--priority-color') !== '#ff0000') {
                 throw new Error('global --priority-color should be applied from settings');
             }
-            if (el.style.getPropertyValue('--task-priority-color') !== '#00ff00') {
-                throw new Error('per-task --task-priority-color should be applied from the task color');
+            if (el.style.getPropertyValue('--task-priority-color') !== '') {
+                throw new Error('applyPriorityColor must not write the stored per-task hex over the renderer\'s colour');
             }
         } finally {
             el.remove();
