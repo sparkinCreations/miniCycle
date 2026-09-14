@@ -5,10 +5,13 @@ version of this document described a data shape this codebase has never had (see
 [What was wrong before](#what-was-wrong-before)); every structure, path and count below was
 verified against the running code, and the claims that could not be verified are marked.
 **Priority:** Medium — but see [Two renames, not one](#two-renames-not-one): the two halves
-have very different value, and the cheaper half is the more useful one.
+have very different value, and the cheaper half is the more useful one. A third change,
+**Priority levels** (below), was decided in September 2026.
 **Breaking changes:** Yes (stored data + the published `.mcyc` schema).
-**Last Updated:** August 2026 (full rewrite: corrected schema shape, migration seam,
-`.mcyc` obligations, surface inventory, harness-correct tests, plan ordering)
+**Last Updated:** September 2026 (decisions: `autoClear` confirmed, priority becomes a level;
+transitional helpers added; priority folded into every section below). Previously August 2026:
+full rewrite — corrected schema shape, migration seam, `.mcyc` obligations, surface inventory,
+harness-correct tests, plan ordering.
 
 ---
 
@@ -56,6 +59,10 @@ independent changes with very different payoffs, and they should be judged separ
 | `.mcyc` format impact    | **yes** — published schema changes          | **none** — 0 references      |
 | Recommendation           | **do this one**                             | optional; lower value per unit of risk |
 
+**A third, independent change was added in September 2026:** priority stored as a level instead
+of a colour — see **Priority levels** below. Like Rename A it changes the published `.mcyc`
+format, so the two should ship together as one format bump.
+
 ### Rename A — `deleteWhenComplete*` → `autoClear`
 
 **Why the current name is wrong, not merely inelegant.** `delete` already means something
@@ -77,6 +84,12 @@ And the schema already owns the noun: `clearedTasks { entries, totalCleared,
 autoPruneEnabled }`, documented as *"To-Do mode clears + cycle reset auto-removes"*, with
 its own `clearedTasksManager`. **`taskCycleReset.js:385` records `deleteWhenComplete` tasks
 into `clearedTasks`** — the field feeding `clearedTasks` is the one named "delete."
+
+**Decision (Sep 2026): the name is `autoClear` — confirmed by the product owner.** In the
+meantime the rule in the repo-root `CLAUDE.md` (§Naming) applies: no new names built on
+"delete" for this option; say "Clear on Reset" / "Marked for Clearing", and read or write it
+through `getAutoClear()` / `setAutoClear()` — see
+[Transitional naming helpers](#transitional-naming-helpers-sep-2026).
 
 **Why `autoClear` and not `clearOnReset` / `clearOnComplete`.** The *trigger* differs by
 mode — reset in cycle mode, clearing in to-do mode — which is exactly why the stored value
@@ -106,6 +119,125 @@ wording — those refer to completions, which really are cycles.
 
 This is cosmetic. It is the larger of the two changes and fixes no defect. Sequence it after
 A, or skip it.
+
+### Transitional naming helpers (Sep 2026)
+
+Until either rename happens, new code does not have to spell the stored names.
+`modules/utils/cycleMode.js` exports helpers that use the product vocabulary while reading
+and writing the **current 2.5 keys**. They add no keys to stored data, so saved data,
+backups and `.mcyc` files are unchanged.
+
+| Helper | Reads / writes today (2.5) | After 2.6 |
+|---|---|---|
+| `getRoutines(state)` | `data.cycles` | `data.routine` |
+| `getRoutine(state, id)` / `getActiveRoutine(state)` | `data.cycles[id]` | `data.routine[id]` |
+| `getActiveRoutineId(state)` / `setActiveRoutineId(state, id)` | `appState.activeCycleId` | `appState.activeRoutineId` |
+| `getAutoClear(task, routine, defaults)` / `setAutoClear(task, routine, value, defaults)` | `deleteWhenCompleteSettings[mode]` + the `deleteWhenComplete` mirror | `autoClear[mode]` |
+| `getAutoClearMode` / `resolveAutoClear` / `syncTaskAutoClear` | the same functions as `getDeleteSettingsMode` / `resolveDeleteWhenComplete` / `syncTaskDeleteWhenComplete` | renamed or retired with the reconciler |
+
+`cycleCount` and `userProgress.cyclesCompleted` get no helper and keep their names — they
+count completions, which really are cycles.
+
+**What this changes for the plan.** When a rename lands, these helpers' internals change in
+the same commit, and every caller already using them needs no edit. It does **not** shrink
+the existing surface: code written before the helpers still reads the stored keys directly,
+so the sweep scope above still applies. Each call site moved onto a helper beforehand is one
+fewer to touch during the migration.
+
+**Why helpers, not aliases on the data.** Measured Sep 2026: an alias getter hidden on the
+state object is dropped by `structuredClone` (every `AppState.update`, undo snapshots); a
+visible one makes JSON store every routine twice, which become two diverging copies after a
+reload; and wrapping state in a Proxy makes `structuredClone` throw. Do not revisit that.
+
+---
+
+## Priority levels — store a level, not a colour
+
+**Decision (Sep 2026): priority becomes a level — `high` / `medium` / `low` — confirmed by the
+product owner.** The picker's Red / Yellow / Green already read as levels; today the app treats
+them as one on/off flag with a colour attached. This is a third, independent change: it touches
+the published `.mcyc` schema like Rename A, and can ship with either rename or on its own.
+
+### What 2.5 does (measured Sep 2026)
+
+- A task stores `highPriority` (boolean) and `priorityColor` (hex). `mcyc-2.5.schema.json` says
+  the colour is *"ignored unless highPriority is true"*, and accepts **any** hex.
+- The picker (`showPriorityColorPickerNotification` in `notifications.js`) offers the active
+  theme's `priorityColors`, or `DEFAULT_PRIORITY_SWATCHES` for classic. Swatches are darkened
+  per theme for contrast, so **the stored hex is theme-specific** (habit-tracker's red is
+  `#8b1a1a`, fitness's is `#c0392b`).
+- Toggling priority on saves the resolved colour into the task and its recurring template
+  (`taskCRUD.js`). Picking a swatch also writes `settings.priorityColor`, so the last pick
+  becomes the colour for the next task flagged.
+- No UI accepts a free-form priority colour. Non-swatch hexes only arrive through `.mcyc`
+  files written by hand.
+- Search's Priority filter and "Priority First" sort only see on/off, and they read a DOM
+  class, not state.
+
+### What is wrong with it
+
+1. **A stored hex does not follow the theme.** Picked under one theme, a task keeps that
+   theme's tint after a switch, and ships it as-is in shared `.mcyc` files.
+2. **Colour is the only signal.** Assistive tech hears on/off (`aria-pressed`), never the level.
+3. **Three display fallbacks disagree.** The toggle uses task → `settings.priorityColor` →
+   `COLORS.PRIORITY_DEFAULT`; `taskDOM` / `taskDOMPatch` re-renders use task → default;
+   `focusTaskPanel` uses task → `var(--color-red)`. Harmless while the toggle saves a colour,
+   but a flagged task that arrives with none renders differently per surface.
+4. **Theme presets carry a conflicting colour.** Each theme's `colorPreset.priorityColor`
+   (fitness: `#1e8c52`, a green) sets the root `--task-priority-color` CSS variable
+   (`themeManager.js`). Flagged tasks write an inline value that overrides it, so it rarely
+   shows — but under levels, a green "High" default contradicts green = low. Make it the
+   theme's High swatch, or retire it.
+
+### 2.6 shape
+
+```javascript
+// 2.5                                        // 2.6
+task.highPriority = true               →      task.priority = 'medium'   // 'high' | 'medium' | 'low' | null
+task.priorityColor = '#b8860b'         →      (removed — colour derived from the theme at render)
+settings.priorityColor = '#b8860b'     →      settings.defaultPriority = 'medium'
+```
+
+- **Migration and import:** `highPriority: false` → `null`. Flagged with a known swatch hex (any
+  theme, or the defaults) → that swatch's level. Flagged with no hex or an unknown one →
+  `'high'`. An unknown custom hex is **lost**. No UI ever produced one, but a hand-written
+  `.mcyc` can carry one — see the `.mcyc` section for what that means for the published promise.
+- **Priority is stored in more than tasks** (measured Sep 2026), and every copy must convert in
+  the same migration:
+  - recurring templates — `recurringTemplates[id].highPriority` / `.priorityColor`, written by
+    the priority toggle (`taskCRUD.js`) and read by `recurringWatcher.js` to recreate the task
+  - the cleared-task archive — `clearedTasks.entries[].wasHighPriority` / `.priorityColor`,
+    used by `clearedTasksManager.js` to recreate a cleared task
+  - history event details — `priorityColor`, rendered by `historyManager.js`
+
+  Miss one and a recreated task comes back without its priority.
+- **`.mcyc`:** the published schema changes; the importer keeps accepting 2.5
+  `highPriority` / `priorityColor` and converts them with the rule above.
+- **UI:** picker swatches are labelled High / Medium / Low (colour still shown), the accessible
+  name states the level, and "Priority First" sorts high → medium → low → none from state.
+- **The gate:** `validateSchema25Structure()` must accept the new shape, exactly as for the
+  renames.
+
+### Transitional helpers (Sep 2026)
+
+`modules/utils/priorityLevel.js` (pure, no DI) treats priority as a level today while reading and
+writing **only the 2.5 fields**:
+
+| Helper | What it does on 2.5 data |
+|---|---|
+| `getPriorityLevel(task, swatchSets)` | level from `highPriority` + the stored hex; flagged with no or unknown colour → `'high'` |
+| `getPriorityColor(task, swatches, swatchSets)` | display colour: a swatch colour follows the current theme, a custom hex is shown as stored, no colour → the theme's High |
+| `setPriorityLevel(task, level, swatches)` | writes `highPriority` and the theme's swatch hex; `null` turns priority off and keeps the colour, like the toggle |
+| `comparePriority(a, b, swatchSets)` | sort order high → medium → low → none |
+| `getPrioritySwatches(theme)` / `collectSwatchSets(THEME_DEFINITIONS)` | the active theme's set (defaults for classic) / every theme's set |
+
+Supporting data: `PRIORITY_LEVELS` and `DEFAULT_PRIORITY_SWATCHES` in `constants.js` (now also
+the picker's fallback, so the two cannot drift), and a `level` on every theme `priorityColors`
+entry. Tests guard that every theme defines each level once and that no hex means two levels.
+
+**Not wired in yet.** Rendering, the picker and search still use the 2.5 fields directly.
+Switching them onto these helpers is the next step, and it changes visible behaviour: priority
+colours start following the theme, and "Priority First" becomes level-aware.
 
 ---
 
@@ -194,6 +326,18 @@ users something untrue about a format that did not change.
 the published format (`mcyc.schema.json`, `schema/mcyc-2.5.schema.json`, and 8 mentions in
 `pages/mcyc-format.html`).
 
+**Priority levels touch it too.** `highPriority` and `priorityColor` appear in
+`mcyc.schema.json`, `schema/mcyc-2.5.schema.json` and `pages/mcyc-format.html`. The obligations
+below apply to them exactly as to Rename A — the importer accepts `highPriority` /
+`priorityColor` permanently, and the exporter writes `priority` — so publish both changes in
+the same `mcyc-2.6.schema.json`. One extra decision is needed first: the 2.5 schema accepts
+**any** hex, so a hand-written file can hold a custom colour. Under the migration rule it still
+imports — as High — but the colour is gone. That honours "existing files keep importing" but not
+the author's colour; decide whether a custom colour should survive (for example as an optional
+override field) before 2.6 is published. The sample routines in `examples/routines/` use the 2.5
+fields; they keep importing through the permanent alias, and should be converted when 2.6 ships
+so the examples show the current format.
+
 **The rules here are already published**, on <https://minicycle.app/pages/mcyc-format>. They
 are a public commitment to anyone building on the format, not an internal convention this
 plan gets to set:
@@ -245,7 +389,8 @@ Files pinning the schema string or the renamed fields, excluding `archive/`, `di
 
 **Data integrity — none of these were in the previous plan**
 `utils/dataValidator.js` · `utils/dataRecovery.js` · `utils/dataSanitizer.js` ·
-`storage/backupManager.js` (IndexedDB blobs) · `ui/backupRestoreManager.js` ·
+`storage/backupManager.js` (IndexedDB blobs) · `ui/undoIndexedDB.js` (persisted undo stacks,
+keyed by `cycleId`) · `ui/backupRestoreManager.js` ·
 the first-run rescue screen in `miniCycle.html`, which accepts **two** backup formats
 
 **Import / export / share**
@@ -258,6 +403,16 @@ the first-run rescue screen in `miniCycle.html`, which accepts **two** backup fo
 `recurring/recurringActivation.js` · `recurring/recurringTemplate.js` ·
 `recurring/recurringSettingsApplicator.js` · `ui/focusTaskPanel.js` ·
 `ui/undoTransactionDiff.js` · `ui/undoSnapshotUtils.js` · `features/clearedTasksManager.js`
+
+**Priority levels (measured Sep 2026) — in addition to the task, import and undo files above**
+`utils/notifications.js` (the picker) · `ui/taskSearch.js` (Priority filter and "Priority First"
+sort, via the `high-priority` class) · `labels/themes.js` (swatches) · `labels/defaultLabels.js`
+(Red / Yellow / Green → High / Medium / Low) · `features/themeManager.js`
+(`colorPreset.priorityColor` → CSS variable) · `features/historyManager.js` ·
+`recurring/recurringWatcher.js` · `ui/settingsUIManager.js` · `ui/preferencesManager.js` ·
+`ui/taskOptionsCustomizer.js` · `utils/dataValidator.js` · `routine/routineSwitcherActions.js` ·
+`routine/routineSwitcherRepair.js` · `task/taskEvents.js` · `task/taskCore.js` ·
+`utils/priorityLevel.js` · `styles/components/task-options.css` · `examples/routines/`
 
 **Easily missed**
 `games/miniCycle-taskGame.js` · `games/miniCycle-taskOrder.js` · `games/miniCycle-taskScramble.js` ·
@@ -295,7 +450,11 @@ await test('2.5 → 2.6 renames the delete pair to autoClear', () => {
 **Journey tests** — `tests/automated/run-journey-tests.cjs`, real boot in Playwright,
 asserting persisted state. This is the layer that catches schema regressions module tests
 miss. Add a journey that boots a 2.5 payload, confirms migration, and confirms a task whose
-`autoClear.cycle` is `false` still survives a cycle reset.
+`autoClear.cycle` is `false` still survives a cycle reset. For priority, boot a 2.5 payload
+whose flagged tasks carry another theme's swatch colours and one custom hex, plus a flagged
+recurring template and a flagged cleared-task entry; assert the stored levels, the colour
+rendered under the current theme, and that recreating the recurring and cleared tasks keeps
+their level.
 
 **Mutation-test every new assertion.** Prove it fails without the change. The existing
 delete-reconciliation journey exists because a first mutation attempt passed — the test was
@@ -304,7 +463,9 @@ fine, the guessed mechanism was wrong.
 **Gates that must stay green** (`npm run` targets): `lint`, `test`, `test:sw`, `test:meta`,
 `test:layout`, `test:journey`, `test:a11y`, `test:changelog`, `test:restore`, and
 `validate:{csp,html,docs,di,comments,builtins,labels,chains,api,cache,provides,inline,legacy}`.
-`test:sw` matters if any new module file enters the boot graph.
+`test:sw` matters for **any** new file under `modules/`, not only boot-graph ones: its precache
+drift guard walks every module file and fails unless it is precached or in `PRECACHE_EXEMPT`
+(measured Sep 2026, when `utils/priorityLevel.js` tripped it before anything imported it).
 
 ---
 
@@ -315,7 +476,8 @@ fine, the guessed mechanism was wrong.
    UUID map keys with `title` as the display name**. Today cycles are keyed by name, which is
    both what that plan wants to change and a CLAUDE.md #18 prototype-pollution hazard. Doing
    Rename B first means renaming a map whose keying is about to change anyway.
-2. **This plan.** Rename A first; Rename B optional and after it.
+2. **This plan.** Rename A and Priority levels first, together — both change the published
+   `.mcyc` format, so they share one format bump. Rename B optional and after them.
 3. **`TASK_ORDERING_SYSTEM_PLAN.md` is downstream** — its task object is declared
    "Schema 2.6+", so it waits on whichever renames land.
 
@@ -333,6 +495,10 @@ The previous "2–3 days" estimate was built on a six-file surface and is not su
   the resolver in the same change that removes the mirror.
 - **Rename B** — 643 hits / 117 files for `activeCycleId` alone, mechanical but wide, and the
   review pass dominates.
+- **Priority levels** — ~165 sites by the August 2026 count, plus converting every stored copy
+  (tasks, recurring templates, cleared-task entries, history details), switching the picker,
+  search and renderers onto the level, and the `.mcyc` format work shared with Rename A. The
+  transitional helpers in `utils/priorityLevel.js` already hold the mapping rules.
 
 Neither is a "day." Treat the migration function as the small part and the audit of the
 surfaces above as the real work.
@@ -349,6 +515,10 @@ surfaces above as the real work.
 | Backups in IndexedDB and the two rescue-screen formats still hold 2.5 | Restore must migrate on read, not assume the current version |
 | Data loss during migration | Automatic backup first; validate after; `test:restore` covers the rollback generator |
 | Half-migrated stored data if a sweep is partial | One migration function, one version bump, no field-by-field rollout |
+| Priority converted on tasks but not on recurring templates, cleared-task entries or history | Convert all four in the one migration; the priority journey recreates a recurring and a cleared task and asserts the level survives |
+| Persisted undo history restores pre-migration snapshots — `undoIndexedDB.js` keeps undo stacks in the `miniCycleUndoHistory` IndexedDB (`undoStacks` store, keyed by `cycleId`) and reloads them on boot and routine switch; the snapshots hold 2.5 priority and delete fields, and the key itself is a Rename B name | Migrate or clear persisted undo history at the version bump (all three changes) |
+| A custom hex in a shared `.mcyc` silently becomes plain High | Decide before publishing 2.6 whether a custom colour survives; state the outcome on the format page |
+| A theme's `colorPreset.priorityColor` contradicts the level colours (fitness: a green default) | Point it at the theme's High swatch, or retire it, in the same change |
 
 ---
 
@@ -360,6 +530,11 @@ surfaces above as the real work.
 - [ ] `schema/mcyc-2.5.schema.json` byte-identical; `schema/mcyc-2.6.schema.json` published;
       format page lists both
 - [ ] Importer accepts `deleteWhenCompleteSettings` **and** `autoClear`
+- [ ] Priority is a level on tasks, recurring templates, cleared-task entries and history
+      details; every theme's swatch colours map to the right level
+- [ ] Importer accepts `highPriority` / `priorityColor` **and** `priority`
+- [ ] Picker labels, accessible names and "Priority First" sort are level-aware;
+      `colorPreset.priorityColor` resolved; persisted undo history migrated or cleared
 - [ ] Full suite and every gate green (see [Testing](#testing))
 - [ ] New migration tests, each mutation-verified
 - [ ] `SCHEMA_2_5.md`, `DATA_SCHEMA_GUIDE.md`, `MCYC_FILE_FORMAT.md`, `CLAUDE.md` updated;
@@ -375,11 +550,13 @@ dev builds so field-default drift is caught where objects are born. Precedent: t
 `highPriority: null` bug (fixed v2.398) shipped because a creation path defaulted a field
 differently from the schema.
 
-This is also the right answer for **`highPriority` / `priorityColor`, which this plan
-deliberately leaves alone.** They are a flag plus an optional per-task override of the global
-`settings.priorityColor` default — not a mirrored pair, no dual-write, no drift. Restructuring
-them would cost ~165 sites and buy no correctness. The one real wart (`highPriority: null`) is
-a validation problem, and a validator is the fix.
+**Superseded in September 2026 for `highPriority` / `priorityColor`.** This section used to say
+the plan deliberately leaves them alone, because they are a flag plus an optional per-task colour
+— not a mirrored pair, no dual-write, no drift — and restructuring them buys no *correctness*.
+That reasoning still holds: the September change is a product decision (levels, colours that
+follow the theme, a signal that is not colour alone), not a bug fix — see **Priority levels**.
+The validator point stands too: the `highPriority: null` wart was a validation problem, and a
+dev-build `validateTask()` helps whatever shape priority takes.
 
 ---
 

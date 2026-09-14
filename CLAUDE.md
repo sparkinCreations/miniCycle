@@ -327,6 +327,15 @@ state.userProgress                        — milestones, totals
 state.achievements                        — unlocked[], seen{}
 ```
 
+### Naming — routine vs cycle, and "clearing" not "deleting"
+
+The stored field names above predate the product's vocabulary. **Stored names stay as they are until Schema 2.6** (`web/docs/future-work/SCHEMA_2_6_PLAN.md`) — renaming a stored key without a migration makes `validateSchema25Structure()` reject the user's data, and the app behaves as if they have none. **Everything you write NEW uses the product words:**
+
+- **Routine** = the checklist — what `state.data.cycles[id]` holds (`activeCycleId` is the open routine). **Cycle** = one completion of it (`cycleCount`, `userProgress.cyclesCompleted`), and "cycle" is used for nothing else. New identifiers, variables and comments say routine — `getActiveRoutineTasks()`, `routine`, `routineId` — even when the value is read from `data.cycles`.
+- **Clearing, never deleting**, for the per-task auto-remove option. Users see **"Clear on Reset"** in the cycle modes and **"Marked for Clearing"** in To-Do mode (`taskOption.clearOnReset` / `taskOption.markedForClearing`), and the removed tasks are recorded in `clearedTasks`. "Delete" means a user explicitly destroying a task (`action.deleteTask`). The stored `deleteWhenComplete` / `deleteWhenCompleteSettings` fields and their helpers (`resolveDeleteWhenComplete`, `syncTaskDeleteWhenComplete`) keep their names for now (Schema 2.6 renames them to `autoClear` — decided) — but never coin a new name built on "delete" for this option.
+- **Use the naming helpers in `web/modules/utils/cycleMode.js`** so new code never has to spell the stored names: `getActiveRoutine()`, `getActiveRoutineId()`, `getRoutine()`, `getRoutines()`, `setActiveRoutineId()`, and `getAutoClear()` / `setAutoClear()` (plus `resolveAutoClear` / `syncTaskAutoClear` / `getAutoClearMode`, the same functions under autoClear names). They read and write the existing keys and add none — do NOT put alias properties on the state object instead: `structuredClone` drops hidden getters, JSON saves visible ones twice, and a Proxy makes `structuredClone` throw (measured Sep 2026). `cycleCount` keeps its name: it really counts cycles.
+- Renaming a file's **local** variables while you are in it (`cycleData` → `routine`) is welcome. Renaming **DI names** (`switchMiniCycle`, `loadMiniCycle`, …) or **stored keys** is a dedicated change, never a drive-by: DI renames go through the full manifest → depMappings → appContext pipeline.
+
 ---
 
 ## BOOT SEQUENCE — Do Not Bypass
