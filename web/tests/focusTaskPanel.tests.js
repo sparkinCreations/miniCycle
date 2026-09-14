@@ -101,6 +101,18 @@ export async function runFocusTaskPanelTests(resultsDiv) {
 
     resultsDiv.innerHTML += '<h4 class="test-section">🎯 Task selection (D2)</h4>';
 
+    await test('renders a pre-repair task that only carries legacy taskText', async () => {
+        // A task object can reach the panel before routineLoader's load-time repair
+        // renames taskText → text; the panel reads through getTaskText().
+        const host = buildPanelFixture();
+        try {
+            const { panel } = await makeManager(makeState([{ id: 'legacy', taskText: 'Old name', completed: false }]));
+            const shown = document.getElementById('focus-task-text').textContent;
+            if (shown !== 'Old name') throw new Error(`Expected "Old name", got "${shown}"`);
+            panel.destroy();
+        } finally { host.remove(); }
+    });
+
     await test('shows the first incomplete task with position indicator', async () => {
         const host = buildPanelFixture();
         try {

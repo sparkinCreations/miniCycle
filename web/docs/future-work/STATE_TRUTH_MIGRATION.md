@@ -1,6 +1,6 @@
 # State-as-Truth Migration — Gen 1 leftovers on the cycle loop
 
-**Status:** Open plan — #4 and #10 FIXED (v2.541 / v2.540), #24 shipped, #30 verified closed; #1 probed and NOT reproduced, then #1 (auto-reset + due-date paths) and #2 moved to state in v2.562; #1's Complete-button half REPRODUCED and fixed with #3 (Sep 2026, unreleased at time of writing)  
+**Status:** Open plan — #4 and #10 FIXED (v2.541 / v2.540), #24 shipped, #30 verified closed; #1 probed and NOT reproduced, then #1 (auto-reset + due-date paths) and #2 moved to state in v2.562; #1's Complete-button half REPRODUCED and fixed with #3 and #5 (Sep 2026, unreleased at time of writing) — **P0 band closed**  
 **Raised:** 2026-08-23 · **Against:** v2.483 · **Amended:** 2026-09-05 against v2.541  
 **Source:** Independent code review of boot, AppState, DI, completion/reset, both task renderers, undo wrapper, drag-drop, reminders, daily reset, history, `.mcyc` payload, import, `featureBoot` API allow-lists, and `moduleLoader` `ENFORCE_REQUIRES`  
 **Premise:** The repaired modules are Gen 3 (state is truth). The **name of the app** — “all tasks done → reset” — is still Gen 1 (DOM `.checked`). That split is the work.
@@ -53,7 +53,7 @@ Do not start at schema 2.6 or UUID keys. Collapse Gen 1 on the loop first.
 
 | Band | Items | Why first |
 |------|-------|-----------|
-| **P0** | #1–#5 | Completion + one renderer |
+| **P0** | #1–#5 — ✅ all closed Sep 2026 (#4 v2.541, #1–#2 v2.562, #1 button half + #3 + #5 after v2.563) | Completion + one renderer |
 | **P1** | #6–#13, #14–#19 | Undo/mutation + DI on the same loop |
 | **P2** | #20–#31, #32–#34 | Schema fossils, recurring dates, XSS sinks, product notes |
 | **P3** | #35–#42 | Hygiene when touching those files |
@@ -254,11 +254,20 @@ unifying the renderers is safe cleanup rather than a bug fix, and anyone who uni
 must check whether `organize()` is still needed afterwards or becomes a redundant second
 pass over the same DOM.
 
-### #5 Runtime drops `taskText`; boot still accepts it
+### #5 Runtime drops `taskText`; boot still accepts it — ✅ FIXED Sep 2026
 
 **Where:** Renderer `addTask(task.text, …)` vs boot `task.text || task.taskText`.
 
 **Fix:** One helper: `task.text ?? task.taskText ?? ''`. Stop writing `taskText` on live tasks (cleared-task entries keep `taskText` by schema).
+
+**Fixed.** Measured first: nothing wrote `taskText` onto a live task any more, and
+`routineLoader`'s load-time repair already renames `taskText` → `text` and deletes the old
+key — that is the write-side normaliser. What remained were two inline read-side fallbacks:
+`focusTaskPanel` (`task.text ?? task.taskText ?? ''`) and the detail messages in
+`migrationManager.fixTaskValidationIssues`, which boot runs *before* the loader repair.
+Both now go through `getTaskText(task)` in `task/taskUtils.js`, the one read-side fallback,
+cross-referenced from the loader repair. Pinned by `taskUtils.tests.js` and a `focusTaskPanel`
+test that renders a pre-repair task carrying only `taskText`.
 
 ---
 

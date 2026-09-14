@@ -6,7 +6,8 @@
 // Direct import from module (not via appContext which may not be populated)
 import {
     TaskUtils,
-    setTaskUtilsDependencies
+    setTaskUtilsDependencies,
+    getTaskText
 } from '../modules/task/taskUtils.js';
 
 import {
@@ -76,6 +77,18 @@ export async function runTaskUtilsTests(resultsDiv) {
     await test('TaskUtils class is imported from module', () => {
         if (typeof TaskUtils !== 'function') {
             throw new Error('TaskUtils not available from module import');
+        }
+    });
+
+    await test('getTaskText prefers text, tolerates legacy taskText, and never returns a non-string', () => {
+        // The one read-side fallback for a task seen before routineLoader's repair
+        // renames taskText → text (STATE_TRUTH_MIGRATION #5).
+        if (getTaskText({ text: 'Water plants' }) !== 'Water plants') throw new Error('text');
+        if (getTaskText({ text: 'New', taskText: 'Old' }) !== 'New') throw new Error('text must win over taskText');
+        if (getTaskText({ taskText: 'Legacy' }) !== 'Legacy') throw new Error('legacy taskText');
+        if (getTaskText({ text: '' , taskText: 'Legacy' }) !== '') throw new Error('an empty string is still text, not missing');
+        for (const bad of [{}, { text: null }, { text: 42 }, null, undefined]) {
+            if (getTaskText(bad) !== '') throw new Error(`expected '' for ${JSON.stringify(bad)}`);
         }
     });
 

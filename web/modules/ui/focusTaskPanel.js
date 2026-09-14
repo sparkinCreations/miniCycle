@@ -27,6 +27,7 @@ import { createDIModule, required, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_SELECTORS, DATA_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, GESTURE,
          DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { getTaskText } from '../task/taskUtils.js';
 import { getCycleMode, getAllDoneHintKey, getDeleteSettingsMode,
          resolveDeleteWhenComplete, getTaskResetIndicator } from '../utils/cycleMode.js';
 
@@ -219,7 +220,7 @@ export class FocusTaskPanel {
         position.textContent = getLabel('focusTask.position', {
             vars: { current: index + 1, total: tasks.length }
         });
-        text.textContent = task.text ?? task.taskText ?? '';
+        text.textContent = getTaskText(task);
 
         // Completed task being browsed via ‹ › (D4) — dimmed, button unchecks
         const isCompleted = !!task.completed;

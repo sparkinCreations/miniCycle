@@ -527,6 +527,25 @@ function createOrUpdateTaskData(taskContext) {
  * @param {{name?: string, recurring?: boolean, status?: string}} [opts]
  * @returns {void}
  */
+/**
+ * The display text of a task object, tolerating the legacy `taskText` key.
+ *
+ * Live tasks carry `text`; `taskText` is the pre-2.5 name that only survives on a
+ * task object that has not yet passed through routineLoader's load-time repair,
+ * which renames it and deletes the old key (boot runs fixTaskValidationIssues
+ * before that repair, and cleared-task ENTRIES keep `taskText` by schema). This
+ * is the one read-side fallback; do not write `taskText` on a live task.
+ * (STATE_TRUTH_MIGRATION #5)
+ *
+ * @param {Object|null|undefined} task
+ * @returns {string} '' when neither key holds a string
+ */
+export function getTaskText(task) {
+    if (typeof task?.text === 'string') return task.text;
+    if (typeof task?.taskText === 'string') return task.taskText;
+    return '';
+}
+
 export function applyTaskStatusLabel(taskItem, completed, opts = {}) {
     if (!taskItem) return;
     const name = opts.name ?? (taskItem.querySelector(DOM_SELECTORS.TASK_TEXT)?.textContent || '');

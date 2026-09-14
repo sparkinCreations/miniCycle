@@ -27,6 +27,7 @@ import { getLabel } from '../labels/labelResolver.js';
 // dataRecovery in appState.js, so migration can schedule rebuilt templates.
 import { calculateNextOccurrence } from '../recurring/recurringCalculators.js';
 import { buildRecurringTemplate } from '../recurring/recurringTemplate.js';
+import { getTaskText } from '../task/taskUtils.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -616,7 +617,7 @@ export function validateAllMiniCycleTasksLenient() {
             const criticalErrors = [];
 
             // ✅ Only check for critical errors that would break migration
-            if (!task.text && !task.taskText) {
+            if (!getTaskText(task)) {
                 criticalErrors.push("Task has no text content");
             }
 
@@ -633,7 +634,7 @@ export function validateAllMiniCycleTasksLenient() {
             if (criticalErrors.length > 0) {
                 results.push({
                     cycle: cycleName,
-                    taskText: task.text || task.taskText || "(no text)",
+                    taskText: getTaskText(task) || "(no text)",
                     id: task.id || "(no id)",
                     errors: criticalErrors
                 });
@@ -673,7 +674,7 @@ export function fixTaskValidationIssues() {
                 const taskId = task.id || 'unknown';
 
                 // ✅ NEW: Handle tasks that SHOULD have recurring but don't
-                if (!task.recurring && (task.taskText || task.id)) {
+                if (!task.recurring && (getTaskText(task) || task.id)) {
                     // Skip tasks that are clearly not meant to be recurring
                     // (This is the safest approach - only fix existing recurring objects)
                     return;
@@ -686,26 +687,26 @@ export function fixTaskValidationIssues() {
                     if (task.recurring.recurCount === undefined) {
                         task.recurring.recurCount = 1;
                         fixedTasks++;
-                        fixedDetails.push(`${task.taskText}: Added recurCount`);
+                        fixedDetails.push(`${getTaskText(task) || task.id}: Added recurCount`);
                     }
 
                     if (task.recurring.recurIndefinitely === undefined) {
                         task.recurring.recurIndefinitely = true;
                         fixedTasks++;
-                        fixedDetails.push(`${task.taskText}: Added recurIndefinitely`);
+                        fixedDetails.push(`${getTaskText(task) || task.id}: Added recurIndefinitely`);
                     }
 
                     if (task.recurring.useSpecificTime === undefined) {
                         task.recurring.useSpecificTime = false;
                         fixedTasks++;
-                        fixedDetails.push(`${task.taskText}: Added useSpecificTime`);
+                        fixedDetails.push(`${getTaskText(task) || task.id}: Added useSpecificTime`);
                     }
 
                     // ✅ Set frequency if missing
                     if (!task.recurring.frequency) {
                         task.recurring.frequency = 'daily'; // Most common default
                         fixedTasks++;
-                        fixedDetails.push(`${task.taskText}: Added default frequency`);
+                        fixedDetails.push(`${getTaskText(task) || task.id}: Added default frequency`);
                     }
 
                     // Fix missing frequency blocks based on actual frequency
@@ -717,7 +718,7 @@ export function fixTaskValidationIssues() {
                             minute: 0
                         };
                         fixedTasks++;
-                        fixedDetails.push(`${task.taskText}: Added hourly block`);
+                        fixedDetails.push(`${getTaskText(task) || task.id}: Added hourly block`);
                     }
 
                     if (freq === 'daily' && !task.recurring.daily) {
@@ -729,7 +730,7 @@ export function fixTaskValidationIssues() {
                             militaryTime: false
                         };
                         fixedTasks++;
-                        fixedDetails.push(`${task.taskText}: Added daily block`);
+                        fixedDetails.push(`${getTaskText(task) || task.id}: Added daily block`);
                     }
 
                     if (freq === 'weekly' && !task.recurring.weekly) {
@@ -743,7 +744,7 @@ export function fixTaskValidationIssues() {
                             militaryTime: false
                         };
                         fixedTasks++;
-                        fixedDetails.push(`${task.taskText}: Added weekly block`);
+                        fixedDetails.push(`${getTaskText(task) || task.id}: Added weekly block`);
                     }
 
                     if (freq === 'biweekly' && !task.recurring.biweekly) {
@@ -757,7 +758,7 @@ export function fixTaskValidationIssues() {
                             militaryTime: false
                         };
                         fixedTasks++;
-                        fixedDetails.push(`${task.taskText}: Added biweekly block`);
+                        fixedDetails.push(`${getTaskText(task) || task.id}: Added biweekly block`);
                     }
 
                     if (freq === 'monthly' && !task.recurring.monthly) {
@@ -771,7 +772,7 @@ export function fixTaskValidationIssues() {
                             militaryTime: false
                         };
                         fixedTasks++;
-                        fixedDetails.push(`${task.taskText}: Added monthly block`);
+                        fixedDetails.push(`${getTaskText(task) || task.id}: Added monthly block`);
                     }
 
                     if (freq === 'yearly' && !task.recurring.yearly) {
@@ -787,7 +788,7 @@ export function fixTaskValidationIssues() {
                             militaryTime: false
                         };
                         fixedTasks++;
-                        fixedDetails.push(`${task.taskText}: Added yearly block`);
+                        fixedDetails.push(`${getTaskText(task) || task.id}: Added yearly block`);
                     }
                 }
             });

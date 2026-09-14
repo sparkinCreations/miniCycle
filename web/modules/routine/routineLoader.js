@@ -265,7 +265,10 @@ function repairAndCleanTasks(currentCycle, cycleKey = 'unknown') {
       tasksModified = true;
       console.warn('⚠️ Repaired task with missing text:', task.id);
     } else if (task.taskText && !task.text) {
-      // Migrate legacy taskText to text
+      // Migrate legacy taskText to text. This is the WRITE-side normaliser: after
+      // it runs, live tasks carry only `text`. The read-side counterpart is
+      // getTaskText() in task/taskUtils.js, for the few readers that can see a
+      // task before this repair (STATE_TRUTH_MIGRATION #5).
       task.text = task.taskText;
       delete task.taskText;
       tasksModified = true;
