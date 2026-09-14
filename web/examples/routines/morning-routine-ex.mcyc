@@ -1,0 +1,29 @@
+{
+  "name": "morning_routine",
+  "title": "☀️ Morning Routine",
+  "autoReset": true,
+  "deleteCheckedTasks": false,
+  "cycleCount": 0,
+  "tasks": [
+    {
+      "id": "t1",
+      "text": "💧 Drink a glass of water",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t2",
+      "text": "🧘 Stretch for five minutes",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t3",
+      "text": "📓 Write down today's top task",
+      "completed": false,
+      "highPriority": true,
+      "priorityColor": "#dc3545",
+      "schemaVersion": 2
+    }
+  ]
+}
