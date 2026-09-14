@@ -143,6 +143,12 @@ const COPY_EXCLUDE = new Set([
   // Reference config for self-hosting behind nginx; update-version.sh and
   // validate-csp.py rewrite it in the SOURCE tree. Nothing fetches it at runtime.
   'nginx-security.conf',
+  // Local-only historical snapshots (legacy code, old plans, business notes). Until
+  // Sep 2026 this was tracked AND fell through this allow-by-default pass, so all of
+  // it was publicly downloadable (e.g. /archive/TTO/Business-plan-updated.txt).
+  // It is now untracked and gitignored; excluding it here as well means a stray
+  // local build or an accidental re-add still cannot publish it.
+  'archive',
 ]);
 // Node tooling written as CommonJS — build/test runners, probes, one-off scripts.
 // Every legitimate one lives in scripts/ or tests/, both handled separately, so a

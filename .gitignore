@@ -5,6 +5,11 @@ Thumbs.db
 # Private developer docs
 web/docs/DEVELOPER_PROFILE.md
 
+# Local-only archive and presentation decks (kept on disk, not in the repo).
+# web/archive/ is anchored so it does NOT match web/docs/archive/, which stays tracked.
+web/archive/
+*.pptx
+
 # Dependencies
 web/blog/node_modules/
 
