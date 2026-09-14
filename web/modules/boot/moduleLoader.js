@@ -8,7 +8,8 @@
  * - Loading modules by phase
  * - Calling setDependencies functions
  * - Initializing modules
- * - Registering with appContext
+ * - Registering provides into the deps container and building the grouped API
+ *   objects (featureBoot does the appContext registration)
  *
  * USAGE:
  * ```javascript
@@ -20,12 +21,11 @@
  * // Or load all phases
  * await loadAllModules(deps, coreResult);
  * ```
- *
- * @version 1.0.0
  */
 
-// ✅ FIX: Dynamic import with version for cache-busting (prevents stale manifest issues)
-// Static imports can serve cached old versions even when moduleLoader.js is updated
+// moduleManifests.js is deliberately NOT a static import: loadManifests() below
+// imports it through withV() so its URL carries the version (content-hashed in the
+// release build, ?v= in dev) and a stale manifest can't pair with a fresh loader.
 import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
 import { featureAvailability } from '../utils/featureAvailability.js';
 
@@ -50,7 +50,8 @@ let _appContextModule = null;
 let _withV = null;
 let registerApi = () => { console.warn('⚠️ registerApi not loaded yet'); };
 
-// Use grouped APIs instead of legacy getters
+// Late-bound appContext reads: completeInitialSetup is a context value,
+// hideMainMenu comes from the grouped ui API
 const getCompleteInitialSetup = () => _appContextModule?.getContextValue?.('completeInitialSetup') || null;
 const getHideMainMenu = () => _appContextModule?.getUiApi?.()?.hideMainMenu || null;
 
@@ -71,7 +72,7 @@ async function loadAppContext(withV) {
 
 /**
  * Load moduleManifests with version cache-busting
- * @param {Function} withV - Version-appending function from coreBoot (e.g., path => `${path}?v=1.528`)
+ * @param {Function} withV - Version-appending function from coreBoot (dev: `${path}?v=<APP_VERSION>`; release build: the content-hashed URL from the module map)
  */
 export async function loadManifests(withV) {
     if (_manifestsLoaded) return;
@@ -100,7 +101,8 @@ export async function loadManifests(withV) {
 // ============================================================================
 // ⚠️ The registries MUST be shared across ALL moduleLoader instances. On boot
 // retry the orchestrator imports moduleLoader with a DIFFERENT ?v= suffix
-// (?v=X.r2, or bare offline), which creates a separate ES module instance —
+// (?v=X.r2 online; offline, bare in dev or ?v=retry on the hashed build), which
+// creates a separate ES module instance —
 // module-level Maps there would start empty, so destroyAllModules() would
 // iterate nothing and attempt 1's listeners/timers would survive into attempt 2
 // (July 2026 boot audit, finding C1). Anchoring the Maps on globalThis gives
@@ -159,7 +161,7 @@ let ALIAS_MAP = new Map();  // Will be populated from manifest
 let resolveAlias = (apiName) => apiName;  // Will be populated from manifest
 
 // ============================================================================
-// CIRCULAR DEPENDENCY DETECTION
+// DI VALIDATION FLAGS
 // ============================================================================
 
 /**
@@ -225,13 +227,12 @@ function isProductionHost() {
  * name warns against the facade's manifest path — which is the manifest that
  * actually needs the entry. That is the taskDOM / taskCore class that cost v2.418.
  *
- * Gated on the boot-interactive mark (see `bootIsInteractive`). Reads before that
- * are NOT reported, deliberately: the only pre-interactive reader is
- * `di.resolve()` probing `required()` markers at construction, and a schema name
- * missing from the manifest is the static case `validate:di` already gates at 0.
- * Post-boot reads are the complement — dynamic, forwarded, and unmodeled accessor
- * shapes, which is precisely what static analysis cannot see. Suppressed reads are
- * not recorded as seen, so the same dep still warns when a real interaction hits it.
+ * Timed by the boot-interactive mark (see `bootIsInteractive`). Reads after it warn
+ * immediately. Reads before it are BUFFERED, not dropped, and flushed with a
+ * " during boot" suffix once the mark lands — facades such as taskDOM snapshot deps
+ * in their constructors, so the only read of an undeclared name can happen during
+ * boot (see reportUndeclaredDepAccess). Every read is recorded as seen when first
+ * made, buffered or not, so each module+dep pair is reported exactly once.
  *
  * Dev only. Production pays nothing: the attach loop is skipped outright.
  */
@@ -264,12 +265,13 @@ const WARN_ON_UNDECLARED_DEP_ACCESS = !isProductionHost();
  *    and facade forward-through at 0. It only sees the dep-accessor shapes it
  *    models; `_rawDeps` and the `resolvedDeps = di.resolve(...)` alias both had to
  *    be taught to it. A NEW accessor shape is a new blind spot.
- *  - `WARN_ON_UNDECLARED_DEP_ACCESS` (below) is the runtime cover for exactly that
+ *  - `WARN_ON_UNDECLARED_DEP_ACCESS` (above) is the runtime cover for exactly that
  *    blind spot: it warns when a module READS a name it never declared, at the
  *    access site, whatever accessor shape got it there. Added Aug 2026 — until
  *    then strict mode had no runtime signal for its own failure mode, and the
- *    module test suite structurally cannot supply one (4 of 132 test files touch
- *    the loader; the rest hand modules their deps directly, bypassing wiring).
+ *    module test suite structurally cannot supply one (only a couple of test
+ *    files import the loader; the rest hand modules their deps directly, bypassing
+ *    wiring).
  *  - `npm run test:journey` is the backstop that actually caught these, and it
  *    now forwards DI-shaped console warnings so a starved dep does not read as a
  *    bare 10s timeout — including the undeclared-access warnings above, since
@@ -291,11 +293,13 @@ const ENFORCE_REQUIRES = true;
  * above covers the demand side (used but not declared). Together they close both
  * directions of the manifest/consumer mismatch at runtime.
  *
- * Default ON in development. Set false to suppress.
+ * ON on every host, production included — unlike WARN_ON_UNDECLARED_DEP_ACCESS,
+ * which is dev only. Set false to suppress.
  */
 const WARN_ON_UNMAPPED_DECLARED_DEPS = true;
-// Dedupe DI-gap warnings — buildModuleDependencies re-runs on deferred loads,
-// so without this each gap spams the console once per wiring pass.
+// Dedupe DI-gap warnings — buildModuleDependencies runs twice per module at boot
+// (Stage 2 wiring + initializeModule) and again on deferred loads, so without this
+// each gap would warn once per wiring pass.
 const _warnedDIGaps = new Set();
 
 // ============================================================================
@@ -437,7 +441,7 @@ function reportUndeclaredDepAccess(modulePath, dep) {
 
 /**
  * Read the undeclared accesses seen so far. Test/debug hook.
- * @returns {string[]} `path::dep` pairs, in the order they were first warned about
+ * @returns {string[]} `path::dep` pairs, in the order they were first read (includes boot-time reads still buffered)
  */
 export function getUndeclaredDepAccesses() {
     return [..._warnedUndeclaredAccess];
@@ -553,6 +557,10 @@ function createValidatedWrapper(apiName, getter) {
         return impl(...args);
     };
 }
+
+// ============================================================================
+// CIRCULAR DEPENDENCY DETECTION
+// ============================================================================
 
 /**
  * Find which module provides a given API
@@ -693,6 +701,8 @@ export function detectCircularDeps(manifests) {
  * @param {Object} deps - Dependencies container
  * @param {Object} coreResult - Results from coreBoot
  * @param {Function} withV - Version-appending function for cache busting
+ * @param {boolean} [wire=true] - Build deps and call setDependencies now; loadPhase passes
+ *   false and wires in its sequential Stage 2 instead
  * @returns {Promise<Object|null>} Loaded module or null if failed
  */
 export async function loadModule(name, deps, coreResult, withV, wire = true) {
@@ -725,9 +735,11 @@ export async function loadModule(name, deps, coreResult, withV, wire = true) {
         loadedModules.set(name, mod);
 
         // Wire dependencies (setDependencies). Skipped when wire=false: loadPhase defers
-        // wiring to its sequential init stage, because setDependencies EAGERLY captures
-        // getter-style deps (e.g. TaskOptionsVisibilityController) — so a module must wire
-        // AFTER same-phase providers' init() has registered them, not during parallel load.
+        // wiring to its sequential init stage, because BUILDING the deps object captures
+        // values eagerly: injectDeclaredDeps reads every depMappings entry, which runs
+        // getters (e.g. TaskOptionsVisibilityController) and copies plain entries (e.g.
+        // showNotification) as they are at that moment. So a module must wire AFTER
+        // same-phase providers' init() has registered them, not during parallel load.
         if (wire) {
             const setDepsFn = findSetDependenciesFunction(mod, name);
             if (setDepsFn) {
@@ -805,7 +817,9 @@ export async function initializeModule(name, mod, deps, coreResult) {
             }
         }
 
-        // Check for exported instances that have init() methods (e.g., onboardingManager)
+        // Check for exported instances that have init() methods. Only reached by modules
+        // with NO init-function export — one exporting init*/initialize* (e.g.
+        // onboardingManager's initOnboardingManager) takes the branch above instead.
         // These are pre-created singletons that need initialization after dependencies are set.
         // Any singleton exposing destroy() is registered in moduleInstances so
         // destroy-on-retry reaches its listeners/timers — previously no-init modules
@@ -889,8 +903,9 @@ export async function loadPhase(deps, coreResult, phase) {
 
     // ⚡ Stage 1 — FETCH (import + parse) in parallel. This is the boot-time win: it
     // collapses N sequential fetch/parse round-trips into one batch. NO wiring here —
-    // import() is order-independent/idempotent, but setDependencies is NOT (it eagerly
-    // captures getter-style cross-module deps), so wiring is deferred to Stage 2.
+    // import() is order-independent/idempotent, but wiring is NOT (building the deps
+    // object eagerly captures cross-module deps — see loadModule), so wiring is
+    // deferred to Stage 2.
     // A non-optional import failure rejects here, aborting boot exactly as before
     // (optional modules resolve to null inside loadModule).
     await Promise.all(
@@ -966,7 +981,7 @@ export async function loadAllModules(deps, coreResult) {
     // Load each phase in order.
     // ⏱️ Per-phase timing: emit a `mc:subphase:<NAME>` performance measure for each
     // phase so getBootTiming() can rank which phase dominates the features window
-    // (the proven 74–78% of boot). Measures are read by name in orchestrator.js —
+    // (the bulk of boot when profiled). Measures are read by name in orchestrator.js —
     // see clearBootTiming()/getBootTiming() for the matching prefix scan.
     for (const [phaseName, phase] of Object.entries(PHASES)) {
         // Checkpoint: abort between phases if a retry superseded this attempt.
@@ -995,7 +1010,8 @@ export async function loadAllModules(deps, coreResult) {
  * Cross-module injections that must run after the relevant modules exist.
  * Called once at the end of boot, and again after each on-demand (deferred)
  * module load, so a late-arriving provider gets wired into already-loaded
- * consumers. Every injection is guarded — a safe no-op until both sides exist.
+ * consumers. Each injection is guarded on its consumer and primary provider, so it
+ * no-ops until both exist (reapplyActiveFilter rides on updateSearchVisibility's guard).
  * @param {Object} deps - Dependencies container
  */
 function runPostInitInjections(deps) {
@@ -1200,11 +1216,15 @@ function findInitFunction(mod, name) {
  *
  * All three declaration buckets — requires, optionalDeps, lazyRequires — are
  * resolved identically (from depMappings, falling back to coreResult) so they
- * all survive ENFORCE_REQUIRES mode. Under the default loader they're also
- * supplied by the broad `Object.assign(result, depMappings)`, but that assign is
- * skipped when ENFORCE_REQUIRES is true; this is then the only path, and omitting
- * optionalDeps here (as the loader previously did) would make every optional dep
- * silently resolve to undefined the moment the flag flips.
+ * all survive ENFORCE_REQUIRES mode (on by default since Aug 2026). With the flag
+ * false they're also supplied by the broad `Object.assign(result, depMappings)`,
+ * but that assign is skipped while ENFORCE_REQUIRES is true, so this is the only
+ * path — omitting optionalDeps here (as the loader previously did) makes every
+ * optional dep silently resolve to undefined.
+ *
+ * The assignment READS each depMappings entry, so a getter entry is invoked here
+ * and stored as a plain value: the built deps object never carries depMappings
+ * getters through to the module.
  *
  * Caller validates requires/lazyRequires separately; optionalDeps are not
  * validated (they're allowed to be absent). Exported for unit testing the
@@ -1239,9 +1259,9 @@ export function injectDeclaredDeps(result, manifest, depMappings, coreResult) {
  * from two sources: a handful (AppState, appInit, GlobalUtils, AppGlobalState,
  * FeatureFlags, AppMeta) are set directly on `result` by the Phase-1 prologue of
  * buildModuleDependencies; the rest (DOM helpers, sanitizeInput, generateId, the
- * safe* utilities, …) are entries in `depMappings`. Under the default loader the
+ * safe* utilities, …) are entries in `depMappings`. With ENFORCE_REQUIRES false the
  * latter arrive via the broad `Object.assign(result, depMappings)`, but that
- * assign is skipped under ENFORCE_REQUIRES — so without this loop every
+ * assign is skipped under ENFORCE_REQUIRES (the default) — so without this loop every
  * depMappings-sourced CORE_DEP (e.g. getElementById) would be undefined in strict
  * mode and modules using it would break.
  *
@@ -1286,7 +1306,7 @@ function buildModuleDependencies(manifest, deps, coreResult) {
     // AppState: callable Proxy that works both as function and object
     // - this.deps.AppState() returns the AppState object (for settingsManager, etc.)
     // - this.deps.AppState?.isReady?.() works via property access (for taskCore, etc.)
-    // - this.deps.AppState.data = x works via property assignment (for cycleManager, etc.)
+    // - this.deps.AppState.data = x works via property assignment (the set trap forwards it)
     const appStateGetter = () => deps.core?.AppState;
     // Methods the codebase calls on AppState. When the underlying manager is not
     // yet available (boot retry / teardown), accessing any of these must yield a
@@ -1378,7 +1398,7 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         getTaskList: () => document.getElementById(DOM_IDS.TASK_LIST),
         getProgressBar: () => document.getElementById(DOM_IDS.PROGRESS_BAR),
 
-        // Loading overlay (registered by uiBoot in Phase 3, use lazy getters)
+        // Loading overlay (registered by uiBoot in Phase 3 — lazy wrapper functions)
         showLoader: (...args) => deps.ui?.showLoader?.(...args),
         hideLoader: (...args) => deps.ui?.hideLoader?.(...args),
 
@@ -1504,7 +1524,7 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         isModalOpen: () => deps.ui?.modalManager?.isModalOpen?.(),
         // Overlay-active check (provided by uiBoot.js) — covers any open <dialog>,
         // visible main menu, notifications, onboarding modal, etc. Used by
-        // gesturePanelManager + recurringIntegration to suppress swipes/gestures
+        // gesturePanelManager, statsPanel + recurringIntegration to suppress swipes/gestures
         // while a modal/overlay is up. Falls back to false if uiBoot hasn't run.
         isOverlayActive: () => deps.ui?.isOverlayActive?.() ?? false,
         updateMainMenuHeader: createValidatedWrapper('updateMainMenuHeader',
@@ -1843,7 +1863,7 @@ function buildModuleDependencies(manifest, deps, coreResult) {
     // the same way (depMappings, falling back to coreResult). optionalDeps MUST be
     // injected here too — under ENFORCE_REQUIRES the broad Object.assign below is
     // skipped, so this loop is their only source; without it every optionalDeps
-    // dep would silently become undefined when the flag flips.
+    // dep would silently be undefined.
     injectDeclaredDeps(result, manifest, depMappings, coreResult);
 
     // Inject framework-level CORE_DEPS (DOM helpers, sanitizeInput, safe* utils,
@@ -1893,8 +1913,8 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         }
     }
 
-    // ENFORCE_REQUIRES mode: Only provide declared dependencies
-    // When false (default): Provide ALL deps for backwards compatibility
+    // ENFORCE_REQUIRES (true by default): only declared dependencies are provided.
+    // When set false: provide ALL deps via this broad assign (pre-Aug-2026 behaviour)
     if (!ENFORCE_REQUIRES) {
         Object.assign(result, depMappings);
     }
@@ -2100,11 +2120,6 @@ function capitalize(str) {
 // ============================================================================
 
 /**
- * Get a loaded module by name
- * @param {string} name - Module name
- * @returns {Object|null}
- */
-/**
  * Get the set of depMappings keys (for DI wiring tests)
  * @returns {Set<string>|null} Keys available in depMappings, or null if boot hasn't run
  */
@@ -2120,9 +2135,10 @@ export function getDepMappingKeys() {
  * runs during `loadAllModules()`. The CLI/Playwright harness never boots the app,
  * so the keys stay null and the wiring battery self-skips.
  *
- * depMappings values are closures over `deps` that are NOT invoked at build time
- * (they only deref `deps.x?.y?.()` when later called), so building it once with
- * empty stubs is side-effect-free and yields the exact same keys the real boot
+ * Most depMappings values are closures over `deps` that are not invoked at build
+ * time; the rest are plain `deps.x?.y` reads, getters, and Proxy constructions,
+ * all of which only optional-chain through `deps` when evaluated. So building it
+ * once with empty stubs is side-effect-free and yields the exact same keys the real boot
  * would. This keeps the test honest: keys come from the real object literal, so
  * adding/removing a depMappings entry is reflected automatically.
  *
@@ -2139,6 +2155,11 @@ export function ensureDepMappingKeys() {
     return _depMappingKeys || new Set();
 }
 
+/**
+ * Get a loaded module by name
+ * @param {string} name - Module name
+ * @returns {Object|null}
+ */
 export function getLoadedModule(name) {
     return loadedModules.get(name) || null;
 }

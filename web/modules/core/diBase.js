@@ -245,10 +245,14 @@ export function createDIModule(moduleName, schema = {}, options = {}) {
             const resolved = {};
             const missing = [];
 
-            // setDependencies preserves GETTERS on purpose ("for lazy binding"),
-            // and moduleLoader relies on it — `get consoleCapture()`,
-            // `get backupManager()`, `get TaskOptionsVisibilityController()` all
-            // resolve late. Reading `_injected[key]` here would INVOKE the getter
+            // setDependencies preserves GETTERS on purpose ("for lazy binding").
+            // The getters in moduleLoader's depMappings (`get consoleCapture()`,
+            // `get backupManager()`, `get TaskOptionsVisibilityController()`) do NOT
+            // arrive here as getters — injectDeclaredDeps reads them into plain
+            // values while building the deps object. The getters that do arrive are
+            // the loader's non-enumerable undeclared-dep warners, and whatever a
+            // caller passes (a facade forwarding its own resolved deps, a test
+            // stub). Reading `_injected[key]` here would INVOKE the getter
             // and store its value, then cache the object: a dep that was null at
             // first resolve stayed null forever, silently cancelling the lazy
             // binding the setter went to trouble to keep. Verified by execution
