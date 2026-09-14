@@ -293,6 +293,60 @@ export async function runBackupRestoreManagerTests(resultsDiv) {
         }
     });
 
+    // The pre-2.5 migration was retired Sep 2026 (SCHEMA_2_6_PLAN.md). A legacy
+    // backup file must get the same message as any unreadable file — and must not
+    // touch current data. The old branch DELETED miniCycleData before converting.
+    await test('Settings restore rejects a pre-2.5 backup without touching current data', async () => {
+        // A separate module instance: setupRestoreButton() wires once per module
+        // (_initialized.restoreButton), and the test above already used this one's.
+        const fresh = await import(`../modules/ui/backupRestoreManager.js?v=${cacheBuster}-legacy`);
+        const current = JSON.stringify({ schemaVersion: '2.5', sentinel: 'current-data' });
+        localStorage.setItem('miniCycleData', current);
+        localStorage.removeItem('miniCycleStorage');
+        localStorage.removeItem('lastUsedMiniCycle');
+        const legacyFile = JSON.stringify({
+            schemaVersion: 'legacy',
+            miniCycleStorage: JSON.stringify({ Morning: { title: 'Morning', tasks: [] } }),
+            lastUsedMiniCycle: 'Morning'
+        });
+
+        const notes = [];
+        fresh.setBackupRestoreManagerDependencies({
+            AppState: { get: () => ({}), forceSave: () => {} },
+            showNotification: (msg) => notes.push(String(msg)),
+            showConfirmationModal: ({ callback }) => callback(true),
+            safeAddEventListener: (el, ev, fn, opts) => el.addEventListener(ev, fn, opts)
+        });
+
+        const btn = document.createElement('button');
+        btn.id = 'restore-mini-cycles';   // DOM_IDS.RESTORE_MINI_CYCLES
+        document.body.appendChild(btn);
+        try {
+            fresh.setupRestoreButton();
+            btn.click();
+            const input = document.getElementById('import-cycle-file-input');
+            if (!input) throw new Error('restore file input was never created');
+            const dt = new DataTransfer();
+            dt.items.add(new File([legacyFile], 'legacy.json', { type: 'application/json' }));
+            input.files = dt.files;
+            input.dispatchEvent(new Event('change'));
+
+            for (let i = 0; i < 60 && !notes.some(n => n.includes('Invalid file format')); i++) {
+                await new Promise(r => setTimeout(r, 50));
+            }
+            if (!notes.some(n => n.includes('Invalid file format'))) {
+                throw new Error(`expected the unreadable-file message, got: ${JSON.stringify(notes)}`);
+            }
+            if (localStorage.getItem('miniCycleData') !== current) throw new Error('current data was changed by a rejected legacy restore');
+            if (localStorage.getItem('miniCycleStorage') !== null || localStorage.getItem('lastUsedMiniCycle') !== null) {
+                throw new Error('legacy keys were written by a rejected restore');
+            }
+        } finally {
+            btn.remove();
+            document.getElementById('import-cycle-file-input')?.remove();
+        }
+    });
+
     // ============================================
     resultsDiv.innerHTML += '<h4 class="test-section">🏭 Factory Reset</h4>';
 

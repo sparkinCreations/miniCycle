@@ -371,8 +371,8 @@ export function incrementCycleCount(miniCycleName, savedMiniCycles, completionSp
 
     // First cycle celebration overlay (one-time only for truly new users)
     // Guard: globalCyclesCompleted must be exactly 1 AND the celebration must not have
-    // been shown before. The flag prevents re-showing for migrated users whose
-    // cyclesCompleted was set to their pre-existing total by migrationManager.
+    // been shown before. The flag prevents re-showing; the retired pre-2.5
+    // migration also set it for users whose cyclesCompleted it carried over.
     // Delayed so the user sees the task reset animation play first.
     if (globalCyclesCompleted === 1 && !updatedState.userProgress?.firstCycleCelebrated) {
         setTimeout(() => {

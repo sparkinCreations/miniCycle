@@ -144,7 +144,6 @@ const legacy = {
     FeatureFlags: null,
     loadMiniCycleData: null,
     autoSave: null,
-    fixTaskValidationIssues: null,
 
     // Managers
     BackupManager: null,

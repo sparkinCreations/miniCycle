@@ -274,8 +274,8 @@ Create tasks that automatically appear on a schedule.
 ### Data Migration
 | Feature | Description | Module |
 |---------|-------------|--------|
-| Schema Migration | Automatic data format upgrades | `routine/migrationManager.js` |
-| Backward Compatibility | Older data formats upgraded seamlessly | `core/migrationFacade.js` |
+| Boot entry & fresh install | Runs initial setup; creates a new user's Schema 2.5 data | `routine/migrationManager.js` |
+| Forward Compatibility | Data written by a newer build is never adopted or overwritten | `utils/schemaVersion.js` |
 
 ---
 

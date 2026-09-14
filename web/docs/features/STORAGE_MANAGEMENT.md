@@ -102,9 +102,11 @@ The quota gates below govern **user-initiated** growth. Several system writers s
 | Writer | Cap | Constant |
 |---|---|---|
 | Corrupted-data snapshots (`miniCycleData_corrupted_<ts>`) | 3 | `LIMITS.MAX_CORRUPT_BACKUPS` |
-| Migration backups (`pre_migration_backup_`, `migration_backup_`) | 2 per prefix | `LIMITS.MAX_MIGRATION_BACKUPS` (v2.331) |
-| Auto-migration backups (`auto_migration_backup_`) | 5 | via `miniCycleBackupIndex` |
 | Undo cache | 20 snapshots **and** ~1MB byte cap (sheds oldest; real bytes = length×2, matching the quota meter's UTF-16 convention) | `LIMITS.UNDO_STACK` + `LIMITS.UNDO_CACHE_MAX_BYTES` (v2.343) |
+
+The pre-2.5 migration's backups (`pre_migration_backup_`, `migration_backup_`, `auto_migration_backup_`) are no
+longer written: that migration was retired Sep 2026 (`docs/future-work/SCHEMA_2_6_PLAN.md`). The factory reset still
+clears any a pre-launch browser has left behind.
 
 ## User-Facing Features
 

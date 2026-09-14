@@ -274,37 +274,5 @@ export function sanitizeImportedData(backupData) {
 
     sanitizeLiteStorage(backupData);
 
-    // Sanitize legacy format
-    if (backupData.miniCycleStorage) {
-        try {
-            const legacyData = JSON.parse(backupData.miniCycleStorage);
-
-            if (Array.isArray(legacyData)) {
-                legacyData.forEach(cycle => {
-                    if (!cycle || typeof cycle !== 'object') return;
-
-                    // Sanitize cycle name
-                    if (cycle.name) {
-                        cycle.name = sanitizeText(cycle.name, 100);
-                    }
-
-                    // Sanitize task text
-                    if (Array.isArray(cycle.tasks)) {
-                        cycle.tasks.forEach(task => {
-                            if (task && typeof task === 'object' && task.text) {
-                                task.text = sanitizeText(task.text, 500);
-                            }
-                        });
-                    }
-                });
-            }
-
-            // Write sanitized data back
-            backupData.miniCycleStorage = JSON.stringify(legacyData);
-        } catch (error) {
-            console.error('Error sanitizing legacy data:', error);
-        }
-    }
-
     return backupData;
 }

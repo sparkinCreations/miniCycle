@@ -367,7 +367,6 @@ miniCycle-main.js (entrypoint)
 - `constants.js` - Application constants
 - `dataAccess.js` - Legacy data access wrapper (new code uses AppState directly)
 - `diBase.js` - Dependency injection base utilities
-- `migrationFacade.js` - Schema migration facade
 - `types.js` - Central JSDoc type definitions for Schema 2.5
 
 **Philosophy:** Core modules are special - they initialize before everything else and are dependency-injected into other modules.

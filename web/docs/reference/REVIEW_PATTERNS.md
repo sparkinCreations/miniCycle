@@ -38,7 +38,7 @@ cause is a fixture shaped unlike production data:
   — the app writes **neither**. So a test named "flags cycles needing migration"
   passed by injecting a field nothing creates, while the real check could never fire
   and the tool always reported "valid".
-- `migrationFacade.tests.js` asserted *"all facade methods return undefined and do
+- `migrationFacade.tests.js` (removed Sep 2026 with the pre-2.5 migration) asserted *"all facade methods return undefined and do
   not throw before init"* — pinning the unsafe contract exactly, since a falsy
   `checkNeeded()` reads as "no migration needed".
 - `taskValidation.tests.js` pinned `TASK_LIMIT === 100`, a hardcoded value that had

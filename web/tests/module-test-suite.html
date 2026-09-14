@@ -478,7 +478,6 @@
             <option value="appContext">🔗 App Context</option>
             <option value="dataAccess">💿 Data Access</option>
             <option value="appGlobalState">🌐 App Global State</option>
-            <option value="migrationFacade">🔀 Migration Facade</option>
             <option value="types">📝 Types</option>
             <option value="modalRegistry">📒 Modal Registry</option>
             <option value="modalUtils">🔧 Modal Utils</option>
@@ -666,7 +665,6 @@
         const { runAppContextTests } = await import(`./appContext.tests.js?v=${cacheBuster}`);
         const { runDataAccessTests } = await import(`./dataAccess.tests.js?v=${cacheBuster}`);
         const { runAppGlobalStateTests } = await import(`./appGlobalState.tests.js?v=${cacheBuster}`);
-        const { runMigrationFacadeTests } = await import(`./migrationFacade.tests.js?v=${cacheBuster}`);
         const { runTypesTests } = await import(`./types.tests.js?v=${cacheBuster}`);
         const { runModalRegistryTests } = await import(`./modalRegistry.tests.js?v=${cacheBuster}`);
         const { runModalUtilsTests } = await import(`./modalUtils.tests.js?v=${cacheBuster}`);
@@ -1146,13 +1144,7 @@
                 const mod = await import(`../modules/routine/migrationManager.js?v=${cacheBuster}`);
                 window.setMigrationManagerDependencies = mod.setMigrationManagerDependencies;
                 window.createInitialSchema25Data = mod.createInitialSchema25Data;
-                window.checkMigrationNeeded = mod.checkMigrationNeeded;
-                window.simulateMigrationToSchema25 = mod.simulateMigrationToSchema25;
-                window.performSchema25Migration = mod.performSchema25Migration;
-                window.validateAllMiniCycleTasksLenient = mod.validateAllMiniCycleTasksLenient;
-                window.fixTaskValidationIssues = mod.fixTaskValidationIssues;
                 window.initAppWithAutoMigration = mod.initAppWithAutoMigration;
-                window.forceAppMigration = mod.forceAppMigration;
             } else if (moduleKey === 'dueDates') {
                 const mod = await import(`../modules/features/dueDates.js?v=${cacheBuster}`);
                 window.MiniCycleDueDates = mod.MiniCycleDueDates;
@@ -1511,13 +1503,7 @@
                     const mod = await import(`../modules/routine/migrationManager.js?v=${cacheBuster}`);
                     window.setMigrationManagerDependencies = mod.setMigrationManagerDependencies;
                     window.createInitialSchema25Data = mod.createInitialSchema25Data;
-                    window.checkMigrationNeeded = mod.checkMigrationNeeded;
-                    window.simulateMigrationToSchema25 = mod.simulateMigrationToSchema25;
-                    window.performSchema25Migration = mod.performSchema25Migration;
-                    window.validateAllMiniCycleTasksLenient = mod.validateAllMiniCycleTasksLenient;
-                    window.fixTaskValidationIssues = mod.fixTaskValidationIssues;
                     window.initAppWithAutoMigration = mod.initAppWithAutoMigration;
-                    window.forceAppMigration = mod.forceAppMigration;
                     currentModule = 'migrationManager';
                     resultsDiv.innerHTML = '<p>✅ MigrationManager loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'dueDates') {
@@ -2002,7 +1988,7 @@
                     await import(`../modules/features/uxRatings.js?v=${cacheBuster}`);
                     currentModule = 'uxRatings';
                     resultsDiv.innerHTML = '<p>✅ UXRatings loaded. Click "Run Tests" to begin.</p>';
-                } else if (['diWiring','orchestrator','moduleLoader','moduleManifests','modalTemplates','appContext','dataAccess','appGlobalState','migrationFacade','types','modalRegistry','modalUtils','panelVisibilityHelpers','gesturePanelManager','titleManager','headerLayoutManager','featureAvailability','dataRecovery','uiOrchestrator','preferencesBgImage','preferencesPresets','taskDOMPatch','debugMode','iconInit','icons','keyboardNav','collapsibleSections','educationalTips','routineSwitcherThemePicker','routineSwitcherPreview','routineSwitcherListTransforms','routineSwitcherRepair','routineSwitcherActions','onboardingDemo','onboardingSplash','onboardingCarousel','longPressHint','mcycPayload','bootSw','nameUtils','styleValidators','cycleMode','priorityLevel','schemaVersion','undoSnapshotUtils','undoTransactionDiff','panelCarousel','focusTaskPanel','recurringPanelEvents','recurringPanelForm','recurringPanelGrids','recurringPanelSetup','recurringPanelSummary','recurringSettings','recurringSettingsApplicator','recurringWatcher','statsPanelGestures','statsPanelRewards','taskViewLayoutManager'].includes(moduleName)) {
+                } else if (['diWiring','orchestrator','moduleLoader','moduleManifests','modalTemplates','appContext','dataAccess','appGlobalState','types','modalRegistry','modalUtils','panelVisibilityHelpers','gesturePanelManager','titleManager','headerLayoutManager','featureAvailability','dataRecovery','uiOrchestrator','preferencesBgImage','preferencesPresets','taskDOMPatch','debugMode','iconInit','icons','keyboardNav','collapsibleSections','educationalTips','routineSwitcherThemePicker','routineSwitcherPreview','routineSwitcherListTransforms','routineSwitcherRepair','routineSwitcherActions','onboardingDemo','onboardingSplash','onboardingCarousel','longPressHint','mcycPayload','bootSw','nameUtils','styleValidators','cycleMode','priorityLevel','schemaVersion','undoSnapshotUtils','undoTransactionDiff','panelCarousel','focusTaskPanel','recurringPanelEvents','recurringPanelForm','recurringPanelGrids','recurringPanelSetup','recurringPanelSummary','recurringSettings','recurringSettingsApplicator','recurringWatcher','statsPanelGestures','statsPanelRewards','taskViewLayoutManager'].includes(moduleName)) {
                     const pathMap = {
                         diWiring: '../modules/boot/moduleLoader.js',
                         orchestrator: '../modules/boot/orchestrator.js',
@@ -2012,7 +1998,6 @@
                         appContext: '../modules/core/appContext.js',
                         dataAccess: '../modules/core/dataAccess.js',
                         appGlobalState: '../modules/core/appGlobalState.js',
-                        migrationFacade: '../modules/core/migrationFacade.js',
                         types: '../modules/core/types.js',
                         modalRegistry: '../modules/ui/modalRegistry.js',
                         modalUtils: '../modules/ui/modalUtils.js',
@@ -2310,7 +2295,6 @@
             } else if (currentModule === 'appContext') { await runAppContextTests(resultsDiv);
             } else if (currentModule === 'dataAccess') { await runDataAccessTests(resultsDiv);
             } else if (currentModule === 'appGlobalState') { await runAppGlobalStateTests(resultsDiv);
-            } else if (currentModule === 'migrationFacade') { await runMigrationFacadeTests(resultsDiv);
             } else if (currentModule === 'types') { await runTypesTests(resultsDiv);
             } else if (currentModule === 'modalRegistry') { await runModalRegistryTests(resultsDiv);
             } else if (currentModule === 'modalUtils') { await runModalUtilsTests(resultsDiv);
@@ -2666,7 +2650,6 @@
                 { name: 'AppContext', key: 'appContext', runFn: runAppContextTests, importPath: '../modules/core/appContext.js' },
                 { name: 'DataAccess', key: 'dataAccess', runFn: runDataAccessTests, importPath: '../modules/core/dataAccess.js' },
                 { name: 'AppGlobalState', key: 'appGlobalState', runFn: runAppGlobalStateTests, importPath: '../modules/core/appGlobalState.js' },
-                { name: 'MigrationFacade', key: 'migrationFacade', runFn: runMigrationFacadeTests, importPath: '../modules/core/migrationFacade.js' },
                 { name: 'Types', key: 'types', runFn: runTypesTests, importPath: '../modules/core/types.js' },
                 { name: 'ModalRegistry', key: 'modalRegistry', runFn: runModalRegistryTests, importPath: '../modules/ui/modalRegistry.js' },
                 { name: 'ModalUtils', key: 'modalUtils', runFn: runModalUtilsTests, importPath: '../modules/ui/modalUtils.js' },

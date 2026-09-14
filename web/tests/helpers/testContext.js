@@ -118,7 +118,6 @@ export function getTestValidateAndSanitizeTaskInput() { return getContextValue('
 export function getTestLoadTaskContext() { return getContextValue('loadTaskContext'); }
 export function getTestCreateTaskDOMElements() { return getContextValue('createTaskDOMElements'); }
 export function getTestCreateOrUpdateTaskData() { return getContextValue('createOrUpdateTaskData'); }
-export function getTestFixTaskValidationIssues() { return getContextValue('fixTaskValidationIssues'); }
 export function getTestTaskRenderer() { return getContextValue('TaskRenderer'); }
 export function getTestTaskDOMManager() { return getContextValue('TaskDOMManager'); }
 export function getTestTaskEvents() { return getContextValue('TaskEvents'); }

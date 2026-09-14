@@ -250,9 +250,6 @@ localStorage.setItem(STORAGE_KEYS.DARK_MODE, 'true');
 | Key | Value | Purpose |
 |-----|-------|---------|
 | `DATA` | `'miniCycleData'` | Main app state |
-| `LEGACY_DATA` | `'miniCycleStorage'` | Pre-migration storage key |
-| `LAST_USED` | `'lastUsedMiniCycle'` | Timestamp of last use |
-| `REMINDERS` | `'miniCycleReminders'` | Reminder state |
 | `MILESTONE_UNLOCKS` | `'milestoneUnlocks'` | Achievement progress |
 | `DARK_MODE` | `'darkModeEnabled'` | Dark mode preference |
 | `CURRENT_THEME` | `'currentTheme'` | Active color theme |

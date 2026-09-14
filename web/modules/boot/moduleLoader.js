@@ -1585,11 +1585,10 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         // Notification drag state — used by gesture / swipe handlers to skip while dragging a toast
         isDraggingNotification: () => deps.utils?.notifications?.isDraggingNotification ?? false,
 
-        // ─── Constants / migrations injected via deps.core (set by coreBoot) ───
+        // ─── Constants injected via deps.core (set by coreBoot) ───
         // Direct value access (not a function wrapper) — depMappings is built per-module
         // inside buildModuleDependencies, so deps.core is already populated by this point.
         DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS: deps.core?.DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS,
-        performSchema25Migration: deps.core?.performSchema25Migration,
         enableTourPrompts: (...args) => deps.ui?.enableTourPrompts?.(...args),
         showStatsTourNotification: (...args) => deps.ui?.showStatsTourNotification?.(...args),
         showPersonalizationTourNotification: (...args) => deps.ui?.showPersonalizationTourNotification?.(...args),

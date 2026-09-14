@@ -623,10 +623,6 @@ export const DEFAULT_LABELS = deepFreeze({
         backupRestoreError:      'Error restoring backup - file may be corrupted.',
         backupRestored:          'Backup restored successfully!',
         backupReloading:         'Reloading app to apply changes...',
-        backupConvertingLegacy:  'Auto-converting legacy backup...',
-        backupInvalidLegacy:     'Invalid legacy backup file format.',
-        backupLegacyRestored:    'Legacy backup restored and converted!',
-        backupMigrationFailed:   'Migration failed during restore',
         backupCorruptData:       'Backup data is corrupt.',
         factoryResetComplete:    'Factory Reset Complete. Reloading...',
         factoryResetCancelled:   'Factory reset cancelled.',
@@ -705,7 +701,6 @@ export const DEFAULT_LABELS = deepFreeze({
         compressingImage:        'Compressing {size}MB image...',
 
         // Migration (additional)
-        compatibilityMode:       'Running in compatibility mode due to: {reason}. Restart app to retry migration.',
 
         // Device detection (additional)
         deviceStatusVersion:     'Version: {version}',
@@ -725,13 +720,6 @@ export const DEFAULT_LABELS = deepFreeze({
         quickToggleFocusTask:    'Quick toggle - Task View',
 
         // Migration notifications
-        forceMigrationComplete:  'Force migration completed! Some data may need manual review.',
-        dataFormatUpdating:      'Updating your data format... This will take a moment.',
-        dataIssuesFixed:         'Fixed {count} data compatibility issues',
-        dataUpdatedWithFixes:    'Data updated successfully! Fixed {count} compatibility issues.',
-        dataFormatUpdated:       'Data format updated successfully!',
-        freshCycleCreated:       'Created fresh routine. Previous data may have been incompatible.',
-        migrationFailed:         'Unable to update data format. Using existing data until next app reload. Your data is safe!',
 
         // Device detection notifications
         deviceDetectionComplete: 'Device detection complete - using full version by user choice',
@@ -2643,10 +2631,6 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'notify.backupRestoreError',
     'notify.backupRestored',
     'notify.backupReloading',
-    'notify.backupConvertingLegacy',
-    'notify.backupInvalidLegacy',
-    'notify.backupLegacyRestored',
-    'notify.backupMigrationFailed',
     'notify.backupCorruptData',
     'notify.factoryResetComplete',
     'notify.factoryResetCancelled',
@@ -2915,10 +2899,6 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'notify.milestoneAchieved',
     'notify.gameUnlocked',
     'notify.taskSetRecurring',
-    'notify.forceMigrationComplete',
-    'notify.dataFormatUpdating',
-    'notify.dataFormatUpdated',
-    'notify.migrationFailed',
     'notify.taskLoadFailed',
     'notify.noRoutineLoaded',
     'notify.allTasksRecurring',

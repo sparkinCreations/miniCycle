@@ -124,19 +124,21 @@ export async function runConsoleCaptureTests(resultsDiv) {
     // === AUTO-START DETECTION TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">🚀 Auto-Start Detection</h4>';
 
-    test('detects old data for auto-start', () => {
-        // Simulate old schema data
+    test('leftover pre-2.5 data does not auto-start capture', () => {
+        // Auto-start used to fire for pre-2.5 data awaiting migration. That migration
+        // was retired Sep 2026, and a leftover legacy key must not be read at all.
         localStorage.setItem('miniCycleStorage', '{"test": "data"}');
+        localStorage.removeItem('miniCycleData');
+        localStorage.removeItem('miniCycle_enableAutoConsoleCapture');
 
         const capture = new MiniCycleConsoleCapture();
         const shouldStart = capture.shouldAutoStartConsoleCapture();
-
-        if (!shouldStart) {
-            throw new Error('Should auto-start with old data');
-        }
-
-        // Cleanup
         capture.stopConsoleCapture();
+        localStorage.removeItem('miniCycleStorage');
+
+        if (shouldStart) {
+            throw new Error('Leftover legacy data must not auto-start capture');
+        }
     });
 
     test('detects testing mode for auto-start', () => {
@@ -153,26 +155,10 @@ export async function runConsoleCaptureTests(resultsDiv) {
         capture.stopConsoleCapture();
     });
 
-    test('detects migration mode for auto-start', () => {
-        sessionStorage.setItem('miniCycleLegacyModeActive', 'true');
-
-        const capture = new MiniCycleConsoleCapture();
-        const shouldStart = capture.shouldAutoStartConsoleCapture();
-
-        if (!shouldStart) {
-            throw new Error('Should auto-start in migration mode');
-        }
-
-        // Cleanup
-        capture.stopConsoleCapture();
-    });
-
     test('does not auto-start without conditions', () => {
         // Clear all auto-start triggers BEFORE creating instance
-        localStorage.removeItem('miniCycleStorage');
         localStorage.removeItem('miniCycle_enableAutoConsoleCapture');
         localStorage.removeItem('miniCycle_capturedConsoleBuffer');
-        sessionStorage.removeItem('miniCycleLegacyModeActive');
 
         const capture = new MiniCycleConsoleCapture();
         const shouldStart = capture.shouldAutoStartConsoleCapture();
@@ -450,10 +436,8 @@ export async function runConsoleCaptureTests(resultsDiv) {
 
     test('restores original console methods', () => {
         // Clear all auto-start triggers to prevent auto-start in constructor
-        localStorage.removeItem('miniCycleStorage');
         localStorage.removeItem('miniCycle_enableAutoConsoleCapture');
         localStorage.removeItem('miniCycle_capturedConsoleBuffer');
-        sessionStorage.removeItem('miniCycleLegacyModeActive');
 
         const capture = new MiniCycleConsoleCapture();
         const originalLog = console.log;
@@ -519,10 +503,8 @@ export async function runConsoleCaptureTests(resultsDiv) {
 
     test('stats reflect active capture', () => {
         // Clear all auto-start triggers to prevent auto-start in constructor
-        localStorage.removeItem('miniCycleStorage');
         localStorage.removeItem('miniCycle_enableAutoConsoleCapture');
         localStorage.removeItem('miniCycle_capturedConsoleBuffer');
-        sessionStorage.removeItem('miniCycleLegacyModeActive');
 
         const capture = new MiniCycleConsoleCapture();
 

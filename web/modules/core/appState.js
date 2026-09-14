@@ -596,8 +596,8 @@ class MiniCycleState {
     /**
      * Persist a successfully salvaged/repaired state back to storage so the
      * corrupt original doesn't survive to later readers. AppState's recovery is
-     * otherwise in-memory only — checkMigrationNeeded() and any other direct
-     * localStorage reader would still hit the corrupt string and fail boot.
+     * otherwise in-memory only — any direct localStorage reader would still hit
+     * the corrupt string and fail boot.
      * Quota failures are tolerated: the snapshot of the corrupt original was
      * already taken by recoverCorruptedData.
      * @param {Schema25Data} data - Repaired state to persist

@@ -562,18 +562,6 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
         }).not.toThrow();
     });
 
-    await test('handles schema migration failure gracefully', async () => {
-        const instance = new SettingsManager({
-            performSchema25Migration: () => ({ success: false }),
-            showNotification: () => {}
-        });
-
-        // Should not throw
-        if (!instance) {
-            throw new Error('Should handle migration failure');
-        }
-    });
-
     // === DOM INTERACTION TESTS ===
     resultsDiv.innerHTML += '<h4>🌐 DOM Interaction</h4>';
 

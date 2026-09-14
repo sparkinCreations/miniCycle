@@ -141,7 +141,6 @@ var BOOT_CRITICAL = [
   './modules/core/constants.js',
   './modules/core/appContext.js',
   './modules/core/appGlobalState.js',
-  './modules/core/migrationFacade.js',
   './modules/core/dataAccess.js',
   './modules/core/types.js',
   // Utils - ALL utility modules

@@ -276,16 +276,11 @@ level-aware.
 The previous doc named the wrong file; `routineLoader.js`'s only `schemaVersion` code is the
 per-task integer repair described above.
 
-Existing entry points, all named for 2.5 — a 2.6 step means generalising these or adding a
-parallel chain beside them:
+Entry points after the pre-2.5 retirement (Sep 2026) — the 2.6 step hangs here:
 
 | Function | Role |
 |---|---|
-| `checkMigrationNeeded()` | decides whether a migration runs |
-| `simulateMigrationToSchema25(dryRun)` | dry-run path |
-| `performSchema25Migration()` | the actual transform |
-| `initAppWithAutoMigration(options)` | boot-time entry |
-| `forceAppMigration()` | manual trigger |
+| `initAppWithAutoMigration()` | boot-time entry every user passes through; today it only runs setup |
 | `createInitialSchema25Data()` | fresh-install shape |
 
 A migration function is deliberately **not** sketched here. The previous doc's example was
@@ -295,12 +290,8 @@ written against the wrong shape and would have thrown on real data; write it aga
 **Starting point (product owner, Sep 2026): pre-2.5 predates the public launch at minicycle.app,
 so every user has only ever had 2.5.** The new
 migration therefore goes **2.5 → 2.6 only** — nothing in 2.6 needs to handle pre-2.5 storage
-directly. Pre-2.5 data can still *arrive*, through two paths that exist today:
-
-- at boot, `orchestrator.js` calls `initAppWithAutoMigration()`, which still migrates the legacy
-  keys (`miniCycleStorage`, `lastUsedMiniCycle`, `miniCycleReminders`) whenever they are present
-- `backupRestoreManager.js` still restores legacy backup files through the same migration — only
-  a pre-launch backup file could carry pre-2.5 data, since no public user ever had it
+directly. The two paths by which pre-2.5 data could still arrive — boot migrating the legacy keys
+and Settings restoring a legacy backup file — were removed with the retirement below.
 
 **Decided Sep 2026: retire the pre-2.5 migration before 2.6**, as its own release (see
 *Ordering*), so the bundled migration is 2.5 → 2.6 with no legacy chain to build or test.
@@ -311,27 +302,26 @@ outside `migrationManager.js` itself (the migration and its rollback), nothing w
 keys; the Lite version stores its own `miniCycleLite` object, not the legacy format; and the
 `miniCycle.html` rescue screen accepts only the current backup format.
 
-**Keep:**
+**Done Sep 2026.** Audited every `migrationManager.js` export rather than trusting the list above,
+which was wrong in one place: `fixTaskValidationIssues()` was listed as "not legacy-specific",
+but it only read and rewrote `miniCycleStorage`, so it went too (with its boot call and its
+`appContext` / `stateApi` slots). What changed:
 
-- the boot entry — every user passes through `initAppWithAutoMigration()`, and it is what
-  creates the initial state for a brand-new user; only its legacy branch goes
-- `createInitialSchema25Data()` (fresh installs) and `fixTaskValidationIssues()` (called at
-  boot, not legacy-specific)
-
-**Remove** whatever only serves pre-2.5 data — audit each `migrationManager.js` export rather
-than trusting a list — and every reference to it: `migrationFacade.js`, the
-`performSchema25Migration` entry in `moduleLoader.js` depMappings and its manifest declarations
-(the DI pipeline; `validate:di` / `validate:api` gate it), the legacy branch of
-`backupRestoreManager.js`, `STORAGE_KEYS.LEGACY_DATA` (update the `validate:reset` list), the
-legacy restore label keys, the testing-modal backup code, and the tests that pin the legacy path.
-
-**No special handling for leftovers.** No public user ever had pre-2.5 data, so keep it minimal:
-
-- stop reading the legacy keys; if any exist (a pre-launch test browser), leave them untouched —
-  never delete them
-- a legacy backup file gets the same error message as any backup the app cannot read (confirm
-  which label when implementing)
-- add **no** new download or warning UI — it would be new code for a case no user has
+- **Kept:** `initAppWithAutoMigration()` (setup + ready only) and `createInitialSchema25Data()`.
+- **Removed:** detection, the transform and dry run, the auto/force paths, the migration
+  backups and their pruning, rollback, "legacy fallback mode", `migrationFacade.js` and its
+  tests, the `performSchema25Migration` DI route (manifests, `CORE_DEPS`, depMappings,
+  `settingsManager` forwarding), `STORAGE_KEYS.LEGACY_DATA` / `LAST_USED` / `REMINDERS`, the
+  migration `LIMITS`, the legacy branches of `backupRestoreManager.js`, `dataSanitizer.js` and
+  the testing modal's restore, console capture's legacy auto-start, and 12 label keys.
+- **Measured against the previous build:** on a first-run boot with only legacy keys it did not
+  convert them — it created a fresh install — and it left `miniCycleStorage` unchanged, but it
+  did read the key: console capture auto-started because it existed. The *pre-2.5 leftovers*
+  journey fails on that build on the console-capture check; its other checks are contract
+  guards that both builds pass.
+- **Leftovers:** legacy keys are never read and never deleted at boot. A legacy backup file gets
+  `notify.invalidFormat` — the message for any file the app cannot read — before anything is
+  written. The factory reset still clears the legacy key names, as it clears every miniCycle key.
 
 ---
 
@@ -656,11 +646,12 @@ risky stored-format change small and last.
    Guarded by the touched modules' unit tests and the *priority levels follow the theme* journey.
    Still showing a stored hex: the history and cleared-task dots (`historyManager`,
    `clearedTasksManager`). They render archived entries and move to levels with the 2.6 migration.
-5. **Retire the pre-2.5 migration** (decided Sep 2026). Remove the legacy migration and rollback,
-   keep the boot entry and initial-state creation. No leftover-data UI: pre-2.5 predates the
-   public launch, so legacy keys are simply left untouched and a legacy backup file gets the
-   normal unreadable-backup message. Details in *Migration seam*. Must ship before step 7, so the
-   migration is 2.5 → 2.6 only.
+5. **Retire the pre-2.5 migration** — ✅ *done Sep 2026.* `migrationManager.js` keeps only the
+   boot entry (`initAppWithAutoMigration`, now setup only) and `createInitialSchema25Data`.
+   Legacy keys are left untouched, a legacy backup file gets the normal "Invalid file format"
+   message, and no new UI was added. Details and the audit in *Migration seam*; pinned by
+   `migrationManager.tests.js`, `backupRestoreManager.tests.js` and the *pre-2.5 leftovers are
+   never migrated or deleted* journey. Must ship before step 7, so the migration is 2.5 → 2.6 only.
 6. **`STATE_TRUTH_MIGRATION.md` P0 and P1 come first for the stored-format work.** It says so
    explicitly: *"Do not start at schema 2.6 or UUID keys. Collapse Gen 1 on the loop first."*
    Its P1 fixes the state, undo and persistence code a migration runs on. Do its AppState load /

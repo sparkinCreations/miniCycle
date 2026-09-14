@@ -315,16 +315,10 @@ export async function initCoreBoot(deps, versionSuffix = null) {
 
   deps.core.migrationMod = migrationMod;
   deps.core.createInitialSchema25Data = migrationMod.createInitialSchema25Data;
-  deps.core.checkMigrationNeeded = migrationMod.checkMigrationNeeded;
-  deps.core.performSchema25Migration = migrationMod.performSchema25Migration;
   deps.core.initAppWithAutoMigration = migrationMod.initAppWithAutoMigration;
 
-  // Initialize migration facade (consolidates 8 globals into 1 importable object)
-  const migrationFacadeMod = await import(`../core/migrationFacade.js${vSuffix}`);
-  migrationFacadeMod.initMigrationFacade(migrationMod);
-  deps.core.MigrationFacade = migrationFacadeMod.MigrationFacade;
-
-  // ✅ Migration functions accessible via deps.core and MigrationFacade - no window.* exposure
+  // ✅ Boot entry + fresh-install factory accessible via deps.core - no window.* exposure.
+  // The pre-2.5 migration (and the facade over it) was retired Sep 2026.
 
   // ========== Initialize appContext early ==========
   // This allows modules loaded between initCoreBoot and initAppState
@@ -334,8 +328,7 @@ export async function initCoreBoot(deps, versionSuffix = null) {
   appContextMod.initAppContext({
     appInit,
     AppGlobalState,
-    GlobalUtils,
-    fixTaskValidationIssues: migrationMod.fixTaskValidationIssues
+    GlobalUtils
     // Note: AppState will be added via setContextValue in initAppState
   });
 
@@ -430,8 +423,6 @@ export async function initAppState(deps, showNotification) {
   // Wire migration manager dependencies
   migrationMod.setMigrationManagerDependencies({
     storage: localStorage,
-    sessionStorage: sessionStorage,
-    showNotification: (...args) => showNotification?.(...args),
     initialSetup: () => {
       if (typeof appInit.runInitialSetup === 'function') {
         return appInit.runInitialSetup();
@@ -439,8 +430,7 @@ export async function initAppState(deps, showNotification) {
       return runFallbackInitialSetup(deps);
     },
     onInitialSetupComplete: () => appInit.markAppReady(),
-    now: () => Date.now(),
-    document: document
+    now: () => Date.now()
   });
 
   // Load and create AppState
@@ -491,8 +481,7 @@ export async function initAppState(deps, showNotification) {
     AppGlobalState: deps.core.AppGlobalState,
     AppMeta: deps.core.AppMeta,  // Use deps, not window.*
     loadMiniCycleData,
-    autoSave,
-    fixTaskValidationIssues: migrationMod.fixTaskValidationIssues
+    autoSave
   });
 
   // Update deps.core with data functions

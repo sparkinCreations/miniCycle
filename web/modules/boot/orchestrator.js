@@ -1022,9 +1022,8 @@ async function runBootSequence() {
 
   await withTimeout(
     (async () => {
-      // Load app data - fix any task validation issues first
-      appContextMod.state?.()?.fixTaskValidationIssues?.();
-      await deps.core.initAppWithAutoMigration({ forceMode: true });
+      // Load app data (creates the initial state for a brand-new user)
+      await deps.core.initAppWithAutoMigration();
 
       // Re-initialize vocab themes and themes panel for new users.
       // vocabThemeManager.init() and setupThemesPanel() both run during Phase 2, but

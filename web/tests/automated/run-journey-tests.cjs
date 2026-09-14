@@ -2437,6 +2437,85 @@ async function journeyNewerDataNeverOverwritten(browser, baseURL) {
     return { name: 'data written by a newer build is never overwritten', failures };
 }
 
+// The pre-2.5 migration was retired Sep 2026 (SCHEMA_2_6_PLAN.md, step 5). Pre-2.5
+// predates the public launch, so the decision is: never read, convert or delete
+// leftover legacy keys.
+//
+// Measured against the previous build: a first-run boot with only legacy keys did NOT
+// convert them (it created a fresh install), and it left miniCycleStorage byte-identical
+// even with an incomplete recurring task in it — so neither "no miniCycleData" (racy
+// besides) nor the byte-identical check tells the builds apart. What that build DID do
+// was read the key: console capture auto-started because it existed. That check fails
+// on the previous build; the others are contract guards, taken after boot finishes.
+async function journeyLegacyLeftoversUntouched(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const legacy = {
+        // An incomplete mid-era recurring object — the shape the retired repair pass
+        // targeted, so a revived repair would show up as a changed key.
+        miniCycleStorage: JSON.stringify({ 'Old Routine': { title: 'Old Routine', cycleCount: 3,
+            tasks: [{ id: 'old-1', text: 'Old task', recurring: { frequency: 'daily' } }] } }),
+        lastUsedMiniCycle: 'Old Routine',
+        miniCycleReminders: JSON.stringify({ enabled: false })
+    };
+    const { context, page } = await openFresh(browser, baseURL, {
+        noNavigate: true,
+        // Seed once per origin, before any app code runs.
+        initScript: (keys) => {
+            if (localStorage.getItem('__legacySeeded')) return;
+            Object.entries(keys).forEach(([k, v]) => localStorage.setItem(k, v));
+            localStorage.setItem('__legacySeeded', '1');
+        },
+        initArg: legacy
+    });
+    const readLegacy = () => page.evaluate((keys) => {
+        let data = null;
+        try { data = JSON.parse(localStorage.getItem('miniCycleData') || 'null'); } catch { data = 'unparseable'; }
+        return {
+            same: Object.entries(keys).every(([k, v]) => localStorage.getItem(k) === v),
+            migratedFrom: data && typeof data === 'object' ? (data.metadata?.migratedFrom ?? null) : data,
+            titles: data && typeof data === 'object' ? Object.values(data.data?.cycles || {}).map(c => c.title) : [],
+            backups: Object.keys(localStorage).filter(k => k.includes('migration_backup_')),
+            consoleCapture: localStorage.getItem('miniCycle_capturedConsoleBuffer') !== null
+        };
+    }, legacy);
+    try {
+        await page.goto(`${baseURL}/miniCycle.html`, { waitUntil: 'domcontentloaded', timeout: 20000 });
+        const firstRun = await page.waitForFunction(
+            () => !!document.querySelector('.first-run-btn[data-choice="learn"]'),
+            null, { timeout: 20000 }
+        ).then(() => true).catch(() => false);
+        record('with only legacy keys, boot shows the first-run screen', firstRun,
+            'no first-run choice screen — boot treated the legacy keys as existing data');
+        // Let boot finish (Phase 3 is where the retired migration and repair ran).
+        await page.waitForFunction(() => document.documentElement.dataset.appLoaded === 'true', null, { timeout: 20000 }).catch(() => {});
+        await page.waitForTimeout(1500);
+        let s = await readLegacy();
+        record('legacy keys are byte-identical after boot', s.same,
+            'a legacy key was rewritten or deleted during boot');
+        record('legacy data did not auto-start console capture', !s.consoleCapture,
+            'miniCycle_capturedConsoleBuffer was written — something still reads the legacy key at startup');
+        record('nothing was converted from the legacy data',
+            s.migratedFrom === null && !s.titles.includes('Old Routine'),
+            `migratedFrom=${JSON.stringify(s.migratedFrom)} routines=${JSON.stringify(s.titles)}`);
+        record('no migration backups were written', s.backups.length === 0, s.backups.join(', '));
+
+        await page.evaluate(() => document.querySelector('.first-run-btn[data-choice="learn"]')?.click());
+        await page.waitForFunction(() => !!localStorage.getItem('miniCycleData'), null, { timeout: 15000 }).catch(() => {});
+        await page.reload({ waitUntil: 'domcontentloaded', timeout: 20000 });
+        await bootApp(page);
+        s = await readLegacy();
+        record('after first run and a reload the legacy keys are still untouched', s.same, 'a legacy key changed after first run');
+        record('the legacy routine never appears in the app data', s.titles.length > 0 && !s.titles.includes('Old Routine'),
+            `routines: ${JSON.stringify(s.titles)}`);
+    } catch (e) {
+        failures.push(`run error: ${e.message}`);
+        console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);
+    } finally {
+        await context.close();
+    }
+    return { name: 'pre-2.5 leftovers are never migrated or deleted', failures };
+}
+
 // Priority is a LEVEL shown in the active routine's theme colours (SCHEMA_2_6_PLAN.md
 // step 4). Before Sep 2026 each surface showed the raw stored hex: a task flagged
 // under one theme kept that theme's red after a switch, a startup pass re-applied
@@ -2544,6 +2623,7 @@ async function journeyPriorityLevelsFollowTheme(browser, baseURL) {
 }
 
 const JOURNEYS = [
+    { name: 'pre-2.5 leftovers are never migrated or deleted', fn: journeyLegacyLeftoversUntouched },
     { name: 'priority levels follow the theme', fn: journeyPriorityLevelsFollowTheme },
     { name: 'data written by a newer build is never overwritten', fn: journeyNewerDataNeverOverwritten },
     { name: 'the Complete Cycle button survives every task moving to the dropdown', fn: journeyCompleteButtonSurvivesDropdown },

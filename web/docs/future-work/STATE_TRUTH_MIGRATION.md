@@ -264,7 +264,7 @@ pass over the same DOM.
 `routineLoader`'s load-time repair already renames `taskText` → `text` and deletes the old
 key — that is the write-side normaliser. What remained were two inline read-side fallbacks:
 `focusTaskPanel` (`task.text ?? task.taskText ?? ''`) and the detail messages in
-`migrationManager.fixTaskValidationIssues`, which boot runs *before* the loader repair.
+the pre-2.5 task-repair pass (since retired with that migration).
 Both now go through `getTaskText(task)` in `task/taskUtils.js`, the one read-side fallback,
 cross-referenced from the loader repair. Pinned by `taskUtils.tests.js` and a `focusTaskPanel`
 test that renders a pre-repair task carrying only `taskText`.

@@ -379,8 +379,6 @@ export const LIMITS = Object.freeze({
     BACKUP_REMINDER_EVERY_N_CYCLES: 25,  // Trigger backup reminder every N completed cycles
     BACKUP_REMINDER_EVERY_N_TASKS: 100,  // Trigger backup reminder every N cleared tasks (To-Do mode)
     MAX_CORRUPT_BACKUPS: 3,              // Max raw-corrupted-data snapshots kept in localStorage for manual recovery
-    MAX_MIGRATION_BACKUPS: 2,            // Max per-prefix migration backups (pre_migration_/migration_) kept; each is a full-dataset copy, created per migration and never otherwise pruned
-    MAX_AUTO_MIGRATION_BACKUPS: 5,       // Max auto_migration_backup_ entries kept in miniCycleBackupIndex (index-managed, separate from the per-prefix cap above)
     RECURRING_OVERSLEEP_FACTOR: 2,       // Watch tick counts as overslept when the gap since the last tick exceeds this multiple of the expected interval (device sleep / tab freeze) — the tick then delegates to catch-up
     // Max task names stored on ONE history event's completion breakdown (per
     // side). Names are user text, so this is a STORAGE cap, not a display one:
@@ -587,7 +585,7 @@ export const Z_INDEX = Object.freeze({
     MODAL_BACKDROP: 999,     // Modal backdrops
     MODAL: 1000,             // Standard modals
     MODAL_HIGH: 2000,        // High-priority modals (storage, onboarding)
-    OVERLAY_CRITICAL: 10000, // Import/migration error overlays
+    OVERLAY_CRITICAL: 10000, // Import error overlays and the testing modal
     LONG_PRESS_HINT: 1001,   // Long-press label bubble — one above MODAL, matching .quick-actions-tooltip's calc(var(--z-modal) + 1). Inside a showModal() dialog the top layer decides instead; see longPressHint._ensureHintElement
     TOUR_OVERLAY: 10500,     // Guided tour overlay
     TOUR_TOOLTIP: 10501,     // Guided tour tooltip
@@ -628,9 +626,6 @@ export const TIME_UNITS = Object.freeze({
  */
 export const STORAGE_KEYS = Object.freeze({
     DATA: 'miniCycleData',
-    LEGACY_DATA: 'miniCycleStorage',
-    LAST_USED: 'lastUsedMiniCycle',
-    REMINDERS: 'miniCycleReminders',
     MILESTONE_UNLOCKS: 'milestoneUnlocks',
     DARK_MODE: 'darkModeEnabled',
     CURRENT_THEME: 'currentTheme',

@@ -67,15 +67,11 @@ export class MiniCycleConsoleCapture {
 
     // Check if we should auto-start console capture
     shouldAutoStartConsoleCapture() {
-        // Auto-start if:
-        // 1. We have old schema data (migration might happen)
-        // 2. OR we're in development/testing mode
-        // 3. OR migration is explicitly enabled
-        const hasOldData = localStorage.getItem(STORAGE_KEYS.LEGACY_DATA) && !localStorage.getItem(STORAGE_KEYS.DATA);
-        const isTestingMode = localStorage.getItem(STORAGE_KEYS.CONSOLE_CAPTURE_ENABLED) === "true";
-        const migrationMode = sessionStorage.getItem('miniCycleLegacyModeActive') === 'true';
-        
-        return hasOldData || isTestingMode || migrationMode;
+        // Auto-start only when capture is explicitly enabled (testing mode). It used
+        // to also start for pre-2.5 data awaiting migration and for the migration's
+        // fallback mode; both went with that migration (retired Sep 2026), and a
+        // leftover legacy key must not be read at all.
+        return localStorage.getItem(STORAGE_KEYS.CONSOLE_CAPTURE_ENABLED) === "true";
     }
 
     // Enhanced console capture that works across page refreshes
@@ -333,9 +329,7 @@ export class MiniCycleConsoleCapture {
         // Enhanced filtering for migration-related messages
         const migrationKeywords = [
             'migration', 'schema', 'backup', 'restore', 'fallback',
-            'legacy', 'performSchema25Migration', 'checkMigrationNeeded',
-            'handleMigrationFailure', 'createAutomaticMigrationBackup',
-            'restoreFromAutomaticBackup', 'migrateTask', 'validateAllMiniCycleTasks'
+            'legacy'
         ];
         
         const errorMessages = allLogs.filter(log => {

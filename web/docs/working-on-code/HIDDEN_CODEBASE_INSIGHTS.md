@@ -67,7 +67,7 @@ These are populated dynamically via `loadSubModules()`.
 
 ---
 
-### 1.3 Redundant migrationFacade.js
+### 1.3 Redundant migrationFacade.js — ✅ resolved Sep 2026 (removed with the pre-2.5 migration)
 
 **Files:**
 - `/modules/core/migrationFacade.js` (158 lines) — thin wrapper
@@ -738,7 +738,7 @@ CSS then targets only iOS PWAs:
 | 3 | Add maxlength to input fields | Low | Better UX | HTML templates |
 | 4 | Increase stats cache TTL (5s → 30s) | Low | Performance boost | `/modules/core/constants.js` |
 | 5 | Split testing-modal.js | Medium | Better maintainability | `/modules/testing/testing-modal.js` |
-| 6 | Remove migrationFacade.js | Low | Reduce redundancy | `/modules/core/migrationFacade.js` |
+| 6 | Remove migrationFacade.js — ✅ done Sep 2026 | Low | Reduce redundancy | `/modules/core/migrationFacade.js` (removed) |
 | 7 | Add plugin unregister (or remove system) | Low | Clean up unused code | `/modules/core/appInit.js` |
 | 8 | Document recurring matcher edge cases | Low | Future-proofing | `/modules/recurring/recurringMatcher.js` |
 

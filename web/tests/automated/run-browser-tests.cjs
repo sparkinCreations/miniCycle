@@ -45,7 +45,7 @@ const ALL_MODULES = [
     'quickActionsManager', 'actionUsage', 'backupRestoreManager', 'cycleExportManager',
     'cycleImportManager', 'shareManager', 'taskButtons', 'taskCycleReset', 'backupReminder',
     'orchestrator', 'diWiring', 'moduleLoader', 'moduleManifests', 'modalTemplates',
-    'appContext', 'dataAccess', 'appGlobalState', 'migrationFacade', 'types',
+    'appContext', 'dataAccess', 'appGlobalState', 'types',
     'modalRegistry', 'modalUtils', 'panelVisibilityHelpers', 'gesturePanelManager',
     'titleManager', 'headerLayoutManager', 'featureAvailability', 'dataRecovery', 'uiOrchestrator', 'preferencesBgImage', 'preferencesPresets',
     'taskDOMPatch', 'debugMode', 'iconInit', 'icons', 'keyboardNav', 'collapsibleSections', 'educationalTips', 'routineSwitcherThemePicker', 'routineSwitcherPreview', 'routineSwitcherListTransforms', 'routineSwitcherRepair', 'routineSwitcherActions', 'onboardingDemo', 'onboardingSplash', 'onboardingCarousel', 'longPressHint', 'mcycPayload', 'nameUtils', 'styleValidators', 'cycleMode', 'priorityLevel', 'schemaVersion', 'undoSnapshotUtils', 'undoTransactionDiff', 'bootSw',

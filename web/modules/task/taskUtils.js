@@ -532,8 +532,8 @@ function createOrUpdateTaskData(taskContext) {
  *
  * Live tasks carry `text`; `taskText` is the pre-2.5 name that only survives on a
  * task object that has not yet passed through routineLoader's load-time repair,
- * which renames it and deletes the old key (boot runs fixTaskValidationIssues
- * before that repair, and cleared-task ENTRIES keep `taskText` by schema). This
+ * which renames it and deletes the old key (cleared-task ENTRIES keep `taskText`
+ * by schema). This
  * is the one read-side fallback; do not write `taskText` on a live task.
  * (STATE_TRUTH_MIGRATION #5)
  *

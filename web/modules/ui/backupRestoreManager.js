@@ -25,7 +25,6 @@ const di = createDIModule('BackupRestoreManager', {
     showNotification: required(),
     showConfirmationModal: required(),
     safeAddEventListener: required(),
-    performSchema25Migration: optional(null),  // For legacy backup migration
     BackupManager: optional(null),  // For safety backups before restore
     AppMeta: optional(null),  // For version info
     loadMiniCycle: optional(null),  // For in-place UI refresh after restore/reset (replaces location.reload)
@@ -41,7 +40,7 @@ const di = createDIModule('BackupRestoreManager', {
     initUndoIndexedDB: optional(null)
 });
 
-/** @type {{AppState: Object, showNotification: Function, showConfirmationModal: Function, safeAddEventListener: Function, performSchema25Migration: Function|null, BackupManager: Object|null, AppMeta: Object|null, loadMiniCycle: Function|null, showLoader: Function|null, hideLoader: Function|null, hideMainMenu: Function|null, closeAllModals: Function|null, appInit: Object|null}} */
+/** @type {{AppState: Object, showNotification: Function, showConfirmationModal: Function, safeAddEventListener: Function, BackupManager: Object|null, AppMeta: Object|null, loadMiniCycle: Function|null, showLoader: Function|null, hideLoader: Function|null, hideMainMenu: Function|null, closeAllModals: Function|null, appInit: Object|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];
@@ -818,91 +817,10 @@ async function processRestoreData(fileContent) {
                     return;
                 }
 
-                // Handle legacy backup - convert to Schema 2.5
-                if (backupData.schemaVersion === "legacy" || backupData.miniCycleStorage) {
-                    _deps.showNotification(getLabel('notify.backupConvertingLegacy'), "info", UI_TIMEOUTS.NOTIFICATION_LONG);
-
-                    if (!backupData.miniCycleStorage) {
-                        _deps.showNotification(getLabel('notify.backupInvalidLegacy'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
-                        resolve();
-                        return;
-                    }
-
-                    // Validate the legacy payload BEFORE touching current data —
-                    // the old order removed Schema 2.5 data first, so a corrupt
-                    // legacy backup left the user with NO data at all.
-                    if (typeof backupData.miniCycleStorage !== 'string') {
-                        console.error('Legacy backup missing miniCycleStorage string');
-                        _deps.showNotification(getLabel('notify.backupInvalidLegacy'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
-                        resolve();
-                        return;
-                    }
-                    try { JSON.parse(backupData.miniCycleStorage); } catch {
-                        console.error('Invalid legacy miniCycleStorage data');
-                        _deps.showNotification?.(getLabel('notify.backupCorruptData'), 'error', UI_TIMEOUTS.NOTIFICATION_EXTENDED);
-                        resolve();
-                        return;
-                    }
-
-                    // Capture current data for rollback: if the migration below
-                    // fails, restoring it beats rebooting into auto-created empty
-                    // state (which would also permanently orphan the legacy keys —
-                    // next boot would see valid 2.5 data and never migrate them).
-                    const previousSchema25Data = localStorage.getItem(STORAGE_KEYS.DATA);
-
-                    // Remove existing Schema 2.5 data so migration will run
-                    localStorage.removeItem(STORAGE_KEYS.DATA);
-
-                    localStorage.setItem(STORAGE_KEYS.LEGACY_DATA, backupData.miniCycleStorage);
-                    localStorage.setItem(STORAGE_KEYS.LAST_USED, backupData.lastUsedMiniCycle || "");
-
-                    if (backupData.miniCycleReminders) {
-                        const remVal = typeof backupData.miniCycleReminders === 'string'
-                            ? backupData.miniCycleReminders : JSON.stringify(backupData.miniCycleReminders);
-                        localStorage.setItem(STORAGE_KEYS.REMINDERS, remVal);
-                    }
-                    if (backupData.milestoneUnlocks) {
-                        const milVal = typeof backupData.milestoneUnlocks === 'string'
-                            ? backupData.milestoneUnlocks : JSON.stringify(backupData.milestoneUnlocks);
-                        localStorage.setItem(STORAGE_KEYS.MILESTONE_UNLOCKS, milVal);
-                    }
-                    if (backupData.darkModeEnabled !== undefined) {
-                        localStorage.setItem(STORAGE_KEYS.DARK_MODE, backupData.darkModeEnabled);
-                    }
-                    if (backupData.currentTheme) {
-                        localStorage.setItem(STORAGE_KEYS.CURRENT_THEME, backupData.currentTheme);
-                    }
-
-                    // Migrate to 2.5
-                    setTimeout(() => {
-                        const performSchema25Migration = _deps.performSchema25Migration;
-                        const migrationResults = performSchema25Migration?.() || { success: false };
-
-                        if (migrationResults.success) {
-                            _deps.showNotification("✅ " + getLabel('notify.backupLegacyRestored'), "success", UI_TIMEOUTS.NOTIFICATION_EXTENDED);
-                        } else {
-                            // Roll back to the pre-restore data — without this the
-                            // reload auto-creates empty 2.5 state and the restored
-                            // legacy keys are never migrated on any future boot.
-                            if (previousSchema25Data) {
-                                try {
-                                    localStorage.setItem(STORAGE_KEYS.DATA, previousSchema25Data);
-                                    console.warn('↩️ Legacy restore migration failed — previous data restored');
-                                } catch (rollbackError) {
-                                    console.error('❌ Could not roll back previous data after failed migration:', rollbackError);
-                                }
-                            }
-                            _deps.showNotification(getLabel('notify.backupMigrationFailed'), "error", UI_TIMEOUTS.NOTIFICATION_EXTENDED);
-                        }
-
-                        // Re-render UI in place — faster than location.reload() and works offline
-                        reloadWithLoader('Legacy restore');
-                        resolve();
-                    }, 500);
-
-                    return;
-                }
-
+                // A pre-2.5 ("legacy") backup is not a format this app reads any more:
+                // pre-2.5 predates the public launch, so the migration that converted it
+                // was retired Sep 2026 (docs/future-work/SCHEMA_2_6_PLAN.md). It gets the
+                // same message as any file the app cannot read, and nothing is written.
                 console.error('Unrecognized backup format');
                 _deps.showNotification(getLabel('notify.invalidFormat'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
                 resolve();
