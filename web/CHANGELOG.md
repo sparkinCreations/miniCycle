@@ -1,3 +1,11 @@
+## [2.563] - 2026-09-14
+- feat(examples): add morning routine example
+- docs(product): add September what's new entries
+- docs: naming rules and schema 2.6 priority plan
+- feat(utils): priority level helpers and theme swatch levels
+- feat(utils): routine and autoClear naming helpers
+
+
 ## [2.562] - 2026-09-14
 - refactor(progress): read completion, due dates and progress from AppState
 - chore: untrack web/archive, exclude it from the build, ignore pptx
