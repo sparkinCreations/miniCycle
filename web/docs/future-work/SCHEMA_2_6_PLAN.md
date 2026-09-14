@@ -6,7 +6,9 @@ version of this document described a data shape this codebase has never had (see
 verified against the running code, and the claims that could not be verified are marked.
 **Priority:** Medium — but see [Two renames, not one](#two-renames-not-one): the two halves
 have very different value, and the cheaper half is the more useful one. A third change,
-**Priority levels** (below), was decided in September 2026.
+**Priority levels** (below), was decided in September 2026. **All three ship as one migration and
+one version bump, bundled with the UUID re-key from `STATE_TRUTH_MIGRATION.md` #20** (decided
+Sep 2026 — see *Ordering*).
 **Breaking changes:** Yes (stored data + the published `.mcyc` schema).
 **Last Updated:** September 2026 (decisions: `autoClear` confirmed, priority becomes a level;
 transitional helpers added; priority folded into every section below). Previously August 2026:
@@ -57,7 +59,7 @@ independent changes with very different payoffs, and they should be judged separ
 | Aligns with              | the existing `clearedTasks` schema noun     | nothing already in the schema |
 | UI vocabulary today      | already says "clear"                        | already says "routine"       |
 | `.mcyc` format impact    | **yes** — published schema changes          | **none** — 0 references      |
-| Recommendation           | **do this one**                             | optional; lower value per unit of risk |
+| Recommendation           | **do this one**                             | bundled into the single 2.6 migration (decided Sep 2026) |
 
 **A third, independent change was added in September 2026:** priority stored as a level instead
 of a colour — see **Priority levels** below. Like Rename A it changes the published `.mcyc`
@@ -117,8 +119,11 @@ metadata.totalCyclesCreated   →  metadata.totalRoutinesCreated
 **Keep** `cycleCount`, `userProgress.cyclesCompleted`, and the user-facing "Complete Cycle"
 wording — those refer to completions, which really are cycles.
 
-This is cosmetic. It is the larger of the two changes and fixes no defect. Sequence it after
-A, or skip it.
+It fixes no defect, but codebase coherence is a goal in itself here, so it is not optional.
+**Decided Sep 2026: it ships inside the single 2.6 migration**, alongside Rename A, priority
+storage and the UUID re-key (`STATE_TRUTH_MIGRATION.md` #20). The re-key rewrites the routines
+map anyway, so renaming it in the same pass costs little, and users' data is migrated once
+instead of twice.
 
 ### Transitional naming helpers (Sep 2026)
 
@@ -284,6 +289,47 @@ A migration function is deliberately **not** sketched here. The previous doc's e
 written against the wrong shape and would have thrown on real data; write it against
 `SCHEMA_2_5.md` and the functions above.
 
+**Starting point (product owner, Sep 2026): pre-2.5 predates the public launch at minicycle.app,
+so every user has only ever had 2.5.** The new
+migration therefore goes **2.5 → 2.6 only** — nothing in 2.6 needs to handle pre-2.5 storage
+directly. Pre-2.5 data can still *arrive*, through two paths that exist today:
+
+- at boot, `orchestrator.js` calls `initAppWithAutoMigration()`, which still migrates the legacy
+  keys (`miniCycleStorage`, `lastUsedMiniCycle`, `miniCycleReminders`) whenever they are present
+- `backupRestoreManager.js` still restores legacy backup files through the same migration — only
+  a pre-launch backup file could carry pre-2.5 data, since no public user ever had it
+
+**Decided Sep 2026: retire the pre-2.5 migration before 2.6**, as its own release (see
+*Ordering*), so the bundled migration is 2.5 → 2.6 with no legacy chain to build or test.
+Why it is safe: pre-2.5 predates the public launch, so no public user ever had pre-2.5 data —
+at most a pre-launch test browser or file could. Also measured: `schemaVersion "2.5"` is in the
+repo's first commit (Sep 2025);
+outside `migrationManager.js` itself (the migration and its rollback), nothing writes the legacy
+keys; the Lite version stores its own `miniCycleLite` object, not the legacy format; and the
+`miniCycle.html` rescue screen accepts only the current backup format.
+
+**Keep:**
+
+- the boot entry — every user passes through `initAppWithAutoMigration()`, and it is what
+  creates the initial state for a brand-new user; only its legacy branch goes
+- `createInitialSchema25Data()` (fresh installs) and `fixTaskValidationIssues()` (called at
+  boot, not legacy-specific)
+
+**Remove** whatever only serves pre-2.5 data — audit each `migrationManager.js` export rather
+than trusting a list — and every reference to it: `migrationFacade.js`, the
+`performSchema25Migration` entry in `moduleLoader.js` depMappings and its manifest declarations
+(the DI pipeline; `validate:di` / `validate:api` gate it), the legacy branch of
+`backupRestoreManager.js`, `STORAGE_KEYS.LEGACY_DATA` (update the `validate:reset` list), the
+legacy restore label keys, the testing-modal backup code, and the tests that pin the legacy path.
+
+**No special handling for leftovers.** No public user ever had pre-2.5 data, so keep it minimal:
+
+- stop reading the legacy keys; if any exist (a pre-launch test browser), leave them untouched —
+  never delete them
+- a legacy backup file gets the same error message as any backup the app cannot read (confirm
+  which label when implementing)
+- add **no** new download or warning UI — it would be new code for a case no user has
+
 ---
 
 ## The gate you must not miss
@@ -345,7 +391,9 @@ previous plan, which never mentioned it.
 **Requirements for 2.6.**
 
 - **One shared version check** replaces the exact-match comparisons and classifies data as
-  *current*, *older* (migrate it) or *newer than this build*.
+  *current*, *older* (migrate it) or *newer than this build*. It must **parse the version into
+  numbers** (major, minor) before comparing — never compare the strings, because `"2.5" > "2.10"`
+  is true (`STATE_TRUTH_MIGRATION.md` #22).
 - **Newer data is never overwritten.** A build that meets it opens read-only or refuses with a
   clear message; `init` must never fall through to first-run, and `save` must never write over
   it. **This must ship in a release before 2.6 changes the stored format**, so every build that
@@ -559,13 +607,13 @@ drift guard walks every module file and fails unless it is precached or in `PREC
 
 ## Ordering relative to other plans
 
-**Agreed sequence (Sep 2026).** Steps 1–4 change no stored format, so nothing below blocks them;
+**Agreed sequence (Sep 2026).** Steps 1–5 change no stored format, so nothing below blocks them;
 they deliver the user-visible priority improvements and the safety net early, and keep the
 risky stored-format change small and last.
 
 1. **Forward-compatibility release.** Ship the shared version check and the "never overwrite
    newer data" behaviour (see *Built to adapt*) on its own, and let it reach the platform builds,
-   so no build that can meet 2.6 data will destroy it. It must be out before step 6.
+   so no build that can meet 2.6 data will destroy it. It must be out before step 7.
 2. **Theme presets → High swatch.** Set each theme's `colorPreset.priorityColor` to its High
    swatch and add the test that keeps them equal for every theme.
 3. **Colour-family rule in the helpers.** Update `utils/priorityLevel.js` so an unknown hex takes
@@ -580,17 +628,29 @@ risky stored-format change small and last.
      `getPriorityColor`, which also retires the three disagreeing fallbacks
    - search's Priority filter and "Priority First" sort use the level from state instead of the
      `high-priority` class
-5. **`STATE_TRUTH_MIGRATION.md` comes first for the stored-format work.** It says so explicitly:
-   *"Do not start at schema 2.6 or UUID keys. Collapse Gen 1 on the loop first."* It also
-   proposes **stable UUID map keys with `title` as the display name**. Today cycles are keyed by
-   name, which is both what that plan wants to change and a CLAUDE.md #18 prototype-pollution
-   hazard. Doing Rename B first means renaming a map whose keying is about to change anyway.
-6. **This plan's format change.** Rename A and priority storage together — both change the
-   published `.mcyc` format, so they share one format bump — with dual-written exports during
-   the transition window.
-7. **Rename B — optional, and only after step 6.**
+5. **Retire the pre-2.5 migration** (decided Sep 2026). Remove the legacy migration and rollback,
+   keep the boot entry and initial-state creation. No leftover-data UI: pre-2.5 predates the
+   public launch, so legacy keys are simply left untouched and a legacy backup file gets the
+   normal unreadable-backup message. Details in *Migration seam*. Must ship before step 7, so the
+   migration is 2.5 → 2.6 only.
+6. **`STATE_TRUTH_MIGRATION.md` P0 and P1 come first for the stored-format work.** It says so
+   explicitly: *"Do not start at schema 2.6 or UUID keys. Collapse Gen 1 on the loop first."*
+   Its P1 fixes the state, undo and persistence code a migration runs on. Do its AppState load /
+   save items together with step 1, so that code is reworked once.
+7. **One migration, one version bump (decided Sep 2026).** A single 2.5 → 2.6 migration carries:
+   - the **UUID re-key** — `STATE_TRUTH_MIGRATION.md` #20: stable UUID map keys, `title` as the
+     name. Today routines are keyed by name, which is also a CLAUDE.md #18 prototype-pollution
+     hazard
+   - **Rename A** — `deleteWhenComplete*` → `autoClear`
+   - **Rename B** — `cycles` → `routine`, done while the map is rewritten anyway
+   - **priority storage** — `task.priority` levels
+
+   Rename A and priority change the published `.mcyc` format, so they share one format bump,
+   with dual-written exports during the transition window. Build the migration as ordered,
+   separately tested steps inside one function and one version bump — never as separate
+   releases.
 8. **`TASK_ORDERING_SYSTEM_PLAN.md` is downstream** — its task object is declared
-   "Schema 2.6+", so it waits on whichever renames land.
+   "Schema 2.6+", so it waits on the migration.
 
 `APPSTATE_MERGE_STATES.md` notes a schema change is a natural moment to revisit merge
 semantics; it does not block and is not scheduled.
@@ -621,8 +681,11 @@ grep -rhoE '\b(highPriority|priorityColor|wasHighPriority)\b' modules tests | wc
   transitional helpers in `utils/priorityLevel.js` already hold the swatch mapping; the
   colour-family rule for custom hexes still has to be added to them.
 
-Neither is a "day." Treat the migration function as the small part and the audit of the
-surfaces above as the real work.
+- **UUID re-key** (`STATE_TRUTH_MIGRATION.md` #20) — bundled into the same migration; every
+  place that looks a routine up by name has to move to the id.
+
+None of these is a "day," and bundled they make one large release. Treat the migration function
+as the small part and the audit of the surfaces above as the real work.
 
 ---
 
@@ -642,6 +705,8 @@ surfaces above as the real work.
 | A theme's `colorPreset.priorityColor` contradicts the level colours (fitness: a green default) | Decided: set it to the theme's High swatch; a test in `priorityLevel.tests.js` keeps the two equal for every theme |
 | An older build (lagging platform build, or a tab open across the release) meets 2.6 stored data and treats the user as new, or saves its 2.5 state over it | Ship the forward-compatibility release first; a journey seeds data with a newer `schemaVersion` and asserts it is neither overwritten on load nor on save |
 | A 2.6 `.mcyc` opened in an older build silently loses clear and priority settings | Exporter dual-writes the 2.5 fields until every platform build reads 2.6; importer prefers the 2.6 field when both are present |
+| The bundled migration (re-key + Rename A + Rename B + priority) is large: one bug blocks the whole release, and it is hard to review | One migration function built from ordered steps, each with its own tests; dry-run on real backups before release; automatic backup first; the forward-compatibility release is already out so no older build can destroy the result |
+| Retiring the pre-2.5 migration strands someone's data | Negligible: pre-2.5 predates the public launch at minicycle.app, so only a pre-launch test browser or file could hold it. Legacy keys are left untouched (never deleted), a legacy backup gets the normal unreadable-backup message, and the boot entry and new-user initial state are kept |
 
 ---
 
@@ -666,6 +731,13 @@ surfaces above as the real work.
 - [ ] Migrations chain per version; `autoClear` and any new `.mcyc` objects are open to new keys
 - [ ] Exports dual-write the 2.5 fields during the transition window; the importer prefers 2.6
       fields when both are present
+- [ ] The UUID re-key, Rename A, Rename B and priority storage land in **one** migration and one
+      version bump; each step is tested on its own and the whole is dry-run on real backups
+- [ ] The pre-2.5 migration is retired **before** 2.6 ships; the 2.6 migration is 2.5 → 2.6 only
+- [ ] Legacy keys are no longer read and never deleted; a legacy backup file gets the normal
+      unreadable-backup message; no new UI was added for pre-2.5 data
+- [ ] A brand-new user still gets initial state at boot; `validate:di`, `validate:api` and
+      `validate:reset` are green after the legacy references are removed
 - [ ] Full suite and every gate green (see [Testing](#testing))
 - [ ] New migration tests, each mutation-verified
 - [ ] `SCHEMA_2_5.md`, `DATA_SCHEMA_GUIDE.md`, `MCYC_FILE_FORMAT.md`, `CLAUDE.md` updated;

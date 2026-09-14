@@ -1,6 +1,6 @@
 # State-as-Truth Migration — Gen 1 leftovers on the cycle loop
 
-**Status:** Open plan — #4 and #10 FIXED (v2.541 / v2.540), #24 shipped, #30 verified closed; #1 probed and NOT reproduced  
+**Status:** Open plan — #4 and #10 FIXED (v2.541 / v2.540), #24 shipped, #30 verified closed; #1 probed and NOT reproduced, then #1 (auto-reset + due-date paths) and #2 moved to state in v2.562  
 **Raised:** 2026-08-23 · **Against:** v2.483 · **Amended:** 2026-09-05 against v2.541  
 **Source:** Independent code review of boot, AppState, DI, completion/reset, both task renderers, undo wrapper, drag-drop, reminders, daily reset, history, `.mcyc` payload, import, `featureBoot` API allow-lists, and `moduleLoader` `ENFORCE_REQUIRES`  
 **Premise:** The repaired modules are Gen 3 (state is truth). The **name of the app** — “all tasks done → reset” — is still Gen 1 (DOM `.checked`). That split is the work.
@@ -39,7 +39,7 @@ Until that slice is true, more features will pass tests and still feel haunted o
 
 | Gen | Rule | Still in |
 |-----|------|----------|
-| **1** | DOM is the database | `checkMiniCycle`, `updateProgressBar`, `extractTaskDataFromDOM`, boot `renderTasksToDOM` |
+| **1** | DOM is the database | `checkCompleteAllButton` (button visibility), `extractTaskDataFromDOM`, boot `renderTasksToDOM` — `checkMiniCycle` and `updateProgressBar` moved to Gen 3 in v2.562 |
 | **2** | `AppState.update`, but also the checkbox / DOM order | drag `saveDragReorder`, hybrid reminders settings via `loadMiniCycleData` |
 | **3** | State first; DOM is a projection | runtime `TaskRenderer` partition, reminders **tasks**, `dailyResetManager`, `historyManager`, `mcycPayload`, `cycleMode.js`, `ModeManager._checkCycleWithSnapshot` |
 
@@ -73,7 +73,7 @@ Do not start at schema 2.6 or UUID keys. Collapse Gen 1 on the loop first.
 > Not probed: #2 (progress bar), #3 (hardcoded ids), #5 (`taskText`). #3 and #5 are tidiness
 > and need no reproduction to justify; #2 shares #1's mechanism and would need its own probe.
 
-### #1 Cycle complete is derived from checkboxes
+### #1 Cycle complete is derived from checkboxes — ✅ MOSTLY FIXED v2.562
 
 **Where:** `checkMiniCycle` in `modules/progress/cycleCompletion.js` — `allTasks.every(task => task.querySelector("input")?.checked)` over `#taskList` + `#completedTaskList` children.
 
@@ -100,17 +100,56 @@ That leaves the genuine exposure narrower than the row implies: a render window 
 fix is still correct — read `cycle.tasks` — but it is debt paydown on the highest-risk
 function in the app, not a bug fix, and should be sequenced accordingly.
 
-### #2 Progress bar uses the same DOM walk
+**Fixed Sep 2026 (v2.562) — the auto-reset and due-date paths.**
+
+- `checkMiniCycle` reads the active routine's tasks from AppState (`getActiveRoutineTasks()`,
+  built on `getActiveRoutine()` in `utils/cycleMode.js`): completion is
+  `tasks.every(task => task.completed)`, and the due-date warning is
+  `tasks.some(task => task.dueDate)`. The `assignCycleVariables` lookup and the checkbox walk
+  over `#taskList` + `#completedTaskList` are gone.
+- The Complete All due-date check in `handleCompleteAllTasksImpl` reads `cycleData.tasks` too.
+  That also closed a real blind spot: the old DOM scan only looked at `#taskList`, so a due date
+  on a task in the completed dropdown never raised the warning.
+- The read works on the checkbox path only because the state write lands first: the change
+  handler does not await `handleTaskCompletionChange`, and `AppState.update` runs its producer
+  synchronously once initialised. "ORDER MATTERS" comments now guard that at `taskDOM`,
+  `taskCore`, `taskCompletion`, `AppState.update` and `markAllTasksCompleteImpl`.
+- Tests: `cycleCompletion.tests.js` fixtures are state, including cases where the rendered
+  checkboxes deliberately disagree with state; `taskCycleReset.tests.js` covers a Complete All
+  due date held only in state. Run against the pre-change code, 10 `cycleCompletion` tests and
+  the Complete All test fail. `test:journey` (21/21) passed on the change.
+
+**Still open on this row:**
+
+- **Complete-button visibility** — `checkCompleteAllButton` in `ui/taskUI.js` still decides from
+  the DOM: `taskList.children.length > 0` plus body mode classes. Because it counts only
+  `#taskList`, it may hide the button when every task has moved to the completed dropdown —
+  **not probed**; reproduce before fixing.
+- **No shared helper yet.** The row's `areAllTasksComplete(cycle)` was not extracted; completion
+  is inline in `checkMiniCycle`. Extract it when the button moves to state, so both answer the
+  same way.
+- **Not yet tested:** this row's "last checkbox after boot vs after undo" case.
+
+### #2 Progress bar uses the same DOM walk — ✅ FIXED v2.562
 
 **Where:** `updateProgressBar` in the same module.
 
 **Fix:** Same helper as #1; `completed / total` from the active cycle’s task array.
+
+**Fixed Sep 2026 (v2.562).** `updateProgressBar` computes `completed / total` from
+`getActiveRoutineTasks()`, and shows an empty bar when there is no data (first run, and after a
+factory reset, where `neutralizeAppState` nulls it). The call inside
+`removeRecurringTasksFromCycle` was removed: it ran before the reset producer applied the removal,
+so a state-based count there would be stale, and `resetTasksImpl` empties the bar itself.
 
 ### #3 Hardcoded IDs next to real constants
 
 **Where:** `getElementById('completedTaskList')`, `getElementById('task-view')` in `cycleCompletion.js`. Constants exist (`DOM_IDS.COMPLETED_TASK_LIST`, etc.).
 
 **Fix:** Use `DOM_IDS` / `DOM_SELECTORS`. Trivial once #1–#2 stop needing the completed list for counting.
+
+**Partly done (v2.562).** The `getElementById('completedTaskList')` lookups went away with #1–#2.
+`getElementById('task-view')` in `showCompletionAnimation` remains — use `DOM_IDS.TASK_VIEW`.
 
 ### #4 Boot render ≠ runtime render — ✅ FIXED v2.541
 
@@ -369,6 +408,11 @@ should not wait for it.
 
 **Fix:** New writes: stable UUID map key; `title` is the name. One migration. Do **not** confuse with Schema 2.6’s `cycles` → `routine` rename ([SCHEMA_2_6_PLAN.md](./SCHEMA_2_6_PLAN.md)).
 
+**Decided Sep 2026: this re-key ships inside the single Schema 2.6 migration** — one migration and
+one version bump together with Rename A, Rename B and priority storage (see the *Ordering* section
+of [SCHEMA_2_6_PLAN.md](./SCHEMA_2_6_PLAN.md)). They stay distinct changes — identity here,
+naming there — but users' data is migrated once. Still sequenced after this plan's P0 and P1.
+
 ### #21 `text` vs `taskText`
 
 **Fix:** Live tasks always `text`. Cleared entries always `taskText`. One import/load normalizer. Ties to #5.
@@ -477,7 +521,7 @@ independent check.
 
 Cycle complete (count++, flip `completed`); to-do clear (`clearedTasks`); daily auto-uncheck (`dailyResetManager` — silent, no `cycleCount`, any cycle, notify on view).
 
-**Fix:** Keep the split. Tests: background-routine daily uncheck must not drive `checkMiniCycle` off the **active** DOM. After #1 this is automatic.
+**Fix:** Keep the split. Tests: background-routine daily uncheck must not drive `checkMiniCycle` off the **active** DOM. After #1 this is automatic. *(Sep 2026: `checkMiniCycle` reads state as of v2.562, so the mechanism is in place; the test is still to write.)*
 
 ### #33 No cloud sync / device loss
 
@@ -553,6 +597,6 @@ These were real; the tree now carries the lesson. Regression tests, not new work
 - Cloud sync, collab, task notes
 - Rewriting the DI framework
 - Maintaining `lite/`
-- Schema 2.6 rename (own plan)
+- Schema 2.6 (own plan) — #20's UUID re-key is carried by its single migration
 - `mergeStates()` (own plan)
 - Generating `depMappings` (own plan) except as it helps #19
