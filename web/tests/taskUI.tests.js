@@ -47,6 +47,7 @@ export async function runTaskUITests(resultsDiv, isPartOfSuite = false) {
     // Create mock dependencies
     function createMockDeps(overrides = {}) {
         return {
+            AppState: { isReady: () => false, get: () => null },
             loadMiniCycleData: () => ({
                 cycles: {
                     'test-cycle': {
@@ -507,51 +508,99 @@ export async function runTaskUITests(resultsDiv, isPartOfSuite = false) {
     // =====================================================
     resultsDiv.innerHTML += '<h3>checkCompleteAllButton</h3>';
 
-    await test('checkCompleteAllButton shows button when tasks exist', async () => {
-        createTestDOM();
-        setTaskUIDependencies(createMockDeps());
-        document.body.classList.remove('auto-cycle-mode');
+    // checkCompleteAllButton decides from STATE (the active routine), never from the
+    // rendered lists. Fixtures are AppState mocks; the DOM only supplies the button.
+    function appStateWith(routine) {
+        const state = routine === null ? null : {
+            data: { cycles: { 'test-cycle': routine } },
+            appState: { activeCycleId: 'test-cycle' }
+        };
+        return { isReady: () => state !== null, get: () => state };
+    }
+    const task = (completed = false) => ({ id: 't-' + Math.random().toString(36).slice(2, 7), text: 'T', completed });
 
-        const taskList = document.getElementById('taskList');
-        const task = document.createElement('li');
-        taskList.appendChild(task);
+    await test('checkCompleteAllButton shows button when the routine has tasks (manual mode)', async () => {
+        createTestDOM();
+        setTaskUIDependencies(createMockDeps({ AppState: appStateWith({ autoReset: false, deleteCheckedTasks: false, tasks: [task()] }) }));
 
         checkCompleteAllButton();
 
         const btn = document.getElementById('completeAll');
         if (btn.style.display !== 'block') {
-            throw new Error('Button should be displayed when tasks exist');
+            throw new Error('Button should be displayed when the routine has tasks');
         }
     });
 
-    await test('checkCompleteAllButton hides button when no tasks', async () => {
+    await test('checkCompleteAllButton hides button when the routine has no tasks', async () => {
         createTestDOM();
-        setTaskUIDependencies(createMockDeps());
-        document.body.classList.remove('auto-cycle-mode');
-
-        // No tasks added
-        checkCompleteAllButton();
-
-        const btn = document.getElementById('completeAll');
-        if (btn.style.display !== 'none') {
-            throw new Error('Button should be hidden when no tasks');
-        }
-    });
-
-    await test('checkCompleteAllButton hides button in auto mode', async () => {
-        createTestDOM();
-        setTaskUIDependencies(createMockDeps());
-        document.body.classList.add('auto-cycle-mode');
-
-        const taskList = document.getElementById('taskList');
-        const task = document.createElement('li');
-        taskList.appendChild(task);
+        setTaskUIDependencies(createMockDeps({ AppState: appStateWith({ autoReset: false, deleteCheckedTasks: false, tasks: [] }) }));
 
         checkCompleteAllButton();
 
         const btn = document.getElementById('completeAll');
         if (btn.style.display !== 'none') {
-            throw new Error('Button should be hidden in auto mode');
+            throw new Error('Button should be hidden when the routine has no tasks');
+        }
+    });
+
+    await test('checkCompleteAllButton hides button when there is no routine (first run / after reset)', async () => {
+        createTestDOM();
+        setTaskUIDependencies(createMockDeps({ AppState: appStateWith(null) }));
+
+        checkCompleteAllButton(); // must not throw
+
+        const btn = document.getElementById('completeAll');
+        if (btn.style.display !== 'none') {
+            throw new Error('Button should be hidden with no active routine');
+        }
+    });
+
+    await test('checkCompleteAllButton stays visible when every task is in the completed dropdown', async () => {
+        // Reproduced Sep 2026: with the completed dropdown on, every finished row
+        // moves out of #taskList. The old element count read that as "no tasks"
+        // and hid the Complete Cycle button after a reload — in manual mode, the
+        // one button that finishes the cycle.
+        createTestDOM();
+        setTaskUIDependencies(createMockDeps({ AppState: appStateWith({
+            autoReset: false, deleteCheckedTasks: false, tasks: [task(true), task(true), task(true)]
+        }) }));
+        // #taskList is deliberately EMPTY — the rows live in the dropdown.
+        if (document.getElementById('taskList').children.length !== 0) throw new Error('fixture: taskList should be empty');
+
+        checkCompleteAllButton();
+
+        const btn = document.getElementById('completeAll');
+        if (btn.style.display !== 'block') {
+            throw new Error('Button must stay visible: the routine has tasks, they are just all in the dropdown');
+        }
+    });
+
+    await test('checkCompleteAllButton hides button in auto mode, read from state', async () => {
+        createTestDOM();
+        setTaskUIDependencies(createMockDeps({ AppState: appStateWith({ autoReset: true, deleteCheckedTasks: false, tasks: [task()] }) }));
+        // Body classes are NOT consulted: leave the body saying manual to prove it.
+        document.body.classList.add('manual-cycle-mode');
+        try {
+            checkCompleteAllButton();
+            const btn = document.getElementById('completeAll');
+            if (btn.style.display !== 'none') {
+                throw new Error('Button should be hidden in auto mode (state), whatever the body class says');
+            }
+        } finally {
+            document.body.classList.remove('manual-cycle-mode');
+        }
+    });
+
+    await test('checkCompleteAllButton labels the button for To-Do mode from state', async () => {
+        createTestDOM();
+        setTaskUIDependencies(createMockDeps({ AppState: appStateWith({ autoReset: false, deleteCheckedTasks: true, tasks: [task()] }) }));
+
+        checkCompleteAllButton();
+
+        const btn = document.getElementById('completeAll');
+        if (btn.style.display !== 'block') throw new Error('Button should show in To-Do mode with tasks');
+        if (!btn.classList.contains('todo-mode-btn') || btn.classList.contains('cycle-mode-btn')) {
+            throw new Error(`To-Do styling expected, got classes: ${btn.className}`);
         }
     });
 

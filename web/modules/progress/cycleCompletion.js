@@ -51,7 +51,7 @@ import { createDIModule, optional } from '../core/diBase.js';
 import { UI_TIMEOUTS, DOM_IDS, DOM_CLASSES, APP_VERSION } from '../core/constants.js';
 import { getLabel, getIcon } from '../labels/labelResolver.js';
 import { announce } from '../utils/announce.js';
-import { getActiveRoutine } from '../utils/cycleMode.js';
+import { getActiveRoutine, areAllTasksComplete } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -130,7 +130,7 @@ export function showCompletionAnimation() {
     // banner / input bar instead. Translate it to the task list's actual
     // rendered center so it visually celebrates *that*.
     if (document.body.classList.contains(DOM_CLASSES.FIRST_RUN_WELCOME_ACTIVE)) {
-        const taskView = document.getElementById('task-view');
+        const taskView = document.getElementById(DOM_IDS.TASK_VIEW);
         if (taskView) {
             const rect = taskView.getBoundingClientRect();
             const taskCenterY = rect.top + rect.height / 2;
@@ -583,9 +583,9 @@ export function checkMiniCycle(options = {}) {
         return;
     }
 
-    // Check if ALL tasks are completed
-    const tasks = getActiveRoutineTasks() ?? [];
-    const allCompleted = tasks.length > 0 && tasks.every(task => task.completed);
+    // Check if ALL tasks are completed — the same answer the Complete button uses
+    const tasks = freshCycleData.tasks ?? [];
+    const allCompleted = areAllTasksComplete(freshCycleData);
 
     updateProgressBar();
 

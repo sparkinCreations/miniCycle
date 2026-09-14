@@ -2301,7 +2301,85 @@ async function journeyNewRoutineHintMatchesBar(browser, baseURL) {
     return { name: "a new routine's empty-state hint matches the bar on screen", failures };
 }
 
+// ── Journey: the Complete Cycle button survives every task moving to the dropdown ──
+// Reproduced Sep 2026 (STATE_TRUTH_MIGRATION #1): checkCompleteAllButton counted
+// `#taskList.children`, and with the completed dropdown on, every finished row
+// moves OUT of #taskList. Live completion left the button alone (nothing re-ran the
+// check), but the boot render partitions the rows into the dropdown and then runs
+// the check — so a manual-cycle routine with all tasks done lost its Complete Cycle
+// button on reload. The button is now decided from state.
+async function journeyCompleteButtonSurvivesDropdown(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const { context, page } = await openFresh(browser, baseURL);
+    try {
+        const seed = async (completed) => {
+            await page.evaluate((completed) => {
+                const d = JSON.parse(localStorage.getItem('miniCycleData'));
+                const c = d.data.cycles[d.appState.activeCycleId];
+                c.tasks = ['One', 'Two', 'Three'].map((t, i) => ({
+                    id: 'cb' + i, text: t, completed, dueDate: null, highPriority: false,
+                    priorityColor: null, remindersEnabled: false, recurring: false,
+                    recurringSettings: {}, deleteWhenComplete: false,
+                    deleteWhenCompleteSettings: { cycle: false, todo: true }, schemaVersion: 2
+                }));
+                c.recurringTemplates = {};
+                c.autoReset = false;            // manual cycle: the button is how the cycle completes
+                c.deleteCheckedTasks = false;
+                d.settings = d.settings || {};
+                d.settings.showCompletedDropdown = true;
+                localStorage.setItem('miniCycleData', JSON.stringify(d));
+            }, completed);
+            await page.reload({ waitUntil: 'domcontentloaded', timeout: 20000 });
+            await bootApp(page);
+            await page.waitForTimeout(800);
+        };
+        const snap = () => page.evaluate(() => ({
+            active: document.querySelectorAll('#taskList > li').length,
+            dropdown: document.querySelectorAll('#completedTaskList > li').length,
+            button: getComputedStyle(document.getElementById('completeAll')).display,
+            manual: document.body.classList.contains('manual-cycle-mode')
+        }));
+
+        // Boot render with every task already complete — the reproduced case.
+        await seed(true);
+        let s = await snap();
+        record('boot render put every task in the dropdown', s.active === 0 && s.dropdown === 3 && s.manual,
+            JSON.stringify(s));
+        record('Complete Cycle button is visible after the boot render', s.button === 'block',
+            `button display=${s.button} with #taskList empty — the routine has 3 tasks, all done`);
+
+        // Live path: start open, complete every task through the real checkboxes.
+        await seed(false);
+        s = await snap();
+        record('live: three open tasks rendered in the active list', s.active === 3 && s.button === 'block', JSON.stringify(s));
+        await page.evaluate(() => document.querySelectorAll('#taskList li input[type="checkbox"]')
+            .forEach(cb => { if (!cb.checked) { cb.checked = true; cb.dispatchEvent(new Event('change', { bubbles: true })); } }));
+        await page.waitForTimeout(1500);
+        s = await snap();
+        record('live: completing every task moved them to the dropdown', s.active === 0 && s.dropdown === 3, JSON.stringify(s));
+        record('live: Complete Cycle button still visible', s.button === 'block', `button display=${s.button}`);
+
+        // And it must still do its job: pressing it completes the cycle.
+        const before = await persisted(page);
+        await clickEl(page, '#completeAll');
+        await page.waitForFunction((prev) => {
+            const p = JSON.parse(localStorage.getItem('miniCycleData') || 'null');
+            const c = p && p.data.cycles[p.appState.activeCycleId];
+            return c && (c.cycleCount || 0) > prev;
+        }, before.cycleCount, { timeout: 10000 }).catch(() => {});
+        const after = await persisted(page);
+        record('pressing the button completed the cycle', after.cycleCount === before.cycleCount + 1,
+            `cycleCount ${before.cycleCount} → ${after.cycleCount}`);
+
+        record('no starved dependencies', page.__diWarnings.length === 0, `DI warnings: ${page.__diWarnings.join(' | ')}`);
+    } finally {
+        await context.close();
+    }
+    return { name: 'the Complete Cycle button survives every task moving to the dropdown', failures };
+}
+
 const JOURNEYS = [
+    { name: 'the Complete Cycle button survives every task moving to the dropdown', fn: journeyCompleteButtonSurvivesDropdown },
     { name: 'reorder arrows move the task the user pointed at', fn: journeyArrowReorderMovesTheRightTask },
     { name: 'import never attaches a template to a non-recurring task', fn: journeyImportTemplateTaskCollision },
     { name: 'import keeps recurring templates with no live task', fn: journeyImportKeepsOrphanTemplates },

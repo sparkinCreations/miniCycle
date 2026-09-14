@@ -10,6 +10,7 @@ export async function runCycleModeTests(resultsDiv) {
     const { getCycleMode, getAllDoneHintKey, getDeleteSettingsMode, syncTaskDeleteWhenComplete,
             resolveDeleteWhenComplete, getTaskResetIndicator,
             getRoutines, getActiveRoutineId, getRoutine, getActiveRoutine, setActiveRoutineId,
+            routineHasTasks, areAllTasksComplete,
             getAutoClearMode, syncTaskAutoClear, resolveAutoClear, getAutoClear, setAutoClear } = mod;
     const { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS: DEFAULTS } =
         await import(`../modules/core/constants.js?v=${cacheBuster}`);
@@ -344,6 +345,31 @@ export async function runCycleModeTests(resultsDiv) {
         for (const newName of ['routines', 'activeRoutineId', 'routineId']) {
             if (saved.includes(`"${newName}"`)) throw new Error(`stored data gained a "${newName}" key`);
         }
+    });
+
+    // ── Completion helpers ───────────────────────────────────────────────────
+    resultsDiv.innerHTML += '<h4 class="test-section">✅ routineHasTasks / areAllTasksComplete</h4>';
+
+    await test('routineHasTasks is true only for a routine with at least one task', () => {
+        if (routineHasTasks({ tasks: [{ id: 'a' }] }) !== true) throw new Error('one task');
+        if (routineHasTasks({ tasks: [] }) !== false) throw new Error('empty');
+        for (const bad of [null, undefined, {}, { tasks: null }, { tasks: 'x' }]) {
+            if (routineHasTasks(bad) !== false) throw new Error(`should be false for ${JSON.stringify(bad)}`);
+        }
+    });
+
+    await test('areAllTasksComplete requires every task complete, and at least one task', () => {
+        if (areAllTasksComplete({ tasks: [{ completed: true }, { completed: true }] }) !== true) throw new Error('all done');
+        if (areAllTasksComplete({ tasks: [{ completed: true }, { completed: false }] }) !== false) throw new Error('one open');
+        // An empty routine is not a finished one — every() on [] is true, so guard it.
+        if (areAllTasksComplete({ tasks: [] }) !== false) throw new Error('empty routine must not count as complete');
+        if (areAllTasksComplete(null) !== false) throw new Error('null');
+    });
+
+    await test('areAllTasksComplete treats a missing or non-boolean completed as not complete', () => {
+        if (areAllTasksComplete({ tasks: [{ completed: true }, {}] }) !== false) throw new Error('missing flag');
+        if (areAllTasksComplete({ tasks: [{ completed: 'yes' }] }) !== false) throw new Error('string flag');
+        if (areAllTasksComplete({ tasks: [{ completed: true }, null] }) !== false) throw new Error('null task');
     });
 
     // ── Naming helpers: autoClear ────────────────────────────────────────────

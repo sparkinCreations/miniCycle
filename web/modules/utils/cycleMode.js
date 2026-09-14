@@ -273,6 +273,28 @@ export function setActiveRoutineId(state, routineId) {
 }
 
 /**
+ * Does the routine have any tasks at all? Reads state, never the rendered lists:
+ * the completed dropdown moves finished rows out of `#taskList`, so an element
+ * count says "no tasks" for a routine whose every task is simply done.
+ * @param {Object|null|undefined} routine - A routine from state.data.cycles
+ * @returns {boolean}
+ */
+export function routineHasTasks(routine) {
+    return Array.isArray(routine?.tasks) && routine.tasks.length > 0;
+}
+
+/**
+ * Is every task in the routine complete? False for a routine with no tasks — an
+ * empty routine is not a finished one. The one answer to "is this routine done?",
+ * shared by cycle completion and the Complete button so they can never disagree.
+ * @param {Object|null|undefined} routine - A routine from state.data.cycles
+ * @returns {boolean}
+ */
+export function areAllTasksComplete(routine) {
+    return routineHasTasks(routine) && routine.tasks.every(task => task?.completed === true);
+}
+
+/**
  * autoClear name for {@link getDeleteSettingsMode}: which settings key applies
  * to a routine — 'todo' (Marked for Clearing) or 'cycle' (Clear on Reset).
  * @type {typeof getDeleteSettingsMode}

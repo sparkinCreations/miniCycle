@@ -1,6 +1,6 @@
 # State-as-Truth Migration — Gen 1 leftovers on the cycle loop
 
-**Status:** Open plan — #4 and #10 FIXED (v2.541 / v2.540), #24 shipped, #30 verified closed; #1 probed and NOT reproduced, then #1 (auto-reset + due-date paths) and #2 moved to state in v2.562  
+**Status:** Open plan — #4 and #10 FIXED (v2.541 / v2.540), #24 shipped, #30 verified closed; #1 probed and NOT reproduced, then #1 (auto-reset + due-date paths) and #2 moved to state in v2.562; #1's Complete-button half REPRODUCED and fixed with #3 (Sep 2026, unreleased at time of writing)  
 **Raised:** 2026-08-23 · **Against:** v2.483 · **Amended:** 2026-09-05 against v2.541  
 **Source:** Independent code review of boot, AppState, DI, completion/reset, both task renderers, undo wrapper, drag-drop, reminders, daily reset, history, `.mcyc` payload, import, `featureBoot` API allow-lists, and `moduleLoader` `ENFORCE_REQUIRES`  
 **Premise:** The repaired modules are Gen 3 (state is truth). The **name of the app** — “all tasks done → reset” — is still Gen 1 (DOM `.checked`). That split is the work.
@@ -39,7 +39,7 @@ Until that slice is true, more features will pass tests and still feel haunted o
 
 | Gen | Rule | Still in |
 |-----|------|----------|
-| **1** | DOM is the database | `checkCompleteAllButton` (button visibility), `extractTaskDataFromDOM`, boot `renderTasksToDOM` — `checkMiniCycle` and `updateProgressBar` moved to Gen 3 in v2.562 |
+| **1** | DOM is the database | `extractTaskDataFromDOM`, boot `renderTasksToDOM`, the renderer's `tasks-empty` body class (see #1) — `checkMiniCycle`, `updateProgressBar` (v2.562) and `checkCompleteAllButton` (Sep 2026) moved to Gen 3 |
 | **2** | `AppState.update`, but also the checkbox / DOM order | drag `saveDragReorder`, hybrid reminders settings via `loadMiniCycleData` |
 | **3** | State first; DOM is a projection | runtime `TaskRenderer` partition, reminders **tasks**, `dailyResetManager`, `historyManager`, `mcycPayload`, `cycleMode.js`, `ModeManager._checkCycleWithSnapshot` |
 
@@ -73,7 +73,7 @@ Do not start at schema 2.6 or UUID keys. Collapse Gen 1 on the loop first.
 > Not probed: #2 (progress bar), #3 (hardcoded ids), #5 (`taskText`). #3 and #5 are tidiness
 > and need no reproduction to justify; #2 shares #1's mechanism and would need its own probe.
 
-### #1 Cycle complete is derived from checkboxes — ✅ MOSTLY FIXED v2.562
+### #1 Cycle complete is derived from checkboxes — ✅ FIXED (v2.562 + Sep 2026)
 
 **Where:** `checkMiniCycle` in `modules/progress/cycleCompletion.js` — `allTasks.every(task => task.querySelector("input")?.checked)` over `#taskList` + `#completedTaskList` children.
 
@@ -119,15 +119,34 @@ function in the app, not a bug fix, and should be sequenced accordingly.
   due date held only in state. Run against the pre-change code, 10 `cycleCompletion` tests and
   the Complete All test fail. `test:journey` (21/21) passed on the change.
 
+**Complete-button half — REPRODUCED and fixed, Sep 2026.** Probed against v2.563 with a
+Playwright script driving the real app: manual cycle mode, completed dropdown on, three tasks.
+
+```
+BEFORE completing:            taskList 5, dropdown 0, button block
+AFTER completing all (live):  taskList 0, dropdown 5, button block   ← right by accident: nothing re-ran the check
+AFTER reload (boot render):   taskList 0, dropdown 5, button NONE    ← the bug
+```
+
+The boot render partitions every finished row into `#completedTaskList`, then runs
+`checkCompleteAllButton`, which counted `#taskList.children` — so a manual-cycle routine whose
+tasks were all done lost its Complete Cycle button on reload, the one button that finishes the
+cycle. **Verified broken**, not merely fragile (contrast the auto-reset half above).
+
+Fix: `checkCompleteAllButton` reads the active routine from `AppState` (`required()`, unguarded)
+— tasks present via `routineHasTasks(routine)`, mode via `getCycleMode(routine)`, no routine → no
+button. Body classes and `#taskList` are no longer consulted. The row's shared helper now exists:
+`areAllTasksComplete(routine)` in `utils/cycleMode.js`, used by `checkMiniCycle` as well. Pinned
+by state-fixture tests in `taskUI.tests.js` (3 of them fail on the old code) and the journey
+*"the Complete Cycle button survives every task moving to the dropdown"*, which seeds the exact
+scenario, reloads, then completes live and presses the button.
+
 **Still open on this row:**
 
-- **Complete-button visibility** — `checkCompleteAllButton` in `ui/taskUI.js` still decides from
-  the DOM: `taskList.children.length > 0` plus body mode classes. Because it counts only
-  `#taskList`, it may hide the button when every task has moved to the completed dropdown —
-  **not probed**; reproduce before fixing.
-- **No shared helper yet.** The row's `areAllTasksComplete(cycle)` was not extracted; completion
-  is inline in `checkMiniCycle`. Extract it when the button moves to state, so both answer the
-  same way.
+- **The renderer's `tasks-empty` body class** (`taskRenderer.js`) is toggled from
+  `taskList.children.length === 0` — the same DOM count. With every task in the dropdown it
+  presumably shows the "no tasks" empty state over a full routine. **Not probed.** Same fix
+  shape: `!routineHasTasks(routine)`.
 - **Not yet tested:** this row's "last checkbox after boot vs after undo" case.
 
 ### #2 Progress bar uses the same DOM walk — ✅ FIXED v2.562
@@ -142,14 +161,14 @@ factory reset, where `neutralizeAppState` nulls it). The call inside
 `removeRecurringTasksFromCycle` was removed: it ran before the reset producer applied the removal,
 so a state-based count there would be stale, and `resetTasksImpl` empties the bar itself.
 
-### #3 Hardcoded IDs next to real constants
+### #3 Hardcoded IDs next to real constants — ✅ FIXED Sep 2026
 
 **Where:** `getElementById('completedTaskList')`, `getElementById('task-view')` in `cycleCompletion.js`. Constants exist (`DOM_IDS.COMPLETED_TASK_LIST`, etc.).
 
 **Fix:** Use `DOM_IDS` / `DOM_SELECTORS`. Trivial once #1–#2 stop needing the completed list for counting.
 
-**Partly done (v2.562).** The `getElementById('completedTaskList')` lookups went away with #1–#2.
-`getElementById('task-view')` in `showCompletionAnimation` remains — use `DOM_IDS.TASK_VIEW`.
+**Fixed.** The `getElementById('completedTaskList')` lookups went away with #1–#2 (v2.562);
+`getElementById('task-view')` in `showCompletionAnimation` now uses `DOM_IDS.TASK_VIEW` (Sep 2026).
 
 ### #4 Boot render ≠ runtime render — ✅ FIXED v2.541
 

@@ -13,9 +13,10 @@
  * @module modules/ui/taskUI
  */
 
-import { createDIModule, optional } from '../core/diBase.js';
+import { createDIModule, required, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { getActiveRoutine, getCycleMode, routineHasTasks } from '../utils/cycleMode.js';
 // NOTE: taskToAddTaskOptions injected via DI to avoid duplicate module loading
 
 // ============================================================================
@@ -23,13 +24,16 @@ import { getLabel } from '../labels/labelResolver.js';
 // ============================================================================
 
 const di = createDIModule('TaskUI', {
+    // For checkCompleteAllButton — the button's visibility and mode are decided
+    // from the active routine in state, never from the rendered lists. Required
+    // and read unguarded (CLAUDE.md #19): a wiring miss must throw, not hide the
+    // button silently. Delivered as a CORE_DEP, so no manifest entry.
+    AppState: required(),
+
     // For refreshTaskListUI
     loadMiniCycleData: optional(null),
     addTask: optional(null),
     getElementById: optional(null),
-
-    // For checkCompleteAllButton
-    getTaskList: optional(null),
 
     // For touch detection
     isTouchDevice: optional(null),
@@ -42,7 +46,7 @@ const di = createDIModule('TaskUI', {
 });
 
 // Late-binding deps via Proxy
-/** @type {{loadMiniCycleData: Function|null, addTask: Function|null, getElementById: Function|null, getTaskList: Function|null, isTouchDevice: Function|null, taskToAddTaskOptions: Function|null}} */
+/** @type {{AppState: Object, loadMiniCycleData: Function|null, addTask: Function|null, getElementById: Function|null, isTouchDevice: Function|null, taskToAddTaskOptions: Function|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];
@@ -393,30 +397,35 @@ export function hideTaskOptions(event) {
 
 /**
  * Checks if the complete all button should be visible.
- * Shows when there are tasks and not in auto cycle mode.
+ * Shows when the active routine has tasks and is not in auto cycle mode.
  * Updates button text and color based on mode (To-Do vs Cycle).
+ *
+ * Decided from STATE, not the rendered lists. It used to count
+ * `#taskList.children`, and with the completed dropdown on, every finished row
+ * moves out of `#taskList` — so a manual-cycle routine whose tasks were all done
+ * lost its Complete Cycle button on the next boot render (reproduced Sep 2026),
+ * the one button that finishes the cycle. The mode comes from the same routine
+ * (`getCycleMode`), which is what modeManager derives the body classes from.
  */
 export function checkCompleteAllButton() {
-    const getTaskList = _deps.getTaskList;
-
-    const taskList = typeof getTaskList === 'function' ? getTaskList() : document.getElementById(DOM_IDS.TASK_LIST);
     // getCompleteAllButton was a dead DI dep (resolvable nowhere — the DOM
     // fallback always ran). Use the CORE_DEP DOM helper directly instead.
     const completeAllButton = typeof _deps.getElementById === 'function'
         ? _deps.getElementById(DOM_IDS.COMPLETE_ALL)
         : document.getElementById(DOM_IDS.COMPLETE_ALL);
 
-    if (!taskList || !completeAllButton) {
-        // Elements should exist after DOMContentLoaded - warn if missing
-        console.warn('checkCompleteAllButton: Required elements not found (taskList:', !!taskList, ', completeAllButton:', !!completeAllButton, ')');
+    if (!completeAllButton) {
+        // Element should exist after DOMContentLoaded - warn if missing
+        console.warn('checkCompleteAllButton: #' + DOM_IDS.COMPLETE_ALL + ' not found');
         return;
     }
 
-    const isAutoMode = document.body.classList.contains(DOM_CLASSES.AUTO_CYCLE_MODE);
+    // No routine yet (first run, mid-boot, after a factory reset) reads as no tasks.
+    const routine = getActiveRoutine(_deps.AppState.get());
+    const mode = getCycleMode(routine);
+    const isAutoMode = mode === 'auto';
+    const isToDoMode = mode === 'todo';
     const taskView = document.getElementById(DOM_IDS.TASK_VIEW);
-
-    // Detect To-Do mode from body class (set by modeManager as 'todo-mode-mode')
-    const isToDoMode = document.body.classList.contains(DOM_CLASSES.TODO_MODE_MODE);
 
     // Update button text and styling based on mode
     if (isToDoMode) {
@@ -429,7 +438,7 @@ export function checkCompleteAllButton() {
         completeAllButton.classList.remove(DOM_CLASSES.TODO_MODE_BTN);
     }
 
-    if (taskList.children.length > 0 && !isAutoMode) {
+    if (routineHasTasks(routine) && !isAutoMode) {
         completeAllButton.style.display = "block";
         taskView?.classList.add(DOM_CLASSES.COMPLETE_BTN_VISIBLE);
     } else {
