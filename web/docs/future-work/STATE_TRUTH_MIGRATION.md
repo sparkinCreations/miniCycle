@@ -1,6 +1,6 @@
 # State-as-Truth Migration — Gen 1 leftovers on the cycle loop
 
-**Status:** Open plan — #4 and #10 FIXED (v2.541 / v2.540), #24 shipped, #30 verified closed; #1 probed and NOT reproduced, then #1 (auto-reset + due-date paths) and #2 moved to state in v2.562; #1's Complete-button half REPRODUCED and fixed with #3 and #5 (Sep 2026, unreleased at time of writing) — **P0 band closed**  
+**Status:** Open plan — #13 FIXED Sep 2026 (first real input switches undo on); #8, #9 and #11 measured and found milder than written (see each); #4 and #10 FIXED (v2.541 / v2.540), #24 shipped, #30 verified closed; #1 probed and NOT reproduced, then #1 (auto-reset + due-date paths) and #2 moved to state in v2.562; #1's Complete-button half REPRODUCED and fixed with #3 and #5 (Sep 2026, unreleased at time of writing) — **P0 band closed**  
 **Raised:** 2026-08-23 · **Against:** v2.483 · **Amended:** 2026-09-05 against v2.541  
 **Source:** Independent code review of boot, AppState, DI, completion/reset, both task renderers, undo wrapper, drag-drop, reminders, daily reset, history, `.mcyc` payload, import, `featureBoot` API allow-lists, and `moduleLoader` `ENFORCE_REQUIRES`  
 **Premise:** The repaired modules are Gen 3 (state is truth). The **name of the app** — “all tasks done → reset” — is still Gen 1 (DOM `.checked`). That split is the work.
@@ -288,7 +288,13 @@ subscribers redraw against the state that actually exists. Pinned in `appState.t
 
 **Fix:** After restore, notify subscribers so the screen is not left on a mutation that was undone. (Documented in HOW_MINICYCLE_WORKS; still missing in code.)
 
-### #8 Undo is a slice plus extra captures
+### #8 Undo is a slice plus extra captures — measured Sep 2026: no user-visible fault found
+
+*(The gesture probe above found Undo correct for add, check, priority, delete, completing a
+cycle by checking the last task, Complete Cycle and a To-Do switch once undo is on. Each add
+costs exactly one undo step — the explicit pre-add capture and the wrapper's capture dedupe.
+A tab refocus between a gesture and Undo does not steal the Undo. The duplicate capture sites
+below still exist and are still worth collapsing, but as cleanup, not a bug fix.)*
 
 **Where:** `wrapAppStateForUndo` is supposed to be the single source (`useUpdateWrapper`). Call sites still snapshot: `taskCompletion`, `taskCRUD` (pre-add), `dragDropManager`, `titleManager`, `taskCycleReset`, `ModeManager._checkCycleWithSnapshot`.
 
@@ -298,7 +304,11 @@ Snapshots are a **cycle slice** (tasks, templates, title, modes, cycleCount, the
 
 **Fix:** Wrapper-only for `update()` paths. Keep **one** gesture-boundary snapshot where the executor no longer captures (mode-switch → auto-reset). Do not snapshot celebration flags as their own undo steps (#9).
 
-### #9 Many `update()`s per cycle complete
+### #9 Many `update()`s per cycle complete — measured Sep 2026: no undo impact
+
+*(`incrementCycleCount` runs inside `resetTasks` while `isResetting` is raised, so the undo
+wrapper skips all of these updates. What remains is cost: up to four immediate saves plus the
+history event, and a listener notification each, per completed cycle.)*
 
 **Where:** `incrementCycleCount` — count + `cyclesCompleted`, then `firstCycleCelebrated`, then 100/500 flags, then `logHistoryEvent` (another `update`).
 
@@ -373,7 +383,13 @@ persistent `order` field removes index arithmetic entirely and makes both trigge
 impossible. That is ~20 hours and a Schema 2.6 migration; this row is the small fix that
 should not wait for it.
 
-### #11 `saveCycleData` replaces the whole cycle object
+### #11 `saveCycleData` replaces the whole cycle object — measured Sep 2026: not the stale-overwrite described
+
+*(`loadMiniCycleData()` returns the live `AppState` tree, not a copy, so the routine
+`saveCycleData` assigns is the same object already in state — it cannot overwrite a recurring
+or watcher write. The real fault is one step earlier: `repairAndCleanTasks` mutates that live
+routine before any `update()` runs (CLAUDE.md #13). The fix below still applies; its reason is
+different.)*
 
 **Where:** `routineLoader.js` — `state.data.cycles[activeCycle] = currentCycle`.
 
@@ -390,7 +406,19 @@ setter bug.)*
 
 **Fix:** `Object.defineProperties` like every other setter. Phase-1 “exception” is historical, not required.
 
-### #13 `isInitializing` blocks undo until first task/title action
+### #13 `isInitializing` blocks undo until first task/title action — ✅ FIXED Sep 2026
+
+*(Measured first with a probe that did each gesture once, as the first action after load and
+after a warm-up, then pressed Undo. Every gesture undid correctly except two cold ones:
+**Complete Cycle** and **switching to To-Do mode** — Undo did nothing, because neither path
+calls `enableUndoSystemOnFirstInteraction`, and neither do due dates, reminders, the recurring
+panel or completed tasks. Fixed once instead of per gesture: `armUndoOnFirstInput()` in
+`uiBoot.js` is a capture-phase document listener for the first **trusted** `pointerdown` /
+`keydown`, so undo switches on before any gesture's own handler runs; scripted events are
+ignored, so boot dispatches cannot enable it early. Also measured before choosing this over
+"enable at load": background writes (overdue check, recurring watcher) add no undo steps — they
+are `{ system: true }`. Pinned by the *the first gesture after load can be undone* journey (fails
+on the previous build on both Undo checks) and `uiBoot.tests.js`.)*
 
 **Where:** `taskViewLayoutManager` header: wrapper skips snapshots while `AppGlobalState.isInitializing`; only some modules flip it.
 

@@ -2437,6 +2437,89 @@ async function journeyNewerDataNeverOverwritten(browser, baseURL) {
     return { name: 'data written by a newer build is never overwritten', failures };
 }
 
+// Undo starts disabled so boot-time writes never become undo steps, and used to be
+// switched on only by gestures that remembered to (STATE_TRUTH_MIGRATION #13).
+// Measured Sep 2026: with Complete Cycle, or a switch to To-Do mode, as the FIRST
+// action after load, Undo did nothing. Real input only — a scripted .click() fires no
+// pointerdown/keydown, which is exactly what the fix listens for. Each case opens a
+// fresh app so the gesture really is the first one.
+async function journeyFirstGestureUndo(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const openColdRoutine = async () => {
+        const opened = await openFresh(browser, baseURL);
+        const { page } = opened;
+        await page.evaluate(() => {
+            const d = JSON.parse(localStorage.getItem('miniCycleData'));
+            const c = d.data.cycles[d.appState.activeCycleId];
+            c.tasks = ['One', 'Two', 'Three'].map((text, i) => ({
+                id: 'fg' + i, text, completed: false, dueDate: null, highPriority: false, priorityColor: null,
+                remindersEnabled: false, recurring: false, recurringSettings: {}, deleteWhenComplete: false,
+                deleteWhenCompleteSettings: { cycle: false, todo: true }, schemaVersion: 2
+            }));
+            c.recurringTemplates = {};
+            c.autoReset = false;            // manual cycle: Complete Cycle is how it completes
+            c.deleteCheckedTasks = false;
+            c.cycleCount = 0;
+            localStorage.setItem('miniCycleData', JSON.stringify(d));
+        });
+        // Reload: undo's "initializing" flag starts over, so the next gesture is the first.
+        await page.reload({ waitUntil: 'domcontentloaded', timeout: 20000 });
+        await bootApp(page);
+        await page.waitForTimeout(800);
+        return opened;
+    };
+    const field = (page, name) => page.evaluate((name) => {
+        const d = JSON.parse(localStorage.getItem('miniCycleData') || 'null');
+        const c = d && d.data.cycles[d.appState.activeCycleId];
+        return c ? c[name] : undefined;
+    }, name);
+    const waitField = (page, name, want, timeout = 10000) => page.waitForFunction(([name, want]) => {
+        const d = JSON.parse(localStorage.getItem('miniCycleData') || 'null');
+        const c = d && d.data.cycles[d.appState.activeCycleId];
+        return c && (c[name] || (name === 'cycleCount' ? 0 : false)) === want;
+    }, [name, want], { timeout }).then(() => true).catch(() => false);
+
+    // ── Complete Cycle as the first action ──────────────────────────────────
+    let opened = await openColdRoutine();
+    try {
+        const { page } = opened;
+        await page.focus('#completeAll');
+        await page.keyboard.press('Enter');
+        const completed = await waitField(page, 'cycleCount', 1);
+        record('Complete Cycle (first action) completed the cycle', completed, `cycleCount=${await field(page, 'cycleCount')}`);
+        await page.waitForTimeout(3500);   // let the reset animation and its saves finish
+        await page.keyboard.press('Control+z');
+        const undone = await waitField(page, 'cycleCount', 0, 8000);
+        record('Undo reverts a Complete Cycle that was the first action after load', undone,
+            `cycleCount=${await field(page, 'cycleCount')} after Undo — undo was still switched off`);
+    } catch (e) {
+        failures.push(`Complete Cycle case: ${e.message}`);
+    } finally {
+        await opened.context.close();
+    }
+
+    // ── Switch to To-Do mode as the first action ────────────────────────────
+    opened = await openColdRoutine();
+    try {
+        const { page } = opened;
+        await page.focus('#mode-selector');
+        await page.keyboard.press('Shift');   // the real keydown a user's selection starts with
+        await page.selectOption('#mode-selector', 'todo-mode');
+        const switched = await waitField(page, 'deleteCheckedTasks', true);
+        record('switching to To-Do mode (first action) took effect', switched, `deleteCheckedTasks=${await field(page, 'deleteCheckedTasks')}`);
+        await page.waitForTimeout(800);
+        await page.keyboard.press('Control+z');
+        const undone = await waitField(page, 'deleteCheckedTasks', false, 8000);
+        record('Undo reverts a mode switch that was the first action after load', undone,
+            `deleteCheckedTasks=${await field(page, 'deleteCheckedTasks')} after Undo — undo was still switched off`);
+    } catch (e) {
+        failures.push(`mode switch case: ${e.message}`);
+    } finally {
+        await opened.context.close();
+    }
+    return { name: 'the first gesture after load can be undone', failures };
+}
+
 // The pre-2.5 migration was retired Sep 2026 (SCHEMA_2_6_PLAN.md, step 5). Pre-2.5
 // predates the public launch, so the decision is: never read, convert or delete
 // leftover legacy keys.
@@ -2623,6 +2706,7 @@ async function journeyPriorityLevelsFollowTheme(browser, baseURL) {
 }
 
 const JOURNEYS = [
+    { name: 'the first gesture after load can be undone', fn: journeyFirstGestureUndo },
     { name: 'pre-2.5 leftovers are never migrated or deleted', fn: journeyLegacyLeftoversUntouched },
     { name: 'priority levels follow the theme', fn: journeyPriorityLevelsFollowTheme },
     { name: 'data written by a newer build is never overwritten', fn: journeyNewerDataNeverOverwritten },

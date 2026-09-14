@@ -656,6 +656,8 @@ risky stored-format change small and last.
    explicitly: *"Do not start at schema 2.6 or UUID keys. Collapse Gen 1 on the loop first."*
    Its P1 fixes the state, undo and persistence code a migration runs on. Do its AppState load /
    save items together with step 1, so that code is reworked once.
+   *Progress Sep 2026:* P0 closed. In P1, #7, #12 and #13 are fixed; #8, #9 and #11 were
+   measured and found milder than written (details in that doc).
 7. **One migration, one version bump (decided Sep 2026).** A single 2.5 → 2.6 migration carries:
    - the **UUID re-key** — `STATE_TRUTH_MIGRATION.md` #20: stable UUID map keys, `title` as the
      name. Today routines are keyed by name, which is also a CLAUDE.md #18 prototype-pollution

@@ -187,6 +187,47 @@ export async function runUIBootTests(resultsDiv) {
     // ===== COPYRIGHT YEAR =====
     resultsDiv.innerHTML += '<h4 class="test-section">\u00A9 Copyright Year</h4>';
 
+    // Undo starts disabled and is switched on by the user's first REAL input
+    // (STATE_TRUTH_MIGRATION #13). Page scripts can only dispatch untrusted events,
+    // so these pin the ignore-scripted and no-stacking halves; the
+    // "first gesture after load can be undone" journey covers real input.
+    await test('armUndoOnFirstInput ignores scripted pointerdown/keydown', async () => {
+        const cacheBuster = window.testCacheBuster || Date.now();
+        const { armUndoOnFirstInput, disarmUndoOnFirstInput } = await import(`../modules/boot/uiBoot.js?v=${cacheBuster}`);
+        let calls = 0;
+        armUndoOnFirstInput(() => { calls++; });
+        try {
+            document.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', bubbles: true }));
+            if (calls !== 0) throw new Error(`scripted events enabled undo (${calls} call(s)) — boot dispatches could switch it on early`);
+        } finally {
+            disarmUndoOnFirstInput();
+        }
+    });
+
+    await test('re-arming replaces the first-input listener instead of stacking another', async () => {
+        const cacheBuster = window.testCacheBuster || Date.now();
+        const { armUndoOnFirstInput, disarmUndoOnFirstInput } = await import(`../modules/boot/uiBoot.js?v=${cacheBuster}`);
+        const added = [];
+        const removed = [];
+        const origAdd = document.addEventListener;
+        const origRemove = document.removeEventListener;
+        document.addEventListener = function (type, fn, opts) { if (type === 'pointerdown') added.push(fn); return origAdd.call(this, type, fn, opts); };
+        document.removeEventListener = function (type, fn, opts) { if (type === 'pointerdown') removed.push(fn); return origRemove.call(this, type, fn, opts); };
+        try {
+            armUndoOnFirstInput(() => {});
+            armUndoOnFirstInput(() => {});
+            disarmUndoOnFirstInput();
+        } finally {
+            document.addEventListener = origAdd;
+            document.removeEventListener = origRemove;
+        }
+        if (added.length !== 2) throw new Error(`expected 2 arms, saw ${added.length}`);
+        if (removed.length !== 2 || removed[0] !== added[0] || removed[1] !== added[1]) {
+            throw new Error('each arm must remove the previous listener, and disarm the current one');
+        }
+    });
+
     await test('stampCopyrightYear fills every [data-copyright-year] with the CURRENT year', async () => {
         const { stampCopyrightYear } = await import(
             ((globalThis.__MC_MODULE_MAP || {})['/modules/boot/uiBoot.js'] || '../modules/boot/uiBoot.js') + '?v=' + Date.now());
