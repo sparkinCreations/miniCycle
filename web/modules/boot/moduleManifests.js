@@ -549,7 +549,7 @@ export const MODULE_MANIFESTS = {
         path: '../progress/cycleCompletion.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState', 'showNotification'],
-        optionalDeps: ['logHistoryEvent', 'checkAchievements', 'checkBackupReminderOnCycleComplete', 'vocabThemeManager', 'renderVocabThemes', 'showConfirmationModal', 'assignCycleVariables', 'resetTasks', 'unlockMiniGame', 'updateStatsPanel'],
+        optionalDeps: ['logHistoryEvent', 'checkAchievements', 'checkBackupReminderOnCycleComplete', 'vocabThemeManager', 'renderVocabThemes', 'showConfirmationModal', 'resetTasks', 'unlockMiniGame', 'updateStatsPanel'],
         provides: ['checkMiniCycle', 'updateProgressBar', 'incrementCycleCount', 'showCompletionAnimation', 'showClearAnimation', 'animateProgressBarFill', 'animateProgressBarEmpty', 'showMilestoneCelebrationOverlay'],
         api: 'progress'
     },

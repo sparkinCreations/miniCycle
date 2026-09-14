@@ -131,6 +131,14 @@ export async function handleTaskCompletionChangeImpl(checkbox, deps = {}) {
 
         // Save completion state to AppState (only if taskId exists)
         // ✅ Use AppState only (no localStorage fallback) - DI-pure
+        //
+        // ORDER MATTERS: this must stay the FIRST await in this function. taskDOM's
+        // change handler calls this without awaiting and runs checkMiniCycle on the
+        // next line, which reads completion from state. AppState.update runs its
+        // producer synchronously once initialized, so the write below has landed by
+        // the time this function first yields. Any await added above it (or in the
+        // taskCore facade before delegating here) means checkMiniCycle sees the
+        // pre-click state and ticking the last task stops completing the cycle.
         if (taskId) {
             if (AppState?.isReady?.()) {
                 await AppState.update(state => {

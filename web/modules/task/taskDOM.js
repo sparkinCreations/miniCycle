@@ -854,6 +854,14 @@ export class TaskDOMManager {
                 this.deps.enableUndoSystemOnFirstInteraction();
             }
 
+            // ORDER MATTERS: checkMiniCycle below reads completion from AppState,
+            // and this call is NOT awaited. That works only because the state write
+            // lands synchronously: nothing awaits between here and the
+            // AppState.update inside handleTaskCompletionChangeImpl (the taskCore
+            // facade delegates without awaiting), and update() runs its producer
+            // before its first await once AppState is initialized. An await added
+            // anywhere on that path makes checkMiniCycle see the pre-click state,
+            // so ticking the last task would silently stop completing the cycle.
             if (typeof this.deps.handleTaskCompletionChange === 'function') {
                 this.deps.handleTaskCompletionChange(checkbox);
             }

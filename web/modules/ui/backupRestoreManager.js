@@ -164,10 +164,12 @@ function reloadWithLoader(logContext, options = {}) {
             // routine's completion until a manual reload (reported Aug 2026,
             // measured at scaleX(0.666667) with zero task rows).
             //
-            // updateProgressBar() counts the rendered rows, and they are already
-            // cleared by this point, so calling it resolves to 0 with no special
-            // empty-state branch needed. It runs AFTER the list clears above for
-            // exactly that reason — moving it earlier would recompute the old fill.
+            // updateProgressBar() reads the active routine from AppState, so it runs
+            // AFTER AppState.reload() above and reflects whatever state settled on.
+            // After a factory reset that is no data at all (neutralizeAppState nulled
+            // it and reload() finds nothing in storage), so the bar resolves to 0 with
+            // no special empty-state branch; after a restore it shows the restored
+            // routine's progress.
             try {
                 _deps.updateProgressBar?.();
             } catch (e) {

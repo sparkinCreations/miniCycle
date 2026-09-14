@@ -1038,6 +1038,12 @@ export function markAllTasksCompleteImpl(cycleData, taskList, resetTasksFn, deps
 
     taskList.querySelectorAll(".task input").forEach(task => task.checked = true);
 
+    // ORDER MATTERS: checkMiniCycle reads completion from AppState, not the
+    // checkboxes, so the AppState.update above must already have landed. It has,
+    // even though it is not awaited: once AppState is initialized, update() runs
+    // its producer synchronously, before its first await. Keep that write above
+    // this call and never put an await in front of it — otherwise checkMiniCycle
+    // sees the pre-Complete state and the cycle never completes.
     if (typeof checkMiniCycle === 'function') {
         checkMiniCycle();
     }
@@ -1114,9 +1120,7 @@ export async function handleCompleteAllTasksImpl(resetTasksFn, deps = {}) {
 
         // Step 2: Check if confirmation modal is needed (due dates in cycle mode)
         if (!cycleData.deleteCheckedTasks) {
-            const hasDueDates = [...taskList.querySelectorAll(DOM_SELECTORS.DUE_DATE)].some(
-                dueDateInput => dueDateInput.value
-            );
+            const hasDueDates = (cycleData.tasks ?? []).some(task => task.dueDate);
 
             if (hasDueDates) {
                 mergedDeps.showConfirmationModal({

@@ -48,7 +48,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION } from '../core/constants.js';
+import { UI_TIMEOUTS, DOM_IDS, DOM_CLASSES, APP_VERSION } from '../core/constants.js';
 import { getLabel, getIcon } from '../labels/labelResolver.js';
 import { announce } from '../utils/announce.js';
 
@@ -70,9 +70,7 @@ const di = createDIModule('CycleCompletion', {
     unlockMiniGame: optional(null),
     renderVocabThemes: optional(null),
     // For updateProgressBar and checkMiniCycle
-    getTaskList: optional(null),           // () => taskList element
     getProgressBar: optional(null),        // () => progressBar element
-    assignCycleVariables: optional(null),  // () => { lastUsedMiniCycle, savedMiniCycles }
     resetTasks: optional(null),            // () => void
     // History & Achievements hooks
     logHistoryEvent: optional(null),       // (type, details) => void
@@ -97,6 +95,21 @@ const deps = new Proxy({}, {
  */
 export function setCycleCompletionDependencies(dependencies) {
     di.setDependencies(dependencies);
+}
+
+/**
+ * Returns the active routine's tasks from AppState, or null when there is no state yet.
+ * @returns {Array|null} Array of tasks or null
+ */
+export function getActiveRoutineTasks() {
+    const state = deps.AppState?.get?.();
+    if (!state) return null;
+
+    const cycleId = state.appState?.activeCycleId;
+    if (!cycleId) return null;
+
+    const cycle = state.data?.cycles?.[cycleId];
+    return cycle?.tasks ?? null;
 }
 
 /**
@@ -517,32 +530,20 @@ export function animateProgressBarEmpty() {
 /**
  * Updates the progress bar to reflect current task completion.
  * Animates the width transition smoothly.
- * Counts tasks from both main list AND completed dropdown.
+ * Reads task completion from AppState.
  * @returns {void}
  */
 export function updateProgressBar() {
-    const taskList = deps.getTaskList?.();
     const progressBar = deps.getProgressBar?.();
 
-    if (!taskList || !progressBar) {
-        console.warn('⚠️ updateProgressBar: taskList or progressBar not available');
+    if (!progressBar) {
+        console.warn('⚠️ updateProgressBar: progressBar not available');
         return;
     }
 
-    // Count tasks from main list
-    const mainTasks = [...taskList.children];
-    const mainTotal = mainTasks.length;
-    const mainCompleted = mainTasks.filter(task => task.querySelector("input")?.checked).length;
-
-    // Also count tasks from completed dropdown (if enabled)
-    const completedTaskList = document.getElementById('completedTaskList');
-    const dropdownTasks = completedTaskList ? [...completedTaskList.children] : [];
-    const dropdownTotal = dropdownTasks.length;
-    const dropdownCompleted = dropdownTasks.filter(task => task.querySelector("input")?.checked).length;
-
-    // Total from both lists
-    const totalTasks = mainTotal + dropdownTotal;
-    const completedTasks = mainCompleted + dropdownCompleted;
+    const tasks = getActiveRoutineTasks() ?? [];
+    const totalTasks = tasks.length;
+    const completedTasks = tasks.filter(task => task.completed).length;
     const progress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
 
     // Add consistent animation for all progress updates
@@ -557,6 +558,7 @@ export function updateProgressBar() {
     }, 200);
 }
 
+
 // Guard flag to prevent double-modal when checkMiniCycle is called twice per click
 // (taskDOM.js change handler + taskEvents.js click handler both call checkMiniCycle)
 let _showingDueDateModal = false;
@@ -565,7 +567,7 @@ let _showingDueDateModal = false;
  * Checks if all tasks in the miniCycle are completed.
  * If auto-reset is enabled, resets tasks after completion.
  * Updates progress bar and stats panel.
- * Checks tasks from both main list AND completed dropdown.
+ * Reads tasks from AppState.
  * @param {Object} [options] - Optional parameters
  * @param {HTMLElement} [options.lastToggledElement] - The task element that was just toggled (for cancel-revert)
  * @returns {void}
@@ -577,56 +579,30 @@ export function checkMiniCycle(options = {}) {
         return;
     }
 
-    const taskList = deps.getTaskList?.();
-    if (!taskList) {
-        console.warn('⚠️ checkMiniCycle: taskList not available');
-        return;
-    }
+    // Find the active routine in AppState
+    const state = deps.AppState?.get?.();
+    const activeCycleId = state?.appState?.activeCycleId;
+    const freshCycleData = activeCycleId ? state?.data?.cycles?.[activeCycleId] : null;
 
-    // Get tasks from both main list and completed dropdown
-    const mainTasks = [...taskList.children];
-    const completedTaskList = document.getElementById('completedTaskList');
-    const dropdownTasks = completedTaskList ? [...completedTaskList.children] : [];
-    const allTasks = [...mainTasks, ...dropdownTasks];
-
-    // Check if ALL tasks (from both lists) are completed
-    const allCompleted = allTasks.length > 0 && allTasks.every(task => task.querySelector("input")?.checked);
-
-    // Retrieve miniCycle variables
-    const cycleVars = deps.assignCycleVariables?.();
-    if (!cycleVars) {
-        console.warn("⚠️ No cycle variables available.");
-        return;
-    }
-
-    const { lastUsedMiniCycle, savedMiniCycles } = cycleVars;
-    const cycleData = savedMiniCycles[lastUsedMiniCycle];
-
-    if (!lastUsedMiniCycle || !cycleData) {
+    if (!freshCycleData) {
         console.warn("⚠️ No active miniCycle found.");
         return;
     }
 
+    // Check if ALL tasks are completed
+    const tasks = getActiveRoutineTasks() ?? [];
+    const allCompleted = tasks.length > 0 && tasks.every(task => task.completed);
+
     updateProgressBar();
 
     // Only trigger reset if ALL tasks are completed AND autoReset is enabled
-    // Use allTasks.length which includes both main list and completed dropdown
-    if (allCompleted && allTasks.length > 0) {
-
-        // ✅ FIX: Read autoReset from FRESH AppState, not potentially stale cycleVars
-        // This ensures mode changes are respected immediately
-        const state = deps.AppState?.get?.();
-        const activeCycleId = state?.appState?.activeCycleId;
-        const freshCycleData = activeCycleId ? state?.data?.cycles?.[activeCycleId] : null;
-        const autoResetEnabled = freshCycleData?.autoReset ?? cycleData.autoReset;
+    if (allCompleted) {
+        const autoResetEnabled = freshCycleData.autoReset;
 
         // Auto-reset: Only reset if AutoReset is enabled (manual mode = autoReset OFF)
         if (autoResetEnabled) {
             // Check if any tasks have due dates that will be cleared on reset
-            const hasDueDates = allTasks.some(task => {
-                const dueDateInput = task.querySelector(DOM_SELECTORS.DUE_DATE);
-                return dueDateInput && dueDateInput.value;
-            });
+            const hasDueDates = tasks.some(task => task.dueDate);
 
             // Show warning modal if due dates exist (guard prevents double-modal)
             if (hasDueDates && deps.showConfirmationModal && !_showingDueDateModal) {
@@ -714,6 +690,7 @@ export function checkMiniCycle(options = {}) {
         deps.updateStatsPanel();
     }
 }
+
 
 // ============================================================================
 // MODULE INITIALIZATION (for moduleLoader)

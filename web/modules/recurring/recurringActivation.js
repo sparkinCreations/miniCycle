@@ -31,7 +31,6 @@ const di = createDIModule('RecurringActivation', {
     updateRecurringSummary: optional(null),
     updatePanelButtonVisibility: optional(null),
     updateInfoLink: optional(null),
-    updateProgressBar: optional(null),
     GlobalUtils: optional(null),
     // Functions from sibling modules (injected to avoid circular imports)
     normalizeRecurringSettings: optional(null),
@@ -512,10 +511,10 @@ export function removeRecurringTasksFromCycle(taskElements, cycleData) {
         }
     });
 
-    // Update progress bar
-    if (plan.removedIds.length > 0 && Deps.updateProgressBar) {
-        Deps.updateProgressBar();
-    }
+    // No progress-bar update here. The bar reads AppState, and state still holds
+    // the removed tasks until the caller's reset producer applies this plan, so a
+    // count taken now would be stale. resetTasksImpl animates the bar itself
+    // (animateProgressBarEmpty) once the reset has been applied.
 
     return plan;
 }

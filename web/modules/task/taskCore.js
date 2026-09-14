@@ -459,6 +459,10 @@ export class TaskCore {
             console.warn('TaskCore: handleTaskCompletionChangeImpl not loaded');
             return;
         }
+        // Delegate immediately — do NOT await anything before this call. taskDOM's
+        // change handler runs checkMiniCycle right after calling this (unawaited),
+        // and relies on the AppState write inside handleTaskCompletionChangeImpl
+        // having already happened synchronously.
         return _subModules.handleTaskCompletionChangeImpl(checkbox, this.deps);
     }
 

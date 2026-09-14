@@ -691,6 +691,13 @@ class MiniCycleState {
 
         try {
             // ✅ FIXED: Call updateFn with this.data, not as async
+            //
+            // Callers depend on this running SYNCHRONOUSLY once initialized: with
+            // no await before it, a caller that does not await update() still sees
+            // the change on its very next line. taskDOM's checkbox handler and
+            // markAllTasksCompleteImpl both call checkMiniCycle straight after an
+            // unawaited update and read completion from state. Never add an await
+            // between the top of this method and this call on the initialized path.
             const result = updateFn(this.data);
 
             this.isDirty = true;

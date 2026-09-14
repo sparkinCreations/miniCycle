@@ -395,6 +395,26 @@ export async function runTaskCycleResetTests(resultsDiv) {
         }
     });
 
+    await test('Complete All (cycle mode) warns about a due date held in AppState, even with no date input rendered', async () => {
+        // The harness renders bare rows with no due-date inputs — the same blind
+        // spot as a dated task parked in the completed dropdown, which the old
+        // #taskList-only DOM scan never saw. The warning must come from state.
+        const h = makeCompleteAllHarness(false);
+        h.stateObj.data.cycles.c1.tasks.forEach(t => { t.completed = false; });
+        h.stateObj.data.cycles.c1.tasks[0].dueDate = '2026-09-20';
+        let modalShown = false;
+        h.deps.showConfirmationModal = (config) => { modalShown = true; config.callback(false); };
+        try {
+            await mod.handleCompleteAllTasksImpl(() => {}, h.deps);
+            if (!modalShown) throw new Error('a dueDate in state must trigger the reset warning');
+            const anyCompleted = h.stateObj.data.cycles.c1.tasks.some(t => t.completed === true);
+            if (anyCompleted) throw new Error('declining the warning must leave every task incomplete');
+        } finally {
+            mod.clearAllTimeouts();
+            h.taskList.remove();
+        }
+    });
+
     await test('resetTasksImpl (effect executor) captures NO snapshot of its own', async () => {
         const taskList = document.createElement('ul');
         document.body.appendChild(taskList);

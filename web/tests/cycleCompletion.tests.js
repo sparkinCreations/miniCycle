@@ -9,6 +9,7 @@
  * - Cycle count increment
  * - Milestone detection
  * - Theme/game unlocks
+ * - Progress bar and completion/due-date checks, read from AppState (not the DOM)
  */
 
 import {
@@ -643,7 +644,31 @@ export async function runCycleCompletionTests(resultsDiv, isPartOfSuite = false)
     });
 
     // === PROGRESS BAR TESTS ===
+    // updateProgressBar reads completion from AppState, not the rendered checkboxes,
+    // so every fixture here is state; the DOM only supplies the bar element.
     resultsDiv.innerHTML += '<h4 class="test-section">📊 Progress Bar</h4>';
+
+    // Helper: AppState mock whose active routine ('cycle-main') holds these tasks
+    function appStateWithTasks(tasks, cycleOverrides = {}) {
+        return createMockAppStateWithData({
+            data: { cycles: { 'cycle-main': { tasks, ...cycleOverrides } } }
+        });
+    }
+
+    // Helper: a rendered task list whose checkboxes are all set to `checked`.
+    // Used to make the DOM DISAGREE with state, proving the DOM is not consulted.
+    function renderedListWithCheckboxes(count, checked) {
+        const list = document.createElement('ul');
+        for (let i = 0; i < count; i++) {
+            const task = document.createElement('li');
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.checked = checked;
+            task.appendChild(checkbox);
+            list.appendChild(task);
+        }
+        return list;
+    }
 
     await test('updateProgressBar function exists', () => {
         if (typeof updateProgressBar !== 'function') {
@@ -651,20 +676,26 @@ export async function runCycleCompletionTests(resultsDiv, isPartOfSuite = false)
         }
     });
 
-    await test('updateProgressBar handles missing taskList gracefully', () => {
+    await test('updateProgressBar sets scaleX(0) when AppState has no data', () => {
+        // First run, and the moment after a factory reset (neutralizeAppState
+        // nulls the data): there is nothing to count, so the bar must be empty.
+        const mockProgressBar = document.createElement('div');
+
         setCycleCompletionDependencies({
-            getTaskList: () => null,
-            getProgressBar: () => document.createElement('div')
+            AppState: { isReady: () => false, get: () => null },
+            getProgressBar: () => mockProgressBar
         });
 
-        // Should not throw
         updateProgressBar();
+
+        if (mockProgressBar.style.transform !== 'scaleX(0)') {
+            throw new Error(`Expected scaleX(0), got ${mockProgressBar.style.transform}`);
+        }
     });
 
     await test('updateProgressBar handles missing progressBar gracefully', () => {
-        const mockTaskList = document.createElement('ul');
         setCycleCompletionDependencies({
-            getTaskList: () => mockTaskList,
+            AppState: appStateWithTasks([{ id: 't1', text: 'One', completed: true }]),
             getProgressBar: () => null
         });
 
@@ -672,12 +703,11 @@ export async function runCycleCompletionTests(resultsDiv, isPartOfSuite = false)
         updateProgressBar();
     });
 
-    await test('updateProgressBar sets scaleX(0) for empty task list', () => {
-        const mockTaskList = document.createElement('ul');
+    await test('updateProgressBar sets scaleX(0) for a routine with no tasks', () => {
         const mockProgressBar = document.createElement('div');
 
         setCycleCompletionDependencies({
-            getTaskList: () => mockTaskList,
+            AppState: appStateWithTasks([]),
             getProgressBar: () => mockProgressBar
         });
 
@@ -689,22 +719,17 @@ export async function runCycleCompletionTests(resultsDiv, isPartOfSuite = false)
         }
     });
 
-    await test('updateProgressBar calculates correct percentage', () => {
-        const mockTaskList = document.createElement('ul');
-        // Add 4 tasks, 2 completed
-        for (let i = 0; i < 4; i++) {
-            const task = document.createElement('li');
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.checked = i < 2; // First 2 checked
-            task.appendChild(checkbox);
-            mockTaskList.appendChild(task);
-        }
-
+    await test('updateProgressBar calculates correct percentage from AppState', () => {
         const mockProgressBar = document.createElement('div');
 
+        // 4 tasks, 2 completed
         setCycleCompletionDependencies({
-            getTaskList: () => mockTaskList,
+            AppState: appStateWithTasks([
+                { id: 't1', text: 'One', completed: true },
+                { id: 't2', text: 'Two', completed: true },
+                { id: 't3', text: 'Three', completed: false },
+                { id: 't4', text: 'Four', completed: false }
+            ]),
             getProgressBar: () => mockProgressBar
         });
 
@@ -717,20 +742,14 @@ export async function runCycleCompletionTests(resultsDiv, isPartOfSuite = false)
     });
 
     await test('updateProgressBar sets scaleX(1) when all tasks complete', () => {
-        const mockTaskList = document.createElement('ul');
-        for (let i = 0; i < 3; i++) {
-            const task = document.createElement('li');
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.checked = true;
-            task.appendChild(checkbox);
-            mockTaskList.appendChild(task);
-        }
-
         const mockProgressBar = document.createElement('div');
 
         setCycleCompletionDependencies({
-            getTaskList: () => mockTaskList,
+            AppState: appStateWithTasks([
+                { id: 't1', text: 'One', completed: true },
+                { id: 't2', text: 'Two', completed: true },
+                { id: 't3', text: 'Three', completed: true }
+            ]),
             getProgressBar: () => mockProgressBar
         });
 
@@ -742,12 +761,32 @@ export async function runCycleCompletionTests(resultsDiv, isPartOfSuite = false)
         }
     });
 
-    await test('updateProgressBar adds transition for animation', () => {
-        const mockTaskList = document.createElement('ul');
+    await test('updateProgressBar follows AppState even when rendered checkboxes disagree', () => {
+        // Both rendered boxes are ticked, but state says neither task is done.
+        // A DOM-counting bar would read scaleX(1); the state-reading bar reads 0.
         const mockProgressBar = document.createElement('div');
 
         setCycleCompletionDependencies({
-            getTaskList: () => mockTaskList,
+            AppState: appStateWithTasks([
+                { id: 't1', text: 'One', completed: false },
+                { id: 't2', text: 'Two', completed: false }
+            ]),
+            getTaskList: () => renderedListWithCheckboxes(2, true),
+            getProgressBar: () => mockProgressBar
+        });
+
+        updateProgressBar();
+
+        if (mockProgressBar.style.transform !== 'scaleX(0)') {
+            throw new Error(`Expected scaleX(0) from state, got ${mockProgressBar.style.transform}`);
+        }
+    });
+
+    await test('updateProgressBar adds transition for animation', () => {
+        const mockProgressBar = document.createElement('div');
+
+        setCycleCompletionDependencies({
+            AppState: appStateWithTasks([]),
             getProgressBar: () => mockProgressBar
         });
 
@@ -781,49 +820,31 @@ export async function runCycleCompletionTests(resultsDiv, isPartOfSuite = false)
         checkMiniCycle();
     });
 
-    await test('checkMiniCycle handles missing taskList', () => {
-        const mockAppState = {
-            isReady: () => true
-        };
+    // checkMiniCycle decides completion and due dates from AppState. Every test sets
+    // the deps it relies on explicitly (module DI persists between tests), and the
+    // due-date modal mock always answers its callback so the module's one-modal
+    // guard (_showingDueDateModal) is released for the next test.
+
+    await test('checkMiniCycle handles AppState with no data', () => {
+        let statsPanelUpdated = false;
 
         setCycleCompletionDependencies({
-            AppState: mockAppState,
-            getTaskList: () => null
+            AppState: { isReady: () => true, get: () => null },
+            getProgressBar: () => document.createElement('div'),
+            updateStatsPanel: () => { statsPanelUpdated = true; }
         });
 
-        // Should not throw
+        // Should not throw, and with no routine there is nothing to report on
         checkMiniCycle();
-    });
 
-    await test('checkMiniCycle handles missing cycle variables', () => {
-        const mockTaskList = document.createElement('ul');
-        const mockAppState = {
-            isReady: () => true
-        };
-
-        setCycleCompletionDependencies({
-            AppState: mockAppState,
-            getTaskList: () => mockTaskList,
-            assignCycleVariables: () => null
-        });
-
-        // Should not throw
-        checkMiniCycle();
+        if (statsPanelUpdated) {
+            throw new Error('Should stop before updating stats when there is no active routine');
+        }
     });
 
     await test('checkMiniCycle handles missing active cycle', () => {
-        const mockTaskList = document.createElement('ul');
-        const mockAppState = {
-            isReady: () => true
-        };
-
         setCycleCompletionDependencies({
-            AppState: mockAppState,
-            getTaskList: () => mockTaskList,
-            assignCycleVariables: () => ({
-                lastUsedMiniCycle: null,
-                savedMiniCycles: {}
-            }),
+            AppState: createMockAppStateWithData({ appState: { activeCycleId: 'does-not-exist' } }),
             getProgressBar: () => document.createElement('div')
         });
 
@@ -831,64 +852,39 @@ export async function runCycleCompletionTests(resultsDiv, isPartOfSuite = false)
         checkMiniCycle();
     });
 
-    await test('checkMiniCycle updates progress bar', () => {
-        const mockTaskList = document.createElement('ul');
-        const task = document.createElement('li');
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        task.appendChild(checkbox);
-        mockTaskList.appendChild(task);
-
+    await test('checkMiniCycle updates progress bar from AppState', () => {
         const mockProgressBar = document.createElement('div');
-        const mockAppState = {
-            isReady: () => true
-        };
 
         setCycleCompletionDependencies({
-            AppState: mockAppState,
-            getTaskList: () => mockTaskList,
+            AppState: appStateWithTasks([
+                { id: 't1', text: 'One', completed: true },
+                { id: 't2', text: 'Two', completed: false }
+            ], { autoReset: false }),
             getProgressBar: () => mockProgressBar,
-            assignCycleVariables: () => ({
-                lastUsedMiniCycle: 'test-cycle',
-                savedMiniCycles: {
-                    'test-cycle': { title: 'Test', autoReset: false }
-                }
-            }),
             updateStatsPanel: () => {}
         });
 
         checkMiniCycle();
 
         // The module uses transform: scaleX() instead of width
-        if (mockProgressBar.style.transform !== 'scaleX(0)') {
-            throw new Error('Should update progress bar');
+        if (mockProgressBar.style.transform !== 'scaleX(0.5)') {
+            throw new Error(`Should update progress bar from state, got ${mockProgressBar.style.transform}`);
         }
     });
 
-    await test('checkMiniCycle triggers auto-reset when enabled and all complete', async () => {
-        const mockTaskList = document.createElement('ul');
-        const task = document.createElement('li');
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.checked = true; // All complete
-        task.appendChild(checkbox);
-        mockTaskList.appendChild(task);
-
+    await test('checkMiniCycle auto-resets when AppState says every task is complete (rendered checkboxes ignored)', async () => {
         let resetCalled = false;
-        const mockAppState = {
-            isReady: () => true
-        };
+        let modalShown = false;
 
         setCycleCompletionDependencies({
-            AppState: mockAppState,
-            getTaskList: () => mockTaskList,
+            AppState: appStateWithTasks([
+                { id: 't1', text: 'One', completed: true },
+                { id: 't2', text: 'Two', completed: true }
+            ], { autoReset: true }),
+            // The rendered boxes are UNticked — only state says the cycle is done
+            getTaskList: () => renderedListWithCheckboxes(2, false),
             getProgressBar: () => document.createElement('div'),
-            assignCycleVariables: () => ({
-                lastUsedMiniCycle: 'test-cycle',
-                savedMiniCycles: {
-                    'test-cycle': { title: 'Test', autoReset: true }
-                }
-            }),
+            showConfirmationModal: (config) => { modalShown = true; config.callback(false); },
             resetTasks: () => { resetCalled = true; },
             updateStatsPanel: () => {}
         });
@@ -899,34 +895,105 @@ export async function runCycleCompletionTests(resultsDiv, isPartOfSuite = false)
         await new Promise(resolve => setTimeout(resolve, 1100));
 
         if (!resetCalled) {
-            throw new Error('Should trigger reset when autoReset enabled and all tasks complete');
+            throw new Error('Should trigger reset when autoReset enabled and all tasks complete in state');
+        }
+        if (modalShown) {
+            throw new Error('Should not show the due-date warning when no task has a due date');
+        }
+    });
+
+    await test('checkMiniCycle does not reset when AppState has an incomplete task (even if its checkbox is ticked)', async () => {
+        let resetCalled = false;
+
+        setCycleCompletionDependencies({
+            AppState: appStateWithTasks([
+                { id: 't1', text: 'One', completed: true },
+                { id: 't2', text: 'Two', completed: false }
+            ], { autoReset: true }),
+            // Every rendered box is ticked, but state still has one task open
+            getTaskList: () => renderedListWithCheckboxes(2, true),
+            getProgressBar: () => document.createElement('div'),
+            showConfirmationModal: (config) => { config.callback(false); },
+            resetTasks: () => { resetCalled = true; },
+            updateStatsPanel: () => {}
+        });
+
+        checkMiniCycle();
+
+        // Longer than the auto-reset delay, so a wrongly scheduled reset would fire
+        await new Promise(resolve => setTimeout(resolve, 1100));
+
+        if (resetCalled) {
+            throw new Error('Should not reset while a task is incomplete in state');
+        }
+    });
+
+    await test('checkMiniCycle shows the due-date warning when a task in AppState has a dueDate', () => {
+        let modalShown = false;
+        let resetCalled = false;
+
+        setCycleCompletionDependencies({
+            AppState: appStateWithTasks([
+                { id: 't1', text: 'One', completed: true, dueDate: '2026-09-20' },
+                { id: 't2', text: 'Two', completed: true, dueDate: null }
+            ], { autoReset: true }),
+            getProgressBar: () => document.createElement('div'),
+            showConfirmationModal: (config) => { modalShown = true; config.callback(false); },
+            resetTasks: () => { resetCalled = true; },
+            updateStatsPanel: () => {}
+        });
+
+        checkMiniCycle();
+
+        if (!modalShown) {
+            throw new Error('A dueDate in state must trigger the reset warning');
+        }
+        if (resetCalled) {
+            throw new Error('Declining the warning must not reset');
+        }
+    });
+
+    await test('checkMiniCycle cancelling the due-date warning un-completes the last toggled task', () => {
+        const mockAppState = appStateWithTasks([
+            { id: 't1', text: 'One', completed: true, dueDate: '2026-09-20' },
+            { id: 't2', text: 'Two', completed: true }
+        ], { autoReset: true });
+
+        // The row the user just ticked
+        const toggledRow = document.createElement('li');
+        toggledRow.dataset.taskId = 't2';
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = true;
+        toggledRow.appendChild(checkbox);
+
+        setCycleCompletionDependencies({
+            AppState: mockAppState,
+            getProgressBar: () => document.createElement('div'),
+            showConfirmationModal: (config) => { config.callback(false); },
+            resetTasks: () => {},
+            updateStatsPanel: () => {}
+        });
+
+        checkMiniCycle({ lastToggledElement: toggledRow });
+
+        if (checkbox.checked) {
+            throw new Error('Cancelling should untick the last toggled checkbox');
+        }
+        const task = mockAppState.get().data.cycles['cycle-main'].tasks.find(t => t.id === 't2');
+        if (task.completed !== false) {
+            throw new Error('Cancelling should mark the last toggled task incomplete in state');
         }
     });
 
     await test('checkMiniCycle does not reset when autoReset disabled', () => {
-        const mockTaskList = document.createElement('ul');
-        const task = document.createElement('li');
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.checked = true;
-        task.appendChild(checkbox);
-        mockTaskList.appendChild(task);
-
         let resetCalled = false;
-        const mockAppState = {
-            isReady: () => true
-        };
 
         setCycleCompletionDependencies({
-            AppState: mockAppState,
-            getTaskList: () => mockTaskList,
+            AppState: appStateWithTasks([
+                { id: 't1', text: 'One', completed: true }
+            ], { autoReset: false }),
             getProgressBar: () => document.createElement('div'),
-            assignCycleVariables: () => ({
-                lastUsedMiniCycle: 'test-cycle',
-                savedMiniCycles: {
-                    'test-cycle': { title: 'Test', autoReset: false }
-                }
-            }),
             resetTasks: () => { resetCalled = true; },
             updateStatsPanel: () => {}
         });
@@ -939,28 +1006,13 @@ export async function runCycleCompletionTests(resultsDiv, isPartOfSuite = false)
     });
 
     await test('checkMiniCycle calls updateStatsPanel', () => {
-        const mockTaskList = document.createElement('ul');
-        const task = document.createElement('li');
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        task.appendChild(checkbox);
-        mockTaskList.appendChild(task);
-
         let statsPanelUpdated = false;
-        const mockAppState = {
-            isReady: () => true
-        };
 
         setCycleCompletionDependencies({
-            AppState: mockAppState,
-            getTaskList: () => mockTaskList,
+            AppState: appStateWithTasks([
+                { id: 't1', text: 'One', completed: false }
+            ], { autoReset: false }),
             getProgressBar: () => document.createElement('div'),
-            assignCycleVariables: () => ({
-                lastUsedMiniCycle: 'test-cycle',
-                savedMiniCycles: {
-                    'test-cycle': { title: 'Test', autoReset: false }
-                }
-            }),
             updateStatsPanel: () => { statsPanelUpdated = true; }
         });
 
