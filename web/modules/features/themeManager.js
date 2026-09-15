@@ -567,15 +567,20 @@ export class ThemeManager {
             }
             thisToggle.dataset.darkModeSetup = 'true';
 
-            
+            // The handler never depends on data, so it is attached unconditionally.
+            // This used to bail — guard already stamped — when no schema data existed
+            // yet, and on a FIRST RUN it ran before the initial data was created, so
+            // the toggle stayed dead for the whole session. It only appeared to work
+            // because reminders' boot-time read of the legacy loadMiniCycleData wrapper
+            // happened first and that wrapper CREATES the initial data as a side
+            // effect (measured Sep 2026, STATE_TRUTH_MIGRATION #25). Initial state:
+            // settings when available, else the class the pre-paint script in
+            // miniCycle.html already applied from those same settings.
             const schemaData = this.loadSchemaData();
-            if (!schemaData) {
-                console.warn('⚠️ Schema 2.5 data not available for dark mode setup');
-                return;
-            }
-            
-            const isDark = schemaData.settings?.darkMode || false;
-            
+            const isDark = schemaData
+                ? (schemaData.settings?.darkMode || false)
+                : !!_deps.getRootElement()?.classList.contains(DOM_CLASSES.DARK_MODE);
+
 
             // Set initial state
             thisToggle.checked = isDark;
@@ -617,9 +622,11 @@ export class ThemeManager {
             quickToggle.dataset.quickToggleSetup = 'true';
 
             
-            // Get current dark mode state
+            // Get current dark mode state (same fallback as setupDarkModeToggle)
             const schemaData = this.loadSchemaData();
-            const isDark = schemaData ? (schemaData.settings?.darkMode || false) : false;
+            const isDark = schemaData
+                ? (schemaData.settings?.darkMode || false)
+                : !!_deps.getRootElement()?.classList.contains(DOM_CLASSES.DARK_MODE);
             
             // Remove existing listeners to prevent duplicates
             const newQuickToggle = quickToggle.cloneNode(true);

@@ -20,6 +20,7 @@ import { createDIModule, optional } from '../core/diBase.js';
 import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, FREQUENCY_MS, LIMITS, DEFAULT_REMINDERS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { isClickOnNotification } from '../ui/modalUtils.js';
+import { getActiveRoutine, getActiveRoutineId } from '../utils/cycleMode.js';
 import {
     isNativeApp,
     requestNotificationPermission,
@@ -35,7 +36,6 @@ import {
 const di = createDIModule('Reminders', {
     AppState: optional(null),
     showNotification: optional(null),
-    loadMiniCycleData: optional(null),
     appInit: optional(null),
     refreshTaskListUI: optional(null),
     updateUndoRedoButtons: optional(null),
@@ -50,7 +50,7 @@ const di = createDIModule('Reminders', {
 });
 
 // Late-binding deps via Proxy
-/** @type {{AppState: Object|null, showNotification: Function|null, loadMiniCycleData: Function|null, appInit: Object|null, refreshTaskListUI: Function|null, updateUndoRedoButtons: Function|null, autoSave: Function|null, AppGlobalState: Object|null, AppMeta: Object|null, hideMainMenu: Function|null, trackAction: Function|null}} */
+/** @type {{AppState: Object|null, showNotification: Function|null, appInit: Object|null, refreshTaskListUI: Function|null, updateUndoRedoButtons: Function|null, autoSave: Function|null, AppGlobalState: Object|null, AppMeta: Object|null, hideMainMenu: Function|null, trackAction: Function|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];
@@ -59,7 +59,7 @@ const _deps = new Proxy({}, {
 
 /**
  * Set dependencies for MiniCycleReminders (call before creating instance)
- * @param {Object} dependencies - { AppState, showNotification, loadMiniCycleData, appInit, refreshTaskListUI, AppGlobalState, AppMeta }
+ * @param {Object} dependencies - { AppState, showNotification, appInit, refreshTaskListUI, AppGlobalState, AppMeta }
  * @returns {void}
  */
 export function setRemindersDependencies(dependencies) {
@@ -105,7 +105,6 @@ export class MiniCycleReminders {
         this._cachedDeps = {
             AppState: _deps.AppState,
             showNotification: _deps.showNotification || this.fallbackNotification,
-            loadMiniCycleData: _deps.loadMiniCycleData || this.fallbackLoadData,
             appInit: _deps.appInit,
             refreshTaskListUI: _deps.refreshTaskListUI,
             updateUndoRedoButtons: _deps.updateUndoRedoButtons || (() => {}),
@@ -191,9 +190,9 @@ export class MiniCycleReminders {
                 }
 
                 // Load settings to check if reminders are enabled
-                const schemaData = this.deps.loadMiniCycleData();
-                if (schemaData) {
-                    const reminderSettings = schemaData.reminders || {};
+                const state = this._state();
+                if (state) {
+                    const reminderSettings = state.customReminders || {};
 
                     // Update reminder buttons now that tasks are rendered
                     await this.updateReminderButtons();
@@ -268,13 +267,13 @@ export class MiniCycleReminders {
         const isEnabled = enableReminders.checked;
 
         // Get previous state from Schema 2.5
-        const schemaData = this.deps.loadMiniCycleData();
-        if (!schemaData) {
+        const state = this._state();
+        if (!state) {
             console.error('❌ Schema 2.5 data required for handleReminderToggle');
             throw new Error('Schema 2.5 data not found');
         }
 
-        const previousSettings = schemaData.reminders || {};
+        const previousSettings = state.customReminders || {};
         const wasEnabled = previousSettings.enabled === true;
 
         // Update the visibility of the frequency section
@@ -349,13 +348,13 @@ export class MiniCycleReminders {
         replaceStoredEventListener(enableReminders, "change", "__miniCycleRemindersToggleChangeHandler", () => this.handleReminderToggle());
 
         // Load reminder settings from Schema 2.5
-        const schemaData = this.deps.loadMiniCycleData();
-        if (!schemaData) {
+        const state = this._state();
+        if (!state) {
             console.warn('⚠️ No Schema 2.5 data yet - reminder toggle will initialize after cycle creation');
             return; // Gracefully exit - settings will be loaded when data exists
         }
 
-        const reminderSettings = schemaData.reminders || {
+        const reminderSettings = state.customReminders || {
             enabled: false,
             indefinite: true,
             dueDatesReminders: false,
@@ -409,7 +408,7 @@ export class MiniCycleReminders {
      * un-hydrated control can no longer overwrite its neighbours, which makes the
      * hydration fix a second line of defence rather than the only one.
      *
-     * DEFAULT_REMINDERS is the base the READER (loadMiniCycleData) substitutes when
+     * DEFAULT_REMINDERS is the base every reader of customReminders substitutes when
      * `customReminders` is absent, so a profile missing the key persists exactly the
      * settings it was already showing.
      *
@@ -448,14 +447,14 @@ export class MiniCycleReminders {
      */
     async autoSaveReminders() {
 
-        const schemaData = this.deps.loadMiniCycleData();
-        if (!schemaData) {
+        const state = this._state();
+        if (!state) {
             console.error('❌ Schema 2.5 data required for autoSaveReminders');
             throw new Error('Schema 2.5 data not found');
         }
 
         const enabled = this.deps.getElementById(DOM_IDS.ENABLE_REMINDERS)?.checked || false;
-        const previousSettings = schemaData.reminders || {};
+        const previousSettings = state.customReminders || {};
 
         const remindersToSave = {
             enabled,
@@ -515,13 +514,13 @@ export class MiniCycleReminders {
             await appInitModule.waitForCore();
         }
 
-        const schemaData = this.deps.loadMiniCycleData();
-        if (!schemaData) {
+        const state = this._state();
+        if (!state) {
             console.error('❌ Schema 2.5 data required for loadRemindersSettings');
             throw new Error('Schema 2.5 data not found');
         }
 
-        const reminders = schemaData.reminders || {
+        const reminders = state.customReminders || {
             enabled: false,
             indefinite: true,
             dueDatesReminders: false,
@@ -614,43 +613,31 @@ export class MiniCycleReminders {
             await appInitModule.waitForCore();
         }
 
-        const schemaData = this.deps.loadMiniCycleData();
-        if (!schemaData) {
+        const state = this._state();
+        if (!state) {
             console.error('❌ Schema 2.5 data required for saveTaskReminderState');
             throw new Error('Schema 2.5 data not found');
         }
 
-        // Schema 2.5 structure: data.cycles and appState.activeCycleId
-        const cycles = schemaData.data?.cycles || schemaData.cycles;
-        const activeCycle = schemaData.appState?.activeCycleId || schemaData.activeCycle;
-
-        if (!activeCycle || !cycles[activeCycle]) {
+        const activeCycle = getActiveRoutineId(state);
+        const routine = getActiveRoutine(state);
+        if (!activeCycle || !routine) {
             console.error('❌ No active cycle found for task reminder state');
             return;
         }
 
-        const task = cycles[activeCycle].tasks?.find(t => t.id === taskId);
-
-        if (!task) {
+        if (!routine.tasks?.some(t => t.id === taskId)) {
             console.warn(`⚠️ Task with ID "${taskId}" not found in active cycle`);
             return;
         }
 
-        // Update task reminder state
-        task.remindersEnabled = isEnabled;
-
-        // ✅ Use AppState only (no localStorage fallback)
+        // Written inside the producer (CLAUDE.md #13). This used to flip the flag on
+        // the live task first, then assign the whole routine back over itself.
         const AppStateTask = typeof this.deps.AppState === 'function' ? this.deps.AppState() : this.deps.AppState;
-        if (AppStateTask?.isReady?.()) {
-            await AppStateTask.update(state => {
-                if (state?.data?.cycles?.[activeCycle]) {
-                    state.data.cycles[activeCycle] = cycles[activeCycle];
-                }
-            }, true); // immediate save for task changes
-        } else {
-            console.error('❌ AppState not ready for updateTaskReminderState');
-            return;
-        }
+        await AppStateTask.update(draft => {
+            const task = draft?.data?.cycles?.[activeCycle]?.tasks?.find(t => t.id === taskId);
+            if (task) task.remindersEnabled = isEnabled;
+        }, true); // immediate save for task changes
 
     }
 
@@ -668,24 +655,20 @@ export class MiniCycleReminders {
         // Schema 2.5 only. Return, don't throw: this runs inside a timer
         // callback, where a throw becomes an unhandled rejection — matching
         // how scheduleNextReminder already handles the same condition.
-        const schemaData = this.deps.loadMiniCycleData();
-        if (!schemaData) {
+        const state = this._state();
+        if (!state) {
             console.error('❌ Schema 2.5 data required for sendReminderNotificationIfNeeded');
             return;
         }
 
-        const { reminders } = schemaData;
-        const remindersSettings = reminders || {};
+        const remindersSettings = state.customReminders || {};
 
         // Read task state from AppState, never the DOM (CLAUDE.md rule #14):
         // the DOM holds only the active routine's currently RENDERED tasks, so
         // render timing, mid-switch states, and filtered/collapsed views all
         // leaked into reminder decisions when this queried
         // querySelectorAll(TASK) + .reminder-active + .checked.
-        const AppStateRef = typeof this.deps.AppState === 'function' ? this.deps.AppState() : this.deps.AppState;
-        const state = AppStateRef?.get?.();
-        const activeCycle = state?.data?.cycles?.[state?.appState?.activeCycleId];
-        const incompleteTasks = (activeCycle?.tasks || [])
+        const incompleteTasks = (getActiveRoutine(state)?.tasks || [])
             .filter(t => t.remindersEnabled && !t.completed)
             .map(t => t.text);
 
@@ -750,7 +733,7 @@ export class MiniCycleReminders {
         const AppStateNotify = typeof this.deps.AppState === 'function' ? this.deps.AppState() : this.deps.AppState;
         if (AppStateNotify?.isReady?.()) {
             await AppStateNotify.update(state => {
-                // Fix: Write to customReminders (where loadMiniCycleData reads from)
+                // Fix: Write to customReminders (where every reader looks)
                 // Previously wrote to cycles[id].reminders which was never read back
                 if (state.customReminders) {
                     state.customReminders.timesReminded = timesReminded + 1;
@@ -784,14 +767,13 @@ export class MiniCycleReminders {
         }
 
         // Schema 2.5 only
-        const schemaData = this.deps.loadMiniCycleData();
-        if (!schemaData) {
+        const state = this._state();
+        if (!state) {
             console.warn('⚠️ No Schema 2.5 data yet - reminders will start after cycle creation');
             return; // Gracefully exit - reminders will start when data exists
         }
 
-        const { reminders } = schemaData;
-        const remindersSettings = reminders || {};
+        const remindersSettings = state.customReminders || {};
 
         if (!remindersSettings.enabled) {
             return;
@@ -827,14 +809,13 @@ export class MiniCycleReminders {
             await appInitModule.waitForCore();
         }
 
-        const schemaData = this.deps.loadMiniCycleData();
-        if (!schemaData) {
+        const state = this._state();
+        if (!state) {
             console.error('❌ Schema 2.5 data required for scheduleNextReminder');
             return;
         }
 
-        const { reminders } = schemaData;
-        const remindersSettings = reminders || {};
+        const remindersSettings = state.customReminders || {};
 
         if (!remindersSettings.enabled) {
             return;
@@ -899,8 +880,7 @@ export class MiniCycleReminders {
     async syncNativeReminderSeries() {
         if (!isNativeApp()) return;
 
-        const schemaData = this.deps.loadMiniCycleData();
-        const remindersSettings = schemaData?.reminders || {};
+        const remindersSettings = this._state()?.customReminders || {};
 
         // Off, or system notifications not opted in — make sure nothing is pending.
         if (!remindersSettings.enabled || !remindersSettings.browserNotifications) {
@@ -949,16 +929,14 @@ export class MiniCycleReminders {
                 await appInitModule.waitForCore();
             }
 
-            // ✅ Read fresh state from localStorage (source of truth)
-            const schemaData = this.deps.loadMiniCycleData();
-            if (!schemaData) {
+            // ✅ Read fresh state (source of truth)
+            const state = this._state();
+            if (!state) {
                 console.error('❌ Cannot toggle reminder - no data available');
                 return;
             }
 
-            const { cycles, activeCycle } = schemaData;
-            const currentCycle = cycles[activeCycle];
-            const task = currentCycle?.tasks?.find(t => t.id === assignedTaskId);
+            const task = getActiveRoutine(state)?.tasks?.find(t => t.id === assignedTaskId);
 
             if (!task) {
                 console.warn('⚠️ Task not found for reminder toggle:', assignedTaskId);
@@ -984,7 +962,7 @@ export class MiniCycleReminders {
             this.deps.updateUndoRedoButtons();
 
             if (isActive) {
-                const reminderSettings = schemaData.reminders || {};
+                const reminderSettings = state.customReminders || {};
                 const freq = reminderSettings.frequencyValue || 0;
                 const unit = reminderSettings.frequencyUnit || 'hours';
                 const settingsText = freq > 0
@@ -1028,15 +1006,14 @@ export class MiniCycleReminders {
         }
 
         // Schema 2.5 only
-        const schemaData = this.deps.loadMiniCycleData();
-        if (!schemaData) {
+        const state = this._state();
+        if (!state) {
             console.error('❌ Schema 2.5 data required for updateReminderButtons');
             return;
         }
 
-        const { cycles, activeCycle, reminders } = schemaData;
-        const currentCycle = cycles[activeCycle];
-        const reminderSettings = reminders || {};
+        const currentCycle = getActiveRoutine(state);
+        const reminderSettings = state.customReminders || {};
         const remindersGloballyEnabled = reminderSettings.enabled === true;
 
         this.deps.querySelectorAll(DOM_SELECTORS.TASK).forEach(taskItem => {
@@ -1099,13 +1076,13 @@ export class MiniCycleReminders {
             if (element) {
                 replaceStoredEventListener(element, "input", "__miniCycleRemindersInputHandler", () => {
 
-                    const schemaData = this.deps.loadMiniCycleData();
-                    if (!schemaData) {
+                    const state = this._state();
+                    if (!state) {
                         console.error('❌ Schema 2.5 data required for reminder input change');
                         return;
                     }
 
-                    const settings = schemaData.reminders || {};
+                    const settings = state.customReminders || {};
                     if (!settings.enabled) return;
 
                     const frequencyValue = parseInt(this.deps.getElementById(DOM_IDS.FREQUENCY_VALUE)?.value) || 0;
@@ -1319,9 +1296,17 @@ export class MiniCycleReminders {
     fallbackNotification(message, type) {
     }
 
-    fallbackLoadData() {
-        console.warn('⚠️ Data loading not available - reminders cannot function');
-        return null;
+    /**
+     * Live state, or null while AppState is not ready (first run before the
+     * routine choice). Replaces the legacy loadMiniCycleData wrapper
+     * (STATE_TRUTH_MIGRATION #25): reminder settings are `state.customReminders`,
+     * the routine is getActiveRoutine(state).
+     * @returns {Object|null}
+     * @private
+     */
+    _state() {
+        const AppState = typeof this.deps.AppState === 'function' ? this.deps.AppState() : this.deps.AppState;
+        return AppState?.isReady?.() ? AppState.get() : null;
     }
 
     fallbackAddEventListener(element, event, handler) {

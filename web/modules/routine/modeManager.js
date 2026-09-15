@@ -16,7 +16,7 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
-import { syncTaskDeleteWhenComplete } from '../utils/cycleMode.js';
+import { syncTaskDeleteWhenComplete, getActiveRoutine, getActiveRoutineId } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -25,7 +25,6 @@ import { syncTaskDeleteWhenComplete } from '../utils/cycleMode.js';
 const di = createDIModule('ModeManager', {
     appInit: optional(null),
     AppState: optional(null),
-    loadMiniCycleData: optional(null),
     createTaskButtonContainer: optional(null),
     setupDueDateButtonInteraction: optional(null),
     checkCompleteAllButton: optional(null),
@@ -489,21 +488,20 @@ export class ModeManager {
         // Wait for core
         await this.deps.appInit?.waitForCore();
 
-        // ✅ Schema 2.5 only
-        const loadMiniCycleData = this.deps.loadMiniCycleData;
-        if (!loadMiniCycleData) {
-            console.warn('⚠️ ModeManager: loadMiniCycleData not available');
+        // Read from state, not the legacy loadMiniCycleData wrapper (STATE_TRUTH_MIGRATION #25)
+        const AppState = this.deps.AppState;
+        if (!AppState) {
+            console.warn('⚠️ ModeManager: AppState not available');
             return;
         }
 
-        const schemaData = loadMiniCycleData();
-        if (!schemaData) {
+        const state = AppState.get?.();
+        if (!state) {
             console.error('❌ ModeManager: Schema 2.5 data required for updateCycleModeDescription');
             throw new Error('Schema 2.5 data not found');
         }
 
-        const { cycles, activeCycle } = schemaData;
-        const currentCycle = cycles[activeCycle];
+        const currentCycle = getActiveRoutine(state);
 
         let autoReset = false;
         let deleteChecked = false;
@@ -1260,14 +1258,14 @@ export class ModeManager {
         deleteCheckedTasks._deleteCheckedTasksModeHandler = async (event) => {
             // ✅ Schema 2.5 only
 
-            const schemaData = self.deps.loadMiniCycleData();
-            if (!schemaData) {
+            const state = self.deps.AppState?.get?.();
+            if (!state) {
                 console.error('❌ Schema 2.5 data required for deleteCheckedTasks toggle');
                 throw new Error('Schema 2.5 data not found');
             }
 
-            const { cycles, activeCycle } = schemaData;
-            const currentCycle = cycles[activeCycle];
+            const activeCycle = getActiveRoutineId(state);
+            const currentCycle = getActiveRoutine(state);
 
             if (!activeCycle || !currentCycle) {
                 console.warn('⚠️ No active cycle found for delete checked tasks toggle');

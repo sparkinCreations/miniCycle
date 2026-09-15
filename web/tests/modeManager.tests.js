@@ -96,11 +96,6 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
                 get: () => mockSchemaData,
                 update: (fn) => { fn(mockSchemaData); }
             },
-            loadMiniCycleData: () => ({
-                metadata: mockSchemaData.metadata,
-                cycles: mockSchemaData.data.cycles,
-                activeCycle: mockSchemaData.appState.activeCycleId
-            }),
             createTaskButtonContainer: () => {
                 const container = document.createElement('div');
                 container.className = 'task-options';
@@ -165,7 +160,6 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
     await test('accepts constructor dependency injection', async () => {
         const mockDeps = {
             AppState: { get: () => ({}) },
-            loadMiniCycleData: () => ({ metadata: { version: '2.5' } }),
             showNotification: () => {},
             getElementById: (id) => document.createElement('div'),
             querySelectorAll: (sel) => []
@@ -173,7 +167,7 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
 
         const manager = new ModeManager(mockDeps);
 
-        if (!manager.deps.AppState || !manager.deps.loadMiniCycleData) {
+        if (!manager.deps.AppState) {
             throw new Error('Dependency injection failed');
         }
     });
@@ -191,7 +185,6 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
         const manager = new ModeManager();
         const expectedDeps = [
             'AppState',
-            'loadMiniCycleData',
             'createTaskButtonContainer',
             'setupDueDateButtonInteraction',
             'checkCompleteAllButton',
@@ -552,9 +545,9 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
     // === UPDATE CYCLE MODE DESCRIPTION TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">📝 Update Cycle Mode Description (DI)</h4>';
 
-    await test('updateCycleModeDescription handles missing loadMiniCycleData (DI)', async () => {
+    await test('updateCycleModeDescription handles missing AppState (DI)', async () => {
         setModeManagerDependencies(createMockDeps({
-            loadMiniCycleData: null
+            AppState: null
         }));
         const manager = new ModeManager();
 
@@ -568,16 +561,16 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
         document.body.appendChild(descriptionBox);
 
         setModeManagerDependencies(createMockDeps({
-            loadMiniCycleData: () => ({
-                metadata: { version: '2.5' },
-                cycles: {
-                    'cycle-1': {
-                        autoReset: true,
-                        deleteCheckedTasks: false
-                    }
-                },
-                activeCycle: 'cycle-1'
-            }),
+            // Read from state now, not the legacy wrapper (STATE_TRUTH_MIGRATION #25)
+            AppState: {
+                isReady: () => true,
+                get: () => ({
+                    metadata: { version: '2.5' },
+                    data: { cycles: { 'cycle-1': { autoReset: true, deleteCheckedTasks: false } } },
+                    appState: { activeCycleId: 'cycle-1' }
+                }),
+                update: () => {}
+            },
             getElementById: (id) => {
                 if (id === 'mode-description') return descriptionBox;
                 return document.getElementById(id);
@@ -681,29 +674,22 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
-    await test('works without AppState (fallback mode) (DI)', async () => {
-        let fallbackLoadCalled = false;
+    await test('without AppState, updateCycleModeDescription leaves the description untouched (DI)', async () => {
+        // There is no longer a loadMiniCycleData fallback (STATE_TRUTH_MIGRATION #25):
+        // state is the only source, and with none the method must warn and return.
+        const descriptionBox = document.createElement('div');
+        descriptionBox.id = 'mode-description';
+        descriptionBox.textContent = 'untouched';
         setModeManagerDependencies(createMockDeps({
             AppState: null,
-            loadMiniCycleData: () => {
-                fallbackLoadCalled = true;
-                return {
-                    metadata: { version: '2.5' },
-                    settings: {},
-                    cycles: {}
-                };
-            },
-            getElementById: () => null
+            getElementById: (id) => (id === 'mode-description' ? descriptionBox : null)
         }));
         const manager = new ModeManager();
 
         await manager.updateCycleModeDescription();
 
-        // In fallback mode (no AppState) updateCycleModeDescription sources data from
-        // loadMiniCycleData — assert that fallback path was actually taken. The old test
-        // called it and asserted nothing.
-        if (!fallbackLoadCalled) {
-            throw new Error('fallback path should read data via loadMiniCycleData when AppState is absent');
+        if (descriptionBox.textContent !== 'untouched') {
+            throw new Error('the description was rewritten with no state to read from');
         }
     });
 

@@ -183,6 +183,40 @@ export async function runThemeManagerTests(resultsDiv) {
 
     resultsDiv.innerHTML += '<h4 class="test-section">🌙 Dark Mode</h4>';
 
+    // On a first run the toggle was set up before any data existed, stamped its
+    // idempotency flag, and bailed — a dead toggle for the whole session. It only
+    // looked fine because another module's boot-time read of the legacy
+    // loadMiniCycleData wrapper CREATED the initial data first (measured Sep 2026).
+    await test('setupDarkModeToggle attaches its handler even when no schema data exists yet', () => {
+        const toggle = document.createElement('input');
+        toggle.type = 'checkbox';
+        toggle.id = 'darkModeToggle';
+        document.body.appendChild(toggle);
+        const savedData = localStorage.getItem('miniCycleData');
+        const rootWasDark = document.documentElement.classList.contains('dark-mode');
+        try {
+            localStorage.removeItem('miniCycleData');
+            document.documentElement.classList.add('dark-mode');     // what the pre-paint script leaves
+            setThemeManagerDependencies({
+                AppState: { isReady: () => false, get: () => null },
+                safeAddEventListener: (el, ev, fn) => el.addEventListener(ev, fn)
+            });
+            const tm = new ThemeManager();
+            tm.setupDarkModeToggle('darkModeToggle', ['darkModeToggle']);
+            if (typeof toggle._darkModeChangeHandler !== 'function') {
+                throw new Error('no change handler attached — the toggle is dead until reload');
+            }
+            if (toggle.checked !== true) {
+                throw new Error('initial state should mirror the dark-mode class already on <html>');
+            }
+        } finally {
+            toggle.remove();
+            document.documentElement.classList.toggle('dark-mode', rootWasDark);
+            if (savedData !== null) localStorage.setItem('miniCycleData', savedData);
+            setThemeManagerDependencies({ AppState: env.AppState, safeAddEventListener: null });
+        }
+    });
+
     await test('toggles dark mode on', () => {
         const tm = new ThemeManager();
         tm.toggleDarkMode(true);

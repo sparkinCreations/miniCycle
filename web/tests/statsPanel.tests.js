@@ -157,7 +157,6 @@ export async function runStatsPanelTests(resultsDiv) {
     await test('accepts dependency injection', () => {
         const mockDeps = {
             showNotification: (msg) => msg,
-            loadMiniCycleData: () => JSON.parse(localStorage.getItem('miniCycleData')),
             updateThemeColor: () => {}
         };
 
@@ -508,13 +507,6 @@ export async function runStatsPanelTests(resultsDiv) {
         statsPanel.dependencies.showNotification('Test message', 'info');
     });
 
-    await test('uses fallback data loader when dependency missing', () => {
-        const statsPanel = new StatsPanelManager({});
-
-        // Should not throw error
-        const data = statsPanel.dependencies.loadMiniCycleData();
-    });
-
     await test('uses fallback overlay check when dependency missing', () => {
         const statsPanel = new StatsPanelManager({});
 
@@ -591,9 +583,7 @@ export async function runStatsPanelTests(resultsDiv) {
     await test('handles updateStatsPanel without AppState', async () => {
         delete window.AppState;
 
-        const statsPanel = new StatsPanelManager({
-            loadMiniCycleData: () => JSON.parse(localStorage.getItem('miniCycleData'))
-        });
+        const statsPanel = new StatsPanelManager({});
 
         // ⏳ Wait for async init() to complete (constructor calls this.init() without awaiting)
         await new Promise(resolve => setTimeout(resolve, 200));
@@ -606,7 +596,7 @@ export async function runStatsPanelTests(resultsDiv) {
         localStorage.removeItem('miniCycleData');
 
         const statsPanel = new StatsPanelManager({
-            loadMiniCycleData: () => null
+            AppState: { isReady: () => false, get: () => null }
         });
 
         // ⏳ Wait for async init() to complete (constructor calls this.init() without awaiting)

@@ -385,7 +385,8 @@ function registerGroupedApisFromLoader(deps, appContextMod, coreResult) {
     AppState: deps.core?.AppState,
     AppGlobalState: deps.core?.AppGlobalState,
     AppMeta: deps.core?.AppMeta,
-    loadMiniCycleData: deps.core?.loadMiniCycleData,
+    // loadMiniCycleData was dropped from this API (STATE_TRUTH_MIGRATION #25): no
+    // reader used it, and new code reads AppState directly.
     autoSave: deps.core?.autoSave
   };
   appContextMod.setContextValue('stateApi', stateApiObj);

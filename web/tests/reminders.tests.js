@@ -174,11 +174,16 @@ export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
         // tests passed while asserting nothing. Construct the instance AFTER wiring so its
         // deps cache resolves the freshly-set module deps.
         const { setRemindersDependencies } = module;
-        function wireReminders({ AppGlobalState = {}, loadMiniCycleData = () => null, AppState = null, appInit = null } = {}) {
+        // `state` is the Schema 2.5 state object the module reads through AppState
+        // (reminder settings under customReminders); null means "not ready yet", the
+        // case the retired loadMiniCycleData wrapper covered by returning null.
+        function wireReminders({ AppGlobalState = {}, state = null, AppState = null, appInit = null } = {}) {
             const notifications = [];
+            if (!AppState) {
+                AppState = { isReady: () => state !== null, get: () => state, update: async (fn) => fn(state) };
+            }
             setRemindersDependencies({
                 AppGlobalState,
-                loadMiniCycleData,
                 AppState,
                 appInit,
                 showNotification: (msg, type) => { notifications.push({ msg, type }); },
@@ -199,11 +204,11 @@ export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
 
         await test('accepts dependency injection', async () => {
             const mockShowNotification = (msg) => console.log(msg);
-            const mockLoadData = () => ({ reminders: { enabled: false }});
+            const mockAppState = { isReady: () => true, get: () => ({ customReminders: { enabled: false } }) };
 
             const instance = new MiniCycleReminders({
                 showNotification: mockShowNotification,
-                loadMiniCycleData: mockLoadData
+                AppState: mockAppState
             });
 
             if (!instance || !instance.deps.showNotification) {
@@ -246,7 +251,7 @@ export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
             // timer callback, where the old `throw new Error('Schema 2.5 data not
             // found')` became an unhandled rejection. Must mirror
             // scheduleNextReminder: log + return.
-            const { instance } = wireReminders({ loadMiniCycleData: () => null });
+            const { instance } = wireReminders({ state: null });
             await instance.sendReminderNotificationIfNeeded(); // throws = test fails
         });
 
@@ -257,19 +262,20 @@ export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
             // rendered (mid-switch, filtered view, focus mode) read as "nothing
             // to remind", and the empty branch called stopReminders(), killing
             // the timer AND the native series. State is the source of truth.
-            const mockAppState = {
-                get: () => ({
-                    appState: { activeCycleId: 'c1' },
-                    data: { cycles: { c1: { tasks: [
-                        { id: 't1', text: 'unrendered but real', remindersEnabled: true, completed: false },
-                        { id: 't2', text: 'done one', remindersEnabled: true, completed: true }
-                    ] } } }
-                })
+            // Settings and tasks come from ONE state object now (the wrapper that used
+            // to hand over `reminders` separately is gone — STATE_TRUTH_MIGRATION #25).
+            const sendState = {
+                customReminders: { enabled: true, indefinite: true, frequencyValue: 30, frequencyUnit: 'minutes', browserNotifications: false },
+                appState: { activeCycleId: 'c1' },
+                data: { cycles: { c1: { tasks: [
+                    { id: 't1', text: 'unrendered but real', remindersEnabled: true, completed: false },
+                    { id: 't2', text: 'done one', remindersEnabled: true, completed: true }
+                ] } } }
             };
-            const { instance, notifications } = wireReminders({
-                AppState: mockAppState,
-                loadMiniCycleData: () => ({ reminders: { enabled: true, indefinite: true, frequencyValue: 30, frequencyUnit: 'minutes', browserNotifications: false } })
-            });
+            // A complete AppState: the old mock had no isReady(), so the send path's
+            // timesReminded write was silently skipped rather than exercised.
+            const mockAppState = { isReady: () => true, get: () => sendState, update: async (fn) => fn(sendState) };
+            const { instance, notifications } = wireReminders({ AppState: mockAppState });
             // No task DOM exists in the harness — the old DOM-derived code sees
             // zero tasks here and stops the reminder system.
             let stopped = false;
@@ -296,7 +302,7 @@ export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
 
         await test('startReminders schedules a timeout when enabled with a future next time', async () => {
             const { instance, AppGlobalState } = wireReminders({
-                loadMiniCycleData: () => ({ reminders: { enabled: true, indefinite: true, frequencyValue: 30, frequencyUnit: 'minutes', nextReminderTime: Date.now() + 3600000 } })
+                state: { customReminders: { enabled: true, indefinite: true, frequencyValue: 30, frequencyUnit: 'minutes', nextReminderTime: Date.now() + 3600000 } }
             });
             try {
                 await instance.startReminders();
@@ -307,28 +313,28 @@ export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
         });
 
         await test('startReminders does nothing when reminders are disabled', async () => {
-            const { instance, AppGlobalState } = wireReminders({ loadMiniCycleData: () => ({ reminders: { enabled: false } }) });
+            const { instance, AppGlobalState } = wireReminders({ state: { customReminders: { enabled: false } } });
             await instance.startReminders();
             if (AppGlobalState.reminderTimeoutId) { clearTimeout(AppGlobalState.reminderTimeoutId); throw new Error('disabled reminders must not schedule a timeout'); }
         });
 
         await test('startReminders stops once the repeat count is reached (non-indefinite)', async () => {
             const { instance, AppGlobalState } = wireReminders({
-                loadMiniCycleData: () => ({ reminders: { enabled: true, indefinite: false, repeatCount: 3, timesReminded: 3, nextReminderTime: Date.now() + 3600000 } })
+                state: { customReminders: { enabled: true, indefinite: false, repeatCount: 3, timesReminded: 3, nextReminderTime: Date.now() + 3600000 } }
             });
             await instance.startReminders();
             if (AppGlobalState.reminderTimeoutId) { clearTimeout(AppGlobalState.reminderTimeoutId); throw new Error('should not schedule once repeatCount is reached'); }
         });
 
         await test('startReminders exits gracefully with no schema data', async () => {
-            const { instance, AppGlobalState } = wireReminders({ loadMiniCycleData: () => null });
+            const { instance, AppGlobalState } = wireReminders({ state: null });
             await instance.startReminders();   // must not throw
             if (AppGlobalState.reminderTimeoutId) throw new Error('no schema data → no timer scheduled');
         });
 
         await test('scheduleNextReminder recomputes the interval from frequency when overdue', async () => {
             const { instance, AppGlobalState } = wireReminders({
-                loadMiniCycleData: () => ({ reminders: { enabled: true, frequencyValue: 2, frequencyUnit: 'hours', nextReminderTime: Date.now() - 1000 } })
+                state: { customReminders: { enabled: true, frequencyValue: 2, frequencyUnit: 'hours', nextReminderTime: Date.now() - 1000 } }
             });
             const origSetTimeout = window.setTimeout;
             let capturedDelay = null;
@@ -351,7 +357,7 @@ export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
             // notification loop, unbounded when `indefinite` is set.
             const MAX_TIMEOUT_MS = 2147483647;
             const { instance } = wireReminders({
-                loadMiniCycleData: () => ({ reminders: { enabled: true, indefinite: true, frequencyValue: 30, frequencyUnit: 'days', nextReminderTime: Date.now() - 1000 } })
+                state: { customReminders: { enabled: true, indefinite: true, frequencyValue: 30, frequencyUnit: 'days', nextReminderTime: Date.now() - 1000 } }
             });
             const origSetTimeout = window.setTimeout;
             let capturedDelay = null;
@@ -380,7 +386,7 @@ export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
         await test('scheduleNextReminder leaves sub-ceiling intervals exact', async () => {
             // 7 days = 604,800,000 ms — comfortably under the ceiling, must pass through.
             const { instance } = wireReminders({
-                loadMiniCycleData: () => ({ reminders: { enabled: true, frequencyValue: 7, frequencyUnit: 'days', nextReminderTime: Date.now() - 1000 } })
+                state: { customReminders: { enabled: true, frequencyValue: 7, frequencyUnit: 'days', nextReminderTime: Date.now() - 1000 } }
             });
             const origSetTimeout = window.setTimeout;
             let capturedDelay = null;
@@ -405,13 +411,13 @@ export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
             testContainer.appendChild(freqSection);
             try {
                 // Enabled → checkbox checked, frequency section visible (no 'hidden' class).
-                let { instance } = wireReminders({ loadMiniCycleData: () => ({ reminders: { enabled: true } }) });
+                let { instance } = wireReminders({ state: { customReminders: { enabled: true } } });
                 instance.setupReminderToggle();
                 if (checkbox.checked !== true) throw new Error('checkbox should reflect saved enabled=true');
                 if (freqSection.classList.contains('hidden')) throw new Error('frequency section should be visible when enabled');
 
                 // Disabled → checkbox unchecked, frequency section hidden.
-                ({ instance } = wireReminders({ loadMiniCycleData: () => ({ reminders: { enabled: false } }) }));
+                ({ instance } = wireReminders({ state: { customReminders: { enabled: false } } }));
                 instance.setupReminderToggle();
                 if (checkbox.checked !== false) throw new Error('checkbox should reflect saved enabled=false');
                 if (!freqSection.classList.contains('hidden')) throw new Error('frequency section should be hidden when disabled');
@@ -424,7 +430,7 @@ export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
             const cycle = { tasks: [{ id: 'task-1', remindersEnabled: false }] };
             const state = { data: { cycles: { c1: cycle } }, appState: { activeCycleId: 'c1' } };
             const AppState = { isReady: () => true, get: () => state, update: async (fn) => fn(state) };
-            const { instance } = wireReminders({ loadMiniCycleData: () => state, AppState });
+            const { instance } = wireReminders({ AppState });
 
             await instance.saveTaskReminderState('task-1', true);
             if (state.data.cycles.c1.tasks[0].remindersEnabled !== true) throw new Error('the task remindersEnabled flag should be set true');
@@ -518,7 +524,7 @@ export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
             try {
                 const state = { customReminders: { ...CONFIGURED } };
                 const AppState = { isReady: () => true, get: () => state, update: async (fn) => fn(state) };
-                const { instance } = wireReminders({ AppState, loadMiniCycleData: () => ({ reminders: state.customReminders }) });
+                const { instance } = wireReminders({ AppState });
                 instance.setupReminderInputListeners();
 
                 form.privacy.open = true;
@@ -540,7 +546,7 @@ export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
             try {
                 const state = { customReminders: { ...CONFIGURED } };
                 const AppState = { isReady: () => true, get: () => state, update: async (fn) => fn(state) };
-                const { instance } = wireReminders({ AppState, loadMiniCycleData: () => ({ reminders: state.customReminders }) });
+                const { instance } = wireReminders({ AppState });
                 instance.setupReminderInputListeners();
 
                 form.dueDates.checked = false;
@@ -565,17 +571,14 @@ export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
             // exists to prevent.
             const form = buildUnhydratedReminderForm();
             try {
-                const state = { customReminders: { ...CONFIGURED } };
+                // Full shape: loadRemindersSettings() ends in updateReminderButtons(),
+                // which reads the active routine.
+                const state = { customReminders: { ...CONFIGURED }, data: { cycles: { c1: { tasks: [] } } }, appState: { activeCycleId: 'c1' } };
                 const AppState = { isReady: () => true, get: () => state, update: async (fn) => fn(state) };
                 let explode = false;
                 const realGet = (id) => document.getElementById(id);
                 const { instance } = wireReminders({
                     AppState,
-                    loadMiniCycleData: () => ({
-                        reminders: state.customReminders,
-                        cycles: { c1: { tasks: [] } },
-                        activeCycle: 'c1'
-                    }),
                     appInit: { waitForCore: async () => {} }
                 });
                 // Swap in a lookup that blows up partway through hydration.
@@ -613,17 +616,12 @@ export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
             // state away, rebuild from what was stored, and reopen the panel.
             const form = buildUnhydratedReminderForm();
             try {
-                let state = { customReminders: { ...CONFIGURED } };
+                // Full shape, not just customReminders: loadRemindersSettings() ends in
+                // updateReminderButtons(), which reads the active routine.
+                let state = { customReminders: { ...CONFIGURED }, data: { cycles: { c1: { tasks: [] } } }, appState: { activeCycleId: 'c1' } };
                 const AppState = { isReady: () => true, get: () => state, update: async (fn) => fn(state) };
-                // Full shape, not just `reminders`: loadRemindersSettings() ends in
-                // updateReminderButtons(), which reads cycles[activeCycle] unguarded.
                 const { instance } = wireReminders({
                     AppState,
-                    loadMiniCycleData: () => ({
-                        reminders: state.customReminders,
-                        cycles: { c1: { tasks: [] } },
-                        activeCycle: 'c1'
-                    }),
                     appInit: { waitForCore: async () => {} }
                 });
                 instance.setupReminderInputListeners();

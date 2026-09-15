@@ -46,7 +46,6 @@ let MILESTONES = null;
 
 const di = createDIModule('StatsPanel', {
     showNotification: optional(null),
-    loadMiniCycleData: optional(null),
     isOverlayActive: optional(null),
     isDraggingNotification: optional(null),
     updateThemeColor: optional(null),
@@ -73,7 +72,7 @@ const di = createDIModule('StatsPanel', {
 });
 
 // Late-binding deps via Proxy
-/** @type {{showNotification: Function|null, loadMiniCycleData: Function|null, isOverlayActive: Function|null, isDraggingNotification: Function|null, updateThemeColor: Function|null, hideMainMenu: Function|null, setupDarkModeToggle: Function|null, AppState: Object|null, appInit: Object|null, safeAddEventListener: Function|null}} */
+/** @type {{showNotification: Function|null, isOverlayActive: Function|null, isDraggingNotification: Function|null, updateThemeColor: Function|null, hideMainMenu: Function|null, setupDarkModeToggle: Function|null, AppState: Object|null, appInit: Object|null, safeAddEventListener: Function|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];
@@ -82,7 +81,7 @@ const _deps = new Proxy({}, {
 
 /**
  * Set dependencies for StatsPanelManager (call before creating instance)
- * @param {Object} dependencies - { showNotification, loadMiniCycleData, AppState, appInit, etc. }
+ * @param {Object} dependencies - { showNotification, AppState, appInit, etc. }
  * @returns {void}
  */
 /**
@@ -164,7 +163,6 @@ export class StatsPanelManager {
         this._constructorDeps = {
             // Fallback functions bound to this instance
             fallbackNotification: this.fallbackNotification.bind(this),
-            fallbackLoadData: this.fallbackLoadData.bind(this),
             fallbackOverlayCheck: this.fallbackOverlayCheck.bind(this)
         };
 
@@ -217,7 +215,6 @@ export class StatsPanelManager {
     _resolveAndCacheDeps() {
         this._cachedDeps = {
             showNotification: _deps.showNotification || this._constructorDeps.fallbackNotification,
-            loadMiniCycleData: _deps.loadMiniCycleData || this._constructorDeps.fallbackLoadData,
             isOverlayActive: _deps.isOverlayActive || this._constructorDeps.fallbackOverlayCheck,
             isDraggingNotification: _deps.isDraggingNotification || (() => false),
             updateThemeColor: _deps.updateThemeColor || (() => {}),
@@ -1255,11 +1252,6 @@ export class StatsPanelManager {
     // ==========================================
 
     fallbackNotification(message, type, duration) {
-    }
-
-    fallbackLoadData() {
-        console.warn('⚠️ loadMiniCycleData not available - using fallback');
-        return null;
     }
 
     fallbackOverlayCheck() {

@@ -1,6 +1,6 @@
 # State-as-Truth Migration — Gen 1 leftovers on the cycle loop
 
-**Status:** Open plan — #26 measured Sep 2026: closed by the normalizer; #14 measured Sep 2026: covered, not changed; #11 FIXED Sep 2026 (repair runs inside update()); undo no longer offered with nothing to undo; #16 measured Sep 2026: no live gap, not changed (see it); #15 hot path DONE Sep 2026 (add/complete/reset/render/cycle-complete/backup) (AppState required + unguarded; `validate:chains` now sees local aliases); #13 FIXED Sep 2026 (first real input switches undo on); #8, #9 and #11 measured and found milder than written (see each); #4 and #10 FIXED (v2.541 / v2.540), #24 shipped, #30 verified closed; #1 probed and NOT reproduced, then #1 (auto-reset + due-date paths) and #2 moved to state in v2.562; #1's Complete-button half REPRODUCED and fixed with #3 and #5 (Sep 2026, unreleased at time of writing) — **P0 band closed**  
+**Status:** Open plan — #25 first batch DONE Sep 2026 (reminders, modeManager, statsPanel, stateApi); wrapper create-side-effect measured; #26 measured Sep 2026: closed by the normalizer; #14 measured Sep 2026: covered, not changed; #11 FIXED Sep 2026 (repair runs inside update()); undo no longer offered with nothing to undo; #16 measured Sep 2026: no live gap, not changed (see it); #15 hot path DONE Sep 2026 (add/complete/reset/render/cycle-complete/backup) (AppState required + unguarded; `validate:chains` now sees local aliases); #13 FIXED Sep 2026 (first real input switches undo on); #8, #9 and #11 measured and found milder than written (see each); #4 and #10 FIXED (v2.541 / v2.540), #24 shipped, #30 verified closed; #1 probed and NOT reproduced, then #1 (auto-reset + due-date paths) and #2 moved to state in v2.562; #1's Complete-button half REPRODUCED and fixed with #3 and #5 (Sep 2026, unreleased at time of writing) — **P0 band closed**  
 **Raised:** 2026-08-23 · **Against:** v2.483 · **Amended:** 2026-09-05 against v2.541  
 **Source:** Independent code review of boot, AppState, DI, completion/reset, both task renderers, undo wrapper, drag-drop, reminders, daily reset, history, `.mcyc` payload, import, `featureBoot` API allow-lists, and `moduleLoader` `ENFORCE_REQUIRES`  
 **Premise:** The repaired modules are Gen 3 (state is truth). The **name of the app** — “all tasks done → reset” — is still Gen 1 (DOM `.checked`). That split is the work.
@@ -578,11 +578,36 @@ no live task*, *import never attaches a template to a non-recurring task*), muta
 watcher would resurrect it — but the notification says only "Task deleted: {name}" and never
 mentions that a recurrence was cancelled, which is the more consequential half.
 
-### #25 `loadMiniCycleData` still in the living graph
+### #25 `loadMiniCycleData` still in the living graph — first batch DONE Sep 2026; scope was understated
 
 **Where:** `statsPanel`, `modeManager`, `reminders` (settings vs tasks already split), `featureBoot` `stateApiObj`.
 
 **Fix:** AppState only. Then delete the dep.
+
+*✅ The four named here are done: `reminders` (14 sites, through one `_state()` reader —
+`state.customReminders` and `getActiveRoutine(state)`; `saveTaskReminderState` now writes inside
+the producer instead of mutating the live task and assigning the routine back), `modeManager`
+(2 sites), `statsPanel` (the dep was wired and never called) and the `stateApi` key (no reader).
+Suites and journeys green.*
+
+*The row understated the scope: the wrapper still has **~60 call sites across 20 modules**
+(`settingsUIManager` 8, `dueDates` 6, `deviceDetection` 4, `settingsManager` 4, `menuManager` 4,
+`titleManager`, `taskDOM`, `recurringIntegration`, `appInit` 3 each, …). Each conversion means
+rewriting that module's test fixtures from the wrapper shape (`{ cycles, activeCycle, reminders }`)
+to state shape. Do it module by module, tests first.*
+
+*Measured while doing this batch, and the reason the wrapper is dangerous beyond shape:
+`loadMiniCycleData()` **creates the initial data** when AppState is not ready and storage is
+empty. On a first run, whichever module calls it first during boot silently seeds storage for
+everyone after it. Retiring the reminders call moved that moment later, and
+`themeManager.setupDarkModeToggle` — which stamped its idempotency flag BEFORE checking for data —
+ran before the seed, bailed, and left the dark toggle dead for the session (journey + a11y both
+caught it). Fixed in `themeManager`: both dark toggles attach their handler without data and take
+their initial state from the class the pre-paint script already applied. Pinned in
+`themeManager.tests.js` (fails on the previous module). Expect the same class of surprise from
+every further wrapper retirement: **grep the module's boot-time callers for "runs before data
+exists" assumptions**, and consider removing the wrapper's create side effect outright once
+`appInit`'s own initial-data path is confirmed to cover every first-run route.*
 
 ---
 
