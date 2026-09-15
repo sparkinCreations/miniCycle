@@ -33,7 +33,6 @@ import {
     applyThemeSettings,
     setupRemindersForCycle,
     updateDependentComponents,
-    saveCycleData,
     setRoutineLoaderDependencies
 } from '../modules/routine/routineLoader.js';
 
@@ -473,19 +472,64 @@ export async function runRoutineLoaderTests(resultsDiv, isPartOfSuite = false) {
     // === DATA PERSISTENCE TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">💾 Data Persistence</h4>';
 
-    // ⚠️ ENVIRONMENT-SPECIFIC: Error recovery behavior varies by browser
-    await test('handles corrupted localStorage in save', async () => {
-        // This test intentionally sets invalid JSON to test error handling
-        localStorage.setItem('miniCycleData', 'invalid json');
-
-        // Should not throw error (saveCycleData handles it gracefully)
+    // The load-time repair used to mutate the LIVE routine (loadMiniCycleData returns
+    // the AppState tree) before any update() ran, then assign the same object back
+    // (CLAUDE.md #13, STATE_TRUTH_MIGRATION #11). It must now reach state only through
+    // update(): when update() starts, state still holds the unrepaired routine.
+    const liveStateFixture = (task) => {
+        const data = {
+            data: { cycles: { r1: { id: 'r1', title: 'Routine', cycleCount: 0, autoReset: true,
+                deleteCheckedTasks: false, recurringTemplates: {}, tasks: [task] } } },
+            appState: { activeCycleId: 'r1' },
+            settings: {}
+        };
+        const calls = [];
+        const AppState = {
+            isReady: () => true,
+            get: () => data,
+            update: (fn) => {
+                calls.push(structuredClone(data));   // what state looked like when update() began
+                fn(data);
+                return Promise.resolve();
+            }
+        };
+        return { data, calls, AppState };
+    };
+    const loadWith = async (AppState) => {
+        setRoutineLoaderDependencies({
+            AppState,
+            loadMiniCycleData: () => ({ cycles: AppState.get().data.cycles, activeCycle: 'r1', settings: {} }),
+            addTask: () => {}
+        });
         try {
-            await saveCycleData('cycle1', { title: 'Test' });
-        } catch (e) {
-            // Expected to handle gracefully - no error should propagate
+            await loadMiniCycle();
+        } catch {
+            // Rendering needs DOM this fixture does not build; the repair runs first,
+            // and it is the only thing asserted here.
         }
+    };
 
-        // Test passed - no exception thrown means it handled gracefully
+    await test('load-time repair changes state only inside update(), never before it', async () => {
+        const { data, calls, AppState } = liveStateFixture({ id: 't1', text: 'Needs repair', completed: 'yes' });
+        await loadWith(AppState);
+        if (calls.length !== 1) throw new Error(`expected exactly one update() for the repair, got ${calls.length}`);
+        const seen = calls[0].data.cycles.r1.tasks[0].completed;
+        if (seen !== 'yes') {
+            throw new Error(`update() began with completed=${JSON.stringify(seen)} — live state was repaired BEFORE update() ran`);
+        }
+        if (data.data.cycles.r1.tasks[0].completed !== true) {
+            throw new Error('the repair did not land in state');
+        }
+    });
+
+    await test('load-time repair does not write when the routine is already valid', async () => {
+        const { calls, AppState } = liveStateFixture({
+            id: 't1', text: 'Fine', completed: false, highPriority: false, remindersEnabled: false,
+            recurring: false, dueDate: null, schemaVersion: 2,
+            deleteWhenComplete: false, deleteWhenCompleteSettings: { cycle: false, todo: true }
+        });
+        await loadWith(AppState);
+        if (calls.length !== 0) throw new Error(`a valid routine caused ${calls.length} update() call(s)`);
     });
 
     // === RESULTS SUMMARY ===

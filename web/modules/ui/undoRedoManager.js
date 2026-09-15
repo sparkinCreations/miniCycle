@@ -753,6 +753,52 @@ function handleUndoRedoUIUpdate(diff, newState) {
 }
 
 /**
+ * The undo-relevant slice of a state, in snapshot shape (what captureStateSnapshot
+ * stores and buildSnapshotSignature compares).
+ * @param {Object} state - AppState data
+ * @param {{clone?: boolean}} [options] - clone: deep-copy for pushing onto a stack;
+ *   false for read-only comparison
+ * @returns {Object|null} null when the state has no active routine
+ */
+function snapshotOfState(state, { clone = true } = {}) {
+  const activeCycleId = state?.appState?.activeCycleId;
+  if (!activeCycleId) return null;
+  const cycle = state.data?.cycles?.[activeCycleId];
+  const copy = clone ? (value) => structuredClone(value) : (value) => value;
+  return {
+    activeCycleId,
+    tasks: copy(cycle?.tasks || []),
+    recurringTemplates: copy(cycle?.recurringTemplates || {}),
+    title: cycle?.title,
+    autoReset: cycle?.autoReset,
+    deleteCheckedTasks: cycle?.deleteCheckedTasks,
+    cycleCount: cycle?.cycleCount || 0,
+    theme: cycle?.theme || 'classic',
+    clearedTasks: cycle?.clearedTasks ? copy(cycle.clearedTasks) : null,
+    taskViewLayout: state.settings?.taskViewLayout ? copy(state.settings.taskViewLayout) : null,
+    timestamp: Date.now()
+  };
+}
+
+/**
+ * How many entries on an undo/redo stack would actually change what is on screen.
+ *
+ * A stack can be non-empty yet hold only entries identical to the current state.
+ * Counting length alone kept the Undo button enabled after everything was undone,
+ * and the next press silently discarded the last entry with no visible change
+ * (measured Sep 2026). Falls back to the raw length when state is not readable.
+ * @param {Array} stack - activeUndoStack or activeRedoStack
+ * @returns {number}
+ */
+function countStepsThatChangeState(stack) {
+  const state = _deps.AppState?.isReady?.() ? _deps.AppState.get() : null;
+  const current = snapshotOfState(state, { clone: false });
+  if (!current) return stack.length;
+  const sig = buildSnapshotSignature(current);
+  return stack.filter(entry => (entry._sig || buildSnapshotSignature(entry)) !== sig).length;
+}
+
+/**
  * Perform undo operation
  */
 export async function performStateBasedUndo() {
@@ -770,6 +816,14 @@ export async function performStateBasedUndo() {
     return;
   }
 
+  // Only entries identical to what is on screen: leave the stack alone. Popping them
+  // here used to discard the last undo entry with no visible change.
+  if (countStepsThatChangeState(_deps.AppGlobalState.activeUndoStack) === 0) {
+    console.warn('⚠️ Nothing to undo');
+    updateUndoRedoButtons();
+    return;
+  }
+
   _deps.AppGlobalState.isPerformingUndoRedo = true;
 
   // ✅ Create rollback points
@@ -780,23 +834,7 @@ export async function performStateBasedUndo() {
   try {
     const currentState = _deps.AppState.get();
     const currentActive = currentState.appState.activeCycleId;
-    const currentCycle = currentState.data.cycles[currentActive];
-
-    const currentSnapshot = {
-      activeCycleId: currentActive,
-      tasks: structuredClone(currentCycle?.tasks || []),
-      recurringTemplates: structuredClone(currentCycle?.recurringTemplates || {}),
-      title: currentCycle?.title,
-      autoReset: currentCycle?.autoReset,
-      deleteCheckedTasks: currentCycle?.deleteCheckedTasks,
-      cycleCount: currentCycle?.cycleCount || 0,  // ✅ Include cycle count
-      theme: currentCycle?.theme || 'classic',
-      clearedTasks: currentCycle?.clearedTasks ? structuredClone(currentCycle.clearedTasks) : null,
-      taskViewLayout: currentState.settings?.taskViewLayout
-        ? structuredClone(currentState.settings.taskViewLayout)
-        : null,
-      timestamp: Date.now()
-    };
+    const currentSnapshot = snapshotOfState(currentState);
 
     let snap = null;
     let skippedDuplicates = 0;
@@ -894,7 +932,7 @@ export async function performStateBasedUndo() {
     // ✅ Show success notification
     if (_deps.showNotification) {
       const changeDesc = transactionDiff.description;
-      const stepsLeft = _deps.AppGlobalState.activeUndoStack.length;
+      const stepsLeft = countStepsThatChangeState(_deps.AppGlobalState.activeUndoStack);
       const stepsText = stepsLeft === 0 ? getLabel('notify.stepsLeftNone') :
                         stepsLeft === 1 ? getLabel('notify.stepsLeftOne') :
                         getLabel('notify.stepsLeftMany', { vars: { count: stepsLeft } });
@@ -978,6 +1016,13 @@ export async function performStateBasedRedo() {
     return;
   }
 
+  // Same rule as undo: nothing that differs from the screen means nothing to redo.
+  if (countStepsThatChangeState(_deps.AppGlobalState.activeRedoStack) === 0) {
+    console.warn('⚠️ Nothing to redo');
+    updateUndoRedoButtons();
+    return;
+  }
+
   _deps.AppGlobalState.isPerformingUndoRedo = true;
 
   // ✅ Create rollback points
@@ -988,23 +1033,7 @@ export async function performStateBasedRedo() {
   try {
     const currentState = _deps.AppState.get();
     const currentActive = currentState.appState.activeCycleId;
-    const currentCycle = currentState.data.cycles[currentActive];
-
-    const currentSnapshot = {
-      activeCycleId: currentActive,
-      tasks: structuredClone(currentCycle?.tasks || []),
-      recurringTemplates: structuredClone(currentCycle?.recurringTemplates || {}),
-      title: currentCycle?.title,
-      autoReset: currentCycle?.autoReset,
-      deleteCheckedTasks: currentCycle?.deleteCheckedTasks,
-      cycleCount: currentCycle?.cycleCount || 0,  // ✅ Include cycle count
-      theme: currentCycle?.theme || 'classic',
-      clearedTasks: currentCycle?.clearedTasks ? structuredClone(currentCycle.clearedTasks) : null,
-      taskViewLayout: currentState.settings?.taskViewLayout
-        ? structuredClone(currentState.settings.taskViewLayout)
-        : null,
-      timestamp: Date.now()
-    };
+    const currentSnapshot = snapshotOfState(currentState);
 
     let snap = null;
     let skippedDuplicates = 0;
@@ -1102,7 +1131,7 @@ export async function performStateBasedRedo() {
     // ✅ Show success notification
     if (_deps.showNotification) {
       const changeDesc = transactionDiff.description;
-      const stepsLeft = _deps.AppGlobalState.activeRedoStack.length;
+      const stepsLeft = countStepsThatChangeState(_deps.AppGlobalState.activeRedoStack);
       const stepsText = stepsLeft === 0 ? getLabel('notify.stepsLeftNone') :
                         stepsLeft === 1 ? getLabel('notify.stepsLeftOne') :
                         getLabel('notify.stepsLeftMany', { vars: { count: stepsLeft } });
@@ -1159,8 +1188,8 @@ export function updateUndoRedoButtonStates() {
   const redoBtn = _deps.getElementById(DOM_IDS.REDO_BTN);
 
   // Use actual stack lengths (instant with localStorage cache)
-  const hasUndo = _deps.AppGlobalState.activeUndoStack.length > 0;
-  const hasRedo = _deps.AppGlobalState.activeRedoStack.length > 0;
+  const hasUndo = countStepsThatChangeState(_deps.AppGlobalState.activeUndoStack) > 0;
+  const hasRedo = countStepsThatChangeState(_deps.AppGlobalState.activeRedoStack) > 0;
 
   if (undoBtn) {
     undoBtn.disabled = !hasUndo;
@@ -1182,8 +1211,8 @@ export function updateUndoRedoButtonVisibility() {
   const redoBtn = _deps.getElementById(DOM_IDS.REDO_BTN);
 
   // Use actual stack lengths (instant with localStorage cache)
-  const hasUndo = _deps.AppGlobalState.activeUndoStack.length > 0;
-  const hasRedo = _deps.AppGlobalState.activeRedoStack.length > 0;
+  const hasUndo = countStepsThatChangeState(_deps.AppGlobalState.activeUndoStack) > 0;
+  const hasRedo = countStepsThatChangeState(_deps.AppGlobalState.activeRedoStack) > 0;
 
   if (undoBtn) undoBtn.hidden = !hasUndo;
   if (redoBtn) redoBtn.hidden = !hasRedo;

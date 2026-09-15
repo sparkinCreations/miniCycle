@@ -688,12 +688,46 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         mockDeps.AppGlobalState.activeUndoStack.push(JSON.parse(JSON.stringify(snapshot)));
         mockDeps.AppGlobalState.activeUndoStack.push(JSON.parse(JSON.stringify(snapshot)));
 
-        // Perform undo
+        // Every entry is identical to the current state: undo has nothing to go back
+        // to, so it must leave the stack alone. It used to pop them all, silently
+        // discarding the last undo entry with no visible change (measured Sep 2026).
         await performStateBasedUndo();
 
-        // Should have skipped duplicates
-        if (mockDeps.AppGlobalState.activeUndoStack.length > 0) {
-            throw new Error('Should have skipped all duplicate snapshots');
+        if (mockDeps.AppGlobalState.activeUndoStack.length !== 3) {
+            throw new Error(`stack should be untouched when nothing differs from the screen, got ${mockDeps.AppGlobalState.activeUndoStack.length}`);
+        }
+        if (mockDeps.AppGlobalState.activeRedoStack.length !== 0) {
+            throw new Error('a no-op undo must not push onto the redo stack');
+        }
+    });
+
+    await test('performStateBasedUndo skips identical entries above a real change and restores the change', async () => {
+        const mockDeps = createMockDependencies();
+        mockDeps.AppGlobalState.isInitializing = false;
+        setUndoRedoManagerDependencies(mockDeps);
+
+        const same = {
+            activeCycleId: 'Test Cycle',
+            tasks: [
+                { id: 'task-1', text: 'Task 1', completed: false, highPriority: false },
+                { id: 'task-2', text: 'Task 2', completed: true, highPriority: true }
+            ],
+            recurringTemplates: {}, title: 'Test Cycle', autoReset: false, deleteCheckedTasks: false, timestamp: Date.now()
+        };
+        const earlier = JSON.parse(JSON.stringify(same));
+        earlier.tasks[0].completed = true;          // the real change to go back to
+
+        mockDeps.AppGlobalState.activeUndoStack.push(earlier);
+        mockDeps.AppGlobalState.activeUndoStack.push(JSON.parse(JSON.stringify(same)));
+        mockDeps.AppGlobalState.activeUndoStack.push(JSON.parse(JSON.stringify(same)));
+
+        await performStateBasedUndo();
+
+        if (mockDeps.AppState.get().data.cycles['Test Cycle'].tasks[0].completed !== true) {
+            throw new Error('undo should restore the entry that differs from the screen');
+        }
+        if (mockDeps.AppGlobalState.activeUndoStack.length !== 0) {
+            throw new Error(`identical entries above the change should be dropped, ${mockDeps.AppGlobalState.activeUndoStack.length} left`);
         }
     });
 
@@ -869,12 +903,12 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         mockDeps.AppGlobalState.activeRedoStack.push(JSON.parse(JSON.stringify(snapshot)));
         mockDeps.AppGlobalState.activeRedoStack.push(JSON.parse(JSON.stringify(snapshot)));
 
-        // Perform redo
+        // Every entry is identical to the current state: nothing to redo, so the
+        // stack is left alone (same rule as undo).
         await performStateBasedRedo();
 
-        // Should have skipped duplicates
-        if (mockDeps.AppGlobalState.activeRedoStack.length > 0) {
-            throw new Error('Should have skipped all duplicate snapshots');
+        if (mockDeps.AppGlobalState.activeRedoStack.length !== 3) {
+            throw new Error(`redo stack should be untouched when nothing differs from the screen, got ${mockDeps.AppGlobalState.activeRedoStack.length}`);
         }
     });
 
@@ -965,6 +999,24 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         const undoBtn = mockDeps.getElementById('undo-btn');
         if (undoBtn.hidden || undoBtn.disabled) {
             throw new Error('Undo button should be visible and enabled when stack has items');
+        }
+    });
+
+    await test('updateUndoRedoButtons hides undo when every entry matches the current state', async () => {
+        const mockDeps = createMockDependencies();
+        setUndoRedoManagerDependencies(mockDeps);
+        const current = mockDeps.AppState.get().data.cycles['Test Cycle'];
+        mockDeps.AppGlobalState.activeUndoStack.push({
+            activeCycleId: 'Test Cycle', tasks: JSON.parse(JSON.stringify(current.tasks)), recurringTemplates: {},
+            title: current.title, autoReset: current.autoReset, deleteCheckedTasks: current.deleteCheckedTasks,
+            cycleCount: 0, timestamp: Date.now()
+        });
+
+        updateUndoRedoButtons();
+
+        const undoBtn = mockDeps.getElementById('undo-btn');
+        if (!undoBtn.hidden || !undoBtn.disabled) {
+            throw new Error('Undo must not be offered when nothing on the stack differs from the screen');
         }
     });
 

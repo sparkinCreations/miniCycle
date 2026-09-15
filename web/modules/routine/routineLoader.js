@@ -134,10 +134,7 @@ async function loadMiniCycle() {
   const currentCycle = cycles[activeCycleId];
 
   // 1) Validate and repair cycle + task data (comprehensive, like import does)
-  const cleaned = repairAndCleanTasks(currentCycle, activeCycleId);
-  if (cleaned.wasModified) {
-    await saveCycleData(activeCycleId, currentCycle);
-  }
+  await repairRoutineBeforeRender(activeCycleId, currentCycle);
 
   // What the user is looking at RIGHT NOW, captured before the render awaits.
   // updateCycleUIState uses it to decide whether this load is a routine SWITCH
@@ -188,10 +185,24 @@ async function loadMiniCycle() {
 }
 
 /**
+ * Warning sink for repairAndCleanTasks: silent for the detection pass on a copy
+ * (the same repair then runs for real and logs), console.warn otherwise.
+ * Kept out of repairAndCleanTasks so the branch does not add to its complexity.
+ * @param {boolean} quiet
+ * @returns {Function}
+ */
+function repairLogger(quiet) {
+  if (quiet) return () => {};
+  return (...args) => console.warn(...args);
+}
+
+/**
  * Repair & cleanup - validates and repairs cycle-level AND task-level data
  * Handles corrupted or incomplete data gracefully (like import does)
  */
-function repairAndCleanTasks(currentCycle, cycleKey = 'unknown') {
+function repairAndCleanTasks(currentCycle, cycleKey = 'unknown', { quiet = false } = {}) {
+  // quiet: used by the detection pass on a copy, so each repair is only logged once
+  const warn = repairLogger(quiet);
   let tasksModified = false;
 
   // ============================================================================
@@ -202,28 +213,28 @@ function repairAndCleanTasks(currentCycle, cycleKey = 'unknown') {
   if (!currentCycle.title || typeof currentCycle.title !== 'string') {
     currentCycle.title = cycleKey !== 'unknown' ? cycleKey : 'Untitled Routine';
     tasksModified = true;
-    console.warn(`⚠️ Repaired missing cycle title: "${currentCycle.title}"`);
+    warn(`⚠️ Repaired missing cycle title: "${currentCycle.title}"`);
   }
 
   // Ensure cycleCount is a valid number
   if (typeof currentCycle.cycleCount !== 'number' || currentCycle.cycleCount < 0 || isNaN(currentCycle.cycleCount)) {
     currentCycle.cycleCount = 0;
     tasksModified = true;
-    console.warn('⚠️ Repaired invalid cycleCount to 0');
+    warn('⚠️ Repaired invalid cycleCount to 0');
   }
 
   // Ensure autoReset is a boolean
   if (typeof currentCycle.autoReset !== 'boolean') {
     currentCycle.autoReset = true;
     tasksModified = true;
-    console.warn('⚠️ Repaired autoReset to default (true)');
+    warn('⚠️ Repaired autoReset to default (true)');
   }
 
   // Ensure deleteCheckedTasks is a boolean
   if (typeof currentCycle.deleteCheckedTasks !== 'boolean') {
     currentCycle.deleteCheckedTasks = false;
     tasksModified = true;
-    console.warn('⚠️ Repaired deleteCheckedTasks to default (false)');
+    warn('⚠️ Repaired deleteCheckedTasks to default (false)');
   }
 
   // ============================================================================
@@ -233,7 +244,7 @@ function repairAndCleanTasks(currentCycle, cycleKey = 'unknown') {
   if (!currentCycle.tasks || !Array.isArray(currentCycle.tasks)) {
     currentCycle.tasks = [];
     tasksModified = true;
-    console.warn('⚠️ Repaired invalid tasks array');
+    warn('⚠️ Repaired invalid tasks array');
     return { tasks: [], wasModified: tasksModified };
   }
 
@@ -255,7 +266,7 @@ function repairAndCleanTasks(currentCycle, cycleKey = 'unknown') {
     if (!task.id || typeof task.id !== 'string') {
       task.id = `task-${Date.now()}-${index}-${(task.text || '').length}`;
       tasksModified = true;
-      console.warn('⚠️ Repaired task with missing ID:', task.id);
+      warn('⚠️ Repaired task with missing ID:', task.id);
     }
 
     // ✅ Repair missing text (don't filter out yet)
@@ -263,7 +274,7 @@ function repairAndCleanTasks(currentCycle, cycleKey = 'unknown') {
     if (!hasText || (typeof hasText === 'string' && hasText.trim() === '')) {
       task.text = `[Task ${index + 1}]`;
       tasksModified = true;
-      console.warn('⚠️ Repaired task with missing text:', task.id);
+      warn('⚠️ Repaired task with missing text:', task.id);
     } else if (task.taskText && !task.text) {
       // Migrate legacy taskText to text. This is the WRITE-side normaliser: after
       // it runs, live tasks carry only `text`. The read-side counterpart is
@@ -278,13 +289,13 @@ function repairAndCleanTasks(currentCycle, cycleKey = 'unknown') {
     if (typeof task.completed !== 'boolean') {
       task.completed = Boolean(task.completed);
       tasksModified = true;
-      console.warn('⚠️ Repaired task with invalid completed field:', task.id);
+      warn('⚠️ Repaired task with invalid completed field:', task.id);
     }
 
     if (typeof task.highPriority !== 'boolean') {
       task.highPriority = Boolean(task.highPriority);
       tasksModified = true;
-      console.warn('⚠️ Repaired task with invalid highPriority field:', task.id);
+      warn('⚠️ Repaired task with invalid highPriority field:', task.id);
     }
 
     // Enforce invariant: highPriority tasks must have a priorityColor
@@ -296,34 +307,34 @@ function repairAndCleanTasks(currentCycle, cycleKey = 'unknown') {
     if (typeof task.remindersEnabled !== 'boolean') {
       task.remindersEnabled = Boolean(task.remindersEnabled);
       tasksModified = true;
-      console.warn('⚠️ Repaired task with invalid remindersEnabled field:', task.id);
+      warn('⚠️ Repaired task with invalid remindersEnabled field:', task.id);
     }
 
     if (typeof task.recurring !== 'boolean') {
       task.recurring = Boolean(task.recurring);
       tasksModified = true;
-      console.warn('⚠️ Repaired task with invalid recurring field:', task.id);
+      warn('⚠️ Repaired task with invalid recurring field:', task.id);
     }
 
     // ✅ Repair dueDate (should be null, string, or number)
     if (task.dueDate === undefined) {
       task.dueDate = null;
       tasksModified = true;
-      console.warn('⚠️ Repaired task with missing dueDate:', task.id);
+      warn('⚠️ Repaired task with missing dueDate:', task.id);
     }
 
     // ✅ Repair recurringSettings (should be object if recurring)
     if (task.recurring && (!task.recurringSettings || typeof task.recurringSettings !== 'object')) {
       task.recurringSettings = {};
       tasksModified = true;
-      console.warn('⚠️ Repaired missing recurringSettings for recurring task:', task.id);
+      warn('⚠️ Repaired missing recurringSettings for recurring task:', task.id);
     }
 
     // ✅ Repair schemaVersion (should be a number, default to 2)
     if (typeof task.schemaVersion !== 'number' || task.schemaVersion < 1) {
       task.schemaVersion = 2;
       tasksModified = true;
-      console.warn('⚠️ Repaired task with missing schemaVersion:', task.id);
+      warn('⚠️ Repaired task with missing schemaVersion:', task.id);
     }
 
     // ✅ Repair deleteWhenCompleteSettings, then ALWAYS re-derive deleteWhenComplete
@@ -337,7 +348,7 @@ function repairAndCleanTasks(currentCycle, cycleKey = 'unknown') {
     // copy was hardened against, while this one claimed to match it.
     const dwcSync = syncTaskDeleteWhenComplete(task, currentMode, DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS);
     if (dwcSync.repaired) {
-      console.warn('⚠️ Repaired task with missing/invalid deleteWhenCompleteSettings:', task.id);
+      warn('⚠️ Repaired task with missing/invalid deleteWhenCompleteSettings:', task.id);
     }
     if (dwcSync.changed) {
       tasksModified = true;
@@ -357,7 +368,7 @@ function repairAndCleanTasks(currentCycle, cycleKey = 'unknown') {
 
   const removedCount = originalLength - validTasks.length;
   if (removedCount > 0) {
-    console.warn(`⚠️ Removed ${removedCount} corrupted tasks during sanitization`);
+    warn(`⚠️ Removed ${removedCount} corrupted tasks during sanitization`);
   }
 
 
@@ -544,32 +555,47 @@ function updateDependentComponents() {
 }
 
 /**
- * Persist cycle changes
- * ✅ Uses AppState.update() only - no direct localStorage writes
- * to prevent race conditions with concurrent saves
+ * Repair the routine being loaded without mutating live state outside update().
+ *
+ * While state is ready, loadMiniCycleData() hands back the LIVE AppState tree, so the
+ * old in-place repair changed live state before any update() ran (CLAUDE.md #13):
+ * subscribers were then notified with an oldState that already held the repair, and
+ * the save that followed assigned the same object back over itself
+ * (STATE_TRUTH_MIGRATION #11). Now the repair is detected on a copy
+ * and, only if something needs repairing, applied inside update() to state itself.
+ *
+ * While state is not ready the loader holds a copy read from storage — not live
+ * state — so that copy is repaired directly for rendering; there is no state to save
+ * it to yet.
+ *
+ * @param {string} routineId - Id of the routine being loaded
+ * @param {Object} routine - The routine object the loader renders from
+ * @returns {Promise<void>}
  */
-async function saveCycleData(activeCycle, currentCycle) {
-  // ✅ Wait for core systems to be ready (AppState + data)
-  // This prevents conflicts with AppState initialization
-  await _deps.appInit?.waitForCore();
-
-  // ✅ Use AppState only (no localStorage fallback)
+async function repairRoutineBeforeRender(routineId, routine) {
   const appState = getAppState();
   if (!appState?.isReady?.()) {
-    console.error('❌ AppState not ready for saveCycleData - this should not happen after waitForCore()');
+    repairAndCleanTasks(routine, routineId);
     return;
   }
 
-  // Use AppState for coordinated saves
+  const needsRepair = repairAndCleanTasks(structuredClone(routine), routineId, { quiet: true }).wasModified;
+  if (!needsRepair) return;
+
+  let liveRoutine = null;
   try {
     await appState.update((state) => {
-      if (state?.data?.cycles?.[activeCycle]) {
-        state.data.cycles[activeCycle] = currentCycle;
-      }
-    }, true); // immediate = true for cycle repairs
+      liveRoutine = state?.data?.cycles?.[routineId] ?? null;
+      if (liveRoutine) repairAndCleanTasks(liveRoutine, routineId);
+    }, true); // immediate = true for repairs
   } catch (e) {
-    console.error('❌ Failed to save cycle data via AppState', e);
+    console.error('❌ Failed to save routine repair via AppState', e);
   }
+
+  // Normally `routine` IS the live object and is now repaired. If the loader was
+  // handed a copy anyway (its AppState read fell back to storage), repair that copy
+  // too so the render matches what was saved.
+  if (liveRoutine !== routine) repairAndCleanTasks(routine, routineId, { quiet: true });
 }
 
 // ✅ REMOVED: Backward compatibility global attachment
@@ -584,6 +610,5 @@ export {
   applyThemeSettings,
   setupRemindersForCycle,
   updateDependentComponents,
-  saveCycleData,
   setRoutineLoaderDependencies
 };

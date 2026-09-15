@@ -2437,6 +2437,71 @@ async function journeyNewerDataNeverOverwritten(browser, baseURL) {
     return { name: 'data written by a newer build is never overwritten', failures };
 }
 
+// Undo everything, then look at what the app still offers (measured Sep 2026): the Undo
+// button stayed shown and enabled, because the stack still held one entry identical to
+// the screen, and the next press silently discarded it. The button must only offer an
+// undo that changes something, an extra press must change nothing, and Redo must still
+// bring everything back.
+async function journeyUndoBottom(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const { context, page } = await openFresh(browser, baseURL);
+    const tasks = () => page.evaluate(() => [...document.querySelectorAll('#taskList li .task-text')].map(el => el.textContent.trim()).join('+'));
+    const undoOffered = () => page.evaluate(() => {
+        const b = document.getElementById('undo-btn');
+        return !!b && !b.hidden && !b.disabled;
+    });
+    try {
+        await page.evaluate(() => {
+            const d = JSON.parse(localStorage.getItem('miniCycleData'));
+            const c = d.data.cycles[d.appState.activeCycleId];
+            c.tasks = [{ id: 'ub-0', text: 'Existing', completed: false, dueDate: null, highPriority: false, priorityColor: null,
+                remindersEnabled: false, recurring: false, recurringSettings: {}, deleteWhenComplete: false,
+                deleteWhenCompleteSettings: { cycle: false, todo: true }, schemaVersion: 2 }];
+            c.recurringTemplates = {};
+            c.autoReset = false; c.deleteCheckedTasks = false;
+            localStorage.setItem('miniCycleData', JSON.stringify(d));
+        });
+        await page.reload({ waitUntil: 'domcontentloaded', timeout: 20000 });
+        await bootApp(page);
+        await page.waitForTimeout(800);
+
+        await addTask(page, 'UB A');
+        await page.waitForFunction(() => document.querySelectorAll('#taskList li').length === 2, null, { timeout: 10000 });
+        await page.waitForTimeout(400);
+        await addTask(page, 'UB B');
+        await page.waitForFunction(() => document.querySelectorAll('#taskList li').length === 3, null, { timeout: 10000 });
+        await page.waitForTimeout(400);
+        await page.evaluate(() => document.activeElement && document.activeElement.blur());
+
+        for (let i = 0; i < 2; i++) {
+            await page.keyboard.press('Control+z');
+            await page.waitForTimeout(1300);
+        }
+        const afterTwo = await tasks();
+        record('two undos remove both added tasks', afterTwo === 'Existing', afterTwo);
+        record('Undo is not offered once everything is undone', !(await undoOffered()),
+            'the Undo button is still shown and enabled with nothing left to undo — the next press would do nothing');
+
+        await page.keyboard.press('Control+z');
+        await page.waitForTimeout(1300);
+        const afterExtra = await tasks();
+        record('an extra Undo changes nothing', afterExtra === 'Existing', afterExtra);
+
+        for (let i = 0; i < 2; i++) {
+            await page.keyboard.press('Control+y');
+            await page.waitForTimeout(1300);
+        }
+        const afterRedo = await tasks();
+        record('two redos bring both tasks back', afterRedo === 'Existing+UB A+UB B', afterRedo);
+    } catch (e) {
+        failures.push(`run error: ${e.message}`);
+        console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);
+    } finally {
+        await context.close();
+    }
+    return { name: 'Undo is only offered when it changes something', failures };
+}
+
 // Undo starts disabled so boot-time writes never become undo steps, and used to be
 // switched on only by gestures that remembered to (STATE_TRUTH_MIGRATION #13).
 // Measured Sep 2026: with Complete Cycle, or a switch to To-Do mode, as the FIRST
@@ -2706,6 +2771,7 @@ async function journeyPriorityLevelsFollowTheme(browser, baseURL) {
 }
 
 const JOURNEYS = [
+    { name: 'Undo is only offered when it changes something', fn: journeyUndoBottom },
     { name: 'the first gesture after load can be undone', fn: journeyFirstGestureUndo },
     { name: 'pre-2.5 leftovers are never migrated or deleted', fn: journeyLegacyLeftoversUntouched },
     { name: 'priority levels follow the theme', fn: journeyPriorityLevelsFollowTheme },
