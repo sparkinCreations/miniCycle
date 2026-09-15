@@ -334,7 +334,7 @@ export const MODULE_MANIFESTS = {
         provides: [
             'createTaskDOMElements', 'setupTaskInteractions', 'refreshUIFromState',
             'loadTaskContext', 'createOrUpdateTaskData', 'finalizeTaskCreation',
-            'validateAndSanitizeTaskInput', 'buildTaskContext', 'extractTaskDataFromDOM',
+            'validateAndSanitizeTaskInput', 'buildTaskContext',
             'renderTasks', 'refreshTaskListUI', 'createTaskButtonContainer', 'handleTaskButtonClick',
             'setupRecurringButtonHandler', 'revealTaskButtons', 'taskToAddTaskOptions',
             'patchTask', 'removeTask', 'applyTaskOrder', 'syncBoundaryMarkers',

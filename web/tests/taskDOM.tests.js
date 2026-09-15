@@ -699,59 +699,6 @@ export async function runTaskDOMTests(resultsDiv) {
         }
     });
 
-    await test('extractTaskDataFromDOM returns empty array when no taskList', () => {
-        const mockGetById = (id) => null;
-
-        const result = TaskUtils.extractTaskDataFromDOM(mockGetById);
-
-        if (!Array.isArray(result) || result.length !== 0) {
-            throw new Error('Should return empty array when taskList not found');
-        }
-    });
-
-    await test('extractTaskDataFromDOM parses task elements', () => {
-        const taskList = document.createElement('ul');
-        taskList.id = 'taskList';
-
-        const taskItem = document.createElement('li');
-        taskItem.dataset.taskId = 'task-1';
-
-        const taskText = document.createElement('span');
-        taskText.className = 'task-text';
-        taskText.textContent = 'Test task';
-        taskItem.appendChild(taskText);
-
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.checked = true;
-        taskItem.appendChild(checkbox);
-
-        taskList.appendChild(taskItem);
-
-        const mockGetById = (id) => id === 'taskList' ? taskList : null;
-
-        const result = TaskUtils.extractTaskDataFromDOM(mockGetById);
-
-        if (result.length !== 1) {
-            throw new Error('Should extract one task');
-        }
-
-        if (result[0].id !== 'task-1') {
-            throw new Error('Should have correct ID');
-        }
-
-        if (result[0].text !== 'Test task') {
-            throw new Error('Should have correct text');
-        }
-
-        if (result[0].completed !== true) {
-            throw new Error('Should have correct completed state');
-        }
-    });
-
-    // ============================================
-    // 🛡️ ERROR HANDLING TESTS
-    // ============================================
     resultsDiv.innerHTML += '<h4 class="test-section">🛡️ Error Handling</h4>';
 
     await test('validates input through validator after init', async () => {

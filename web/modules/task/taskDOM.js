@@ -548,7 +548,7 @@ export class TaskDOMManager {
 
     // GROUP 2: UTILITIES
     // ✅ MOVED TO: modules/task/taskUtils.js
-    // Use TaskUtils.buildTaskContext(), TaskUtils.extractTaskDataFromDOM(), etc.
+    // Use TaskUtils.buildTaskContext(), TaskUtils.loadTaskContext(), etc.
 
     // GROUP 3: DOM CREATION
     /**
@@ -1421,15 +1421,6 @@ function buildTaskContext(taskItem, taskId) {
     return TaskUtils.buildTaskContext(taskItem, taskId, AppState);
 }
 
-function extractTaskDataFromDOM() {
-    if (typeof TaskUtils?.extractTaskDataFromDOM === 'function') {
-        return TaskUtils.extractTaskDataFromDOM(undefined, _deps.AppState);
-    }
-    // TaskUtils not available - return empty array (will be populated once TaskUtils loads)
-    console.warn('⚠️ TaskUtils not initialized yet, returning empty array');
-    return [];
-}
-
 function loadTaskContext(taskTextTrimmed, taskId, taskOptions, isLoading = false) {
     // Use module deps for DI-pure pattern
     const loadMiniCycleData = _deps.loadMiniCycleData;
@@ -1819,7 +1810,6 @@ export {
     validateAndSanitizeTaskInput,
     // Group 2: Utilities
     buildTaskContext,
-    extractTaskDataFromDOM,
     loadTaskContext,
     createOrUpdateTaskData,
     scrollToNewTask,

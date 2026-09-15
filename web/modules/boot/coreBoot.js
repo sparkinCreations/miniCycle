@@ -512,9 +512,7 @@ async function initDataAccess(deps) {
   // ✅ FIX: Inject all deps directly into dataAccess to avoid versioned/unversioned module mismatch
   if (dataAccessMod.setDataAccessDeps) {
     dataAccessMod.setDataAccessDeps({
-      AppState,
-      // getExtractTaskDataFromDOM is set later by featureBoot - use lazy wrapper
-      getExtractTaskDataFromDOM: () => deps?.task?.extractTaskDataFromDOM?.()
+      AppState
     });
   }
 

@@ -110,7 +110,7 @@ After `initTaskDOMManager()` runs, the manager has these sub-modules:
 | Sub-module | Purpose | Key methods |
 |------------|---------|-------------|
 | `manager.validator` | Input validation | `validateAndSanitizeTaskInput()` |
-| `manager.utils` | Task utilities | `buildTaskContext()`, `extractTaskDataFromDOM()` |
+| `manager.utils` | Task utilities | `buildTaskContext()` |
 | `manager.renderer` | UI rendering | `refreshUIFromState()`, `refreshTaskListUI()` |
 | `manager.events` | Event handling | `initEventDelegation()`, `handleTaskButtonClick()` |
 

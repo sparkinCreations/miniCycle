@@ -126,7 +126,6 @@ export function getTestTaskOptionsCustomizer() { return getContextValue('TaskOpt
 export function getTestTaskCore() { return getContextValue('TaskCore'); }
 export function getTestHandleTaskCompletionChange() { return getContextValue('handleTaskCompletionChange'); }
 export function getTestHandleCompleteAllTasks() { return getContextValue('handleCompleteAllTasks'); }
-export function getTestExtractTaskDataFromDOM() { return getContextValue('extractTaskDataFromDOM'); }
 
 // ============================================================================
 // ROUTINE SWITCHER GETTERS

@@ -2053,7 +2053,6 @@ function buildGroupedApis(deps) {
             handleCompleteAll: deps.task?.handleCompleteAllTasks,
             loadContext: deps.task?.loadTaskContext,
             createDOM: deps.task?.createTaskDOMElements,
-            extractFromDOM: deps.task?.extractTaskDataFromDOM,
             updateMoveArrows: deps.task?.updateMoveArrowsVisibility,
             refresh: deps.task?.refreshTaskListUI
         },

@@ -1,6 +1,6 @@
 # State-as-Truth Migration — Gen 1 leftovers on the cycle loop
 
-**Status:** Open plan — #25 first batch DONE Sep 2026 (reminders, modeManager, statsPanel, stateApi); wrapper create-side-effect measured; #26 measured Sep 2026: closed by the normalizer; #14 measured Sep 2026: covered, not changed; #11 FIXED Sep 2026 (repair runs inside update()); undo no longer offered with nothing to undo; #16 measured Sep 2026: no live gap, not changed (see it); #15 hot path DONE Sep 2026 (add/complete/reset/render/cycle-complete/backup) (AppState required + unguarded; `validate:chains` now sees local aliases); #13 FIXED Sep 2026 (first real input switches undo on); #8, #9 and #11 measured and found milder than written (see each); #4 and #10 FIXED (v2.541 / v2.540), #24 shipped, #30 verified closed; #1 probed and NOT reproduced, then #1 (auto-reset + due-date paths) and #2 moved to state in v2.562; #1's Complete-button half REPRODUCED and fixed with #3 and #5 (Sep 2026, unreleased at time of writing) — **P0 band closed**  
+**Status:** Open plan — #31 DELETED Sep 2026; #25 first batch DONE Sep 2026 (reminders, modeManager, statsPanel, stateApi); wrapper create-side-effect measured; #26 measured Sep 2026: closed by the normalizer; #14 measured Sep 2026: covered, not changed; #11 FIXED Sep 2026 (repair runs inside update()); undo no longer offered with nothing to undo; #16 measured Sep 2026: no live gap, not changed (see it); #15 hot path DONE Sep 2026 (add/complete/reset/render/cycle-complete/backup) (AppState required + unguarded; `validate:chains` now sees local aliases); #13 FIXED Sep 2026 (first real input switches undo on); #8, #9 and #11 measured and found milder than written (see each); #4 and #10 FIXED (v2.541 / v2.540), #24 shipped, #30 verified closed; #1 probed and NOT reproduced, then #1 (auto-reset + due-date paths) and #2 moved to state in v2.562; #1's Complete-button half REPRODUCED and fixed with #3 and #5 (Sep 2026, unreleased at time of writing) — **P0 band closed**  
 **Raised:** 2026-08-23 · **Against:** v2.483 · **Amended:** 2026-09-05 against v2.541  
 **Source:** Independent code review of boot, AppState, DI, completion/reset, both task renderers, undo wrapper, drag-drop, reminders, daily reset, history, `.mcyc` payload, import, `featureBoot` API allow-lists, and `moduleLoader` `ENFORCE_REQUIRES`  
 **Premise:** The repaired modules are Gen 3 (state is truth). The **name of the app** — “all tasks done → reset” — is still Gen 1 (DOM `.checked`). That split is the work.
@@ -681,6 +681,13 @@ independent check.
 
 **Fix:** Do not persist from this. Delete when unused; until then, do not wire to save.
 
+*✅ DELETED Sep 2026. It was already unused at runtime: `autoSave` refuses a null task list, and
+the getter `dataAccess` accepted for it was assigned and never read — the `featureBoot` comment
+calling it "critical" for autoSave was stale. Removed the static method and both wrappers, the
+manifest `provides` entry, the `extractFromDOM` key on the task API, the `appContext` slot, the
+`dataAccess` / `coreBoot` injection, the test-context helper and the eight tests that pinned the
+scrape. `validate:api` / `validate:provides` / `validate:di` green; nothing else referenced it.*
+
 ---
 
 ## P2 — product (from code, not taste)
@@ -754,7 +761,7 @@ These were real; the tree now carries the lesson. Regression tests, not new work
 | Should I remind? | AppState tasks | Unchanged (already Gen 3) |
 | Recurring spawn | Templates + watcher + system update | Unchanged |
 | Daily uncheck | Per-cycle settings + tick | Unchanged |
-| Persist from the list | `extractTaskDataFromDOM` still exists | Delete / unwire |
+| Persist from the list | ~~`extractTaskDataFromDOM` still exists~~ deleted Sep 2026 | — |
 | First paint | `innerHTML` + `addTask` | Same as undo render |
 | After undo | Fragment + state partition | Unchanged |
 

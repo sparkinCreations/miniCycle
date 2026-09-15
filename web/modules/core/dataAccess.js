@@ -24,18 +24,14 @@ import { STORAGE_KEYS, DEFAULT_REMINDERS } from './constants.js';
 // This avoids versioned/unversioned module instance mismatch issues
 
 let _injectedAppState = null;
-let _injectedGetExtractTaskDataFromDOM = null;
 
 /**
  * Inject dependencies directly from coreBoot (avoids module instance mismatch)
- * @param {Object} deps - { AppState, getExtractTaskDataFromDOM }
+ * @param {Object} deps - { AppState }
  */
 export function setDataAccessDeps(deps) {
     if (deps.AppState) {
         _injectedAppState = deps.AppState;
-    }
-    if (deps.getExtractTaskDataFromDOM) {
-        _injectedGetExtractTaskDataFromDOM = deps.getExtractTaskDataFromDOM;
     }
 }
 

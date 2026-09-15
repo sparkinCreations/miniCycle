@@ -55,7 +55,6 @@ const DEV_MODE = false; // Production mode - set to true for development
  * @property {Function} handleCompleteAll - Complete all tasks
  * @property {Function} loadContext - Load task context
  * @property {Function} createDOM - Create task DOM elements
- * @property {Function} extractFromDOM - Extract task data from DOM
  * @property {Function} updateMoveArrows - Update arrow visibility
  * @property {Function} refresh - Refresh task list UI
  */
@@ -212,7 +211,6 @@ const legacy = {
     createTaskDOMElements: null,
     createOrUpdateTaskData: null,
     handleCompleteAllTasks: null,
-    extractTaskDataFromDOM: null,
     initCompletedTasksSection: null,
     TaskCore: null,
     TaskDOMManager: null,

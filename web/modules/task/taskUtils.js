@@ -140,82 +140,6 @@ export class TaskUtils {
     }
 
     /**
-     * Extract task data from DOM
-     * @param {Function} getElementById - Function to get element by ID
-     * @returns {Array} - Array of task objects
-     */
-    static extractTaskDataFromDOM(getElementById = (id) => document.getElementById(id), AppState = null) {
-        const taskListElement = getElementById(DOM_IDS.TASK_LIST);
-        if (!taskListElement) {
-            console.warn('⚠️ Task list element not found');
-            return [];
-        }
-
-        // Build a lookup map from AppState so we can read priorityColor from
-        // the source of truth instead of scraping it from a CSS custom property.
-        const stateTasks = (() => {
-            if (!AppState?.isReady?.()) return {};
-            const state = AppState.get();
-            const cid = state?.appState?.activeCycleId;
-            const tasks = state?.data?.cycles?.[cid]?.tasks;
-            if (!Array.isArray(tasks)) return {};
-            const map = {};
-            for (const t of tasks) { if (t?.id) map[t.id] = t; }
-            return map;
-        })();
-
-        return [...taskListElement.children].map(taskElement => {
-            const taskTextElement = taskElement.querySelector(DOM_SELECTORS.TASK_TEXT);
-            const taskId = taskElement.dataset.taskId;
-
-            if (!taskTextElement || !taskId) {
-                console.warn("⚠️ Skipping invalid task element");
-                return null;
-            }
-
-            // Extract recurring settings safely
-            let recurringSettings = {};
-            try {
-                const settingsAttr = taskElement.getAttribute("data-recurring-settings");
-                if (settingsAttr) {
-                    recurringSettings = JSON.parse(settingsAttr);
-                }
-            } catch (err) {
-                console.warn("⚠️ Invalid recurring settings, using empty object");
-            }
-
-            // Extract deleteWhenCompleteSettings from data attribute or use defaults
-            let deleteWhenCompleteSettings = { ...DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS };
-            const settingsAttr = taskElement.dataset.deleteWhenCompleteSettings;
-            if (settingsAttr) {
-                try {
-                    deleteWhenCompleteSettings = JSON.parse(settingsAttr);
-                } catch (err) {
-                    console.warn("⚠️ Invalid deleteWhenCompleteSettings, using defaults");
-                }
-            }
-
-            // Read priorityColor from AppState (source of truth), not from DOM
-            const priorityColor = stateTasks[taskId]?.priorityColor || null;
-
-            return {
-                id: taskId,
-                text: taskTextElement.textContent,
-                completed: taskElement.querySelector("input[type='checkbox']")?.checked || false,
-                dueDate: taskElement.querySelector(DOM_SELECTORS.DUE_DATE)?.value || null,
-                highPriority: taskElement.classList.contains(DOM_CLASSES.HIGH_PRIORITY),
-                priorityColor,
-                remindersEnabled: taskElement.querySelector(DOM_SELECTORS.ENABLE_TASK_REMINDERS)?.classList.contains(DOM_CLASSES.REMINDER_ACTIVE) || false,
-                recurring: taskElement.querySelector(DOM_SELECTORS.RECURRING_BTN)?.classList.contains(DOM_CLASSES.ACTIVE) || false,
-                recurringSettings,
-                deleteWhenComplete: taskElement.dataset.deleteWhenComplete === "true" || false,
-                deleteWhenCompleteSettings: deleteWhenCompleteSettings,
-                schemaVersion: 2
-            };
-        }).filter(Boolean);
-    }
-
-    /**
      * Load task context from schema data
      * @param {string} taskTextTrimmed - Sanitized task text
      * @param {string} taskId - Task ID (optional, will generate if not provided)
@@ -455,10 +379,6 @@ function buildTaskContext(taskItem, taskId) {
     return TaskUtils.buildTaskContext(taskItem, taskId, AppState);
 }
 
-function extractTaskDataFromDOM() {
-    return TaskUtils.extractTaskDataFromDOM(undefined, _deps.AppState);
-}
-
 function loadTaskContext(taskTextTrimmed, taskId, taskOptions, isLoading = false) {
     const loadMiniCycleData = _deps.loadMiniCycleData;
     const generateId = _deps.generateId;
@@ -560,7 +480,6 @@ export function applyTaskStatusLabel(taskItem, completed, opts = {}) {
 // ES6 exports
 export {
     buildTaskContext,
-    extractTaskDataFromDOM,
     loadTaskContext,
     createOrUpdateTaskData,
     scrollToNewTask,
