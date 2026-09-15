@@ -1,3 +1,12 @@
+## [2.567] - 2026-09-15
+- fix(undo,loader): undo only offered when it changes something; repair runs inside update
+- docs(state-truth): record #16 as measured, no live gap
+- fix(di): AppState required on render, cycle-complete and backup
+- fix(di): AppState required on add, complete and reset; chains gate sees aliases
+- fix(undo): first real input switches undo on
+- TODO(changelog): uncommitted work shipped in this release — describe it here
+
+
 ## [2.566] - 2026-09-14
 - refactor(migration): retire the pre-2.5 migration
 - feat(priority): show priority as a level in the active theme's colours

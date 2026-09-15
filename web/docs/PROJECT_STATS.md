@@ -10,7 +10,7 @@
 > Other sites should fetch that rather than scraping this page — both come from
 > the same counter, so they cannot disagree.
 
-**Last Updated**: September 14, 2026
+**Last Updated**: September 15, 2026
 
 ---
 
@@ -18,14 +18,14 @@
 
 | Metric | Value |
 |--------|-------|
-| **App Version** | 2.566 |
+| **App Version** | 2.567 |
 | **Lite Version** | 2.092 (frozen) |
 | **Schema Version** | 2.5 |
 | **Total Modules** | 159 |
-| **Total Tests** | 124 |
+| **Total Tests** | 3719 |
 | **Test Pass Rate** | 100% |
 | **CSS Files** | 46 |
-| **JSDoc Blocks** | 1472 |
+| **JSDoc Blocks** | 1478 |
 | **Documentation Files** | 249 |
 | **DI Completion** | 100% |
 | **Custom window.* Globals (modules)** | 0 |
@@ -64,8 +64,8 @@
 | `modules/boot/orchestrator.js` | ~1281 | Sequence control + boot UI + early coordination |
 | `modules/boot/coreBoot.js` | ~777 | Core state & init |
 | `modules/boot/featureBoot.js` | ~627 | DI wiring hub |
-| `modules/boot/uiBoot.js` | ~1202 | UI handlers |
-| **Total** | **~3937** | |
+| `modules/boot/uiBoot.js` | ~1255 | UI handlers |
+| **Total** | **~3990** | |
 
 ---
 
@@ -73,7 +73,7 @@
 
 | Category | Tests |
 |----------|-------|
-| Total Tests | 124 |
+| Total Tests | 3719 |
 | Test Files | 149 |
 | Pass Rate | 100% |
 | Platforms Tested | Mac, iPad, iPhone |
