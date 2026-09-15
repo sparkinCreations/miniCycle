@@ -304,8 +304,15 @@ export class QuickActionsManager {
         // not a contract, which is why every writer ensures the block itself.
         await _deps.appInit.waitForCore();
 
-        // Ensure quickActions data exists in settings
-        this._ensureData();
+        // Ensure quickActions data exists in settings. On a FIRST RUN state is not
+        // ready here, so this applies nothing — then the subscription repeats it on
+        // the first state change after data exists (the routine the first-run choice
+        // creates), so the block is present before the panel can be used. It used to
+        // land at boot only because the legacy loadMiniCycleData wrapper created the
+        // initial data as a side effect earlier in the same boot (measured Sep 2026,
+        // STATE_TRUTH_MIGRATION #25); that timing is gone, and this is the contract.
+        if (this.deps.AppState.isReady()) this._ensureData();
+        this._seedWhenStateArrives();
 
         // Render desktop panel
         this._renderPanel(DOM_IDS.QUICK_ACTIONS_SLOTS);
@@ -348,6 +355,26 @@ export class QuickActionsManager {
     // Best-effort boot seed. It is not the guarantee — every writer calls
     // ensureQuickActions() for itself — because update() is a no-op whenever
     // AppState has no data yet (CLAUDE.md: core-ready is not state-ready).
+    /**
+     * One-shot: seed the quickActions block on the first state change after data
+     * exists, then unsubscribe. No-op when the block is already there.
+     * @private
+     */
+    _seedWhenStateArrives() {
+        const AppState = this.deps.AppState;
+        if (AppState.get()?.settings?.quickActions) return;
+        // Test doubles may not implement subscribe; the real AppState always does.
+        if (typeof AppState.subscribe !== 'function') return;
+        const key = 'quickActions-seed';
+        const seed = () => {
+            // Unsubscribe FIRST: _ensureData() writes through update(), which
+            // notifies listeners, and this must not run inside its own notification.
+            AppState.unsubscribe(key, seed);
+            this._ensureData();
+        };
+        AppState.subscribe(key, seed);
+    }
+
     _ensureData() {
         if (this.deps.AppState.get()?.settings?.quickActions) return;
         this.deps.AppState.update(s => { ensureQuickActions(s); });

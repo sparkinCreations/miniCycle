@@ -513,8 +513,6 @@ async function initDataAccess(deps) {
   if (dataAccessMod.setDataAccessDeps) {
     dataAccessMod.setDataAccessDeps({
       AppState,
-      // createInitialSchema25Data is set by initMigration before this is called
-      createInitialSchema25Data: deps?.core?.createInitialSchema25Data,
       // getExtractTaskDataFromDOM is set later by featureBoot - use lazy wrapper
       getExtractTaskDataFromDOM: () => deps?.task?.extractTaskDataFromDOM?.()
     });

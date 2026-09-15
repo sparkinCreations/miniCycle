@@ -97,6 +97,31 @@ export async function runDataAccessTests(resultsDiv) {
     // ── autoSave: guard / no-op paths ─────────────────────────────────────────
     resultsDiv.innerHTML += '<h4 class="test-section">💾 autoSave guards</h4>';
 
+    // The wrapper used to CREATE the initial data when AppState was not ready and
+    // storage was empty, so whichever module read it first on a first-run boot seeded
+    // storage for everyone after it (STATE_TRUTH_MIGRATION #25, measured Sep 2026).
+    await test('loadMiniCycleData reports an empty origin as null and creates nothing', () => {
+        const saved = localStorage.getItem('miniCycleData');
+        try {
+            localStorage.removeItem('miniCycleData');
+            // A creator is injected on purpose: the old path invoked it here, and a
+            // test that injects none cannot tell the two apart.
+            let created = 0;
+            setDataAccessDeps({
+                AppState: makeAppState(baseState(), { ready: false }),
+                createInitialSchema25Data: () => { created++; localStorage.setItem('miniCycleData', JSON.stringify(baseState())); }
+            });
+            const result = loadMiniCycleData();
+            if (created !== 0) throw new Error('a READ invoked createInitialSchema25Data');
+            if (result !== null) throw new Error(`expected null on an empty origin, got ${JSON.stringify(result).slice(0, 80)}`);
+            if (localStorage.getItem('miniCycleData') !== null) {
+                throw new Error('a READ created initial data in storage');
+            }
+        } finally {
+            if (saved !== null) localStorage.setItem('miniCycleData', saved);
+        }
+    });
+
     await test('returns error when AppState not ready', async () => {
         setDataAccessDeps({ AppState: makeAppState(baseState(), { ready: false }) });
         const r = await autoSave([{ id: 't1', text: 'x' }]);

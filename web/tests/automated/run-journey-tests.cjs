@@ -1958,10 +1958,14 @@ async function seedViaLearnOn(page) {
     await page.waitForTimeout(1200);
 }
 
+// No document at all counts as "no routines": since the legacy loadMiniCycleData
+// wrapper stopped creating initial data as a side effect (Sep 2026), a factory reset
+// leaves storage EMPTY until the user makes the first-run choice — the first-run
+// state contract — rather than an auto-created empty document.
 const storedCycleKeys = (page) => page.evaluate(() => {
     try {
         const d = JSON.parse(localStorage.getItem('miniCycleData') || 'null');
-        return d ? Object.keys(d.data.cycles) : null;
+        return d ? Object.keys(d.data.cycles) : [];
     } catch (e) { return 'unreadable'; }
 });
 

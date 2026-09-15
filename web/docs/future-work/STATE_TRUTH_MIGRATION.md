@@ -609,6 +609,15 @@ every further wrapper retirement: **grep the module's boot-time callers for "run
 exists" assumptions**, and consider removing the wrapper's create side effect outright once
 `appInit`'s own initial-data path is confirmed to cover every first-run route.*
 
+*✅ Side effect removed, same day: `loadMiniCycleData()` now returns null on an empty origin
+and creates nothing (pinned in `dataAccess.tests.js` with an injected creator that must never be
+called). Two journeys immediately failed, both boot-order assumptions the seed had been masking:
+`quickActionsManager` seeded its settings block at init, which on a first run is refused
+(state not ready) — it now also seeds on the first state change after data exists, a contract
+instead of timing; and a factory reset now leaves storage genuinely empty until the first-run
+choice (the first-run state contract) rather than an auto-created empty document — the reset
+journeys read an absent document as "no routines". Everything green after that.*
+
 ---
 
 ## P2 — recurring / dates
