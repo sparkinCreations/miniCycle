@@ -1,6 +1,6 @@
 # State-as-Truth Migration — Gen 1 leftovers on the cycle loop
 
-**Status:** Open plan — #15 hot path DONE Sep 2026 (add/complete/reset/render/cycle-complete/backup) (AppState required + unguarded; `validate:chains` now sees local aliases); #13 FIXED Sep 2026 (first real input switches undo on); #8, #9 and #11 measured and found milder than written (see each); #4 and #10 FIXED (v2.541 / v2.540), #24 shipped, #30 verified closed; #1 probed and NOT reproduced, then #1 (auto-reset + due-date paths) and #2 moved to state in v2.562; #1's Complete-button half REPRODUCED and fixed with #3 and #5 (Sep 2026, unreleased at time of writing) — **P0 band closed**  
+**Status:** Open plan — #16 measured Sep 2026: no live gap, not changed (see it); #15 hot path DONE Sep 2026 (add/complete/reset/render/cycle-complete/backup) (AppState required + unguarded; `validate:chains` now sees local aliases); #13 FIXED Sep 2026 (first real input switches undo on); #8, #9 and #11 measured and found milder than written (see each); #4 and #10 FIXED (v2.541 / v2.540), #24 shipped, #30 verified closed; #1 probed and NOT reproduced, then #1 (auto-reset + due-date paths) and #2 moved to state in v2.562; #1's Complete-button half REPRODUCED and fixed with #3 and #5 (Sep 2026, unreleased at time of writing) — **P0 band closed**  
 **Raised:** 2026-08-23 · **Against:** v2.483 · **Amended:** 2026-09-05 against v2.541  
 **Source:** Independent code review of boot, AppState, DI, completion/reset, both task renderers, undo wrapper, drag-drop, reminders, daily reset, history, `.mcyc` payload, import, `featureBoot` API allow-lists, and `moduleLoader` `ENFORCE_REQUIRES`  
 **Premise:** The repaired modules are Gen 3 (state is truth). The **name of the app** — “all tasks done → reset” — is still Gen 1 (DOM `.checked`). That split is the work.
@@ -463,7 +463,18 @@ rather than the existing auto-backup test, because a backup from the last day ma
 
 **Fix:** `AppState: required()` on add / complete / reset / backup. Unguarded `.get()` / `.update()`. `validate:chains` then applies.
 
-### #16 Renderer and drag-drop copy deps at construct
+### #16 Renderer and drag-drop copy deps at construct — measured Sep 2026: no live gap, left as is
+
+*(Two checks before touching it. **Static:** every `this.deps.X` either class reads is either
+copied in the constructor or injected later (`moduleLoader` / `featureBoot` / `taskDOM`
+`injectDependency`) — nothing is read that neither provides. **Runtime:** the real app booted
+(returning-user path) with both constructors instrumented at serve time; after boot settled,
+`DragDropManager` had 13 slots with none empty and `TaskRenderer` 22 slots with only
+`revealTaskButtons` empty — which the renderer never reads. So the copy-then-inject pattern
+delivers everything these classes use today. Switching to `get deps()` would reroute the
+injected keys through DI and drop the overrides `taskDOM` passes to the constructor, for no
+measured benefit. Re-open with a concrete missing dependency, not the pattern alone. The
+unread `revealTaskButtons` copy is dead code — P3 hygiene.)*
 
 **Where:** `TaskRenderer` / `DragDropManager` assign `this.deps = { AppState: resolvedDeps.AppState, … }` then `injectDependency` as a patch.
 
