@@ -121,7 +121,19 @@ def main():
             for line in src.split('\n'):
                 starts.append(starts[-1] + len(line) + 1)
             for dep in req:
-                pat = re.compile(r"(?:this\.)?(?:deps|_deps)\.%s\?\." % re.escape(dep))
+                d = re.escape(dep)
+                ref = r"(?:this\.)?(?:deps|_deps)\.%s" % d
+                patterns = [
+                    r"%s\?\." % ref,
+                    # (deps.X || _deps.X)?.  — the parenthesised fallback read
+                    r"\(\s*%s(?:\s*\|\|\s*%s)*\s*\)\?\." % (ref, ref),
+                ]
+                # A local alias of the dep — `const X = deps.X || _deps.X` — then `X?.`.
+                # Hot-path modules read through aliases almost everywhere, so without
+                # this the gate saw none of them (STATE_TRUTH_MIGRATION #15, Sep 2026).
+                for am in re.finditer(r"\b(?:const|let|var)\s+(\w+)\s*=\s*%s(?:\s*\|\|\s*%s)*\s*;" % (ref, ref), src):
+                    patterns.append(r"(?<![\w.])%s\?\." % re.escape(am.group(1)))
+                pat = re.compile('|'.join('(?:%s)' % p for p in dict.fromkeys(patterns)))
                 for m in pat.finditer(src):
                     if any(a <= m.start() < b for a, b in allowed):
                         continue  # inside catch — see module docstring

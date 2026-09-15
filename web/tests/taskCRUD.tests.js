@@ -124,14 +124,20 @@ export async function runTaskCRUDTests(resultsDiv) {
     // ============================================
     resultsDiv.innerHTML += '<h4 class="test-section">⚠️ Error Handling</h4>';
 
-    await test('addTaskImpl handles missing AppState', async () => {
+    // AppState is required() on the add path (STATE_TRUTH_MIGRATION #15). Missing wiring
+    // used to fall through the guards and return quietly; it must reach addTaskImpl's catch
+    // and tell the user the add failed.
+    await test('addTaskImpl reports a failure when AppState is not wired', async () => {
+        const notes = [];
         const deps = {
             AppState: null,
-            showNotification: () => {},
+            showNotification: (msg, type) => notes.push(type),
         };
         setTaskCRUDDependencies(deps);
-        // Should not throw
-        await addTaskImpl('test', {}, deps);
+        await addTaskImpl('test', {}, deps);   // must not throw out — the catch surfaces it
+        if (!notes.includes('warning')) {
+            throw new Error('no failure notification — the add was skipped silently');
+        }
     });
 
     // ============================================

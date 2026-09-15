@@ -331,7 +331,7 @@ class UIOrchestrator {
         }
 
         // Get tasks from AppState (state-driven, not relying on hidden defaults)
-        const state = AppState?.get?.();
+        const state = AppState.get();
         const activeCycleId = state?.appState?.activeCycleId;
         const tasks = state?.data?.cycles?.[activeCycleId]?.tasks || [];
 
@@ -349,7 +349,7 @@ class UIOrchestrator {
         const AppState = _deps.AppState;
 
         // Get current task data from state
-        const state = AppState?.get?.();
+        const state = AppState.get();
         const activeCycleId = state?.appState?.activeCycleId;
         const cycle = state?.data?.cycles?.[activeCycleId];
 
@@ -414,7 +414,7 @@ class UIOrchestrator {
 
         // Get current arrow visibility from state
         const AppState = _deps.AppState;
-        const state = AppState?.get?.();
+        const state = AppState.get();
         const arrowsVisible = state?.ui?.moveArrowsVisible || false;
 
         _deps.setArrowsEnabled?.(arrowsVisible);

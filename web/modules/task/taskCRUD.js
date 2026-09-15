@@ -58,7 +58,9 @@ let estimateTaskSize, canAddToStorage, getStorageShortageMessage;
 
 const di = createDIModule('TaskCRUD', {
     appInit: optional(null),
-    AppState: optional(null),
+    // add / complete / reset: a wiring miss must throw (each caller's catch surfaces it as a
+    // failure notification) instead of silently skipping the save — STATE_TRUTH_MIGRATION #15
+    AppState: required(),
     sanitizeInput: optional(null),
     showNotification: optional(null),
     showPromptModal: optional(null),
@@ -233,12 +235,12 @@ export async function addTaskImpl(taskText, options = {}, deps = {}) {
 
         // Validate AppState is available
         const AppState = deps.AppState || _deps.AppState;
-        if (!AppState?.isReady?.()) {
+        if (!AppState.isReady()) {
             console.warn('AppState not ready, task creation may fail');
         }
 
         // Check task limit (skip during initial loading)
-        if (!isLoading && AppState?.isReady?.()) {
+        if (!isLoading && AppState.isReady()) {
             const state = AppState.get();
             const activeCycleId = state?.appState?.activeCycleId;
             const currentTasks = state?.data?.cycles?.[activeCycleId]?.tasks || [];
@@ -297,7 +299,7 @@ export async function addTaskImpl(taskText, options = {}, deps = {}) {
         if (!isLoading) {
             const AppStateForSnap = deps.AppState || _deps.AppState;
             const captureStateSnapshot = deps.captureStateSnapshot || _deps.captureStateSnapshot;
-            const preAddState = AppStateForSnap?.get?.();
+            const preAddState = AppStateForSnap.get();
             if (preAddState) safeCaptureSnapshot(captureStateSnapshot, preAddState, 'task add');
         }
 
@@ -477,7 +479,7 @@ export async function editTaskImpl(taskItem, deps = {}) {
             enableUndoSystemOnFirstInteraction?.();
 
             // Capture snapshot BEFORE changing text
-            if (AppState?.isReady?.()) {
+            if (AppState.isReady()) {
                 const currentState = AppState.get();
                 if (currentState) safeCaptureSnapshot(captureStateSnapshot, currentState, 'task edit');
             }
@@ -487,7 +489,7 @@ export async function editTaskImpl(taskItem, deps = {}) {
 
             const taskId = taskItem.dataset.taskId;
 
-            if (AppState?.isReady?.()) {
+            if (AppState.isReady()) {
                 await AppState.update(state => {
                     const cid = state.appState.activeCycleId;
                     const cycle = state.data.cycles[cid];
@@ -604,7 +606,7 @@ function _editTaskModal(taskItem, taskLabel, oldText, ctx) {
 
         enableUndoSystemOnFirstInteraction?.();
 
-        if (AppState?.isReady?.()) {
+        if (AppState.isReady()) {
             const currentState = AppState.get();
             if (currentState) safeCaptureSnapshot(captureStateSnapshot, currentState, 'task edit');
         }
@@ -612,7 +614,7 @@ function _editTaskModal(taskItem, taskLabel, oldText, ctx) {
         taskLabel.textContent = newText;
         const taskId = taskItem.dataset.taskId;
 
-        if (AppState?.isReady?.()) {
+        if (AppState.isReady()) {
             await AppState.update(state => {
                 const cid = state.appState.activeCycleId;
                 const cycle = state.data.cycles[cid];
@@ -709,13 +711,13 @@ export async function deleteTaskImpl(taskItem, deps = {}) {
                 enableUndoSystemOnFirstInteraction?.();
 
                 // Capture snapshot BEFORE deletion
-                if (AppState?.isReady?.()) {
+                if (AppState.isReady()) {
                     const currentState = AppState.get();
                     if (currentState) safeCaptureSnapshot(captureStateSnapshot, currentState, 'task delete');
                 }
 
                 // ✅ Use AppState only (no localStorage fallback) - DI-pure
-                if (AppState?.isReady?.()) {
+                if (AppState.isReady()) {
                     await AppState.update(state => {
                         const cid = state.appState.activeCycleId;
                         const cycle = state.data.cycles[cid];
@@ -797,7 +799,7 @@ export async function toggleTaskPriorityImpl(taskItem, deps = {}) {
         const taskId = taskItem.dataset.taskId;
 
         // Read fresh state from AppState
-        const currentState = AppState?.get();
+        const currentState = AppState.get();
         if (!currentState) {
             console.error('AppState not available for priority toggle');
             return;
@@ -817,7 +819,7 @@ export async function toggleTaskPriorityImpl(taskItem, deps = {}) {
         const newHighPriority = !isCurrentlyHighPriority;
 
         // Capture snapshot BEFORE changing priority
-        if (AppState?.isReady?.()) {
+        if (AppState.isReady()) {
             safeCaptureSnapshot(captureStateSnapshot, currentState, 'priority toggle');
         }
 
@@ -851,7 +853,7 @@ export async function toggleTaskPriorityImpl(taskItem, deps = {}) {
         }
 
         // ✅ Use AppState only (no localStorage fallback) - DI-pure
-        if (AppState?.isReady?.()) {
+        if (AppState.isReady()) {
 
             AppState.update(state => {
                 const cid = state.appState.activeCycleId;
@@ -875,7 +877,7 @@ export async function toggleTaskPriorityImpl(taskItem, deps = {}) {
                 if (notifications?.showPriorityColorPickerNotification) {
                     // onColorSelect closes over AppState and taskId — reliable save path
                     const onColorSelect = async (color) => {
-                        if (AppState?.isReady?.()) {
+                        if (AppState.isReady()) {
                             await AppState.update(state => {
                                 if (!state.settings) state.settings = {};
                                 // Update global default so future new tasks start with this color

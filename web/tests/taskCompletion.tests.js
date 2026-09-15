@@ -8,7 +8,7 @@ import { setupTestEnvironment, createProtectedTest } from './testHelpers.js';
 export async function runTaskCompletionTests(resultsDiv) {
     const cacheBuster = window.testCacheBuster || Date.now();
     const mod = await import(`../modules/task/taskCompletion.js?v=${cacheBuster}`);
-    const { setTaskCompletionDependencies, saveTaskToSchema25Impl } = mod;
+    const { setTaskCompletionDependencies, saveTaskToSchema25Impl, handleTaskCompletionChangeImpl } = mod;
 
     resultsDiv.innerHTML = '<h2>TaskCompletion Tests</h2><h3>Running tests...</h3>';
     let passed = { count: 0 }, total = { count: 0 };
@@ -87,9 +87,42 @@ export async function runTaskCompletionTests(resultsDiv) {
     // ============================================
     resultsDiv.innerHTML += '<h4 class="test-section">⚠️ Error Handling</h4>';
 
-    await test('saveTaskToSchema25Impl handles missing AppState', () => {
-        // Should not throw
-        saveTaskToSchema25Impl('cycle-1', { tasks: [] }, {});
+    // AppState is required() on the completion path (STATE_TRUTH_MIGRATION #15). A wiring
+    // miss used to skip the save silently — the checkbox moved, nothing was stored, no
+    // message. It must now fail where it happens.
+    await test('saveTaskToSchema25Impl throws when AppState is not wired (no silent skipped save)', () => {
+        setTaskCompletionDependencies({ AppState: null });
+        let message = null;
+        try {
+            saveTaskToSchema25Impl('cycle-1', { tasks: [] }, {});
+        } catch (error) {
+            message = error.message;
+        }
+        if (!message || !message.includes('isReady')) {
+            throw new Error(`expected a TypeError reading isReady, got ${message === null ? 'no throw — the save was skipped silently' : message}`);
+        }
+    });
+
+    await test('a checkbox change with AppState not wired reports the failure instead of skipping the save', async () => {
+        const notes = [];
+        setTaskCompletionDependencies({ AppState: null, showNotification: (msg, type) => notes.push(type) });
+        const li = document.createElement('li');
+        li.className = 'task';
+        li.dataset.taskId = 'task-1';
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = true;
+        li.appendChild(checkbox);
+        document.body.appendChild(li);
+        try {
+            await handleTaskCompletionChangeImpl(checkbox, {});
+        } finally {
+            li.remove();
+            setTaskCompletionDependencies({ showNotification: null });
+        }
+        if (!notes.includes('warning')) {
+            throw new Error('no failure notification — a missing AppState was skipped silently again');
+        }
     });
 
     await test('saveTaskToSchema25Impl handles null cycle', () => {

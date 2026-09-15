@@ -779,6 +779,26 @@ export async function runTaskCycleResetTests(resultsDiv) {
         }
     });
 
+    // AppState is required() on the reset path (STATE_TRUTH_MIGRATION #15). Mark-all used
+    // to skip its state write silently when AppState was missing, leaving the checkboxes
+    // ticked with nothing saved. It must now fail where it happens.
+    await test('markAllTasksCompleteImpl throws when AppState is not wired (no silent DOM-only completion)', () => {
+        mod.setTaskCycleResetDependencies({ AppState: null });
+        let message = null;
+        try {
+            mod.markAllTasksCompleteImpl({ tasks: [] }, document.createElement('ul'), () => {}, {});
+        } catch (error) {
+            message = error.message;
+        } finally {
+            mod.setTaskCycleResetDependencies({
+                AppState: { get: () => ({ settings: {}, appState: {}, data: { cycles: {} } }), update: () => {}, isReady: () => false }
+            });
+        }
+        if (!message || !message.includes('isReady')) {
+            throw new Error(`expected a TypeError reading isReady, got ${message === null ? 'no throw — the write was skipped silently' : message}`);
+        }
+    });
+
     // ============================================
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;

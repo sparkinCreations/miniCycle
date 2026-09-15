@@ -593,7 +593,7 @@ export class GuidedTourManager {
      */
     async enableTourPrompts() {
         const AppState = this.deps.AppState;
-        if (!AppState?.isReady?.()) return;
+        if (!AppState.isReady()) return;
 
         await AppState.update((state) => {
             if (!state.settings) state.settings = {};
@@ -785,7 +785,7 @@ export class GuidedTourManager {
 
     _persistStep(stepIndex) {
         const appState = this.deps.AppState;
-        if (!appState?.isReady?.()) {
+        if (!appState.isReady()) {
             return;
         }
 
@@ -798,7 +798,7 @@ export class GuidedTourManager {
 
     _markDone() {
         const appState = this.deps.AppState;
-        if (!appState?.isReady?.()) {
+        if (!appState.isReady()) {
             return;
         }
 

@@ -163,7 +163,7 @@ export function setupExportButton() {
     exportBtn._clickHandler = () => {
 
         const loadMiniCycleData = _deps.loadMiniCycleData;
-        const schemaData = loadMiniCycleData?.();
+        const schemaData = loadMiniCycleData();
 
         if (!schemaData) {
             console.error('Schema 2.5 data required for export');

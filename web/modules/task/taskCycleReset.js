@@ -49,7 +49,7 @@
  * - **Clear on Reset tasks** → deleted during reset, recorded to clearedTasks for recreate
  */
 
-import { createDIModule, optional } from '../core/diBase.js';
+import { createDIModule, required, optional } from '../core/diBase.js';
 import { applyTaskStatusLabel } from './taskUtils.js';
 import { TASK_TIMEOUTS, UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, MILESTONES, LIMITS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
@@ -60,7 +60,9 @@ import { getLabel } from '../labels/labelResolver.js';
 
 const di = createDIModule('TaskCycleReset', {
     appInit: optional(null),
-    AppState: optional(null),
+    // add / complete / reset: a wiring miss must throw (each caller's catch surfaces it as a
+    // failure notification) instead of silently skipping the save — STATE_TRUTH_MIGRATION #15
+    AppState: required(),
     // Re-arm reminders after a reset: the reminder timer stops itself when it
     // fires with zero incomplete tasks (long window in Manual Cycle mode), and
     // resetting tasks to incomplete never restarted it — reminders went silent
@@ -332,7 +334,7 @@ function getResetContext(deps) {
     // Get cycle data from AppState (always ready by the time user actions trigger this)
     const AppState = deps.AppState || _deps.AppState;
 
-    if (!AppState?.isReady?.()) {
+    if (!AppState.isReady()) {
         console.error('AppState not ready for resetTasks');
         return null;
     }
@@ -362,7 +364,7 @@ function resetTasksData(context, deps) {
     const removeRecurringTasksFromCycle = deps.removeRecurringTasksFromCycle || _deps.removeRecurringTasksFromCycle;
 
     // Get fresh state (user may have switched cycles during animation)
-    const freshState = AppState?.get?.();
+    const freshState = AppState.get();
     const currentActiveCycle = freshState?.appState?.activeCycleId;
 
     if (currentActiveCycle !== activeCycle) {
@@ -466,7 +468,7 @@ function resetTasksData(context, deps) {
     }
 
     // ✅ Use AppState only (no localStorage fallback) - DI-pure
-    if (AppState?.isReady?.()) {
+    if (AppState.isReady()) {
         AppState.update(state => {
             const cycle = state?.data?.cycles?.[currentActiveCycle];
             if (cycle) {
@@ -592,7 +594,7 @@ function moveCompletedTasksBack(context, deps) {
 
 
     // Restore original task order from AppState
-    if (AppState?.isReady?.()) {
+    if (AppState.isReady()) {
         const state = AppState.get();
         const cycleData = state?.data?.cycles?.[activeCycle];
         const stateTaskOrder = cycleData?.tasks?.map(t => t.id) || [];
@@ -935,7 +937,7 @@ export async function deleteCompletedTasksImpl(activeCycleId, cycleData, taskLis
     });
 
     // ✅ Use AppState only (no localStorage fallback) - DI-pure
-    if (AppState?.isReady?.()) {
+    if (AppState.isReady()) {
         await AppState.update(state => {
             const cycle = state.data.cycles[activeCycleId];
             if (cycle?.tasks) {
@@ -1025,7 +1027,7 @@ export function markAllTasksCompleteImpl(cycleData, taskList, resetTasksFn, deps
     // window dropped them, and state readers (stats, Clear Completed, the new
     // auto-reset completion guard) disagreed with the visible checkboxes.
     const AppState = deps.AppState || _deps.AppState;
-    if (AppState?.isReady?.()) {
+    if (AppState.isReady()) {
         // Capture the manual-vs-button split BEFORE the write below flips every
         // task to completed. This is the only instant it is knowable.
         const preState = AppState.get();
@@ -1073,7 +1075,7 @@ function getCompleteAllContext(deps) {
 
     const taskList = querySelector(`#${DOM_IDS.TASK_LIST}`);
 
-    if (!AppState?.isReady?.()) {
+    if (!AppState.isReady()) {
         console.error('AppState not ready for handleCompleteAllTasks');
         return null;
     }
@@ -1187,7 +1189,7 @@ async function executeCompleteAll(activeCycle, cycleData, taskList, resetTasksFn
     const captureStateSnapshot = deps.captureStateSnapshot || _deps.captureStateSnapshot;
     const isPerformingUndoRedo = deps.isPerformingUndoRedo || _deps.isPerformingUndoRedo || (() => false);
     if (typeof captureStateSnapshot === 'function' && !isPerformingUndoRedo()) {
-        const preBatchState = (deps.AppState || _deps.AppState)?.get?.();
+        const preBatchState = (deps.AppState || _deps.AppState).get();
         if (preBatchState) captureStateSnapshot(preBatchState);
     }
 

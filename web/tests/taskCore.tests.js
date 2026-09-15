@@ -415,7 +415,10 @@ export async function runTaskCoreTests(resultsDiv, isPartOfSuite = false) {
         checkbox.checked = true;
         taskDiv.appendChild(checkbox);
 
-        const instance = new TaskCore();
+        // AppState is required() on the completion path (STATE_TRUTH_MIGRATION #15): without
+        // it the handler now reports a failure instead of updating the DOM with no save, so
+        // the fixture carries one, as production always does.
+        const instance = new TaskCore({ AppState: createMockAppState(createMockSchemaData()) });
         // Init to load sub-modules
         await instance.init();
         await instance.handleTaskCompletionChange(checkbox);

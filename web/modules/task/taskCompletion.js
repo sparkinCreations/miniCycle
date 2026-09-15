@@ -22,7 +22,7 @@
  * @typedef {import('../core/types.js').MiniCycleState} MiniCycleState
  */
 
-import { createDIModule, optional } from '../core/diBase.js';
+import { createDIModule, required, optional } from '../core/diBase.js';
 import { applyTaskStatusLabel } from './taskUtils.js';
 import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
@@ -34,7 +34,9 @@ import { announce } from '../utils/announce.js';
 
 const di = createDIModule('TaskCompletion', {
     appInit: optional(null),
-    AppState: optional(null),
+    // add / complete / reset: a wiring miss must throw (each caller's catch surfaces it as a
+    // failure notification) instead of silently skipping the save — STATE_TRUTH_MIGRATION #15
+    AppState: required(),
     isPerformingUndoRedo: optional(null),
     showNotification: optional(null),
     captureStateSnapshot: optional(null),
@@ -123,7 +125,7 @@ export async function handleTaskCompletionChangeImpl(checkbox, deps = {}) {
 
         // Capture state snapshot BEFORE making changes (for undo)
         if (typeof captureStateSnapshot === 'function' && !isPerformingUndoRedo()) {
-            const currentState = AppState?.get?.();
+            const currentState = AppState.get();
             if (currentState) {
                 captureStateSnapshot(currentState);
             }
@@ -140,7 +142,7 @@ export async function handleTaskCompletionChangeImpl(checkbox, deps = {}) {
         // taskCore facade before delegating here) means checkMiniCycle sees the
         // pre-click state and ticking the last task stops completing the cycle.
         if (taskId) {
-            if (AppState?.isReady?.()) {
+            if (AppState.isReady()) {
                 await AppState.update(state => {
                     const cid = state.appState?.activeCycleId;
                     const cycle = state.data?.cycles?.[cid];
@@ -234,7 +236,7 @@ export async function saveCurrentTaskOrderImpl(deps = {}) {
         const newOrderIds = Array.from(taskElements).map(task => task.dataset.taskId);
 
         // ✅ Use AppState only (no localStorage fallback) - DI-pure
-        if (AppState?.isReady?.()) {
+        if (AppState.isReady()) {
             await AppState.update(state => {
                 const cid = state.appState.activeCycleId;
                 const cycle = state.data.cycles[cid];
@@ -273,7 +275,7 @@ export async function saveCurrentTaskOrderImpl(deps = {}) {
 export function saveTaskToSchema25Impl(activeCycle, currentCycle, deps = {}) {
     const AppState = deps.AppState || _deps.AppState;
 
-    if (AppState?.isReady?.()) {
+    if (AppState.isReady()) {
         try {
             AppState.update(state => {
                 if (state?.data?.cycles) {
