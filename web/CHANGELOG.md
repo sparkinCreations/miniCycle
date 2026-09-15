@@ -1,3 +1,10 @@
+## [2.568] - 2026-09-15
+- refactor(task): delete the DOM-scraping save helper
+- fix(state): the legacy data wrapper no longer creates initial data as a side effect
+- refactor(state): reminders, modeManager and statsPanel read AppState, not the legacy wrapper
+- docs(state-truth): record #14 and #26 as measured and closed
+
+
 ## [2.567] - 2026-09-15
 - fix(undo,loader): undo only offered when it changes something; repair runs inside update
 - docs(state-truth): record #16 as measured, no live gap
