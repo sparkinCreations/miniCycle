@@ -168,6 +168,7 @@ var BOOT_CRITICAL = [
   './modules/utils/cycleMode.js',
   './modules/utils/priorityLevel.js',
   './modules/utils/schemaVersion.js',
+  './modules/routine/schemaMigration26.js',
   // Task modules - ALL task functionality
   './modules/task/taskCore.js',
   './modules/task/taskDOM.js',

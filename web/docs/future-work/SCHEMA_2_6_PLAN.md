@@ -283,6 +283,18 @@ Entry points after the pre-2.5 retirement (Sep 2026) — the 2.6 step hangs here
 | `initAppWithAutoMigration()` | boot-time entry every user passes through; today it only runs setup |
 | `createInitialSchema25Data()` | fresh-install shape |
 
+**The migration itself is written (Sep 2026) and not yet wired:**
+`modules/routine/schemaMigration26.js` — `migrateSchema_2_5_to_2_6(doc, { makeId, now, swatchSets })`,
+pure (no DI, no storage), returns a new document and leaves the input untouched, idempotent on a
+2.6 document, refuses anything that is not 2.5. Built from five exported, separately tested steps
+in this order: `rekeyRoutines` (#20), `collapseAutoClear` (Rename A — `autoClear` is an OPEN map,
+extra boolean modes survive; the mirror is ignored, never consulted), `convertPriority` (tasks,
+recurring templates, cleared-task entries, history details; `settings.priorityColor` →
+`settings.defaultPriority`), `renameRoutineKeys` (Rename B), `stampVersion`. Tests in
+`tests/schemaMigration26.tests.js`, mutation-verified (mirror kept, active id not remapped,
+colour ignored, closed map, input mutated — each fails). Nothing calls it at runtime and
+`SCHEMA.CURRENT` is still `"2.5"`. Wiring it is the release step below.
+
 A migration function is deliberately **not** sketched here. The previous doc's example was
 written against the wrong shape and would have thrown on real data; write it against
 `SCHEMA_2_5.md` and the functions above.
@@ -658,7 +670,11 @@ risky stored-format change small and last.
    save items together with step 1, so that code is reworked once.
    *Progress Sep 2026:* P0 closed. In P1, #7, #12 and #13 are fixed; #8, #9 and #11 were
    measured and found milder than written (details in that doc).
-7. **One migration, one version bump (decided Sep 2026).** A single 2.5 → 2.6 migration carries:
+7. **One migration, one version bump (decided Sep 2026).** *Progress: the migration function is
+   built and tested but unwired — see Migration seam. Measured surface for the reader sweep, Sep
+   2026: Rename B 1,330 references in 74 modules, priority 469 in 36, Rename A 447 in 29. The
+   sweep moves readers onto the `cycleMode.js` / `priorityLevel.js` helpers first (behaviour-neutral
+   on 2.5), then the helpers' internals flip in the same release as the wiring.* A single 2.5 → 2.6 migration carries:
    - the **UUID re-key** — `STATE_TRUTH_MIGRATION.md` #20: stable UUID map keys, `title` as the
      name. Today routines are keyed by name, which is also a CLAUDE.md #18 prototype-pollution
      hazard
