@@ -1,6 +1,6 @@
 # State-as-Truth Migration — Gen 1 leftovers on the cycle loop
 
-**Status:** Open plan — #11 FIXED Sep 2026 (repair runs inside update()); undo no longer offered with nothing to undo; #16 measured Sep 2026: no live gap, not changed (see it); #15 hot path DONE Sep 2026 (add/complete/reset/render/cycle-complete/backup) (AppState required + unguarded; `validate:chains` now sees local aliases); #13 FIXED Sep 2026 (first real input switches undo on); #8, #9 and #11 measured and found milder than written (see each); #4 and #10 FIXED (v2.541 / v2.540), #24 shipped, #30 verified closed; #1 probed and NOT reproduced, then #1 (auto-reset + due-date paths) and #2 moved to state in v2.562; #1's Complete-button half REPRODUCED and fixed with #3 and #5 (Sep 2026, unreleased at time of writing) — **P0 band closed**  
+**Status:** Open plan — #26 measured Sep 2026: closed by the normalizer; #14 measured Sep 2026: covered, not changed; #11 FIXED Sep 2026 (repair runs inside update()); undo no longer offered with nothing to undo; #16 measured Sep 2026: no live gap, not changed (see it); #15 hot path DONE Sep 2026 (add/complete/reset/render/cycle-complete/backup) (AppState required + unguarded; `validate:chains` now sees local aliases); #13 FIXED Sep 2026 (first real input switches undo on); #8, #9 and #11 measured and found milder than written (see each); #4 and #10 FIXED (v2.541 / v2.540), #24 shipped, #30 verified closed; #1 probed and NOT reproduced, then #1 (auto-reset + due-date paths) and #2 moved to state in v2.562; #1's Complete-button half REPRODUCED and fixed with #3 and #5 (Sep 2026, unreleased at time of writing) — **P0 band closed**  
 **Raised:** 2026-08-23 · **Against:** v2.483 · **Amended:** 2026-09-05 against v2.541  
 **Source:** Independent code review of boot, AppState, DI, completion/reset, both task renderers, undo wrapper, drag-drop, reminders, daily reset, history, `.mcyc` payload, import, `featureBoot` API allow-lists, and `moduleLoader` `ENFORCE_REQUIRES`  
 **Premise:** The repaired modules are Gen 3 (state is truth). The **name of the app** — “all tasks done → reset” — is still Gen 1 (DOM `.checked`). That split is the work.
@@ -442,7 +442,14 @@ on the previous build on both Undo checks) and `uiBoot.tests.js`.)*
 
 ## P1 — DI advertised vs DI on the hot path
 
-### #14 `required()` warns and returns `null`
+### #14 `required()` warns and returns `null` — measured Sep 2026: covered, `diBase` left as is
+
+*(A missing required dep logs `⚠️ <Module> missing required deps: <names>` from `resolve()`, so
+the console names the culprit. The journey harness fails any journey whose page logs
+`missing (required )?dep`, so a boot-time wiring gap cannot pass CI. And since #15 the hot path
+reads `AppState` unguarded, so a gap throws where it is used. Throwing from `resolve()` for every
+module would change what roughly 3,700 unit tests may wire partially, for no safety the above
+does not already give. Reopen if a gap is found that neither the warning nor the journeys caught.)*
 
 **Where:** `diBase.js` — missing required deps do **not** throw. Fail-fast is a contributor rule (unguarded read), not `resolve()`.
 
@@ -581,7 +588,17 @@ mentions that a recurrence was cancelled, which is the more consequential half.
 
 ## P2 — recurring / dates
 
-### #26 Monthly “pattern doesn’t exist” → 1st of month
+### #26 Monthly “pattern doesn’t exist” → 1st of month — measured Sep 2026: closed by the normalizer
+
+*(The fallback in `calculateNextMonthly`'s week-of-month branch is unreachable for real input.
+`calculateNthWeekdayOfMonth` returns null only for an ordinal outside 1–4/`last` or an unknown
+weekday, and a 1st–4th or last weekday exists in every month. `normalizeRecurringSettings`
+allowlists exactly those ordinals and weekdays (`VALID_ORDINALS`, `VALID_WEEK_DAYS`, Aug 2026
+sweep), and `calculateNextOccurrence` normalizes on EVERY call — so a template stored before the
+allowlist with ordinal `5` is coerced at spawn time too. Pinned end to end in
+`recurringCalculators.tests.js` ("imported ordinal-5 weekOfMonth normalizes away"). The
+specific-days branch had the same shape and was fixed separately with a forward scan. No change
+made; reopen only for a caller that reaches `calculateNextMonthly` without the normalizer.)*
 
 **Where:** `calculateNextMonthly` in `recurringCalculators.js` — `new Date(nextYear, nextMonth, 1)` fallback.
 
