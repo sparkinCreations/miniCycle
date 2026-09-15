@@ -479,6 +479,25 @@ export async function runBackupManagerTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
+    // AppState is required() (STATE_TRUTH_MIGRATION #15). The manual backup used to throw
+    // "AppState not ready" for a missing AppState too, so broken wiring read as a timing
+    // problem. (The auto-backup test above cannot tell the two apart: a backup from the last
+    // day returns false before AppState is read.)
+    await test('createManualBackup names broken wiring, not "not ready", when AppState is not wired', async () => {
+        setBackupManagerDependencies({ AppState: null });
+        let message = null;
+        try {
+            await backupManager.createManualBackup('wiring probe');
+        } catch (error) {
+            message = error.message;
+        } finally {
+            setBackupManagerDependencies({ AppState: createMockAppStateWithData() });
+        }
+        if (!message || !message.includes('isReady')) {
+            throw new Error(`expected a TypeError reading isReady, got ${message === null ? 'no throw' : JSON.stringify(message)}`);
+        }
+    });
+
     await test('restoreBackup throws for invalid ID', async () => {
         const mockAppState = createMockAppStateWithData();
         setBackupManagerDependencies({ AppState: mockAppState });

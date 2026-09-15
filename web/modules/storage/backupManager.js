@@ -13,7 +13,7 @@
  * @module storage/backupManager
  */
 
-import { createDIModule, optional } from '../core/diBase.js';
+import { createDIModule, required } from '../core/diBase.js';
 import { STORAGE_KEYS, INTERVALS, APP_VERSION } from '../core/constants.js';
 
 // ============================================================================
@@ -21,7 +21,9 @@ import { STORAGE_KEYS, INTERVALS, APP_VERSION } from '../core/constants.js';
 // ============================================================================
 
 const di = createDIModule('BackupManager', {
-    AppState: optional(null)
+    // Read unguarded: a wiring miss must throw where it happens instead of silently
+    // skipping the work — STATE_TRUTH_MIGRATION #15
+    AppState: required()
 });
 
 // Late-binding deps via Proxy
@@ -119,14 +121,6 @@ class BackupManager {
         this.db = null;
         this.isInitialized = false;
         this.initPromise = null;
-    }
-
-    /**
-     * Get AppState (DI-pure, no window.* fallback)
-     * @private
-     */
-    _getAppState() {
-        return _deps.AppState;
     }
 
     _buildBackupRecord(currentState, type, { id, name, cycleCount, liteStorage = collectLiteStorageSnapshot(), timestamp = Date.now() } = {}) {
@@ -273,8 +267,8 @@ class BackupManager {
             }
 
             // Get current app state (DI-pure)
-            const AppState = this._getAppState();
-            if (!AppState?.isReady?.()) {
+            const AppState = _deps.AppState;
+            if (!AppState.isReady()) {
                 console.warn('⚠️ BackupManager: AppState not ready, skipping auto-backup');
                 return false;
             }
@@ -321,8 +315,8 @@ class BackupManager {
             }
 
             // Get current app state (DI-pure)
-            const AppState = this._getAppState();
-            if (!AppState?.isReady?.()) {
+            const AppState = _deps.AppState;
+            if (!AppState.isReady()) {
                 console.warn('⚠️ BackupManager: AppState not ready, skipping session backup');
                 return false;
             }
@@ -387,8 +381,8 @@ class BackupManager {
             await this.init();
 
             // DI-pure (no window.* fallback)
-            const AppState = this._getAppState();
-            if (!AppState?.isReady?.()) {
+            const AppState = _deps.AppState;
+            if (!AppState.isReady()) {
                 throw new Error('AppState not ready');
             }
 

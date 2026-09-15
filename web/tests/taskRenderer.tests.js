@@ -197,6 +197,26 @@ export async function runTaskRendererTests(resultsDiv) {
         await renderer.refreshUIFromState(null);
     });
 
+    // AppState is required() (STATE_TRUTH_MIGRATION #15). With it missing, refresh used to
+    // take the not-ready fallback and reload, so broken wiring looked like a slow boot.
+    await test('refreshUIFromState throws when AppState is not wired, instead of the not-ready fallback', async () => {
+        let fallbackCalled = false;
+        const renderer = new TaskRenderer(createMockDependencies({ loadMiniCycle: () => { fallbackCalled = true; } }));
+        renderer.deps.AppState = null;
+        let message = null;
+        try {
+            await renderer.refreshUIFromState();
+        } catch (error) {
+            message = error.message;
+        }
+        if (!message || !message.includes('isReady')) {
+            throw new Error(`expected a TypeError reading isReady, got ${message === null ? 'no throw' : message}`);
+        }
+        if (fallbackCalled) {
+            throw new Error('took the loadMiniCycle fallback — broken wiring was treated as "not ready"');
+        }
+    });
+
     await test('refreshUIFromState uses AppState when ready', async () => {
         let appStateCalled = false;
         const renderer = new TaskRenderer(createMockDependencies({

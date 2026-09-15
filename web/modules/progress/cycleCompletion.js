@@ -47,7 +47,7 @@
  * NOT a good hook point - use `incrementCycleCount()` instead.
  */
 
-import { createDIModule, optional } from '../core/diBase.js';
+import { createDIModule, required, optional } from '../core/diBase.js';
 import { UI_TIMEOUTS, DOM_IDS, DOM_CLASSES, APP_VERSION } from '../core/constants.js';
 import { getLabel, getIcon } from '../labels/labelResolver.js';
 import { announce } from '../utils/announce.js';
@@ -65,7 +65,9 @@ let MILESTONES = null;
 // ============================================================================
 
 const di = createDIModule('CycleCompletion', {
-    AppState: optional(null),
+    // Read unguarded: a wiring miss must throw where it happens instead of silently
+    // skipping the work — STATE_TRUTH_MIGRATION #15
+    AppState: required(),
     showNotification: optional(null),
     updateStatsPanel: optional(null),
     unlockMiniGame: optional(null),
@@ -103,7 +105,7 @@ export function setCycleCompletionDependencies(dependencies) {
  * @returns {Array|null} Array of tasks or null
  */
 export function getActiveRoutineTasks() {
-    return getActiveRoutine(deps.AppState?.get?.())?.tasks ?? null;
+    return getActiveRoutine(deps.AppState.get())?.tasks ?? null;
 }
 
 /**
@@ -113,7 +115,7 @@ export function getActiveRoutineTasks() {
  */
 export function showCompletionAnimation() {
     const deps = di.resolve();
-    const state = deps.AppState?.get?.();
+    const state = deps.AppState.get();
     if (state?.settings?.disableCompletionToast) return;
 
     const animation = document.createElement("div");
@@ -271,7 +273,7 @@ function showMilestoneMessage(miniCycleName, cycleCount) {
  */
 function handleMilestoneUnlocks(miniCycleName, globalCyclesCompleted) {
 
-    if (!deps.AppState?.isReady?.()) {
+    if (!deps.AppState.isReady()) {
         console.error('❌ AppState not ready for milestone unlocks');
         return;
     }
@@ -322,7 +324,7 @@ function handleMilestoneUnlocks(miniCycleName, globalCyclesCompleted) {
  */
 export function incrementCycleCount(miniCycleName, savedMiniCycles, completionSplit = null) {
 
-    if (!deps.AppState?.isReady?.()) {
+    if (!deps.AppState.isReady()) {
         console.error('❌ AppState not ready for incrementCycleCount');
         return;
     }
@@ -569,12 +571,12 @@ let _showingDueDateModal = false;
 export function checkMiniCycle(options = {}) {
     const { lastToggledElement } = options;
     // Early return if AppState not ready to prevent initialization race conditions
-    if (!deps.AppState?.isReady?.()) {
+    if (!deps.AppState.isReady()) {
         return;
     }
 
     // Find the active routine in AppState
-    const state = deps.AppState?.get?.();
+    const state = deps.AppState.get();
     const activeCycleId = state?.appState?.activeCycleId;
     const freshCycleData = activeCycleId ? state?.data?.cycles?.[activeCycleId] : null;
 
@@ -610,7 +612,7 @@ export function checkMiniCycle(options = {}) {
                         _showingDueDateModal = false;
                         if (confirmed) {
                             // Verify cycle hasn't changed during modal
-                            const freshState = deps.AppState?.get?.();
+                            const freshState = deps.AppState.get();
                             const currentCycleId = freshState?.appState?.activeCycleId;
                             if (currentCycleId !== activeCycleId) {
                                 console.warn('⚠️ Cycle changed during modal, aborting reset');
@@ -624,7 +626,7 @@ export function checkMiniCycle(options = {}) {
                                 checkbox.checked = false;
                                 // Update AppState to mark task uncompleted
                                 const taskId = lastToggledElement.dataset?.taskId;
-                                if (taskId && deps.AppState) {
+                                if (taskId) {
                                     deps.AppState.update(s => {
                                         const cycle = s.data?.cycles?.[s.appState?.activeCycleId];
                                         const task = cycle?.tasks?.find(t => t.id === taskId);
@@ -645,7 +647,7 @@ export function checkMiniCycle(options = {}) {
             const expectedCycleId = activeCycleId;
             setTimeout(() => {
                 // ✅ FIX: Verify cycle hasn't changed and autoReset still enabled during delay
-                const freshState = deps.AppState?.get?.();
+                const freshState = deps.AppState.get();
 
                 // Only validate if we can read fresh state (backwards compatible with tests)
                 if (freshState) {

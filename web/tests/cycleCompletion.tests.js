@@ -203,13 +203,23 @@ export async function runCycleCompletionTests(resultsDiv, isPartOfSuite = false)
     // === INCREMENT CYCLE COUNT TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">🔢 Increment Cycle Count</h4>';
 
-    await test('incrementCycleCount requires AppState', () => {
+    // AppState is required() (STATE_TRUTH_MIGRATION #15). A missing AppState used to log
+    // "not ready" and return, so a wiring failure looked like a timing blip and the cycle
+    // count silently never moved. It must now throw where it happens.
+    await test('incrementCycleCount throws when AppState is not wired', () => {
         setCycleCompletionDependencies({
             AppState: null
         });
 
-        // Should not throw, just log error
-        incrementCycleCount('test-cycle', {});
+        let message = null;
+        try {
+            incrementCycleCount('test-cycle', {});
+        } catch (error) {
+            message = error.message;
+        }
+        if (!message || !message.includes('isReady')) {
+            throw new Error(`expected a TypeError reading isReady, got ${message === null ? 'no throw — logged and returned as if merely not ready' : message}`);
+        }
     });
 
     await test('incrementCycleCount updates cycle count', () => {
@@ -580,13 +590,20 @@ export async function runCycleCompletionTests(resultsDiv, isPartOfSuite = false)
     // === ERROR HANDLING TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">⚠️ Error Handling</h4>';
 
-    await test('handles null AppState gracefully', () => {
+    await test('checkMiniCycle throws when AppState is not wired (not the not-ready early return)', () => {
         setCycleCompletionDependencies({
             AppState: null
         });
 
-        // Should not throw
-        incrementCycleCount('test', {});
+        let message = null;
+        try {
+            checkMiniCycle();
+        } catch (error) {
+            message = error.message;
+        }
+        if (!message || !message.includes('isReady')) {
+            throw new Error(`expected a TypeError reading isReady, got ${message === null ? 'no throw — returned as if merely not ready, so ticking the last task would never complete the cycle' : message}`);
+        }
     });
 
     await test('handles AppState not ready', () => {

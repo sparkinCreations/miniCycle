@@ -1,6 +1,6 @@
 # State-as-Truth Migration — Gen 1 leftovers on the cycle loop
 
-**Status:** Open plan — #15 add/complete/reset DONE Sep 2026 (AppState required + unguarded; `validate:chains` now sees local aliases); #13 FIXED Sep 2026 (first real input switches undo on); #8, #9 and #11 measured and found milder than written (see each); #4 and #10 FIXED (v2.541 / v2.540), #24 shipped, #30 verified closed; #1 probed and NOT reproduced, then #1 (auto-reset + due-date paths) and #2 moved to state in v2.562; #1's Complete-button half REPRODUCED and fixed with #3 and #5 (Sep 2026, unreleased at time of writing) — **P0 band closed**  
+**Status:** Open plan — #15 hot path DONE Sep 2026 (add/complete/reset/render/cycle-complete/backup) (AppState required + unguarded; `validate:chains` now sees local aliases); #13 FIXED Sep 2026 (first real input switches undo on); #8, #9 and #11 measured and found milder than written (see each); #4 and #10 FIXED (v2.541 / v2.540), #24 shipped, #30 verified closed; #1 probed and NOT reproduced, then #1 (auto-reset + due-date paths) and #2 moved to state in v2.562; #1's Complete-button half REPRODUCED and fixed with #3 and #5 (Sep 2026, unreleased at time of writing) — **P0 band closed**  
 **Raised:** 2026-08-23 · **Against:** v2.483 · **Amended:** 2026-09-05 against v2.541  
 **Source:** Independent code review of boot, AppState, DI, completion/reset, both task renderers, undo wrapper, drag-drop, reminders, daily reset, history, `.mcyc` payload, import, `featureBoot` API allow-lists, and `moduleLoader` `ENFORCE_REQUIRES`  
 **Premise:** The repaired modules are Gen 3 (state is truth). The **name of the app** — “all tasks done → reset” — is still Gen 1 (DOM `.checked`). That split is the work.
@@ -448,8 +448,16 @@ also flags `alias?.` and `(deps.X || _deps.X)?.`. That surfaced 15 older violati
 kind in `guidedTourManager`, `uiOrchestrator`, `deviceDetection`, `cycleExportManager` and
 `shareManager`; all converted, their suites pass.*
 
-*Still open under this item: `taskRenderer`, `cycleCompletion` and `backupManager` still declare
-`AppState: optional(null)`, as do many non-hot-path modules — 40 in all before this change.)*
+*Second batch, same day: `taskRenderer`, `cycleCompletion` and `backupManager` — the render,
+cycle-complete and backup paths — are now `required()` and unguarded too. `backupManager`'s
+private `_getAppState()` accessor became a plain `_deps.AppState` alias so the gate covers it.
+Four more tests pin it and fail on the previous modules; one of them had to be `createManualBackup`
+rather than the existing auto-backup test, because a backup from the last day makes
+`createAutoBackup` return before AppState is read, on either build.*
+
+*Still open under this item: the non-hot-path modules that still declare
+`AppState: optional(null)` (34 of the original 40), and the same accessor pattern in
+`gamesManager` and `dragDropManager`, which the gate cannot see.)*
 
 **Where:** `taskCompletion.js`, `taskCRUD.js`, `taskCycleReset.js`, `taskRenderer.js`, `backupManager.js`, `cycleCompletion.js` (and more). Contrast: `cycleImportManager`, `historyManager`, `dailyResetManager` use `required()`.
 

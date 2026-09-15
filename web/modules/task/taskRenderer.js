@@ -21,7 +21,7 @@
  * @typedef {import('../core/types.js').MiniCycleState} MiniCycleState
  */
 
-import { createDIModule, optional } from '../core/diBase.js';
+import { createDIModule, required, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 // NOTE: taskToAddTaskOptions injected via DI to avoid duplicate module loading
@@ -31,7 +31,9 @@ import { getLabel } from '../labels/labelResolver.js';
 // ============================================================================
 
 const di = createDIModule('TaskRenderer', {
-    AppState: optional(null),
+    // Read unguarded: a wiring miss must throw where it happens instead of silently
+    // skipping the work — STATE_TRUTH_MIGRATION #15
+    AppState: required(),
     addTask: optional(null),
     loadMiniCycle: optional(null),
     updateProgressBar: optional(null),
@@ -321,7 +323,8 @@ export class TaskRenderer {
 
     /**
      * Refresh UI from state (re-render tasks from AppState).
-     * Falls back to loadMiniCycle if state is not available.
+     * Falls back to loadMiniCycle when state is not ready yet; a missing AppState
+     * (broken wiring) throws instead of taking that fallback.
      *
      * NOTE: Can only be called after Phase 2 complete (TaskDOMManager ready).
      *
@@ -331,7 +334,7 @@ export class TaskRenderer {
     async refreshUIFromState(providedState = null) {
         const state =
             providedState ||
-            (this.deps.AppState?.isReady?.() ? this.deps.AppState.get() : null);
+            (this.deps.AppState.isReady() ? this.deps.AppState.get() : null);
 
         if (state?.data?.cycles && state?.appState?.activeCycleId) {
             const cid = state.appState.activeCycleId;
@@ -367,7 +370,7 @@ export class TaskRenderer {
 
         // ✅ Also restore arrow visibility after fallback load
         setTimeout(() => {
-            if (this.deps.AppState?.isReady?.()) {
+            if (this.deps.AppState.isReady()) {
                 const currentState = this.deps.AppState.get();
                 const arrowsVisible = currentState?.ui?.moveArrowsVisible || false;
                 this.deps.updateArrowsInDOM?.(arrowsVisible);
@@ -395,7 +398,7 @@ export class TaskRenderer {
      */
     _restoreActiveTaskOptions() {
         const AppState = this.deps.AppState;
-        if (!AppState?.isReady?.()) return;
+        if (!AppState.isReady()) return;
 
         const currentState = AppState.get();
 
