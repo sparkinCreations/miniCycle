@@ -121,6 +121,7 @@
  * @property {string|null} [dueDate=null] - Default due date
  * @property {boolean} [remindersEnabled=false] - Default reminders
  * @property {RecurringSettings} recurringSettings - Recurrence configuration
+ * @property {number|null} [position=null] - Index in the routine's task list where a recreated instance is inserted; recorded when the previous instance was removed (cycle reset, To-Do clear), at activation and on import. null appends.
  * @property {string} [createdAt] - ISO timestamp of template creation
  */
 

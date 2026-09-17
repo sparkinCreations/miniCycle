@@ -47,10 +47,11 @@
  * NOT a good hook point - use `incrementCycleCount()` instead.
  */
 
-import { createDIModule, optional } from '../core/diBase.js';
-import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION } from '../core/constants.js';
+import { createDIModule, required, optional } from '../core/diBase.js';
+import { UI_TIMEOUTS, DOM_IDS, DOM_CLASSES, APP_VERSION } from '../core/constants.js';
 import { getLabel, getIcon } from '../labels/labelResolver.js';
 import { announce } from '../utils/announce.js';
+import { areAllTasksComplete, getActiveRoutine, getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -64,15 +65,15 @@ let MILESTONES = null;
 // ============================================================================
 
 const di = createDIModule('CycleCompletion', {
-    AppState: optional(null),
+    // Read unguarded: a wiring miss must throw where it happens instead of silently
+    // skipping the work — STATE_TRUTH_MIGRATION #15
+    AppState: required(),
     showNotification: optional(null),
     updateStatsPanel: optional(null),
     unlockMiniGame: optional(null),
     renderVocabThemes: optional(null),
     // For updateProgressBar and checkMiniCycle
-    getTaskList: optional(null),           // () => taskList element
     getProgressBar: optional(null),        // () => progressBar element
-    assignCycleVariables: optional(null),  // () => { lastUsedMiniCycle, savedMiniCycles }
     resetTasks: optional(null),            // () => void
     // History & Achievements hooks
     logHistoryEvent: optional(null),       // (type, details) => void
@@ -100,13 +101,21 @@ export function setCycleCompletionDependencies(dependencies) {
 }
 
 /**
+ * Returns the active routine's tasks from AppState, or null when there is no state yet.
+ * @returns {Array|null} Array of tasks or null
+ */
+export function getActiveRoutineTasks() {
+    return getActiveRoutine(deps.AppState.get())?.tasks ?? null;
+}
+
+/**
  * Shows a completion animation when a cycle is finished.
  * Creates a temporary DOM overlay that auto-removes after 1.5s.
  * @returns {void}
  */
 export function showCompletionAnimation() {
     const deps = di.resolve();
-    const state = deps.AppState?.get?.();
+    const state = deps.AppState.get();
     if (state?.settings?.disableCompletionToast) return;
 
     const animation = document.createElement("div");
@@ -123,7 +132,7 @@ export function showCompletionAnimation() {
     // banner / input bar instead. Translate it to the task list's actual
     // rendered center so it visually celebrates *that*.
     if (document.body.classList.contains(DOM_CLASSES.FIRST_RUN_WELCOME_ACTIVE)) {
-        const taskView = document.getElementById('task-view');
+        const taskView = document.getElementById(DOM_IDS.TASK_VIEW);
         if (taskView) {
             const rect = taskView.getBoundingClientRect();
             const taskCenterY = rect.top + rect.height / 2;
@@ -264,7 +273,7 @@ function showMilestoneMessage(miniCycleName, cycleCount) {
  */
 function handleMilestoneUnlocks(miniCycleName, globalCyclesCompleted) {
 
-    if (!deps.AppState?.isReady?.()) {
+    if (!deps.AppState.isReady()) {
         console.error('❌ AppState not ready for milestone unlocks');
         return;
     }
@@ -315,7 +324,7 @@ function handleMilestoneUnlocks(miniCycleName, globalCyclesCompleted) {
  */
 export function incrementCycleCount(miniCycleName, savedMiniCycles, completionSplit = null) {
 
-    if (!deps.AppState?.isReady?.()) {
+    if (!deps.AppState.isReady()) {
         console.error('❌ AppState not ready for incrementCycleCount');
         return;
     }
@@ -338,7 +347,7 @@ export function incrementCycleCount(miniCycleName, savedMiniCycles, completionSp
     // Update through state module and get the actual new count
     let actualNewCount;
     deps.AppState.update(state => {
-        const cycle = state.data.cycles[activeCycle];
+        const cycle = getRoutine(state, activeCycle);
         if (cycle) {
             cycle.cycleCount = (cycle.cycleCount || 0) + 1;
             actualNewCount = cycle.cycleCount;
@@ -364,8 +373,8 @@ export function incrementCycleCount(miniCycleName, savedMiniCycles, completionSp
 
     // First cycle celebration overlay (one-time only for truly new users)
     // Guard: globalCyclesCompleted must be exactly 1 AND the celebration must not have
-    // been shown before. The flag prevents re-showing for migrated users whose
-    // cyclesCompleted was set to their pre-existing total by migrationManager.
+    // been shown before. The flag prevents re-showing; the retired pre-2.5
+    // migration also set it for users whose cyclesCompleted it carried over.
     // Delayed so the user sees the task reset animation play first.
     if (globalCyclesCompleted === 1 && !updatedState.userProgress?.firstCycleCelebrated) {
         setTimeout(() => {
@@ -517,32 +526,20 @@ export function animateProgressBarEmpty() {
 /**
  * Updates the progress bar to reflect current task completion.
  * Animates the width transition smoothly.
- * Counts tasks from both main list AND completed dropdown.
+ * Reads task completion from AppState.
  * @returns {void}
  */
 export function updateProgressBar() {
-    const taskList = deps.getTaskList?.();
     const progressBar = deps.getProgressBar?.();
 
-    if (!taskList || !progressBar) {
-        console.warn('⚠️ updateProgressBar: taskList or progressBar not available');
+    if (!progressBar) {
+        console.warn('⚠️ updateProgressBar: progressBar not available');
         return;
     }
 
-    // Count tasks from main list
-    const mainTasks = [...taskList.children];
-    const mainTotal = mainTasks.length;
-    const mainCompleted = mainTasks.filter(task => task.querySelector("input")?.checked).length;
-
-    // Also count tasks from completed dropdown (if enabled)
-    const completedTaskList = document.getElementById('completedTaskList');
-    const dropdownTasks = completedTaskList ? [...completedTaskList.children] : [];
-    const dropdownTotal = dropdownTasks.length;
-    const dropdownCompleted = dropdownTasks.filter(task => task.querySelector("input")?.checked).length;
-
-    // Total from both lists
-    const totalTasks = mainTotal + dropdownTotal;
-    const completedTasks = mainCompleted + dropdownCompleted;
+    const tasks = getActiveRoutineTasks() ?? [];
+    const totalTasks = tasks.length;
+    const completedTasks = tasks.filter(task => task.completed).length;
     const progress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
 
     // Add consistent animation for all progress updates
@@ -557,6 +554,7 @@ export function updateProgressBar() {
     }, 200);
 }
 
+
 // Guard flag to prevent double-modal when checkMiniCycle is called twice per click
 // (taskDOM.js change handler + taskEvents.js click handler both call checkMiniCycle)
 let _showingDueDateModal = false;
@@ -565,7 +563,7 @@ let _showingDueDateModal = false;
  * Checks if all tasks in the miniCycle are completed.
  * If auto-reset is enabled, resets tasks after completion.
  * Updates progress bar and stats panel.
- * Checks tasks from both main list AND completed dropdown.
+ * Reads tasks from AppState.
  * @param {Object} [options] - Optional parameters
  * @param {HTMLElement} [options.lastToggledElement] - The task element that was just toggled (for cancel-revert)
  * @returns {void}
@@ -573,60 +571,34 @@ let _showingDueDateModal = false;
 export function checkMiniCycle(options = {}) {
     const { lastToggledElement } = options;
     // Early return if AppState not ready to prevent initialization race conditions
-    if (!deps.AppState?.isReady?.()) {
+    if (!deps.AppState.isReady()) {
         return;
     }
 
-    const taskList = deps.getTaskList?.();
-    if (!taskList) {
-        console.warn('⚠️ checkMiniCycle: taskList not available');
-        return;
-    }
+    // Find the active routine in AppState
+    const state = deps.AppState.get();
+    const activeCycleId = getActiveRoutineId(state);
+    const freshCycleData = activeCycleId ? getRoutine(state, activeCycleId) : null;
 
-    // Get tasks from both main list and completed dropdown
-    const mainTasks = [...taskList.children];
-    const completedTaskList = document.getElementById('completedTaskList');
-    const dropdownTasks = completedTaskList ? [...completedTaskList.children] : [];
-    const allTasks = [...mainTasks, ...dropdownTasks];
-
-    // Check if ALL tasks (from both lists) are completed
-    const allCompleted = allTasks.length > 0 && allTasks.every(task => task.querySelector("input")?.checked);
-
-    // Retrieve miniCycle variables
-    const cycleVars = deps.assignCycleVariables?.();
-    if (!cycleVars) {
-        console.warn("⚠️ No cycle variables available.");
-        return;
-    }
-
-    const { lastUsedMiniCycle, savedMiniCycles } = cycleVars;
-    const cycleData = savedMiniCycles[lastUsedMiniCycle];
-
-    if (!lastUsedMiniCycle || !cycleData) {
+    if (!freshCycleData) {
         console.warn("⚠️ No active miniCycle found.");
         return;
     }
 
+    // Check if ALL tasks are completed — the same answer the Complete button uses
+    const tasks = freshCycleData.tasks ?? [];
+    const allCompleted = areAllTasksComplete(freshCycleData);
+
     updateProgressBar();
 
     // Only trigger reset if ALL tasks are completed AND autoReset is enabled
-    // Use allTasks.length which includes both main list and completed dropdown
-    if (allCompleted && allTasks.length > 0) {
-
-        // ✅ FIX: Read autoReset from FRESH AppState, not potentially stale cycleVars
-        // This ensures mode changes are respected immediately
-        const state = deps.AppState?.get?.();
-        const activeCycleId = state?.appState?.activeCycleId;
-        const freshCycleData = activeCycleId ? state?.data?.cycles?.[activeCycleId] : null;
-        const autoResetEnabled = freshCycleData?.autoReset ?? cycleData.autoReset;
+    if (allCompleted) {
+        const autoResetEnabled = freshCycleData.autoReset;
 
         // Auto-reset: Only reset if AutoReset is enabled (manual mode = autoReset OFF)
         if (autoResetEnabled) {
             // Check if any tasks have due dates that will be cleared on reset
-            const hasDueDates = allTasks.some(task => {
-                const dueDateInput = task.querySelector(DOM_SELECTORS.DUE_DATE);
-                return dueDateInput && dueDateInput.value;
-            });
+            const hasDueDates = tasks.some(task => task.dueDate);
 
             // Show warning modal if due dates exist (guard prevents double-modal)
             if (hasDueDates && deps.showConfirmationModal && !_showingDueDateModal) {
@@ -640,8 +612,8 @@ export function checkMiniCycle(options = {}) {
                         _showingDueDateModal = false;
                         if (confirmed) {
                             // Verify cycle hasn't changed during modal
-                            const freshState = deps.AppState?.get?.();
-                            const currentCycleId = freshState?.appState?.activeCycleId;
+                            const freshState = deps.AppState.get();
+                            const currentCycleId = getActiveRoutineId(freshState);
                             if (currentCycleId !== activeCycleId) {
                                 console.warn('⚠️ Cycle changed during modal, aborting reset');
                                 return;
@@ -654,9 +626,9 @@ export function checkMiniCycle(options = {}) {
                                 checkbox.checked = false;
                                 // Update AppState to mark task uncompleted
                                 const taskId = lastToggledElement.dataset?.taskId;
-                                if (taskId && deps.AppState) {
+                                if (taskId) {
                                     deps.AppState.update(s => {
-                                        const cycle = s.data?.cycles?.[s.appState?.activeCycleId];
+                                        const cycle = getActiveRoutine(s);
                                         const task = cycle?.tasks?.find(t => t.id === taskId);
                                         if (task) task.completed = false;
                                     });
@@ -675,12 +647,12 @@ export function checkMiniCycle(options = {}) {
             const expectedCycleId = activeCycleId;
             setTimeout(() => {
                 // ✅ FIX: Verify cycle hasn't changed and autoReset still enabled during delay
-                const freshState = deps.AppState?.get?.();
+                const freshState = deps.AppState.get();
 
                 // Only validate if we can read fresh state (backwards compatible with tests)
                 if (freshState) {
-                    const currentCycleId = freshState?.appState?.activeCycleId;
-                    const currentCycleData = currentCycleId ? freshState?.data?.cycles?.[currentCycleId] : null;
+                    const currentCycleId = getActiveRoutineId(freshState);
+                    const currentCycleData = currentCycleId ? getRoutine(freshState, currentCycleId) : null;
 
                     if (currentCycleId !== expectedCycleId) {
                         console.warn('⚠️ Cycle changed during auto-reset delay, aborting stale reset');
@@ -714,6 +686,7 @@ export function checkMiniCycle(options = {}) {
         deps.updateStatsPanel();
     }
 }
+
 
 // ============================================================================
 // MODULE INITIALIZATION (for moduleLoader)

@@ -27,8 +27,8 @@ import { createDIModule, required, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_SELECTORS, DATA_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, GESTURE,
          DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
-import { getCycleMode, getAllDoneHintKey, getDeleteSettingsMode,
-         resolveDeleteWhenComplete, getTaskResetIndicator } from '../utils/cycleMode.js';
+import { getTaskText } from '../task/taskUtils.js';
+import { getActiveRoutine, getActiveRoutineId, getAllDoneHintKey, getCycleMode, getDeleteSettingsMode, getRoutine, getTaskResetIndicator, getAutoClearForMode } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION
@@ -36,6 +36,8 @@ import { getCycleMode, getAllDoneHintKey, getDeleteSettingsMode,
 
 const di = createDIModule('FocusTaskPanel', {
     AppState: required(),
+    // Priority accent = the task's LEVEL under the active theme (utils/priorityLevel.js)
+    vocabThemeManager: required(),
     appInit: optional(null),
     // Completion-path companions (same trio the task-list tap uses)
     checkMiniCycle: optional(null),
@@ -129,8 +131,8 @@ export class FocusTaskPanel {
 
     _getActiveCycle(state = null) {
         const s = state || this.deps.AppState.get?.();
-        const cycleId = s?.appState?.activeCycleId;
-        const cycle = cycleId ? s?.data?.cycles?.[cycleId] : null;
+        const cycleId = getActiveRoutineId(s);
+        const cycle = cycleId ? getRoutine(s, cycleId) : null;
         return { cycleId: cycleId ?? null, cycle: cycle ?? null };
     }
 
@@ -219,16 +221,19 @@ export class FocusTaskPanel {
         position.textContent = getLabel('focusTask.position', {
             vars: { current: index + 1, total: tasks.length }
         });
-        text.textContent = task.text ?? task.taskText ?? '';
+        text.textContent = getTaskText(task);
 
         // Completed task being browsed via ‹ › (D4) — dimmed, button unchecks
         const isCompleted = !!task.completed;
         card.classList.toggle('focus-task-completed', isCompleted);
         completeBtn.textContent = getLabel(isCompleted ? 'focusTask.uncompleteTask' : 'focusTask.completeTask');
 
-        // Priority accent (border-left via CSS var; transparent when not flagged)
-        if (task.highPriority) {
-            card.style.setProperty('--focus-task-priority', task.priorityColor || 'var(--color-red)');
+        // Priority accent (border-left via CSS var; transparent when not flagged).
+        // The level's swatch under the active theme, never the stored hex — the
+        // same rule the task list follows, so the card and the row always agree.
+        const priorityColor = this.deps.vocabThemeManager.getTaskPriorityColor(task);
+        if (priorityColor) {
+            card.style.setProperty('--focus-task-priority', priorityColor);
         } else {
             card.style.removeProperty('--focus-task-priority');
         }
@@ -314,8 +319,8 @@ export class FocusTaskPanel {
     }
 
     _onStateChange(newState, oldState) {
-        const newActive = newState?.appState?.activeCycleId;
-        const oldActive = oldState?.appState?.activeCycleId;
+        const newActive = getActiveRoutineId(newState);
+        const oldActive = getActiveRoutineId(oldState);
 
         if (newActive !== oldActive) {
             // Routine switch: override + celebration are meaningless now
@@ -328,8 +333,8 @@ export class FocusTaskPanel {
         // Cycle reset detection: cycleCount bump on the active cycle (fires
         // for auto-cycle last-task completion AND the manual Complete Cycle
         // button — both land on task 1, per D5).
-        const newCount = newState?.data?.cycles?.[newActive]?.cycleCount ?? 0;
-        const oldCount = oldState?.data?.cycles?.[oldActive]?.cycleCount ?? 0;
+        const newCount = getRoutine(newState, newActive)?.cycleCount ?? 0;
+        const oldCount = getRoutine(oldState, oldActive)?.cycleCount ?? 0;
         if (newCount > oldCount) {
             this.clearOverride();
             if (this._isPanelVisible()) {
@@ -395,16 +400,11 @@ export class FocusTaskPanel {
         if (!el) return;
 
         const state = this.deps.AppState.get();
-        const cycle = state?.data?.cycles?.[state?.appState?.activeCycleId];
+        const cycle = getActiveRoutine(state);
         const mode = getDeleteSettingsMode(cycle);
 
         const indicator = getTaskResetIndicator({
-            deleteWhenComplete: resolveDeleteWhenComplete({
-                settings: task.deleteWhenCompleteSettings,
-                legacy: task.deleteWhenComplete,
-                mode,
-                defaults: DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS
-            }),
+            deleteWhenComplete: getAutoClearForMode(task, mode, DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS),
             isRecurring: !!task.recurring,
             mode
         });

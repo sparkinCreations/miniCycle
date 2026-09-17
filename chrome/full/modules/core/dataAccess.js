@@ -24,22 +24,14 @@ import { STORAGE_KEYS, DEFAULT_REMINDERS } from './constants.js';
 // This avoids versioned/unversioned module instance mismatch issues
 
 let _injectedAppState = null;
-let _injectedGetExtractTaskDataFromDOM = null;
-let _injectedCreateInitialSchema25Data = null;
 
 /**
  * Inject dependencies directly from coreBoot (avoids module instance mismatch)
- * @param {Object} deps - { AppState, getExtractTaskDataFromDOM, createInitialSchema25Data }
+ * @param {Object} deps - { AppState }
  */
 export function setDataAccessDeps(deps) {
     if (deps.AppState) {
         _injectedAppState = deps.AppState;
-    }
-    if (deps.getExtractTaskDataFromDOM) {
-        _injectedGetExtractTaskDataFromDOM = deps.getExtractTaskDataFromDOM;
-    }
-    if (deps.createInitialSchema25Data) {
-        _injectedCreateInitialSchema25Data = deps.createInitialSchema25Data;
     }
 }
 
@@ -105,40 +97,13 @@ export function loadMiniCycleData() {
         }
     }
 
-    // CREATE INITIAL DATA IF NONE EXISTS
-    // SAFETY CHECK: Verify localStorage truly has no data before creating fresh data
-    const existingData = localStorage.getItem(STORAGE_KEYS.DATA);
-    if (existingData) {
-        console.error('❌ Data exists in localStorage but failed to parse. NOT creating fresh data to prevent data loss.');
-        console.error('❌ Existing data length:', existingData.length, 'chars');
-        return null;
-    }
-
-    _injectedCreateInitialSchema25Data?.();
-
-    // Try again after creating
-    const newData = localStorage.getItem(STORAGE_KEYS.DATA);
-    if (newData) {
-        const parsed = JSON.parse(newData);
-        const activeCycleId = parsed.appState.activeCycleId;
-        // Read from root customReminders (where reminders.js saves)
-        const reminders = parsed.customReminders || {
-            enabled: false,
-            indefinite: false,
-            dueDatesReminders: false,
-            repeatCount: 0,
-            frequencyValue: 30,
-            frequencyUnit: "minutes"
-        };
-
-        return {
-            cycles: parsed.data.cycles,
-            activeCycle: activeCycleId,
-            reminders: reminders,
-            settings: parsed.settings
-        };
-    }
-
+    // No data in storage: report it, never create it. This wrapper used to call
+    // createInitialSchema25Data() here, so whichever module read it FIRST during a
+    // first-run boot silently seeded storage for every module after it — a boot-order
+    // dependency nothing declared. Measured Sep 2026 (STATE_TRUTH_MIGRATION #25):
+    // retiring one early caller moved the seed later and left the dark-mode toggle
+    // dead for the session. Initial data is created only where the app decides to —
+    // appInit's first-run path and the corruption-recovery choice.
     return null;
 }
 

@@ -35,10 +35,12 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { UI_TIMEOUTS, COLORS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, BREAKPOINTS } from '../core/constants.js';
+import { UI_TIMEOUTS, COLORS, DEFAULT_PRIORITY_SWATCHES, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, BREAKPOINTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { getPriorityLevel } from './priorityLevel.js';
 import { reshowPopover } from './popoverUtils.js';
 import { EducationalTipManager } from './educationalTips.js';
+import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -1185,7 +1187,7 @@ async setDefaultPosition(notificationContainer) {
         await _deps.appInit?.waitForCore();
 
         const state = this.deps.AppState.get();
-        const activeCycleId = state?.appState?.activeCycleId;
+        const activeCycleId = getActiveRoutineId(state);
 
         // Apply recurring settings (DI-pure)
         if (this.deps.applyRecurringToTaskSchema25) {
@@ -1194,7 +1196,7 @@ async setDefaultPosition(notificationContainer) {
 
         // Re-read fresh state after update (state var above is pre-update snapshot)
         const updatedState = this.deps.AppState.get();
-        const targetTask = updatedState.data?.cycles?.[activeCycleId]?.tasks.find(t => t.id === taskId);
+        const targetTask = getRoutine(updatedState, activeCycleId)?.tasks.find(t => t.id === taskId);
         const pattern = targetTask?.recurringSettings?.indefinitely ? getLabel('recurring.patternIndefinitely') : getLabel('recurring.patternLimited');
         const currentSettingsText = notification.querySelector(`#${DOM_IDS.notificationCurrentSettings(taskId)}`);
 
@@ -1219,8 +1221,8 @@ async setDefaultPosition(notificationContainer) {
           return;
         }
         const state = this.deps.AppState.get();
-        const activeCycleId = state?.appState?.activeCycleId;
-        const task = state?.data?.cycles?.[activeCycleId]?.tasks.find(t => t.id === taskId);
+        const activeCycleId = getActiveRoutineId(state);
+        const task = getRoutine(state, activeCycleId)?.tasks.find(t => t.id === taskId);
 
         let startingFrequency;
         const selectedCircle = notification.querySelector(DOM_SELECTORS.RADIO_CIRCLE_SELECTED);
@@ -1338,22 +1340,25 @@ async setDefaultPosition(notificationContainer) {
    * @param {Function|null} [onColorSelect=null] - Callback(color) to persist the chosen color
    */
   showPriorityColorPickerNotification(currentColor = COLORS.PRIORITY_DEFAULT, duration = 8000, taskId = null, onColorSelect = null) {
-    const vocabThemeId = document.documentElement.dataset?.vocabTheme;
-    const activeThemeDef = (vocabThemeId && vocabThemeId !== 'classic') ? _deps.vocabThemeManager?.getThemeDefinition(vocabThemeId) : null;
-    const colorSwatches = activeThemeDef?.priorityColors
-      ? activeThemeDef.priorityColors.map(c => ({ hex: c.hex, label: getLabel(c.labelKey) }))
-      : [
-          { hex: COLORS.PRIORITY_DEFAULT, label: getLabel('notify.priorityColorRed') },
-          { hex: '#facc15', label: getLabel('notify.priorityColorYellow') },
-          { hex: '#28a745', label: getLabel('notify.priorityColorGreen') },
-        ];
+    // Swatches are LEVELS (High / Medium / Low) in the active theme's colours,
+    // from the theme manager — never a theme id read off the DOM — or the shared
+    // defaults before the manager is wired. Same source the renderers map
+    // through (utils/priorityLevel.js), so picker and list cannot disagree.
+    // Selection is by level, so a task coloured under another theme still
+    // lights up the matching swatch here.
+    const themes = _deps.vocabThemeManager;
+    const colorSwatches = (themes?.getPrioritySwatches?.() || DEFAULT_PRIORITY_SWATCHES)
+      .map(c => ({ level: c.level, hex: c.hex, label: getLabel(c.labelKey) }));
+    const probe = { highPriority: true, priorityColor: currentColor };
+    const currentLevel = themes?.getTaskPriorityLevel?.(probe) ?? getPriorityLevel(probe);
 
     const swatchesHTML = colorSwatches.map(c => {
-      const isSelected = c.hex === currentColor;
+      const isSelected = c.level === currentLevel;
       const dotOpacity = isSelected ? '1' : '0';
       const swatchOutline = isSelected ? '2px solid rgba(255,255,255,0.9)' : '2px solid transparent';
       return `<button class="priority-color-btn"
                        data-color="${c.hex}"
+                       data-level="${c.level}"
                        role="radio"
                        aria-checked="${isSelected}"
                        aria-label="${c.label}"
@@ -1363,6 +1368,7 @@ async setDefaultPosition(notificationContainer) {
           <span class="priority-radio-dot" style="width:4px;height:4px;border-radius:50%;background:white;display:block;opacity:${dotOpacity};transition:opacity 0.15s;"></span>
         </span>
         <span class="priority-swatch" style="width:20px;height:20px;border-radius:50%;background:${c.hex};display:block;flex-shrink:0;border:1px solid rgba(0,0,0,0.35);outline:${swatchOutline};outline-offset:1px;transition:outline 0.15s;"></span>
+        <span class="priority-swatch-label" style="font-size:0.8em;">${c.label}</span>
       </button>`;
     }).join('');
 
@@ -1373,7 +1379,7 @@ async setDefaultPosition(notificationContainer) {
         <div class="priority-color-options"
              role="radiogroup"
              aria-label="${getLabel('notify.priorityColorPicker')}"
-             style="display:flex;gap:10px;align-items:center;">
+             style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
           ${swatchesHTML}
         </div>
         <button class="notification-close"

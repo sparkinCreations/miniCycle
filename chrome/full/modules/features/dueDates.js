@@ -24,6 +24,7 @@ import { getLabel } from '../labels/labelResolver.js';
 // owned the correct local-midnight parser and the recurring subsystem already
 // used it; the due-date paths simply never adopted it. Pure module, no imports.
 import { parseDateAsLocal } from '../recurring/recurringDateUtils.js';
+import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -167,8 +168,8 @@ export class MiniCycleDueDates {
 
         try {
             await AppState.update(state => {
-                if (state?.data?.cycles?.[activeCycle]) {
-                    const taskToUpdate = state.data.cycles[activeCycle].tasks?.find(t => t.id === taskId);
+                if (getRoutine(state, activeCycle)) {
+                    const taskToUpdate = getRoutine(state, activeCycle).tasks?.find(t => t.id === taskId);
                     if (taskToUpdate) {
                         taskToUpdate.dueDate = newDueDate;
                     }
@@ -206,9 +207,9 @@ export class MiniCycleDueDates {
         // Completion state for the rows below, keyed by task id. Read from state
         // rather than the checkbox — rule 14: the DOM holds only what is
         // currently rendered, and this label must describe the task, not the view.
-        const activeCycleId = currentState?.appState?.activeCycleId;
+        const activeCycleId = getActiveRoutineId(currentState);
         const cycleTasks = new Map(
-            (currentState?.data?.cycles?.[activeCycleId]?.tasks || []).map(t => [t.id, t])
+            (getRoutine(currentState, activeCycleId)?.tasks || []).map(t => [t.id, t])
         );
 
         tasks.forEach(task => {
@@ -407,8 +408,8 @@ export class MiniCycleDueDates {
 
                     try {
                         await AppState.update(state => {
-                            if (state?.data?.cycles?.[activeCycle]) {
-                                state.data.cycles[activeCycle].autoReset = autoReset;
+                            if (getRoutine(state, activeCycle)) {
+                                getRoutine(state, activeCycle).autoReset = autoReset;
                             }
                         }, true);
                     } catch (error) {
@@ -471,7 +472,7 @@ export class MiniCycleDueDates {
 
         try {
             await AppState.update(state => {
-                const taskToUpdate = state?.data?.cycles?.[activeCycle]?.tasks?.find(t => t.id === taskId);
+                const taskToUpdate = getRoutine(state, activeCycle)?.tasks?.find(t => t.id === taskId);
                 if (taskToUpdate) {
                     taskToUpdate.dueDate = dueDateValue;
                 }

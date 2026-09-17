@@ -11,6 +11,7 @@
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, LIMITS, DEBOUNCE } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { handleGridArrowNav, handleVerticalArrowNav } from '../utils/keyboardNav.js';
+import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
 
 // ============================================================================
 // EVENT DELEGATION FUNCTIONS
@@ -300,8 +301,8 @@ export function setupTaskListDelegation(deps, state, callbacks) {
             if (taskId && deps.AppState?.isReady?.()) {
                 // Get template from recurringTemplates (not tasks array)
                 const currentState = deps.AppState.get();
-                const activeCycleId = currentState.appState?.activeCycleId;
-                const currentCycle = currentState.data?.cycles?.[activeCycleId];
+                const activeCycleId = getActiveRoutineId(currentState);
+                const currentCycle = getRoutine(currentState, activeCycleId);
                 const template = currentCycle?.recurringTemplates?.[taskId];
 
                 if (template && callbacks.handleRemoveTask) {
@@ -364,8 +365,8 @@ function selectTaskItem(item, deps, state, callbacks) {
     // Get fresh data from AppState - ONLY use recurringTemplates
     if (deps.AppState?.isReady?.()) {
         const currentState = deps.AppState.get();
-        const activeCycleId = currentState.appState?.activeCycleId;
-        const currentCycle = currentState.data?.cycles?.[activeCycleId];
+        const activeCycleId = getActiveRoutineId(currentState);
+        const currentCycle = getRoutine(currentState, activeCycleId);
 
         // Get task from recurringTemplates ONLY (independent from tasks array)
         const template = currentCycle?.recurringTemplates?.[taskId];

@@ -22,6 +22,9 @@
  * @see {@link file://docs/future-work/LARGE_MODULE_SPLITS_PLAN.md} - why this split
  */
 
+import { getRoutine, getRoutines, getAutoClearSettings, setAutoClearSettings } from '../utils/cycleMode.js';
+import { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS } from '../core/constants.js';
+
 /**
  * Validate and repair a cycle in place (through AppState), returning whether
  * anything needed fixing.
@@ -32,7 +35,7 @@
  */
 export function validateAndRepairCycleData(AppState, cycleKey) {
     const currentState = AppState.get();
-    const originalCycle = currentState?.data?.cycles?.[cycleKey];
+    const originalCycle = getRoutine(currentState, cycleKey);
 
     if (!originalCycle) {
         console.warn(`⚠️ Cycle not found for validation: ${cycleKey}`);
@@ -103,8 +106,9 @@ export function validateAndRepairCycleData(AppState, cycleKey) {
 
         // (deleteWhenComplete is optional — undefined is a valid state; a
         // dead self-assignment lived here until v2.365.)
-        if (!task.deleteWhenCompleteSettings || typeof task.deleteWhenCompleteSettings !== 'object') {
-            task.deleteWhenCompleteSettings = { cycle: false, todo: true };
+        const autoClear = getAutoClearSettings(task);
+        if (!autoClear || typeof autoClear !== 'object') {
+            setAutoClearSettings(task, null, cycle, DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS);
             repaired = true;
         }
 
@@ -144,7 +148,7 @@ export function validateAndRepairCycleData(AppState, cycleKey) {
     // ✅ Apply repairs through AppState.update() - never mutate outside transaction
     if (repaired) {
         AppState.update(state => {
-            state.data.cycles[cycleKey] = cycle;
+            getRoutines(state)[cycleKey] = cycle;
         }, true);
     }
 

@@ -44,6 +44,49 @@ export const COLORS = Object.freeze({
     PRIORITY_DEFAULT: '#dc3545'  // Red — fallback when task.priorityColor and settings.priorityColor are both absent
 });
 
+/**
+ * Priority levels, highest first — this order IS the sort order.
+ * Schema 2.5 still stores priority as `highPriority` + a `priorityColor` hex; the
+ * helpers in utils/priorityLevel.js translate between the two until Schema 2.6
+ * stores the level itself (docs/future-work/SCHEMA_2_6_PLAN.md).
+ * @constant {ReadonlyArray<'high'|'medium'|'low'>}
+ */
+export const PRIORITY_LEVELS = Object.freeze(['high', 'medium', 'low']);
+
+/**
+ * Colour-family rule for a priority colour that is NOT one of the swatches (a
+ * hand-written .mcyc can carry any hex). Tuning values for
+ * utils/priorityLevel.js — see SCHEMA_2_6_PLAN.md "Priority levels":
+ *   1. an exact swatch match wins (any theme, or the defaults)
+ *   2. no clear colour (saturation or lightness outside the bounds) → high
+ *   3. otherwise the nearest hue anchor within MAX_HUE_DISTANCE → its level
+ *   4. farther than that from every anchor (blues, purples) → high
+ * Hue anchors are degrees on the HSL wheel; saturation/lightness are 0–1.
+ * Measured Sep 2026: pink/maroon → high, orange/gold/olive/lime → medium,
+ * teal → low, blue/purple/navy/gray/black/white → high; every real swatch
+ * classifies to its own level by hue alone.
+ * @constant {Object}
+ */
+export const PRIORITY_COLOR_FAMILY = Object.freeze({
+    HUE_ANCHORS: Object.freeze({ high: 0, medium: 50, low: 125 }),
+    MAX_HUE_DISTANCE: 45,
+    MIN_SATURATION: 0.25,
+    MIN_LIGHTNESS: 0.10,
+    MAX_LIGHTNESS: 0.92
+});
+
+/**
+ * Priority picker swatches for themes that define none of their own (classic).
+ * Every other theme's set lives in THEME_DEFINITIONS[id].priorityColors, with the
+ * same `level` tags. Red = high, yellow = medium, green = low.
+ * @constant {ReadonlyArray<{level: string, hex: string, labelKey: string}>}
+ */
+export const DEFAULT_PRIORITY_SWATCHES = Object.freeze([
+    Object.freeze({ level: 'high',   hex: COLORS.PRIORITY_DEFAULT, labelKey: 'notify.priorityHigh' }),
+    Object.freeze({ level: 'medium', hex: '#facc15',               labelKey: 'notify.priorityMedium' }),
+    Object.freeze({ level: 'low',    hex: '#28a745',               labelKey: 'notify.priorityLow' })
+]);
+
 // ============================================================================
 // TIMEOUTS (milliseconds)
 // ============================================================================
@@ -286,6 +329,11 @@ export const FONT_SIZE = Object.freeze({
  */
 export const SCHEMA = Object.freeze({
     CURRENT: '2.5',
+    // The oldest top-level version this build can still read — a restore or
+    // import of anything between here and CURRENT is accepted (and, once a
+    // migration exists, migrated at boot). Pre-2.5 was retired Sep 2026, so
+    // this stays '2.5' when CURRENT moves to '2.6'.
+    OLDEST_MIGRATABLE: '2.5',
     CURRENT_TASK: 2
 });
 
@@ -336,8 +384,6 @@ export const LIMITS = Object.freeze({
     BACKUP_REMINDER_EVERY_N_CYCLES: 25,  // Trigger backup reminder every N completed cycles
     BACKUP_REMINDER_EVERY_N_TASKS: 100,  // Trigger backup reminder every N cleared tasks (To-Do mode)
     MAX_CORRUPT_BACKUPS: 3,              // Max raw-corrupted-data snapshots kept in localStorage for manual recovery
-    MAX_MIGRATION_BACKUPS: 2,            // Max per-prefix migration backups (pre_migration_/migration_) kept; each is a full-dataset copy, created per migration and never otherwise pruned
-    MAX_AUTO_MIGRATION_BACKUPS: 5,       // Max auto_migration_backup_ entries kept in miniCycleBackupIndex (index-managed, separate from the per-prefix cap above)
     RECURRING_OVERSLEEP_FACTOR: 2,       // Watch tick counts as overslept when the gap since the last tick exceeds this multiple of the expected interval (device sleep / tab freeze) — the tick then delegates to catch-up
     // Max task names stored on ONE history event's completion breakdown (per
     // side). Names are user text, so this is a STORAGE cap, not a display one:
@@ -544,7 +590,7 @@ export const Z_INDEX = Object.freeze({
     MODAL_BACKDROP: 999,     // Modal backdrops
     MODAL: 1000,             // Standard modals
     MODAL_HIGH: 2000,        // High-priority modals (storage, onboarding)
-    OVERLAY_CRITICAL: 10000, // Import/migration error overlays
+    OVERLAY_CRITICAL: 10000, // Import error overlays and the testing modal
     LONG_PRESS_HINT: 1001,   // Long-press label bubble — one above MODAL, matching .quick-actions-tooltip's calc(var(--z-modal) + 1). Inside a showModal() dialog the top layer decides instead; see longPressHint._ensureHintElement
     TOUR_OVERLAY: 10500,     // Guided tour overlay
     TOUR_TOOLTIP: 10501,     // Guided tour tooltip
@@ -585,9 +631,6 @@ export const TIME_UNITS = Object.freeze({
  */
 export const STORAGE_KEYS = Object.freeze({
     DATA: 'miniCycleData',
-    LEGACY_DATA: 'miniCycleStorage',
-    LAST_USED: 'lastUsedMiniCycle',
-    REMINDERS: 'miniCycleReminders',
     MILESTONE_UNLOCKS: 'milestoneUnlocks',
     DARK_MODE: 'darkModeEnabled',
     CURRENT_THEME: 'currentTheme',
@@ -1430,6 +1473,7 @@ export const DOM_IDS = Object.freeze({
 
     // ---- Loading & UI ----
     APP_LOADER: 'app-loader',
+    NEWER_DATA_NOTICE: 'newer-data-notice',   // appInit.showNewerDataNotice — storage written by a newer build
     LOADER_TIP: 'loader-tip',
     PROGRESS_BAR: 'progressBar',
     LOADING_OVERLAY: 'loading-overlay',

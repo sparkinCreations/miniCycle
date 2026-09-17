@@ -89,7 +89,10 @@ const di = createDIModule('TaskCore', {
     AppMeta: optional(null),
     DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS: optional(null),
     DEFAULT_TASK_OPTION_BUTTONS: optional(null),
-    isTouchDevice: optional(null)
+    isTouchDevice: optional(null),
+    // FORWARD-THROUGH to taskCRUD (wireSubModuleDependencies): the priority
+    // toggle stores a LEVEL as the active theme's swatch (utils/priorityLevel.js)
+    vocabThemeManager: optional(null)
 });
 
 // Late-binding deps via Proxy
@@ -459,6 +462,10 @@ export class TaskCore {
             console.warn('TaskCore: handleTaskCompletionChangeImpl not loaded');
             return;
         }
+        // Delegate immediately — do NOT await anything before this call. taskDOM's
+        // change handler runs checkMiniCycle right after calling this (unawaited),
+        // and relies on the AppState write inside handleTaskCompletionChangeImpl
+        // having already happened synchronously.
         return _subModules.handleTaskCompletionChangeImpl(checkbox, this.deps);
     }
 

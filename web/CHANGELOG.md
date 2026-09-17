@@ -1,3 +1,16 @@
+## [2.569] - 2026-09-17
+- refactor(schema): one predicate for every version gate outside the shape owners
+- feat(import): read the 2.6 .mcyc fields ahead of the format bump
+- refactor(task): priority batch 1 — toggle, picker and record copies onto the level helpers
+- refactor(task): Rename A batch 1 — autoClear readers onto the cycleMode helpers
+- refactor(routine): batch 5 — the tail of readers onto the cycleMode helpers
+- refactor(routine): batch 4 of readers onto the cycleMode helpers
+- refactor(routine): batch 3 of readers onto the cycleMode helpers
+- refactor(routine): batch 2 of readers onto the cycleMode helpers
+- refactor(routine): batch 1 of readers onto the cycleMode helpers
+- feat(schema): pure 2.5 → 2.6 migration, tested and unwired
+
+
 ## [2.568] - 2026-09-15
 - refactor(task): delete the DOM-scraping save helper
 - fix(state): the legacy data wrapper no longer creates initial data as a side effect

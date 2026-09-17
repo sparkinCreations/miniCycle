@@ -7,7 +7,7 @@
  * @module testing-modal-debug
  */
 
-import { UI_TIMEOUTS } from '../core/constants.js';
+import { UI_TIMEOUTS, SCHEMA } from '../core/constants.js';
 import {
     getDeps,
     showNotification,
@@ -129,7 +129,7 @@ export function generateDebugReport() {
             timestamp: new Date().toISOString(),
             appInfo: {
                 version: metadata?.version || "unknown",
-                schemaVersion: metadata?.schemaVersion || "2.5",
+                schemaVersion: metadata?.schemaVersion || SCHEMA.CURRENT,
                 name: "miniCycle",
                 developer: "Sparkin Creations"
             },

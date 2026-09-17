@@ -27,6 +27,7 @@
  */
 import { DOM_CLASSES, DOM_IDS, DOM_SELECTORS, EVENTS, UI_TIMEOUTS, BREAKPOINTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
 
 export class OnboardingCarousel {
     constructor(manager) {
@@ -254,16 +255,16 @@ export class OnboardingCarousel {
         if (typeof this.m.deps.AppState?.subscribe !== 'function') return;
 
         const state = this.m.deps.AppState.get?.();
-        const activeCycleId = state?.appState?.activeCycleId;
+        const activeCycleId = getActiveRoutineId(state);
         if (!activeCycleId) return;
 
-        const initialCount = state?.data?.cycles?.[activeCycleId]?.cycleCount ?? 0;
+        const initialCount = getRoutine(state, activeCycleId)?.cycleCount ?? 0;
 
         this.m._firstRunWelcomeCycleWatchKey = 'firstRunWelcome:cycleCompletion';
         this.m._firstRunWelcomeCycleWatchHandler = (newState) => {
             // One-shot: ignore further updates after celebration fires.
             if (this.m._firstRunWelcomeCelebrationTriggered) return;
-            const newCount = newState?.data?.cycles?.[activeCycleId]?.cycleCount ?? 0;
+            const newCount = getRoutine(newState, activeCycleId)?.cycleCount ?? 0;
             if (newCount > initialCount) {
                 this._handleFirstRunWelcomeCycleCompletion();
             }

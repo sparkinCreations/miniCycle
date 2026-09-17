@@ -12,6 +12,7 @@
 
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
 
 // Stable handler references for safeAddEventListener dedup. Module-level so the boot
 // path and the (later-loaded) panel instance share ONE reference — re-adding the same
@@ -49,9 +50,9 @@ export function updateRecurringInfoLink(deps, { openPanel } = {}) {
     try {
         if (!deps.AppState?.isReady?.()) return;
         const state = deps.AppState.get();
-        const cid = state.appState?.activeCycleId;
+        const cid = getActiveRoutineId(state);
         if (!cid) return;
-        const cycle = state.data.cycles[cid];
+        const cycle = getRoutine(state, cid);
         if (!cycle) return;
 
         const templateCount = Object.keys(cycle.recurringTemplates || {}).length;

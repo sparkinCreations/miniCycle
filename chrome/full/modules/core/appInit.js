@@ -38,6 +38,7 @@
 import { createDIModule, optional } from './diBase.js';
 import { DOM_IDS, DOM_CLASSES, STORAGE_KEYS, Z_INDEX, UI_TIMEOUTS } from './constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { getRoutine, setActiveRoutineId } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -502,6 +503,17 @@ class AppInit {
 		}
 
 		// Final check - if still no data, something is very wrong
+		// Storage written by a NEWER build: AppState refused to adopt it (and will
+		// refuse to write over it). Do not fall through — loadMiniCycleData reads
+		// storage directly and would hand back that data with AppState empty, a
+		// half-dead UI; and the corruption modal below offers a fresh start that
+		// would delete it. Show the one honest option: reload into a newer build.
+		const newerBlock = _deps.getMiniCycleState?.()?.isBlockedByNewerData?.();
+		if (newerBlock) {
+			this.showNewerDataNotice(newerBlock.version);
+			return;
+		}
+
 		if (!schemaData) {
 			console.error('🚨 Failed to load or create schema data');
 			this.showDataCorruptionRecovery(localStorage.getItem(STORAGE_KEYS.DATA));
@@ -603,7 +615,7 @@ class AppInit {
 				const miniCycleState = _deps.getMiniCycleState?.();
 				if (miniCycleState?.isReady?.()) {
 					await miniCycleState.update(state => {
-						state.appState.activeCycleId = firstCycle;
+						setActiveRoutineId(state, firstCycle);
 					}, true);
 					// Reload schemaData with fixed activeCycle
 					schemaData = miniCycleState.load();
@@ -645,7 +657,7 @@ class AppInit {
 		if (this._pendingFirstRunFocusView?.showInputBar) {
 			const AppStateForInput = _deps.getMiniCycleState?.();
 			await AppStateForInput?.update?.((state) => {
-				const cycle = state.data?.cycles?.[activeCycle];
+				const cycle = getRoutine(state, activeCycle);
 				if (cycle) cycle.showTaskInput = true;
 			}, true);
 		}
@@ -772,6 +784,48 @@ class AppInit {
 	 * Show data corruption recovery modal
 	 * Offers options to recover from corrupted localStorage data
 	 */
+	/**
+	 * Full-screen notice for storage written by a newer app version. Deliberately
+	 * has ONE action, reload: every other recovery option (fresh start, restore)
+	 * would destroy data this build simply cannot read yet. Built with DOM APIs
+	 * and textContent — the version string comes from storage.
+	 * @param {string} version - The stored document's schemaVersion
+	 * @returns {void}
+	 */
+	showNewerDataNotice(version) {
+		if (document.getElementById(DOM_IDS.NEWER_DATA_NOTICE)) return;
+
+		const overlay = document.createElement('div');
+		overlay.id = DOM_IDS.NEWER_DATA_NOTICE;
+		overlay.setAttribute('role', 'alertdialog');
+		overlay.setAttribute('aria-modal', 'true');
+		overlay.setAttribute('aria-labelledby', DOM_IDS.NEWER_DATA_NOTICE + '-title');
+		overlay.style.cssText = `position:fixed;inset:0;z-index:${Z_INDEX.CRITICAL};display:flex;align-items:center;justify-content:center;padding:var(--space-4, 16px);box-sizing:border-box;background:rgba(0,0,0,0.9);`;
+
+		const content = document.createElement('div');
+		content.style.cssText = 'max-width:500px;width:100%;padding:32px;border-radius:16px;color:#fff;background:linear-gradient(135deg,#1a1a2e,#16213e);box-shadow:0 10px 40px rgba(0,0,0,0.5);';
+
+		const title = document.createElement('h2');
+		title.id = DOM_IDS.NEWER_DATA_NOTICE + '-title';
+		title.style.cssText = 'margin:0 0 16px;font-size:1.5rem;';
+		title.textContent = getLabel('modal.newerDataTitle');
+
+		const body = document.createElement('p');
+		body.style.cssText = 'margin:0 0 24px;line-height:1.5;opacity:0.9;white-space:pre-line;';
+		body.textContent = getLabel('modal.newerDataMessage', { vars: { version } });
+
+		const reload = document.createElement('button');
+		reload.type = 'button';
+		reload.style.cssText = 'width:100%;padding:14px;border:0;border-radius:8px;font-size:1rem;font-weight:600;cursor:pointer;color:#fff;background:#4a90e2;';
+		reload.textContent = getLabel('button.reload');
+		reload.addEventListener('click', () => globalThis.location?.reload?.(), { once: true });
+
+		content.append(title, body, reload);
+		overlay.appendChild(content);
+		document.body.appendChild(overlay);
+		reload.focus();
+	}
+
 	showDataCorruptionRecovery(corruptedData) {
 
 		// Create modal overlay

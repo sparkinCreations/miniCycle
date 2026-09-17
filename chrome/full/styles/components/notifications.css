@@ -335,6 +335,12 @@
    IN-DIALOG NOTIFICATIONS
    Notifications rendered inside a <dialog> via the container option.
    Compact horizontal layout that sits flush at the top of the dialog content.
+   Titled cards (.notification-titled) are excluded from the row layout: they
+   carry a title, a multi-line message, and up to two action buttons. In a row,
+   the non-shrinking buttons leave the message a few pixels wide and the text
+   wraps one character per line (seen when the Welcome Screen dialog opened
+   while the Home View welcome card was showing — NotificationDialogHost moves
+   #notification-container into the topmost <dialog>, so these rules apply).
    ============================================================================= */
 
 dialog .notification {
@@ -347,14 +353,14 @@ dialog .notification {
     flex: 0 0 100%;
 }
 
-dialog .notification .notification-content.notification-has-action {
+dialog .notification:not(.notification-titled) .notification-content.notification-has-action {
     flex-direction: row;
     align-items: center;
     justify-content: flex-start;
     gap: var(--space-3);
 }
 
-dialog .notification .notification-message {
+dialog .notification:not(.notification-titled) .notification-message {
     flex: 1;
 }
 

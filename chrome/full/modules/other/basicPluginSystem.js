@@ -10,6 +10,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
+import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
 
 const di = createDIModule('BasicPluginSystem', {
     appInit: optional(null),
@@ -184,8 +185,8 @@ class MiniCyclePlugin {
         // name is a DOM helper returning the #taskList ELEMENT, not a task array.
         if (this.deps.AppState?.get) {
             const state = this.deps.AppState.get();
-            const activeCycleId = state?.appState?.activeCycleId;
-            return state?.data?.cycles?.[activeCycleId]?.tasks || [];
+            const activeCycleId = getActiveRoutineId(state);
+            return getRoutine(state, activeCycleId)?.tasks || [];
         }
         return [];
     }
@@ -197,8 +198,8 @@ class MiniCyclePlugin {
     getCurrentCycle() {
         if (this.deps.AppState?.get) {
             const state = this.deps.AppState.get();
-            const activeCycleId = state?.appState?.activeCycleId;
-            return state?.data?.cycles?.[activeCycleId] || null;
+            const activeCycleId = getActiveRoutineId(state);
+            return getRoutine(state, activeCycleId) || null;
         }
         return null;
     }

@@ -50,15 +50,39 @@ export class OnboardingSplash {
         // onboardingCompleted), neither the splash nor the banner show on
         // subsequent reloads. App close alone does NOT graduate them.
         const state = this.m.deps.AppState?.get?.();
-        if (state?.settings?.firstRunWelcomeDismissed) return Promise.resolve();
+        if (state?.settings?.firstRunWelcomeDismissed) {
+            // A pre-boot splash may already be on screen (mounted by the tap
+            // handler before this state was readable). Never strand it.
+            this._discardPrebootSplash();
+            return Promise.resolve();
+        }
 
         if (this.m._firstRunSplash) return this.m._firstRunSplashDone ?? Promise.resolve();
+
+        // The tap handler's splash already played and was removed (its 12 s
+        // watchdog, or showBootError cleared it). Do not play a second one.
+        if (standalone && !this._findPrebootSplash() && this._consumePrebootFlag()) {
+            return Promise.resolve();
+        }
 
         // Completion promise — resolved by _hideFirstRunSplash once the
         // element is actually off the page.
         this.m._firstRunSplashDone = new Promise(resolve => {
             this.m._resolveFirstRunSplashDone = resolve;
         });
+
+        // Pre-boot hand-off: for the create/sample picks, the tap handler in
+        // miniCycle.html mounts an identical #first-run-splash the moment the
+        // user taps, so the cascade runs while the module graph is still
+        // loading. Adopt that element instead of mounting a second one; the
+        // completion promise then settles when the already-running animation
+        // ends, so the creation dialog opens at max(boot, splash) rather than
+        // boot + splash. The learn path never mounts one (its splash needs the
+        // banner for phase 3), so adoption is always the standalone shape.
+        const preboot = this._findPrebootSplash();
+        if (preboot) {
+            return this._adoptPrebootSplash(preboot, standalone);
+        }
 
         const titleText = getLabel('firstRunWelcome.title');
         const splash = document.createElement('div');
@@ -258,6 +282,147 @@ export class OnboardingSplash {
         });
 
         return splashWords;
+    }
+
+    /**
+     * The splash mounted by miniCycle.html's tap handler, if it is on the page.
+     * @returns {HTMLElement|null}
+     * @private
+     */
+    _findPrebootSplash() {
+        const el = document.getElementById(DOM_IDS.FIRST_RUN_SPLASH);
+        return el && el.classList.contains(`${DOM_CLASSES.FIRST_RUN_SPLASH}--preboot`) ? el : null;
+    }
+
+    /**
+     * Read-and-clear the same-session "a pre-boot splash was mounted" flag.
+     * @returns {boolean} whether the flag was set
+     * @private
+     */
+    _consumePrebootFlag() {
+        try {
+            const set = sessionStorage.getItem('miniCycle_prebootSplash') === '1';
+            if (set) sessionStorage.removeItem('miniCycle_prebootSplash');
+            return set;
+        } catch {
+            return false; // storage unavailable — nothing to consume
+        }
+    }
+
+    /**
+     * Fade out and remove a pre-boot splash this module is not going to run
+     * (welcome already dismissed). Nothing awaits it, so no promise plumbing.
+     * @private
+     */
+    _discardPrebootSplash() {
+        const el = this._findPrebootSplash();
+        this._consumePrebootFlag();
+        if (!el) return;
+        el.setAttribute('data-adopted', '1');
+        el.classList.add(DOM_CLASSES.FIRST_RUN_SPLASH_FADING);
+        setTimeout(() => el.remove(), UI_TIMEOUTS.NOTIFICATION_BRIEF);
+    }
+
+    /**
+     * Take over a splash that the pre-boot tap handler already mounted (see
+     * showPrebootSplash in miniCycle.html). Same lifecycle as a fresh splash —
+     * tap-to-dismiss, watchdog, hold, fade — but the cascade may be mid-flight
+     * or already over by the time this module runs, so completion is read from
+     * the Web Animations API rather than from a future animationend event.
+     * @param {HTMLElement} splash - the pre-mounted #first-run-splash
+     * @param {boolean} standalone - hold duration to use (always true today)
+     * @returns {Promise<void>} the shared completion promise
+     * @private
+     */
+    _adoptPrebootSplash(splash, standalone) {
+        // Capture the completion promise up front: _hideFirstRunSplash detaches
+        // and nulls the field as it runs, so any branch that hides synchronously
+        // must still hand the caller the promise that hide will settle.
+        const done = this.m._firstRunSplashDone;
+        this.m._firstRunSplash = splash;
+        // Tells the tap handler's 12 s watchdog the element is now owned here.
+        splash.setAttribute('data-adopted', '1');
+        this._consumePrebootFlag();
+
+        const dismissOnTap = () => {
+            splash.removeEventListener('pointerdown', dismissOnTap);
+            this._hideFirstRunSplash();
+        };
+        splash.addEventListener('pointerdown', dismissOnTap);
+
+        this.m._firstRunSplashWatchdog = setTimeout(() => {
+            this.m._firstRunSplashWatchdog = null;
+            this._hideFirstRunSplash();
+        }, UI_TIMEOUTS.FIRST_RUN_SPLASH_WATCHDOG);
+
+        const startHold = () => {
+            this.m._firstRunSplashHoldTimer = setTimeout(() => {
+                this.m._firstRunSplashHoldTimer = null;
+                this._hideFirstRunSplash();
+            }, this._readSplashHoldDuration(standalone));
+        };
+
+        // The user already tapped the splash before boot got here: honour it
+        // now instead of making them wait out the cascade and the hold.
+        if (splash.getAttribute('data-skip') === '1') {
+            this._hideFirstRunSplash();
+            return done;
+        }
+
+        if (window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) {
+            startHold();
+            return done;
+        }
+
+        const chars = splash.querySelectorAll(`.${DOM_CLASSES.FIRST_RUN_SPLASH_CHAR}`);
+        const lastChar = chars[chars.length - 1];
+        if (!lastChar) {
+            this._hideFirstRunSplash();
+            return done;
+        }
+
+        // `finished` resolves immediately for a completed animation and later
+        // for a running one, so both "boot was slower than the cascade" and
+        // "boot was faster" collapse into one path. A cancelled animation
+        // rejects — treat that like completion rather than hanging.
+        const shrink = typeof lastChar.getAnimations === 'function'
+            ? lastChar.getAnimations().find(a => a.animationName === 'first-run-splash-shrink')
+            : null;
+        if (shrink) {
+            // If boot took longer than the cascade, the finished title has
+            // already been resting on screen. Credit that time against the
+            // hold so a slow boot does not add a second, redundant pause:
+            // the dialog should open at max(boot, splash), not boot + hold.
+            const startHoldCreditingRest = () => {
+                let rested = 0;
+                try {
+                    const timing = shrink.effect?.getComputedTiming?.();
+                    const endedAt = (shrink.startTime ?? 0) + (timing?.endTime ?? 0);
+                    const now = document.timeline?.currentTime ?? performance.now();
+                    rested = Math.max(0, now - endedAt);
+                } catch {
+                    rested = 0; // timing unreadable — fall back to the full hold
+                }
+                const hold = Math.max(0, this._readSplashHoldDuration(standalone) - rested);
+                this.m._firstRunSplashHoldTimer = setTimeout(() => {
+                    this.m._firstRunSplashHoldTimer = null;
+                    this._hideFirstRunSplash();
+                }, hold);
+            };
+            shrink.finished.then(startHoldCreditingRest, startHold);
+            return done;
+        }
+
+        // No animation yet: main.css has not applied (slow network), so the
+        // cascade starts when the stylesheet lands. Wait for its end the way
+        // the fresh splash does; the watchdog still bounds the worst case.
+        lastChar.addEventListener('animationend', function onShrinkEnd(event) {
+            if (event.animationName === 'first-run-splash-shrink') {
+                lastChar.removeEventListener('animationend', onShrinkEnd);
+                startHold();
+            }
+        });
+        return done;
     }
 
     /**

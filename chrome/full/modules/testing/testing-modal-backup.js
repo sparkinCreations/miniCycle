@@ -14,6 +14,7 @@ import {
     safeShowConfirmationModal,
     escapeHtml
 } from './testing-modal-core.js';
+import { isSupportedStoredVersion } from '../utils/schemaVersion.js';
 import { DOM_SELECTORS, DOM_CLASSES, STORAGE_KEYS, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 // Pure, DI-free — shared with the production file-restore path so the testing
@@ -152,26 +153,25 @@ export async function listAvailableBackups() {
         }
     }
 
-    // Legacy localStorage backups
-    const legacyManual = Object.keys(localStorage).filter(key => key.startsWith('miniCycle_backup_'));
-    const legacyAuto = Object.keys(localStorage).filter(key => key.startsWith('auto_migration_backup_'));
-    const legacyBackups = [...legacyManual, ...legacyAuto];
+    // Legacy localStorage backups (pre-IndexedDB manual backups). The retired pre-2.5
+    // migration's auto_migration_backup_* snapshots are no longer listed: they hold
+    // pre-2.5 data, which nothing can restore any more.
+    const legacyBackups = Object.keys(localStorage).filter(key => key.startsWith('miniCycle_backup_'));
 
     if (legacyBackups.length > 0) {
         appendToTestResults("Legacy Backups (localStorage):\n");
         legacyBackups.sort((a, b) => {
-            const timestampA = parseInt(a.replace(/^(miniCycle_backup_|auto_migration_backup_)/, ''));
-            const timestampB = parseInt(b.replace(/^(miniCycle_backup_|auto_migration_backup_)/, ''));
+            const timestampA = parseInt(a.replace(/^miniCycle_backup_/, ''));
+            const timestampB = parseInt(b.replace(/^miniCycle_backup_/, ''));
             return timestampB - timestampA;
         });
 
         legacyBackups.forEach(key => {
-            const timestamp = key.replace(/^(miniCycle_backup_|auto_migration_backup_)/, '');
+            const timestamp = key.replace(/^miniCycle_backup_/, '');
             const date = new Date(parseInt(timestamp)).toLocaleString();
             const backupValue = deps.safeLocalStorageGet(key, "");
             const size = (backupValue.length / 1024).toFixed(2);
-            const type = key.startsWith('auto_migration_backup_') ? 'AUTO' : 'MANUAL';
-            appendToTestResults(`  - ${date} - ${size} KB [${type}]\n`);
+            appendToTestResults(`  - ${date} - ${size} KB [MANUAL]\n`);
             totalBackups++;
         });
         appendToTestResults("\n");
@@ -255,19 +255,18 @@ export async function restoreFromBackup() {
         }
     }
 
-    // Load localStorage backups (legacy)
-    const legacyManual = Object.keys(localStorage).filter(key => key.startsWith('miniCycle_backup_'));
-    const legacyAuto = Object.keys(localStorage).filter(key => key.startsWith('auto_migration_backup_'));
-    const legacyKeys = [...legacyManual, ...legacyAuto];
+    // Load localStorage backups (pre-IndexedDB manual backups; see the listing above
+    // for why auto_migration_backup_* snapshots are not offered)
+    const legacyKeys = Object.keys(localStorage).filter(key => key.startsWith('miniCycle_backup_'));
 
     legacyKeys.forEach(key => {
-        const timestamp = parseInt(key.replace(/^(miniCycle_backup_|auto_migration_backup_)/, ''));
+        const timestamp = parseInt(key.replace(/^miniCycle_backup_/, ''));
         const backupData = deps.safeLocalStorageGet(key, null);
         allBackups.push({
-            type: key.startsWith('auto_migration_backup_') ? 'localstorage-auto' : 'localstorage-manual',
+            type: 'localstorage-manual',
             timestamp,
             id: key,
-            name: `Legacy ${key.startsWith('auto_migration_backup_') ? 'Auto' : 'Manual'} Backup`,
+            name: 'Legacy Manual Backup',
             size: backupData ? backupData.length : 0,
             data: backupData,
             metadata: null
@@ -326,9 +325,6 @@ export async function restoreFromBackup() {
         } else if (backup.type === 'indexeddb-session') {
             typeLabel = '<span class="backup-type-badge session">[SESSION]</span>';
             storageLabel = '<span class="backup-storage-label indexeddb">IndexedDB</span>';
-        } else if (backup.type === 'localstorage-auto') {
-            typeLabel = '<span class="backup-type-badge legacy-auto">[LEGACY AUTO]</span>';
-            storageLabel = '<span class="backup-storage-label localstorage">localStorage</span>';
         } else {
             typeLabel = '<span class="backup-type-badge legacy-manual">[LEGACY MANUAL]</span>';
             storageLabel = '<span class="backup-storage-label localstorage">localStorage</span>';
@@ -447,9 +443,9 @@ export async function restoreFromBackup() {
                             throw new Error('Failed to load backup from IndexedDB');
                         }
 
-                        const isPortableSchema25 = (restoredData.schemaVersion === '2.5' || restoredData.schemaVersion === 2.5) &&
+                        const isPortableSchema25 = isSupportedStoredVersion(restoredData) &&
                             typeof restoredData.miniCycleData === 'string';
-                        const isSchema25 = restoredData.schemaVersion === '2.5' || restoredData.schemaVersion === 2.5;
+                        const isSchema25 = isSupportedStoredVersion(restoredData);
 
                         if (isPortableSchema25) {
                             // Same structural gate as the production file-restore
@@ -468,24 +464,9 @@ export async function restoreFromBackup() {
                             localStorage.setItem(STORAGE_KEYS.DATA, JSON.stringify(restoredData));
                             appendToTestResults(`Restored Schema 2.5 data to localStorage\n`);
                         } else {
-                            appendToTestResults(`Detected legacy format backup\n`);
-                            localStorage.removeItem(STORAGE_KEYS.DATA);
-
-                            if (restoredData.cycles || restoredData.miniCycleStorage) {
-                                const cyclesData = restoredData.cycles || restoredData.miniCycleStorage;
-                                deps.safeLocalStorageSet('miniCycleStorage', typeof cyclesData === 'string' ? cyclesData : JSON.stringify(cyclesData));
-                                appendToTestResults(`Restored: miniCycleStorage\n`);
-                            }
-                            if (restoredData.lastUsedMiniCycle || restoredData.activeCycle) {
-                                deps.safeLocalStorageSet('lastUsedMiniCycle', restoredData.lastUsedMiniCycle || restoredData.activeCycle);
-                                appendToTestResults(`Restored: lastUsedMiniCycle\n`);
-                            }
-                            if (restoredData.reminders || restoredData.miniCycleReminders) {
-                                const remindersData = restoredData.reminders || restoredData.miniCycleReminders;
-                                deps.safeLocalStorageSet('miniCycleReminders', typeof remindersData === 'string' ? remindersData : JSON.stringify(remindersData));
-                                appendToTestResults(`Restored: miniCycleReminders\n`);
-                            }
-                            appendToTestResults(`Legacy data will be migrated to Schema 2.5 on reload\n`);
+                            // Pre-2.5 backup: the migration that converted it was retired
+                            // Sep 2026. Refuse BEFORE touching current data.
+                            throw new Error('Pre-2.5 backup format is no longer supported — nothing restored');
                         }
 
                     } else {
@@ -496,37 +477,15 @@ export async function restoreFromBackup() {
                             throw new Error('Failed to parse backup data');
                         }
 
-                        const isSchema25 = parsed.schemaVersion === '2.5' || parsed.schemaVersion === 2.5;
+                        const isSchema25 = isSupportedStoredVersion(parsed);
 
                         if (isSchema25) {
                             localStorage.setItem(STORAGE_KEYS.DATA, JSON.stringify(parsed));
                             appendToTestResults(`Restored Schema 2.5 data from localStorage backup\n`);
                         } else {
-                            localStorage.removeItem(STORAGE_KEYS.DATA);
-                            const isAuto = selectedBackup.type === 'localstorage-auto';
-
-                            if (isAuto) {
-                                if (parsed.data?.miniCycleStorage) {
-                                    deps.safeLocalStorageSet('miniCycleStorage', parsed.data.miniCycleStorage);
-                                    appendToTestResults(`Restored: miniCycleStorage\n`);
-                                }
-                                if (parsed.data?.miniCycleReminders) {
-                                    deps.safeLocalStorageSet('miniCycleReminders', parsed.data.miniCycleReminders);
-                                    appendToTestResults(`Restored: miniCycleReminders\n`);
-                                }
-                                if (parsed.data?.lastUsedMiniCycle) {
-                                    deps.safeLocalStorageSet('lastUsedMiniCycle', parsed.data.lastUsedMiniCycle);
-                                    appendToTestResults(`Restored: lastUsedMiniCycle\n`);
-                                }
-                            } else {
-                                ['miniCycleStorage', 'lastUsedMiniCycle', 'miniCycleReminders'].forEach(key => {
-                                    if (parsed[key]) {
-                                        deps.safeLocalStorageSet(key, typeof parsed[key] === 'string' ? parsed[key] : JSON.stringify(parsed[key]));
-                                        appendToTestResults(`Restored: ${key}\n`);
-                                    }
-                                });
-                            }
-                            appendToTestResults(`Legacy data will be migrated to Schema 2.5 on reload\n`);
+                            // Pre-2.5 content (see the IndexedDB branch above) — refuse
+                            // before touching current data.
+                            throw new Error('Pre-2.5 backup format is no longer supported — nothing restored');
                         }
                     }
 

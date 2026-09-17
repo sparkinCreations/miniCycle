@@ -37,7 +37,6 @@ const di = createDIModule('SettingsManager', {
     updateMoveArrowsVisibility: optional(null),
     toggleHoverTaskOptions: optional(null),
     refreshTaskListUI: optional(null),
-    performSchema25Migration: optional(null),
     resetDefaultRecurringSettings: optional(null),
     organizeCompletedTasks: optional(null),
     handleTaskListMovement: optional(null),
@@ -68,7 +67,7 @@ const di = createDIModule('SettingsManager', {
     showPromptModal: optional(null)
 });
 
-/** @type {{appInit: Object|null, loadMiniCycleData: Function, AppState: Object, showNotification: Function, showConfirmationModal: Function, hideMainMenu: Function|null, setupDarkModeToggle: Function|null, setupQuickDarkToggle: Function|null, updateMoveArrowsVisibility: Function|null, toggleHoverTaskOptions: Function|null, refreshTaskListUI: Function|null, performSchema25Migration: Function|null, resetDefaultRecurringSettings: Function|null, organizeCompletedTasks: Function|null, DataValidator: Object|null, calculateNextOccurrence: Function|null, sanitizeInput: Function, AppMeta: Object|null, safeAddEventListener: Function, BackupManager: Object|null}} */
+/** @type {{appInit: Object|null, loadMiniCycleData: Function, AppState: Object, showNotification: Function, showConfirmationModal: Function, hideMainMenu: Function|null, setupDarkModeToggle: Function|null, setupQuickDarkToggle: Function|null, updateMoveArrowsVisibility: Function|null, toggleHoverTaskOptions: Function|null, refreshTaskListUI: Function|null, resetDefaultRecurringSettings: Function|null, organizeCompletedTasks: Function|null, DataValidator: Object|null, calculateNextOccurrence: Function|null, sanitizeInput: Function, AppMeta: Object|null, safeAddEventListener: Function, BackupManager: Object|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];
@@ -240,7 +239,6 @@ function wireSubModuleDependencies(dependencies) {
         showNotification: dependencies.showNotification,
         showConfirmationModal: dependencies.showConfirmationModal,
         safeAddEventListener: dependencies.safeAddEventListener,
-        performSchema25Migration: dependencies.performSchema25Migration,
         BackupManager: dependencies.BackupManager,
         AppMeta: dependencies.AppMeta,
         loadMiniCycle: dependencies.loadMiniCycle,

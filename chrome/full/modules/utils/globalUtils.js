@@ -24,6 +24,7 @@
 
 import { DOM_IDS, DOM_CLASSES, DOM_SELECTORS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { getAutoClearForMode, getAutoClearSettings } from './cycleMode.js';
 
 // NOTE: Uses plain _deps instead of createDIModule() because GlobalUtils is a Phase 1
 // static class loaded in coreBoot before the manifest system. The static class pattern
@@ -604,33 +605,20 @@ export class GlobalUtils {
             return;
         }
 
-        const { deleteWhenComplete, deleteWhenCompleteSettings } = taskData;
+        const defaults = constants.DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS;
+        const storedSettings = getAutoClearSettings(taskData);
         const isToDoMode = currentMode === 'todo';
         const isRecurring = taskElement.classList.contains(DOM_CLASSES.RECURRING);
 
         // Validate settings
-        const validSettings = this.validateDeleteSettings(deleteWhenCompleteSettings)
-            ? deleteWhenCompleteSettings
-            : { ...constants.DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS };
+        const validSettings = this.validateDeleteSettings(storedSettings)
+            ? storedSettings
+            : { ...defaults };
 
-        // ✅ Decide active deleteWhenComplete strictly from settings when possible
-        // Priority: mode-specific setting (canonical) > legacy field > hard defaults
-        let finalDeleteWhenComplete;
-
-        // 1) Preferred: mode-specific setting (canonical source of truth)
-        if (typeof validSettings[currentMode] === 'boolean') {
-            finalDeleteWhenComplete = validSettings[currentMode];
-
-        // 2) Fallback: legacy/temporary field if settings are somehow missing
-        } else if (typeof deleteWhenComplete === 'boolean') {
-            finalDeleteWhenComplete = deleteWhenComplete;
-
-        // 3) Last-resort: hard defaults per mode
-        } else {
-            finalDeleteWhenComplete = currentMode === 'todo'
-                ? true   // To-Do default = delete
-                : false; // Cycle default = keep
-        }
+        // Active value: mode-specific setting (canonical) > legacy field > hard
+        // defaults — the one resolver in utils/cycleMode.js, read PER KEY so a
+        // map that is valid for this mode still counts when the other key is bad.
+        const finalDeleteWhenComplete = getAutoClearForMode(taskData, currentMode, defaults);
 
         // Update data attributes
         taskElement.dataset.deleteWhenComplete = finalDeleteWhenComplete.toString();

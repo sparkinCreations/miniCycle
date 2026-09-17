@@ -13,11 +13,13 @@ import {
     safeAddEventListenerById,
     safeShowConfirmationModal
 } from './testing-modal-core.js';
-import { STORAGE_KEYS, UI_TIMEOUTS } from '../core/constants.js';
+import { STORAGE_KEYS, UI_TIMEOUTS, DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS, SCHEMA } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 // Local-midnight parse: date-only dueDates read as UTC midnight counted an
 // extra task as overdue in negative UTC offsets.
 import { parseDateAsLocal } from '../recurring/recurringDateUtils.js';
+import { getAutoClear, getAutoClearSettings, getRoutines, setAutoClearSettings } from '../utils/cycleMode.js';
+import { hasPriority } from '../utils/priorityLevel.js';
 
 // ==========================================
 // BUTTON SETUP
@@ -61,7 +63,7 @@ export function runFullAnalysis() {
         return;
     }
 
-    const cycles = state.data.cycles || {};
+    const cycles = getRoutines(state) || {};
     const metadata = state.metadata || {};
 
     // ROUTINE ANALYSIS
@@ -103,13 +105,13 @@ export function runFullAnalysis() {
 
     Object.values(cycles).forEach(cycle => {
         cycle.tasks?.forEach(task => {
-            if (task.highPriority) highPriorityTasks++;
+            if (hasPriority(task)) highPriorityTasks++;
             if (task.dueDate) {
                 tasksWithDueDates++;
                 if ((parseDateAsLocal(task.dueDate) || new Date(task.dueDate)) < today) overdueTasks++;
             }
             if (task.remindersEnabled) tasksWithReminders++;
-            if (task.deleteWhenComplete || task.deleteWhenCompleteSettings?.todo) {
+            if (getAutoClear(task, cycle, DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS) || getAutoClearSettings(task)?.todo) {
                 deleteWhenCompleteTasks++;
             }
         });
@@ -149,7 +151,7 @@ export function runFullAnalysis() {
     // SUMMARY
     appendToTestResults("=".repeat(50) + "\n");
     appendToTestResults("ANALYSIS COMPLETE\n");
-    appendToTestResults(`Schema Version: ${metadata.schemaVersion || '2.5'}\n`);
+    appendToTestResults(`Schema Version: ${metadata.schemaVersion || SCHEMA.CURRENT}\n`);
     appendToTestResults("=".repeat(50) + "\n\n");
 
     const status = issues.length === 0 ? "success" : "warning";
@@ -377,8 +379,9 @@ export function repairData() {
                         repairs.push(`Fixed missing completed status for "${task.text}"`);
                     }
 
-                    if (!task.deleteWhenCompleteSettings || typeof task.deleteWhenCompleteSettings !== 'object') {
-                        task.deleteWhenCompleteSettings = { cycle: false, todo: true };
+                    const autoClear = getAutoClearSettings(task);
+                    if (!autoClear || typeof autoClear !== 'object') {
+                        setAutoClearSettings(task, null, cycle, DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS);
                     }
 
                     validTasks.push(task);

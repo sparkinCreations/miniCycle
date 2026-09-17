@@ -16,7 +16,7 @@
  * @module deviceDetection
  */
 
-import { STORAGE_KEYS, UI_TIMEOUTS } from '../core/constants.js';
+import { STORAGE_KEYS, UI_TIMEOUTS, SCHEMA } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { isNativeApp } from '../platform/capacitorBridge.js';
 import { goToLiteVersion } from './liteVersion.js';
@@ -81,9 +81,7 @@ export class DeviceDetectionManager {
 
       // ✅ Wait for core systems to be ready (AppState + data) - DI-pure
       const appInitModule = this.deps.appInit;
-      if (appInitModule?.waitForCore) {
-        await appInitModule.waitForCore();
-      }
+      await appInitModule.waitForCore();
 
       const schemaData = this.deps.loadMiniCycleData();
       if (!schemaData) {
@@ -150,13 +148,11 @@ export class DeviceDetectionManager {
   async saveCompatibilityData(compatibilityData) {
     // ✅ Wait for core systems to be ready (AppState + data) - DI-pure
     const appInitModule = this.deps.appInit;
-    if (appInitModule?.waitForCore) {
-      await appInitModule.waitForCore();
-    }
+    await appInitModule.waitForCore();
 
     // ✅ Use AppState only (no localStorage fallback) - DI-pure
     const AppState = this.deps.AppState;
-    if (!AppState?.isReady?.()) {
+    if (!AppState.isReady()) {
       console.error('❌ AppState not ready for saveCompatibilityData');
       return;
     }
@@ -199,9 +195,7 @@ export class DeviceDetectionManager {
 
     // ✅ Wait for core systems to be ready (AppState + data) - DI-pure
     const appInitModule = this.deps.appInit;
-    if (appInitModule?.waitForCore) {
-      await appInitModule.waitForCore();
-    }
+    await appInitModule.waitForCore();
 
     const schemaData = this.deps.loadMiniCycleData();
     if (!schemaData) {
@@ -230,9 +224,7 @@ export class DeviceDetectionManager {
 
     // ✅ Wait for core systems to be ready (AppState + data) - DI-pure
     const appInitModule = this.deps.appInit;
-    if (appInitModule?.waitForCore) {
-      await appInitModule.waitForCore();
-    }
+    await appInitModule.waitForCore();
 
     const schemaData = this.deps.loadMiniCycleData();
     if (!schemaData) {
@@ -264,7 +256,7 @@ export class DeviceDetectionManager {
       storedDecision: storedDecision,
       currentUrl: window.location.href,
       timestamp: new Date().toISOString(),
-      schema: '2.5',
+      schema: SCHEMA.CURRENT,
       detectionData: detectionData
     };
     
@@ -304,9 +296,7 @@ export class DeviceDetectionManager {
 
     // ✅ Wait for core systems to be ready (AppState + data) - DI-pure
     const appInitModule = this.deps.appInit;
-    if (appInitModule?.waitForCore) {
-      await appInitModule.waitForCore();
-    }
+    await appInitModule.waitForCore();
 
     const schemaData = this.deps.loadMiniCycleData();
     if (!schemaData) {
@@ -325,7 +315,7 @@ export class DeviceDetectionManager {
   async clearDetectionData() {
     // ✅ Use AppState only (no localStorage fallback) - DI-pure
     const AppState = this.deps.AppState;
-    if (AppState?.isReady?.()) {
+    if (AppState.isReady()) {
       try {
         await AppState.update(state => {
           if (state?.settings?.deviceCompatibility) {

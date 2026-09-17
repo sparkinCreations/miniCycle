@@ -4,13 +4,14 @@
  * @module modules/core/diBase
  *
  * This module provides standardized DI patterns to eliminate boilerplate
- * across all 49+ modules. Instead of each module repeating 20+ lines of
- * dependency setup, they use these utilities.
+ * across the DI-based modules (live counts: docs/PROJECT_STATS.md). Instead of
+ * each module repeating 20+ lines of dependency setup, they use these utilities.
  *
  * PATTERNS PROVIDED:
  * 1. createDIModule() - Factory for module-level DI with validation
  * 2. lazy() - Lazy getter wrapper for cross-module dependencies
- * 3. required() - Marker for required dependencies (warns and resolves to null if missing — it does NOT throw)
+ * 3. required() - Marker for required dependencies (warns and resolves to null if missing;
+ *    throws only in a module created with { strict: true })
  * 4. optional() - Marker for optional dependencies with defaults
  *
  * USAGE:
@@ -33,12 +34,10 @@
  * export class TaskCore {
  *     constructor(overrides = {}) {
  *         this.deps = di.resolve(overrides);
- *         // this.deps.AppState is now guaranteed or warning logged
+ *         // this.deps.AppState is now set, or a warning was logged (thrown under strict)
  *     }
  * }
  * ```
- *
- * @version 1.0.0
  */
 
 /** @type {string} Version marker for cache debugging (derives from Single Source of Truth) */
@@ -54,9 +53,16 @@ const OPTIONAL = Symbol('optional');
 /**
  * Mark a dependency as required
  *
- * If missing at resolve time this WARNS and resolves to null — it does not throw.
- * There is no "strict mode": ENFORCE_REQUIRES (moduleLoader.js) controls what the
- * loader DELIVERS, not what resolve() does when a declared dep is absent. The
+ * If missing at resolve time this WARNS and resolves to null — it does not throw,
+ * unless the module opts in with createDIModule(name, schema, { strict: true }),
+ * in which case resolve() throws. That opt-in is per module (dataValidator.js and
+ * recurringPanel.js use it). A dep injected as a GETTER is not pinned to null: it
+ * is reported if empty at resolve time, but stays a live accessor that fills in
+ * once the getter returns a value. The warning fires once per resolve() cache
+ * fill, not on every read.
+ *
+ * ENFORCE_REQUIRES (moduleLoader.js) is unrelated: it controls what the loader
+ * DELIVERS, not what resolve() does when a declared dep is absent. The loader-wide
  * STRICT_PHASES follow-up that would have thrown was never built and was dropped
  * as unnecessary — see docs/archive/ENFORCE_REQUIRES_ROLLOUT_PLAN.md.
  *
@@ -92,15 +98,18 @@ export function optional(defaultValue = null) {
  * Create a lazy getter that resolves at access time
  * Use for cross-module dependencies that may not exist at wire time
  *
+ * Returns a WRAPPER, not the dependency: read it through `.value`. A getter that
+ * throws is caught, warned, and yields null.
+ *
  * @param {Function} getter - Function that returns the dependency
- * @returns {Object} Object with getter property
+ * @returns {{value: *}} Object whose `value` getter calls `getter` on every read
  *
  * @example
  * this.deps = {
- *     // Resolves each time accessed - always gets latest value
+ *     // Resolves each time .value is read - always gets latest value
  *     AppState: lazy(() => getApi('state').AppState),
  * };
- * // Access: this.deps.AppState.get()
+ * // Access: this.deps.AppState.value.get()
  */
 export function lazy(getter) {
     return {
@@ -123,14 +132,14 @@ export function lazy(getter) {
  * Create a DI container for a module
  * Eliminates boilerplate by providing standardized:
  * - setDependencies() function
- * - resolve() function with validation
- * - Logging and error handling
+ * - resolve() function with validation (cached until deps change)
+ * - Missing-required-dep warnings (or a throw, under strict)
  *
  * @param {string} moduleName - Name for logging (e.g., 'TaskCore')
  * @param {Object} schema - Dependency schema with required/optional markers
  * @param {Object} [options] - Configuration options
- * @param {boolean} [options.strict=false] - Throw on missing required deps
- * @param {boolean} [options.logResolution=false] - Log dependency resolution
+ * @param {boolean} [options.strict=false] - Throw from resolve() on missing required deps (per module)
+ * @param {boolean} [options.logResolution=false] - Accepted but currently unused — logs nothing
  * @returns {Object} DI container with setDependencies and resolve methods
  *
  * @example
@@ -236,10 +245,14 @@ export function createDIModule(moduleName, schema = {}, options = {}) {
             const resolved = {};
             const missing = [];
 
-            // setDependencies preserves GETTERS on purpose ("for lazy binding"),
-            // and moduleLoader relies on it — `get consoleCapture()`,
-            // `get backupManager()`, `get TaskOptionsVisibilityController()` all
-            // resolve late. Reading `_injected[key]` here would INVOKE the getter
+            // setDependencies preserves GETTERS on purpose ("for lazy binding").
+            // The getters in moduleLoader's depMappings (`get consoleCapture()`,
+            // `get backupManager()`, `get TaskOptionsVisibilityController()`) do NOT
+            // arrive here as getters — injectDeclaredDeps reads them into plain
+            // values while building the deps object. The getters that do arrive are
+            // the loader's non-enumerable undeclared-dep warners, and whatever a
+            // caller passes (a facade forwarding its own resolved deps, a test
+            // stub). Reading `_injected[key]` here would INVOKE the getter
             // and store its value, then cache the object: a dep that was null at
             // first resolve stayed null forever, silently cancelling the lazy
             // binding the setter went to trouble to keep. Verified by execution
@@ -381,7 +394,9 @@ export function createDIModule(moduleName, schema = {}, options = {}) {
 
         /**
          * Get current injected dependencies (for debugging)
-         * @returns {Object} Copy of injected deps
+         * A SNAPSHOT: the spread invokes every getter once and omits
+         * non-enumerable properties, so it is not a faithful copy of `_injected`.
+         * @returns {Object} Shallow snapshot of injected deps
          */
         getInjected() {
             return { ..._injected };
@@ -399,6 +414,10 @@ export function createDIModule(moduleName, schema = {}, options = {}) {
         /**
          * Update a single dependency after initial setup
          * Useful for late-bound dependencies
+         *
+         * Plain assignment: on a key that setDependencies() injected as a
+         * getter-only accessor this throws a TypeError (modules run in strict
+         * mode). Replace such a key via setDependencies() instead.
          *
          * @param {string} key - Dependency key
          * @param {*} value - New value
@@ -446,7 +465,7 @@ export function createDIModule(moduleName, schema = {}, options = {}) {
  * @example
  * const deps = createDepsProxy(di, 'MyModule');
  * deps.AppState // works - triggers get trap
- * { ...deps }   // warns - spreading proxy doesn't work as expected
+ * { ...deps }   // warns once - and still copies, invoking every getter (non-enumerable ones included)
  */
 export function createDepsProxy(di, moduleName) {
     let spreadWarned = false;
@@ -483,6 +502,8 @@ export function createDepsProxy(di, moduleName) {
 
 /**
  * Wrap resolved deps in a proxy that warns when null optional deps are accessed
+ * Warns once per key, and only when the value is exactly null — an optional()
+ * with a non-null default, or an undefined value, never warns.
  *
  * @param {Object} resolved - Resolved dependencies object
  * @param {Object} schema - DI schema with OPTIONAL markers
@@ -515,11 +536,13 @@ export function createValidatedDepsProxy(resolved, schema, moduleName) {
 // ============================================================================
 
 /**
- * Create a simple fallback function that logs when called
+ * Create a simple fallback function for an optional dependency
  * Use for optional dependencies that should no-op gracefully
+ * Logs NOTHING: `logged` is flipped on first call but no console output is
+ * wired to it, and `name` is unused.
  *
- * @param {string} name - Name of the dependency (for logging)
- * @returns {Function} No-op function that logs once
+ * @param {string} name - Name of the dependency (currently unused)
+ * @returns {Function} Silent no-op function returning undefined
  */
 export function createFallback(name) {
     let logged = false;
@@ -533,9 +556,10 @@ export function createFallback(name) {
 
 /**
  * Create a fallback that returns a specific value
- * @param {string} name - Name for logging
+ * Silent, like createFallback(): nothing is logged and `name` is unused.
+ * @param {string} name - Name of the dependency (currently unused)
  * @param {*} returnValue - Value to return
- * @returns {Function}
+ * @returns {Function} Silent function returning `returnValue`
  */
 export function createFallbackWithValue(name, returnValue) {
     let logged = false;
@@ -588,7 +612,7 @@ export function safeGet(getter, name = 'dependency') {
 
 /**
  * @typedef {Object} DIOptions
- * @property {boolean} [strict=false] - Throw on missing required deps
- * @property {boolean} [logResolution=false] - Log dependency resolution
+ * @property {boolean} [strict=false] - Throw from resolve() on missing required deps (per module)
+ * @property {boolean} [logResolution=false] - Accepted but currently unused — logs nothing
  */
 

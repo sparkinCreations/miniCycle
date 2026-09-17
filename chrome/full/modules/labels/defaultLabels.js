@@ -366,10 +366,10 @@ export const DEFAULT_LABELS = deepFreeze({
         taskLimitReached:       'Cannot add task - limit of {limit} tasks reached.\nComplete or delete tasks to add more.',
         priorityEnabled:        'Priority enabled.',
         priorityRemoved:        'Priority removed.',
-        priorityColorPicker:    'Choose priority color:',
-        priorityColorRed:       'Red',
-        priorityColorYellow:    'Yellow',
-        priorityColorGreen:     'Green',
+        priorityColorPicker:    'Choose priority level:',
+        priorityHigh:           'High',
+        priorityMedium:         'Medium',
+        priorityLow:            'Low',
         priorityColorSaved:     'Priority color saved',
         taskInputShown:         'Add tasks using the input bar. Press + to hide it when you\'re done.',
         taskInputHidden:        'Task input hidden. Press + to show it again.',
@@ -623,10 +623,6 @@ export const DEFAULT_LABELS = deepFreeze({
         backupRestoreError:      'Error restoring backup - file may be corrupted.',
         backupRestored:          'Backup restored successfully!',
         backupReloading:         'Reloading app to apply changes...',
-        backupConvertingLegacy:  'Auto-converting legacy backup...',
-        backupInvalidLegacy:     'Invalid legacy backup file format.',
-        backupLegacyRestored:    'Legacy backup restored and converted!',
-        backupMigrationFailed:   'Migration failed during restore',
         backupCorruptData:       'Backup data is corrupt.',
         factoryResetComplete:    'Factory Reset Complete. Reloading...',
         factoryResetCancelled:   'Factory reset cancelled.',
@@ -663,6 +659,9 @@ export const DEFAULT_LABELS = deepFreeze({
 
         // State/data notifications
         dataCorrupted:           'Data was corrupted and has been reset. Your previous data could not be recovered.',
+        // Storage holds a document from a NEWER app version; this build refuses to
+        // adopt or overwrite it. {version} is the stored schemaVersion.
+        dataFromNewerVersion:    'Your data was saved by a newer version of miniCycle (data version {version}). Changes are not being saved. Reload to update the app.',
         multiTabConflict:        'Data updated from another tab. Your unsaved changes were overwritten.',
         dataClearedElsewhere:    'All data was cleared in another tab. Refresh this tab to continue.',
         stateUpdateFailed:       'State update failed',
@@ -702,7 +701,6 @@ export const DEFAULT_LABELS = deepFreeze({
         compressingImage:        'Compressing {size}MB image...',
 
         // Migration (additional)
-        compatibilityMode:       'Running in compatibility mode due to: {reason}. Restart app to retry migration.',
 
         // Device detection (additional)
         deviceStatusVersion:     'Version: {version}',
@@ -722,13 +720,6 @@ export const DEFAULT_LABELS = deepFreeze({
         quickToggleFocusTask:    'Quick toggle - Task View',
 
         // Migration notifications
-        forceMigrationComplete:  'Force migration completed! Some data may need manual review.',
-        dataFormatUpdating:      'Updating your data format... This will take a moment.',
-        dataIssuesFixed:         'Fixed {count} data compatibility issues',
-        dataUpdatedWithFixes:    'Data updated successfully! Fixed {count} compatibility issues.',
-        dataFormatUpdated:       'Data format updated successfully!',
-        freshCycleCreated:       'Created fresh routine. Previous data may have been incompatible.',
-        migrationFailed:         'Unable to update data format. Using existing data until next app reload. Your data is safe!',
 
         // Device detection notifications
         deviceDetectionComplete: 'Device detection complete - using full version by user choice',
@@ -923,6 +914,8 @@ export const DEFAULT_LABELS = deepFreeze({
         removeRecurringConfirm: 'Remove',
         liteVersionTitle:   'Switch to Lite Version',
         liteVersionConfirm: 'Try Lite Version',
+        newerDataTitle:     'Saved by a Newer Version',
+        newerDataMessage:   'Your routines were saved by a newer version of miniCycle (data version {version}), which this version of the app cannot read yet.\n\nNothing has been changed. Reload to update the app and pick up where you left off.',
         liteVersionCancel:  'Stay Here',
         resetAchievementsTitle:   'Reset Achievement Progress',
         resetAchievementsMessage: 'This will reset all achievement badges and global progress to 0. Your individual routine stats and history will NOT be affected. Are you sure?',
@@ -1543,6 +1536,7 @@ export const DEFAULT_LABELS = deepFreeze({
         done:       'Done',
         import:     'Import',
         create:     'Create',
+        reload:     'Reload',
         enable:     'Enable',
         loadSample: 'Load Sample',
         back:       'Back'
@@ -2569,9 +2563,9 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'notify.priorityEnabled',
     'notify.priorityRemoved',
     'notify.priorityColorPicker',
-    'notify.priorityColorRed',
-    'notify.priorityColorYellow',
-    'notify.priorityColorGreen',
+    'notify.priorityHigh',
+    'notify.priorityMedium',
+    'notify.priorityLow',
     'notify.priorityColorSaved',
     'notify.clearTasksFailed',
     'notify.deleteTasksFailed',
@@ -2637,10 +2631,6 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'notify.backupRestoreError',
     'notify.backupRestored',
     'notify.backupReloading',
-    'notify.backupConvertingLegacy',
-    'notify.backupInvalidLegacy',
-    'notify.backupLegacyRestored',
-    'notify.backupMigrationFailed',
     'notify.backupCorruptData',
     'notify.factoryResetComplete',
     'notify.factoryResetCancelled',
@@ -2909,10 +2899,6 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'notify.milestoneAchieved',
     'notify.gameUnlocked',
     'notify.taskSetRecurring',
-    'notify.forceMigrationComplete',
-    'notify.dataFormatUpdating',
-    'notify.dataFormatUpdated',
-    'notify.migrationFailed',
     'notify.taskLoadFailed',
     'notify.noRoutineLoaded',
     'notify.allTasksRecurring',

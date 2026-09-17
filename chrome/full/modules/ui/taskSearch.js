@@ -11,8 +11,9 @@
  * @module modules/ui/taskSearch
  */
 
-import { createDIModule, optional } from '../core/diBase.js';
+import { createDIModule, required, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS } from '../core/constants.js';
+import { getActiveRoutine } from '../utils/cycleMode.js';
 
 // ============================================================================
 // CONSTANTS
@@ -31,6 +32,11 @@ function _isMobileTouch() {
 // ============================================================================
 
 const di = createDIModule('TaskSearch', {
+    // The Priority chip and "Priority First" read the task's LEVEL from state
+    // (utils/priorityLevel.js) — the DOM's high-priority class is only on/off
+    // and cannot put Medium before Low.
+    AppState: required(),
+    vocabThemeManager: required(),
     getElementById: optional((id) => document.getElementById(id)),
     querySelectorAll: optional((sel) => document.querySelectorAll(sel)),
     getBody: optional(() => document.body),
@@ -356,16 +362,19 @@ function clearSearch() {
 /**
  * Check whether a task matches the current category filter
  * @param {HTMLElement} task - Task list item element
+ * @param {Object|undefined} taskData - The task's state record (undefined when the
+ *   element has no counterpart in state, e.g. a placeholder)
+ * @param {Object} themes - vocabThemeManager
  * @returns {boolean}
  */
-function matchesFilter(task) {
+function matchesFilter(task, taskData, themes) {
     if (currentFilter === 'all') return true;
 
     const checkbox = task.querySelector(DOM_SELECTORS.TASK_CHECKBOX);
 
     if (currentFilter === 'incomplete') return !checkbox?.checked;
     if (currentFilter === 'completed')  return !!checkbox?.checked;
-    if (currentFilter === 'priority')   return task.classList.contains(DOM_CLASSES.HIGH_PRIORITY);
+    if (currentFilter === 'priority')   return themes.getTaskPriorityLevel(taskData) !== null;
     if (currentFilter === 'due-date')   return !!(task.querySelector(DOM_SELECTORS.DUE_DATE)?.value);
     if (currentFilter === 'recurring')  {
         return task.querySelector(DOM_SELECTORS.RECURRING_BTN)?.classList.contains(DOM_CLASSES.ACTIVE) ?? false;
@@ -380,8 +389,10 @@ function matchesFilter(task) {
  * and restored when switching back to 'default'.
  * @param {HTMLElement[]} tasks - Current task elements (in current DOM order)
  * @param {HTMLElement} taskList - The <ul> task list element
+ * @param {(el: HTMLElement) => Object|undefined} dataFor - The element's state record
+ * @param {Object} themes - vocabThemeManager
  */
-function applySortToDOM(tasks, taskList) {
+function applySortToDOM(tasks, taskList, dataFor, themes) {
     if (currentSort === 'default') {
         // Restore original DOM order if we have a saved order, THEN drop it so
         // the next non-default sort captures the order as it stands now (a task
@@ -411,9 +422,8 @@ function applySortToDOM(tasks, taskList) {
             return ta.localeCompare(tb);
         }
         if (currentSort === 'priority') {
-            const pa = a.classList.contains(DOM_CLASSES.HIGH_PRIORITY) ? 0 : 1;
-            const pb = b.classList.contains(DOM_CLASSES.HIGH_PRIORITY) ? 0 : 1;
-            return pa - pb;
+            // High, then Medium, then Low, then none — from state, by level
+            return themes.compareTaskPriority(dataFor(a), dataFor(b));
         }
         if (currentSort === 'due-date') {
             const da = a.querySelector(DOM_SELECTORS.DUE_DATE)?.value || '9999-12-31';
@@ -438,8 +448,15 @@ function applyFiltersAndSort(query) {
     const tasks = [...taskList.querySelectorAll(DOM_SELECTORS.TASK)];
     const lowerQuery = query.toLowerCase().trim();
 
+    // State records by id, for the priority chip and sort. The other chips still
+    // read the DOM (completed, due date, recurring) — STATE_TRUTH_MIGRATION.md.
+    const routine = getActiveRoutine(deps.AppState.get());
+    const taskById = new Map((routine?.tasks ?? []).map(task => [task.id, task]));
+    const dataFor = (el) => taskById.get(el.dataset.taskId);
+    const themes = deps.vocabThemeManager;
+
     // 1. Apply sort (reorders DOM nodes in the active list)
-    applySortToDOM(tasks, taskList);
+    applySortToDOM(tasks, taskList, dataFor, themes);
 
     // 2. Apply text + category filter (show/hide each task) to BOTH the active list
     //    AND the completed-tasks dropdown. When that feature is enabled, completed
@@ -448,7 +465,7 @@ function applyFiltersAndSort(query) {
     const applyTo = (task) => {
         const taskText = task.querySelector(DOM_SELECTORS.TASK_TEXT)?.textContent?.toLowerCase() || '';
         const textMatch = lowerQuery === '' || taskText.includes(lowerQuery);
-        const categoryMatch = matchesFilter(task);
+        const categoryMatch = matchesFilter(task, dataFor(task), themes);
         task.style.display = (textMatch && categoryMatch) ? '' : 'none';
     };
     [...taskList.querySelectorAll(DOM_SELECTORS.TASK)].forEach(applyTo);

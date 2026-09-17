@@ -49,10 +49,12 @@
  * - **Clear on Reset tasks** → deleted during reset, recorded to clearedTasks for recreate
  */
 
-import { createDIModule, optional } from '../core/diBase.js';
+import { createDIModule, required, optional } from '../core/diBase.js';
 import { applyTaskStatusLabel } from './taskUtils.js';
-import { TASK_TIMEOUTS, UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, MILESTONES, LIMITS } from '../core/constants.js';
+import { TASK_TIMEOUTS, UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, MILESTONES, LIMITS, DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { autoClearFields, getActiveRoutine, getActiveRoutineId, getAutoClear, getAutoClearMode, getAutoClearSettings, getRoutine, getRoutines } from '../utils/cycleMode.js';
+import { priorityFields } from '../utils/priorityLevel.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -60,7 +62,9 @@ import { getLabel } from '../labels/labelResolver.js';
 
 const di = createDIModule('TaskCycleReset', {
     appInit: optional(null),
-    AppState: optional(null),
+    // add / complete / reset: a wiring miss must throw (each caller's catch surfaces it as a
+    // failure notification) instead of silently skipping the save — STATE_TRUTH_MIGRATION #15
+    AppState: required(),
     // Re-arm reminders after a reset: the reminder timer stops itself when it
     // fires with zero incomplete tasks (long window in Manual Cycle mode), and
     // resetting tasks to incomplete never restarted it — reminders went silent
@@ -332,14 +336,14 @@ function getResetContext(deps) {
     // Get cycle data from AppState (always ready by the time user actions trigger this)
     const AppState = deps.AppState || _deps.AppState;
 
-    if (!AppState?.isReady?.()) {
+    if (!AppState.isReady()) {
         console.error('AppState not ready for resetTasks');
         return null;
     }
 
     const state = AppState.get();
-    const cycles = state?.data?.cycles || {};
-    const activeCycle = state?.appState?.activeCycleId;
+    const cycles = getRoutines(state) || {};
+    const activeCycle = getActiveRoutineId(state);
     const cycleData = cycles[activeCycle];
 
     if (!activeCycle || !cycleData) {
@@ -362,15 +366,15 @@ function resetTasksData(context, deps) {
     const removeRecurringTasksFromCycle = deps.removeRecurringTasksFromCycle || _deps.removeRecurringTasksFromCycle;
 
     // Get fresh state (user may have switched cycles during animation)
-    const freshState = AppState?.get?.();
-    const currentActiveCycle = freshState?.appState?.activeCycleId;
+    const freshState = AppState.get();
+    const currentActiveCycle = getActiveRoutineId(freshState);
 
     if (currentActiveCycle !== activeCycle) {
         console.warn('Cycle switched during reset, aborting');
         return { aborted: true };
     }
 
-    const freshCycleData = freshState?.data?.cycles?.[currentActiveCycle];
+    const freshCycleData = getRoutine(freshState, currentActiveCycle);
     if (!freshCycleData) {
         console.warn('Could not get fresh cycle data');
         return { aborted: true };
@@ -407,7 +411,7 @@ function resetTasksData(context, deps) {
         const task = freshCycleData?.tasks?.find(t => t.id === taskId);
 
         // Check if task should be deleted
-        if (task?.deleteWhenComplete === true) {
+        if (task && getAutoClear(task, freshCycleData, DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS)) {
             tasksToDelete.push(taskId);
             if (task.text) tasksToDeleteNames.push(task.text);
             taskEl.remove();
@@ -457,7 +461,7 @@ function resetTasksData(context, deps) {
         const tasksToRecord = tasksToDelete
             .map(taskId => freshCycleData?.tasks?.find(t => t.id === taskId))
             .filter(Boolean)
-            .map(buildClearedRecord);
+            .map(task => buildClearedRecord(task, freshCycleData));
 
         const recordFn = deps.recordMultipleClearedTasks || _deps.recordMultipleClearedTasks;
         if (tasksToRecord.length > 0 && typeof recordFn === 'function') {
@@ -466,9 +470,9 @@ function resetTasksData(context, deps) {
     }
 
     // ✅ Use AppState only (no localStorage fallback) - DI-pure
-    if (AppState?.isReady?.()) {
+    if (AppState.isReady()) {
         AppState.update(state => {
-            const cycle = state?.data?.cycles?.[currentActiveCycle];
+            const cycle = getRoutine(state, currentActiveCycle);
             if (cycle) {
                 // Apply the recurring-removal plan (state side of what the
                 // DOM already shows): remove spawned recurring instances,
@@ -486,6 +490,7 @@ function resetTasksData(context, deps) {
                     if (template) {
                         template.nextScheduledOccurrence = upd.nextScheduledOccurrence;
                         template.lastTriggeredTimestamp = upd.lastTriggeredTimestamp;
+                        if (Number.isInteger(upd.position)) template.position = upd.position;
                     }
                 });
                 cycle.tasks.forEach(task => {
@@ -591,9 +596,9 @@ function moveCompletedTasksBack(context, deps) {
 
 
     // Restore original task order from AppState
-    if (AppState?.isReady?.()) {
+    if (AppState.isReady()) {
         const state = AppState.get();
-        const cycleData = state?.data?.cycles?.[activeCycle];
+        const cycleData = getRoutine(state, activeCycle);
         const stateTaskOrder = cycleData?.tasks?.map(t => t.id) || [];
 
         if (stateTaskOrder.length > 0) {
@@ -770,15 +775,17 @@ export async function resetTasksImpl(deps = {}) {
  * @param {Object} task - The live task being cleared
  * @returns {Object} Cleared-task record
  */
-function buildClearedRecord(task) {
+function buildClearedRecord(task, routine) {
     return {
         text: task.text,
-        highPriority: task.highPriority || false,
+        ...priorityFields(task),
         dueDate: task.dueDate,
-        priorityColor: task.priorityColor || null,
         remindersEnabled: task.remindersEnabled || false,
-        deleteWhenComplete: task.deleteWhenComplete || false,
-        deleteWhenCompleteSettings: task.deleteWhenCompleteSettings || null,
+        ...autoClearFields({
+            settings: getAutoClearSettings(task),
+            mode: getAutoClearMode(routine),
+            defaults: DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS
+        }),
         recurring: task.recurring || false,
         recurringSettings: task.recurringSettings || null
     };
@@ -813,7 +820,7 @@ export async function deleteCompletedTasksImpl(activeCycleId, cycleData, taskLis
         // make Clear Completed delete or skip the wrong tasks. See ARCH REVIEW FINDINGS §1.1.
         const isCompleted = task?.completed === true;
 
-        if (isCompleted && task?.deleteWhenComplete === true) {
+        if (isCompleted && getAutoClear(task, cycleData, DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS)) {
             tasksToDelete.push({ taskId, taskElement });
         }
     };
@@ -855,7 +862,7 @@ export async function deleteCompletedTasksImpl(activeCycleId, cycleData, taskLis
     const tasksToRecord = nonRecurringToDelete
         .map(({ taskId }) => cycleData.tasks?.find(t => t.id === taskId))
         .filter(Boolean)
-        .map(buildClearedRecord);
+        .map(task => buildClearedRecord(task, cycleData));
 
     // Accept a caller override like the cycle-reset path does (see the sibling
     // `deps.recordMultipleClearedTasks || _deps...` above). This path read only the
@@ -934,10 +941,17 @@ export async function deleteCompletedTasksImpl(activeCycleId, cycleData, taskLis
     });
 
     // ✅ Use AppState only (no localStorage fallback) - DI-pure
-    if (AppState?.isReady?.()) {
+    if (AppState.isReady()) {
         await AppState.update(state => {
-            const cycle = state.data.cycles[activeCycleId];
+            const cycle = getRoutine(state, activeCycleId);
             if (cycle?.tasks) {
+                // A cleared recurring instance comes back later — record where it
+                // sat so the watcher can recreate it in place, not at the bottom.
+                cycle.tasks.forEach((t, index) => {
+                    if (t.recurring && taskIdsToDelete.includes(t.id) && cycle.recurringTemplates?.[t.id]) {
+                        cycle.recurringTemplates[t.id].position = index;
+                    }
+                });
                 cycle.tasks = cycle.tasks.filter(t => !taskIdsToDelete.includes(t.id));
             }
             // Update total tasks completed count for achievements.
@@ -1017,15 +1031,15 @@ export function markAllTasksCompleteImpl(cycleData, taskList, resetTasksFn, deps
     // window dropped them, and state readers (stats, Clear Completed, the new
     // auto-reset completion guard) disagreed with the visible checkboxes.
     const AppState = deps.AppState || _deps.AppState;
-    if (AppState?.isReady?.()) {
+    if (AppState.isReady()) {
         // Capture the manual-vs-button split BEFORE the write below flips every
         // task to completed. This is the only instant it is knowable.
         const preState = AppState.get();
-        const preCycleId = preState?.appState?.activeCycleId;
-        captureCompletionSplit(preCycleId, preState?.data?.cycles?.[preCycleId]?.tasks);
+        const preCycleId = getActiveRoutineId(preState);
+        captureCompletionSplit(preCycleId, getRoutine(preState, preCycleId)?.tasks);
 
         AppState.update(state => {
-            const cycle = state.data?.cycles?.[state.appState?.activeCycleId];
+            const cycle = getActiveRoutine(state);
             if (cycle?.tasks) {
                 cycle.tasks.forEach(task => { task.completed = true; });
             }
@@ -1038,6 +1052,12 @@ export function markAllTasksCompleteImpl(cycleData, taskList, resetTasksFn, deps
 
     taskList.querySelectorAll(".task input").forEach(task => task.checked = true);
 
+    // ORDER MATTERS: checkMiniCycle reads completion from AppState, not the
+    // checkboxes, so the AppState.update above must already have landed. It has,
+    // even though it is not awaited: once AppState is initialized, update() runs
+    // its producer synchronously, before its first await. Keep that write above
+    // this call and never put an await in front of it — otherwise checkMiniCycle
+    // sees the pre-Complete state and the cycle never completes.
     if (typeof checkMiniCycle === 'function') {
         checkMiniCycle();
     }
@@ -1059,14 +1079,14 @@ function getCompleteAllContext(deps) {
 
     const taskList = querySelector(`#${DOM_IDS.TASK_LIST}`);
 
-    if (!AppState?.isReady?.()) {
+    if (!AppState.isReady()) {
         console.error('AppState not ready for handleCompleteAllTasks');
         return null;
     }
 
     const state = AppState.get();
-    const activeCycle = state?.appState?.activeCycleId;
-    const cycleData = state?.data?.cycles?.[activeCycle];
+    const activeCycle = getActiveRoutineId(state);
+    const cycleData = getRoutine(state, activeCycle);
 
     if (!activeCycle || !cycleData) {
         console.warn('No active cycle found for complete all tasks');
@@ -1114,9 +1134,7 @@ export async function handleCompleteAllTasksImpl(resetTasksFn, deps = {}) {
 
         // Step 2: Check if confirmation modal is needed (due dates in cycle mode)
         if (!cycleData.deleteCheckedTasks) {
-            const hasDueDates = [...taskList.querySelectorAll(DOM_SELECTORS.DUE_DATE)].some(
-                dueDateInput => dueDateInput.value
-            );
+            const hasDueDates = (cycleData.tasks ?? []).some(task => task.dueDate);
 
             if (hasDueDates) {
                 mergedDeps.showConfirmationModal({
@@ -1175,7 +1193,7 @@ async function executeCompleteAll(activeCycle, cycleData, taskList, resetTasksFn
     const captureStateSnapshot = deps.captureStateSnapshot || _deps.captureStateSnapshot;
     const isPerformingUndoRedo = deps.isPerformingUndoRedo || _deps.isPerformingUndoRedo || (() => false);
     if (typeof captureStateSnapshot === 'function' && !isPerformingUndoRedo()) {
-        const preBatchState = (deps.AppState || _deps.AppState)?.get?.();
+        const preBatchState = (deps.AppState || _deps.AppState).get();
         if (preBatchState) captureStateSnapshot(preBatchState);
     }
 

@@ -25,6 +25,8 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { INTERVALS, DEFAULT_RECURRING_DELETE_SETTINGS, LIMITS, UI_TIMEOUTS } from '../core/constants.js';
 import { getIcon, getLabel } from '../labels/labelResolver.js';
+import { autoClearFields, getActiveRoutineId, getAutoClearSettings, getRoutine } from '../utils/cycleMode.js';
+import { priorityFields } from '../utils/priorityLevel.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -267,21 +269,21 @@ function buildTemplateUpdate(template, nowMs, calculateNextOccurrence) {
  * @returns {Object} A fresh task instance ready to push into the cycle
  */
 function buildRecurringInstance(template) {
-    if (template.deleteWhenComplete === false) {
-        console.debug(`⚠️ Template "${template.text}" has deleteWhenComplete=false; recreated instance forced to true`);
+    const templateSettings = getAutoClearSettings(template);
+    if (templateSettings && Object.values(templateSettings).some(value => value === false)) {
+        console.debug(`⚠️ Template "${template.text}" keeps tasks in some mode; recreated instance forced to clear`);
     }
     return {
         text: template.text,
         completed: false,
         dueDate: template.dueDate,
-        highPriority: template.highPriority,
-        priorityColor: template.priorityColor || null,
+        ...priorityFields(template),
         remindersEnabled: template.remindersEnabled,
         recurring: true,
         id: template.id,
         recurringSettings: template.recurringSettings,
-        deleteWhenComplete: true, // Always true for recreated instances (safety override)
-        deleteWhenCompleteSettings: template.deleteWhenCompleteSettings ?? { ...DEFAULT_RECURRING_DELETE_SETTINGS }
+        // Always clears, whatever the template's map says (safety override)
+        ...autoClearFields({ settings: templateSettings, value: true, defaults: DEFAULT_RECURRING_DELETE_SETTINGS })
     };
 }
 
@@ -352,10 +354,21 @@ async function recreateDueTasks(activeCycleId, templates, taskList, now, extraEl
         assertInjected('updateAppState', Deps.updateAppState);
 
         await commitSystemUpdate(draft => {
-            const cycle = draft.data.cycles[activeCycleId];
-            tasksToActuallyAdd.forEach(taskData => {
-                cycle.tasks.push({ ...taskData, dateCreated: now.toISOString() });
-            });
+            const cycle = getRoutine(draft, activeCycleId);
+            // Put each instance back where its template says it sat (recorded when
+            // the previous instance was removed, or at activation/import). Ascending
+            // order so earlier inserts shift later targets correctly; a template with
+            // no position, or one past the end, appends — the old behaviour.
+            const positionOf = (taskData) => {
+                const p = templates[taskData.id]?.position;
+                return Number.isInteger(p) && p >= 0 ? p : Number.MAX_SAFE_INTEGER;
+            };
+            [...tasksToActuallyAdd]
+                .sort((a, b) => positionOf(a) - positionOf(b))
+                .forEach(taskData => {
+                    const at = Math.min(positionOf(taskData), cycle.tasks.length);
+                    cycle.tasks.splice(at, 0, { ...taskData, dateCreated: now.toISOString() });
+                });
             Object.entries(committedUpdates).forEach(([templateId, updatedTemplate]) => {
                 cycle.recurringTemplates[templateId] = updatedTemplate;
             });
@@ -424,14 +437,14 @@ export async function catchUpMissedRecurringTasks() {
         return { added: 0, updated: 0 };
     }
     const state = Deps.AppState.get();
-    const activeCycleId = state?.appState?.activeCycleId;
+    const activeCycleId = getActiveRoutineId(state);
 
     if (!activeCycleId) {
         console.warn('⚠️ No active cycle ID found for catch-up');
         return { added: 0, updated: 0 };
     }
 
-    const cycleData = state.data?.cycles?.[activeCycleId];
+    const cycleData = getRoutine(state, activeCycleId);
     if (!cycleData) {
         console.warn('⚠️ No active cycle found for catch-up');
         return { added: 0, updated: 0 };
@@ -491,14 +504,14 @@ export async function watchRecurringTasks() {
     assertInjected('AppState', Deps.AppState);
 
     const state = Deps.AppState?.get();
-    const activeCycleId = state?.appState?.activeCycleId;
+    const activeCycleId = getActiveRoutineId(state);
 
     if (!activeCycleId) {
         console.warn('⚠️ No active cycle ID found for recurring task watch');
         return;
     }
 
-    const cycleData = state.data?.cycles?.[activeCycleId];
+    const cycleData = getRoutine(state, activeCycleId);
     if (!cycleData) {
         console.warn('⚠️ No active cycle found for recurring task watch');
         return;
@@ -612,13 +625,13 @@ export async function setupRecurringWatcher() {
         return;
     }
 
-    const activeCycleId = state.appState?.activeCycleId;
+    const activeCycleId = getActiveRoutineId(state);
 
     if (!activeCycleId) {
         return;
     }
 
-    const cycleData = state.data?.cycles?.[activeCycleId];
+    const cycleData = getRoutine(state, activeCycleId);
     if (!cycleData) {
         return;
     }

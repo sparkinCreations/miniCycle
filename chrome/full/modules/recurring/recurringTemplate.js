@@ -30,6 +30,7 @@
  */
 
 import { DEFAULT_RECURRING_DELETE_SETTINGS } from '../core/constants.js';
+import { autoClearFields } from '../utils/cycleMode.js';
 
 /** Schema stamp for template records. Bump only alongside a migration. */
 export const RECURRING_TEMPLATE_SCHEMA_VERSION = 2;
@@ -72,7 +73,12 @@ export function buildRecurringTemplate({
     deleteWhenComplete = true,
     deleteWhenCompleteSettings = null,
     occurrenceCount = 0,
-    lastTriggeredTimestamp = null
+    lastTriggeredTimestamp = null,
+    // Index in routine.tasks where a recreated instance should land. Recorded when
+    // the instance is removed (cycle reset, To-Do clear) and at activation/import;
+    // null means "unknown", and the watcher appends as it always did. Without it
+    // every recurring task came back at the bottom of the routine.
+    position = null
 } = {}) {
     if (nextScheduledOccurrence == null) {
         // Not thrown: a data path should not explode mid-write. But say it out
@@ -91,12 +97,11 @@ export function buildRecurringTemplate({
         highPriority,
         priorityColor,
         remindersEnabled,
-        deleteWhenComplete,
-        deleteWhenCompleteSettings:
-            deleteWhenCompleteSettings ?? { ...DEFAULT_RECURRING_DELETE_SETTINGS },
+        ...autoClearFields({ settings: deleteWhenCompleteSettings, value: deleteWhenComplete, defaults: DEFAULT_RECURRING_DELETE_SETTINGS }),
         occurrenceCount,
         lastTriggeredTimestamp,
         nextScheduledOccurrence: nextScheduledOccurrence ?? null,
+        position: Number.isInteger(position) && position >= 0 ? position : null,
         schemaVersion: RECURRING_TEMPLATE_SCHEMA_VERSION
     };
 }

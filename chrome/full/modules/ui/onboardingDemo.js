@@ -23,6 +23,7 @@
  */
 import { DOM_CLASSES, DOM_SELECTORS, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
 
 export class OnboardingDemo {
     constructor(manager) {
@@ -295,8 +296,8 @@ export class OnboardingDemo {
     _buildTryItDynamic(container) {
         const computeRemaining = () => {
             const state = this.m.deps.AppState?.get?.();
-            const activeId = state?.appState?.activeCycleId;
-            const tasks = state?.data?.cycles?.[activeId]?.tasks || [];
+            const activeId = getActiveRoutineId(state);
+            const tasks = getRoutine(state, activeId)?.tasks || [];
             const total = tasks.length;
             const remaining = tasks.filter(t => !t.completed).length;
             return { total, remaining };

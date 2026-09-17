@@ -116,7 +116,7 @@ export function setupShareRoutineButton() {
  */
 export async function shareCurrentRoutine() {
     const loadMiniCycleData = _deps.loadMiniCycleData;
-    const schemaData = loadMiniCycleData?.();
+    const schemaData = loadMiniCycleData();
 
     if (!schemaData) {
         _deps.showNotification(getLabel('notify.shareRoutineNoActiveCycle'), 'error');

@@ -33,6 +33,7 @@ import { createDIModule, optional } from '../core/diBase.js';
 import { getLabel, getIcon } from '../labels/labelResolver.js';
 import { isClickOnNotification } from '../ui/modalUtils.js';
 import { announce } from '../utils/announce.js';
+import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -54,6 +55,7 @@ const di = createDIModule('ThemeManager', {
     updateMainMenuHeader: optional(null),
     updateHelpWindow: optional(null),
     refreshFocusActionButton: optional(null),
+    refreshTaskPriorityColors: optional(null),
     applyCustomColors: optional(null),
     logHistoryEvent: optional(null),
     getBody: optional(() => document.body),
@@ -212,6 +214,10 @@ function _refreshLiveLensLabels() {
     // Focus-mode action button — refreshes data-label + aria so vocab
     // themes can rename "Cycle"/"Clear" while focus mode is active.
     _deps.refreshFocusActionButton?.();
+    // Priority accents are the task's LEVEL under the active theme
+    // (utils/priorityLevel.js), so a theme change must repaint them — nothing
+    // else re-renders the list for a theme switch.
+    _deps.refreshTaskPriorityColors?.();
 
     // Task input placeholder ("Add task" → "Add habit" etc.)
     const taskInputEl = _deps.getElementById(DOM_IDS.TASK_INPUT);
@@ -562,15 +568,20 @@ export class ThemeManager {
             }
             thisToggle.dataset.darkModeSetup = 'true';
 
-            
+            // The handler never depends on data, so it is attached unconditionally.
+            // This used to bail — guard already stamped — when no schema data existed
+            // yet, and on a FIRST RUN it ran before the initial data was created, so
+            // the toggle stayed dead for the whole session. It only appeared to work
+            // because reminders' boot-time read of the legacy loadMiniCycleData wrapper
+            // happened first and that wrapper CREATES the initial data as a side
+            // effect (measured Sep 2026, STATE_TRUTH_MIGRATION #25). Initial state:
+            // settings when available, else the class the pre-paint script in
+            // miniCycle.html already applied from those same settings.
             const schemaData = this.loadSchemaData();
-            if (!schemaData) {
-                console.warn('⚠️ Schema 2.5 data not available for dark mode setup');
-                return;
-            }
-            
-            const isDark = schemaData.settings?.darkMode || false;
-            
+            const isDark = schemaData
+                ? (schemaData.settings?.darkMode || false)
+                : !!_deps.getRootElement()?.classList.contains(DOM_CLASSES.DARK_MODE);
+
 
             // Set initial state
             thisToggle.checked = isDark;
@@ -612,9 +623,11 @@ export class ThemeManager {
             quickToggle.dataset.quickToggleSetup = 'true';
 
             
-            // Get current dark mode state
+            // Get current dark mode state (same fallback as setupDarkModeToggle)
             const schemaData = this.loadSchemaData();
-            const isDark = schemaData ? (schemaData.settings?.darkMode || false) : false;
+            const isDark = schemaData
+                ? (schemaData.settings?.darkMode || false)
+                : !!_deps.getRootElement()?.classList.contains(DOM_CLASSES.DARK_MODE);
             
             // Remove existing listeners to prevent duplicates
             const newQuickToggle = quickToggle.cloneNode(true);
@@ -851,8 +864,8 @@ export class ThemeManager {
             // Reconcile unlocks for new users or missed unlock checks.
             vtm.reconcileUnlocksFromProgress?.();
 
-            const activeCycleId = state.appState?.activeCycleId;
-            const activeCycle = state.data?.cycles?.[activeCycleId];
+            const activeCycleId = getActiveRoutineId(state);
+            const activeCycle = getRoutine(state, activeCycleId);
             const currentThemeId = activeCycle?.theme ?? 'classic';
             const unlocked = new Set(vtm.getUnlockedThemeIds());
 
@@ -905,7 +918,7 @@ export class ThemeManager {
                 radio.addEventListener('change', () => {
                     // Read the active cycle at click time (not render time)
                     // so the theme is always applied to the currently active routine.
-                    const currentCycleId = _deps.AppState?.get?.()?.appState?.activeCycleId;
+                    const currentCycleId = getActiveRoutineId(_deps.AppState?.get?.());
                     if (radio.checked && currentCycleId) {
                         vtm.setRoutineTheme(currentCycleId, id);
                         _deps.showNotification?.(

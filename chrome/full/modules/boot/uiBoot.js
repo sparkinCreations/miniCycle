@@ -124,6 +124,56 @@ const MENU_OUTSIDE_KEY = '__miniCycleUiBootMenuCloseOutsideHandler';
 // GLOBAL EVENT LISTENERS
 // ============================================================================
 
+/** Real-input events that precede every user gesture (click, tap, key press). */
+const FIRST_INPUT_EVENTS = Object.freeze(['pointerdown', 'keydown']);
+// Stored on `document`, not in a module variable: a boot retry re-imports this module
+// under a new version, and only a key on the live element lets the newer boot remove
+// the older attempt's listener (same reason as replaceStoredEventListener above).
+const FIRST_INPUT_KEY = '__miniCycleUiBootFirstInputUndoHandler';
+const FIRST_INPUT_OPTIONS = Object.freeze({ capture: true });
+
+/**
+ * Switch undo on at the user's first real input, before that gesture's own handler runs.
+ *
+ * Undo starts disabled (AppGlobalState.isInitializing) so boot-time writes never
+ * become undo steps. Turning it on used to be each gesture's job, and several never
+ * did it — measured Sep 2026: with Complete Cycle or a mode switch as the first
+ * action after load, Undo did nothing (STATE_TRUTH_MIGRATION #13). A real click, tap
+ * or key press always fires a trusted pointerdown or keydown first, so ONE
+ * capture-phase listener on the document covers every gesture, including ones added
+ * later. Scripted events (isTrusted false) are ignored, so nothing boot dispatches
+ * can enable undo early. The listener removes itself after the first real input, and
+ * re-arming (boot retry) replaces the previous listener instead of stacking one.
+ *
+ * @param {Function} enable - Switches undo on (undo API enableOnFirstInteraction)
+ * @returns {void}
+ */
+export function armUndoOnFirstInput(enable) {
+  disarmUndoOnFirstInput();
+  const handler = (event) => {
+    if (!event.isTrusted) return;
+    disarmUndoOnFirstInput();
+    try {
+      enable();
+    } catch {
+      // Undo API not wired (boot failure path) — the gesture itself must still run
+    }
+  };
+  document[FIRST_INPUT_KEY] = handler;
+  FIRST_INPUT_EVENTS.forEach(type => document.addEventListener(type, handler, FIRST_INPUT_OPTIONS));
+}
+
+/**
+ * Remove the first-input listener, if armed (including one armed by a previous boot).
+ * @returns {void}
+ */
+export function disarmUndoOnFirstInput() {
+  const handler = document[FIRST_INPUT_KEY];
+  if (typeof handler !== 'function') return;
+  document[FIRST_INPUT_KEY] = null;
+  FIRST_INPUT_EVENTS.forEach(type => document.removeEventListener(type, handler, FIRST_INPUT_OPTIONS));
+}
+
 /**
  * Attach all global event listeners
  * Called from orchestrator.js after modules are loaded
@@ -131,6 +181,9 @@ const MENU_OUTSIDE_KEY = '__miniCycleUiBootMenuCloseOutsideHandler';
  * @param {Object} options - Configuration options
  */
 export function attachGlobalEventListeners(_GlobalUtils, _options = {}) {
+  // ========== First real input switches undo on ==========
+  armUndoOnFirstInput(() => _appContextMod?.getUndoApi?.()?.enableOnFirstInteraction?.());
+
   // ========== Keyboard Shortcuts ==========
   replaceStoredEventListener(
     document,

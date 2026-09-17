@@ -23,7 +23,7 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
-import { getAllDoneHintKey } from '../utils/cycleMode.js';
+import { getActiveRoutineId, getAllDoneHintKey, getRoutine } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -302,8 +302,8 @@ export class CompletedTasksManager {
         }
 
         const state = AppState.get();
-        const activeId = state?.appState?.activeCycleId;
-        const cycle = activeId ? state?.data?.cycles?.[activeId] : null;
+        const activeId = getActiveRoutineId(state);
+        const cycle = activeId ? getRoutine(state, activeId) : null;
         const tasks = Array.isArray(cycle?.tasks) ? cycle.tasks : [];
         const allComplete = tasks.length > 0 && tasks.every(t => t.completed);
 
@@ -452,8 +452,8 @@ export class CompletedTasksManager {
         const AppState = this.deps.AppState;
         if (AppState?.isReady?.()) {
             const state = AppState.get();
-            const activeId = state?.appState?.activeCycleId;
-            const tasks = activeId ? state?.data?.cycles?.[activeId]?.tasks : null;
+            const activeId = getActiveRoutineId(state);
+            const tasks = activeId ? getRoutine(state, activeId)?.tasks : null;
             if (Array.isArray(tasks)) {
                 completedIds = new Set(tasks.filter(t => t.completed).map(t => t.id));
                 knownIds = new Set(tasks.map(t => t.id));

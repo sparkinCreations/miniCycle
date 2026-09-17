@@ -28,6 +28,7 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { UI_TIMEOUTS, CHART, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION } from '../core/constants.js';
 import { getLabel, getIcon } from '../labels/labelResolver.js';
+import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
 // Pure utility class (no side effects/module state) — safe static import.
 // Owns the ordered panel registry; statsPanel registers its panels into it.
 // See docs/archive/FOCUS_TASK_VIEW_PLAN.md Phase 0.
@@ -46,7 +47,6 @@ let MILESTONES = null;
 
 const di = createDIModule('StatsPanel', {
     showNotification: optional(null),
-    loadMiniCycleData: optional(null),
     isOverlayActive: optional(null),
     isDraggingNotification: optional(null),
     updateThemeColor: optional(null),
@@ -73,7 +73,7 @@ const di = createDIModule('StatsPanel', {
 });
 
 // Late-binding deps via Proxy
-/** @type {{showNotification: Function|null, loadMiniCycleData: Function|null, isOverlayActive: Function|null, isDraggingNotification: Function|null, updateThemeColor: Function|null, hideMainMenu: Function|null, setupDarkModeToggle: Function|null, AppState: Object|null, appInit: Object|null, safeAddEventListener: Function|null}} */
+/** @type {{showNotification: Function|null, isOverlayActive: Function|null, isDraggingNotification: Function|null, updateThemeColor: Function|null, hideMainMenu: Function|null, setupDarkModeToggle: Function|null, AppState: Object|null, appInit: Object|null, safeAddEventListener: Function|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];
@@ -82,7 +82,7 @@ const _deps = new Proxy({}, {
 
 /**
  * Set dependencies for StatsPanelManager (call before creating instance)
- * @param {Object} dependencies - { showNotification, loadMiniCycleData, AppState, appInit, etc. }
+ * @param {Object} dependencies - { showNotification, AppState, appInit, etc. }
  * @returns {void}
  */
 /**
@@ -164,7 +164,6 @@ export class StatsPanelManager {
         this._constructorDeps = {
             // Fallback functions bound to this instance
             fallbackNotification: this.fallbackNotification.bind(this),
-            fallbackLoadData: this.fallbackLoadData.bind(this),
             fallbackOverlayCheck: this.fallbackOverlayCheck.bind(this)
         };
 
@@ -217,7 +216,6 @@ export class StatsPanelManager {
     _resolveAndCacheDeps() {
         this._cachedDeps = {
             showNotification: _deps.showNotification || this._constructorDeps.fallbackNotification,
-            loadMiniCycleData: _deps.loadMiniCycleData || this._constructorDeps.fallbackLoadData,
             isOverlayActive: _deps.isOverlayActive || this._constructorDeps.fallbackOverlayCheck,
             isDraggingNotification: _deps.isDraggingNotification || (() => false),
             updateThemeColor: _deps.updateThemeColor || (() => {}),
@@ -1135,8 +1133,8 @@ export class StatsPanelManager {
         }
 
         const state = AppState.get();
-        const activeCycleId = state?.appState?.activeCycleId;
-        const cycle = activeCycleId ? state.data.cycles[activeCycleId] : null;
+        const activeCycleId = getActiveRoutineId(state);
+        const cycle = activeCycleId ? getRoutine(state, activeCycleId) : null;
 
         // History button: show if there are any events OR any cleared tasks
         // (Cleared Tasks is now a tab within the History modal)
@@ -1255,11 +1253,6 @@ export class StatsPanelManager {
     // ==========================================
 
     fallbackNotification(message, type, duration) {
-    }
-
-    fallbackLoadData() {
-        console.warn('⚠️ loadMiniCycleData not available - using fallback');
-        return null;
     }
 
     fallbackOverlayCheck() {

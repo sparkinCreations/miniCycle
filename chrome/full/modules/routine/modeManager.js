@@ -16,7 +16,7 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
-import { syncTaskDeleteWhenComplete } from '../utils/cycleMode.js';
+import { getActiveRoutine, getActiveRoutineId, getRoutine, getRoutines, syncTaskDeleteWhenComplete } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -25,7 +25,6 @@ import { syncTaskDeleteWhenComplete } from '../utils/cycleMode.js';
 const di = createDIModule('ModeManager', {
     appInit: optional(null),
     AppState: optional(null),
-    loadMiniCycleData: optional(null),
     createTaskButtonContainer: optional(null),
     setupDueDateButtonInteraction: optional(null),
     checkCompleteAllButton: optional(null),
@@ -179,8 +178,8 @@ export class ModeManager {
         const remindersEnabledGlobal = currentState?.reminders?.enabled || false;
 
         // ✅ Get currentCycle - required for recurring button handler
-        const activeCycleId = currentState?.appState?.activeCycleId;
-        const currentCycle = currentState?.data?.cycles?.[activeCycleId];
+        const activeCycleId = getActiveRoutineId(currentState);
+        const currentCycle = getActiveRoutine(currentState);
 
         if (!currentCycle) {
             console.warn('⚠️ ModeManager: No active cycle found, cannot refresh task buttons');
@@ -325,9 +324,7 @@ export class ModeManager {
             return;
         }
 
-        const { data, appState } = currentState;
-        const activeCycle = appState.activeCycleId;
-        const currentCycle = data.cycles[activeCycle];
+        const currentCycle = getActiveRoutine(currentState);
 
         const toggleAutoReset = this.deps.getElementById(DOM_IDS.TOGGLE_AUTO_RESET);
         const deleteCheckedTasks = this.deps.getElementById(DOM_IDS.DELETE_CHECKED_TASKS);
@@ -432,12 +429,12 @@ export class ModeManager {
      */
     isModeAlreadyApplied(cycle, isToDoMode, currentMode) {
         if (!cycle || cycle.deleteCheckedTasks !== isToDoMode) return false;
-        return (cycle.tasks || []).every(task => {
-            const stored = task.deleteWhenCompleteSettings;
-            if (!stored || typeof stored !== 'object') return false;
-            if (typeof stored[currentMode] !== 'boolean') return false;
-            return !!task.deleteWhenComplete === stored[currentMode];
-        });
+        // Probe a shallow copy: the sync helper reports whether it would have to
+        // write anything, and the live cycle stays untouched.
+        const defaults = this.deps.DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS;
+        return (cycle.tasks || []).every(task =>
+            !syncTaskDeleteWhenComplete({ ...task }, currentMode, defaults).changed
+        );
     }
 
     /**
@@ -456,8 +453,7 @@ export class ModeManager {
             return;
         }
 
-        const { appState } = currentState;
-        const activeCycle = appState.activeCycleId;
+        const activeCycle = getActiveRoutineId(currentState);
 
         if (!activeCycle) {
             console.warn('⚠️ ModeManager: No active cycle found for storage update');
@@ -470,7 +466,7 @@ export class ModeManager {
         // ✅ Update through state system — mode flags AND the per-task values they
         // derive, in ONE producer, so the whole switch is a single undo step.
         AppState.update(state => {
-            const cycle = state.data.cycles[activeCycle];
+            const cycle = getRoutine(state, activeCycle);
             if (cycle) {
                 cycle.autoReset = toggleAutoReset.checked;
                 cycle.deleteCheckedTasks = deleteCheckedTasks.checked;
@@ -489,21 +485,20 @@ export class ModeManager {
         // Wait for core
         await this.deps.appInit?.waitForCore();
 
-        // ✅ Schema 2.5 only
-        const loadMiniCycleData = this.deps.loadMiniCycleData;
-        if (!loadMiniCycleData) {
-            console.warn('⚠️ ModeManager: loadMiniCycleData not available');
+        // Read from state, not the legacy loadMiniCycleData wrapper (STATE_TRUTH_MIGRATION #25)
+        const AppState = this.deps.AppState;
+        if (!AppState) {
+            console.warn('⚠️ ModeManager: AppState not available');
             return;
         }
 
-        const schemaData = loadMiniCycleData();
-        if (!schemaData) {
+        const state = AppState.get?.();
+        if (!state) {
             console.error('❌ ModeManager: Schema 2.5 data required for updateCycleModeDescription');
             throw new Error('Schema 2.5 data not found');
         }
 
-        const { cycles, activeCycle } = schemaData;
-        const currentCycle = cycles[activeCycle];
+        const currentCycle = getActiveRoutine(state);
 
         let autoReset = false;
         let deleteChecked = false;
@@ -923,12 +918,11 @@ export class ModeManager {
 
         // Apply first-time shimmer only for genuinely new users
         const currentState = this.deps.AppState?.get();
-        const activeCycleId = currentState?.appState?.activeCycleId;
-        const activeCycle = currentState?.data?.cycles?.[activeCycleId];
+        const activeCycle = getActiveRoutine(currentState);
         // Don't count sample routine tasks — new users have tasks from the getting-started routine
         // Only cycleCount > 0 (completed a cycle) or multiple routines indicate a returning user
         const isReturningUser = activeCycle?.cycleCount > 0
-            || Object.keys(currentState?.data?.cycles || {}).length > 1;
+            || Object.keys(getRoutines(currentState) || {}).length > 1;
 
         if (!currentState?.settings?.addTaskDiscovered && !isReturningUser) {
             quickActionsBtn.classList.add(DOM_CLASSES.FIRST_TIME_SHIMMER);
@@ -1016,8 +1010,7 @@ export class ModeManager {
             // Set initial state from the per-routine setting (default: false =
             // hidden), overridden for an empty routine — see _shouldShowTaskInput().
             const state = this.deps.AppState?.get();
-            const activeCycleId = state?.appState?.activeCycleId;
-            const activeCycle = activeCycleId ? state?.data?.cycles?.[activeCycleId] : null;
+            const activeCycle = getActiveRoutine(state);
             const initialVisible = this._shouldShowTaskInput(activeCycle);
             this._updateTaskInputVisibility(initialVisible);
 
@@ -1041,9 +1034,9 @@ export class ModeManager {
                 // Persist to active routine (per-routine setting)
                 if (this.deps.AppState) {
                     await this.deps.AppState.update(state => {
-                        const cycleId = state.appState?.activeCycleId;
-                        if (cycleId && state.data?.cycles?.[cycleId]) {
-                            state.data.cycles[cycleId].showTaskInput = newVisible;
+                        const routine = getActiveRoutine(state);
+                        if (routine) {
+                            routine.showTaskInput = newVisible;
                         }
                     });
                 }
@@ -1130,9 +1123,8 @@ export class ModeManager {
             return;
         }
 
-        const { data, appState } = currentState;
-        const activeCycle = appState.activeCycleId;
-        const currentCycle = data.cycles[activeCycle];
+        const activeCycle = getActiveRoutineId(currentState);
+        const currentCycle = getActiveRoutine(currentState);
 
         // ✅ Ensure AutoReset reflects the correct state from state system
         if (activeCycle && currentCycle) {
@@ -1157,8 +1149,8 @@ export class ModeManager {
 
             // Fix #34: Read current activeCycleId inside handler, not from closure
             const currentState = AppState?.get?.();
-            const currentActiveCycle = currentState?.appState?.activeCycleId;
-            const currentCycleData = currentState?.data?.cycles?.[currentActiveCycle];
+            const currentActiveCycle = getActiveRoutineId(currentState);
+            const currentCycleData = getActiveRoutine(currentState);
 
             if (!currentActiveCycle || !currentCycleData) {
                 console.warn('⚠️ No active cycle available for auto reset change');
@@ -1167,7 +1159,7 @@ export class ModeManager {
 
             // ✅ Update through state system
             AppState.update(state => {
-                const cycle = state.data.cycles[currentActiveCycle];
+                const cycle = getRoutine(state, currentActiveCycle);
                 if (cycle) {
                     cycle.autoReset = event.target.checked;
 
@@ -1210,7 +1202,7 @@ export class ModeManager {
 
             // ✅ Update through state system
             AppState.update(state => {
-                const cycle = state.data.cycles[activeCycle];
+                const cycle = getRoutine(state, activeCycle);
                 if (cycle) {
                     cycle.deleteCheckedTasks = event.target.checked;
                 }
@@ -1260,14 +1252,14 @@ export class ModeManager {
         deleteCheckedTasks._deleteCheckedTasksModeHandler = async (event) => {
             // ✅ Schema 2.5 only
 
-            const schemaData = self.deps.loadMiniCycleData();
-            if (!schemaData) {
+            const state = self.deps.AppState?.get?.();
+            if (!state) {
                 console.error('❌ Schema 2.5 data required for deleteCheckedTasks toggle');
                 throw new Error('Schema 2.5 data not found');
             }
 
-            const { cycles, activeCycle } = schemaData;
-            const currentCycle = cycles[activeCycle];
+            const activeCycle = getActiveRoutineId(state);
+            const currentCycle = getActiveRoutine(state);
 
             if (!activeCycle || !currentCycle) {
                 console.warn('⚠️ No active cycle found for delete checked tasks toggle');
@@ -1296,7 +1288,7 @@ export class ModeManager {
                     updatedCycle = currentCycle;
                 } else {
                     await AppState.update(state => {
-                        const cycle = state.data.cycles[activeCycle];
+                        const cycle = getRoutine(state, activeCycle);
 
                         // Update mode
                         cycle.deleteCheckedTasks = isToDoMode;
@@ -1368,9 +1360,7 @@ export class ModeManager {
             return;
         }
 
-        const { data, appState } = currentState;
-        const activeCycle = appState?.activeCycleId;
-        const currentCycle = activeCycle ? data?.cycles?.[activeCycle] : null;
+        const currentCycle = getActiveRoutine(currentState);
 
         if (!currentCycle) {
             console.warn('⚠️ ModeManager: No active cycle for validation');

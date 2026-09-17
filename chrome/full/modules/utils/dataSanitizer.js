@@ -14,6 +14,8 @@
  */
 
 import { createDIModule, required } from '../core/diBase.js';
+import { isSupportedStoredVersion } from '../utils/schemaVersion.js';
+import { getRoutines } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -133,7 +135,7 @@ function sanitizeCycle(cycle) {
 }
 
 function sanitizeSchema25State(state) {
-    const cycles = state?.data?.cycles || state?.cycles;
+    const cycles = getRoutines(state) || state?.cycles;
     if (!cycles || typeof cycles !== 'object') {
         return;
     }
@@ -260,7 +262,7 @@ function sanitizeLiteStorage(backupData) {
 export function sanitizeImportedData(backupData) {
 
     // Sanitize Schema 2.5 format
-    if (backupData.schemaVersion === '2.5' && backupData.miniCycleData) {
+    if (isSupportedStoredVersion(backupData) && backupData.miniCycleData) {
         try {
             const data = JSON.parse(backupData.miniCycleData);
             sanitizeSchema25State(data);
@@ -273,38 +275,6 @@ export function sanitizeImportedData(backupData) {
     }
 
     sanitizeLiteStorage(backupData);
-
-    // Sanitize legacy format
-    if (backupData.miniCycleStorage) {
-        try {
-            const legacyData = JSON.parse(backupData.miniCycleStorage);
-
-            if (Array.isArray(legacyData)) {
-                legacyData.forEach(cycle => {
-                    if (!cycle || typeof cycle !== 'object') return;
-
-                    // Sanitize cycle name
-                    if (cycle.name) {
-                        cycle.name = sanitizeText(cycle.name, 100);
-                    }
-
-                    // Sanitize task text
-                    if (Array.isArray(cycle.tasks)) {
-                        cycle.tasks.forEach(task => {
-                            if (task && typeof task === 'object' && task.text) {
-                                task.text = sanitizeText(task.text, 500);
-                            }
-                        });
-                    }
-                });
-            }
-
-            // Write sanitized data back
-            backupData.miniCycleStorage = JSON.stringify(legacyData);
-        } catch (error) {
-            console.error('Error sanitizing legacy data:', error);
-        }
-    }
 
     return backupData;
 }

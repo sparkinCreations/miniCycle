@@ -40,10 +40,12 @@
  * @property {HTMLElement|null} [targetContainer=null] - Custom container element
  */
 
-import { createDIModule, optional } from '../core/diBase.js';
-import { LIMITS, UI_TIMEOUTS, COLORS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION } from '../core/constants.js';
+import { createDIModule, required, optional } from '../core/diBase.js';
+import { LIMITS, UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION, DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { announce } from '../utils/announce.js';
+import { getActiveRoutineId, getAutoClear, getAutoClearSettings, getRoutine } from '../utils/cycleMode.js';
+import { hasPriority } from '../utils/priorityLevel.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -58,7 +60,9 @@ let estimateTaskSize, canAddToStorage, getStorageShortageMessage;
 
 const di = createDIModule('TaskCRUD', {
     appInit: optional(null),
-    AppState: optional(null),
+    // add / complete / reset: a wiring miss must throw (each caller's catch surfaces it as a
+    // failure notification) instead of silently skipping the save — STATE_TRUTH_MIGRATION #15
+    AppState: required(),
     sanitizeInput: optional(null),
     showNotification: optional(null),
     showPromptModal: optional(null),
@@ -82,6 +86,8 @@ const di = createDIModule('TaskCRUD', {
     startReminders: optional(null),
     // Notifications instance for color picker notification
     notifications: optional(null),
+    // Priority is a LEVEL stored as the active theme's swatch (utils/priorityLevel.js)
+    vocabThemeManager: required(),
     // History logging
     logHistoryEvent: optional(null)
 });
@@ -231,15 +237,15 @@ export async function addTaskImpl(taskText, options = {}, deps = {}) {
 
         // Validate AppState is available
         const AppState = deps.AppState || _deps.AppState;
-        if (!AppState?.isReady?.()) {
+        if (!AppState.isReady()) {
             console.warn('AppState not ready, task creation may fail');
         }
 
         // Check task limit (skip during initial loading)
-        if (!isLoading && AppState?.isReady?.()) {
+        if (!isLoading && AppState.isReady()) {
             const state = AppState.get();
-            const activeCycleId = state?.appState?.activeCycleId;
-            const currentTasks = state?.data?.cycles?.[activeCycleId]?.tasks || [];
+            const activeCycleId = getActiveRoutineId(state);
+            const currentTasks = getRoutine(state, activeCycleId)?.tasks || [];
 
             if (currentTasks.length >= LIMITS.TASKS_PER_CYCLE) {
                 console.warn(`Task limit reached (${LIMITS.TASKS_PER_CYCLE}). Cannot add more tasks.`);
@@ -295,7 +301,7 @@ export async function addTaskImpl(taskText, options = {}, deps = {}) {
         if (!isLoading) {
             const AppStateForSnap = deps.AppState || _deps.AppState;
             const captureStateSnapshot = deps.captureStateSnapshot || _deps.captureStateSnapshot;
-            const preAddState = AppStateForSnap?.get?.();
+            const preAddState = AppStateForSnap.get();
             if (preAddState) safeCaptureSnapshot(captureStateSnapshot, preAddState, 'task add');
         }
 
@@ -305,8 +311,8 @@ export async function addTaskImpl(taskText, options = {}, deps = {}) {
 
         // Sync derived deleteWhenComplete back to context so DOM creation sees it
         if (taskData && taskContext.deleteWhenComplete === undefined) {
-            taskContext.deleteWhenComplete = taskData.deleteWhenComplete;
-            taskContext.deleteWhenCompleteSettings = taskData.deleteWhenCompleteSettings;
+            taskContext.deleteWhenComplete = getAutoClear(taskData, taskContext.currentCycle, DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS);
+            taskContext.deleteWhenCompleteSettings = getAutoClearSettings(taskData);
         }
 
         // Create DOM elements
@@ -475,7 +481,7 @@ export async function editTaskImpl(taskItem, deps = {}) {
             enableUndoSystemOnFirstInteraction?.();
 
             // Capture snapshot BEFORE changing text
-            if (AppState?.isReady?.()) {
+            if (AppState.isReady()) {
                 const currentState = AppState.get();
                 if (currentState) safeCaptureSnapshot(captureStateSnapshot, currentState, 'task edit');
             }
@@ -485,10 +491,10 @@ export async function editTaskImpl(taskItem, deps = {}) {
 
             const taskId = taskItem.dataset.taskId;
 
-            if (AppState?.isReady?.()) {
+            if (AppState.isReady()) {
                 await AppState.update(state => {
-                    const cid = state.appState.activeCycleId;
-                    const cycle = state.data.cycles[cid];
+                    const cid = getActiveRoutineId(state);
+                    const cycle = getRoutine(state, cid);
                     const t = cycle?.tasks?.find(t => t.id === taskId);
                     if (t) t.text = newText;
                 }, true);
@@ -602,7 +608,7 @@ function _editTaskModal(taskItem, taskLabel, oldText, ctx) {
 
         enableUndoSystemOnFirstInteraction?.();
 
-        if (AppState?.isReady?.()) {
+        if (AppState.isReady()) {
             const currentState = AppState.get();
             if (currentState) safeCaptureSnapshot(captureStateSnapshot, currentState, 'task edit');
         }
@@ -610,10 +616,10 @@ function _editTaskModal(taskItem, taskLabel, oldText, ctx) {
         taskLabel.textContent = newText;
         const taskId = taskItem.dataset.taskId;
 
-        if (AppState?.isReady?.()) {
+        if (AppState.isReady()) {
             await AppState.update(state => {
-                const cid = state.appState.activeCycleId;
-                const cycle = state.data.cycles[cid];
+                const cid = getActiveRoutineId(state);
+                const cycle = getRoutine(state, cid);
                 const t = cycle?.tasks?.find(t => t.id === taskId);
                 if (t) t.text = newText;
             }, true);
@@ -707,16 +713,16 @@ export async function deleteTaskImpl(taskItem, deps = {}) {
                 enableUndoSystemOnFirstInteraction?.();
 
                 // Capture snapshot BEFORE deletion
-                if (AppState?.isReady?.()) {
+                if (AppState.isReady()) {
                     const currentState = AppState.get();
                     if (currentState) safeCaptureSnapshot(captureStateSnapshot, currentState, 'task delete');
                 }
 
                 // ✅ Use AppState only (no localStorage fallback) - DI-pure
-                if (AppState?.isReady?.()) {
+                if (AppState.isReady()) {
                     await AppState.update(state => {
-                        const cid = state.appState.activeCycleId;
-                        const cycle = state.data.cycles[cid];
+                        const cid = getActiveRoutineId(state);
+                        const cycle = getRoutine(state, cid);
                         if (cycle?.tasks) {
                             const index = cycle.tasks.findIndex(t => t.id === taskId);
                             if (index !== -1) {
@@ -795,14 +801,14 @@ export async function toggleTaskPriorityImpl(taskItem, deps = {}) {
         const taskId = taskItem.dataset.taskId;
 
         // Read fresh state from AppState
-        const currentState = AppState?.get();
+        const currentState = AppState.get();
         if (!currentState) {
             console.error('AppState not available for priority toggle');
             return;
         }
 
-        const activeCycleId = currentState.appState?.activeCycleId;
-        const freshCycle = currentState.data?.cycles?.[activeCycleId];
+        const activeCycleId = getActiveRoutineId(currentState);
+        const freshCycle = getRoutine(currentState, activeCycleId);
         const task = freshCycle?.tasks?.find(t => t.id === taskId);
 
         if (!task) {
@@ -811,11 +817,11 @@ export async function toggleTaskPriorityImpl(taskItem, deps = {}) {
         }
 
         // Toggle based on AppState, not DOM
-        const isCurrentlyHighPriority = task.highPriority === true;
+        const isCurrentlyHighPriority = hasPriority(task);
         const newHighPriority = !isCurrentlyHighPriority;
 
         // Capture snapshot BEFORE changing priority
-        if (AppState?.isReady?.()) {
+        if (AppState.isReady()) {
             safeCaptureSnapshot(captureStateSnapshot, currentState, 'priority toggle');
         }
 
@@ -828,59 +834,61 @@ export async function toggleTaskPriorityImpl(taskItem, deps = {}) {
             button.setAttribute("aria-pressed", newHighPriority.toString());
         }
 
-        // Apply or clear per-task priority color via CSS custom property
+        // Priority is a LEVEL (utils/priorityLevel.js). Turning it on keeps the
+        // level the task last had, else the default (the last level picked
+        // anywhere), else High — stored as the ACTIVE theme's swatch hex, which
+        // is also what the row shows. Resolved now so it is persisted even if
+        // the user dismisses the picker without choosing.
+        const themes = _deps.vocabThemeManager;
+        let newLevel = null;
+        let resolvedColor = null;
         if (newHighPriority) {
-            // Use task's own saved color, falling back to global default
-            const taskColor = task.priorityColor ?? currentState?.settings?.priorityColor ?? COLORS.PRIORITY_DEFAULT;
-            taskItem.style.setProperty('--task-priority-color', taskColor);
+            newLevel = themes.getLastPriorityLevel(task) ?? themes.getDefaultPriorityLevel(currentState?.settings);
+            resolvedColor = themes.getPriorityLevelColor(newLevel);
+        }
+
+        // Apply or clear per-task priority color via CSS custom property
+        if (resolvedColor) {
+            taskItem.style.setProperty('--task-priority-color', resolvedColor);
         } else {
             taskItem.style.removeProperty('--task-priority-color');
         }
 
         // ✅ Use AppState only (no localStorage fallback) - DI-pure
-        if (AppState?.isReady?.()) {
-            // Resolve the color now so it's persisted even if the user
-            // dismisses the color picker without clicking a swatch
-            const resolvedColor = newHighPriority
-                ? (task.priorityColor ?? currentState?.settings?.priorityColor ?? COLORS.PRIORITY_DEFAULT)
-                : null;
+        if (AppState.isReady()) {
 
             AppState.update(state => {
-                const cid = state.appState.activeCycleId;
-                const cycle = state.data.cycles[cid];
+                const cid = getActiveRoutineId(state);
+                const cycle = getRoutine(state, cid);
                 const t = cycle?.tasks?.find(t => t.id === taskId);
-                if (t) {
-                    t.highPriority = newHighPriority;
-                    // Always persist the resolved color so it survives reload
-                    if (resolvedColor) t.priorityColor = resolvedColor;
-                }
+                // Written as the active theme's swatch so it survives reload; null turns it off
+                if (t) themes.setTaskPriorityLevel(t, newLevel);
                 // Sync priority state to recurring template so recreated tasks keep the setting
                 if (cycle?.recurringTemplates?.[taskId]) {
-                    cycle.recurringTemplates[taskId].highPriority = newHighPriority;
-                    if (resolvedColor) cycle.recurringTemplates[taskId].priorityColor = resolvedColor;
+                    themes.setTaskPriorityLevel(cycle.recurringTemplates[taskId], newLevel);
                 }
             }, true);
 
             if (newHighPriority) {
                 // Show color picker notification with a callback that saves the chosen color
                 const notifications = _deps.notifications;
-                const taskColor = task.priorityColor ?? currentState?.settings?.priorityColor ?? COLORS.PRIORITY_DEFAULT;
                 if (notifications?.showPriorityColorPickerNotification) {
                     // onColorSelect closes over AppState and taskId — reliable save path
                     const onColorSelect = async (color) => {
-                        if (AppState?.isReady?.()) {
+                        if (AppState.isReady()) {
+                            const pickedLevel = themes.getPriorityLevelForColor(color);
                             await AppState.update(state => {
                                 if (!state.settings) state.settings = {};
-                                // Update global default so future new tasks start with this color
-                                state.settings.priorityColor = color;
-                                // Save to the specific task so it remembers its own color
-                                const cid = state.appState?.activeCycleId;
-                                const cycle = state.data?.cycles?.[cid];
+                                // Remember the level as the default for the next flagged task
+                                themes.setDefaultPriorityLevel(state.settings, pickedLevel);
+                                // Save to the specific task so it remembers its own level
+                                const cid = getActiveRoutineId(state);
+                                const cycle = getRoutine(state, cid);
                                 const t = cycle?.tasks?.find(t => t.id === taskId);
-                                if (t) t.priorityColor = color;
-                                // Sync color to recurring template so recreated tasks keep the color
+                                if (t) themes.setTaskPriorityLevel(t, pickedLevel);
+                                // Sync to the recurring template so recreated tasks keep the level
                                 if (cycle?.recurringTemplates?.[taskId]) {
-                                    cycle.recurringTemplates[taskId].priorityColor = color;
+                                    themes.setTaskPriorityLevel(cycle.recurringTemplates[taskId], pickedLevel);
                                 }
                             }, true);
                             // Update DOM immediately so the color change is visible without refresh
@@ -891,13 +899,13 @@ export async function toggleTaskPriorityImpl(taskItem, deps = {}) {
                             });
                         }
                     };
-                    notifications.showPriorityColorPickerNotification(taskColor, 8000, taskId, onColorSelect);
+                    notifications.showPriorityColorPickerNotification(resolvedColor, 8000, taskId, onColorSelect);
                 } else {
                     _deps.showNotification?.(getLabel('notify.priorityEnabled'), 'warning', UI_TIMEOUTS.NOTIFICATION_BRIEF);
                 }
                 _deps.logHistoryEvent?.('task_priority_set', {
                     taskName: task.text,
-                    priorityColor: taskColor
+                    priorityColor: resolvedColor
                 });
             } else {
                 _deps.showNotification?.(getLabel('notify.priorityRemoved'), 'info', UI_TIMEOUTS.NOTIFICATION_BRIEF);

@@ -18,6 +18,7 @@ import { createDIModule, optional } from '../core/diBase.js';
 import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, BREAKPOINTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { isClickOnNotification } from './modalUtils.js';
+import { getActiveRoutine, getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -207,7 +208,7 @@ export class TaskOptionsCustomizer {
             if (openButton) {
                 openButton._clickHandler = () => {
                     const state = this.deps.AppState?.get();
-                    const currentCycleId = state?.appState?.activeCycleId;
+                    const currentCycleId = getActiveRoutineId(state);
 
                     if (currentCycleId) {
                         // Close the settings modal first
@@ -232,7 +233,7 @@ export class TaskOptionsCustomizer {
             if (menuButton) {
                 menuButton._clickHandler = () => {
                     const state = this.deps.AppState?.get();
-                    const currentCycleId = state?.appState?.activeCycleId;
+                    const currentCycleId = getActiveRoutineId(state);
 
                     if (currentCycleId) {
                         // Close the menu first
@@ -278,7 +279,7 @@ export class TaskOptionsCustomizer {
 
             // Get current cycle and re-open modal
             const state = this.deps.AppState?.get();
-            const currentCycleId = state?.appState?.activeCycleId;
+            const currentCycleId = getActiveRoutineId(state);
 
             if (currentCycleId) {
                 this.showCustomizationModal(currentCycleId);
@@ -303,7 +304,7 @@ export class TaskOptionsCustomizer {
         }
 
         const state = this.deps.AppState.get();
-        const cycle = state.data.cycles[cycleId];
+        const cycle = getRoutine(state, cycleId);
 
         if (!cycle) {
             console.error(`❌ Cycle not found: ${cycleId}`);
@@ -445,7 +446,7 @@ export class TaskOptionsCustomizer {
             // Mode-aware labels for deleteWhenComplete
             if (option.key === 'deleteWhenComplete') {
                 const state = this.deps.AppState?.get?.();
-                const activeCycle = state?.data?.cycles?.[state?.appState?.activeCycleId];
+                const activeCycle = getActiveRoutine(state);
                 if (activeCycle?.deleteCheckedTasks === true) {
                     label = getLabel('taskOptions.markedForClearing');
                     description = getLabel('taskOptions.markedForClearingDescription');
@@ -749,7 +750,7 @@ export class TaskOptionsCustomizer {
         const currentState = this.deps.AppState.get();
         const currentGlobalMoveArrows = currentState.ui?.moveArrowsVisible || false;
         const currentThreeDots = currentState.settings?.showThreeDots || false;
-        const cycle = currentState.data.cycles[cycleId];
+        const cycle = getRoutine(currentState, cycleId);
         const currentRemindersEnabled = cycle?.reminders?.enabled || false;
 
         // ✅ New values from checkboxes
@@ -765,8 +766,8 @@ export class TaskOptionsCustomizer {
         // ✅ SINGLE AppState.update() - all changes in one atomic transaction
         await this.deps.AppState.update(state => {
             // Save cycle-only options (without global keys)
-            if (state.data.cycles[cycleId]) {
-                state.data.cycles[cycleId].taskOptionButtons = cycleOnlyOptions;
+            if (getRoutine(state, cycleId)) {
+                getRoutine(state, cycleId).taskOptionButtons = cycleOnlyOptions;
             }
 
             // Sync move arrows global setting
@@ -782,8 +783,8 @@ export class TaskOptionsCustomizer {
             }
 
             // Sync reminders enabled for this cycle
-            if (remindersChanged && state.data.cycles[cycleId]?.reminders) {
-                state.data.cycles[cycleId].reminders.enabled = newRemindersEnabled;
+            if (remindersChanged && getRoutine(state, cycleId)?.reminders) {
+                getRoutine(state, cycleId).reminders.enabled = newRemindersEnabled;
             }
 
         }, true); // immediate save
@@ -952,7 +953,7 @@ export class TaskOptionsCustomizer {
         const state = this.deps.AppState?.get?.();
         if (!state) return { ...defaultButtons };
 
-        const cycle = state.data.cycles[cycleId];
+        const cycle = getRoutine(state, cycleId);
         const cycleOptions = cycle?.taskOptionButtons || {};
 
         // ✅ Merge cycle options with global settings

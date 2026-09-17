@@ -30,6 +30,7 @@ import { getLabel } from '../labels/labelResolver.js';
 import { OnboardingDemo } from './onboardingDemo.js';
 import { OnboardingSplash } from './onboardingSplash.js';
 import { OnboardingCarousel } from './onboardingCarousel.js';
+import { getActiveRoutineId } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -890,11 +891,11 @@ export class OnboardingManager {
                         // new blank routine becomes active.
                         if (tourTimer) { clearTimeout(tourTimer); tourTimer = null; }
 
-                        const initialCycleId = this.deps.AppState?.get?.()?.appState?.activeCycleId;
+                        const initialCycleId = getActiveRoutineId(this.deps.AppState?.get?.());
 
                         if (typeof this.deps.AppState?.subscribe === 'function') {
                             const onChange = (newState) => {
-                                const newCycleId = newState?.appState?.activeCycleId;
+                                const newCycleId = getActiveRoutineId(newState);
                                 if (newCycleId && newCycleId !== initialCycleId) {
                                     cleanupBlankWatch();
                                     startTourAfter(UI_TIMEOUTS.START_TOUR_AFTER_BLANK);

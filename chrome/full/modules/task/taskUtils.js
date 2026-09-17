@@ -28,6 +28,8 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { buildRecurringTemplate } from '../recurring/recurringTemplate.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { autoClearFields, getActiveRoutineId, getAutoClearMode, getAutoClearSettings, getRoutine, getRoutines } from '../utils/cycleMode.js';
+import { priorityFields } from '../utils/priorityLevel.js';
 import {
     DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS,
     DEFAULT_RECURRING_DELETE_SETTINGS,
@@ -81,15 +83,15 @@ export function taskToAddTaskOptions(task) {
         completed: task.completed || false,
         shouldSave: false,
         dueDate: task.dueDate || null,
-        highPriority: task.highPriority || false,
-        priorityColor: task.priorityColor || null,
+        ...priorityFields(task),
         isLoading: true,
         remindersEnabled: task.remindersEnabled || false,
         recurring: task.recurring || false,
         taskId: task.id,
         recurringSettings: task.recurringSettings || {},
-        deleteWhenComplete: task.deleteWhenComplete,
-        deleteWhenCompleteSettings: task.deleteWhenCompleteSettings
+        // The active value is resolved again at render time (createMainTaskElement),
+        // so only the per-mode map needs to travel.
+        deleteWhenCompleteSettings: getAutoClearSettings(task)
     };
 }
 
@@ -113,11 +115,11 @@ export class TaskUtils {
             }
 
             const state = AppState.get();
-            const activeCycleId = state.appState?.activeCycleId;
+            const activeCycleId = getActiveRoutineId(state);
 
             if (!activeCycleId) return null;
 
-            const currentCycle = state.data?.cycles?.[activeCycleId];
+            const currentCycle = getRoutine(state, activeCycleId);
             if (!currentCycle) return null;
 
             const taskText = taskItem.querySelector(DOM_SELECTORS.TASK_TEXT)?.textContent?.trim() || '';
@@ -126,7 +128,7 @@ export class TaskUtils {
                 taskTextTrimmed: taskText,
                 assignedTaskId: taskId,
                 schemaData: state, // Pass the full state for backward compatibility
-                cycles: state.data.cycles,
+                cycles: getRoutines(state),
                 activeCycle: activeCycleId,
                 currentCycle,
                 settings: state.settings || {},
@@ -137,82 +139,6 @@ export class TaskUtils {
             console.warn('⚠️ Failed to build task context:', error);
             return null;
         }
-    }
-
-    /**
-     * Extract task data from DOM
-     * @param {Function} getElementById - Function to get element by ID
-     * @returns {Array} - Array of task objects
-     */
-    static extractTaskDataFromDOM(getElementById = (id) => document.getElementById(id), AppState = null) {
-        const taskListElement = getElementById(DOM_IDS.TASK_LIST);
-        if (!taskListElement) {
-            console.warn('⚠️ Task list element not found');
-            return [];
-        }
-
-        // Build a lookup map from AppState so we can read priorityColor from
-        // the source of truth instead of scraping it from a CSS custom property.
-        const stateTasks = (() => {
-            if (!AppState?.isReady?.()) return {};
-            const state = AppState.get();
-            const cid = state?.appState?.activeCycleId;
-            const tasks = state?.data?.cycles?.[cid]?.tasks;
-            if (!Array.isArray(tasks)) return {};
-            const map = {};
-            for (const t of tasks) { if (t?.id) map[t.id] = t; }
-            return map;
-        })();
-
-        return [...taskListElement.children].map(taskElement => {
-            const taskTextElement = taskElement.querySelector(DOM_SELECTORS.TASK_TEXT);
-            const taskId = taskElement.dataset.taskId;
-
-            if (!taskTextElement || !taskId) {
-                console.warn("⚠️ Skipping invalid task element");
-                return null;
-            }
-
-            // Extract recurring settings safely
-            let recurringSettings = {};
-            try {
-                const settingsAttr = taskElement.getAttribute("data-recurring-settings");
-                if (settingsAttr) {
-                    recurringSettings = JSON.parse(settingsAttr);
-                }
-            } catch (err) {
-                console.warn("⚠️ Invalid recurring settings, using empty object");
-            }
-
-            // Extract deleteWhenCompleteSettings from data attribute or use defaults
-            let deleteWhenCompleteSettings = { ...DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS };
-            const settingsAttr = taskElement.dataset.deleteWhenCompleteSettings;
-            if (settingsAttr) {
-                try {
-                    deleteWhenCompleteSettings = JSON.parse(settingsAttr);
-                } catch (err) {
-                    console.warn("⚠️ Invalid deleteWhenCompleteSettings, using defaults");
-                }
-            }
-
-            // Read priorityColor from AppState (source of truth), not from DOM
-            const priorityColor = stateTasks[taskId]?.priorityColor || null;
-
-            return {
-                id: taskId,
-                text: taskTextElement.textContent,
-                completed: taskElement.querySelector("input[type='checkbox']")?.checked || false,
-                dueDate: taskElement.querySelector(DOM_SELECTORS.DUE_DATE)?.value || null,
-                highPriority: taskElement.classList.contains(DOM_CLASSES.HIGH_PRIORITY),
-                priorityColor,
-                remindersEnabled: taskElement.querySelector(DOM_SELECTORS.ENABLE_TASK_REMINDERS)?.classList.contains(DOM_CLASSES.REMINDER_ACTIVE) || false,
-                recurring: taskElement.querySelector(DOM_SELECTORS.RECURRING_BTN)?.classList.contains(DOM_CLASSES.ACTIVE) || false,
-                recurringSettings,
-                deleteWhenComplete: taskElement.dataset.deleteWhenComplete === "true" || false,
-                deleteWhenCompleteSettings: deleteWhenCompleteSettings,
-                schemaVersion: 2
-            };
-        }).filter(Boolean);
     }
 
     /**
@@ -294,15 +220,14 @@ export class TaskUtils {
             // Mode-specific deleteWhenComplete architecture:
             // - Active value synced with current mode
             // - Settings object stores preference per mode
-            const isToDoMode = currentCycle.deleteCheckedTasks === true;
-
-            // Use provided settings or defaults
-            const finalSettings = deleteWhenCompleteSettings || { ...DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS };
-
-            // Active value based on current mode (unless explicitly provided)
-            const activeDeleteWhenComplete = deleteWhenComplete !== undefined ?
-                deleteWhenComplete :
-                (isToDoMode ? finalSettings.todo : finalSettings.cycle);
+            // Provided settings or defaults; the active value follows the current
+            // mode unless the caller gave one (utils/cycleMode.js).
+            const autoClear = autoClearFields({
+                settings: deleteWhenCompleteSettings,
+                value: deleteWhenComplete,
+                mode: getAutoClearMode(currentCycle),
+                defaults: DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS
+            });
 
             existingTask = {
                 id: assignedTaskId,
@@ -318,8 +243,7 @@ export class TaskUtils {
                 remindersEnabled,
                 recurring,
                 recurringSettings,
-                deleteWhenComplete: activeDeleteWhenComplete,
-                deleteWhenCompleteSettings: finalSettings,
+                ...autoClear,
                 schemaVersion: 2
             };
 
@@ -349,7 +273,7 @@ export class TaskUtils {
                     // Finding the cycle in the DRAFT (not via the context refs)
                     // means a stale not-ready-window copy can never clobber state.
                     AppState.update(state => {
-                        const cycle = state?.data?.cycles?.[activeCycle];
+                        const cycle = getRoutine(state, activeCycle);
                         if (!cycle) {
                             console.warn('⚠️ Active cycle vanished before task commit:', activeCycle);
                             return;
@@ -455,10 +379,6 @@ function buildTaskContext(taskItem, taskId) {
     return TaskUtils.buildTaskContext(taskItem, taskId, AppState);
 }
 
-function extractTaskDataFromDOM() {
-    return TaskUtils.extractTaskDataFromDOM(undefined, _deps.AppState);
-}
-
 function loadTaskContext(taskTextTrimmed, taskId, taskOptions, isLoading = false) {
     const loadMiniCycleData = _deps.loadMiniCycleData;
     const generateId = _deps.generateId;
@@ -527,6 +447,25 @@ function createOrUpdateTaskData(taskContext) {
  * @param {{name?: string, recurring?: boolean, status?: string}} [opts]
  * @returns {void}
  */
+/**
+ * The display text of a task object, tolerating the legacy `taskText` key.
+ *
+ * Live tasks carry `text`; `taskText` is the pre-2.5 name that only survives on a
+ * task object that has not yet passed through routineLoader's load-time repair,
+ * which renames it and deletes the old key (cleared-task ENTRIES keep `taskText`
+ * by schema). This
+ * is the one read-side fallback; do not write `taskText` on a live task.
+ * (STATE_TRUTH_MIGRATION #5)
+ *
+ * @param {Object|null|undefined} task
+ * @returns {string} '' when neither key holds a string
+ */
+export function getTaskText(task) {
+    if (typeof task?.text === 'string') return task.text;
+    if (typeof task?.taskText === 'string') return task.taskText;
+    return '';
+}
+
 export function applyTaskStatusLabel(taskItem, completed, opts = {}) {
     if (!taskItem) return;
     const name = opts.name ?? (taskItem.querySelector(DOM_SELECTORS.TASK_TEXT)?.textContent || '');
@@ -541,7 +480,6 @@ export function applyTaskStatusLabel(taskItem, completed, opts = {}) {
 // ES6 exports
 export {
     buildTaskContext,
-    extractTaskDataFromDOM,
     loadTaskContext,
     createOrUpdateTaskData,
     scrollToNewTask,

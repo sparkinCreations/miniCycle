@@ -385,7 +385,8 @@ function registerGroupedApisFromLoader(deps, appContextMod, coreResult) {
     AppState: deps.core?.AppState,
     AppGlobalState: deps.core?.AppGlobalState,
     AppMeta: deps.core?.AppMeta,
-    loadMiniCycleData: deps.core?.loadMiniCycleData,
+    // loadMiniCycleData was dropped from this API (STATE_TRUTH_MIGRATION #25): no
+    // reader used it, and new code reads AppState directly.
     autoSave: deps.core?.autoSave
   };
   appContextMod.setContextValue('stateApi', stateApiObj);
@@ -399,7 +400,6 @@ function registerGroupedApisFromLoader(deps, appContextMod, coreResult) {
     handleCompleteAll: deps.task?.handleCompleteAllTasks,
     loadContext: deps.task?.loadTaskContext,
     createDOM: deps.task?.createTaskDOMElements,
-    extractFromDOM: deps.task?.extractTaskDataFromDOM,
     updateMoveArrows: deps.task?.updateMoveArrowsVisibility,
     refresh: deps.task?.refreshTaskListUI,
     checkCompleteAllButton: deps.ui?.checkCompleteAllButton
@@ -523,10 +523,6 @@ function registerGroupedApisFromLoader(deps, appContextMod, coreResult) {
   appContextMod.setContextValue('onboardingManager', deps.ui?.onboardingManager);
   appContextMod.setContextValue('showCycleCreationModal', deps.cycle?.showCycleCreationModal);
   appContextMod.setContextValue('hideMainMenu', deps.ui?.hideMainMenu);
-
-  // Critical: extractTaskDataFromDOM is used by dataAccess.js autoSave
-  // Without this, autoSave defaults to [] and wipes all tasks
-  appContextMod.setContextValue('extractTaskDataFromDOM', deps.task?.extractTaskDataFromDOM);
 
   // Task operations used by menu buttons
   appContextMod.setContextValue('resetTasks', deps.task?.resetTasks);

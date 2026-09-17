@@ -13,15 +13,18 @@
  * @module storage/backupManager
  */
 
-import { createDIModule, optional } from '../core/diBase.js';
-import { STORAGE_KEYS, INTERVALS, APP_VERSION } from '../core/constants.js';
+import { createDIModule, required } from '../core/diBase.js';
+import { STORAGE_KEYS, INTERVALS, APP_VERSION, SCHEMA } from '../core/constants.js';
+import { getRoutines } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
 // ============================================================================
 
 const di = createDIModule('BackupManager', {
-    AppState: optional(null)
+    // Read unguarded: a wiring miss must throw where it happens instead of silently
+    // skipping the work — STATE_TRUTH_MIGRATION #15
+    AppState: required()
 });
 
 // Late-binding deps via Proxy
@@ -96,12 +99,12 @@ function buildPortableBackupPayload(backup) {
     }
 
     const payload = {
-        schemaVersion: backup.data.metadata?.schemaVersion || backup.metadata?.schemaVersion || '2.5',
+        schemaVersion: backup.data.metadata?.schemaVersion || backup.metadata?.schemaVersion || SCHEMA.CURRENT,
         miniCycleData: JSON.stringify(backup.data),
         backupMetadata: {
             createdAt: backup.timestamp,
             version: backup.metadata?.version || backup.data.metadata?.version || '2.5',
-            schemaVersion: backup.metadata?.schemaVersion || backup.data.metadata?.schemaVersion || '2.5',
+            schemaVersion: backup.metadata?.schemaVersion || backup.data.metadata?.schemaVersion || SCHEMA.CURRENT,
             includesLiteStorage: Boolean(backup.liteStorage),
             source: 'miniCycle BackupManager'
         }
@@ -121,14 +124,6 @@ class BackupManager {
         this.initPromise = null;
     }
 
-    /**
-     * Get AppState (DI-pure, no window.* fallback)
-     * @private
-     */
-    _getAppState() {
-        return _deps.AppState;
-    }
-
     _buildBackupRecord(currentState, type, { id, name, cycleCount, liteStorage = collectLiteStorageSnapshot(), timestamp = Date.now() } = {}) {
         const backup = {
             timestamp,
@@ -140,7 +135,7 @@ class BackupManager {
                 // `appVersion` is the field the backup schema docs describe.
                 version: currentState.metadata?.version || APP_VERSION,
                 appVersion: APP_VERSION,
-                schemaVersion: currentState.metadata?.schemaVersion || '2.5',
+                schemaVersion: currentState.metadata?.schemaVersion || SCHEMA.CURRENT,
                 size: calculateBackupSize(currentState, liteStorage),
                 type,
                 created: new Date(timestamp).toISOString(),
@@ -273,8 +268,8 @@ class BackupManager {
             }
 
             // Get current app state (DI-pure)
-            const AppState = this._getAppState();
-            if (!AppState?.isReady?.()) {
+            const AppState = _deps.AppState;
+            if (!AppState.isReady()) {
                 console.warn('⚠️ BackupManager: AppState not ready, skipping auto-backup');
                 return false;
             }
@@ -321,8 +316,8 @@ class BackupManager {
             }
 
             // Get current app state (DI-pure)
-            const AppState = this._getAppState();
-            if (!AppState?.isReady?.()) {
+            const AppState = _deps.AppState;
+            if (!AppState.isReady()) {
                 console.warn('⚠️ BackupManager: AppState not ready, skipping session backup');
                 return false;
             }
@@ -334,7 +329,7 @@ class BackupManager {
             }
 
             // Check if data is meaningful (has at least one cycle)
-            const cycleCount = Object.keys(currentState?.data?.cycles || {}).length;
+            const cycleCount = Object.keys(getRoutines(currentState) || {}).length;
             const liteStorage = collectLiteStorageSnapshot();
             if (cycleCount === 0 && !liteStorage) {
                 return false;
@@ -387,8 +382,8 @@ class BackupManager {
             await this.init();
 
             // DI-pure (no window.* fallback)
-            const AppState = this._getAppState();
-            if (!AppState?.isReady?.()) {
+            const AppState = _deps.AppState;
+            if (!AppState.isReady()) {
                 throw new Error('AppState not ready');
             }
 

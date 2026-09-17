@@ -23,6 +23,20 @@
 
 import { createDIModule, optional } from '../core/diBase.js';
 import { setLabelResolverDependencies } from './labelResolver.js';
+import { getActiveRoutineId, getRoutine, getRoutines } from '../utils/cycleMode.js';
+import {
+    getPrioritySwatches,
+    collectSwatchSets,
+    getPriorityLevel,
+    getPriorityColor,
+    setPriorityLevel,
+    comparePriority,
+    getLastPriorityLevel,
+    getLevelForColor,
+    getLevelColor,
+    getDefaultPriorityLevel,
+    setDefaultPriorityLevel
+} from '../utils/priorityLevel.js';
 
 // ============================================================================
 // THEME DEFINITIONS
@@ -123,7 +137,7 @@ export const THEME_DEFINITIONS = {
             panelText:            '#ffffff',  // on appBg — 4.71:1 ✓
             celebrationBg:        'rgba(192, 82, 21, 0.97)',   // fiery orange popup
             celebrationShadow:    'rgba(192, 82, 21, 0.4)',
-            priorityColor:        '#b04e12',
+            priorityColor:        '#8b1a1a',                    // = this theme's High swatch (priorityColors below); a test keeps them equal
             modalBg:              'rgba(255, 225, 195, 0.82)',   // warm amber glass — matches theme palette
             modalText:            '#3d1a00',                    // dark brown — same as taskText for consistency
             // Main menu gradient — its own, not modalBg: the menu is chrome and
@@ -144,9 +158,9 @@ export const THEME_DEFINITIONS = {
         },
         // Priority picker options — darkened for contrast on warm amber taskBg (#ffd0a0)
         priorityColors: [
-            { hex: '#8b1a1a', labelKey: 'notify.priorityColorRed' },
-            { hex: '#7a4d00', labelKey: 'notify.priorityColorYellow' },
-            { hex: '#1a5c2e', labelKey: 'notify.priorityColorGreen' },
+            { level: 'high',   hex: '#8b1a1a', labelKey: 'notify.priorityHigh' },
+            { level: 'medium', hex: '#7a4d00', labelKey: 'notify.priorityMedium' },
+            { level: 'low',    hex: '#1a5c2e', labelKey: 'notify.priorityLow' },
         ],
         preview: {
             tagline:      'Build streaks, track habits',
@@ -227,7 +241,7 @@ export const THEME_DEFINITIONS = {
             panelText:            '#ffffff',
             celebrationBg:        'rgba(30, 140, 82, 0.97)',
             celebrationShadow:    'rgba(30, 140, 82, 0.4)',
-            priorityColor:        '#1e8c52',
+            priorityColor:        '#c0392b',                    // = this theme's High swatch; was a green that contradicted green = Low
             modalBg:              'rgba(220, 248, 232, 0.82)',   // soft mint glass — matches theme palette
             modalText:            '#0d2b1a',                    // dark green — same as taskText for consistency
             // Main menu gradient — its own, not modalBg: the menu is chrome and
@@ -248,9 +262,9 @@ export const THEME_DEFINITIONS = {
         },
         // Priority picker options — improved contrast on white taskBg (#ffffff)
         priorityColors: [
-            { hex: '#c0392b', labelKey: 'notify.priorityColorRed' },
-            { hex: '#b8860b', labelKey: 'notify.priorityColorYellow' },
-            { hex: '#27ae60', labelKey: 'notify.priorityColorGreen' },
+            { level: 'high',   hex: '#c0392b', labelKey: 'notify.priorityHigh' },
+            { level: 'medium', hex: '#b8860b', labelKey: 'notify.priorityMedium' },
+            { level: 'low',    hex: '#27ae60', labelKey: 'notify.priorityLow' },
         ],
         preview: {
             tagline:      'Track workouts, build routines',
@@ -331,7 +345,7 @@ export const THEME_DEFINITIONS = {
             panelText:            '#ffffff',
             celebrationBg:        'rgba(61, 53, 181, 0.97)',
             celebrationShadow:    'rgba(61, 53, 181, 0.4)',
-            priorityColor:        '#3d35b5',
+            priorityColor:        '#c0392b',                    // = this theme's High swatch
             modalBg:              'rgba(216, 213, 255, 0.82)',   // soft periwinkle glass — matches theme palette
             modalText:            '#1e1b4b',                    // dark indigo — same as taskText for consistency
             // Main menu gradient — its own, not modalBg: the menu is chrome and
@@ -352,9 +366,9 @@ export const THEME_DEFINITIONS = {
         },
         // Priority picker options — improved contrast on white taskBg (#ffffff)
         priorityColors: [
-            { hex: '#c0392b', labelKey: 'notify.priorityColorRed' },
-            { hex: '#b8860b', labelKey: 'notify.priorityColorYellow' },
-            { hex: '#27ae60', labelKey: 'notify.priorityColorGreen' },
+            { level: 'high',   hex: '#c0392b', labelKey: 'notify.priorityHigh' },
+            { level: 'medium', hex: '#b8860b', labelKey: 'notify.priorityMedium' },
+            { level: 'low',    hex: '#27ae60', labelKey: 'notify.priorityLow' },
         ],
         preview: {
             tagline:      'Study topics, track sessions',
@@ -435,7 +449,7 @@ export const THEME_DEFINITIONS = {
             panelText:            '#ffffff',
             celebrationBg:        'rgba(10, 141, 181, 0.97)',
             celebrationShadow:    'rgba(10, 141, 181, 0.4)',
-            priorityColor:        '#0a8db5',
+            priorityColor:        '#c0392b',                    // = this theme's High swatch
             modalBg:              'rgba(200, 240, 252, 0.82)',   // soft aqua glass — matches theme palette
             modalText:            '#0c2b33',                    // dark teal — same as taskText for consistency
             // Main menu gradient — its own, not modalBg: the menu is chrome and
@@ -456,9 +470,9 @@ export const THEME_DEFINITIONS = {
         },
         // Priority picker options — improved contrast on white taskBg (#ffffff)
         priorityColors: [
-            { hex: '#c0392b', labelKey: 'notify.priorityColorRed' },
-            { hex: '#b8860b', labelKey: 'notify.priorityColorYellow' },
-            { hex: '#27ae60', labelKey: 'notify.priorityColorGreen' },
+            { level: 'high',   hex: '#c0392b', labelKey: 'notify.priorityHigh' },
+            { level: 'medium', hex: '#b8860b', labelKey: 'notify.priorityMedium' },
+            { level: 'low',    hex: '#27ae60', labelKey: 'notify.priorityLow' },
         ],
         preview: {
             tagline:      'Tackle chores, run clean sweeps',
@@ -484,6 +498,10 @@ const di = createDIModule('VocabThemeManager', {
  * @returns {void}
  */
 export const setVocabThemeManagerDependencies = di.setDependencies;
+
+// Every theme's priority swatch set, for recognising a colour picked under ANY
+// theme (utils/priorityLevel.js). THEME_DEFINITIONS is frozen data, so once.
+const PRIORITY_SWATCH_SETS = collectSwatchSets(THEME_DEFINITIONS);
 
 // ============================================================================
 // THEME MANAGER
@@ -512,10 +530,10 @@ export class VocabThemeManager {
         const state = typeof get === 'function' ? this.deps.AppState.get() : null;
         if (!state) return THEME_DEFINITIONS.classic;
 
-        const activeCycleId = state.appState?.activeCycleId;
+        const activeCycleId = getActiveRoutineId(state);
         if (!activeCycleId) return THEME_DEFINITIONS.classic;
 
-        const cycle = state.data?.cycles?.[activeCycleId];
+        const cycle = getRoutine(state, activeCycleId);
         const themeId = cycle?.theme ?? state.settings?.defaultTheme ?? 'classic';
 
         return THEME_DEFINITIONS[themeId] ?? THEME_DEFINITIONS.classic;
@@ -534,7 +552,7 @@ export class VocabThemeManager {
         const state = typeof get === 'function' ? this.deps.AppState.get() : null;
         if (!state) return THEME_DEFINITIONS.classic;
 
-        const cycle = state.data?.cycles?.[routineId];
+        const cycle = getRoutine(state, routineId);
         const themeId = cycle?.theme ?? state.settings?.defaultTheme ?? 'classic';
 
         return THEME_DEFINITIONS[themeId] ?? THEME_DEFINITIONS.classic;
@@ -581,8 +599,8 @@ export class VocabThemeManager {
         }
 
         this.deps.AppState.update(state => {
-            if (state.data?.cycles?.[routineId]) {
-                state.data.cycles[routineId].theme = themeId;
+            if (getRoutine(state, routineId)) {
+                getRoutine(state, routineId).theme = themeId;
             }
         }, true);
 
@@ -698,8 +716,8 @@ export class VocabThemeManager {
             s.settings.defaultTheme    = s.settings.defaultTheme ?? 'classic';
 
             // Stamp all existing routines with theme: 'classic' if missing
-            if (s.data?.cycles) {
-                for (const cycle of Object.values(s.data.cycles)) {
+            if (getRoutines(s)) {
+                for (const cycle of Object.values(getRoutines(s))) {
                     if (!cycle.theme) cycle.theme = 'classic';
                 }
             }
@@ -714,6 +732,108 @@ export class VocabThemeManager {
      */
     getThemeDefinition(themeId) {
         return THEME_DEFINITIONS[themeId] ?? null;
+    }
+
+    // ── Priority levels ──────────────────────────────────────────────────
+    // Task priority is a LEVEL (high / medium / low) shown as the ACTIVE
+    // routine's theme swatch; the stored 2.5 hex is only how the level is found
+    // (utils/priorityLevel.js). This manager is the one place that knows which
+    // theme is active, so the renderers, the toggle, search and the picker ask
+    // here instead of reading a theme id off the DOM.
+
+    /**
+     * The picker swatches for the active routine's theme (the shared defaults
+     * for classic).
+     * @returns {ReadonlyArray<{level: string, hex: string, labelKey: string}>}
+     */
+    getPrioritySwatches() {
+        return getPrioritySwatches(this.getActiveTheme());
+    }
+
+    /**
+     * @param {Object|null|undefined} task
+     * @returns {'high'|'medium'|'low'|null} null when the task is not flagged
+     */
+    getTaskPriorityLevel(task) {
+        return getPriorityLevel(task, PRIORITY_SWATCH_SETS);
+    }
+
+    /**
+     * The colour to DISPLAY for a task's priority under the active theme.
+     * @param {Object|null|undefined} task
+     * @returns {string|null} null when the task is not flagged
+     */
+    getTaskPriorityColor(task) {
+        return getPriorityColor(task, this.getPrioritySwatches(), PRIORITY_SWATCH_SETS);
+    }
+
+    /**
+     * Write a level into a task's stored 2.5 fields as the active theme's swatch.
+     * Mutates `task` — call it inside an AppState.update() producer.
+     * @param {Object} task
+     * @param {'high'|'medium'|'low'|null} level - null turns priority off
+     * @returns {boolean} false (and no write) for an unknown level
+     */
+    setTaskPriorityLevel(task, level) {
+        return setPriorityLevel(task, level, this.getPrioritySwatches());
+    }
+
+    /**
+     * Sort comparator: high, then medium, then low, then no priority.
+     * @param {Object} a
+     * @param {Object} b
+     * @returns {number}
+     */
+    compareTaskPriority(a, b) {
+        return comparePriority(a, b, PRIORITY_SWATCH_SETS);
+    }
+
+    /**
+     * The level a task last had, flagged or not — what the toggle turns priority
+     * back on at. null when it has never had a colour.
+     * @param {Object|null|undefined} task
+     * @returns {'high'|'medium'|'low'|null}
+     */
+    getLastPriorityLevel(task) {
+        return getLastPriorityLevel(task, PRIORITY_SWATCH_SETS);
+    }
+
+    /**
+     * Which level a picked colour means (the picker hands back a hex).
+     * @param {*} hex
+     * @returns {'high'|'medium'|'low'}
+     */
+    getPriorityLevelForColor(hex) {
+        return getLevelForColor(hex, PRIORITY_SWATCH_SETS);
+    }
+
+    /**
+     * The active theme's colour for a level.
+     * @param {'high'|'medium'|'low'} level
+     * @returns {string|null} null for an unknown level
+     */
+    getPriorityLevelColor(level) {
+        return getLevelColor(level, this.getPrioritySwatches());
+    }
+
+    /**
+     * The level a newly flagged task starts at (the last pick, else High).
+     * @param {Object|null|undefined} settings - state.settings
+     * @returns {'high'|'medium'|'low'}
+     */
+    getDefaultPriorityLevel(settings) {
+        return getDefaultPriorityLevel(settings, PRIORITY_SWATCH_SETS);
+    }
+
+    /**
+     * Remember a level as the default for the next flagged task, as the active
+     * theme's swatch. Mutates `settings` — call inside an AppState.update() producer.
+     * @param {Object} settings - state.settings draft
+     * @param {'high'|'medium'|'low'} level
+     * @returns {boolean}
+     */
+    setDefaultPriorityLevel(settings, level) {
+        return setDefaultPriorityLevel(settings, level, this.getPrioritySwatches());
     }
 
     /**

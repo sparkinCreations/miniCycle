@@ -10,6 +10,7 @@ import { createDIModule, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { announce } from '../utils/announce.js';
+import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -668,9 +669,9 @@ export class DragDropManager {
 
                 // Update state: reorder tasks AND set activeTaskId
                 AppState.update(state => {
-                    const activeCycleId = state.appState.activeCycleId;
-                    if (activeCycleId && state.data.cycles[activeCycleId]) {
-                        const tasks = state.data.cycles[activeCycleId].tasks;
+                    const activeCycleId = getActiveRoutineId(state);
+                    if (activeCycleId && getRoutine(state, activeCycleId)) {
+                        const tasks = getRoutine(state, activeCycleId).tasks;
                         const from = tasks ? tasks.findIndex(t => t.id === taskId) : -1;
                         if (tasks && from !== -1 && tasks.some(t => t.id === targetTaskId)) {
                             // Lift the task out first, THEN locate the target — its
@@ -778,9 +779,9 @@ export class DragDropManager {
 
             // Update AppState with new order
             AppState.update(state => {
-                const activeCycleId = state.appState.activeCycleId;
-                if (activeCycleId && state.data.cycles[activeCycleId]) {
-                    const tasks = state.data.cycles[activeCycleId].tasks;
+                const activeCycleId = getActiveRoutineId(state);
+                if (activeCycleId && getRoutine(state, activeCycleId)) {
+                    const tasks = getRoutine(state, activeCycleId).tasks;
                     if (tasks && newTaskOrder.length > 0) {
                         const taskMap = new Map(tasks.map(t => [t.id, t]));
                         const reorderedTasks = newTaskOrder
@@ -789,7 +790,7 @@ export class DragDropManager {
 
                         // Preserve tasks not in DOM (e.g., completed tasks in dropdown)
                         const missingTasks = tasks.filter(t => !newTaskOrder.includes(t.id));
-                        state.data.cycles[activeCycleId].tasks = [...reorderedTasks, ...missingTasks];
+                        getRoutine(state, activeCycleId).tasks = [...reorderedTasks, ...missingTasks];
                     }
                 }
             }, true); // immediate save

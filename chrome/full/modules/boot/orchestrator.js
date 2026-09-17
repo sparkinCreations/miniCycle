@@ -535,6 +535,11 @@ function showBootError(phase, error, willRetry = false) {
   // Keep loader visible and update its content
   loader.style.display = 'flex';
   loader.classList.remove(DOM_CLASSES.FADE_OUT);
+  // A pre-boot welcome splash (create/sample first-run pick, mounted by
+  // miniCycle.html before boot) sits ABOVE the loader. It must not hide the
+  // error screen — the user needs to see the retry text and the backup button.
+  const prebootSplash = document.getElementById(DOM_IDS.FIRST_RUN_SPLASH);
+  if (prebootSplash) prebootSplash.remove();
 
   const { description, suggestion } = getErrorDetails(error, phase);
   const shortError = (error?.message || 'Unknown error').substring(0, 80);
@@ -1017,9 +1022,8 @@ async function runBootSequence() {
 
   await withTimeout(
     (async () => {
-      // Load app data - fix any task validation issues first
-      appContextMod.state?.()?.fixTaskValidationIssues?.();
-      await deps.core.initAppWithAutoMigration({ forceMode: true });
+      // Load app data (creates the initial state for a brand-new user)
+      await deps.core.initAppWithAutoMigration();
 
       // Re-initialize vocab themes and themes panel for new users.
       // vocabThemeManager.init() and setupThemesPanel() both run during Phase 2, but

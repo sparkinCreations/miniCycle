@@ -15,6 +15,8 @@ import {
     DATA_SELECTORS, DOM_CLASSES, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { buildRecurringTemplate } from './recurringTemplate.js';
+import { autoClearFields, getActiveRoutineId, getAutoClear, getRoutine, setAutoClearSettings } from '../utils/cycleMode.js';
+import { priorityFields } from '../utils/priorityLevel.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -31,7 +33,6 @@ const di = createDIModule('RecurringActivation', {
     updateRecurringSummary: optional(null),
     updatePanelButtonVisibility: optional(null),
     updateInfoLink: optional(null),
-    updateProgressBar: optional(null),
     GlobalUtils: optional(null),
     // Functions from sibling modules (injected to avoid circular imports)
     normalizeRecurringSettings: optional(null),
@@ -84,20 +85,22 @@ export function activateTaskRecurringState(cycle, taskId, normalizedSettings, ca
         task.recurring = true;
         task.recurringSettings = structuredClone(normalizedSettings);
         task.schemaVersion = 2;
-        task.deleteWhenComplete = true;
-        task.deleteWhenCompleteSettings = { ...DEFAULT_RECURRING_DELETE_SETTINGS };
+        setAutoClearSettings(task, DEFAULT_RECURRING_DELETE_SETTINGS, cycle, DEFAULT_RECURRING_DELETE_SETTINGS);
     }
 
     if (!cycle.recurringTemplates) {
         cycle.recurringTemplates = {};
     }
 
+    // Where the task sits now is where its recreated instances should return to.
+    const taskIndex = cycle.tasks.findIndex(t => t.id === taskId);
+
     cycle.recurringTemplates[taskId] = buildRecurringTemplate({
         id: taskId,
         text: task?.text || cycle.recurringTemplates[taskId]?.text || getLabel('noun.untitledTask'),
+        position: taskIndex >= 0 ? taskIndex : cycle.recurringTemplates[taskId]?.position ?? null,
         recurringSettings: structuredClone(normalizedSettings),
-        highPriority: task?.highPriority || false,
-        priorityColor: task?.priorityColor || null,
+        ...priorityFields(task),
         dueDate: task?.dueDate || null,
         remindersEnabled: task?.remindersEnabled || false,
         nextScheduledOccurrence: calculateNextOccurrenceFn(normalizedSettings, Date.now())
@@ -111,16 +114,14 @@ export function activateTaskRecurringState(cycle, taskId, normalizedSettings, ca
  *
  * @param {Object} cycle - Draft cycle object (mutated in place)
  * @param {string} taskId - Task ID to deactivate
- * @param {string} currentMode - 'todo' or 'cycle'
  * @returns {void}
  */
-export function deactivateTaskRecurringState(cycle, taskId, currentMode) {
+export function deactivateTaskRecurringState(cycle, taskId) {
     const task = cycle.tasks.find(t => t.id === taskId);
     if (task) {
         task.recurring = false;
         task.schemaVersion = 2;
-        task.deleteWhenCompleteSettings = { ...DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS };
-        task.deleteWhenComplete = DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS[currentMode];
+        setAutoClearSettings(task, DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS, cycle, DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS);
     }
 
     if (cycle.recurringTemplates?.[taskId]) {
@@ -167,8 +168,8 @@ export async function handleRecurringTaskActivation(task, taskContext, button = 
     // Commit state FIRST (single source of truth), then sync DOM
     assertInjected('updateAppState', Deps.updateAppState);
     await Deps.updateAppState(draft => {
-        const activeCycleId = draft.appState?.activeCycleId;
-        const currentCycleInState = draft.data?.cycles?.[activeCycleId];
+        const activeCycleId = getActiveRoutineId(draft);
+        const currentCycleInState = getRoutine(draft, activeCycleId);
 
         if (!currentCycleInState) {
             console.warn('⚠️ No active cycle found in AppState for template creation');
@@ -194,10 +195,7 @@ export async function handleRecurringTaskActivation(task, taskContext, button = 
         const currentMode = currentCycle?.deleteCheckedTasks ? 'todo' : 'cycle';
         Deps.GlobalUtils.syncTaskDeleteWhenCompleteDOM(
             taskItem,
-            {
-                deleteWhenComplete: true,
-                deleteWhenCompleteSettings: { ...DEFAULT_RECURRING_DELETE_SETTINGS }
-            },
+            autoClearFields({ settings: null, mode: currentMode, defaults: DEFAULT_RECURRING_DELETE_SETTINGS }),
             currentMode,
             { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS }
         );
@@ -262,7 +260,7 @@ export async function handleRecurringTaskDeactivation(task, taskContext, assigne
     }
 
     const state = Deps.AppState?.get();
-    const activeCycleId = state?.appState?.activeCycleId;
+    const activeCycleId = getActiveRoutineId(state);
 
     if (!activeCycleId) {
         console.error('❌ No active cycle found for handleRecurringTaskDeactivation');
@@ -272,15 +270,15 @@ export async function handleRecurringTaskDeactivation(task, taskContext, assigne
     const taskItem = Deps.querySelector(DATA_SELECTORS.elementByTaskId(assignedTaskId));
 
     // Get current mode
-    const currentCycle = state.data?.cycles?.[activeCycleId];
+    const currentCycle = getRoutine(state, activeCycleId);
     const isToDoMode = currentCycle?.deleteCheckedTasks === true;
     const currentMode = isToDoMode ? 'todo' : 'cycle';
 
     // Update via AppState
     await Deps.updateAppState(draft => {
-        const cycle = draft.data.cycles[activeCycleId];
+        const cycle = getRoutine(draft, activeCycleId);
 
-        deactivateTaskRecurringState(cycle, assignedTaskId, currentMode);
+        deactivateTaskRecurringState(cycle, assignedTaskId);
 
         // Fallback: ensure task stays in main array even if not found
         const targetTask = cycle.tasks.find(t => t.id === assignedTaskId);
@@ -290,8 +288,7 @@ export async function handleRecurringTaskDeactivation(task, taskContext, assigne
                 ...task,
                 recurring: false,
                 recurringSettings: task.recurringSettings || {},
-                deleteWhenCompleteSettings: { ...DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS },
-                deleteWhenComplete: DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS[currentMode],
+                ...autoClearFields({ settings: null, mode: currentMode, defaults: DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS }),
                 schemaVersion: 2
             });
         }
@@ -305,10 +302,7 @@ export async function handleRecurringTaskDeactivation(task, taskContext, assigne
         if (Deps.GlobalUtils?.syncTaskDeleteWhenCompleteDOM) {
             Deps.GlobalUtils.syncTaskDeleteWhenCompleteDOM(
                 taskItem,
-                {
-                    deleteWhenComplete: DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS[currentMode],
-                    deleteWhenCompleteSettings: { ...DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS }
-                },
+                autoClearFields({ settings: null, mode: currentMode, defaults: DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS }),
                 currentMode,
                 { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS }
             );
@@ -344,14 +338,14 @@ export async function applyRecurringToTaskSchema25(taskId, newSettings) {
     }
 
     const state = Deps.AppState?.get();
-    const activeCycleId = state?.appState?.activeCycleId;
+    const activeCycleId = getActiveRoutineId(state);
 
     if (!activeCycleId) {
         console.error('❌ No active cycle found for applyRecurringToTaskSchema25');
         return;
     }
 
-    const cycleData = state.data?.cycles?.[activeCycleId];
+    const cycleData = getRoutine(state, activeCycleId);
     if (!cycleData) {
         console.error('❌ Cycle data not found for applyRecurringToTaskSchema25');
         return;
@@ -372,13 +366,13 @@ export async function applyRecurringToTaskSchema25(taskId, newSettings) {
     // Delegate to the canonical activation function (single source of truth
     // for task + template state shape)
     await Deps.updateAppState(draft => {
-        const cycle = draft.data.cycles[activeCycleId];
+        const cycle = getRoutine(draft, activeCycleId);
         activateTaskRecurringState(cycle, taskId, normalizedSettings, Deps.calculateNextOccurrence);
     }, true);
 
     // Re-read task from updated state (the `task` variable above holds pre-update data)
     const updatedState = Deps.AppState.get();
-    const updatedCycle = updatedState.data?.cycles?.[activeCycleId];
+    const updatedCycle = getRoutine(updatedState, activeCycleId);
     const updatedTask = updatedCycle?.tasks?.find(t => t.id === taskId);
 
     // Update DOM
@@ -433,14 +427,14 @@ export async function deleteRecurringTemplate(taskId) {
     }
 
     const state = Deps.AppState?.get();
-    const activeCycleId = state?.appState?.activeCycleId;
+    const activeCycleId = getActiveRoutineId(state);
 
     if (!activeCycleId) {
         console.error('❌ No active cycle found for deleteRecurringTemplate');
         return;
     }
 
-    const cycleData = state.data?.cycles?.[activeCycleId];
+    const cycleData = getRoutine(state, activeCycleId);
     if (!cycleData) {
         console.error('❌ Cycle data not found for deleteRecurringTemplate');
         return;
@@ -452,7 +446,7 @@ export async function deleteRecurringTemplate(taskId) {
     }
 
     await Deps.updateAppState(draft => {
-        const cycle = draft.data.cycles[activeCycleId];
+        const cycle = getRoutine(draft, activeCycleId);
         if (cycle?.recurringTemplates?.[taskId]) {
             delete cycle.recurringTemplates[taskId];
         }
@@ -484,7 +478,8 @@ export function removeRecurringTasksFromCycle(taskElements, cycleData) {
 
         if (isRecurring) {
             const task = cycleData?.tasks?.find(t => t.id === taskId);
-            const shouldDelete = task?.deleteWhenComplete !== false;
+            // Recurring defaults: a recurring task with no stored choice clears.
+            const shouldDelete = getAutoClear(task, cycleData, DEFAULT_RECURRING_DELETE_SETTINGS);
 
             if (!shouldDelete) {
                 const checkbox = taskEl.querySelector(DOM_SELECTORS.TASK_CHECKBOX);
@@ -501,21 +496,25 @@ export function removeRecurringTasksFromCycle(taskElements, cycleData) {
             // recurring domain); the producer applies the plain values.
             if (cycleData?.recurringTemplates?.[taskId]) {
                 const template = cycleData.recurringTemplates[taskId];
+                // Remember where the task sat, so the watcher can put the next
+                // instance back there instead of at the bottom of the routine.
+                const position = (cycleData.tasks || []).findIndex(t => t.id === taskId);
                 plan.templateUpdates[taskId] = {
                     nextScheduledOccurrence: Deps.calculateNextOccurrence(
                         template.recurringSettings,
                         Date.now()
                     ),
-                    lastTriggeredTimestamp: null
+                    lastTriggeredTimestamp: null,
+                    position: position >= 0 ? position : (template.position ?? null)
                 };
             }
         }
     });
 
-    // Update progress bar
-    if (plan.removedIds.length > 0 && Deps.updateProgressBar) {
-        Deps.updateProgressBar();
-    }
+    // No progress-bar update here. The bar reads AppState, and state still holds
+    // the removed tasks until the caller's reset producer applies this plan, so a
+    // count taken now would be stale. resetTasksImpl animates the bar itself
+    // (animateProgressBarEmpty) once the reset has been applied.
 
     return plan;
 }
@@ -533,14 +532,14 @@ export function handleRecurringTasksAfterReset() {
     }
 
     const state = Deps.AppState?.get();
-    const activeCycleId = state?.appState?.activeCycleId;
+    const activeCycleId = getActiveRoutineId(state);
 
     if (!activeCycleId) {
         console.error('❌ No active cycle found for handleRecurringTasksAfterReset');
         return;
     }
 
-    const cycleData = state.data?.cycles?.[activeCycleId];
+    const cycleData = getRoutine(state, activeCycleId);
     if (!cycleData) {
         console.warn('⚠️ No active cycle data found for recurring task reset');
         return;

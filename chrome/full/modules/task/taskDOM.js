@@ -28,12 +28,12 @@
  * @typedef {import('../core/types.js').RecurringSettings} RecurringSettings
  */
 
-import { createDIModule, optional } from '../core/diBase.js';
+import { createDIModule, required, optional } from '../core/diBase.js';
 import { applyTaskStatusLabel } from './taskUtils.js';
-import { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS, COLORS, DOM_IDS, DOM_SELECTORS, DATA_SELECTORS, DOM_CLASSES } from '../core/constants.js';
+import { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS, DOM_IDS, DOM_SELECTORS, DATA_SELECTORS, DOM_CLASSES } from '../core/constants.js';
 import { ICONS } from '../utils/icons.js';
 import { getLabel } from '../labels/labelResolver.js';
-import { resolveDeleteWhenComplete, getTaskResetIndicator } from '../utils/cycleMode.js';
+import { getActiveRoutine, getActiveRoutineId, getRoutine, getTaskResetIndicator, resolveAutoClear } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -53,7 +53,10 @@ const di = createDIModule('TaskDOMManager', {
     generateId: optional(null),
     syncTaskDeleteWhenCompleteDOM: optional(null),
     saveTaskToSchema25: optional(null),
-    AppMeta: optional(null)
+    AppMeta: optional(null),
+    // Priority colour = the task's LEVEL under the active theme (utils/priorityLevel.js).
+    // Also handed to TaskDOMPatch at construction (init) — keep the two in step.
+    vocabThemeManager: required()
 });
 
 // Late-binding deps via Proxy
@@ -120,6 +123,10 @@ export class TaskDOMManager {
             // ============================================
             AppState: resolvedDeps.AppState,
             sanitizeInput: resolvedDeps.sanitizeInput,
+            // Declared required() in the schema above but NOT in the fail-fast list: it
+            // is only read when a flagged task is painted. This hand-written map is the
+            // only way a dep reaches this.deps — a schema entry alone is not enough.
+            vocabThemeManager: resolvedDeps.vocabThemeManager,
 
             // ============================================
             // IMPORTANT - warn if missing but don't fail
@@ -393,7 +400,8 @@ export class TaskDOMManager {
                 // Initialize patcher module - handles DOM patching without full re-renders
                 this.patcher = this._rawDeps.patcher || new TaskDOMPatch({
                     sanitizeInput: this.deps.sanitizeInput,
-                    AppState: this.deps.AppState
+                    AppState: this.deps.AppState,
+                    vocabThemeManager: this.deps.vocabThemeManager
                 });
 
                 // Phase 3 - No window.* exports (main script handles exposure)
@@ -540,7 +548,7 @@ export class TaskDOMManager {
 
     // GROUP 2: UTILITIES
     // ✅ MOVED TO: modules/task/taskUtils.js
-    // Use TaskUtils.buildTaskContext(), TaskUtils.extractTaskDataFromDOM(), etc.
+    // Use TaskUtils.buildTaskContext(), TaskUtils.loadTaskContext(), etc.
 
     // GROUP 3: DOM CREATION
     /**
@@ -570,9 +578,10 @@ export class TaskDOMManager {
 
         // Apply per-task priority color via CSS custom property (more reliable than borderLeftColor
         // because it doesn't conflict with the border-left shorthand in the stylesheet).
-        // Use fallback chain matching toggleTaskPriorityImpl: task color → global default → red
-        if (highPriority) {
-            const resolvedColor = priorityColor ?? COLORS.PRIORITY_DEFAULT;
+        // The colour is the task's LEVEL under the active theme, never the stored hex —
+        // the same rule taskDOMPatch, focusTaskPanel and the picker follow.
+        const resolvedColor = this.deps.vocabThemeManager.getTaskPriorityColor({ highPriority, priorityColor });
+        if (resolvedColor) {
             taskItem.style.setProperty('--task-priority-color', resolvedColor);
         }
 
@@ -662,7 +671,7 @@ export class TaskDOMManager {
         // Priority: mode-specific setting (canonical) > legacy field > hard defaults.
         // Shared with the Task view via utils/cycleMode.js — the same task must
         // not show one indicator in the list and another on the card.
-        const finalDeleteWhenComplete = resolveDeleteWhenComplete({
+        const finalDeleteWhenComplete = resolveAutoClear({
             settings: validSettings,
             legacy: deleteWhenComplete,
             mode: currentMode,
@@ -854,6 +863,14 @@ export class TaskDOMManager {
                 this.deps.enableUndoSystemOnFirstInteraction();
             }
 
+            // ORDER MATTERS: checkMiniCycle below reads completion from AppState,
+            // and this call is NOT awaited. That works only because the state write
+            // lands synchronously: nothing awaits between here and the
+            // AppState.update inside handleTaskCompletionChangeImpl (the taskCore
+            // facade delegates without awaiting), and update() runs its producer
+            // before its first await once AppState is initialized. An await added
+            // anywhere on that path makes checkMiniCycle see the pre-click state,
+            // so ticking the last task would silently stop completing the cycle.
             if (typeof this.deps.handleTaskCompletionChange === 'function') {
                 this.deps.handleTaskCompletionChange(checkbox);
             }
@@ -955,8 +972,8 @@ export class TaskDOMManager {
                 return;
             }
 
-            const activeCycleId = currentState.appState?.activeCycleId;
-            const freshCycle = currentState.data?.cycles?.[activeCycleId];
+            const activeCycleId = getActiveRoutineId(currentState);
+            const freshCycle = getRoutine(currentState, activeCycleId);
 
             if (!freshCycle) {
                 console.warn('⚠️ Active cycle not found in AppState');
@@ -1247,6 +1264,22 @@ export class TaskDOMManager {
     }
 
     /**
+     * Repaint every rendered task's priority colour from state.
+     *
+     * Colours are the task's LEVEL under the ACTIVE theme, so a theme change
+     * must repaint them — nothing else re-renders the list for a theme switch.
+     * Called by themeManager after it applies a vocab theme.
+     */
+    refreshTaskPriorityColors() {
+        const routine = getActiveRoutine(this.deps.AppState?.get?.());
+        (routine?.tasks ?? []).forEach(task => {
+            if (this.getTaskElement(task.id)) {
+                this.patchTask(task.id, task, ['priorityColor']);
+            }
+        });
+    }
+
+    /**
      * Remove a task from the DOM (O(1) operation)
      * @param {string} taskId - Task ID to remove
      * @returns {boolean} True if removed, false if not found
@@ -1386,15 +1419,6 @@ function buildTaskContext(taskItem, taskId) {
         return {};
     }
     return TaskUtils.buildTaskContext(taskItem, taskId, AppState);
-}
-
-function extractTaskDataFromDOM() {
-    if (typeof TaskUtils?.extractTaskDataFromDOM === 'function') {
-        return TaskUtils.extractTaskDataFromDOM(undefined, _deps.AppState);
-    }
-    // TaskUtils not available - return empty array (will be populated once TaskUtils loads)
-    console.warn('⚠️ TaskUtils not initialized yet, returning empty array');
-    return [];
 }
 
 function loadTaskContext(taskTextTrimmed, taskId, taskOptions, isLoading = false) {
@@ -1786,7 +1810,6 @@ export {
     validateAndSanitizeTaskInput,
     // Group 2: Utilities
     buildTaskContext,
-    extractTaskDataFromDOM,
     loadTaskContext,
     createOrUpdateTaskData,
     scrollToNewTask,

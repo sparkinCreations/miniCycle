@@ -10,6 +10,7 @@
  */
 
 import { createDIModule, required } from '../core/diBase.js';
+import { isSupportedStoredVersion } from '../utils/schemaVersion.js';
 import { formatLocalDate } from '../recurring/recurringDateUtils.js';
 
 // ============================================================================
@@ -280,7 +281,7 @@ export class DataValidator {
             throw new Error('Imported data missing schemaVersion');
         }
 
-        if (importedData.schemaVersion !== '2.5') {
+        if (!isSupportedStoredVersion(importedData)) {
             throw new Error(`Unsupported schema version: ${importedData.schemaVersion}`);
         }
 
