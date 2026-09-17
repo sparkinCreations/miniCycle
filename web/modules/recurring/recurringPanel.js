@@ -38,6 +38,7 @@ import {
     handleConfirmAddRecurring as _handleConfirmAddRecurring
 } from './recurringPanelAddTask.js';
 import { animateDialogClose } from '../utils/dialogClose.js';
+import { getActiveRoutineId, getRoutine, getRoutines } from '../utils/cycleMode.js';
 // Boot-time helpers — single source of truth for button-visibility + info-link so
 // recurringIntegration can run them at boot WITHOUT loading this 2k-line panel.
 import {
@@ -641,14 +642,14 @@ export class RecurringPanelManager {
             await this.deps.appInit?.waitForCore();
 
             const state = this.deps.AppState.get();
-            const activeCycleId = state?.appState?.activeCycleId;
+            const activeCycleId = getActiveRoutineId(state);
 
             if (!activeCycleId) {
                 console.warn('⚠️ No active cycle ID found for recurring panel');
                 return;
             }
 
-            const cycles = state.data?.cycles || {};
+            const cycles = getRoutines(state) || {};
             const cycleData = currentCycleData || cycles[activeCycleId];
 
             if (!cycleData) {
@@ -806,7 +807,7 @@ export class RecurringPanelManager {
                     }
 
                     const state = this.deps.AppState.get();
-                    const activeCycleId = state.appState?.activeCycleId;
+                    const activeCycleId = getActiveRoutineId(state);
 
                     if (!activeCycleId) {
                         console.error('❌ No active cycle found for task removal');
@@ -815,13 +816,13 @@ export class RecurringPanelManager {
                     }
 
                     // Compute current mode for deleteWhenComplete reset
-                    const currentCycle = state.data?.cycles?.[activeCycleId];
+                    const currentCycle = getRoutine(state, activeCycleId);
                     const isToDoMode = currentCycle?.deleteCheckedTasks === true;
                     const currentMode = isToDoMode ? 'todo' : 'cycle';
 
                     // ✅ Update via shared deactivation helper (immediate save)
                     await this.deps.updateAppState(draft => {
-                        const cycle = draft.data.cycles[activeCycleId];
+                        const cycle = getRoutine(draft, activeCycleId);
                         this.deps.deactivateTaskRecurringState(cycle, task.id, currentMode);
                     }, true); // ✅ Immediate save when removing recurring from panel
 
@@ -847,7 +848,7 @@ export class RecurringPanelManager {
 
                         // Restore delete-when-complete state based on cycle mode
                         const updatedState = this.deps.AppState.get();
-                        const freshCycle = updatedState.data?.cycles?.[activeCycleId];
+                        const freshCycle = getRoutine(updatedState, activeCycleId);
                         const isToDoMode = freshCycle?.deleteCheckedTasks === true;
                         const defaultDeleteState = isToDoMode; // todo=true, cycle=false
 
@@ -884,7 +885,7 @@ export class RecurringPanelManager {
 
                     // ✅ Check remaining templates via AppState
                     const updatedState = this.deps.AppState.get();
-                    const updatedCycle = updatedState.data?.cycles?.[activeCycleId];
+                    const updatedCycle = getRoutine(updatedState, activeCycleId);
                     const remaining = Object.values(updatedCycle?.recurringTemplates || {});
                     if (remaining.length === 0) {
                         const overlay = this.deps.getModal('recurringOverlay');
@@ -1039,14 +1040,14 @@ export class RecurringPanelManager {
             }
 
             const state = this.deps.AppState.get();
-            const activeCycleId = state.appState?.activeCycleId;
+            const activeCycleId = getActiveRoutineId(state);
 
             if (!activeCycleId) {
                 console.warn('⚠️ No active cycle ID found for task preview');
                 return;
             }
 
-            const currentCycle = state.data?.cycles?.[activeCycleId];
+            const currentCycle = getRoutine(state, activeCycleId);
             if (!currentCycle) {
                 console.warn('⚠️ No active cycle found for task preview');
                 return;
@@ -1332,8 +1333,8 @@ export class RecurringPanelManager {
         if (!this.deps.AppState.isReady?.()) return;
 
         const state = this.deps.AppState.get();
-        const activeCycleId = state.appState?.activeCycleId;
-        const currentCycle = state.data?.cycles?.[activeCycleId];
+        const activeCycleId = getActiveRoutineId(state);
+        const currentCycle = getRoutine(state, activeCycleId);
         if (!currentCycle) return;
 
         const task = currentCycle.tasks.find(t => t.id === taskId);
@@ -1394,8 +1395,8 @@ export class RecurringPanelManager {
                 // Show task preview
                 if (this.deps.AppState.isReady?.()) {
                     const state = this.deps.AppState.get();
-                    const activeCycleId = state.appState?.activeCycleId;
-                    const task = state.data?.cycles?.[activeCycleId]?.tasks.find(t => t.id === taskIdToPreselect);
+                    const activeCycleId = getActiveRoutineId(state);
+                    const task = getRoutine(state, activeCycleId)?.tasks.find(t => t.id === taskIdToPreselect);
 
                     if (task) {
                         this.showTaskSummaryPreview(task);

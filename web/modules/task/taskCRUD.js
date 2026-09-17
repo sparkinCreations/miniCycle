@@ -44,6 +44,7 @@ import { createDIModule, required, optional } from '../core/diBase.js';
 import { LIMITS, UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { announce } from '../utils/announce.js';
+import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -242,8 +243,8 @@ export async function addTaskImpl(taskText, options = {}, deps = {}) {
         // Check task limit (skip during initial loading)
         if (!isLoading && AppState.isReady()) {
             const state = AppState.get();
-            const activeCycleId = state?.appState?.activeCycleId;
-            const currentTasks = state?.data?.cycles?.[activeCycleId]?.tasks || [];
+            const activeCycleId = getActiveRoutineId(state);
+            const currentTasks = getRoutine(state, activeCycleId)?.tasks || [];
 
             if (currentTasks.length >= LIMITS.TASKS_PER_CYCLE) {
                 console.warn(`Task limit reached (${LIMITS.TASKS_PER_CYCLE}). Cannot add more tasks.`);
@@ -491,8 +492,8 @@ export async function editTaskImpl(taskItem, deps = {}) {
 
             if (AppState.isReady()) {
                 await AppState.update(state => {
-                    const cid = state.appState.activeCycleId;
-                    const cycle = state.data.cycles[cid];
+                    const cid = getActiveRoutineId(state);
+                    const cycle = getRoutine(state, cid);
                     const t = cycle?.tasks?.find(t => t.id === taskId);
                     if (t) t.text = newText;
                 }, true);
@@ -616,8 +617,8 @@ function _editTaskModal(taskItem, taskLabel, oldText, ctx) {
 
         if (AppState.isReady()) {
             await AppState.update(state => {
-                const cid = state.appState.activeCycleId;
-                const cycle = state.data.cycles[cid];
+                const cid = getActiveRoutineId(state);
+                const cycle = getRoutine(state, cid);
                 const t = cycle?.tasks?.find(t => t.id === taskId);
                 if (t) t.text = newText;
             }, true);
@@ -719,8 +720,8 @@ export async function deleteTaskImpl(taskItem, deps = {}) {
                 // ✅ Use AppState only (no localStorage fallback) - DI-pure
                 if (AppState.isReady()) {
                     await AppState.update(state => {
-                        const cid = state.appState.activeCycleId;
-                        const cycle = state.data.cycles[cid];
+                        const cid = getActiveRoutineId(state);
+                        const cycle = getRoutine(state, cid);
                         if (cycle?.tasks) {
                             const index = cycle.tasks.findIndex(t => t.id === taskId);
                             if (index !== -1) {
@@ -805,8 +806,8 @@ export async function toggleTaskPriorityImpl(taskItem, deps = {}) {
             return;
         }
 
-        const activeCycleId = currentState.appState?.activeCycleId;
-        const freshCycle = currentState.data?.cycles?.[activeCycleId];
+        const activeCycleId = getActiveRoutineId(currentState);
+        const freshCycle = getRoutine(currentState, activeCycleId);
         const task = freshCycle?.tasks?.find(t => t.id === taskId);
 
         if (!task) {
@@ -856,8 +857,8 @@ export async function toggleTaskPriorityImpl(taskItem, deps = {}) {
         if (AppState.isReady()) {
 
             AppState.update(state => {
-                const cid = state.appState.activeCycleId;
-                const cycle = state.data.cycles[cid];
+                const cid = getActiveRoutineId(state);
+                const cycle = getRoutine(state, cid);
                 const t = cycle?.tasks?.find(t => t.id === taskId);
                 if (t) {
                     t.highPriority = newHighPriority;
@@ -883,8 +884,8 @@ export async function toggleTaskPriorityImpl(taskItem, deps = {}) {
                                 // Update global default so future new tasks start with this color
                                 state.settings.priorityColor = color;
                                 // Save to the specific task so it remembers its own color
-                                const cid = state.appState?.activeCycleId;
-                                const cycle = state.data?.cycles?.[cid];
+                                const cid = getActiveRoutineId(state);
+                                const cycle = getRoutine(state, cid);
                                 const t = cycle?.tasks?.find(t => t.id === taskId);
                                 if (t) t.priorityColor = color;
                                 // Sync color to recurring template so recreated tasks keep the color

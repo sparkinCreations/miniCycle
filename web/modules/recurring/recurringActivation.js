@@ -15,6 +15,7 @@ import {
     DATA_SELECTORS, DOM_CLASSES, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { buildRecurringTemplate } from './recurringTemplate.js';
+import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -170,8 +171,8 @@ export async function handleRecurringTaskActivation(task, taskContext, button = 
     // Commit state FIRST (single source of truth), then sync DOM
     assertInjected('updateAppState', Deps.updateAppState);
     await Deps.updateAppState(draft => {
-        const activeCycleId = draft.appState?.activeCycleId;
-        const currentCycleInState = draft.data?.cycles?.[activeCycleId];
+        const activeCycleId = getActiveRoutineId(draft);
+        const currentCycleInState = getRoutine(draft, activeCycleId);
 
         if (!currentCycleInState) {
             console.warn('⚠️ No active cycle found in AppState for template creation');
@@ -265,7 +266,7 @@ export async function handleRecurringTaskDeactivation(task, taskContext, assigne
     }
 
     const state = Deps.AppState?.get();
-    const activeCycleId = state?.appState?.activeCycleId;
+    const activeCycleId = getActiveRoutineId(state);
 
     if (!activeCycleId) {
         console.error('❌ No active cycle found for handleRecurringTaskDeactivation');
@@ -275,13 +276,13 @@ export async function handleRecurringTaskDeactivation(task, taskContext, assigne
     const taskItem = Deps.querySelector(DATA_SELECTORS.elementByTaskId(assignedTaskId));
 
     // Get current mode
-    const currentCycle = state.data?.cycles?.[activeCycleId];
+    const currentCycle = getRoutine(state, activeCycleId);
     const isToDoMode = currentCycle?.deleteCheckedTasks === true;
     const currentMode = isToDoMode ? 'todo' : 'cycle';
 
     // Update via AppState
     await Deps.updateAppState(draft => {
-        const cycle = draft.data.cycles[activeCycleId];
+        const cycle = getRoutine(draft, activeCycleId);
 
         deactivateTaskRecurringState(cycle, assignedTaskId, currentMode);
 
@@ -347,14 +348,14 @@ export async function applyRecurringToTaskSchema25(taskId, newSettings) {
     }
 
     const state = Deps.AppState?.get();
-    const activeCycleId = state?.appState?.activeCycleId;
+    const activeCycleId = getActiveRoutineId(state);
 
     if (!activeCycleId) {
         console.error('❌ No active cycle found for applyRecurringToTaskSchema25');
         return;
     }
 
-    const cycleData = state.data?.cycles?.[activeCycleId];
+    const cycleData = getRoutine(state, activeCycleId);
     if (!cycleData) {
         console.error('❌ Cycle data not found for applyRecurringToTaskSchema25');
         return;
@@ -375,13 +376,13 @@ export async function applyRecurringToTaskSchema25(taskId, newSettings) {
     // Delegate to the canonical activation function (single source of truth
     // for task + template state shape)
     await Deps.updateAppState(draft => {
-        const cycle = draft.data.cycles[activeCycleId];
+        const cycle = getRoutine(draft, activeCycleId);
         activateTaskRecurringState(cycle, taskId, normalizedSettings, Deps.calculateNextOccurrence);
     }, true);
 
     // Re-read task from updated state (the `task` variable above holds pre-update data)
     const updatedState = Deps.AppState.get();
-    const updatedCycle = updatedState.data?.cycles?.[activeCycleId];
+    const updatedCycle = getRoutine(updatedState, activeCycleId);
     const updatedTask = updatedCycle?.tasks?.find(t => t.id === taskId);
 
     // Update DOM
@@ -436,14 +437,14 @@ export async function deleteRecurringTemplate(taskId) {
     }
 
     const state = Deps.AppState?.get();
-    const activeCycleId = state?.appState?.activeCycleId;
+    const activeCycleId = getActiveRoutineId(state);
 
     if (!activeCycleId) {
         console.error('❌ No active cycle found for deleteRecurringTemplate');
         return;
     }
 
-    const cycleData = state.data?.cycles?.[activeCycleId];
+    const cycleData = getRoutine(state, activeCycleId);
     if (!cycleData) {
         console.error('❌ Cycle data not found for deleteRecurringTemplate');
         return;
@@ -455,7 +456,7 @@ export async function deleteRecurringTemplate(taskId) {
     }
 
     await Deps.updateAppState(draft => {
-        const cycle = draft.data.cycles[activeCycleId];
+        const cycle = getRoutine(draft, activeCycleId);
         if (cycle?.recurringTemplates?.[taskId]) {
             delete cycle.recurringTemplates[taskId];
         }
@@ -540,14 +541,14 @@ export function handleRecurringTasksAfterReset() {
     }
 
     const state = Deps.AppState?.get();
-    const activeCycleId = state?.appState?.activeCycleId;
+    const activeCycleId = getActiveRoutineId(state);
 
     if (!activeCycleId) {
         console.error('❌ No active cycle found for handleRecurringTasksAfterReset');
         return;
     }
 
-    const cycleData = state.data?.cycles?.[activeCycleId];
+    const cycleData = getRoutine(state, activeCycleId);
     if (!cycleData) {
         console.warn('⚠️ No active cycle data found for recurring task reset');
         return;

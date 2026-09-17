@@ -43,6 +43,7 @@
 import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { buildMcycPayload } from '../utils/mcycPayload.js';
+import { getActiveRoutineId, getRoutine, getRoutines, setActiveRoutineId } from '../utils/cycleMode.js';
 
 export class RoutineSwitcherActions {
     /**
@@ -80,7 +81,7 @@ export class RoutineSwitcherActions {
         }
 
         const cycleKey = selectedCycle.dataset.cycleKey;
-        const currentCycle = currentState.data?.cycles?.[cycleKey];
+        const currentCycle = getRoutine(currentState, cycleKey);
 
         if (!cycleKey || !currentCycle) {
             console.error('❌ Invalid cycle selection:', { cycleKey, hasCycle: !!currentCycle });
@@ -153,21 +154,21 @@ export class RoutineSwitcherActions {
                 // ✅ Update through state system
                 this.m.deps.AppState.update(state => {
                     // Remove the selected miniCycle
-                    delete state.data.cycles[cycleKey];
+                    delete getRoutines(state)[cycleKey];
 
                     // If the deleted cycle was the active one, handle fallback
                     if (wasActiveCycle) {
-                        const remainingCycleKeys = Object.keys(state.data.cycles);
+                        const remainingCycleKeys = Object.keys(getRoutines(state));
 
                         if (remainingCycleKeys.length > 0) {
                             // Switch to the first available miniCycle
                             const newActiveCycleKey = remainingCycleKeys[0];
-                            state.appState.activeCycleId = newActiveCycleKey;
+                            setActiveRoutineId(state, newActiveCycleKey);
 
-                            const newActiveCycle = state.data.cycles[newActiveCycleKey];
+                            const newActiveCycle = getRoutine(state, newActiveCycleKey);
                             newActiveCycleName = newActiveCycle.title;
                         } else {
-                            state.appState.activeCycleId = null;
+                            setActiveRoutineId(state, null);
                         }
                     }
 
@@ -193,7 +194,7 @@ export class RoutineSwitcherActions {
 
                 // ✅ Check if any cycles remain
                 const finalState = this.m.deps.AppState.get();
-                const remainingCycles = Object.keys(finalState.data.cycles);
+                const remainingCycles = Object.keys(getRoutines(finalState));
 
                 if (remainingCycles.length === 0) {
                     // No cycles left — return the EXISTING user to the neutral
@@ -267,7 +268,7 @@ export class RoutineSwitcherActions {
 
         const cycleKey = selected.dataset.cycleKey;
         const currentState = this.m.deps.AppState?.get();
-        const cycleData = currentState?.data?.cycles?.[cycleKey];
+        const cycleData = getRoutine(currentState, cycleKey);
         if (!cycleData) return;
 
         const cycleName = cycleData.title || cycleKey;
@@ -400,7 +401,7 @@ export class RoutineSwitcherActions {
 
         // ✅ Update through state system
         this.m.deps.AppState.update(state => {
-            state.data.cycles[uniqueName] = copiedCycle;
+            getRoutines(state)[uniqueName] = copiedCycle;
             state.metadata.totalCyclesCreated = (state.metadata.totalCyclesCreated || 0) + 1;
         }, true); // immediate save
 
@@ -665,7 +666,7 @@ export class RoutineSwitcherActions {
 
         // Get unique name if there's a collision (but not with self)
         const currentState = this.m.deps.AppState.get();
-        const cycles = { ...currentState.data.cycles };
+        const cycles = { ...getRoutines(currentState) };
         delete cycles[oldKey];
 
         const { name: uniqueName, wasModified } = this.m.getUniqueCycleName(newName, cycles);
@@ -676,15 +677,15 @@ export class RoutineSwitcherActions {
 
         // Update through state system
         this.m.deps.AppState.update(state => {
-            const cycleData = state.data.cycles[oldKey];
+            const cycleData = getRoutine(state, oldKey);
             if (!cycleData) return;
 
             const updatedCycle = { ...cycleData, title: uniqueName };
-            state.data.cycles[uniqueName] = updatedCycle;
-            delete state.data.cycles[oldKey];
+            getRoutines(state)[uniqueName] = updatedCycle;
+            delete getRoutines(state)[oldKey];
 
-            if (state.appState.activeCycleId === oldKey) {
-                state.appState.activeCycleId = uniqueName;
+            if (getActiveRoutineId(state) === oldKey) {
+                setActiveRoutineId(state, uniqueName);
             }
 
         }, true);
