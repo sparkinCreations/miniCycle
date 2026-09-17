@@ -16,6 +16,7 @@ import { createDIModule, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { announce } from '../utils/announce.js';
+import { getRoutines, setActiveRoutineId } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -212,7 +213,7 @@ export class RoutineManager {
                         return;
                     }
 
-                    const existingCycles = appState.get()?.data?.cycles || {};
+                    const existingCycles = getRoutines(appState.get()) || {};
                     const { name: finalTitle, wasModified } = getUniqueCycleName(newCycleName, existingCycles);
 
                     if (wasModified) {
@@ -220,7 +221,7 @@ export class RoutineManager {
                     }
 
                     await appState.update(state => {
-                        state.data.cycles[finalTitle] = {
+                        getRoutines(state)[finalTitle] = {
                             id: cycleId,
                             title: finalTitle,
                             tasks: [],
@@ -240,7 +241,7 @@ export class RoutineManager {
                             }
                         };
 
-                        state.appState.activeCycleId = finalTitle;
+                        setActiveRoutineId(state, finalTitle);
                         state.metadata.totalCyclesCreated = (state.metadata.totalCyclesCreated || 0) + 1;
                     }, true);
 
@@ -337,12 +338,12 @@ export class RoutineManager {
         const fallbackTitle = "Getting Started";
 
         // ✅ Get unique name (uses centralized utility)
-        const existingCycles = appState.get()?.data?.cycles || {};
+        const existingCycles = getRoutines(appState.get()) || {};
         const { name: finalTitle } = getUniqueCycleName(fallbackTitle, existingCycles);
 
         // ✅ Create fallback cycle via AppState.update() - use title as key
         await appState.update(state => {
-            state.data.cycles[finalTitle] = {
+            getRoutines(state)[finalTitle] = {
                 id: cycleId,
                 title: finalTitle,
                 tasks: [
@@ -367,7 +368,7 @@ export class RoutineManager {
                 recurringTemplates: {}
             };
 
-            state.appState.activeCycleId = finalTitle;
+            setActiveRoutineId(state, finalTitle);
             state.metadata.totalCyclesCreated = (state.metadata.totalCyclesCreated || 0) + 1;
         }, true); // immediate save
 
@@ -439,7 +440,7 @@ export class RoutineManager {
                 const newCycleName = this.deps.sanitizeInput(inputValue);
                 const cycleId = `cycle_${Date.now()}`;
 
-                const existingCycles = this.deps.AppState.get()?.data?.cycles || {};
+                const existingCycles = getRoutines(this.deps.AppState.get()) || {};
                 const { name: finalTitle, wasModified } = getUniqueCycleName(newCycleName, existingCycles);
 
                 if (wasModified) {
@@ -450,7 +451,7 @@ export class RoutineManager {
                 let finalResult = null;
 
                 this.deps.AppState.update(state => {
-                    state.data.cycles[storageKey] = {
+                    getRoutines(state)[storageKey] = {
                         title: finalTitle,
                         id: cycleId,
                         tasks: [],
@@ -463,7 +464,7 @@ export class RoutineManager {
                         taskOptionButtons: { ...this.deps.DEFAULT_TASK_OPTION_BUTTONS }
                     };
 
-                    state.appState.activeCycleId = storageKey;
+                    setActiveRoutineId(state, storageKey);
                     state.metadata.totalCyclesCreated = (state.metadata.totalCyclesCreated || 0) + 1;
 
                     finalResult = { storageKey, finalTitle };
@@ -605,11 +606,11 @@ export class RoutineManager {
 
             const cycleId = `cycle_${Date.now()}`;
             const sampleTitle = sample.title || sample.name || 'Sample Routine';
-            const existingCycles = appState.get()?.data?.cycles || {};
+            const existingCycles = getRoutines(appState.get()) || {};
             const { name: finalTitle } = getUniqueCycleName(sampleTitle, existingCycles);
 
             await appState.update(state => {
-                state.data.cycles[finalTitle] = {
+                getRoutines(state)[finalTitle] = {
                     id: cycleId,
                     title: finalTitle,
                     tasks: sample.tasks || [],
@@ -630,7 +631,7 @@ export class RoutineManager {
                     }
                 };
 
-                state.appState.activeCycleId = finalTitle;
+                setActiveRoutineId(state, finalTitle);
                 state.metadata.totalCyclesCreated = (state.metadata.totalCyclesCreated || 0) + 1;
             }, true);
 

@@ -679,7 +679,8 @@ risky stored-format change small and last.
    variable names and so barely moves): `grep -rhoE '\.appState\??\.activeCycleId\b|\.data\??\.cycles\b' modules`.
    Batch 1 (Sep 2026): `undoRedoManager`, `modeManager`, `routineSwitcher`, `dailyResetManager` →
    389 → 322 reads remaining. Batch 2: `routineSwitcherActions`, `taskCRUD`, `recurringActivation`,
-   `recurringPanel` → 266. Undo SNAPSHOT fields keep the name `activeCycleId` on purpose — that
+   `recurringPanel` → 266. Batch 3: `taskCycleReset`, `routineManager`, `clearedTasksManager`,
+   `taskOptionsCustomizer` → 217. Undo SNAPSHOT fields keep the name `activeCycleId` on purpose — that
    is the snapshot's own shape, cleared at the version bump, not the stored document.*
    A single 2.5 → 2.6 migration carries:
    - the **UUID re-key** — `STATE_TRUTH_MIGRATION.md` #20: stable UUID map keys, `title` as the

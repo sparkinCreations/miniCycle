@@ -53,6 +53,7 @@ import { createDIModule, required, optional } from '../core/diBase.js';
 import { applyTaskStatusLabel } from './taskUtils.js';
 import { TASK_TIMEOUTS, UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, MILESTONES, LIMITS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { getActiveRoutine, getActiveRoutineId, getRoutine, getRoutines } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -340,8 +341,8 @@ function getResetContext(deps) {
     }
 
     const state = AppState.get();
-    const cycles = state?.data?.cycles || {};
-    const activeCycle = state?.appState?.activeCycleId;
+    const cycles = getRoutines(state) || {};
+    const activeCycle = getActiveRoutineId(state);
     const cycleData = cycles[activeCycle];
 
     if (!activeCycle || !cycleData) {
@@ -365,14 +366,14 @@ function resetTasksData(context, deps) {
 
     // Get fresh state (user may have switched cycles during animation)
     const freshState = AppState.get();
-    const currentActiveCycle = freshState?.appState?.activeCycleId;
+    const currentActiveCycle = getActiveRoutineId(freshState);
 
     if (currentActiveCycle !== activeCycle) {
         console.warn('Cycle switched during reset, aborting');
         return { aborted: true };
     }
 
-    const freshCycleData = freshState?.data?.cycles?.[currentActiveCycle];
+    const freshCycleData = getRoutine(freshState, currentActiveCycle);
     if (!freshCycleData) {
         console.warn('Could not get fresh cycle data');
         return { aborted: true };
@@ -470,7 +471,7 @@ function resetTasksData(context, deps) {
     // ✅ Use AppState only (no localStorage fallback) - DI-pure
     if (AppState.isReady()) {
         AppState.update(state => {
-            const cycle = state?.data?.cycles?.[currentActiveCycle];
+            const cycle = getRoutine(state, currentActiveCycle);
             if (cycle) {
                 // Apply the recurring-removal plan (state side of what the
                 // DOM already shows): remove spawned recurring instances,
@@ -596,7 +597,7 @@ function moveCompletedTasksBack(context, deps) {
     // Restore original task order from AppState
     if (AppState.isReady()) {
         const state = AppState.get();
-        const cycleData = state?.data?.cycles?.[activeCycle];
+        const cycleData = getRoutine(state, activeCycle);
         const stateTaskOrder = cycleData?.tasks?.map(t => t.id) || [];
 
         if (stateTaskOrder.length > 0) {
@@ -939,7 +940,7 @@ export async function deleteCompletedTasksImpl(activeCycleId, cycleData, taskLis
     // ✅ Use AppState only (no localStorage fallback) - DI-pure
     if (AppState.isReady()) {
         await AppState.update(state => {
-            const cycle = state.data.cycles[activeCycleId];
+            const cycle = getRoutine(state, activeCycleId);
             if (cycle?.tasks) {
                 // A cleared recurring instance comes back later — record where it
                 // sat so the watcher can recreate it in place, not at the bottom.
@@ -1031,11 +1032,11 @@ export function markAllTasksCompleteImpl(cycleData, taskList, resetTasksFn, deps
         // Capture the manual-vs-button split BEFORE the write below flips every
         // task to completed. This is the only instant it is knowable.
         const preState = AppState.get();
-        const preCycleId = preState?.appState?.activeCycleId;
-        captureCompletionSplit(preCycleId, preState?.data?.cycles?.[preCycleId]?.tasks);
+        const preCycleId = getActiveRoutineId(preState);
+        captureCompletionSplit(preCycleId, getRoutine(preState, preCycleId)?.tasks);
 
         AppState.update(state => {
-            const cycle = state.data?.cycles?.[state.appState?.activeCycleId];
+            const cycle = getActiveRoutine(state);
             if (cycle?.tasks) {
                 cycle.tasks.forEach(task => { task.completed = true; });
             }
@@ -1081,8 +1082,8 @@ function getCompleteAllContext(deps) {
     }
 
     const state = AppState.get();
-    const activeCycle = state?.appState?.activeCycleId;
-    const cycleData = state?.data?.cycles?.[activeCycle];
+    const activeCycle = getActiveRoutineId(state);
+    const cycleData = getRoutine(state, activeCycle);
 
     if (!activeCycle || !cycleData) {
         console.warn('No active cycle found for complete all tasks');

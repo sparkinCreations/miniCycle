@@ -16,6 +16,7 @@ import { isClickOnNotification } from '../ui/modalUtils.js';
 // Local-midnight parse for date-only "YYYY-MM-DD" dueDates — new Date() reads
 // them as UTC midnight, showing the previous day in negative UTC offsets.
 import { parseDateAsLocal } from '../recurring/recurringDateUtils.js';
+import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
 
 // ============================================================================
 // CONSTANTS
@@ -95,20 +96,20 @@ export class ClearedTasksManager {
         }
 
         const state = this.deps.AppState.get();
-        const activeCycleId = state?.appState?.activeCycleId;
+        const activeCycleId = getActiveRoutineId(state);
 
         if (!activeCycleId) {
             console.warn('ClearedTasksManager: No active cycle');
             return;
         }
 
-        const activeCycle = state.data.cycles[activeCycleId];
+        const activeCycle = getRoutine(state, activeCycleId);
         const clearedInMode = activeCycle?.deleteCheckedTasks ? 'todo' : 'cycle';
 
         const entry = this._buildClearedEntry(task, clearedInMode);
 
         this.deps.AppState.update(s => {
-            const cycle = s.data.cycles[activeCycleId];
+            const cycle = getRoutine(s, activeCycleId);
             if (!cycle) return;
 
             // Initialize clearedTasks if needed
@@ -146,17 +147,17 @@ export class ClearedTasksManager {
         if (!tasks || tasks.length === 0) return;
 
         const state = this.deps.AppState.get();
-        const activeCycleId = state?.appState?.activeCycleId;
+        const activeCycleId = getActiveRoutineId(state);
 
         if (!activeCycleId) return;
 
-        const activeCycle = state.data.cycles[activeCycleId];
+        const activeCycle = getRoutine(state, activeCycleId);
         const clearedInMode = activeCycle?.deleteCheckedTasks ? 'todo' : 'cycle';
 
         const entries = tasks.map(task => this._buildClearedEntry(task, clearedInMode));
 
         this.deps.AppState.update(s => {
-            const cycle = s.data.cycles[activeCycleId];
+            const cycle = getRoutine(s, activeCycleId);
             if (!cycle) return;
 
             if (!cycle.clearedTasks) {
@@ -188,11 +189,11 @@ export class ClearedTasksManager {
      */
     getClearedTasks(cycleId = null) {
         const state = this.deps.AppState.get();
-        const id = cycleId || state?.appState?.activeCycleId;
+        const id = cycleId || getActiveRoutineId(state);
 
         if (!id) return { entries: [], totalCleared: 0 };
 
-        const cycle = state.data.cycles[id];
+        const cycle = getRoutine(state, id);
         return {
             entries: cycle?.clearedTasks?.entries || [],
             totalCleared: cycle?.clearedTasks?.totalCleared || 0
@@ -206,12 +207,12 @@ export class ClearedTasksManager {
      */
     clearAll(cycleId = null) {
         const state = this.deps.AppState.get();
-        const id = cycleId || state?.appState?.activeCycleId;
+        const id = cycleId || getActiveRoutineId(state);
 
         if (!id) return;
 
         this.deps.AppState.update(s => {
-            const cycle = s.data.cycles[id];
+            const cycle = getRoutine(s, id);
             if (cycle?.clearedTasks) {
                 cycle.clearedTasks.entries = [];
                 // Note: totalCleared is NOT reset - it's a lifetime counter
@@ -234,12 +235,12 @@ export class ClearedTasksManager {
      */
     removeEntry(entryId, cycleId = null) {
         const state = this.deps.AppState.get();
-        const id = cycleId || state?.appState?.activeCycleId;
+        const id = cycleId || getActiveRoutineId(state);
 
         if (!id || !entryId) return;
 
         this.deps.AppState.update(s => {
-            const cycle = s.data.cycles[id];
+            const cycle = getRoutine(s, id);
             if (cycle?.clearedTasks?.entries) {
                 cycle.clearedTasks.entries = cycle.clearedTasks.entries.filter(e => e.id !== entryId);
             }
