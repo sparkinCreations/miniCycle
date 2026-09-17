@@ -517,6 +517,14 @@ decided:
    `cycleImportManager.tests.js`, mutation-verified. So once the exporter writes 2.6, every web
    build from this one on reads it; the dual-write window only has to cover platform builds
    older than this.
+   *Version gates (Sep 2026):* every restore / import / sanitize gate outside the shape owners
+   now asks `isSupportedStoredVersion()` (`utils/schemaVersion.js`) — true from
+   `SCHEMA.OLDEST_MIGRATABLE` (`'2.5'`, which stays put) up to `SCHEMA.CURRENT` — instead of
+   `=== '2.5'`, and the backup-metadata fallbacks write `SCHEMA.CURRENT`. So the bump moves ONE
+   constant and no gate; a 2.5 backup restored into a 2.6 build is accepted and left to the boot
+   migration. Still literal on purpose, because they write the 2.5 SHAPE and the wiring must
+   rewrite them: `appState.validateSchema25Structure` / `createMinimalFallbackState` /
+   `_ensureMetadata`, and `migrationManager.createInitialSchema25Data`.
 5. **`mcycPayload` / `cycleExportManager` write the 2.6 fields and, during a transition window,
    the 2.5 fields too — decided Sep 2026.** The published promise only says unknown keys must
    not error, so an older app reading a new file falls back to defaults and silently loses the

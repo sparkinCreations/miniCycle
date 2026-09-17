@@ -14,6 +14,7 @@ import {
     safeShowConfirmationModal,
     escapeHtml
 } from './testing-modal-core.js';
+import { isSupportedStoredVersion } from '../utils/schemaVersion.js';
 import { DOM_SELECTORS, DOM_CLASSES, STORAGE_KEYS, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 // Pure, DI-free — shared with the production file-restore path so the testing
@@ -442,9 +443,9 @@ export async function restoreFromBackup() {
                             throw new Error('Failed to load backup from IndexedDB');
                         }
 
-                        const isPortableSchema25 = (restoredData.schemaVersion === '2.5' || restoredData.schemaVersion === 2.5) &&
+                        const isPortableSchema25 = isSupportedStoredVersion(restoredData) &&
                             typeof restoredData.miniCycleData === 'string';
-                        const isSchema25 = restoredData.schemaVersion === '2.5' || restoredData.schemaVersion === 2.5;
+                        const isSchema25 = isSupportedStoredVersion(restoredData);
 
                         if (isPortableSchema25) {
                             // Same structural gate as the production file-restore
@@ -476,7 +477,7 @@ export async function restoreFromBackup() {
                             throw new Error('Failed to parse backup data');
                         }
 
-                        const isSchema25 = parsed.schemaVersion === '2.5' || parsed.schemaVersion === 2.5;
+                        const isSchema25 = isSupportedStoredVersion(parsed);
 
                         if (isSchema25) {
                             localStorage.setItem(STORAGE_KEYS.DATA, JSON.stringify(parsed));

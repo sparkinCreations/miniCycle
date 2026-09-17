@@ -13,7 +13,7 @@ import {
     safeAddEventListenerById,
     safeShowConfirmationModal
 } from './testing-modal-core.js';
-import { STORAGE_KEYS, UI_TIMEOUTS, DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS } from '../core/constants.js';
+import { STORAGE_KEYS, UI_TIMEOUTS, DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS, SCHEMA } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 // Local-midnight parse: date-only dueDates read as UTC midnight counted an
 // extra task as overdue in negative UTC offsets.
@@ -151,7 +151,7 @@ export function runFullAnalysis() {
     // SUMMARY
     appendToTestResults("=".repeat(50) + "\n");
     appendToTestResults("ANALYSIS COMPLETE\n");
-    appendToTestResults(`Schema Version: ${metadata.schemaVersion || '2.5'}\n`);
+    appendToTestResults(`Schema Version: ${metadata.schemaVersion || SCHEMA.CURRENT}\n`);
     appendToTestResults("=".repeat(50) + "\n\n");
 
     const status = issues.length === 0 ? "success" : "warning";

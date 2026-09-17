@@ -16,7 +16,7 @@
  * @module deviceDetection
  */
 
-import { STORAGE_KEYS, UI_TIMEOUTS } from '../core/constants.js';
+import { STORAGE_KEYS, UI_TIMEOUTS, SCHEMA } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { isNativeApp } from '../platform/capacitorBridge.js';
 import { goToLiteVersion } from './liteVersion.js';
@@ -256,7 +256,7 @@ export class DeviceDetectionManager {
       storedDecision: storedDecision,
       currentUrl: window.location.href,
       timestamp: new Date().toISOString(),
-      schema: '2.5',
+      schema: SCHEMA.CURRENT,
       detectionData: detectionData
     };
     

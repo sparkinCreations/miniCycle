@@ -63,6 +63,26 @@ export function compareSchemaVersions(a, b) {
  * @param {string} [current=SCHEMA.CURRENT] - The version this build writes
  * @returns {'current'|'older'|'newer'|'unknown'}
  */
+/**
+ * Can this build accept the document at all — restore it, import it, sanitize
+ * it? True for the current version and for anything back to
+ * SCHEMA.OLDEST_MIGRATABLE; false for newer, for anything older than the
+ * migrations reach, and for a missing or unparseable version. This is the ONE
+ * predicate the restore gates share, so a version bump changes two constants
+ * and no gate.
+ *
+ * @param {Object|null|undefined} doc - Parsed stored document (or backup envelope)
+ * @param {{current?: string, oldest?: string}} [range] - defaults to SCHEMA
+ * @returns {boolean}
+ */
+export function isSupportedStoredVersion(doc, { current = SCHEMA.CURRENT, oldest = SCHEMA.OLDEST_MIGRATABLE } = {}) {
+    const stored = doc?.schemaVersion ?? doc?.metadata?.schemaVersion;
+    const vsCurrent = compareSchemaVersions(stored, current);
+    const vsOldest = compareSchemaVersions(stored, oldest);
+    if (vsCurrent === null || vsOldest === null) return false;
+    return vsCurrent <= 0 && vsOldest >= 0;
+}
+
 export function classifyStoredVersion(doc, current = SCHEMA.CURRENT) {
     const stored = doc?.schemaVersion ?? doc?.metadata?.schemaVersion;
     const cmp = compareSchemaVersions(stored, current);

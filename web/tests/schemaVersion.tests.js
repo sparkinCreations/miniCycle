@@ -8,7 +8,7 @@ import { createProtectedTest } from './testHelpers.js';
 export async function runSchemaVersionTests(resultsDiv) {
     const cacheBuster = window.testCacheBuster || Date.now();
     const mod = await import(`../modules/utils/schemaVersion.js?v=${cacheBuster}`);
-    const { parseSchemaVersion, compareSchemaVersions, classifyStoredVersion } = mod;
+    const { parseSchemaVersion, compareSchemaVersions, classifyStoredVersion, isSupportedStoredVersion } = mod;
     const { SCHEMA } = await import(`../modules/core/constants.js?v=${cacheBuster}`);
 
     resultsDiv.innerHTML = '<h2>SchemaVersion Tests</h2><h3>Running tests...</h3>';
@@ -70,6 +70,33 @@ export async function runSchemaVersionTests(resultsDiv) {
     await test('accepts an explicit current version, so a future build can classify against itself', () => {
         if (classifyStoredVersion({ schemaVersion: '2.5' }, '2.6') !== 'older') throw new Error('2.5 is older than 2.6');
         if (classifyStoredVersion({ schemaVersion: '2.6' }, '2.6') !== 'current') throw new Error('2.6 is current for 2.6');
+    });
+
+    resultsDiv.innerHTML += '<h4 class="test-section">✅ isSupportedStoredVersion</h4>';
+
+    await test('accepts the current version (string, number, patch) and reads metadata as a fallback', () => {
+        if (!isSupportedStoredVersion({ schemaVersion: SCHEMA.CURRENT })) throw new Error('current string');
+        if (!isSupportedStoredVersion({ schemaVersion: Number(SCHEMA.CURRENT) })) throw new Error('current number');
+        if (!isSupportedStoredVersion({ schemaVersion: `${SCHEMA.CURRENT}.1` })) throw new Error('patch of current');
+        if (!isSupportedStoredVersion({ metadata: { schemaVersion: SCHEMA.CURRENT } })) throw new Error('metadata fallback');
+    });
+
+    await test('rejects newer, pre-migratable, missing and unparseable versions', () => {
+        if (isSupportedStoredVersion({ schemaVersion: '2.6' }, { current: '2.5', oldest: '2.5' })) throw new Error('newer accepted');
+        if (isSupportedStoredVersion({ schemaVersion: '2.4' })) throw new Error('older than OLDEST_MIGRATABLE accepted');
+        if (isSupportedStoredVersion({ schemaVersion: '1.0' })) throw new Error('1.0 accepted');
+        if (isSupportedStoredVersion({})) throw new Error('missing accepted');
+        if (isSupportedStoredVersion({ schemaVersion: 'latest' })) throw new Error('garbage accepted');
+        if (isSupportedStoredVersion(null)) throw new Error('null accepted');
+    });
+
+    await test('spans the migratable range once CURRENT moves: 2.5 and 2.6 pass for a 2.6 build, 2.4 and 2.7 do not', () => {
+        const range = { current: '2.6', oldest: '2.5' };
+        if (!isSupportedStoredVersion({ schemaVersion: '2.5' }, range)) throw new Error('2.5 should be migratable');
+        if (!isSupportedStoredVersion({ schemaVersion: '2.6' }, range)) throw new Error('2.6 should be current');
+        if (isSupportedStoredVersion({ schemaVersion: '2.4' }, range)) throw new Error('2.4 accepted');
+        if (isSupportedStoredVersion({ schemaVersion: '2.7' }, range)) throw new Error('2.7 accepted');
+        if (SCHEMA.OLDEST_MIGRATABLE !== '2.5') throw new Error(`OLDEST_MIGRATABLE moved: ${SCHEMA.OLDEST_MIGRATABLE}`);
     });
 
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed</h3>`;

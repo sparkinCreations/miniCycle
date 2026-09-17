@@ -9,7 +9,8 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { UI_TIMEOUTS, DOM_IDS, DOM_CLASSES, STORAGE_KEYS } from '../core/constants.js';
+import { isSupportedStoredVersion } from '../utils/schemaVersion.js';
+import { UI_TIMEOUTS, DOM_IDS, DOM_CLASSES, STORAGE_KEYS, SCHEMA } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 // Pure, DI-free module (same known-acceptable dual-instance pattern as
 // appState's static import of it) — shared payload validation with the
@@ -354,12 +355,12 @@ function rescuePayloadToBackupData(payload) {
     }
 
     const converted = {
-        schemaVersion: '2.5',
+        schemaVersion: SCHEMA.CURRENT,
         miniCycleData: payload.keys[STORAGE_KEYS.DATA],
         backupMetadata: {
             createdAt: payload.exportedAt,
             version: payload.appVersion,
-            schemaVersion: '2.5',
+            schemaVersion: SCHEMA.CURRENT,
             source: 'miniCycle rescue screen'
         }
     };
@@ -499,12 +500,12 @@ export function downloadBackupFile(options = {}) {
         const currentState = AppState.get();
         const liteStorage = collectLiteStorageSnapshot();
         const backupData = {
-            schemaVersion: '2.5',
+            schemaVersion: SCHEMA.CURRENT,
             miniCycleData,
             backupMetadata: {
                 createdAt: Date.now(),
                 version: _deps.AppMeta?.version || currentState?.metadata?.version || '2.5',
-                schemaVersion: currentState?.metadata?.schemaVersion || '2.5',
+                schemaVersion: currentState?.metadata?.schemaVersion || SCHEMA.CURRENT,
                 includesLiteStorage: Boolean(liteStorage),
                 source: 'miniCycle App'
             }
@@ -792,7 +793,7 @@ async function processRestoreData(fileContent) {
                 neutralizeAppState();
 
                 // Handle Schema 2.5 backup
-                if (backupData.schemaVersion === "2.5" && backupData.miniCycleData) {
+                if (isSupportedStoredVersion(backupData) && backupData.miniCycleData) {
 
                     // Structural validation (shared with the testing modal's IDB
                     // restore) — includes the `metadata` check the earlier inline

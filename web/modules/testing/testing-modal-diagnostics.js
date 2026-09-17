@@ -93,7 +93,7 @@ export function runHealthCheck() {
         appendToTestResults(`Found ${cycleCount} routines\n`);
         appendToTestResults(`Total Tasks: ${totalTasks}\n`);
         appendToTestResults(`Storage Status: OK\n`);
-        appendToTestResults(`Schema Version: ${metadata?.schemaVersion || '2.5'}\n\n`);
+        appendToTestResults(`Schema Version: ${metadata?.schemaVersion || SCHEMA.CURRENT}\n\n`);
 
         showNotification(getLabel('notify.diagHealthCheckDone'), "success", UI_TIMEOUTS.NOTIFICATION_LONG);
     }, 1500);

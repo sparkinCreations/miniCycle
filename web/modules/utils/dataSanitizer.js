@@ -14,6 +14,7 @@
  */
 
 import { createDIModule, required } from '../core/diBase.js';
+import { isSupportedStoredVersion } from '../utils/schemaVersion.js';
 import { getRoutines } from '../utils/cycleMode.js';
 
 // ============================================================================
@@ -261,7 +262,7 @@ function sanitizeLiteStorage(backupData) {
 export function sanitizeImportedData(backupData) {
 
     // Sanitize Schema 2.5 format
-    if (backupData.schemaVersion === '2.5' && backupData.miniCycleData) {
+    if (isSupportedStoredVersion(backupData) && backupData.miniCycleData) {
         try {
             const data = JSON.parse(backupData.miniCycleData);
             sanitizeSchema25State(data);

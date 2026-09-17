@@ -10,7 +10,8 @@
  * @module utils/debugMode
  */
 
-import { STORAGE_KEYS, APP_VERSION } from '../core/constants.js';
+import { STORAGE_KEYS, APP_VERSION, SCHEMA } from '../core/constants.js';
+import { classifyStoredVersion } from './schemaVersion.js';
 import { getActiveRoutineId, getRoutines } from '../utils/cycleMode.js';
 
 // Store original console methods
@@ -268,8 +269,8 @@ function dumpDiagnosticSnapshot() {
             issues.push(`Storage over 75% (${pctUsed.toFixed(1)}%)`);
         }
     }
-    if (state.schemaVersion !== '2.5') {
-        issues.push(`Schema version: ${state.schemaVersion} (expected 2.5)`);
+    if (classifyStoredVersion(state) !== 'current') {
+        issues.push(`Schema version: ${state.schemaVersion} (expected ${SCHEMA.CURRENT})`);
     }
 
     if (issues.length > 0) {

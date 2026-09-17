@@ -14,6 +14,7 @@
  */
 
 import { STORAGE_KEYS, LIMITS } from '../core/constants.js';
+import { isSupportedStoredVersion } from './schemaVersion.js';
 
 const CORRUPT_BACKUP_PREFIX = `${STORAGE_KEYS.DATA}_corrupted_`;
 
@@ -209,7 +210,7 @@ export function validateSchema25PayloadString(payloadString) {
     try {
         const parsed = JSON.parse(payloadString);
         return !!(parsed &&
-            parsed.schemaVersion === "2.5" &&
+            isSupportedStoredVersion(parsed) &&
             parsed.metadata && typeof parsed.metadata === 'object' &&
             parsed.data && typeof parsed.data.cycles === 'object' &&
             parsed.appState && typeof parsed.appState === 'object');

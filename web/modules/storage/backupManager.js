@@ -14,7 +14,7 @@
  */
 
 import { createDIModule, required } from '../core/diBase.js';
-import { STORAGE_KEYS, INTERVALS, APP_VERSION } from '../core/constants.js';
+import { STORAGE_KEYS, INTERVALS, APP_VERSION, SCHEMA } from '../core/constants.js';
 import { getRoutines } from '../utils/cycleMode.js';
 
 // ============================================================================
@@ -99,12 +99,12 @@ function buildPortableBackupPayload(backup) {
     }
 
     const payload = {
-        schemaVersion: backup.data.metadata?.schemaVersion || backup.metadata?.schemaVersion || '2.5',
+        schemaVersion: backup.data.metadata?.schemaVersion || backup.metadata?.schemaVersion || SCHEMA.CURRENT,
         miniCycleData: JSON.stringify(backup.data),
         backupMetadata: {
             createdAt: backup.timestamp,
             version: backup.metadata?.version || backup.data.metadata?.version || '2.5',
-            schemaVersion: backup.metadata?.schemaVersion || backup.data.metadata?.schemaVersion || '2.5',
+            schemaVersion: backup.metadata?.schemaVersion || backup.data.metadata?.schemaVersion || SCHEMA.CURRENT,
             includesLiteStorage: Boolean(backup.liteStorage),
             source: 'miniCycle BackupManager'
         }
@@ -135,7 +135,7 @@ class BackupManager {
                 // `appVersion` is the field the backup schema docs describe.
                 version: currentState.metadata?.version || APP_VERSION,
                 appVersion: APP_VERSION,
-                schemaVersion: currentState.metadata?.schemaVersion || '2.5',
+                schemaVersion: currentState.metadata?.schemaVersion || SCHEMA.CURRENT,
                 size: calculateBackupSize(currentState, liteStorage),
                 type,
                 created: new Date(timestamp).toISOString(),
