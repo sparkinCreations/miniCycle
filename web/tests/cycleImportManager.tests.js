@@ -292,6 +292,93 @@ export async function runCycleImportManagerTests(resultsDiv) {
         }
     });
 
+    // ── 2.6 file fields (read ahead of the format bump; SCHEMA_2_6_PLAN.md ".mcyc") ──
+    // One test per alias, so a future cleanup that drops one fails loudly.
+    resultsDiv.innerHTML += '<h4 class="test-section">🔜 2.6 file aliases</h4>';
+    const { DEFAULT_PRIORITY_SWATCHES } = await import(`../modules/core/constants.js?v=${cacheBuster}`);
+    const defaultSwatch = (level) => DEFAULT_PRIORITY_SWATCHES.find(s => s.level === level).hex;
+
+    await test('a task\'s `autoClear` map imports as its per-mode clear settings, and wins over the 2.5 map', async () => {
+        const { state } = await runImport({
+            name: 'autoClear alias',
+            tasks: [
+                { id: 't1', text: 'Only 2.6', autoClear: { cycle: true, todo: false } },
+                { id: 't2', text: 'Both', autoClear: { cycle: true, todo: false }, deleteWhenCompleteSettings: { cycle: false, todo: true } }
+            ]
+        });
+        const [t1, t2] = importedCycle(state).tasks;
+        if (t1.deleteWhenCompleteSettings.cycle !== true || t1.deleteWhenCompleteSettings.todo !== false) {
+            throw new Error(`autoClear not read: ${JSON.stringify(t1.deleteWhenCompleteSettings)}`);
+        }
+        if (t2.deleteWhenCompleteSettings.cycle !== true || t2.deleteWhenCompleteSettings.todo !== false) {
+            throw new Error(`2.6 map should win: ${JSON.stringify(t2.deleteWhenCompleteSettings)}`);
+        }
+        if ('autoClear' in t1) throw new Error('the 2.6 key must not be stored on 2.5 data');
+    });
+
+    await test('a task\'s `priority` level imports as the flag plus the level\'s default swatch, and wins over the 2.5 pair', async () => {
+        const { state } = await runImport({
+            name: 'priority alias',
+            tasks: [
+                { id: 't1', text: 'Medium', priority: 'medium' },
+                { id: 't2', text: 'Off wins', priority: null, highPriority: true, priorityColor: '#ff0000' },
+                { id: 't3', text: 'Unknown level falls to 2.5', priority: 'urgent', highPriority: true, priorityColor: '#00ff00' }
+            ]
+        });
+        const [t1, t2, t3] = importedCycle(state).tasks;
+        if (t1.highPriority !== true || t1.priorityColor !== defaultSwatch('medium')) {
+            throw new Error(`medium → ${t1.highPriority} ${t1.priorityColor}`);
+        }
+        if (t2.highPriority !== false || t2.priorityColor !== null) throw new Error(`priority:null should turn it off, got ${JSON.stringify(t2)}`);
+        if (t3.highPriority !== true || t3.priorityColor !== '#00ff00') throw new Error(`unknown level should fall back to the 2.5 pair, got ${t3.priorityColor}`);
+        if ('priority' in t1) throw new Error('the 2.6 key must not be stored on 2.5 data');
+    });
+
+    await test('an orphan recurring template\'s `priority` level imports into its 2.5 fields', async () => {
+        const { state } = await runImport({
+            name: 'orphan priority alias',
+            tasks: [],
+            recurringTemplates: {
+                'tpl-1': { id: 'tpl-1', text: 'Weekly', priority: 'low', recurringSettings: { frequency: 'weekly' } }
+            }
+        });
+        const tpl = Object.values(importedCycle(state).recurringTemplates || {})[0];
+        if (!tpl) throw new Error('orphan template was not imported');
+        if (tpl.highPriority !== true || tpl.priorityColor !== defaultSwatch('low')) {
+            throw new Error(`low → ${tpl.highPriority} ${tpl.priorityColor}`);
+        }
+    });
+
+    await test('a cleared entry\'s `priority` and `autoClear` import into its 2.5 fields', async () => {
+        const { state } = await runImport({
+            name: 'cleared entry aliases',
+            tasks: [],
+            clearedTasks: { entries: [
+                { taskText: 'Gone', clearedAt: 5, priority: 'high', autoClear: { cycle: false, todo: false } },
+                { taskText: 'Gone too', clearedAt: 6, priority: null, wasHighPriority: true, priorityColor: '#ff0000' }
+            ] }
+        });
+        const entries = importedCycle(state).clearedTasks?.entries || [];
+        if (entries.length !== 2) throw new Error(`expected 2 entries, got ${entries.length}`);
+        const [a, b] = entries;
+        if (a.wasHighPriority !== true || a.priorityColor !== defaultSwatch('high')) throw new Error(`high → ${a.wasHighPriority} ${a.priorityColor}`);
+        if (!a.deleteWhenCompleteSettings || a.deleteWhenCompleteSettings.cycle !== false || a.deleteWhenCompleteSettings.todo !== false) {
+            throw new Error(`autoClear not read: ${JSON.stringify(a.deleteWhenCompleteSettings)}`);
+        }
+        if (b.wasHighPriority !== false || b.priorityColor !== null) throw new Error(`priority:null should win over the 2.5 pair, got ${JSON.stringify(b)}`);
+    });
+
+    await test('a history event\'s `priority` level imports as the swatch colour the dot renders', async () => {
+        const { state } = await runImport({
+            name: 'history priority alias',
+            tasks: [],
+            history: { events: [{ type: 'task_priority_set', timestamp: 1, details: { taskName: 'x', priority: 'medium' } }] }
+        });
+        const ev = importedCycle(state).history?.events?.[0];
+        if (!ev) throw new Error('history event was not imported');
+        if (ev.details.priorityColor !== defaultSwatch('medium')) throw new Error(`got ${JSON.stringify(ev.details)}`);
+    });
+
     await test('an explicit per-mode map in the file is preserved, not overwritten by defaults', async () => {
         const { state } = await runImport({
             name: 'Explicit Delete Settings',

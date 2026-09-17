@@ -509,6 +509,14 @@ decided:
 4. **`cycleImportManager` accepts `deleteWhenCompleteSettings` permanently.** "Existing files
    keep importing" has no end date, so this is an alias, not a deprecation window. Add one
    import test per alias so a future cleanup that drops it fails loudly.
+   ✅ *The other direction landed first (Sep 2026):* the importer already reads the 2.6
+   spellings — `autoClear` on tasks and cleared entries, `priority` on tasks, orphan
+   templates, cleared entries and history details — and stores them in the 2.5 shape (a level
+   becomes the level's default swatch; the theme repaints it). When both spellings are present
+   the 2.6 one wins, including `priority: null` beside a 2.5 flag. One test per alias in
+   `cycleImportManager.tests.js`, mutation-verified. So once the exporter writes 2.6, every web
+   build from this one on reads it; the dual-write window only has to cover platform builds
+   older than this.
 5. **`mcycPayload` / `cycleExportManager` write the 2.6 fields and, during a transition window,
    the 2.5 fields too — decided Sep 2026.** The published promise only says unknown keys must
    not error, so an older app reading a new file falls back to defaults and silently loses the
