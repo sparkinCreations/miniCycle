@@ -32,6 +32,7 @@ import * as preview from './routineSwitcherPreview.js';
 import * as listTransforms from './routineSwitcherListTransforms.js';
 import { validateAndRepairCycleData } from './routineSwitcherRepair.js';
 import { RoutineSwitcherActions } from './routineSwitcherActions.js';
+import { getActiveRoutineId, getRoutine, getRoutines, setActiveRoutineId } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -182,7 +183,7 @@ export class RoutineSwitcher {
             this._filterMode = prefs.filterMode || 'all';
         }
 
-        const cycles = currentState.data?.cycles || {};
+        const cycles = getRoutines(currentState) || {};
         const switchModal = this.deps.getModal('routineSwitcher');
         const switchRow = this.deps.getElementById(DOM_IDS.SWITCH_ITEMS_ROW);
         const duplicateButton = this.deps.getElementById(DOM_IDS.SWITCH_DUPLICATE);
@@ -472,21 +473,23 @@ export class RoutineSwitcher {
 
         // ✅ Update through state system
         this.deps.AppState.update(state => {
-            const oldCycleId = state.appState.activeCycleId;
+            const oldCycleId = getActiveRoutineId(state);
 
             // ✅ Save lastModified to the OLD cycle before switching — captures
             // when the user last worked on that routine. (undoSizeBytes is no
             // longer written: drift-review C-09 removed its only reader, the
             // routine-size display; stale values in stored data are ignored.)
-            if (oldCycleId && state.data.cycles[oldCycleId]) {
-                state.data.cycles[oldCycleId].lastModified = state.metadata.lastModified || Date.now();
+            const oldRoutine = getRoutine(state, oldCycleId);
+            if (oldRoutine) {
+                oldRoutine.lastModified = state.metadata.lastModified || Date.now();
             }
 
-            state.appState.activeCycleId = cycleKey;
+            setActiveRoutineId(state, cycleKey);
 
             // Track last accessed time for "Recently Used" in routine switcher
-            if (state.data.cycles[cycleKey]) {
-                state.data.cycles[cycleKey].lastAccessedAt = Date.now();
+            const newRoutine = getRoutine(state, cycleKey);
+            if (newRoutine) {
+                newRoutine.lastAccessedAt = Date.now();
             }
         }, false); // deferred save - don't block UI
 
@@ -494,7 +497,7 @@ export class RoutineSwitcher {
         this._scheduleIdleSave();
 
         // ✅ Verify the change took effect
-        const newActiveId = this.deps.AppState.get()?.appState?.activeCycleId;
+        const newActiveId = getActiveRoutineId(this.deps.AppState.get());
 
         if (newActiveId !== cycleKey) {
             console.error('❌ State update failed! Expected:', cycleKey, 'Got:', newActiveId);
@@ -521,7 +524,7 @@ export class RoutineSwitcher {
         setTimeout(() => {
             // ✅ FIX: Verify cycle hasn't changed during delay (prevents stale load)
             const freshState = this.deps.AppState.get();
-            const currentActiveCycle = freshState?.appState?.activeCycleId;
+            const currentActiveCycle = getActiveRoutineId(freshState);
 
             if (currentActiveCycle !== expectedCycleKey) {
                 console.warn('⚠️ Cycle changed during switch delay, aborting stale load');
@@ -538,7 +541,7 @@ export class RoutineSwitcher {
             }
 
             // ✅ Get cycle name from state for confirmation (use fresh state)
-            const cycleName = freshState?.data?.cycles?.[currentActiveCycle]?.title || currentActiveCycle;
+            const cycleName = getRoutine(freshState, currentActiveCycle)?.title || currentActiveCycle;
             this.deps.showNotification('✅ ' + getLabel('notify.routineSwitched', { vars: { name: cycleName } }), "success", UI_TIMEOUTS.NOTIFICATION_SHORT);
         }, 100);
     }
@@ -828,7 +831,7 @@ export class RoutineSwitcher {
             return;
         }
 
-        const cycles = currentState.data?.cycles || {};
+        const cycles = getRoutines(currentState) || {};
         const miniCycleList = this.deps.getElementById(DOM_IDS.MINI_CYCLE_LIST);
         if (!miniCycleList) {
             console.error('❌ miniCycleList element not found');
@@ -866,7 +869,7 @@ export class RoutineSwitcher {
         const sortedCycles = this._sortCycles(filteredCycles);
 
         // Render recently used chips (3+ routines)
-        const activeCycleId = currentState.appState?.activeCycleId;
+        const activeCycleId = getActiveRoutineId(currentState);
         this._renderRecentlyUsed(sortedCycles, activeCycleId, miniCycleList, modalContent);
 
         // Render each list item

@@ -30,6 +30,7 @@ import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, INTERVALS } from '../
 import { getLabel } from '../labels/labelResolver.js';
 import { formatLocalDate } from '../recurring/recurringDateUtils.js';
 import { applyTaskStatusLabel } from './taskUtils.js';
+import { getActiveRoutineId, getRoutine, getRoutines } from '../utils/cycleMode.js';
 
 
 const APPSTATE_SUBSCRIBER_KEY = 'dailyResetManager';
@@ -186,13 +187,13 @@ export class DailyResetManager {
      */
     async checkAllRoutines() {
         const state = this.deps.AppState.get?.();
-        if (!state?.data?.cycles) return;
+        if (!getRoutines(state)) return;
 
         const now = new Date();
         const today = todayLocal(now);
         const fired = []; // [{ cycleId, name, hour, minute, isActive }]
 
-        for (const [cycleId, cycle] of Object.entries(state.data.cycles)) {
+        for (const [cycleId, cycle] of Object.entries(getRoutines(state))) {
             const s = readSettings(cycle);
             if (!s.enabled) continue;
             if (s.lastResetDate === today) continue;
@@ -202,7 +203,7 @@ export class DailyResetManager {
                 name: cycle?.title || cycleId,
                 hour: s.hour,
                 minute: s.minute,
-                isActive: cycleId === state.appState.activeCycleId
+                isActive: cycleId === getActiveRoutineId(state)
             });
         }
 
@@ -215,7 +216,7 @@ export class DailyResetManager {
         try {
             await this._commitSystemUpdate(s => {
                 for (const { cycleId, isActive } of fired) {
-                    const cycle = s.data.cycles[cycleId];
+                    const cycle = getRoutine(s, cycleId);
                     if (!cycle) continue;
                     if (Array.isArray(cycle.tasks)) {
                         cycle.tasks.forEach(t => { t.completed = false; });
@@ -253,7 +254,7 @@ export class DailyResetManager {
      */
     showPendingNotificationIfAny(cycleId) {
         const state = this.deps.AppState.get?.();
-        const cycle = state?.data?.cycles?.[cycleId];
+        const cycle = getRoutine(state, cycleId);
         const s = readSettings(cycle);
         if (!s.pendingNotification) return;
 
@@ -261,7 +262,7 @@ export class DailyResetManager {
 
         // Clear the flag atomically with showing the toast
         this._commitSystemUpdate(st => {
-            const c = st.data.cycles[cycleId];
+            const c = getRoutine(st, cycleId);
             if (c?.autoUncheckDaily) {
                 c.autoUncheckDaily.pendingNotification = false;
             }
@@ -283,7 +284,7 @@ export class DailyResetManager {
         let snapshot = null;
         let name = cycleId;
         this.deps.AppState.update(s => {
-            const c = s.data.cycles[cycleId];
+            const c = getRoutine(s, cycleId);
             if (!c) return;
             c.autoUncheckDaily = c.autoUncheckDaily || { hour: 0, minute: 0, lastResetDate: null, pendingNotification: false };
             c.autoUncheckDaily.enabled = !!enabled;
@@ -335,7 +336,7 @@ export class DailyResetManager {
         let name = cycleId;
 
         this.deps.AppState.update(s => {
-            const c = s.data.cycles[cycleId];
+            const c = getRoutine(s, cycleId);
             if (!c) return;
             c.autoUncheckDaily = c.autoUncheckDaily || { enabled: false, lastResetDate: null, pendingNotification: false };
             c.autoUncheckDaily.hour = h;
@@ -366,7 +367,7 @@ export class DailyResetManager {
      */
     openTimePickerModal(cycleId) {
         const state = this.deps.AppState.get?.();
-        const cycle = state?.data?.cycles?.[cycleId];
+        const cycle = getRoutine(state, cycleId);
         const s = readSettings(cycle);
         const name = cycle?.title || cycleId;
         // Defensive escape so a routine titled `<script>` can't break out of HTML
@@ -431,9 +432,9 @@ export class DailyResetManager {
 
     _syncForActiveCycle() {
         const state = this.deps.AppState.get?.();
-        const cycleId = state?.appState?.activeCycleId;
+        const cycleId = getActiveRoutineId(state);
         if (!cycleId) return;
-        const cycle = state.data.cycles?.[cycleId];
+        const cycle = getRoutine(state, cycleId);
         const s = readSettings(cycle);
 
         const toggle = this.deps.getElementById(DOM_IDS.AUTO_UNCHECK_DAILY_TOGGLE);
@@ -474,7 +475,7 @@ export class DailyResetManager {
 
         if (toggle) {
             this._toggleHandler = (e) => {
-                const cycleId = this.deps.AppState.get?.()?.appState?.activeCycleId;
+                const cycleId = getActiveRoutineId(this.deps.AppState.get?.());
                 if (!cycleId) return;
                 this.setEnabled(cycleId, e.target.checked);
             };
@@ -488,7 +489,7 @@ export class DailyResetManager {
                 // checkbox). Kept so the row stays click-safe if the markup shifts again.
                 e.preventDefault();
                 e.stopPropagation();
-                const cycleId = this.deps.AppState.get?.()?.appState?.activeCycleId;
+                const cycleId = getActiveRoutineId(this.deps.AppState.get?.());
                 if (!cycleId) return;
                 this.openTimePickerModal(cycleId);
             };
@@ -500,7 +501,7 @@ export class DailyResetManager {
         const banner = this.deps.getElementById(DOM_IDS.AUTO_UNCHECK_BANNER);
         if (!banner) return;
         this._bannerHandler = () => {
-            const cycleId = this.deps.AppState.get?.()?.appState?.activeCycleId;
+            const cycleId = getActiveRoutineId(this.deps.AppState.get?.());
             if (!cycleId) return;
             this.openTimePickerModal(cycleId);
         };
@@ -513,7 +514,7 @@ export class DailyResetManager {
      * @returns {boolean}
      */
     _anyRoutineEnabled() {
-        const cycles = this.deps.AppState.get?.()?.data?.cycles;
+        const cycles = getRoutines(this.deps.AppState.get?.());
         if (!cycles) return false;
         return Object.values(cycles).some(c => readSettings(c).enabled);
     }
@@ -569,8 +570,8 @@ export class DailyResetManager {
     _subscribeToAppState() {
         if (!this.deps.AppState.subscribe) return;
         this._onAppStateChange = (newState, oldState) => {
-            const newActive = newState?.appState?.activeCycleId;
-            const oldActive = oldState?.appState?.activeCycleId;
+            const newActive = getActiveRoutineId(newState);
+            const oldActive = getActiveRoutineId(oldState);
             if (newActive !== oldActive) {
                 this._syncForActiveCycle();
             }

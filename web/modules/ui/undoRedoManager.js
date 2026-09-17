@@ -35,6 +35,7 @@ import { LIMITS, DEBOUNCE, DOM_IDS, APP_VERSION, UI_TIMEOUTS } from '../core/con
 // Aug 2026. `describeChange` is re-exported from there for tests only; the
 // parent calls `computeTransactionDiff`, which is the entry point.
 import { computeTransactionDiff } from './undoTransactionDiff.js';
+import { getActiveRoutineId, getRoutine, getRoutines } from '../utils/cycleMode.js';
 
 // Re-exported because it was part of this module's public surface before the
 // split and the test suite imports it from here. Not a `provides` name.
@@ -523,11 +524,11 @@ export function setupStateBasedUndoRedo() {
       if (_deps.AppGlobalState.isSwitchingCycles) return;
 
       if (!_deps.AppGlobalState.isPerformingUndoRedo &&
-          oldState?.data?.cycles && newState?.data?.cycles) {
-        const activeCycle = newState.appState.activeCycleId;
-        if (activeCycle && oldState.data.cycles[activeCycle] && newState.data.cycles[activeCycle]) {
-          const oldCycle = oldState.data.cycles[activeCycle];
-          const newCycle = newState.data.cycles[activeCycle];
+          getRoutines(oldState) && getRoutines(newState)) {
+        const activeCycle = getActiveRoutineId(newState);
+        if (activeCycle && getRoutine(oldState, activeCycle) && getRoutine(newState, activeCycle)) {
+          const oldCycle = getRoutine(oldState, activeCycle);
+          const newCycle = getRoutine(newState, activeCycle);
 
           const tasksChanged = JSON.stringify(oldCycle.tasks) !== JSON.stringify(newCycle.tasks);
           const titleChanged = oldCycle.title !== newCycle.title;
@@ -593,13 +594,13 @@ export function captureStateSnapshot(state) {
     return;
   }
 
-  if (!state?.data?.cycles || !state?.appState?.activeCycleId) {
+  if (!getRoutines(state) || !getActiveRoutineId(state)) {
     console.warn('⚠️ Invalid state for snapshot');
     return;
   }
 
-  const activeCycle = state.appState.activeCycleId;
-  const currentCycle = state.data.cycles[activeCycle];
+  const activeCycle = getActiveRoutineId(state);
+  const currentCycle = getRoutine(state, activeCycle);
   if (!currentCycle) return;
 
   // Safety check: Ensure we're tracking the right cycle
@@ -761,9 +762,9 @@ function handleUndoRedoUIUpdate(diff, newState) {
  * @returns {Object|null} null when the state has no active routine
  */
 function snapshotOfState(state, { clone = true } = {}) {
-  const activeCycleId = state?.appState?.activeCycleId;
+  const activeCycleId = getActiveRoutineId(state);
   if (!activeCycleId) return null;
-  const cycle = state.data?.cycles?.[activeCycleId];
+  const cycle = getRoutine(state, activeCycleId);
   const copy = clone ? (value) => structuredClone(value) : (value) => value;
   return {
     activeCycleId,
@@ -833,7 +834,7 @@ export async function performStateBasedUndo() {
 
   try {
     const currentState = _deps.AppState.get();
-    const currentActive = currentState.appState.activeCycleId;
+    const currentActive = getActiveRoutineId(currentState);
     const currentSnapshot = snapshotOfState(currentState);
 
     let snap = null;
@@ -866,8 +867,9 @@ export async function performStateBasedUndo() {
     // Use non-immediate save for better UI latency (persistence via debounce)
     // NOTE: Undo NEVER switches cycles - each routine has isolated undo history
     await _deps.AppState.update(state => {
-      const cid = state.appState.activeCycleId;  // Always use current cycle
-      const cycle = state.data.cycles[cid] || (state.data.cycles[cid] = {});
+      const cid = getActiveRoutineId(state);  // Always use current cycle
+      const routines = getRoutines(state);
+      const cycle = routines[cid] || (routines[cid] = {});
       cycle.tasks = structuredClone(snap.tasks || []);
       cycle.recurringTemplates = structuredClone(snap.recurringTemplates || {});
       if (snap.title) cycle.title = snap.title;
@@ -1032,7 +1034,7 @@ export async function performStateBasedRedo() {
 
   try {
     const currentState = _deps.AppState.get();
-    const currentActive = currentState.appState.activeCycleId;
+    const currentActive = getActiveRoutineId(currentState);
     const currentSnapshot = snapshotOfState(currentState);
 
     let snap = null;
@@ -1065,8 +1067,9 @@ export async function performStateBasedRedo() {
     // Use non-immediate save for better UI latency (persistence via debounce)
     // NOTE: Redo NEVER switches cycles - each routine has isolated undo history
     await _deps.AppState.update(state => {
-      const cid = state.appState.activeCycleId;  // Always use current cycle
-      const cycle = state.data.cycles[cid] || (state.data.cycles[cid] = {});
+      const cid = getActiveRoutineId(state);  // Always use current cycle
+      const routines = getRoutines(state);
+      const cycle = routines[cid] || (routines[cid] = {});
       cycle.tasks = structuredClone(snap.tasks || []);
       cycle.recurringTemplates = structuredClone(snap.recurringTemplates || {});
       if (snap.title) cycle.title = snap.title;
@@ -1426,7 +1429,7 @@ export async function initUndoSystemForApp() {
 
     // 2. Get current active cycle
     const currentState = _deps.AppState.get();
-    const activeCycleId = currentState?.appState?.activeCycleId;
+    const activeCycleId = getActiveRoutineId(currentState);
 
     if (!activeCycleId) {
       // Normal for first-time users — onboarding hasn't completed yet

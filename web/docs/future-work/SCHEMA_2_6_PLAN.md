@@ -674,7 +674,13 @@ risky stored-format change small and last.
    built and tested but unwired — see Migration seam. Measured surface for the reader sweep, Sep
    2026: Rename B 1,330 references in 74 modules, priority 469 in 36, Rename A 447 in 29. The
    sweep moves readers onto the `cycleMode.js` / `priorityLevel.js` helpers first (behaviour-neutral
-   on 2.5), then the helpers' internals flip in the same release as the wiring.* A single 2.5 → 2.6 migration carries:
+   on 2.5), then the helpers' internals flip in the same release as the wiring.
+   *Sweep progress — measure with stored-shape READS, not the grep above (which also counts local
+   variable names and so barely moves): `grep -rhoE '\.appState\??\.activeCycleId\b|\.data\??\.cycles\b' modules`.
+   Batch 1 (Sep 2026): `undoRedoManager`, `modeManager`, `routineSwitcher`, `dailyResetManager` →
+   389 → 322 reads remaining. Undo SNAPSHOT fields keep the name `activeCycleId` on purpose — that
+   is the snapshot's own shape, cleared at the version bump, not the stored document.*
+   A single 2.5 → 2.6 migration carries:
    - the **UUID re-key** — `STATE_TRUTH_MIGRATION.md` #20: stable UUID map keys, `title` as the
      name. Today routines are keyed by name, which is also a CLAUDE.md #18 prototype-pollution
      hazard
