@@ -17,6 +17,7 @@ import { isClickOnNotification } from '../ui/modalUtils.js';
 // them as UTC midnight, showing the previous day in negative UTC offsets.
 import { parseDateAsLocal } from '../recurring/recurringDateUtils.js';
 import { autoClearFields, getActiveRoutineId, getAutoClearSettings, getRoutine } from '../utils/cycleMode.js';
+import { hasPriority, priorityFields } from '../utils/priorityLevel.js';
 
 // ============================================================================
 // CONSTANTS
@@ -71,10 +72,10 @@ export class ClearedTasksManager {
             id: `clr-${Date.now()}-${this._idCounter++}-${Math.random().toString(36).substr(2, 5)}`,
             taskText: task.text,
             clearedAt: Date.now(),
-            wasHighPriority: task.highPriority || false,
+            wasHighPriority: hasPriority(task),
             hadDueDate: !!task.dueDate,
             dueDate: task.dueDate || null,
-            priorityColor: task.priorityColor || null,
+            priorityColor: priorityFields(task).priorityColor,
             remindersEnabled: task.remindersEnabled || false,
             ...autoClearFields({
                 settings: getAutoClearSettings(task) ? structuredClone(getAutoClearSettings(task)) : null,

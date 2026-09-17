@@ -16,6 +16,7 @@ import {
 import { getLabel } from '../labels/labelResolver.js';
 import { buildRecurringTemplate } from './recurringTemplate.js';
 import { autoClearFields, getActiveRoutineId, getAutoClear, getRoutine, setAutoClearSettings } from '../utils/cycleMode.js';
+import { priorityFields } from '../utils/priorityLevel.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -99,8 +100,7 @@ export function activateTaskRecurringState(cycle, taskId, normalizedSettings, ca
         text: task?.text || cycle.recurringTemplates[taskId]?.text || getLabel('noun.untitledTask'),
         position: taskIndex >= 0 ? taskIndex : cycle.recurringTemplates[taskId]?.position ?? null,
         recurringSettings: structuredClone(normalizedSettings),
-        highPriority: task?.highPriority || false,
-        priorityColor: task?.priorityColor || null,
+        ...priorityFields(task),
         dueDate: task?.dueDate || null,
         remindersEnabled: task?.remindersEnabled || false,
         nextScheduledOccurrence: calculateNextOccurrenceFn(normalizedSettings, Date.now())

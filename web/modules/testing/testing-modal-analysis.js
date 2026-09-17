@@ -19,6 +19,7 @@ import { getLabel } from '../labels/labelResolver.js';
 // extra task as overdue in negative UTC offsets.
 import { parseDateAsLocal } from '../recurring/recurringDateUtils.js';
 import { getAutoClear, getAutoClearSettings, getRoutines, setAutoClearSettings } from '../utils/cycleMode.js';
+import { hasPriority } from '../utils/priorityLevel.js';
 
 // ==========================================
 // BUTTON SETUP
@@ -104,7 +105,7 @@ export function runFullAnalysis() {
 
     Object.values(cycles).forEach(cycle => {
         cycle.tasks?.forEach(task => {
-            if (task.highPriority) highPriorityTasks++;
+            if (hasPriority(task)) highPriorityTasks++;
             if (task.dueDate) {
                 tasksWithDueDates++;
                 if ((parseDateAsLocal(task.dueDate) || new Date(task.dueDate)) < today) overdueTasks++;

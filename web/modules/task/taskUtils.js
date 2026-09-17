@@ -29,6 +29,7 @@ import { createDIModule, optional } from '../core/diBase.js';
 import { buildRecurringTemplate } from '../recurring/recurringTemplate.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { autoClearFields, getActiveRoutineId, getAutoClearMode, getAutoClearSettings, getRoutine, getRoutines } from '../utils/cycleMode.js';
+import { priorityFields } from '../utils/priorityLevel.js';
 import {
     DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS,
     DEFAULT_RECURRING_DELETE_SETTINGS,
@@ -82,8 +83,7 @@ export function taskToAddTaskOptions(task) {
         completed: task.completed || false,
         shouldSave: false,
         dueDate: task.dueDate || null,
-        highPriority: task.highPriority || false,
-        priorityColor: task.priorityColor || null,
+        ...priorityFields(task),
         isLoading: true,
         remindersEnabled: task.remindersEnabled || false,
         recurring: task.recurring || false,

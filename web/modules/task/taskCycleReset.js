@@ -54,6 +54,7 @@ import { applyTaskStatusLabel } from './taskUtils.js';
 import { TASK_TIMEOUTS, UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, MILESTONES, LIMITS, DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { autoClearFields, getActiveRoutine, getActiveRoutineId, getAutoClear, getAutoClearMode, getAutoClearSettings, getRoutine, getRoutines } from '../utils/cycleMode.js';
+import { priorityFields } from '../utils/priorityLevel.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -777,9 +778,8 @@ export async function resetTasksImpl(deps = {}) {
 function buildClearedRecord(task, routine) {
     return {
         text: task.text,
-        highPriority: task.highPriority || false,
+        ...priorityFields(task),
         dueDate: task.dueDate,
-        priorityColor: task.priorityColor || null,
         remindersEnabled: task.remindersEnabled || false,
         ...autoClearFields({
             settings: getAutoClearSettings(task),

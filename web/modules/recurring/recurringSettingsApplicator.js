@@ -13,6 +13,7 @@ import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, UI_TIMEOUTS, DEFAU
 import { getLabel } from '../labels/labelResolver.js';
 import { buildRecurringTemplate } from './recurringTemplate.js';
 import { getActiveRoutineId, getAutoClearForMode, getAutoClearMode, getAutoClearSettings, getRoutine, syncTaskAutoClear } from '../utils/cycleMode.js';
+import { hasPriority, priorityFields } from '../utils/priorityLevel.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -136,8 +137,8 @@ export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
                         id: taskId,
                         text: templateText,
                         dueDate: task?.dueDate || existingTemplate?.dueDate || null,
-                        highPriority: task?.highPriority || existingTemplate?.highPriority || false,
-                        priorityColor: task?.priorityColor || existingTemplate?.priorityColor || null,
+                        highPriority: hasPriority(task) || hasPriority(existingTemplate),
+                        priorityColor: priorityFields(task).priorityColor || priorityFields(existingTemplate).priorityColor,
                         remindersEnabled: task?.remindersEnabled || existingTemplate?.remindersEnabled || false,
                         deleteWhenComplete: getAutoClearForMode(task ?? existingTemplate, mode, DEFAULT_RECURRING_DELETE_SETTINGS),
                         deleteWhenCompleteSettings: getAutoClearSettings(task)

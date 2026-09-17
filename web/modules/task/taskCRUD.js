@@ -45,6 +45,7 @@ import { LIMITS, UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION, 
 import { getLabel } from '../labels/labelResolver.js';
 import { announce } from '../utils/announce.js';
 import { getActiveRoutineId, getAutoClear, getAutoClearSettings, getRoutine } from '../utils/cycleMode.js';
+import { hasPriority } from '../utils/priorityLevel.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -816,7 +817,7 @@ export async function toggleTaskPriorityImpl(taskItem, deps = {}) {
         }
 
         // Toggle based on AppState, not DOM
-        const isCurrentlyHighPriority = task.highPriority === true;
+        const isCurrentlyHighPriority = hasPriority(task);
         const newHighPriority = !isCurrentlyHighPriority;
 
         // Capture snapshot BEFORE changing priority
@@ -834,16 +835,16 @@ export async function toggleTaskPriorityImpl(taskItem, deps = {}) {
         }
 
         // Priority is a LEVEL (utils/priorityLevel.js). Turning it on keeps the
-        // level the task last had, else the level of the last colour picked
-        // anywhere (settings.priorityColor), else High — stored as the ACTIVE
-        // theme's swatch hex, which is also what the row shows. Resolved now so
-        // it is persisted even if the user dismisses the picker without choosing.
+        // level the task last had, else the default (the last level picked
+        // anywhere), else High — stored as the ACTIVE theme's swatch hex, which
+        // is also what the row shows. Resolved now so it is persisted even if
+        // the user dismisses the picker without choosing.
+        const themes = _deps.vocabThemeManager;
+        let newLevel = null;
         let resolvedColor = null;
         if (newHighPriority) {
-            const themes = _deps.vocabThemeManager;
-            const draft = { highPriority: true, priorityColor: task.priorityColor ?? currentState?.settings?.priorityColor };
-            themes.setTaskPriorityLevel(draft, themes.getTaskPriorityLevel(draft));
-            resolvedColor = draft.priorityColor;
+            newLevel = themes.getLastPriorityLevel(task) ?? themes.getDefaultPriorityLevel(currentState?.settings);
+            resolvedColor = themes.getPriorityLevelColor(newLevel);
         }
 
         // Apply or clear per-task priority color via CSS custom property
@@ -860,15 +861,11 @@ export async function toggleTaskPriorityImpl(taskItem, deps = {}) {
                 const cid = getActiveRoutineId(state);
                 const cycle = getRoutine(state, cid);
                 const t = cycle?.tasks?.find(t => t.id === taskId);
-                if (t) {
-                    t.highPriority = newHighPriority;
-                    // Always persist the resolved color so it survives reload
-                    if (resolvedColor) t.priorityColor = resolvedColor;
-                }
+                // Written as the active theme's swatch so it survives reload; null turns it off
+                if (t) themes.setTaskPriorityLevel(t, newLevel);
                 // Sync priority state to recurring template so recreated tasks keep the setting
                 if (cycle?.recurringTemplates?.[taskId]) {
-                    cycle.recurringTemplates[taskId].highPriority = newHighPriority;
-                    if (resolvedColor) cycle.recurringTemplates[taskId].priorityColor = resolvedColor;
+                    themes.setTaskPriorityLevel(cycle.recurringTemplates[taskId], newLevel);
                 }
             }, true);
 
@@ -879,18 +876,19 @@ export async function toggleTaskPriorityImpl(taskItem, deps = {}) {
                     // onColorSelect closes over AppState and taskId — reliable save path
                     const onColorSelect = async (color) => {
                         if (AppState.isReady()) {
+                            const pickedLevel = themes.getPriorityLevelForColor(color);
                             await AppState.update(state => {
                                 if (!state.settings) state.settings = {};
-                                // Update global default so future new tasks start with this color
-                                state.settings.priorityColor = color;
-                                // Save to the specific task so it remembers its own color
+                                // Remember the level as the default for the next flagged task
+                                themes.setDefaultPriorityLevel(state.settings, pickedLevel);
+                                // Save to the specific task so it remembers its own level
                                 const cid = getActiveRoutineId(state);
                                 const cycle = getRoutine(state, cid);
                                 const t = cycle?.tasks?.find(t => t.id === taskId);
-                                if (t) t.priorityColor = color;
-                                // Sync color to recurring template so recreated tasks keep the color
+                                if (t) themes.setTaskPriorityLevel(t, pickedLevel);
+                                // Sync to the recurring template so recreated tasks keep the level
                                 if (cycle?.recurringTemplates?.[taskId]) {
-                                    cycle.recurringTemplates[taskId].priorityColor = color;
+                                    themes.setTaskPriorityLevel(cycle.recurringTemplates[taskId], pickedLevel);
                                 }
                             }, true);
                             // Update DOM immediately so the color change is visible without refresh

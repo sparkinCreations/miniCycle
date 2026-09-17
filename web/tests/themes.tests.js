@@ -405,6 +405,20 @@ export async function runThemesTests(resultsDiv) {
         if (sorted[0] !== high || sorted[1] !== task || sorted[2] !== none) throw new Error('compareTaskPriority order wrong');
     });
 
+    await test('default and last-level accessors follow the active theme', () => {
+        const vtm = managerOnTheme('fitness');
+        const fitnessMedium = THEME_DEFINITIONS.fitness.priorityColors.find(s => s.level === 'medium').hex;
+        const habitMedium = THEME_DEFINITIONS['habit-tracker'].priorityColors.find(s => s.level === 'medium').hex;
+        if (vtm.getPriorityLevelColor('medium') !== fitnessMedium) throw new Error('getPriorityLevelColor should be the active theme\'s swatch');
+        if (vtm.getPriorityLevelForColor(habitMedium) !== 'medium') throw new Error('a colour picked under another theme still names its level');
+        if (vtm.getLastPriorityLevel({ highPriority: false, priorityColor: habitMedium }) !== 'medium') throw new Error('last level not remembered');
+        const settings = {};
+        if (vtm.getDefaultPriorityLevel(settings) !== 'high') throw new Error('no pick should default to high');
+        if (!vtm.setDefaultPriorityLevel(settings, 'low')) throw new Error('setDefaultPriorityLevel refused');
+        if (settings.priorityColor !== THEME_DEFINITIONS.fitness.priorityColors.find(s => s.level === 'low').hex) throw new Error(`stored ${settings.priorityColor}`);
+        if (vtm.getDefaultPriorityLevel(settings) !== 'low') throw new Error('default did not round-trip');
+    });
+
     // ============================================
     // 📊 RESULTS
     // ============================================

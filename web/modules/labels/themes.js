@@ -25,8 +25,17 @@ import { createDIModule, optional } from '../core/diBase.js';
 import { setLabelResolverDependencies } from './labelResolver.js';
 import { getActiveRoutineId, getRoutine, getRoutines } from '../utils/cycleMode.js';
 import {
-    getPrioritySwatches, collectSwatchSets, getPriorityLevel, getPriorityColor,
-    setPriorityLevel, comparePriority
+    getPrioritySwatches,
+    collectSwatchSets,
+    getPriorityLevel,
+    getPriorityColor,
+    setPriorityLevel,
+    comparePriority,
+    getLastPriorityLevel,
+    getLevelForColor,
+    getLevelColor,
+    getDefaultPriorityLevel,
+    setDefaultPriorityLevel
 } from '../utils/priorityLevel.js';
 
 // ============================================================================
@@ -777,6 +786,54 @@ export class VocabThemeManager {
      */
     compareTaskPriority(a, b) {
         return comparePriority(a, b, PRIORITY_SWATCH_SETS);
+    }
+
+    /**
+     * The level a task last had, flagged or not — what the toggle turns priority
+     * back on at. null when it has never had a colour.
+     * @param {Object|null|undefined} task
+     * @returns {'high'|'medium'|'low'|null}
+     */
+    getLastPriorityLevel(task) {
+        return getLastPriorityLevel(task, PRIORITY_SWATCH_SETS);
+    }
+
+    /**
+     * Which level a picked colour means (the picker hands back a hex).
+     * @param {*} hex
+     * @returns {'high'|'medium'|'low'}
+     */
+    getPriorityLevelForColor(hex) {
+        return getLevelForColor(hex, PRIORITY_SWATCH_SETS);
+    }
+
+    /**
+     * The active theme's colour for a level.
+     * @param {'high'|'medium'|'low'} level
+     * @returns {string|null} null for an unknown level
+     */
+    getPriorityLevelColor(level) {
+        return getLevelColor(level, this.getPrioritySwatches());
+    }
+
+    /**
+     * The level a newly flagged task starts at (the last pick, else High).
+     * @param {Object|null|undefined} settings - state.settings
+     * @returns {'high'|'medium'|'low'}
+     */
+    getDefaultPriorityLevel(settings) {
+        return getDefaultPriorityLevel(settings, PRIORITY_SWATCH_SETS);
+    }
+
+    /**
+     * Remember a level as the default for the next flagged task, as the active
+     * theme's swatch. Mutates `settings` — call inside an AppState.update() producer.
+     * @param {Object} settings - state.settings draft
+     * @param {'high'|'medium'|'low'} level
+     * @returns {boolean}
+     */
+    setDefaultPriorityLevel(settings, level) {
+        return setDefaultPriorityLevel(settings, level, this.getPrioritySwatches());
     }
 
     /**

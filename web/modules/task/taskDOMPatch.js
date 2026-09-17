@@ -23,6 +23,7 @@ import { ICONS } from '../utils/icons.js';
 import { parseDateAsLocal } from '../recurring/recurringDateUtils.js';
 import { applyTaskStatusLabel } from './taskUtils.js';
 import { getActiveRoutine, getAutoClear } from '../utils/cycleMode.js';
+import { hasPriority } from '../utils/priorityLevel.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -143,7 +144,7 @@ export class TaskDOMPatch {
      * @private
      */
     _patchHighPriority(taskElement, taskData) {
-        const isHighPriority = taskData.highPriority || false;
+        const isHighPriority = hasPriority(taskData);
         taskElement.classList.toggle(DOM_CLASSES.HIGH_PRIORITY, isHighPriority);
 
         this._applyPriorityColor(taskElement, taskData);

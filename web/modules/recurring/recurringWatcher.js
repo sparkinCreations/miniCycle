@@ -26,6 +26,7 @@ import { createDIModule, optional } from '../core/diBase.js';
 import { INTERVALS, DEFAULT_RECURRING_DELETE_SETTINGS, LIMITS, UI_TIMEOUTS } from '../core/constants.js';
 import { getIcon, getLabel } from '../labels/labelResolver.js';
 import { autoClearFields, getActiveRoutineId, getAutoClearSettings, getRoutine } from '../utils/cycleMode.js';
+import { priorityFields } from '../utils/priorityLevel.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -276,8 +277,7 @@ function buildRecurringInstance(template) {
         text: template.text,
         completed: false,
         dueDate: template.dueDate,
-        highPriority: template.highPriority,
-        priorityColor: template.priorityColor || null,
+        ...priorityFields(template),
         remindersEnabled: template.remindersEnabled,
         recurring: true,
         id: template.id,

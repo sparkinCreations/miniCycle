@@ -699,6 +699,18 @@ risky stored-format change small and last.
    fell to defaults; `recurringSettingsApplicator` derives the mirror from the map instead of
    forcing `true` when it was undefined; `deactivateTaskRecurringState` derives the mode from
    the draft routine and no longer takes `currentMode`.*
+   *Priority sweep — measure with stored-field READS of `highPriority` / `priorityColor` outside
+   the owners (`priorityLevel.js` and `labels/themes.js` join the list). Batch 1 (Sep 2026) added
+   the record helpers `hasPriority`, `priorityFields`, `getLastPriorityLevel`, `getLevelForColor`,
+   `getLevelColor`, `getDefaultPriorityLevel`, `setDefaultPriorityLevel` and their
+   `VocabThemeManager` accessors (`getLastPriorityLevel`, `getPriorityLevelForColor`,
+   `getPriorityLevelColor`, `getDefaultPriorityLevel`, `setDefaultPriorityLevel`): the toggle and
+   the picker in `taskCRUD` now write the LEVEL through the accessors (task, template and the
+   `settings` default alike), and the eight copy/flag sites spread `priorityFields()`: 66 → 43.
+   Left on purpose: the undo snapshot/diff (10), the `.mcyc` importer/exporter (10), the loader
+   and switcher REPAIR rules (6 — the "fill a colour when flagged" rule has no 2.6 meaning and is
+   replaced, not moved), and the cleared-entry / history-event RENDER and recreate sites (7),
+   which read the entries' own `wasHighPriority` / details shape that the migration rewrites.*
    A single 2.5 → 2.6 migration carries:
    - the **UUID re-key** — `STATE_TRUTH_MIGRATION.md` #20: stable UUID map keys, `title` as the
      name. Today routines are keyed by name, which is also a CLAUDE.md #18 prototype-pollution
