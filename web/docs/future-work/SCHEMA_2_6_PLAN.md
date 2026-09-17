@@ -680,7 +680,8 @@ risky stored-format change small and last.
    Batch 1 (Sep 2026): `undoRedoManager`, `modeManager`, `routineSwitcher`, `dailyResetManager` →
    389 → 322 reads remaining. Batch 2: `routineSwitcherActions`, `taskCRUD`, `recurringActivation`,
    `recurringPanel` → 266. Batch 3: `taskCycleReset`, `routineManager`, `clearedTasksManager`,
-   `taskOptionsCustomizer` → 217. Undo SNAPSHOT fields keep the name `activeCycleId` on purpose — that
+   `taskOptionsCustomizer` → 217. Batch 4: `taskButtons`, `historyManager`, `focusTaskPanel`,
+   `dragDropManager`, `recurringWatcher`, `cycleCompletion` → 166. Undo SNAPSHOT fields keep the name `activeCycleId` on purpose — that
    is the snapshot's own shape, cleared at the version bump, not the stored document.*
    A single 2.5 → 2.6 migration carries:
    - the **UUID re-key** — `STATE_TRUTH_MIGRATION.md` #20: stable UUID map keys, `title` as the

@@ -20,7 +20,7 @@ import { createDIModule, optional } from '../core/diBase.js';
 import { DOM_CLASSES, DOM_SELECTORS, UI_TIMEOUTS, DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { handleHorizontalArrowNav } from '../utils/keyboardNav.js';
-import { syncTaskDeleteWhenComplete, getDeleteSettingsMode } from '../utils/cycleMode.js';
+import { getActiveRoutine, getActiveRoutineId, getDeleteSettingsMode, getRoutine, syncTaskDeleteWhenComplete } from '../utils/cycleMode.js';
 import { createIconElement } from '../utils/icons.js';
 
 // SVG icons for task buttons (Font Awesome style)
@@ -147,7 +147,7 @@ export class TaskButtons {
             const customizer = this.deps.taskOptionsCustomizer;
             if (customizer) {
                 const state = this.deps.AppState?.get?.();
-                const activeCycleId = state?.appState?.activeCycleId;
+                const activeCycleId = getActiveRoutineId(state);
                 if (activeCycleId) {
                     customizer.showCustomizationModal(activeCycleId);
                 } else {
@@ -280,7 +280,7 @@ export class TaskButtons {
         let labelKey = ariaLabelKeys[btnClass];
         if (btnClass === 'delete-when-complete-btn') {
             const state = this.deps.AppState?.get?.();
-            const activeCycle = state?.data?.cycles?.[state?.appState?.activeCycleId];
+            const activeCycle = getActiveRoutine(state);
             const isToDoMode = activeCycle?.deleteCheckedTasks === true;
             labelKey = isToDoMode ? 'taskOption.markedForClearing' : 'taskOption.clearOnReset';
         }
@@ -402,8 +402,8 @@ export class TaskButtons {
             let currentMode;
 
             await this.deps.AppState.update(state => {
-                const activeCycleId = state.appState.activeCycleId;
-                const cycle = state.data.cycles[activeCycleId];
+                const activeCycleId = getActiveRoutineId(state);
+                const cycle = getRoutine(state, activeCycleId);
                 const task = cycle?.tasks?.find(t => t.id === assignedTaskId);
 
                 if (!task) return;
@@ -423,8 +423,8 @@ export class TaskButtons {
 
             // Re-read for DOM sync
             const state = this.deps.AppState.get();
-            const activeCycleId = state.appState.activeCycleId;
-            const task = state.data.cycles[activeCycleId]?.tasks?.find(t => t.id === assignedTaskId);
+            const activeCycleId = getActiveRoutineId(state);
+            const task = getRoutine(state, activeCycleId)?.tasks?.find(t => t.id === assignedTaskId);
 
             if (task) {
                 if (this.deps.GlobalUtils) {
@@ -485,8 +485,8 @@ export class TaskButtons {
         if (!this.deps.AppState?.isReady?.()) return;
 
         await this.deps.AppState.update(state => {
-            const cid = state.appState.activeCycleId;
-            const cycle = state.data.cycles[cid];
+            const cid = getActiveRoutineId(state);
+            const cycle = getRoutine(state, cid);
 
             if (cycle?.recurringTemplates?.[assignedTaskId]) {
                 delete cycle.recurringTemplates[assignedTaskId];
@@ -505,8 +505,8 @@ export class TaskButtons {
         }, true);
 
         const state = this.deps.AppState.get();
-        const cid = state.appState.activeCycleId;
-        const cycle = state.data.cycles[cid];
+        const cid = getActiveRoutineId(state);
+        const cycle = getRoutine(state, cid);
         const task = cycle?.tasks?.find(t => t.id === assignedTaskId);
         const isToDoMode = cycle?.deleteCheckedTasks === true;
         const currentMode = isToDoMode ? 'todo' : 'cycle';

@@ -51,7 +51,7 @@ import { createDIModule, required, optional } from '../core/diBase.js';
 import { UI_TIMEOUTS, DOM_IDS, DOM_CLASSES, APP_VERSION } from '../core/constants.js';
 import { getLabel, getIcon } from '../labels/labelResolver.js';
 import { announce } from '../utils/announce.js';
-import { getActiveRoutine, areAllTasksComplete } from '../utils/cycleMode.js';
+import { areAllTasksComplete, getActiveRoutine, getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -347,7 +347,7 @@ export function incrementCycleCount(miniCycleName, savedMiniCycles, completionSp
     // Update through state module and get the actual new count
     let actualNewCount;
     deps.AppState.update(state => {
-        const cycle = state.data.cycles[activeCycle];
+        const cycle = getRoutine(state, activeCycle);
         if (cycle) {
             cycle.cycleCount = (cycle.cycleCount || 0) + 1;
             actualNewCount = cycle.cycleCount;
@@ -577,8 +577,8 @@ export function checkMiniCycle(options = {}) {
 
     // Find the active routine in AppState
     const state = deps.AppState.get();
-    const activeCycleId = state?.appState?.activeCycleId;
-    const freshCycleData = activeCycleId ? state?.data?.cycles?.[activeCycleId] : null;
+    const activeCycleId = getActiveRoutineId(state);
+    const freshCycleData = activeCycleId ? getRoutine(state, activeCycleId) : null;
 
     if (!freshCycleData) {
         console.warn("⚠️ No active miniCycle found.");
@@ -613,7 +613,7 @@ export function checkMiniCycle(options = {}) {
                         if (confirmed) {
                             // Verify cycle hasn't changed during modal
                             const freshState = deps.AppState.get();
-                            const currentCycleId = freshState?.appState?.activeCycleId;
+                            const currentCycleId = getActiveRoutineId(freshState);
                             if (currentCycleId !== activeCycleId) {
                                 console.warn('⚠️ Cycle changed during modal, aborting reset');
                                 return;
@@ -628,7 +628,7 @@ export function checkMiniCycle(options = {}) {
                                 const taskId = lastToggledElement.dataset?.taskId;
                                 if (taskId) {
                                     deps.AppState.update(s => {
-                                        const cycle = s.data?.cycles?.[s.appState?.activeCycleId];
+                                        const cycle = getActiveRoutine(s);
                                         const task = cycle?.tasks?.find(t => t.id === taskId);
                                         if (task) task.completed = false;
                                     });
@@ -651,8 +651,8 @@ export function checkMiniCycle(options = {}) {
 
                 // Only validate if we can read fresh state (backwards compatible with tests)
                 if (freshState) {
-                    const currentCycleId = freshState?.appState?.activeCycleId;
-                    const currentCycleData = currentCycleId ? freshState?.data?.cycles?.[currentCycleId] : null;
+                    const currentCycleId = getActiveRoutineId(freshState);
+                    const currentCycleData = currentCycleId ? getRoutine(freshState, currentCycleId) : null;
 
                     if (currentCycleId !== expectedCycleId) {
                         console.warn('⚠️ Cycle changed during auto-reset delay, aborting stale reset');

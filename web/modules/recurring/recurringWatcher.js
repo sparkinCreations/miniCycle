@@ -25,6 +25,7 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { INTERVALS, DEFAULT_RECURRING_DELETE_SETTINGS, LIMITS, UI_TIMEOUTS } from '../core/constants.js';
 import { getIcon, getLabel } from '../labels/labelResolver.js';
+import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -352,7 +353,7 @@ async function recreateDueTasks(activeCycleId, templates, taskList, now, extraEl
         assertInjected('updateAppState', Deps.updateAppState);
 
         await commitSystemUpdate(draft => {
-            const cycle = draft.data.cycles[activeCycleId];
+            const cycle = getRoutine(draft, activeCycleId);
             // Put each instance back where its template says it sat (recorded when
             // the previous instance was removed, or at activation/import). Ascending
             // order so earlier inserts shift later targets correctly; a template with
@@ -435,14 +436,14 @@ export async function catchUpMissedRecurringTasks() {
         return { added: 0, updated: 0 };
     }
     const state = Deps.AppState.get();
-    const activeCycleId = state?.appState?.activeCycleId;
+    const activeCycleId = getActiveRoutineId(state);
 
     if (!activeCycleId) {
         console.warn('⚠️ No active cycle ID found for catch-up');
         return { added: 0, updated: 0 };
     }
 
-    const cycleData = state.data?.cycles?.[activeCycleId];
+    const cycleData = getRoutine(state, activeCycleId);
     if (!cycleData) {
         console.warn('⚠️ No active cycle found for catch-up');
         return { added: 0, updated: 0 };
@@ -502,14 +503,14 @@ export async function watchRecurringTasks() {
     assertInjected('AppState', Deps.AppState);
 
     const state = Deps.AppState?.get();
-    const activeCycleId = state?.appState?.activeCycleId;
+    const activeCycleId = getActiveRoutineId(state);
 
     if (!activeCycleId) {
         console.warn('⚠️ No active cycle ID found for recurring task watch');
         return;
     }
 
-    const cycleData = state.data?.cycles?.[activeCycleId];
+    const cycleData = getRoutine(state, activeCycleId);
     if (!cycleData) {
         console.warn('⚠️ No active cycle found for recurring task watch');
         return;
@@ -623,13 +624,13 @@ export async function setupRecurringWatcher() {
         return;
     }
 
-    const activeCycleId = state.appState?.activeCycleId;
+    const activeCycleId = getActiveRoutineId(state);
 
     if (!activeCycleId) {
         return;
     }
 
-    const cycleData = state.data?.cycles?.[activeCycleId];
+    const cycleData = getRoutine(state, activeCycleId);
     if (!cycleData) {
         return;
     }

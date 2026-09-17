@@ -16,6 +16,7 @@ import { isClickOnNotification } from '../ui/modalUtils.js';
 // them as UTC midnight, showing the previous day in negative UTC offsets.
 import { parseDateAsLocal } from '../recurring/recurringDateUtils.js';
 import { isValidHex } from '../utils/styleValidators.js';
+import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
 
 // ============================================================================
 // CONSTANTS
@@ -71,7 +72,7 @@ export class HistoryManager {
      */
     logEvent(type, details = {}) {
         const state = this.deps.AppState.get();
-        const activeCycleId = state?.appState?.activeCycleId;
+        const activeCycleId = getActiveRoutineId(state);
 
         if (!activeCycleId) {
             console.warn('HistoryManager: No active cycle to log event');
@@ -150,7 +151,7 @@ export class HistoryManager {
         };
 
         this.deps.AppState.update(s => {
-            const cycle = s.data.cycles[activeCycleId];
+            const cycle = getRoutine(s, activeCycleId);
             if (!cycle) return;
 
             // Initialize history if needed
@@ -176,11 +177,11 @@ export class HistoryManager {
      */
     getHistory(cycleId = null) {
         const state = this.deps.AppState.get();
-        const id = cycleId || state?.appState?.activeCycleId;
+        const id = cycleId || getActiveRoutineId(state);
 
         if (!id) return [];
 
-        const cycle = state.data.cycles[id];
+        const cycle = getRoutine(state, id);
         return cycle?.history?.events || [];
     }
 
@@ -191,12 +192,12 @@ export class HistoryManager {
      */
     clearHistory(cycleId = null) {
         const state = this.deps.AppState.get();
-        const id = cycleId || state?.appState?.activeCycleId;
+        const id = cycleId || getActiveRoutineId(state);
 
         if (!id) return;
 
         this.deps.AppState.update(s => {
-            const cycle = s.data.cycles[id];
+            const cycle = getRoutine(s, id);
             if (cycle?.history) {
                 cycle.history.events = [];
             }
@@ -217,7 +218,7 @@ export class HistoryManager {
      */
     _resetRoutineProgress() {
         const state = this.deps.AppState.get();
-        const cycleId = state?.appState?.activeCycleId;
+        const cycleId = getActiveRoutineId(state);
 
         if (!cycleId) return;
 
@@ -226,7 +227,7 @@ export class HistoryManager {
 
         const doReset = () => {
             this.deps.AppState.update(s => {
-                const cycle = s.data.cycles[cycleId];
+                const cycle = getRoutine(s, cycleId);
                 if (cycle) {
                     // Reset cycle count
                     cycle.cycleCount = 0;
@@ -667,8 +668,8 @@ export class HistoryManager {
 
         // Add recurring tasks note below entries
         const state = this.deps.AppState.get?.();
-        const activeCycleId = state?.appState?.activeCycleId;
-        const activeCycle = activeCycleId ? state?.data?.cycles?.[activeCycleId] : null;
+        const activeCycleId = getActiveRoutineId(state);
+        const activeCycle = activeCycleId ? getRoutine(state, activeCycleId) : null;
         const hasRecurring = Object.keys(activeCycle?.recurringTemplates || {}).length > 0;
         const recurringNote = `
             <div class="history-recurring-note">

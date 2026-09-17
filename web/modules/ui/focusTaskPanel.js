@@ -28,8 +28,7 @@ import { DOM_IDS, DOM_SELECTORS, DATA_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, GESTU
          DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { getTaskText } from '../task/taskUtils.js';
-import { getCycleMode, getAllDoneHintKey, getDeleteSettingsMode,
-         resolveDeleteWhenComplete, getTaskResetIndicator } from '../utils/cycleMode.js';
+import { getActiveRoutine, getActiveRoutineId, getAllDoneHintKey, getCycleMode, getDeleteSettingsMode, getRoutine, getTaskResetIndicator, resolveDeleteWhenComplete } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION
@@ -132,8 +131,8 @@ export class FocusTaskPanel {
 
     _getActiveCycle(state = null) {
         const s = state || this.deps.AppState.get?.();
-        const cycleId = s?.appState?.activeCycleId;
-        const cycle = cycleId ? s?.data?.cycles?.[cycleId] : null;
+        const cycleId = getActiveRoutineId(s);
+        const cycle = cycleId ? getRoutine(s, cycleId) : null;
         return { cycleId: cycleId ?? null, cycle: cycle ?? null };
     }
 
@@ -320,8 +319,8 @@ export class FocusTaskPanel {
     }
 
     _onStateChange(newState, oldState) {
-        const newActive = newState?.appState?.activeCycleId;
-        const oldActive = oldState?.appState?.activeCycleId;
+        const newActive = getActiveRoutineId(newState);
+        const oldActive = getActiveRoutineId(oldState);
 
         if (newActive !== oldActive) {
             // Routine switch: override + celebration are meaningless now
@@ -334,8 +333,8 @@ export class FocusTaskPanel {
         // Cycle reset detection: cycleCount bump on the active cycle (fires
         // for auto-cycle last-task completion AND the manual Complete Cycle
         // button — both land on task 1, per D5).
-        const newCount = newState?.data?.cycles?.[newActive]?.cycleCount ?? 0;
-        const oldCount = oldState?.data?.cycles?.[oldActive]?.cycleCount ?? 0;
+        const newCount = getRoutine(newState, newActive)?.cycleCount ?? 0;
+        const oldCount = getRoutine(oldState, oldActive)?.cycleCount ?? 0;
         if (newCount > oldCount) {
             this.clearOverride();
             if (this._isPanelVisible()) {
@@ -401,7 +400,7 @@ export class FocusTaskPanel {
         if (!el) return;
 
         const state = this.deps.AppState.get();
-        const cycle = state?.data?.cycles?.[state?.appState?.activeCycleId];
+        const cycle = getActiveRoutine(state);
         const mode = getDeleteSettingsMode(cycle);
 
         const indicator = getTaskResetIndicator({
