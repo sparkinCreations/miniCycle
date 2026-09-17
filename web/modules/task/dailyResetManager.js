@@ -14,7 +14,7 @@
  * tick (INTERVALS.DAILY_RESET_TICK) or visibility-change event fires the reset on open.
  *
  * Schema (per-cycle):
- *   state.data.cycles[cycleId].autoUncheckDaily = {
+ *   getRoutine(state, cycleId).autoUncheckDaily = {
  *       enabled: false,
  *       hour: 0,        // 0-23 (local time)
  *       minute: 0,      // 0-59

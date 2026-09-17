@@ -18,6 +18,7 @@ import { createDIModule, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_CLASSES, DOM_SELECTORS, UI_TIMEOUTS, EVENTS, Z_INDEX } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { getIcon } from '../utils/icons.js';
+import { getActiveRoutine, getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -488,7 +489,7 @@ export class FocusMode {
      */
     _getCurrentMode() {
         const state = this.deps.AppState?.get?.();
-        const cycle = state?.data?.cycles?.[state?.appState?.activeCycleId];
+        const cycle = getActiveRoutine(state);
         if (cycle?.deleteCheckedTasks) return 'todo-mode';
         if (cycle?.autoReset) return 'auto-cycle';
         return 'manual-cycle';
@@ -698,8 +699,8 @@ export class FocusMode {
                 // 'manual-cycle' and label the button "Cycle" even in to-do
                 // mode. Fall back to AppState — the persisted source of truth.
                 const state = this.deps.AppState?.get?.();
-                const cycleId = state?.appState?.activeCycleId;
-                const cycle = cycleId ? state?.data?.cycles?.[cycleId] : null;
+                const cycleId = getActiveRoutineId(state);
+                const cycle = cycleId ? getRoutine(state, cycleId) : null;
                 if (cycle?.deleteCheckedTasks) {
                     mode = 'todo-mode';
                 } else if (cycle?.autoReset) {

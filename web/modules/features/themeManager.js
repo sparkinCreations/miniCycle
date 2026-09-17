@@ -33,6 +33,7 @@ import { createDIModule, optional } from '../core/diBase.js';
 import { getLabel, getIcon } from '../labels/labelResolver.js';
 import { isClickOnNotification } from '../ui/modalUtils.js';
 import { announce } from '../utils/announce.js';
+import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -863,8 +864,8 @@ export class ThemeManager {
             // Reconcile unlocks for new users or missed unlock checks.
             vtm.reconcileUnlocksFromProgress?.();
 
-            const activeCycleId = state.appState?.activeCycleId;
-            const activeCycle = state.data?.cycles?.[activeCycleId];
+            const activeCycleId = getActiveRoutineId(state);
+            const activeCycle = getRoutine(state, activeCycleId);
             const currentThemeId = activeCycle?.theme ?? 'classic';
             const unlocked = new Set(vtm.getUnlockedThemeIds());
 
@@ -917,7 +918,7 @@ export class ThemeManager {
                 radio.addEventListener('change', () => {
                     // Read the active cycle at click time (not render time)
                     // so the theme is always applied to the currently active routine.
-                    const currentCycleId = _deps.AppState?.get?.()?.appState?.activeCycleId;
+                    const currentCycleId = getActiveRoutineId(_deps.AppState?.get?.());
                     if (radio.checked && currentCycleId) {
                         vtm.setRoutineTheme(currentCycleId, id);
                         _deps.showNotification?.(

@@ -14,6 +14,7 @@
  */
 import { getLabel, getIcon } from '../labels/labelResolver.js';
 import { DOM_CLASSES, DOM_SELECTORS } from '../core/constants.js';
+import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
 
 export class StatsPanelRewards {
     constructor(manager) {
@@ -69,8 +70,8 @@ export class StatsPanelRewards {
             const state = AppState.get();
             totalTasksCleared = state?.userProgress?.totalTasksCompleted || 0;
             // Check current mode from active cycle
-            const activeCycleId = state?.appState?.activeCycleId;
-            const currentCycle = activeCycleId ? state?.data?.cycles?.[activeCycleId] : null;
+            const activeCycleId = getActiveRoutineId(state);
+            const currentCycle = activeCycleId ? getRoutine(state, activeCycleId) : null;
             isToDoMode = currentCycle?.deleteCheckedTasks || false;
         }
 

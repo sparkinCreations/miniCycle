@@ -33,7 +33,7 @@ import { applyTaskStatusLabel } from './taskUtils.js';
 import { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS, DOM_IDS, DOM_SELECTORS, DATA_SELECTORS, DOM_CLASSES } from '../core/constants.js';
 import { ICONS } from '../utils/icons.js';
 import { getLabel } from '../labels/labelResolver.js';
-import { resolveDeleteWhenComplete, getTaskResetIndicator, getActiveRoutine } from '../utils/cycleMode.js';
+import { getActiveRoutine, getActiveRoutineId, getRoutine, getTaskResetIndicator, resolveDeleteWhenComplete } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -972,8 +972,8 @@ export class TaskDOMManager {
                 return;
             }
 
-            const activeCycleId = currentState.appState?.activeCycleId;
-            const freshCycle = currentState.data?.cycles?.[activeCycleId];
+            const activeCycleId = getActiveRoutineId(currentState);
+            const freshCycle = getRoutine(currentState, activeCycleId);
 
             if (!freshCycle) {
                 console.warn('⚠️ Active cycle not found in AppState');

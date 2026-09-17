@@ -34,6 +34,7 @@
 import { DOM_IDS, DOM_SELECTORS, DATA_SELECTORS, DOM_CLASSES } from '../core/constants.js';
 import { ICONS } from '../utils/icons.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
 
 /**
  * Setup the "Add Task" button and available tasks list
@@ -174,8 +175,8 @@ export function populateAvailableTasks(deps, panelState, _cb = {}) {
         }
 
         const state = deps.AppState.get();
-        const activeCycleId = state.appState?.activeCycleId;
-        const currentCycle = state.data?.cycles?.[activeCycleId];
+        const activeCycleId = getActiveRoutineId(state);
+        const currentCycle = getRoutine(state, activeCycleId);
 
         if (!currentCycle) {
             console.warn('⚠️ No active cycle found');
@@ -257,7 +258,7 @@ export async function handleConfirmAddRecurring(deps, panelState, cb = {}) {
         }
 
         const state = deps.AppState.get();
-        const activeCycleId = state.appState?.activeCycleId;
+        const activeCycleId = getActiveRoutineId(state);
 
         if (!activeCycleId) {
             console.error('❌ No active cycle');
@@ -273,7 +274,7 @@ export async function handleConfirmAddRecurring(deps, panelState, cb = {}) {
 
         // Add each selected task to recurring templates via shared helper
         await deps.updateAppState(draft => {
-            const cycle = draft.data.cycles[activeCycleId];
+            const cycle = getRoutine(draft, activeCycleId);
 
             selectedTaskIds.forEach(taskId => {
                 const task = cycle.tasks.find(t => t.id === taskId);

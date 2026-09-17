@@ -22,6 +22,7 @@ import { ICONS } from '../utils/icons.js';
 // them as UTC midnight, displaying the previous day in negative UTC offsets.
 import { parseDateAsLocal } from '../recurring/recurringDateUtils.js';
 import { applyTaskStatusLabel } from './taskUtils.js';
+import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -256,8 +257,8 @@ export class TaskDOMPatch {
         taskElement.dataset.deleteWhenComplete = String(isActive);
         if (!isRecurring) {
             const state = this.deps.AppState?.get?.();
-            const activeCycleId = state?.appState?.activeCycleId;
-            const isToDoMode = state?.data?.cycles?.[activeCycleId]?.deleteCheckedTasks === true;
+            const activeCycleId = getActiveRoutineId(state);
+            const isToDoMode = getRoutine(state, activeCycleId)?.deleteCheckedTasks === true;
             if (isToDoMode) {
                 taskElement.classList.remove(DOM_CLASSES.SHOW_DELETE_INDICATOR);
                 taskElement.classList.toggle(DOM_CLASSES.KEPT_TASK, !isActive);

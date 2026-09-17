@@ -43,6 +43,7 @@
 
 import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { getRoutine, getRoutines } from '../utils/cycleMode.js';
 
 /**
  * Render the selected routine into both preview panels.
@@ -62,7 +63,7 @@ export function updatePreview(deps, cycleName) {
         return;
     }
 
-    const cycles = currentState.data?.cycles || {};
+    const cycles = getRoutines(currentState) || {};
     const cycleData = cycles[cycleName];
 
     function escapeText(str) {
@@ -252,7 +253,7 @@ export function openPreviewReviewModal(deps, callbacks) {
 
     const cycleKey = selected.dataset.cycleKey;
     const currentState = deps.AppState?.get();
-    const cycleData = currentState?.data?.cycles?.[cycleKey];
+    const cycleData = getRoutine(currentState, cycleKey);
     if (!cycleData?.tasks) return;
 
     const cycleName = cycleData.title || cycleKey;

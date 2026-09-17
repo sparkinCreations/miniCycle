@@ -26,6 +26,7 @@ import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, APP_V
 import { getLabel } from '../labels/labelResolver.js';
 import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
 import { toggleSectionExpanded, setSectionExpanded, isSectionExpanded, collapseAllSections, usesExclusiveSections, isCollapseAllClick } from '../utils/collapsibleSections.js';
+import { getRoutines, setActiveRoutineId } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -663,7 +664,7 @@ export class MenuManager {
                     const newCycleId = `copy_${Date.now()}`;
 
                     // ✅ Deep copy the current cycle with new title as storage key
-                    state.data.cycles[finalCycleName] = {
+                    getRoutines(state)[finalCycleName] = {
                         ...JSON.parse(JSON.stringify(currentCycle)),
                         id: newCycleId,
                         title: finalCycleName,
@@ -671,7 +672,7 @@ export class MenuManager {
                     };
 
                     // ✅ Set as active cycle using the title as key
-                    state.appState.activeCycleId = finalCycleName;
+                    setActiveRoutineId(state, finalCycleName);
                     state.metadata.totalCyclesCreated = (state.metadata.totalCyclesCreated || 0) + 1;
 
                 }, true); // immediate save

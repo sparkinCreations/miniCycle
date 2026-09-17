@@ -11,6 +11,7 @@
  */
 
 import { STORAGE_KEYS, APP_VERSION } from '../core/constants.js';
+import { getActiveRoutineId, getRoutines } from '../utils/cycleMode.js';
 
 // Store original console methods
 const originalConsole = {
@@ -181,9 +182,9 @@ function dumpDiagnosticSnapshot() {
     }
 
     // --- Routines & Tasks ---
-    const cycles = state.data?.cycles || {};
+    const cycles = getRoutines(state) || {};
     const cycleIds = Object.keys(cycles);
-    const activeCycleId = state.appState?.activeCycleId;
+    const activeCycleId = getActiveRoutineId(state);
     const activeCycle = cycles[activeCycleId];
     const activeRoutineName = activeCycle?.name || '(unnamed)';
     const activeMode = activeCycle?.mode || '?';

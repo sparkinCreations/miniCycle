@@ -23,6 +23,7 @@
 
 import { createDIModule, optional } from '../core/diBase.js';
 import { setLabelResolverDependencies } from './labelResolver.js';
+import { getActiveRoutineId, getRoutine, getRoutines } from '../utils/cycleMode.js';
 import {
     getPrioritySwatches, collectSwatchSets, getPriorityLevel, getPriorityColor,
     setPriorityLevel, comparePriority
@@ -520,10 +521,10 @@ export class VocabThemeManager {
         const state = typeof get === 'function' ? this.deps.AppState.get() : null;
         if (!state) return THEME_DEFINITIONS.classic;
 
-        const activeCycleId = state.appState?.activeCycleId;
+        const activeCycleId = getActiveRoutineId(state);
         if (!activeCycleId) return THEME_DEFINITIONS.classic;
 
-        const cycle = state.data?.cycles?.[activeCycleId];
+        const cycle = getRoutine(state, activeCycleId);
         const themeId = cycle?.theme ?? state.settings?.defaultTheme ?? 'classic';
 
         return THEME_DEFINITIONS[themeId] ?? THEME_DEFINITIONS.classic;
@@ -542,7 +543,7 @@ export class VocabThemeManager {
         const state = typeof get === 'function' ? this.deps.AppState.get() : null;
         if (!state) return THEME_DEFINITIONS.classic;
 
-        const cycle = state.data?.cycles?.[routineId];
+        const cycle = getRoutine(state, routineId);
         const themeId = cycle?.theme ?? state.settings?.defaultTheme ?? 'classic';
 
         return THEME_DEFINITIONS[themeId] ?? THEME_DEFINITIONS.classic;
@@ -589,8 +590,8 @@ export class VocabThemeManager {
         }
 
         this.deps.AppState.update(state => {
-            if (state.data?.cycles?.[routineId]) {
-                state.data.cycles[routineId].theme = themeId;
+            if (getRoutine(state, routineId)) {
+                getRoutine(state, routineId).theme = themeId;
             }
         }, true);
 
@@ -706,8 +707,8 @@ export class VocabThemeManager {
             s.settings.defaultTheme    = s.settings.defaultTheme ?? 'classic';
 
             // Stamp all existing routines with theme: 'classic' if missing
-            if (s.data?.cycles) {
-                for (const cycle of Object.values(s.data.cycles)) {
+            if (getRoutines(s)) {
+                for (const cycle of Object.values(getRoutines(s))) {
                     if (!cycle.theme) cycle.theme = 'classic';
                 }
             }

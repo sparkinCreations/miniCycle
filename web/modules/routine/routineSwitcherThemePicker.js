@@ -43,6 +43,7 @@
 
 import { UI_TIMEOUTS, DOM_IDS, DOM_CLASSES } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { getRoutine } from '../utils/cycleMode.js';
 
 // Render order for the chips. Kept verbatim from the parent: the picker shows
 // themes in a fixed order rather than however getUnlockedThemeIds() returns them.
@@ -86,7 +87,7 @@ export function openThemePicker(deps, cycleKey) {
     themeBtn?.setAttribute('aria-expanded', 'true');
 
     const state = deps.AppState?.get();
-    const cycle = state?.data?.cycles?.[cycleKey];
+    const cycle = getRoutine(state, cycleKey);
     const currentThemeId = cycle?.theme ?? 'classic';
     const unlocked = new Set(vtm.getUnlockedThemeIds());
 

@@ -14,6 +14,7 @@
  */
 
 import { createDIModule, required } from '../core/diBase.js';
+import { getRoutines } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -133,7 +134,7 @@ function sanitizeCycle(cycle) {
 }
 
 function sanitizeSchema25State(state) {
-    const cycles = state?.data?.cycles || state?.cycles;
+    const cycles = getRoutines(state) || state?.cycles;
     if (!cycles || typeof cycles !== 'object') {
         return;
     }

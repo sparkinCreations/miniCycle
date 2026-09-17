@@ -22,6 +22,8 @@
  * @see {@link file://docs/future-work/LARGE_MODULE_SPLITS_PLAN.md} - why this split
  */
 
+import { getRoutine, getRoutines } from '../utils/cycleMode.js';
+
 /**
  * Validate and repair a cycle in place (through AppState), returning whether
  * anything needed fixing.
@@ -32,7 +34,7 @@
  */
 export function validateAndRepairCycleData(AppState, cycleKey) {
     const currentState = AppState.get();
-    const originalCycle = currentState?.data?.cycles?.[cycleKey];
+    const originalCycle = getRoutine(currentState, cycleKey);
 
     if (!originalCycle) {
         console.warn(`⚠️ Cycle not found for validation: ${cycleKey}`);
@@ -144,7 +146,7 @@ export function validateAndRepairCycleData(AppState, cycleKey) {
     // ✅ Apply repairs through AppState.update() - never mutate outside transaction
     if (repaired) {
         AppState.update(state => {
-            state.data.cycles[cycleKey] = cycle;
+            getRoutines(state)[cycleKey] = cycle;
         }, true);
     }
 

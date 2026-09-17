@@ -26,6 +26,7 @@ import { loadPanelVisibility } from './panelVisibilityHelpers.js';
 import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
 import { toggleSectionExpanded, setSectionExpanded, isSectionExpanded, collapseAllSections, usesExclusiveSections, isCollapseAllClick } from '../utils/collapsibleSections.js';
 import { isClickOnNotification } from './modalUtils.js';
+import { getRoutine } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -1142,7 +1143,7 @@ export async function syncCurrentSettingsToStorage() {
     const AppState = _deps.AppState();
     if (AppState?.isReady?.()) {
         await AppState.update(state => {
-            const cycle = state?.data?.cycles?.[activeCycle];
+            const cycle = getRoutine(state, activeCycle);
             if (cycle) {
                 cycle.autoReset = toggleAutoReset.checked;
                 cycle.deleteCheckedTasks = deleteCheckedTasks.checked;

@@ -28,6 +28,7 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { UI_TIMEOUTS, CHART, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION } from '../core/constants.js';
 import { getLabel, getIcon } from '../labels/labelResolver.js';
+import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
 // Pure utility class (no side effects/module state) — safe static import.
 // Owns the ordered panel registry; statsPanel registers its panels into it.
 // See docs/archive/FOCUS_TASK_VIEW_PLAN.md Phase 0.
@@ -1132,8 +1133,8 @@ export class StatsPanelManager {
         }
 
         const state = AppState.get();
-        const activeCycleId = state?.appState?.activeCycleId;
-        const cycle = activeCycleId ? state.data.cycles[activeCycleId] : null;
+        const activeCycleId = getActiveRoutineId(state);
+        const cycle = activeCycleId ? getRoutine(state, activeCycleId) : null;
 
         // History button: show if there are any events OR any cleared tasks
         // (Cleared Tasks is now a tab within the History modal)

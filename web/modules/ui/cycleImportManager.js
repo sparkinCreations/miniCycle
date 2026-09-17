@@ -23,6 +23,7 @@ import { getLabel } from '../labels/labelResolver.js';
 import { normalizeRecurringSettings } from '../recurring/recurringSettings.js';
 import { buildRecurringTemplate } from '../recurring/recurringTemplate.js';
 import { isValidHex } from '../utils/styleValidators.js';
+import { getRoutines, setActiveRoutineId } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -727,7 +728,7 @@ export async function processImportedData(fileContent) {
     }
 
     // ✅ Get unique name (auto-increment if duplicate) - use title as storage key
-    const existingCycles = appState.get()?.data?.cycles || {};
+    const existingCycles = getRoutines(appState.get()) || {};
     const { name: finalCycleTitle, wasModified: titleWasModified } = getUniqueCycleName(cycleTitle, existingCycles);
 
 
@@ -985,7 +986,7 @@ export async function processImportedData(fileContent) {
 
     // ✅ Create imported cycle via AppState.update() - use title as storage key (consistent with app)
     appState.update(state => {
-        state.data.cycles[finalCycleTitle] = {
+        getRoutines(state)[finalCycleTitle] = {
             id: cycleId,
             title: finalCycleTitle,
             tasks: mappedTasks,
@@ -1002,7 +1003,7 @@ export async function processImportedData(fileContent) {
             clearedTasks: safeClearedTasks
         };
 
-        state.appState.activeCycleId = finalCycleTitle;
+        setActiveRoutineId(state, finalCycleTitle);
         state.metadata.totalCyclesCreated = (state.metadata.totalCyclesCreated || 0) + 1;
     }, true); // immediate save
 

@@ -21,7 +21,7 @@ import { createDIModule, optional } from '../core/diBase.js';
 import { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS, COLORS, DOM_IDS, DOM_CLASSES, FONT_SIZE } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { normalizeFontSize } from '../utils/styleValidators.js';
-import { syncTaskDeleteWhenComplete } from '../utils/cycleMode.js';
+import { getActiveRoutineId, getRoutine, getRoutines, syncTaskDeleteWhenComplete } from '../utils/cycleMode.js';
 import { announce } from '../utils/announce.js';
 // NOTE: taskToAddTaskOptions injected via DI to avoid duplicate module loading
 
@@ -118,11 +118,11 @@ async function loadMiniCycle() {
     return;
   }
 
-  const cycles = schemaData.cycles || schemaData.data?.cycles || {};
+  const cycles = schemaData.cycles || getRoutines(schemaData) || {};
   const activeCycleId =
     schemaData.activeCycle ||
     schemaData.activeCycleId ||
-    schemaData.appState?.activeCycleId ||
+    getActiveRoutineId(schemaData) ||
     schemaData.appState?.activeCycle ||
     null;
 
@@ -585,7 +585,7 @@ async function repairRoutineBeforeRender(routineId, routine) {
   let liveRoutine = null;
   try {
     await appState.update((state) => {
-      liveRoutine = state?.data?.cycles?.[routineId] ?? null;
+      liveRoutine = getRoutine(state, routineId) ?? null;
       if (liveRoutine) repairAndCleanTasks(liveRoutine, routineId);
     }, true); // immediate = true for repairs
   } catch (e) {

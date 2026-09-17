@@ -12,6 +12,7 @@ import { createDIModule, required, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, UI_TIMEOUTS, DEFAULT_RECURRING_DELETE_SETTINGS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { buildRecurringTemplate } from './recurringTemplate.js';
+import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -59,14 +60,14 @@ export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
         await _deps.appInit?.waitForCore();
 
         const state = _deps.AppState.get();
-        const activeCycleId = state?.appState?.activeCycleId;
+        const activeCycleId = getActiveRoutineId(state);
 
         if (!activeCycleId) {
             _deps.showNotification("⚠ " + getLabel('notify.recurringNoActiveFound'));
             return;
         }
 
-        const cycleData = state.data?.cycles?.[activeCycleId];
+        const cycleData = getRoutine(state, activeCycleId);
         if (!cycleData) {
             _deps.showNotification("⚠ " + getLabel('notify.recurringDataNotFound'));
             return;
@@ -104,7 +105,7 @@ export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
                     draft.settings.defaultRecurringSettings = settings;
                 }
 
-                const cycle = draft.data.cycles[activeCycleId];
+                const cycle = getRoutine(draft, activeCycleId);
                 if (!cycle.recurringTemplates) {
                     cycle.recurringTemplates = {};
                 }
@@ -257,8 +258,8 @@ function updateUIAfterApply(panel) {
 
         // Update preview with new settings from template
         const state = _deps.AppState.get();
-        const activeCycleId = state.appState?.activeCycleId;
-        const template = state.data?.cycles?.[activeCycleId]?.recurringTemplates?.[taskId];
+        const activeCycleId = getActiveRoutineId(state);
+        const template = getRoutine(state, activeCycleId)?.recurringTemplates?.[taskId];
 
         if (template) {
             panel.showTaskSummaryPreview(template);

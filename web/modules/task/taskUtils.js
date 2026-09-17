@@ -28,6 +28,7 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { buildRecurringTemplate } from '../recurring/recurringTemplate.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { getActiveRoutineId, getRoutine, getRoutines } from '../utils/cycleMode.js';
 import {
     DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS,
     DEFAULT_RECURRING_DELETE_SETTINGS,
@@ -113,11 +114,11 @@ export class TaskUtils {
             }
 
             const state = AppState.get();
-            const activeCycleId = state.appState?.activeCycleId;
+            const activeCycleId = getActiveRoutineId(state);
 
             if (!activeCycleId) return null;
 
-            const currentCycle = state.data?.cycles?.[activeCycleId];
+            const currentCycle = getRoutine(state, activeCycleId);
             if (!currentCycle) return null;
 
             const taskText = taskItem.querySelector(DOM_SELECTORS.TASK_TEXT)?.textContent?.trim() || '';
@@ -126,7 +127,7 @@ export class TaskUtils {
                 taskTextTrimmed: taskText,
                 assignedTaskId: taskId,
                 schemaData: state, // Pass the full state for backward compatibility
-                cycles: state.data.cycles,
+                cycles: getRoutines(state),
                 activeCycle: activeCycleId,
                 currentCycle,
                 settings: state.settings || {},
@@ -273,7 +274,7 @@ export class TaskUtils {
                     // Finding the cycle in the DRAFT (not via the context refs)
                     // means a stale not-ready-window copy can never clobber state.
                     AppState.update(state => {
-                        const cycle = state?.data?.cycles?.[activeCycle];
+                        const cycle = getRoutine(state, activeCycle);
                         if (!cycle) {
                             console.warn('⚠️ Active cycle vanished before task commit:', activeCycle);
                             return;

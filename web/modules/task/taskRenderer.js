@@ -24,6 +24,7 @@
 import { createDIModule, required, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { getActiveRoutineId, getRoutine, getRoutines } from '../utils/cycleMode.js';
 // NOTE: taskToAddTaskOptions injected via DI to avoid duplicate module loading
 
 // ============================================================================
@@ -336,9 +337,9 @@ export class TaskRenderer {
             providedState ||
             (this.deps.AppState.isReady() ? this.deps.AppState.get() : null);
 
-        if (state?.data?.cycles && state?.appState?.activeCycleId) {
-            const cid = state.appState.activeCycleId;
-            const cycle = state.data.cycles[cid];
+        if (getRoutines(state) && getActiveRoutineId(state)) {
+            const cid = getActiveRoutineId(state);
+            const cycle = getRoutine(state, cid);
             if (cycle) {
                 // Render directly from current in-memory state
                 await this.renderTasks(cycle.tasks || []);

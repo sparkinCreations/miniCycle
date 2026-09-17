@@ -38,6 +38,7 @@
 import { createDIModule, optional } from './diBase.js';
 import { DOM_IDS, DOM_CLASSES, STORAGE_KEYS, Z_INDEX, UI_TIMEOUTS } from './constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { getRoutine, setActiveRoutineId } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -614,7 +615,7 @@ class AppInit {
 				const miniCycleState = _deps.getMiniCycleState?.();
 				if (miniCycleState?.isReady?.()) {
 					await miniCycleState.update(state => {
-						state.appState.activeCycleId = firstCycle;
+						setActiveRoutineId(state, firstCycle);
 					}, true);
 					// Reload schemaData with fixed activeCycle
 					schemaData = miniCycleState.load();
@@ -656,7 +657,7 @@ class AppInit {
 		if (this._pendingFirstRunFocusView?.showInputBar) {
 			const AppStateForInput = _deps.getMiniCycleState?.();
 			await AppStateForInput?.update?.((state) => {
-				const cycle = state.data?.cycles?.[activeCycle];
+				const cycle = getRoutine(state, activeCycle);
 				if (cycle) cycle.showTaskInput = true;
 			}, true);
 		}

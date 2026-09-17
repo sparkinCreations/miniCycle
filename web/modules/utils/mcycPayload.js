@@ -14,10 +14,11 @@
  * imports resolve to a single URL anyway).
  */
 
+
 /**
  * Build a .mcyc export/share payload from a cycle record.
  * @param {string} cycleKey - Storage key of the cycle
- * @param {Object} cycle - Cycle record from state.data.cycles[cycleKey]
+ * @param {Object} cycle - A routine record from state
  * @param {Object} options
  * @param {boolean} options.includeHistory - Include history + clearedTasks.
  *   true  = backup-for-self semantics (Settings export, routine download);

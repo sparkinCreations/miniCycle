@@ -40,6 +40,7 @@ import { getLabel } from '../labels/labelResolver.js';
 import { getPriorityLevel } from './priorityLevel.js';
 import { reshowPopover } from './popoverUtils.js';
 import { EducationalTipManager } from './educationalTips.js';
+import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -1186,7 +1187,7 @@ async setDefaultPosition(notificationContainer) {
         await _deps.appInit?.waitForCore();
 
         const state = this.deps.AppState.get();
-        const activeCycleId = state?.appState?.activeCycleId;
+        const activeCycleId = getActiveRoutineId(state);
 
         // Apply recurring settings (DI-pure)
         if (this.deps.applyRecurringToTaskSchema25) {
@@ -1195,7 +1196,7 @@ async setDefaultPosition(notificationContainer) {
 
         // Re-read fresh state after update (state var above is pre-update snapshot)
         const updatedState = this.deps.AppState.get();
-        const targetTask = updatedState.data?.cycles?.[activeCycleId]?.tasks.find(t => t.id === taskId);
+        const targetTask = getRoutine(updatedState, activeCycleId)?.tasks.find(t => t.id === taskId);
         const pattern = targetTask?.recurringSettings?.indefinitely ? getLabel('recurring.patternIndefinitely') : getLabel('recurring.patternLimited');
         const currentSettingsText = notification.querySelector(`#${DOM_IDS.notificationCurrentSettings(taskId)}`);
 
@@ -1220,8 +1221,8 @@ async setDefaultPosition(notificationContainer) {
           return;
         }
         const state = this.deps.AppState.get();
-        const activeCycleId = state?.appState?.activeCycleId;
-        const task = state?.data?.cycles?.[activeCycleId]?.tasks.find(t => t.id === taskId);
+        const activeCycleId = getActiveRoutineId(state);
+        const task = getRoutine(state, activeCycleId)?.tasks.find(t => t.id === taskId);
 
         let startingFrequency;
         const selectedCircle = notification.querySelector(DOM_SELECTORS.RADIO_CIRCLE_SELECTED);

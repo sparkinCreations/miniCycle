@@ -18,6 +18,7 @@ import { getLabel } from '../labels/labelResolver.js';
 // Local-midnight parse: date-only dueDates read as UTC midnight counted an
 // extra task as overdue in negative UTC offsets.
 import { parseDateAsLocal } from '../recurring/recurringDateUtils.js';
+import { getRoutines } from '../utils/cycleMode.js';
 
 // ==========================================
 // BUTTON SETUP
@@ -61,7 +62,7 @@ export function runFullAnalysis() {
         return;
     }
 
-    const cycles = state.data.cycles || {};
+    const cycles = getRoutines(state) || {};
     const metadata = state.metadata || {};
 
     // ROUTINE ANALYSIS

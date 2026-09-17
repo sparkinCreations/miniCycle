@@ -20,7 +20,7 @@ import { createDIModule, optional } from '../core/diBase.js';
 import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, FREQUENCY_MS, LIMITS, DEFAULT_REMINDERS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { isClickOnNotification } from '../ui/modalUtils.js';
-import { getActiveRoutine, getActiveRoutineId } from '../utils/cycleMode.js';
+import { getActiveRoutine, getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
 import {
     isNativeApp,
     requestNotificationPermission,
@@ -299,13 +299,13 @@ export class MiniCycleReminders {
         const AppState = typeof this.deps.AppState === 'function' ? this.deps.AppState() : this.deps.AppState;
         if (AppState?.update && AppState?.get) {
             const state = AppState.get();
-            const activeCycleId = state.appState?.activeCycleId;
-            if (activeCycleId && state.data?.cycles?.[activeCycleId]) {
+            const activeCycleId = getActiveRoutineId(state);
+            if (activeCycleId && getRoutine(state, activeCycleId)) {
                 AppState.update(s => {
-                    if (!s.data.cycles[activeCycleId].taskOptionButtons) {
-                        s.data.cycles[activeCycleId].taskOptionButtons = {};
+                    if (!getRoutine(s, activeCycleId).taskOptionButtons) {
+                        getRoutine(s, activeCycleId).taskOptionButtons = {};
                     }
-                    s.data.cycles[activeCycleId].taskOptionButtons.reminders = isEnabled;
+                    getRoutine(s, activeCycleId).taskOptionButtons.reminders = isEnabled;
                 });
             }
         }
@@ -635,7 +635,7 @@ export class MiniCycleReminders {
         // the live task first, then assign the whole routine back over itself.
         const AppStateTask = typeof this.deps.AppState === 'function' ? this.deps.AppState() : this.deps.AppState;
         await AppStateTask.update(draft => {
-            const task = draft?.data?.cycles?.[activeCycle]?.tasks?.find(t => t.id === taskId);
+            const task = getRoutine(draft, activeCycle)?.tasks?.find(t => t.id === taskId);
             if (task) task.remindersEnabled = isEnabled;
         }, true); // immediate save for task changes
 

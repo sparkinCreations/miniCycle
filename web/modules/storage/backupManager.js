@@ -15,6 +15,7 @@
 
 import { createDIModule, required } from '../core/diBase.js';
 import { STORAGE_KEYS, INTERVALS, APP_VERSION } from '../core/constants.js';
+import { getRoutines } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -328,7 +329,7 @@ class BackupManager {
             }
 
             // Check if data is meaningful (has at least one cycle)
-            const cycleCount = Object.keys(currentState?.data?.cycles || {}).length;
+            const cycleCount = Object.keys(getRoutines(currentState) || {}).length;
             const liteStorage = collectLiteStorageSnapshot();
             if (cycleCount === 0 && !liteStorage) {
                 return false;

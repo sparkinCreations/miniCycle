@@ -11,6 +11,7 @@ import { createDIModule, optional } from '../core/diBase.js';
 import { LIMITS, DOM_IDS, APP_VERSION, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { announce } from '../utils/announce.js';
+import { getActiveRoutineId, getRoutine, getRoutines, setActiveRoutineId } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -163,7 +164,7 @@ async function handleMiniCycleTitleBlur() {
 
     // ✅ Get unique name (auto-increment if duplicate)
     const currentState = AppState.get();
-    const { name: finalTitle, wasModified } = getUniqueCycleName(newTitle, currentState?.data?.cycles || {});
+    const { name: finalTitle, wasModified } = getUniqueCycleName(newTitle, getRoutines(currentState) || {});
 
     if (wasModified) {
         showNotification?.(getLabel('notify.nameExists', { vars: { name: finalTitle } }), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
@@ -176,8 +177,8 @@ async function handleMiniCycleTitleBlur() {
 
     // ✅ Update storage key to match new title (like routineSwitcher does)
     await AppState.update(state => {
-        const oldKey = state.appState.activeCycleId;
-        const cycle = state.data.cycles[oldKey];
+        const oldKey = getActiveRoutineId(state);
+        const cycle = getRoutine(state, oldKey);
 
         if (!cycle) {
             console.error('Cycle not found for title update');
@@ -186,12 +187,12 @@ async function handleMiniCycleTitleBlur() {
 
         // Create new entry with new title as key
         const updatedCycle = { ...cycle, title: finalTitle };
-        state.data.cycles[finalTitle] = updatedCycle;
+        getRoutines(state)[finalTitle] = updatedCycle;
 
         // Remove old entry (if key changed)
         if (finalTitle !== oldKey) {
-            delete state.data.cycles[oldKey];
-            state.appState.activeCycleId = finalTitle;
+            delete getRoutines(state)[oldKey];
+            setActiveRoutineId(state, finalTitle);
         }
 
     }, false); // deferred save - don't block UI

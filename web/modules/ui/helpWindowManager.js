@@ -14,6 +14,7 @@ import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION, BREAKPOI
 // side-layout hysteresis compares content height against the same budget.
 const VIEWPORT_CHROME_PX = 385;
 import { getLabel } from '../labels/labelResolver.js';
+import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -548,8 +549,8 @@ export class HelpWindowManager {
         if (_deps.AppState?.isReady?.()) {
             const state = _deps.AppState.get();
             if (state) {
-                const activeCycle = state.appState?.activeCycleId;
-                const currentCycle = state.data?.cycles?.[activeCycle];
+                const activeCycle = getActiveRoutineId(state);
+                const currentCycle = getRoutine(state, activeCycle);
                 cycleCount = currentCycle?.cycleCount || 0;
                 clearedTasksCount = currentCycle?.clearedTasks?.totalCleared || 0;
                 isToDoMode = currentCycle?.deleteCheckedTasks === true;

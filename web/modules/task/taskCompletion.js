@@ -27,6 +27,7 @@ import { applyTaskStatusLabel } from './taskUtils.js';
 import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { announce } from '../utils/announce.js';
+import { getActiveRoutineId, getRoutine, getRoutines } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -144,8 +145,8 @@ export async function handleTaskCompletionChangeImpl(checkbox, deps = {}) {
         if (taskId) {
             if (AppState.isReady()) {
                 await AppState.update(state => {
-                    const cid = state.appState?.activeCycleId;
-                    const cycle = state.data?.cycles?.[cid];
+                    const cid = getActiveRoutineId(state);
+                    const cycle = getRoutine(state, cid);
                     if (!cycle?.tasks) return;
 
                     const task = cycle.tasks.find(t => t.id === taskId);
@@ -238,8 +239,8 @@ export async function saveCurrentTaskOrderImpl(deps = {}) {
         // ✅ Use AppState only (no localStorage fallback) - DI-pure
         if (AppState.isReady()) {
             await AppState.update(state => {
-                const cid = state.appState.activeCycleId;
-                const cycle = state.data.cycles[cid];
+                const cid = getActiveRoutineId(state);
+                const cycle = getRoutine(state, cid);
                 if (!cycle?.tasks) return;
 
                 // Fix #28: Preserve tasks not visible in DOM (e.g., completed tasks in dropdown)
@@ -278,8 +279,8 @@ export function saveTaskToSchema25Impl(activeCycle, currentCycle, deps = {}) {
     if (AppState.isReady()) {
         try {
             AppState.update(state => {
-                if (state?.data?.cycles) {
-                    state.data.cycles[activeCycle] = currentCycle;
+                if (getRoutines(state)) {
+                    getRoutines(state)[activeCycle] = currentCycle;
                 }
             }, true); // immediate save - required for stats panel to read correct data
         } catch (error) {
