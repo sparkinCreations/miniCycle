@@ -11,7 +11,9 @@ export async function runCycleModeTests(resultsDiv) {
             resolveDeleteWhenComplete, getTaskResetIndicator,
             getRoutines, getActiveRoutineId, getRoutine, getActiveRoutine, setActiveRoutineId,
             routineHasTasks, areAllTasksComplete,
-            getAutoClearMode, syncTaskAutoClear, resolveAutoClear, getAutoClear, setAutoClear } = mod;
+            getAutoClearMode, syncTaskAutoClear, resolveAutoClear, getAutoClear, setAutoClear,
+            getAutoClearForMode, getAutoClearSettings, isAutoClearSettings, setAutoClearSettings,
+            autoClearFields } = mod;
     const { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS: DEFAULTS } =
         await import(`../modules/core/constants.js?v=${cacheBuster}`);
     const { DEFAULT_LABELS } = await import(`../modules/labels/defaultLabels.js?v=${cacheBuster}`);
@@ -445,6 +447,89 @@ export async function runCycleModeTests(resultsDiv) {
         const task = {};
         if (setAutoClear(task, cycleRoutine, true, null) !== null) throw new Error('missing defaults');
         if ('deleteWhenComplete' in task) throw new Error('task was written without defaults');
+    });
+
+    // ── map-level helpers (Rename A reader sweep) ────────────────────────────
+    resultsDiv.innerHTML += '<h4 class="test-section">🧹 autoClear map helpers</h4>';
+
+    await test('getAutoClearForMode reads the given mode, not the routine', () => {
+        const task = { deleteWhenCompleteSettings: { cycle: true, todo: false }, deleteWhenComplete: false };
+        if (getAutoClearForMode(task, 'cycle', DEFAULTS) !== true) throw new Error('cycle key ignored');
+        if (getAutoClearForMode(task, 'todo', DEFAULTS) !== false) throw new Error('todo key ignored');
+        if (getAutoClear(task, cycleRoutine, DEFAULTS) !== getAutoClearForMode(task, 'cycle', DEFAULTS)) {
+            throw new Error('getAutoClear must agree with the mode-keyed read');
+        }
+    });
+
+    await test('getAutoClearForMode falls back to the mirror, then the default', () => {
+        if (getAutoClearForMode({ deleteWhenComplete: true }, 'cycle', DEFAULTS) !== true) throw new Error('mirror ignored');
+        if (getAutoClearForMode({}, 'todo', DEFAULTS) !== DEFAULTS.todo) throw new Error('default ignored');
+        if (getAutoClearForMode(null, 'cycle', DEFAULTS) !== DEFAULTS.cycle) throw new Error('null task should read the default');
+    });
+
+    await test('getAutoClearSettings returns the stored map or undefined', () => {
+        const map = { cycle: true, todo: true };
+        if (getAutoClearSettings({ deleteWhenCompleteSettings: map }) !== map) throw new Error('should return the stored object itself');
+        if (getAutoClearSettings({}) !== undefined) throw new Error('missing map should be undefined');
+        if (getAutoClearSettings({ deleteWhenCompleteSettings: null }) !== undefined) throw new Error('null map should be undefined');
+        if (getAutoClearSettings(null) !== undefined) throw new Error('null task should be undefined');
+    });
+
+    await test('isAutoClearSettings requires a boolean for every default key', () => {
+        if (!isAutoClearSettings({ cycle: false, todo: true }, DEFAULTS)) throw new Error('valid map rejected');
+        if (isAutoClearSettings({ cycle: false }, DEFAULTS)) throw new Error('missing todo accepted');
+        if (isAutoClearSettings({ cycle: 'no', todo: true }, DEFAULTS)) throw new Error('string accepted');
+        if (isAutoClearSettings(null, DEFAULTS)) throw new Error('null accepted');
+        if (isAutoClearSettings('cycle', DEFAULTS)) throw new Error('string accepted as map');
+        if (isAutoClearSettings({ cycle: false, todo: true }, null)) throw new Error('no defaults accepted');
+    });
+
+    await test('setAutoClearSettings replaces the map and re-derives the mirror for the routine mode', () => {
+        const task = { deleteWhenCompleteSettings: { cycle: false, todo: false }, deleteWhenComplete: false };
+        const incoming = { cycle: true, todo: false };
+        const mode = setAutoClearSettings(task, incoming, cycleRoutine, DEFAULTS);
+        if (mode !== 'cycle') throw new Error(`mode ${mode}`);
+        if (task.deleteWhenCompleteSettings === incoming) throw new Error('should copy, not alias, the incoming map');
+        if (task.deleteWhenCompleteSettings.cycle !== true || task.deleteWhenCompleteSettings.todo !== false) {
+            throw new Error(`map ${JSON.stringify(task.deleteWhenCompleteSettings)}`);
+        }
+        if (task.deleteWhenComplete !== true) throw new Error('mirror not re-derived for cycle mode');
+        setAutoClearSettings(task, incoming, todoRoutine, DEFAULTS);
+        if (task.deleteWhenComplete !== false) throw new Error('mirror not re-derived for todo mode');
+    });
+
+    await test('setAutoClearSettings fills a null map from defaults and repairs bad keys', () => {
+        const task = {};
+        setAutoClearSettings(task, null, todoRoutine, DEFAULTS);
+        if (JSON.stringify(task.deleteWhenCompleteSettings) !== JSON.stringify(DEFAULTS)) throw new Error('defaults not used');
+        if (task.deleteWhenComplete !== DEFAULTS.todo) throw new Error('mirror not derived');
+        const bad = {};
+        setAutoClearSettings(bad, { cycle: 'yes', todo: true, extra: 1 }, cycleRoutine, DEFAULTS);
+        if (bad.deleteWhenCompleteSettings.cycle !== DEFAULTS.cycle) throw new Error('bad key not repaired');
+        if ('extra' in bad.deleteWhenCompleteSettings) throw new Error('unknown key kept');
+        if (setAutoClearSettings(null, {}, cycleRoutine, DEFAULTS) !== null) throw new Error('null task');
+        if (setAutoClearSettings({}, {}, cycleRoutine, null) !== null) throw new Error('missing defaults');
+    });
+
+    await test('autoClearFields derives the active value from the map for a known mode', () => {
+        const fields = autoClearFields({ settings: { cycle: true, todo: false }, mode: 'cycle', defaults: DEFAULTS });
+        if (fields.deleteWhenComplete !== true) throw new Error(`cycle → ${fields.deleteWhenComplete}`);
+        if (fields.deleteWhenCompleteSettings.cycle !== true) throw new Error('map not carried');
+        const todo = autoClearFields({ settings: { cycle: true, todo: false }, mode: 'todo', defaults: DEFAULTS });
+        if (todo.deleteWhenComplete !== false) throw new Error(`todo → ${todo.deleteWhenComplete}`);
+    });
+
+    await test('autoClearFields: explicit value wins, no mode leaves the active value undefined, no map copies defaults', () => {
+        const forced = autoClearFields({ settings: { cycle: false, todo: false }, mode: 'cycle', value: true, defaults: DEFAULTS });
+        if (forced.deleteWhenComplete !== true) throw new Error('explicit value ignored');
+        const noMode = autoClearFields({ settings: { cycle: true, todo: true }, defaults: DEFAULTS });
+        if (noMode.deleteWhenComplete !== undefined) throw new Error(`no mode → ${noMode.deleteWhenComplete}`);
+        const noMap = autoClearFields({ settings: null, mode: 'todo', defaults: DEFAULTS });
+        if (noMap.deleteWhenCompleteSettings === DEFAULTS) throw new Error('defaults must be copied');
+        if (JSON.stringify(noMap.deleteWhenCompleteSettings) !== JSON.stringify(DEFAULTS)) throw new Error('defaults not used');
+        if (noMap.deleteWhenComplete !== DEFAULTS.todo) throw new Error('active value not derived from defaults');
+        const keys = Object.keys(autoClearFields({ defaults: DEFAULTS })).sort().join(',');
+        if (keys !== 'deleteWhenComplete,deleteWhenCompleteSettings') throw new Error(`unexpected keys: ${keys}`);
     });
 
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed</h3>`;

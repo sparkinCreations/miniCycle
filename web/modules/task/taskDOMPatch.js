@@ -16,13 +16,13 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS } from '../core/constants.js';
 import { ICONS } from '../utils/icons.js';
 // Local-midnight parse for date-only "YYYY-MM-DD" values — new Date() treats
 // them as UTC midnight, displaying the previous day in negative UTC offsets.
 import { parseDateAsLocal } from '../recurring/recurringDateUtils.js';
 import { applyTaskStatusLabel } from './taskUtils.js';
-import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
+import { getActiveRoutine, getAutoClear } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -243,7 +243,9 @@ export class TaskDOMPatch {
      * @private
      */
     _patchDeleteWhenComplete(taskElement, taskData) {
-        const isActive = taskData.deleteWhenComplete || false;
+        const state = this.deps.AppState?.get?.();
+        const routine = getActiveRoutine(state);
+        const isActive = getAutoClear(taskData, routine, DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS);
         const isRecurring = taskData.recurring || false;
 
         const dwcBtn = taskElement.querySelector(DOM_SELECTORS.DELETE_WHEN_COMPLETE_BTN);
@@ -256,9 +258,7 @@ export class TaskDOMPatch {
         // Sync task element data attribute and visual indicator classes
         taskElement.dataset.deleteWhenComplete = String(isActive);
         if (!isRecurring) {
-            const state = this.deps.AppState?.get?.();
-            const activeCycleId = getActiveRoutineId(state);
-            const isToDoMode = getRoutine(state, activeCycleId)?.deleteCheckedTasks === true;
+            const isToDoMode = routine?.deleteCheckedTasks === true;
             if (isToDoMode) {
                 taskElement.classList.remove(DOM_CLASSES.SHOW_DELETE_INDICATOR);
                 taskElement.classList.toggle(DOM_CLASSES.KEPT_TASK, !isActive);

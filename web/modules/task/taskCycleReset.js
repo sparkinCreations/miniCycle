@@ -51,9 +51,9 @@
 
 import { createDIModule, required, optional } from '../core/diBase.js';
 import { applyTaskStatusLabel } from './taskUtils.js';
-import { TASK_TIMEOUTS, UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, MILESTONES, LIMITS } from '../core/constants.js';
+import { TASK_TIMEOUTS, UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, MILESTONES, LIMITS, DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
-import { getActiveRoutine, getActiveRoutineId, getRoutine, getRoutines } from '../utils/cycleMode.js';
+import { autoClearFields, getActiveRoutine, getActiveRoutineId, getAutoClear, getAutoClearMode, getAutoClearSettings, getRoutine, getRoutines } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -410,7 +410,7 @@ function resetTasksData(context, deps) {
         const task = freshCycleData?.tasks?.find(t => t.id === taskId);
 
         // Check if task should be deleted
-        if (task?.deleteWhenComplete === true) {
+        if (task && getAutoClear(task, freshCycleData, DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS)) {
             tasksToDelete.push(taskId);
             if (task.text) tasksToDeleteNames.push(task.text);
             taskEl.remove();
@@ -460,7 +460,7 @@ function resetTasksData(context, deps) {
         const tasksToRecord = tasksToDelete
             .map(taskId => freshCycleData?.tasks?.find(t => t.id === taskId))
             .filter(Boolean)
-            .map(buildClearedRecord);
+            .map(task => buildClearedRecord(task, freshCycleData));
 
         const recordFn = deps.recordMultipleClearedTasks || _deps.recordMultipleClearedTasks;
         if (tasksToRecord.length > 0 && typeof recordFn === 'function') {
@@ -774,15 +774,18 @@ export async function resetTasksImpl(deps = {}) {
  * @param {Object} task - The live task being cleared
  * @returns {Object} Cleared-task record
  */
-function buildClearedRecord(task) {
+function buildClearedRecord(task, routine) {
     return {
         text: task.text,
         highPriority: task.highPriority || false,
         dueDate: task.dueDate,
         priorityColor: task.priorityColor || null,
         remindersEnabled: task.remindersEnabled || false,
-        deleteWhenComplete: task.deleteWhenComplete || false,
-        deleteWhenCompleteSettings: task.deleteWhenCompleteSettings || null,
+        ...autoClearFields({
+            settings: getAutoClearSettings(task),
+            mode: getAutoClearMode(routine),
+            defaults: DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS
+        }),
         recurring: task.recurring || false,
         recurringSettings: task.recurringSettings || null
     };
@@ -817,7 +820,7 @@ export async function deleteCompletedTasksImpl(activeCycleId, cycleData, taskLis
         // make Clear Completed delete or skip the wrong tasks. See ARCH REVIEW FINDINGS §1.1.
         const isCompleted = task?.completed === true;
 
-        if (isCompleted && task?.deleteWhenComplete === true) {
+        if (isCompleted && getAutoClear(task, cycleData, DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS)) {
             tasksToDelete.push({ taskId, taskElement });
         }
     };
@@ -859,7 +862,7 @@ export async function deleteCompletedTasksImpl(activeCycleId, cycleData, taskLis
     const tasksToRecord = nonRecurringToDelete
         .map(({ taskId }) => cycleData.tasks?.find(t => t.id === taskId))
         .filter(Boolean)
-        .map(buildClearedRecord);
+        .map(task => buildClearedRecord(task, cycleData));
 
     // Accept a caller override like the cycle-reset path does (see the sibling
     // `deps.recordMultipleClearedTasks || _deps...` above). This path read only the

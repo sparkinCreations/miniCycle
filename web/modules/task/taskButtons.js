@@ -20,7 +20,7 @@ import { createDIModule, optional } from '../core/diBase.js';
 import { DOM_CLASSES, DOM_SELECTORS, UI_TIMEOUTS, DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { handleHorizontalArrowNav } from '../utils/keyboardNav.js';
-import { getActiveRoutine, getActiveRoutineId, getDeleteSettingsMode, getRoutine, syncTaskDeleteWhenComplete } from '../utils/cycleMode.js';
+import { getActiveRoutine, getActiveRoutineId, getAutoClearSettings, getDeleteSettingsMode, getRoutine, setAutoClear, syncTaskDeleteWhenComplete } from '../utils/cycleMode.js';
 import { createIconElement } from '../utils/icons.js';
 
 // SVG icons for task buttons (Font Awesome style)
@@ -412,13 +412,7 @@ export class TaskButtons {
                 const isToDoMode = cycle?.deleteCheckedTasks === true;
                 currentMode = isToDoMode ? 'todo' : 'cycle';
 
-                const isValid = this.deps.GlobalUtils?.validateDeleteSettings(task.deleteWhenCompleteSettings);
-                if (!isValid) {
-                    task.deleteWhenCompleteSettings = { ...DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS };
-                }
-
-                task.deleteWhenComplete = newState;
-                task.deleteWhenCompleteSettings[currentMode] = newState;
+                setAutoClear(task, cycle, newState, DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS);
             }, true);
 
             // Re-read for DOM sync
@@ -437,7 +431,7 @@ export class TaskButtons {
                 } else {
                     // Fallback: manual DOM update
                     taskItem.dataset.deleteWhenComplete = newState.toString();
-                    taskItem.dataset.deleteWhenCompleteSettings = JSON.stringify(task.deleteWhenCompleteSettings);
+                    taskItem.dataset.deleteWhenCompleteSettings = JSON.stringify(getAutoClearSettings(task));
                     button.classList.toggle(DOM_CLASSES.ACTIVE, newState);
                     button.classList.toggle(DOM_CLASSES.DELETE_WHEN_COMPLETE_ACTIVE, newState);
                     button.setAttribute("aria-pressed", newState.toString());

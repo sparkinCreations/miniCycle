@@ -41,10 +41,10 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { LIMITS, UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION } from '../core/constants.js';
+import { LIMITS, UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION, DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { announce } from '../utils/announce.js';
-import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
+import { getActiveRoutineId, getAutoClear, getAutoClearSettings, getRoutine } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -310,8 +310,8 @@ export async function addTaskImpl(taskText, options = {}, deps = {}) {
 
         // Sync derived deleteWhenComplete back to context so DOM creation sees it
         if (taskData && taskContext.deleteWhenComplete === undefined) {
-            taskContext.deleteWhenComplete = taskData.deleteWhenComplete;
-            taskContext.deleteWhenCompleteSettings = taskData.deleteWhenCompleteSettings;
+            taskContext.deleteWhenComplete = getAutoClear(taskData, taskContext.currentCycle, DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS);
+            taskContext.deleteWhenCompleteSettings = getAutoClearSettings(taskData);
         }
 
         // Create DOM elements

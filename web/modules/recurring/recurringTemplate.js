@@ -30,6 +30,7 @@
  */
 
 import { DEFAULT_RECURRING_DELETE_SETTINGS } from '../core/constants.js';
+import { autoClearFields } from '../utils/cycleMode.js';
 
 /** Schema stamp for template records. Bump only alongside a migration. */
 export const RECURRING_TEMPLATE_SCHEMA_VERSION = 2;
@@ -96,9 +97,7 @@ export function buildRecurringTemplate({
         highPriority,
         priorityColor,
         remindersEnabled,
-        deleteWhenComplete,
-        deleteWhenCompleteSettings:
-            deleteWhenCompleteSettings ?? { ...DEFAULT_RECURRING_DELETE_SETTINGS },
+        ...autoClearFields({ settings: deleteWhenCompleteSettings, value: deleteWhenComplete, defaults: DEFAULT_RECURRING_DELETE_SETTINGS }),
         occurrenceCount,
         lastTriggeredTimestamp,
         nextScheduledOccurrence: nextScheduledOccurrence ?? null,

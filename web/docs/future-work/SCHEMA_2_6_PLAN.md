@@ -685,6 +685,20 @@ risky stored-format change small and last.
    outside the seven that OWN the shape: `appState`, `cycleMode`, `schemaMigration26`, `dataAccess`,
    `dataValidator`, `dataRecovery`, `appGlobalState`. Those flip with the migration. Undo SNAPSHOT fields keep the name `activeCycleId` on purpose — that
    is the snapshot's own shape, cleared at the version bump, not the stored document.*
+   *Rename A sweep — measure with stored-field READS of the pair, dataset attributes excluded:
+   `grep -rnE '\.deleteWhenComplete(Settings)?\b' modules | grep -v 'dataset\.deleteWhenComplete'`,
+   minus the shape owners above. Batch 1 (Sep 2026) added the map-level helpers to `cycleMode.js`
+   (`getAutoClearForMode`, `getAutoClearSettings`, `isAutoClearSettings`, `setAutoClearSettings`,
+   `autoClearFields` — the last is the ONE place a task/template literal's stored names are
+   spelled) and moved 17 modules onto them: 60 → 24. Of the 24, the undo snapshot/diff (9) and
+   the `.mcyc` importer/exporter (10) are left on purpose until the wiring step — the importer
+   gets its aliases and the exporter its dual-write there, and undo history is cleared at the
+   version bump; the other 5 are option/context KEY names (`addTask` options, `visibleOptions`),
+   not stored reads. Behaviour notes from the batch: every reader now resolves PER KEY
+   (`settings[mode]` → mirror → default) where three sites still validated the whole map and
+   fell to defaults; `recurringSettingsApplicator` derives the mirror from the map instead of
+   forcing `true` when it was undefined; `deactivateTaskRecurringState` derives the mode from
+   the draft routine and no longer takes `currentMode`.*
    A single 2.5 → 2.6 migration carries:
    - the **UUID re-key** — `STATE_TRUTH_MIGRATION.md` #20: stable UUID map keys, `title` as the
      name. Today routines are keyed by name, which is also a CLAUDE.md #18 prototype-pollution

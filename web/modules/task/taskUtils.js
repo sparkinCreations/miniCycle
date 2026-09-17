@@ -28,7 +28,7 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { buildRecurringTemplate } from '../recurring/recurringTemplate.js';
 import { getLabel } from '../labels/labelResolver.js';
-import { getActiveRoutineId, getRoutine, getRoutines } from '../utils/cycleMode.js';
+import { autoClearFields, getActiveRoutineId, getAutoClearMode, getAutoClearSettings, getRoutine, getRoutines } from '../utils/cycleMode.js';
 import {
     DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS,
     DEFAULT_RECURRING_DELETE_SETTINGS,
@@ -89,8 +89,9 @@ export function taskToAddTaskOptions(task) {
         recurring: task.recurring || false,
         taskId: task.id,
         recurringSettings: task.recurringSettings || {},
-        deleteWhenComplete: task.deleteWhenComplete,
-        deleteWhenCompleteSettings: task.deleteWhenCompleteSettings
+        // The active value is resolved again at render time (createMainTaskElement),
+        // so only the per-mode map needs to travel.
+        deleteWhenCompleteSettings: getAutoClearSettings(task)
     };
 }
 
@@ -219,15 +220,14 @@ export class TaskUtils {
             // Mode-specific deleteWhenComplete architecture:
             // - Active value synced with current mode
             // - Settings object stores preference per mode
-            const isToDoMode = currentCycle.deleteCheckedTasks === true;
-
-            // Use provided settings or defaults
-            const finalSettings = deleteWhenCompleteSettings || { ...DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS };
-
-            // Active value based on current mode (unless explicitly provided)
-            const activeDeleteWhenComplete = deleteWhenComplete !== undefined ?
-                deleteWhenComplete :
-                (isToDoMode ? finalSettings.todo : finalSettings.cycle);
+            // Provided settings or defaults; the active value follows the current
+            // mode unless the caller gave one (utils/cycleMode.js).
+            const autoClear = autoClearFields({
+                settings: deleteWhenCompleteSettings,
+                value: deleteWhenComplete,
+                mode: getAutoClearMode(currentCycle),
+                defaults: DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS
+            });
 
             existingTask = {
                 id: assignedTaskId,
@@ -243,8 +243,7 @@ export class TaskUtils {
                 remindersEnabled,
                 recurring,
                 recurringSettings,
-                deleteWhenComplete: activeDeleteWhenComplete,
-                deleteWhenCompleteSettings: finalSettings,
+                ...autoClear,
                 schemaVersion: 2
             };
 

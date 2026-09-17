@@ -15,7 +15,7 @@ import {
     DATA_SELECTORS, DOM_CLASSES, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { buildRecurringTemplate } from './recurringTemplate.js';
-import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
+import { autoClearFields, getActiveRoutineId, getAutoClear, getRoutine, setAutoClearSettings } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -84,8 +84,7 @@ export function activateTaskRecurringState(cycle, taskId, normalizedSettings, ca
         task.recurring = true;
         task.recurringSettings = structuredClone(normalizedSettings);
         task.schemaVersion = 2;
-        task.deleteWhenComplete = true;
-        task.deleteWhenCompleteSettings = { ...DEFAULT_RECURRING_DELETE_SETTINGS };
+        setAutoClearSettings(task, DEFAULT_RECURRING_DELETE_SETTINGS, cycle, DEFAULT_RECURRING_DELETE_SETTINGS);
     }
 
     if (!cycle.recurringTemplates) {
@@ -115,16 +114,14 @@ export function activateTaskRecurringState(cycle, taskId, normalizedSettings, ca
  *
  * @param {Object} cycle - Draft cycle object (mutated in place)
  * @param {string} taskId - Task ID to deactivate
- * @param {string} currentMode - 'todo' or 'cycle'
  * @returns {void}
  */
-export function deactivateTaskRecurringState(cycle, taskId, currentMode) {
+export function deactivateTaskRecurringState(cycle, taskId) {
     const task = cycle.tasks.find(t => t.id === taskId);
     if (task) {
         task.recurring = false;
         task.schemaVersion = 2;
-        task.deleteWhenCompleteSettings = { ...DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS };
-        task.deleteWhenComplete = DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS[currentMode];
+        setAutoClearSettings(task, DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS, cycle, DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS);
     }
 
     if (cycle.recurringTemplates?.[taskId]) {
@@ -198,10 +195,7 @@ export async function handleRecurringTaskActivation(task, taskContext, button = 
         const currentMode = currentCycle?.deleteCheckedTasks ? 'todo' : 'cycle';
         Deps.GlobalUtils.syncTaskDeleteWhenCompleteDOM(
             taskItem,
-            {
-                deleteWhenComplete: true,
-                deleteWhenCompleteSettings: { ...DEFAULT_RECURRING_DELETE_SETTINGS }
-            },
+            autoClearFields({ settings: null, mode: currentMode, defaults: DEFAULT_RECURRING_DELETE_SETTINGS }),
             currentMode,
             { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS }
         );
@@ -284,7 +278,7 @@ export async function handleRecurringTaskDeactivation(task, taskContext, assigne
     await Deps.updateAppState(draft => {
         const cycle = getRoutine(draft, activeCycleId);
 
-        deactivateTaskRecurringState(cycle, assignedTaskId, currentMode);
+        deactivateTaskRecurringState(cycle, assignedTaskId);
 
         // Fallback: ensure task stays in main array even if not found
         const targetTask = cycle.tasks.find(t => t.id === assignedTaskId);
@@ -294,8 +288,7 @@ export async function handleRecurringTaskDeactivation(task, taskContext, assigne
                 ...task,
                 recurring: false,
                 recurringSettings: task.recurringSettings || {},
-                deleteWhenCompleteSettings: { ...DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS },
-                deleteWhenComplete: DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS[currentMode],
+                ...autoClearFields({ settings: null, mode: currentMode, defaults: DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS }),
                 schemaVersion: 2
             });
         }
@@ -309,10 +302,7 @@ export async function handleRecurringTaskDeactivation(task, taskContext, assigne
         if (Deps.GlobalUtils?.syncTaskDeleteWhenCompleteDOM) {
             Deps.GlobalUtils.syncTaskDeleteWhenCompleteDOM(
                 taskItem,
-                {
-                    deleteWhenComplete: DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS[currentMode],
-                    deleteWhenCompleteSettings: { ...DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS }
-                },
+                autoClearFields({ settings: null, mode: currentMode, defaults: DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS }),
                 currentMode,
                 { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS }
             );
@@ -488,7 +478,8 @@ export function removeRecurringTasksFromCycle(taskElements, cycleData) {
 
         if (isRecurring) {
             const task = cycleData?.tasks?.find(t => t.id === taskId);
-            const shouldDelete = task?.deleteWhenComplete !== false;
+            // Recurring defaults: a recurring task with no stored choice clears.
+            const shouldDelete = getAutoClear(task, cycleData, DEFAULT_RECURRING_DELETE_SETTINGS);
 
             if (!shouldDelete) {
                 const checkbox = taskEl.querySelector(DOM_SELECTORS.TASK_CHECKBOX);

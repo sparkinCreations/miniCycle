@@ -815,15 +815,10 @@ export class RecurringPanelManager {
                         return;
                     }
 
-                    // Compute current mode for deleteWhenComplete reset
-                    const currentCycle = getRoutine(state, activeCycleId);
-                    const isToDoMode = currentCycle?.deleteCheckedTasks === true;
-                    const currentMode = isToDoMode ? 'todo' : 'cycle';
-
                     // ✅ Update via shared deactivation helper (immediate save)
                     await this.deps.updateAppState(draft => {
                         const cycle = getRoutine(draft, activeCycleId);
-                        this.deps.deactivateTaskRecurringState(cycle, task.id, currentMode);
+                        this.deps.deactivateTaskRecurringState(cycle, task.id);
                     }, true); // ✅ Immediate save when removing recurring from panel
 
                     this.deps.showNotification(`↩️ ${getLabel('notify.recurringTurnedOff')}`, "info", UI_TIMEOUTS.NOTIFICATION_SLOW);

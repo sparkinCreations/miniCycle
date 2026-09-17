@@ -22,7 +22,8 @@
  * @see {@link file://docs/future-work/LARGE_MODULE_SPLITS_PLAN.md} - why this split
  */
 
-import { getRoutine, getRoutines } from '../utils/cycleMode.js';
+import { getRoutine, getRoutines, getAutoClearSettings, setAutoClearSettings } from '../utils/cycleMode.js';
+import { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS } from '../core/constants.js';
 
 /**
  * Validate and repair a cycle in place (through AppState), returning whether
@@ -105,8 +106,9 @@ export function validateAndRepairCycleData(AppState, cycleKey) {
 
         // (deleteWhenComplete is optional — undefined is a valid state; a
         // dead self-assignment lived here until v2.365.)
-        if (!task.deleteWhenCompleteSettings || typeof task.deleteWhenCompleteSettings !== 'object') {
-            task.deleteWhenCompleteSettings = { cycle: false, todo: true };
+        const autoClear = getAutoClearSettings(task);
+        if (!autoClear || typeof autoClear !== 'object') {
+            setAutoClearSettings(task, null, cycle, DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS);
             repaired = true;
         }
 

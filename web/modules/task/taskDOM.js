@@ -33,7 +33,7 @@ import { applyTaskStatusLabel } from './taskUtils.js';
 import { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS, DOM_IDS, DOM_SELECTORS, DATA_SELECTORS, DOM_CLASSES } from '../core/constants.js';
 import { ICONS } from '../utils/icons.js';
 import { getLabel } from '../labels/labelResolver.js';
-import { getActiveRoutine, getActiveRoutineId, getRoutine, getTaskResetIndicator, resolveDeleteWhenComplete } from '../utils/cycleMode.js';
+import { getActiveRoutine, getActiveRoutineId, getRoutine, getTaskResetIndicator, resolveAutoClear } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -671,7 +671,7 @@ export class TaskDOMManager {
         // Priority: mode-specific setting (canonical) > legacy field > hard defaults.
         // Shared with the Task view via utils/cycleMode.js — the same task must
         // not show one indicator in the list and another on the card.
-        const finalDeleteWhenComplete = resolveDeleteWhenComplete({
+        const finalDeleteWhenComplete = resolveAutoClear({
             settings: validSettings,
             legacy: deleteWhenComplete,
             mode: currentMode,

@@ -25,7 +25,7 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { INTERVALS, DEFAULT_RECURRING_DELETE_SETTINGS, LIMITS, UI_TIMEOUTS } from '../core/constants.js';
 import { getIcon, getLabel } from '../labels/labelResolver.js';
-import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
+import { autoClearFields, getActiveRoutineId, getAutoClearSettings, getRoutine } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -268,8 +268,9 @@ function buildTemplateUpdate(template, nowMs, calculateNextOccurrence) {
  * @returns {Object} A fresh task instance ready to push into the cycle
  */
 function buildRecurringInstance(template) {
-    if (template.deleteWhenComplete === false) {
-        console.debug(`⚠️ Template "${template.text}" has deleteWhenComplete=false; recreated instance forced to true`);
+    const templateSettings = getAutoClearSettings(template);
+    if (templateSettings && Object.values(templateSettings).some(value => value === false)) {
+        console.debug(`⚠️ Template "${template.text}" keeps tasks in some mode; recreated instance forced to clear`);
     }
     return {
         text: template.text,
@@ -281,8 +282,8 @@ function buildRecurringInstance(template) {
         recurring: true,
         id: template.id,
         recurringSettings: template.recurringSettings,
-        deleteWhenComplete: true, // Always true for recreated instances (safety override)
-        deleteWhenCompleteSettings: template.deleteWhenCompleteSettings ?? { ...DEFAULT_RECURRING_DELETE_SETTINGS }
+        // Always clears, whatever the template's map says (safety override)
+        ...autoClearFields({ settings: templateSettings, value: true, defaults: DEFAULT_RECURRING_DELETE_SETTINGS })
     };
 }
 

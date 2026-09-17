@@ -12,7 +12,7 @@ import { createDIModule, required, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, UI_TIMEOUTS, DEFAULT_RECURRING_DELETE_SETTINGS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { buildRecurringTemplate } from './recurringTemplate.js';
-import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
+import { getActiveRoutineId, getAutoClearForMode, getAutoClearMode, getAutoClearSettings, getRoutine, syncTaskAutoClear } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -110,6 +110,7 @@ export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
                     cycle.recurringTemplates = {};
                 }
 
+                const mode = getAutoClearMode(cycle);
                 checkedTaskData.forEach(({ taskId, textFromDOM }) => {
                     // Check if task exists in task list
                     const task = cycle.tasks.find(t => t.id === taskId);
@@ -119,12 +120,9 @@ export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
                         task.recurring = true;
                         task.schemaVersion = 2;
                         task.recurringSettings = structuredClone(settings);
-                        if (task.deleteWhenComplete === undefined) {
-                            task.deleteWhenComplete = true;
-                        }
-                        if (!task.deleteWhenCompleteSettings) {
-                            task.deleteWhenCompleteSettings = { ...DEFAULT_RECURRING_DELETE_SETTINGS };
-                        }
+                        // Fill a missing map from the recurring defaults and derive the
+                        // active value for this routine's mode (utils/cycleMode.js).
+                        syncTaskAutoClear(task, mode, DEFAULT_RECURRING_DELETE_SETTINGS);
                     }
 
                     // Always update the template — preserve all fields the watcher reads
@@ -141,9 +139,9 @@ export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
                         highPriority: task?.highPriority || existingTemplate?.highPriority || false,
                         priorityColor: task?.priorityColor || existingTemplate?.priorityColor || null,
                         remindersEnabled: task?.remindersEnabled || existingTemplate?.remindersEnabled || false,
-                        deleteWhenComplete: task?.deleteWhenComplete ?? existingTemplate?.deleteWhenComplete ?? true,
-                        deleteWhenCompleteSettings: task?.deleteWhenCompleteSettings
-                            || existingTemplate?.deleteWhenCompleteSettings
+                        deleteWhenComplete: getAutoClearForMode(task ?? existingTemplate, mode, DEFAULT_RECURRING_DELETE_SETTINGS),
+                        deleteWhenCompleteSettings: getAutoClearSettings(task)
+                            || getAutoClearSettings(existingTemplate)
                             || null,
                         recurringSettings: structuredClone(settings),
                         // Where the task sits now, or the last recorded spot if it is

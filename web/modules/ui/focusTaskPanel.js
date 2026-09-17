@@ -28,7 +28,7 @@ import { DOM_IDS, DOM_SELECTORS, DATA_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, GESTU
          DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { getTaskText } from '../task/taskUtils.js';
-import { getActiveRoutine, getActiveRoutineId, getAllDoneHintKey, getCycleMode, getDeleteSettingsMode, getRoutine, getTaskResetIndicator, resolveDeleteWhenComplete } from '../utils/cycleMode.js';
+import { getActiveRoutine, getActiveRoutineId, getAllDoneHintKey, getCycleMode, getDeleteSettingsMode, getRoutine, getTaskResetIndicator, getAutoClearForMode } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION
@@ -404,12 +404,7 @@ export class FocusTaskPanel {
         const mode = getDeleteSettingsMode(cycle);
 
         const indicator = getTaskResetIndicator({
-            deleteWhenComplete: resolveDeleteWhenComplete({
-                settings: task.deleteWhenCompleteSettings,
-                legacy: task.deleteWhenComplete,
-                mode,
-                defaults: DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS
-            }),
+            deleteWhenComplete: getAutoClearForMode(task, mode, DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS),
             isRecurring: !!task.recurring,
             mode
         });

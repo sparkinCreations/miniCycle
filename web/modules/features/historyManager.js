@@ -16,7 +16,7 @@ import { isClickOnNotification } from '../ui/modalUtils.js';
 // them as UTC midnight, showing the previous day in negative UTC offsets.
 import { parseDateAsLocal } from '../recurring/recurringDateUtils.js';
 import { isValidHex } from '../utils/styleValidators.js';
-import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
+import { getActiveRoutineId, getAutoClearSettings, getRoutine } from '../utils/cycleMode.js';
 
 // ============================================================================
 // CONSTANTS
@@ -1146,7 +1146,8 @@ export class HistoryManager {
                 if (entry.remindersEnabled) recreateOptions.remindersEnabled = true;
                 // Pass per-mode settings only — createOrUpdateTaskData derives the active
                 // deleteWhenComplete value from the current mode + these settings
-                if (entry.deleteWhenCompleteSettings) recreateOptions.deleteWhenCompleteSettings = structuredClone(entry.deleteWhenCompleteSettings);
+                const entryAutoClear = getAutoClearSettings(entry);
+                if (entryAutoClear) recreateOptions.deleteWhenCompleteSettings = structuredClone(entryAutoClear);
                 if (entry.recurring) recreateOptions.recurring = true;
                 if (entry.recurringSettings) recreateOptions.recurringSettings = structuredClone(entry.recurringSettings);
 

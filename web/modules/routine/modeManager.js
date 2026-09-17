@@ -429,12 +429,12 @@ export class ModeManager {
      */
     isModeAlreadyApplied(cycle, isToDoMode, currentMode) {
         if (!cycle || cycle.deleteCheckedTasks !== isToDoMode) return false;
-        return (cycle.tasks || []).every(task => {
-            const stored = task.deleteWhenCompleteSettings;
-            if (!stored || typeof stored !== 'object') return false;
-            if (typeof stored[currentMode] !== 'boolean') return false;
-            return !!task.deleteWhenComplete === stored[currentMode];
-        });
+        // Probe a shallow copy: the sync helper reports whether it would have to
+        // write anything, and the live cycle stays untouched.
+        const defaults = this.deps.DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS;
+        return (cycle.tasks || []).every(task =>
+            !syncTaskDeleteWhenComplete({ ...task }, currentMode, defaults).changed
+        );
     }
 
     /**

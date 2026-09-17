@@ -322,12 +322,95 @@ export const resolveAutoClear = resolveDeleteWhenComplete;
  * @returns {boolean}
  */
 export function getAutoClear(task, routine, defaults) {
+    return getAutoClearForMode(task, getDeleteSettingsMode(routine), defaults);
+}
+
+/**
+ * {@link getAutoClear} for callers that already hold the mode key rather than
+ * the routine (the DOM sync helpers, cleared-task records that remember the
+ * mode they were cleared in).
+ * @param {Object|null|undefined} task
+ * @param {'todo'|'cycle'} mode - see getAutoClearMode
+ * @param {Object} defaults - DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS
+ * @returns {boolean}
+ */
+export function getAutoClearForMode(task, mode, defaults) {
     return resolveDeleteWhenComplete({
         settings: task?.deleteWhenCompleteSettings,
         legacy: task?.deleteWhenComplete,
-        mode: getDeleteSettingsMode(routine),
+        mode,
         defaults
     });
+}
+
+/**
+ * The task's per-mode auto-clear map as stored — `{ cycle, todo }` — or
+ * undefined when the task has none. Not validated: use {@link isAutoClearSettings}
+ * before trusting a key, or {@link getAutoClear} to read one mode safely.
+ * @param {Object|null|undefined} task
+ * @returns {Object|undefined}
+ */
+export function getAutoClearSettings(task) {
+    return task?.deleteWhenCompleteSettings ?? undefined;
+}
+
+/**
+ * Is `settings` a usable per-mode map — a boolean for every key in `defaults`?
+ * @param {*} settings
+ * @param {Object} defaults - DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS
+ * @returns {boolean}
+ */
+export function isAutoClearSettings(settings, defaults) {
+    if (!settings || typeof settings !== 'object' || !defaults) return false;
+    return Object.keys(defaults).every(key => typeof settings[key] === 'boolean');
+}
+
+/**
+ * Replace a task's whole per-mode map and re-derive its active value for the
+ * routine's current mode. Keys `defaults` does not name are dropped and missing
+ * ones filled from `defaults` (the same per-key repair the loader does). Mutates
+ * `task` — call it inside an AppState.update() producer.
+ * @param {Object} task - Task draft to mutate
+ * @param {Object|null|undefined} settings - The new map; null/undefined means "all defaults"
+ * @param {Object|null|undefined} routine - The task's routine (sets the mode)
+ * @param {Object} defaults - DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS or DEFAULT_RECURRING_DELETE_SETTINGS
+ * @returns {'todo'|'cycle'|null} The mode key the active value was derived for, or null when nothing was written
+ */
+export function setAutoClearSettings(task, settings, routine, defaults) {
+    if (!task || !defaults) return null;
+    const mode = getDeleteSettingsMode(routine);
+    task.deleteWhenCompleteSettings = settings && typeof settings === 'object' ? { ...settings } : { ...defaults };
+    syncTaskDeleteWhenComplete(task, mode, defaults);
+    return mode;
+}
+
+/**
+ * The stored auto-clear fields for a task or template built from scratch — spread
+ * the result into the object literal. This is the ONE place a literal's stored
+ * names are spelled, so Schema 2.6 changes what it returns and nothing else.
+ *
+ * Until the collapse, the active value is written beside the map (its "mirror").
+ * When `value` is a boolean it is written as given — that is how a recreated
+ * recurring instance is forced to clear regardless of its template's map;
+ * otherwise it is derived from `settings[mode]` (falling back to `defaults`) when
+ * a mode is known, and left undefined when not (templates carry no mode).
+ *
+ * @param {Object} args
+ * @param {Object|null|undefined} args.settings - per-mode map; null/undefined means a copy of `defaults`
+ * @param {Object} args.defaults - DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS or DEFAULT_RECURRING_DELETE_SETTINGS
+ * @param {'todo'|'cycle'} [args.mode] - see getAutoClearMode
+ * @param {boolean} [args.value] - explicit active value
+ * @returns {{deleteWhenComplete: (boolean|undefined), deleteWhenCompleteSettings: Object}}
+ */
+export function autoClearFields({ settings, defaults, mode, value } = {}) {
+    const map = settings && typeof settings === 'object' ? settings : { ...defaults };
+    let active;
+    if (typeof value === 'boolean') {
+        active = value;
+    } else if (mode) {
+        active = resolveDeleteWhenComplete({ settings: map, legacy: undefined, mode, defaults });
+    }
+    return { deleteWhenComplete: active, deleteWhenCompleteSettings: map };
 }
 
 /**
