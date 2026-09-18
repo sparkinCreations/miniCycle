@@ -238,6 +238,12 @@ export function validateSchema() {
 // document. A hit means a container the migration does not walk yet.
 const STALE_25_KEYS = ['cycles', 'activeCycleId', 'totalCyclesCreated',
     'deleteWhenComplete', 'deleteWhenCompleteSettings', 'highPriority', 'wasHighPriority', 'priorityColor'];
+// Containers whose keys are OPTION IDS that happen to share those names, not
+// stored task fields: a routine's `taskOptionButtons` maps option id -> visible
+// (`highPriority: true` means "show the priority button"). The migration leaves
+// them alone on purpose; the first real-data dry run (Sep 2026, 7 routines)
+// reported 8 false positives here before this exemption.
+const STALE_SCAN_SKIP = ['taskOptionButtons'];
 
 /**
  * Every path in `value` whose key is one of `keys`, as "a.b[3].c" strings.
@@ -252,6 +258,7 @@ function findKeys(value, keys, path = '', hits = []) {
         value.forEach((item, index) => findKeys(item, keys, `${path}[${index}]`, hits));
     } else if (value && typeof value === 'object') {
         for (const [key, child] of Object.entries(value)) {
+            if (STALE_SCAN_SKIP.includes(key)) continue;
             const childPath = path ? `${path}.${key}` : key;
             if (keys.includes(key)) hits.push(childPath);
             findKeys(child, keys, childPath, hits);

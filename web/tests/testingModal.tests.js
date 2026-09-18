@@ -275,6 +275,21 @@ export async function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
         if (!outputText().includes('FAILED')) throw new Error(outputText());
     });
 
+    await test('dry run ignores option ids in taskOptionButtons but still catches a task-level key', () => {
+        // Real data, Sep 2026: every routine with a customised option bar carries
+        // taskOptionButtons.highPriority / .deleteWhenComplete — option IDS, not
+        // task fields. They must not count; a task field of the same name must.
+        mockState.schemaVersion = '2.5';
+        mockState.data.cycles['test-cycle'].taskOptionButtons = { highPriority: true, deleteWhenComplete: false, dueDate: true };
+        const clean = dryRunSchema26Migration();
+        if (!clean || clean.problems.length !== 0) throw new Error(`option ids counted as stale: ${JSON.stringify(clean?.problems)}`);
+        if (!outputText().includes('PASS')) throw new Error(outputText());
+        ensureOutput();
+        mockState.data.cycles['test-cycle'].leftovers = [{ deleteWhenComplete: true }];
+        const dirty = dryRunSchema26Migration();
+        if (!dirty || !dirty.problems.some(p => p.includes('leftovers[0].deleteWhenComplete'))) throw new Error(JSON.stringify(dirty?.problems));
+    });
+
     await test('dry run flags a stale 2.5 key the migration leaves behind', () => {
         // A container the migration does not walk (a made-up one) keeps its 2.5
         // field, and the deep scan must report it. This is what proves the scan
