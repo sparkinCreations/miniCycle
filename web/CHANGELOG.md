@@ -1,3 +1,7 @@
+## [2.572] - 2026-09-18
+- fix(testing): dry-run scan skips taskOptionButtons — option ids, not task fields
+
+
 ## [2.571] - 2026-09-18
 - docs(schema): file-by-file wiring checklist for the 2.6 release step
 - feat(testing): dry-run the 2.5 -> 2.6 migration on real data, never writing
