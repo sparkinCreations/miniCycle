@@ -34,7 +34,7 @@ export async function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
     }
 
     const { escapeHtml, appendToTestResults, clearTestResults, setTestingModalCoreDependencies } = core;
-    const { checkDataIntegrity, validateSchema, showAppInfo, showStorageInfo } = diagnostics;
+    const { checkDataIntegrity, validateSchema, showAppInfo, showStorageInfo, dryRunSchema26Migration } = diagnostics;
     const { getServiceWorkerInfo } = debug;
 
     // DOM_IDS.TESTING_OUTPUT === 'testing-output' — the element the modules write into.
@@ -235,6 +235,55 @@ export async function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
             throw new Error(`expected an outdated-schema note, got: "${outputText()}"`);
         }
         mockState = cleanState();
+    });
+
+    // =====================================================
+    // Diagnostics: dryRunSchema26Migration (real, sync, never writes)
+    // =====================================================
+    resultsDiv.innerHTML += '<h4>Migration dry run</h4>';
+
+    await test('dry run reports the routines, tasks and levels it would migrate and passes its own checks', () => {
+        mockState.schemaVersion = '2.5';
+        mockState.data.cycles['test-cycle'].tasks[0].highPriority = true;
+        mockState.data.cycles['test-cycle'].tasks[0].priorityColor = '#facc15';
+        const before = JSON.stringify(mockState);
+        const report = dryRunSchema26Migration();
+        const text = outputText();
+        if (!report || report.migrated !== true) throw new Error(`expected a migrated report, got ${JSON.stringify(report)}`);
+        if (!text.includes('Routines: 1 re-keyed')) throw new Error(`routine line missing: "${text}"`);
+        if (!text.includes('Tasks: 2,')) throw new Error(`task line missing: "${text}"`);
+        if (!text.includes('medium 1')) throw new Error(`level count missing: "${text}"`);
+        if (!text.includes('PASS')) throw new Error(`checks did not pass: "${text}"`);
+        if (report.problems.length !== 0) throw new Error(`problems: ${report.problems.join('; ')}`);
+        if (JSON.stringify(mockState) !== before) throw new Error('the live state was modified by a DRY run');
+    });
+
+    await test('dry run says there is nothing to migrate for a 2.6 document', () => {
+        mockState.schemaVersion = '2.6';
+        mockState.metadata.schemaVersion = '2.6';
+        const report = dryRunSchema26Migration();
+        if (!report || report.migrated !== false || report.kind !== 'current') throw new Error(JSON.stringify(report));
+        if (!outputText().includes('nothing to migrate')) throw new Error(outputText());
+    });
+
+    await test('dry run reports a migration failure instead of throwing', () => {
+        // metadata says 2.5 but the document itself carries no version: the
+        // migration refuses it, and the diagnostic must say so, not crash.
+        delete mockState.schemaVersion;
+        const report = dryRunSchema26Migration();
+        if (!report || report.migrated !== false || !report.error) throw new Error(JSON.stringify(report));
+        if (!outputText().includes('FAILED')) throw new Error(outputText());
+    });
+
+    await test('dry run flags a stale 2.5 key the migration leaves behind', () => {
+        // A container the migration does not walk (a made-up one) keeps its 2.5
+        // field, and the deep scan must report it. This is what proves the scan
+        // is real rather than a constant PASS.
+        mockState.schemaVersion = '2.5';
+        mockState.data.cycles['test-cycle'].somethingNew = [{ highPriority: true }];
+        const report = dryRunSchema26Migration();
+        if (!report || !report.problems.some(p => p.includes('stale 2.5 key'))) throw new Error(JSON.stringify(report));
+        if (!outputText().includes('PROBLEM')) throw new Error(outputText());
     });
 
     // =====================================================

@@ -540,8 +540,10 @@ naming there — but users' data is migrated once. Still sequenced after this pl
 
 *(`utils/schemaVersion.js` compares parsed numbers, and `AppState` classifies stored data
 through it at init, reload, save and cross-tab — the forward-compatibility release in
-`SCHEMA_2_6_PLAN.md`. The restore/import paths still use `=== '2.5'`; they reject rather than
-overwrite, and move onto the classifier with the 2.6 migration.)*
+`SCHEMA_2_6_PLAN.md`. The restore / import / sanitize gates moved onto
+`isSupportedStoredVersion()` in v2.569, so a bump changes `SCHEMA.CURRENT` and no gate. What
+remains literal is the 2.5 SHAPE-writing code in `appState` and `migrationManager`, which the
+2.6 wiring rewrites.)*
 
 **Fix:** Equality only, or integer/`{major,minor}`. Never `>` string versions (`"2.5" > "2.10"`).
 
