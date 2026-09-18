@@ -7,8 +7,13 @@
  * @module testing-modal-diagnostics
  */
 
-import { UI_TIMEOUTS, SCHEMA } from '../core/constants.js';
+import { UI_TIMEOUTS, SCHEMA, PRIORITY_LEVELS } from '../core/constants.js';
 import { getLocalStorageQuota } from '../utils/storageUtils.js';
+import { GlobalUtils } from '../utils/globalUtils.js';
+import { THEME_DEFINITIONS } from '../labels/themes.js';
+import { collectSwatchSets } from '../utils/priorityLevel.js';
+import { migrateSchema_2_5_to_2_6, SCHEMA_2_6 } from '../routine/schemaMigration26.js';
+import { classifyStoredVersion } from '../utils/schemaVersion.js';
 import {
     getDeps,
     showNotification,
@@ -35,6 +40,10 @@ export function setupDiagnosticsButtons() {
 
     safeAddEventListenerById("validate-schema", "click", () => {
         validateSchema();
+    });
+
+    safeAddEventListenerById("dry-run-schema-26", "click", () => {
+        dryRunSchema26Migration();
     });
 
     safeAddEventListenerById("show-app-info", "click", () => {
@@ -219,6 +228,132 @@ export function validateSchema() {
             showNotification(getLabel('notify.diagSchemaValid'), "success", UI_TIMEOUTS.NOTIFICATION_LONG);
         }
     }, 800);
+}
+
+// ==========================================
+// 2.5 -> 2.6 MIGRATION DRY RUN
+// ==========================================
+
+// Stored 2.5 field names that must not survive the migration anywhere in the
+// document. A hit means a container the migration does not walk yet.
+const STALE_25_KEYS = ['cycles', 'activeCycleId', 'totalCyclesCreated',
+    'deleteWhenComplete', 'deleteWhenCompleteSettings', 'highPriority', 'wasHighPriority', 'priorityColor'];
+
+/**
+ * Every path in `value` whose key is one of `keys`, as "a.b[3].c" strings.
+ * @param {*} value
+ * @param {string[]} keys
+ * @param {string} [path='']
+ * @param {string[]} [hits=[]]
+ * @returns {string[]}
+ */
+function findKeys(value, keys, path = '', hits = []) {
+    if (Array.isArray(value)) {
+        value.forEach((item, index) => findKeys(item, keys, `${path}[${index}]`, hits));
+    } else if (value && typeof value === 'object') {
+        for (const [key, child] of Object.entries(value)) {
+            const childPath = path ? `${path}.${key}` : key;
+            if (keys.includes(key)) hits.push(childPath);
+            findKeys(child, keys, childPath, hits);
+        }
+    }
+    return hits;
+}
+
+/**
+ * Run the 2.5 -> 2.6 migration on a CLONE of the live state and report what it
+ * would do (routine keys, clear settings, priority levels) plus the checks a
+ * release depends on: the live state is untouched, no 2.5 field name survives,
+ * nothing is lost, and running the result through again changes nothing.
+ * Never writes. This is the "dry-run on real data before release" the plan
+ * asks for (SCHEMA_2_6_PLAN.md, Risks), runnable on any device with data.
+ * @returns {Object|null} The report (also printed), or null when it could not run
+ */
+export function dryRunSchema26Migration() {
+    const deps = getDeps();
+    appendToTestResults(`Schema 2.5 -> ${SCHEMA_2_6} migration dry run (nothing is written):\n`);
+
+    if (!deps.AppState?.isReady?.()) {
+        appendToTestResults("AppState not ready\n\n");
+        showNotification(getLabel('notify.diagNoAppState'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
+        return null;
+    }
+    const live = deps.AppState.get();
+    if (!live) {
+        appendToTestResults("No state data available\n\n");
+        return null;
+    }
+
+    const liveBefore = JSON.stringify(live);
+    const kind = classifyStoredVersion(live, SCHEMA_2_6);
+    if (kind !== 'older') {
+        appendToTestResults(`- Stored schema is ${live.schemaVersion ?? live.metadata?.schemaVersion} (${kind} for ${SCHEMA_2_6}) - nothing to migrate\n\n`);
+        return { kind, migrated: false };
+    }
+
+    const options = {
+        makeId: () => GlobalUtils.generateId('routine'),
+        swatchSets: collectSwatchSets(THEME_DEFINITIONS)
+    };
+    let migrated;
+    try {
+        migrated = migrateSchema_2_5_to_2_6(live, options);
+    } catch (error) {
+        appendToTestResults(`- FAILED: ${error.message}\n\n`);
+        showNotification(getLabel('notify.diagMigrationDryRunFailed'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
+        return { kind, migrated: false, error: error.message };
+    }
+
+    // What it would do
+    const before = live.data?.cycles || {};
+    const after = migrated.data?.routine || {};
+    const keyMap = Object.keys(before).map((name, i) => [name, Object.keys(after)[i]]);
+    const routinesAfter = Object.values(after);
+    const tasksAfter = routinesAfter.flatMap(r => Array.isArray(r.tasks) ? r.tasks : []);
+    const templatesAfter = routinesAfter.flatMap(r => Object.values(r.recurringTemplates || {}));
+    const entriesAfter = routinesAfter.flatMap(r => r.clearedTasks?.entries || []);
+    const levels = Object.fromEntries([...PRIORITY_LEVELS, 'none'].map(l => [l, 0]));
+    tasksAfter.forEach(t => { levels[t.priority ?? 'none']++; });
+
+    appendToTestResults(`- Routines: ${keyMap.length} re-keyed, active -> ${migrated.appState?.activeRoutineId ? 'mapped' : 'NONE'}\n`);
+    keyMap.slice(0, 5).forEach(([name, key]) => appendToTestResults(`    "${name}" -> ${key}\n`));
+    if (keyMap.length > 5) appendToTestResults(`    ... ${keyMap.length - 5} more\n`);
+    appendToTestResults(`- Tasks: ${tasksAfter.length}, recurring templates: ${templatesAfter.length}, cleared entries: ${entriesAfter.length}\n`);
+    appendToTestResults(`- Priority levels: ${PRIORITY_LEVELS.map(l => `${l} ${levels[l]}`).join(', ')}, none ${levels.none}\n`);
+    appendToTestResults(`- Default priority: ${migrated.settings?.defaultPriority ?? 'none'}\n`);
+
+    // Release checks
+    const problems = [];
+    if (JSON.stringify(live) !== liveBefore) problems.push('the LIVE state was modified');
+    const stale = findKeys(migrated, STALE_25_KEYS);
+    if (stale.length) problems.push(`${stale.length} stale 2.5 key(s) survive: ${stale.slice(0, 5).join(', ')}${stale.length > 5 ? ', ...' : ''}`);
+    const tasksBefore = Object.values(before).reduce((n, r) => n + (Array.isArray(r.tasks) ? r.tasks.length : 0), 0);
+    if (tasksBefore !== tasksAfter.length) problems.push(`task count changed: ${tasksBefore} -> ${tasksAfter.length}`);
+    const textsBefore = Object.values(before).flatMap(r => (r.tasks || []).map(t => t.text)).join(' ');
+    const textsAfter = tasksAfter.map(t => t.text).join(' ');
+    if (textsBefore !== textsAfter) problems.push('task texts or order changed');
+    const badAutoClear = tasksAfter.filter(t => !t.autoClear || typeof t.autoClear.cycle !== 'boolean' || typeof t.autoClear.todo !== 'boolean');
+    if (badAutoClear.length) problems.push(`${badAutoClear.length} task(s) without a complete autoClear map`);
+    const badPriority = [...tasksAfter, ...templatesAfter, ...entriesAfter].filter(t => t.priority !== null && !PRIORITY_LEVELS.includes(t.priority));
+    if (badPriority.length) problems.push(`${badPriority.length} record(s) with an invalid priority`);
+    if (!Object.prototype.hasOwnProperty.call(after, migrated.appState?.activeRoutineId)) problems.push('activeRoutineId does not name a routine');
+    if (String(migrated.schemaVersion) !== SCHEMA_2_6 || String(migrated.metadata?.schemaVersion) !== SCHEMA_2_6) problems.push('version not stamped on both document and metadata');
+    try {
+        const again = migrateSchema_2_5_to_2_6(migrated, options);
+        if (JSON.stringify(again) !== JSON.stringify(migrated)) problems.push('running the migration twice changes the result');
+    } catch (error) {
+        problems.push(`second run threw: ${error.message}`);
+    }
+
+    if (problems.length === 0) {
+        appendToTestResults('- Checks: live state untouched, no 2.5 keys survive, nothing lost, idempotent - PASS\n\n');
+        showNotification(getLabel('notify.diagMigrationDryRunOk'), "success", UI_TIMEOUTS.NOTIFICATION_LONG);
+    } else {
+        problems.forEach(problem => appendToTestResults(`- PROBLEM: ${problem}\n`));
+        appendToTestResults('\n');
+        showNotification(getLabel('notify.diagMigrationDryRunProblems', { vars: { count: problems.length } }), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
+    }
+    return { kind, migrated: true, problems, levels, routines: keyMap.length, tasks: tasksAfter.length };
 }
 
 // ==========================================
