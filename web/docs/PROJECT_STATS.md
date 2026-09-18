@@ -10,7 +10,7 @@
 > Other sites should fetch that rather than scraping this page — both come from
 > the same counter, so they cannot disagree.
 
-**Last Updated**: September 17, 2026
+**Last Updated**: September 18, 2026
 
 ---
 
@@ -18,7 +18,7 @@
 
 | Metric | Value |
 |--------|-------|
-| **App Version** | 2.569 |
+| **App Version** | 2.570 |
 | **Lite Version** | 2.092 (frozen) |
 | **Schema Version** | 2.5 |
 | **Total Modules** | 160 |

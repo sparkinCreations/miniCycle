@@ -1,3 +1,7 @@
+## [2.570] - 2026-09-18
+- docs(ios): document the CLI device install path (xcodebuild + devicectl over WiFi)
+
+
 ## [2.569] - 2026-09-17
 - refactor(schema): one predicate for every version gate outside the shape owners
 - feat(import): read the 2.6 .mcyc fields ahead of the format bump
