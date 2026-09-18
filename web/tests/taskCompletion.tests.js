@@ -18,8 +18,7 @@ export async function runTaskCompletionTests(resultsDiv) {
         return {
             metadata: { lastModified: Date.now() },
             settings: {},
-            data: {
-                cycles: {
+            data: { routine: {
                     'cycle-1': {
                         tasks: [
                             { id: 'task-1', text: 'Task 1', completed: false },
@@ -30,7 +29,7 @@ export async function runTaskCompletionTests(resultsDiv) {
                     }
                 }
             },
-            appState: { activeCycleId: 'cycle-1', currentMode: 'auto' }
+            appState: { activeRoutineId: 'cycle-1', currentMode: 'auto' }
         };
     }
 
@@ -61,7 +60,7 @@ export async function runTaskCompletionTests(resultsDiv) {
         state.metadata.lastModified = 0;   // reset so we can see the impl set it
         const deps = { AppState: createMockAppState(state) };
 
-        const cycle = state.data.cycles['cycle-1'];
+        const cycle = state.data.routine['cycle-1'];
         saveTaskToSchema25Impl('cycle-1', cycle, deps);
 
         // The impl's update callback sets metadata.lastModified (taskCompletion.js). createMockState
@@ -74,12 +73,12 @@ export async function runTaskCompletionTests(resultsDiv) {
         const deps = { AppState: createMockAppState(state) };
 
         // A SEPARATE cycle object (not the reference already in state), so the assertion proves
-        // the impl actually WROTE it. The old test mutated state.data.cycles['cycle-1'] directly
+        // the impl actually WROTE it. The old test mutated state.data.routine['cycle-1'] directly
         // (same reference) and read it back — a tautology that passes even with deps = {}.
         const newCycle = { title: 'Test', tasks: [{ id: 'task-1', text: 'Rewritten', completed: false }] };
         saveTaskToSchema25Impl('cycle-1', newCycle, deps);
 
-        const saved = state.data.cycles['cycle-1'];
+        const saved = state.data.routine['cycle-1'];
         if (saved !== newCycle) throw new Error('impl should assign the passed cycle into state');
         if (saved.tasks[0].text !== 'Rewritten') throw new Error('persisted cycle should carry the passed task data');
     });

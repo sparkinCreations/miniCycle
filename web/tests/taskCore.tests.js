@@ -110,20 +110,19 @@ export async function runTaskCoreTests(resultsDiv, isPartOfSuite = false) {
                 version: "2.5",
                 lastModified: Date.now(),
                 createdAt: Date.now(),
-                schemaVersion: "2.5"
+                schemaVersion: "2.6"
             },
             settings: {
                 theme: 'default',
                 darkMode: false
             },
-            data: {
-                cycles: {
+            data: { routine: {
                     'cycle-1': {
                         id: 'cycle-1',
                         name: 'Test Cycle',
                         tasks: [
-                            { id: 'task-1', text: 'Test Task 1', completed: false, highPriority: false },
-                            { id: 'task-2', text: 'Test Task 2', completed: true, highPriority: true }
+                            { id: 'task-1', text: 'Test Task 1', completed: false, priority: null },
+                            { id: 'task-2', text: 'Test Task 2', completed: true, priority: 'high' }
                         ],
                         cycleCount: 5,
                         autoReset: true,
@@ -132,7 +131,7 @@ export async function runTaskCoreTests(resultsDiv, isPartOfSuite = false) {
                 }
             },
             appState: {
-                activeCycleId: 'cycle-1',
+                activeRoutineId: 'cycle-1',
                 currentMode: 'auto-cycle'
             },
             userProgress: {

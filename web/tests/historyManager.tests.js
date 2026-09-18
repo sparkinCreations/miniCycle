@@ -20,8 +20,7 @@ export async function runHistoryManagerTests(resultsDiv) {
         return {
             metadata: { lastModified: Date.now() },
             settings: {},
-            data: {
-                cycles: {
+            data: { routine: {
                     'cycle-1': {
                         tasks: [],
                         history: { events: [] },
@@ -31,7 +30,7 @@ export async function runHistoryManagerTests(resultsDiv) {
                     }
                 }
             },
-            appState: { activeCycleId: 'cycle-1' },
+            appState: { activeRoutineId: 'cycle-1' },
             userProgress: { cyclesCompleted: 3, totalTasksCleared: 5 },
             achievements: { unlocked: [], seen: {} },
             ...overrides
@@ -99,7 +98,7 @@ export async function runHistoryManagerTests(resultsDiv) {
         mgr.logEvent('taskAdded', { taskText: 'New task' });
 
         const state = mockAS.get();
-        const events = state.data.cycles['cycle-1'].history.events;
+        const events = state.data.routine['cycle-1'].history.events;
         if (events.length === 0) throw new Error('Event not added');
     });
 
@@ -113,7 +112,7 @@ export async function runHistoryManagerTests(resultsDiv) {
         const mgr = new HistoryManager();
         mgr.logEvent('cycleCompleted', {});
 
-        const events = mockAS.get().data.cycles['cycle-1'].history.events;
+        const events = mockAS.get().data.routine['cycle-1'].history.events;
         if (events[0].type !== 'cycleCompleted') throw new Error(`Expected "cycleCompleted", got "${events[0].type}"`);
     });
 
@@ -128,7 +127,7 @@ export async function runHistoryManagerTests(resultsDiv) {
         const before = Date.now();
         mgr.logEvent('taskDeleted', { taskText: 'Old task' });
 
-        const events = mockAS.get().data.cycles['cycle-1'].history.events;
+        const events = mockAS.get().data.routine['cycle-1'].history.events;
         if (!events[0].timestamp || events[0].timestamp < before) {
             throw new Error('Timestamp not set correctly');
         }
@@ -145,7 +144,7 @@ export async function runHistoryManagerTests(resultsDiv) {
         mgr.logEvent('taskAdded', { taskText: 'First' });
         mgr.logEvent('taskAdded', { taskText: 'Second' });
 
-        const events = mockAS.get().data.cycles['cycle-1'].history.events;
+        const events = mockAS.get().data.routine['cycle-1'].history.events;
         if (events.length < 2) throw new Error('Both events should be stored');
         // Newest first — Second should be at index 0
         if (!events[0].details?.taskText?.includes('Second')) {
@@ -218,7 +217,7 @@ export async function runHistoryManagerTests(resultsDiv) {
         mgr.logEvent('taskAdded', { taskText: 'Test' });
 
         mgr.clearHistory('cycle-1');
-        const events = mockAS.get().data.cycles['cycle-1'].history.events;
+        const events = mockAS.get().data.routine['cycle-1'].history.events;
         if (events.length !== 0) throw new Error('Events should be cleared');
     });
 
@@ -240,7 +239,7 @@ export async function runHistoryManagerTests(resultsDiv) {
 
     await test('getHistory handles missing history object', () => {
         const mockAS = createMockAppState();
-        delete mockAS.get().data.cycles['cycle-1'].history;
+        delete mockAS.get().data.routine['cycle-1'].history;
         setHistoryManagerDependencies({
             AppState: mockAS,
             appInit: createMockAppInit(),
@@ -267,13 +266,13 @@ export async function runHistoryManagerTests(resultsDiv) {
         const html = mgr._renderEvent({
             type: 'task_priority_set',
             timestamp: 1723000000000,
-            details: { taskName: 'Water plants', priorityColor: '#ff8800' }
+            details: { taskName: 'Water plants', priority: 'medium' }
         });
         if (!html.includes('history-priority-dot')) {
             throw new Error('priority_set must render the priority dot (branch was unreachable below the generic taskName branch)');
         }
-        if (!html.includes('#ff8800')) {
-            throw new Error('the logged priorityColor must reach the dot');
+        if (!html.includes('#facc15')) {
+            throw new Error('the logged LEVEL must reach the dot as its default swatch');
         }
         if (!html.includes('Water plants')) throw new Error('task name must render');
     });

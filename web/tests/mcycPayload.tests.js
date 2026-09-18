@@ -30,13 +30,12 @@ export async function runMcycPayloadTests(resultsDiv) {
                 text: 'Stretch',
                 completed: true,
                 dueDate: '2026-07-30',
-                highPriority: true,
-                priorityColor: '#8b1a1a',
+                priority: 'high',
                 remindersEnabled: true,
                 recurring: false,
                 recurringSettings: null,
-                deleteWhenComplete: false,
-                deleteWhenCompleteSettings: { cycle: false, todo: true },
+                
+                autoClear: { cycle: false, todo: true },
                 schemaVersion: 2
             }],
             autoReset: true,
@@ -66,10 +65,17 @@ export async function runMcycPayloadTests(resultsDiv) {
         if (payload.clearedTasks?.entries?.[0]?.taskText !== 'secret task') throw new Error('clearedTasks should round-trip');
     });
 
-    await test('priorityColor survives (dropped by the old share/switcher copies)', () => {
+    await test('priority survives, and the 2.5 pair is dual-written for older readers', () => {
         const payload = buildMcycPayload('my-cycle', makeCycle(), { includeHistory: false });
-        if (payload.tasks[0].priorityColor !== '#8b1a1a') {
-            throw new Error(`priorityColor lost: got ${payload.tasks[0].priorityColor}`);
+        const t = payload.tasks[0];
+        if (t.priority !== 'high') throw new Error(`priority lost: got ${t.priority}`);
+        // SCHEMA_2_6_PLAN.md ".mcyc": the lagging platform builds read the 2.5 pair,
+        // colour = the level's default swatch.
+        if (t.highPriority !== true || t.priorityColor !== '#dc3545') {
+            throw new Error(`2.5 pair not dual-written: ${t.highPriority} ${t.priorityColor}`);
+        }
+        if (!t.autoClear || !t.deleteWhenCompleteSettings || typeof t.deleteWhenComplete !== 'boolean') {
+            throw new Error('autoClear and its 2.5 pair must both be written');
         }
     });
 

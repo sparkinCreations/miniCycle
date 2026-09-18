@@ -311,7 +311,7 @@
 - Recurring task integration
 - Testing and troubleshooting
 
-#### [SCHEMA_2_5.md](reference/SCHEMA_2_5.md)
+#### [SCHEMA_2_6.md](reference/SCHEMA_2_6.md)
 **What it is**: Data structure and schema documentation
 **Read if**: You're working with data persistence or state management
 **Time**: 10 minutes
@@ -441,7 +441,7 @@
 
 1. **Product overview**: [WHAT_IS_MINICYCLE.md](start-here/WHAT_IS_MINICYCLE.md)
 2. **Architecture**: [CLAUDE.md](working-on-code/CLAUDE.md)
-3. **Data structure**: [SCHEMA_2_5.md](reference/SCHEMA_2_5.md)
+3. **Data structure**: [SCHEMA_2_6.md](reference/SCHEMA_2_6.md)
 4. **Test system**: [TESTING_README.md](testing/TESTING_README.md)
 
 ### "I'm debugging an issue"
@@ -449,13 +449,13 @@
 1. **Test failures**: [TESTING_README.md](testing/TESTING_README.md) → Debugging section
 2. **Performance issues**: [PERFORMANCE_TESTING_GUIDE.md](performance/PERFORMANCE_TESTING_GUIDE.md) → Optimization section
 3. **Cache/PWA issues**: [SERVICE_WORKER_UPDATE_STRATEGY.md](deployment/SERVICE_WORKER_UPDATE_STRATEGY.md) → Troubleshooting
-4. **Data corruption**: [SCHEMA_2_5.md](reference/SCHEMA_2_5.md) → Migration section
+4. **Data corruption**: [SCHEMA_2_6.md](reference/SCHEMA_2_6.md) → Migration section
 5. **Memory leaks**: [PERFORMANCE_TESTING_GUIDE.md](performance/PERFORMANCE_TESTING_GUIDE.md) → Chrome DevTools section
 
 ### "I'm adding a feature"
 
 1. **Architecture**: [CLAUDE.md](working-on-code/CLAUDE.md) → Module System
-2. **Data model**: [SCHEMA_2_5.md](reference/SCHEMA_2_5.md) → Adding fields
+2. **Data model**: [SCHEMA_2_6.md](reference/SCHEMA_2_6.md) → Adding fields
 3. **Example feature**: [COMPLETED_TASKS_DROPDOWN.md](features/COMPLETED_TASKS_DROPDOWN.md) → Implementation Details
 4. **Write tests**: [TESTING_README.md](testing/TESTING_README.md) → Writing Tests
 5. **Version update**: [CLAUDE.md](working-on-code/CLAUDE.md) → Version Management
@@ -468,7 +468,7 @@
 
 **Themes:**
 1. [THEME_ARCHITECTURE.md](architecture/THEME_ARCHITECTURE.md) → Theme system
-2. [SCHEMA_2_5.md](reference/SCHEMA_2_5.md) → Theme data
+2. [SCHEMA_2_6.md](reference/SCHEMA_2_6.md) → Theme data
 
 **Recurring Tasks:**
 1. [RECURRING_WATCH_FUNCTION.md](architecture/RECURRING_WATCH_FUNCTION.md) → Scheduling
@@ -484,7 +484,7 @@
 
 **Import/Export:**
 1. [MCYC_FILE_FORMAT.md](reference/MCYC_FILE_FORMAT.md) → File format
-2. [SCHEMA_2_5.md](reference/SCHEMA_2_5.md) → Data structure
+2. [SCHEMA_2_6.md](reference/SCHEMA_2_6.md) → Data structure
 
 ### "I'm optimizing performance"
 
@@ -612,7 +612,7 @@ Status: Complete ✅
 | PERFORMANCE_SUMMARY.md | 2025-11-12 | ✅ Current |
 | PERFORMANCE_SETUP.md | 2025-11-12 | ✅ Current |
 | COMPLETED_TASKS_DROPDOWN.md | 2025-11-13 | ✅ Current |
-| SCHEMA_2_5.md | 2025-01 | ✅ Current |
+| SCHEMA_2_6.md | 2025-01 | ✅ Current |
 | DRAG_DROP_ARCHITECTURE.md | 2025-01 | ✅ Current |
 | THEME_ARCHITECTURE.md | 2024-11-09 | ✅ Current |
 | RECURRING_WATCH_FUNCTION.md | 2025 | ✅ Current |
@@ -633,7 +633,7 @@ Status: Complete ✅
    ↓
 2. Architecture → CLAUDE.md (15 min)
    ↓
-3. Data Structure → SCHEMA_2_5.md (10 min)
+3. Data Structure → SCHEMA_2_6.md (10 min)
    ↓
 4. Testing Overview → TESTING_README.md (10 min)
    ↓

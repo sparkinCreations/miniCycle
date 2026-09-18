@@ -25,10 +25,24 @@ import {
     DEFAULT_RECURRING_DELETE_SETTINGS,
     DEBOUNCE,
     DOM_IDS,
-    STORAGE_KEYS, UI_TIMEOUTS, DOM_CLASSES, SCHEMA } from './constants.js';
+    STORAGE_KEYS,
+    UI_TIMEOUTS,
+    DOM_CLASSES,
+    SCHEMA
+} from './constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { recoverCorruptedData } from '../utils/dataRecovery.js';
 import { classifyStoredVersion } from '../utils/schemaVersion.js';
+import { getRoutines, getActiveRoutine, getActiveRoutineId, setActiveRoutineId } from '../utils/cycleMode.js';
+import { migrateSchema_2_5_to_2_6 } from '../routine/schemaMigration26.js';
+import { GlobalUtils } from '../utils/globalUtils.js';
+import { THEME_DEFINITIONS } from '../labels/themes.js';
+import { collectSwatchSets } from '../utils/priorityLevel.js';
+
+// Where an older document is kept, byte for byte, before it is migrated —
+// beside the `<DATA>_corrupted_<ts>` copies dataRecovery keeps. The factory
+// reset sweeps it like every other miniCycle-prefixed key.
+const PRE_MIGRATION_BACKUP_PREFIX = `${STORAGE_KEYS.DATA}_pre-migration_`;
 
 // NOTE: The in-app test runner now executes on a SEPARATE ORIGIN (test.minicycle.app),
 // so its storage is physically isolated from real user data. The former test-mode
@@ -189,7 +203,7 @@ class MiniCycleState {
      * @returns {Schema25Data|null} Current state or null if not initialized
      * @example
      * const state = AppState.get();
-     * const activeCycle = state.data.cycles[state.appState.activeCycleId];
+     * const routine = getActiveRoutine(state);
      */
     get() {
         return this.data;
@@ -235,10 +249,12 @@ class MiniCycleState {
                     this.isInitialized = false;
                     return null;
                 }
+                parsed = this._migrateIfOlder(parsed, stored);
                 if (this.validateSchema25Structure(parsed)) {
                     this.data = this._ensureMetadata(parsed);
                     this.isInitialized = true;
                     this._registerPersistenceListeners();
+                    if (this.migratedThisBoot) this._persistRepairedData(this.data);
                     return this.data;
                 }
             }
@@ -262,7 +278,7 @@ class MiniCycleState {
      * @private
      */
     _notifyDataRepaired(recovery) {
-        const count = Object.keys(recovery?.data?.data?.cycles || {}).length;
+        const count = Object.keys(recovery?.data?.data?.routine || {}).length;
         this.deps.showNotification(
             getLabel('notify.dataRepaired', {
                 vars: { count, routines: getLabel('noun.routine', { count }) }
@@ -315,6 +331,11 @@ class MiniCycleState {
                 if (stored) {
                     // JSON.parse throws land in the catch below, as before.
                     existingData = this._adoptStoredDocument(stored);
+                    // A migrated document is written back NOW, not on the next
+                    // debounced save: a tab closed before its first edit would
+                    // otherwise re-migrate on every boot (and keep a new
+                    // pre-migration copy each time).
+                    if (existingData && this.migratedThisBoot) this._persistRepairedData(existingData);
                 }
             } catch (parseError) {
                 console.warn('⚠️ Could not parse existing data — attempting recovery:', parseError);
@@ -338,17 +359,18 @@ class MiniCycleState {
             if (existingData) {
                 this.data = this._ensureMetadata(existingData);
 
-                // ✅ Initialize deleteWhenCompleteSettings for existing tasks
+                // ✅ Initialize autoClear for existing tasks
                 let tasksInitialized = 0;
                 let templatesInitialized = 0;
 
-                if (this.data.data?.cycles) {
-                    Object.values(this.data.data.cycles).forEach(cycle => {
+                const routines = getRoutines(this.data);
+                if (routines) {
+                    Object.values(routines).forEach(cycle => {
                         // Initialize settings for regular tasks
                         if (cycle.tasks) {
                             cycle.tasks.forEach(task => {
-                                if (!task.deleteWhenCompleteSettings) {
-                                    task.deleteWhenCompleteSettings = { ...DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS };
+                                if (!task.autoClear) {
+                                    task.autoClear = { ...DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS };
                                     tasksInitialized++;
                                 }
                             });
@@ -357,8 +379,8 @@ class MiniCycleState {
                         // Initialize settings for recurring templates
                         if (cycle.recurringTemplates) {
                             Object.values(cycle.recurringTemplates).forEach(template => {
-                                if (!template.deleteWhenCompleteSettings) {
-                                    template.deleteWhenCompleteSettings = { ...DEFAULT_RECURRING_DELETE_SETTINGS };
+                                if (!template.autoClear) {
+                                    template.autoClear = { ...DEFAULT_RECURRING_DELETE_SETTINGS };
                                     templatesInitialized++;
                                 }
                             });
@@ -569,7 +591,7 @@ class MiniCycleState {
             data.metadata = {
                 createdAt: Date.now(),
                 lastModified: Date.now(),
-                schemaVersion: "2.5"
+                schemaVersion: SCHEMA.CURRENT
             };
         }
 
@@ -586,8 +608,8 @@ class MiniCycleState {
         // check would preserve an already-broken NaN. This runs whether the
         // metadata block was just created or already existed, so it REPAIRS
         // profiles that already stored null rather than only preventing new ones.
-        if (!Number.isFinite(data.metadata.totalCyclesCreated)) {
-            data.metadata.totalCyclesCreated = 0;
+        if (!Number.isFinite(data.metadata.totalRoutinesCreated)) {
+            data.metadata.totalRoutinesCreated = 0;
         }
 
         return data;
@@ -614,7 +636,7 @@ class MiniCycleState {
      * @private
      */
     _adoptStoredDocument(stored) {
-        const parsed = JSON.parse(stored);
+        const parsed = this._migrateIfOlder(JSON.parse(stored), stored);
         if (classifyStoredVersion(parsed) === 'newer') {
             this._blockOnNewerData(parsed.schemaVersion);
             return null;
@@ -625,12 +647,49 @@ class MiniCycleState {
         // Parsed fine but wrong shape — try to salvage before discarding.
         console.warn('⚠️ Existing data structure is invalid — attempting recovery');
         const recovery = recoverCorruptedData(stored, { storage: this.deps.storage });
-        if (recovery.recovered && this.validateSchema25Structure(recovery.data)) {
-            this._persistRepairedData(recovery.data);
-            this._notifyDataRepaired(recovery);
-            return recovery.data;
+        if (recovery.recovered) {
+            recovery.data = this._migrateIfOlder(recovery.data, null);
+            if (this.validateSchema25Structure(recovery.data)) {
+                this._persistRepairedData(recovery.data);
+                this._notifyDataRepaired(recovery);
+                return recovery.data;
+            }
         }
         return null;
+    }
+
+    /**
+     * Bring an OLDER stored document up to SCHEMA.CURRENT before it is adopted.
+     * Today that is one step, 2.5 -> 2.6 (routine/schemaMigration26.js — the
+     * same function the testing modal's dry run exercises on real data). A
+     * current or newer document passes through untouched.
+     *
+     * The raw pre-migration document is kept first under
+     * `<DATA>_pre-migration_<timestamp>`, the way corruption recovery keeps the
+     * bytes it could not parse, so a bad migration is recoverable by hand; the
+     * migrated document is persisted by the caller through the normal path.
+     * `migratedThisBoot` tells later boot steps the stored shape changed (the
+     * undo system clears its persisted snapshots on it).
+     *
+     * @param {Object} doc - Parsed stored document
+     * @param {string|null} rawStored - The raw storage string, when available
+     * @returns {Object} The document to adopt
+     * @private
+     */
+    _migrateIfOlder(doc, rawStored) {
+        if (classifyStoredVersion(doc) !== 'older') return doc;
+        try {
+            this.deps.storage.setItem(`${PRE_MIGRATION_BACKUP_PREFIX}${Date.now()}`, rawStored ?? JSON.stringify(doc));
+        } catch (error) {
+            console.warn('⚠️ Could not keep a pre-migration copy:', error);
+        }
+        const migrated = migrateSchema_2_5_to_2_6(doc, {
+            makeId: () => GlobalUtils.generateId('routine'),
+            swatchSets: collectSwatchSets(THEME_DEFINITIONS)
+        });
+        this.migratedThisBoot = { from: String(doc.schemaVersion), to: SCHEMA.CURRENT };
+        console.warn(`✅ Migrated stored data ${this.migratedThisBoot.from} -> ${this.migratedThisBoot.to}`);
+        return migrated;
     }
 
     /**
@@ -698,15 +757,18 @@ class MiniCycleState {
     /**
      * Validate that data conforms to Schema 2.5 structure
      * @param {Object} data - Data to validate
-     * @returns {boolean} True if valid Schema 2.5 structure
+     * @returns {boolean} True for the CURRENT stored shape (SCHEMA.CURRENT, 2.6)
      * @private
      */
     validateSchema25Structure(data) {
+        // Name kept from 2.5 for its call sites and tests; the shape it checks
+        // is the current one. An older document is migrated BEFORE it gets
+        // here (_migrateIfOlder), so this is a strict "current shape" check.
         try {
             return data &&
-                   data.schemaVersion === "2.5" &&
+                   classifyStoredVersion(data) === 'current' &&
                    data.data &&
-                   typeof data.data.cycles === 'object' &&
+                   typeof data.data.routine === 'object' &&
                    data.appState &&
                    typeof data.appState === 'object';
         } catch (error) {
@@ -722,16 +784,16 @@ class MiniCycleState {
      */
     createMinimalFallbackState() {
         return {
-            schemaVersion: "2.5",
+            schemaVersion: SCHEMA.CURRENT,
             metadata: {
                 createdAt: Date.now(),
                 lastModified: Date.now(),
-                schemaVersion: "2.5",
+                schemaVersion: SCHEMA.CURRENT,
                 // Seeded here as well as in _ensureMetadata: one caller of this
                 // function (the corruption-recovery branch in init) assigns the
                 // result straight to this.data and returns WITHOUT passing it
                 // through _ensureMetadata, so the backfill there would miss it.
-                totalCyclesCreated: 0
+                totalRoutinesCreated: 0
             },
             settings: {
                 theme: 'default',
@@ -741,8 +803,8 @@ class MiniCycleState {
                 testingModalResultsHeight: null,
                 modeDescriptionCollapsed: false
             },
-            data: { cycles: {} },
-            appState: { activeCycleId: null },
+            data: { routine: {} },
+            appState: { activeRoutineId: null },
             userProgress: { cyclesCompleted: 0 },
             customReminders: { enabled: false }
         };
@@ -1077,9 +1139,7 @@ class MiniCycleState {
      * @returns {Cycle|null} Active cycle or null if not available
      */
     getActiveCycle() {
-        if (!this.data) return null;
-        const { data, appState } = this.data;
-        return data.cycles[appState.activeCycleId];
+        return getActiveRoutine(this.data);
     }
 
     /**
@@ -1107,11 +1167,9 @@ class MiniCycleState {
             return;
         }
         this.update(state => {
-            const activeCycle = state.appState.activeCycleId;
-            if (activeCycle && state.data.cycles[activeCycle]) {
-                // Fix #1: Use array assignment instead of Object.assign which corrupts arrays
-                state.data.cycles[activeCycle].tasks = taskUpdates;
-            }
+            const routine = getActiveRoutine(state);
+            // Fix #1: Use array assignment instead of Object.assign which corrupts arrays
+            if (routine) routine.tasks = taskUpdates;
         });
     }
 
@@ -1121,7 +1179,7 @@ class MiniCycleState {
      */
     setActiveCycle(cycleId) {
         this.update(state => {
-            state.appState.activeCycleId = cycleId;
+            setActiveRoutineId(state, cycleId);
         });
     }
 
@@ -1182,11 +1240,9 @@ export function assignCycleVariables() {
         return { lastUsedMiniCycle: null, savedMiniCycles: {} };
     }
 
-    const { data, appState } = currentState;
-
     return {
-        lastUsedMiniCycle: appState.activeCycleId,
-        savedMiniCycles: data.cycles
+        lastUsedMiniCycle: getActiveRoutineId(currentState),
+        savedMiniCycles: getRoutines(currentState)
     };
 }
 

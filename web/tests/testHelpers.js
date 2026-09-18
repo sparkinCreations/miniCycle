@@ -154,8 +154,8 @@ export function createMockData(overrides = {}) {
         metadata: {
             version: "2.5",
             lastModified: Date.now(),
-            schemaVersion: "2.5",
-            totalCyclesCreated: 1
+            schemaVersion: "2.6",
+            totalRoutinesCreated: 1
         },
         settings: {
             theme: 'default',
@@ -164,8 +164,7 @@ export function createMockData(overrides = {}) {
             soundEnabled: true,
             notifications: true,
         },
-        data: {
-            cycles: {
+        data: { routine: {
                 'cycle-main': {
                     id: 'cycle-main',
                     name: 'Main Cycle',
@@ -180,7 +179,7 @@ export function createMockData(overrides = {}) {
             }
         },
         appState: {
-            activeCycleId: 'cycle-main',
+            activeRoutineId: 'cycle-main',
             currentMode: 'auto-cycle'
         },
         userProgress: {
@@ -207,8 +206,8 @@ export function createFlattenedMockData(schemaData = null) {
     const fullData = schemaData || createMockData();
     return {
         metadata: fullData.metadata,
-        cycles: fullData.data?.cycles || {},
-        activeCycle: fullData.appState?.activeCycleId || null,
+        cycles: fullData.data?.routine || {},
+        activeCycle: fullData.appState?.activeRoutineId || null,
         settings: fullData.settings
     };
 }
@@ -252,7 +251,7 @@ export function createMockLoadMiniCycleData(customData = null) {
 export function createMockUpdateCycleData() {
     return (cycleId, updateFn, shouldSave = true) => {
         const data = JSON.parse(localStorage.getItem('miniCycleData') || '{}');
-        const cycle = data.data?.cycles?.[cycleId];
+        const cycle = data.data?.routine?.[cycleId];
         if (cycle && typeof updateFn === 'function') {
             updateFn(cycle);
             if (shouldSave) {

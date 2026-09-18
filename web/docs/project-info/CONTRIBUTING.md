@@ -236,7 +236,7 @@ open http://localhost:8080/tests/module-test-suite.html
 
 - Schema version is tracked in AppState (currently 2.5)
 - Always bump `schemaVersion` and include backward transformation logic
-- See [SCHEMA_2_5.md](../reference/SCHEMA_2_5.md) for the current data structure
+- See [SCHEMA_2_6.md](../reference/SCHEMA_2_6.md) for the current data structure
 
 ---
 

@@ -147,8 +147,8 @@ export async function runTaskUtilsTests(resultsDiv) {
         const mockAppState = {
             isReady: () => true,
             get: () => ({
-                data: { cycles: {} },
-                appState: { activeCycleId: null }
+                data: { routine: {} },
+                appState: { activeRoutineId: null }
             })
         };
 
@@ -169,12 +169,11 @@ export async function runTaskUtilsTests(resultsDiv) {
         const mockAppState = {
             isReady: () => true,
             get: () => ({
-                data: {
-                    cycles: {
+                data: { routine: {
                         'cycle-1': { tasks: [], autoReset: false, deleteCheckedTasks: false }
                     }
                 },
-                appState: { activeCycleId: 'cycle-1' },
+                appState: { activeRoutineId: 'cycle-1' },
                 settings: {}
             })
         };
@@ -204,12 +203,11 @@ export async function runTaskUtilsTests(resultsDiv) {
         const mockAppState = {
             isReady: () => true,
             get: () => ({
-                data: {
-                    cycles: {
+                data: { routine: {
                         'cycle-1': { tasks: [], autoReset: true, deleteCheckedTasks: false }
                     }
                 },
-                appState: { activeCycleId: 'cycle-1' },
+                appState: { activeRoutineId: 'cycle-1' },
                 settings: { theme: 'dark' }
             })
         };
@@ -240,8 +238,7 @@ export async function runTaskUtilsTests(resultsDiv) {
         taskTextTrimmed: 'a recurring task',
         completed: false,
         dueDate: null,
-        highPriority: false,
-        priorityColor: null,
+        priority: null,
         remindersEnabled: false,
         recurring: true,
         recurringSettings: { frequency: 'daily', indefinitely: true },
@@ -249,8 +246,8 @@ export async function runTaskUtilsTests(resultsDiv) {
         cycles: {},
         activeCycle: 'cycle-1',
         isLoading: true,
-        deleteWhenComplete: undefined,
-        deleteWhenCompleteSettings: null
+        
+        autoClear: null
     });
 
     await test('a template created here carries a nextScheduledOccurrence', () => {
@@ -307,14 +304,13 @@ export async function runTaskUtilsTests(resultsDiv) {
         throw new Error('expected an inert template when no calculator is injected');
     });
 
-    const priorityCtx = (id, highPriority, priorityColor) => ({
+    const priorityCtx = (id, priority) => ({
         cycleTasks: [],
         assignedTaskId: id,
         taskTextTrimmed: 'a task',
         completed: false,
         dueDate: null,
-        highPriority,
-        priorityColor,
+        priority,
         remindersEnabled: false,
         recurring: false,
         recurringSettings: {},
@@ -322,50 +318,28 @@ export async function runTaskUtilsTests(resultsDiv) {
         cycles: {},
         activeCycle: 'cycle-1',
         isLoading: true,
-        deleteWhenComplete: undefined,
-        deleteWhenCompleteSettings: null
+        
+        autoClear: null
     });
 
-    await test('created task persists highPriority as a boolean, never null', () => {
-        // null is what addTaskImpl defaulted to until Aug 2026: it was written
-        // verbatim into the stored task, so every UI-created task was
-        // schema-invalid and routineLoader repaired + re-saved it on next boot.
-        const task = TaskUtils.createOrUpdateTaskData(priorityCtx('t-null', null, null), () => {}, null);
-        if (typeof task.highPriority !== 'boolean') {
-            throw new Error(`schema requires a boolean, got ${JSON.stringify(task.highPriority)}`);
+    await test('created task persists priority as a level or null, never undefined', () => {
+        // Until Aug 2026 addTaskImpl wrote `null` for a boolean field verbatim, so
+        // every UI-created task was schema-invalid until routineLoader repaired it
+        // on the next boot. The stored shape must be explicit from the first write.
+        for (const given of [null, undefined, 'urgent']) {
+            const task = TaskUtils.createOrUpdateTaskData(priorityCtx(`t-${given}`, given), () => {}, null);
+            if (task.priority !== null) throw new Error(`${JSON.stringify(given)} should store null, got ${JSON.stringify(task.priority)}`);
         }
-        if (task.highPriority !== false) {
-            throw new Error(`expected false, got ${JSON.stringify(task.highPriority)}`);
-        }
+        const medium = TaskUtils.createOrUpdateTaskData(priorityCtx('t-medium', 'medium'), () => {}, null);
+        if (medium.priority !== 'medium') throw new Error(`level not stored: ${JSON.stringify(medium.priority)}`);
     });
 
-    await test('highPriority coercion does NOT change priority colours', () => {
-        // Guards the constraint on the fix: null and false are both falsy, so
-        // the priorityColor expression must resolve identically either way.
-        const plain = TaskUtils.createOrUpdateTaskData(priorityCtx('t-plain', null, null), () => {}, null);
-        if (plain.priorityColor !== null) {
-            throw new Error(`non-priority task must have no colour, got ${plain.priorityColor}`);
+    await test('no colour and no 2.5 flag are stored beside the level', () => {
+        const task = TaskUtils.createOrUpdateTaskData(priorityCtx('t-high', 'high'), () => {}, null);
+        for (const old of ['highPriority', 'priorityColor', 'deleteWhenComplete', 'deleteWhenCompleteSettings']) {
+            if (old in task) throw new Error(`a retired 2.5 field was written: ${old}`);
         }
-
-        const plainFalse = TaskUtils.createOrUpdateTaskData(priorityCtx('t-false', false, null), () => {}, null);
-        if (plainFalse.priorityColor !== plain.priorityColor) {
-            throw new Error('null and false must resolve to the same colour');
-        }
-
-        const priority = TaskUtils.createOrUpdateTaskData(priorityCtx('t-pri', true, null), () => {}, null);
-        if (priority.priorityColor !== COLORS.PRIORITY_DEFAULT) {
-            throw new Error(`priority task must default to ${COLORS.PRIORITY_DEFAULT}, got ${priority.priorityColor}`);
-        }
-
-        const custom = TaskUtils.createOrUpdateTaskData(priorityCtx('t-custom', true, '#ff00ff'), () => {}, null);
-        if (custom.priorityColor !== '#ff00ff') {
-            throw new Error(`an explicit colour must be preserved, got ${custom.priorityColor}`);
-        }
-
-        const customNoPriority = TaskUtils.createOrUpdateTaskData(priorityCtx('t-custom2', false, '#00ff00'), () => {}, null);
-        if (customNoPriority.priorityColor !== '#00ff00') {
-            throw new Error('an explicit colour must survive even without priority');
-        }
+        if (!task.autoClear || typeof task.autoClear.cycle !== 'boolean') throw new Error('autoClear map missing');
     });
 
     resultsDiv.innerHTML += '<h4 class="test-section">📝 Load Task Context</h4>';

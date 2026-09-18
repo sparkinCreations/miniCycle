@@ -154,7 +154,7 @@ export async function runOnboardingManagerTests(resultsDiv) {
         // prompts explicitly disabled.
         const mockState = {
             settings: { onboardingCompleted: false, tourPromptsEnabled: false },
-            data: { cycles: {} }
+            data: { routine: {} }
         };
         const shown = [];
         setOnboardingManagerDependencies(createMockDeps({
@@ -771,7 +771,7 @@ export async function runOnboardingManagerTests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">🚀 First-Run Focus-First Flow</h4>';
 
     await test('runFirstRunFlow loads sample, sets focus state, attaches lifecycle', async () => {
-        const state = { settings: {}, data: { cycles: {} } };
+        const state = { settings: {}, data: { routine: {} } };
         let preloadCalled = false;
         let activateCalled = false;
 
@@ -801,7 +801,7 @@ export async function runOnboardingManagerTests(resultsDiv) {
     });
 
     await test('runFirstRunFlow rolls back focus state when sample load fails', async () => {
-        const state = { settings: {}, data: { cycles: {} } };
+        const state = { settings: {}, data: { routine: {} } };
         let creationModalShown = false;
 
         setOnboardingManagerDependencies(createMockDeps({
@@ -829,7 +829,7 @@ export async function runOnboardingManagerTests(resultsDiv) {
     });
 
     await test('runFirstRunFlow defers activation until init:app-ready when app not ready', async () => {
-        const state = { settings: {}, data: { cycles: {} } };
+        const state = { settings: {}, data: { routine: {} } };
         let activateCalled = false;
 
         setOnboardingManagerDependencies(createMockDeps({
@@ -857,7 +857,7 @@ export async function runOnboardingManagerTests(resultsDiv) {
     });
 
     await test('first focus-view exit marks onboardingCompleted + dispatches setup-complete', async () => {
-        const state = { settings: {}, data: { cycles: {} } };
+        const state = { settings: {}, data: { routine: {} } };
         let setupCompleteFired = false;
         const onSetupComplete = () => { setupCompleteFired = true; };
         document.addEventListener('onboarding:setup-complete', onSetupComplete);
@@ -889,7 +889,7 @@ export async function runOnboardingManagerTests(resultsDiv) {
     });
 
     await test('first focus-view exit shows Home View welcome notification with action button', async () => {
-        const state = { settings: {}, data: { cycles: {} } };
+        const state = { settings: {}, data: { routine: {} } };
         const notificationCalls = [];
         let createNewCalled = 0;
 
@@ -946,7 +946,7 @@ export async function runOnboardingManagerTests(resultsDiv) {
     });
 
     await test('Home View welcome notification fires only once (one-shot listener)', async () => {
-        const state = { settings: {}, data: { cycles: {} } };
+        const state = { settings: {}, data: { routine: {} } };
         const notificationCalls = [];
 
         setOnboardingManagerDependencies(createMockDeps({
@@ -1023,7 +1023,7 @@ export async function runOnboardingManagerTests(resultsDiv) {
     });
 
     await test('beforeunload does NOT graduate onboarding (closing app keeps welcome+splash on reload)', async () => {
-        const state = { settings: {}, data: { cycles: {} } };
+        const state = { settings: {}, data: { routine: {} } };
 
         setOnboardingManagerDependencies(createMockDeps({
             AppState: {
@@ -1062,7 +1062,7 @@ export async function runOnboardingManagerTests(resultsDiv) {
 
     await test('showWelcomeSplash mounts the centered splash and skips the banner hand-off', async () => {
         clearSplashDom();
-        const state = { settings: {}, data: { cycles: {} } };
+        const state = { settings: {}, data: { routine: {} } };
         setOnboardingManagerDependencies(createMockDeps({
             AppState: { isReady: () => true, get: () => state, update: (fn) => { fn(state); return state; } }
         }));
@@ -1085,7 +1085,7 @@ export async function runOnboardingManagerTests(resultsDiv) {
 
     await test('showWelcomeSplash resolves once the splash is gone', async () => {
         clearSplashDom();
-        const state = { settings: {}, data: { cycles: {} } };
+        const state = { settings: {}, data: { routine: {} } };
         setOnboardingManagerDependencies(createMockDeps({
             AppState: { isReady: () => true, get: () => state, update: (fn) => { fn(state); return state; } }
         }));
@@ -1114,7 +1114,7 @@ export async function runOnboardingManagerTests(resultsDiv) {
 
     await test('destroy settles a pending splash promise (never strands the create/sample dialog)', async () => {
         clearSplashDom();
-        const state = { settings: {}, data: { cycles: {} } };
+        const state = { settings: {}, data: { routine: {} } };
         setOnboardingManagerDependencies(createMockDeps({
             AppState: { isReady: () => true, get: () => state, update: (fn) => { fn(state); return state; } }
         }));
@@ -1145,7 +1145,7 @@ export async function runOnboardingManagerTests(resultsDiv) {
         preboot.appendChild(ch);
         document.body.appendChild(preboot);
 
-        const state = { settings: {}, data: { cycles: {} } };
+        const state = { settings: {}, data: { routine: {} } };
         setOnboardingManagerDependencies(createMockDeps({
             AppState: { isReady: () => true, get: () => state, update: (fn) => { fn(state); return state; } }
         }));
@@ -1182,7 +1182,7 @@ export async function runOnboardingManagerTests(resultsDiv) {
         preboot.appendChild(ch);
         document.body.appendChild(preboot);
 
-        const state = { settings: {}, data: { cycles: {} } };
+        const state = { settings: {}, data: { routine: {} } };
         setOnboardingManagerDependencies(createMockDeps({
             AppState: { isReady: () => true, get: () => state, update: (fn) => { fn(state); return state; } }
         }));
@@ -1206,7 +1206,7 @@ export async function runOnboardingManagerTests(resultsDiv) {
         preboot.className = 'first-run-splash first-run-splash--preboot';
         document.body.appendChild(preboot);
 
-        const state = { settings: { firstRunWelcomeDismissed: true }, data: { cycles: {} } };
+        const state = { settings: { firstRunWelcomeDismissed: true }, data: { routine: {} } };
         setOnboardingManagerDependencies(createMockDeps({
             AppState: { isReady: () => true, get: () => state, update: (fn) => { fn(state); return state; } }
         }));
@@ -1222,7 +1222,7 @@ export async function runOnboardingManagerTests(resultsDiv) {
     });
 
     await test('showWelcomeSplash no-ops once the welcome has been dismissed', async () => {
-        const state = { settings: { firstRunWelcomeDismissed: true }, data: { cycles: {} } };
+        const state = { settings: { firstRunWelcomeDismissed: true }, data: { routine: {} } };
         setOnboardingManagerDependencies(createMockDeps({
             AppState: { isReady: () => true, get: () => state, update: (fn) => { fn(state); return state; } }
         }));
@@ -1243,7 +1243,7 @@ export async function runOnboardingManagerTests(resultsDiv) {
     });
 
     await test('armFirstSessionLifecycle is idempotent', async () => {
-        const state = { settings: {}, data: { cycles: {} } };
+        const state = { settings: {}, data: { routine: {} } };
         let updateCount = 0;
 
         setOnboardingManagerDependencies(createMockDeps({
@@ -1271,7 +1271,7 @@ export async function runOnboardingManagerTests(resultsDiv) {
     });
 
     await test('destroy cleans up first-session lifecycle listeners', async () => {
-        const state = { settings: {}, data: { cycles: {} } };
+        const state = { settings: {}, data: { routine: {} } };
         let updateCount = 0;
 
         setOnboardingManagerDependencies(createMockDeps({
@@ -1308,7 +1308,7 @@ export async function runOnboardingManagerTests(resultsDiv) {
     const isMergedWelcome = (args) => !!(args[3] && args[3].actionButton && args[3].secondaryActionButton);
 
     await test('startFocusViewForNewRoutine("sample") shows merged Home View welcome on first focus exit', async () => {
-        const state = { settings: {}, data: { cycles: {} } };
+        const state = { settings: {}, data: { routine: {} } };
         const notifications = [];
         let tourWelcomeMarked = 0;
 
@@ -1348,7 +1348,7 @@ export async function runOnboardingManagerTests(resultsDiv) {
     });
 
     await test('startFocusViewForNewRoutine("create") DOES show merged welcome on focus exit', async () => {
-        const state = { settings: {}, data: { cycles: {} } };
+        const state = { settings: {}, data: { routine: {} } };
         const notifications = [];
         let tourWelcomeMarked = 0;
 
@@ -1386,7 +1386,7 @@ export async function runOnboardingManagerTests(resultsDiv) {
     });
 
     await test('sample first-exit welcome fires only once across repeated focus exits', async () => {
-        const state = { settings: {}, data: { cycles: {} } };
+        const state = { settings: {}, data: { routine: {} } };
         const notifications = [];
 
         setOnboardingManagerDependencies(createMockDeps({
@@ -1418,7 +1418,7 @@ export async function runOnboardingManagerTests(resultsDiv) {
     });
 
     await test('destroy cleans up the pending sample first-exit welcome listener', async () => {
-        const state = { settings: {}, data: { cycles: {} } };
+        const state = { settings: {}, data: { routine: {} } };
         const notifications = [];
 
         setOnboardingManagerDependencies(createMockDeps({

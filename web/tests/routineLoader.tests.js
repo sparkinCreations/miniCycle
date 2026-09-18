@@ -90,8 +90,7 @@ export async function runRoutineLoaderTests(resultsDiv, isPartOfSuite = false) {
                     darkMode: false,
                     theme: 'default'
                 },
-                data: {
-                    cycles: {
+                data: { routine: {
                         'cycle1': {
                             id: 'cycle1',
                             title: 'Test Cycle',
@@ -108,7 +107,7 @@ export async function runRoutineLoaderTests(resultsDiv, isPartOfSuite = false) {
                     }
                 },
                 appState: {
-                    activeCycleId: 'cycle1'
+                    activeRoutineId: 'cycle1'
                 },
                 reminders: {
                     enabled: true,
@@ -259,18 +258,18 @@ export async function runRoutineLoaderTests(resultsDiv, isPartOfSuite = false) {
     });
 
     // Regression — ARCH REVIEW FINDINGS §2.4 (hardening): when a task's
-    // deleteWhenCompleteSettings exists but lacks a boolean value for the CURRENT mode,
+    // autoClear exists but lacks a boolean value for the CURRENT mode,
     // the load-time sync must repair to defaults rather than derive `undefined` and write
     // it to deleteWhenComplete. Cycle mode (deleteCheckedTasks=false → currentMode='cycle')
     // with settings carrying only a 'todo' key reproduces the edge case.
-    await test('repairs deleteWhenComplete when the current mode value is missing/non-boolean (§2.4)', () => {
+    await test('repairs the autoClear map per key when the current mode value is missing/non-boolean (§2.4)', () => {
         const cycle = {
             title: 'T', cycleCount: 0, autoReset: true, deleteCheckedTasks: false,
             tasks: [
                 {
                     id: 'task1', text: 'Task 1', completed: false,
-                    deleteWhenComplete: true,
-                    deleteWhenCompleteSettings: { todo: true } // no boolean 'cycle' key
+                    
+                    autoClear: { todo: true } // no boolean 'cycle' key
                 }
             ]
         };
@@ -278,14 +277,14 @@ export async function runRoutineLoaderTests(resultsDiv, isPartOfSuite = false) {
         const result = repairAndCleanTasks(cycle);
         const task = cycle.tasks[0];
 
-        if (typeof task.deleteWhenCompleteSettings.cycle !== 'boolean') {
+        if (typeof task.autoClear.cycle !== 'boolean') {
             throw new Error('Missing/non-boolean current-mode setting should be repaired to a boolean');
         }
-        if (typeof task.deleteWhenComplete !== 'boolean') {
-            throw new Error(`deleteWhenComplete must stay a boolean, got ${task.deleteWhenComplete}`);
+        if ('deleteWhenComplete' in task) {
+            throw new Error('the retired 2.5 mirror must not be written back');
         }
-        if (task.deleteWhenComplete !== task.deleteWhenCompleteSettings.cycle) {
-            throw new Error('deleteWhenComplete must equal the repaired current-mode setting');
+        if (task.autoClear.todo !== true) {
+            throw new Error('the valid todo key must survive the per-key repair');
         }
         if (!result.wasModified) {
             throw new Error('Repair should flag wasModified');
@@ -478,9 +477,9 @@ export async function runRoutineLoaderTests(resultsDiv, isPartOfSuite = false) {
     // update(): when update() starts, state still holds the unrepaired routine.
     const liveStateFixture = (task) => {
         const data = {
-            data: { cycles: { r1: { id: 'r1', title: 'Routine', cycleCount: 0, autoReset: true,
+            data: { routine: { r1: { id: 'r1', title: 'Routine', cycleCount: 0, autoReset: true,
                 deleteCheckedTasks: false, recurringTemplates: {}, tasks: [task] } } },
-            appState: { activeCycleId: 'r1' },
+            appState: { activeRoutineId: 'r1' },
             settings: {}
         };
         const calls = [];
@@ -498,7 +497,7 @@ export async function runRoutineLoaderTests(resultsDiv, isPartOfSuite = false) {
     const loadWith = async (AppState) => {
         setRoutineLoaderDependencies({
             AppState,
-            loadMiniCycleData: () => ({ cycles: AppState.get().data.cycles, activeCycle: 'r1', settings: {} }),
+            loadMiniCycleData: () => ({ cycles: AppState.get().data.routine, activeCycle: 'r1', settings: {} }),
             addTask: () => {}
         });
         try {
@@ -513,20 +512,20 @@ export async function runRoutineLoaderTests(resultsDiv, isPartOfSuite = false) {
         const { data, calls, AppState } = liveStateFixture({ id: 't1', text: 'Needs repair', completed: 'yes' });
         await loadWith(AppState);
         if (calls.length !== 1) throw new Error(`expected exactly one update() for the repair, got ${calls.length}`);
-        const seen = calls[0].data.cycles.r1.tasks[0].completed;
+        const seen = calls[0].data.routine.r1.tasks[0].completed;
         if (seen !== 'yes') {
             throw new Error(`update() began with completed=${JSON.stringify(seen)} — live state was repaired BEFORE update() ran`);
         }
-        if (data.data.cycles.r1.tasks[0].completed !== true) {
+        if (data.data.routine.r1.tasks[0].completed !== true) {
             throw new Error('the repair did not land in state');
         }
     });
 
     await test('load-time repair does not write when the routine is already valid', async () => {
         const { calls, AppState } = liveStateFixture({
-            id: 't1', text: 'Fine', completed: false, highPriority: false, remindersEnabled: false,
+            id: 't1', text: 'Fine', completed: false, priority: null, remindersEnabled: false,
             recurring: false, dueDate: null, schemaVersion: 2,
-            deleteWhenComplete: false, deleteWhenCompleteSettings: { cycle: false, todo: true }
+            autoClear: { cycle: false, todo: true }
         });
         await loadWith(AppState);
         if (calls.length !== 0) throw new Error(`a valid routine caused ${calls.length} update() call(s)`);

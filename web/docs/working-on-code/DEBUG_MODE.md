@@ -29,7 +29,7 @@ _s.get()
 _s.get().appState
 
 // All cycles
-_s.get().data.cycles
+_s.get().data.routine
 
 // Settings
 _s.get().settings

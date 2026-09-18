@@ -325,7 +325,7 @@ if (taskList.some(task => task.id === id)) return false;  // Already exists, don
 ## References
 
 - **CLAUDE.md** - Main architecture documentation
-- **SCHEMA_2_5.md** - Data schema specification
+- **SCHEMA_2_6.md** - Data schema specification
 - **RECURRING_WATCH_FUNCTION.md** - Recurring task system
 - **UNDO_REDO_ARCHITECTURE.md** - Undo system integration
 

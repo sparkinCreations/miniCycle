@@ -225,8 +225,8 @@ export async function runCycleCompletionTests(resultsDiv, isPartOfSuite = false)
     await test('incrementCycleCount updates cycle count', () => {
         let updatedState = null;
         const mockData = createMockData();
-        mockData.appState.activeCycleId = 'default';
-        mockData.data.cycles['default'] = {
+        mockData.appState.activeRoutineId = 'default';
+        mockData.data.routine['default'] = {
             title: 'Default Cycle',
             cycleCount: 5,
             tasks: []
@@ -250,17 +250,17 @@ export async function runCycleCompletionTests(resultsDiv, isPartOfSuite = false)
 
         incrementCycleCount('default', {});
 
-        if (updatedState.data.cycles['default'].cycleCount !== 6) {
-            throw new Error(`Expected cycle count 6, got ${updatedState.data.cycles['default'].cycleCount}`);
+        if (updatedState.data.routine['default'].cycleCount !== 6) {
+            throw new Error(`Expected cycle count 6, got ${updatedState.data.routine['default'].cycleCount}`);
         }
     });
 
     await test('incrementCycleCount updates userProgress.cyclesCompleted', () => {
         let updatedState = null;
         const mockData = createMockData();
-        mockData.appState.activeCycleId = 'default';
+        mockData.appState.activeRoutineId = 'default';
         mockData.userProgress.cyclesCompleted = 10;
-        mockData.data.cycles['default'] = {
+        mockData.data.routine['default'] = {
             title: 'Default Cycle',
             cycleCount: 5,
             tasks: []
@@ -291,8 +291,8 @@ export async function runCycleCompletionTests(resultsDiv, isPartOfSuite = false)
 
     await test('incrementCycleCount shows completion animation', () => {
         const mockData = createMockData();
-        mockData.appState.activeCycleId = 'default';
-        mockData.data.cycles['default'] = {
+        mockData.appState.activeRoutineId = 'default';
+        mockData.data.routine['default'] = {
             title: 'Default Cycle',
             cycleCount: 0,
             tasks: []
@@ -320,8 +320,8 @@ export async function runCycleCompletionTests(resultsDiv, isPartOfSuite = false)
 
     await test('incrementCycleCount calls updateStatsPanel', () => {
         const mockData = createMockData();
-        mockData.appState.activeCycleId = 'default';
-        mockData.data.cycles['default'] = {
+        mockData.appState.activeRoutineId = 'default';
+        mockData.data.routine['default'] = {
             title: 'Default Cycle',
             cycleCount: 0,
             tasks: []
@@ -348,7 +348,7 @@ export async function runCycleCompletionTests(resultsDiv, isPartOfSuite = false)
 
     await test('incrementCycleCount handles missing active cycle gracefully', () => {
         const mockData = createMockData();
-        mockData.appState.activeCycleId = 'non-existent';
+        mockData.appState.activeRoutineId = 'non-existent';
 
         const mockAppState = {
             isReady: () => true,
@@ -377,9 +377,9 @@ export async function runCycleCompletionTests(resultsDiv, isPartOfSuite = false)
         // The 5-cycle THRESHOLD itself lives in vocabThemeManager (covered by its own tests);
         // this asserts cycleCompletion's wiring surfaces a theme unlocked during the cycle.
         const mockData = createMockData();
-        mockData.appState.activeCycleId = 'default';
+        mockData.appState.activeRoutineId = 'default';
         mockData.userProgress.cyclesCompleted = 4; // becomes 5 after increment
-        mockData.data.cycles['default'] = { title: 'Default Cycle', cycleCount: 0, tasks: [] };
+        mockData.data.routine['default'] = { title: 'Default Cycle', cycleCount: 0, tasks: [] };
 
         const mockAppState = {
             isReady: () => true,
@@ -424,9 +424,9 @@ export async function runCycleCompletionTests(resultsDiv, isPartOfSuite = false)
 
     await test('calls checkAchievements at 50 global cycles for theme unlocks', () => {
         const mockData = createMockData();
-        mockData.appState.activeCycleId = 'default';
+        mockData.appState.activeRoutineId = 'default';
         mockData.userProgress.cyclesCompleted = 50;
-        mockData.data.cycles['default'] = {
+        mockData.data.routine['default'] = {
             title: 'Default Cycle',
             cycleCount: 0,
             tasks: []
@@ -460,10 +460,10 @@ export async function runCycleCompletionTests(resultsDiv, isPartOfSuite = false)
 
     await test('unlocks mini game at 100 global cycles', () => {
         const mockData = createMockData();
-        mockData.appState.activeCycleId = 'default';
+        mockData.appState.activeRoutineId = 'default';
         mockData.userProgress.cyclesCompleted = 100;
         mockData.settings = { unlockedFeatures: [] };
-        mockData.data.cycles['default'] = {
+        mockData.data.routine['default'] = {
             title: 'Default Cycle',
             cycleCount: 0,
             tasks: []
@@ -491,10 +491,10 @@ export async function runCycleCompletionTests(resultsDiv, isPartOfSuite = false)
 
     await test('does not re-unlock game if already unlocked', () => {
         const mockData = createMockData();
-        mockData.appState.activeCycleId = 'default';
+        mockData.appState.activeRoutineId = 'default';
         mockData.userProgress.cyclesCompleted = 100;
         mockData.settings = { unlockedFeatures: ['task-order-game'] }; // Already unlocked
-        mockData.data.cycles['default'] = {
+        mockData.data.routine['default'] = {
             title: 'Default Cycle',
             cycleCount: 0,
             tasks: []
@@ -527,9 +527,9 @@ export async function runCycleCompletionTests(resultsDiv, isPartOfSuite = false)
         // (Was 'milestone levels are defined correctly', which ran incrementCycleCount and
         // asserted nothing.) Assert the core effect: both counters advance by exactly one.
         const mockData = createMockData();
-        mockData.appState.activeCycleId = 'default';
+        mockData.appState.activeRoutineId = 'default';
         mockData.userProgress.cyclesCompleted = 5;
-        mockData.data.cycles['default'] = {
+        mockData.data.routine['default'] = {
             title: 'Default Cycle',
             cycleCount: 5,
             tasks: []
@@ -549,8 +549,8 @@ export async function runCycleCompletionTests(resultsDiv, isPartOfSuite = false)
 
         incrementCycleCount('default', {});
 
-        if (mockData.data.cycles['default'].cycleCount !== 6) {
-            throw new Error(`cycleCount should increment 5→6, got ${mockData.data.cycles['default'].cycleCount}`);
+        if (mockData.data.routine['default'].cycleCount !== 6) {
+            throw new Error(`cycleCount should increment 5→6, got ${mockData.data.routine['default'].cycleCount}`);
         }
         if (mockData.userProgress.cyclesCompleted !== 6) {
             throw new Error(`global cyclesCompleted should increment 5→6, got ${mockData.userProgress.cyclesCompleted}`);
@@ -559,9 +559,9 @@ export async function runCycleCompletionTests(resultsDiv, isPartOfSuite = false)
 
     await test('does not show milestone for non-milestone counts', () => {
         const mockData = createMockData();
-        mockData.appState.activeCycleId = 'default';
+        mockData.appState.activeRoutineId = 'default';
         mockData.userProgress.cyclesCompleted = 7; // Not a milestone level
-        mockData.data.cycles['default'] = {
+        mockData.data.routine['default'] = {
             title: 'Default Cycle',
             cycleCount: 0,
             tasks: []
@@ -636,9 +636,9 @@ export async function runCycleCompletionTests(resultsDiv, isPartOfSuite = false)
 
     await test('handles missing unlockDarkOceanTheme function', () => {
         const mockData = createMockData();
-        mockData.appState.activeCycleId = 'default';
+        mockData.appState.activeRoutineId = 'default';
         mockData.userProgress.cyclesCompleted = 5;
-        mockData.data.cycles['default'] = {
+        mockData.data.routine['default'] = {
             title: 'Default Cycle',
             cycleCount: 0,
             tasks: []
@@ -668,7 +668,7 @@ export async function runCycleCompletionTests(resultsDiv, isPartOfSuite = false)
     // Helper: AppState mock whose active routine ('cycle-main') holds these tasks
     function appStateWithTasks(tasks, cycleOverrides = {}) {
         return createMockAppStateWithData({
-            data: { cycles: { 'cycle-main': { tasks, ...cycleOverrides } } }
+            data: { routine: { 'cycle-main': { tasks, ...cycleOverrides } } }
         });
     }
 
@@ -861,7 +861,7 @@ export async function runCycleCompletionTests(resultsDiv, isPartOfSuite = false)
 
     await test('checkMiniCycle handles missing active cycle', () => {
         setCycleCompletionDependencies({
-            AppState: createMockAppStateWithData({ appState: { activeCycleId: 'does-not-exist' } }),
+            AppState: createMockAppStateWithData({ appState: { activeRoutineId: 'does-not-exist' } }),
             getProgressBar: () => document.createElement('div')
         });
 
@@ -997,7 +997,7 @@ export async function runCycleCompletionTests(resultsDiv, isPartOfSuite = false)
         if (checkbox.checked) {
             throw new Error('Cancelling should untick the last toggled checkbox');
         }
-        const task = mockAppState.get().data.cycles['cycle-main'].tasks.find(t => t.id === 't2');
+        const task = mockAppState.get().data.routine['cycle-main'].tasks.find(t => t.id === 't2');
         if (task.completed !== false) {
             throw new Error('Cancelling should mark the last toggled task incomplete in state');
         }

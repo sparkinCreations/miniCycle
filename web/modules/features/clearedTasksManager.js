@@ -9,7 +9,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { COLORS, DOM_SELECTORS, DOM_CLASSES, DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS } from '../core/constants.js';
+import { COLORS, DOM_SELECTORS, DOM_CLASSES, DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS, DEFAULT_PRIORITY_SWATCHES } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
 import { isClickOnNotification } from '../ui/modalUtils.js';
@@ -17,7 +17,7 @@ import { isClickOnNotification } from '../ui/modalUtils.js';
 // them as UTC midnight, showing the previous day in negative UTC offsets.
 import { parseDateAsLocal } from '../recurring/recurringDateUtils.js';
 import { autoClearFields, getActiveRoutineId, getAutoClearSettings, getRoutine } from '../utils/cycleMode.js';
-import { hasPriority, priorityFields } from '../utils/priorityLevel.js';
+import { hasPriority, priorityFields, getPriorityLevel, getLevelColor } from '../utils/priorityLevel.js';
 
 // ============================================================================
 // CONSTANTS
@@ -72,10 +72,9 @@ export class ClearedTasksManager {
             id: `clr-${Date.now()}-${this._idCounter++}-${Math.random().toString(36).substr(2, 5)}`,
             taskText: task.text,
             clearedAt: Date.now(),
-            wasHighPriority: hasPriority(task),
+            ...priorityFields(task),
             hadDueDate: !!task.dueDate,
             dueDate: task.dueDate || null,
-            priorityColor: priorityFields(task).priorityColor,
             remindersEnabled: task.remindersEnabled || false,
             ...autoClearFields({
                 settings: getAutoClearSettings(task) ? structuredClone(getAutoClearSettings(task)) : null,
@@ -288,16 +287,15 @@ export class ClearedTasksManager {
         for (const entry of toRecreate) {
             try {
                 const recreateOptions = {
-                    highPriority: entry.wasHighPriority
+                    priority: getPriorityLevel(entry)
                 };
                 // Restore preserved attributes (backward-compatible with older entries)
                 if (entry.dueDate) recreateOptions.dueDate = entry.dueDate;
-                if (entry.priorityColor) recreateOptions.priorityColor = entry.priorityColor;
                 if (entry.remindersEnabled) recreateOptions.remindersEnabled = true;
-                // Pass per-mode settings only — createOrUpdateTaskData derives the active
-                // deleteWhenComplete value from the current mode + these settings
+                // Pass the per-mode map only — createOrUpdateTaskData reads it for
+                // the current mode
                 const entryAutoClear = getAutoClearSettings(entry);
-                if (entryAutoClear) recreateOptions.deleteWhenCompleteSettings = structuredClone(entryAutoClear);
+                if (entryAutoClear) recreateOptions.autoClear = structuredClone(entryAutoClear);
                 if (entry.recurring) recreateOptions.recurring = true;
                 if (entry.recurringSettings) recreateOptions.recurringSettings = structuredClone(entry.recurringSettings);
 
@@ -732,7 +730,7 @@ export class ClearedTasksManager {
                         gap: 8px;
                     ">
                         <span>${dateStr} ${timeStr}</span>
-                        ${entry.wasHighPriority ? (() => { const safeColor = /^#[0-9a-fA-F]{3,8}$/.test(entry.priorityColor) ? entry.priorityColor : COLORS.PRIORITY_DEFAULT; return `<span style="color: var(--danger-color, #dc3545); display: inline-flex; align-items: center; gap: 3px;">${getLabel('history.highPriority')} <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${safeColor};vertical-align:middle;" aria-hidden="true"></span></span>`; })() : ''}
+                        ${hasPriority(entry) ? (() => { const safeColor = getLevelColor(getPriorityLevel(entry), DEFAULT_PRIORITY_SWATCHES) || COLORS.PRIORITY_DEFAULT; return `<span style="color: var(--danger-color, #dc3545); display: inline-flex; align-items: center; gap: 3px;">${getLabel('history.highPriority')} <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${safeColor};vertical-align:middle;" aria-hidden="true"></span></span>`; })() : ''}
                         ${entry.dueDate ? `<span style="color: var(--color-blue-medium, #3498db);">${getLabel('history.hasDueDate')} ${(parseDateAsLocal(entry.dueDate) || new Date(entry.dueDate)).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>` : ''}
                         ${entry.remindersEnabled ? `<span style="color: var(--color-orange, #e67e22);">${getLabel('history.hasReminders')}</span>` : ''}
                         ${entry.recurring ? `<span style="color: var(--color-game-primary, #27ae60);">${getLabel('history.isRecurring')}</span>` : ''}

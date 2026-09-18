@@ -16,6 +16,7 @@
  */
 
 import { STORAGE_KEYS, DEFAULT_REMINDERS } from './constants.js';
+import { getRoutines, getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION
@@ -55,11 +56,11 @@ export function loadMiniCycleData() {
             const state = AppState.get();
             if (state) {
                 // Load reminders from root customReminders (where reminders.js saves)
-                const activeCycleId = state.appState.activeCycleId;
+                const activeCycleId = getActiveRoutineId(state);
                 const reminders = state.customReminders || { ...DEFAULT_REMINDERS };
 
                 return {
-                    cycles: state.data.cycles,
+                    cycles: getRoutines(state),
                     activeCycle: activeCycleId,
                     reminders: reminders,
                     settings: state.settings
@@ -80,18 +81,18 @@ export function loadMiniCycleData() {
     if (data) {
         try {
             const parsed = JSON.parse(data);
-            const activeCycleId = parsed.appState.activeCycleId;
+            const activeCycleId = getActiveRoutineId(parsed);
             // Read from root customReminders (where reminders.js saves)
             const reminders = parsed.customReminders || { ...DEFAULT_REMINDERS };
 
             return {
-                cycles: parsed.data.cycles,
+                cycles: getRoutines(parsed),
                 activeCycle: activeCycleId,
                 reminders: reminders,
                 settings: parsed.settings
             };
         } catch (error) {
-            console.error('❌ Error parsing Schema 2.5 data:', error);
+            console.error('❌ Error parsing stored data:', error);
             console.error('❌ This likely means data is corrupted. NOT creating fresh data to preserve existing localStorage.');
             return null;
         }
@@ -147,12 +148,12 @@ export async function autoSave(taskList = null, immediate = false) {
         }
 
         await AppState.update(state => {
-            const activeCycle = state?.appState?.activeCycleId;
+            const activeCycle = getActiveRoutineId(state);
             if (!activeCycle) {
                 throw new Error('No active cycle ID found in state');
             }
 
-            const currentCycle = state?.data?.cycles?.[activeCycle];
+            const currentCycle = getRoutine(state, activeCycle);
             if (!currentCycle) {
                 throw new Error(`Active cycle "${activeCycle}" not found in state`);
             }
@@ -185,9 +186,8 @@ export async function updateCycleData(cycleId, updateFn, immediate = true) {
 
     try {
         await AppState.update(state => {
-            if (state.data?.cycles?.[cycleId]) {
-                updateFn(state.data.cycles[cycleId]);
-            }
+            const routine = getRoutine(state, cycleId);
+            if (routine) updateFn(routine);
         }, immediate);
         return true;
     } catch (error) {

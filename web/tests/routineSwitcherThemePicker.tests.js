@@ -62,7 +62,7 @@ export async function runRoutineSwitcherThemePickerTests(resultsDiv) {
             safeAddEventListener: (el, ev, fn) => el.addEventListener(ev, fn),
             getModal: () => null,
             getElementById: (id) => document.getElementById(id),
-            AppState: { get: () => ({ data: { cycles: { c1: { theme } } } }) },
+            AppState: { get: () => ({ data: { routine: { c1: { theme } } } }) },
             showNotification: (msg) => calls.notifications.push(String(msg)),
             logHistoryEvent: (type, detail) => calls.history.push({ type, detail }),
             refreshThemeLabels: () => { calls.refreshed++; },

@@ -723,7 +723,7 @@ break after it:
 
 - `onCycleDeleted` / `onCycleRenamed` are awaited with `.catch()`, so a mock returning
   `undefined` throws;
-- duplicate increments `state.metadata.totalCyclesCreated`, NOT `userProgress`;
+- duplicate increments `state.metadata.totalRoutinesCreated`, NOT `userProgress`;
 - `_commitRename(oldKey, rawNewName, oldName)` takes **three** args and **re-keys** the
   cycle (`cycles[newName] = …; delete cycles[oldKey]`) rather than just retitling;
 - uniqueness is enforced on the storage KEY, not the display title — two routines can end

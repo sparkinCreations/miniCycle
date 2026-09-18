@@ -35,7 +35,7 @@ export async function runRoutineSwitcherRepairTests(resultsDiv) {
      * repair went through a transaction rather than mutating the live object.
      */
     function make(cycle, key = 'c1') {
-        const state = { data: { cycles: key ? { [key]: cycle } : {} } };
+        const state = { data: { routine: key ? { [key]: cycle } : {} } };
         const updates = [];
         const instance = new RoutineSwitcher({
             safeAddEventListener: (el, ev, fn) => el.addEventListener(ev, fn),
@@ -46,15 +46,15 @@ export async function runRoutineSwitcherRepairTests(resultsDiv) {
                 update: (producer, immediate) => { producer(state); updates.push({ immediate }); }
             }
         });
-        return { instance, state, updates, cycleAfter: () => state.data.cycles[key] };
+        return { instance, state, updates, cycleAfter: () => state.data.routine[key] };
     }
 
     const WELL_FORMED = () => ({
         title: 'Fine', cycleCount: 2, autoReset: true, deleteCheckedTasks: false,
         tasks: [{
-            id: 'task-1', text: 'A', completed: false, highPriority: false,
+            id: 'task-1', text: 'A', completed: false, priority: null,
             remindersEnabled: false, recurring: false, dueDate: null,
-            deleteWhenCompleteSettings: { cycle: false, todo: true }
+            autoClear: { cycle: false, todo: true }
         }]
     });
 
@@ -130,9 +130,10 @@ export async function runRoutineSwitcherRepairTests(resultsDiv) {
         const { instance, cycleAfter } = make({ ...WELL_FORMED(), tasks: [{ id: 't', text: 'x' }] });
         instance._validateAndRepairCycleData('c1');
         const t = cycleAfter().tasks[0];
-        for (const f of ['completed', 'highPriority', 'remindersEnabled', 'recurring']) {
+        for (const f of ['completed', 'remindersEnabled', 'recurring']) {
             if (typeof t[f] !== 'boolean') throw new Error(`${f} should be boolean, got ${typeof t[f]}`);
         }
+        if (t.priority !== null) throw new Error(`priority should default to null, got ${JSON.stringify(t.priority)}`);
     });
 
     await test('a missing dueDate becomes null, not undefined', async () => {
@@ -149,10 +150,10 @@ export async function runRoutineSwitcherRepairTests(resultsDiv) {
         }
     });
 
-    await test('deleteWhenCompleteSettings is restored when malformed', async () => {
-        const { instance, cycleAfter } = make({ ...WELL_FORMED(), tasks: [{ id: 't', text: 'x', deleteWhenCompleteSettings: 'nope' }] });
+    await test('autoClear is restored when malformed', async () => {
+        const { instance, cycleAfter } = make({ ...WELL_FORMED(), tasks: [{ id: 't', text: 'x', autoClear: 'nope' }] });
         instance._validateAndRepairCycleData('c1');
-        const s = cycleAfter().tasks[0].deleteWhenCompleteSettings;
+        const s = cycleAfter().tasks[0].autoClear;
         if (!s || s.cycle !== false || s.todo !== true) throw new Error(`bad settings: ${JSON.stringify(s)}`);
     });
 
@@ -202,7 +203,7 @@ export async function runRoutineSwitcherRepairTests(resultsDiv) {
         // AppState.get() would make the undo wrapper snapshot post-change state.
         const cycle = { ...WELL_FORMED(), title: '' };
         const { instance, state } = make(cycle);
-        const original = state.data.cycles.c1;
+        const original = state.data.routine.c1;
         instance._validateAndRepairCycleData('c1');
         if (original.title !== '') {
             throw new Error('the original object was mutated in place before the update');

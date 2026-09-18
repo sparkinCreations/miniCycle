@@ -77,14 +77,13 @@ export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
             metadata: {
                 version: "2.5",
                 lastModified: Date.now(),
-                totalCyclesCreated: 1
+                totalRoutinesCreated: 1
             },
             settings: {
                 theme: 'default',
                 darkMode: false
             },
-            data: {
-                cycles: {
+            data: { routine: {
                     'cycle-1': {
                         id: 'cycle-1',
                         title: 'Test Cycle',
@@ -98,7 +97,7 @@ export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
                 }
             },
             appState: {
-                activeCycleId: 'cycle-1',
+                activeRoutineId: 'cycle-1',
                 currentMode: 'auto-cycle'
             },
             userProgress: {
@@ -107,8 +106,8 @@ export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
         };
 
         const mockFlattenedData = {
-            cycles: mockFullSchema.data.cycles,
-            activeCycle: mockFullSchema.appState.activeCycleId
+            cycles: mockFullSchema.data.routine,
+            activeCycle: mockFullSchema.appState.activeRoutineId
         };
 
         // AppState mock: must work both as a factory function (saveMiniCycleAsNew calls this.deps.AppState())
@@ -470,18 +469,17 @@ export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
         let newCycleName = null;
         let stateUpdated = false;
         const mockFullSchema = {
-            metadata: { totalCyclesCreated: 1, lastModified: Date.now() },
-            data: {
-                cycles: {
+            metadata: { totalRoutinesCreated: 1, lastModified: Date.now() },
+            data: { routine: {
                     'cycle-1': { id: 'cycle-1', title: 'Test Cycle', tasks: [] }
                 }
             },
-            appState: { activeCycleId: 'cycle-1' }
+            appState: { activeRoutineId: 'cycle-1' }
         };
 
         setMenuManagerDependencies(createMockDeps({
             loadMiniCycleData: () => ({
-                cycles: mockFullSchema.data.cycles,
+                cycles: mockFullSchema.data.routine,
                 activeCycle: 'cycle-1'
             }),
             AppState: () => ({
@@ -490,7 +488,7 @@ export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
                 update: (updateFn, immediate) => {
                     const stateCopy = JSON.parse(JSON.stringify(mockFullSchema));
                     updateFn(stateCopy);
-                    newCycleName = Object.keys(stateCopy.data.cycles).find(k => k !== 'cycle-1');
+                    newCycleName = Object.keys(stateCopy.data.routine).find(k => k !== 'cycle-1');
                     stateUpdated = true;
                 }
             }),
@@ -547,8 +545,8 @@ export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
 
     test('handles user cancellation in saveMiniCycleAsNew (DI)', () => {
         const mockFullSchema = {
-            data: { cycles: { 'cycle-1': { title: 'Test' } } },
-            appState: { activeCycleId: 'cycle-1' }
+            data: { routine: { 'cycle-1': { title: 'Test' } } },
+            appState: { activeRoutineId: 'cycle-1' }
         };
 
         setMenuManagerDependencies(createMockDeps({

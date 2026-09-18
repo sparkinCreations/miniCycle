@@ -165,8 +165,7 @@ export async function runStressTests(resultsDiv) {
             schemaVersion: 2.5,
             metadata: { lastModified: Date.now() },
             settings: { theme: 'default' },
-            data: {
-                cycles: {
+            data: { routine: {
                     'stress-cycle': {
                         name: 'Storage Stress Test',
                         tasks: Array.from({ length: 2000 }, (_, i) => ({
@@ -180,7 +179,7 @@ export async function runStressTests(resultsDiv) {
                     }
                 }
             },
-            appState: { activeCycleId: 'stress-cycle' }
+            appState: { activeRoutineId: 'stress-cycle' }
         };
 
         const serialized = JSON.stringify(data);
@@ -190,7 +189,7 @@ export async function runStressTests(resultsDiv) {
         const loaded = JSON.parse(localStorage.getItem('stress-test-data'));
         localStorage.removeItem('stress-test-data');
 
-        if (loaded.data.cycles['stress-cycle'].tasks.length !== 2000) {
+        if (loaded.data.routine['stress-cycle'].tasks.length !== 2000) {
             throw new Error('Data corruption after save/load cycle');
         }
     });
@@ -207,7 +206,7 @@ export async function runStressTests(resultsDiv) {
 
         const data = {
             schemaVersion: 2.5,
-            data: { cycles: { 'test': { tasks } } }
+            data: { routine: { 'test': { tasks } } }
         };
 
         const serialized = JSON.stringify(data);
@@ -229,7 +228,7 @@ export async function runStressTests(resultsDiv) {
 
     await test('Rapid save/load cycles (100 iterations)', async () => {
         const data = {
-            cycles: {
+            routine: {
                 'rapid-test': {
                     tasks: Array.from({ length: 100 }, (_, i) => ({
                         id: `rapid-${i}`,
@@ -241,11 +240,11 @@ export async function runStressTests(resultsDiv) {
         };
 
         for (let i = 0; i < 100; i++) {
-            data.cycles['rapid-test'].tasks[0].checked = i % 2 === 0;
+            data.routine['rapid-test'].tasks[0].checked = i % 2 === 0;
             localStorage.setItem('rapid-test', JSON.stringify(data));
             const loaded = JSON.parse(localStorage.getItem('rapid-test'));
 
-            if (loaded.cycles['rapid-test'].tasks[0].checked !== (i % 2 === 0)) {
+            if (loaded.routine['rapid-test'].tasks[0].checked !== (i % 2 === 0)) {
                 throw new Error(`Data inconsistency at iteration ${i}`);
             }
         }
@@ -312,15 +311,15 @@ export async function runStressTests(resultsDiv) {
             };
         }
 
-        let activeCycleId = 'cycle-0';
+        let activeRoutineId = 'cycle-0';
 
         // Simulate rapid switching
         for (let i = 0; i < 100; i++) {
             const nextCycleId = `cycle-${i % 20}`;
-            activeCycleId = nextCycleId;
+            activeRoutineId = nextCycleId;
 
             // Verify cycle data is accessible
-            const cycle = cycles[activeCycleId];
+            const cycle = cycles[activeRoutineId];
             if (!cycle || cycle.tasks.length !== 50) {
                 throw new Error(`Cycle data corrupted at switch ${i}`);
             }

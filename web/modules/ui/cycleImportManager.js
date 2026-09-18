@@ -9,7 +9,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { LIMITS, COLORS, DOM_SELECTORS, Z_INDEX, APP_VERSION, UI_TIMEOUTS, DEFAULT_PRIORITY_SWATCHES } from '../core/constants.js';
+import { LIMITS, DOM_SELECTORS, Z_INDEX, APP_VERSION, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 // Pure normalizer (no DI, no side effects) — statically imported like
 // recurringCalculators in migrationManager, so imported settings get the same
@@ -24,7 +24,12 @@ import { normalizeRecurringSettings } from '../recurring/recurringSettings.js';
 import { buildRecurringTemplate } from '../recurring/recurringTemplate.js';
 import { isValidHex } from '../utils/styleValidators.js';
 import { getRoutines, setActiveRoutineId } from '../utils/cycleMode.js';
-import { isPriorityLevel, getLevelColor } from '../utils/priorityLevel.js';
+import { isPriorityLevel, getLegacyPriorityLevel, getLevelForColor, collectSwatchSets } from '../utils/priorityLevel.js';
+import { THEME_DEFINITIONS } from '../labels/themes.js';
+
+// Every theme's swatches, so a 2.5 file's colour — picked under any theme — maps
+// to its level (utils/priorityLevel.js).
+const LEGACY_SWATCH_SETS = collectSwatchSets(THEME_DEFINITIONS);
 
 // ============================================================================
 // 2.6 file fields — read AHEAD of the format bump
@@ -51,23 +56,22 @@ function importedAutoClearMap(record) {
 }
 
 /**
- * A file record's priority as the stored 2.5 pair. A 2.6 level becomes the
- * level's DEFAULT swatch (the theme repaints it at render); a 2.5 colour is
- * hex-checked; `priority: null` turns priority off even beside a 2.5 flag.
+ * A file record's priority as the stored LEVEL. A 2.6 record carries it as is
+ * (`priority: null` turns priority off even beside a 2.5 flag); a 2.5 record's
+ * flag + colour are read through the legacy rule — a swatch of any theme names
+ * its level, a custom colour its colour family. Cleared entries spell the 2.5
+ * flag `wasHighPriority`.
  * @param {Object|null|undefined} record
- * @returns {{highPriority: boolean, priorityColor: (string|null)}}
+ * @returns {{priority: ('high'|'medium'|'low'|null)}}
  */
 function importedPriorityFields(record) {
     if (record && Object.prototype.hasOwnProperty.call(record, 'priority')) {
-        const level = record.priority;
-        if (isPriorityLevel(level)) {
-            return { highPriority: true, priorityColor: getLevelColor(level, DEFAULT_PRIORITY_SWATCHES) };
-        }
-        if (level === null) return { highPriority: false, priorityColor: null };
+        if (isPriorityLevel(record.priority)) return { priority: record.priority };
+        if (record.priority === null) return { priority: null };
     }
-    const highPriority = record?.highPriority === true;
-    const validColor = isValidHex(record?.priorityColor) ? record.priorityColor : null;
-    return { highPriority, priorityColor: validColor || (highPriority ? COLORS.PRIORITY_DEFAULT : null) };
+    const flagged = record?.highPriority === true || record?.wasHighPriority === true;
+    const color = isValidHex(record?.priorityColor) ? record.priorityColor : null;
+    return { priority: getLegacyPriorityLevel({ highPriority: flagged, priorityColor: color }, LEGACY_SWATCH_SETS) };
 }
 
 // ============================================================================
@@ -190,7 +194,7 @@ function normalizeImportedText(input, maxLength = 100) {
 // Display-only _* keys (_eventIcon, _eventLabel, _cycleNoun, _taskNoun) are
 // regenerated from getLabel()/icon maps at render time and are never imported.
 const HISTORY_DETAIL_NUMBER_KEYS = ['cycleCount', 'tasksCleared', 'count'];
-const HISTORY_DETAIL_STRING_KEYS = ['achievementId', 'achievementName', 'oldName', 'newName', 'taskName', 'themeName', 'priorityColor'];
+const HISTORY_DETAIL_STRING_KEYS = ['achievementId', 'achievementName', 'oldName', 'newName', 'taskName', 'themeName', 'priority', 'priorityColor'];
 
 /**
  * Reduce an imported history event's details to the allowlisted, type-checked
@@ -207,11 +211,15 @@ function sanitizeHistoryDetails(details) {
     for (const k of HISTORY_DETAIL_STRING_KEYS) {
         if (typeof details[k] === 'string') safe[k] = normalizeImportedText(details[k], MAX_TASK_TEXT_LENGTH);
     }
-    // A 2.6 event carries the level; the dot renders a colour, so store the
-    // level's default swatch (see importedPriorityFields). The level wins.
+    // The event carries a LEVEL (Schema 2.6). A 2.5 file's colour maps to its
+    // level the way task colours do; the level wins when both are present.
+    delete safe.priority;
     if (isPriorityLevel(details.priority)) {
-        safe.priorityColor = getLevelColor(details.priority, DEFAULT_PRIORITY_SWATCHES);
+        safe.priority = details.priority;
+    } else if (typeof details.priorityColor === 'string' && isValidHex(details.priorityColor)) {
+        safe.priority = getLevelForColor(details.priorityColor, LEGACY_SWATCH_SETS);
     }
+    delete safe.priorityColor;
     if (Array.isArray(details.taskNames)) {
         safe.taskNames = details.taskNames
             .filter(n => typeof n === 'string')
@@ -693,11 +701,9 @@ export async function processImportedData(fileContent) {
             remindersEnabled: task.remindersEnabled === true,
             recurring: task.recurring === true,
             recurringSettings: safeSettings,
-            // Default deleteWhenComplete to true unless explicitly false —
-            // Recurring tasks: always delete (cycle: true, todo: true)
+            // Recurring tasks: always clear (cycle: true, todo: true)
             // Non-recurring tasks: respect mode (cycle: false, todo: true)
-            deleteWhenComplete: task.deleteWhenComplete !== false,
-            deleteWhenCompleteSettings:
+            autoClear:
                 (autoClearMap &&
                  typeof autoClearMap.cycle === 'boolean' &&
                  typeof autoClearMap.todo === 'boolean')
@@ -737,8 +743,7 @@ export async function processImportedData(fileContent) {
                     // instances go back to this spot, not the bottom of the routine.
                     position: index,
                     dueDate: task.dueDate || null,
-                    highPriority: task.highPriority || false,
-                    priorityColor: task.priorityColor || (task.highPriority ? COLORS.PRIORITY_DEFAULT : null),
+                    priority: task.priority,
                     remindersEnabled: task.remindersEnabled || false,
                     recurringSettings: structuredClone(task.recurringSettings),
                     nextScheduledOccurrence: nextOccurrence
@@ -1004,20 +1009,11 @@ export async function processImportedData(fileContent) {
                     // path above validates its equivalents — so Recreate after an
                     // export→import yields the task with due date, priority, and
                     // recurring settings intact, exactly as the manual promises.
-                    // Entries spell the flag `wasHighPriority`; a 2.6 entry carries `priority`.
-                    wasHighPriority: Object.prototype.hasOwnProperty.call(e, 'priority')
-                        ? importedPriorityFields(e).highPriority
-                        : e.wasHighPriority === true,
+                    ...importedPriorityFields(e),
                     hadDueDate: e.hadDueDate === true,
                     dueDate: typeof e.dueDate === 'string' ? e.dueDate : null,
-                    priorityColor: Object.prototype.hasOwnProperty.call(e, 'priority')
-                        ? importedPriorityFields(e).priorityColor
-                        : (typeof e.priorityColor === 'string'
-                            ? normalizeImportedText(e.priorityColor, 50)
-                            : null),
                     remindersEnabled: e.remindersEnabled === true,
-                    deleteWhenComplete: e.deleteWhenComplete === true,
-                    deleteWhenCompleteSettings: (() => {
+                    autoClear: (() => {
                         const map = importedAutoClearMap(e);
                         return map ? { cycle: map.cycle === true, todo: map.todo !== false } : null;
                     })(),
@@ -1057,7 +1053,7 @@ export async function processImportedData(fileContent) {
         };
 
         setActiveRoutineId(state, finalCycleTitle);
-        state.metadata.totalCyclesCreated = (state.metadata.totalCyclesCreated || 0) + 1;
+        state.metadata.totalRoutinesCreated = (state.metadata.totalRoutinesCreated || 0) + 1;
     }, true); // immediate save
 
     // Initialize empty undo stacks for the imported cycle and reset the

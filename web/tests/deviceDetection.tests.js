@@ -89,8 +89,7 @@ export async function runDeviceDetectionTests(resultsDiv, isPartOfSuite = false)
                     lastModified: Date.now()
                 },
                 settings: {},
-                data: {
-                    cycles: {}
+                data: { routine: {}
                 },
                 userProgress: {}
             };

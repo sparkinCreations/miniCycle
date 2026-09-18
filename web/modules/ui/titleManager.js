@@ -112,7 +112,7 @@ async function handleMiniCycleTitleBlur() {
     // Load data once at the start — repeated reads mid-function can observe a mid-save state
     const schemaData = loadMiniCycleData?.();
     if (!schemaData) {
-        console.error('Schema 2.5 data required for title update');
+        console.error('State data required for title update');
         return;
     }
 

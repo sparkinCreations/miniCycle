@@ -68,8 +68,7 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
         const mockSchemaData = {
             metadata: { version: "2.5", lastModified: Date.now() },
             settings: {},
-            data: {
-                cycles: {
+            data: { routine: {
                     'cycle-test-123': {
                         name: 'Test Cycle',
                         tasks: [
@@ -83,7 +82,7 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
                 }
             },
             appState: {
-                activeCycleId: 'cycle-test-123',
+                activeRoutineId: 'cycle-test-123',
                 currentMode: 'auto-cycle'
             },
             userProgress: { cyclesCompleted: 10, totalTasksCompleted: 50 }
@@ -285,15 +284,14 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
 
     await test('syncModeFromToggles detects auto-cycle mode correctly (DI)', async () => {
         const mockState = {
-            data: {
-                cycles: {
+            data: { routine: {
                     'cycle-1': {
                         autoReset: true,
                         deleteCheckedTasks: false
                     }
                 }
             },
-            appState: { activeCycleId: 'cycle-1' }
+            appState: { activeRoutineId: 'cycle-1' }
         };
 
         const mockModeSelector = document.createElement('select');
@@ -332,15 +330,14 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
 
     await test('syncModeFromToggles detects manual-cycle mode correctly (DI)', async () => {
         const mockState = {
-            data: {
-                cycles: {
+            data: { routine: {
                     'cycle-1': {
                         autoReset: false,
                         deleteCheckedTasks: false
                     }
                 }
             },
-            appState: { activeCycleId: 'cycle-1' }
+            appState: { activeRoutineId: 'cycle-1' }
         };
 
         const mockModeSelector = document.createElement('select');
@@ -382,15 +379,14 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
 
     await test('syncModeFromToggles detects todo-mode correctly (DI)', async () => {
         const mockState = {
-            data: {
-                cycles: {
+            data: { routine: {
                     'cycle-1': {
                         autoReset: false,
                         deleteCheckedTasks: true
                     }
                 }
             },
-            appState: { activeCycleId: 'cycle-1' }
+            appState: { activeRoutineId: 'cycle-1' }
         };
 
         const mockModeSelector = document.createElement('select');
@@ -432,15 +428,14 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
 
     await test('syncModeFromToggles updates body classes (DI)', async () => {
         const mockState = {
-            data: {
-                cycles: {
+            data: { routine: {
                     'cycle-1': {
                         autoReset: true,
                         deleteCheckedTasks: false
                     }
                 }
             },
-            appState: { activeCycleId: 'cycle-1' }
+            appState: { activeRoutineId: 'cycle-1' }
         };
 
         const mockModeSelector = document.createElement('select');
@@ -474,24 +469,22 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
 
         const mockAppState = {
             get: () => ({
-                data: {
-                    cycles: {
+                data: { routine: {
                         'cycle-1': {}
                     }
                 },
-                appState: { activeCycleId: 'cycle-1' }
+                appState: { activeRoutineId: 'cycle-1' }
             }),
             update: (updateFn, immediate) => {
                 updateCalled = true;
                 const state = {
-                    data: {
-                        cycles: {
+                    data: { routine: {
                             'cycle-1': {}
                         }
                     }
                 };
                 updateFn(state);
-                savedData = state.data.cycles['cycle-1'];
+                savedData = state.data.routine['cycle-1'];
             }
         };
 
@@ -527,8 +520,8 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
     await test('updateStorageFromToggles handles missing active cycle (DI)', async () => {
         const mockAppState = {
             get: () => ({
-                data: { cycles: {} },
-                appState: { activeCycleId: null }
+                data: { routine: {} },
+                appState: { activeRoutineId: null }
             })
         };
 
@@ -566,8 +559,8 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
                 isReady: () => true,
                 get: () => ({
                     metadata: { version: '2.5' },
-                    data: { cycles: { 'cycle-1': { autoReset: true, deleteCheckedTasks: false } } },
-                    appState: { activeCycleId: 'cycle-1' }
+                    data: { routine: { 'cycle-1': { autoReset: true, deleteCheckedTasks: false } } },
+                    appState: { activeRoutineId: 'cycle-1' }
                 }),
                 update: () => {}
             },
@@ -620,7 +613,7 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
 
     await test('handles missing DOM elements gracefully (DI)', async () => {
         setModeManagerDependencies(createMockDeps({
-            AppState: { get: () => ({ data: { cycles: {} }, appState: {} }) },
+            AppState: { get: () => ({ data: { routine: {} }, appState: {} }) },
             getElementById: () => null,
             querySelectorAll: () => []
         }));
@@ -644,15 +637,14 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
                 return {
                     metadata: { version: '2.5' },
                     settings: {},
-                    data: {
-                        cycles: {
+                    data: { routine: {
                             'cycle-1': {
                                 autoReset: true,
                                 deleteCheckedTasks: false
                             }
                         }
                     },
-                    appState: { activeCycleId: 'cycle-1' }
+                    appState: { activeRoutineId: 'cycle-1' }
                 };
             },
             update: (updateFn, immediate) => {}
@@ -744,15 +736,14 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
 
     await test('setupToggleAutoReset sets up toggles from state', async () => {
         const mockState = {
-            data: {
-                cycles: {
+            data: { routine: {
                     'cycle-1': {
                         autoReset: true,
                         deleteCheckedTasks: false
                     }
                 }
             },
-            appState: { activeCycleId: 'cycle-1' }
+            appState: { activeRoutineId: 'cycle-1' }
         };
 
         const toggleAutoReset = document.createElement('input');
@@ -798,12 +789,11 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
 
     await test('setupToggleAutoReset attaches change event listeners', async () => {
         const mockState = {
-            data: {
-                cycles: {
+            data: { routine: {
                     'cycle-1': { autoReset: false, deleteCheckedTasks: false }
                 }
             },
-            appState: { activeCycleId: 'cycle-1' }
+            appState: { activeRoutineId: 'cycle-1' }
         };
 
         let updateCalled = false;
@@ -1031,24 +1021,24 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
     // === MODE SWITCH ATOMICITY ===
     resultsDiv.innerHTML += '<h4 class="test-section">🔀 Mode switch is one transaction</h4>';
 
-    await test('updateStorageFromToggles writes the mode AND the derived task values together', async () => {
-        // `task.deleteWhenComplete` is derived from deleteWhenCompleteSettings[mode].
-        // It used to be written by a SEPARATE update (the checkbox change handler),
-        // so one mode switch produced two undo steps and the first Undo left To-Do
-        // mode showing with every task on the cycle-mode value.
+    await test('updateStorageFromToggles writes the mode and the repaired task maps in ONE update', async () => {
+        // A mode switch used to be two writes (the mode, then a derived per-task
+        // value), so one switch produced two undo steps. Since Schema 2.6 there is
+        // no derived value — the per-mode map is read at use time — but the mode
+        // and any map repair must still land in a single update.
         const deps = createMockDeps();
         const writes = [];
         const state = deps.AppState.get();
-        const cycle = state.data.cycles['cycle-test-123'];
+        const cycle = state.data.routine['cycle-test-123'];
         cycle.tasks = [
-            { id: 't1', text: 'a', deleteWhenComplete: false, deleteWhenCompleteSettings: { cycle: false, todo: true } },
-            { id: 't2', text: 'b', deleteWhenComplete: false, deleteWhenCompleteSettings: { cycle: false, todo: true } }
+            { id: 't1', text: 'a', autoClear: { cycle: false, todo: true } },
+            { id: 't2', text: 'b', autoClear: { cycle: false, todo: true } }
         ];
         deps.AppState.update = (fn) => {
             fn(state);
             writes.push({
                 deleteCheckedTasks: cycle.deleteCheckedTasks,
-                dwc: cycle.tasks.map(t => +!!t.deleteWhenComplete).join('')
+                maps: cycle.tasks.map(t => +!!(t.autoClear && typeof t.autoClear.todo === 'boolean')).join('')
             });
         };
         // Toggles as the mode-selector leaves them for To-Do mode.
@@ -1073,30 +1063,31 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
         if (writes[0].deleteCheckedTasks !== true) {
             throw new Error('the write must carry the new mode');
         }
-        if (writes[0].dwc !== '11') {
-            throw new Error(`the SAME write must carry the derived task values, got "${writes[0].dwc}"`);
+        if (writes[0].maps !== '11') {
+            throw new Error(`the SAME write must leave every task with a valid map, got "${writes[0].maps}"`);
+        }
+        if (cycle.tasks.some(t => 'deleteWhenComplete' in t)) {
+            throw new Error('the retired 2.5 mirror must not be written');
         }
     });
 
-    await test('syncTasksToMode repairs missing/invalid settings before deriving', async () => {
-        // Without the repair, the derived value becomes `undefined` and is written
-        // onto the task.
+    await test('syncTasksToMode repairs missing/invalid maps per key', async () => {
         const deps = createMockDeps();
         deps.DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS = { cycle: false, todo: true };
         setModeManagerDependencies(deps);
         const mgr = new ModeManager();
         const cycle = { tasks: [
             { id: 't1', text: 'a' },                                        // no settings at all
-            { id: 't2', text: 'b', deleteWhenCompleteSettings: 'nonsense' }, // wrong type
-            { id: 't3', text: 'c', deleteWhenCompleteSettings: { cycle: false } } // missing todo
+            { id: 't2', text: 'b', autoClear: 'nonsense' }, // wrong type
+            { id: 't3', text: 'c', autoClear: { cycle: false } } // missing todo
         ] };
         mgr.syncTasksToMode(cycle, 'todo');
         cycle.tasks.forEach(t => {
-            if (typeof t.deleteWhenComplete !== 'boolean') {
-                throw new Error(`${t.id} derived a non-boolean: ${t.deleteWhenComplete}`);
+            if (!t.autoClear || typeof t.autoClear.todo !== 'boolean' || typeof t.autoClear.cycle !== 'boolean') {
+                throw new Error(`${t.id} was not repaired to a complete map: ${JSON.stringify(t.autoClear)}`);
             }
         });
-        if (cycle.tasks.some(t => t.deleteWhenComplete !== true)) {
+        if (cycle.tasks.some(t => t.autoClear.todo !== true)) {
             throw new Error('repaired tasks should take the default todo value (true)');
         }
     });
@@ -1110,23 +1101,20 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
         setModeManagerDependencies(deps);
         const mgr = new ModeManager();
         const cycle = { tasks: [
-            { id: 't1', deleteWhenCompleteSettings: { cycle: true } },          // todo missing
-            { id: 't2', deleteWhenCompleteSettings: { cycle: true, todo: false } } // both valid
+            { id: 't1', autoClear: { cycle: true } },          // todo missing
+            { id: 't2', autoClear: { cycle: true, todo: false } } // both valid
         ] };
         mgr.syncTasksToMode(cycle, 'todo');
 
-        if (cycle.tasks[0].deleteWhenCompleteSettings.cycle !== true) {
+        if (cycle.tasks[0].autoClear.cycle !== true) {
             throw new Error('repairing the missing todo key wiped a valid cycle:true');
         }
-        if (cycle.tasks[0].deleteWhenCompleteSettings.todo !== true) {
+        if (cycle.tasks[0].autoClear.todo !== true) {
             throw new Error('the missing key should take the default');
         }
-        if (cycle.tasks[1].deleteWhenCompleteSettings.todo !== false ||
-            cycle.tasks[1].deleteWhenCompleteSettings.cycle !== true) {
+        if (cycle.tasks[1].autoClear.todo !== false ||
+            cycle.tasks[1].autoClear.cycle !== true) {
             throw new Error('a fully valid settings object must pass through untouched');
-        }
-        if (cycle.tasks[1].deleteWhenComplete !== false) {
-            throw new Error('derived value must come from the entering mode');
         }
     });
 

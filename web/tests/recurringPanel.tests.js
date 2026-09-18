@@ -16,9 +16,9 @@ function setupPanelDeps(overrides = {}) {
     const defaultDeps = {
         AppState: overrides.AppState || {
             get: () => ({
-                schemaVersion: "2.5",
-                data: { cycles: {} },
-                appState: { activeCycleId: null }
+                schemaVersion: "2.6",
+                data: { routine: {} },
+                appState: { activeRoutineId: null }
             }),
             update: (fn) => {},
             isReady: () => true
@@ -170,9 +170,9 @@ export async function runRecurringPanelTests(resultsDiv) {
 
     function cycleState(tasks, templates = {}) {
         return {
-            schemaVersion: '2.5',
-            data: { cycles: { c1: { title: 'c1', tasks, recurringTemplates: templates } } },
-            appState: { activeCycleId: 'c1' }
+            schemaVersion: '2.6',
+            data: { routine: { c1: { title: 'c1', tasks, recurringTemplates: templates } } },
+            appState: { activeRoutineId: 'c1' }
         };
     }
 
@@ -441,8 +441,8 @@ export async function runRecurringPanelTests(resultsDiv) {
         setupPanelDeps({
             AppState: {
                 get: () => ({
-                    data: { cycles: {} },
-                    appState: { activeCycleId: 'cycle-1' }
+                    data: { routine: {} },
+                    appState: { activeRoutineId: 'cycle-1' }
                 }),
                 update: (fn) => {},
                 isReady: () => true
@@ -468,8 +468,8 @@ export async function runRecurringPanelTests(resultsDiv) {
         setupPanelDeps({
             AppState: {
                 get: () => ({
-                    data: { cycles: {} },
-                    appState: { activeCycleId: 'cycle-1' }
+                    data: { routine: {} },
+                    appState: { activeRoutineId: 'cycle-1' }
                 }),
                 update: (fn) => {},
                 isReady: () => true
@@ -947,12 +947,11 @@ export async function runRecurringPanelTests(resultsDiv) {
             },
             AppState: {
                 get: () => ({
-                    data: {
-                        cycles: {
+                    data: { routine: {
                             'cycle-1': { recurringTemplates: {} }
                         }
                     },
-                    appState: { activeCycleId: 'cycle-1' }
+                    appState: { activeRoutineId: 'cycle-1' }
                 }),
                 update: (fn) => {},
                 isReady: () => true
@@ -985,8 +984,7 @@ export async function runRecurringPanelTests(resultsDiv) {
             },
             AppState: {
                 get: () => ({
-                    data: {
-                        cycles: {
+                    data: { routine: {
                             'cycle-1': {
                                 recurringTemplates: {
                                     'task-1': { id: 'task-1', text: 'Test' }
@@ -994,7 +992,7 @@ export async function runRecurringPanelTests(resultsDiv) {
                             }
                         }
                     },
-                    appState: { activeCycleId: 'cycle-1' }
+                    appState: { activeRoutineId: 'cycle-1' }
                 }),
                 update: (fn) => {},
                 isReady: () => true
@@ -1180,8 +1178,8 @@ export async function runRecurringPanelTests(resultsDiv) {
         setupPanelDeps({
             AppState: {
                 get: () => ({
-                    data: { cycles: {} },
-                    appState: { activeCycleId: 'cycle-1' }
+                    data: { routine: {} },
+                    appState: { activeRoutineId: 'cycle-1' }
                 }),
                 update: (fn) => {},
                 isReady: () => true
@@ -1203,8 +1201,8 @@ export async function runRecurringPanelTests(resultsDiv) {
         setupPanelDeps({
             AppState: {
                 get: () => ({
-                    data: { cycles: {} },
-                    appState: { activeCycleId: null }
+                    data: { routine: {} },
+                    appState: { activeRoutineId: null }
                 }),
                 update: (fn) => {},
                 isReady: () => true
@@ -1256,15 +1254,14 @@ export async function runRecurringPanelTests(resultsDiv) {
         };
 
         const mockState = {
-            data: {
-                cycles: {
+            data: { routine: {
                     'cycle-1': {
                         tasks: [task],
                         recurringTemplates: {}
                     }
                 }
             },
-            appState: { activeCycleId: 'cycle-1' }
+            appState: { activeRoutineId: 'cycle-1' }
         };
 
         setupPanelDeps({
@@ -1323,15 +1320,14 @@ export async function runRecurringPanelTests(resultsDiv) {
         };
 
         const mockState = {
-            data: {
-                cycles: {
+            data: { routine: {
                     'cycle-1': {
                         tasks: [task],
                         recurringTemplates: {}
                     }
                 }
             },
-            appState: { activeCycleId: 'cycle-1' }
+            appState: { activeRoutineId: 'cycle-1' }
         };
 
         setupPanelDeps({
@@ -1381,8 +1377,7 @@ export async function runRecurringPanelTests(resultsDiv) {
 
     await test('integrates with AppState for panel updates', async () => {
         const mockState = {
-            data: {
-                cycles: {
+            data: { routine: {
                     'cycle-1': {
                         tasks: [
                             { id: 'task-1', text: 'Test Task', recurring: true }
@@ -1393,7 +1388,7 @@ export async function runRecurringPanelTests(resultsDiv) {
                     }
                 }
             },
-            appState: { activeCycleId: 'cycle-1' }
+            appState: { activeRoutineId: 'cycle-1' }
         };
 
         let stateRead = false;
@@ -1434,7 +1429,7 @@ export async function runRecurringPanelTests(resultsDiv) {
 
     test('uses dependency injection for AppState', () => {
         const mockState = {
-            get: () => ({ data: { cycles: {} }, appState: { activeCycleId: null } }),
+            get: () => ({ data: { routine: {} }, appState: { activeRoutineId: null } }),
             update: (fn) => {},
             isReady: () => true
         };

@@ -50,7 +50,7 @@ Themes are unlocked globally (based on total cycle count across all routines), b
 Vocabulary theme is stored per routine:
 
 ```javascript
-// state.data.cycles[cycleId].theme  →  e.g. 'habit-tracker'
+// state.data.routine[cycleId].theme  →  e.g. 'habit-tracker'
 // state.settings.unlockedThemes      →  ['classic', 'habit-tracker', ...]
 // state.settings.defaultTheme        →  applied to new routines
 ```
@@ -61,7 +61,7 @@ Vocabulary theme is stored per routine:
 getLabel('action.addTask')
   → labelResolver.getActiveLens()
   → vocabThemeManager.getActiveTheme()
-  → AppState.get().data.cycles[activeCycleId].theme   // e.g. 'habit-tracker'
+  → AppState.get().data.routine[activeCycleId].theme   // e.g. 'habit-tracker'
   → THEME_DEFINITIONS['habit-tracker'].labels['action.addTask']  // 'Add habit'
 ```
 
@@ -147,7 +147,7 @@ When a routine is created or switched to, the routine modules (`routineManager`,
 
 ### Theme Picker
 
-The theme picker is accessed via the 🎨 button in the routine switcher action row (`#theme-picker-row`). It shows chips for each unlocked theme; selecting one updates `state.data.cycles[cycleId].theme` and triggers a label refresh.
+The theme picker is accessed via the 🎨 button in the routine switcher action row (`#theme-picker-row`). It shows chips for each unlocked theme; selecting one updates `state.data.routine[cycleId].theme` and triggers a label refresh.
 
 ---
 
@@ -212,7 +212,7 @@ The fallback chain ensures a value always exists: vocab theme preset → user cu
 
 ### Per-Routine, Not Per-Session
 
-Vocabulary themes are stored in the routine's data (`state.data.cycles[cycleId].theme`), not in a session variable. Switching routines instantly switches the active theme without any reload.
+Vocabulary themes are stored in the routine's data (`state.data.routine[cycleId].theme`), not in a session variable. Switching routines instantly switches the active theme without any reload.
 
 ---
 
@@ -240,7 +240,7 @@ Vocabulary themes are stored in the routine's data (`state.data.cycles[cycleId].
 
 2. **Update `defaultLabels.js`** if your theme needs label keys that don't exist yet.
 
-3. **Test** by setting `state.data.cycles[cycleId].theme = 'my-theme'` in the browser console and reloading.
+3. **Test** by setting `state.data.routine[cycleId].theme = 'my-theme'` in the browser console and reloading.
 
 4. No build step required.
 

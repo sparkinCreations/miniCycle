@@ -87,10 +87,9 @@ export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
                         lastModified: Date.now()
                     },
                     appState: {
-                        activeCycleId: 'test-cycle'
+                        activeRoutineId: 'test-cycle'
                     },
-                    data: {
-                        cycles: {
+                    data: { routine: {
                             'test-cycle': {
                                 name: 'Test Cycle',
                                 tasks: [
@@ -266,8 +265,8 @@ export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
             // to hand over `reminders` separately is gone — STATE_TRUTH_MIGRATION #25).
             const sendState = {
                 customReminders: { enabled: true, indefinite: true, frequencyValue: 30, frequencyUnit: 'minutes', browserNotifications: false },
-                appState: { activeCycleId: 'c1' },
-                data: { cycles: { c1: { tasks: [
+                appState: { activeRoutineId: 'c1' },
+                data: { routine: { c1: { tasks: [
                     { id: 't1', text: 'unrendered but real', remindersEnabled: true, completed: false },
                     { id: 't2', text: 'done one', remindersEnabled: true, completed: true }
                 ] } } }
@@ -428,16 +427,16 @@ export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
 
         await test('saveTaskReminderState writes remindersEnabled onto the matching task', async () => {
             const cycle = { tasks: [{ id: 'task-1', remindersEnabled: false }] };
-            const state = { data: { cycles: { c1: cycle } }, appState: { activeCycleId: 'c1' } };
+            const state = { data: { routine: { c1: cycle } }, appState: { activeRoutineId: 'c1' } };
             const AppState = { isReady: () => true, get: () => state, update: async (fn) => fn(state) };
             const { instance } = wireReminders({ AppState });
 
             await instance.saveTaskReminderState('task-1', true);
-            if (state.data.cycles.c1.tasks[0].remindersEnabled !== true) throw new Error('the task remindersEnabled flag should be set true');
+            if (state.data.routine.c1.tasks[0].remindersEnabled !== true) throw new Error('the task remindersEnabled flag should be set true');
 
             // Unknown task id → no-op (no throw, no new task).
             await instance.saveTaskReminderState('does-not-exist', true);
-            if (state.data.cycles.c1.tasks.length !== 1) throw new Error('an unknown task id should be a no-op');
+            if (state.data.routine.c1.tasks.length !== 1) throw new Error('an unknown task id should be a no-op');
         });
 
         // === SETTINGS PERSISTENCE (v2.481 regression guards) ===
@@ -573,7 +572,7 @@ export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
             try {
                 // Full shape: loadRemindersSettings() ends in updateReminderButtons(),
                 // which reads the active routine.
-                const state = { customReminders: { ...CONFIGURED }, data: { cycles: { c1: { tasks: [] } } }, appState: { activeCycleId: 'c1' } };
+                const state = { customReminders: { ...CONFIGURED }, data: { routine: { c1: { tasks: [] } } }, appState: { activeRoutineId: 'c1' } };
                 const AppState = { isReady: () => true, get: () => state, update: async (fn) => fn(state) };
                 let explode = false;
                 const realGet = (id) => document.getElementById(id);
@@ -618,7 +617,7 @@ export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
             try {
                 // Full shape, not just customReminders: loadRemindersSettings() ends in
                 // updateReminderButtons(), which reads the active routine.
-                let state = { customReminders: { ...CONFIGURED }, data: { cycles: { c1: { tasks: [] } } }, appState: { activeCycleId: 'c1' } };
+                let state = { customReminders: { ...CONFIGURED }, data: { routine: { c1: { tasks: [] } } }, appState: { activeRoutineId: 'c1' } };
                 const AppState = { isReady: () => true, get: () => state, update: async (fn) => fn(state) };
                 const { instance } = wireReminders({
                     AppState,

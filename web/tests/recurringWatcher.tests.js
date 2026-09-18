@@ -57,8 +57,8 @@ export async function runRecurringWatcherTests(resultsDiv) {
 
     function cycleState(templates = {}, tasks = []) {
         return makeAppState({
-            appState: { activeCycleId: 'c1' },
-            data: { cycles: { c1: { tasks, recurringTemplates: templates } } }
+            appState: { activeRoutineId: 'c1' },
+            data: { routine: { c1: { tasks, recurringTemplates: templates } } }
         });
     }
 
@@ -106,7 +106,7 @@ export async function runRecurringWatcherTests(resultsDiv) {
     });
 
     await test('catchUp returns zeros when no active cycle', async () => {
-        mod.setRecurringWatcherDependencies(makeDeps({ AppState: makeAppState({ appState: {}, data: { cycles: {} } }) }));
+        mod.setRecurringWatcherDependencies(makeDeps({ AppState: makeAppState({ appState: {}, data: { routine: {} } }) }));
         const r = await mod.catchUpMissedRecurringTasks();
         eq(r.added, 0, 'added');
     });
@@ -130,10 +130,10 @@ export async function runRecurringWatcherTests(resultsDiv) {
         mod.setRecurringWatcherDependencies(makeDeps({ AppState: as }));
         const r = await mod.catchUpMissedRecurringTasks();
         eq(r.added, 1, 'added one');
-        const cyc = as.get().data.cycles.c1;
+        const cyc = as.get().data.routine.c1;
         eq(cyc.tasks.length, 1, 'task pushed');
         eq(cyc.tasks[0].id, 't1', 'task id');
-        eq(cyc.tasks[0].deleteWhenComplete, true, 'recreated instance forced deleteWhenComplete=true');
+        eq(cyc.tasks[0].autoClear.cycle, true, 'recreated instance clears on reset (recurring default map)');
         eq(cyc.recurringTemplates.t1.occurrenceCount, 1, 'occurrenceCount incremented');
         eq(cyc.recurringTemplates.t1.nextScheduledOccurrence, NOW + 60000, 'next occurrence advanced');
     });
@@ -145,7 +145,7 @@ export async function runRecurringWatcherTests(resultsDiv) {
         mod.setRecurringWatcherDependencies(makeDeps({ AppState: as }));
         const r = await mod.catchUpMissedRecurringTasks();
         eq(r.added, 1, 'added one');
-        eq(as.get().data.cycles.c1.tasks.map(t => t.id).join(','), 'a,t1,b,c', 'inserted at index 1');
+        eq(as.get().data.routine.c1.tasks.map(t => t.id).join(','), 'a,t1,b,c', 'inserted at index 1');
     });
 
     await test('catchUp keeps recreated tasks in position order when several are due', async () => {
@@ -157,7 +157,7 @@ export async function runRecurringWatcherTests(resultsDiv) {
         mod.setRecurringWatcherDependencies(makeDeps({ AppState: as }));
         const r = await mod.catchUpMissedRecurringTasks();
         eq(r.added, 2, 'added two');
-        eq(as.get().data.cycles.c1.tasks.map(t => t.id).join(','), 't0,a,b,t2', 'each at its own index');
+        eq(as.get().data.routine.c1.tasks.map(t => t.id).join(','), 't0,a,b,t2', 'each at its own index');
     });
 
     await test('catchUp appends when the position is unknown or past the end', async () => {
@@ -170,7 +170,7 @@ export async function runRecurringWatcherTests(resultsDiv) {
         mod.setRecurringWatcherDependencies(makeDeps({ AppState: as }));
         const r = await mod.catchUpMissedRecurringTasks();
         eq(r.added, 2, 'added two');
-        const ids = as.get().data.cycles.c1.tasks.map(t => t.id);
+        const ids = as.get().data.routine.c1.tasks.map(t => t.id);
         eq(ids[0], 'a', 'existing task stays first');
         eq(ids.length, 3, 'both appended after it');
     });
@@ -179,7 +179,7 @@ export async function runRecurringWatcherTests(resultsDiv) {
         const as = cycleState({ t1: dueTemplate('t1', { position: 0 }) }, [{ id: 'a' }]);
         mod.setRecurringWatcherDependencies(makeDeps({ AppState: as }));
         await mod.catchUpMissedRecurringTasks();
-        eq(as.get().data.cycles.c1.recurringTemplates.t1.position, 0, 'position survives buildTemplateUpdate');
+        eq(as.get().data.routine.c1.recurringTemplates.t1.position, 0, 'position survives buildTemplateUpdate');
     });
 
     await test('catchUp skips template when matching task already exists', async () => {
@@ -187,7 +187,7 @@ export async function runRecurringWatcherTests(resultsDiv) {
         mod.setRecurringWatcherDependencies(makeDeps({ AppState: as }));
         const r = await mod.catchUpMissedRecurringTasks();
         eq(r.added, 0, 'nothing added');
-        eq(as.get().data.cycles.c1.tasks.length, 1, 'task count unchanged');
+        eq(as.get().data.routine.c1.tasks.length, 1, 'task count unchanged');
     });
 
     await test('catchUp skips template with null nextScheduledOccurrence', async () => {
@@ -261,8 +261,8 @@ export async function runRecurringWatcherTests(resultsDiv) {
         mod.setRecurringWatcherDependencies(makeDeps({ AppState: as }));
         const r = await mod.catchUpMissedRecurringTasks();
         eq(r.added, 1, 'final occurrence spawned');
-        eq(as.get().data.cycles.c1.recurringTemplates.t1.occurrenceCount, 2, 'count reached');
-        eq(as.get().data.cycles.c1.recurringTemplates.t1.nextScheduledOccurrence, null, 'no further occurrences');
+        eq(as.get().data.routine.c1.recurringTemplates.t1.occurrenceCount, 2, 'count reached');
+        eq(as.get().data.routine.c1.recurringTemplates.t1.nextScheduledOccurrence, null, 'no further occurrences');
     });
 
     await test('finite count: non-final spawn keeps a next occurrence', async () => {
@@ -273,7 +273,7 @@ export async function runRecurringWatcherTests(resultsDiv) {
         const as = cycleState({ t1: tmpl }, []);
         mod.setRecurringWatcherDependencies(makeDeps({ AppState: as }));
         await mod.catchUpMissedRecurringTasks();
-        eq(as.get().data.cycles.c1.recurringTemplates.t1.nextScheduledOccurrence, NOW + 60000, 'next occurrence kept');
+        eq(as.get().data.routine.c1.recurringTemplates.t1.nextScheduledOccurrence, NOW + 60000, 'next occurrence kept');
     });
 
     // ── watchRecurringTasks (slow-path matcher) ───────────────────────────────
@@ -283,14 +283,14 @@ export async function runRecurringWatcherTests(resultsDiv) {
         const as = cycleState({ t1: dueTemplate('t1') }, []);
         mod.setRecurringWatcherDependencies(makeDeps({ AppState: as, shouldRecreateRecurringTask: () => true }));
         await mod.watchRecurringTasks();
-        eq(as.get().data.cycles.c1.tasks.length, 1, 'watch spawned task');
+        eq(as.get().data.routine.c1.tasks.length, 1, 'watch spawned task');
     });
 
     await test('watch does NOT spawn when shouldRecreateRecurringTask returns false', async () => {
         const as = cycleState({ t1: dueTemplate('t1') }, []);
         mod.setRecurringWatcherDependencies(makeDeps({ AppState: as, shouldRecreateRecurringTask: () => false }));
         await mod.watchRecurringTasks();
-        eq(as.get().data.cycles.c1.tasks.length, 0, 'pattern mismatch blocks spawn');
+        eq(as.get().data.routine.c1.tasks.length, 0, 'pattern mismatch blocks spawn');
     });
 
     // ── Task limit enforcement ────────────────────────────────────────────────
@@ -310,7 +310,7 @@ export async function runRecurringWatcherTests(resultsDiv) {
         const r = await mod.catchUpMissedRecurringTasks();
         eq(r.added, 0, 'no task added at limit');
         eq(r.blocked, 1, 'one task reported blocked');
-        const t = as.get().data.cycles.c1.recurringTemplates.t1;
+        const t = as.get().data.routine.c1.recurringTemplates.t1;
         eq(t.occurrenceCount, 0, 'blocked spawn must NOT consume an occurrence');
         eq(t.nextScheduledOccurrence, NOW - 1000, 'blocked occurrence stays due for retry');
         eq(r.updated, 0, 'no template update committed for a blocked spawn');
@@ -324,10 +324,10 @@ export async function runRecurringWatcherTests(resultsDiv) {
         mod.setRecurringWatcherDependencies(makeDeps({ AppState: as }));
 
         await mod.catchUpMissedRecurringTasks();          // blocked
-        as.get().data.cycles.c1.tasks.pop();              // user deletes a task
+        as.get().data.routine.c1.tasks.pop();              // user deletes a task
         const r2 = await mod.catchUpMissedRecurringTasks();
         eq(r2.added, 1, 'previously blocked occurrence delivered');
-        eq(as.get().data.cycles.c1.recurringTemplates.t1.occurrenceCount, 1, 'occurrence consumed on actual delivery');
+        eq(as.get().data.routine.c1.recurringTemplates.t1.occurrenceCount, 1, 'occurrence consumed on actual delivery');
     });
 
     await test('task-limit notification fires once per blocked era, resets on successful spawn', async () => {
@@ -346,12 +346,12 @@ export async function runRecurringWatcherTests(resultsDiv) {
         await mod.catchUpMissedRecurringTasks();  // still blocked → once-per-era guard mutes
         eq(limitMessages.length, 1, 'repeat block in the same era must not re-notify');
 
-        as.get().data.cycles.c1.tasks.pop();      // space frees
+        as.get().data.routine.c1.tasks.pop();      // space frees
         await mod.catchUpMissedRecurringTasks();  // delivered → era resets
         // Simulate the next occurrence coming due after the user completed the
         // spawned task (instance auto-deletes) and the cycle refilled to the
         // limit — a NEW block must notify again.
-        const cyc = as.get().data.cycles.c1;
+        const cyc = as.get().data.routine.c1;
         cyc.tasks = cyc.tasks.filter(t => t.id !== 't1');
         cyc.tasks.push({ id: 'y', text: 'y' });
         cyc.recurringTemplates.t1.nextScheduledOccurrence = NOW - 500;
@@ -444,11 +444,11 @@ export async function runRecurringWatcherTests(resultsDiv) {
         // Session 1: the owed final occurrence spawns — correct.
         const r1 = await mod.catchUpMissedRecurringTasks();
         eq(r1.added, 1, 'final owed occurrence delivered');
-        const t = as.get().data.cycles.c1.recurringTemplates.t1;
+        const t = as.get().data.routine.c1.recurringTemplates.t1;
         eq(t.nextScheduledOccurrence, null, 'template finished — nothing scheduled past the end date');
 
         // User completes the task (recreated instances auto-delete on completion).
-        as.get().data.cycles.c1.tasks.length = 0;
+        as.get().data.routine.c1.tasks.length = 0;
 
         // Session 2: nothing is owed anymore — the routine ended.
         const r2 = await mod.catchUpMissedRecurringTasks();
@@ -473,11 +473,11 @@ export async function runRecurringWatcherTests(resultsDiv) {
         }));
 
         await mod.watchRecurringTasks();             // normal tick — nothing due yet
-        eq(as.get().data.cycles.c1.tasks.length, 0, 'nothing due at first tick');
+        eq(as.get().data.routine.c1.tasks.length, 0, 'nothing due at first tick');
 
         clock = NOW + 20 * 60_000;                   // wake 20 minutes later
         await mod.watchRecurringTasks();             // overslept tick
-        eq(as.get().data.cycles.c1.tasks.length, 1, 'missed occurrence delivered on wake');
+        eq(as.get().data.routine.c1.tasks.length, 1, 'missed occurrence delivered on wake');
     });
 
     // cleanup global singleton state

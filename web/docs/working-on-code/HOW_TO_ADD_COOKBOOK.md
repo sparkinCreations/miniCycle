@@ -488,7 +488,7 @@ The script scans all `.mcyc` files, extracts title + emoji, and writes `manifest
 
 - [ ] File is valid JSON (`python3 -m json.tool Your_File.mcyc`)
 - [ ] **All root-level fields** present: name, title, tasks, autoReset, cycleCount, deleteCheckedTasks, taskOptionButtons, recurringTemplates, reminders, theme, createdAt
-- [ ] **All task-level fields** present: id, text, completed, dueDate, highPriority, remindersEnabled, recurring, recurringSettings, deleteWhenComplete, deleteWhenCompleteSettings, schemaVersion
+- [ ] **All task-level fields** present: id, text, completed, dueDate, priority, remindersEnabled, recurring, recurringSettings, deleteWhenComplete, autoClear, schemaVersion
 - [ ] Title has emoji (start or end)
 - [ ] Filename uses underscores: `Descriptive_Name.mcyc`
 - [ ] `npm run samples` ran successfully

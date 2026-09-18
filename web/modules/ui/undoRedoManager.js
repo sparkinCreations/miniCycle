@@ -1431,6 +1431,17 @@ export async function initUndoSystemForApp() {
     const currentState = _deps.AppState.get();
     const activeCycleId = getActiveRoutineId(currentState);
 
+    // A stored-shape migration this boot (2.5 -> 2.6) invalidates every
+    // persisted snapshot: they carry the old task fields and are keyed by the
+    // old routine names. Clearing is the decided answer (SCHEMA_2_6_PLAN.md,
+    // Risks) — far simpler than migrating snapshots, and losing undo across a
+    // version bump is acceptable.
+    if (_deps.AppState.migratedThisBoot) {
+      await dbReady;
+      await clearAllUndoHistory();
+      console.warn('🧹 Undo history cleared after the stored-data migration');
+    }
+
     if (!activeCycleId) {
       // Normal for first-time users — onboarding hasn't completed yet
       return;

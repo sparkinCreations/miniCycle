@@ -139,13 +139,13 @@ export class MiniCycleDueDates {
 
         const schemaData = this.deps.loadMiniCycleData();
         if (!schemaData) {
-            throw new Error('Schema 2.5 data not found');
+            throw new Error('State data not found');
         }
 
         const { cycles, activeCycle } = schemaData;
 
         if (!activeCycle || !cycles[activeCycle]) {
-            console.error('❌ Error: Active cycle not found in Schema 2.5.');
+            console.error('❌ Error: Active routine not found in state.');
             return;
         }
 
@@ -391,7 +391,7 @@ export class MiniCycleDueDates {
 
                 const schemaData = this.deps.loadMiniCycleData();
                 if (!schemaData) {
-                    console.error('❌ Schema 2.5 data required for due date toggle');
+                    console.error('❌ State data required for due date toggle');
                     return;
                 }
 
@@ -445,14 +445,14 @@ export class MiniCycleDueDates {
 
         const schemaData = this.deps.loadMiniCycleData();
         if (!schemaData) {
-            console.error('❌ Schema 2.5 data required for handleDueDateChange');
+            console.error('❌ State data required for handleDueDateChange');
             return;
         }
 
         const { cycles, activeCycle, reminders } = schemaData;
 
         if (!activeCycle || !cycles[activeCycle]) {
-            console.error("❌ Error: Active cycle not found in Schema 2.5.");
+            console.error("❌ Error: Active routine not found in state.");
             return;
         }
 
@@ -519,7 +519,7 @@ export class MiniCycleDueDates {
 
         const schemaData = this.deps.loadMiniCycleData();
         if (!schemaData) {
-            console.error('❌ Schema 2.5 data required for remindOverdueTasks');
+            console.error('❌ State data required for remindOverdueTasks');
             return;
         }
 

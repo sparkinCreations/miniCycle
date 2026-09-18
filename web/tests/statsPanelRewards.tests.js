@@ -55,7 +55,7 @@ export async function runStatsPanelRewardsTests(resultsDiv) {
         return {
             elements: { themeUnlockMessage, goldenUnlockMessage, gameUnlockMessage, themeUnlockStatus: null, themesModal: null },
             dependencies: {
-                AppState: makeAppState({ userProgress: { totalTasksCompleted: 0 }, appState: {}, data: { cycles: {} }, settings: {} }),
+                AppState: makeAppState({ userProgress: { totalTasksCompleted: 0 }, appState: {}, data: { routine: {} }, settings: {} }),
                 vocabThemeManager: makeVtm(),
                 hideMainMenu: () => {}
             },

@@ -30,6 +30,7 @@
  */
 
 import { DEFAULT_RECURRING_DELETE_SETTINGS } from '../core/constants.js';
+import { isPriorityLevel } from '../utils/priorityLevel.js';
 import { autoClearFields } from '../utils/cycleMode.js';
 
 /** Schema stamp for template records. Bump only alongside a migration. */
@@ -52,11 +53,9 @@ export const RECURRING_TEMPLATE_SCHEMA_VERSION = 2;
  * @param {Object} fields.recurringSettings - Normalised recurrence settings (cloned by the caller)
  * @param {number|null} fields.nextScheduledOccurrence - Epoch ms of the next due occurrence
  * @param {string|null} [fields.dueDate=null]
- * @param {boolean} [fields.highPriority=false]
- * @param {string|null} [fields.priorityColor=null]
+ * @param {'high'|'medium'|'low'|null} [fields.priority=null] - Priority level
  * @param {boolean} [fields.remindersEnabled=false]
- * @param {boolean} [fields.deleteWhenComplete=true] - Recurring instances auto-remove by default
- * @param {Object|null} [fields.deleteWhenCompleteSettings=null] - Defaults to the recurring preset
+ * @param {Object|null} [fields.autoClear=null] - Per-mode clear map; defaults to the recurring preset
  * @param {number} [fields.occurrenceCount=0]
  * @param {number|null} [fields.lastTriggeredTimestamp=null]
  * @returns {Object} A complete template record
@@ -67,11 +66,9 @@ export function buildRecurringTemplate({
     recurringSettings,
     nextScheduledOccurrence,
     dueDate = null,
-    highPriority = false,
-    priorityColor = null,
+    priority = null,
     remindersEnabled = false,
-    deleteWhenComplete = true,
-    deleteWhenCompleteSettings = null,
+    autoClear = null,
     occurrenceCount = 0,
     lastTriggeredTimestamp = null,
     // Index in routine.tasks where a recreated instance should land. Recorded when
@@ -94,10 +91,9 @@ export function buildRecurringTemplate({
         recurring: true,
         recurringSettings,
         dueDate,
-        highPriority,
-        priorityColor,
+        priority: isPriorityLevel(priority) ? priority : null,
         remindersEnabled,
-        ...autoClearFields({ settings: deleteWhenCompleteSettings, value: deleteWhenComplete, defaults: DEFAULT_RECURRING_DELETE_SETTINGS }),
+        ...autoClearFields({ settings: autoClear, defaults: DEFAULT_RECURRING_DELETE_SETTINGS }),
         occurrenceCount,
         lastTriggeredTimestamp,
         nextScheduledOccurrence: nextScheduledOccurrence ?? null,

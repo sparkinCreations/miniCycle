@@ -223,7 +223,7 @@ derivations — the user-toggle write in `taskButtons` and the recurring
 always-true safety override in `recurringWatcher` — as that commit's own message
 records.
 
-**§2.5 / §3.3 doc notes** — both written into `docs/reference/SCHEMA_2_5.md`
+**§2.5 / §3.3 doc notes** — both written into `docs/reference/SCHEMA_2_6.md`
 (the `buildSnapshotSignature` rule, and why `achievements.unlocked` and
 `settings.unlockedThemes` stay separate).
 

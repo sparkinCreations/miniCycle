@@ -684,11 +684,11 @@ test('rolls back on update error', async () => {
     const state = createStateManager();
     await state.init();
 
-    const originalValue = state.data.appState.activeCycleId;
+    const originalValue = state.data.appState.activeRoutineId;
 
     try {
         await state.update(data => {
-            data.appState.activeCycleId = 'changed';
+            data.appState.activeRoutineId = 'changed';
             throw new Error('Simulated error');
         });
     } catch (error) {
@@ -696,7 +696,7 @@ test('rolls back on update error', async () => {
     }
 
     // ✅ Verify rollback happened
-    if (state.data.appState.activeCycleId !== originalValue) {
+    if (state.data.appState.activeRoutineId !== originalValue) {
         throw new Error('State not rolled back after error!');
     }
 });
@@ -785,15 +785,15 @@ test('updatePreview generates task preview', async () => {
 
 **Key Testing Principles:**
 1. **Use complete Schema 2.5 structures** - Don't mock partial data
-2. **Test actual data paths** - Verify `schemaData.data.cycles`, not shortcuts
+2. **Test actual data paths** - Verify `schemaData.data.routine`, not shortcuts
 3. **Assert meaningful output** - Don't just check that code runs
 4. **Test with real DOM** - Create actual elements, not mocks
 5. **Verify all branches** - Test success AND error paths
 
 **Real Impact:**
 - RoutineSwitcher tests found Schema 2.5 bug in first run (4/22 tests failed)
-- Bug was in `updatePreview()` accessing `schemaData.cycles` instead of `schemaData.data.cycles`
-- Single fix: `const cycles = schemaData.data?.cycles || {};`
+- Bug was in `updatePreview()` accessing `schemaData.cycles` instead of `schemaData.data.routine`
+- Single fix: `const cycles = schemaData.data?.routine || {};`
 - All 22 tests passed after fix - **100% success rate**
 
 ---

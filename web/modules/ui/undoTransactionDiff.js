@@ -30,6 +30,7 @@
  */
 
 import { getLabel } from '../labels/labelResolver.js';
+import { getPriorityLevel } from '../utils/priorityLevel.js';
 
 /**
  * Analyze what changed between two snapshots
@@ -76,7 +77,7 @@ export function describeChange(fromSnapshot, toSnapshot) {
   // Track per-field change counts to avoid duplicate labels
   const fieldCounts = {
     edited: 0, completed: 0, uncompleted: 0,
-    prioritySet: 0, priorityRemoved: 0, priorityColor: 0,
+    prioritySet: 0, priorityRemoved: 0, priorityChanged: 0,
     recurringOn: 0, recurringOff: 0,
     remindersOn: 0, remindersOff: 0,
     dueDateSet: 0, dueDateRemoved: 0, dueDateChanged: 0,
@@ -90,13 +91,12 @@ export function describeChange(fromSnapshot, toSnapshot) {
     if (fromTask.text !== toTask.text) fieldCounts.edited++;
     if (!fromTask.completed && toTask.completed) fieldCounts.completed++;
     if (fromTask.completed && !toTask.completed) fieldCounts.uncompleted++;
-    if (fromTask.highPriority !== toTask.highPriority) {
-      if (toTask.highPriority) fieldCounts.prioritySet++;
-      else fieldCounts.priorityRemoved++;
-    }
-    if (fromTask.highPriority && toTask.highPriority &&
-        (fromTask.priorityColor || null) !== (toTask.priorityColor || null)) {
-      fieldCounts.priorityColor++;
+    const fromLevel = getPriorityLevel(fromTask);
+    const toLevel = getPriorityLevel(toTask);
+    if (fromLevel !== toLevel) {
+      if (!fromLevel) fieldCounts.prioritySet++;
+      else if (!toLevel) fieldCounts.priorityRemoved++;
+      else fieldCounts.priorityChanged++;
     }
     if (!!fromTask.recurring !== !!toTask.recurring) {
       if (toTask.recurring) fieldCounts.recurringOn++;
@@ -111,14 +111,9 @@ export function describeChange(fromSnapshot, toSnapshot) {
       else if (fromTask.dueDate && !toTask.dueDate) fieldCounts.dueDateRemoved++;
       else fieldCounts.dueDateChanged++;
     }
-    // `deleteWhenComplete` is DERIVED from deleteWhenCompleteSettings[mode], so it
-    // also moves whenever the routine's mode does. Only count it as a user action
-    // when the stored settings actually changed — the per-task control writes both
-    // (taskButtons.js), a mode switch writes only the derived value. Without this,
-    // switching to To-Do Mode reported a per-task control the user never touched.
-    if (!!fromTask.deleteWhenComplete !== !!toTask.deleteWhenComplete &&
-        JSON.stringify(fromTask.deleteWhenCompleteSettings || null) !==
-        JSON.stringify(toTask.deleteWhenCompleteSettings || null)) {
+    // The autoClear map is the only stored value (Schema 2.6): a mode switch no
+    // longer touches the task, so any change here IS a per-task control.
+    if (JSON.stringify(fromTask.autoClear || null) !== JSON.stringify(toTask.autoClear || null)) {
       fieldCounts.clearToggled++;
     }
   }
@@ -133,7 +128,7 @@ export function describeChange(fromSnapshot, toSnapshot) {
   }
   if (fieldCounts.prioritySet > 0) changes.push(getLabel('notify.changePrioritySet'));
   if (fieldCounts.priorityRemoved > 0) changes.push(getLabel('notify.changePriorityRemoved'));
-  if (fieldCounts.priorityColor > 0) changes.push(getLabel('notify.changePriorityColor'));
+  if (fieldCounts.priorityChanged > 0) changes.push(getLabel('notify.changePriorityColor'));
   if (fieldCounts.recurringOn > 0) changes.push(getLabel('notify.changeRecurringEnabled'));
   if (fieldCounts.recurringOff > 0) changes.push(getLabel('notify.changeRecurringDisabled'));
   if (fieldCounts.remindersOn > 0) changes.push(getLabel('notify.changeRemindersEnabled'));
@@ -269,11 +264,8 @@ export function computeTransactionDiff(fromSnapshot, toSnapshot) {
     if (fromTask.completed !== toTask.completed) {
       taskFieldsChanged.push('completed');
     }
-    if (fromTask.highPriority !== toTask.highPriority) {
-      taskFieldsChanged.push('highPriority');
-    }
-    if ((fromTask.priorityColor || null) !== (toTask.priorityColor || null)) {
-      taskFieldsChanged.push('priorityColor');
+    if (getPriorityLevel(fromTask) !== getPriorityLevel(toTask)) {
+      taskFieldsChanged.push('priority');
     }
     if (fromTask.dueDate !== toTask.dueDate) {
       taskFieldsChanged.push('dueDate');
@@ -284,8 +276,8 @@ export function computeTransactionDiff(fromSnapshot, toSnapshot) {
     if (fromTask.remindersEnabled !== toTask.remindersEnabled) {
       taskFieldsChanged.push('remindersEnabled');
     }
-    if (fromTask.deleteWhenComplete !== toTask.deleteWhenComplete) {
-      taskFieldsChanged.push('deleteWhenComplete');
+    if (JSON.stringify(fromTask.autoClear || null) !== JSON.stringify(toTask.autoClear || null)) {
+      taskFieldsChanged.push('autoClear');
     }
 
     if (taskFieldsChanged.length > 0) {

@@ -46,20 +46,20 @@ export async function runRoutineSwitcherActionsTests(resultsDiv) {
      * An instance with a selectable routine list and a controllable confirm.
      * `confirmAnswer` decides what the confirmation modal reports back.
      */
-    function setup({ cycles, selectedKey, activeCycleId = 'a', confirmAnswer = true, appReady = true } = {}) {
+    function setup({ cycles, selectedKey, activeRoutineId = 'a', confirmAnswer = true, appReady = true } = {}) {
         cleanupDom();
-        // userProgress is read by duplicate (totalCyclesCreated); the lifecycle
+        // userProgress is read by duplicate (totalRoutinesCreated); the lifecycle
         // hooks are awaited with .catch(), so they must return promises. Both
         // learned from running these tests against the pre-split code.
         const state = {
-            data: { cycles: structuredClone(cycles) },
-            appState: { activeCycleId },
+            data: { routine: structuredClone(cycles) },
+            appState: { activeRoutineId },
             settings: {},
             userProgress: {},
-            // duplicate increments state.metadata.totalCyclesCreated — not
+            // duplicate increments state.metadata.totalRoutinesCreated — not
             // userProgress, as I first assumed. Learned by running these against
             // the pre-split code.
-            metadata: { totalCyclesCreated: 0 }
+            metadata: { totalRoutinesCreated: 0 }
         };
         const calls = { notifications: [], confirms: [], deleted: [], renamed: [] };
 
@@ -99,7 +99,7 @@ export async function runRoutineSwitcherActionsTests(resultsDiv) {
         instance.hideSwitchMiniCycleModal = () => {};
         instance.loadMiniCycleList = () => {};
         instance.updatePreview = () => {};
-        return { instance, state, calls, cycleKeys: () => Object.keys(state.data.cycles) };
+        return { instance, state, calls, cycleKeys: () => Object.keys(state.data.routine) };
     }
 
     const TWO = { a: { title: 'Alpha', tasks: [] }, b: { title: 'Beta', tasks: [] } };
@@ -111,12 +111,12 @@ export async function runRoutineSwitcherActionsTests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">🗑️ Delete</h4>';
 
     await test('deletes the SELECTED routine, not the active one', async () => {
-        const { instance, state, cycleKeys } = setup({ cycles: TWO, selectedKey: 'b', activeCycleId: 'a' });
+        const { instance, state, cycleKeys } = setup({ cycles: TWO, selectedKey: 'b', activeRoutineId: 'a' });
         instance.deleteMiniCycle();
         await settle();
         if (cycleKeys().includes('b')) throw new Error('the selected routine survived');
         if (!cycleKeys().includes('a')) throw new Error('the ACTIVE routine was deleted instead');
-        if (state.appState.activeCycleId !== 'a') throw new Error('active routine should be untouched');
+        if (state.appState.activeRoutineId !== 'a') throw new Error('active routine should be untouched');
         cleanupDom();
     });
 
@@ -177,7 +177,7 @@ export async function runRoutineSwitcherActionsTests(resultsDiv) {
         instance.duplicateMiniCycle();
         await settle(600);
         if (cycleKeys().length !== 2) throw new Error(`expected 2 routines, got ${cycleKeys().length}`);
-        if (state.data.cycles.a.title !== 'Alpha') throw new Error('the original was modified');
+        if (state.data.routine.a.title !== 'Alpha') throw new Error('the original was modified');
         cleanupDom();
     });
 
@@ -185,7 +185,7 @@ export async function runRoutineSwitcherActionsTests(resultsDiv) {
         const { instance, state } = setup({ cycles: { a: { title: 'Alpha', tasks: [] } }, selectedKey: 'a' });
         instance.duplicateMiniCycle();
         await settle(600);
-        const titles = Object.values(state.data.cycles).map(c => c.title);
+        const titles = Object.values(state.data.routine).map(c => c.title);
         if (new Set(titles).size !== titles.length) throw new Error(`duplicate name collision: ${titles}`);
         cleanupDom();
     });
@@ -208,7 +208,7 @@ export async function runRoutineSwitcherActionsTests(resultsDiv) {
         const { instance, calls, state } = setup({ cycles: TWO, selectedKey: null });
         instance.renameMiniCycle();
         await settle(300);
-        if (state.data.cycles.a.title !== 'Alpha') throw new Error('a title changed with nothing selected');
+        if (state.data.routine.a.title !== 'Alpha') throw new Error('a title changed with nothing selected');
         if (calls.notifications.length === 0) throw new Error('expected a select-first notification');
         cleanupDom();
     });
@@ -217,7 +217,7 @@ export async function runRoutineSwitcherActionsTests(resultsDiv) {
         const { instance, calls, state } = setup({ cycles: TWO, selectedKey: 'b', appReady: false });
         instance.renameMiniCycle();
         await settle(300);
-        if (state.data.cycles.b.title !== 'Beta') throw new Error('a title changed while state was not ready');
+        if (state.data.routine.b.title !== 'Beta') throw new Error('a title changed while state was not ready');
         if (calls.notifications.length === 0) throw new Error('expected a not-ready notification');
         cleanupDom();
     });
@@ -226,22 +226,22 @@ export async function runRoutineSwitcherActionsTests(resultsDiv) {
         // Signature is (oldKey, rawNewName, oldName) — three args. The producer
         // writes cycles[newName] and deletes cycles[oldKey], so the storage key
         // and the title move together.
-        const { instance, state, cycleKeys } = setup({ cycles: TWO, selectedKey: 'b', activeCycleId: 'a' });
+        const { instance, state, cycleKeys } = setup({ cycles: TWO, selectedKey: 'b', activeRoutineId: 'a' });
         instance._commitRename('b', 'Renamed Beta', 'Beta');
         await settle(400);
         if (cycleKeys().includes('b')) throw new Error('the old key should be gone');
         if (!cycleKeys().includes('Renamed Beta')) throw new Error(`re-key failed: ${cycleKeys()}`);
-        if (state.data.cycles['Renamed Beta'].title !== 'Renamed Beta') throw new Error('title not updated');
-        if (state.data.cycles.a.title !== 'Alpha') throw new Error('the wrong routine was renamed');
+        if (state.data.routine['Renamed Beta'].title !== 'Renamed Beta') throw new Error('title not updated');
+        if (state.data.routine.a.title !== 'Alpha') throw new Error('the wrong routine was renamed');
         cleanupDom();
     });
 
     await test('renaming the ACTIVE routine follows it to the new key', async () => {
-        const { instance, state } = setup({ cycles: TWO, selectedKey: 'a', activeCycleId: 'a' });
+        const { instance, state } = setup({ cycles: TWO, selectedKey: 'a', activeRoutineId: 'a' });
         instance._commitRename('a', 'Alpha Renamed', 'Alpha');
         await settle(400);
-        if (state.appState.activeCycleId !== 'Alpha Renamed') {
-            throw new Error(`activeCycleId is "${state.appState.activeCycleId}" — it would now point at nothing`);
+        if (state.appState.activeRoutineId !== 'Alpha Renamed') {
+            throw new Error(`activeRoutineId is "${state.appState.activeRoutineId}" — it would now point at nothing`);
         }
         cleanupDom();
     });
@@ -269,7 +269,7 @@ export async function runRoutineSwitcherActionsTests(resultsDiv) {
         const { instance, calls, state } = setup({ cycles: TWO, selectedKey: null });
         instance.downloadMiniCycle();
         await settle(300);
-        if (Object.keys(state.data.cycles).length !== 2) throw new Error('download must not mutate');
+        if (Object.keys(state.data.routine).length !== 2) throw new Error('download must not mutate');
         if (calls.notifications.length === 0) throw new Error('expected a select-first notification');
         cleanupDom();
     });

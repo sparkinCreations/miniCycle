@@ -123,7 +123,7 @@ export function generateDebugReport() {
         }
 
         const { data, metadata } = state;
-        const cycles = data.cycles || {};
+        const cycles = data.routine || {};
 
         const report = {
             timestamp: new Date().toISOString(),

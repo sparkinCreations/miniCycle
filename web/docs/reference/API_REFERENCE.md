@@ -76,7 +76,7 @@ const state = window.AppState.get();
 // Update state
 window.AppState.update((state) => {
     // Modify state directly
-    state.appState.activeCycleId = newId;
+    state.appState.activeRoutineId = newId;
 }, immediate);  // immediate = true/false
 
 // Check if ready

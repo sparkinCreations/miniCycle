@@ -84,7 +84,7 @@ A manifest-based wiring layer — dependencies are declared in `moduleManifests.
 ```javascript
 // miniCycle
 AppState.update(state => {
-    state.data.cycles[cycleId].tasks.push(newTask);
+    state.data.routine[cycleId].tasks.push(newTask);
 }, true); // true = immediate save
 
 // Redux equivalent

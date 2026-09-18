@@ -114,9 +114,9 @@ export async function runStateTests(resultsDiv, isPartOfSuite = false) {
     await test('validates correct Schema 2.5 structure', () => {
         const state = createStateManager();
         const validData = {
-            schemaVersion: "2.5",
-            data: { cycles: {} },
-            appState: { activeCycleId: null }
+            schemaVersion: "2.6",
+            data: { routine: {} },
+            appState: { activeRoutineId: null }
         };
 
         const isValid = state.validateSchema25Structure(validData);
@@ -130,8 +130,8 @@ export async function runStateTests(resultsDiv, isPartOfSuite = false) {
         const state = createStateManager();
         const invalidData = {
             schemaVersion: "1.0",
-            data: { cycles: {} },
-            appState: { activeCycleId: null }
+            data: { routine: {} },
+            appState: { activeRoutineId: null }
         };
 
         const isValid = state.validateSchema25Structure(invalidData);
@@ -141,12 +141,12 @@ export async function runStateTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
-    await test('rejects missing data.cycles', () => {
+    await test('rejects missing data.routine', () => {
         const state = createStateManager();
         const invalidData = {
-            schemaVersion: "2.5",
+            schemaVersion: "2.6",
             data: {},
-            appState: { activeCycleId: null }
+            appState: { activeRoutineId: null }
         };
 
         const isValid = state.validateSchema25Structure(invalidData);
@@ -159,8 +159,8 @@ export async function runStateTests(resultsDiv, isPartOfSuite = false) {
     await test('rejects missing appState', () => {
         const state = createStateManager();
         const invalidData = {
-            schemaVersion: "2.5",
-            data: { cycles: {} }
+            schemaVersion: "2.6",
+            data: { routine: {} }
         };
 
         const isValid = state.validateSchema25Structure(invalidData);
@@ -184,10 +184,10 @@ export async function runStateTests(resultsDiv, isPartOfSuite = false) {
 
     await test('loads existing Schema 2.5 data from localStorage', async () => {
         const mockData = {
-            schemaVersion: "2.5",
+            schemaVersion: "2.6",
             metadata: { lastModified: Date.now() },
-            data: { cycles: { 'cycle1': { name: 'Test' } } },
-            appState: { activeCycleId: 'cycle1' }
+            data: { routine: { 'cycle1': { name: 'Test' } } },
+            appState: { activeRoutineId: 'cycle1' }
         };
 
         localStorage.setItem('miniCycleData', JSON.stringify(mockData));
@@ -199,7 +199,7 @@ export async function runStateTests(resultsDiv, isPartOfSuite = false) {
             throw new Error('State should be ready after init');
         }
 
-        if (!state.data || state.data.schemaVersion !== "2.5") {
+        if (!state.data || state.data.schemaVersion !== "2.6") {
             throw new Error('Data not loaded correctly');
         }
     });
@@ -219,7 +219,7 @@ export async function runStateTests(resultsDiv, isPartOfSuite = false) {
         const state = createStateManager();
         const result = await state.init();
 
-        if (!result || result.schemaVersion !== '2.5') {
+        if (!result || result.schemaVersion !== '2.6') {
             throw new Error('Should create fallback Schema 2.5 state for corrupted data');
         }
         if (!state.isReady()) {
@@ -229,9 +229,9 @@ export async function runStateTests(resultsDiv, isPartOfSuite = false) {
 
     await test('prevents double initialization', async () => {
         const mockData = {
-            schemaVersion: "2.5",
-            data: { cycles: {} },
-            appState: { activeCycleId: null }
+            schemaVersion: "2.6",
+            data: { routine: {} },
+            appState: { activeRoutineId: null }
         };
 
         localStorage.setItem('miniCycleData', JSON.stringify(mockData));
@@ -251,9 +251,9 @@ export async function runStateTests(resultsDiv, isPartOfSuite = false) {
 
     await test('get() returns current data', async () => {
         const mockData = {
-            schemaVersion: "2.5",
-            data: { cycles: {} },
-            appState: { activeCycleId: null }
+            schemaVersion: "2.6",
+            data: { routine: {} },
+            appState: { activeRoutineId: null }
         };
 
         localStorage.setItem('miniCycleData', JSON.stringify(mockData));
@@ -263,7 +263,7 @@ export async function runStateTests(resultsDiv, isPartOfSuite = false) {
 
         const data = state.get();
 
-        if (!data || data.schemaVersion !== "2.5") {
+        if (!data || data.schemaVersion !== "2.6") {
             throw new Error('get() did not return correct data');
         }
     });
@@ -276,9 +276,9 @@ export async function runStateTests(resultsDiv, isPartOfSuite = false) {
         }
 
         const mockData = {
-            schemaVersion: "2.5",
-            data: { cycles: {} },
-            appState: { activeCycleId: null }
+            schemaVersion: "2.6",
+            data: { routine: {} },
+            appState: { activeRoutineId: null }
         };
         localStorage.setItem('miniCycleData', JSON.stringify(mockData));
 
@@ -294,10 +294,10 @@ export async function runStateTests(resultsDiv, isPartOfSuite = false) {
 
     await test('updates state successfully', async () => {
         const mockData = {
-            schemaVersion: "2.5",
+            schemaVersion: "2.6",
             metadata: { lastModified: 0 },
-            data: { cycles: {} },
-            appState: { activeCycleId: null }
+            data: { routine: {} },
+            appState: { activeRoutineId: null }
         };
 
         localStorage.setItem('miniCycleData', JSON.stringify(mockData));
@@ -306,20 +306,20 @@ export async function runStateTests(resultsDiv, isPartOfSuite = false) {
         await state.init();
 
         await state.update(data => {
-            data.appState.activeCycleId = 'newCycle';
+            data.appState.activeRoutineId = 'newCycle';
         });
 
-        if (state.data.appState.activeCycleId !== 'newCycle') {
+        if (state.data.appState.activeRoutineId !== 'newCycle') {
             throw new Error('State not updated');
         }
     });
 
     await test('marks state as dirty after update', async () => {
         const mockData = {
-            schemaVersion: "2.5",
+            schemaVersion: "2.6",
             metadata: { lastModified: 0 },
-            data: { cycles: {} },
-            appState: { activeCycleId: null }
+            data: { routine: {} },
+            appState: { activeRoutineId: null }
         };
 
         localStorage.setItem('miniCycleData', JSON.stringify(mockData));
@@ -328,7 +328,7 @@ export async function runStateTests(resultsDiv, isPartOfSuite = false) {
         await state.init();
 
         await state.update(data => {
-            data.appState.activeCycleId = 'test';
+            data.appState.activeRoutineId = 'test';
         });
 
         if (!state.isDirty) {
@@ -338,10 +338,10 @@ export async function runStateTests(resultsDiv, isPartOfSuite = false) {
 
     await test('updates lastModified timestamp', async () => {
         const mockData = {
-            schemaVersion: "2.5",
+            schemaVersion: "2.6",
             metadata: { lastModified: 0 },
-            data: { cycles: {} },
-            appState: { activeCycleId: null }
+            data: { routine: {} },
+            appState: { activeRoutineId: null }
         };
 
         localStorage.setItem('miniCycleData', JSON.stringify(mockData));
@@ -355,7 +355,7 @@ export async function runStateTests(resultsDiv, isPartOfSuite = false) {
         await new Promise(resolve => setTimeout(resolve, 10));
 
         await state.update(data => {
-            data.appState.activeCycleId = 'test';
+            data.appState.activeRoutineId = 'test';
         });
 
         if (state.data.metadata.lastModified <= oldTimestamp) {
@@ -365,10 +365,10 @@ export async function runStateTests(resultsDiv, isPartOfSuite = false) {
 
     await test('rolls back on update error', async () => {
         const mockData = {
-            schemaVersion: "2.5",
+            schemaVersion: "2.6",
             metadata: { lastModified: 0 },
-            data: { cycles: {} },
-            appState: { activeCycleId: 'original' }
+            data: { routine: {} },
+            appState: { activeRoutineId: 'original' }
         };
 
         localStorage.setItem('miniCycleData', JSON.stringify(mockData));
@@ -378,14 +378,14 @@ export async function runStateTests(resultsDiv, isPartOfSuite = false) {
 
         try {
             await state.update(data => {
-                data.appState.activeCycleId = 'changed';
+                data.appState.activeRoutineId = 'changed';
                 throw new Error('Test error');
             });
         } catch (error) {
             // Expected
         }
 
-        if (state.data.appState.activeCycleId !== 'original') {
+        if (state.data.appState.activeRoutineId !== 'original') {
             throw new Error('State not rolled back after error');
         }
     });
@@ -395,10 +395,10 @@ export async function runStateTests(resultsDiv, isPartOfSuite = false) {
 
     await test('saves state to localStorage', async () => {
         const mockData = {
-            schemaVersion: "2.5",
+            schemaVersion: "2.6",
             metadata: { lastModified: 0 },
-            data: { cycles: {} },
-            appState: { activeCycleId: null }
+            data: { routine: {} },
+            appState: { activeRoutineId: null }
         };
 
         localStorage.setItem('miniCycleData', JSON.stringify(mockData));
@@ -407,22 +407,22 @@ export async function runStateTests(resultsDiv, isPartOfSuite = false) {
         await state.init();
 
         await state.update(data => {
-            data.appState.activeCycleId = 'saved';
+            data.appState.activeRoutineId = 'saved';
         }, true); // Immediate save
 
         const saved = JSON.parse(localStorage.getItem('miniCycleData'));
 
-        if (saved.appState.activeCycleId !== 'saved') {
+        if (saved.appState.activeRoutineId !== 'saved') {
             throw new Error('State not saved to localStorage');
         }
     });
 
     await test('clears dirty flag after save', async () => {
         const mockData = {
-            schemaVersion: "2.5",
+            schemaVersion: "2.6",
             metadata: { lastModified: 0 },
-            data: { cycles: {} },
-            appState: { activeCycleId: null }
+            data: { routine: {} },
+            appState: { activeRoutineId: null }
         };
 
         localStorage.setItem('miniCycleData', JSON.stringify(mockData));
@@ -431,7 +431,7 @@ export async function runStateTests(resultsDiv, isPartOfSuite = false) {
         await state.init();
 
         await state.update(data => {
-            data.appState.activeCycleId = 'test';
+            data.appState.activeRoutineId = 'test';
         }, true);
 
         if (state.isDirty) {
@@ -461,10 +461,10 @@ export async function runStateTests(resultsDiv, isPartOfSuite = false) {
 
     await test('forceSave triggers immediate save', async () => {
         const mockData = {
-            schemaVersion: "2.5",
+            schemaVersion: "2.6",
             metadata: { lastModified: 0 },
-            data: { cycles: {} },
-            appState: { activeCycleId: null }
+            data: { routine: {} },
+            appState: { activeRoutineId: null }
         };
 
         localStorage.setItem('miniCycleData', JSON.stringify(mockData));
@@ -473,14 +473,14 @@ export async function runStateTests(resultsDiv, isPartOfSuite = false) {
         await state.init();
 
         await state.update(data => {
-            data.appState.activeCycleId = 'forced';
+            data.appState.activeRoutineId = 'forced';
         });
 
         state.forceSave();
 
         const saved = JSON.parse(localStorage.getItem('miniCycleData'));
 
-        if (saved.appState.activeCycleId !== 'forced') {
+        if (saved.appState.activeRoutineId !== 'forced') {
             throw new Error('Force save did not persist');
         }
     });
@@ -501,10 +501,10 @@ export async function runStateTests(resultsDiv, isPartOfSuite = false) {
 
     await test('notifies listeners on update', async () => {
         const mockData = {
-            schemaVersion: "2.5",
+            schemaVersion: "2.6",
             metadata: { lastModified: 0 },
-            data: { cycles: {} },
-            appState: { activeCycleId: null }
+            data: { routine: {} },
+            appState: { activeRoutineId: null }
         };
 
         localStorage.setItem('miniCycleData', JSON.stringify(mockData));
@@ -518,7 +518,7 @@ export async function runStateTests(resultsDiv, isPartOfSuite = false) {
         });
 
         await state.update(data => {
-            data.appState.activeCycleId = 'changed';
+            data.appState.activeRoutineId = 'changed';
         });
 
         if (!notified) {
@@ -528,10 +528,10 @@ export async function runStateTests(resultsDiv, isPartOfSuite = false) {
 
     await test('provides old and new data to listeners', async () => {
         const mockData = {
-            schemaVersion: "2.5",
+            schemaVersion: "2.6",
             metadata: { lastModified: 0 },
-            data: { cycles: {} },
-            appState: { activeCycleId: 'old' }
+            data: { routine: {} },
+            appState: { activeRoutineId: 'old' }
         };
 
         localStorage.setItem('miniCycleData', JSON.stringify(mockData));
@@ -543,12 +543,12 @@ export async function runStateTests(resultsDiv, isPartOfSuite = false) {
         let receivedNew = null;
 
         state.subscribe('test', (newData, oldData) => {
-            receivedOld = oldData.appState.activeCycleId;
-            receivedNew = newData.appState.activeCycleId;
+            receivedOld = oldData.appState.activeRoutineId;
+            receivedNew = newData.appState.activeRoutineId;
         });
 
         await state.update(data => {
-            data.appState.activeCycleId = 'new';
+            data.appState.activeRoutineId = 'new';
         });
 
         if (receivedOld !== 'old' || receivedNew !== 'new') {
@@ -618,10 +618,10 @@ export async function runStateTests(resultsDiv, isPartOfSuite = false) {
 
     await test('handles listener errors gracefully', async () => {
         const mockData = {
-            schemaVersion: "2.5",
+            schemaVersion: "2.6",
             metadata: { lastModified: 0 },
-            data: { cycles: {} },
-            appState: { activeCycleId: null }
+            data: { routine: {} },
+            appState: { activeRoutineId: null }
         };
 
         localStorage.setItem('miniCycleData', JSON.stringify(mockData));
@@ -635,7 +635,7 @@ export async function runStateTests(resultsDiv, isPartOfSuite = false) {
 
         // Should not throw - error handled internally
         await state.update(data => {
-            data.appState.activeCycleId = 'test';
+            data.appState.activeRoutineId = 'test';
         });
     });
 
@@ -644,14 +644,13 @@ export async function runStateTests(resultsDiv, isPartOfSuite = false) {
 
     await test('getActiveCycle returns current cycle', async () => {
         const mockData = {
-            schemaVersion: "2.5",
+            schemaVersion: "2.6",
             metadata: { lastModified: 0 },
-            data: {
-                cycles: {
+            data: { routine: {
                     'cycle1': { name: 'Test Cycle', tasks: [] }
                 }
             },
-            appState: { activeCycleId: 'cycle1' }
+            appState: { activeRoutineId: 'cycle1' }
         };
 
         localStorage.setItem('miniCycleData', JSON.stringify(mockData));
@@ -668,10 +667,10 @@ export async function runStateTests(resultsDiv, isPartOfSuite = false) {
 
     await test('getActiveCycle returns null when no active cycle', async () => {
         const mockData = {
-            schemaVersion: "2.5",
+            schemaVersion: "2.6",
             metadata: { lastModified: 0 },
-            data: { cycles: {} },
-            appState: { activeCycleId: null }
+            data: { routine: {} },
+            appState: { activeRoutineId: null }
         };
 
         localStorage.setItem('miniCycleData', JSON.stringify(mockData));
@@ -688,17 +687,16 @@ export async function runStateTests(resultsDiv, isPartOfSuite = false) {
 
     await test('getTasks returns active cycle tasks', async () => {
         const mockData = {
-            schemaVersion: "2.5",
+            schemaVersion: "2.6",
             metadata: { lastModified: 0 },
-            data: {
-                cycles: {
+            data: { routine: {
                     'cycle1': {
                         name: 'Test',
                         tasks: [{ id: 'task1', text: 'Task 1' }]
                     }
                 }
             },
-            appState: { activeCycleId: 'cycle1' }
+            appState: { activeRoutineId: 'cycle1' }
         };
 
         localStorage.setItem('miniCycleData', JSON.stringify(mockData));
@@ -724,15 +722,14 @@ export async function runStateTests(resultsDiv, isPartOfSuite = false) {
 
     await test('setActiveCycle updates active cycle', async () => {
         const mockData = {
-            schemaVersion: "2.5",
+            schemaVersion: "2.6",
             metadata: { lastModified: 0 },
-            data: {
-                cycles: {
+            data: { routine: {
                     'cycle1': { name: 'Cycle 1' },
                     'cycle2': { name: 'Cycle 2' }
                 }
             },
-            appState: { activeCycleId: 'cycle1' }
+            appState: { activeRoutineId: 'cycle1' }
         };
 
         localStorage.setItem('miniCycleData', JSON.stringify(mockData));
@@ -742,7 +739,7 @@ export async function runStateTests(resultsDiv, isPartOfSuite = false) {
 
         await state.setActiveCycle('cycle2');
 
-        if (state.data.appState.activeCycleId !== 'cycle2') {
+        if (state.data.appState.activeRoutineId !== 'cycle2') {
             throw new Error('Active cycle not changed');
         }
     });
@@ -773,12 +770,12 @@ export async function runStateTests(resultsDiv, isPartOfSuite = false) {
     await test('creates valid Schema 2.5 initial state', async () => {
         const initialState = await freshInitialState();
 
-        if (initialState.schemaVersion !== "2.5") {
+        if (initialState.schemaVersion !== "2.6") {
             throw new Error('Invalid schema version');
         }
 
-        if (!initialState.data || !initialState.data.cycles) {
-            throw new Error('Missing data.cycles');
+        if (!initialState.data || !initialState.data.routine) {
+            throw new Error('Missing data.routine');
         }
 
         if (!initialState.appState) {
@@ -809,7 +806,7 @@ export async function runStateTests(resultsDiv, isPartOfSuite = false) {
             throw new Error('Missing lastModified timestamp');
         }
 
-        if (initialState.metadata.schemaVersion !== "2.5") {
+        if (initialState.metadata.schemaVersion !== "2.6") {
             throw new Error('Incorrect metadata schemaVersion');
         }
     });

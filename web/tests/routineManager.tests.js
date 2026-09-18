@@ -132,15 +132,14 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
             metadata: {
                 version: "2.5",
                 lastModified: Date.now(),
-                schemaVersion: "2.5",
-                totalCyclesCreated: 1
+                schemaVersion: "2.6",
+                totalRoutinesCreated: 1
             },
             settings: {
                 theme: 'default',
                 darkMode: false
             },
-            data: {
-                cycles: {
+            data: { routine: {
                     'Test Cycle': {
                         id: 'cycle-test',
                         title: 'Test Cycle',
@@ -156,7 +155,7 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
                 }
             },
             appState: {
-                activeCycleId: 'Test Cycle',
+                activeRoutineId: 'Test Cycle',
                 currentMode: 'auto-cycle'
             },
             userProgress: {
@@ -444,7 +443,7 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
 
         // Check the cycle was created - uses title as key, not cycle_ prefix
         const stored = JSON.parse(localStorage.getItem('miniCycleData'));
-        const newCycle = stored.data.cycles['My New Cycle'];
+        const newCycle = stored.data.routine['My New Cycle'];
 
         if (!newCycle) {
             throw new Error('New cycle should be created with title as key');
@@ -510,7 +509,7 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
 
         // Check the cycle was created - uses title as key
         const stored = JSON.parse(localStorage.getItem('miniCycleData'));
-        const fallbackCycle = stored.data.cycles['Getting Started'];
+        const fallbackCycle = stored.data.routine['Getting Started'];
 
         if (!fallbackCycle) {
             throw new Error('Fallback cycle should be created with title as key');
@@ -566,7 +565,7 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
             throw new Error('AppState.update should be called');
         }
         // Verify the cycle was created in the data
-        if (!mockSchemaData.data.cycles['Getting Started']) {
+        if (!mockSchemaData.data.routine['Getting Started']) {
             throw new Error('Fallback cycle should be created in AppState data');
         }
     });
@@ -676,7 +675,7 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
         }
 
         // Check the cycle was created
-        if (!mockData.data.cycles['Brand New Cycle']) {
+        if (!mockData.data.routine['Brand New Cycle']) {
             throw new Error('Cycle should be created with title as key');
         }
     });
@@ -686,7 +685,7 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
         const mockData = createMockSchemaData();
 
         // Add existing cycle with same name
-        mockData.data.cycles['Duplicate Name'] = {
+        mockData.data.routine['Duplicate Name'] = {
             id: 'cycle-dup',
             title: 'Duplicate Name',
             tasks: []
@@ -713,7 +712,7 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
         await fillAndConfirmCreationDialog('Duplicate Name', 300);
 
         // Should create "Duplicate Name (2)"
-        if (!mockData.data.cycles['Duplicate Name (2)']) {
+        if (!mockData.data.routine['Duplicate Name (2)']) {
             throw new Error('Should create numbered variation for duplicate');
         }
         // Note: a duplicate-warning notification is optional behavior and intentionally
@@ -727,9 +726,9 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
         const mockData = createMockSchemaData();
 
         // Add many existing cycles with same name (fill up to 10)
-        mockData.data.cycles['Many Dupes'] = { id: 'c1', title: 'Many Dupes', tasks: [] };
+        mockData.data.routine['Many Dupes'] = { id: 'c1', title: 'Many Dupes', tasks: [] };
         for (let i = 2; i <= 11; i++) {
-            mockData.data.cycles[`Many Dupes (${i})`] = { id: `c${i}`, title: `Many Dupes (${i})`, tasks: [] };
+            mockData.data.routine[`Many Dupes (${i})`] = { id: `c${i}`, title: `Many Dupes (${i})`, tasks: [] };
         }
 
         const deps = createValidDeps({
@@ -753,7 +752,7 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
         await fillAndConfirmCreationDialog('Many Dupes', 300);
 
         // Fallback appends timestamp to the name (e.g., "Many Dupes (1735822342415)")
-        const cycleKeys = Object.keys(mockData.data.cycles);
+        const cycleKeys = Object.keys(mockData.data.routine);
         // Look for a key that starts with "Many Dupes (" and ends with a timestamp
         const timestampKey = cycleKeys.find(k => {
             if (!k.startsWith('Many Dupes (')) return false;
@@ -905,7 +904,7 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
         // Fill and confirm the dialog
         await fillAndConfirmCreationDialog('Schema Test', 300);
 
-        const newCycle = mockData.data.cycles['Schema Test'];
+        const newCycle = mockData.data.routine['Schema Test'];
 
         if (!newCycle) {
             throw new Error('Cycle should be created');
@@ -974,9 +973,9 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
         }
     });
 
-    await test('increments totalCyclesCreated on cycle creation', async () => {
+    await test('increments totalRoutinesCreated on cycle creation', async () => {
         const mockData = createMockSchemaData();
-        const originalCount = mockData.metadata.totalCyclesCreated;
+        const originalCount = mockData.metadata.totalRoutinesCreated;
 
         const deps = createValidDeps({
             AppState: {
@@ -993,12 +992,12 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
         // Fill and confirm the dialog
         await fillAndConfirmCreationDialog('Count Test', 300);
 
-        if (mockData.metadata.totalCyclesCreated !== originalCount + 1) {
-            throw new Error('totalCyclesCreated should be incremented');
+        if (mockData.metadata.totalRoutinesCreated !== originalCount + 1) {
+            throw new Error('totalRoutinesCreated should be incremented');
         }
     });
 
-    await test('sets activeCycleId to new cycle', async () => {
+    await test('sets activeRoutineId to new cycle', async () => {
         const mockData = createMockSchemaData();
 
         const deps = createValidDeps({
@@ -1016,8 +1015,8 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
         // Fill and confirm the dialog
         await fillAndConfirmCreationDialog('Active Test', 300);
 
-        if (mockData.appState.activeCycleId !== 'Active Test') {
-            throw new Error('activeCycleId should be set to new cycle');
+        if (mockData.appState.activeRoutineId !== 'Active Test') {
+            throw new Error('activeRoutineId should be set to new cycle');
         }
     });
 
@@ -1133,7 +1132,7 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
             throw new Error('AppState.update should be called');
         }
         // Verify the cycle was created
-        if (!mockData.data.cycles['Sync Test']) {
+        if (!mockData.data.routine['Sync Test']) {
             throw new Error('Cycle should be created in AppState data');
         }
     });
@@ -1286,7 +1285,7 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
 
         try {
             const mockState = createMockSchemaData();
-            mockState.data.cycles = {};
+            mockState.data.routine = {};
             const deps = createValidDeps({
                 AppState: {
                     isReady: () => true,
@@ -1305,7 +1304,7 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
 
             await instance.preloadInitialRunCycle();
 
-            const cycles = Object.values(savedState?.data?.cycles || {});
+            const cycles = Object.values(savedState?.data?.routine || {});
             if (cycles.length === 0) throw new Error('No cycle was created');
             const created = cycles[0];
             if (created.showTaskInput !== true) {

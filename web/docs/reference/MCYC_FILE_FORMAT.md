@@ -22,8 +22,15 @@ not an internal convention that can be revised by editing this file:
 > added, so treat unknown keys as ignorable rather than as errors, which is also how the app
 > treats them."*
 >
-> *"Each format version gets its own permanent URL (`/schema/mcyc-2.5.schema.json` today),
+> *"Each format version gets its own permanent URL (`/schema/mcyc-2.6.schema.json` today),
 > and a version that has shipped is never edited in place."*
+
+**Format versions.** 2.5 (`/schema/mcyc-2.5.schema.json`, immutable) stores priority as a
+flag plus a colour and the clear setting as a map plus a derived mirror. **2.6 (Sep 2026,
+`/schema/mcyc-2.6.schema.json`)** stores priority as a LEVEL (`priority`) and the clear
+setting as one open map (`autoClear`). Every 2.5 spelling is still read — permanently — and
+the exporter writes both spellings for as long as older platform builds are in use, so a file
+from either side imports on the other. When both are present the 2.6 field wins.
 
 Two consequences worth stating plainly for anyone changing the importer:
 
@@ -179,7 +186,7 @@ routine importer rejects it.
 | Contains | one routine | the whole app document |
 | Written by | `cycleExportManager` via `buildMcycPayload()` | `backupRestoreManager` |
 | Read by | the routine import button (`processImportedData`) | Settings → Restore, and the pre-boot rescue screen |
-| Described by | `/mcyc.schema.json` | `docs/reference/SCHEMA_2_5.md` |
+| Described by | `/mcyc.schema.json` | `docs/reference/SCHEMA_2_6.md` |
 
 `processImportedData` opens with a hard gate:
 
@@ -190,7 +197,7 @@ if (!importedData.name || !Array.isArray(importedData.tasks)) { /* rejected */ }
 A full-state file has neither key at its root, so **handing one to the routine importer
 produces "invalid format."** That is expected — restore it through Settings instead.
 
-Its shape follows the app's stored document (see `SCHEMA_2_5.md`, which is normative for it):
+Its shape follows the app's stored document (see `SCHEMA_2_6.md`, which is normative for it):
 
 ```json
 {
@@ -234,13 +241,11 @@ Every task in the `tasks` array uses this structure:
   "completed": false,
   "schemaVersion": 2,
   "dueDate": null,
-  "highPriority": false,
-  "priorityColor": null,
+  "priority": null,
   "remindersEnabled": false,
   "recurring": false,
   "recurringSettings": {},
-  "deleteWhenComplete": false,
-  "deleteWhenCompleteSettings": {
+  "autoClear": {
     "cycle": false,
     "todo": true
   }
@@ -256,13 +261,11 @@ Every task in the `tasks` array uses this structure:
 | `completed` | boolean | **Yes** | `false` | Completion status |
 | `schemaVersion` | number | **Yes** | `2` | Task schema version |
 | `dueDate` | string\|null | No | `null` | ISO 8601 date string |
-| `highPriority` | boolean | No | `false` | Priority flag |
-| `priorityColor` | string\|null | No | `null` | Hex color for priority border (e.g., `"#dc3545"`) |
+| `priority` | string\|null | No | `null` | Priority LEVEL: `"high"`, `"medium"`, `"low"` or `null`. The app shows it as the reader's theme colour for that level — no colour travels in the file. *(2.5 spelling, still accepted: `highPriority` + `priorityColor`; a swatch colour of any theme names its level, any other hex its colour family; ignored when `priority` is present.)* |
 | `remindersEnabled` | boolean | No | `false` | Enable reminders for this task |
 | `recurring` | boolean | No | `false` | Is this a recurring task? |
 | `recurringSettings` | object | No | `{}` | Recurring configuration (see below) |
-| `deleteWhenComplete` | boolean | No | *derived* | **Do not author this.** It mirrors whichever `deleteWhenCompleteSettings` entry matches the routine's current mode, and `routineLoader` re-derives it on **every** load. A file that sets only this field imports looking correct, then loses the value the first time the routine opens. |
-| `deleteWhenCompleteSettings` | object | No | recurring: `{"cycle": true, "todo": true}`<br>otherwise: `{"cycle": false, "todo": true}` | Per-mode deletion behavior, and the **durable** setting. The import default depends on `recurring` (cycleImportManager) — a recurring occurrence is removed on reset so the schedule can bring it back. |
+| `autoClear` | object | No | recurring: `{"cycle": true, "todo": true}`<br>otherwise: `{"cycle": false, "todo": true}` | Whether the task is REMOVED (rather than unchecked) when the routine resets (`cycle`, the Auto and Manual modes) or completed tasks are cleared (`todo`). An OPEN map: a boolean under any other key is carried through. *(2.5 spelling, still accepted: `deleteWhenCompleteSettings`, and a derived `deleteWhenComplete` mirror that is ignored on import; both ignored when `autoClear` is present.)* |
 
 ---
 
@@ -359,13 +362,11 @@ privacy: a shared routine usually shouldn't carry the owner's cleared task names
       "id": "clr-1704567890123-xyz98",
       "taskText": "Buy groceries",
       "clearedAt": 1704567890123,
-      "wasHighPriority": true,
+      "priority": "high",
       "hadDueDate": false,
       "dueDate": null,
-      "priorityColor": "#dc3545",
       "remindersEnabled": false,
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": { "cycle": false, "todo": true },
+      "autoClear": { "cycle": false, "todo": true },
       "recurring": false,
       "recurringSettings": null,
       "clearedInMode": "todo"
@@ -388,7 +389,7 @@ legacy alias when reading old files).
 |----------|------|-------------|
 | `entries` | array | Recent cleared tasks (auto-pruned after 90 days) |
 | `taskText` | string | The cleared task's text (see trap above) |
-| `wasHighPriority` / `hadDueDate` / `dueDate` / `priorityColor` / `remindersEnabled` / `deleteWhenComplete` / `deleteWhenCompleteSettings` / `recurring` / `recurringSettings` / `clearedInMode` | various | Full metadata `_buildClearedEntry()` records, so **Recreate** rebuilds the task with settings intact. Since v2.342 the importer preserves all of these (validated) rather than dropping them |
+| `priority` / `hadDueDate` / `dueDate` / `remindersEnabled` / `autoClear` / `recurring` / `recurringSettings` / `clearedInMode` | various | Full metadata `_buildClearedEntry()` records, so **Recreate** rebuilds the task with settings intact. Since v2.342 the importer preserves all of these (validated) rather than dropping them |
 | `totalCleared` | number | Lifetime count of cleared tasks (persists through prune) |
 | `autoPruneEnabled` | boolean | Whether to auto-remove entries older than 90 days |
 
@@ -697,8 +698,7 @@ For tasks with `recurring: true` (Schema 2.5+ structure, updated v1.349):
       "text": "✅ Finalize feature set",
       "completed": false,
       "schemaVersion": 2,
-      "highPriority": true,
-      "priorityColor": "#dc3545"
+      "priority": "high"
     },
     {
       "id": "t2",
@@ -718,8 +718,7 @@ For tasks with `recurring: true` (Schema 2.5+ structure, updated v1.349):
       "text": "🎉 Launch announcement",
       "completed": false,
       "schemaVersion": 2,
-      "highPriority": true,
-      "priorityColor": "#facc15",
+      "priority": "medium",
       "dueDate": "2025-02-15T12:00:00Z"
     }
   ],

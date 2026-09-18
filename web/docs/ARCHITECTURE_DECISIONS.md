@@ -145,7 +145,7 @@ shape, **backing up the old data before rewriting.** Cycles remain keyed by thei
 - The app has **no server**, so users hold data in whatever shape was current when
   they saved it. Without versioned migration, any change to the data shape would
   either break existing users or freeze the schema forever.
-- Migration ran `newData.data.cycles = oldCycles` — i.e. it *carries the existing
+- Migration ran `newData.data.routine = oldCycles` — i.e. it *carries the existing
   name-keyed map through unchanged* — because rewriting keys during migration on
   millions of unknown local states is risky and not rollback-able. Backing up first
   makes even a failed migration recoverable.

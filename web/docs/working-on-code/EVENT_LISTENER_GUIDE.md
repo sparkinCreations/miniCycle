@@ -510,14 +510,14 @@ destroy() {
 
 ```javascript
 // WRONG — activeCycleId captured at handler creation time
-const cycleId = state.appState.activeCycleId;
+const cycleId = state.appState.activeRoutineId;
 radio.addEventListener('change', () => {
     applyTheme(cycleId);  // Uses stale cycleId!
 });
 
 // RIGHT — read fresh from state at event-fire time
 radio.addEventListener('change', () => {
-    const currentCycleId = this.deps.AppState.get().appState.activeCycleId;
+    const currentCycleId = this.deps.AppState.get().appState.activeRoutineId;
     applyTheme(currentCycleId);
 });
 ```

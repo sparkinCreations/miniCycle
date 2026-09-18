@@ -202,7 +202,7 @@ export async function runUndoSnapshotUtilsTests(resultsDiv) {
         const variants = {
             'task text':          snap({ tasks: [{ id: 't1', text: 'changed', completed: false }] }),
             'completed flag':     snap({ tasks: [{ id: 't1', text: 'Task one', completed: true }] }),
-            'high priority':      snap({ tasks: [{ id: 't1', text: 'Task one', highPriority: true }] }),
+            'high priority':      snap({ tasks: [{ id: 't1', text: 'Task one', priority: 'high' }] }),
             'recurringSettings':  snap({ tasks: [{ id: 't1', text: 'Task one', recurringSettings: { frequency: 'daily' } }] }),
             'title':              snap({ title: 'renamed' }),
             'autoReset':          snap({ autoReset: false }),

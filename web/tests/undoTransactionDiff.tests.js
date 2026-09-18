@@ -26,7 +26,7 @@ export async function runUndoTransactionDiffTests(resultsDiv) {
     const test = createProtectedTest(resultsDiv, passed, total);
 
     const task = (id, over = {}) => ({
-        id, text: `Task ${id}`, completed: false, highPriority: false,
+        id, text: `Task ${id}`, completed: false, priority: null,
         dueDate: null, recurring: false, remindersEnabled: false, ...over
     });
     const snap = (over = {}) => ({
@@ -100,8 +100,8 @@ export async function runUndoTransactionDiffTests(resultsDiv) {
         const cases = {
             text:             { text: 'edited' },
             completed:        { completed: true },
-            highPriority:     { highPriority: true },
-            priorityColor:    { priorityColor: '#dc3545' },
+            priority:         { priority: 'high' },
+            autoClear:        { autoClear: { cycle: true, todo: true } },
             dueDate:          { dueDate: '2026-01-01' },
             recurring:        { recurring: true },
             remindersEnabled: { remindersEnabled: true }

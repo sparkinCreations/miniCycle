@@ -106,14 +106,13 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
                 metadata: {
                     version: "2.5",
                     lastModified: Date.now(),
-                    totalCyclesCreated: 1
+                    totalRoutinesCreated: 1
                 },
                 settings: {
                     theme: 'default',
                     darkMode: false
                 },
-                data: {
-                    cycles: {
+                data: { routine: {
                         'cycle-1': {
                             id: 'cycle-1',
                             title: 'Test Cycle',
@@ -127,7 +126,7 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
                     }
                 },
                 appState: {
-                    activeCycleId: 'cycle-1',
+                    activeRoutineId: 'cycle-1',
                     currentMode: 'auto-cycle'
                 },
                 userProgress: {
@@ -137,8 +136,8 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
 
             // Flattened data structure that loadMiniCycleData returns
             const mockFlattenedData = {
-                cycles: mockFullSchema.data.cycles,
-                activeCycle: mockFullSchema.appState.activeCycleId
+                cycles: mockFullSchema.data.routine,
+                activeCycle: mockFullSchema.appState.activeRoutineId
             };
 
             localStorage.setItem('miniCycleData', JSON.stringify(mockFullSchema));

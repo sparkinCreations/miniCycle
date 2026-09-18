@@ -144,8 +144,8 @@ export async function runUIOrchestratorTests(resultsDiv) {
 
     await test('full task render reads tasks from AppState and calls renderTasks', () => {
         const state = {
-            appState: { activeCycleId: 'c1' },
-            data: { cycles: { c1: { tasks: [{ id: 'a' }, { id: 'b' }] } } }
+            appState: { activeRoutineId: 'c1' },
+            data: { routine: { c1: { tasks: [{ id: 'a' }, { id: 'b' }] } } }
         };
         const { log, orch } = setup(state);
         orch.request({ tasks: { type: 'full' } });
@@ -157,8 +157,8 @@ export async function runUIOrchestratorTests(resultsDiv) {
 
     await test('patch dispatches patchTask only for ids present in state', () => {
         const state = {
-            appState: { activeCycleId: 'c1' },
-            data: { cycles: { c1: { tasks: [{ id: 'a', text: 'A' }] } } }
+            appState: { activeRoutineId: 'c1' },
+            data: { routine: { c1: { tasks: [{ id: 'a', text: 'A' }] } } }
         };
         const { log, orch } = setup(state);
         orch.request({ tasks: { type: 'patch', taskIds: ['a', 'ghost'], changedFields: ['text'] } });
@@ -205,7 +205,7 @@ export async function runUIOrchestratorTests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">🛡️ error handling</h4>';
 
     await test('renderer throwing is caught and triggers showNotification', () => {
-        const state = { appState: { activeCycleId: 'c1' }, data: { cycles: { c1: { tasks: [] } } } };
+        const state = { appState: { activeRoutineId: 'c1' }, data: { routine: { c1: { tasks: [] } } } };
         const { log, orch } = setup(state, {
             TaskRenderer: { renderTasks: () => { throw new Error('boom'); } }
         });

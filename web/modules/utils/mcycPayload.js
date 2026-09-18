@@ -15,6 +15,10 @@
  */
 
 
+import { getPriorityLevel, hasPriority, getLevelColor } from './priorityLevel.js';
+import { DEFAULT_PRIORITY_SWATCHES, DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS } from '../core/constants.js';
+import { getAutoClearMode, getAutoClearSettings, resolveAutoClear } from './cycleMode.js';
+
 /**
  * Build a .mcyc export/share payload from a cycle record.
  * @param {string} cycleKey - Storage key of the cycle
@@ -27,6 +31,7 @@
  * @returns {Object} JSON-serializable .mcyc payload
  */
 export function buildMcycPayload(cycleKey, cycle, { includeHistory }) {
+    const mode = getAutoClearMode(cycle);
     const payload = {
         name: cycleKey,
         title: cycle.title || 'New Routine',
@@ -45,18 +50,28 @@ export function buildMcycPayload(cycleKey, cycle, { includeHistory }) {
             // away on any settings re-apply); no migration for a dead field.
             delete settings.defaultRecurTime;
 
+            const autoClearMap = getAutoClearSettings(task) || { ...DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS };
+
             return {
                 id: task.id || `task-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
                 text: task.text || '',
                 completed: task.completed || false,
                 dueDate: task.dueDate || null,
-                highPriority: task.highPriority || false,
-                priorityColor: task.priorityColor || null,
+                priority: getPriorityLevel(task),
+                // DUAL-WRITTEN 2.5 fields (SCHEMA_2_6_PLAN.md, ".mcyc"): the Android,
+                // iOS and Chrome builds are on-demand snapshots that lag the web app,
+                // and a 2.5 reader falls to defaults on the fields it does not know.
+                // The colour is the level's default swatch. Drop these only when
+                // every shipped platform build reads 2.6.
+                highPriority: hasPriority(task),
+                priorityColor: hasPriority(task) ? getLevelColor(getPriorityLevel(task), DEFAULT_PRIORITY_SWATCHES) : null,
                 remindersEnabled: task.remindersEnabled || false,
                 recurring: task.recurring || false,
                 recurringSettings: settings,
-                deleteWhenComplete: task.deleteWhenComplete,
-                deleteWhenCompleteSettings: task.deleteWhenCompleteSettings || { cycle: false, todo: true },
+                autoClear: autoClearMap,
+                // Dual-written 2.5 pair, see above; the mirror is the routine's current mode.
+                deleteWhenCompleteSettings: autoClearMap,
+                deleteWhenComplete: resolveAutoClear({ settings: autoClearMap, mode, defaults: DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS }),
                 schemaVersion: task.schemaVersion || 2
             };
         }),

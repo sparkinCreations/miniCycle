@@ -90,7 +90,7 @@ export function runHealthCheck() {
         }
 
         const { data, metadata } = currentState;
-        const cycles = data.cycles || {};
+        const cycles = data.routine || {};
         const cycleCount = Object.keys(cycles).length;
 
         let totalTasks = 0;
@@ -130,7 +130,7 @@ export function checkDataIntegrity() {
         }
 
         const { data } = currentState;
-        const cycles = data.cycles || {};
+        const cycles = data.routine || {};
         const results = [];
 
         Object.entries(cycles).forEach(([cycleId, cycle]) => {
@@ -189,7 +189,7 @@ export function validateSchema() {
         }
 
         const { data, metadata } = currentState;
-        const cycles = data.cycles || {};
+        const cycles = data.routine || {};
         const schemaVersion = metadata?.schemaVersion || 'unknown';
 
         // This used to test `cycle.schemaVersion < 2.5`. CYCLES CARRY NO

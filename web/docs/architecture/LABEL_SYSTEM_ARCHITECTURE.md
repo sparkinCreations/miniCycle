@@ -50,7 +50,7 @@ Instead of the originally planned `lenses/` directory, contextual lenses shipped
 
 - `THEME_DEFINITIONS` — 5 themes (Classic / Habit Tracker / Fitness / Scholar / Cleaning) with per-key label override maps and `colorPreset` objects
 - `vocabThemeManager` — singleton that resolves the active routine's theme
-- Themes unlock at 0/5/25/50/75 completed cycles; the active theme is stored **per routine** at `state.data.cycles[cycleId].theme`
+- Themes unlock at 0/5/25/50/75 completed cycles; the active theme is stored **per routine** at `state.data.routine[cycleId].theme`
 - `getLabel()` checks the active theme's overrides first (via the resolver's `getActiveLens`/`getRoutineLens` DI hooks), then falls back to `DEFAULT_LABELS`
 
 See [VOCAB_THEME_SYSTEM.md](../features/VOCAB_THEME_SYSTEM.md) for the full guide.

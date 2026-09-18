@@ -702,8 +702,8 @@ export async function runCompletedTasksManagerTests(resultsDiv, isPartOfSuite = 
                 isReady: () => true,
                 get: () => ({
                     settings: { showCompletedDropdown: true },
-                    appState: { activeCycleId: 'c1' },
-                    data: { cycles: { c1: { tasks: [
+                    appState: { activeRoutineId: 'c1' },
+                    data: { routine: { c1: { tasks: [
                         { id: 'a', completed: true },   // state: COMPLETED (box will say otherwise)
                         { id: 'b', completed: false }   // state: NOT completed (box will say otherwise)
                     ] } } }
@@ -818,8 +818,8 @@ export async function runCompletedTasksManagerTests(resultsDiv, isPartOfSuite = 
     function stateWithTasks(tasks, cycleOverrides = {}) {
         return {
             settings: { completedTasksExpanded: false, showCompletedDropdown: true },
-            appState: { activeCycleId: 'Routine A' },
-            data: { cycles: { 'Routine A': { title: 'Routine A', tasks, ...cycleOverrides } } }
+            appState: { activeRoutineId: 'Routine A' },
+            data: { routine: { 'Routine A': { title: 'Routine A', tasks, ...cycleOverrides } } }
         };
     }
 

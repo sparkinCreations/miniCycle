@@ -215,7 +215,7 @@ All notification messages, modal text, ARIA labels, and button text should use `
         deleteCheckedTasks: boolean,
         taskOptionButtons: { /* per-cycle button visibility */ },
         recurringTemplates: {},   // map keyed by taskId (NOT an array)
-        history: { events: [], maxEvents: 100 },  // OBJECT, not an array — see SCHEMA_2_5.md
+        history: { events: [], maxEvents: 100 },  // OBJECT, not an array — see SCHEMA_2_6.md
         clearedTasks: { entries: [], totalCleared: 0, autoPruneEnabled: true }  // To-Do clears + cycle-reset auto-removes
       }
     }
@@ -248,13 +248,13 @@ await appInit.waitForCore();
 ```javascript
 // In a module that receives AppState via DI
 const state = this.deps.AppState.get();
-const activeCycle = state.data.cycles[state.appState.activeCycleId];
+const activeCycle = state.data.routine[state.appState.activeRoutineId];
 ```
 
 **Update state:**
 ```javascript
 this.deps.AppState.update(state => {
-    state.data.cycles[cycleId].tasks.push(newTask);
+    state.data.routine[cycleId].tasks.push(newTask);
 }, true); // true = immediate save
 ```
 
@@ -267,14 +267,14 @@ this.deps.AppState.update(state => {
 > ```javascript
 > // WRONG — `mode` is scoped to the callback
 > this.deps.AppState.update(state => {
->     const mode = state.data.cycles[id].deleteCheckedTasks ? 'todo' : 'cycle';
+>     const mode = state.data.routine[id].deleteCheckedTasks ? 'todo' : 'cycle';
 > });
 > if (mode === 'todo') { ... }  // mode is undefined here, no error
 >
 > // RIGHT — declare outside, assign inside
 > let mode;
 > this.deps.AppState.update(state => {
->     mode = state.data.cycles[id].deleteCheckedTasks ? 'todo' : 'cycle';
+>     mode = state.data.routine[id].deleteCheckedTasks ? 'todo' : 'cycle';
 > });
 > if (mode === 'todo') { ... }  // works
 > ```
@@ -350,7 +350,7 @@ import('/modules/core/appState.js?v=<APP_VERSION>').then(m => _s = m.getStateMan
 // Then inspect state
 _s.get()                    // Full state object
 _s.get().appState           // Active cycle info
-_s.get().data.cycles        // All cycles
+_s.get().data.routine        // All cycles
 ```
 
 The version number ensures the cached module is used. Check `version.js` for current version.

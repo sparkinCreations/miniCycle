@@ -49,6 +49,26 @@ export async function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
     // version. Keep this honest to what createInitialSchema25Data produces.
     function cleanState() {
         return {
+            schemaVersion: '2.6',
+            metadata: { schemaVersion: '2.6', lastModified: Date.now() },
+            data: { routine: {
+                    'test-cycle': {
+                        title: 'Test Routine',
+                        tasks: [
+                            { id: 't1', text: 'Task one', completed: false, schemaVersion: 2 },
+                            { id: 't2', text: 'Task two', completed: true, schemaVersion: 2 }
+                        ]
+                    }
+                }
+            },
+            appState: { activeRoutineId: 'test-cycle' },
+            settings: {}
+        };
+    }
+    // A 2.5 document — the migration's INPUT — for the dry-run tests.
+    function legacyState() {
+        return {
+            schemaVersion: '2.5',
             metadata: { schemaVersion: '2.5', lastModified: Date.now() },
             data: {
                 cycles: {
@@ -167,21 +187,21 @@ export async function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
     });
 
     await test('checkDataIntegrity detects a task with a missing id', async () => {
-        delete mockState.data.cycles['test-cycle'].tasks[0].id;
+        delete mockState.data.routine['test-cycle'].tasks[0].id;
         checkDataIntegrity();
         await new Promise(r => setTimeout(r, 1200));
         if (!outputText().includes('Missing task ID')) throw new Error(`expected "Missing task ID", got: "${outputText()}"`);
     });
 
     await test('checkDataIntegrity detects a cycle with a missing title', async () => {
-        delete mockState.data.cycles['test-cycle'].title;
+        delete mockState.data.routine['test-cycle'].title;
         checkDataIntegrity();
         await new Promise(r => setTimeout(r, 1200));
         if (!outputText().includes('Missing title')) throw new Error(`expected "Missing title", got: "${outputText()}"`);
     });
 
     await test('checkDataIntegrity detects a cycle whose tasks is not an array', async () => {
-        mockState.data.cycles['test-cycle'].tasks = 'not-an-array';
+        mockState.data.routine['test-cycle'].tasks = 'not-an-array';
         checkDataIntegrity();
         await new Promise(r => setTimeout(r, 1200));
         if (!outputText().includes('not an array')) throw new Error(`expected "not an array", got: "${outputText()}"`);
@@ -217,8 +237,8 @@ export async function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
         // production never writes — so the check could not fire on real data and
         // the tool always reported "valid". A task with no schemaVersion is what
         // genuinely-unmigrated data looks like.
-        delete mockState.data.cycles['test-cycle'].tasks[0].schemaVersion;
-        mockState.data.cycles['test-cycle'].tasks[1].schemaVersion = 1;
+        delete mockState.data.routine['test-cycle'].tasks[0].schemaVersion;
+        mockState.data.routine['test-cycle'].tasks[1].schemaVersion = 1;
         validateSchema();
         await new Promise(r => setTimeout(r, 1000));
         if (!outputText().includes('Tasks needing migration: 2')) {
@@ -231,7 +251,7 @@ export async function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
         mockState.metadata.schemaVersion = '2.0';
         validateSchema();
         await new Promise(r => setTimeout(r, 1000));
-        if (!outputText().includes('expected 2.5')) {
+        if (!outputText().includes('expected 2.6')) {
             throw new Error(`expected an outdated-schema note, got: "${outputText()}"`);
         }
         mockState = cleanState();
@@ -243,7 +263,7 @@ export async function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
     resultsDiv.innerHTML += '<h4>Migration dry run</h4>';
 
     await test('dry run reports the routines, tasks and levels it would migrate and passes its own checks', () => {
-        mockState.schemaVersion = '2.5';
+        mockState = legacyState();
         mockState.data.cycles['test-cycle'].tasks[0].highPriority = true;
         mockState.data.cycles['test-cycle'].tasks[0].priorityColor = '#facc15';
         const before = JSON.stringify(mockState);
@@ -269,6 +289,7 @@ export async function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
     await test('dry run reports a migration failure instead of throwing', () => {
         // metadata says 2.5 but the document itself carries no version: the
         // migration refuses it, and the diagnostic must say so, not crash.
+        mockState = legacyState();
         delete mockState.schemaVersion;
         const report = dryRunSchema26Migration();
         if (!report || report.migrated !== false || !report.error) throw new Error(JSON.stringify(report));
@@ -279,7 +300,7 @@ export async function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
         // Real data, Sep 2026: every routine with a customised option bar carries
         // taskOptionButtons.highPriority / .deleteWhenComplete — option IDS, not
         // task fields. They must not count; a task field of the same name must.
-        mockState.schemaVersion = '2.5';
+        mockState = legacyState();
         mockState.data.cycles['test-cycle'].taskOptionButtons = { highPriority: true, deleteWhenComplete: false, dueDate: true };
         const clean = dryRunSchema26Migration();
         if (!clean || clean.problems.length !== 0) throw new Error(`option ids counted as stale: ${JSON.stringify(clean?.problems)}`);
@@ -294,7 +315,7 @@ export async function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
         // A container the migration does not walk (a made-up one) keeps its 2.5
         // field, and the deep scan must report it. This is what proves the scan
         // is real rather than a constant PASS.
-        mockState.schemaVersion = '2.5';
+        mockState = legacyState();
         mockState.data.cycles['test-cycle'].somethingNew = [{ highPriority: true }];
         const report = dryRunSchema26Migration();
         if (!report || !report.problems.some(p => p.includes('stale 2.5 key'))) throw new Error(JSON.stringify(report));
@@ -318,7 +339,7 @@ export async function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
         if (!text.includes(`App Version: ${appVersion}`)) {
             throw new Error(`expected the real app version ${appVersion}, got: "${text}"`);
         }
-        if (!text.includes('Schema Version: 2.5')) throw new Error('expected schema version line');
+        if (!text.includes('Schema Version: 2.6')) throw new Error('expected schema version line');
         // Compare the LINE, not a substring. `text.includes('App Version: 2.5')`
         // is true for "App Version: 2.500" — so this guard fired spuriously for
         // every release in the 2.5xx range the moment the counter reached it
@@ -365,7 +386,7 @@ export async function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
     // cycles — had it deleted with no confirmation and no backup (Aug 2026).
     await test('scanTestDataCycles never flags a user routine by its NAME', () => {
         const found = analysis.scanTestDataCycles({
-            cycles: {
+            routine: {
                 'id-1786-abc': { id: 'id-1786-abc', title: 'Main Cycle', name: 'Main Cycle', tasks: [] },
                 'id-1786-def': { id: 'id-1786-def', title: 'Test Cycle', tasks: [] },
                 'id-1786-ghi': { id: 'id-1786-ghi', title: 'Test Routine', tasks: [] },
@@ -381,7 +402,7 @@ export async function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
         // tests/testHelpers.js seeds 'cycle-main' — ids are app-derived, never
         // user-typed, so matching on them cannot hit a real routine.
         const found = analysis.scanTestDataCycles({
-            cycles: {
+            routine: {
                 'cycle-main': { id: 'cycle-main', title: 'Main Cycle', name: 'Main Cycle', tasks: [] },
                 'test-cycle': { id: 'test-cycle', title: 'Whatever', tasks: [] },
                 'test_cycle': { id: 'test_cycle', title: 'Whatever', tasks: [] },
@@ -418,9 +439,9 @@ export async function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
 
     await test('scanTestDataCycles does not mutate the data it scans', () => {
         // The confirmation names what will be deleted, so the scan must be pure.
-        const data = { cycles: { 'cycle-main': { id: 'cycle-main', title: 'Main Cycle', tasks: [] } } };
+        const data = { routine: { 'cycle-main': { id: 'cycle-main', title: 'Main Cycle', tasks: [] } } };
         analysis.scanTestDataCycles(data);
-        if (Object.keys(data.cycles).length !== 1) throw new Error('scan deleted a cycle');
+        if (Object.keys(data.routine).length !== 1) throw new Error('scan deleted a cycle');
     });
 
     // --- Cleanup ---------------------------------------------------------------

@@ -420,19 +420,19 @@ export async function runDataValidatorTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
-    await test('validateTask throws for non-boolean highPriority', () => {
+    await test('validateTask throws for an unknown priority level', () => {
         let threw = false;
         try {
             DataValidator.validateTask({
                 id: 'task-1',
                 text: 'Hello',
-                highPriority: 1
+                priority: 'urgent'
             });
         } catch (error) {
             threw = true;
         }
         if (!threw) {
-            throw new Error('Should throw for non-boolean highPriority');
+            throw new Error('Should throw for an unknown priority level');
         }
     });
 
@@ -645,9 +645,8 @@ export async function runDataValidatorTests(resultsDiv, isPartOfSuite = false) {
 
     await test('validateImportedData accepts valid data', () => {
         const importedData = {
-            schemaVersion: '2.5',
-            data: {
-                cycles: {
+            schemaVersion: '2.6',
+            data: { routine: {
                     'cycle-1': {
                         title: 'Test Cycle',
                         tasks: []
@@ -656,7 +655,7 @@ export async function runDataValidatorTests(resultsDiv, isPartOfSuite = false) {
             }
         };
         const result = DataValidator.validateImportedData(importedData);
-        if (result.schemaVersion !== '2.5') {
+        if (result.schemaVersion !== '2.6') {
             throw new Error('Should preserve schemaVersion');
         }
     });
@@ -689,7 +688,7 @@ export async function runDataValidatorTests(resultsDiv, isPartOfSuite = false) {
         let threw = false;
         try {
             DataValidator.validateImportedData({
-                data: { cycles: {} }
+                data: { routine: {} }
             });
         } catch (error) {
             threw = true;
@@ -707,7 +706,7 @@ export async function runDataValidatorTests(resultsDiv, isPartOfSuite = false) {
         try {
             DataValidator.validateImportedData({
                 schemaVersion: '1.0',
-                data: { cycles: {} }
+                data: { routine: {} }
             });
         } catch (error) {
             threw = true;
@@ -724,7 +723,7 @@ export async function runDataValidatorTests(resultsDiv, isPartOfSuite = false) {
         let threw = false;
         try {
             DataValidator.validateImportedData({
-                schemaVersion: '2.5'
+                schemaVersion: '2.6'
             });
         } catch (error) {
             threw = true;
@@ -738,7 +737,7 @@ export async function runDataValidatorTests(resultsDiv, isPartOfSuite = false) {
         let threw = false;
         try {
             DataValidator.validateImportedData({
-                schemaVersion: '2.5',
+                schemaVersion: '2.6',
                 data: {}
             });
         } catch (error) {
@@ -751,9 +750,8 @@ export async function runDataValidatorTests(resultsDiv, isPartOfSuite = false) {
 
     await test('validateImportedData validates each cycle', () => {
         const importedData = {
-            schemaVersion: '2.5',
-            data: {
-                cycles: {
+            schemaVersion: '2.6',
+            data: { routine: {
                     'cycle-1': {
                         title: '  <script>bad</script>  ',
                         tasks: []
@@ -764,8 +762,8 @@ export async function runDataValidatorTests(resultsDiv, isPartOfSuite = false) {
         const result = DataValidator.validateImportedData(importedData);
         // Trim proves validateCycleData ran on the nested cycle; intact tags pin
         // pass-through (escaping is a render-sink concern, not validation's).
-        if (result.data.cycles['cycle-1'].title !== '<script>bad</script>') {
-            throw new Error(`expected trimmed pass-through, got '${result.data.cycles['cycle-1'].title}'`);
+        if (result.data.routine['cycle-1'].title !== '<script>bad</script>') {
+            throw new Error(`expected trimmed pass-through, got '${result.data.routine['cycle-1'].title}'`);
         }
     });
 
@@ -773,9 +771,8 @@ export async function runDataValidatorTests(resultsDiv, isPartOfSuite = false) {
         let threw = false;
         try {
             DataValidator.validateImportedData({
-                schemaVersion: '2.5',
-                data: {
-                    cycles: {
+                schemaVersion: '2.6',
+                data: { routine: {
                         'bad-cycle': {
                             tasks: 'not an array'
                         }

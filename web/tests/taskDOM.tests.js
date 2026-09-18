@@ -142,7 +142,7 @@ export async function runTaskDOMTests(resultsDiv) {
     await test('creates instance with custom dependencies', () => {
         const mockAppState = {
             isReady: () => true,
-            get: () => ({ data: { cycles: {} }, appState: {} })
+            get: () => ({ data: { routine: {} }, appState: {} })
         };
 
         const mockNotification = (msg) => console.log(msg);
@@ -474,11 +474,11 @@ export async function runTaskDOMTests(resultsDiv) {
 
     await test('refreshTaskPriorityColors repaints every rendered task of the active routine from state', () => {
         const tasks = [
-            { id: 'rp-1', highPriority: true, priorityColor: '#8b1a1a' },
-            { id: 'rp-2', highPriority: false },
-            { id: 'rp-offscreen', highPriority: true }
+            { id: 'rp-1', priority: 'high' },
+            { id: 'rp-2', priority: null },
+            { id: 'rp-offscreen', priority: 'high' }
         ];
-        const state = { data: { cycles: { r1: { tasks } } }, appState: { activeCycleId: 'r1' } };
+        const state = { data: { routine: { r1: { tasks } } }, appState: { activeRoutineId: 'r1' } };
         const manager = new TaskDOMManager({ ...getDefaultDeps(), AppState: { get: () => state, isReady: () => true } });
         const calls = [];
         manager.patcher = { patchTask: (id, data, fields) => { calls.push(`${id}:${fields.join('+')}`); return true; } };
@@ -492,7 +492,7 @@ export async function runTaskDOMTests(resultsDiv) {
         document.body.appendChild(host);
         try {
             manager.refreshTaskPriorityColors();
-            if (calls.join(',') !== 'rp-1:priorityColor,rp-2:priorityColor') {
+            if (calls.join(',') !== 'rp-1:priority,rp-2:priority') {
                 throw new Error(`expected both rendered tasks repainted (and not the unrendered one), got ${calls.join(',')}`);
             }
         } finally { host.remove(); }
@@ -670,15 +670,14 @@ export async function runTaskDOMTests(resultsDiv) {
         const mockAppState = {
             isReady: () => true,
             get: () => ({
-                data: {
-                    cycles: {
+                data: { routine: {
                         'cycle-1': {
                             tasks: []
                         }
                     }
                 },
                 appState: {
-                    activeCycleId: 'cycle-1'
+                    activeRoutineId: 'cycle-1'
                 },
                 settings: {}
             })
@@ -749,7 +748,7 @@ export async function runTaskDOMTests(resultsDiv) {
             settings: {},
             remindersEnabled: false,
             recurring: false,
-            highPriority: false
+            priority: null
         };
 
         const container = document.createElement('div');
@@ -786,15 +785,14 @@ export async function runTaskDOMTests(resultsDiv) {
                 get: () => {
                     appStateCalled = true;
                     return {
-                        data: {
-                            cycles: {
+                        data: { routine: {
                                 'cycle-1': {
                                     tasks: []
                                 }
                             }
                         },
                         appState: {
-                            activeCycleId: 'cycle-1'
+                            activeRoutineId: 'cycle-1'
                         },
                         ui: {}
                     };

@@ -100,15 +100,14 @@ export async function runHelpWindowManagerTests(resultsDiv, isPartOfSuite = fals
     }
 
     // Helper to create mock AppState
-    function createMockAppState(cycleCount = 0, activeCycleId = 'cycle-main') {
+    function createMockAppState(cycleCount = 0, activeRoutineId = 'cycle-main') {
         return {
             isReady: () => true,
             get: () => ({
-                appState: { activeCycleId },
-                data: {
-                    cycles: {
-                        [activeCycleId]: {
-                            id: activeCycleId,
+                appState: { activeRoutineId },
+                data: { routine: {
+                        [activeRoutineId]: {
+                            id: activeRoutineId,
                             name: 'Test Cycle',
                             cycleCount: cycleCount,
                             tasks: []

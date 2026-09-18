@@ -46,7 +46,7 @@ export async function runBackupRestoreManagerTests(resultsDiv) {
     await test('injected AppState is used by neutralizeAppState', () => {
         // Prove DI takes effect (not just no-throw): neutralizeAppState mutates the
         // injected AppState to stop auto-save during destructive operations.
-        const appState = { data: { cycles: {} }, isDirty: true, isInitialized: true };
+        const appState = { data: { routine: {} }, isDirty: true, isInitialized: true };
         mod.setBackupRestoreManagerDependencies({
             AppState: appState,
             showNotification: () => {},
@@ -84,11 +84,10 @@ export async function runBackupRestoreManagerTests(resultsDiv) {
             tasks.push({ id: `t${i + 1}`, text: `Task ${i + 1}`, completed: false });
         }
         return {
-            schemaVersion: '2.5',
-            metadata: { version: '2.5', schemaVersion: '2.5', lastModified: Date.now(), createdAt: Date.now() },
+            schemaVersion: '2.6',
+            metadata: { version: '2.5', schemaVersion: '2.6', lastModified: Date.now(), createdAt: Date.now() },
             settings: {},
-            data: {
-                cycles: {
+            data: { routine: {
                     kitchen: {
                         id: 'kitchen',
                         title: 'Kitchen',
@@ -100,7 +99,7 @@ export async function runBackupRestoreManagerTests(resultsDiv) {
                     }
                 }
             },
-            appState: { activeCycleId: 'kitchen' },
+            appState: { activeRoutineId: 'kitchen' },
             userProgress: {},
             achievements: { unlocked: [], seen: {} }
         };
@@ -167,11 +166,11 @@ export async function runBackupRestoreManagerTests(resultsDiv) {
         const file = JSON.parse(raw);
         const inner = JSON.parse(file.miniCycleData);
         const stored = JSON.parse(localStorage.getItem('miniCycleData'));
-        if (stored.data.cycles.kitchen.tasks.length !== 3) {
+        if (stored.data.routine.kitchen.tasks.length !== 3) {
             throw new Error('fixture: localStorage should remain at the pre-quota 3-task document');
         }
-        if (inner.data.cycles.kitchen.tasks.length !== 4) {
-            throw new Error(`backup used stale storage (${inner.data.cycles.kitchen.tasks.length} tasks) instead of live AppState`);
+        if (inner.data.routine.kitchen.tasks.length !== 4) {
+            throw new Error(`backup used stale storage (${inner.data.routine.kitchen.tasks.length} tasks) instead of live AppState`);
         }
     });
 
@@ -185,7 +184,7 @@ export async function runBackupRestoreManagerTests(resultsDiv) {
         });
         if (!raw) throw new Error('no backup blob was created with empty localStorage');
         const inner = JSON.parse(JSON.parse(raw).miniCycleData);
-        if (inner.data.cycles.kitchen.tasks.length !== 4) {
+        if (inner.data.routine.kitchen.tasks.length !== 4) {
             throw new Error('empty localStorage should not block an in-memory export');
         }
         if (localStorage.getItem('miniCycleData') !== null) {
@@ -203,7 +202,7 @@ export async function runBackupRestoreManagerTests(resultsDiv) {
             mod.downloadBackupFile({ skipNamePrompt: true });
         });
         const inner = JSON.parse(JSON.parse(raw).miniCycleData);
-        if (inner.data.cycles.kitchen.tasks.length !== 4) {
+        if (inner.data.routine.kitchen.tasks.length !== 4) {
             throw new Error('healthy flush path still must snapshot live state, not leftover storage');
         }
     });
@@ -219,13 +218,13 @@ export async function runBackupRestoreManagerTests(resultsDiv) {
     // restoring fine from Settings — reported from a phone, invisible to every test.
     await test('Settings restore accepts a pre-boot rescue-screen backup ({ type, keys })', async () => {
         const inner = JSON.stringify({
-            schemaVersion: '2.5',
-            metadata: { version: '2.5', schemaVersion: '2.5', lastModified: Date.now(), createdAt: Date.now() },
+            schemaVersion: '2.6',
+            metadata: { version: '2.5', schemaVersion: '2.6', lastModified: Date.now(), createdAt: Date.now() },
             settings: { onboardingCompleted: true },
-            data: { cycles: { rescued: { id: 'rescued', title: 'Rescued Routine', tasks: [], cycleCount: 2,
+            data: { routine: { rescued: { id: 'rescued', title: 'Rescued Routine', tasks: [], cycleCount: 2,
                 recurringTemplates: {}, history: { events: [], maxEvents: 100 },
                 clearedTasks: { entries: [], totalCleared: 0, autoPruneEnabled: false } } } },
-            appState: { activeCycleId: 'rescued' },
+            appState: { activeRoutineId: 'rescued' },
             userProgress: { cyclesCompleted: 2 },
             achievements: { unlocked: [], seen: {} }
         });
@@ -300,7 +299,7 @@ export async function runBackupRestoreManagerTests(resultsDiv) {
         // A separate module instance: setupRestoreButton() wires once per module
         // (_initialized.restoreButton), and the test above already used this one's.
         const fresh = await import(`../modules/ui/backupRestoreManager.js?v=${cacheBuster}-legacy`);
-        const current = JSON.stringify({ schemaVersion: '2.5', sentinel: 'current-data' });
+        const current = JSON.stringify({ schemaVersion: '2.6', sentinel: 'current-data' });
         localStorage.setItem('miniCycleData', current);
         localStorage.removeItem('miniCycleStorage');
         localStorage.removeItem('lastUsedMiniCycle');
@@ -463,7 +462,7 @@ export async function runBackupRestoreManagerTests(resultsDiv) {
                 forceSave: () => {},
                 update: () => {},
                 reload: () => {},
-                data: { cycles: {} }
+                data: { routine: {} }
             },
             showNotification: (msg, type) => { notifications.push({ msg: String(msg), type }); },
             showConfirmationModal: (opts) => { confirmOpts = opts; confirmPromise = opts.callback(confirmValue); },

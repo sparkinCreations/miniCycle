@@ -131,9 +131,9 @@ export async function runRecurringIntegrationTests(resultsDiv) {
         // Setup mocks
         const mockAppState = {
             get: () => ({
-                schemaVersion: "2.5",
-                data: { cycles: {} },
-                appState: { activeCycleId: null }
+                schemaVersion: "2.6",
+                data: { routine: {} },
+                appState: { activeRoutineId: null }
             }),
             update: (fn) => {},
             isReady: () => true
@@ -166,9 +166,9 @@ export async function runRecurringIntegrationTests(resultsDiv) {
     await test('exposes recurringCore globally', async () => {
         const mockAppState = {
             get: () => ({
-                schemaVersion: "2.5",
-                data: { cycles: {} },
-                appState: { activeCycleId: null }
+                schemaVersion: "2.6",
+                data: { routine: {} },
+                appState: { activeRoutineId: null }
             }),
             update: (fn) => {},
             isReady: () => true
@@ -196,9 +196,9 @@ export async function runRecurringIntegrationTests(resultsDiv) {
     await test('returns recurringPanel in result', async () => {
         const mockAppState = {
             get: () => ({
-                schemaVersion: "2.5",
-                data: { cycles: {} },
-                appState: { activeCycleId: null }
+                schemaVersion: "2.6",
+                data: { routine: {} },
+                appState: { activeRoutineId: null }
             }),
             update: (fn) => {},
             isReady: () => true
@@ -226,9 +226,9 @@ export async function runRecurringIntegrationTests(resultsDiv) {
     await test('returns complete API objects', async () => {
         const mockAppState = {
             get: () => ({
-                schemaVersion: "2.5",
-                data: { cycles: {} },
-                appState: { activeCycleId: null }
+                schemaVersion: "2.6",
+                data: { routine: {} },
+                appState: { activeRoutineId: null }
             }),
             update: (fn) => {},
             isReady: () => true
@@ -292,9 +292,9 @@ export async function runRecurringIntegrationTests(resultsDiv) {
     await test('processes deferred setups', async () => {
         const mockAppState = {
             get: () => ({
-                schemaVersion: "2.5",
-                data: { cycles: {} },
-                appState: { activeCycleId: null }
+                schemaVersion: "2.6",
+                data: { routine: {} },
+                appState: { activeRoutineId: null }
             }),
             update: (fn) => {},
             isReady: () => true
@@ -333,9 +333,9 @@ export async function runRecurringIntegrationTests(resultsDiv) {
     await test('wires the injected AppState through to a usable coreAPI', async () => {
         const mockAppState = {
             get: () => ({
-                schemaVersion: "2.5",
-                data: { cycles: {} },
-                appState: { activeCycleId: null }
+                schemaVersion: "2.6",
+                data: { routine: {} },
+                appState: { activeRoutineId: null }
             }),
             update: (fn) => {},
             isReady: () => true
@@ -363,9 +363,9 @@ export async function runRecurringIntegrationTests(resultsDiv) {
     await test('does not surface a notification on a successful init', async () => {
         const mockAppState = {
             get: () => ({
-                schemaVersion: "2.5",
-                data: { cycles: {} },
-                appState: { activeCycleId: null }
+                schemaVersion: "2.6",
+                data: { routine: {} },
+                appState: { activeRoutineId: null }
             }),
             update: (fn) => {},
             isReady: () => true
@@ -391,9 +391,9 @@ export async function runRecurringIntegrationTests(resultsDiv) {
     await test('still returns core AND panel when the recurring feature flag is disabled', async () => {
         const mockAppState = {
             get: () => ({
-                schemaVersion: "2.5",
-                data: { cycles: {} },
-                appState: { activeCycleId: null }
+                schemaVersion: "2.6",
+                data: { routine: {} },
+                appState: { activeRoutineId: null }
             }),
             update: (fn) => {},
             isReady: () => true
@@ -467,9 +467,9 @@ export async function runRecurringIntegrationTests(resultsDiv) {
     await test('exposes applyRecurringToTaskSchema25', async () => {
         const mockAppState = {
             get: () => ({
-                schemaVersion: "2.5",
-                data: { cycles: {} },
-                appState: { activeCycleId: null }
+                schemaVersion: "2.6",
+                data: { routine: {} },
+                appState: { activeRoutineId: null }
             }),
             update: (fn) => {},
             isReady: () => true
@@ -493,9 +493,9 @@ export async function runRecurringIntegrationTests(resultsDiv) {
     await test('returns handleActivation in coreAPI', async () => {
         const mockAppState = {
             get: () => ({
-                schemaVersion: "2.5",
-                data: { cycles: {} },
-                appState: { activeCycleId: null }
+                schemaVersion: "2.6",
+                data: { routine: {} },
+                appState: { activeRoutineId: null }
             }),
             update: (fn) => {},
             isReady: () => true
@@ -519,9 +519,9 @@ export async function runRecurringIntegrationTests(resultsDiv) {
     await test('returns panel update functions in panelAPI', async () => {
         const mockAppState = {
             get: () => ({
-                schemaVersion: "2.5",
-                data: { cycles: {} },
-                appState: { activeCycleId: null }
+                schemaVersion: "2.6",
+                data: { routine: {} },
+                appState: { activeRoutineId: null }
             }),
             update: (fn) => {},
             isReady: () => true
@@ -554,9 +554,9 @@ export async function runRecurringIntegrationTests(resultsDiv) {
     await test('defers panel load until first open', async () => {
         const mockAppState = {
             get: () => ({
-                schemaVersion: "2.5",
-                data: { cycles: {} },
-                appState: { activeCycleId: null }
+                schemaVersion: "2.6",
+                data: { routine: {} },
+                appState: { activeRoutineId: null }
             }),
             update: (fn) => {},
             isReady: () => true

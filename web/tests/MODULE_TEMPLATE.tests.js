@@ -54,8 +54,8 @@ export async function runMODULE_NAMETests(resultsDiv) {
                 get: () => ({
                     metadata: { version: '2.5' },
                     settings: {},
-                    data: { cycles: {} },
-                    appState: { activeCycleId: 'cycle1' }
+                    data: { routine: {} },
+                    appState: { activeRoutineId: 'cycle1' }
                 }),
                 update: (fn) => { fn({}); }
             },
@@ -314,7 +314,7 @@ KEY PATTERNS FOR STRICT DI TESTING
 5. Mock AppState properly:
    AppState: {
        isReady: () => true,
-       get: () => ({ settings: {}, data: { cycles: {} } }),
+       get: () => ({ settings: {}, data: { routine: {} } }),
        update: (fn) => { fn({}); }
    }
 

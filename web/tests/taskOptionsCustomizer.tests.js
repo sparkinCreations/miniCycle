@@ -76,10 +76,9 @@ export async function runTaskOptionsCustomizerTests(resultsDiv, isPartOfSuite = 
                 moveArrowsVisible: false
             },
             appState: {
-                activeCycleId: 'test-cycle-1'
+                activeRoutineId: 'test-cycle-1'
             },
-            data: {
-                cycles: {
+            data: { routine: {
                     'test-cycle-1': {
                         id: 'test-cycle-1',
                         title: 'Test Cycle',
@@ -88,7 +87,7 @@ export async function runTaskOptionsCustomizerTests(resultsDiv, isPartOfSuite = 
                             customize: true,
                             moveArrows: false,
                             threeDots: false,
-                            highPriority: true,
+                            priority: 'high',
                             rename: true,
                             delete: true,
                             recurring: false,
@@ -243,7 +242,7 @@ export async function runTaskOptionsCustomizerTests(resultsDiv, isPartOfSuite = 
     await test('loads current cycle button settings', async () => {
         // Modify mock data in localStorage before creating instance
         const mockData = JSON.parse(localStorage.getItem('miniCycleData'));
-        mockData.data.cycles['test-cycle-1'].taskOptionButtons.highPriority = false;
+        mockData.data.routine['test-cycle-1'].taskOptionButtons.highPriority = false;
         localStorage.setItem('miniCycleData', JSON.stringify(mockData));
 
         const instance = new TaskOptionsCustomizer();
@@ -298,7 +297,7 @@ export async function runTaskOptionsCustomizerTests(resultsDiv, isPartOfSuite = 
             throw new Error('AppState.update should be called');
         }
 
-        if (!mockData.data.cycles['test-cycle-1'].taskOptionButtons.recurring) {
+        if (!mockData.data.routine['test-cycle-1'].taskOptionButtons.recurring) {
             throw new Error('Recurring option should be saved as true');
         }
     });
@@ -313,7 +312,7 @@ export async function runTaskOptionsCustomizerTests(resultsDiv, isPartOfSuite = 
         instance.saveCustomization('test-cycle-1', checkboxes);
 
         const savedData = JSON.parse(localStorage.getItem('miniCycleData'));
-        if (!savedData.data.cycles['test-cycle-1'].taskOptionButtons.customize) {
+        if (!savedData.data.routine['test-cycle-1'].taskOptionButtons.customize) {
             throw new Error('Customize button should always be enabled after save');
         }
     });
@@ -347,7 +346,7 @@ export async function runTaskOptionsCustomizerTests(resultsDiv, isPartOfSuite = 
         // Set global moveArrowsVisible=true in localStorage
         const mockData = JSON.parse(localStorage.getItem('miniCycleData'));
         mockData.ui.moveArrowsVisible = true;
-        mockData.data.cycles['test-cycle-1'].taskOptionButtons.moveArrows = false;
+        mockData.data.routine['test-cycle-1'].taskOptionButtons.moveArrows = false;
         localStorage.setItem('miniCycleData', JSON.stringify(mockData));
 
         const instance = new TaskOptionsCustomizer();

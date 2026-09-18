@@ -93,8 +93,8 @@ export async function runTaskSearchTests(resultsDiv) {
     const stateWith = (tasks) => {
         const state = {
             settings: { defaultTheme: 'classic' },
-            data: { cycles: { r1: { tasks, theme: 'classic' } } },
-            appState: { activeCycleId: 'r1' }
+            data: { routine: { r1: { tasks, theme: 'classic' } } },
+            appState: { activeRoutineId: 'r1' }
         };
         return { get: () => state };
     };
@@ -307,10 +307,10 @@ export async function runTaskSearchTests(resultsDiv) {
         // No high-priority classes in the DOM on purpose: the answer must come from state.
         fresh.setTaskSearchDependencies({
             AppState: stateWith([
-                { id: 'low', highPriority: true, priorityColor: '#28a745' },
-                { id: 'none', highPriority: false, priorityColor: '#dc3545' },
-                { id: 'high', highPriority: true, priorityColor: '#8b1a1a' },   // habit-tracker's High
-                { id: 'medium', highPriority: true, priorityColor: '#facc15' }
+                { id: 'low', priority: 'low' },
+                { id: 'none', priority: null },
+                { id: 'high', priority: 'high' },   // habit-tracker's High
+                { id: 'medium', priority: 'medium' }
             ]),
             vocabThemeManager: themes,
             getElementById: (id) => document.getElementById(id),

@@ -183,7 +183,7 @@ export function backupCorruptedData(corruptedData, storage) {
 export function validateRecoveredData(data) {
     if (!data || typeof data !== 'object') return false;
 
-    const cycles = data.data?.cycles || data.cycles;
+    const cycles = data.data?.routine || data.routine;
     if (!cycles || typeof cycles !== 'object') return false;
 
     for (const cycle of Object.values(cycles)) {
@@ -212,7 +212,7 @@ export function validateSchema25PayloadString(payloadString) {
         return !!(parsed &&
             isSupportedStoredVersion(parsed) &&
             parsed.metadata && typeof parsed.metadata === 'object' &&
-            parsed.data && typeof parsed.data.cycles === 'object' &&
+            parsed.data && typeof parsed.data.routine === 'object' &&
             parsed.appState && typeof parsed.appState === 'object');
     } catch {
         return false;

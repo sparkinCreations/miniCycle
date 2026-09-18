@@ -88,7 +88,7 @@ export class RecurringStats {
     async update() {
         await this.deps.appInit.waitForCore();
         const state = this.deps.AppState.get();
-        const cycle = state.data.cycles[state.appState.activeCycleId];
+        const cycle = state.data.routine[state.appState.activeRoutineId];
         // ... use cycle data
     }
 }

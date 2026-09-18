@@ -96,8 +96,7 @@ export async function runStatsPanelTests(resultsDiv) {
                     unlockedThemes: ['default'],
                     unlockedFeatures: []
                 },
-                data: {
-                    cycles: {
+                data: { routine: {
                         'cycle1': {
                             id: 'cycle1',
                             title: 'Test Cycle',
@@ -110,7 +109,7 @@ export async function runStatsPanelTests(resultsDiv) {
                     }
                 },
                 appState: {
-                    activeCycleId: 'cycle1'
+                    activeRoutineId: 'cycle1'
                 },
                 userProgress: {
                     rewardMilestones: []
@@ -272,8 +271,8 @@ export async function runStatsPanelTests(resultsDiv) {
     // never invalidated externally). State says 4 tasks / 3 completed while
     // the DOM is left EMPTY — if the numbers land, they came from state.
     const statsMockState = (tasks) => ({
-        data: { cycles: { c1: { tasks, cycleCount: 0, deleteCheckedTasks: false } } },
-        appState: { activeCycleId: 'c1' },
+        data: { routine: { c1: { tasks, cycleCount: 0, deleteCheckedTasks: false } } },
+        appState: { activeRoutineId: 'c1' },
         userProgress: { cyclesCompleted: 0, totalTasksCompleted: 0 },
         settings: {}
     });
@@ -341,8 +340,8 @@ export async function runStatsPanelTests(resultsDiv) {
     const badgeTestMockData = {
         schemaVersion: 2.5,
         settings: { theme: 'light', darkMode: false },
-        data: { cycles: {} },
-        appState: { activeCycleId: 'test-cycle' },
+        data: { routine: {} },
+        appState: { activeRoutineId: 'test-cycle' },
         userProgress: { cyclesCompleted: 0, totalTasksCompleted: 0, rewardMilestones: [] },
         achievements: { unlocked: [], seen: {} }
     };

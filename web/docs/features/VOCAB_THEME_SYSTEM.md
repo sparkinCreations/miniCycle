@@ -12,7 +12,7 @@ The vocabulary theme system lets each routine use different terminology — "hab
 getLabel('action.addTask')
   → labelResolver.getActiveLens()
   → vocabThemeManager.getActiveTheme()
-  → AppState.get().data.cycles[activeCycleId].theme   // e.g. 'habit-tracker'
+  → AppState.get().data.routine[activeCycleId].theme   // e.g. 'habit-tracker'
   → THEME_DEFINITIONS['habit-tracker'].labels['action.addTask']  // 'Add habit'
 ```
 
@@ -58,7 +58,7 @@ Only keys listed in `labels` are overridden. Everything else falls through to `D
 The active theme ID is stored on each routine:
 
 ```
-state.data.cycles[cycleId].theme  // e.g. 'habit-tracker'
+state.data.routine[cycleId].theme  // e.g. 'habit-tracker'
 ```
 
 Set it via `vocabThemeManager.setRoutineTheme(routineId, themeId)`.
@@ -187,7 +187,7 @@ If **any** of the three layers is missing, the dependency silently stays `null` 
 
 ```javascript
 // ❌ WRONG — captures activeCycleId at render time
-const activeCycleId = state?.appState?.activeCycleId;
+const activeCycleId = state?.appState?.activeRoutineId;
 radio.addEventListener('change', () => {
     if (radio.checked && activeCycleId) {
         vtm.setRoutineTheme(activeCycleId, id);  // Stale!
@@ -200,7 +200,7 @@ If the user switches routines after the modal renders, the handler applies the t
 ```javascript
 // ✅ RIGHT — reads current state at click time
 radio.addEventListener('change', () => {
-    const currentCycleId = _deps.AppState?.get?.()?.appState?.activeCycleId;
+    const currentCycleId = _deps.AppState?.get?.()?.appState?.activeRoutineId;
     if (radio.checked && currentCycleId) {
         vtm.setRoutineTheme(currentCycleId, id);  // Always current
     }

@@ -310,16 +310,16 @@ The two functions do similar things (mark tasks as recurring) but are called fro
 - **`applyRecurringSettings()`** — called when configuring settings for a single task via the settings form
 - **`handleConfirmAddRecurring()`** — called when bulk-adding selected tasks from the "Add Task" list
 
-The fix in `applyRecurringSettings()` worked for the settings form, but the bulk-add path still had the bugs (missing `deleteWhenComplete`, broken DOM sync).
+The fix in `applyRecurringSettings()` worked for the settings form, but the bulk-add path still had the bugs (missing `autoClear`, broken DOM sync).
 
 **How to avoid:**
 1. Start from the UI action, not the function name. Click the button, trace the event handler, find the actual code path
 2. Search for all callers of the function you think you're fixing: `grep -r "functionName" modules/`
 3. If there are multiple code paths to the same behavior, fix all of them
 
-### Pitfall 4: Missing `deleteWhenComplete` on Bulk Operations
+### Pitfall 4: Missing `autoClear` on Bulk Operations
 
-**What happened:** When `handleConfirmAddRecurring()` was first written, it set `task.recurring = true` and `task.recurringSettings = {...}` but forgot to set `deleteWhenComplete = true` and `deleteWhenCompleteSettings`. The individual task path (`recurringActivation.js`) set these correctly, but the bulk path didn't.
+**What happened:** When `handleConfirmAddRecurring()` was first written, it set `task.recurring = true` and `task.recurringSettings = {...}` but forgot to set `deleteWhenComplete = true` and `autoClear`. The individual task path (`recurringActivation.js`) set these correctly, but the bulk path didn't.
 
 The fix (now in `recurringPanel.js:1575-1576`):
 
@@ -329,13 +329,12 @@ selectedTaskIds.forEach(taskId => {
     if (task) {
         task.recurring = true;
         task.recurringSettings = { ...defaultSettings };
-        task.deleteWhenComplete = true;                              // <-- was missing
-        task.deleteWhenCompleteSettings = { cycle: true, todo: true }; // <-- was missing
+        task.autoClear = true;                              // <-- was missing
+        task.autoClear = { cycle: true, todo: true }; // <-- was missing
 
         cycle.recurringTemplates[taskId] = {
             // ... also needs deleteWhenComplete here ...
-            deleteWhenComplete: true,                                // <-- was missing
-            deleteWhenCompleteSettings: { cycle: true, todo: true }  // <-- was missing
+            autoClear: { cycle: true, todo: true }  // <-- was missing
         };
     }
 });
@@ -345,7 +344,7 @@ selectedTaskIds.forEach(taskId => {
 
 ### Pitfall 5: DOM Fix Masking a State Bug
 
-**What happened:** When removing a task from recurring via the panel (`handleRemoveTask` in `recurringPanel.js:925`), the AppState update set `recurring = false` and deleted `recurringSettings`, but never reset `deleteWhenComplete` or `deleteWhenCompleteSettings` back to non-recurring defaults. The task's state still had `{ cycle: true, todo: true }` from when it was recurring.
+**What happened:** When removing a task from recurring via the panel (`handleRemoveTask` in `recurringPanel.js:925`), the AppState update set `recurring = false` and deleted `recurringSettings`, but never reset `autoClear` or `autoClear` back to non-recurring defaults. The task's state still had `{ cycle: true, todo: true }` from when it was recurring.
 
 The DOM update code *did* compute the correct default and toggled the right CSS classes and button states (lines 997-1019). So the UI looked correct immediately after removal. But on any page refresh or `refreshUIFromState()` call, the DOM was rebuilt from the stale state — and the task showed up with recurring-style deletion behavior.
 
@@ -353,16 +352,16 @@ The individual button deactivation path (`recurringActivation.js:handleRecurring
 
 ```javascript
 // recurringActivation.js:243-244 — the working path
-targetTask.deleteWhenCompleteSettings = { ...DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS };
-targetTask.deleteWhenComplete = DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS[currentMode];
+targetTask.autoClear = { ...DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS };
+targetTask.autoClear = DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS[currentMode];
 ```
 
 The panel's `handleRemoveTask` was missing the equivalent (now fixed at `recurringPanel.js:967-968`):
 
 ```javascript
 // recurringPanel.js:967-968 — the fix
-liveTask.deleteWhenCompleteSettings = { cycle: false, todo: true };
-liveTask.deleteWhenComplete = currentMode === 'todo';
+liveTask.autoClear = { cycle: false, todo: true };
+liveTask.autoClear = currentMode === 'todo';
 ```
 
 **Why it's silent:** The DOM looked correct immediately. The bug only appeared after a refresh, when the UI was rebuilt from state. This makes it easy to think the fix is working when it's only cosmetic.

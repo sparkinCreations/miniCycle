@@ -110,12 +110,11 @@ Every task object must include **all** of these:
   "text": "🔧 Task description here",
   "completed": false,
   "dueDate": null,
-  "highPriority": false,
+  "priority": null,
   "remindersEnabled": false,
   "recurring": false,
   "recurringSettings": {},
-  "deleteWhenComplete": false,
-  "deleteWhenCompleteSettings": {
+  "autoClear": {
     "cycle": false,
     "todo": true
   },
@@ -167,7 +166,7 @@ Create a new file in `web/examples/sample-routines/`. Use the full Schema 2.5 fo
 Key decisions:
 - **`autoReset: true`** for routines people repeat (daily, weekly)
 - **`autoReset: false`** for one-time processes (recipes, checklists)
-- **`highPriority: true`** on critical tasks the user should not skip
+- **`priority: 'high'`** on critical tasks the user should not skip
 - **Emoji in task text** for visual appeal and scannability
 
 **Step 2: Regenerate the manifest**
@@ -196,7 +195,7 @@ Open the app -> Menu -> Create New Routine -> click "Load Sample" and confirm th
 
 - [ ] File is valid JSON (run `python3 -m json.tool Your_File.mcyc`)
 - [ ] All root-level fields present (name, title, tasks, autoReset, cycleCount, deleteCheckedTasks, taskOptionButtons, recurringTemplates, reminders, theme, createdAt)
-- [ ] All task-level fields present (id, text, completed, dueDate, highPriority, remindersEnabled, recurring, recurringSettings, deleteWhenComplete, deleteWhenCompleteSettings, schemaVersion)
+- [ ] All task-level fields present (id, text, completed, dueDate, priority, remindersEnabled, recurring, recurringSettings, deleteWhenComplete, autoClear, schemaVersion)
 - [ ] Title includes emoji (start or end)
 - [ ] File named with underscores: `Descriptive_Name.mcyc`
 - [ ] `npm run samples` ran successfully
@@ -351,10 +350,10 @@ When a sample `.mcyc` file is loaded, it passes through two validation layers:
 
 - Validates and repairs all cycle-level fields (title, cycleCount, autoReset, deleteCheckedTasks)
 - Validates and repairs all task-level fields with `console.warn()` for each repair:
-  - Missing/invalid ID, text, completed, highPriority, remindersEnabled, recurring
+  - Missing/invalid ID, text, completed, priority, remindersEnabled, recurring
   - Missing dueDate, recurringSettings, schemaVersion
-  - Missing deleteWhenCompleteSettings
-- Syncs `deleteWhenComplete` with the current mode
+  - Missing autoClear
+- Syncs `autoClear` with the current mode
 
 **This is why sample files should include all fields** -- it prevents a wall of repair warnings in the console every time someone loads a sample. With complete files, the repair system has nothing to fix.
 

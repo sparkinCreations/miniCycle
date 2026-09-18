@@ -110,8 +110,7 @@ export async function runRoutineSwitcherTests(resultsDiv, isPartOfSuite = false)
                     lastModified: Date.now()
                 },
                 settings: {},
-                data: {
-                    cycles: {
+                data: { routine: {
                         'Morning Routine': {
                             title: 'Morning Routine',
                             id: 'cycle-morning',
@@ -148,7 +147,7 @@ export async function runRoutineSwitcherTests(resultsDiv, isPartOfSuite = false)
                     }
                 },
                 appState: {
-                    activeCycleId: 'Morning Routine',
+                    activeRoutineId: 'Morning Routine',
                     currentMode: 'auto-cycle'
                 },
                 userProgress: {
@@ -278,8 +277,8 @@ export async function runRoutineSwitcherTests(resultsDiv, isPartOfSuite = false)
         // Empty cycles
         const emptyData = {
             metadata: { version: "2.5" },
-            data: { cycles: {} },
-            appState: { activeCycleId: null }
+            data: { routine: {} },
+            appState: { activeRoutineId: null }
         };
         localStorage.setItem('miniCycleData', JSON.stringify(emptyData));
 
@@ -525,7 +524,7 @@ export async function runRoutineSwitcherTests(resultsDiv, isPartOfSuite = false)
                 get: () => schemaData,
                 update: (updateFn) => {
                     // Must PERSIST: confirmMiniCycle re-reads AppState.get() straight
-                    // after and bails if activeCycleId did not actually change. A
+                    // after and bails if activeRoutineId did not actually change. A
                     // non-persisting mock aborts the switch before the hook is ever
                     // reached, which is not the path this test is about.
                     const state = JSON.parse(JSON.stringify(schemaData));
@@ -622,8 +621,8 @@ export async function runRoutineSwitcherTests(resultsDiv, isPartOfSuite = false)
         // Single-cycle state; AppState.update mutates it in place so the
         // post-delete get() returns zero cycles (drives the "no cycles" branch).
         const state = {
-            data: { cycles: { 'Only Routine': { id: 'c1', title: 'Only Routine', tasks: [] } } },
-            appState: { activeCycleId: 'Only Routine' },
+            data: { routine: { 'Only Routine': { id: 'c1', title: 'Only Routine', tasks: [] } } },
+            appState: { activeRoutineId: 'Only Routine' },
             metadata: {}
         };
 
@@ -661,7 +660,7 @@ export async function runRoutineSwitcherTests(resultsDiv, isPartOfSuite = false)
 
         selectedCycle.remove();
 
-        if (Object.keys(state.data.cycles).length !== 0) {
+        if (Object.keys(state.data.routine).length !== 0) {
             throw new Error('precondition failed: the only cycle should have been deleted');
         }
         if (!creationModalOpened) {

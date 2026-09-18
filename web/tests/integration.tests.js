@@ -90,8 +90,7 @@ export async function runIntegrationTests(resultsDiv, isPartOfSuite = false) {
                 showMoveArrows: false,
                 showThreeDots: false
             },
-            data: {
-                cycles: {
+            data: { routine: {
                     'test-cycle': {
                         id: 'test-cycle',
                         name: 'Test Cycle',
@@ -103,7 +102,7 @@ export async function runIntegrationTests(resultsDiv, isPartOfSuite = false) {
                 }
             },
             appState: {
-                activeCycleId: 'test-cycle',
+                activeRoutineId: 'test-cycle',
                 currentMode: 'auto-cycle'
             },
             reminders: {
@@ -170,7 +169,7 @@ export async function runIntegrationTests(resultsDiv, isPartOfSuite = false) {
     // ✅ FIXED: Added await before each test() call
     await test('WORKFLOW: Add task → Save → Verify persistence', async () => {
         const data = loadData();
-        const cycle = data.data.cycles['test-cycle'];
+        const cycle = data.data.routine['test-cycle'];
 
         const newTask = {
             id: 'task-' + Date.now(),
@@ -183,7 +182,7 @@ export async function runIntegrationTests(resultsDiv, isPartOfSuite = false) {
         saveData(data);
 
         const savedData = loadData();
-        const savedCycle = savedData.data.cycles['test-cycle'];
+        const savedCycle = savedData.data.routine['test-cycle'];
         const foundTask = savedCycle.tasks.find(t => t.text === 'Integration Test Task');
 
         if (!foundTask) {
@@ -191,7 +190,7 @@ export async function runIntegrationTests(resultsDiv, isPartOfSuite = false) {
         }
 
         const reloadedData = loadData();
-        const reloadedCycle = reloadedData.data.cycles['test-cycle'];
+        const reloadedCycle = reloadedData.data.routine['test-cycle'];
         const persistedTask = reloadedCycle.tasks.find(t => t.text === 'Integration Test Task');
 
         if (!persistedTask) {
@@ -205,7 +204,7 @@ export async function runIntegrationTests(resultsDiv, isPartOfSuite = false) {
 
     await test('WORKFLOW: Complete task → Update stats → Verify state', async () => {
         const data = loadData();
-        const cycle = data.data.cycles['test-cycle'];
+        const cycle = data.data.routine['test-cycle'];
 
         cycle.tasks.push({
             id: 'task-complete-test',
@@ -215,13 +214,13 @@ export async function runIntegrationTests(resultsDiv, isPartOfSuite = false) {
         saveData(data);
 
         const data2 = loadData();
-        const cycle2 = data2.data.cycles['test-cycle'];
+        const cycle2 = data2.data.routine['test-cycle'];
         const task = cycle2.tasks.find(t => t.id === 'task-complete-test');
         task.completed = true;
         saveData(data2);
 
         const data3 = loadData();
-        const cycle3 = data3.data.cycles['test-cycle'];
+        const cycle3 = data3.data.routine['test-cycle'];
         const completedTask = cycle3.tasks.find(t => t.id === 'task-complete-test');
 
         if (!completedTask.completed) {
@@ -239,7 +238,7 @@ export async function runIntegrationTests(resultsDiv, isPartOfSuite = false) {
 
     await test('WORKFLOW: Complete all tasks → Verify cycle count logic', async () => {
         const data = loadData();
-        const cycle = data.data.cycles['test-cycle'];
+        const cycle = data.data.routine['test-cycle'];
         cycle.autoReset = true;
         cycle.tasks = [
             { id: 'task1', text: 'Task 1', completed: false },
@@ -250,12 +249,12 @@ export async function runIntegrationTests(resultsDiv, isPartOfSuite = false) {
         saveData(data);
 
         const data2 = loadData();
-        const cycle2 = data2.data.cycles['test-cycle'];
+        const cycle2 = data2.data.routine['test-cycle'];
         cycle2.tasks.forEach(task => task.completed = true);
         saveData(data2);
 
         const data3 = loadData();
-        const cycle3 = data3.data.cycles['test-cycle'];
+        const cycle3 = data3.data.routine['test-cycle'];
 
         const allCompleted = cycle3.tasks.every(t => t.completed);
         if (!allCompleted) {
@@ -271,7 +270,7 @@ export async function runIntegrationTests(resultsDiv, isPartOfSuite = false) {
         }
 
         const data4 = loadData();
-        const cycle4 = data4.data.cycles['test-cycle'];
+        const cycle4 = data4.data.routine['test-cycle'];
 
         const anyCompleted = cycle4.tasks.some(t => t.completed);
         if (anyCompleted) {
@@ -285,7 +284,7 @@ export async function runIntegrationTests(resultsDiv, isPartOfSuite = false) {
 
     await test('WORKFLOW: Undo/Redo task addition', async () => {
         const data = loadData();
-        const cycle = data.data.cycles['test-cycle'];
+        const cycle = data.data.routine['test-cycle'];
         const originalTaskCount = cycle.tasks.length;
 
         const newTask = {
@@ -302,7 +301,7 @@ export async function runIntegrationTests(resultsDiv, isPartOfSuite = false) {
         undoStack.push(previousState);
 
         let currentData = loadData();
-        if (currentData.data.cycles['test-cycle'].tasks.length !== originalTaskCount + 1) {
+        if (currentData.data.routine['test-cycle'].tasks.length !== originalTaskCount + 1) {
             throw new Error('Task was not added');
         }
 
@@ -312,7 +311,7 @@ export async function runIntegrationTests(resultsDiv, isPartOfSuite = false) {
         }
 
         currentData = loadData();
-        const currentTasks = currentData.data.cycles['test-cycle'].tasks;
+        const currentTasks = currentData.data.routine['test-cycle'].tasks;
         if (currentTasks.length !== originalTaskCount) {
             throw new Error(`Undo failed: expected ${originalTaskCount} tasks, got ${currentTasks.length}`);
         }
@@ -325,7 +324,7 @@ export async function runIntegrationTests(resultsDiv, isPartOfSuite = false) {
 
     await test('WORKFLOW: Multiple operations → Undo → Redo', async () => {
         let data = loadData();
-        const cycle = data.data.cycles['test-cycle'];
+        const cycle = data.data.routine['test-cycle'];
         const undoStack = [];
         const redoStack = [];
 
@@ -336,7 +335,7 @@ export async function runIntegrationTests(resultsDiv, isPartOfSuite = false) {
         undoStack.push(JSON.parse(JSON.stringify(data)));
 
         data = loadData();
-        data.data.cycles['test-cycle'].tasks.push({ id: 'op2', text: 'Operation 2', completed: false });
+        data.data.routine['test-cycle'].tasks.push({ id: 'op2', text: 'Operation 2', completed: false });
         saveData(data);
         undoStack.push(JSON.parse(JSON.stringify(data)));
 
@@ -346,10 +345,10 @@ export async function runIntegrationTests(resultsDiv, isPartOfSuite = false) {
         saveData(previousState);
 
         data = loadData();
-        if (data.data.cycles['test-cycle'].tasks.find(t => t.id === 'op2')) {
+        if (data.data.routine['test-cycle'].tasks.find(t => t.id === 'op2')) {
             throw new Error('Undo failed: Operation 2 task still exists');
         }
-        if (!data.data.cycles['test-cycle'].tasks.find(t => t.id === 'op1')) {
+        if (!data.data.routine['test-cycle'].tasks.find(t => t.id === 'op1')) {
             throw new Error('Undo broke: Operation 1 task should still exist');
         }
 
@@ -358,7 +357,7 @@ export async function runIntegrationTests(resultsDiv, isPartOfSuite = false) {
         saveData(redoState);
 
         data = loadData();
-        if (!data.data.cycles['test-cycle'].tasks.find(t => t.id === 'op2')) {
+        if (!data.data.routine['test-cycle'].tasks.find(t => t.id === 'op2')) {
             throw new Error('Redo failed: Operation 2 task not restored');
         }
     });
@@ -389,20 +388,20 @@ export async function runIntegrationTests(resultsDiv, isPartOfSuite = false) {
 
     await test('INTEGRATION: Settings changes affect cycle behavior', async () => {
         const data = loadData();
-        const cycle = data.data.cycles['test-cycle'];
+        const cycle = data.data.routine['test-cycle'];
         cycle.autoReset = true;
         saveData(data);
 
         const savedData = loadData();
-        if (savedData.data.cycles['test-cycle'].autoReset !== true) {
+        if (savedData.data.routine['test-cycle'].autoReset !== true) {
             throw new Error('Auto-reset setting not saved');
         }
 
-        savedData.data.cycles['test-cycle'].autoReset = false;
+        savedData.data.routine['test-cycle'].autoReset = false;
         saveData(savedData);
 
         const updatedData = loadData();
-        if (updatedData.data.cycles['test-cycle'].autoReset !== false) {
+        if (updatedData.data.routine['test-cycle'].autoReset !== false) {
             throw new Error('Auto-reset setting change did not persist');
         }
     });
@@ -413,13 +412,13 @@ export async function runIntegrationTests(resultsDiv, isPartOfSuite = false) {
 
     await test('INTEGRATION: Multiple cycles coexist correctly', async () => {
         const data = loadData();
-        data.data.cycles['cycle-1'] = {
+        data.data.routine['cycle-1'] = {
             id: 'cycle-1',
             name: 'Cycle 1',
             tasks: [{ id: 't1', text: 'Task 1', completed: false }],
             cycleCount: 0
         };
-        data.data.cycles['cycle-2'] = {
+        data.data.routine['cycle-2'] = {
             id: 'cycle-2',
             name: 'Cycle 2',
             tasks: [{ id: 't2', text: 'Task 2', completed: true }],
@@ -428,25 +427,25 @@ export async function runIntegrationTests(resultsDiv, isPartOfSuite = false) {
         saveData(data);
 
         const savedData = loadData();
-        if (!savedData.data.cycles['cycle-1']) {
+        if (!savedData.data.routine['cycle-1']) {
             throw new Error('Cycle 1 not saved');
         }
-        if (!savedData.data.cycles['cycle-2']) {
+        if (!savedData.data.routine['cycle-2']) {
             throw new Error('Cycle 2 not saved');
         }
 
-        if (savedData.data.cycles['cycle-1'].tasks[0].completed === true) {
+        if (savedData.data.routine['cycle-1'].tasks[0].completed === true) {
             throw new Error('Cycle 1 task incorrectly marked as completed');
         }
-        if (savedData.data.cycles['cycle-2'].cycleCount !== 5) {
+        if (savedData.data.routine['cycle-2'].cycleCount !== 5) {
             throw new Error('Cycle 2 count incorrect');
         }
 
-        savedData.data.cycles['cycle-1'].tasks[0].completed = true;
+        savedData.data.routine['cycle-1'].tasks[0].completed = true;
         saveData(savedData);
 
         const finalData = loadData();
-        if (finalData.data.cycles['cycle-2'].tasks[0].text !== 'Task 2') {
+        if (finalData.data.routine['cycle-2'].tasks[0].text !== 'Task 2') {
             throw new Error('Cycle 2 was affected by Cycle 1 modification');
         }
     });
@@ -457,7 +456,7 @@ export async function runIntegrationTests(resultsDiv, isPartOfSuite = false) {
             throw new Error(`Expected schema 2.5, got ${data.metadata.version}`);
         }
 
-        data.data.cycles['test-cycle'].tasks.push({
+        data.data.routine['test-cycle'].tasks.push({
             id: 'schema-test',
             text: 'Schema Test',
             completed: false
@@ -505,7 +504,7 @@ export async function runIntegrationTests(resultsDiv, isPartOfSuite = false) {
     await test('INTEGRATION: Switch between Auto Cycle and To-Do mode', async () => {
         let data = loadData();
         data.appState.currentMode = 'auto-cycle';
-        const cycle = data.data.cycles['test-cycle'];
+        const cycle = data.data.routine['test-cycle'];
         cycle.autoReset = true;
         cycle.deleteCheckedTasks = false;
         saveData(data);

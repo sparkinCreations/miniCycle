@@ -512,8 +512,8 @@ export async function runTaskUITests(resultsDiv, isPartOfSuite = false) {
     // rendered lists. Fixtures are AppState mocks; the DOM only supplies the button.
     function appStateWith(routine) {
         const state = routine === null ? null : {
-            data: { cycles: { 'test-cycle': routine } },
-            appState: { activeCycleId: 'test-cycle' }
+            data: { routine: { 'test-cycle': routine } },
+            appState: { activeRoutineId: 'test-cycle' }
         };
         return { isReady: () => state !== null, get: () => state };
     }
@@ -646,7 +646,7 @@ export async function runTaskUITests(resultsDiv, isPartOfSuite = false) {
             await refreshTaskListUI();
         } catch (e) {
             threwError = true;
-            if (!e.message.includes('Schema 2.5 data not found')) {
+            if (!e.message.includes('State data not found')) {
                 throw new Error('Wrong error message');
             }
         }

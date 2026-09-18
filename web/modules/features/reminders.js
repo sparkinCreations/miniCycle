@@ -269,8 +269,8 @@ export class MiniCycleReminders {
         // Get previous state from Schema 2.5
         const state = this._state();
         if (!state) {
-            console.error('❌ Schema 2.5 data required for handleReminderToggle');
-            throw new Error('Schema 2.5 data not found');
+            console.error('❌ State data required for handleReminderToggle');
+            throw new Error('State data not found');
         }
 
         const previousSettings = state.customReminders || {};
@@ -350,7 +350,7 @@ export class MiniCycleReminders {
         // Load reminder settings from Schema 2.5
         const state = this._state();
         if (!state) {
-            console.warn('⚠️ No Schema 2.5 data yet - reminder toggle will initialize after cycle creation');
+            console.warn('⚠️ No state data yet - reminder toggle will initialize after cycle creation');
             return; // Gracefully exit - settings will be loaded when data exists
         }
 
@@ -449,8 +449,8 @@ export class MiniCycleReminders {
 
         const state = this._state();
         if (!state) {
-            console.error('❌ Schema 2.5 data required for autoSaveReminders');
-            throw new Error('Schema 2.5 data not found');
+            console.error('❌ State data required for autoSaveReminders');
+            throw new Error('State data not found');
         }
 
         const enabled = this.deps.getElementById(DOM_IDS.ENABLE_REMINDERS)?.checked || false;
@@ -516,8 +516,8 @@ export class MiniCycleReminders {
 
         const state = this._state();
         if (!state) {
-            console.error('❌ Schema 2.5 data required for loadRemindersSettings');
-            throw new Error('Schema 2.5 data not found');
+            console.error('❌ State data required for loadRemindersSettings');
+            throw new Error('State data not found');
         }
 
         const reminders = state.customReminders || {
@@ -615,8 +615,8 @@ export class MiniCycleReminders {
 
         const state = this._state();
         if (!state) {
-            console.error('❌ Schema 2.5 data required for saveTaskReminderState');
-            throw new Error('Schema 2.5 data not found');
+            console.error('❌ State data required for saveTaskReminderState');
+            throw new Error('State data not found');
         }
 
         const activeCycle = getActiveRoutineId(state);
@@ -657,7 +657,7 @@ export class MiniCycleReminders {
         // how scheduleNextReminder already handles the same condition.
         const state = this._state();
         if (!state) {
-            console.error('❌ Schema 2.5 data required for sendReminderNotificationIfNeeded');
+            console.error('❌ State data required for sendReminderNotificationIfNeeded');
             return;
         }
 
@@ -769,7 +769,7 @@ export class MiniCycleReminders {
         // Schema 2.5 only
         const state = this._state();
         if (!state) {
-            console.warn('⚠️ No Schema 2.5 data yet - reminders will start after cycle creation');
+            console.warn('⚠️ No state data yet - reminders will start after cycle creation');
             return; // Gracefully exit - reminders will start when data exists
         }
 
@@ -811,7 +811,7 @@ export class MiniCycleReminders {
 
         const state = this._state();
         if (!state) {
-            console.error('❌ Schema 2.5 data required for scheduleNextReminder');
+            console.error('❌ State data required for scheduleNextReminder');
             return;
         }
 
@@ -1008,7 +1008,7 @@ export class MiniCycleReminders {
         // Schema 2.5 only
         const state = this._state();
         if (!state) {
-            console.error('❌ Schema 2.5 data required for updateReminderButtons');
+            console.error('❌ State data required for updateReminderButtons');
             return;
         }
 
@@ -1078,7 +1078,7 @@ export class MiniCycleReminders {
 
                     const state = this._state();
                     if (!state) {
-                        console.error('❌ Schema 2.5 data required for reminder input change');
+                        console.error('❌ State data required for reminder input change');
                         return;
                     }
 

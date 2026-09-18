@@ -1,17 +1,17 @@
-# miniCycle Schema 2.5 Documentation
+# miniCycle Schema 2.6 Documentation
 
 **Version**: See [PROJECT_STATS.md](../PROJECT_STATS.md)
-**Last Updated**: July 26, 2026 — audited field-by-field against `createInitialState()`, `types.js`, and the modules that read/write each field.
+**Last Updated**: September 18, 2026 — Schema 2.6: routines keyed by a generated id under `data.routine`, priority as a level, one `autoClear` map. Audited field-by-field against `createInitialSchema25Data()`, `types.js`, `schemaMigration26.js` and the modules that read/write each field.
 
 ## Overview
 
-Schema 2.5 represents the current data structure for miniCycle, consolidating all application state, user data, settings, and metadata into a single unified format. This schema supports multiple cycles, recurring tasks, theme unlocks, and comprehensive user progress tracking.
+Schema 2.6 represents the current data structure for miniCycle, consolidating all application state, user data, settings, and metadata into a single unified format. This schema supports multiple cycles, recurring tasks, theme unlocks, and comprehensive user progress tracking.
 
 > **Source of Truth**: `modules/core/types.js` contains the canonical JSDoc type definitions.
 
 ## Schema Version
 
-**Current Version**: `2.5`
+**Current Version**: `2.6` (`SCHEMA.CURRENT`); the oldest version a build still reads is `SCHEMA.OLDEST_MIGRATABLE` = `2.5`
 
 ### Two Version Stamps (Document vs. Task)
 
@@ -21,7 +21,7 @@ different things:
 
 | Stamp | Where it lives | Current value | Type |
 |-------|----------------|---------------|------|
-| **Document version** | Top-level `schemaVersion` and `metadata.schemaVersion` | `"2.5"` | string |
+| **Document version** | Top-level `schemaVersion` and `metadata.schemaVersion` | `"2.6"` | string |
 | **Task version** | `schemaVersion` on each individual task | `2` | number |
 
 Think of it as a **shipping container with individually-labeled boxes**:
@@ -45,29 +45,50 @@ change without changing a task's shape, and vice versa, so each gets its own cou
 - No code compares a task's version to decide it is "outdated." The only task-version
   read (`routineLoader`) simply repairs a missing/invalid stamp back to `2`. So `2`
   is the current, correct task value — not a leftover from an older "Schema 2."
-- The document version `"2.5"` is the value gated on for migrations and validation
-  (e.g. `schemaVersion === "2.5"`). Pre-2.5 migration applies only to dev-era data;
-  public data is always 2.5.
+- The document version is never compared as a string. `utils/schemaVersion.js`
+  parses it (`classifyStoredVersion` → current / older / newer / unknown;
+  `isSupportedStoredVersion` for the restore and import gates) so `"2.10"` sorts
+  after `"2.6"`. An **older** document is migrated at boot before it is adopted
+  (`AppState._migrateIfOlder` → `routine/schemaMigration26.js`); a **newer** one is
+  left untouched and the app shows a reload notice instead of first-run.
+- Pre-2.5 data predates the public launch and is not migrated; the only migration
+  is 2.5 → 2.6.
 
-> **Note:** The two stamps currently differ in type (string `"2.5"` vs. number `2`).
-> This is accepted as-is today. Because versions are compared by exact match
-> (`=== "2.5"`) and task versions are never compared with `<`/`>`, the type difference
-> is currently harmless. This document describes current behavior only.
+> **Note:** The two stamps differ in type (string `"2.6"` vs. number `2`). This is
+> accepted as-is: task versions are never compared with `<`/`>`, and the document
+> version goes through the parser above.
+
+### What changed from 2.5 (migrated once at boot, Sep 2026)
+
+| 2.5 | 2.6 | Why |
+|-----|-----|-----|
+| `data.cycles[<display name>]` | `data.routine[<generated id>]`; `title` is the name | routines keyed by a stable id (STATE_TRUTH_MIGRATION #20) and named with the product word |
+| `appState.activeCycleId` | `appState.activeRoutineId` | same |
+| `metadata.totalCyclesCreated` | `metadata.totalRoutinesCreated` | same |
+| `task.highPriority` + `task.priorityColor` (a theme-tinted hex) | `task.priority`: `'high'` / `'medium'` / `'low'` / `null` | the colour is the active theme's swatch for the level; nothing is shown as stored |
+| `settings.priorityColor` | `settings.defaultPriority` (a level) | same |
+| `task.deleteWhenCompleteSettings` + a derived `deleteWhenComplete` mirror | `task.autoClear`: `{ cycle, todo, …any later mode }` — an OPEN map | one stored value, no reconciliation on load; a newer build's mode survives a round trip |
+| cleared entry `wasHighPriority` / `priorityColor`; history detail `priorityColor` | `priority` on both | same rule, every container |
+
+The migration (`migrateSchema_2_5_to_2_6`) keeps the raw 2.5 document under
+`miniCycleData_pre-migration_<timestamp>` first, and persisted undo history is
+cleared on that boot. Testing modal → Diagnostics → *Dry-Run 2.6 Migration* runs the
+same function on a clone of the live state and reports what it would do.
 
 ## Complete Schema Structure
 
 ```javascript
 {
-  schemaVersion: "2.5",
+  schemaVersion: "2.6",
 
   metadata: {
     createdAt: 1696723400000,              // Unix timestamp
     lastModified: 1696723445123,           // Unix timestamp
     migratedFrom: "2.0",                   // Previous schema version (null when fresh)
     migrationDate: "2025-10-07",           // When migration occurred (null when fresh)
-    totalCyclesCreated: 5,                 // Lifetime cycle creation count
+    totalRoutinesCreated: 5,               // Lifetime routine creation count
     totalCyclesCompleted: 12,              // Lifetime cycle completion count
-    schemaVersion: "2.5",                  // Duplicated here as well as at the root
+    schemaVersion: "2.6",                  // Duplicated here as well as at the root
     lastModifiedBy: "tab-x7f2",            // Writing tab's id — multi-tab conflict detection
                                            // (appState.js stamps it on every save)
     storageQuota: { /* … */ }              // Cached quota estimate (storageUtils.js)
@@ -111,11 +132,11 @@ change without changing a task's shape, and vice versa, so each gets its own cou
   },
 
   data: {
-    cycles: {
-      "cycle-abc123": {
-        id: "cycle-abc123",                // Unique cycle identifier
+    routine: {
+      "routine-1789760998636-bqphapbbc": { // Keyed by a GENERATED id (GlobalUtils.generateId('routine'))
+        id: "routine-1789760998636-bqphapbbc",
         // ⚠️ `title` IS the display name. There is no `name` field: nothing in
-        // the app writes one (routineManager creates cycles with `title`, and
+        // the app writes one (routineManager creates routines with `title`, and
         // there are ~47 reads of `.title`). An earlier revision of this doc had
         // these reversed — `cycleCompletion.js` still reads `cycleData.name ||
         // activeCycle`, which therefore always falls through to the storage key.
@@ -159,7 +180,7 @@ change without changing a task's shape, and vice versa, so each gets its own cou
   },
 
   appState: {
-    activeCycleId: "cycle-abc123",         // Currently selected cycle
+    activeRoutineId: "routine-1789760998636-bqphapbbc", // Currently selected routine
     overdueTaskStates: {}                  // { [taskId]: boolean }
     // NOTE: the current mode is NOT stored here — it's derived from the active
     // cycle's autoReset / deleteCheckedTasks flags (see modeManager).
@@ -217,7 +238,7 @@ Tracks application-level information and migration history:
 | `migrationHistory` | string[] | Array of migration paths taken |
 | `migratedFrom` | string | Previous schema version (if migrated) |
 | `migrationDate` | string | When migration occurred |
-| `totalCyclesCreated` | number | Lifetime cycle creation count |
+| `totalRoutinesCreated` | number | Lifetime routine creation count |
 | `totalTasksCompleted` | number | Lifetime task completion count |
 
 ### Settings
@@ -335,13 +356,11 @@ Each entry in `clearedTasks.entries`:
 | `id` | string | Unique id for the cleared entry (e.g. `clr-...`) |
 | `taskText` | string | Text of the cleared task |
 | `clearedAt` | number | Unix timestamp when cleared |
-| `wasHighPriority` | boolean | Whether the task was high priority when cleared |
+| `priority` | string\|null | The task's priority level when cleared (`'high'` / `'medium'` / `'low'` / `null`) |
 | `hadDueDate` | boolean | Whether the task had a due date |
 | `dueDate` | string\|null | The task's due date, if any |
-| `priorityColor` | string\|null | The task's priority color, if any |
 | `remindersEnabled` | boolean | Whether task reminders were enabled |
-| `deleteWhenComplete` | boolean | Active delete-when-complete flag at clear time |
-| `deleteWhenCompleteSettings` | object\|null | Per-mode delete-when-complete settings snapshot |
+| `autoClear` | object | Per-mode clear map snapshot (`{ cycle, todo }`) |
 
 #### Task Option Buttons
 
@@ -367,16 +386,15 @@ Each task object in the `tasks` array:
 | `id` | string | Unique task identifier |
 | `text` | string | Task description text |
 | `completed` | boolean | Completion status |
-| `highPriority` | boolean | Priority flag |
+| `priority` | string\|null | Priority LEVEL: `'high'` / `'medium'` / `'low'` / `null`. No colour is stored — the row shows the active theme's swatch for the level (`vocabThemeManager.getTaskPriorityColor`) |
 | `dueDate` | string\|null | Due date in ISO format |
 | `remindersEnabled` | boolean | Task-specific reminder toggle |
 | `recurring` | boolean | Whether task is recurring |
 | `recurringSettings` | object | Recurring task configuration |
-| `schemaVersion` | number | Per-task shape version. Currently the number `2`. This is a *separate* counter from the document's `schemaVersion` (`"2.5"`) — see "Two Version Stamps" below. |
+| `schemaVersion` | number | Per-task shape version. Currently the number `2`. This is a *separate* counter from the document's `schemaVersion` (`"2.6"`) — see "Two Version Stamps" below. |
 | `createdAt` | string | ISO timestamp of creation |
 | `completedAt` | string\|null | ISO timestamp of completion |
-| `deleteWhenComplete` | boolean | 🧹 Active flag for current mode (synced from deleteWhenCompleteSettings) |
-| `deleteWhenCompleteSettings` | object | Per-mode settings: `{ cycle: boolean, todo: boolean }` |
+| `autoClear` | object | 🧹 Clear on Reset (cycle) / Marked for Clearing (to-do), per mode: `{ cycle: boolean, todo: boolean }`. An OPEN map — a boolean under any other key is kept. Read with `getAutoClear(task, routine, defaults)`; there is no derived mirror |
 
 #### Recurring Settings Structure
 
@@ -503,36 +521,37 @@ It fails silently and looks like "undo just doesn't cover that" rather than a bu
 It has bitten twice already, and both fixes are visible in the function today:
 
 - **Settings objects, not just their booleans.** `recurringSettings` and
-  `deleteWhenCompleteSettings` are serialised whole; comparing only the derived
-  `recurring` / `deleteWhenComplete` flags meant editing a schedule without
-  toggling the flag was invisible.
+  `autoClear` are serialised whole; comparing only a derived `recurring` flag
+  meant editing a schedule without toggling the flag was invisible.
 - **`taskViewLayout.positions`.** A drag-end or dock-back changes nothing else, so
   without `tvl` in the key the whole Task View layout feature sat outside undo.
 
-The same applies to anything added under `settings`, `data.cycles[id]`, or a task
+The same applies to anything added under `settings`, `data.routine[id]`, or a task
 record. If it is user-editable and worth undoing, it belongs in the signature.
 
 ## Migration Support
 
-Schema 2.5 includes built-in migration tracking:
+A migrated document records where it came from:
 
 ```javascript
 metadata: {
-  migratedFrom: "2.0",
-  migrationDate: "2025-10-15",
-  migrationHistory: ["2.0 → 2.5"]
+  migratedFrom: "2.5",
+  migrationDate: 1789760998636
 }
 ```
+
+The migration is pure and separately tested (`tests/schemaMigration26.tests.js`); the
+boot seam that runs it, keeps the pre-migration copy and clears undo history is pinned
+by the *a 2.5 document is migrated at boot* journey.
 
 ## Usage Example
 
 ```javascript
 // Loading data (via DI - AppState is injected, not accessed via window.*)
+import { getActiveRoutine } from '../utils/cycleMode.js';
 const state = this.deps.AppState.get();
-if (state.schemaVersion === "2.5") {
-  const activeCycle = state.data.cycles[state.appState.activeCycleId];
-  const isDarkMode = state.settings.darkMode;
-}
+const routine = getActiveRoutine(state);   // never spell data.routine[...] in a module
+const isDarkMode = state.settings.darkMode;
 
 // Updating data
 this.deps.AppState.update(state => {
@@ -554,5 +573,5 @@ This schema structure is also used in `.mcyc` file exports/imports, ensuring con
 - [DATA_SCHEMA_GUIDE.md](DATA_SCHEMA_GUIDE.md) - Schema guide with data flow
 - [types.js](../../modules/core/types.js) - Canonical JSDoc type definitions
 - [minicycle-recurring-guide.md](RECURRING_SYSTEM_REFERENCE.md) - Recurring task implementation
-- [SCHEMA_2_6_PLAN.md](../future-work/SCHEMA_2_6_PLAN.md) - Planned successor: `deleteWhenComplete*` → `autoClear`,
-  and optionally `cycles` → `routine`. Nothing on this page is deprecated yet — 2.5 is what ships.
+- [SCHEMA_2_6_PLAN.md](../future-work/SCHEMA_2_6_PLAN.md) - The plan this schema shipped from: decisions, the
+  reader sweeps, the migration's ordered steps and the release checklist.

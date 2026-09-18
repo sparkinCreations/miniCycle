@@ -40,8 +40,8 @@ export async function runOnboardingDemoTests(resultsDiv) {
         const messages = [];
         const subs = new Map();
         const store = {
-            appState: { activeCycleId: 'c1' },
-            data: { cycles: { c1: { tasks } } }
+            appState: { activeRoutineId: 'c1' },
+            data: { routine: { c1: { tasks } } }
         };
         const makeAppState = (backing) => ({
             get: () => backing,
@@ -58,8 +58,8 @@ export async function runOnboardingDemoTests(resultsDiv) {
             // construction keeps the OLD object and never sees this.
             swapAppState(newTasks) {
                 AppState = makeAppState({
-                    appState: { activeCycleId: 'c1' },
-                    data: { cycles: { c1: { tasks: newTasks } } }
+                    appState: { activeRoutineId: 'c1' },
+                    data: { routine: { c1: { tasks: newTasks } } }
                 });
             },
             _setFirstRunWelcomeMessageText(el, text) { messages.push(text); }

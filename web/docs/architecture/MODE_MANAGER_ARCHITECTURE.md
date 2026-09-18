@@ -363,8 +363,8 @@ async refreshTaskButtonsForModeChange() {
 
         // Get current cycle (required for recurring handler)
         const currentState = this.deps.AppState?.get();
-        const activeCycleId = currentState?.appState?.activeCycleId;
-        const currentCycle = currentState?.data?.cycles?.[activeCycleId];
+        const activeCycleId = currentState?.appState?.activeRoutineId;
+        const currentCycle = currentState?.data?.routine?.[activeCycleId];
         if (!currentCycle) return;
 
         tasks.forEach(task => {
@@ -472,8 +472,8 @@ const syncTogglesFromMode = async (selectedMode) => {
 async syncModeFromToggles() {
     const AppState = this.deps.AppState;
     const currentState = AppState?.get();
-    const activeCycle = currentState?.appState?.activeCycleId;
-    const currentCycle = currentState?.data?.cycles?.[activeCycle];
+    const activeCycle = currentState?.appState?.activeRoutineId;
+    const currentCycle = currentState?.data?.routine?.[activeCycle];
 
     let autoReset = false;
     let deleteChecked = false;
@@ -657,7 +657,7 @@ modes.forEach(fromMode => {
 ## Related Documentation
 
 - [USER_GUIDE.md](../user-guides/USER_GUIDE.md) - User-facing mode documentation
-- [SCHEMA_2_5.md](../reference/SCHEMA_2_5.md) - Data schema with mode settings
+- [SCHEMA_2_6.md](../reference/SCHEMA_2_6.md) - Data schema with mode settings
 - [TASK_OPTIONS_CUSTOMIZER.md](../features/TASK_OPTIONS_CUSTOMIZER.md) - Button customization system
 - [EVENT_FLOW_PATTERNS.md](./EVENT_FLOW_PATTERNS.md) - UI state management patterns
 

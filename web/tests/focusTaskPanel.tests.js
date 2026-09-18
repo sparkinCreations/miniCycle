@@ -65,8 +65,8 @@ export async function runFocusTaskPanelTests(resultsDiv) {
     };
 
     const makeState = (tasks, { cycleId = 'r1', autoReset = true, deleteCheckedTasks = false, cycleCount = 0 } = {}) => ({
-        data: { cycles: { [cycleId]: { tasks, autoReset, deleteCheckedTasks, cycleCount, title: 'Routine' } } },
-        appState: { activeCycleId: cycleId },
+        data: { routine: { [cycleId]: { tasks, autoReset, deleteCheckedTasks, cycleCount, title: 'Routine' } } },
+        appState: { activeRoutineId: cycleId },
         settings: {}, userProgress: {}
     });
 
@@ -140,7 +140,7 @@ export async function runFocusTaskPanelTests(resultsDiv) {
             // Cycle mode, opted IN to removal -> 🧹. The list shows the same via
             // SHOW_DELETE_INDICATOR; both read getTaskResetIndicator.
             let { panel } = await makeManager(makeState(
-                [T('a', false, { deleteWhenCompleteSettings: { cycle: true, todo: true } })]));
+                [T('a', false, { autoClear: { cycle: true, todo: true } })]));
             if (!shown()) throw new Error('cycle + delete-on-complete should show an indicator');
             if (el().textContent !== '🧹') throw new Error(`expected broom, got "${el().textContent}"`);
             if (!el().getAttribute('aria-label')) throw new Error('indicator must carry an accessible name');
@@ -149,7 +149,7 @@ export async function runFocusTaskPanelTests(resultsDiv) {
             // Cycle mode default (keep) -> nothing. Marking the unsurprising
             // case would make the indicator noise.
             ({ panel } = await makeManager(makeState(
-                [T('b', false, { deleteWhenCompleteSettings: { cycle: false, todo: true } })])));
+                [T('b', false, { autoClear: { cycle: false, todo: true } })])));
             if (shown()) throw new Error('cycle + keep is the default and should show nothing');
             if (el().getAttribute('aria-label')) throw new Error('hidden indicator must not keep a stale name');
             panel.destroy();
@@ -157,14 +157,14 @@ export async function runFocusTaskPanelTests(resultsDiv) {
             // Cycle mode, RECURRING + removal -> nothing: the recurring glyph
             // already implies it.
             ({ panel } = await makeManager(makeState(
-                [T('c', false, { recurring: true, deleteWhenCompleteSettings: { cycle: true, todo: true } })])));
+                [T('c', false, { recurring: true, autoClear: { cycle: true, todo: true } })])));
             if (shown()) throw new Error('recurring already implies removal; no broom');
             panel.destroy();
 
             // To-Do mode, opted OUT -> 📌. Inverse of cycle: here removal is the
             // default, so only survival is worth marking.
             ({ panel } = await makeManager(makeState(
-                [T('d', false, { deleteWhenCompleteSettings: { cycle: false, todo: false } })],
+                [T('d', false, { autoClear: { cycle: false, todo: false } })],
                 { deleteCheckedTasks: true })));
             if (!shown()) throw new Error('to-do + opted out should show an indicator');
             if (el().textContent !== '📌') throw new Error(`expected pin, got "${el().textContent}"`);
@@ -172,7 +172,7 @@ export async function runFocusTaskPanelTests(resultsDiv) {
 
             // To-Do default (delete) -> nothing.
             ({ panel } = await makeManager(makeState(
-                [T('e', false, { deleteWhenCompleteSettings: { cycle: false, todo: true } })],
+                [T('e', false, { autoClear: { cycle: false, todo: true } })],
                 { deleteCheckedTasks: true })));
             if (shown()) throw new Error('to-do + delete is the default and should show nothing');
             panel.destroy();
@@ -395,7 +395,7 @@ export async function runFocusTaskPanelTests(resultsDiv) {
             }
             // Browse back to the (now checked in DOM) task and uncheck it —
             // simulate state agreement first
-            AppState.get().data.cycles.r1.tasks[0].completed = true;
+            AppState.get().data.routine.r1.tasks[0].completed = true;
             panel.render();
             document.getElementById('focus-task-prev-btn').click();
             document.getElementById('focus-task-complete-btn').click(); // uncheck path
@@ -413,13 +413,13 @@ export async function runFocusTaskPanelTests(resultsDiv) {
         try {
             // Stored as habit-tracker's dark red; the routine is classic, so the
             // card shows classic's High — the same colour the task row shows.
-            const { panel, AppState } = await makeManager(makeState([T('a', false, { highPriority: true, priorityColor: '#8b1a1a' })]));
+            const { panel, AppState } = await makeManager(makeState([T('a', false, { priority: 'high' })]));
             const card = host.querySelector('.focus-task-card');
             if (card.style.getPropertyValue('--focus-task-priority') !== '#dc3545') {
                 throw new Error(`Priority var should be classic's High, got ${card.style.getPropertyValue('--focus-task-priority')}`);
             }
-            const themed = makeState([T('a', false, { highPriority: true, priorityColor: '#facc15' })]);
-            themed.data.cycles.r1.theme = 'habit-tracker';
+            const themed = makeState([T('a', false, { priority: 'medium' })]);
+            themed.data.routine.r1.theme = 'habit-tracker';
             AppState._emit(themed, AppState.get());
             if (card.style.getPropertyValue('--focus-task-priority') !== '#7a4d00') {
                 throw new Error(`Medium under habit-tracker should be #7a4d00, got ${card.style.getPropertyValue('--focus-task-priority')}`);

@@ -117,10 +117,10 @@ console.log(appState.get());
 
 // Check active cycle
 const state = appState.get();
-console.log(state.data.cycles[state.appState.activeCycleId]);
+console.log(state.data.routine[state.appState.activeRoutineId]);
 
 // Check all tasks
-const cycle = state.data.cycles[state.appState.activeCycleId];
+const cycle = state.data.routine[state.appState.activeRoutineId];
 console.log(cycle.tasks);
 
 // Test notification system
@@ -129,7 +129,7 @@ ui().showNotification('Test message', 'info', 3000);
 
 // Check recurring templates
 const state = appState.get();
-const cycle = state.data.cycles[state.appState.activeCycleId];
+const cycle = state.data.routine[state.appState.activeRoutineId];
 console.log(cycle.recurringTemplates);
 ```
 
@@ -212,7 +212,7 @@ const newTask = {
     id: generateId('task'),
     text: "My task",
     completed: false,
-    highPriority: false,
+    priority: null,
     dueDate: null,
     remindersEnabled: false,
     recurring: false,

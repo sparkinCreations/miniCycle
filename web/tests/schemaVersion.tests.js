@@ -55,13 +55,13 @@ export async function runSchemaVersionTests(resultsDiv) {
     await test('classifies a stored document against the current version', () => {
         if (classifyStoredVersion({ schemaVersion: SCHEMA.CURRENT }) !== 'current') throw new Error('current');
         if (classifyStoredVersion({ schemaVersion: '2.4' }) !== 'older') throw new Error('older');
-        if (classifyStoredVersion({ schemaVersion: '2.6' }) !== 'newer') throw new Error('newer');
-        if (classifyStoredVersion({ schemaVersion: '2.10' }) !== 'newer') throw new Error('"2.10" is newer than "2.5", not older');
+        if (classifyStoredVersion({ schemaVersion: '2.7' }) !== 'newer') throw new Error('newer');
+        if (classifyStoredVersion({ schemaVersion: '2.10' }) !== 'newer') throw new Error('"2.10" is newer than "2.6", not older');
         if (classifyStoredVersion({ schemaVersion: '3.0' }) !== 'newer') throw new Error('next major is newer');
     });
 
     await test('falls back to metadata.schemaVersion and reports unknown for the rest', () => {
-        if (classifyStoredVersion({ metadata: { schemaVersion: '2.6' } }) !== 'newer') throw new Error('metadata fallback');
+        if (classifyStoredVersion({ metadata: { schemaVersion: '2.7' } }) !== 'newer') throw new Error('metadata fallback');
         for (const doc of [{}, null, undefined, { schemaVersion: 'legacy' }, { schemaVersion: null }]) {
             if (classifyStoredVersion(doc) !== 'unknown') throw new Error(`expected unknown for ${JSON.stringify(doc)}`);
         }

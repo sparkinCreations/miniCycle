@@ -27,7 +27,7 @@
         lastModified: 1696723445123,         // Unix timestamp
         migratedFrom: "2.0",                 // Previous schema version (null when fresh)
         migrationDate: "2025-10-07",         // Migration date (null when fresh)
-        totalCyclesCreated: 5,               // Total cycles ever created
+        totalRoutinesCreated: 5,               // Total cycles ever created
         totalCyclesCompleted: 12,            // Total cycles ever completed
         schemaVersion: "2.5"                 // Also stamped here, not just at the root
         // NOT here: `appVersion`, `migrationHistory` and `totalTasksCompleted`
@@ -36,9 +36,9 @@
     },
 
     data: {
-        cycles: {
+        routine: {
             // ⚠️ Cycles are keyed by TITLE, not by id — creation, rename,
-            // duplication, and import all write `cycles[title]`. Titles are
+            // duplication, and import all write `routine[<generated id>]`; `title` is the name. Ids are
             // therefore unique (getUniqueCycleName), and renaming rekeys the
             // map entry. The `id` field is internal metadata and does NOT
             // match the key (no code currently reads it).
@@ -57,7 +57,7 @@
                         id: "task-xyz789",
                         text: "☕ Make coffee",
                         completed: false,
-                        highPriority: false,
+                        priority: null,
                         dueDate: null,           // ISO string or null
                         remindersEnabled: false,
                         recurring: false,
@@ -65,13 +65,12 @@
                         schemaVersion: 2,     // per-task shape version (number)
                         createdAt: "2025-10-07T09:00:00.000Z",
                         completedAt: null,       // ISO string or null
-                        deleteWhenComplete: false
                     }
                 ],
                 recurringTemplates: {
                     "template-def456": {
                         taskText: "💊 Take medication",
-                        highPriority: true,
+                        priority: 'high',
                         dueDate: null,
                         remindersEnabled: true,
                         recurringSettings: {
@@ -97,21 +96,19 @@
                     customize: true,
                     moveArrows: false,
                     threeDots: false,
-                    highPriority: true,
+                    priority: 'high',
                     rename: true,
                     delete: true,
                     recurring: false,
                     dueDate: false,
                     reminders: false,
-                    deleteWhenComplete: false
                 }
             }
         }
     },
 
     appState: {
-        activeCycleId: "Morning Routine",    // ⚠️ Holds the active cycle's TITLE
-                                             // (the cycles-map key), not the id
+        activeRoutineId: "routine-1789760998636-bqphapbbc", // The active routine's generated id
                                              // field — the name is a legacy artifact.
         overdueTaskStates: {}                // {[taskId]: boolean}
         // Mode is NOT stored here — derived from the cycle's autoReset/deleteCheckedTasks.
@@ -119,7 +116,7 @@
 
     ui: {                                    // ⚠️ OPTIONAL — created on demand, not part of
                                              // the minimal valid shape (validateSchema25Structure
-                                             // requires only schemaVersion, data.cycles, appState)
+                                             // requires only schemaVersion, data.routine, appState)
         moveArrowsVisible: false,
         activeTaskId: null                   // Task ID whose options panel is open
     },
@@ -148,7 +145,7 @@
         fontSize: "16",
         debugMode: false
         // …plus tour-step trackers, customColors, savedColorPresets,
-        // menuCollapsedSections, settingsCollapsedSections. Full list: SCHEMA_2_5.md / types.js.
+        // menuCollapsedSections, settingsCollapsedSections. Full list: SCHEMA_2_6.md / types.js.
     },
 
     customReminders: {
@@ -171,7 +168,7 @@
         // NOT here (both were listed as placeholders; neither is a field the app writes):
         //  • `achievementsUnlocked` — superseded. Achievements live in the TOP-LEVEL
         //    `achievements` object ({ unlocked: [], seen: {} }), which is what
-        //    achievementsManager reads and writes. See SCHEMA_2_5.md.
+        //    achievementsManager reads and writes. See SCHEMA_2_6.md.
         //  • `streaks` — never implemented. types.js declares a `StreakData`
         //    typedef, but no code path writes one. (Searching for "streaks" mostly
         //    hits the habit-tracker VOCAB THEME, which renames "cycle" to "streak"
@@ -226,7 +223,7 @@ function addTask(taskText) {
         id: taskId,
         text: taskText,
         completed: false,
-        highPriority: false,
+        priority: null,
         dueDate: null,
         remindersEnabled: false,
         recurring: false,
@@ -234,13 +231,12 @@ function addTask(taskText) {
         schemaVersion: 2,     // per-task shape version (number)
         createdAt: new Date().toISOString(),
         completedAt: null,
-        deleteWhenComplete: false
     };
 
     // 3. Update AppState (via injected dependency)
     this.deps.AppState.update((state) => {
-        const activeCycleId = state.appState.activeCycleId;
-        state.data.cycles[activeCycleId].tasks.push(newTask);
+        const activeCycleId = state.appState.activeRoutineId;
+        state.data.routine[activeCycleId].tasks.push(newTask);
     }, true);  // true = save immediately
 
     // 4. Update DOM

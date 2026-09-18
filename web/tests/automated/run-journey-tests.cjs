@@ -67,9 +67,9 @@ function readActiveCycleInPage() {
     try { parsed = JSON.parse(localStorage.getItem('miniCycleData') || 'null'); }
     catch { return null; }
     if (!parsed) return null;
-    const cycles = (parsed.data && parsed.data.cycles) || parsed.cycles;
+    const cycles = (parsed.data && parsed.data.routine) || parsed.routine;
     if (!cycles || typeof cycles !== 'object') return null;
-    const activeId = (parsed.appState && parsed.appState.activeCycleId)
+    const activeId = (parsed.appState && parsed.appState.activeRoutineId)
         || parsed.activeCycle || parsed.lastActiveCycle;
     const cycle = (activeId && cycles[activeId]) || Object.values(cycles)[0];
     if (!cycle) return null;
@@ -178,7 +178,7 @@ async function openFresh(browser, baseURL, opts = {}) {
     await page.waitForFunction(() => {
         try {
             const p = JSON.parse(localStorage.getItem('miniCycleData') || 'null');
-            const cycles = p && ((p.data && p.data.cycles) || p.cycles);
+            const cycles = p && ((p.data && p.data.routine) || p.routine);
             return cycles && Object.keys(cycles).length > 0;
         } catch { return false; }
     }, null, { timeout: 20000 });
@@ -258,7 +258,7 @@ async function journeyCore(browser, baseURL) {
         await page.waitForFunction((n) => {
             try {
                 const p = JSON.parse(localStorage.getItem('miniCycleData') || 'null');
-                const cycles = p && ((p.data && p.data.cycles) || p.cycles);
+                const cycles = p && ((p.data && p.data.routine) || p.routine);
                 return cycles && Object.values(cycles).some(c => Array.isArray(c.tasks) && c.tasks.length >= n);
             } catch { return false; }
         }, startCount + 2, { timeout: 10000 }).catch(() => {});
@@ -285,7 +285,7 @@ async function journeyCore(browser, baseURL) {
             await page.waitForFunction((prev) => {
                 try {
                     const p = JSON.parse(localStorage.getItem('miniCycleData') || 'null');
-                    const cycles = p && ((p.data && p.data.cycles) || p.cycles);
+                    const cycles = p && ((p.data && p.data.routine) || p.routine);
                     return cycles && Object.values(cycles).some(c => (c.cycleCount || 0) > prev);
                 } catch { return false; }
             }, startCycleCount, { timeout: 15000 });
@@ -371,7 +371,7 @@ async function journeyRoutineSwitch(browser, baseURL) {
         await page.waitForFunction((prev) => {
             try {
                 const p = JSON.parse(localStorage.getItem('miniCycleData') || 'null');
-                return p && p.appState && p.appState.activeCycleId && p.appState.activeCycleId !== prev;
+                return p && p.appState && p.appState.activeRoutineId && p.appState.activeRoutineId !== prev;
             } catch { return false; }
         }, origId, { timeout: 15000 });
         await bootApp(page);
@@ -408,7 +408,7 @@ async function journeyRoutineSwitch(browser, baseURL) {
         await page.waitForFunction((target) => {
             try {
                 const p = JSON.parse(localStorage.getItem('miniCycleData') || 'null');
-                return p && p.appState && p.appState.activeCycleId === target;
+                return p && p.appState && p.appState.activeRoutineId === target;
             } catch { return false; }
         }, origId, { timeout: 15000 });
         await bootApp(page);
@@ -577,7 +577,7 @@ async function journeyRecurring(browser, baseURL) {
         await page.waitForFunction(() => {
             try {
                 const p = JSON.parse(localStorage.getItem('miniCycleData') || 'null');
-                const cycles = p && ((p.data && p.data.cycles) || p.cycles);
+                const cycles = p && ((p.data && p.data.routine) || p.routine);
                 return cycles && Object.values(cycles).some(c => {
                     const rt = c.recurringTemplates;
                     return rt && (Array.isArray(rt) ? rt.length : Object.keys(rt).length) > 0;
@@ -632,7 +632,7 @@ async function journeyTodoMode(browser, baseURL) {
         record('To-Do mode control present', switched, 'no #deleteCheckedTasks control');
         await page.waitForFunction(() => {
             const p = JSON.parse(localStorage.getItem('miniCycleData') || 'null');
-            const cycles = p && p.data && p.data.cycles;
+            const cycles = p && p.data && p.data.routine;
             return cycles && Object.values(cycles).some(c => c.deleteCheckedTasks === true);
         }, null, { timeout: 10000 }).catch(() => {});
 
@@ -643,7 +643,7 @@ async function journeyTodoMode(browser, baseURL) {
 
         const after = await page.evaluate(() => {
             const p = JSON.parse(localStorage.getItem('miniCycleData') || 'null');
-            const cycles = (p && p.data && p.data.cycles) || {};
+            const cycles = (p && p.data && p.data.routine) || {};
             const cycle = Object.values(cycles)[0] || {};
             return {
                 remaining: Array.isArray(cycle.tasks) ? cycle.tasks.length : -1,
@@ -740,21 +740,21 @@ async function journeyTodoStatsSync(browser, baseURL) {
 
         const derived = await page.evaluate(() => {
             const p = JSON.parse(localStorage.getItem('miniCycleData') || 'null');
-            const id = p.appState.activeCycleId;
-            const tasks = p.data.cycles[id].tasks || [];
-            return { todo: p.data.cycles[id].deleteCheckedTasks === true,
-                     dwc: tasks.filter(t => t.deleteWhenComplete === true).length, total: tasks.length };
+            const id = p.appState.activeRoutineId;
+            const tasks = p.data.routine[id].tasks || [];
+            return { todo: p.data.routine[id].deleteCheckedTasks === true,
+                     dwc: tasks.filter(t => t.autoClear && t.autoClear.todo === true).length, total: tasks.length };
         });
-        record('To-Do mode set and deleteWhenComplete derived', derived.todo && derived.dwc >= 2,
-            `todo=${derived.todo} deleteWhenComplete on ${derived.dwc}/${derived.total} tasks ` +
-            `(the Clear button only deletes tasks carrying this flag)`);
+        record('To-Do mode set and every task clears in it (autoClear.todo)', derived.todo && derived.dwc >= 2,
+            `todo=${derived.todo} autoClear.todo on ${derived.dwc}/${derived.total} tasks ` +
+            `(the Clear button only deletes tasks whose map says so)`);
 
         // Mark two complete in storage and reload — the "reopened the app with
         // completed tasks still listed" state.
         await page.evaluate(() => {
             const p = JSON.parse(localStorage.getItem('miniCycleData'));
-            const id = p.appState.activeCycleId;
-            p.data.cycles[id].tasks.slice(0, 2).forEach(t => { t.completed = true; });
+            const id = p.appState.activeRoutineId;
+            p.data.routine[id].tasks.slice(0, 2).forEach(t => { t.completed = true; });
             localStorage.setItem('miniCycleData', JSON.stringify(p));
         });
         await page.reload({ waitUntil: 'domcontentloaded', timeout: 20000 });
@@ -774,7 +774,7 @@ async function journeyTodoStatsSync(browser, baseURL) {
         // tasks, so the expected remainder has to be derived, not hard-coded.
         const pre = await page.evaluate(() => {
             const p = JSON.parse(localStorage.getItem('miniCycleData'));
-            const tasks = p.data.cycles[p.appState.activeCycleId].tasks || [];
+            const tasks = p.data.routine[p.appState.activeRoutineId].tasks || [];
             return { total: tasks.length, completed: tasks.filter(t => t.completed === true).length };
         });
         record('two tasks are completed and awaiting the clear', pre.completed === 2,
@@ -792,8 +792,8 @@ async function journeyTodoStatsSync(browser, baseURL) {
                 .replace(/\s+/g, ' ').trim();
             const m = panelText.match(/(\d+) of (\d+) tasks? Completed/);
             const p = JSON.parse(localStorage.getItem('miniCycleData') || 'null');
-            const id = p.appState.activeCycleId;
-            const tasks = (p.data.cycles[id] || {}).tasks || [];
+            const id = p.appState.activeRoutineId;
+            const tasks = (p.data.routine[id] || {}).tasks || [];
             return {
                 panelText,
                 panelCompleted: m ? Number(m[1]) : null,
@@ -877,7 +877,7 @@ async function journeyFactoryResetRepeat(browser, baseURL) {
         await page.evaluate(() => document.querySelector('.first-run-btn[data-choice="learn"]')?.click());
         await page.waitForFunction(() => {
             const p = JSON.parse(localStorage.getItem('miniCycleData') || 'null');
-            return p && Object.keys((p.data && p.data.cycles) || {}).length > 0;
+            return p && Object.keys((p.data && p.data.routine) || {}).length > 0;
         }, null, { timeout: 25000 });
         await page.waitForTimeout(2500);
         await page.evaluate(() => document.getElementById('first-run-welcome-dismiss')?.click());
@@ -896,7 +896,7 @@ async function journeyFactoryResetRepeat(browser, baseURL) {
             const state = await page.evaluate(() => {
                 const p = JSON.parse(localStorage.getItem('miniCycleData') || 'null');
                 return {
-                    cycles: Object.keys((p && p.data && p.data.cycles) || {}).length,
+                    cycles: Object.keys((p && p.data && p.data.routine) || {}).length,
                     forcedFull: localStorage.getItem('miniCycleForceFullVersion'),
                     plugin: localStorage.getItem('timeTrackerData')
                 };
@@ -909,7 +909,7 @@ async function journeyFactoryResetRepeat(browser, baseURL) {
                 await seedViaLearn();
                 const after = await page.evaluate(() => {
                     const p = JSON.parse(localStorage.getItem('miniCycleData') || 'null');
-                    return Object.keys((p && p.data && p.data.cycles) || {}).length;
+                    return Object.keys((p && p.data && p.data.routine) || {}).length;
                 });
                 record(`pass ${pass}: pick routes via the re-armed handler`, after > 0,
                     'clicking a choice button did nothing — no handler was bound');
@@ -1175,12 +1175,14 @@ async function journeyFirstRunRestore(browser, baseURL) {
                 let cycles = [];
                 try {
                     const parsed = JSON.parse(localStorage.getItem('miniCycleData') || '{}');
-                    cycles = Object.keys((parsed.data && parsed.data.cycles) || {});
+                    // Titles, not keys: a restored 2.5 backup is migrated at the reload
+                    // and its routines re-keyed by generated id.
+                    cycles = Object.values((parsed.data && parsed.data.routine) || {}).map(r => r.title);
                 } catch (e) { /* unreadable — reported as "no cycles" below */ }
                 return { cycles, evil: localStorage.getItem('evilKey') };
             });
 
-            const restored = seen.cycles.includes('restored');
+            const restored = seen.cycles.includes('Restored Routine');
             record(`${file.label}: ${file.expectRestore ? 'restores' : 'is rejected'}`,
                 restored === file.expectRestore,
                 file.expectRestore
@@ -1303,7 +1305,7 @@ async function journeyFirstRunStateContract(browser, baseURL) {
         await page.waitForFunction(() => {
             try {
                 const p = JSON.parse(localStorage.getItem('miniCycleData') || 'null');
-                const cycles = p && ((p.data && p.data.cycles) || p.cycles);
+                const cycles = p && ((p.data && p.data.routine) || p.routine);
                 return cycles && Object.keys(cycles).length > 0;
             } catch { return false; }
         }, null, { timeout: 20000 });
@@ -1438,35 +1440,27 @@ async function journeyFirstRunQuickActions(browser, baseURL) {
     return { name: 'quick actions are writable during a first-run session', failures };
 }
 
-// ── Journey 14: the delete-mirror reconciles, and KEEP is honoured ─────────
-// Two fields describe one behaviour: `deleteWhenCompleteSettings {cycle,todo}`
-// is the durable truth, `deleteWhenComplete` a flat mirror. They can arrive
-// DISAGREEING — measured: a shared .mcyc that omits both (the shape the public
-// schema tells authors to write) imports with mirror `true` and settings.cycle
-// `false`. And the two paths read different fields: taskDOM renders through
-// resolveAutoClear() while taskCycleReset.js deletes on the raw mirror
-// (:340, :741).
-//
-// The reason that is safe is NOT obvious and nothing asserted it: boot
-// re-derives the mirror from the map and writes the corrected value back to
-// storage before the user can complete anything. This journey pins that
-// reconciliation explicitly, and then the outcome that depends on it — a task
-// whose stored setting says KEEP survives a cycle reset. Asserting only the
-// survival would let a silent removal of the write-back pass on luck.
+// ── Journey 14: an imported KEEP setting is honoured across a reset ─────────
+// Until Schema 2.6 two fields described one behaviour (a per-mode map and a
+// flat mirror that arrived disagreeing on every import), and boot had to
+// reconcile them before the reset path read the wrong one. The map is the
+// only stored value now (`autoClear`), so the journey pins the outcome that
+// used to depend on that reconciliation: a task whose stored setting says
+// KEEP survives a cycle reset, and boot leaves a complete map on it.
 //
 // It seeds the SHAPE the importer produces rather than driving a file import;
-// the unit tests own "the importer emits this", this owns "the app reconciles
-// it and honours the user's setting".
+// the unit tests own "the importer emits this", this owns "the app honours
+// the user's setting".
 async function journeyImportedKeepOnReset(browser, baseURL) {
     const { failures, record } = makeRecorder();
     const { context, page } = await openFresh(browser, baseURL);
     try {
         // Exactly what cycleImportManager produces for `{name, tasks:[{id,text}]}`:
-        // mirror true, per-mode settings {cycle:false, todo:true}.
+        // per-mode map {cycle:false, todo:true}.
         await page.evaluate(() => {
             const parsed = JSON.parse(localStorage.getItem('miniCycleData'));
             const id = 'imported-routine';
-            parsed.data.cycles[id] = {
+            parsed.data.routine[id] = {
                 id,
                 title: 'Imported Routine',
                 autoReset: true,
@@ -1480,17 +1474,15 @@ async function journeyImportedKeepOnReset(browser, baseURL) {
                     text: 'Keep me on reset',
                     completed: false,
                     dueDate: null,
-                    highPriority: false,
-                    priorityColor: null,
+                    priority: null,
                     remindersEnabled: false,
                     recurring: false,
                     recurringSettings: {},
-                    deleteWhenComplete: true,                              // the mirror
-                    deleteWhenCompleteSettings: { cycle: false, todo: true }, // the truth
+                    autoClear: { cycle: false, todo: true },
                     schemaVersion: 2
                 }]
             };
-            parsed.appState.activeCycleId = id;
+            parsed.appState.activeRoutineId = id;
             localStorage.setItem('miniCycleData', JSON.stringify(parsed));
         });
 
@@ -1501,7 +1493,7 @@ async function journeyImportedKeepOnReset(browser, baseURL) {
         const storedTasks = () => page.evaluate(() => {
             try {
                 const p = JSON.parse(localStorage.getItem('miniCycleData'));
-                const c = p.data.cycles[p.appState.activeCycleId];
+                const c = p.data.routine[p.appState.activeRoutineId];
                 return (c.tasks || []).map(t => t.id);
             } catch (e) { return null; }
         });
@@ -1512,19 +1504,17 @@ async function journeyImportedKeepOnReset(browser, baseURL) {
         const beforeCount = await taskCount(page);
         record('the task rendered', beforeCount >= 1, `${beforeCount} task rows`);
 
-        // THE MECHANISM. Boot must converge the flat mirror onto the canonical
-        // per-mode setting IN STORAGE — not just in the DOM dataset, because the
-        // reset path reads task data, not the element.
-        const reconciled = await page.evaluate(() => {
+        // Boot must leave the per-mode map complete IN STORAGE — the reset path
+        // reads task data, not the element — and must not have invented a
+        // mirror field beside it.
+        const stored = await page.evaluate(() => {
             const p = JSON.parse(localStorage.getItem('miniCycleData'));
-            const t = p.data.cycles[p.appState.activeCycleId].tasks[0];
-            return { mirror: t.deleteWhenComplete, canonical: t.deleteWhenCompleteSettings.cycle };
+            const t = p.data.routine[p.appState.activeRoutineId].tasks[0];
+            return { cycle: t.autoClear && t.autoClear.cycle, todo: t.autoClear && t.autoClear.todo, mirror: 'deleteWhenComplete' in t };
         });
-        record('boot reconciles the delete-mirror with the canonical setting',
-            reconciled.mirror === reconciled.canonical,
-            `stored deleteWhenComplete=${reconciled.mirror} but deleteWhenCompleteSettings.cycle=` +
-            `${reconciled.canonical} — the write-back that makes the two-field design safe is gone, ` +
-            'so the reset below is deciding on a stale mirror');
+        record('boot keeps a complete autoClear map on the imported task and no 2.5 mirror',
+            stored.cycle === false && stored.todo === true && stored.mirror === false,
+            `stored autoClear=${JSON.stringify(stored)}`);
 
         // Complete it — in cycle mode with autoReset on, that fires the reset.
         await page.evaluate(() => {
@@ -1540,7 +1530,7 @@ async function journeyImportedKeepOnReset(browser, baseURL) {
             await page.waitForFunction(() => {
                 try {
                     const p = JSON.parse(localStorage.getItem('miniCycleData'));
-                    const c = p.data.cycles[p.appState.activeCycleId];
+                    const c = p.data.routine[p.appState.activeRoutineId];
                     return (c.cycleCount || 0) > 0;
                 } catch (e) { return false; }
             }, null, { timeout: 15000 });
@@ -1591,15 +1581,15 @@ async function journeyImportKeepsOrphanTemplates(browser, baseURL) {
             title: 'Between Occurrences',
             tasks: [{
                 id: 'plain-task', text: 'Make bed', completed: false, dueDate: null,
-                highPriority: false, priorityColor: null, remindersEnabled: false,
-                recurring: false, recurringSettings: {}, deleteWhenComplete: false,
-                deleteWhenCompleteSettings: { cycle: false, todo: true }, schemaVersion: 2
+                priority: null, remindersEnabled: false,
+                recurring: false, recurringSettings: {},
+                autoClear: { cycle: false, todo: true }, schemaVersion: 2
             }],
             // The template with NO live task — what a cycle reset leaves behind.
             recurringTemplates: {
                 'orphan-task': {
-                    id: 'orphan-task', text: 'Water the plants', highPriority: true,
-                    priorityColor: null, remindersEnabled: false,
+                    id: 'orphan-task', text: 'Water the plants', priority: 'high',
+                     remindersEnabled: false,
                     recurringSettings: { frequency: 'hourly', indefinitely: true, time: null },
                     nextScheduledOccurrence: '2020-01-01T09:00:00.000Z',
                     createdAt: 1750000000000
@@ -1635,7 +1625,7 @@ async function journeyImportKeepsOrphanTemplates(browser, baseURL) {
         const imported = () => page.evaluate(() => {
             try {
                 const p = JSON.parse(localStorage.getItem('miniCycleData'));
-                const c = p.data.cycles[p.appState.activeCycleId];
+                const c = p.data.routine[p.appState.activeRoutineId];
                 return {
                     title: c.title,
                     taskTexts: (c.tasks || []).map(t => t.text),
@@ -1671,7 +1661,7 @@ async function journeyImportKeepsOrphanTemplates(browser, baseURL) {
         // reads the carried-over template cold from storage.
         await page.evaluate(() => {
             const p = JSON.parse(localStorage.getItem('miniCycleData'));
-            const c = p.data.cycles[p.appState.activeCycleId];
+            const c = p.data.routine[p.appState.activeRoutineId];
             for (const k of Object.keys(c.recurringTemplates || {})) {
                 c.recurringTemplates[k].nextScheduledOccurrence = Date.now() - 60000;
             }
@@ -1685,7 +1675,7 @@ async function journeyImportKeepsOrphanTemplates(browser, baseURL) {
             await page.waitForFunction(() => {
                 try {
                     const p = JSON.parse(localStorage.getItem('miniCycleData'));
-                    const c = p.data.cycles[p.appState.activeCycleId];
+                    const c = p.data.routine[p.appState.activeRoutineId];
                     return (c.tasks || []).some(t => t.text === 'Water the plants');
                 } catch (e) { return false; }
             }, null, { timeout: 30000 });
@@ -1730,10 +1720,9 @@ async function journeyImportTemplateTaskCollision(browser, baseURL) {
             name: 'collision', title: 'Collision Routine',
             tasks: [{
                 id: 'X', text: 'Make bed', completed: false, dueDate: null,
-                highPriority: false, priorityColor: null, remindersEnabled: false,
+                priority: null, remindersEnabled: false,
                 recurring: false, recurringSettings: {},          // the authority: NOT recurring
-                deleteWhenComplete: false,
-                deleteWhenCompleteSettings: { cycle: false, todo: true }, schemaVersion: 2
+                autoClear: { cycle: false, todo: true }, schemaVersion: 2
             }],
             recurringTemplates: {                                  // stray entry for the SAME id
                 'X': {
@@ -1769,7 +1758,7 @@ async function journeyImportTemplateTaskCollision(browser, baseURL) {
         const after = await page.evaluate(() => {
             try {
                 const p = JSON.parse(localStorage.getItem('miniCycleData'));
-                const c = p.data.cycles[p.appState.activeCycleId];
+                const c = p.data.routine[p.appState.activeRoutineId];
                 return {
                     title: c.title,
                     tasks: (c.tasks || []).map(t => ({ id: t.id, recurring: t.recurring === true })),
@@ -1821,12 +1810,11 @@ async function journeyArrowReorderMovesTheRightTask(browser, baseURL) {
         const seed = async (texts, opts = {}) => {
             await page.evaluate(({ texts, opts }) => {
                 const d = JSON.parse(localStorage.getItem('miniCycleData'));
-                const c = d.data.cycles[d.appState.activeCycleId];
+                const c = d.data.routine[d.appState.activeRoutineId];
                 c.tasks = texts.map((t, i) => ({
-                    id: 't' + i, text: t, completed: false, dueDate: null, highPriority: false,
-                    priorityColor: null, remindersEnabled: false, recurring: false,
-                    recurringSettings: {}, deleteWhenComplete: false,
-                    deleteWhenCompleteSettings: { cycle: false, todo: true }, schemaVersion: 2
+                    id: 't' + i, text: t, completed: false, dueDate: null, priority: null, remindersEnabled: false, recurring: false,
+                    recurringSettings: {},
+                    autoClear: { cycle: false, todo: true }, schemaVersion: 2
                 }));
                 c.recurringTemplates = {};
                 c.autoReset = false;              // completing must not fire a cycle reset here
@@ -1844,7 +1832,7 @@ async function journeyArrowReorderMovesTheRightTask(browser, baseURL) {
 
         const stored = () => page.evaluate(() => {
             const d = JSON.parse(localStorage.getItem('miniCycleData'));
-            return (d.data.cycles[d.appState.activeCycleId].tasks || []).map(t => t.text);
+            return (d.data.routine[d.appState.activeRoutineId].tasks || []).map(t => t.text);
         });
         const domOrder = () => page.evaluate(() =>
             [...document.querySelectorAll('#taskList .task .task-text')].map(e => e.textContent));
@@ -1950,7 +1938,7 @@ async function seedViaLearnOn(page) {
         () => !!document.querySelector('.first-run-btn[data-choice="learn"]'), null, { timeout: 25000 });
     await page.evaluate(() => document.querySelector('.first-run-btn[data-choice="learn"]')?.click());
     await page.waitForFunction(() => {
-        try { return Object.keys(JSON.parse(localStorage.getItem('miniCycleData')).data.cycles).length > 0; }
+        try { return Object.keys(JSON.parse(localStorage.getItem('miniCycleData')).data.routine).length > 0; }
         catch (e) { return false; }
     }, null, { timeout: 25000 });
     await page.waitForTimeout(2500);
@@ -1965,7 +1953,7 @@ async function seedViaLearnOn(page) {
 const storedCycleKeys = (page) => page.evaluate(() => {
     try {
         const d = JSON.parse(localStorage.getItem('miniCycleData') || 'null');
-        return d ? Object.keys(d.data.cycles) : [];
+        return d ? Object.keys(d.data.routine) : [];
     } catch (e) { return 'unreadable'; }
 });
 
@@ -2016,7 +2004,7 @@ async function journeyResetTwoTabs(browser, baseURL) {
                 || `${path}?v=${globalThis.APP_VERSION}`;
             const { getStateManager } = await import(url('/modules/core/appState.js'));
             const d = getStateManager().get();
-            return d ? Object.keys(d.data.cycles) : null;
+            return d ? Object.keys(d.data.routine) : null;
         });
         record('the other tab is not holding the deleted routine', !(bMemory && bMemory.length > 0),
             `tab B still has ${JSON.stringify(bMemory)} in memory`);
@@ -2053,17 +2041,15 @@ async function journeyResetClearsRenderedState(browser, baseURL) {
         // A routine with values worth going stale: a completed task and 42 cycles.
         await page.evaluate(() => {
             const d = JSON.parse(localStorage.getItem('miniCycleData'));
-            d.data.cycles.rich = {
+            d.data.routine.rich = {
                 id: 'rich', title: 'RICH ROUTINE', autoReset: true, deleteCheckedTasks: false,
                 cycleCount: 42, recurringTemplates: {},
                 history: { events: [], maxEvents: 100 },
                 clearedTasks: { entries: [], totalCleared: 7, autoPruneEnabled: false },
-                tasks: [{ id: 'a', text: 'DONE TASK', completed: true, dueDate: null, highPriority: false,
-                    priorityColor: null, remindersEnabled: false, recurring: false, recurringSettings: {},
-                    deleteWhenComplete: false, deleteWhenCompleteSettings: { cycle: false, todo: true },
+                tasks: [{ id: 'a', text: 'DONE TASK', completed: true, dueDate: null, priority: null, remindersEnabled: false, recurring: false, recurringSettings: {}, autoClear: { cycle: false, todo: true },
                     schemaVersion: 2 }]
             };
-            d.appState.activeCycleId = 'rich';
+            d.appState.activeRoutineId = 'rich';
             d.userProgress = d.userProgress || {};
             d.userProgress.cyclesCompleted = 42;
             localStorage.setItem('miniCycleData', JSON.stringify(d));
@@ -2165,8 +2151,8 @@ async function journeyBadgeCrossAxis(browser, baseURL) {
         // Habit Tracker (tier 5) earned by CLEARING, never by cycling.
         await page.evaluate(() => {
             const d = JSON.parse(localStorage.getItem('miniCycleData'));
-            const id = d.appState.activeCycleId;
-            d.data.cycles[id].deleteCheckedTasks = false;   // CYCLE mode
+            const id = d.appState.activeRoutineId;
+            d.data.routine[id].deleteCheckedTasks = false;   // CYCLE mode
             d.userProgress = d.userProgress || {};
             d.userProgress.cyclesCompleted = 0;
             d.userProgress.totalTasksCompleted = 5;
@@ -2319,12 +2305,11 @@ async function journeyCompleteButtonSurvivesDropdown(browser, baseURL) {
         const seed = async (completed) => {
             await page.evaluate((completed) => {
                 const d = JSON.parse(localStorage.getItem('miniCycleData'));
-                const c = d.data.cycles[d.appState.activeCycleId];
+                const c = d.data.routine[d.appState.activeRoutineId];
                 c.tasks = ['One', 'Two', 'Three'].map((t, i) => ({
-                    id: 'cb' + i, text: t, completed, dueDate: null, highPriority: false,
-                    priorityColor: null, remindersEnabled: false, recurring: false,
-                    recurringSettings: {}, deleteWhenComplete: false,
-                    deleteWhenCompleteSettings: { cycle: false, todo: true }, schemaVersion: 2
+                    id: 'cb' + i, text: t, completed, dueDate: null, priority: null, remindersEnabled: false, recurring: false,
+                    recurringSettings: {},
+                    autoClear: { cycle: false, todo: true }, schemaVersion: 2
                 }));
                 c.recurringTemplates = {};
                 c.autoReset = false;            // manual cycle: the button is how the cycle completes
@@ -2368,7 +2353,7 @@ async function journeyCompleteButtonSurvivesDropdown(browser, baseURL) {
         await clickEl(page, '#completeAll');
         await page.waitForFunction((prev) => {
             const p = JSON.parse(localStorage.getItem('miniCycleData') || 'null');
-            const c = p && p.data.cycles[p.appState.activeCycleId];
+            const c = p && p.data.routine[p.appState.activeRoutineId];
             return c && (c.cycleCount || 0) > prev;
         }, before.cycleCount, { timeout: 10000 }).catch(() => {});
         const after = await persisted(page);
@@ -2390,11 +2375,11 @@ async function journeyCompleteButtonSurvivesDropdown(browser, baseURL) {
 async function journeyNewerDataNeverOverwritten(browser, baseURL) {
     const { failures, record } = makeRecorder();
     const newerDoc = {
-        schemaVersion: '2.6',
-        metadata: { createdAt: 1, lastModified: 9999999999999, schemaVersion: '2.6', totalCyclesCreated: 1 },
+        schemaVersion: '2.7',
+        metadata: { createdAt: 1, lastModified: 9999999999999, schemaVersion: '2.7', totalRoutinesCreated: 1 },
         settings: { theme: 'default', darkMode: false },
-        data: { cycles: { 'Future Routine': { id: 'Future Routine', title: 'Future Routine', tasks: [{ id: 'f1', text: 'Future task', completed: false, schemaVersion: 2 }], cycleCount: 7, autoReset: true, deleteCheckedTasks: false, recurringTemplates: {} } } },
-        appState: { activeCycleId: 'Future Routine' }, userProgress: { cyclesCompleted: 7 }
+        data: { routine: { 'Future Routine': { id: 'Future Routine', title: 'Future Routine', tasks: [{ id: 'f1', text: 'Future task', completed: false, schemaVersion: 2 }], cycleCount: 7, autoReset: true, deleteCheckedTasks: false, recurringTemplates: {} } } },
+        appState: { activeRoutineId: 'Future Routine' }, userProgress: { cyclesCompleted: 7 }
     };
     const raw = JSON.stringify(newerDoc);
 
@@ -2421,7 +2406,7 @@ async function journeyNewerDataNeverOverwritten(browser, baseURL) {
         await context.close();
     }
 
-    // Part 2: a stale tab with valid 2.5 in memory meets the newer document in storage.
+    // Part 2: a stale tab with valid current-version data in memory meets the newer document in storage.
     const second = await openFresh(browser, baseURL);
     try {
         const p2 = second.page;
@@ -2431,7 +2416,7 @@ async function journeyNewerDataNeverOverwritten(browser, baseURL) {
         const after = await p2.evaluate(() => {
             const s = localStorage.getItem('miniCycleData');
             let p = null; try { p = JSON.parse(s); } catch { /* unreadable */ }
-            return { same: s, version: p && p.schemaVersion, hasFuture: !!(p && p.data && p.data.cycles['Future Routine']) };
+            return { same: s, version: p && p.schemaVersion, hasFuture: !!(p && p.data && p.data.routine['Future Routine']) };
         });
         record('a stale tab does not save over the newer document', after.same === raw, `storage now version=${after.version}, Future Routine kept=${after.hasFuture}`);
         record('no starved dependencies', p2.__diWarnings.length === 0, `DI warnings: ${p2.__diWarnings.join(' | ')}`);
@@ -2457,10 +2442,9 @@ async function journeyUndoBottom(browser, baseURL) {
     try {
         await page.evaluate(() => {
             const d = JSON.parse(localStorage.getItem('miniCycleData'));
-            const c = d.data.cycles[d.appState.activeCycleId];
-            c.tasks = [{ id: 'ub-0', text: 'Existing', completed: false, dueDate: null, highPriority: false, priorityColor: null,
-                remindersEnabled: false, recurring: false, recurringSettings: {}, deleteWhenComplete: false,
-                deleteWhenCompleteSettings: { cycle: false, todo: true }, schemaVersion: 2 }];
+            const c = d.data.routine[d.appState.activeRoutineId];
+            c.tasks = [{ id: 'ub-0', text: 'Existing', completed: false, dueDate: null, priority: null, remindersEnabled: false, recurring: false, recurringSettings: {},
+                autoClear: { cycle: false, todo: true }, schemaVersion: 2 }];
             c.recurringTemplates = {};
             c.autoReset = false; c.deleteCheckedTasks = false;
             localStorage.setItem('miniCycleData', JSON.stringify(d));
@@ -2519,11 +2503,10 @@ async function journeyFirstGestureUndo(browser, baseURL) {
         const { page } = opened;
         await page.evaluate(() => {
             const d = JSON.parse(localStorage.getItem('miniCycleData'));
-            const c = d.data.cycles[d.appState.activeCycleId];
+            const c = d.data.routine[d.appState.activeRoutineId];
             c.tasks = ['One', 'Two', 'Three'].map((text, i) => ({
-                id: 'fg' + i, text, completed: false, dueDate: null, highPriority: false, priorityColor: null,
-                remindersEnabled: false, recurring: false, recurringSettings: {}, deleteWhenComplete: false,
-                deleteWhenCompleteSettings: { cycle: false, todo: true }, schemaVersion: 2
+                id: 'fg' + i, text, completed: false, dueDate: null, priority: null, remindersEnabled: false, recurring: false, recurringSettings: {},
+                autoClear: { cycle: false, todo: true }, schemaVersion: 2
             }));
             c.recurringTemplates = {};
             c.autoReset = false;            // manual cycle: Complete Cycle is how it completes
@@ -2539,12 +2522,12 @@ async function journeyFirstGestureUndo(browser, baseURL) {
     };
     const field = (page, name) => page.evaluate((name) => {
         const d = JSON.parse(localStorage.getItem('miniCycleData') || 'null');
-        const c = d && d.data.cycles[d.appState.activeCycleId];
+        const c = d && d.data.routine[d.appState.activeRoutineId];
         return c ? c[name] : undefined;
     }, name);
     const waitField = (page, name, want, timeout = 10000) => page.waitForFunction(([name, want]) => {
         const d = JSON.parse(localStorage.getItem('miniCycleData') || 'null');
-        const c = d && d.data.cycles[d.appState.activeCycleId];
+        const c = d && d.data.routine[d.appState.activeRoutineId];
         return c && (c[name] || (name === 'cycleCount' ? 0 : false)) === want;
     }, [name, want], { timeout }).then(() => true).catch(() => false);
 
@@ -2625,7 +2608,7 @@ async function journeyLegacyLeftoversUntouched(browser, baseURL) {
         return {
             same: Object.entries(keys).every(([k, v]) => localStorage.getItem(k) === v),
             migratedFrom: data && typeof data === 'object' ? (data.metadata?.migratedFrom ?? null) : data,
-            titles: data && typeof data === 'object' ? Object.values(data.data?.cycles || {}).map(c => c.title) : [],
+            titles: data && typeof data === 'object' ? Object.values(data.data?.routine || {}).map(c => c.title) : [],
             backups: Object.keys(localStorage).filter(k => k.includes('migration_backup_')),
             consoleCapture: localStorage.getItem('miniCycle_capturedConsoleBuffer') !== null
         };
@@ -2686,23 +2669,22 @@ async function journeyPriorityLevelsFollowTheme(browser, baseURL) {
     try {
         await page.evaluate(() => {
             const d = JSON.parse(localStorage.getItem('miniCycleData'));
-            const c = d.data.cycles[d.appState.activeCycleId];
-            const task = (id, highPriority, priorityColor) => ({
-                id, text: id, completed: false, dueDate: null, highPriority, priorityColor,
-                remindersEnabled: false, recurring: false, recurringSettings: {},
-                deleteWhenComplete: false, deleteWhenCompleteSettings: { cycle: false, todo: true }, schemaVersion: 2
+            const c = d.data.routine[d.appState.activeRoutineId];
+            const task = (id, priority) => ({
+                id, text: id, completed: false, dueDate: null, priority,
+                remindersEnabled: false, recurring: false, recurringSettings: {}, autoClear: { cycle: false, todo: true }, schemaVersion: 2
             });
             c.tasks = [
-                task('pl-low', true, '#28a745'),       // classic Low
-                task('pl-none', false, null),
-                task('pl-high', true, '#8b1a1a'),      // habit-tracker High — a DIFFERENT theme's colour
-                task('pl-medium', true, '#facc15')     // classic Medium
+                task('pl-low', 'low'),
+                task('pl-none', null),
+                task('pl-high', 'high'),               // a LEVEL: no theme's colour is stored any more
+                task('pl-medium', 'medium')
             ];
             c.recurringTemplates = {};
             c.theme = 'classic';
             d.settings = d.settings || {};
             d.settings.unlockedThemes = ['classic', 'habit-tracker'];
-            delete d.settings.priorityColor;
+            delete d.settings.defaultPriority;
             localStorage.setItem('miniCycleData', JSON.stringify(d));
         });
         await page.reload({ waitUntil: 'domcontentloaded', timeout: 20000 });
@@ -2752,18 +2734,18 @@ async function journeyPriorityLevelsFollowTheme(browser, baseURL) {
         await page.waitForFunction(() => {
             try {
                 const d = JSON.parse(localStorage.getItem('miniCycleData'));
-                const t = d.data.cycles[d.appState.activeCycleId].tasks.find(x => x.id === 'pl-none');
-                return t && t.highPriority === true && t.priorityColor === '#1a5c2e';
+                const t = d.data.routine[d.appState.activeRoutineId].tasks.find(x => x.id === 'pl-none');
+                return t && t.priority === 'low';
             } catch { return false; }
         }, null, { timeout: 8000 }).catch(() => {});
         const stored = await page.evaluate(() => {
             const d = JSON.parse(localStorage.getItem('miniCycleData'));
-            const t = d.data.cycles[d.appState.activeCycleId].tasks.find(x => x.id === 'pl-none');
-            return { highPriority: t.highPriority, priorityColor: t.priorityColor };
+            const t = d.data.routine[d.appState.activeRoutineId].tasks.find(x => x.id === 'pl-none');
+            return { priority: t.priority };
         });
         got = await colours();
-        record('choosing Low stores habit-tracker\'s Low swatch and shows it',
-            stored.highPriority === true && stored.priorityColor === '#1a5c2e' && got['pl-none'] === '#1a5c2e',
+        record('choosing Low stores the level and shows habit-tracker\'s Low swatch',
+            stored.priority === 'low' && got['pl-none'] === '#1a5c2e',
             `stored=${JSON.stringify(stored)} shown=${got['pl-none']}`);
     } catch (e) {
         failures.push(`run error: ${e.message}`);
@@ -2774,12 +2756,120 @@ async function journeyPriorityLevelsFollowTheme(browser, baseURL) {
     return { name: 'priority levels follow the theme', failures };
 }
 
+// ── Journey: a 2.5 document is migrated at boot ─────────────────────────────
+// The one release step of SCHEMA_2_6_PLAN.md: a returning user's 2.5 document
+// must come up as 2.6 on the first boot — re-keyed routines with the active id
+// following, priority as a level, autoClear as the one map (the mirror ignored),
+// cleared entries and the settings default converted, both version stamps set,
+// the raw document kept byte-identical under a pre-migration key, persisted undo
+// history cleared, and NOTHING left to migrate (and no second copy) on the next
+// boot. The migration function's unit tests own each rule; this owns "boot runs
+// it, once, and the app renders the result".
+async function journeyBootMigratesSchema25(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const legacyDoc = {
+        schemaVersion: '2.5',
+        metadata: { createdAt: 1, lastModified: 2, schemaVersion: '2.5', totalCyclesCreated: 1 },
+        settings: { theme: 'default', darkMode: false, onboardingCompleted: true, priorityColor: '#facc15' },
+        data: { cycles: { 'Morning Routine': {
+            id: 'Morning Routine', title: 'Morning Routine', cycleCount: 3, autoReset: true, deleteCheckedTasks: false,
+            recurringTemplates: {},
+            tasks: [
+                { id: 't1', text: 'Stretch', completed: false, highPriority: true, priorityColor: '#28a745',
+                  deleteWhenComplete: true, deleteWhenCompleteSettings: { cycle: false, todo: true }, schemaVersion: 2 },
+                { id: 't2', text: 'Coffee', completed: false, highPriority: false, priorityColor: null,
+                  deleteWhenComplete: false, deleteWhenCompleteSettings: { cycle: true, todo: true }, schemaVersion: 2 }
+            ],
+            clearedTasks: { entries: [{ taskText: 'Old', clearedAt: 1, wasHighPriority: true, priorityColor: '#dc3545' }], totalCleared: 1 }
+        } } },
+        appState: { activeCycleId: 'Morning Routine' },
+        userProgress: { cyclesCompleted: 3 }
+    };
+    const raw = JSON.stringify(legacyDoc);
+    const { context, page } = await openFresh(browser, baseURL, {
+        noNavigate: true,
+        initScript: (doc) => { if (!localStorage.getItem('__seeded')) { localStorage.setItem('miniCycleData', doc); localStorage.setItem('__seeded', '1'); } },
+        initArg: raw
+    });
+    try {
+        await page.goto(`${baseURL}/miniCycle.html`, { waitUntil: 'domcontentloaded', timeout: 20000 });
+        await bootApp(page);
+        await page.waitForTimeout(1500);
+        const after = await page.evaluate(() => {
+            const d = JSON.parse(localStorage.getItem('miniCycleData'));
+            const map = (d.data && d.data.routine) || {};
+            const keys = Object.keys(map);
+            const r = map[keys[0]] || {};
+            const t1 = (r.tasks || []).find(t => t.id === 't1') || {};
+            const t2 = (r.tasks || []).find(t => t.id === 't2') || {};
+            const entry = (((r.clearedTasks || {}).entries) || [])[0] || {};
+            const stale = JSON.stringify(d).match(/"(cycles|activeCycleId|highPriority|priorityColor|deleteWhenComplete|deleteWhenCompleteSettings|wasHighPriority|totalCyclesCreated)"/g) || [];
+            return {
+                version: d.schemaVersion, metaVersion: d.metadata && d.metadata.schemaVersion,
+                keys, activeMapped: keys.includes(d.appState && d.appState.activeRoutineId), title: r.title,
+                t1: { priority: t1.priority, autoClear: t1.autoClear }, t2: { priority: t2.priority, autoClear: t2.autoClear },
+                entry: entry.priority, defaultPriority: d.settings && d.settings.defaultPriority,
+                totalRoutinesCreated: d.metadata && d.metadata.totalRoutinesCreated, stale,
+                preCopies: Object.keys(localStorage).filter(k => k.startsWith('miniCycleData_pre-migration_')),
+                renderedTasks: document.querySelectorAll('#taskList .task').length
+            };
+        });
+        record('the document is 2.6 on both version stamps', after.version === '2.6' && after.metaVersion === '2.6', JSON.stringify({ v: after.version, m: after.metaVersion }));
+        record('the routine is re-keyed and the active id follows it',
+            after.keys.length === 1 && !after.keys.includes('Morning Routine') && after.activeMapped && after.title === 'Morning Routine',
+            JSON.stringify({ keys: after.keys, active: after.activeMapped, title: after.title }));
+        record('priority became a level and autoClear the one map (the mirror is ignored)',
+            after.t1.priority === 'low' && after.t1.autoClear && after.t1.autoClear.cycle === false && after.t1.autoClear.todo === true &&
+            after.t2.priority === null && after.t2.autoClear && after.t2.autoClear.cycle === true,
+            JSON.stringify({ t1: after.t1, t2: after.t2 }));
+        record('cleared entries, the settings default and the routine counter were converted too',
+            after.entry === 'high' && after.defaultPriority === 'medium' && after.totalRoutinesCreated === 1,
+            JSON.stringify({ entry: after.entry, defaultPriority: after.defaultPriority, total: after.totalRoutinesCreated }));
+        record('no 2.5 field name survives anywhere in storage', after.stale.length === 0, `stale: ${after.stale.join(',')}`);
+        record('a pre-migration copy of the raw document was kept', after.preCopies.length === 1, `copies: ${after.preCopies.join(',')}`);
+        const copy = await page.evaluate((k) => localStorage.getItem(k), after.preCopies[0] || '');
+        record('the copy is the byte-identical 2.5 document', copy === raw, 'copy differs from what was stored');
+        record('the migrated routine rendered', after.renderedTasks === 2, `${after.renderedTasks} task rows`);
+
+        const undo = await page.evaluate(() => new Promise((resolve) => {
+            const req = indexedDB.open('miniCycleUndoHistory');
+            req.onerror = () => resolve('open-error');
+            req.onsuccess = () => {
+                const db = req.result;
+                if (!db.objectStoreNames.contains('undoStacks')) { db.close(); resolve(0); return; }
+                const all = db.transaction('undoStacks', 'readonly').objectStore('undoStacks').getAll();
+                all.onsuccess = () => { db.close(); resolve(all.result.reduce((n, rec) => n + ((rec.undoStack || []).length + (rec.redoStack || []).length), 0)); };
+                all.onerror = () => { db.close(); resolve('read-error'); };
+            };
+        }));
+        record('persisted undo history holds no snapshots after the migration boot', undo === 0, `snapshots: ${undo}`);
+
+        await page.reload({ waitUntil: 'domcontentloaded', timeout: 20000 });
+        await bootApp(page);
+        await page.waitForTimeout(800);
+        const again = await page.evaluate(() => ({
+            copies: Object.keys(localStorage).filter(k => k.startsWith('miniCycleData_pre-migration_')).length,
+            v: JSON.parse(localStorage.getItem('miniCycleData')).schemaVersion,
+            rows: document.querySelectorAll('#taskList .task').length
+        }));
+        record('a second boot finds a current document, keeps ONE copy, and renders', again.copies === 1 && again.v === '2.6' && again.rows === 2, JSON.stringify(again));
+        record('no starved dependencies', page.__diWarnings.length === 0, `DI warnings: ${page.__diWarnings.join(' | ')}`);
+    } catch (e) {
+        failures.push(`run error: ${e.message}`);
+        console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);
+    } finally {
+        await context.close();
+    }
+    return { name: 'a 2.5 document is migrated at boot', failures };
+}
+
 const JOURNEYS = [
     { name: 'Undo is only offered when it changes something', fn: journeyUndoBottom },
     { name: 'the first gesture after load can be undone', fn: journeyFirstGestureUndo },
     { name: 'pre-2.5 leftovers are never migrated or deleted', fn: journeyLegacyLeftoversUntouched },
     { name: 'priority levels follow the theme', fn: journeyPriorityLevelsFollowTheme },
     { name: 'data written by a newer build is never overwritten', fn: journeyNewerDataNeverOverwritten },
+    { name: 'a 2.5 document is migrated at boot', fn: journeyBootMigratesSchema25 },
     { name: 'the Complete Cycle button survives every task moving to the dropdown', fn: journeyCompleteButtonSurvivesDropdown },
     { name: 'reorder arrows move the task the user pointed at', fn: journeyArrowReorderMovesTheRightTask },
     { name: 'import never attaches a template to a non-recurring task', fn: journeyImportTemplateTaskCollision },

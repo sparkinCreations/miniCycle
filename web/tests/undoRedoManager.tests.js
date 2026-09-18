@@ -107,13 +107,12 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
                 version: "2.5",
                 lastModified: Date.now()
             },
-            data: {
-                cycles: {
+            data: { routine: {
                     'Test Cycle': {
                         title: 'Test Cycle',
                         tasks: [
-                            { id: 'task-1', text: 'Task 1', completed: false, highPriority: false },
-                            { id: 'task-2', text: 'Task 2', completed: true, highPriority: true }
+                            { id: 'task-1', text: 'Task 1', completed: false, priority: null },
+                            { id: 'task-2', text: 'Task 2', completed: true, priority: 'high' }
                         ],
                         recurringTemplates: {},
                         autoReset: false,
@@ -122,8 +121,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
                     }
                 }
             },
-            appState: {
-                activeCycleId: 'Test Cycle',
+            appState: { activeRoutineId: 'Test Cycle',
                 currentMode: 'manual-cycle'
             }
         };
@@ -407,7 +405,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
 
         // Modify state
         const state2 = mockDeps.AppState.get();
-        state2.data.cycles['Test Cycle'].tasks[0].completed = true;
+        state2.data.routine['Test Cycle'].tasks[0].completed = true;
 
         // Wait to avoid time throttling
         await new Promise(resolve => setTimeout(resolve, 350));
@@ -438,7 +436,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
 
         // Capture one more
         const state = mockDeps.AppState.get();
-        state.data.cycles['Test Cycle'].tasks[0].text = 'Modified Task';
+        state.data.routine['Test Cycle'].tasks[0].text = 'Modified Task';
 
         await new Promise(resolve => setTimeout(resolve, 350));
         await captureStateSnapshot(state);
@@ -473,7 +471,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         const snapshot1 = {
             activeCycleId: 'Test',
             tasks: [
-                { id: 'task-1', text: 'Task 1', completed: false, highPriority: true }
+                { id: 'task-1', text: 'Task 1', completed: false, priority: 'high' }
             ],
             title: 'Test Cycle',
             autoReset: true,
@@ -483,7 +481,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         const snapshot2 = {
             activeCycleId: 'Test',
             tasks: [
-                { id: 'task-1', text: 'Task 1', completed: false, highPriority: true }
+                { id: 'task-1', text: 'Task 1', completed: false, priority: 'high' }
             ],
             title: 'Test Cycle',
             autoReset: true,
@@ -506,7 +504,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
             activeCycleId: 'Test',
             tasks: [{
                 id: 'task-1', text: 'Task 1', completed: false,
-                recurring: true, deleteWhenComplete: true,
+                recurring: true, 
                 ...settings
             }],
             title: 'Test Cycle',
@@ -520,10 +518,10 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
             throw new Error('recurringSettings-only change must alter the signature');
         }
 
-        const sigC = buildSnapshotSignature(base({ deleteWhenCompleteSettings: { mode: 'x' } }));
-        const sigD = buildSnapshotSignature(base({ deleteWhenCompleteSettings: { mode: 'y' } }));
+        const sigC = buildSnapshotSignature(base({ autoClear: { mode: 'x' } }));
+        const sigD = buildSnapshotSignature(base({ autoClear: { mode: 'y' } }));
         if (sigC === sigD) {
-            throw new Error('deleteWhenCompleteSettings-only change must alter the signature');
+            throw new Error('autoClear-only change must alter the signature');
         }
     });
 
@@ -575,12 +573,12 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         setUndoRedoManagerDependencies(mockDeps);
 
         const state = mockDeps.AppState.get();
-        const originalTaskText = state.data.cycles['Test Cycle'].tasks[0].text;
+        const originalTaskText = state.data.routine['Test Cycle'].tasks[0].text;
 
         await captureStateSnapshot(state);
 
         // Modify original state
-        state.data.cycles['Test Cycle'].tasks[0].text = 'Modified';
+        state.data.routine['Test Cycle'].tasks[0].text = 'Modified';
 
         // Check snapshot is unchanged
         const snapshot = mockDeps.AppGlobalState.activeUndoStack[0];
@@ -603,7 +601,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
 
         // Modify state
         await mockDeps.AppState.update(state => {
-            state.data.cycles['Test Cycle'].tasks[0].completed = true;
+            state.data.routine['Test Cycle'].tasks[0].completed = true;
         });
 
         // Wait to avoid throttling
@@ -618,7 +616,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
 
         // Check state restored
         const restoredState = mockDeps.AppState.get();
-        if (restoredState.data.cycles['Test Cycle'].tasks[0].completed !== false) {
+        if (restoredState.data.routine['Test Cycle'].tasks[0].completed !== false) {
             throw new Error('Undo should restore previous state');
         }
     });
@@ -636,7 +634,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         // Advance the live state via update() — the mock's get() returns a fresh deep copy
         // each call, so mutating a previously-returned object would NOT change what undo reads.
         await mockDeps.AppState.update(state => {
-            state.data.cycles['Test Cycle'].tasks[0].completed = true;
+            state.data.routine['Test Cycle'].tasks[0].completed = true;
         });
         await captureStateSnapshot(mockDeps.AppState.get());
 
@@ -658,7 +656,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
             throw new Error('redoStack snapshot should carry the pre-undo (completed) task state');
         }
         // ...and the live state was actually rolled back to the earlier (uncompleted) snapshot.
-        if (mockDeps.AppState.get().data.cycles['Test Cycle'].tasks[0].completed !== false) {
+        if (mockDeps.AppState.get().data.routine['Test Cycle'].tasks[0].completed !== false) {
             throw new Error('undo should have restored the earlier uncompleted state');
         }
     });
@@ -674,8 +672,8 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         const snapshot = {
             activeCycleId: 'Test Cycle',
             tasks: [
-                { id: 'task-1', text: 'Task 1', completed: false, highPriority: false },
-                { id: 'task-2', text: 'Task 2', completed: true, highPriority: true }
+                { id: 'task-1', text: 'Task 1', completed: false, priority: null },
+                { id: 'task-2', text: 'Task 2', completed: true, priority: 'high' }
             ],
             recurringTemplates: {},
             title: 'Test Cycle',
@@ -709,8 +707,8 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         const same = {
             activeCycleId: 'Test Cycle',
             tasks: [
-                { id: 'task-1', text: 'Task 1', completed: false, highPriority: false },
-                { id: 'task-2', text: 'Task 2', completed: true, highPriority: true }
+                { id: 'task-1', text: 'Task 1', completed: false, priority: null },
+                { id: 'task-2', text: 'Task 2', completed: true, priority: 'high' }
             ],
             recurringTemplates: {}, title: 'Test Cycle', autoReset: false, deleteCheckedTasks: false, timestamp: Date.now()
         };
@@ -723,7 +721,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
 
         await performStateBasedUndo();
 
-        if (mockDeps.AppState.get().data.cycles['Test Cycle'].tasks[0].completed !== true) {
+        if (mockDeps.AppState.get().data.routine['Test Cycle'].tasks[0].completed !== true) {
             throw new Error('undo should restore the entry that differs from the screen');
         }
         if (mockDeps.AppGlobalState.activeUndoStack.length !== 0) {
@@ -750,7 +748,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
 
         await new Promise(resolve => setTimeout(resolve, 350));
 
-        state.data.cycles['Test Cycle'].tasks[0].completed = true;
+        state.data.routine['Test Cycle'].tasks[0].completed = true;
         await captureStateSnapshot(state);
 
         // Check flag during undo
@@ -806,7 +804,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
 
         // Update state via proper update() call
         await mockDeps.AppState.update(state => {
-            state.data.cycles['Test Cycle'].tasks[0].completed = true;
+            state.data.routine['Test Cycle'].tasks[0].completed = true;
         });
 
         // Capture modified state (completed = true)
@@ -817,7 +815,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
 
         // Verify task is false after undo
         const afterUndo = mockDeps.AppState.get();
-        if (afterUndo.data.cycles['Test Cycle'].tasks[0].completed !== false) {
+        if (afterUndo.data.routine['Test Cycle'].tasks[0].completed !== false) {
             throw new Error('Undo should restore to uncompleted state');
         }
 
@@ -825,7 +823,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         await performStateBasedRedo();
 
         const afterRedo = mockDeps.AppState.get();
-        if (afterRedo.data.cycles['Test Cycle'].tasks[0].completed !== true) {
+        if (afterRedo.data.routine['Test Cycle'].tasks[0].completed !== true) {
             throw new Error('Redo should restore to completed state');
         }
     });
@@ -842,7 +840,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         await new Promise(resolve => setTimeout(resolve, 350));
 
         await mockDeps.AppState.update(state => {
-            state.data.cycles['Test Cycle'].tasks[0].completed = true;
+            state.data.routine['Test Cycle'].tasks[0].completed = true;
         });
         await captureStateSnapshot(mockDeps.AppState.get());
 
@@ -865,7 +863,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
             throw new Error('undoStack top should carry the pre-redo (uncompleted) task state');
         }
         // ...and the live state was actually advanced to the redone (completed) snapshot.
-        if (mockDeps.AppState.get().data.cycles['Test Cycle'].tasks[0].completed !== true) {
+        if (mockDeps.AppState.get().data.routine['Test Cycle'].tasks[0].completed !== true) {
             throw new Error('redo should have restored the completed state');
         }
     });
@@ -889,8 +887,8 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         const snapshot = {
             activeCycleId: 'Test Cycle',
             tasks: [
-                { id: 'task-1', text: 'Task 1', completed: false, highPriority: false },
-                { id: 'task-2', text: 'Task 2', completed: true, highPriority: true }
+                { id: 'task-1', text: 'Task 1', completed: false, priority: null },
+                { id: 'task-2', text: 'Task 2', completed: true, priority: 'high' }
             ],
             recurringTemplates: {},
             title: 'Test Cycle',
@@ -919,7 +917,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
 
         // Create state with recurringTemplates
         const state = mockDeps.AppState.get();
-        state.data.cycles['Test Cycle'].recurringTemplates = {
+        state.data.routine['Test Cycle'].recurringTemplates = {
             'template-1': { frequency: 'daily', time: '09:00' }
         };
         await captureStateSnapshot(state);
@@ -927,14 +925,14 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         await new Promise(resolve => setTimeout(resolve, 350));
 
         // Modify tasks
-        state.data.cycles['Test Cycle'].tasks[0].completed = true;
+        state.data.routine['Test Cycle'].tasks[0].completed = true;
         await captureStateSnapshot(state);
 
         // Undo
         await performStateBasedUndo();
 
         const restored = mockDeps.AppState.get();
-        if (!restored.data.cycles['Test Cycle'].recurringTemplates['template-1']) {
+        if (!restored.data.routine['Test Cycle'].recurringTemplates['template-1']) {
             throw new Error('Undo should preserve recurringTemplates');
         }
     });
@@ -952,7 +950,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
 
         // Make a change to current cycle
         await mockDeps.AppState.update(state => {
-            state.data.cycles['Test Cycle'].tasks.push({
+            state.data.routine['Test Cycle'].tasks.push({
                 id: 'new-task',
                 text: 'New Task',
                 completed: false
@@ -967,11 +965,11 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
 
         const restored = mockDeps.AppState.get();
         // Should still be on the same cycle
-        if (restored.appState.activeCycleId !== 'Test Cycle') {
-            throw new Error(`Undo should NOT switch cycles. Expected 'Test Cycle', got '${restored.appState.activeCycleId}'`);
+        if (restored.appState.activeRoutineId !== 'Test Cycle') {
+            throw new Error(`Undo should NOT switch cycles. Expected 'Test Cycle', got '${restored.appState.activeRoutineId}'`);
         }
         // Should have restored the task list (removed the added task)
-        const tasks = restored.data.cycles['Test Cycle'].tasks;
+        const tasks = restored.data.routine['Test Cycle'].tasks;
         if (tasks.some(t => t.id === 'new-task')) {
             throw new Error('Undo should have removed the newly added task');
         }
@@ -1005,7 +1003,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
     await test('updateUndoRedoButtons hides undo when every entry matches the current state', async () => {
         const mockDeps = createMockDependencies();
         setUndoRedoManagerDependencies(mockDeps);
-        const current = mockDeps.AppState.get().data.cycles['Test Cycle'];
+        const current = mockDeps.AppState.get().data.routine['Test Cycle'];
         mockDeps.AppGlobalState.activeUndoStack.push({
             activeCycleId: 'Test Cycle', tasks: JSON.parse(JSON.stringify(current.tasks)), recurringTemplates: {},
             title: current.title, autoReset: current.autoReset, deleteCheckedTasks: current.deleteCheckedTasks,
@@ -1078,7 +1076,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
 
         // Modify state
         await mockDeps.AppState.update(state => {
-            state.data.cycles['Test Cycle'].tasks[0].completed = true;
+            state.data.routine['Test Cycle'].tasks[0].completed = true;
         });
         await captureStateSnapshot(mockDeps.AppState.get());
 
@@ -1118,7 +1116,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         await new Promise(resolve => setTimeout(resolve, 350));
 
         await mockDeps.AppState.update(state => {
-            state.data.cycles['Test Cycle'].tasks[0].completed = true;
+            state.data.routine['Test Cycle'].tasks[0].completed = true;
         });
         await captureStateSnapshot(mockDeps.AppState.get());
 
@@ -1143,7 +1141,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         await new Promise(resolve => setTimeout(resolve, 350));
 
         await mockDeps.AppState.update(state => {
-            state.data.cycles['Test Cycle'].tasks[0].completed = true;
+            state.data.routine['Test Cycle'].tasks[0].completed = true;
         });
         await captureStateSnapshot(mockDeps.AppState.get());
 
@@ -1196,7 +1194,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
 
         const oldState = mockDeps.AppState.get();
         const newState = JSON.parse(JSON.stringify(oldState));
-        newState.data.cycles['Test Cycle'].tasks[0].completed = true;
+        newState.data.routine['Test Cycle'].tasks[0].completed = true;
 
         // Trigger subscriber
         subscriber(newState, oldState);
@@ -1219,7 +1217,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
 
         const oldState = mockDeps.AppState.get();
         const newState = JSON.parse(JSON.stringify(oldState));
-        newState.data.cycles['Test Cycle'].tasks[0].completed = true;
+        newState.data.routine['Test Cycle'].tasks[0].completed = true;
 
         // Trigger subscriber
         subscriber(newState, oldState);
@@ -1245,7 +1243,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
 
         const oldState = mockDeps.AppState.get();
         const newState = JSON.parse(JSON.stringify(oldState));
-        newState.data.cycles['Test Cycle'].title = 'Modified Title';
+        newState.data.routine['Test Cycle'].title = 'Modified Title';
 
         // Trigger subscriber
         subscriber(newState, oldState);
@@ -1267,7 +1265,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
 
         const oldState = mockDeps.AppState.get();
         const newState = JSON.parse(JSON.stringify(oldState));
-        newState.data.cycles['Test Cycle'].autoReset = true;
+        newState.data.routine['Test Cycle'].autoReset = true;
 
         // Trigger subscriber
         subscriber(newState, oldState);
@@ -1360,11 +1358,9 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
 
         // State with activeCycleId but no matching cycle
         const state = {
-            data: {
-                cycles: {}
+            data: { routine: {}
             },
-            appState: {
-                activeCycleId: 'NonExistent'
+            appState: { activeRoutineId: 'NonExistent'
             }
         };
 
@@ -1591,7 +1587,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         // Try to capture multiple states (simulating progressive loading)
         for (let i = 0; i < 5; i++) {
             const state = mockDeps.AppState.get();
-            state.data.cycles['Test Cycle'].tasks[0].text = `Modified ${i}`;
+            state.data.routine['Test Cycle'].tasks[0].text = `Modified ${i}`;
             await captureStateSnapshot(state);
         }
 
@@ -1641,7 +1637,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
 
         const oldState = mockDeps.AppState.get();
         const newState = JSON.parse(JSON.stringify(oldState));
-        newState.data.cycles['Test Cycle'].tasks[0].completed = true;
+        newState.data.routine['Test Cycle'].tasks[0].completed = true;
 
         // Trigger subscriber
         subscriber(newState, oldState);
@@ -1912,7 +1908,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         gs.activeCycleIdForUndo = 'Stale Cycle';   // tracking a cycle we are no longer on
         gs.activeUndoStack = [];
 
-        captureStateSnapshot(deps.AppState.get());   // state.appState.activeCycleId === 'Test Cycle'
+        captureStateSnapshot(deps.AppState.get());   // state.appState.activeRoutineId === 'Test Cycle'
 
         if (gs.activeUndoStack.length !== 0) {
             throw new Error(`captured ${gs.activeUndoStack.length} snapshot(s) against a stale cycle id`);
@@ -2271,7 +2267,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         // as a duplicate and the apply path never runs).
         const snapshot = {
             activeCycleId: 'Test Cycle',
-            tasks: [{ id: 'task-1', text: 'Task 1 EDITED', completed: false, highPriority: false }],
+            tasks: [{ id: 'task-1', text: 'Task 1 EDITED', completed: false, priority: null }],
             recurringTemplates: {},
             title: 'Test Cycle',
             autoReset: false,
@@ -2321,7 +2317,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
     // and a length-only check would miss it.
     const mkSnap = (marker, taskTexts) => ({
         activeCycleId: 'Test Cycle',
-        tasks: taskTexts.map((t, i) => ({ id: `${marker}-${i}`, text: t, completed: false, highPriority: false })),
+        tasks: taskTexts.map((t, i) => ({ id: `${marker}-${i}`, text: t, completed: false, priority: null })),
         recurringTemplates: {}, title: 'Test Cycle', autoReset: false, deleteCheckedTasks: false,
         cycleCount: 0, theme: 'classic', clearedTasks: null, taskViewLayout: null, timestamp: marker
     });
@@ -2366,7 +2362,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
     });
 
     // === DERIVED-FIELD DESCRIPTIONS ===
-    // `task.deleteWhenComplete` is derived from deleteWhenCompleteSettings[mode],
+    // `task.deleteWhenComplete` is derived from autoClear[mode],
     // so it moves for BOTH a per-task toggle and a routine mode switch. Naming it
     // in the label is only correct for the former.
     resultsDiv.innerHTML += '<h4 class="test-section">🏷️ Change descriptions (derived fields)</h4>';
@@ -2381,8 +2377,8 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         // Both halves of a mode switch land in ONE snapshot pair: the routine flag
         // AND every task's derived value. Only the flag is a control the user touched.
         const settings = { cycle: false, todo: true };
-        const from = snapOf(false, [{ id: 't1', text: 'a', deleteWhenComplete: false, deleteWhenCompleteSettings: { ...settings } }]);
-        const to   = snapOf(true,  [{ id: 't1', text: 'a', deleteWhenComplete: true,  deleteWhenCompleteSettings: { ...settings } }]);
+        const from = snapOf(false, [{ id: 't1', text: 'a', autoClear: { ...settings } }]);
+        const to   = snapOf(true,  [{ id: 't1', text: 'a', autoClear: { ...settings } }]);
 
         const desc = computeTransactionDiff(from, to).description;
         if (!/Mode changed/.test(desc)) {
@@ -2399,9 +2395,9 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
 
     await test('a real per-task clear-on-complete toggle IS still described', () => {
         // The guard above must not swallow the genuine case: taskButtons writes
-        // deleteWhenCompleteSettings[mode] alongside the derived value.
-        const from = snapOf(false, [{ id: 't1', text: 'a', deleteWhenComplete: false, deleteWhenCompleteSettings: { cycle: false, todo: true } }]);
-        const to   = snapOf(false, [{ id: 't1', text: 'a', deleteWhenComplete: true,  deleteWhenCompleteSettings: { cycle: true,  todo: true } }]);
+        // autoClear[mode] alongside the derived value.
+        const from = snapOf(false, [{ id: 't1', text: 'a', autoClear: { cycle: false, todo: true } }]);
+        const to   = snapOf(false, [{ id: 't1', text: 'a', autoClear: { cycle: true,  todo: true } }]);
 
         const desc = computeTransactionDiff(from, to).description;
         if (!/[Rr]emove when complete/.test(desc)) {

@@ -39,10 +39,10 @@ export async function runDataAccessTests(resultsDiv) {
 
     const baseState = () => ({
         metadata: { lastModified: 'old', version: '2.5' },
-        appState: { activeCycleId: 'cycle-A' },
+        appState: { activeRoutineId: 'cycle-A' },
         settings: { theme: 'dark' },
         customReminders: { enabled: true, frequencyValue: 15 },
-        data: { cycles: { 'cycle-A': { id: 'cycle-A', tasks: [], cycleCount: 2 } } }
+        data: { routine: { 'cycle-A': { id: 'cycle-A', tasks: [], cycleCount: 2 } } }
     });
 
     // ── Module loading (kept) ─────────────────────────────────────────────────
@@ -163,14 +163,14 @@ export async function runDataAccessTests(resultsDiv) {
         const tasks = [{ id: 't1', text: 'one' }, { id: 't2', text: 'two' }];
         const r = await autoSave(tasks, true);
         if (r.success !== true || r.taskCount !== 2) throw new Error('bad result: ' + JSON.stringify(r));
-        if (as.get().data.cycles['cycle-A'].tasks !== tasks) {
+        if (as.get().data.routine['cycle-A'].tasks !== tasks) {
             throw new Error('tasks not written to active cycle');
         }
     });
 
     await test('returns failure when active cycle id is missing in state', async () => {
         const st = baseState();
-        st.appState.activeCycleId = null;
+        st.appState.activeRoutineId = null;
         setDataAccessDeps({ AppState: makeAppState(st) });
         const r = await autoSave([{ id: 't1', text: 'x' }]);
         if (r.success !== false) throw new Error('expected failure when no active cycle');
@@ -179,7 +179,7 @@ export async function runDataAccessTests(resultsDiv) {
 
     await test('returns failure when active cycle not found in cycles map', async () => {
         const st = baseState();
-        st.appState.activeCycleId = 'cycle-MISSING';
+        st.appState.activeRoutineId = 'cycle-MISSING';
         setDataAccessDeps({ AppState: makeAppState(st) });
         const r = await autoSave([{ id: 't1', text: 'x' }]);
         if (r.success !== false) throw new Error('expected failure for missing cycle');
@@ -200,7 +200,7 @@ export async function runDataAccessTests(resultsDiv) {
         setDataAccessDeps({ AppState: as });
         const ok = await updateCycleData('cycle-A', c => { c.cycleCount = 7; });
         if (ok !== true) throw new Error('expected true');
-        if (as.get().data.cycles['cycle-A'].cycleCount !== 7) throw new Error('producer did not apply');
+        if (as.get().data.routine['cycle-A'].cycleCount !== 7) throw new Error('producer did not apply');
         if (as.get().metadata.lastModified === 'old') throw new Error('lastModified not updated');
     });
 

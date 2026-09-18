@@ -18,8 +18,7 @@ export async function runTaskCRUDTests(resultsDiv) {
         return {
             metadata: { lastModified: Date.now() },
             settings: { taskLimit: 100 },
-            data: {
-                cycles: {
+            data: { routine: {
                     'cycle-1': {
                         tasks: [
                             { id: 'task-1', text: 'Existing', completed: false, priority: false }
@@ -29,7 +28,7 @@ export async function runTaskCRUDTests(resultsDiv) {
                     }
                 }
             },
-            appState: { activeCycleId: 'cycle-1', currentMode: 'auto' }
+            appState: { activeRoutineId: 'cycle-1', currentMode: 'auto' }
         };
     }
 
@@ -85,7 +84,7 @@ export async function runTaskCRUDTests(resultsDiv) {
             if (taskInput.getAttribute('aria-invalid') !== 'true') {
                 throw new Error('empty input should be flagged aria-invalid by the validation guard');
             }
-            if (state.data.cycles['cycle-1'].tasks.length !== 1) {
+            if (state.data.routine['cycle-1'].tasks.length !== 1) {
                 throw new Error('empty task should not be added');
             }
         } finally {
@@ -113,7 +112,7 @@ export async function runTaskCRUDTests(resultsDiv) {
             if (taskInput.getAttribute('aria-invalid') !== 'true') {
                 throw new Error('whitespace input should be flagged aria-invalid by the validation guard');
             }
-            if (state.data.cycles['cycle-1'].tasks.length !== 1) {
+            if (state.data.routine['cycle-1'].tasks.length !== 1) {
                 throw new Error('whitespace task should not be added');
             }
         } finally {

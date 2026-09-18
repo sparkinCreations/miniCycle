@@ -26,7 +26,7 @@ import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, APP_V
 import { getLabel } from '../labels/labelResolver.js';
 import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
 import { toggleSectionExpanded, setSectionExpanded, isSectionExpanded, collapseAllSections, usesExclusiveSections, isCollapseAllClick } from '../utils/collapsibleSections.js';
-import { getRoutines, setActiveRoutineId } from '../utils/cycleMode.js';
+import { getRoutines, setActiveRoutineId, getActiveRoutineId, getActiveRoutine } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -602,9 +602,8 @@ export class MenuManager {
             return;
         }
 
-        const { data, appState } = currentState;
-        const activeCycle = appState.activeCycleId;
-        const currentCycle = data.cycles[activeCycle];
+        const activeCycle = getActiveRoutineId(currentState);
+        const currentCycle = getActiveRoutine(currentState);
 
         if (!activeCycle || !currentCycle) {
             console.warn('⚠️ No active miniCycle found to save');
@@ -626,7 +625,7 @@ export class MenuManager {
         }
 
         // Generate suggested name with increment
-        const { name: suggestedName } = getUniqueCycleName(currentCycle.title, data.cycles || {});
+        const { name: suggestedName } = getUniqueCycleName(currentCycle.title, getRoutines(currentState) || {});
 
         this.deps.showPromptModal({
             title: getLabel('modal.duplicateRoutine'),
@@ -651,7 +650,7 @@ export class MenuManager {
                 }
 
                 // ✅ Get unique name (auto-increment if duplicate)
-                const { name: finalCycleName, wasModified } = getUniqueCycleName(sanitizedName, data.cycles || {});
+                const { name: finalCycleName, wasModified } = getUniqueCycleName(sanitizedName, getRoutines(currentState) || {});
 
                 if (wasModified) {
                     this.deps.showNotification(getLabel('notify.nameExists', { vars: { name: finalCycleName } }), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
@@ -673,7 +672,7 @@ export class MenuManager {
 
                     // ✅ Set as active cycle using the title as key
                     setActiveRoutineId(state, finalCycleName);
-                    state.metadata.totalCyclesCreated = (state.metadata.totalCyclesCreated || 0) + 1;
+                    state.metadata.totalRoutinesCreated = (state.metadata.totalRoutinesCreated || 0) + 1;
 
                 }, true); // immediate save
 
@@ -703,7 +702,7 @@ export class MenuManager {
 
         const schemaData = this.deps.loadMiniCycleData();
         if (!schemaData) {
-            console.error('❌ Schema 2.5 data required for clearAllTasks');
+            console.error('❌ State data required for clearAllTasks');
             this.deps.showNotification("⚠️ " + getLabel('notify.dataNotAvailable'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
             return;
         }
@@ -782,7 +781,7 @@ export class MenuManager {
 
         const schemaData = this.deps.loadMiniCycleData();
         if (!schemaData) {
-            console.error('❌ Schema 2.5 data required for deleteAllTasks');
+            console.error('❌ State data required for deleteAllTasks');
             this.deps.showNotification("⚠️ " + getLabel('notify.dataNotAvailable'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
             return;
         }

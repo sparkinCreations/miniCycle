@@ -65,7 +65,7 @@ export async function runAppStateTests(resultsDiv, isPartOfSuite = false) {
     function createSchema25MockData() {
         const baseData = createMockData();
         return {
-            schemaVersion: "2.5",
+            schemaVersion: "2.6",
             ...baseData
         };
     }
@@ -201,11 +201,11 @@ export async function runAppStateTests(resultsDiv, isPartOfSuite = false) {
     // invalid (first-run screen over intact data), and a tab with 2.5 in memory
     // SAVED over the newer document. Every guard here refuses to touch it.
     const newerDoc = () => ({
-        schemaVersion: '2.6',
-        metadata: { createdAt: 1, lastModified: 5, schemaVersion: '2.6', totalCyclesCreated: 1 },
+        schemaVersion: '2.7',
+        metadata: { createdAt: 1, lastModified: 5, schemaVersion: '2.7', totalRoutinesCreated: 1 },
         settings: { theme: 'default' },
-        data: { cycles: { future: { id: 'future', title: 'Future', tasks: [], cycleCount: 42, autoReset: true, deleteCheckedTasks: false, recurringTemplates: {} } } },
-        appState: { activeCycleId: 'future' }, userProgress: { cyclesCompleted: 42 }
+        data: { routine: { future: { id: 'future', title: 'Future', tasks: [], cycleCount: 42, autoReset: true, deleteCheckedTasks: false, recurringTemplates: {} } } },
+        appState: { activeRoutineId: 'future' }, userProgress: { cyclesCompleted: 42 }
     });
 
     await test('init refuses to adopt newer-version data and leaves storage byte-identical', async () => {
@@ -216,7 +216,7 @@ export async function runAppStateTests(resultsDiv, isPartOfSuite = false) {
         const result = await sm.init();
         if (result !== null || sm.get() !== null) throw new Error('newer data must not be adopted');
         if (sm.isReady()) throw new Error('state must not report ready');
-        if (!sm.isBlockedByNewerData() || sm.isBlockedByNewerData().version !== '2.6') {
+        if (!sm.isBlockedByNewerData() || sm.isBlockedByNewerData().version !== '2.7') {
             throw new Error(`block flag should carry the version, got ${JSON.stringify(sm.isBlockedByNewerData())}`);
         }
         if (localStorage.getItem('miniCycleData') !== raw) throw new Error('storage was modified by init (recovery must not run on newer data)');
@@ -224,7 +224,7 @@ export async function runAppStateTests(resultsDiv, isPartOfSuite = false) {
     });
 
     await test('save() refuses to write over newer-version data written by another tab', async () => {
-        localStorage.setItem('miniCycleData', JSON.stringify({ ...createMockData(), schemaVersion: '2.5' }));
+        localStorage.setItem('miniCycleData', JSON.stringify({ ...createMockData(), schemaVersion: '2.6' }));
         const warnings = [];
         const sm = createStateManager({ showNotification: (msg, type) => warnings.push(`${type}: ${msg}`) });
         await sm.init();
@@ -248,7 +248,7 @@ export async function runAppStateTests(resultsDiv, isPartOfSuite = false) {
     });
 
     await test('a cross-tab write of newer-version data is not adopted', async () => {
-        localStorage.setItem('miniCycleData', JSON.stringify({ ...createMockData(), schemaVersion: '2.5' }));
+        localStorage.setItem('miniCycleData', JSON.stringify({ ...createMockData(), schemaVersion: '2.6' }));
         const sm = createStateManager({ showNotification: () => {} });
         await sm.init();
         if (!sm.isReady()) throw new Error('fixture: 2.5 data should load');
@@ -266,8 +266,8 @@ export async function runAppStateTests(resultsDiv, isPartOfSuite = false) {
         if (!stateManager.data) {
             throw new Error('init should load data');
         }
-        if (stateManager.data.schemaVersion !== '2.5') {
-            throw new Error('Should load Schema 2.5 data');
+        if (stateManager.data.schemaVersion !== '2.6') {
+            throw new Error('Should load Schema 2.6 data');
         }
     });
 
@@ -356,7 +356,7 @@ export async function runAppStateTests(resultsDiv, isPartOfSuite = false) {
 
     await test('validateSchema25Structure rejects missing data property', () => {
         const stateManager = createStateManager();
-        const invalidData = { schemaVersion: '2.5', appState: {} };
+        const invalidData = { schemaVersion: '2.6', appState: {} };
 
         const result = stateManager.validateSchema25Structure(invalidData);
         if (result) {
@@ -366,7 +366,7 @@ export async function runAppStateTests(resultsDiv, isPartOfSuite = false) {
 
     await test('validateSchema25Structure rejects missing appState', () => {
         const stateManager = createStateManager();
-        const invalidData = { schemaVersion: '2.5', data: { cycles: {} } };
+        const invalidData = { schemaVersion: '2.6', data: { routine: {} } };
 
         const result = stateManager.validateSchema25Structure(invalidData);
         if (result) {
@@ -643,11 +643,11 @@ export async function runAppStateTests(resultsDiv, isPartOfSuite = false) {
         // Must be structurally valid Schema 2.5 — save() now refuses to adopt
         // malformed stored data (a real tab write always carries schemaVersion).
         localStorage.setItem('miniCycleData', JSON.stringify({
-            schemaVersion: "2.5",
+            schemaVersion: "2.6",
             metadata: { lastModified: storedTs },
             settings: { theme: 'from-other-tab' },
-            data: { cycles: {} },
-            appState: { activeCycleId: null }
+            data: { routine: {} },
+            appState: { activeRoutineId: null }
         }));
 
         let notified = false;
@@ -694,8 +694,8 @@ export async function runAppStateTests(resultsDiv, isPartOfSuite = false) {
         localStorage.setItem('miniCycleData', JSON.stringify({
             metadata: { lastModified: ourTs + 5000 },
             settings: { theme: 'corrupt-newer' },
-            data: { cycles: {} },
-            appState: { activeCycleId: null }
+            data: { routine: {} },
+            appState: { activeRoutineId: null }
         }));
 
         stateManager.isDirty = true;
@@ -714,7 +714,7 @@ export async function runAppStateTests(resultsDiv, isPartOfSuite = false) {
         // Regression guard (Aug 2026 external review, Finding 1): the storage-event
         // handler adopted newer data from another tab and then called
         // notifyListeners() with NO arguments — every subscriber received
-        // (undefined, undefined). undoRedoManager guards on newState?.data?.cycles
+        // (undefined, undefined). undoRedoManager guards on newState?.data?.routine
         // and silently skipped its snapshot; dailyResetManager compared
         // newActive !== oldActive on two undefineds and skipped its resync. The
         // other two adoption sites already passed (oldData, newData); this third
@@ -735,11 +735,11 @@ export async function runAppStateTests(resultsDiv, isPartOfSuite = false) {
         }
 
         const externalData = {
-            schemaVersion: "2.5",
+            schemaVersion: "2.6",
             metadata: { lastModified: ourTs + 5000 },
             settings: { theme: 'adopted-from-other-tab' },
-            data: { cycles: {} },
-            appState: { activeCycleId: null }
+            data: { routine: {} },
+            appState: { activeRoutineId: null }
         };
 
         let receivedNew, receivedOld, callCount = 0;
@@ -822,7 +822,7 @@ export async function runAppStateTests(resultsDiv, isPartOfSuite = false) {
         stateManager.deps.showNotification = (msg) => { shown = msg; };
 
         stateManager._notifyDataRepaired({
-            data: { data: { cycles: { a: {}, b: {} } } },
+            data: { data: { routine: { a: {}, b: {} } } },
             backupKey: 'miniCycleData_corrupted_1'
         });
 
@@ -1053,12 +1053,12 @@ export async function runAppStateTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
-    await test('setActiveCycle updates activeCycleId', async () => {
+    await test('setActiveCycle updates activeRoutineId', async () => {
         const stateManager = createStateManager();
         await stateManager.init();
 
         // Add a second cycle
-        stateManager.data.data.cycles['new-cycle'] = {
+        stateManager.data.data.routine['new-cycle'] = {
             id: 'new-cycle',
             name: 'New Cycle',
             tasks: []
@@ -1066,8 +1066,8 @@ export async function runAppStateTests(resultsDiv, isPartOfSuite = false) {
 
         await stateManager.setActiveCycle('new-cycle');
 
-        if (stateManager.data.appState.activeCycleId !== 'new-cycle') {
-            throw new Error('setActiveCycle should update activeCycleId');
+        if (stateManager.data.appState.activeRoutineId !== 'new-cycle') {
+            throw new Error('setActiveCycle should update activeRoutineId');
         }
     });
 
@@ -1089,20 +1089,20 @@ export async function runAppStateTests(resultsDiv, isPartOfSuite = false) {
         const stateManager = createStateManager();
         const minimal = stateManager.createMinimalFallbackState();
 
-        if (minimal.schemaVersion !== '2.5') {
-            throw new Error('Should have schemaVersion 2.5');
+        if (minimal.schemaVersion !== '2.6') {
+            throw new Error('Should have schemaVersion 2.6');
         }
-        if (!minimal.data || typeof minimal.data.cycles !== 'object') {
-            throw new Error('Should have data.cycles object');
+        if (!minimal.data || typeof minimal.data.routine !== 'object') {
+            throw new Error('Should have data.routine object');
         }
         if (!minimal.appState) {
             throw new Error('Should have appState');
         }
     });
 
-    await test('recovered state seeds totalCyclesCreated, so a bare ++ cannot yield NaN', () => {
+    await test('recovered state seeds totalRoutinesCreated, so a bare ++ cannot yield NaN', () => {
         // The bug: metadata built by the recovery paths omitted this field, and
-        // six call sites did `metadata.totalCyclesCreated++`. `undefined++` is
+        // six call sites did `metadata.totalRoutinesCreated++`. `undefined++` is
         // NaN, which JSON.stringify persists as null — schema-invalid for a
         // field types.js declares as a number.
         //
@@ -1113,19 +1113,19 @@ export async function runAppStateTests(resultsDiv, isPartOfSuite = false) {
         const stateManager = createStateManager();
         const recovered = stateManager.createMinimalFallbackState();
 
-        if (!Number.isFinite(recovered.metadata.totalCyclesCreated)) {
-            throw new Error(`fallback metadata must seed a real number, got ${JSON.stringify(recovered.metadata.totalCyclesCreated)}`);
+        if (!Number.isFinite(recovered.metadata.totalRoutinesCreated)) {
+            throw new Error(`fallback metadata must seed a real number, got ${JSON.stringify(recovered.metadata.totalRoutinesCreated)}`);
         }
 
         // Even the unguarded form the six sites used must now stay finite.
-        recovered.metadata.totalCyclesCreated++;
-        if (recovered.metadata.totalCyclesCreated !== 1) {
-            throw new Error(`expected 1, got ${recovered.metadata.totalCyclesCreated}`);
+        recovered.metadata.totalRoutinesCreated++;
+        if (recovered.metadata.totalRoutinesCreated !== 1) {
+            throw new Error(`expected 1, got ${recovered.metadata.totalRoutinesCreated}`);
         }
         // And survive a persist round-trip as a number, not null.
         const roundTripped = JSON.parse(JSON.stringify(recovered));
-        if (roundTripped.metadata.totalCyclesCreated !== 1) {
-            throw new Error(`persisted as ${JSON.stringify(roundTripped.metadata.totalCyclesCreated)}`);
+        if (roundTripped.metadata.totalRoutinesCreated !== 1) {
+            throw new Error(`persisted as ${JSON.stringify(roundTripped.metadata.totalRoutinesCreated)}`);
         }
     });
 
@@ -1136,16 +1136,16 @@ export async function runAppStateTests(resultsDiv, isPartOfSuite = false) {
         const stateManager = createStateManager();
         for (const broken of [null, undefined, NaN, 'seven', {}]) {
             const data = stateManager.createMinimalFallbackState();
-            data.metadata.totalCyclesCreated = broken;
+            data.metadata.totalRoutinesCreated = broken;
             const fixed = stateManager._ensureMetadata(data);
-            if (fixed.metadata.totalCyclesCreated !== 0) {
-                throw new Error(`${JSON.stringify(broken)} should normalize to 0, got ${JSON.stringify(fixed.metadata.totalCyclesCreated)}`);
+            if (fixed.metadata.totalRoutinesCreated !== 0) {
+                throw new Error(`${JSON.stringify(broken)} should normalize to 0, got ${JSON.stringify(fixed.metadata.totalRoutinesCreated)}`);
             }
         }
         // A real count must be left alone.
         const healthy = stateManager.createMinimalFallbackState();
-        healthy.metadata.totalCyclesCreated = 12;
-        if (stateManager._ensureMetadata(healthy).metadata.totalCyclesCreated !== 12) {
+        healthy.metadata.totalRoutinesCreated = 12;
+        if (stateManager._ensureMetadata(healthy).metadata.totalRoutinesCreated !== 12) {
             throw new Error('an existing count must not be reset');
         }
     });

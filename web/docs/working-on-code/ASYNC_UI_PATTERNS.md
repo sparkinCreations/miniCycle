@@ -47,20 +47,18 @@ Data sometimes exists in multiple places (e.g., task object + recurring template
 ```javascript
 // ❌ WRONG - Only updated the template
 recurringTemplates[taskId] = {
-    deleteWhenComplete: true,
-    deleteWhenCompleteSettings: {...}
+    autoClear: {...}
 };
 
 // ✅ RIGHT - Also update the task in the tasks array
 recurringTemplates[taskId] = {
-    deleteWhenComplete: true,
-    deleteWhenCompleteSettings: {...}
+    autoClear: {...}
 };
 
 const task = cycle.tasks.find(t => t.id === taskId);
 if (task) {
-    task.deleteWhenComplete = true;
-    task.deleteWhenCompleteSettings = {...};
+    task.autoClear = true;
+    task.autoClear = {...};
 }
 ```
 
@@ -237,7 +235,7 @@ function scheduleIdleSave() {
 // AppState already uses 600ms debounced saves
 // Idle-time saves provide an additional safety net
 AppState.update(state => {
-    state.data.cycles[cycleId].tasks.push(newTask);
+    state.data.routine[cycleId].tasks.push(newTask);
 });  // Debounced save scheduled
 
 // Also schedule an idle-time save for extra durability

@@ -724,12 +724,12 @@ export const DEFAULT_LABELS = deepFreeze({
         // Device detection notifications
         deviceDetectionComplete: 'Device detection complete - using full version by user choice',
         redirectingToLite:       'Redirecting to optimized lite version...',
-        reportRequiresSchema:    'Cannot generate report - Schema 2.5 data required',
+        reportRequiresSchema:    'Cannot generate report - state data required',
         deviceConfiguredLite:    'Device configured for lite version',
         deviceConfiguredFull:    'Device configured for full version',
         noDevicePreference:      'No device preference stored',
-        startingDetectionTest:   'Starting manual device detection test (Schema 2.5 only)...',
-        detectionTestFailed:     'Cannot test - Schema 2.5 data required',
+        startingDetectionTest:   'Starting manual device detection test...',
+        detectionTestFailed:     'Cannot test - state data required',
 
         // Recurring panel notifications
         taskLoadFailed:          'Unable to load tasks. Please try again.',

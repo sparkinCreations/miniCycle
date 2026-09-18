@@ -394,7 +394,7 @@ For details, see [Error Handling Documentation](../archive/ERROR_HANDLING_AND_TE
 **Schema Normalization:**
 - Fixed `dueDate` validator to accept ISO date strings (YYYY-MM-DD) from HTML inputs
 - Fixed reminders read/write location mismatch in `dataAccess.js`
-- Updated schema documentation in `SCHEMA_2_5.md`
+- Updated schema documentation in `SCHEMA_2_6.md`
 - **Impact:** Data consistency, prevents validation errors
 - **Severity:** Low (bug fix)
 

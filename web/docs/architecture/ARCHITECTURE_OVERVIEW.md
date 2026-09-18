@@ -260,8 +260,8 @@ web/
 // When user checks off the last task:
 function checkForAutoReset() {
     const currentState = this.deps.AppState.get();
-    const activeCycleId = currentState.appState?.activeCycleId;
-    const currentCycle = currentState.data?.cycles?.[activeCycleId];
+    const activeCycleId = currentState.appState?.activeRoutineId;
+    const currentCycle = currentState.data?.routine?.[activeCycleId];
 
     if (!currentCycle) return;
 
@@ -272,7 +272,7 @@ function checkForAutoReset() {
     if (tasks.length > 0 && completedCount === tasks.length && currentCycle.autoReset) {
         // 🎉 Reset all tasks!
         this.deps.AppState.update(state => {
-            const cycle = state.data.cycles[activeCycleId];
+            const cycle = state.data.routine[activeCycleId];
             cycle.tasks.forEach(task => task.completed = false);
 
             // Increment cycle count (for stats/achievements)
@@ -374,12 +374,12 @@ class MyModule {
     doSomething() {
         // Reading state
         const currentState = this.deps.AppState.get();
-        const activeCycleId = currentState.appState.activeCycleId;
-        const tasks = currentState.data.cycles[activeCycleId].tasks;
+        const activeCycleId = currentState.appState.activeRoutineId;
+        const tasks = currentState.data.routine[activeCycleId].tasks;
 
         // Updating state
         this.deps.AppState.update((state) => {
-            state.data.cycles[activeCycleId].tasks.push(newTask);
+            state.data.routine[activeCycleId].tasks.push(newTask);
         }, true);  // true = save immediately
     }
 }
@@ -451,7 +451,7 @@ function generateRecurringTask(template) {
         id: `task-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         text: template.taskText,
         completed: false,
-        highPriority: template.highPriority || false,
+        priority: template.priority ?? null,
         dueDate: template.dueDate || null,
         remindersEnabled: template.remindersEnabled || false,
         recurring: true,
@@ -566,7 +566,7 @@ The task options customizer (`modules/ui/taskOptionsCustomizer.js`) enables per-
 - **Rationale:** Interaction paradigm should be consistent everywhere
 
 **Per-Cycle Settings** (customizable per routine):
-- `highPriority`, `rename`, `delete`, `recurring`, `dueDate`, `reminders`, `deleteWhenComplete` (v1.370+)
+- `priority`, `rename`, `delete`, `recurring`, `dueDate`, `reminders`, `autoClear` (v1.370+)
 - **Rationale:** Different cycles have different feature requirements
   - Simple routines need minimal buttons
   - Complex projects need full feature set
@@ -578,7 +578,7 @@ cycle.taskOptionButtons = {
     customize: true,      // Always available
     moveArrows: false,    // ← Global preference
     threeDots: false,     // ← Global preference
-    highPriority: true,   // Some tasks matter more
+    priority: 'high',   // Some tasks matter more
     rename: true,         // Occasional adjustments
     delete: true,         // Remove unneeded tasks
     recurring: false,     // Daily routine, no recurring needed
@@ -674,7 +674,7 @@ The drag & drop system (`modules/task/dragDropManager.js`) was refactored to use
 // 2. On drop, calculate new index from drop position
 // 3. Update state with reordered task array
 this.deps.AppState.update(state => {
-    const tasks = state.data.cycles[cycleId].tasks;
+    const tasks = state.data.routine[cycleId].tasks;
     const [movedTask] = tasks.splice(fromIndex, 1);
     tasks.splice(toIndex, 0, movedTask);
 }, true);  // Immediate save

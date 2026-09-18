@@ -233,8 +233,8 @@ export async function runRecurringPanelEventsTests(resultsDiv) {
         return {
             isReady: () => true,
             get: () => ({
-                appState: { activeCycleId: 'c1' },
-                data: { cycles: { c1: { recurringTemplates: template ? { 't1': template } : {} } } }
+                appState: { activeRoutineId: 'c1' },
+                data: { routine: { c1: { recurringTemplates: template ? { 't1': template } : {} } } }
             })
         };
     }

@@ -72,7 +72,7 @@ export class MyModule {
 
         // Now safe to use AppState
         const state = this.deps.AppState.get();
-        const activeCycle = state.data.cycles[state.appState.activeCycleId];
+        const activeCycle = state.data.routine[state.appState.activeRoutineId];
 
         // ... work with data
     }

@@ -103,7 +103,7 @@ export async function runNotificationsTests(resultsDiv) {
 
     function createMockSchemaData() {
         return {
-            schemaVersion: "2.5",
+            schemaVersion: "2.6",
             metadata: {
                 lastModified: Date.now(),
                 version: "2.5"
@@ -115,15 +115,14 @@ export async function runNotificationsTests(resultsDiv) {
                 notificationPositionModified: false,
                 dismissedEducationalTips: {}
             },
-            data: {
-                cycles: {
+            data: { routine: {
                     'test-cycle': {
                         tasks: []
                     }
                 }
             },
             appState: {
-                activeCycleId: 'test-cycle'
+                activeRoutineId: 'test-cycle'
             }
         };
     }

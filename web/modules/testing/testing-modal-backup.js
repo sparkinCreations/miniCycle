@@ -452,17 +452,17 @@ export async function restoreFromBackup() {
                             // path — a version-string match alone let ANY payload
                             // reach localStorage.
                             if (!validateSchema25PayloadString(restoredData.miniCycleData)) {
-                                throw new Error('Backup payload failed Schema 2.5 structural validation — not restored');
+                                throw new Error('Backup payload failed structural validation — not restored');
                             }
                             localStorage.setItem(STORAGE_KEYS.DATA, restoredData.miniCycleData);
-                            appendToTestResults(`Restored Schema 2.5 data to localStorage\n`);
+                            appendToTestResults(`Restored data to localStorage\n`);
                             const liteKeysRestored = restoreLiteStorageSnapshot(deps, restoredData.liteStorage);
                             if (liteKeysRestored > 0) {
                                 appendToTestResults(`Restored ${liteKeysRestored} lite storage key(s)\n`);
                             }
                         } else if (isSchema25) {
                             localStorage.setItem(STORAGE_KEYS.DATA, JSON.stringify(restoredData));
-                            appendToTestResults(`Restored Schema 2.5 data to localStorage\n`);
+                            appendToTestResults(`Restored data to localStorage\n`);
                         } else {
                             // Pre-2.5 backup: the migration that converted it was retired
                             // Sep 2026. Refuse BEFORE touching current data.
@@ -481,7 +481,7 @@ export async function restoreFromBackup() {
 
                         if (isSchema25) {
                             localStorage.setItem(STORAGE_KEYS.DATA, JSON.stringify(parsed));
-                            appendToTestResults(`Restored Schema 2.5 data from localStorage backup\n`);
+                            appendToTestResults(`Restored data from localStorage backup\n`);
                         } else {
                             // Pre-2.5 content (see the IndexedDB branch above) — refuse
                             // before touching current data.

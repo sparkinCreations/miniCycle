@@ -29,9 +29,8 @@ export async function runRecurringTemplateTests(resultsDiv) {
     await test('produces the full field set every writer needs', () => {
         const t = buildRecurringTemplate(base());
         const required = [
-            'id', 'text', 'recurring', 'recurringSettings', 'dueDate', 'highPriority',
-            'priorityColor', 'remindersEnabled', 'deleteWhenComplete',
-            'deleteWhenCompleteSettings', 'occurrenceCount', 'lastTriggeredTimestamp',
+            'id', 'text', 'recurring', 'recurringSettings', 'dueDate', 'priority',
+            'remindersEnabled', 'autoClear', 'occurrenceCount', 'lastTriggeredTimestamp',
             'nextScheduledOccurrence', 'position', 'schemaVersion'
         ];
         const missing = required.filter(k => !(k in t));
@@ -68,42 +67,41 @@ export async function runRecurringTemplateTests(resultsDiv) {
 
     await test('defaults match the recurring contract', () => {
         const t = buildRecurringTemplate(base());
-        assertEq(t.deleteWhenComplete, true, 'recurring instances auto-remove by default');
+        assertEq(t.autoClear.cycle, true, 'recurring instances clear on reset by default');
+        assertEq(t.autoClear.todo, true, 'and in To-Do mode');
         assertEq(t.occurrenceCount, 0, 'a fresh template has no occurrences yet');
         assertEq(t.lastTriggeredTimestamp, null, 'never triggered');
-        assertEq(t.highPriority, false, 'highPriority default');
-        assertEq(t.priorityColor, null, 'priorityColor default');
+        assertEq(t.priority, null, 'priority default');
         assertEq(t.dueDate, null, 'dueDate default');
         assertEq(t.remindersEnabled, false, 'remindersEnabled default');
-        assert(t.deleteWhenCompleteSettings && typeof t.deleteWhenCompleteSettings === 'object',
-            'deleteWhenCompleteSettings must be an object, not null');
+        assert(t.autoClear && typeof t.autoClear === 'object',
+            'autoClear must be an object, not null');
     });
 
     await test('caller values win over every default', () => {
         const t = buildRecurringTemplate({
             ...base(),
-            dueDate: '2026-09-01', highPriority: true, priorityColor: '#ff0000',
-            remindersEnabled: true, deleteWhenComplete: false,
-            deleteWhenCompleteSettings: { cycle: false, todo: false },
+            dueDate: '2026-09-01', priority: 'high',
+            remindersEnabled: true, 
+            autoClear: { cycle: false, todo: false },
             occurrenceCount: 7, lastTriggeredTimestamp: 123
         });
         assertEq(t.dueDate, '2026-09-01', 'dueDate');
-        assertEq(t.highPriority, true, 'highPriority');
-        assertEq(t.deleteWhenComplete, false, 'an explicit false must survive');
+        assertEq(t.priority, 'high', 'priority');
         assertEq(t.occurrenceCount, 7, 'progress toward a finite count must survive');
         assertEq(t.lastTriggeredTimestamp, 123, 'lastTriggeredTimestamp');
-        assertEq(t.deleteWhenCompleteSettings.cycle, false, 'supplied settings win');
+        assertEq(t.autoClear.cycle, false, 'supplied settings win');
     });
 
-    await test('deleteWhenCompleteSettings gets a fresh object, never a shared one', () => {
+    await test('autoClear gets a fresh object, never a shared one', () => {
         // Two templates sharing one settings object would let editing one silently
         // change the other.
         const a = buildRecurringTemplate(base());
         const b = buildRecurringTemplate(base());
-        assert(a.deleteWhenCompleteSettings !== b.deleteWhenCompleteSettings,
+        assert(a.autoClear !== b.autoClear,
             'each template must own its settings object');
-        a.deleteWhenCompleteSettings.cycle = 'mutated';
-        assert(b.deleteWhenCompleteSettings.cycle !== 'mutated', 'mutation leaked between templates');
+        a.autoClear.cycle = 'mutated';
+        assert(b.autoClear.cycle !== 'mutated', 'mutation leaked between templates');
     });
 
     const percentage = Math.round((passed.count / total.count) * 100);

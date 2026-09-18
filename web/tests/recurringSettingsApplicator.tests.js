@@ -60,7 +60,7 @@ export async function runRecurringSettingsApplicatorTests(resultsDiv) {
 
         const deps = {
             appInit: { waitForCore: async () => {} },
-            AppState: over.AppState || makeAppState({ appState: { activeCycleId: 'c1' }, data: { cycles: { c1: { tasks: [], recurringTemplates: {} } } }, settings: {} }),
+            AppState: over.AppState || makeAppState({ appState: { activeRoutineId: 'c1' }, data: { routine: { c1: { tasks: [], recurringTemplates: {} } } }, settings: {} }),
             showNotification,
             getElementById: () => null, // SET_DEFAULT_RECURRING checkbox absent by default
             querySelectorAll: () => [],  // no checked tasks by default
@@ -108,7 +108,7 @@ export async function runRecurringSettingsApplicatorTests(resultsDiv) {
     await test('no active cycle => notifies and does not call updateAppState', async () => {
         let updateCalled = false;
         const deps = makeDeps({
-            AppState: makeAppState({ appState: {}, data: { cycles: {} } }),
+            AppState: makeAppState({ appState: {}, data: { routine: {} } }),
             updateAppState: async () => { updateCalled = true; }
         });
         mod.setRecurringSettingsApplicatorDependencies(deps);
@@ -121,7 +121,7 @@ export async function runRecurringSettingsApplicatorTests(resultsDiv) {
     await test('active cycle but missing cycle data => notifies, no update', async () => {
         let updateCalled = false;
         const deps = makeDeps({
-            AppState: makeAppState({ appState: { activeCycleId: 'ghost' }, data: { cycles: {} } }),
+            AppState: makeAppState({ appState: { activeRoutineId: 'ghost' }, data: { routine: {} } }),
             updateAppState: async () => { updateCalled = true; }
         });
         mod.setRecurringSettingsApplicatorDependencies(deps);
@@ -147,8 +147,8 @@ export async function runRecurringSettingsApplicatorTests(resultsDiv) {
 
     await test('writes a recurring template for the checked task', async () => {
         const appState = makeAppState({
-            appState: { activeCycleId: 'c1' },
-            data: { cycles: { c1: { tasks: [{ id: 't1', text: 'Real task' }], recurringTemplates: {} } } },
+            appState: { activeRoutineId: 'c1' },
+            data: { routine: { c1: { tasks: [{ id: 't1', text: 'Real task' }], recurringTemplates: {} } } },
             settings: {}
         });
         const cb = makeCheckbox('t1', 'DOM text');
@@ -159,7 +159,7 @@ export async function runRecurringSettingsApplicatorTests(resultsDiv) {
         mod.setRecurringSettingsApplicatorDependencies(deps);
         await mod.applyRecurringSettings(makePanel(), () => ({ frequency: 'daily', indefinitely: true }));
 
-        const tmpl = appState.get().data.cycles.c1.recurringTemplates.t1;
+        const tmpl = appState.get().data.routine.c1.recurringTemplates.t1;
         if (!tmpl) throw new Error('template t1 was not created');
         eq(tmpl.id, 't1', 'template id');
         eq(tmpl.recurring, true, 'template recurring flag');
@@ -170,8 +170,8 @@ export async function runRecurringSettingsApplicatorTests(resultsDiv) {
 
     await test('marks the matching task as recurring with defaults', async () => {
         const appState = makeAppState({
-            appState: { activeCycleId: 'c1' },
-            data: { cycles: { c1: { tasks: [{ id: 't1', text: 'Real task' }], recurringTemplates: {} } } },
+            appState: { activeRoutineId: 'c1' },
+            data: { routine: { c1: { tasks: [{ id: 't1', text: 'Real task' }], recurringTemplates: {} } } },
             settings: {}
         });
         const cb = makeCheckbox('t1');
@@ -179,18 +179,18 @@ export async function runRecurringSettingsApplicatorTests(resultsDiv) {
         mod.setRecurringSettingsApplicatorDependencies(deps);
         await mod.applyRecurringSettings(makePanel(), () => ({ frequency: 'weekly' }));
 
-        const task = appState.get().data.cycles.c1.tasks[0];
+        const task = appState.get().data.routine.c1.tasks[0];
         eq(task.recurring, true, 'task.recurring');
         eq(task.schemaVersion, 2, 'task.schemaVersion');
-        eq(task.deleteWhenComplete, true, 'task.deleteWhenComplete default');
-        if (!task.deleteWhenCompleteSettings) throw new Error('deleteWhenCompleteSettings not set');
+        eq(task.autoClear.cycle, true, 'recurring autoClear.cycle default');
+        if (!task.autoClear) throw new Error('autoClear not set');
         if (!task.recurringSettings) throw new Error('recurringSettings not set on task');
     });
 
     await test('uses DOM text fallback when task not in task list', async () => {
         const appState = makeAppState({
-            appState: { activeCycleId: 'c1' },
-            data: { cycles: { c1: { tasks: [], recurringTemplates: {} } } }, // no matching task
+            appState: { activeRoutineId: 'c1' },
+            data: { routine: { c1: { tasks: [], recurringTemplates: {} } } }, // no matching task
             settings: {}
         });
         const cb = makeCheckbox('orphan', 'Fallback DOM text');
@@ -198,15 +198,15 @@ export async function runRecurringSettingsApplicatorTests(resultsDiv) {
         mod.setRecurringSettingsApplicatorDependencies(deps);
         await mod.applyRecurringSettings(makePanel(), () => ({ frequency: 'daily' }));
 
-        const tmpl = appState.get().data.cycles.c1.recurringTemplates.orphan;
+        const tmpl = appState.get().data.routine.c1.recurringTemplates.orphan;
         if (!tmpl) throw new Error('orphan template not created');
         eq(tmpl.text, 'Fallback DOM text', 'template uses DOM text fallback');
     });
 
     await test('saveAsDefault checkbox stores defaultRecurringSettings', async () => {
         const appState = makeAppState({
-            appState: { activeCycleId: 'c1' },
-            data: { cycles: { c1: { tasks: [{ id: 't1', text: 'x' }], recurringTemplates: {} } } },
+            appState: { activeRoutineId: 'c1' },
+            data: { routine: { c1: { tasks: [{ id: 't1', text: 'x' }], recurringTemplates: {} } } },
             settings: {}
         });
         const cb = makeCheckbox('t1');
@@ -225,8 +225,8 @@ export async function runRecurringSettingsApplicatorTests(resultsDiv) {
 
     await test('panel transitions to browsing mode and restarts watcher', async () => {
         const appState = makeAppState({
-            appState: { activeCycleId: 'c1' },
-            data: { cycles: { c1: { tasks: [{ id: 't1', text: 'x' }], recurringTemplates: {} } } },
+            appState: { activeRoutineId: 'c1' },
+            data: { routine: { c1: { tasks: [{ id: 't1', text: 'x' }], recurringTemplates: {} } } },
             settings: {}
         });
         const cb = makeCheckbox('t1');
@@ -246,8 +246,8 @@ export async function runRecurringSettingsApplicatorTests(resultsDiv) {
         // readers ever consumed it. The applicator must leave normalized
         // settings untouched instead of re-adding the dead field.
         const appState = makeAppState({
-            appState: { activeCycleId: 'c1' },
-            data: { cycles: { c1: { tasks: [{ id: 't1', text: 'x' }], recurringTemplates: {} } } },
+            appState: { activeRoutineId: 'c1' },
+            data: { routine: { c1: { tasks: [{ id: 't1', text: 'x' }], recurringTemplates: {} } } },
             settings: {}
         });
         const cb = makeCheckbox('t1');
@@ -270,8 +270,8 @@ export async function runRecurringSettingsApplicatorTests(resultsDiv) {
         const cb = makeCheckbox('t1');
         const deps = makeDeps({
             AppState: makeAppState({
-                appState: { activeCycleId: 'c1' },
-                data: { cycles: { c1: { tasks: [{ id: 't1', text: 'x' }], recurringTemplates: {} } } },
+                appState: { activeRoutineId: 'c1' },
+                data: { routine: { c1: { tasks: [{ id: 't1', text: 'x' }], recurringTemplates: {} } } },
                 settings: {}
             }),
             querySelectorAll: () => [cb],

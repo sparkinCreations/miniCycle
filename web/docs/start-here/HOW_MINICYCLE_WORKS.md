@@ -159,7 +159,7 @@ async update(updateFn, immediate = false) {
    insurance in case the change fails.
 2. **Make the change** — the caller hands `update()` a small *instruction*
    (`updateFn`) describing *what* to change; `update()` handles all the ceremony.
-   Example: `AppState.update(state => { state.data.cycles[id].tasks.push(task); })`.
+   Example: `AppState.update(state => { state.data.routine[id].tasks.push(task); })`.
 3. **Save** (`scheduleSave`) — **debounced**: normal saves wait ~600ms and *batch*
    (rapid changes collapse into one save); urgent ones (`immediate = true`) save
    instantly. A pending save is **flushed on close** by three handlers —
@@ -194,7 +194,7 @@ The handler is `handleTaskCompletionChangeImpl` in
 3. **Change the truth through `update()`:**
    ```javascript
    AppState.update(state => {
-     const cycle = state.data.cycles[state.appState.activeCycleId];
+     const cycle = state.data.routine[state.appState.activeRoutineId];
      const task = cycle.tasks.find(t => t.id === taskId);
      if (task) task.completed = isCompleted;   // the actual change
    }, false);  // false = let debounce batch the save
@@ -274,7 +274,7 @@ record (defined in `modules/routine/migrationManager.js`, schema version `"2.5"`
 }
 ```
 
-**`data.cycles`** holds your routines. Each cycle is keyed by its name and also
+**`data.routine`** holds your routines. Each cycle is keyed by its name and also
 carries a stable `id`:
 
 ```javascript
@@ -296,8 +296,7 @@ both" — the name is the historical key; the `id` is the newer stable identifie
   id: "task-xyz",
   text: "Make coffee",
   completed: false,            // ← the checkbox
-  highPriority: true,
-  priorityColor: "#8b1a1a",    // custom priority color (null = theme default)
+  priority: 'high',    // custom priority color (null = theme default)
   dueDate: null,
   remindersEnabled: false,
   recurring: false,
@@ -309,9 +308,9 @@ both" — the name is the historical key; the `id` is the newer stable identifie
 entry's** text lives in `taskText`. The July 2026 review found an import bug caused
 by exactly this mix-up — round-tripped cleared history rendered blank.)*
 
-So checking a task = navigating `data.cycles[activeId].tasks`, finding the one whose
+So checking a task = navigating `data.routine[activeId].tasks`, finding the one whose
 `id` matches, and flipping `completed`. The paths you see in code
-(`state.data.cycles[cid].tasks`) are just walking this nesting.
+(`state.data.routine[cid].tasks`) are just walking this nesting.
 
 **`schemaVersion` is the quiet hero.** With no server, users hold data saved in
 older shapes. On startup, `migrationManager` reads the stamp and **upgrades old data
@@ -329,7 +328,7 @@ keep everything. On the way back in, import
 **rebuilds** every field through a strict allowlist (type-checked, clamped, text
 normalized) rather than trusting the file — see `cycleImportManager.js`.
 
-**Takeaway:** one nested record; routines live in `data.cycles`; each task is an
+**Takeaway:** one nested record; routines live in `data.routine`; each task is an
 object with a `completed` flag; `schemaVersion` enables safe upgrades over time.
 
 ---
@@ -346,7 +345,7 @@ of the tasks vanishing (a to-do app), they **reset** so the routine runs again.
 2. **Count it** (`incrementCycleCount` in `modules/progress/cycleCompletion.js`):
    ```javascript
    AppState.update(state => {
-     const cycle = state.data.cycles[activeCycle];
+     const cycle = state.data.routine[activeCycle];
      cycle.cycleCount = (cycle.cycleCount || 0) + 1;               // this routine +1
      state.userProgress.cyclesCompleted =                          // lifetime total +1
        (state.userProgress.cyclesCompleted || 0) + 1;

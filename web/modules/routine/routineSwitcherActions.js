@@ -119,9 +119,8 @@ export class RoutineSwitcherActions {
             return;
         }
 
-        const { data, appState } = currentState;
-        const cycles = data.cycles || {};
-        const activeCycle = appState.activeCycleId;
+        const cycles = getRoutines(currentState) || {};
+        const activeCycle = getActiveRoutineId(currentState);
         const cycleKey = selectedCycle.dataset.cycleKey;
         const currentCycle = cycles[cycleKey];
 
@@ -334,8 +333,7 @@ export class RoutineSwitcherActions {
             return;
         }
 
-        const { data } = currentState;
-        const cycles = data.cycles || {};
+        const cycles = getRoutines(currentState) || {};
         const cycleKey = selectedCycle.dataset.cycleKey;
         const originalCycle = cycles[cycleKey];
 
@@ -402,7 +400,7 @@ export class RoutineSwitcherActions {
         // ✅ Update through state system
         this.m.deps.AppState.update(state => {
             getRoutines(state)[uniqueName] = copiedCycle;
-            state.metadata.totalCyclesCreated = (state.metadata.totalCyclesCreated || 0) + 1;
+            state.metadata.totalRoutinesCreated = (state.metadata.totalRoutinesCreated || 0) + 1;
         }, true); // immediate save
 
         // ✅ Update storage estimate (add duplicated routine size)

@@ -133,7 +133,7 @@ export async function runAppGlobalStateTests(resultsDiv) {
 
     await test('debugAppState completes without error for a valid state', async () => {
         setDebugAppState({
-            get: () => ({ appState: { activeCycleId: 'c1' }, data: { cycles: { c1: { tasks: [] } } } })
+            get: () => ({ appState: { activeRoutineId: 'c1' }, data: { routine: { c1: { tasks: [] } } } })
         });
         const errors = await withCapturedConsole(() => debugAppState());
         if (errors.length !== 0) throw new Error('expected no errors for valid state, got: ' + JSON.stringify(errors));

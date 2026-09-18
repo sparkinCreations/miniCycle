@@ -47,9 +47,8 @@ export async function runTaskEventsTests(resultsDiv) {
             AppState: {
                 isReady: () => true,
                 get: () => ({
-                    appState: { activeCycleId: 'cycle1' },
-                    data: {
-                        cycles: {
+                    appState: { activeRoutineId: 'cycle1' },
+                    data: { routine: {
                             cycle1: {
                                 deleteCheckedTasks: true,
                                 autoReset: false
@@ -419,7 +418,8 @@ export async function runTaskEventsTests(resultsDiv) {
         const taskElements = { taskItem, buttonContainer, checkbox, dueDateInput };
         const taskContext = {
             settings: { showThreeDots: false },
-            highPriority: true
+            priority: 'high',
+            highPriority: true   // taskCRUD derives this on/off flag for the DOM from the level
         };
 
         events.setupTaskInteractions(taskElements, taskContext);

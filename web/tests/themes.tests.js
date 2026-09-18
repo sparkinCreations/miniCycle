@@ -22,8 +22,8 @@ export async function runThemesTests(resultsDiv) {
         const base = {
             metadata: { lastModified: Date.now() },
             settings: { unlockedThemes: ['classic'], defaultTheme: 'classic' },
-            data: { cycles: { 'cycle-1': { tasks: [], theme: 'classic' } } },
-            appState: { activeCycleId: 'cycle-1' },
+            data: { routine: { 'cycle-1': { tasks: [], theme: 'classic' } } },
+            appState: { activeRoutineId: 'cycle-1' },
             userProgress: { cyclesCompleted: 0 }
         };
         return { ...base, ...overrides };
@@ -159,7 +159,7 @@ export async function runThemesTests(resultsDiv) {
 
     await test('getActiveTheme returns routine theme', () => {
         const mockState = createMockState();
-        mockState.data.cycles['cycle-1'].theme = 'fitness';
+        mockState.data.routine['cycle-1'].theme = 'fitness';
         mockState.settings.unlockedThemes = ['classic', 'fitness'];
         setVocabThemeManagerDependencies({ AppState: { get: () => mockState } }, { replace: true });
 
@@ -170,7 +170,7 @@ export async function runThemesTests(resultsDiv) {
 
     await test('getActiveTheme falls back to classic for unknown theme', () => {
         const mockState = createMockState();
-        mockState.data.cycles['cycle-1'].theme = 'nonexistent';
+        mockState.data.routine['cycle-1'].theme = 'nonexistent';
         setVocabThemeManagerDependencies({ AppState: { get: () => mockState } }, { replace: true });
 
         const mgr = new VocabThemeManager();
@@ -180,7 +180,7 @@ export async function runThemesTests(resultsDiv) {
 
     await test('getRoutineTheme returns correct theme for routine', () => {
         const mockState = createMockState();
-        mockState.data.cycles['cycle-1'].theme = 'scholar';
+        mockState.data.routine['cycle-1'].theme = 'scholar';
         setVocabThemeManagerDependencies({ AppState: { get: () => mockState } }, { replace: true });
 
         const mgr = new VocabThemeManager();
@@ -289,7 +289,7 @@ export async function runThemesTests(resultsDiv) {
         if (result !== true) throw new Error('Should return true');
 
         const state = mockAS.get();
-        if (state.data.cycles['cycle-1'].theme !== 'scholar') {
+        if (state.data.routine['cycle-1'].theme !== 'scholar') {
             throw new Error('Theme not set on routine');
         }
     });
@@ -367,7 +367,7 @@ export async function runThemesTests(resultsDiv) {
     // renderers, toggle, search and picker all ask it (utils/priorityLevel.js).
     const managerOnTheme = (themeId) => {
         const AppState = createMockAppState({
-            data: { cycles: { 'cycle-1': { tasks: [], theme: themeId } } }
+            data: { routine: { 'cycle-1': { tasks: [], theme: themeId } } }
         });
         setVocabThemeManagerDependencies({ AppState });
         return new VocabThemeManager();

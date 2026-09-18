@@ -81,14 +81,14 @@ export class EducationalTipManager {
 
       const schemaData = this.deps.loadMiniCycleData();
       if (!schemaData || !schemaData.settings) {
-        console.error('❌ Schema 2.5 data required for loadDismissedTips');
+        console.error('❌ State data required for loadDismissedTips');
         return null;
       }
 
       // ✅ DI-pure: Use schemaData directly, no localStorage access
       return schemaData.settings.dismissedEducationalTips || {};
     } catch (e) {
-      console.warn('⚠️ Error loading dismissed tips from Schema 2.5:', e);
+      console.warn('⚠️ Error loading dismissed tips from state:', e);
       return null;
     }
   }
@@ -166,7 +166,7 @@ export class EducationalTipManager {
       }, true);
 
     } catch (e) {
-      console.error('❌ Error saving dismissed tips to Schema 2.5:', e);
+      console.error('❌ Error saving dismissed tips to state:', e);
     }
   }
 

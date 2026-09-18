@@ -20,7 +20,7 @@
 |---|---|---|
 | **A. Lite reads `.mcyc`** (import, one-way, lossy) | ✅ Yes — narrow | A Lite user (device *can't* run full) cannot open a routine shared with them, or bring in their own. Mapping is trivial: Lite's task is `{ id, text, completed, highPriority }`, a strict subset of the `.mcyc` task. |
 | **B. Full app offers to adopt the Lite list** | ✅ Yes — first | "Used Lite for a while, now on a phone that runs full" is the main migration need, and it's the same origin — the full app can read `miniCycleLite` directly. Zero file handling, zero frozen-code changes, fully testable. |
-| **Lite writes `.mcyc`** (export) | ❌ No | Makes a frozen ES5 file a producer of a living format. Concrete hazard: `cycleImportManager.js:650` defaults `deleteWhenComplete: task.deleteWhenComplete !== false` — a minimal producer that omits the field imports as `true`. Plus `<a download>` of a Blob is unreliable on iOS 12 Safari, the exact device class Lite serves. Same-device migration is covered by B. |
+| **Lite writes `.mcyc`** (export) | ❌ No | Makes a frozen ES5 file a producer of a living format. Concrete hazard: `cycleImportManager.js:650` defaults `deleteWhenComplete: task.autoClear !== false` — a minimal producer that omits the field imports as `true`. Plus `<a download>` of a Blob is unreliable on iOS 12 Safari, the exact device class Lite serves. Same-device migration is covered by B. |
 
 **Build order: B, then A.** The only prerequisite (the Lite backup key gap, B5) is
 done — v2.544. B is maintained code with journeys; A is the one
@@ -34,7 +34,7 @@ un-freeze of Lite and should be a single bounded release.
   `{ name, title, tasks[], autoReset, cycleCount, deleteCheckedTasks, taskOptionButtons,
   recurringTemplates, reminders, autoUncheckDaily, createdAt, theme, history?, clearedTasks? }`.
   Task: `{ id, text, completed, dueDate, highPriority, priorityColor, remindersEnabled,
-  recurring, recurringSettings, deleteWhenComplete, deleteWhenCompleteSettings, schemaVersion }`.
+  recurring, recurringSettings, deleteWhenComplete, autoClear, schemaVersion }`.
 - Full-app importer: `modules/ui/cycleImportManager.js` `processImportedData(fileContent: string)`
   (line ~518). Requires `importedData.name` **and** `Array.isArray(tasks)`; truncates to
   `LIMITS.TASKS_PER_CYCLE` (150); quota check; `DataValidator`; then the
@@ -72,7 +72,7 @@ New `modules/utils/liteAdoptPayload.js`, modelled on `mcycPayload.js`:
   name:  `lite_${Date.now()}`,                       // processImportedData requires .name
   title: lite.title || getLabel('lite.defaultTitle'),// Lite's own default is "My Tasks"
   tasks: lite.tasks.map(t => ({ id, text, completed: t.completed === true,
-                                highPriority: t.highPriority === true })),
+                                highPriority: t.priority === true })),
   autoReset:         mode !== 'todo-mode',
   deleteCheckedTasks: mode === 'todo-mode',
   cycleCount: parseInt(liteStorage.miniCycleLiteCycles, 10) || 0,  // NOT miniCycleLiteCount (dead read)
@@ -84,7 +84,7 @@ New `modules/utils/liteAdoptPayload.js`, modelled on `mcycPayload.js`:
 - Return `null` when `tasks` is not a non-empty array — the prompt is only ever shown
   when this returns a payload, so "Lite data exists but is empty" never prompts.
 - Everything Lite doesn't have is simply absent; `processImportedData` fills defaults.
-  **Verify** the `deleteWhenComplete` default at `cycleImportManager.js:650` produces
+  **Verify** the `autoClear` default at `cycleImportManager.js:650` produces
   the intended behaviour for a non-recurring task that omits the field (see
   "Residual" below) — set it explicitly in the builder if not.
 - Unit test: `tests/liteAdoptPayload.tests.js` (pure function → trivial to pin).
@@ -204,7 +204,7 @@ function parseRoutineFileForLite(text) {            // → { title, tasks, dropp
     var clean = sanitizeInput(t.text);             // strips <>" , trims, caps length
     if (!clean) { dropped++; continue; }
     if (tasks.length >= TASK_LIMIT) { dropped++; continue; }  // Lite cap is 100, full is 150
-    tasks.push({ text: clean, highPriority: t.highPriority === true });
+    tasks.push({ text: clean, highPriority: t.priority === true });
   }
   return tasks.length ? { title: title, tasks: tasks, dropped: dropped } : null;
 }
@@ -221,7 +221,7 @@ function importRoutineFile(file) {
     taskList.innerHTML = '';
     document.getElementById('mini-cycle-title').textContent = parsed.title;
     for (var i = 0; i < parsed.tasks.length; i++) {
-      addTask(parsed.tasks[i].text, false, false, null, parsed.tasks[i].highPriority, true);
+      addTask(parsed.tasks[i].text, false, false, null, parsed.tasks[i].priority, true);
     }
     autoSave();
     showNotification('✅ Imported ' + parsed.tasks.length + ' tasks from "' + parsed.title + '". '
@@ -262,10 +262,10 @@ Rules that must hold:
 
 ## Residual to verify independently (not blocked on this plan)
 
-`cycleImportManager.js:650` — `deleteWhenComplete: task.deleteWhenComplete !== false`
-reads as "missing → `true`", while `deleteWhenCompleteSettings` defaults to
+`cycleImportManager.js:650` — `deleteWhenComplete: task.autoClear !== false`
+reads as "missing → `true`", while `autoClear` defaults to
 `{ cycle: false, todo: true }` for non-recurring tasks. Which field governs at
-completion time decides whether a `.mcyc` that omits `deleteWhenComplete` (any
+completion time decides whether a `.mcyc` that omits `autoClear` (any
 third-party or hand-edited file, not just Lite) imports tasks that vanish on
 completion in cycle mode. Run it before trusting either default.
 

@@ -25,7 +25,7 @@ Welcome to the miniCycle documentation site! Use the sidebar to navigate through
 ### Application Structure
 - **[DEPENDENCY_MAP.md](./architecture/DEPENDENCY_MAP.md)** - Actual module dependencies and global usage
 - **[APPINIT_EXPLAINED.md](./architecture/APPINIT_EXPLAINED.md)** - 2-phase initialization system
-- **[SCHEMA_2_5.md](reference/SCHEMA_2_5.md)** - Data structure and schema documentation
+- **[SCHEMA_2_6.md](reference/SCHEMA_2_6.md)** - Data structure and schema documentation
 - **[MODULE_SYSTEM_GUIDE.md](architecture/MODULE_SYSTEM_GUIDE.md)** - Module patterns and their limitations
 
 ### Key Features
@@ -128,7 +128,7 @@ See [DEPENDENCY_MAP.md](./architecture/DEPENDENCY_MAP.md) for complete analysis.
 → See [minicycle-recurring-guide.md](reference/RECURRING_SYSTEM_REFERENCE.md)
 
 **...work with data/storage**
-→ Check [SCHEMA_2_5.md](reference/SCHEMA_2_5.md) and [MCYC_FILE_FORMAT.md](reference/MCYC_FILE_FORMAT.md)
+→ Check [SCHEMA_2_6.md](reference/SCHEMA_2_6.md) and [MCYC_FILE_FORMAT.md](reference/MCYC_FILE_FORMAT.md)
 
 **...understand the architecture limitations**
 → Read [DEPENDENCY_MAP.md](./architecture/DEPENDENCY_MAP.md) and [MODULAR_OVERHAUL_PLAN.md](archive/MODULAR_OVERHAUL_PLAN.md)

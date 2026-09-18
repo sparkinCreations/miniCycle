@@ -86,10 +86,9 @@ export async function runDataSanitizerTests(resultsDiv) {
     await test('sanitizeImportedData handles Schema 2.5 backup format', () => {
         // sanitizeImportedData expects backup format: schemaVersion + miniCycleData as JSON string
         const stateData = {
-            metadata: { version: '2.5', schemaVersion: '2.5' },
+            metadata: { version: '2.5', schemaVersion: '2.6' },
             settings: { theme: 'default' },
-            data: {
-                cycles: {
+            data: { routine: {
                     'cycle-1': {
                         metadata: { title: '<b>My Routine</b>' },
                         tasks: [
@@ -98,11 +97,11 @@ export async function runDataSanitizerTests(resultsDiv) {
                     }
                 }
             },
-            appState: { activeCycleId: 'cycle-1' }
+            appState: { activeRoutineId: 'cycle-1' }
         };
 
         const backupData = {
-            schemaVersion: '2.5',
+            schemaVersion: '2.6',
             miniCycleData: JSON.stringify(stateData)
         };
 
@@ -111,7 +110,7 @@ export async function runDataSanitizerTests(resultsDiv) {
 
         // Parse back the sanitized miniCycleData
         const sanitized = JSON.parse(result.miniCycleData);
-        const task = sanitized.data.cycles['cycle-1'].tasks[0];
+        const task = sanitized.data.routine['cycle-1'].tasks[0];
         if (task.text.includes('<script>')) {
             throw new Error('Task text should be sanitized');
         }
@@ -173,15 +172,15 @@ export async function runDataSanitizerTests(resultsDiv) {
         // Schema-2.5 STATE shape, which matches NO sanitize branch — so nothing ran and it
         // only asserted input == input (a tautology).
         const stateData = {
-            data: { cycles: { 'cycle-1': { title: 'Test', tasks: [
+            data: { routine: { 'cycle-1': { title: 'Test', tasks: [
                 { id: 'task-1', text: '  Valid task  ', completed: true, priority: true }
             ] } } },
-            appState: { activeCycleId: 'cycle-1' }
+            appState: { activeRoutineId: 'cycle-1' }
         };
-        const backupData = { schemaVersion: '2.5', miniCycleData: JSON.stringify(stateData) };
+        const backupData = { schemaVersion: '2.6', miniCycleData: JSON.stringify(stateData) };
 
         const result = sanitizeImportedData(backupData);
-        const task = JSON.parse(result.miniCycleData).data.cycles['cycle-1'].tasks[0];
+        const task = JSON.parse(result.miniCycleData).data.routine['cycle-1'].tasks[0];
 
         // The injected sanitizeInput actually ran (mock strips tags + trims) → text is trimmed.
         if (task.text !== 'Valid task') throw new Error(`text should be sanitized/trimmed, got '${task.text}'`);
@@ -192,11 +191,11 @@ export async function runDataSanitizerTests(resultsDiv) {
     });
 
     await test('sanitizeImportedData handles empty cycles gracefully', () => {
-        const backupData = { schemaVersion: '2.5', miniCycleData: JSON.stringify({ data: { cycles: {} }, appState: {} }) };
+        const backupData = { schemaVersion: '2.6', miniCycleData: JSON.stringify({ data: { routine: {} }, appState: {} }) };
         const result = sanitizeImportedData(backupData);
         // The Schema-2.5 branch runs with no cycles to sanitize; the payload round-trips intact.
         const sanitized = JSON.parse(result.miniCycleData);
-        if (!sanitized.data || typeof sanitized.data.cycles !== 'object') {
+        if (!sanitized.data || typeof sanitized.data.routine !== 'object') {
             throw new Error('empty-cycles payload should round-trip through sanitization');
         }
     });

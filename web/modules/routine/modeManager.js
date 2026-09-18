@@ -496,8 +496,8 @@ export class ModeManager {
 
         const state = AppState.get?.();
         if (!state) {
-            console.error('❌ ModeManager: Schema 2.5 data required for updateCycleModeDescription');
-            throw new Error('Schema 2.5 data not found');
+            console.error('❌ ModeManager: State data required for updateCycleModeDescription');
+            throw new Error('State data not found');
         }
 
         const currentCycle = getActiveRoutine(state);
@@ -1256,8 +1256,8 @@ export class ModeManager {
 
             const state = self.deps.AppState?.get?.();
             if (!state) {
-                console.error('❌ Schema 2.5 data required for deleteCheckedTasks toggle');
-                throw new Error('Schema 2.5 data not found');
+                console.error('❌ State data required for deleteCheckedTasks toggle');
+                throw new Error('State data not found');
             }
 
             const activeCycle = getActiveRoutineId(state);

@@ -43,9 +43,9 @@ Events are stored newest-first in the active routine's `history.events` array. E
 | `task_added` | `➕` | taskCRUD.js | `{ taskName }` |
 | `task_deleted` | `🗑️` | taskCRUD.js | `{ taskName }` |
 | `task_edited` | `✏️` | taskCRUD.js | `{ oldName, newName }` |
-| `task_priority_set` | `⚠️` | taskCRUD.js | `{ taskName, priorityColor }` |
+| `task_priority_set` | `⚠️` | taskCRUD.js | `{ taskName, priority }` |
 | `task_priority_removed` | `➖` | taskCRUD.js | `{ taskName }` |
-| `task_priority_color_changed` | `🎨` | taskCRUD.js | `{ taskName, priorityColor }` |
+| `task_priority_color_changed` | `🎨` | taskCRUD.js | `{ taskName, priority }` |
 | `theme_changed` | `🎨` | themeManager.js / routineSwitcher.js | `{ themeName, themeId }` |
 | `undo` / `redo` | fallback `📌` | undoRedoManager.js | `{ description }` |
 
@@ -58,7 +58,7 @@ Events are stored newest-first in the active routine's `history.events` array. E
 History is stored inside each routine (cycle object):
 
 ```
-state.data.cycles[cycleId].history.events[]   // array of event objects
+state.data.routine[cycleId].history.events[]   // array of event objects
 ```
 
 Each event has this shape:

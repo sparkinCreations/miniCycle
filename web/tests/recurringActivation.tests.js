@@ -41,7 +41,7 @@ export async function runRecurringActivationTests(resultsDiv) {
 
     await test('activateTaskRecurringState flips a matching task recurring and creates its template', () => {
         const cycle = {
-            tasks: [{ id: 'task-1', text: 'Water plants', highPriority: true, priorityColor: '#f00' }],
+            tasks: [{ id: 'task-1', text: 'Water plants', priority: 'high' }],
             recurringTemplates: {}
         };
         const settings = { frequency: 'daily', indefinitely: true, time: null };
@@ -52,14 +52,14 @@ export async function runRecurringActivationTests(resultsDiv) {
         if (task.recurring !== true) throw new Error('task.recurring should be set true');
         if (task.recurringSettings.frequency !== 'daily') throw new Error('settings should be cloned onto task');
         if (task.recurringSettings === settings) throw new Error('settings should be a clone, not the same ref');
-        if (task.deleteWhenComplete !== true) throw new Error('recurring tasks should get deleteWhenComplete=true');
+        if (!task.autoClear || task.autoClear.cycle !== true || task.autoClear.todo !== true) throw new Error('recurring tasks should get the recurring autoClear map');
 
         const tmpl = cycle.recurringTemplates['task-1'];
         if (!tmpl) throw new Error('template should be created keyed by taskId');
         if (tmpl.recurring !== true) throw new Error('template.recurring should be true');
         if (tmpl.text !== 'Water plants') throw new Error('template should carry the task text');
         if (tmpl.position !== 0) throw new Error(`template.position should be the task's index (0), got ${tmpl.position}`);
-        if (tmpl.highPriority !== true || tmpl.priorityColor !== '#f00') throw new Error('template should copy priority fields');
+        if (tmpl.priority !== 'high') throw new Error('template should copy the priority level');
         if (tmpl.occurrenceCount !== 0) throw new Error('new template should start at occurrenceCount 0');
         if (tmpl.nextScheduledOccurrence !== 424242) throw new Error('template should use calcFn output for nextScheduledOccurrence');
     });
@@ -72,7 +72,7 @@ export async function runRecurringActivationTests(resultsDiv) {
         const tmpl = cycle.recurringTemplates['ghost'];
         if (!tmpl) throw new Error('template should be created for absent task');
         if (tmpl.recurring !== true) throw new Error('template.recurring should be true');
-        if (tmpl.highPriority !== false) throw new Error('absent-task template should default highPriority=false');
+        if (tmpl.priority !== null) throw new Error('absent-task template should default priority=null');
     });
 
     // ============================================
@@ -112,7 +112,7 @@ export async function runRecurringActivationTests(resultsDiv) {
         // array is READ ONLY — the caller applies the returned plan inside its
         // reset producer. The old direct-splice contract mutated live AppState.
         const cycle = {
-            tasks: [{ id: 'task-1', deleteWhenComplete: true }, { id: 'task-2' }],
+            tasks: [{ id: 'task-1' }, { id: 'task-2' }],
             recurringTemplates: {}
         };
         const plan = removeRecurringTasksFromCycle([el], cycle);
@@ -134,7 +134,7 @@ export async function runRecurringActivationTests(resultsDiv) {
         document.body.appendChild(el);
 
         const cycle = {
-            tasks: [{ id: 'task-0' }, { id: 'task-1', deleteWhenComplete: true }, { id: 'task-2' }],
+            tasks: [{ id: 'task-0' }, { id: 'task-1' }, { id: 'task-2' }],
             recurringTemplates: { 'task-1': { id: 'task-1', recurringSettings: { frequency: 'daily' } } }
         };
         setRecurringActivationDependencies({ calculateNextOccurrence: () => 424242 });
@@ -145,7 +145,7 @@ export async function runRecurringActivationTests(resultsDiv) {
         }
     });
 
-    await test('removeRecurringTasksFromCycle plans a KEEP for deleteWhenComplete=false (checkbox unchecked, state untouched)', () => {
+    await test('removeRecurringTasksFromCycle plans a KEEP for autoClear.cycle=false (checkbox unchecked, state untouched)', () => {
         const el = document.createElement('div');
         el.className = 'recurring';
         el.dataset.taskId = 'task-1';
@@ -153,7 +153,7 @@ export async function runRecurringActivationTests(resultsDiv) {
         document.body.appendChild(el);
 
         const cycle = {
-            tasks: [{ id: 'task-1', deleteWhenComplete: false, completed: true }],
+            tasks: [{ id: 'task-1', completed: true, autoClear: { cycle: false, todo: false } }],
             recurringTemplates: {}
         };
         const plan = removeRecurringTasksFromCycle([el], cycle);

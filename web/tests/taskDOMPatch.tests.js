@@ -16,8 +16,8 @@ export async function runTaskDOMPatchTests(resultsDiv) {
     const themesFor = (themeId = 'classic') => {
         const state = {
             settings: { defaultTheme: 'classic' },
-            data: { cycles: { r1: { tasks: [], theme: themeId } } },
-            appState: { activeCycleId: 'r1' }
+            data: { routine: { r1: { tasks: [], theme: themeId } } },
+            appState: { activeRoutineId: 'r1' }
         };
         themesMod.setVocabThemeManagerDependencies({ AppState: { get: () => state } });
         return new themesMod.VocabThemeManager();
@@ -204,7 +204,7 @@ export async function runTaskDOMPatchTests(resultsDiv) {
         const list = mountList('t1');
         try {
             const p = make();
-            p.patchTask('t1', { highPriority: true, priorityColor: '#28a745' }, ['highPriority']);
+            p.patchTask('t1', { priority: 'low' }, ['priority']);
             const el = list.querySelector('.task[data-task-id="t1"]');
             if (!el.classList.contains('high-priority')) throw new Error('high-priority class missing');
             if (el.style.getPropertyValue('--task-priority-color') !== '#28a745') throw new Error('css var not set');
@@ -218,7 +218,7 @@ export async function runTaskDOMPatchTests(resultsDiv) {
         const list = mountList('t1');
         try {
             const p = make();
-            p.patchTask('t1', { highPriority: true }, ['highPriority']);
+            p.patchTask('t1', { priority: 'high' }, ['priority']);
             const el = list.querySelector('.task[data-task-id="t1"]');
             if (el.style.getPropertyValue('--task-priority-color') !== '#dc3545') {
                 throw new Error('default color fallback wrong: ' + el.style.getPropertyValue('--task-priority-color'));
@@ -233,17 +233,17 @@ export async function runTaskDOMPatchTests(resultsDiv) {
             el.classList.add('high-priority');
             el.style.setProperty('--task-priority-color', '#abc');
             const p = make();
-            p.patchTask('t1', { highPriority: false }, ['highPriority']);
+            p.patchTask('t1', { priority: null }, ['priority']);
             if (el.classList.contains('high-priority')) throw new Error('class not removed');
             if (el.style.getPropertyValue('--task-priority-color') !== '') throw new Error('css var not removed');
         } finally { unmount(list); }
     });
 
-    await test('priorityColor-only patch updates var when highPriority truthy', () => {
+    await test('a priority patch paints the level\'s swatch', () => {
         const list = mountList('t1');
         try {
             const p = make();
-            p.patchTask('t1', { highPriority: true, priorityColor: '#facc15' }, ['priorityColor']);
+            p.patchTask('t1', { priority: 'medium' }, ['priority']);
             const el = list.querySelector('.task[data-task-id="t1"]');
             if (el.style.getPropertyValue('--task-priority-color') !== '#facc15') throw new Error('color not applied');
         } finally { unmount(list); }
@@ -253,21 +253,18 @@ export async function runTaskDOMPatchTests(resultsDiv) {
     // swatch for it. Before Sep 2026 the raw hex was shown, so a task flagged
     // under habit-tracker kept its dark red after switching to classic, and a
     // hand-written .mcyc colour was shown as-is.
-    await test('shows the ACTIVE theme\'s swatch for the level, not the stored hex', () => {
+    await test('shows the ACTIVE theme\'s swatch for the level — a stale 2.5 colour on the task is ignored', () => {
         const list = mountList('t1');
         try {
             const el = list.querySelector('.task[data-task-id="t1"]');
-            const shown = (themeId, priorityColor) => {
+            const shown = (themeId, level) => {
                 make({ vocabThemeManager: themesFor(themeId) })
-                    .patchTask('t1', { highPriority: true, priorityColor }, ['priorityColor']);
+                    .patchTask('t1', { priority: level, priorityColor: '#123456' }, ['priority']);
                 return el.style.getPropertyValue('--task-priority-color');
             };
-            // habit-tracker's High, shown under classic → classic's High
-            if (shown('classic', '#8b1a1a') !== '#dc3545') throw new Error(`habit red under classic: ${shown('classic', '#8b1a1a')}`);
-            // classic's Medium, shown under habit-tracker → habit-tracker's Medium
-            if (shown('habit-tracker', '#facc15') !== '#7a4d00') throw new Error(`yellow under habit-tracker: ${shown('habit-tracker', '#facc15')}`);
-            // a non-swatch colour → its colour family's swatch (teal → Low, measured in the plan)
-            if (shown('classic', '#1abc9c') !== '#28a745') throw new Error(`teal under classic: ${shown('classic', '#1abc9c')}`);
+            if (shown('classic', 'high') !== '#dc3545') throw new Error(`high under classic: ${shown('classic', 'high')}`);
+            if (shown('habit-tracker', 'medium') !== '#7a4d00') throw new Error(`medium under habit-tracker: ${shown('habit-tracker', 'medium')}`);
+            if (shown('classic', 'low') !== '#28a745') throw new Error(`low under classic: ${shown('classic', 'low')}`);
         } finally { unmount(list); }
     });
 
@@ -353,15 +350,15 @@ export async function runTaskDOMPatchTests(resultsDiv) {
     // ── patchTask: deleteWhenComplete (uses AppState) ───────────────────────
     resultsDiv.innerHTML += '<h4 class="test-section">🗑️ deleteWhenComplete</h4>';
 
-    await test('deleteWhenComplete sets dataset + button state (cycle mode shows indicator)', () => {
+    await test('autoClear sets dataset + button state (cycle mode shows indicator)', () => {
         const list = mountList('t1');
         try {
             const AppState = { get: () => ({
-                appState: { activeCycleId: 'c1' },
-                data: { cycles: { c1: { deleteCheckedTasks: false } } } // cycle mode
+                appState: { activeRoutineId: 'c1' },
+                data: { routine: { c1: { deleteCheckedTasks: false } } } // cycle mode
             }) };
             const p = make({ AppState });
-            p.patchTask('t1', { deleteWhenComplete: true, recurring: false }, ['deleteWhenComplete']);
+            p.patchTask('t1', { recurring: false, autoClear: { cycle: true, todo: true } }, ['autoClear']);
             const el = list.querySelector('.task[data-task-id="t1"]');
             if (el.dataset.deleteWhenComplete !== 'true') throw new Error('dataset wrong');
             if (!el.classList.contains('show-delete-indicator')) throw new Error('indicator class missing in cycle mode');
@@ -370,16 +367,16 @@ export async function runTaskDOMPatchTests(resultsDiv) {
         } finally { unmount(list); }
     });
 
-    await test('deleteWhenComplete in to-do mode marks kept-task instead of indicator', () => {
+    await test('autoClear off in to-do mode marks kept-task instead of indicator', () => {
         const list = mountList('t1');
         try {
             const AppState = { get: () => ({
-                appState: { activeCycleId: 'c1' },
-                data: { cycles: { c1: { deleteCheckedTasks: true } } } // to-do mode
+                appState: { activeRoutineId: 'c1' },
+                data: { routine: { c1: { deleteCheckedTasks: true } } } // to-do mode
             }) };
             const p = make({ AppState });
             // not active + not recurring + to-do mode -> kept-task class added (!isActive)
-            p.patchTask('t1', { deleteWhenComplete: false, recurring: false }, ['deleteWhenComplete']);
+            p.patchTask('t1', { recurring: false, autoClear: { cycle: false, todo: false } }, ['autoClear']);
             const el = list.querySelector('.task[data-task-id="t1"]');
             if (!el.classList.contains('kept-task')) throw new Error('kept-task not applied in to-do mode');
             if (el.classList.contains('show-delete-indicator')) throw new Error('should not show delete indicator in to-do mode');
@@ -391,7 +388,7 @@ export async function runTaskDOMPatchTests(resultsDiv) {
         const list = mountList('t1');
         try {
             const p = make();
-            const ok = p.patchTask('t1', { completed: true, text: 'Multi', highPriority: true });
+            const ok = p.patchTask('t1', { completed: true, text: 'Multi', priority: 'high' });
             if (!ok) throw new Error('returned false');
             const el = list.querySelector('.task[data-task-id="t1"]');
             if (!el.classList.contains('completed')) throw new Error('completed not patched');

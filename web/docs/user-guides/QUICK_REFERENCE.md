@@ -151,7 +151,7 @@ const state = window.AppState.get();
 
 // Update state
 window.AppState.update((state) => {
-    state.data.cycles[id].tasks.push(newTask);
+    state.data.routine[id].tasks.push(newTask);
 }, true);  // true = immediate save
 
 // Check ready
@@ -282,7 +282,7 @@ function assertInjected(name, fn) {
                         id: "task-xyz789",
                         text: "☕ Make coffee",
                         completed: false,
-                        highPriority: false,
+                        priority: null,
                         dueDate: null,
                         remindersEnabled: false,
                         recurring: false,
@@ -581,7 +581,7 @@ calculateStats(data) {
         totalTasks: tasks.length,
         completedTasks: tasks.filter(t => t.completed).length,
         // Add new stat:
-        highPriorityTasks: tasks.filter(t => t.highPriority).length
+        highPriorityTasks: tasks.filter(t => t.priority).length
     };
 }
 
@@ -636,7 +636,7 @@ console.log('Watcher active:', window._recurringWatcherActive);
 
 // Check templates
 const state = window.AppState.get();
-const cycle = state.data.cycles[state.appState.activeCycleId];
+const cycle = state.data.routine[state.appState.activeRoutineId];
 console.log('Templates:', cycle.recurringTemplates);
 
 // Manual trigger

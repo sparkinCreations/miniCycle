@@ -1174,7 +1174,7 @@ function getDaysBetween(startDate, endDate) {
 ```javascript
 async function catchUpMissedRecurringTasks() {
   const state = getAppState();
-  const currentCycle = state.cycles[state.appState.activeCycleId];
+  const currentCycle = state.cycles[state.appState.activeRoutineId];
   if (!currentCycle?.recurringTemplates) return;
 
   const now = Date.now();
@@ -1207,7 +1207,7 @@ async function catchUpMissedRecurringTasks() {
   // Add all missed tasks in batch
   if (tasksToAdd.length > 0) {
     updateAppState(draft => {
-      const cycle = draft.cycles[draft.appState.activeCycleId];
+      const cycle = draft.cycles[draft.appState.activeRoutineId];
       cycle.tasks.push(...tasksToAdd);
     });
   }
@@ -1226,7 +1226,7 @@ export async function watchRecurringTasks() {
 
   // Get current state
   const state = Deps.getAppState();
-  const cycleData = state.data?.cycles?.[state.appState.activeCycleId];
+  const cycleData = state.data?.routine?.[state.appState.activeRoutineId];
   const templates = cycleData.recurringTemplates || {};
   const taskList = cycleData.tasks || [];
 
@@ -1253,7 +1253,7 @@ export async function watchRecurringTasks() {
   // Update AppState with new tasks
   if (tasksToAdd.length > 0) {
     Deps.updateAppState(draft => {
-      draft.data.cycles[activeCycleId].tasks.push(...tasksToAdd);
+      draft.data.routine[activeCycleId].tasks.push(...tasksToAdd);
     });
   }
 }

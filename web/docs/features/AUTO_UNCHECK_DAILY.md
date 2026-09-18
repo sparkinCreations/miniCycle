@@ -62,7 +62,7 @@ This is implemented via a `pendingNotification` flag on the per-routine settings
 
 ## Schema
 
-Per-cycle, under `state.data.cycles[cycleId]`:
+Per-cycle, under `state.data.routine[cycleId]`:
 
 ```javascript
 autoUncheckDaily: {
@@ -135,7 +135,7 @@ The fire path mutates state via a single `AppState.update(producer, true)` call:
 ```javascript
 this.deps.AppState.update(s => {
     for (const { cycleId, isActive } of fired) {
-        const cycle = s.data.cycles[cycleId];
+        const cycle = s.data.routine[cycleId];
         if (!cycle) continue;
         if (Array.isArray(cycle.tasks)) {
             cycle.tasks.forEach(t => { t.completed = false; });

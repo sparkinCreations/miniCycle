@@ -21,8 +21,7 @@ export async function runAchievementsManagerTests(resultsDiv) {
         return {
             metadata: { lastModified: Date.now() },
             settings: { unlockedThemes: ['classic'] },
-            data: {
-                cycles: {
+            data: { routine: {
                     'cycle-1': {
                         tasks: [],
                         clearedTasks: { items: [], totalCleared: 0 },
@@ -30,7 +29,7 @@ export async function runAchievementsManagerTests(resultsDiv) {
                     }
                 }
             },
-            appState: { activeCycleId: 'cycle-1' },
+            appState: { activeRoutineId: 'cycle-1' },
             userProgress: { cyclesCompleted: 0, totalTasksCleared: 0 },
             achievements: { unlocked: [], seen: {} },
             ...overrides
@@ -231,8 +230,8 @@ export async function runAchievementsManagerTests(resultsDiv) {
             // doesn't fire after the test; unlockedFeatures starts empty —
             // that's the coupling surface both modules race on.
             settings: { unlockedThemes: ['classic'], unlockedFeatures: [] },
-            data: { cycles: { 'default': { title: 'Default', cycleCount: 5, tasks: [] } } },
-            appState: { activeCycleId: 'default' },
+            data: { routine: { 'default': { title: 'Default', cycleCount: 5, tasks: [] } } },
+            appState: { activeRoutineId: 'default' },
             userProgress: {
                 cyclesCompleted: 99, totalTasksCompleted: 0, rewardMilestones: [],
                 firstCycleCelebrated: true, celebrated100Cycles: true, celebrated500Cycles: true

@@ -55,7 +55,7 @@ export async function runTaskViewLayoutManagerTests(resultsDiv) {
     // Mirrors the producer contract: update(fn, immediate) runs fn against the
     // live object, exactly as AppState.update does.
     function makeAppState(initialSettings = {}) {
-        const state = { settings: initialSettings, data: { cycles: {} }, appState: {} };
+        const state = { settings: initialSettings, data: { routine: {} }, appState: {} };
         const calls = { update: 0, immediate: [] };
         return {
             state,

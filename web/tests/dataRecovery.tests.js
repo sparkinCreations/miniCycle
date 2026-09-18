@@ -49,13 +49,13 @@ export async function runDataRecoveryTests(resultsDiv) {
         }
     }
 
-    const validData = { schemaVersion: '2.5', data: { cycles: { c1: { tasks: [] } } }, appState: {} };
+    const validData = { schemaVersion: '2.6', data: { routine: { c1: { tasks: [] } } }, appState: {} };
 
     await test('attemptJsonSalvage: parses valid JSON directly', () => {
         const result = attemptJsonSalvage(JSON.stringify(validData));
         assert(result !== null, 'should not be null');
         assert(result.strategy === 'direct-parse', `expected direct-parse, got ${result?.strategy}`);
-        assert(result.data.schemaVersion === '2.5', 'data round-trips');
+        assert(result.data.schemaVersion === '2.6', 'data round-trips');
     });
 
     await test('attemptJsonSalvage: strips control characters', () => {
@@ -67,47 +67,47 @@ export async function runDataRecoveryTests(resultsDiv) {
     });
 
     await test('attemptJsonSalvage: closes truncated brackets', () => {
-        const truncated = '{"data":{"cycles":{"c1":{"tasks":[]}';
+        const truncated = '{"data":{"routine":{"c1":{"tasks":[]}';
         const result = attemptJsonSalvage(truncated);
         assert(result !== null, 'should repair truncation');
         // The string-aware strategy runs first and handles this case; the
         // naive 'close-brackets' remains as last resort.
         assert(result.strategy === 'close-string-and-brackets', `got ${result?.strategy}`);
-        assert(Array.isArray(result.data.data.cycles.c1.tasks), 'tasks array recovered');
+        assert(Array.isArray(result.data.data.routine.c1.tasks), 'tasks array recovered');
     });
 
     await test('attemptJsonSalvage: repairs truncation MID-STRING (the common case)', () => {
-        const truncated = '{"data":{"cycles":{"c1":{"tasks":[{"id":"t1","text":"buy mi';
+        const truncated = '{"data":{"routine":{"c1":{"tasks":[{"id":"t1","text":"buy mi';
         const result = attemptJsonSalvage(truncated);
         assert(result !== null, 'mid-string truncation should salvage');
         assert(result.strategy === 'close-string-and-brackets', `got ${result?.strategy}`);
-        const task = result.data.data.cycles.c1.tasks[0];
+        const task = result.data.data.routine.c1.tasks[0];
         assert(task && task.id === 't1', 'task id recovered');
         assert(task.text === 'buy mi', `partial text preserved, got ${task?.text}`);
     });
 
     await test('attemptJsonSalvage: braces inside task text do not skew the repair', () => {
-        const truncated = '{"data":{"cycles":{"c1":{"tasks":[{"id":"t1","text":"step {1} of {2}"}]}';
+        const truncated = '{"data":{"routine":{"c1":{"tasks":[{"id":"t1","text":"step {1} of {2}"}]}';
         const result = attemptJsonSalvage(truncated);
         assert(result !== null, 'should salvage despite braces in string');
-        const task = result.data.data.cycles.c1.tasks[0];
+        const task = result.data.data.routine.c1.tasks[0];
         assert(task && task.text === 'step {1} of {2}', `in-string braces preserved, got ${task?.text}`);
     });
 
     await test('attemptJsonSalvage: repairs truncation ON a backslash (dangling escape)', () => {
-        const truncated = '{"data":{"cycles":{"c1":{"tasks":[{"id":"t1","text":"line1\\';
+        const truncated = '{"data":{"routine":{"c1":{"tasks":[{"id":"t1","text":"line1\\';
         const result = attemptJsonSalvage(truncated);
         assert(result !== null, 'dangling-escape truncation should salvage');
-        const task = result.data.data.cycles.c1.tasks[0];
+        const task = result.data.data.routine.c1.tasks[0];
         assert(task && task.text === 'line1', `text recovered without the dangling backslash, got ${task?.text}`);
     });
 
     await test('attemptJsonSalvage: strips a dangling partial member before closing', () => {
-        const truncated = '{"data":{"cycles":{"c1":{"tasks":[],"cycleCount":';
+        const truncated = '{"data":{"routine":{"c1":{"tasks":[],"cycleCount":';
         const result = attemptJsonSalvage(truncated);
         assert(result !== null, 'dangling key truncation should salvage');
-        assert(Array.isArray(result.data.data.cycles.c1.tasks), 'tasks survive');
-        assert(!('cycleCount' in result.data.data.cycles.c1), 'partial member dropped, not corrupted');
+        assert(Array.isArray(result.data.data.routine.c1.tasks), 'tasks survive');
+        assert(!('cycleCount' in result.data.data.routine.c1), 'partial member dropped, not corrupted');
     });
 
     await test('attemptJsonSalvage: truncation MID-NUMBER drops the member instead of adopting a wrong value', () => {
@@ -118,7 +118,7 @@ export async function runDataRecoveryTests(resultsDiv) {
         // comma-preceded members, and the FIRST member of an object (the
         // reviewer's regex missed that one — and metadata.lastModified, the
         // most dangerous field to mangle, IS metadata's first member).
-        const commaCase = '{"data":{"cycles":{}},"settings":{"theme":"dark","fontSize":16000';
+        const commaCase = '{"data":{"routine":{}},"settings":{"theme":"dark","fontSize":16000';
         const r1 = attemptJsonSalvage(commaCase);
         assert(r1 !== null, 'comma-preceded mid-number truncation should still salvage');
         assert(!('fontSize' in r1.data.settings), `truncated number must be DROPPED, got fontSize=${r1.data.settings.fontSize}`);
@@ -182,7 +182,7 @@ export async function runDataRecoveryTests(resultsDiv) {
 
     await test('validateRecoveredData: accepts well-shaped data', () => {
         assert(validateRecoveredData(validData) === true, 'schema-shaped data valid');
-        assert(validateRecoveredData({ cycles: { c1: { tasks: [] } } }) === true, 'bare cycles map valid');
+        assert(validateRecoveredData({ routine: { c1: { tasks: [] } } }) === true, 'bare routine map valid');
     });
 
     await test('validateRecoveredData: rejects malformed data', () => {
@@ -193,10 +193,10 @@ export async function runDataRecoveryTests(resultsDiv) {
 
     await test('recoverCorruptedData: salvages + backs up in one pass', () => {
         const store = mockStorage();
-        const truncated = '{"schemaVersion":"2.5","data":{"cycles":{"c1":{"tasks":[]}';
+        const truncated = '{"schemaVersion":"2.5","data":{"routine":{"c1":{"tasks":[]}';
         const result = recoverCorruptedData(truncated, { storage: store });
         assert(result.recovered === true, 'recovered flag set');
-        assert(result.data.data.cycles.c1.tasks.length === 0, 'data salvaged');
+        assert(result.data.data.routine.c1.tasks.length === 0, 'data salvaged');
         assert(typeof result.backupKey === 'string', 'backup snapshot taken');
         assert(store.getItem(result.backupKey) === truncated, 'raw corrupted string backed up');
     });

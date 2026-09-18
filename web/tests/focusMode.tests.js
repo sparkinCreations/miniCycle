@@ -105,8 +105,8 @@ export async function runFocusModeTests(resultsDiv) {
     // ============================================
     function createMockAppState(overrides = {}) {
         const state = {
-            appState: { activeCycleId: 'cycle-1' },
-            data: { cycles: { 'cycle-1': { autoReset: false, deleteCheckedTasks: false } } },
+            appState: { activeRoutineId: 'cycle-1' },
+            data: { routine: { 'cycle-1': { autoReset: false, deleteCheckedTasks: false } } },
             settings: { focusModeActive: false },
             ...overrides
         };
@@ -188,7 +188,7 @@ export async function runFocusModeTests(resultsDiv) {
         setupDOMScaffold();
         mod.setFocusModeDependencies({
             AppState: createMockAppState({
-                data: { cycles: { 'cycle-1': { autoReset: true, deleteCheckedTasks: true } } }
+                data: { routine: { 'cycle-1': { autoReset: true, deleteCheckedTasks: true } } }
             })
         });
         const instance = new mod.FocusMode();
@@ -201,7 +201,7 @@ export async function runFocusModeTests(resultsDiv) {
         setupDOMScaffold();
         mod.setFocusModeDependencies({
             AppState: createMockAppState({
-                data: { cycles: { 'cycle-1': { autoReset: true, deleteCheckedTasks: false } } }
+                data: { routine: { 'cycle-1': { autoReset: true, deleteCheckedTasks: false } } }
             })
         });
         const instance = new mod.FocusMode();
@@ -214,7 +214,7 @@ export async function runFocusModeTests(resultsDiv) {
         setupDOMScaffold();
         mod.setFocusModeDependencies({
             AppState: createMockAppState({
-                data: { cycles: { 'cycle-1': { autoReset: false, deleteCheckedTasks: false } } }
+                data: { routine: { 'cycle-1': { autoReset: false, deleteCheckedTasks: false } } }
             })
         });
         const instance = new mod.FocusMode();

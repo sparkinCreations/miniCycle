@@ -23,6 +23,7 @@
  */
 
 import { getRoutine, getRoutines, getAutoClearSettings, setAutoClearSettings } from '../utils/cycleMode.js';
+import { isPriorityLevel } from '../utils/priorityLevel.js';
 import { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS } from '../core/constants.js';
 
 /**
@@ -85,8 +86,8 @@ export function validateAndRepairCycleData(AppState, cycleKey) {
             task.completed = Boolean(task.completed);
             repaired = true;
         }
-        if (typeof task.highPriority !== 'boolean') {
-            task.highPriority = Boolean(task.highPriority);
+        if (task.priority !== null && !isPriorityLevel(task.priority)) {
+            task.priority = null;
             repaired = true;
         }
         if (typeof task.remindersEnabled !== 'boolean') {

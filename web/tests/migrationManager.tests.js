@@ -145,7 +145,7 @@ export async function runMigrationManagerTests(resultsDiv, isPartOfSuite = false
 
         const data = JSON.parse(localStorage.getItem('miniCycleData'));
 
-        if (data.schemaVersion !== "2.5") {
+        if (data.schemaVersion !== "2.6") {
             throw new Error('Invalid schema version');
         }
     });
@@ -208,7 +208,7 @@ export async function runMigrationManagerTests(resultsDiv, isPartOfSuite = false
 
         const data = JSON.parse(localStorage.getItem('miniCycleData'));
 
-        if (!data.data.cycles || typeof data.data.cycles !== 'object') {
+        if (!data.data.routine || typeof data.data.routine !== 'object') {
             throw new Error('Missing or invalid cycles object');
         }
     });

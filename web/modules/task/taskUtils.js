@@ -29,11 +29,10 @@ import { createDIModule, optional } from '../core/diBase.js';
 import { buildRecurringTemplate } from '../recurring/recurringTemplate.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { autoClearFields, getActiveRoutineId, getAutoClearMode, getAutoClearSettings, getRoutine, getRoutines } from '../utils/cycleMode.js';
-import { priorityFields } from '../utils/priorityLevel.js';
+import { priorityFields, isPriorityLevel } from '../utils/priorityLevel.js';
 import {
     DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS,
     DEFAULT_RECURRING_DELETE_SETTINGS,
-    COLORS,
     DOM_IDS,
     DOM_SELECTORS,
     DOM_CLASSES
@@ -91,7 +90,7 @@ export function taskToAddTaskOptions(task) {
         recurringSettings: task.recurringSettings || {},
         // The active value is resolved again at render time (createMainTaskElement),
         // so only the per-mode map needs to travel.
-        deleteWhenCompleteSettings: getAutoClearSettings(task)
+        autoClear: getAutoClearSettings(task)
     };
 }
 
@@ -155,15 +154,15 @@ export class TaskUtils {
 
         const schemaData = loadMiniCycleData();
         if (!schemaData) {
-            console.warn('⚠️ Schema 2.5 data required for loadTaskContext');
-            throw new Error('Schema 2.5 data not found');
+            console.warn('⚠️ State data required for loadTaskContext');
+            throw new Error('State data not found');
         }
 
         const { cycles, activeCycle, settings, reminders } = schemaData;
         const currentCycle = cycles[activeCycle];
 
         if (!activeCycle || !currentCycle) {
-            console.warn("⚠️ No active cycle found in Schema 2.5 for loadTaskContext");
+            console.warn("⚠️ No active routine found in state for loadTaskContext");
             throw new Error('No active cycle found');
         }
 
@@ -208,9 +207,9 @@ export class TaskUtils {
     static createOrUpdateTaskData(taskContext, saveTaskToSchema25, AppState) {
         const {
             cycleTasks, assignedTaskId, taskTextTrimmed, completed, dueDate,
-            highPriority, priorityColor, remindersEnabled, recurring, recurringSettings,
+            priority, remindersEnabled, recurring, recurringSettings,
             currentCycle, cycles, activeCycle, isLoading, deleteWhenComplete,
-            deleteWhenCompleteSettings
+            autoClear
         } = taskContext;
 
         let existingTask = cycleTasks.find(task => task.id === assignedTaskId);
@@ -222,8 +221,8 @@ export class TaskUtils {
             // - Settings object stores preference per mode
             // Provided settings or defaults; the active value follows the current
             // mode unless the caller gave one (utils/cycleMode.js).
-            const autoClear = autoClearFields({
-                settings: deleteWhenCompleteSettings,
+            const autoClearField = autoClearFields({
+                settings: autoClear,
                 value: deleteWhenComplete,
                 mode: getAutoClearMode(currentCycle),
                 defaults: DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS
@@ -234,16 +233,13 @@ export class TaskUtils {
                 text: taskTextTrimmed,
                 completed,
                 dueDate,
-                // Coerced for the same reason the recurring template below does
-                // it: a caller passing null/undefined would otherwise persist a
-                // non-boolean. The priorityColor line is unaffected — null and
-                // false are both falsy, so the colour resolves identically.
-                highPriority: highPriority || false,
-                priorityColor: priorityColor || (highPriority ? COLORS.PRIORITY_DEFAULT : null),
+                // A level or null, never undefined: the stored shape is explicit
+                // about "no priority" (dataValidator rejects anything else).
+                priority: isPriorityLevel(priority) ? priority : null,
                 remindersEnabled,
                 recurring,
                 recurringSettings,
-                ...autoClear,
+                ...autoClearField,
                 schemaVersion: 2
             };
 
@@ -252,8 +248,7 @@ export class TaskUtils {
                 id: assignedTaskId,
                 text: taskTextTrimmed,
                 recurringSettings: structuredClone(recurringSettings),
-                highPriority: highPriority || false,
-                priorityColor: priorityColor || (highPriority ? COLORS.PRIORITY_DEFAULT : null),
+                priority: isPriorityLevel(priority) ? priority : null,
                 dueDate: dueDate || null,
                 remindersEnabled: remindersEnabled || false,
                 // Without this the template never fires — recurringWatcher gates on

@@ -19,7 +19,8 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, FONT_SIZE } from '../core/constants.js';
+import { getDefaultPriorityLevel, getLevelColor } from '../utils/priorityLevel.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, FONT_SIZE, DEFAULT_PRIORITY_SWATCHES } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { isValidHex, normalizeFontSize } from '../utils/styleValidators.js';
 import { loadPanelVisibility } from './panelVisibilityHelpers.js';
@@ -498,7 +499,7 @@ export function setupThreeDotsToggle() {
 
     const schemaData = _deps.loadMiniCycleData();
     if (!schemaData) {
-        console.error('Schema 2.5 data required for three dots toggle');
+        console.error('State data required for three dots toggle');
         return;
     }
 
@@ -1122,7 +1123,7 @@ export async function syncCurrentSettingsToStorage() {
     const schemaData = _deps.loadMiniCycleData();
 
     if (!schemaData) {
-        console.error('Schema 2.5 data required for syncCurrentSettingsToStorage');
+        console.error('State data required for syncCurrentSettingsToStorage');
         return;
     }
 
@@ -1398,10 +1399,10 @@ export function applyPriorityColor() {
     const schemaData = _deps.loadMiniCycleData();
     if (!schemaData) return;
 
-    // Validated here rather than trusted from upstream. The per-task copy is
-    // hex-checked on import (cycleImportManager) and again in historyManager;
-    // this global copy was checked nowhere.
-    const globalColor = schemaData.settings?.priorityColor;
+    // The default is a LEVEL (settings.defaultPriority); paint it as the active
+    // theme's swatch, or the shared default before the theme manager is wired.
+    const swatches = _deps.vocabThemeManager?.getPrioritySwatches?.() || DEFAULT_PRIORITY_SWATCHES;
+    const globalColor = getLevelColor(getDefaultPriorityLevel(schemaData.settings), swatches);
     if (isValidHex(globalColor)) {
         document.documentElement.style.setProperty('--priority-color', globalColor);
     }

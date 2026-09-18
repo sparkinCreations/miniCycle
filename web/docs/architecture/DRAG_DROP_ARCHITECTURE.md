@@ -368,7 +368,7 @@ this._nativeDragActive = false;
 
 ```javascript
 // Task order (persisted)
-state.data.cycles[activeCycleId].tasks = [
+state.data.routine[activeCycleId].tasks = [
   { id: 'task-1', text: '...', completed: false },
   { id: 'task-2', text: '...', completed: true },
   // Order in array = visual order
@@ -382,7 +382,7 @@ state.ui.moveArrowsVisible = true; // or false
 ```javascript
 // Arrow button click or drag drop (AppState via DI — this._getAppState())
 AppState.update(state => {
-  const tasks = state.data.cycles[activeCycleId].tasks;
+  const tasks = state.data.routine[activeCycleId].tasks;
 
   // Reorder tasks (splice + insert)
   const [movedTask] = tasks.splice(oldIndex, 1);
@@ -1216,9 +1216,9 @@ newIndex = Math.min(4, 4 + 1) = Math.min(4, 5) = 4;  // Stay at 4
 
             // Update AppState with new order
             AppState.update(state => {
-                const activeCycleId = state.appState.activeCycleId;
-                if (activeCycleId && state.data.cycles[activeCycleId]) {
-                    const tasks = state.data.cycles[activeCycleId].tasks;
+                const activeCycleId = state.appState.activeRoutineId;
+                if (activeCycleId && state.data.routine[activeCycleId]) {
+                    const tasks = state.data.routine[activeCycleId].tasks;
                     if (tasks && currentIndex >= 0 && currentIndex < tasks.length) {
                         // ARRAY MANIPULATION: Remove and reinsert
                         const [movedTask] = tasks.splice(currentIndex, 1);
@@ -1528,14 +1528,14 @@ saveDragReorder() {
         });
 
         AppState.update(state => {
-            const activeCycleId = state.appState.activeCycleId;
-            if (activeCycleId && state.data.cycles[activeCycleId]) {
-                const tasks = state.data.cycles[activeCycleId].tasks;
+            const activeCycleId = state.appState.activeRoutineId;
+            if (activeCycleId && state.data.routine[activeCycleId]) {
+                const tasks = state.data.routine[activeCycleId].tasks;
                 if (tasks && newTaskOrder.length > 0) {
                     const taskMap = new Map(tasks.map(t => [t.id, t]));
                     const reorderedTasks = newTaskOrder.map(id => taskMap.get(id)).filter(Boolean);
                     const missingTasks = tasks.filter(t => !newTaskOrder.includes(t.id));
-                    state.data.cycles[activeCycleId].tasks = [...reorderedTasks, ...missingTasks];
+                    state.data.routine[activeCycleId].tasks = [...reorderedTasks, ...missingTasks];
                     state.metadata.lastModified = Date.now();
                 }
             }

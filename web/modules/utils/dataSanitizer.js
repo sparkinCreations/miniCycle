@@ -270,7 +270,7 @@ export function sanitizeImportedData(backupData) {
             // Write sanitized data back
             backupData.miniCycleData = JSON.stringify(data);
         } catch (error) {
-            console.error('Error sanitizing Schema 2.5 data:', error);
+            console.error('Error sanitizing stored data:', error);
         }
     }
 

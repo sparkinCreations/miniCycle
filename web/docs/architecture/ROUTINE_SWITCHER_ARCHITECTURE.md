@@ -388,9 +388,9 @@ duplicateMiniCycle() {
 
     // Save to state
     this.deps.AppState.update(state => {
-        state.data.cycles[uniqueName] = copiedCycle;
+        state.data.routine[uniqueName] = copiedCycle;
         state.metadata.lastModified = Date.now();
-        state.metadata.totalCyclesCreated = (state.metadata.totalCyclesCreated || 0) + 1;
+        state.metadata.totalRoutinesCreated = (state.metadata.totalRoutinesCreated || 0) + 1;
     }, true);
 
     // Refresh and start inline edit
@@ -459,12 +459,12 @@ _commitRename(oldKey, rawNewName, oldName) {
 
     // Update state (cycle key = title, so the map key migrates)
     this.deps.AppState.update(state => {
-        const cycleData = state.data.cycles[oldKey];
-        state.data.cycles[uniqueName] = { ...cycleData, title: uniqueName };
-        delete state.data.cycles[oldKey];
+        const cycleData = state.data.routine[oldKey];
+        state.data.routine[uniqueName] = { ...cycleData, title: uniqueName };
+        delete state.data.routine[oldKey];
 
-        if (state.appState.activeCycleId === oldKey) {
-            state.appState.activeCycleId = uniqueName;
+        if (state.appState.activeRoutineId === oldKey) {
+            state.appState.activeRoutineId = uniqueName;
         }
     }, true);
 
@@ -546,7 +546,7 @@ _validateAndRepairCycleData(cycleKey) {
 
     if (repaired) {
         this.deps.AppState.update(state => {
-            state.data.cycles[cycleKey] = cycle;
+            state.data.routine[cycleKey] = cycle;
         }, true);
     }
 
@@ -659,7 +659,7 @@ _scheduleIdleSave() {
 
 - [USER_GUIDE.md](../user-guides/USER_GUIDE.md) - User-facing switcher documentation
 - [MODE_MANAGER_ARCHITECTURE.md](./MODE_MANAGER_ARCHITECTURE.md) - Mode system architecture
-- [SCHEMA_2_5.md](../reference/SCHEMA_2_5.md) - Data schema with cycle fields
+- [SCHEMA_2_6.md](../reference/SCHEMA_2_6.md) - Data schema with cycle fields
 - [DI_PATTERNS.md](../working-on-code/DI_PATTERNS.md) - Dependency injection patterns
 
 ---

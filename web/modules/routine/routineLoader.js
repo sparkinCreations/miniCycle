@@ -18,7 +18,8 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS, COLORS, DOM_IDS, DOM_CLASSES, FONT_SIZE } from '../core/constants.js';
+import { isPriorityLevel } from '../utils/priorityLevel.js';
+import { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS, DOM_IDS, DOM_CLASSES, FONT_SIZE } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { normalizeFontSize } from '../utils/styleValidators.js';
 import { getActiveRoutineId, getRoutine, getRoutines, syncTaskAutoClear } from '../utils/cycleMode.js';
@@ -113,7 +114,7 @@ async function loadMiniCycle() {
   const schemaData = _deps.loadMiniCycleData();
 
   if (!schemaData) {
-    console.error('❌ No Schema 2.5 data found');
+    console.error('❌ No state data found');
     _deps.createInitialSchema25Data?.();
     return;
   }
@@ -121,7 +122,6 @@ async function loadMiniCycle() {
   const cycles = schemaData.cycles || getRoutines(schemaData) || {};
   const activeCycleId =
     schemaData.activeCycle ||
-    schemaData.activeCycleId ||
     getActiveRoutineId(schemaData) ||
     schemaData.appState?.activeCycle ||
     null;
@@ -292,16 +292,13 @@ function repairAndCleanTasks(currentCycle, cycleKey = 'unknown', { quiet = false
       warn('⚠️ Repaired task with invalid completed field:', task.id);
     }
 
-    if (typeof task.highPriority !== 'boolean') {
-      task.highPriority = Boolean(task.highPriority);
+    // Priority is a level or null (Schema 2.6). Anything else — a 2.5 flag that
+    // slipped past the migration, a typo in a hand-edited file — reads as "no
+    // priority" and is stored that way, so the shape on disk stays explicit.
+    if (task.priority !== null && !isPriorityLevel(task.priority)) {
+      task.priority = null;
       tasksModified = true;
-      warn('⚠️ Repaired task with invalid highPriority field:', task.id);
-    }
-
-    // Enforce invariant: highPriority tasks must have a priorityColor
-    if (task.highPriority && !task.priorityColor) {
-      task.priorityColor = COLORS.PRIORITY_DEFAULT;
-      tasksModified = true;
+      warn('⚠️ Repaired task with invalid priority:', task.id);
     }
 
     if (typeof task.remindersEnabled !== 'boolean') {

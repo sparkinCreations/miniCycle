@@ -277,8 +277,8 @@ export async function runDragDropManagerTests(resultsDiv) {
         taskList.children[arrowIndex].appendChild(button);
 
         const state = {
-            appState: { activeCycleId: 'c1' },
-            data: { cycles: { c1: { tasks: ids.map(id => ({ id })) } } },
+            appState: { activeRoutineId: 'c1' },
+            data: { routine: { c1: { tasks: ids.map(id => ({ id })) } } },
             metadata: {},
             ui: {}
         };
@@ -291,7 +291,7 @@ export async function runDragDropManagerTests(resultsDiv) {
         return { taskList, button, state, manager };
     }
 
-    const arrowOrder = (state) => state.data.cycles.c1.tasks.map(t => t.id).join(',');
+    const arrowOrder = (state) => state.data.routine.c1.tasks.map(t => t.id).join(',');
 
     await test('handleArrowClick() moves a task up (reorders the state tasks array)', async () => {
         const { taskList, button, state, manager } = buildArrowScenario(['task-1', 'task-2', 'task-3'], 1, 'move-up');

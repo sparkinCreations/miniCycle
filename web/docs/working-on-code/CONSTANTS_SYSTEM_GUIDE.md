@@ -306,7 +306,7 @@ Default color fallbacks for JS code. CSS equivalents live in `variables.css`.
 import { COLORS } from '../core/constants.js';
 
 // Last-resort fallback when a stored colour fails validation (historyManager)
-const safeColor = isValidHex(entry.priorityColor) ? entry.priorityColor : COLORS.PRIORITY_DEFAULT;
+const safeColor = getLevelColor(getPriorityLevel(entry), DEFAULT_PRIORITY_SWATCHES) || COLORS.PRIORITY_DEFAULT;
 ```
 
 **Not for on-screen task priority.** Since Sep 2026 priority is a level (High / Medium / Low)
@@ -317,9 +317,9 @@ High swatch (`DEFAULT_PRIORITY_SWATCHES`).
 
 | Constant | Value | CSS Equivalent | Purpose |
 |----------|-------|----------------|---------|
-| `PRIORITY_DEFAULT` | `'#dc3545'` | `--priority-color` | Fallback when `task.priorityColor` is absent |
+| `PRIORITY_DEFAULT` | `'#dc3545'` | `--priority-color` | The default High swatch; last-resort fallback when a level has no swatch |
 
-**Invariant:** When `task.highPriority` is `true`, `task.priorityColor` must never be `null`. This is enforced at import, boot repair, task creation, and toggle time. `COLORS.PRIORITY_DEFAULT` is the value used to backfill missing colors.
+**Invariant:** `task.priority` is a level or `null`; no colour is stored. The colour on screen is the active theme's swatch for the level (`vocabThemeManager.getTaskPriorityColor`).
 
 ---
 

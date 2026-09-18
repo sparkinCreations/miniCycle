@@ -449,10 +449,10 @@ currentOptions.threeDots = globalThreeDotsEnabled;
 // Customizer → Reminders
 if (newOptions.reminders !== oldOptions.reminders) {
     this.deps.AppState.update(state => {
-        if (!state.data.cycles[cycleId].reminders) {
-            state.data.cycles[cycleId].reminders = { enabled: false };
+        if (!state.data.routine[cycleId].reminders) {
+            state.data.routine[cycleId].reminders = { enabled: false };
         }
-        state.data.cycles[cycleId].reminders.enabled = newOptions.reminders;
+        state.data.routine[cycleId].reminders.enabled = newOptions.reminders;
     });
 }
 ```
@@ -643,7 +643,7 @@ taskOptionsCustomizer?.showCustomizationModal?.(cycleId);
 const { state } = await import(`./modules/core/appContext.js?v=${globalThis.APP_VERSION}`);
 const appState = state().AppState;
 const state = appState.get();
-const cycle = state.data.cycles[cycleId];
+const cycle = state.data.routine[cycleId];
 const { DEFAULT_TASK_OPTION_BUTTONS } = await import(`./modules/utils/globalUtils.js?v=${globalThis.APP_VERSION}`);
 const settings = cycle.taskOptionButtons || DEFAULT_TASK_OPTION_BUTTONS;
 
@@ -654,8 +654,8 @@ console.log('Due dates enabled?', settings.dueDate);
 **Updating Programmatically:**
 ```javascript
 appState.update(state => {
-    state.data.cycles[cycleId].taskOptionButtons.recurring = true;
-    state.data.cycles[cycleId].taskOptionButtons.dueDate = true;
+    state.data.routine[cycleId].taskOptionButtons.recurring = true;
+    state.data.routine[cycleId].taskOptionButtons.dueDate = true;
 });
 
 // Trigger re-render
@@ -716,8 +716,8 @@ If you want to backfill `taskOptionButtons` to existing cycles:
 ```javascript
 // Add to migrationManager.js
 function backfillTaskOptionButtons(state) {
-    Object.keys(state.data.cycles).forEach(cycleId => {
-        const cycle = state.data.cycles[cycleId];
+    Object.keys(state.data.routine).forEach(cycleId => {
+        const cycle = state.data.routine[cycleId];
         if (!cycle.taskOptionButtons) {
             cycle.taskOptionButtons = { ...DEFAULT_TASK_OPTION_BUTTONS };
             console.log(`✅ Backfilled taskOptionButtons for ${cycleId}`);
@@ -815,7 +815,7 @@ function backfillTaskOptionButtons(state) {
 
 ## Related Documentation
 
-- [SCHEMA_2_5.md](../reference/SCHEMA_2_5.md) - Data schema details
+- [SCHEMA_2_6.md](../reference/SCHEMA_2_6.md) - Data schema details
 - [CLAUDE.md](../working-on-code/CLAUDE.md) - Architecture overview
 - [TASK_OPTIONS_CUSTOMIZER_PLAN.md](../archive/TASK_OPTIONS_CUSTOMIZER_PLAN.md) - Original planning doc
 - [FOLDER_STRUCTURE.md](../start-here/FOLDER_STRUCTURE.md) - Module organization

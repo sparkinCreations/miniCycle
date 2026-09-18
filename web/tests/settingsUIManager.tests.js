@@ -109,9 +109,9 @@ export async function runSettingsUIManagerTests(resultsDiv) {
         // them on startup, undoing the theme mapping for the whole list.
         mod.setSettingsUIManagerDependencies({
             loadMiniCycleData: () => ({
-                settings: { priorityColor: '#ff0000' },
+                settings: { defaultPriority: 'high' },
                 activeCycle: 'c1',
-                cycles: { c1: { tasks: [{ id: 't1', highPriority: true, priorityColor: '#00ff00' }] } }
+                cycles: { c1: { tasks: [{ id: 't1', priority: 'low' }] } }
             })
         });
         const el = document.createElement('div');
@@ -119,8 +119,8 @@ export async function runSettingsUIManagerTests(resultsDiv) {
         document.body.appendChild(el);
         try {
             mod.applyPriorityColor();
-            if (document.documentElement.style.getPropertyValue('--priority-color') !== '#ff0000') {
-                throw new Error('global --priority-color should be applied from settings');
+            if (document.documentElement.style.getPropertyValue('--priority-color') !== '#dc3545') {
+                throw new Error('global --priority-color should be the default level\'s swatch');
             }
             if (el.style.getPropertyValue('--task-priority-color') !== '') {
                 throw new Error('applyPriorityColor must not write the stored per-task hex over the renderer\'s colour');
@@ -143,8 +143,8 @@ export async function runSettingsUIManagerTests(resultsDiv) {
         document.body.appendChild(delChecked);
 
         // AppState is resolved as a FACTORY here (_deps.AppState?.()), and update() mutates
-        // state.data.cycles[activeCycle]. Capture that state so we can assert the writes.
-        const captured = { data: { cycles: { c1: {} } } };
+        // state.data.routine[activeCycle]. Capture that state so we can assert the writes.
+        const captured = { data: { routine: { c1: {} } } };
         mod.setSettingsUIManagerDependencies({
             loadMiniCycleData: () => ({ cycles: { c1: {} }, activeCycle: 'c1' }),
             AppState: () => ({ isReady: () => true, update: async (fn) => fn(captured) })
@@ -152,8 +152,8 @@ export async function runSettingsUIManagerTests(resultsDiv) {
 
         try {
             await mod.syncCurrentSettingsToStorage();
-            if (captured.data.cycles.c1.autoReset !== true) throw new Error('autoReset should mirror the checked toggle');
-            if (captured.data.cycles.c1.deleteCheckedTasks !== false) throw new Error('deleteCheckedTasks should mirror the unchecked toggle');
+            if (captured.data.routine.c1.autoReset !== true) throw new Error('autoReset should mirror the checked toggle');
+            if (captured.data.routine.c1.deleteCheckedTasks !== false) throw new Error('deleteCheckedTasks should mirror the unchecked toggle');
         } finally {
             autoReset.remove();
             delChecked.remove();

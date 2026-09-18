@@ -225,8 +225,8 @@ export async function runTaskRendererTests(resultsDiv) {
                 get: () => {
                     appStateCalled = true;
                     return {
-                        data: { cycles: { 'cycle-1': { tasks: [] } } },
-                        appState: { activeCycleId: 'cycle-1' },
+                        data: { routine: { 'cycle-1': { tasks: [] } } },
+                        appState: { activeRoutineId: 'cycle-1' },
                         ui: {}
                     };
                 }

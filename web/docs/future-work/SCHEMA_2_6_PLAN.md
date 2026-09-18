@@ -37,7 +37,7 @@ The stored document is **flat**. There is no `miniCycle` wrapper key:
 }
 ```
 
-`docs/reference/SCHEMA_2_5.md` is accurate and is the reference for field-level detail —
+`docs/reference/SCHEMA_2_6.md` is accurate and is the reference for field-level detail —
 prefer it over anything restated here.
 
 **Two different `schemaVersion` fields exist.** The document-level one is the string
@@ -297,7 +297,7 @@ colour ignored, closed map, input mutated — each fails). Nothing calls it at r
 
 A migration function is deliberately **not** sketched here. The previous doc's example was
 written against the wrong shape and would have thrown on real data; write it against
-`SCHEMA_2_5.md` and the functions above.
+`SCHEMA_2_6.md` and the functions above.
 
 **Starting point (product owner, Sep 2026): pre-2.5 predates the public launch at minicycle.app,
 so every user has only ever had 2.5.** The new
@@ -380,7 +380,7 @@ each:
    migrated shape, the backup, and that undo history is empty afterwards.
 6. **Format** — `schema/mcyc-2.6.schema.json` beside the immutable 2.5 file, the rolling
    `mcyc.schema.json`, a row on `pages/mcyc-format.html`, `docs/reference/MCYC_FILE_FORMAT.md`.
-7. **Docs** — CLAUDE.md's schema block and naming section, `SCHEMA_2_5.md` -> a 2.6 sibling,
+7. **Docs** — CLAUDE.md's schema block and naming section, `SCHEMA_2_6.md` -> a 2.6 sibling,
    and the docs that spell the stored shape (count them with
    `grep -rlE 'data\.cycles|activeCycleId|deleteWhenCompleteSettings' docs`).
 8. **Release** — full suites, every gate, the dry run green on real data, then ONE version
@@ -764,6 +764,18 @@ risky stored-format change small and last.
    fell to defaults; `recurringSettingsApplicator` derives the mirror from the map instead of
    forcing `true` when it was undefined; `deactivateTaskRecurringState` derives the mode from
    the draft routine and no longer takes `currentMode`.*
+   *Wiring (branch `schema-2.6`, Sep 18 2026):* `SCHEMA.CURRENT` is `'2.6'`; the helpers' internals
+   flipped (`cycleMode.js` reads `data.routine` / `activeRoutineId` / one `autoClear` map, the
+   `*DeleteWhenComplete` names retired; `priorityLevel.js` reads `task.priority` and
+   `settings.defaultPriority`, the 2.5 reader kept as `getLegacyPriorityLevel` for the migration
+   and the importer); `AppState._migrateIfOlder` runs the migration on every read path after
+   keeping the raw document under `miniCycleData_pre-migration_<ts>`, and `initUndoSystemForApp`
+   clears persisted undo history on that boot; the addTask option seam accepts `priority` /
+   `autoClear` and still reads the 2.5 option names through the legacy rule; the importer emits
+   2.6 and the exporter dual-writes; `mcyc-2.6.schema.json` published, the rolling schema and the
+   format page moved; ~1,100 fixture lines and 27 suites moved by script plus a hand pass, the
+   journeys converted and one added (*a 2.5 document is migrated at boot*). Measured before the
+   branch: a seeded 2.5 document boots into the 2.6 shape with the copy and the undo store empty.*
    *Priority sweep — measure with stored-field READS of `highPriority` / `priorityColor` outside
    the owners (`priorityLevel.js` and `labels/themes.js` join the list). Batch 1 (Sep 2026) added
    the record helpers `hasPriority`, `priorityFields`, `getLastPriorityLevel`, `getLevelForColor`,
@@ -856,34 +868,34 @@ as the small part and the audit of the surfaces above as the real work.
 ## Success criteria
 
 - [ ] 2.5 data migrates with zero loss, verified on a real backup
-- [ ] `validateSchema25Structure` (or its successor) accepts 2.6 at every call site
-- [ ] `autoClear` is a single field; no mirror remains; `taskCycleReset` reads via the resolver
-- [ ] `schema/mcyc-2.5.schema.json` byte-identical; `schema/mcyc-2.6.schema.json` published;
+- [x] `validateSchema25Structure` (or its successor) accepts 2.6 at every call site
+- [x] `autoClear` is a single field; no mirror remains; `taskCycleReset` reads via the resolver
+- [x] `schema/mcyc-2.5.schema.json` byte-identical; `schema/mcyc-2.6.schema.json` published;
       format page lists both
-- [ ] Importer accepts `deleteWhenCompleteSettings` **and** `autoClear`
-- [ ] Priority is a level on tasks, recurring templates, cleared-task entries and history
+- [x] Importer accepts `deleteWhenCompleteSettings` **and** `autoClear`
+- [x] Priority is a level on tasks, recurring templates, cleared-task entries and history
       details; every theme's swatch colours map to the right level
-- [ ] Importer accepts `highPriority` / `priorityColor` **and** `priority`
-- [ ] Picker labels, accessible names and "Priority First" sort are level-aware;
+- [x] Importer accepts `highPriority` / `priorityColor` **and** `priority`
+- [x] Picker labels, accessible names and "Priority First" sort are level-aware;
       persisted undo history cleared at the version bump
-- [ ] A non-swatch colour from a `.mcyc` imports as its colour family's level (hue rule), with
+- [x] A non-swatch colour from a `.mcyc` imports as its colour family's level (hue rule), with
       the measured examples pinned by tests; `priorityLevel.js` uses the same rule
-- [ ] Every theme's `colorPreset.priorityColor` equals its High swatch, guarded by a test
-- [ ] One shared version check replaces every `schemaVersion === '2.5'`; data newer than the
+- [x] Every theme's `colorPreset.priorityColor` equals its High swatch, guarded by a test
+- [x] One shared version check replaces every `schemaVersion === '2.5'`; data newer than the
       build is never overwritten, and that behaviour shipped before the format changed
-- [ ] Migrations chain per version; `autoClear` and any new `.mcyc` objects are open to new keys
-- [ ] Exports dual-write the 2.5 fields during the transition window; the importer prefers 2.6
+- [x] Migrations chain per version; `autoClear` and any new `.mcyc` objects are open to new keys
+- [x] Exports dual-write the 2.5 fields during the transition window; the importer prefers 2.6
       fields when both are present
-- [ ] The UUID re-key, Rename A, Rename B and priority storage land in **one** migration and one
+- [x] The UUID re-key, Rename A, Rename B and priority storage land in **one** migration and one
       version bump; each step is tested on its own and the whole is dry-run on real backups
-- [ ] The pre-2.5 migration is retired **before** 2.6 ships; the 2.6 migration is 2.5 → 2.6 only
-- [ ] Legacy keys are no longer read and never deleted; a legacy backup file gets the normal
+- [x] The pre-2.5 migration is retired **before** 2.6 ships; the 2.6 migration is 2.5 → 2.6 only
+- [x] Legacy keys are no longer read and never deleted; a legacy backup file gets the normal
       unreadable-backup message; no new UI was added for pre-2.5 data
-- [ ] A brand-new user still gets initial state at boot; `validate:di`, `validate:api` and
+- [x] A brand-new user still gets initial state at boot; `validate:di`, `validate:api` and
       `validate:reset` are green after the legacy references are removed
 - [ ] Full suite and every gate green (see [Testing](#testing))
-- [ ] New migration tests, each mutation-verified
-- [ ] `SCHEMA_2_5.md`, `DATA_SCHEMA_GUIDE.md`, `MCYC_FILE_FORMAT.md`, `CLAUDE.md` updated;
+- [x] New migration tests, each mutation-verified
+- [x] `SCHEMA_2_6.md`, `DATA_SCHEMA_GUIDE.md`, `MCYC_FILE_FORMAT.md`, `CLAUDE.md` updated;
       a `SCHEMA_2_6.md` written
 
 ---

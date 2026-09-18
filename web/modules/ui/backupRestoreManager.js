@@ -451,7 +451,7 @@ function serializeLiveMiniCycleData(AppState) {
         return null;
     }
     if (!validateSchema25PayloadString(payload)) {
-        console.error('In-memory state failed Schema 2.5 validation for backup');
+        console.error('In-memory state failed structure validation for backup');
         return null;
     }
     return payload;
@@ -469,7 +469,7 @@ function serializeLiveMiniCycleData(AppState) {
 export function downloadBackupFile(options = {}) {
     const AppState = getAppStateInstance();
     if (!AppState?.isReady?.()) {
-        console.error('Schema 2.5 AppState required for backup');
+        console.error('AppState required for backup');
         _deps.showNotification(getLabel('notify.backupNoData'), 'error');
         return false;
     }

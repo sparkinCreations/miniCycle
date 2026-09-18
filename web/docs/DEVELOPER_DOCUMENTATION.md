@@ -103,11 +103,11 @@ Centralized state for all app data:
 ```javascript
 // Read state (via DI — AppState is injected, not accessed via window.*)
 const state = _deps.AppState.get()
-const cycle = state.data.cycles[state.appState.activeCycleId]
+const cycle = state.data.routine[state.appState.activeRoutineId]
 
 // Update state
 _deps.AppState.update(state => {
-    state.data.cycles[cycleId].tasks.push(newTask)
+    state.data.routine[cycleId].tasks.push(newTask)
 }, true) // true = immediate save
 
 // Subscribe to changes
@@ -217,8 +217,8 @@ _deps.showNotification('Message', 'success', 3000)
 **Working with tasks:**
 ```javascript
 const state = _deps.AppState.get()
-const activeCycleId = state.appState.activeCycleId
-const tasks = state.data.cycles[activeCycleId].tasks
+const activeCycleId = state.appState.activeRoutineId
+const tasks = state.data.routine[activeCycleId].tasks
 ```
 
 ---

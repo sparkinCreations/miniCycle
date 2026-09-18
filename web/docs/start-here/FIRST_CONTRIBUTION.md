@@ -211,11 +211,11 @@ this._element.removeEventListener('click', this._clickHandler);
 
 ```javascript
 this.deps.AppState.update(state => {
-    state.data.cycles[cycleId].tasks.push(newTask);
+    state.data.routine[cycleId].tasks.push(newTask);
 }, true); // true = save immediately, default is debounced
 ```
 
-Direct mutation (`state.data.cycles[id].tasks = []`) skips the undo system, the debounced save, and the change notifications. **Always go through `update`.** Variables declared `inside` the callback are scoped to the callback — declare them in the outer scope first if you need to read them after.
+Direct mutation (`state.data.routine[id].tasks = []`) skips the undo system, the debounced save, and the change notifications. **Always go through `update`.** Variables declared `inside` the callback are scoped to the callback — declare them in the outer scope first if you need to read them after.
 
 → Deep dive: [`working-on-code/CLAUDE.md`](../working-on-code/CLAUDE.md) §State Management
 

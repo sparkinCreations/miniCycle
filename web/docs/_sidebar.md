@@ -73,7 +73,7 @@
   * [Project Stats](PROJECT_STATS.md)
   * [API Reference](reference/API_REFERENCE.md)
   * [Feature List](reference/FEATURE_LIST.md)
-  * [Schema 2.5](reference/SCHEMA_2_5.md)
+  * [Schema 2.5](reference/SCHEMA_2_6.md)
   * [MCYC File Format](reference/MCYC_FILE_FORMAT.md)
   * [Data Schema Guide](reference/DATA_SCHEMA_GUIDE.md)
   * [Label Registry Reference](reference/LABEL_REGISTRY_REFERENCE.md)

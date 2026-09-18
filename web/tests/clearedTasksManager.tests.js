@@ -18,8 +18,7 @@ export async function runClearedTasksManagerTests(resultsDiv) {
         return {
             metadata: { lastModified: Date.now() },
             settings: {},
-            data: {
-                cycles: {
+            data: { routine: {
                     'cycle-1': {
                         tasks: [{ id: 'task-1', text: 'Test task', completed: false }],
                         // Real Schema 2.5 shape is { entries, totalCleared, autoPruneEnabled }
@@ -30,7 +29,7 @@ export async function runClearedTasksManagerTests(resultsDiv) {
                     }
                 }
             },
-            appState: { activeCycleId: 'cycle-1' },
+            appState: { activeRoutineId: 'cycle-1' },
             userProgress: { cyclesCompleted: 0, totalTasksCleared: 0 },
             ...overrides
         };
@@ -131,12 +130,12 @@ export async function runClearedTasksManagerTests(resultsDiv) {
 
     const DAY_MS = 24 * 60 * 60 * 1000;
 
-    function freshMgr(cycle, activeCycleId = 'cycle-1') {
+    function freshMgr(cycle, activeRoutineId = 'cycle-1') {
         const state = {
             metadata: { lastModified: Date.now() },
             settings: {},
-            data: { cycles: { [activeCycleId]: cycle } },
-            appState: { activeCycleId },
+            data: { routine: { [activeRoutineId]: cycle } },
+            appState: { activeRoutineId },
             userProgress: {}
         };
         const notifications = [];
@@ -157,12 +156,12 @@ export async function runClearedTasksManagerTests(resultsDiv) {
     await test('recordClearedTask appends a newest-first entry and bumps totalCleared', () => {
         // Cycle WITHOUT clearedTasks → exercises the lazy init of { entries, totalCleared, autoPruneEnabled }.
         const { mgr } = freshMgr({ tasks: [], deleteCheckedTasks: false });
-        mgr.recordClearedTask({ text: 'Buy milk', highPriority: true, dueDate: '2026-08-01' });
+        mgr.recordClearedTask({ text: 'Buy milk', priority: 'high', dueDate: '2026-08-01' });
 
         let cleared = mgr.getClearedTasks();
         if (cleared.entries.length !== 1) throw new Error(`expected 1 entry, got ${cleared.entries.length}`);
         if (cleared.entries[0].taskText !== 'Buy milk') throw new Error('entry should carry the task text');
-        if (cleared.entries[0].wasHighPriority !== true) throw new Error('entry should record high-priority flag');
+        if (cleared.entries[0].priority !== 'high') throw new Error('entry should record the priority level');
         if (cleared.entries[0].hadDueDate !== true || cleared.entries[0].dueDate !== '2026-08-01') throw new Error('entry should record the due date');
         if (cleared.totalCleared !== 1) throw new Error('totalCleared should be 1');
 
@@ -268,7 +267,7 @@ export async function runClearedTasksManagerTests(resultsDiv) {
 
     await test('recordClearedTask is a no-op when there is no active cycle', () => {
         const { mgr, state } = freshMgr({ tasks: [] });
-        state.appState.activeCycleId = undefined;
+        state.appState.activeRoutineId = undefined;
         mgr.recordClearedTask({ text: 'orphan' }); // must not throw
         if (mgr.getClearedTasks().entries.length !== 0) throw new Error('nothing should be recorded without an active cycle');
     });

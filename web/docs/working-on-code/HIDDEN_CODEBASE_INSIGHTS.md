@@ -312,7 +312,7 @@ Your app has fundamentally different behavior in:
 - **Cycle Mode:** Tasks reset, never deleted, completion counts
 - **Todo Mode:** Tasks deleted on completion, no reset
 
-This is handled cleanly through `deleteWhenCompleteSettings` per-mode.
+This is handled cleanly through `autoClear` per-mode.
 
 ---
 
@@ -590,7 +590,7 @@ Event handlers created inside a render function capture variables from the rende
 
 ```javascript
 // ❌ BROKEN — activeCycleId captured at render time
-const activeCycleId = state?.appState?.activeCycleId;  // e.g. "Morning Routine"
+const activeCycleId = state?.appState?.activeRoutineId;  // e.g. "Morning Routine"
 
 radio.addEventListener('change', () => {
     vtm.setRoutineTheme(activeCycleId, themeId);  // Still "Morning Routine" even after switching
@@ -606,7 +606,7 @@ Read mutable state from `AppState.get()` at the time the handler fires:
 ```javascript
 // ✅ FIXED — reads current state at click time
 radio.addEventListener('change', () => {
-    const currentCycleId = _deps.AppState?.get?.()?.appState?.activeCycleId;
+    const currentCycleId = _deps.AppState?.get?.()?.appState?.activeRoutineId;
     vtm.setRoutineTheme(currentCycleId, themeId);
 });
 ```

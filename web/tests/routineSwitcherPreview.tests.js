@@ -62,7 +62,7 @@ export async function runRoutineSwitcherPreviewTests(resultsDiv) {
         const hint = mk('desktop-preview-hint');
 
         const state = {
-            data: { cycles },
+            data: { routine: cycles },
             settings: { dismissedEducationalTips: dismissedTip ? { 'tip.routinePreview': true } : {} }
         };
 

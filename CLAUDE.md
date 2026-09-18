@@ -230,8 +230,8 @@ if (count >= LIMITS.MAX_TASKS) { ... }            // numeric caps
 ```javascript
 import { COLORS } from '../core/constants.js';
 
-// Last-resort fallback when a stored colour fails validation (historyManager)
-const safeColor = isValidHex(entry.priorityColor) ? entry.priorityColor : COLORS.PRIORITY_DEFAULT;
+// Last-resort fallback when an archived entry's level has no swatch (historyManager)
+const safeColor = getLevelColor(getPriorityLevel(entry), DEFAULT_PRIORITY_SWATCHES) || COLORS.PRIORITY_DEFAULT;
 ```
 
 A task's priority colour **on screen** is not resolved from the stored hex at all: priority is a
@@ -306,39 +306,51 @@ All tokens are in `styles/base/variables.css`. Timing variables auto-disable und
 ## STATE MANAGEMENT
 
 ```javascript
-// Read state (via injected AppState dependency)
+// Read state (via injected AppState dependency) — always through the helpers
+import { getActiveRoutine, getRoutine } from '../utils/cycleMode.js';
 const state = this.deps.AppState.get();
-const activeCycle = state.data.cycles[state.appState.activeCycleId];
+const routine = getActiveRoutine(state);
 
 // Update state (producer pattern — single entry point for all mutations)
 this.deps.AppState.update(state => {
-    state.data.cycles[cycleId].tasks.push(newTask);
+    getRoutine(state, routineId).tasks.push(newTask);
 }, true); // true = immediate save (default: 600ms debounce)
 ```
 
 **Note:** `dataAccess.js` (`loadMiniCycleData`, `autoSave`, `updateCycleData`) is a legacy wrapper layer. New code should use `AppState.get()` and `AppState.update()` directly — do not add new consumers of `dataAccess.js`.
 
-Schema 2.5 shape:
+Schema 2.6 shape (`SCHEMA.CURRENT`; routines keyed by a generated id, `title` is the name):
 ```
-state.data.cycles[cycleId].tasks[]        — task array
-state.data.cycles[cycleId].title          — display name (there is no `name` field)
-state.data.cycles[cycleId].cycleCount     — times completed
-state.data.cycles[cycleId].recurringTemplates  — map keyed by taskId (not an array)
-state.data.cycles[cycleId].history        — { events[], maxEvents } — an OBJECT, not an array
-state.data.cycles[cycleId].clearedTasks   — { entries[], totalCleared, autoPruneEnabled }
-state.appState.activeCycleId              — current routine
-state.settings                            — theme, darkMode, etc.
+state.data.routine[routineId].tasks[]     — task array
+state.data.routine[routineId].title       — display name (there is no `name` field)
+state.data.routine[routineId].cycleCount  — times completed
+state.data.routine[routineId].recurringTemplates  — map keyed by taskId (not an array)
+state.data.routine[routineId].history     — { events[], maxEvents } — an OBJECT, not an array
+state.data.routine[routineId].clearedTasks — { entries[], totalCleared, autoPruneEnabled }
+state.appState.activeRoutineId            — current routine
+state.settings                            — theme, darkMode, defaultPriority ('high'|'medium'|'low'), etc.
 state.userProgress                        — milestones, totals
 state.achievements                        — unlocked[], seen{}
+
+task.priority   — 'high' | 'medium' | 'low' | null (a LEVEL; the colour is the theme's swatch)
+task.autoClear  — { cycle: boolean, todo: boolean, ...any later mode } — one OPEN per-mode map
 ```
+
+A 2.5 document (`data.cycles`, `activeCycleId`, `highPriority`/`priorityColor`,
+`deleteWhenComplete`/`deleteWhenCompleteSettings`) is migrated ONCE at boot by
+`routine/schemaMigration26.js` (called from `AppState._migrateIfOlder`), after the raw
+document is kept under `miniCycleData_pre-migration_<ts>`; persisted undo history is cleared
+on that boot. Testing modal → Diagnostics → *Dry-Run 2.6 Migration* runs the same function
+on a clone of the live state and reports what it would do.
 
 ### Naming — routine vs cycle, and "clearing" not "deleting"
 
-The stored field names above predate the product's vocabulary. **Stored names stay as they are until Schema 2.6** (`web/docs/future-work/SCHEMA_2_6_PLAN.md`) — renaming a stored key without a migration makes `validateSchema25Structure()` reject the user's data, and the app behaves as if they have none. **Everything you write NEW uses the product words:**
+Since Schema 2.6 (Sep 2026) the stored names ARE the product's words. **Renaming a stored key is never a drive-by** — it needs a migration step in `routine/schemaMigration26.js`, a version bump, and the dry-run tool run on real data (`web/docs/future-work/SCHEMA_2_6_PLAN.md`).
 
-- **Routine** = the checklist — what `state.data.cycles[id]` holds (`activeCycleId` is the open routine). **Cycle** = one completion of it (`cycleCount`, `userProgress.cyclesCompleted`), and "cycle" is used for nothing else. New identifiers, variables and comments say routine — `getActiveRoutineTasks()`, `routine`, `routineId` — even when the value is read from `data.cycles`.
-- **Clearing, never deleting**, for the per-task auto-remove option. Users see **"Clear on Reset"** in the cycle modes and **"Marked for Clearing"** in To-Do mode (`taskOption.clearOnReset` / `taskOption.markedForClearing`), and the removed tasks are recorded in `clearedTasks`. "Delete" means a user explicitly destroying a task (`action.deleteTask`). The stored `deleteWhenComplete` / `deleteWhenCompleteSettings` fields and their helpers (`resolveDeleteWhenComplete`, `syncTaskDeleteWhenComplete`) keep their names for now (Schema 2.6 renames them to `autoClear` — decided) — but never coin a new name built on "delete" for this option.
-- **Use the naming helpers in `web/modules/utils/cycleMode.js`** so new code never has to spell the stored names: `getActiveRoutine()`, `getActiveRoutineId()`, `getRoutine()`, `getRoutines()`, `setActiveRoutineId()`, and `getAutoClear()` / `setAutoClear()` (plus `resolveAutoClear` / `syncTaskAutoClear` / `getAutoClearMode`, the same functions under autoClear names). They read and write the existing keys and add none — do NOT put alias properties on the state object instead: `structuredClone` drops hidden getters, JSON saves visible ones twice, and a Proxy makes `structuredClone` throw (measured Sep 2026). `cycleCount` keeps its name: it really counts cycles.
+- **Routine** = the checklist — what `state.data.routine[id]` holds (`activeRoutineId` is the open routine). **Cycle** = one completion of it (`cycleCount`, `userProgress.cyclesCompleted`), and "cycle" is used for nothing else. Identifiers, variables and comments say routine — `getActiveRoutineTasks()`, `routine`, `routineId`.
+- **Clearing, never deleting**, for the per-task auto-remove option. Users see **"Clear on Reset"** in the cycle modes and **"Marked for Clearing"** in To-Do mode (`taskOption.clearOnReset` / `taskOption.markedForClearing`), and the removed tasks are recorded in `clearedTasks`. "Delete" means a user explicitly destroying a task (`action.deleteTask`). The stored field is `task.autoClear`, one per-mode map; there is no derived mirror any more, so never invent one — and never coin a new name built on "delete" for this option. (The DOM still uses `data-delete-when-complete` / `.delete-when-complete-btn`; those are element contracts, not stored fields.)
+- **Priority is a level**, `task.priority` (`'high' | 'medium' | 'low' | null`), shown as the active theme's swatch. No colour is stored. Read it through `utils/priorityLevel.js` (`getPriorityLevel`, `hasPriority`, `priorityFields`, `comparePriority`) or the `VocabThemeManager` accessors; the 2.5 pair only exists in `.mcyc` files and is read by `getLegacyPriorityLevel` in the importer and the migration.
+- **Use the accessors in `web/modules/utils/cycleMode.js`** rather than spelling the stored names: `getActiveRoutine()`, `getActiveRoutineId()`, `getRoutine()`, `getRoutines()`, `setActiveRoutineId()`, and `getAutoClear()` / `setAutoClear()` / `getAutoClearSettings()` / `setAutoClearSettings()` / `autoClearFields()` (`resolveAutoClear` / `syncTaskAutoClear` / `getAutoClearMode` underneath). That is what let 2.6 rename the keys in one file; keep it that way. Do NOT put alias properties on the state object instead: `structuredClone` drops hidden getters, JSON saves visible ones twice, and a Proxy makes `structuredClone` throw (measured Sep 2026). `cycleCount` keeps its name: it really counts cycles.
 - Renaming a file's **local** variables while you are in it (`cycleData` → `routine`) is welcome. Renaming **DI names** (`switchMiniCycle`, `loadMiniCycle`, …) or **stored keys** is a dedicated change, never a drive-by: DI renames go through the full manifest → depMappings → appContext pipeline.
 
 ---
@@ -414,7 +426,7 @@ which regenerates them in `netlify.toml`.
 11. **Adding listeners in a loop without tracking them** — Use WeakMap or store references for cleanup.
 12. **Assuming a modal's close handler cleans everything up** — It usually only handles escape key. Clean up ALL handlers.
 13. **Mutating the object returned by `AppState.get()`** — it is a live reference, not a copy. Build changes locally and commit them inside `AppState.update()`. Mutating first means the undo wrapper's snapshot captures the *post*-change state, so Undo restores the wrong thing (Aug 2026 review: task add, cycle-reset recurring removal, recurring toggle).
-14. **Deriving state from the DOM** — never count tasks or read completion via `querySelectorAll`, `.checked`, or input values. The DOM holds only the *active* routine's *currently rendered* tasks, so anything filtered, collapsed, or mid-render silently yields wrong numbers with no error. Read from `state.data.cycles[cycleId].tasks`.
+14. **Deriving state from the DOM** — never count tasks or read completion via `querySelectorAll`, `.checked`, or input values. The DOM holds only the *active* routine's *currently rendered* tasks, so anything filtered, collapsed, or mid-render silently yields wrong numbers with no error. Read from `getRoutine(state, routineId).tasks`.
 15. **Fixing a bug in one place without grepping for its copies** — before closing a fix, search for the same pattern elsewhere. Nearly every finding in the Aug 2026 review was newer hardened code sitting beside an older unhardened copy of the same logic (`getState?.()` fixed in taskDOM but missed in taskEvents; `CSS.escape` on one selector builder but not its neighbour).
 16. **Adding a specific `else if` below a general one** — a later branch that re-tests a condition an earlier branch already catches is dead code. Put type-specific branches *above* the generic field check (Aug 2026: the history priority-colour dot never rendered).
 17. **Using post-es2020 built-ins** (`Object.hasOwn`, `.at()`, `.replaceAll()`, `.findLast()`) — esbuild's `target: es2020` transpiles *syntax*, not built-ins; they ship verbatim and throw on browsers the feature gate admits (Safari ≤ 15.3). Tests can't catch it (Playwright = modern Chromium). `validate:builtins` gates it; use the es2020 equivalent (`Object.prototype.hasOwnProperty.call`, `arr[arr.length - 1]`).

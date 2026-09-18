@@ -226,7 +226,7 @@ Stored in `AppGlobalState` (accessed via DI, not window.*):
 **Keyboard:** Ctrl+Z (Cmd+Z on Mac)
 **Button:** Undo button (hidden if stack empty)
 
-**Critical:** Undo **NEVER** switches cycles. Each routine has isolated undo history. When restoring a snapshot, the cycle ID from `state.appState.activeCycleId` (current cycle) is always used, not `snapshot.activeCycleId`.
+**Critical:** Undo **NEVER** switches cycles. Each routine has isolated undo history. When restoring a snapshot, the cycle ID from `state.appState.activeRoutineId` (current cycle) is always used, not `snapshot.activeCycleId`.
 
 **Logic Flow:**
 1. Validate: Check stack not empty, AppState ready
@@ -366,12 +366,12 @@ function buildSnapshotSignature(s) {
   return JSON.stringify({
     c: s.activeCycleId,
     t: (s.tasks || []).map(t => ({
-      id: t.id, txt: t.text, c: !!t.completed, p: !!t.highPriority, d: t.dueDate || null,
-      r: !!t.recurring, re: !!t.remindersEnabled, dwc: !!t.deleteWhenComplete, pc: t.priorityColor || null,
+      id: t.id, txt: t.text, c: !!t.completed, p: !!t.priority, d: t.dueDate || null,
+      r: !!t.recurring, re: !!t.remindersEnabled, ac: t.autoClear ? JSON.stringify(t.autoClear) : null,
       // Settings OBJECTS, not just their booleans — an edit touching only
       // these would otherwise dedup-skip its snapshot
       rs: t.recurringSettings ? JSON.stringify(t.recurringSettings) : null,
-      dws: t.deleteWhenCompleteSettings ? JSON.stringify(t.deleteWhenCompleteSettings) : null
+      dws: t.autoClear ? JSON.stringify(t.autoClear) : null
     })),
     ti: s.title || '',
     ar: !!s.autoReset,
@@ -879,7 +879,7 @@ console.log(JSON.parse(cache));
 
 - **[TESTING_QUICK_REFERENCE.md](../testing/TESTING_QUICK_REFERENCE.md)** - Test suite guide
 - **[DEVELOPER_DOCUMENTATION.md](../DEVELOPER_DOCUMENTATION.md)** - Overall architecture
-- **[SCHEMA_2_5.md](../reference/SCHEMA_2_5.md)** - Data structure details
+- **[SCHEMA_2_6.md](../reference/SCHEMA_2_6.md)** - Data structure details
 
 ---
 

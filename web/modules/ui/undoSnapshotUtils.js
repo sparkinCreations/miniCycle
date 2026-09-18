@@ -29,6 +29,8 @@
  * @module ui/undoSnapshotUtils
  */
 
+import { getPriorityLevel } from '../utils/priorityLevel.js';
+
 // Known valid theme IDs (avoids importing side-effectful themes.js)
 const VALID_THEME_IDS = new Set(['classic', 'habit-tracker', 'fitness', 'scholar', 'cleaning']);
 
@@ -115,13 +117,13 @@ export function buildSnapshotSignature(s) {
   return JSON.stringify({
     c: s.activeCycleId,
     t: (s.tasks || []).map(t => ({
-      id: t.id, txt: t.text, c: !!t.completed, p: !!t.highPriority, d: t.dueDate || null,
-      r: !!t.recurring, re: !!t.remindersEnabled, dwc: !!t.deleteWhenComplete, pc: t.priorityColor || null,
+      id: t.id, txt: t.text, c: !!t.completed, p: getPriorityLevel(t), d: t.dueDate || null,
+      r: !!t.recurring, re: !!t.remindersEnabled,
       // Settings OBJECTS, not just their booleans — an edit touching only
       // these would otherwise dedup-skip its snapshot (same class of bug as
       // the taskViewLayout omission below).
       rs: t.recurringSettings ? JSON.stringify(t.recurringSettings) : null,
-      dws: t.deleteWhenCompleteSettings ? JSON.stringify(t.deleteWhenCompleteSettings) : null
+      ac: t.autoClear ? JSON.stringify(t.autoClear) : null
     })),
     ti: s.title || '',
     ar: !!s.autoReset,
