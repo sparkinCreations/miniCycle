@@ -32,6 +32,9 @@ npm run sync           # build the web payload from web/ + cap sync into ios/
 npm run open           # open in Xcode → build & run on a simulator/device
 ```
 
+No Xcode window needed for a device install: `xcodebuild` + `xcrun devicectl` push it to the
+phone over WiFi — see [`docs/BUILD_AND_RUN.md` §3](./docs/BUILD_AND_RUN.md#3-command-line-builds-no-xcode-gui).
+
 `npm run sync` is the loop you'll run most: it regenerates `www/` from the current `web/` and
 copies it into the native project.
 

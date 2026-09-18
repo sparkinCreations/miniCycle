@@ -4,6 +4,16 @@ Changes to the iOS shell (`mobile/ios/`). The **app content** is the web app —
 live in `web/CHANGELOG.md`; a payload rebuild (`npm run sync`) picks them up wholesale.
 Entries are tagged with the web `APP_VERSION` current at the time.
 
+## [2.569] - 2026-09-18
+
+### CLI device install (no Xcode GUI)
+- Documented the `xcodebuild -destination 'id=<UDID>' -allowProvisioningUpdates` →
+  `xcrun devicectl device install app` → `process launch` path for pushing a Debug build to a
+  physical iPhone over WiFi. First verified on "MJ iPhone" (iPhone 16 Pro) with Xcode 27.0.
+  Removes the old "no CLI device-deploy path yet — use Xcode's Run button" caveat.
+- Troubleshooting: Xcode-upgrade license re-accept (`xcodebuild -license accept`) and the
+  first-launch "developer profile not trusted" error, both hit during this run.
+
 ## [2.312] - 2026-07-21
 
 ### First run on real hardware

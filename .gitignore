@@ -27,3 +27,6 @@ chrome/full-*.zip
 # commit by `git add -A` (happened in v2.318).
 __pycache__/
 *.pyc
+
+# macOS/Finder "name 2.ext" duplicate copies — never commit them
+* 2.*
