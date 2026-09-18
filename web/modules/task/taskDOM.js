@@ -673,7 +673,6 @@ export class TaskDOMManager {
         // not show one indicator in the list and another on the card.
         const finalDeleteWhenComplete = resolveAutoClear({
             settings: validSettings,
-            legacy: deleteWhenComplete,
             mode: currentMode,
             defaults: DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS
         });
@@ -686,7 +685,7 @@ export class TaskDOMManager {
         // special-cases in both directions) live in getTaskResetIndicator so the
         // routine list and the Task view stay in agreement.
         const resetIndicator = getTaskResetIndicator({
-            deleteWhenComplete: finalDeleteWhenComplete,
+            autoClear: finalDeleteWhenComplete,
             isRecurring,
             mode: currentMode
         });

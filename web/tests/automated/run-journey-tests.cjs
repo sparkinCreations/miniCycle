@@ -1444,7 +1444,7 @@ async function journeyFirstRunQuickActions(browser, baseURL) {
 // DISAGREEING — measured: a shared .mcyc that omits both (the shape the public
 // schema tells authors to write) imports with mirror `true` and settings.cycle
 // `false`. And the two paths read different fields: taskDOM renders through
-// resolveDeleteWhenComplete() while taskCycleReset.js deletes on the raw mirror
+// resolveAutoClear() while taskCycleReset.js deletes on the raw mirror
 // (:340, :741).
 //
 // The reason that is safe is NOT obvious and nothing asserted it: boot

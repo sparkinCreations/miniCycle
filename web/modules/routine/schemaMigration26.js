@@ -29,7 +29,7 @@
  */
 
 import { classifyStoredVersion } from '../utils/schemaVersion.js';
-import { getPriorityLevel } from '../utils/priorityLevel.js';
+import { getLegacyPriorityLevel } from '../utils/priorityLevel.js';
 import { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS } from '../core/constants.js';
 
 export const SCHEMA_2_6 = '2.6';
@@ -41,7 +41,7 @@ const isObject = (value) => value !== null && typeof value === 'object' && !Arra
 /**
  * The stored 2.5 `deleteWhenCompleteSettings` map as a valid 2.6 `autoClear` map.
  *
- * Every known mode is present and boolean, defaulting like syncTaskDeleteWhenComplete
+ * Every known mode is present and boolean, defaulting like syncTaskAutoClear
  * repairs it. Unknown mode keys are kept when boolean: the map is OPEN in 2.6 — the plan's
  * "Built to adapt" item 1 — so a mode a newer build adds survives a round trip.
  *
@@ -75,7 +75,7 @@ export function toAutoClear(settings, defaults = DEFAULT_DELETE_WHEN_COMPLETE_SE
  * @returns {'high'|'medium'|'low'|null}
  */
 export function toPriorityLevel(flagged, color, swatchSets) {
-    return getPriorityLevel({ highPriority: flagged === true, priorityColor: color }, swatchSets);
+    return getLegacyPriorityLevel({ highPriority: flagged === true, priorityColor: color }, swatchSets);
 }
 
 // ── Step 1 ────────────────────────────────────────────────────────────────────

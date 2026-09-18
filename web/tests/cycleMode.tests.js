@@ -7,8 +7,7 @@ import { setupTestEnvironment, createProtectedTest } from './testHelpers.js';
 export async function runCycleModeTests(resultsDiv) {
     const cacheBuster = window.testCacheBuster || Date.now();
     const mod = await import(`../modules/utils/cycleMode.js?v=${cacheBuster}`);
-    const { getCycleMode, getAllDoneHintKey, getDeleteSettingsMode, syncTaskDeleteWhenComplete,
-            resolveDeleteWhenComplete, getTaskResetIndicator,
+    const { getCycleMode, getAllDoneHintKey, getTaskResetIndicator,
             getRoutines, getActiveRoutineId, getRoutine, getActiveRoutine, setActiveRoutineId,
             routineHasTasks, areAllTasksComplete,
             getAutoClearMode, syncTaskAutoClear, resolveAutoClear, getAutoClear, setAutoClear,
@@ -105,197 +104,164 @@ export async function runCycleModeTests(resultsDiv) {
         }
     });
 
-    // ── getDeleteSettingsMode ────────────────────────────────────────────────
-    resultsDiv.innerHTML += '<h4 class="test-section">🗝️ getDeleteSettingsMode</h4>';
+    // ── getAutoClearMode ─────────────────────────────────────────────────────
+    resultsDiv.innerHTML += '<h4 class="test-section">🗝️ getAutoClearMode</h4>';
 
-    await test('deleteWhenCompleteSettings is keyed by two modes, not three', () => {
+    await test('autoClear is keyed by two modes, not three', () => {
         // auto and manual routines both RESET rather than delete, so both read
         // the `cycle` key — the three-way getCycleMode must not leak through.
-        if (getDeleteSettingsMode({ deleteCheckedTasks: true }) !== 'todo') throw new Error('todo');
-        if (getDeleteSettingsMode({ autoReset: true }) !== 'cycle') throw new Error('auto should map to cycle');
-        if (getDeleteSettingsMode({}) !== 'cycle') throw new Error('manual should map to cycle');
-        if (getDeleteSettingsMode(null) !== 'cycle') throw new Error('null should map to cycle');
+        if (getAutoClearMode({ deleteCheckedTasks: true }) !== 'todo') throw new Error('todo');
+        if (getAutoClearMode({ autoReset: true }) !== 'cycle') throw new Error('auto should map to cycle');
+        if (getAutoClearMode({}) !== 'cycle') throw new Error('manual should map to cycle');
+        if (getAutoClearMode(null) !== 'cycle') throw new Error('null should map to cycle');
     });
 
-    // ── syncTaskDeleteWhenComplete ───────────────────────────────────────────
-    resultsDiv.innerHTML += '<h4 class="test-section">🔄 syncTaskDeleteWhenComplete</h4>';
-
-    await test('derives deleteWhenComplete from the active mode', () => {
-        const task = { deleteWhenCompleteSettings: { cycle: true, todo: false }, deleteWhenComplete: false };
-        syncTaskDeleteWhenComplete(task, 'cycle', DEFAULTS);
-        if (task.deleteWhenComplete !== true) throw new Error('cycle mode value not applied');
-        syncTaskDeleteWhenComplete(task, 'todo', DEFAULTS);
-        if (task.deleteWhenComplete !== false) throw new Error('todo mode value not applied');
-    });
+    // ── syncTaskAutoClear ────────────────────────────────────────────────────
+    resultsDiv.innerHTML += '<h4 class="test-section">🔄 syncTaskAutoClear</h4>';
 
     await test('repairs PER KEY — the other mode\'s valid value survives', () => {
         // The regression this helper exists to kill: whole-object replacement turned
         // {cycle:true, todo:<bad>} into {cycle:false, todo:true}, silently discarding
         // the user's Cycle setting on load.
-        const task = { deleteWhenCompleteSettings: { cycle: true, todo: 'nope' } };
-        const result = syncTaskDeleteWhenComplete(task, 'todo', DEFAULTS);
-        if (task.deleteWhenCompleteSettings.cycle !== true) {
-            throw new Error('the valid cycle value was discarded during repair');
-        }
-        if (task.deleteWhenCompleteSettings.todo !== DEFAULTS.todo) throw new Error('bad key not defaulted');
+        const task = { autoClear: { cycle: true, todo: 'nope' } };
+        const result = syncTaskAutoClear(task, 'todo', DEFAULTS);
+        if (task.autoClear.cycle !== true) throw new Error('the valid cycle value was discarded during repair');
+        if (task.autoClear.todo !== DEFAULTS.todo) throw new Error('bad key not defaulted');
         if (!result.repaired) throw new Error('should report repaired');
     });
 
-    await test('rebuilds a missing settings map from defaults', () => {
+    await test('rebuilds a missing map from defaults', () => {
         const task = {};
-        const result = syncTaskDeleteWhenComplete(task, 'cycle', DEFAULTS);
-        if (task.deleteWhenCompleteSettings.cycle !== DEFAULTS.cycle) throw new Error('cycle default');
-        if (task.deleteWhenCompleteSettings.todo !== DEFAULTS.todo) throw new Error('todo default');
+        const result = syncTaskAutoClear(task, 'cycle', DEFAULTS);
+        if (task.autoClear.cycle !== DEFAULTS.cycle) throw new Error('cycle default');
+        if (task.autoClear.todo !== DEFAULTS.todo) throw new Error('todo default');
         if (!result.repaired || !result.changed) throw new Error('should report repaired + changed');
     });
 
-    await test('rebuilds a non-object settings value', () => {
+    await test('rebuilds a non-object map', () => {
         for (const bad of ['x', 42, true, null]) {
-            const task = { deleteWhenCompleteSettings: bad };
-            syncTaskDeleteWhenComplete(task, 'cycle', DEFAULTS);
-            if (typeof task.deleteWhenCompleteSettings !== 'object') throw new Error(`not repaired for ${bad}`);
-            if (task.deleteWhenCompleteSettings.todo !== DEFAULTS.todo) throw new Error(`bad rebuild for ${bad}`);
-        }
-    });
-
-    await test('never assigns a non-boolean to deleteWhenComplete', () => {
-        // routineLoader used to derive `undefined` when the active mode's key was
-        // corrupt, then write it straight onto the task.
-        const task = { deleteWhenCompleteSettings: { cycle: undefined, todo: undefined } };
-        syncTaskDeleteWhenComplete(task, 'cycle', DEFAULTS);
-        if (typeof task.deleteWhenComplete !== 'boolean') {
-            throw new Error(`assigned ${typeof task.deleteWhenComplete}`);
+            const task = { autoClear: bad };
+            syncTaskAutoClear(task, 'cycle', DEFAULTS);
+            if (typeof task.autoClear !== 'object') throw new Error(`not repaired for ${bad}`);
+            if (task.autoClear.todo !== DEFAULTS.todo) throw new Error(`bad rebuild for ${bad}`);
         }
     });
 
     await test('is idempotent — a clean task reports no change', () => {
         // modeManager documents "callers that only touched autoReset pay no cost",
         // and routineLoader drives its tasksModified flag off this.
-        const task = { deleteWhenCompleteSettings: { cycle: false, todo: true }, deleteWhenComplete: false };
-        const result = syncTaskDeleteWhenComplete(task, 'cycle', DEFAULTS);
+        const task = { autoClear: { cycle: false, todo: true } };
+        const before = task.autoClear;
+        const result = syncTaskAutoClear(task, 'cycle', DEFAULTS);
         if (result.changed || result.repaired) throw new Error('clean task should report no change');
+        if (task.autoClear !== before) throw new Error('a clean map must not be replaced');
     });
 
-    await test('reports changed (not repaired) when only the derived value was stale', () => {
-        const task = { deleteWhenCompleteSettings: { cycle: false, todo: true }, deleteWhenComplete: true };
-        const result = syncTaskDeleteWhenComplete(task, 'cycle', DEFAULTS);
-        if (result.repaired) throw new Error('settings were valid — should not report repaired');
-        if (!result.changed) throw new Error('stale derived value should report changed');
-        if (task.deleteWhenComplete !== false) throw new Error('value not corrected');
+    await test('keeps an unknown boolean mode — the map is OPEN', () => {
+        // A mode a newer build adds must survive a round trip through this one
+        // (SCHEMA_2_6_PLAN.md, "Built to adapt").
+        const task = { autoClear: { cycle: true, todo: true, someday: false } };
+        const result = syncTaskAutoClear(task, 'cycle', DEFAULTS);
+        if (task.autoClear.someday !== false) throw new Error('unknown mode dropped');
+        if (result.repaired) throw new Error('a valid open map is not a repair');
     });
 
-    await test('drops unknown keys from the settings map', () => {
-        const task = { deleteWhenCompleteSettings: { cycle: true, todo: true, bogus: true } };
-        const result = syncTaskDeleteWhenComplete(task, 'cycle', DEFAULTS);
-        if ('bogus' in task.deleteWhenCompleteSettings) throw new Error('unknown key survived');
-        if (!result.repaired) throw new Error('dropping a key is a rebuild — should report repaired');
+    await test('drops non-boolean junk under an unknown key', () => {
+        const task = { autoClear: { cycle: true, todo: true, bogus: 'x' } };
+        const result = syncTaskAutoClear(task, 'cycle', DEFAULTS);
+        if ('bogus' in task.autoClear) throw new Error('junk survived');
+        if (!result.repaired) throw new Error('dropping junk is a rebuild — should report repaired');
     });
 
     await test('covers every key in the defaults map, not a hardcoded pair', () => {
-        // A third mode must stay covered without editing this helper.
         const task = {};
-        syncTaskDeleteWhenComplete(task, 'cycle', { cycle: false, todo: true, someday: true });
-        if (task.deleteWhenCompleteSettings.someday !== true) throw new Error('extra mode not carried');
+        syncTaskAutoClear(task, 'cycle', { cycle: false, todo: true, someday: true });
+        if (task.autoClear.someday !== true) throw new Error('extra default mode not carried');
+    });
+
+    await test('never writes the retired 2.5 mirror', () => {
+        const task = { autoClear: { cycle: 'bad', todo: true } };
+        syncTaskAutoClear(task, 'cycle', DEFAULTS);
+        if ('deleteWhenComplete' in task || 'deleteWhenCompleteSettings' in task) {
+            throw new Error('a 2.5 field was written');
+        }
     });
 
     await test('returns safely for a null task or missing defaults', () => {
-        const a = syncTaskDeleteWhenComplete(null, 'cycle', DEFAULTS);
+        const a = syncTaskAutoClear(null, 'cycle', DEFAULTS);
         if (a.changed || a.repaired) throw new Error('null task should be inert');
-        const b = syncTaskDeleteWhenComplete({}, 'cycle', null);
+        const b = syncTaskAutoClear({}, 'cycle', null);
         if (b.changed || b.repaired) throw new Error('missing defaults should be inert');
     });
 
-    resultsDiv.innerHTML += '<h4 class="test-section">resolveDeleteWhenComplete — priority order</h4>';
+    resultsDiv.innerHTML += '<h4 class="test-section">resolveAutoClear — per key, then the default</h4>';
 
-    const resolve = (settings, legacy, mode) =>
-        resolveDeleteWhenComplete({ settings, legacy, mode, defaults: DEFAULTS });
+    const resolve = (settings, mode) => resolveAutoClear({ settings, mode, defaults: DEFAULTS });
 
-    await test('falls back to the legacy field when settings are MISSING', () => {
-        // Regression: an earlier version validated the settings map wholesale and
-        // substituted defaults, which made this branch unreachable — a task whose
-        // only signal was deleteWhenComplete:true resolved to the mode default.
-        if (resolve(undefined, true, 'cycle') !== true) {
-            throw new Error('missing settings + legacy true should resolve true, not the cycle default');
-        }
-        if (resolve(undefined, false, 'todo') !== false) {
-            throw new Error('missing settings + legacy false should resolve false, not the todo default');
-        }
-    });
-
-    await test('falls back to the legacy field when settings are MALFORMED', () => {
-        if (resolve({ cycle: 'yes', todo: 1 }, true, 'cycle') !== true) {
-            throw new Error('non-boolean settings should not mask a valid legacy value');
-        }
-    });
-
-    await test('honours a PARTIALLY populated settings map for the mode it covers', () => {
-        // Per key, not wholesale — the same rule syncTaskDeleteWhenComplete follows.
-        // { cycle: true } is a usable answer in cycle mode even with todo missing.
-        if (resolve({ cycle: true }, undefined, 'cycle') !== true) {
-            throw new Error('a valid key for the active mode must win');
-        }
+    await test('honours a PARTIALLY populated map for the mode it covers', () => {
+        // Per key, not wholesale — the same rule syncTaskAutoClear follows.
+        if (resolve({ cycle: true }, 'cycle') !== true) throw new Error('a valid key for the active mode must win');
         // ...and must NOT be borrowed for the mode it does not cover.
-        if (resolve({ cycle: true }, false, 'todo') !== false) {
-            throw new Error('a key for the other mode must not leak across modes');
-        }
+        if (resolve({ cycle: true }, 'todo') !== DEFAULTS.todo) throw new Error('a key for the other mode must not leak across modes');
     });
 
-    await test('falls back to the per-mode default when NEITHER source is present', () => {
-        if (resolve(undefined, undefined, 'cycle') !== DEFAULTS.cycle) {
-            throw new Error('cycle with no signal should use the cycle default');
-        }
-        if (resolve(undefined, undefined, 'todo') !== DEFAULTS.todo) {
-            throw new Error('todo with no signal should use the todo default');
-        }
+    await test('falls back to the per-mode default when the map is missing or malformed', () => {
+        if (resolve(undefined, 'cycle') !== DEFAULTS.cycle) throw new Error('cycle with no map');
+        if (resolve(undefined, 'todo') !== DEFAULTS.todo) throw new Error('todo with no map');
+        if (resolve({ cycle: 'yes', todo: 1 }, 'cycle') !== DEFAULTS.cycle) throw new Error('non-boolean key should default');
     });
 
-    await test('valid settings outrank the legacy field', () => {
-        if (resolve({ cycle: true, todo: false }, false, 'cycle') !== true) {
-            throw new Error('settings are canonical and must win over the legacy mirror');
+    await test('a 2.5 mirror passed as `legacy` is ignored — the map is the only source', () => {
+        if (resolveAutoClear({ settings: undefined, legacy: true, mode: 'cycle', defaults: DEFAULTS }) !== DEFAULTS.cycle) {
+            throw new Error('the retired mirror must not be consulted');
         }
     });
 
     await test('getTaskResetIndicator matches the routine list branch table', () => {
         const cases = [
-            [{ deleteWhenComplete: true,  isRecurring: false, mode: 'todo'  }, null],
-            [{ deleteWhenComplete: false, isRecurring: false, mode: 'todo'  }, 'keep'],
-            [{ deleteWhenComplete: false, isRecurring: false, mode: 'cycle' }, null],
-            [{ deleteWhenComplete: true,  isRecurring: false, mode: 'cycle' }, 'clear'],
-            [{ deleteWhenComplete: true,  isRecurring: true,  mode: 'cycle' }, null],
-            [{ deleteWhenComplete: false, isRecurring: true,  mode: 'cycle' }, 'keep']
+            [{ autoClear: true,  isRecurring: false, mode: 'todo'  }, null],
+            [{ autoClear: false, isRecurring: false, mode: 'todo'  }, 'keep'],
+            [{ autoClear: false, isRecurring: false, mode: 'cycle' }, null],
+            [{ autoClear: true,  isRecurring: false, mode: 'cycle' }, 'clear'],
+            [{ autoClear: true,  isRecurring: true,  mode: 'cycle' }, null],
+            [{ autoClear: false, isRecurring: true,  mode: 'cycle' }, 'keep']
         ];
         for (const [args, want] of cases) {
             const got = getTaskResetIndicator(args);
-            if (got !== want) {
-                throw new Error(`${JSON.stringify(args)} -> ${got}, expected ${want}`);
-            }
+            if (got !== want) throw new Error(`${JSON.stringify(args)} -> ${got}, expected ${want}`);
         }
     });
 
-    // ── Naming helpers: routine ──────────────────────────────────────────────
-    resultsDiv.innerHTML += '<h4 class="test-section">🗂️ Routine helpers (read/write the stored cycle keys)</h4>';
+    // ── Routine accessors ────────────────────────────────────────────────────
+    resultsDiv.innerHTML += '<h4 class="test-section">🗂️ Routine accessors (data.routine / activeRoutineId)</h4>';
 
-    // Schema 2.5 shape: routines live under data.cycles, the open one in appState.activeCycleId
     const makeState = () => ({
-        data: { cycles: {
+        data: { routine: {
             r1: { title: 'Morning', cycleCount: 3, tasks: [{ id: 't1' }] },
             r2: { title: 'Evening', cycleCount: 0, tasks: [] }
         } },
-        appState: { activeCycleId: 'r1' }
+        appState: { activeRoutineId: 'r1' }
     });
 
     await test('getRoutines and getActiveRoutineId read the stored keys', () => {
         const state = makeState();
-        if (getRoutines(state) !== state.data.cycles) throw new Error('getRoutines should return data.cycles');
+        if (getRoutines(state) !== state.data.routine) throw new Error('getRoutines should return data.routine');
         if (getActiveRoutineId(state) !== 'r1') throw new Error(`getActiveRoutineId: ${getActiveRoutineId(state)}`);
+    });
+
+    await test('the 2.5 keys are no longer read', () => {
+        // A document that missed the migration must look EMPTY here, not half-work.
+        const stale = { data: { cycles: { r1: { title: 'x', tasks: [] } } }, appState: { activeCycleId: 'r1' } };
+        if (getRoutines(stale) !== null) throw new Error('data.cycles was read');
+        if (getActiveRoutineId(stale) !== null) throw new Error('activeCycleId was read');
     });
 
     await test('getActiveRoutine returns the open routine itself, so producer edits land in state', () => {
         const state = makeState();
         const routine = getActiveRoutine(state);
-        if (routine !== state.data.cycles.r1) throw new Error('should return the stored routine object, not a copy');
+        if (routine !== state.data.routine.r1) throw new Error('should return the stored routine object, not a copy');
         routine.cycleCount += 1;
-        if (state.data.cycles.r1.cycleCount !== 4) throw new Error('an edit through the helper did not reach state');
+        if (state.data.routine.r1.cycleCount !== 4) throw new Error('an edit through the helper did not reach state');
     });
 
     await test('getRoutine finds a routine by id and returns null for an unknown id', () => {
@@ -306,46 +272,43 @@ export async function runCycleModeTests(resultsDiv) {
     });
 
     await test('getRoutine ignores inherited names like constructor and toString', () => {
-        // The routines map is a plain object — a truthiness lookup would "find" these.
         const state = makeState();
         for (const name of ['constructor', 'toString', '__proto__', 'hasOwnProperty']) {
             if (getRoutine(state, name) !== null) throw new Error(`"${name}" was treated as a routine`);
         }
     });
 
-    await test('routine helpers return null instead of throwing when data is missing', () => {
+    await test('routine accessors return null instead of throwing when data is missing', () => {
         for (const bad of [null, undefined, {}, { data: {} }, { appState: {} }]) {
             if (getRoutines(bad) !== null) throw new Error(`getRoutines for ${JSON.stringify(bad)}`);
             if (getActiveRoutineId(bad) !== null) throw new Error(`getActiveRoutineId for ${JSON.stringify(bad)}`);
             if (getActiveRoutine(bad) !== null) throw new Error(`getActiveRoutine for ${JSON.stringify(bad)}`);
         }
         const pointingNowhere = makeState();
-        pointingNowhere.appState.activeCycleId = 'gone';
+        pointingNowhere.appState.activeRoutineId = 'gone';
         if (getActiveRoutine(pointingNowhere) !== null) throw new Error('an id with no routine should be null');
     });
 
-    await test('setActiveRoutineId writes activeCycleId and creates appState if needed', () => {
+    await test('setActiveRoutineId writes activeRoutineId and creates appState if needed', () => {
         const state = makeState();
         setActiveRoutineId(state, 'r2');
-        if (state.appState.activeCycleId !== 'r2') throw new Error('activeCycleId not written');
+        if (state.appState.activeRoutineId !== 'r2') throw new Error('activeRoutineId not written');
         if (getActiveRoutine(state)?.title !== 'Evening') throw new Error('helper did not follow the new id');
 
-        const bare = { data: { cycles: {} } };
+        const bare = { data: { routine: {} } };
         setActiveRoutineId(bare, 'r9');
-        if (bare.appState?.activeCycleId !== 'r9') throw new Error('appState should be created');
+        if (bare.appState?.activeRoutineId !== 'r9') throw new Error('appState should be created');
 
         setActiveRoutineId(null, 'r1'); // must not throw
     });
 
-    await test('routine helpers never add new keys to stored data', () => {
-        // The stored schema keeps its names until Schema 2.6 — an alias key would be
-        // saved alongside the real one and drift from it after a reload.
+    await test('routine accessors never write the 2.5 names', () => {
         const state = makeState();
         getActiveRoutine(state);
         setActiveRoutineId(state, 'r2');
         const saved = JSON.stringify(state);
-        for (const newName of ['routines', 'activeRoutineId', 'routineId']) {
-            if (saved.includes(`"${newName}"`)) throw new Error(`stored data gained a "${newName}" key`);
+        for (const oldName of ['cycles', 'activeCycleId']) {
+            if (saved.includes(`"${oldName}"`)) throw new Error(`stored data gained a "${oldName}" key`);
         }
     });
 
@@ -363,7 +326,6 @@ export async function runCycleModeTests(resultsDiv) {
     await test('areAllTasksComplete requires every task complete, and at least one task', () => {
         if (areAllTasksComplete({ tasks: [{ completed: true }, { completed: true }] }) !== true) throw new Error('all done');
         if (areAllTasksComplete({ tasks: [{ completed: true }, { completed: false }] }) !== false) throw new Error('one open');
-        // An empty routine is not a finished one — every() on [] is true, so guard it.
         if (areAllTasksComplete({ tasks: [] }) !== false) throw new Error('empty routine must not count as complete');
         if (areAllTasksComplete(null) !== false) throw new Error('null');
     });
@@ -374,86 +336,73 @@ export async function runCycleModeTests(resultsDiv) {
         if (areAllTasksComplete({ tasks: [{ completed: true }, null] }) !== false) throw new Error('null task');
     });
 
-    // ── Naming helpers: autoClear ────────────────────────────────────────────
-    resultsDiv.innerHTML += '<h4 class="test-section">🧹 autoClear helpers (Clear on Reset / Marked for Clearing)</h4>';
+    // ── autoClear accessors ──────────────────────────────────────────────────
+    resultsDiv.innerHTML += '<h4 class="test-section">🧹 autoClear accessors (Clear on Reset / Marked for Clearing)</h4>';
 
     const cycleRoutine = { autoReset: true };
     const todoRoutine = { deleteCheckedTasks: true };
 
-    await test('autoClear names are the existing helpers, not copies that could drift', () => {
-        if (getAutoClearMode !== getDeleteSettingsMode) throw new Error('getAutoClearMode');
-        if (syncTaskAutoClear !== syncTaskDeleteWhenComplete) throw new Error('syncTaskAutoClear');
-        if (resolveAutoClear !== resolveDeleteWhenComplete) throw new Error('resolveAutoClear');
-    });
-
     await test('getAutoClear answers for the routine\'s current mode', () => {
-        const task = { deleteWhenCompleteSettings: { cycle: true, todo: false }, deleteWhenComplete: true };
+        const task = { autoClear: { cycle: true, todo: false } };
         if (getAutoClear(task, cycleRoutine, DEFAULTS) !== true) throw new Error('Clear on Reset (cycle) should be on');
         if (getAutoClear(task, todoRoutine, DEFAULTS) !== false) throw new Error('Marked for Clearing (todo) should be off');
     });
 
-    await test('getAutoClear falls back to the flat field, then the mode default', () => {
-        if (getAutoClear({ deleteWhenComplete: true }, cycleRoutine, DEFAULTS) !== true) {
-            throw new Error('flat field should be used when there is no settings map');
-        }
+    await test('getAutoClear falls back to the mode default, and ignores the retired 2.5 fields', () => {
         if (getAutoClear({}, todoRoutine, DEFAULTS) !== DEFAULTS.todo) throw new Error('todo default');
         if (getAutoClear({}, cycleRoutine, DEFAULTS) !== DEFAULTS.cycle) throw new Error('cycle default');
+        const stale = { deleteWhenComplete: true, deleteWhenCompleteSettings: { cycle: true, todo: true } };
+        if (getAutoClear(stale, cycleRoutine, DEFAULTS) !== DEFAULTS.cycle) throw new Error('2.5 fields must not be read');
     });
 
     await test('setAutoClear makes the same write as the task toggle and keeps the other mode', () => {
-        // taskButtons.js writes task.deleteWhenCompleteSettings[mode] AND task.deleteWhenComplete.
-        const task = { deleteWhenCompleteSettings: { cycle: false, todo: false }, deleteWhenComplete: false };
+        const task = { autoClear: { cycle: false, todo: false } };
         const written = setAutoClear(task, cycleRoutine, true, DEFAULTS);
         if (written !== 'cycle') throw new Error(`wrote mode ${written}`);
-        if (task.deleteWhenCompleteSettings.cycle !== true) throw new Error('per-mode setting not written');
-        if (task.deleteWhenComplete !== true) throw new Error('flat mirror not written');
-        if (task.deleteWhenCompleteSettings.todo !== false) throw new Error('the To-Do setting was changed');
+        if (task.autoClear.cycle !== true) throw new Error('per-mode setting not written');
+        if (task.autoClear.todo !== false) throw new Error('the To-Do setting was changed');
 
         setAutoClear(task, todoRoutine, true, DEFAULTS);
-        if (task.deleteWhenCompleteSettings.cycle !== true) throw new Error('turning on To-Do lost the Cycle setting');
+        if (task.autoClear.cycle !== true) throw new Error('turning on To-Do lost the Cycle setting');
         if (getAutoClear(task, todoRoutine, DEFAULTS) !== true) throw new Error('round trip in To-Do mode');
         if (getAutoClear(task, cycleRoutine, DEFAULTS) !== true) throw new Error('round trip in Cycle mode');
     });
 
-    await test('setAutoClear repairs a missing or invalid settings map before writing', () => {
-        const task = { deleteWhenCompleteSettings: 'garbage' };
+    await test('setAutoClear repairs a missing or invalid map before writing', () => {
+        const task = { autoClear: 'garbage' };
         setAutoClear(task, cycleRoutine, true, DEFAULTS);
-        if (task.deleteWhenCompleteSettings.cycle !== true) throw new Error('value not written after repair');
-        if (task.deleteWhenCompleteSettings.todo !== DEFAULTS.todo) throw new Error('other mode not defaulted');
+        if (task.autoClear.cycle !== true) throw new Error('value not written after repair');
+        if (task.autoClear.todo !== DEFAULTS.todo) throw new Error('other mode not defaulted');
     });
 
     await test('setAutoClear never modifies the frozen defaults object', () => {
-        // A task can end up holding DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS by reference;
-        // editing it in place would throw in strict mode (or silently corrupt defaults).
-        const task = { deleteWhenCompleteSettings: DEFAULTS };
+        const task = { autoClear: DEFAULTS };
         const before = JSON.stringify(DEFAULTS);
         setAutoClear(task, cycleRoutine, !DEFAULTS.cycle, DEFAULTS);
         if (JSON.stringify(DEFAULTS) !== before) throw new Error('the shared defaults object was changed');
-        if (task.deleteWhenCompleteSettings === DEFAULTS) throw new Error('task should get its own settings object');
-        if (task.deleteWhenCompleteSettings.cycle !== !DEFAULTS.cycle) throw new Error('value not written');
+        if (task.autoClear === DEFAULTS) throw new Error('task should get its own map object');
+        if (task.autoClear.cycle !== !DEFAULTS.cycle) throw new Error('value not written');
     });
 
-    await test('setAutoClear only writes the stored field names', () => {
+    await test('setAutoClear writes autoClear and nothing else', () => {
         const task = { id: 't1' };
         setAutoClear(task, todoRoutine, false, DEFAULTS);
-        const saved = JSON.stringify(task);
-        if (saved.includes('"autoClear"')) throw new Error('stored task gained an "autoClear" key');
-        if (!saved.includes('"deleteWhenComplete"')) throw new Error('flat field missing');
-        if (!saved.includes('"deleteWhenCompleteSettings"')) throw new Error('settings map missing');
+        const keys = Object.keys(task).sort().join(',');
+        if (keys !== 'autoClear,id') throw new Error(`unexpected keys: ${keys}`);
     });
 
     await test('setAutoClear is inert for a missing task or missing defaults', () => {
         if (setAutoClear(null, cycleRoutine, true, DEFAULTS) !== null) throw new Error('null task');
         const task = {};
         if (setAutoClear(task, cycleRoutine, true, null) !== null) throw new Error('missing defaults');
-        if ('deleteWhenComplete' in task) throw new Error('task was written without defaults');
+        if ('autoClear' in task) throw new Error('task was written without defaults');
     });
 
-    // ── map-level helpers (Rename A reader sweep) ────────────────────────────
+    // ── map-level helpers ────────────────────────────────────────────────────
     resultsDiv.innerHTML += '<h4 class="test-section">🧹 autoClear map helpers</h4>';
 
     await test('getAutoClearForMode reads the given mode, not the routine', () => {
-        const task = { deleteWhenCompleteSettings: { cycle: true, todo: false }, deleteWhenComplete: false };
+        const task = { autoClear: { cycle: true, todo: false } };
         if (getAutoClearForMode(task, 'cycle', DEFAULTS) !== true) throw new Error('cycle key ignored');
         if (getAutoClearForMode(task, 'todo', DEFAULTS) !== false) throw new Error('todo key ignored');
         if (getAutoClear(task, cycleRoutine, DEFAULTS) !== getAutoClearForMode(task, 'cycle', DEFAULTS)) {
@@ -461,75 +410,63 @@ export async function runCycleModeTests(resultsDiv) {
         }
     });
 
-    await test('getAutoClearForMode falls back to the mirror, then the default', () => {
-        if (getAutoClearForMode({ deleteWhenComplete: true }, 'cycle', DEFAULTS) !== true) throw new Error('mirror ignored');
+    await test('getAutoClearForMode falls back to the default for a missing map or task', () => {
         if (getAutoClearForMode({}, 'todo', DEFAULTS) !== DEFAULTS.todo) throw new Error('default ignored');
         if (getAutoClearForMode(null, 'cycle', DEFAULTS) !== DEFAULTS.cycle) throw new Error('null task should read the default');
     });
 
     await test('getAutoClearSettings returns the stored map or undefined', () => {
         const map = { cycle: true, todo: true };
-        if (getAutoClearSettings({ deleteWhenCompleteSettings: map }) !== map) throw new Error('should return the stored object itself');
+        if (getAutoClearSettings({ autoClear: map }) !== map) throw new Error('should return the stored object itself');
         if (getAutoClearSettings({}) !== undefined) throw new Error('missing map should be undefined');
-        if (getAutoClearSettings({ deleteWhenCompleteSettings: null }) !== undefined) throw new Error('null map should be undefined');
+        if (getAutoClearSettings({ autoClear: null }) !== undefined) throw new Error('null map should be undefined');
         if (getAutoClearSettings(null) !== undefined) throw new Error('null task should be undefined');
     });
 
     await test('isAutoClearSettings requires a boolean for every default key', () => {
         if (!isAutoClearSettings({ cycle: false, todo: true }, DEFAULTS)) throw new Error('valid map rejected');
+        if (!isAutoClearSettings({ cycle: false, todo: true, someday: true }, DEFAULTS)) throw new Error('open map rejected');
         if (isAutoClearSettings({ cycle: false }, DEFAULTS)) throw new Error('missing todo accepted');
         if (isAutoClearSettings({ cycle: 'no', todo: true }, DEFAULTS)) throw new Error('string accepted');
         if (isAutoClearSettings(null, DEFAULTS)) throw new Error('null accepted');
-        if (isAutoClearSettings('cycle', DEFAULTS)) throw new Error('string accepted as map');
         if (isAutoClearSettings({ cycle: false, todo: true }, null)) throw new Error('no defaults accepted');
     });
 
-    await test('setAutoClearSettings replaces the map and re-derives the mirror for the routine mode', () => {
-        const task = { deleteWhenCompleteSettings: { cycle: false, todo: false }, deleteWhenComplete: false };
-        const incoming = { cycle: true, todo: false };
+    await test('setAutoClearSettings replaces the map with a repaired copy and keeps extra modes', () => {
+        const task = { autoClear: { cycle: false, todo: false } };
+        const incoming = { cycle: true, todo: 'bad', someday: true };
         const mode = setAutoClearSettings(task, incoming, cycleRoutine, DEFAULTS);
         if (mode !== 'cycle') throw new Error(`mode ${mode}`);
-        if (task.deleteWhenCompleteSettings === incoming) throw new Error('should copy, not alias, the incoming map');
-        if (task.deleteWhenCompleteSettings.cycle !== true || task.deleteWhenCompleteSettings.todo !== false) {
-            throw new Error(`map ${JSON.stringify(task.deleteWhenCompleteSettings)}`);
-        }
-        if (task.deleteWhenComplete !== true) throw new Error('mirror not re-derived for cycle mode');
-        setAutoClearSettings(task, incoming, todoRoutine, DEFAULTS);
-        if (task.deleteWhenComplete !== false) throw new Error('mirror not re-derived for todo mode');
+        if (task.autoClear === incoming) throw new Error('should copy, not alias, the incoming map');
+        if (task.autoClear.cycle !== true || task.autoClear.todo !== DEFAULTS.todo) throw new Error(`map ${JSON.stringify(task.autoClear)}`);
+        if (task.autoClear.someday !== true) throw new Error('extra mode dropped');
+        if (setAutoClearSettings(task, incoming, todoRoutine, DEFAULTS) !== 'todo') throw new Error('mode should follow the routine');
     });
 
-    await test('setAutoClearSettings fills a null map from defaults and repairs bad keys', () => {
+    await test('setAutoClearSettings fills a null map from defaults; inert without a task or defaults', () => {
         const task = {};
         setAutoClearSettings(task, null, todoRoutine, DEFAULTS);
-        if (JSON.stringify(task.deleteWhenCompleteSettings) !== JSON.stringify(DEFAULTS)) throw new Error('defaults not used');
-        if (task.deleteWhenComplete !== DEFAULTS.todo) throw new Error('mirror not derived');
-        const bad = {};
-        setAutoClearSettings(bad, { cycle: 'yes', todo: true, extra: 1 }, cycleRoutine, DEFAULTS);
-        if (bad.deleteWhenCompleteSettings.cycle !== DEFAULTS.cycle) throw new Error('bad key not repaired');
-        if ('extra' in bad.deleteWhenCompleteSettings) throw new Error('unknown key kept');
+        if (JSON.stringify(task.autoClear) !== JSON.stringify(DEFAULTS)) throw new Error('defaults not used');
         if (setAutoClearSettings(null, {}, cycleRoutine, DEFAULTS) !== null) throw new Error('null task');
         if (setAutoClearSettings({}, {}, cycleRoutine, null) !== null) throw new Error('missing defaults');
     });
 
-    await test('autoClearFields derives the active value from the map for a known mode', () => {
-        const fields = autoClearFields({ settings: { cycle: true, todo: false }, mode: 'cycle', defaults: DEFAULTS });
-        if (fields.deleteWhenComplete !== true) throw new Error(`cycle → ${fields.deleteWhenComplete}`);
-        if (fields.deleteWhenCompleteSettings.cycle !== true) throw new Error('map not carried');
-        const todo = autoClearFields({ settings: { cycle: true, todo: false }, mode: 'todo', defaults: DEFAULTS });
-        if (todo.deleteWhenComplete !== false) throw new Error(`todo → ${todo.deleteWhenComplete}`);
+    await test('autoClearFields returns a copy of the map under the stored name', () => {
+        const settings = { cycle: true, todo: false };
+        const fields = autoClearFields({ settings, defaults: DEFAULTS });
+        if (Object.keys(fields).join(',') !== 'autoClear') throw new Error(`unexpected keys: ${Object.keys(fields)}`);
+        if (fields.autoClear === settings) throw new Error('must copy, not alias');
+        if (fields.autoClear.cycle !== true || fields.autoClear.todo !== false) throw new Error(JSON.stringify(fields));
     });
 
-    await test('autoClearFields: explicit value wins, no mode leaves the active value undefined, no map copies defaults', () => {
+    await test('autoClearFields: a value with a mode sets that mode; without a mode it is ignored; no map copies defaults', () => {
         const forced = autoClearFields({ settings: { cycle: false, todo: false }, mode: 'cycle', value: true, defaults: DEFAULTS });
-        if (forced.deleteWhenComplete !== true) throw new Error('explicit value ignored');
-        const noMode = autoClearFields({ settings: { cycle: true, todo: true }, defaults: DEFAULTS });
-        if (noMode.deleteWhenComplete !== undefined) throw new Error(`no mode → ${noMode.deleteWhenComplete}`);
+        if (forced.autoClear.cycle !== true || forced.autoClear.todo !== false) throw new Error(`forced: ${JSON.stringify(forced)}`);
+        const noMode = autoClearFields({ settings: { cycle: false, todo: false }, value: true, defaults: DEFAULTS });
+        if (noMode.autoClear.cycle !== false) throw new Error('a value without a mode has nothing to apply to');
         const noMap = autoClearFields({ settings: null, mode: 'todo', defaults: DEFAULTS });
-        if (noMap.deleteWhenCompleteSettings === DEFAULTS) throw new Error('defaults must be copied');
-        if (JSON.stringify(noMap.deleteWhenCompleteSettings) !== JSON.stringify(DEFAULTS)) throw new Error('defaults not used');
-        if (noMap.deleteWhenComplete !== DEFAULTS.todo) throw new Error('active value not derived from defaults');
-        const keys = Object.keys(autoClearFields({ defaults: DEFAULTS })).sort().join(',');
-        if (keys !== 'deleteWhenComplete,deleteWhenCompleteSettings') throw new Error(`unexpected keys: ${keys}`);
+        if (noMap.autoClear === DEFAULTS) throw new Error('defaults must be copied');
+        if (JSON.stringify(noMap.autoClear) !== JSON.stringify(DEFAULTS)) throw new Error('defaults not used');
     });
 
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed</h3>`;

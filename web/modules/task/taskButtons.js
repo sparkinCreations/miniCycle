@@ -20,7 +20,7 @@ import { createDIModule, optional } from '../core/diBase.js';
 import { DOM_CLASSES, DOM_SELECTORS, UI_TIMEOUTS, DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { handleHorizontalArrowNav } from '../utils/keyboardNav.js';
-import { getActiveRoutine, getActiveRoutineId, getAutoClearSettings, getDeleteSettingsMode, getRoutine, setAutoClear, syncTaskDeleteWhenComplete } from '../utils/cycleMode.js';
+import { getActiveRoutine, getActiveRoutineId, getAutoClearMode, getAutoClearSettings, getRoutine, setAutoClear, syncTaskAutoClear } from '../utils/cycleMode.js';
 import { createIconElement } from '../utils/icons.js';
 
 // SVG icons for task buttons (Font Awesome style)
@@ -491,10 +491,9 @@ export class TaskButtons {
                 task.recurring = false;
 
                 // A task leaving recurring reverts to its per-mode setting. Shared
-                // repair + re-derive (utils/cycleMode.js) — the local copy only
-                // rebuilt a MISSING settings map, so a present-but-corrupt one
-                // could assign undefined to deleteWhenComplete.
-                syncTaskDeleteWhenComplete(task, getDeleteSettingsMode(cycle), DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS);
+                // per-key repair (utils/cycleMode.js) — the local copy only rebuilt
+                // a MISSING map, so a present-but-corrupt one slipped through.
+                syncTaskAutoClear(task, getAutoClearMode(cycle), DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS);
             }
         }, true);
 

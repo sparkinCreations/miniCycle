@@ -37,7 +37,7 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { UI_TIMEOUTS, COLORS, DEFAULT_PRIORITY_SWATCHES, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, BREAKPOINTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
-import { getPriorityLevel } from './priorityLevel.js';
+import { getLevelForColor } from './priorityLevel.js';
 import { reshowPopover } from './popoverUtils.js';
 import { EducationalTipManager } from './educationalTips.js';
 import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
@@ -1349,8 +1349,9 @@ async setDefaultPosition(notificationContainer) {
     const themes = _deps.vocabThemeManager;
     const colorSwatches = (themes?.getPrioritySwatches?.() || DEFAULT_PRIORITY_SWATCHES)
       .map(c => ({ level: c.level, hex: c.hex, label: getLabel(c.labelKey) }));
-    const probe = { highPriority: true, priorityColor: currentColor };
-    const currentLevel = themes?.getTaskPriorityLevel?.(probe) ?? getPriorityLevel(probe);
+    // The picker is handed a COLOUR (the swatch the row currently shows); the
+    // selected swatch is the one whose level that colour names.
+    const currentLevel = themes?.getPriorityLevelForColor?.(currentColor) ?? getLevelForColor(currentColor);
 
     const swatchesHTML = colorSwatches.map(c => {
       const isSelected = c.level === currentLevel;

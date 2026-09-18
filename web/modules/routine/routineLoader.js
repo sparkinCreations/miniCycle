@@ -21,7 +21,7 @@ import { createDIModule, optional } from '../core/diBase.js';
 import { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS, COLORS, DOM_IDS, DOM_CLASSES, FONT_SIZE } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { normalizeFontSize } from '../utils/styleValidators.js';
-import { getActiveRoutineId, getRoutine, getRoutines, syncTaskDeleteWhenComplete } from '../utils/cycleMode.js';
+import { getActiveRoutineId, getRoutine, getRoutines, syncTaskAutoClear } from '../utils/cycleMode.js';
 import { announce } from '../utils/announce.js';
 // NOTE: taskToAddTaskOptions injected via DI to avoid duplicate module loading
 
@@ -337,20 +337,14 @@ function repairAndCleanTasks(currentCycle, cycleKey = 'unknown', { quiet = false
       warn('⚠️ Repaired task with missing schemaVersion:', task.id);
     }
 
-    // ✅ Repair deleteWhenCompleteSettings, then ALWAYS re-derive deleteWhenComplete
-    // from the current mode — a cycle loaded after a mode switch must carry the
-    // entering mode's value. Shared with modeManager and taskButtons; see
-    // utils/cycleMode.js. ARCH REVIEW FINDINGS §2.4.
-    //
-    // This repairs PER KEY. It previously replaced the whole settings object, which
-    // threw away the other mode's valid value ({cycle:true, todo:<bad>} loaded in
-    // To-Do became {cycle:false, todo:true}) — the exact data loss modeManager's
-    // copy was hardened against, while this one claimed to match it.
-    const dwcSync = syncTaskDeleteWhenComplete(task, currentMode, DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS);
-    if (dwcSync.repaired) {
-      warn('⚠️ Repaired task with missing/invalid deleteWhenCompleteSettings:', task.id);
-    }
-    if (dwcSync.changed) {
+    // Repair the autoClear map PER KEY (shared with modeManager and taskButtons;
+    // utils/cycleMode.js). Replacing the whole object threw away the other mode's
+    // valid value ({cycle:true, todo:<bad>} loaded in To-Do became
+    // {cycle:false, todo:true}). Since Schema 2.6 there is no derived mirror to
+    // re-derive here — the reconciler that kept the 2.5 pair in agreement is gone.
+    const autoClearSync = syncTaskAutoClear(task, currentMode, DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS);
+    if (autoClearSync.repaired) {
+      warn('⚠️ Repaired task with missing/invalid autoClear map:', task.id);
       tasksModified = true;
     }
   });

@@ -16,7 +16,7 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
-import { getActiveRoutine, getActiveRoutineId, getRoutine, getRoutines, syncTaskDeleteWhenComplete } from '../utils/cycleMode.js';
+import { getActiveRoutine, getActiveRoutineId, getRoutine, getRoutines, syncTaskAutoClear } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -410,17 +410,19 @@ export class ModeManager {
     syncTasksToMode(cycle, currentMode) {
         if (!cycle?.tasks) return;
         const DEFAULTS = this.deps.DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS;
-        // Per-key repair + re-derive lives in utils/cycleMode.js — routineLoader and
-        // taskButtons need the identical semantics on load and on un-recurring.
+        // Per-key repair lives in utils/cycleMode.js — routineLoader and taskButtons
+        // need the identical semantics on load and on un-recurring. Since 2.6 there
+        // is no derived value to re-derive: the map is read per mode at use time.
         cycle.tasks.forEach(task => {
-            syncTaskDeleteWhenComplete(task, currentMode, DEFAULTS);
+            syncTaskAutoClear(task, currentMode, DEFAULTS);
         });
     }
 
     /**
-     * True when `cycle` already carries this exact mode transition — the flag and
-     * every task's derived value. Used to skip a redundant persist+notify when the
-     * mode-selector path has already written the same transition.
+     * True when `cycle` already carries this exact mode transition — the flag,
+     * with every task's autoClear map already valid. Used to skip a redundant
+     * persist+notify when the mode-selector path has already written the same
+     * transition.
      *
      * @param {Object} cycle          the live cycle (read-only here)
      * @param {boolean} isToDoMode    the mode being applied
@@ -433,7 +435,7 @@ export class ModeManager {
         // write anything, and the live cycle stays untouched.
         const defaults = this.deps.DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS;
         return (cycle.tasks || []).every(task =>
-            !syncTaskDeleteWhenComplete({ ...task }, currentMode, defaults).changed
+            !syncTaskAutoClear({ ...task }, currentMode, defaults).changed
         );
     }
 

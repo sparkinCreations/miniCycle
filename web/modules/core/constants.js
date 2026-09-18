@@ -321,14 +321,14 @@ export const FONT_SIZE = Object.freeze({
  */
 /**
  * Schema versions. Two DIFFERENT shapes, easy to conflate:
- *   CURRENT      — top-level `metadata.schemaVersion`, the STRING "2.5"
+ *   CURRENT      — top-level `metadata.schemaVersion`, the STRING "2.6"
  *   CURRENT_TASK — per-task/template `schemaVersion`, the NUMBER 2
  * Cycles carry NEITHER — a diagnostic that tested `cycle.schemaVersion` was
  * therefore dead and always reported "valid" (fixed Aug 2026).
  * @constant {Object}
  */
 export const SCHEMA = Object.freeze({
-    CURRENT: '2.5',
+    CURRENT: '2.6',
     // The oldest top-level version this build can still read — a restore or
     // import of anything between here and CURRENT is accepted (and, once a
     // migration exists, migrated at boot). Pre-2.5 was retired Sep 2026, so

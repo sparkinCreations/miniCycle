@@ -1,7 +1,7 @@
 /**
  * PriorityLevel Tests
- * Tests for modules/utils/priorityLevel.js — priority as high / medium / low while
- * Schema 2.5 stores highPriority + a priorityColor hex.
+ * Tests for modules/utils/priorityLevel.js — priority as a stored LEVEL
+ * (`task.priority`, Schema 2.6) plus the 2.5 readers the migration and importer keep.
  */
 import { createProtectedTest } from './testHelpers.js';
 
@@ -9,7 +9,8 @@ export async function runPriorityLevelTests(resultsDiv) {
     const cacheBuster = window.testCacheBuster || Date.now();
     const mod = await import(`../modules/utils/priorityLevel.js?v=${cacheBuster}`);
     const { normalizePriorityHex, isPriorityLevel, getPrioritySwatches, collectSwatchSets,
-            getLevelForHex, getLevelForColorFamily, getPriorityLevel, getPriorityColor, setPriorityLevel, comparePriority,
+            getLevelForHex, getLevelForColorFamily, getPriorityLevel, getLegacyPriorityLevel,
+            getPriorityColor, setPriorityLevel, comparePriority,
             hasPriority, priorityFields, getLastPriorityLevel, getLevelForColor, getLevelColor,
             getDefaultPriorityLevel, setDefaultPriorityLevel } = mod;
     const { PRIORITY_LEVELS, DEFAULT_PRIORITY_SWATCHES, COLORS } =
@@ -108,34 +109,56 @@ export async function runPriorityLevelTests(resultsDiv) {
         }
     });
 
-    // ── getPriorityLevel ─────────────────────────────────────────────────────
+    // ── getPriorityLevel (2.6) ───────────────────────────────────────────────
     resultsDiv.innerHTML += '<h4 class="test-section">📶 getPriorityLevel</h4>';
 
-    await test('a task without priority has no level, even if it remembers a colour', () => {
-        if (getPriorityLevel({ highPriority: false, priorityColor: '#facc15' }, allSets) !== null) {
-            throw new Error('unflagged task should be null');
+    await test('reads the stored level, and only a known level', () => {
+        for (const level of PRIORITY_LEVELS) {
+            if (getPriorityLevel({ priority: level }) !== level) throw new Error(`${level} not read`);
         }
-        if (getPriorityLevel(null, allSets) !== null) throw new Error('null task');
+        if (getPriorityLevel({ priority: null }) !== null) throw new Error('null level');
+        if (getPriorityLevel({}) !== null) throw new Error('missing level');
+        if (getPriorityLevel(null) !== null) throw new Error('null task');
+        // A hand-edited file cannot invent a fourth level.
+        for (const bad of ['urgent', 'High', true, 1, '']) {
+            if (getPriorityLevel({ priority: bad }) !== null) throw new Error(`accepted ${JSON.stringify(bad)}`);
+        }
     });
 
-    await test('a flagged task with no colour is high — on/off priority has always meant high', () => {
-        if (getPriorityLevel({ highPriority: true }, allSets) !== 'high') throw new Error('expected high');
-        if (getPriorityLevel({ highPriority: true, priorityColor: null }, allSets) !== 'high') throw new Error('null colour');
+    await test('the retired 2.5 pair is NOT read — an unmigrated record has no priority', () => {
+        if (getPriorityLevel({ highPriority: true, priorityColor: '#dc3545' }) !== null) {
+            throw new Error('2.5 fields must not be consulted by the 2.6 reader');
+        }
+    });
+
+    // ── getLegacyPriorityLevel (2.5 records: migration + import) ─────────────
+    resultsDiv.innerHTML += '<h4 class="test-section">📶 getLegacyPriorityLevel</h4>';
+
+    await test('a 2.5 record without the flag has no level, even if it remembers a colour', () => {
+        if (getLegacyPriorityLevel({ highPriority: false, priorityColor: '#facc15' }, allSets) !== null) {
+            throw new Error('unflagged record should be null');
+        }
+        if (getLegacyPriorityLevel(null, allSets) !== null) throw new Error('null record');
+    });
+
+    await test('a flagged 2.5 record with no colour is high — on/off priority always meant high', () => {
+        if (getLegacyPriorityLevel({ highPriority: true }, allSets) !== 'high') throw new Error('expected high');
+        if (getLegacyPriorityLevel({ highPriority: true, priorityColor: null }, allSets) !== 'high') throw new Error('null colour');
     });
 
     await test('swatch colours map to their level, from the defaults and from any theme', () => {
-        if (getPriorityLevel({ highPriority: true, priorityColor: '#facc15' }, allSets) !== 'medium') throw new Error('default yellow');
-        if (getPriorityLevel({ highPriority: true, priorityColor: '#1a5c2e' }, allSets) !== 'low') throw new Error('habit-tracker green');
-        if (getPriorityLevel({ highPriority: true, priorityColor: '#C0392B' }, allSets) !== 'high') throw new Error('fitness red, upper case');
+        if (getLegacyPriorityLevel({ highPriority: true, priorityColor: '#facc15' }, allSets) !== 'medium') throw new Error('default yellow');
+        if (getLegacyPriorityLevel({ highPriority: true, priorityColor: '#1a5c2e' }, allSets) !== 'low') throw new Error('habit-tracker green');
+        if (getLegacyPriorityLevel({ highPriority: true, priorityColor: '#C0392B' }, allSets) !== 'high') throw new Error('fitness red, upper case');
     });
 
     await test('a custom, non-swatch colour takes the level of its colour family', () => {
         // The .mcyc schema allows any hex. A green that is not a swatch (the old
         // fitness preset, #1e8c52) is still green — Low — not High.
-        if (getPriorityLevel({ highPriority: true, priorityColor: '#1e8c52' }, allSets) !== 'low') {
+        if (getLegacyPriorityLevel({ highPriority: true, priorityColor: '#1e8c52' }, allSets) !== 'low') {
             throw new Error('a non-swatch green should be Low by colour family');
         }
-        if (getPriorityLevel({ highPriority: true, priorityColor: '#ff8c00' }, allSets) !== 'medium') {
+        if (getLegacyPriorityLevel({ highPriority: true, priorityColor: '#ff8c00' }, allSets) !== 'medium') {
             throw new Error('a non-swatch orange should be Medium by colour family');
         }
     });
@@ -192,70 +215,53 @@ export async function runPriorityLevelTests(resultsDiv) {
     // ── getPriorityColor ─────────────────────────────────────────────────────
     resultsDiv.innerHTML += '<h4 class="test-section">🖌️ getPriorityColor</h4>';
 
-    await test('a swatch colour follows the current theme', () => {
-        // Picked "red" in habit-tracker (#8b1a1a); now shown in fitness.
-        const task = { highPriority: true, priorityColor: '#8b1a1a' };
-        if (getPriorityColor(task, fitness, allSets) !== '#c0392b') {
-            throw new Error(`expected fitness red, got ${getPriorityColor(task, fitness, allSets)}`);
-        }
-        const medium = { highPriority: true, priorityColor: '#b8860b' };
-        if (getPriorityColor(medium, classic, allSets) !== '#facc15') throw new Error('fitness yellow in classic');
-        if (getPriorityColor(medium, habit, allSets) !== '#7a4d00') throw new Error('fitness yellow in habit-tracker');
+    await test('a level shows the current theme\'s swatch for it', () => {
+        if (getPriorityColor({ priority: 'high' }, fitness) !== '#c0392b') throw new Error('fitness high');
+        if (getPriorityColor({ priority: 'medium' }, classic) !== '#facc15') throw new Error('classic medium');
+        if (getPriorityColor({ priority: 'medium' }, habit) !== '#7a4d00') throw new Error('habit-tracker medium');
+        if (getPriorityColor({ priority: 'low' }, fitness) !== '#27ae60') throw new Error('fitness low');
     });
 
-    await test('a custom colour shows its family level in the current theme, never as stored', () => {
-        // A hand-written green shows the theme's Low swatch; an olive its Medium.
-        if (getPriorityColor({ highPriority: true, priorityColor: '#1E8C52' }, fitness, allSets) !== '#27ae60') {
-            throw new Error('custom green should show the fitness Low swatch');
-        }
-        if (getPriorityColor({ highPriority: true, priorityColor: '#808000' }, habit, allSets) !== '#7a4d00') {
-            throw new Error('custom olive should show the habit-tracker Medium swatch');
-        }
+    await test('no swatch set means the defaults', () => {
+        if (getPriorityColor({ priority: 'high' }, null) !== COLORS.PRIORITY_DEFAULT) throw new Error('default high');
+        if (getPriorityColor({ priority: 'low' }, []) !== '#28a745') throw new Error('default low');
     });
 
-    await test('a flagged task with no colour shows the current theme\'s High', () => {
-        if (getPriorityColor({ highPriority: true }, habit, allSets) !== '#8b1a1a') throw new Error('habit high');
-        if (getPriorityColor({ highPriority: true }, null, allSets) !== COLORS.PRIORITY_DEFAULT) throw new Error('default high');
-    });
-
-    await test('an unflagged task has no display colour', () => {
-        if (getPriorityColor({ highPriority: false, priorityColor: '#dc3545' }, fitness, allSets) !== null) {
-            throw new Error('expected null');
-        }
+    await test('a task without a level has no display colour', () => {
+        if (getPriorityColor({ priority: null }, fitness) !== null) throw new Error('null level');
+        if (getPriorityColor({ highPriority: true, priorityColor: '#dc3545' }, fitness) !== null) throw new Error('2.5 fields must not paint');
     });
 
     // ── setPriorityLevel ─────────────────────────────────────────────────────
     resultsDiv.innerHTML += '<h4 class="test-section">✏️ setPriorityLevel</h4>';
 
-    await test('setting a level flags the task and stores that theme\'s swatch', () => {
-        const task = { id: 't1', highPriority: false, priorityColor: null };
-        if (setPriorityLevel(task, 'medium', fitness) !== true) throw new Error('should report success');
-        if (task.highPriority !== true) throw new Error('not flagged');
-        if (task.priorityColor !== '#b8860b') throw new Error(`stored ${task.priorityColor}`);
-        if (getPriorityLevel(task, allSets) !== 'medium') throw new Error('round trip');
+    await test('setting a level stores it and round-trips', () => {
+        const task = { id: 't1', priority: null };
+        if (setPriorityLevel(task, 'medium') !== true) throw new Error('should report success');
+        if (task.priority !== 'medium') throw new Error(`stored ${task.priority}`);
+        if (getPriorityLevel(task) !== 'medium') throw new Error('round trip');
     });
 
-    await test('null turns priority off and keeps the colour, like the task toggle', () => {
-        const task = { highPriority: true, priorityColor: '#28a745' };
-        setPriorityLevel(task, null, classic);
-        if (task.highPriority !== false) throw new Error('still flagged');
-        if (task.priorityColor !== '#28a745') throw new Error('colour should be kept');
+    await test('null turns priority off', () => {
+        const task = { priority: 'low' };
+        setPriorityLevel(task, null);
+        if (task.priority !== null) throw new Error('still set');
+        setPriorityLevel(task, undefined);
+        if (task.priority !== null) throw new Error('undefined should also turn it off');
     });
 
     await test('an unknown level writes nothing', () => {
-        const task = { highPriority: false, priorityColor: null };
-        if (setPriorityLevel(task, 'urgent', fitness) !== false) throw new Error('should report failure');
-        if (task.highPriority !== false || task.priorityColor !== null) throw new Error('task was changed');
-        if (setPriorityLevel(null, 'high', fitness) !== false) throw new Error('null task');
+        const task = { priority: null };
+        if (setPriorityLevel(task, 'urgent') !== false) throw new Error('should report failure');
+        if (task.priority !== null) throw new Error('task was changed');
+        if (setPriorityLevel(null, 'high') !== false) throw new Error('null task');
     });
 
-    await test('setPriorityLevel only writes the stored field names', () => {
+    await test('setPriorityLevel writes priority and nothing else — never the 2.5 pair', () => {
         const task = { id: 't1' };
-        setPriorityLevel(task, 'low', habit);
+        setPriorityLevel(task, 'low');
         const keys = Object.keys(task).sort();
-        if (JSON.stringify(keys) !== JSON.stringify(['highPriority', 'id', 'priorityColor'])) {
-            throw new Error(`unexpected keys ${JSON.stringify(keys)}`);
-        }
+        if (JSON.stringify(keys) !== JSON.stringify(['id', 'priority'])) throw new Error(`unexpected keys ${JSON.stringify(keys)}`);
     });
 
     // ── comparePriority ──────────────────────────────────────────────────────
@@ -263,13 +269,13 @@ export async function runPriorityLevelTests(resultsDiv) {
 
     await test('sorts high, then medium, then low, then no priority — keeping order within a level', () => {
         const tasks = [
-            { id: 'none', highPriority: false },
-            { id: 'low', highPriority: true, priorityColor: '#27ae60' },
-            { id: 'high-1', highPriority: true, priorityColor: '#8b1a1a' },
-            { id: 'medium', highPriority: true, priorityColor: '#facc15' },
-            { id: 'high-2', highPriority: true }
+            { id: 'none', priority: null },
+            { id: 'low', priority: 'low' },
+            { id: 'high-1', priority: 'high' },
+            { id: 'medium', priority: 'medium' },
+            { id: 'high-2', priority: 'high' }
         ];
-        const order = [...tasks].sort((a, b) => comparePriority(a, b, allSets)).map(t => t.id);
+        const order = [...tasks].sort((a, b) => comparePriority(a, b)).map(t => t.id);
         const expected = ['high-1', 'high-2', 'medium', 'low', 'none'];
         if (JSON.stringify(order) !== JSON.stringify(expected)) {
             throw new Error(`got ${JSON.stringify(order)}`);
@@ -279,28 +285,27 @@ export async function runPriorityLevelTests(resultsDiv) {
     // ── record helpers (priority reader sweep) ───────────────────────────────
     resultsDiv.innerHTML += '<h4 class="test-section">📋 record helpers</h4>';
 
-    await test('hasPriority is the strict on/off read', () => {
-        if (hasPriority({ highPriority: true }) !== true) throw new Error('flagged task');
-        if (hasPriority({ highPriority: false, priorityColor: '#dc3545' }) !== false) throw new Error('colour alone is not a flag');
-        if (hasPriority({ highPriority: 'yes' }) !== false) throw new Error('non-boolean must not count');
+    await test('hasPriority is the on/off read of the stored level', () => {
+        if (hasPriority({ priority: 'low' }) !== true) throw new Error('a level counts');
+        if (hasPriority({ priority: null }) !== false) throw new Error('null level');
+        if (hasPriority({ priority: 'urgent' }) !== false) throw new Error('unknown level must not count');
+        if (hasPriority({ highPriority: true }) !== false) throw new Error('the 2.5 flag must not count');
         if (hasPriority(null) !== false) throw new Error('null task');
     });
 
-    await test('priorityFields copies the stored pair, coerced, and nothing else', () => {
-        const copy = priorityFields({ id: 't1', highPriority: true, priorityColor: '#facc15', text: 'x' });
-        if (JSON.stringify(copy) !== JSON.stringify({ highPriority: true, priorityColor: '#facc15' })) throw new Error(JSON.stringify(copy));
-        const empty = priorityFields({});
-        if (empty.highPriority !== false || empty.priorityColor !== null) throw new Error(JSON.stringify(empty));
-        if (priorityFields(undefined).highPriority !== false) throw new Error('missing source');
-        if (priorityFields({ priorityColor: '' }).priorityColor !== null) throw new Error('empty colour should be null');
+    await test('priorityFields copies the stored level, normalised, and nothing else', () => {
+        const copy = priorityFields({ id: 't1', priority: 'medium', text: 'x' });
+        if (JSON.stringify(copy) !== JSON.stringify({ priority: 'medium' })) throw new Error(JSON.stringify(copy));
+        if (priorityFields({}).priority !== null) throw new Error('missing level should copy as null');
+        if (priorityFields(undefined).priority !== null) throw new Error('missing source');
+        if (priorityFields({ priority: 'urgent' }).priority !== null) throw new Error('unknown level should copy as null');
+        if (Object.keys(priorityFields({ priority: 'high' })).join(',') !== 'priority') throw new Error('extra keys');
     });
 
-    await test('getLastPriorityLevel remembers the level of an unflagged task, null without a colour', () => {
-        const habitLow = habit.find(s => s.level === 'low').hex;
-        if (getLastPriorityLevel({ highPriority: false, priorityColor: habitLow }, allSets) !== 'low') throw new Error('unflagged colour not read');
-        if (getLastPriorityLevel({ highPriority: true, priorityColor: '#facc15' }, allSets) !== 'medium') throw new Error('flagged colour not read');
-        if (getLastPriorityLevel({ highPriority: true }, allSets) !== null) throw new Error('no colour should be null');
-        if (getLastPriorityLevel({ highPriority: true, priorityColor: '#123456' }, allSets) === null) throw new Error('an unknown hex still has a family level');
+    await test('getLastPriorityLevel is the current level — a task switched off remembers nothing', () => {
+        if (getLastPriorityLevel({ priority: 'medium' }) !== 'medium') throw new Error('level not read');
+        if (getLastPriorityLevel({ priority: null }) !== null) throw new Error('off should be null');
+        if (getLastPriorityLevel({ highPriority: false, priorityColor: '#facc15' }) !== null) throw new Error('a 2.5 colour is not a memory');
     });
 
     await test('getLevelForColor: swatch, then family, then high', () => {
@@ -315,20 +320,22 @@ export async function runPriorityLevelTests(resultsDiv) {
         if (getLevelColor('urgent', habit) !== null) throw new Error('unknown level should be null');
     });
 
-    await test('getDefaultPriorityLevel reads the last pick from settings, high when none', () => {
-        if (getDefaultPriorityLevel({ priorityColor: '#facc15' }, allSets) !== 'medium') throw new Error('stored pick ignored');
-        if (getDefaultPriorityLevel({}, allSets) !== 'high') throw new Error('no pick should be high');
-        if (getDefaultPriorityLevel(null, allSets) !== 'high') throw new Error('null settings should be high');
+    await test('getDefaultPriorityLevel reads settings.defaultPriority, high when none or unknown', () => {
+        if (getDefaultPriorityLevel({ defaultPriority: 'medium' }) !== 'medium') throw new Error('stored default ignored');
+        if (getDefaultPriorityLevel({}) !== 'high') throw new Error('no default should be high');
+        if (getDefaultPriorityLevel(null) !== 'high') throw new Error('null settings should be high');
+        if (getDefaultPriorityLevel({ defaultPriority: 'urgent' }) !== 'high') throw new Error('unknown level should be high');
+        if (getDefaultPriorityLevel({ priorityColor: '#facc15' }) !== 'high') throw new Error('the 2.5 colour must not be read');
     });
 
-    await test('setDefaultPriorityLevel writes only the stored field, as the given theme\'s swatch', () => {
+    await test('setDefaultPriorityLevel writes settings.defaultPriority and nothing else', () => {
         const settings = { theme: 'x' };
-        if (!setDefaultPriorityLevel(settings, 'low', fitness)) throw new Error('refused a valid level');
-        if (settings.priorityColor !== fitness.find(s => s.level === 'low').hex) throw new Error(`wrote ${settings.priorityColor}`);
-        if (Object.keys(settings).sort().join(',') !== 'priorityColor,theme') throw new Error('extra keys written');
-        if (setDefaultPriorityLevel(settings, 'urgent', fitness)) throw new Error('accepted an unknown level');
-        if (setDefaultPriorityLevel(null, 'low', fitness)) throw new Error('accepted missing settings');
-        if (getDefaultPriorityLevel(settings, allSets) !== 'low') throw new Error('did not round-trip');
+        if (!setDefaultPriorityLevel(settings, 'low')) throw new Error('refused a valid level');
+        if (settings.defaultPriority !== 'low') throw new Error(`wrote ${settings.defaultPriority}`);
+        if (Object.keys(settings).sort().join(',') !== 'defaultPriority,theme') throw new Error('extra keys written');
+        if (setDefaultPriorityLevel(settings, 'urgent')) throw new Error('accepted an unknown level');
+        if (setDefaultPriorityLevel(null, 'low')) throw new Error('accepted missing settings');
+        if (getDefaultPriorityLevel(settings) !== 'low') throw new Error('did not round-trip');
     });
 
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed</h3>`;

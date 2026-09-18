@@ -382,25 +382,23 @@ export async function runThemesTests(resultsDiv) {
         }
     });
 
-    await test('getTaskPriorityColor shows the active theme\'s swatch for a colour picked under ANY theme', () => {
-        const fitnessMedium = THEME_DEFINITIONS.fitness.priorityColors.find(s => s.level === 'medium').hex;
+    await test('getTaskPriorityColor shows the active theme\'s swatch for the task\'s level', () => {
         const habitMedium = THEME_DEFINITIONS['habit-tracker'].priorityColors.find(s => s.level === 'medium').hex;
-        const shown = managerOnTheme('habit-tracker').getTaskPriorityColor({ highPriority: true, priorityColor: fitnessMedium });
-        if (shown !== habitMedium) throw new Error(`fitness Medium under habit-tracker should show ${habitMedium}, got ${shown}`);
-        if (managerOnTheme('classic').getTaskPriorityColor({ highPriority: false, priorityColor: fitnessMedium }) !== null) {
-            throw new Error('an unflagged task has no display colour');
-        }
+        const fitnessMedium = THEME_DEFINITIONS.fitness.priorityColors.find(s => s.level === 'medium').hex;
+        const task = { priority: 'medium' };
+        if (managerOnTheme('habit-tracker').getTaskPriorityColor(task) !== habitMedium) throw new Error('habit-tracker medium');
+        if (managerOnTheme('fitness').getTaskPriorityColor(task) !== fitnessMedium) throw new Error('the same task repaints under fitness');
+        if (managerOnTheme('classic').getTaskPriorityColor({ priority: null }) !== null) throw new Error('no level, no colour');
     });
 
-    await test('setTaskPriorityLevel stores the active theme\'s swatch; compareTaskPriority orders by level', () => {
+    await test('setTaskPriorityLevel stores the level; compareTaskPriority orders by it', () => {
         const vtm = managerOnTheme('fitness');
-        const task = { highPriority: false, priorityColor: null };
+        const task = { priority: null };
         if (!vtm.setTaskPriorityLevel(task, 'low')) throw new Error('setTaskPriorityLevel refused a valid level');
-        const fitnessLow = THEME_DEFINITIONS.fitness.priorityColors.find(s => s.level === 'low').hex;
-        if (!task.highPriority || task.priorityColor !== fitnessLow) throw new Error(`stored ${JSON.stringify(task)}`);
+        if (task.priority !== 'low') throw new Error(`stored ${JSON.stringify(task)}`);
         if (vtm.getTaskPriorityLevel(task) !== 'low') throw new Error('level did not round-trip');
-        const high = { highPriority: true, priorityColor: '#dc3545' };
-        const none = { highPriority: false };
+        const high = { priority: 'high' };
+        const none = { priority: null };
         const sorted = [none, task, high].sort((a, b) => vtm.compareTaskPriority(a, b));
         if (sorted[0] !== high || sorted[1] !== task || sorted[2] !== none) throw new Error('compareTaskPriority order wrong');
     });
@@ -411,11 +409,11 @@ export async function runThemesTests(resultsDiv) {
         const habitMedium = THEME_DEFINITIONS['habit-tracker'].priorityColors.find(s => s.level === 'medium').hex;
         if (vtm.getPriorityLevelColor('medium') !== fitnessMedium) throw new Error('getPriorityLevelColor should be the active theme\'s swatch');
         if (vtm.getPriorityLevelForColor(habitMedium) !== 'medium') throw new Error('a colour picked under another theme still names its level');
-        if (vtm.getLastPriorityLevel({ highPriority: false, priorityColor: habitMedium }) !== 'medium') throw new Error('last level not remembered');
+        if (vtm.getLastPriorityLevel({ priority: 'medium' }) !== 'medium') throw new Error('current level not read');
         const settings = {};
         if (vtm.getDefaultPriorityLevel(settings) !== 'high') throw new Error('no pick should default to high');
         if (!vtm.setDefaultPriorityLevel(settings, 'low')) throw new Error('setDefaultPriorityLevel refused');
-        if (settings.priorityColor !== THEME_DEFINITIONS.fitness.priorityColors.find(s => s.level === 'low').hex) throw new Error(`stored ${settings.priorityColor}`);
+        if (settings.defaultPriority !== 'low') throw new Error(`stored ${JSON.stringify(settings)}`);
         if (vtm.getDefaultPriorityLevel(settings) !== 'low') throw new Error('default did not round-trip');
     });
 
