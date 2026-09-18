@@ -337,6 +337,55 @@ but it only read and rewrote `miniCycleStorage`, so it went too (with its boot c
 
 ---
 
+## Wiring checklist — the release step, measured Sep 2026
+
+One branch, one release, merged only after the dry-run tool has passed on every device that
+holds data. The reader sweeps are done, so the runtime flip is concentrated in the shape
+owners; the bulk of the diff is test fixtures. Sub-commits in this order, suites green after
+each:
+
+1. **Helpers' internals** — `utils/cycleMode.js` (`getRoutines` -> `data.routine`,
+   `getActiveRoutineId` / `setActiveRoutineId` -> `appState.activeRoutineId`; `getAutoClear*`,
+   `setAutoClear*`, `autoClearFields`, `syncTaskAutoClear` -> the single `autoClear` map, no
+   mirror) and `utils/priorityLevel.js` (`getPriorityLevel` / `hasPriority` / `priorityFields`
+   / `setPriorityLevel` -> `task.priority`; `getLastPriorityLevel` -> null, there is no
+   remembered level; `get/setDefaultPriorityLevel` -> `settings.defaultPriority`). Retire the
+   `*DeleteWhenComplete` names. `SCHEMA.CURRENT` -> `'2.6'`; `OLDEST_MIGRATABLE` stays `'2.5'`.
+2. **Test fixtures** — ~1,100 hand-built 2.5 lines across ~80 files (heaviest: undoRedoManager
+   99, cycleMode 78, state 59, priorityLevel 51, modeManager 40, cycleImportManager 39,
+   taskCycleReset 37, taskUtils 36). `testHelpers.createMockData` becomes a 2.6 builder;
+   the rest is a scripted rename (`cycles:` -> `routine:`, `activeCycleId` ->
+   `activeRoutineId`, the priority pair -> `priority`, the clear pair -> `autoClear`) with
+   every assertion on a stored name reviewed by hand, not regexed.
+3. **Shape owners** — `core/appState.js` (`validateSchema25Structure` -> a 2.6 structure
+   check, `createMinimalFallbackState`, `_ensureMetadata`, `totalRoutinesCreated`),
+   `routine/migrationManager.js` (`createInitialSchema25Data` writes 2.6; boot entry runs
+   `migrateSchema_2_5_to_2_6` on an `older` document AFTER an automatic backup, with
+   `GlobalUtils.generateId('routine')` as the id maker — the same one the dry-run tool uses),
+   `core/dataAccess.js` (the `loadMiniCycleData` wrapper's `{cycles, activeCycle}` keys are
+   its consumers' API and stay; its internals read through the helpers), `utils/dataValidator.js`,
+   `utils/dataRecovery.js` (2.6 structure checks), `core/appGlobalState.js` (debug dump).
+4. **Deferred readers** — `ui/undoSnapshotUtils.js` + `ui/undoTransactionDiff.js` (snapshot
+   fields `dwc`/`dws`/`p`/`pc` -> `autoClear`/`priority`), and `undoIndexedDB` cleared once at
+   the bump (the `undoStacks` store is keyed by the OLD routine key); `ui/cycleImportManager.js`
+   OUTPUT becomes 2.6 (the aliases already read both); `utils/mcycPayload.js` dual-writes
+   (`autoClear` + `priority` beside the 2.5 pair, colour = the level's default swatch);
+   `routine/routineLoader.js` + `routine/routineSwitcherRepair.js` repair rules (repair the
+   `autoClear` map per key; coerce `priority` to a level or null; drop the colour fill);
+   `features/historyManager.js` + `features/clearedTasksManager.js` render the dot from the
+   level via `vocabThemeManager.getPriorityLevelColor` (entries carry `priority`, not
+   `wasHighPriority`); `ui/settingsUIManager.applyPriorityColor` reads `settings.defaultPriority`.
+5. **Journeys** — the three that seed `localStorage` with a 2.5 document keep doing so on
+   purpose: they now exercise the boot migration. Add one that seeds 2.5 and asserts the
+   migrated shape, the backup, and that undo history is empty afterwards.
+6. **Format** — `schema/mcyc-2.6.schema.json` beside the immutable 2.5 file, the rolling
+   `mcyc.schema.json`, a row on `pages/mcyc-format.html`, `docs/reference/MCYC_FILE_FORMAT.md`.
+7. **Docs** — CLAUDE.md's schema block and naming section, `SCHEMA_2_5.md` -> a 2.6 sibling,
+   and the docs that spell the stored shape (count them with
+   `grep -rlE 'data\.cycles|activeCycleId|deleteWhenCompleteSettings' docs`).
+8. **Release** — full suites, every gate, the dry run green on real data, then ONE version
+   bump with all four platform flags.
+
 ## The gate you must not miss
 
 **`appState.validateSchema25Structure()` (`modules/core/appState.js`) decides whether
