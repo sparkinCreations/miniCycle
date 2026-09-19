@@ -18,10 +18,11 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS, COLORS, DOM_IDS, DOM_CLASSES, FONT_SIZE } from '../core/constants.js';
+import { isPriorityLevel } from '../utils/priorityLevel.js';
+import { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS, DOM_IDS, DOM_CLASSES, FONT_SIZE } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { normalizeFontSize } from '../utils/styleValidators.js';
-import { getActiveRoutineId, getRoutine, getRoutines, syncTaskDeleteWhenComplete } from '../utils/cycleMode.js';
+import { getActiveRoutineId, getRoutine, getRoutines, syncTaskAutoClear } from '../utils/cycleMode.js';
 import { announce } from '../utils/announce.js';
 // NOTE: taskToAddTaskOptions injected via DI to avoid duplicate module loading
 
@@ -113,7 +114,7 @@ async function loadMiniCycle() {
   const schemaData = _deps.loadMiniCycleData();
 
   if (!schemaData) {
-    console.error('❌ No Schema 2.5 data found');
+    console.error('❌ No state data found');
     _deps.createInitialSchema25Data?.();
     return;
   }
@@ -121,7 +122,6 @@ async function loadMiniCycle() {
   const cycles = schemaData.cycles || getRoutines(schemaData) || {};
   const activeCycleId =
     schemaData.activeCycle ||
-    schemaData.activeCycleId ||
     getActiveRoutineId(schemaData) ||
     schemaData.appState?.activeCycle ||
     null;
@@ -292,16 +292,13 @@ function repairAndCleanTasks(currentCycle, cycleKey = 'unknown', { quiet = false
       warn('⚠️ Repaired task with invalid completed field:', task.id);
     }
 
-    if (typeof task.highPriority !== 'boolean') {
-      task.highPriority = Boolean(task.highPriority);
+    // Priority is a level or null (Schema 2.6). Anything else — a 2.5 flag that
+    // slipped past the migration, a typo in a hand-edited file — reads as "no
+    // priority" and is stored that way, so the shape on disk stays explicit.
+    if (task.priority !== null && !isPriorityLevel(task.priority)) {
+      task.priority = null;
       tasksModified = true;
-      warn('⚠️ Repaired task with invalid highPriority field:', task.id);
-    }
-
-    // Enforce invariant: highPriority tasks must have a priorityColor
-    if (task.highPriority && !task.priorityColor) {
-      task.priorityColor = COLORS.PRIORITY_DEFAULT;
-      tasksModified = true;
+      warn('⚠️ Repaired task with invalid priority:', task.id);
     }
 
     if (typeof task.remindersEnabled !== 'boolean') {
@@ -337,20 +334,14 @@ function repairAndCleanTasks(currentCycle, cycleKey = 'unknown', { quiet = false
       warn('⚠️ Repaired task with missing schemaVersion:', task.id);
     }
 
-    // ✅ Repair deleteWhenCompleteSettings, then ALWAYS re-derive deleteWhenComplete
-    // from the current mode — a cycle loaded after a mode switch must carry the
-    // entering mode's value. Shared with modeManager and taskButtons; see
-    // utils/cycleMode.js. ARCH REVIEW FINDINGS §2.4.
-    //
-    // This repairs PER KEY. It previously replaced the whole settings object, which
-    // threw away the other mode's valid value ({cycle:true, todo:<bad>} loaded in
-    // To-Do became {cycle:false, todo:true}) — the exact data loss modeManager's
-    // copy was hardened against, while this one claimed to match it.
-    const dwcSync = syncTaskDeleteWhenComplete(task, currentMode, DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS);
-    if (dwcSync.repaired) {
-      warn('⚠️ Repaired task with missing/invalid deleteWhenCompleteSettings:', task.id);
-    }
-    if (dwcSync.changed) {
+    // Repair the autoClear map PER KEY (shared with modeManager and taskButtons;
+    // utils/cycleMode.js). Replacing the whole object threw away the other mode's
+    // valid value ({cycle:true, todo:<bad>} loaded in To-Do became
+    // {cycle:false, todo:true}). Since Schema 2.6 there is no derived mirror to
+    // re-derive here — the reconciler that kept the 2.5 pair in agreement is gone.
+    const autoClearSync = syncTaskAutoClear(task, currentMode, DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS);
+    if (autoClearSync.repaired) {
+      warn('⚠️ Repaired task with missing/invalid autoClear map:', task.id);
       tasksModified = true;
     }
   });

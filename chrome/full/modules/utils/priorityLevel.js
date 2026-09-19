@@ -1,17 +1,19 @@
 /**
  * Priority Level
  *
- * Pure helpers that treat task priority as a LEVEL — 'high' | 'medium' | 'low' —
- * while Schema 2.5 still stores it as `highPriority` (on/off) plus a
- * `priorityColor` hex. No DI, no side effects.
+ * Pure helpers for task priority as a LEVEL — 'high' | 'medium' | 'low' | null —
+ * which is what Schema 2.6 stores (`task.priority`). No DI, no side effects.
  *
- * Why this exists: the picker offers Red / Yellow / Green, which users read as
- * high / medium / low, but the stored value is a raw, theme-tinted hex. That hex
- * does not follow a theme switch, travels as-is in shared .mcyc files, and search's
- * "Priority First" sort can only see on/off. Schema 2.6 stores the level itself
- * (docs/future-work/SCHEMA_2_6_PLAN.md, "Priority levels"). Until then these
- * helpers derive the level from the stored hex, pick the display colour from the
- * CURRENT theme, and write only the existing stored fields.
+ * Why a level: the picker offers Red / Yellow / Green, which users read as
+ * high / medium / low. Schema 2.5 stored a raw, theme-tinted hex instead, which
+ * did not follow a theme switch, travelled as-is in shared .mcyc files, and left
+ * search's "Priority First" sort seeing only on/off
+ * (docs/future-work/SCHEMA_2_6_PLAN.md, "Priority levels"). The colour a task
+ * SHOWS is always the current theme's swatch for its level.
+ *
+ * The 2.5 readers (`getLegacyPriorityLevel`, the hex and colour-family rules)
+ * stay for the two places 2.5 records still arrive: the 2.5 -> 2.6 migration and
+ * the .mcyc importer, which accepts 2.5 files for good.
  *
  * Swatch sets are passed in rather than imported. THEME_DEFINITIONS lives in
  * labels/themes.js beside the VocabThemeManager DI module, and importing that here
@@ -165,11 +167,21 @@ export function getLevelForColorFamily(hex) {
  * @param {Array<Array<{level: string, hex: string}>>} [swatchSets=[]] - see collectSwatchSets
  * @returns {'high'|'medium'|'low'|null}
  */
-export function getPriorityLevel(task, swatchSets = []) {
-    if (!task?.highPriority) return null;
-    return getLevelForHex(task.priorityColor, swatchSets)
-        ?? getLevelForColorFamily(task.priorityColor)
+export function getLegacyPriorityLevel(record, swatchSets = []) {
+    if (!record?.highPriority) return null;
+    return getLevelForHex(record.priorityColor, swatchSets)
+        ?? getLevelForColorFamily(record.priorityColor)
         ?? 'high';
+}
+
+/**
+ * A task's priority level as stored. Anything that is not a known level reads
+ * as null (no priority) — a hand-edited file cannot invent a fourth level.
+ * @param {Object|null|undefined} task
+ * @returns {'high'|'medium'|'low'|null}
+ */
+export function getPriorityLevel(task) {
+    return isPriorityLevel(task?.priority) ? task.priority : null;
 }
 
 /**
@@ -195,76 +207,66 @@ function swatchHexForLevel(swatches, level) {
  *
  * @param {Object|null|undefined} task
  * @param {Array<{level: string, hex: string}>|null|undefined} swatches - current theme (getPrioritySwatches)
- * @param {Array<Array<{level: string, hex: string}>>} [swatchSets=[]] - every theme (collectSwatchSets)
- * @returns {string|null} null when the task is not flagged
+ * @returns {string|null} null when the task has no priority
  */
-export function getPriorityColor(task, swatches, swatchSets = []) {
-    const level = getPriorityLevel(task, swatchSets);
+export function getPriorityColor(task, swatches) {
+    const level = getPriorityLevel(task);
     if (!level) return null;
     return swatchHexForLevel(swatches, level);
 }
 
 /**
- * Set a task's priority level by writing the stored 2.5 fields: `highPriority`,
- * and `priorityColor` as the given theme's swatch for that level. Passing null
- * turns priority off and keeps the colour, like the task toggle. Mutates `task` —
- * call it inside an AppState.update() producer, and sync a recurring template
- * yourself as taskCRUD's toggle does.
+ * Set a task's priority level (`task.priority`). Passing null turns priority
+ * off. Mutates `task` — call it inside an AppState.update() producer, and sync
+ * a recurring template yourself as taskCRUD's toggle does.
  *
  * @param {Object} task - Task draft to mutate
  * @param {'high'|'medium'|'low'|null} level
- * @param {Array<{level: string, hex: string}>|null|undefined} swatches - current theme (getPrioritySwatches)
  * @returns {boolean} false (and no write) for an unknown level or a missing task
  */
-export function setPriorityLevel(task, level, swatches) {
+export function setPriorityLevel(task, level) {
     if (!task || typeof task !== 'object') return false;
     if (level === null || level === undefined) {
-        task.highPriority = false;
+        task.priority = null;
         return true;
     }
     if (!isPriorityLevel(level)) return false;
-    task.highPriority = true;
-    task.priorityColor = swatchHexForLevel(swatches, level);
+    task.priority = level;
     return true;
 }
 
 /**
- * Is the task flagged at all? The on/off read every renderer and the toggle
- * make, in one place so Schema 2.6 (`priority` level or null) changes it once.
+ * Does the task have a priority at all? The on/off read every renderer and the
+ * toggle make, in one place.
  * @param {Object|null|undefined} task
  * @returns {boolean}
  */
 export function hasPriority(task) {
-    return task?.highPriority === true;
+    return getPriorityLevel(task) !== null;
 }
 
 /**
- * The stored priority fields of a task or template, for a literal that copies
+ * The stored priority field of a task or template, for a literal that copies
  * one record into another (a recurring template from its task, a recreated
  * instance from its template, a cleared record). Spread the result — this is the
- * ONE place a copy spells the stored names.
+ * ONE place a copy spells the stored name.
  * @param {Object|null|undefined} source
- * @returns {{highPriority: boolean, priorityColor: (string|null)}}
+ * @returns {{priority: ('high'|'medium'|'low'|null)}}
  */
 export function priorityFields(source) {
-    return {
-        highPriority: hasPriority(source),
-        priorityColor: source?.priorityColor || null
-    };
+    return { priority: getPriorityLevel(source) };
 }
 
 /**
- * The level a task LAST had, flagged or not: the toggle turns priority back on at
- * the level the task remembers. null when it has never had a colour.
+ * The level a task currently has, for the toggle: turning priority "on" for a
+ * task that already has a level keeps it. Under 2.5 a switched-off task still
+ * remembered its colour; a 2.6 task with `priority: null` remembers nothing, so
+ * the toggle falls through to the default level.
  * @param {Object|null|undefined} task
- * @param {Array<Array<{level: string, hex: string}>>} [swatchSets=[]] - see collectSwatchSets
  * @returns {'high'|'medium'|'low'|null}
  */
-export function getLastPriorityLevel(task, swatchSets = []) {
-    if (!task?.priorityColor) return null;
-    return getLevelForHex(task.priorityColor, swatchSets)
-        ?? getLevelForColorFamily(task.priorityColor)
-        ?? 'high';
+export function getLastPriorityLevel(task) {
+    return getPriorityLevel(task);
 }
 
 /**
@@ -289,28 +291,26 @@ export function getLevelColor(level, swatches) {
 }
 
 /**
- * The level a NEW flagged task starts at: the last colour picked anywhere
- * (`settings.priorityColor` in 2.5; `settings.defaultPriority` in 2.6), else High.
+ * The level a NEW flagged task starts at: the last level picked anywhere
+ * (`settings.defaultPriority`), else High.
  * @param {Object|null|undefined} settings - state.settings
- * @param {Array<Array<{level: string, hex: string}>>} [swatchSets=[]]
  * @returns {'high'|'medium'|'low'}
  */
-export function getDefaultPriorityLevel(settings, swatchSets = []) {
-    return settings?.priorityColor ? getLevelForColor(settings.priorityColor, swatchSets) : 'high';
+export function getDefaultPriorityLevel(settings) {
+    return isPriorityLevel(settings?.defaultPriority) ? settings.defaultPriority : 'high';
 }
 
 /**
- * Remember a level as the default for the next flagged task. Writes the stored
- * 2.5 field (the given theme's swatch hex). Mutates `settings` — call it inside
- * an AppState.update() producer.
+ * Remember a level as the default for the next flagged task
+ * (`settings.defaultPriority`). Mutates `settings` — call it inside an
+ * AppState.update() producer.
  * @param {Object} settings - state.settings draft
  * @param {'high'|'medium'|'low'} level
- * @param {Array<{level: string, hex: string}>|null|undefined} swatches - current theme
  * @returns {boolean} false (and no write) for an unknown level or missing settings
  */
-export function setDefaultPriorityLevel(settings, level, swatches) {
+export function setDefaultPriorityLevel(settings, level) {
     if (!settings || typeof settings !== 'object' || !isPriorityLevel(level)) return false;
-    settings.priorityColor = swatchHexForLevel(swatches, level);
+    settings.defaultPriority = level;
     return true;
 }
 
@@ -319,11 +319,10 @@ export function setDefaultPriorityLevel(settings, level, swatches) {
  * same level compare equal, so Array.prototype.sort (stable) keeps their order.
  * @param {Object} a
  * @param {Object} b
- * @param {Array<Array<{level: string, hex: string}>>} [swatchSets=[]] - see collectSwatchSets
  * @returns {number}
  */
-export function comparePriority(a, b, swatchSets = []) {
-    return priorityRank(getPriorityLevel(a, swatchSets)) - priorityRank(getPriorityLevel(b, swatchSets));
+export function comparePriority(a, b) {
+    return priorityRank(getPriorityLevel(a)) - priorityRank(getPriorityLevel(b));
 }
 
 /**

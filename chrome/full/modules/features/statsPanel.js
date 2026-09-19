@@ -28,7 +28,7 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { UI_TIMEOUTS, CHART, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION } from '../core/constants.js';
 import { getLabel, getIcon } from '../labels/labelResolver.js';
-import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
+import { getActiveRoutineId, getRoutine, getActiveRoutine } from '../utils/cycleMode.js';
 // Pure utility class (no side effects/module state) — safe static import.
 // Owns the ordered panel registry; statsPanel registers its panels into it.
 // See docs/archive/FOCUS_TASK_VIEW_PLAN.md Phase 0.
@@ -737,9 +737,9 @@ export class StatsPanelManager {
         // ✅ Safe to access AppState - core is guaranteed ready - DI-pure
         const currentState = AppState.get();
         if (currentState) {
-            const { data, appState, userProgress } = currentState;
-            const activeCycleId = appState.activeCycleId;
-            activeCycleData = data.cycles[activeCycleId];
+            const { userProgress } = currentState;
+            const activeCycleId = getActiveRoutineId(currentState);
+            activeCycleData = getActiveRoutine(currentState);
 
             if (activeCycleId && activeCycleData) {
                 perCycleCount = activeCycleData.cycleCount || 0;

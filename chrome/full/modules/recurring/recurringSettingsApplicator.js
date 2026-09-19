@@ -9,12 +9,11 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
+import { getPriorityLevel } from '../utils/priorityLevel.js';
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, UI_TIMEOUTS, DEFAULT_RECURRING_DELETE_SETTINGS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { buildRecurringTemplate } from './recurringTemplate.js';
-import { getActiveRoutineId, getAutoClearForMode, getAutoClearMode, getAutoClearSettings, getRoutine, syncTaskAutoClear } from '../utils/cycleMode.js';
-import { hasPriority, priorityFields } from '../utils/priorityLevel.js';
-
+import { getActiveRoutineId, getAutoClearMode, getAutoClearSettings, getRoutine, syncTaskAutoClear } from '../utils/cycleMode.js';
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
 // ============================================================================
@@ -137,11 +136,9 @@ export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
                         id: taskId,
                         text: templateText,
                         dueDate: task?.dueDate || existingTemplate?.dueDate || null,
-                        highPriority: hasPriority(task) || hasPriority(existingTemplate),
-                        priorityColor: priorityFields(task).priorityColor || priorityFields(existingTemplate).priorityColor,
+                        priority: getPriorityLevel(task) ?? getPriorityLevel(existingTemplate),
                         remindersEnabled: task?.remindersEnabled || existingTemplate?.remindersEnabled || false,
-                        deleteWhenComplete: getAutoClearForMode(task ?? existingTemplate, mode, DEFAULT_RECURRING_DELETE_SETTINGS),
-                        deleteWhenCompleteSettings: getAutoClearSettings(task)
+                        autoClear: getAutoClearSettings(task)
                             || getAutoClearSettings(existingTemplate)
                             || null,
                         recurringSettings: structuredClone(settings),

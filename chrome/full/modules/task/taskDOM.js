@@ -506,7 +506,7 @@ export class TaskDOMManager {
 
     fallbackLoadData() {
         console.warn('⚠️ loadMiniCycleData not available - using empty data');
-        return { data: { cycles: {} }, appState: { activeCycleId: null }, settings: {} };
+        return { data: { routine: {} }, appState: { activeRoutineId: null }, settings: {} };
     }
 
     fallbackSave() {
@@ -559,8 +559,8 @@ export class TaskDOMManager {
      */
     createTaskDOMElements(taskContext, taskData) {
         const {
-            assignedTaskId, taskTextTrimmed, highPriority, priorityColor, recurring,
-            recurringSettings, settings, autoResetEnabled, currentCycle, deleteWhenComplete, deleteWhenCompleteSettings
+            assignedTaskId, taskTextTrimmed, highPriority, priority, recurring,
+            recurringSettings, settings, autoResetEnabled, currentCycle, autoClear
         } = taskContext;
 
         // Get required DOM elements
@@ -574,13 +574,13 @@ export class TaskDOMManager {
         }
 
         // Create main task element
-        const taskItem = this.createMainTaskElement(assignedTaskId, highPriority, recurring, recurringSettings, currentCycle, deleteWhenComplete, deleteWhenCompleteSettings);
+        const taskItem = this.createMainTaskElement(assignedTaskId, highPriority, recurring, recurringSettings, currentCycle, autoClear);
 
         // Apply per-task priority color via CSS custom property (more reliable than borderLeftColor
         // because it doesn't conflict with the border-left shorthand in the stylesheet).
         // The colour is the task's LEVEL under the active theme, never the stored hex —
         // the same rule taskDOMPatch, focusTaskPanel and the picker follow.
-        const resolvedColor = this.deps.vocabThemeManager.getTaskPriorityColor({ highPriority, priorityColor });
+        const resolvedColor = this.deps.vocabThemeManager.getTaskPriorityColor({ priority });
         if (resolvedColor) {
             taskItem.style.setProperty('--task-priority-color', resolvedColor);
         }
@@ -625,7 +625,7 @@ export class TaskDOMManager {
     /**
      * Create main task element (li)
      */
-    createMainTaskElement(assignedTaskId, highPriority, recurring, recurringSettings, currentCycle, deleteWhenComplete = false, deleteWhenCompleteSettings = null) {
+    createMainTaskElement(assignedTaskId, highPriority, recurring, recurringSettings, currentCycle, deleteWhenCompleteSettings = null) {
         const taskItem = document.createElement("li");
         taskItem.classList.add(DOM_CLASSES.TASK);
         taskItem.setAttribute("draggable", "true");
@@ -673,7 +673,6 @@ export class TaskDOMManager {
         // not show one indicator in the list and another on the card.
         const finalDeleteWhenComplete = resolveAutoClear({
             settings: validSettings,
-            legacy: deleteWhenComplete,
             mode: currentMode,
             defaults: DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS
         });
@@ -686,7 +685,7 @@ export class TaskDOMManager {
         // special-cases in both directions) live in getTaskResetIndicator so the
         // routine list and the Task view stay in agreement.
         const resetIndicator = getTaskResetIndicator({
-            deleteWhenComplete: finalDeleteWhenComplete,
+            autoClear: finalDeleteWhenComplete,
             isRecurring,
             mode: currentMode
         });
@@ -1274,7 +1273,7 @@ export class TaskDOMManager {
         const routine = getActiveRoutine(this.deps.AppState?.get?.());
         (routine?.tasks ?? []).forEach(task => {
             if (this.getTaskElement(task.id)) {
-                this.patchTask(task.id, task, ['priorityColor']);
+                this.patchTask(task.id, task, ['priority']);
             }
         });
     }

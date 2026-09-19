@@ -8,14 +8,15 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { COLORS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
+import { getPriorityLevel, getLevelColor, hasPriority } from '../utils/priorityLevel.js';
+import { COLORS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DEFAULT_PRIORITY_SWATCHES } from '../core/constants.js';
 import { getLabel, getIcon } from '../labels/labelResolver.js';
 import { handleVerticalArrowNav, handleHorizontalArrowNav } from '../utils/keyboardNav.js';
 import { isClickOnNotification } from '../ui/modalUtils.js';
 // Local-midnight parse for date-only "YYYY-MM-DD" dueDates — new Date() reads
 // them as UTC midnight, showing the previous day in negative UTC offsets.
 import { parseDateAsLocal } from '../recurring/recurringDateUtils.js';
-import { isValidHex } from '../utils/styleValidators.js';
+import {  } from '../utils/styleValidators.js';
 import { getActiveRoutineId, getAutoClearSettings, getRoutine } from '../utils/cycleMode.js';
 
 // ============================================================================
@@ -752,7 +753,7 @@ export class HistoryManager {
                     <div class="cleared-entry-text">${this._escapeHtml(entry.taskText)}</div>
                     <div class="cleared-entry-metadata">
                         <span>${dateStr} ${timeStr}</span>
-                        ${entry.wasHighPriority ? (() => { const safeColor = isValidHex(entry.priorityColor) ? entry.priorityColor : ''; return `<span class="cleared-entry-priority">${getLabel('history.highPriority')} <span class="history-priority-dot" style="background:${safeColor || 'var(--color-error)'};" aria-hidden="true"></span></span>`; })() : ''}
+                        ${hasPriority(entry) ? (() => { const safeColor = getLevelColor(getPriorityLevel(entry), DEFAULT_PRIORITY_SWATCHES) || ''; return `<span class="cleared-entry-priority">${getLabel('history.highPriority')} <span class="history-priority-dot" style="background:${safeColor || 'var(--color-error)'};" aria-hidden="true"></span></span>`; })() : ''}
                         ${entry.dueDate ? `<span class="cleared-entry-due-date">${getLabel('history.hasDueDate')} ${(parseDateAsLocal(entry.dueDate) || new Date(entry.dueDate)).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>` : ''}
                         ${entry.remindersEnabled ? `<span class="cleared-entry-reminders">${getLabel('history.hasReminders')}</span>` : ''}
                         ${entry.recurring ? `<span class="cleared-entry-recurring">${getLabel('history.isRecurring')}</span>` : ''}
@@ -976,8 +977,8 @@ export class HistoryManager {
                 // is unreachable for events that carry it. Until v2.371 these
                 // two sat below it and the priority dot never rendered
                 // (features-review finding, Aug 2026).
-                const safeColor = isValidHex(event.details.priorityColor)
-                    ? event.details.priorityColor : COLORS.PRIORITY_DEFAULT;
+                // The event carries the LEVEL; the dot shows the level's default swatch.
+                const safeColor = getLevelColor(event.details.priority, DEFAULT_PRIORITY_SWATCHES) || COLORS.PRIORITY_DEFAULT;
                 detailText = `${this._escapeHtml(event.details.taskName)} <span class="history-priority-dot" style="background:${safeColor};" aria-hidden="true"></span>`;
             } else if (event.type === 'task_priority_removed' && event.details.taskName !== undefined) {
                 detailText = this._escapeHtml(event.details.taskName);
@@ -1138,16 +1139,15 @@ export class HistoryManager {
         for (const entry of toRecreate) {
             try {
                 const recreateOptions = {
-                    highPriority: entry.wasHighPriority || false
+                    priority: getPriorityLevel(entry)
                 };
                 // Restore preserved attributes (backward-compatible with older entries)
                 if (entry.dueDate) recreateOptions.dueDate = entry.dueDate;
-                if (entry.priorityColor) recreateOptions.priorityColor = entry.priorityColor;
                 if (entry.remindersEnabled) recreateOptions.remindersEnabled = true;
-                // Pass per-mode settings only — createOrUpdateTaskData derives the active
-                // deleteWhenComplete value from the current mode + these settings
+                // Pass the per-mode map only — createOrUpdateTaskData reads it for
+                // the current mode
                 const entryAutoClear = getAutoClearSettings(entry);
-                if (entryAutoClear) recreateOptions.deleteWhenCompleteSettings = structuredClone(entryAutoClear);
+                if (entryAutoClear) recreateOptions.autoClear = structuredClone(entryAutoClear);
                 if (entry.recurring) recreateOptions.recurring = true;
                 if (entry.recurringSettings) recreateOptions.recurringSettings = structuredClone(entry.recurringSettings);
 

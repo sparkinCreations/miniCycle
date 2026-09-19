@@ -10,6 +10,7 @@
  */
 
 import { createDIModule, required } from '../core/diBase.js';
+import { isPriorityLevel } from './priorityLevel.js';
 import { isSupportedStoredVersion } from '../utils/schemaVersion.js';
 import { formatLocalDate } from '../recurring/recurringDateUtils.js';
 
@@ -204,9 +205,9 @@ export class DataValidator {
             throw new TypeError('Task completed must be a boolean');
         }
 
-        // Validate highPriority
-        if ('highPriority' in task && typeof task.highPriority !== 'boolean') {
-            throw new TypeError('Task highPriority must be a boolean');
+        // Validate priority: a level or null (Schema 2.6)
+        if ('priority' in task && task.priority !== null && !isPriorityLevel(task.priority)) {
+            throw new TypeError('Task priority must be high, medium, low or null');
         }
 
         // Validate remindersEnabled
@@ -290,12 +291,12 @@ export class DataValidator {
             throw new Error('Imported data missing or invalid data field');
         }
 
-        if (!importedData.data.cycles || typeof importedData.data.cycles !== 'object') {
-            throw new Error('Imported data missing or invalid cycles field');
+        if (!importedData.data.routine || typeof importedData.data.routine !== 'object') {
+            throw new Error('Imported data missing or invalid routine field');
         }
 
-        // Validate each cycle
-        for (const [cycleId, cycleData] of Object.entries(importedData.data.cycles)) {
+        // Validate each routine
+        for (const [cycleId, cycleData] of Object.entries(importedData.data.routine)) {
             try {
                 this.validateCycleData(cycleData);
             } catch (error) {

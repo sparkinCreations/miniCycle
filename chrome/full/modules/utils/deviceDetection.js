@@ -85,7 +85,7 @@ export class DeviceDetectionManager {
 
       const schemaData = this.deps.loadMiniCycleData();
       if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for device detection');
+        console.error('❌ State data required for device detection');
         return false;
       }
 
@@ -199,7 +199,7 @@ export class DeviceDetectionManager {
 
     const schemaData = this.deps.loadMiniCycleData();
     if (!schemaData) {
-      console.error('❌ Schema 2.5 data required for version detection');
+      console.error('❌ State data required for version detection');
       return;
     }
     
@@ -208,7 +208,7 @@ export class DeviceDetectionManager {
       const fullSchemaData = JSON.parse(localStorage.getItem(STORAGE_KEYS.DATA));
       lastDetectionVersion = fullSchemaData.settings?.deviceCompatibility?.lastDetectionVersion;
     } catch (error) {
-      console.warn('⚠️ Error reading detection version from Schema 2.5:', error);
+      console.warn('⚠️ Error reading detection version from state:', error);
     }
     
     // If version changed or first time, re-run detection
@@ -228,7 +228,7 @@ export class DeviceDetectionManager {
 
     const schemaData = this.deps.loadMiniCycleData();
     if (!schemaData) {
-      console.error('❌ Schema 2.5 data required for compatibility report');
+      console.error('❌ State data required for compatibility report');
       this.deps.showNotification('❌ ' + getLabel('notify.reportRequiresSchema'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
       return null;
     }
@@ -246,7 +246,7 @@ export class DeviceDetectionManager {
         detectionData = compatibility;
       }
     } catch (error) {
-      console.error('❌ Error reading device compatibility from Schema 2.5:', error);
+      console.error('❌ Error reading device compatibility from state:', error);
     }
     
     const deviceInfo = {
@@ -300,7 +300,7 @@ export class DeviceDetectionManager {
 
     const schemaData = this.deps.loadMiniCycleData();
     if (!schemaData) {
-      console.error('❌ Schema 2.5 data required for device detection test');
+      console.error('❌ State data required for device detection test');
       this.deps.showNotification('❌ ' + getLabel('notify.detectionTestFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
       return;
     }
@@ -323,7 +323,7 @@ export class DeviceDetectionManager {
           }
         }, true);
       } catch (error) {
-        console.error('❌ Error clearing Schema 2.5 compatibility:', error);
+        console.error('❌ Error clearing stored compatibility:', error);
       }
     }
 

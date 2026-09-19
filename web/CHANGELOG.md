@@ -1,3 +1,8 @@
+## [2.573] - 2026-09-19
+- feat(schema): Schema 2.6 — routines by id, priority as a level, one autoClear map
+- wip(schema-2.6): helpers' internals on the 2.6 shape; SCHEMA.CURRENT = 2.6
+
+
 ## [2.572] - 2026-09-18
 - fix(testing): dry-run scan skips taskOptionButtons — option ids, not task fields
 

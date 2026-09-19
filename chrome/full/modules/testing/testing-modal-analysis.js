@@ -242,9 +242,9 @@ function isTestDataCycle(cycleId) {
  */
 export function scanTestDataCycles(data) {
     const found = [];
-    for (const cycleId of Object.keys(data?.cycles || {})) {
+    for (const cycleId of Object.keys(data?.routine || {})) {
         if (!isTestDataCycle(cycleId)) continue;
-        const cycle = data.cycles[cycleId];
+        const cycle = data.routine[cycleId];
         found.push({ id: cycleId, label: cycle?.title || cycle?.name || cycleId });
     }
     return found;
@@ -310,34 +310,34 @@ export function repairData() {
         // Helper to perform repairs on data object
         function performRepairs(data, appState) {
             // FIRST: Detect and remove test data
-            const allCycleIds = Object.keys(data.cycles || {});
+            const allCycleIds = Object.keys(data.routine || {});
             for (const cycleId of allCycleIds) {
-                const cycle = data.cycles[cycleId];
+                const cycle = data.routine[cycleId];
                 if (isTestDataCycle(cycleId)) {
                     testDataFound.push(`"${cycle.title || cycle.name || cycleId}" (id: ${cycleId})`);
-                    delete data.cycles[cycleId];
+                    delete data.routine[cycleId];
                     repairs.push(`Removed test data cycle: "${cycle.title || cycleId}"`);
 
                     // If this was the active cycle, we'll fix that below
-                    if (appState?.activeCycleId === cycleId) {
-                        appState.activeCycleId = null;
+                    if (appState?.activeRoutineId === cycleId) {
+                        appState.activeRoutineId = null;
                     }
                 }
             }
 
             // Fix missing cycles object
-            if (!data.cycles || typeof data.cycles !== 'object') {
-                data.cycles = {};
+            if (!data.routine || typeof data.routine !== 'object') {
+                data.routine = {};
                 repairs.push("Created missing cycles object");
             }
 
             // Fix corrupted cycles
-            const cycleIds = Object.keys(data.cycles);
+            const cycleIds = Object.keys(data.routine);
             for (const cycleId of cycleIds) {
-                const cycle = data.cycles[cycleId];
+                const cycle = data.routine[cycleId];
 
                 if (!cycle || typeof cycle !== 'object' || Array.isArray(cycle)) {
-                    delete data.cycles[cycleId];
+                    delete data.routine[cycleId];
                     repairs.push(`Removed corrupted cycle: ${cycleId}`);
                     continue;
                 }
@@ -391,16 +391,16 @@ export function repairData() {
             }
 
             // Fix active cycle reference
-            const activeCycleKey = appState?.activeCycleId;
+            const activeCycleKey = appState?.activeRoutineId;
             if (activeCycleKey) {
-                const activeCycleExists = data.cycles[activeCycleKey];
+                const activeCycleExists = data.routine[activeCycleKey];
                 if (!activeCycleExists) {
-                    const availableCycles = Object.keys(data.cycles);
+                    const availableCycles = Object.keys(data.routine);
                     if (availableCycles.length > 0) {
-                        appState.activeCycleId = availableCycles[0];
+                        appState.activeRoutineId = availableCycles[0];
                         repairs.push(`Fixed invalid activeCycle reference`);
                     } else {
-                        appState.activeCycleId = null;
+                        appState.activeRoutineId = null;
                         repairs.push("Cleared activeCycle (no routines exist)");
                     }
                 }

@@ -186,8 +186,8 @@ export async function refreshTaskListUI() {
 
     const schemaData = loadMiniCycleData();
     if (!schemaData) {
-        console.error('Schema 2.5 data required for refreshTaskListUI');
-        throw new Error('Schema 2.5 data not found');
+        console.error('State data required for refreshTaskListUI');
+        throw new Error('State data not found');
     }
 
     const { cycles, activeCycle } = schemaData;

@@ -65,7 +65,7 @@ export class TaskDOMPatch {
 
         try {
             // If no specific fields, patch all common fields
-            const fields = changedFields || ['completed', 'text', 'highPriority', 'dueDate', 'recurring', 'remindersEnabled'];
+            const fields = changedFields || ['completed', 'text', 'priority', 'dueDate', 'recurring', 'remindersEnabled', 'autoClear'];
 
             fields.forEach(field => {
                 switch (field) {
@@ -75,7 +75,7 @@ export class TaskDOMPatch {
                     case 'text':
                         this._patchText(taskElement, taskData);
                         break;
-                    case 'highPriority':
+                    case 'priority':
                         this._patchHighPriority(taskElement, taskData);
                         break;
                     case 'dueDate':
@@ -87,10 +87,7 @@ export class TaskDOMPatch {
                     case 'remindersEnabled':
                         this._patchReminders(taskElement, taskData);
                         break;
-                    case 'priorityColor':
-                        this._patchPriorityColor(taskElement, taskData);
-                        break;
-                    case 'deleteWhenComplete':
+                    case 'autoClear':
                         this._patchDeleteWhenComplete(taskElement, taskData);
                         break;
                 }

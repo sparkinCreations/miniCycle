@@ -1,7 +1,7 @@
 /**
  * @fileoverview Type definitions for miniCycle
  *
- * Central type definitions extracted from the Schema 2.5 specification.
+ * Central type definitions for the stored state (Schema 2.6 — see docs/reference/SCHEMA_2_6.md).
  * Import these types in other modules for IDE autocomplete and type checking.
  *
  * @module core/types
@@ -20,7 +20,7 @@
  * @property {string} id - Unique identifier (e.g., "task-xyz789")
  * @property {string} text - Task description/name
  * @property {boolean} completed - Whether task is checked/complete
- * @property {boolean} [highPriority=false] - High priority flag
+ * @property {('high'|'medium'|'low'|null)} [priority=null] - Priority LEVEL; the colour on screen is the active theme's swatch for it (utils/priorityLevel.js). No colour is stored.
  * @property {string|null} [dueDate=null] - Due date in ISO format or null
  * @property {boolean} [remindersEnabled=false] - Whether reminders are enabled
  * @property {boolean} [recurring=false] - Whether this is a recurring task
@@ -28,13 +28,13 @@
  * @property {number} [schemaVersion=2] - Per-task shape version (the code writes the number `2`; routineLoader repairs missing/invalid stamps to `2`). Distinct from the document's `schemaVersion` string `"2.5"`.
  * @property {string} [createdAt] - ISO timestamp of creation
  * @property {string|null} [completedAt=null] - ISO timestamp of completion or null
- * @property {boolean} [deleteWhenComplete] - Whether to delete task on completion
+ * @property {Object.<string, boolean>} [autoClear] - Clear on Reset / Marked for Clearing per mode: `{ cycle, todo, ...any later mode }`. One OPEN map; there is no derived mirror (utils/cycleMode.js)
  * @example
  * const task = {
  *     id: "task-xyz789",
  *     text: "Make coffee",
  *     completed: false,
- *     highPriority: false,
+ *     priority: null,
  *     dueDate: null,
  *     recurring: false,
  *     recurringSettings: {},
@@ -117,7 +117,7 @@
  * Recurring template stored in cycle
  * @typedef {Object} RecurringTemplate
  * @property {string} taskText - Template task text
- * @property {boolean} [highPriority=false] - Default priority
+ * @property {('high'|'medium'|'low')} [defaultPriority='high'] - The level a newly flagged task starts at (the last pick)
  * @property {string|null} [dueDate=null] - Default due date
  * @property {boolean} [remindersEnabled=false] - Default reminders
  * @property {RecurringSettings} recurringSettings - Recurrence configuration
@@ -173,13 +173,14 @@
  */
 
 // =============================================================================
-// STATE TYPES (Schema 2.5)
+// STATE TYPES (Schema 2.6)
 // =============================================================================
 
 /**
- * Complete application state following Schema 2.5
+ * Complete application state following Schema 2.6. (The typedef keeps its 2.5 name:
+ * ~40 JSDoc references across the codebase; the shape is 2.6.)
  * @typedef {Object} Schema25Data
- * @property {string} schemaVersion - Schema version, currently "2.5"
+ * @property {string} schemaVersion - Schema version, SCHEMA.CURRENT ("2.6")
  * @property {Metadata} metadata - Application metadata
  * @property {Settings} settings - User preferences and settings
  * @property {DataContainer} data - Cycle and task data
@@ -192,9 +193,9 @@
  */
 
 /**
- * Data container holding cycles
+ * Data container holding routines
  * @typedef {Object} DataContainer
- * @property {Object.<string, Cycle>} cycles - Map of cycle ID to Cycle object
+ * @property {Object.<string, Cycle>} routine - Map of routine id (generated, `GlobalUtils.generateId('routine')`) to routine object; `title` is the name
  */
 
 /**
@@ -207,7 +208,7 @@
  * @property {string} [migratedFrom] - Previous schema version
  * @property {string} [migrationDate] - Migration date
  * @property {string} [schemaVersion] - Schema version (duplicate for compatibility)
- * @property {number} [totalCyclesCreated=0] - Total cycles ever created
+ * @property {number} [totalRoutinesCreated=0] - Total routines ever created
  * @property {number} [totalCyclesCompleted=0] - Sum of cycleCount across migrated legacy cycles (write-only migration stat)
  */
 
@@ -242,7 +243,7 @@
 /**
  * Runtime application state
  * @typedef {Object} AppStateData
- * @property {string|null} activeCycleId - Currently active cycle ID
+ * @property {string|null} activeRoutineId - Currently active routine id
  * @property {'auto-cycle'|'manual-cycle'|'todo-mode'} [currentMode='auto-cycle'] - Current app mode
  * @property {Object.<string, boolean>} [overdueTaskStates={}] - Overdue task tracking
  */

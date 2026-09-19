@@ -45,7 +45,7 @@ import { LIMITS, UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION, 
 import { getLabel } from '../labels/labelResolver.js';
 import { announce } from '../utils/announce.js';
 import { getActiveRoutineId, getAutoClear, getAutoClearSettings, getRoutine } from '../utils/cycleMode.js';
-import { hasPriority } from '../utils/priorityLevel.js';
+import { hasPriority, isPriorityLevel } from '../utils/priorityLevel.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -220,6 +220,10 @@ export async function addTaskImpl(taskText, options = {}, deps = {}) {
         // shape fix, not a behaviour change.
         highPriority = false,
         priorityColor = null,
+        // Schema 2.6: the level itself. The 2.5 pair above is still accepted
+        // from callers that speak it (recreate flows, tests) and read through
+        // the legacy rule below.
+        priority = undefined,
         isLoading = false,
         remindersEnabled = false,
         recurring = false,
@@ -227,6 +231,7 @@ export async function addTaskImpl(taskText, options = {}, deps = {}) {
         recurringSettings = {},
         deleteWhenComplete = undefined,
         deleteWhenCompleteSettings = undefined,
+        autoClear = undefined,
         deferAppend = false,
         targetContainer = null
     } = options;
@@ -284,10 +289,21 @@ export async function addTaskImpl(taskText, options = {}, deps = {}) {
         }
         if (taskInputEl) taskInputEl.removeAttribute('aria-invalid');
 
+        // Priority is a LEVEL (utils/priorityLevel.js). A caller still passing the
+        // 2.5 pair gets the level its colour names — the same rule the importer
+        // applies to a 2.5 file.
+        const priorityLevel = (priority === null || isPriorityLevel(priority))
+            ? priority
+            : (highPriority
+                ? (priorityColor ? _deps.vocabThemeManager.getPriorityLevelForColor(priorityColor) : 'high')
+                : null);
+
         // Load and validate data context
         const loadContextFn = deps.loadTaskContext || _deps.loadTaskContext;
         const taskContext = loadContextFn?.(validatedInput, taskId, {
-            completed, dueDate, highPriority, priorityColor, remindersEnabled, recurring, recurringSettings, deleteWhenComplete, deleteWhenCompleteSettings
+            completed, dueDate, priority: priorityLevel, highPriority: priorityLevel !== null,
+            remindersEnabled, recurring, recurringSettings,
+            deleteWhenComplete, autoClear: autoClear ?? deleteWhenCompleteSettings
         }, isLoading);
         if (!taskContext) {
             console.warn('Could not load task context');
@@ -312,7 +328,7 @@ export async function addTaskImpl(taskText, options = {}, deps = {}) {
         // Sync derived deleteWhenComplete back to context so DOM creation sees it
         if (taskData && taskContext.deleteWhenComplete === undefined) {
             taskContext.deleteWhenComplete = getAutoClear(taskData, taskContext.currentCycle, DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS);
-            taskContext.deleteWhenCompleteSettings = getAutoClearSettings(taskData);
+            taskContext.autoClear = getAutoClearSettings(taskData);
         }
 
         // Create DOM elements
@@ -895,7 +911,7 @@ export async function toggleTaskPriorityImpl(taskItem, deps = {}) {
                             taskItem.style.setProperty('--task-priority-color', color);
                             _deps.logHistoryEvent?.('task_priority_color_changed', {
                                 taskName: task.text,
-                                priorityColor: color
+                                priority: pickedLevel
                             });
                         }
                     };
@@ -905,7 +921,7 @@ export async function toggleTaskPriorityImpl(taskItem, deps = {}) {
                 }
                 _deps.logHistoryEvent?.('task_priority_set', {
                     taskName: task.text,
-                    priorityColor: resolvedColor
+                    priority: newLevel
                 });
             } else {
                 _deps.showNotification?.(getLabel('notify.priorityRemoved'), 'info', UI_TIMEOUTS.NOTIFICATION_BRIEF);

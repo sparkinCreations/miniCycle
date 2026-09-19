@@ -166,7 +166,7 @@ export function setupExportButton() {
         const schemaData = loadMiniCycleData();
 
         if (!schemaData) {
-            console.error('Schema 2.5 data required for export');
+            console.error('State data required for export');
             _deps.showNotification(getLabel('notify.exportNoData'), "error");
             return;
         }

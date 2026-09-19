@@ -242,7 +242,7 @@ export class RoutineManager {
                         };
 
                         setActiveRoutineId(state, finalTitle);
-                        state.metadata.totalCyclesCreated = (state.metadata.totalCyclesCreated || 0) + 1;
+                        state.metadata.totalRoutinesCreated = (state.metadata.totalRoutinesCreated || 0) + 1;
                     }, true);
 
                     if (typeof this.deps.onCycleCreated === 'function') {
@@ -369,7 +369,7 @@ export class RoutineManager {
             };
 
             setActiveRoutineId(state, finalTitle);
-            state.metadata.totalCyclesCreated = (state.metadata.totalCyclesCreated || 0) + 1;
+            state.metadata.totalRoutinesCreated = (state.metadata.totalRoutinesCreated || 0) + 1;
         }, true); // immediate save
 
         // ✅ Notify undo system of new cycle (fallback path)
@@ -465,7 +465,7 @@ export class RoutineManager {
                     };
 
                     setActiveRoutineId(state, storageKey);
-                    state.metadata.totalCyclesCreated = (state.metadata.totalCyclesCreated || 0) + 1;
+                    state.metadata.totalRoutinesCreated = (state.metadata.totalRoutinesCreated || 0) + 1;
 
                     finalResult = { storageKey, finalTitle };
                 }, true);
@@ -632,7 +632,7 @@ export class RoutineManager {
                 };
 
                 setActiveRoutineId(state, finalTitle);
-                state.metadata.totalCyclesCreated = (state.metadata.totalCyclesCreated || 0) + 1;
+                state.metadata.totalRoutinesCreated = (state.metadata.totalRoutinesCreated || 0) + 1;
             }, true);
 
             // Close dialog if provided

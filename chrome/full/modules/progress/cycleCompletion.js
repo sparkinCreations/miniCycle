@@ -335,9 +335,8 @@ export function incrementCycleCount(miniCycleName, savedMiniCycles, completionSp
         return;
     }
 
-    const { data, appState } = currentState;
-    const activeCycle = appState.activeCycleId;
-    const cycleData = data.cycles[activeCycle];
+    const activeCycle = getActiveRoutineId(currentState);
+    const cycleData = getActiveRoutine(currentState);
 
     if (!activeCycle || !cycleData) {
         console.error('❌ No active cycle found for incrementCycleCount');

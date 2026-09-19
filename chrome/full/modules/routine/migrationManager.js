@@ -20,6 +20,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
+import { SCHEMA } from '../core/constants.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -87,15 +88,15 @@ export function createInitialSchema25Data() {
     assertInjected('now', _deps.now);
 
     const initialData = {
-        schemaVersion: "2.5",
+        schemaVersion: SCHEMA.CURRENT,
         metadata: {
             createdAt: _deps.now(),
             lastModified: _deps.now(),
             migratedFrom: null,
             migrationDate: null,
-            totalCyclesCreated: 0,
+            totalRoutinesCreated: 0,
             totalCyclesCompleted: 0,
-            schemaVersion: "2.5"
+            schemaVersion: SCHEMA.CURRENT
         },
         settings: {
             theme: 'default',
@@ -141,10 +142,10 @@ export function createInitialSchema25Data() {
             fontSize: '16'
         },
         data: {
-            cycles: {} // Empty - user will create their first cycle
+            routine: {} // Empty - user will create their first routine
         },
         appState: {
-            activeCycleId: null, // No active cycle yet
+            activeRoutineId: null, // No active routine yet
             overdueTaskStates: {} // ✅ Add this for overdue task tracking
         },
         userProgress: {

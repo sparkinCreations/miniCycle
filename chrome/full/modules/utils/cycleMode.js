@@ -18,19 +18,19 @@
  * keeps its own copy for now: its strings are coupled to CSS body classes, so
  * unifying that vocabulary is a separate change.
  *
- * It also hosts the NAMING HELPERS (bottom of file) that let new code speak the
- * product's words while the stored schema keeps its old ones: "routine" for the
- * checklist (stored under `data.cycles` / `appState.activeCycleId`) and
- * "autoClear" for Clear on Reset / Marked for Clearing (stored as
- * `deleteWhenComplete` / `deleteWhenCompleteSettings`). "Cycle" stays reserved for
- * a completion (`cycleCount`). Schema 2.6 renames the stored keys; until then
- * only the insides of those helpers know the old names.
+ * It also hosts the ROUTINE and AUTOCLEAR accessors (bottom of file). Since
+ * Schema 2.6 the stored names ARE the product's words: routines live under
+ * `data.routine` / `appState.activeRoutineId`, and a task's Clear on Reset /
+ * Marked for Clearing choice is one per-mode map, `task.autoClear`
+ * (`{ cycle, todo, ...any mode a later build adds }`). "Cycle" stays reserved
+ * for a completion (`cycleCount`). Readers still go through these helpers so
+ * the next rename is one file again.
  *
  * @module utils/cycleMode
  */
 
 /**
- * @param {Object|null|undefined} cycle - A cycle from state.data.cycles
+ * @param {Object|null|undefined} cycle - A routine from state.data.routine
  * @returns {'todo'|'auto'|'manual'}
  */
 export function getCycleMode(cycle) {
@@ -46,42 +46,41 @@ export function getCycleMode(cycle) {
  * both reset rather than delete, so both use the `cycle` key. Callers wrote this
  * inline as `cycle?.deleteCheckedTasks === true ? 'todo' : 'cycle'`.
  *
- * @param {Object|null|undefined} cycle - A cycle from state.data.cycles
+ * @param {Object|null|undefined} cycle - A routine from state.data.routine
  * @returns {'todo'|'cycle'}
  */
-export function getDeleteSettingsMode(cycle) {
+export function getAutoClearMode(cycle) {
     return getCycleMode(cycle) === 'todo' ? 'todo' : 'cycle';
 }
 
 /**
- * Repair a task's `deleteWhenCompleteSettings` and re-derive `deleteWhenComplete`
- * from the mode currently in effect. Mutates `task` in place — call it inside an
- * `AppState.update()` producer.
- *
- * `deleteWhenComplete` is DERIVED state: the durable value is the per-mode map,
- * and the flat field is whichever entry matches the active mode. It therefore has
- * to be re-derived on load, on mode switch, and whenever a task stops being
- * recurring — which is why three call sites had grown their own copy of this.
+ * Repair a task's `autoClear` map if it is missing or malformed. The map is the
+ * ONLY stored value since Schema 2.6 — the 2.5 `deleteWhenComplete` mirror that
+ * had to be re-derived on load, on mode switch and on un-recurring is gone, and
+ * with it the three call sites that each kept their own copy of that logic.
  *
  * Repair is PER KEY, never wholesale. Replacing the whole object when only the
  * entering mode's key was bad discarded the other mode's valid value:
  * `{ cycle: true }` entering To-Do became `{ cycle: false, todo: true }`, silently
- * losing the user's Cycle setting. Keys come from the defaults map, so a third
- * mode would stay covered.
+ * losing the user's Cycle setting. Known keys come from the defaults map; a
+ * boolean under any OTHER key is kept — the map is open, so a mode a newer build
+ * adds survives a round trip through this one (SCHEMA_2_6_PLAN.md, "Built to
+ * adapt"). Non-boolean junk under an unknown key is dropped.
  *
  * @param {Object} task - Task draft to mutate
- * @param {'todo'|'cycle'} mode - Active mode (see getDeleteSettingsMode)
+ * @param {'todo'|'cycle'} mode - Active mode (see getAutoClearMode); kept in the
+ *   signature so callers that track the mode need not change, unused here
  * @param {Object} defaults - DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS; injected so
  *   this module stays dependency-free and callers keep their existing source
  *   (a DI dep in modeManager, a plain import elsewhere).
- * @returns {{repaired: boolean, changed: boolean}} `repaired` when the settings
- *   map was invalid and rebuilt; `changed` when anything at all was written, so
- *   callers tracking a dirty flag can do so without re-comparing.
+ * @returns {{repaired: boolean, changed: boolean}} both true when the map was
+ *   rebuilt (they are the same thing now; `changed` stays for callers that
+ *   track a dirty flag)
  */
-export function syncTaskDeleteWhenComplete(task, mode, defaults) {
+export function syncTaskAutoClear(task, mode, defaults) {
     if (!task || !defaults) return { repaired: false, changed: false };
 
-    const stored = task.deleteWhenCompleteSettings;
+    const stored = task.autoClear;
     const storedIsObject = !!stored && typeof stored === 'object';
     let repaired = !storedIsObject;
 
@@ -95,56 +94,37 @@ export function syncTaskDeleteWhenComplete(task, mode, defaults) {
             repaired = true;
         }
     }
-    // A stored map carrying extra keys is still a rebuild — dropping them is the
-    // point, but it means the object changed even when every known key was valid.
-    if (storedIsObject && Object.keys(stored).length !== Object.keys(next).length) {
-        repaired = true;
+    if (storedIsObject) {
+        for (const [key, value] of Object.entries(stored)) {
+            if (key in next) continue;
+            if (typeof value === 'boolean') next[key] = value;
+            else repaired = true;
+        }
     }
 
-    let changed = repaired;
-    if (repaired) task.deleteWhenCompleteSettings = next;
-
-    const expected = next[mode] ?? defaults[mode];
-    if (task.deleteWhenComplete !== expected) {
-        task.deleteWhenComplete = expected;
-        changed = true;
-    }
-
-    return { repaired, changed };
+    if (repaired) task.autoClear = next;
+    return { repaired, changed: repaired };
 }
 
 /**
- * The `deleteWhenComplete` value actually in effect for a task.
+ * Does a task clear itself in the given mode, given its `autoClear` map? The
+ * map's entry for the mode is the answer; the hard defaults are the fallback.
  *
- * DERIVED, with a priority order that matters: the per-mode map is canonical,
- * the flat field is a legacy/transitional mirror of it, and the hard defaults
- * are last resort. Reading the flat field first would give a stale answer right
- * after a mode switch, before syncTaskDeleteWhenComplete has re-derived it.
+ * Read the ONE key that matters, not the whole map: `{ cycle: true }` is a
+ * usable answer in cycle mode even though `todo` is missing, and discarding it
+ * loses a real user choice. syncTaskAutoClear repairs per key for the same
+ * reason.
  *
  * @param {Object} args
- * @param {Object|undefined} args.settings - task.deleteWhenCompleteSettings
- * @param {boolean|undefined} args.legacy - task.deleteWhenComplete
- * @param {'todo'|'cycle'} args.mode - see getDeleteSettingsMode
+ * @param {Object|undefined} args.settings - task.autoClear
+ * @param {'todo'|'cycle'} args.mode - see getAutoClearMode
  * @param {Object} args.defaults - DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS
  * @returns {boolean}
  */
-export function resolveDeleteWhenComplete({ settings, legacy, mode, defaults }) {
-    // Read the ONE key that matters, not the whole map. An earlier version
-    // (inherited verbatim from taskDOM when this was extracted) validated the
-    // map wholesale and substituted `defaults` when any key was bad — which
-    // made the legacy branch below unreachable, since a default always supplies
-    // a boolean for the mode. A task with no settings and `deleteWhenComplete:
-    // true` therefore resolved to the mode DEFAULT, silently ignoring the only
-    // signal it had.
-    //
-    // Per-key is also what syncTaskDeleteWhenComplete does two functions down,
-    // and for the same reason: `{ cycle: true }` is a usable answer in cycle
-    // mode even though `todo` is missing, and discarding it loses a real user
-    // choice.
+export function resolveAutoClear({ settings, mode, defaults }) {
     if (settings && typeof settings === 'object' && typeof settings[mode] === 'boolean') {
         return settings[mode];
     }
-    if (typeof legacy === 'boolean') return legacy;
     return defaults[mode];
 }
 
@@ -152,7 +132,7 @@ export function resolveDeleteWhenComplete({ settings, legacy, mode, defaults }) 
  * Which reset indicator a task shows, if any.
  *
  * The two are mutually exclusive by construction, and the rule is NOT simply
- * "show what deleteWhenComplete says" — it differs per mode, and recurring
+ * "show what autoClear says" — it differs per mode, and recurring
  * tasks are special-cased in both directions:
  *
  *   To-Do   the default is to delete, so only the OPT-OUT is worth marking
@@ -168,16 +148,16 @@ export function resolveDeleteWhenComplete({ settings, legacy, mode, defaults }) 
  * fault line in REVIEW_PATTERNS.md §4 that this module already exists to close.
  *
  * @param {Object} args
- * @param {boolean} args.deleteWhenComplete - see resolveDeleteWhenComplete
+ * @param {boolean} args.autoClear - see getAutoClear
  * @param {boolean} args.isRecurring
  * @param {'todo'|'cycle'} args.mode
  * @returns {'clear'|'keep'|null}
  */
-export function getTaskResetIndicator({ deleteWhenComplete, isRecurring, mode }) {
+export function getTaskResetIndicator({ autoClear, isRecurring, mode }) {
     if (mode === 'todo') {
-        return deleteWhenComplete ? null : 'keep';
+        return autoClear ? null : 'keep';
     }
-    if (deleteWhenComplete) return isRecurring ? null : 'clear';
+    if (autoClear) return isRecurring ? null : 'clear';
     return isRecurring ? 'keep' : null;
 }
 
@@ -192,7 +172,7 @@ export function getTaskResetIndicator({ deleteWhenComplete, isRecurring, mode })
  * them at a control that is not on screen. Auto resets on its own, so its hint
  * describes rather than instructs.
  *
- * @param {Object|null|undefined} cycle - A cycle from state.data.cycles
+ * @param {Object|null|undefined} cycle - A routine from state.data.routine
  * @returns {string} A `focusTask.*` label key
  */
 export function getAllDoneHintKey(cycle) {
@@ -204,39 +184,37 @@ export function getAllDoneHintKey(cycle) {
 }
 
 // ============================================================================
-// NAMING HELPERS — routine and autoClear
+// ROUTINE AND AUTOCLEAR ACCESSORS
 // ============================================================================
-// These exist so NEW code can say "routine" and "autoClear" without renaming the
-// stored schema. They read and write the OLD stored keys, and deliberately add no
-// new ones: an alias placed on the data itself does not survive the app's own
-// plumbing — measured Sep 2026, a hidden getter vanishes under structuredClone
-// (AppState.update, undo snapshots), a visible one makes JSON store every routine
-// twice (two diverging copies after reload), and a Proxy makes structuredClone
-// throw. Existing code that uses the stored names keeps working unchanged.
+// Every reader of the stored routine map, the active routine id and a task's
+// autoClear map goes through here — that is what let Schema 2.6 rename the keys
+// in one file. Keep it that way: do NOT alias on the data itself (measured Sep
+// 2026: a hidden getter vanishes under structuredClone, a visible one makes JSON
+// store every routine twice, a Proxy makes structuredClone throw).
 
 /**
- * All routines, keyed by routine id (stored as `state.data.cycles`).
- * @param {Object|null|undefined} state - Schema 2.5 state (AppState.get())
+ * All routines, keyed by routine id (stored as `state.data.routine`).
+ * @param {Object|null|undefined} state - Schema 2.6 state (AppState.get())
  * @returns {Object|null} The routines map, or null when there is no data
  */
 export function getRoutines(state) {
-    const routines = state?.data?.cycles;
+    const routines = state?.data?.routine;
     return routines && typeof routines === 'object' ? routines : null;
 }
 
 /**
- * Id of the routine currently open (stored as `state.appState.activeCycleId`).
- * @param {Object|null|undefined} state - Schema 2.5 state
+ * Id of the routine currently open (stored as `state.appState.activeRoutineId`).
+ * @param {Object|null|undefined} state - Schema 2.6 state
  * @returns {string|null}
  */
 export function getActiveRoutineId(state) {
-    return state?.appState?.activeCycleId ?? null;
+    return state?.appState?.activeRoutineId ?? null;
 }
 
 /**
  * One routine by id. Uses an own-property check because the routines map is a
  * plain object: a truthiness lookup would "find" `constructor` or `toString`.
- * @param {Object|null|undefined} state - Schema 2.5 state
+ * @param {Object|null|undefined} state - Schema 2.6 state
  * @param {string|null|undefined} routineId
  * @returns {Object|null} The routine object itself (not a copy), or null
  */
@@ -250,7 +228,7 @@ export function getRoutine(state, routineId) {
 /**
  * The routine currently open. Returns the object itself, so inside an
  * AppState.update() producer, changes made to it land in state.
- * @param {Object|null|undefined} state - Schema 2.5 state
+ * @param {Object|null|undefined} state - Schema 2.6 state
  * @returns {Object|null}
  */
 export function getActiveRoutine(state) {
@@ -258,25 +236,25 @@ export function getActiveRoutine(state) {
 }
 
 /**
- * Open a different routine by writing `state.appState.activeCycleId`. Mutates
+ * Open a different routine by writing `state.appState.activeRoutineId`. Mutates
  * `state` — call it inside an AppState.update() producer. This only changes which
  * routine is active; switching routines in the UI still goes through the routine
  * switcher, which also re-renders and records undo/history.
- * @param {Object} state - Schema 2.5 state draft
+ * @param {Object} state - Schema 2.6 state draft
  * @param {string} routineId
  * @returns {void}
  */
 export function setActiveRoutineId(state, routineId) {
     if (!state || typeof state !== 'object') return;
     if (!state.appState || typeof state.appState !== 'object') state.appState = {};
-    state.appState.activeCycleId = routineId;
+    state.appState.activeRoutineId = routineId;
 }
 
 /**
  * Does the routine have any tasks at all? Reads state, never the rendered lists:
  * the completed dropdown moves finished rows out of `#taskList`, so an element
  * count says "no tasks" for a routine whose every task is simply done.
- * @param {Object|null|undefined} routine - A routine from state.data.cycles
+ * @param {Object|null|undefined} routine - A routine from state.data.routine
  * @returns {boolean}
  */
 export function routineHasTasks(routine) {
@@ -287,31 +265,12 @@ export function routineHasTasks(routine) {
  * Is every task in the routine complete? False for a routine with no tasks — an
  * empty routine is not a finished one. The one answer to "is this routine done?",
  * shared by cycle completion and the Complete button so they can never disagree.
- * @param {Object|null|undefined} routine - A routine from state.data.cycles
+ * @param {Object|null|undefined} routine - A routine from state.data.routine
  * @returns {boolean}
  */
 export function areAllTasksComplete(routine) {
     return routineHasTasks(routine) && routine.tasks.every(task => task?.completed === true);
 }
-
-/**
- * autoClear name for {@link getDeleteSettingsMode}: which settings key applies
- * to a routine — 'todo' (Marked for Clearing) or 'cycle' (Clear on Reset).
- * @type {typeof getDeleteSettingsMode}
- */
-export const getAutoClearMode = getDeleteSettingsMode;
-
-/**
- * autoClear name for {@link syncTaskDeleteWhenComplete}.
- * @type {typeof syncTaskDeleteWhenComplete}
- */
-export const syncTaskAutoClear = syncTaskDeleteWhenComplete;
-
-/**
- * autoClear name for {@link resolveDeleteWhenComplete}.
- * @type {typeof resolveDeleteWhenComplete}
- */
-export const resolveAutoClear = resolveDeleteWhenComplete;
 
 /**
  * Does this task clear itself in its routine's current mode? That is "Clear on
@@ -322,7 +281,7 @@ export const resolveAutoClear = resolveDeleteWhenComplete;
  * @returns {boolean}
  */
 export function getAutoClear(task, routine, defaults) {
-    return getAutoClearForMode(task, getDeleteSettingsMode(routine), defaults);
+    return getAutoClearForMode(task, getAutoClearMode(routine), defaults);
 }
 
 /**
@@ -335,23 +294,18 @@ export function getAutoClear(task, routine, defaults) {
  * @returns {boolean}
  */
 export function getAutoClearForMode(task, mode, defaults) {
-    return resolveDeleteWhenComplete({
-        settings: task?.deleteWhenCompleteSettings,
-        legacy: task?.deleteWhenComplete,
-        mode,
-        defaults
-    });
+    return resolveAutoClear({ settings: task?.autoClear, mode, defaults });
 }
 
 /**
- * The task's per-mode auto-clear map as stored — `{ cycle, todo }` — or
+ * The task's per-mode auto-clear map as stored — `{ cycle, todo, ... }` — or
  * undefined when the task has none. Not validated: use {@link isAutoClearSettings}
  * before trusting a key, or {@link getAutoClear} to read one mode safely.
  * @param {Object|null|undefined} task
  * @returns {Object|undefined}
  */
 export function getAutoClearSettings(task) {
-    return task?.deleteWhenCompleteSettings ?? undefined;
+    return task?.autoClear ?? undefined;
 }
 
 /**
@@ -366,62 +320,57 @@ export function isAutoClearSettings(settings, defaults) {
 }
 
 /**
- * Replace a task's whole per-mode map and re-derive its active value for the
- * routine's current mode. Keys `defaults` does not name are dropped and missing
- * ones filled from `defaults` (the same per-key repair the loader does). Mutates
- * `task` — call it inside an AppState.update() producer.
+ * Replace a task's whole per-mode map. Missing known keys are filled from
+ * `defaults` and non-boolean junk dropped (the same per-key repair the loader
+ * does); extra boolean modes are kept. Mutates `task` — call it inside an
+ * AppState.update() producer.
  * @param {Object} task - Task draft to mutate
  * @param {Object|null|undefined} settings - The new map; null/undefined means "all defaults"
- * @param {Object|null|undefined} routine - The task's routine (sets the mode)
+ * @param {Object|null|undefined} routine - The task's routine (names the mode in the return value)
  * @param {Object} defaults - DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS or DEFAULT_RECURRING_DELETE_SETTINGS
- * @returns {'todo'|'cycle'|null} The mode key the active value was derived for, or null when nothing was written
+ * @returns {'todo'|'cycle'|null} The routine's mode key, or null when nothing was written
  */
 export function setAutoClearSettings(task, settings, routine, defaults) {
     if (!task || !defaults) return null;
-    const mode = getDeleteSettingsMode(routine);
-    task.deleteWhenCompleteSettings = settings && typeof settings === 'object' ? { ...settings } : { ...defaults };
-    syncTaskDeleteWhenComplete(task, mode, defaults);
+    const mode = getAutoClearMode(routine);
+    task.autoClear = settings && typeof settings === 'object' ? { ...settings } : { ...defaults };
+    syncTaskAutoClear(task, mode, defaults);
     return mode;
 }
 
 /**
- * The stored auto-clear fields for a task or template built from scratch — spread
+ * The stored auto-clear field for a task or template built from scratch — spread
  * the result into the object literal. This is the ONE place a literal's stored
- * names are spelled, so Schema 2.6 changes what it returns and nothing else.
+ * name is spelled.
  *
- * Until the collapse, the active value is written beside the map (its "mirror").
- * When `value` is a boolean it is written as given — that is how a recreated
- * recurring instance is forced to clear regardless of its template's map;
- * otherwise it is derived from `settings[mode]` (falling back to `defaults`) when
- * a mode is known, and left undefined when not (templates carry no mode).
+ * The map is a copy of `settings` (or of `defaults` when there is none). When
+ * `value` is a boolean AND a mode is known, that mode's entry is set to it —
+ * how a recreated recurring instance is forced to clear in the routine's current
+ * mode whatever its template says. With no mode (templates carry none) `value`
+ * has nothing to apply to and is ignored.
  *
  * @param {Object} args
  * @param {Object|null|undefined} args.settings - per-mode map; null/undefined means a copy of `defaults`
  * @param {Object} args.defaults - DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS or DEFAULT_RECURRING_DELETE_SETTINGS
  * @param {'todo'|'cycle'} [args.mode] - see getAutoClearMode
- * @param {boolean} [args.value] - explicit active value
- * @returns {{deleteWhenComplete: (boolean|undefined), deleteWhenCompleteSettings: Object}}
+ * @param {boolean} [args.value] - explicit value for `mode`
+ * @returns {{autoClear: Object}}
  */
 export function autoClearFields({ settings, defaults, mode, value } = {}) {
-    const map = settings && typeof settings === 'object' ? settings : { ...defaults };
-    let active;
-    if (typeof value === 'boolean') {
-        active = value;
-    } else if (mode) {
-        active = resolveDeleteWhenComplete({ settings: map, legacy: undefined, mode, defaults });
-    }
-    return { deleteWhenComplete: active, deleteWhenCompleteSettings: map };
+    const map = settings && typeof settings === 'object' ? { ...settings } : { ...defaults };
+    if (typeof value === 'boolean' && mode) map[mode] = value;
+    return { autoClear: map };
 }
 
 /**
  * Turn Clear on Reset / Marked for Clearing on or off for the routine's current
- * mode — the same write the task's toggle button makes (taskButtons.js): the
- * per-mode setting AND its flat mirror. The other mode's setting is kept. Mutates
- * `task` — call it inside an AppState.update() producer.
+ * mode — the same write the task's toggle button makes (taskButtons.js). The
+ * other mode's setting is kept. Mutates `task` — call it inside an
+ * AppState.update() producer.
  *
- * The settings map is repaired per key first (syncTaskDeleteWhenComplete), then
- * replaced with a fresh object rather than edited in place, so a task that holds
- * the frozen defaults object by reference can never make this throw.
+ * The map is repaired per key first (syncTaskAutoClear), then replaced with a
+ * fresh object rather than edited in place, so a task that holds the frozen
+ * defaults object by reference can never make this throw.
  *
  * @param {Object} task - Task draft to mutate
  * @param {Object|null|undefined} routine - The task's routine (sets the mode)
@@ -431,11 +380,10 @@ export function autoClearFields({ settings, defaults, mode, value } = {}) {
  */
 export function setAutoClear(task, routine, value, defaults) {
     if (!task || !defaults) return null;
-    const mode = getDeleteSettingsMode(routine);
+    const mode = getAutoClearMode(routine);
     const next = value === true;
 
-    syncTaskDeleteWhenComplete(task, mode, defaults);
-    task.deleteWhenCompleteSettings = { ...task.deleteWhenCompleteSettings, [mode]: next };
-    task.deleteWhenComplete = next;
+    syncTaskAutoClear(task, mode, defaults);
+    task.autoClear = { ...task.autoClear, [mode]: next };
     return mode;
 }

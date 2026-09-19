@@ -736,8 +736,8 @@ export class VocabThemeManager {
 
     // ── Priority levels ──────────────────────────────────────────────────
     // Task priority is a LEVEL (high / medium / low) shown as the ACTIVE
-    // routine's theme swatch; the stored 2.5 hex is only how the level is found
-    // (utils/priorityLevel.js). This manager is the one place that knows which
+    // routine's theme swatch (utils/priorityLevel.js). This manager is the one
+    // place that knows which
     // theme is active, so the renderers, the toggle, search and the picker ask
     // here instead of reading a theme id off the DOM.
 
@@ -755,7 +755,7 @@ export class VocabThemeManager {
      * @returns {'high'|'medium'|'low'|null} null when the task is not flagged
      */
     getTaskPriorityLevel(task) {
-        return getPriorityLevel(task, PRIORITY_SWATCH_SETS);
+        return getPriorityLevel(task);
     }
 
     /**
@@ -764,18 +764,18 @@ export class VocabThemeManager {
      * @returns {string|null} null when the task is not flagged
      */
     getTaskPriorityColor(task) {
-        return getPriorityColor(task, this.getPrioritySwatches(), PRIORITY_SWATCH_SETS);
+        return getPriorityColor(task, this.getPrioritySwatches());
     }
 
     /**
-     * Write a level into a task's stored 2.5 fields as the active theme's swatch.
-     * Mutates `task` — call it inside an AppState.update() producer.
+     * Write a task's priority level. Mutates `task` — call it inside an
+     * AppState.update() producer.
      * @param {Object} task
      * @param {'high'|'medium'|'low'|null} level - null turns priority off
      * @returns {boolean} false (and no write) for an unknown level
      */
     setTaskPriorityLevel(task, level) {
-        return setPriorityLevel(task, level, this.getPrioritySwatches());
+        return setPriorityLevel(task, level);
     }
 
     /**
@@ -785,7 +785,7 @@ export class VocabThemeManager {
      * @returns {number}
      */
     compareTaskPriority(a, b) {
-        return comparePriority(a, b, PRIORITY_SWATCH_SETS);
+        return comparePriority(a, b);
     }
 
     /**
@@ -795,7 +795,7 @@ export class VocabThemeManager {
      * @returns {'high'|'medium'|'low'|null}
      */
     getLastPriorityLevel(task) {
-        return getLastPriorityLevel(task, PRIORITY_SWATCH_SETS);
+        return getLastPriorityLevel(task);
     }
 
     /**
@@ -822,18 +822,18 @@ export class VocabThemeManager {
      * @returns {'high'|'medium'|'low'}
      */
     getDefaultPriorityLevel(settings) {
-        return getDefaultPriorityLevel(settings, PRIORITY_SWATCH_SETS);
+        return getDefaultPriorityLevel(settings);
     }
 
     /**
-     * Remember a level as the default for the next flagged task, as the active
-     * theme's swatch. Mutates `settings` — call inside an AppState.update() producer.
+     * Remember a level as the default for the next flagged task. Mutates
+     * `settings` — call inside an AppState.update() producer.
      * @param {Object} settings - state.settings draft
      * @param {'high'|'medium'|'low'} level
      * @returns {boolean}
      */
     setDefaultPriorityLevel(settings, level) {
-        return setDefaultPriorityLevel(settings, level, this.getPrioritySwatches());
+        return setDefaultPriorityLevel(settings, level);
     }
 
     /**
