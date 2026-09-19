@@ -45,7 +45,6 @@ const di = createDIModule('TaskDOMManager', {
     appInit: optional(null),
     AppState: optional(null),
     taskCore: optional(null),
-    loadMiniCycleData: optional(null),
     autoSave: optional(null),
     showNotification: optional(null),
     sanitizeInput: optional(null),
@@ -60,7 +59,7 @@ const di = createDIModule('TaskDOMManager', {
 });
 
 // Late-binding deps via Proxy
-/** @type {{appInit: Object|null, AppState: Object|null, taskCore: Object|null, loadMiniCycleData: Function|null, autoSave: Function|null, showNotification: Function|null, sanitizeInput: Function|null, escapeHtml: Function|null, generateId: Function|null, syncTaskDeleteWhenCompleteDOM: Function|null, saveTaskToSchema25: Function|null, AppMeta: Object|null}} */
+/** @type {{appInit: Object|null, AppState: Object|null, taskCore: Object|null, autoSave: Function|null, showNotification: Function|null, sanitizeInput: Function|null, escapeHtml: Function|null, generateId: Function|null, syncTaskDeleteWhenCompleteDOM: Function|null, saveTaskToSchema25: Function|null, AppMeta: Object|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];
@@ -132,7 +131,6 @@ export class TaskDOMManager {
             // IMPORTANT - warn if missing but don't fail
             // ============================================
             GlobalUtils: resolvedDeps.GlobalUtils || this._warnMissing('GlobalUtils'),
-            loadMiniCycleData: resolvedDeps.loadMiniCycleData || this._warnMissingWithFallback('loadMiniCycleData', this.fallbackLoadData),
             saveTaskToSchema25: resolvedDeps.saveTaskToSchema25 || this.fallbackSave,
             generateId: resolvedDeps.generateId || this._warnMissingWithFallback('generateId', this.fallbackGenerateId),
 
@@ -309,7 +307,6 @@ export class TaskDOMManager {
                 const instanceDeps = this.deps;
                 setTaskUtilsDependencies({
                     get AppState() { return instanceDeps.AppState; },
-                    get loadMiniCycleData() { return instanceDeps.loadMiniCycleData; },
                     get generateId() { return instanceDeps.generateId; },
                     get enableDragAndDropOnTask() { return instanceDeps.enableDragAndDropOnTask; },
                     get updateMoveArrowsVisibility() { return instanceDeps.updateMoveArrowsVisibility; },
@@ -503,11 +500,6 @@ export class TaskDOMManager {
     // ============================================
     // Fallback Methods (graceful degradation)
     // ============================================
-
-    fallbackLoadData() {
-        console.warn('⚠️ loadMiniCycleData not available - using empty data');
-        return { data: { routine: {} }, appState: { activeRoutineId: null }, settings: {} };
-    }
 
     fallbackSave() {
         console.warn('⚠️ saveTaskToSchema25 not available - changes not saved');
@@ -1422,20 +1414,13 @@ function buildTaskContext(taskItem, taskId) {
 
 function loadTaskContext(taskTextTrimmed, taskId, taskOptions, isLoading = false) {
     // Use module deps for DI-pure pattern
-    const loadMiniCycleData = _deps.loadMiniCycleData;
+    const AppState = _deps.AppState;
     const generateId = _deps.generateId;
     if (!TaskUtils) {
         console.warn('⚠️ TaskUtils not initialized yet');
         return null;
     }
-    return TaskUtils.loadTaskContext(
-        taskTextTrimmed,
-        taskId,
-        taskOptions,
-        isLoading,
-        loadMiniCycleData,
-        generateId
-    );
+    return TaskUtils.loadTaskContext(taskTextTrimmed, taskId, taskOptions, isLoading, AppState, generateId);
 }
 
 function scrollToNewTask(taskList) {

@@ -36,9 +36,9 @@
  */
 
 import { createDIModule, optional } from './diBase.js';
-import { DOM_IDS, DOM_CLASSES, STORAGE_KEYS, Z_INDEX, UI_TIMEOUTS } from './constants.js';
+import { DOM_IDS, DOM_CLASSES, STORAGE_KEYS, Z_INDEX, UI_TIMEOUTS, DEFAULT_REMINDERS } from './constants.js';
 import { getLabel } from '../labels/labelResolver.js';
-import { getRoutine, setActiveRoutineId } from '../utils/cycleMode.js';
+import { getRoutine, getRoutines, getActiveRoutineId, setActiveRoutineId } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -46,7 +46,6 @@ import { getRoutine, setActiveRoutineId } from '../utils/cycleMode.js';
 
 const di = createDIModule('AppInit', {
 	// For initialSetup
-	loadMiniCycleData: optional(null),
 	createInitialSchema25Data: optional(null),
 	showCycleCreationModal: optional(null),
 	getOnboardingManager: optional(null),
@@ -71,7 +70,7 @@ const di = createDIModule('AppInit', {
 const getDeps = () => di.resolve();
 
 // Legacy _deps reference for compatibility (uses getter for late binding)
-/** @type {{loadMiniCycleData: Function|null, createInitialSchema25Data: Function|null, showCycleCreationModal: Function|null, getOnboardingManager: Function|null, getMiniCycleState: Function|null, showNotification: Function|null, loadMiniCycle: Function|null, updateReminderButtons: Function|null, updateDueDateVisibility: Function|null, checkOverdueTasks: Function|null, organizeCompletedTasks: Function|null, startReminders: Function|null, updateThemeColor: Function|null, getElementById: Function, addBodyClass: Function, removeBodyClass: Function}} */
+/** @type {{createInitialSchema25Data: Function|null, showCycleCreationModal: Function|null, getOnboardingManager: Function|null, getMiniCycleState: Function|null, showNotification: Function|null, loadMiniCycle: Function|null, updateReminderButtons: Function|null, updateDueDateVisibility: Function|null, checkOverdueTasks: Function|null, organizeCompletedTasks: Function|null, startReminders: Function|null, updateThemeColor: Function|null, getElementById: Function, addBodyClass: Function, removeBodyClass: Function}} */
 const _deps = new Proxy({}, {
 	get(_, prop) {
 		return getDeps()[prop];
@@ -467,6 +466,28 @@ class AppInit {
 		}
 	}
 
+	/**
+	 * The state the setup paths read, in the flat shape they consume
+	 * (`{ cycles, activeCycle, reminders, settings }`), or null while AppState is
+	 * not ready. Reads AppState ONLY. The legacy loadMiniCycleData wrapper that fed
+	 * this fell back to a direct localStorage parse, which could hand back a document
+	 * AppState had refused (a newer build's, or one that failed validation) with
+	 * AppState empty - a half-dead UI (STATE_TRUTH_MIGRATION #25).
+	 * @returns {{cycles: Object, activeCycle: string|null, reminders: Object, settings: Object}|null}
+	 */
+	_readSchemaData() {
+		const AppState = _deps.getMiniCycleState?.();
+		if (!AppState?.isReady?.()) return null;
+		const state = AppState.get();
+		if (!state) return null;
+		return {
+			cycles: getRoutines(state) || {},
+			activeCycle: getActiveRoutineId(state),
+			reminders: state.customReminders || DEFAULT_REMINDERS,
+			settings: state.settings || {}
+		};
+	}
+
 	async runInitialSetup() {
 
 		// Wait for core systems (AppState, etc.) to be ready before loading data
@@ -476,13 +497,23 @@ class AppInit {
 		}
 
 		const miniCycleState = _deps.getMiniCycleState?.();
-		let schemaData = miniCycleState?.load?.() || _deps.loadMiniCycleData?.();
+		let schemaData = this._readSchemaData();
 
 		if (!schemaData) {
+			// Storage written by a NEWER build: AppState refused to adopt it (and will
+			// refuse to write over it). Checked FIRST: the corruption modal below offers
+			// a fresh start that would delete it. Show the one honest option: reload
+			// into a newer build.
+			const newerBlock = miniCycleState?.isBlockedByNewerData?.();
+			if (newerBlock) {
+				this.showNewerDataNotice(newerBlock.version);
+				return;
+			}
+
 			// Check if this is corrupted data vs truly empty
 			const rawData = localStorage.getItem(STORAGE_KEYS.DATA);
 			if (rawData) {
-				// Data exists but couldn't be parsed - CORRUPTED
+				// Data exists but AppState could not adopt it - CORRUPTED
 				console.error('🚨 DATA CORRUPTION DETECTED: localStorage has data but it cannot be parsed');
 				console.error('🚨 Raw data length:', rawData.length, 'chars');
 
@@ -499,21 +530,10 @@ class AppInit {
 				miniCycleState.reload();
 			}
 
-			schemaData = miniCycleState?.load?.() || _deps.loadMiniCycleData?.();
+			schemaData = this._readSchemaData();
 		}
 
 		// Final check - if still no data, something is very wrong
-		// Storage written by a NEWER build: AppState refused to adopt it (and will
-		// refuse to write over it). Do not fall through — loadMiniCycleData reads
-		// storage directly and would hand back that data with AppState empty, a
-		// half-dead UI; and the corruption modal below offers a fresh start that
-		// would delete it. Show the one honest option: reload into a newer build.
-		const newerBlock = _deps.getMiniCycleState?.()?.isBlockedByNewerData?.();
-		if (newerBlock) {
-			this.showNewerDataNotice(newerBlock.version);
-			return;
-		}
-
 		if (!schemaData) {
 			console.error('🚨 Failed to load or create schema data');
 			this.showDataCorruptionRecovery(localStorage.getItem(STORAGE_KEYS.DATA));
@@ -617,8 +637,8 @@ class AppInit {
 					await miniCycleState.update(state => {
 						setActiveRoutineId(state, firstCycle);
 					}, true);
-					// Reload schemaData with fixed activeCycle
-					schemaData = miniCycleState.load();
+					// Re-read with the fixed activeCycle
+					schemaData = this._readSchemaData();
 					const recoveredActiveCycle = schemaData?.activeCycle || firstCycle;
 					_deps.showNotification?.(getLabel('notify.recoveredRoutine', { vars: { name: recoveredActiveCycle } }), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
 					await this.runCompleteInitialSetup(recoveredActiveCycle, null, schemaData);
@@ -689,9 +709,8 @@ class AppInit {
 			}
 		}
 
-		const miniCycleState = _deps.getMiniCycleState?.();
 		if (!schemaData) {
-			schemaData = miniCycleState?.load?.() || _deps.loadMiniCycleData?.();
+			schemaData = this._readSchemaData();
 		}
 
 		const { cycles, reminders, settings } = schemaData || {};

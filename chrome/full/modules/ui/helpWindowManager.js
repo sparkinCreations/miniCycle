@@ -36,14 +36,13 @@ let getObjectSizeBytes, formatBytes;
 // ============================================================================
 
 const di = createDIModule('HelpWindowManager', {
-    loadMiniCycleData: optional(null),
     AppState: optional(null),
     safeAddEventListener: optional(null),
     getModal: optional(null)
 });
 
 // Late-binding deps via Proxy (standard: _deps with underscore prefix)
-/** @type {{loadMiniCycleData: Function|null, AppState: Object|null, safeAddEventListener: Function|null, getModal: Function|null}} */
+/** @type {{AppState: Object|null, safeAddEventListener: Function|null, getModal: Function|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];
@@ -545,28 +544,12 @@ export class HelpWindowManager {
         let isToDoMode = false;
         let routineSize = '';
 
-        // Prefer AppState if available, fall back to loadMiniCycleData
+        // Read from state only; before state is ready the figures stay at their zero values
         if (_deps.AppState?.isReady?.()) {
             const state = _deps.AppState.get();
             if (state) {
                 const activeCycle = getActiveRoutineId(state);
                 const currentCycle = getRoutine(state, activeCycle);
-                cycleCount = currentCycle?.cycleCount || 0;
-                clearedTasksCount = currentCycle?.clearedTasks?.totalCleared || 0;
-                isToDoMode = currentCycle?.deleteCheckedTasks === true;
-                // Routine size = routine data only (~ indicates estimate).
-                // Undo cache deliberately excluded — it's a separate transient
-                // store, and including it made this figure disagree with the
-                // manual's 1–5 KB claim (drift-review C-09).
-                if (currentCycle) {
-                    routineSize = `~${formatBytes(getObjectSizeBytes(currentCycle))}`;
-                }
-            }
-        } else if (typeof _deps.loadMiniCycleData === 'function') {
-            const schemaData = _deps.loadMiniCycleData();
-            if (schemaData) {
-                const { cycles, activeCycle } = schemaData;
-                const currentCycle = cycles[activeCycle];
                 cycleCount = currentCycle?.cycleCount || 0;
                 clearedTasksCount = currentCycle?.clearedTasks?.totalCleared || 0;
                 isToDoMode = currentCycle?.deleteCheckedTasks === true;

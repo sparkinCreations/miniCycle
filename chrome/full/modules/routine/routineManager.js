@@ -41,7 +41,6 @@ let _sampleManifestCache = null;
 const di = createDIModule('RoutineManager', {
     helpWindowManager: optional(null),
     AppState: optional(null),
-    loadMiniCycleData: optional(null),
     showPromptModal: optional(null),
     showNotification: optional(null),
     sanitizeInput: optional(null),
@@ -62,7 +61,7 @@ const di = createDIModule('RoutineManager', {
 });
 
 // Late-binding deps via Proxy
-/** @type {{AppState: Object|null, loadMiniCycleData: Function|null, showPromptModal: Function|null, showNotification: Function|null, sanitizeInput: Function|null, completeInitialSetup: Function|null, hideMainMenu: Function|null, updateMainMenuHeader: Function|null, updateProgressBar: Function|null, checkCompleteAllButton: Function|null, autoSave: Function|null, onCycleCreated: Function|null, DEFAULT_TASK_OPTION_BUTTONS: Object|null, AppMeta: Object|null}} */
+/** @type {{AppState: Object|null, showPromptModal: Function|null, showNotification: Function|null, sanitizeInput: Function|null, completeInitialSetup: Function|null, hideMainMenu: Function|null, updateMainMenuHeader: Function|null, updateProgressBar: Function|null, checkCompleteAllButton: Function|null, autoSave: Function|null, onCycleCreated: Function|null, DEFAULT_TASK_OPTION_BUTTONS: Object|null, AppMeta: Object|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];
@@ -88,7 +87,6 @@ export class RoutineManager {
         this.deps = {
             // State management (required)
             AppState: resolvedDeps.AppState,
-            loadMiniCycleData: resolvedDeps.loadMiniCycleData,
 
             // UI functions (required)
             showPromptModal: resolvedDeps.showPromptModal,
@@ -149,7 +147,6 @@ export class RoutineManager {
     _validateDependencies() {
         const required = [
             'AppState',
-            'loadMiniCycleData',
             'showPromptModal',
             'sanitizeInput',
             'completeInitialSetup',

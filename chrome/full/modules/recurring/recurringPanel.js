@@ -70,7 +70,6 @@ const di = createDIModule('RecurringPanel', {
 
     // Optional — genuinely nullable, code checks before use
     appInit: optional(null),
-    loadData: optional(null),
     escapeHtml: optional(null),
     syncRecurringStateToDOM: optional(null),
     refreshTaskButtonsForModeChange: optional(null),

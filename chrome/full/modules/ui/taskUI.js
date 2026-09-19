@@ -31,7 +31,6 @@ const di = createDIModule('TaskUI', {
     AppState: required(),
 
     // For refreshTaskListUI
-    loadMiniCycleData: optional(null),
     addTask: optional(null),
     getElementById: optional(null),
 
@@ -46,7 +45,7 @@ const di = createDIModule('TaskUI', {
 });
 
 // Late-binding deps via Proxy
-/** @type {{AppState: Object, loadMiniCycleData: Function|null, addTask: Function|null, getElementById: Function|null, isTouchDevice: Function|null, taskToAddTaskOptions: Function|null}} */
+/** @type {{AppState: Object, addTask: Function|null, getElementById: Function|null, isTouchDevice: Function|null, taskToAddTaskOptions: Function|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];
@@ -173,25 +172,18 @@ export class TaskOptionsVisibilityController {
 }
 
 /**
- * Refreshes the task list UI from Schema 2.5 state.
- * Clears and re-renders all tasks from the current cycle.
+ * Refreshes the task list UI from state.
+ * Clears and re-renders all tasks from the active routine.
  */
 export async function refreshTaskListUI() {
 
-    const loadMiniCycleData = _deps.loadMiniCycleData;
-    if (typeof loadMiniCycleData !== 'function') {
-        console.error('refreshTaskListUI: loadMiniCycleData dependency not set');
-        return;
-    }
-
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
+    const AppState = _deps.AppState;
+    if (!AppState.isReady()) {
         console.error('State data required for refreshTaskListUI');
         throw new Error('State data not found');
     }
 
-    const { cycles, activeCycle } = schemaData;
-    const cycleData = cycles[activeCycle];
+    const cycleData = getActiveRoutine(AppState.get());
 
     if (!cycleData) {
         console.warn("No active cycle found for UI refresh");
@@ -204,7 +196,7 @@ export async function refreshTaskListUI() {
     if (!taskListContainer) return;
     taskListContainer.innerHTML = "";
 
-    // Re-render each task from Schema 2.5 (await each to ensure proper settings are loaded)
+    // Re-render each task from state (await each to ensure proper settings are loaded)
     const addTask = _deps.addTask;
     if (typeof addTask !== 'function') {
         console.error('refreshTaskListUI: addTask dependency not set');

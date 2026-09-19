@@ -73,7 +73,6 @@ const di = createDIModule('TaskCycleReset', {
     // (no-ops when disabled/exhausted), so unconditional calls are safe.
     startReminders: optional(null),
     AppGlobalState: optional(null),  // batch-operation flag for undo snapshot guard
-    loadMiniCycleData: optional(null),
     autoSave: optional(null),
     isPerformingUndoRedo: optional(null),
     showNotification: optional(null),
@@ -106,7 +105,7 @@ const di = createDIModule('TaskCycleReset', {
 });
 
 // Late-binding deps via Proxy
-/** @type {{appInit: Object|null, AppState: Object|null, loadMiniCycleData: Function|null, autoSave: Function|null, isPerformingUndoRedo: Function|null, showNotification: Function|null, showConfirmationModal: Function|null, captureStateSnapshot: Function|null, updateUndoRedoButtons: Function|null, updateCompletedTasksCount: Function|null, incrementCycleCount: Function|null, animateProgressBarFill: Function|null, animateProgressBarEmpty: Function|null, showCompletionAnimation: Function|null, helpWindowManager: Object|null, pluginManager: Object|null, recurringCore: Object|null, removeRecurringTasksFromCycle: Function|null, checkMiniCycle: Function|null, querySelector: Function|null, querySelectorAll: Function|null, requestUIUpdate: Function|null}} */
+/** @type {{appInit: Object|null, AppState: Object|null, autoSave: Function|null, isPerformingUndoRedo: Function|null, showNotification: Function|null, showConfirmationModal: Function|null, captureStateSnapshot: Function|null, updateUndoRedoButtons: Function|null, updateCompletedTasksCount: Function|null, incrementCycleCount: Function|null, animateProgressBarFill: Function|null, animateProgressBarEmpty: Function|null, showCompletionAnimation: Function|null, helpWindowManager: Object|null, pluginManager: Object|null, recurringCore: Object|null, removeRecurringTasksFromCycle: Function|null, checkMiniCycle: Function|null, querySelector: Function|null, querySelectorAll: Function|null, requestUIUpdate: Function|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];
@@ -638,7 +637,6 @@ export async function resetTasksImpl(deps = {}) {
         // Merge deps with module-level deps
         const mergedDeps = {
             AppState: deps.AppState || _deps.AppState,
-            loadMiniCycleData: deps.loadMiniCycleData || _deps.loadMiniCycleData,
             querySelector: deps.querySelector || _deps.querySelector || ((sel) => document.querySelector(sel)),
             captureStateSnapshot: deps.captureStateSnapshot || _deps.captureStateSnapshot,
             isPerformingUndoRedo: deps.isPerformingUndoRedo || _deps.isPerformingUndoRedo || (() => false),
@@ -1112,7 +1110,6 @@ export async function handleCompleteAllTasksImpl(resetTasksFn, deps = {}) {
         // Merge deps with module-level deps
         const mergedDeps = {
             AppState: deps.AppState || _deps.AppState,
-            loadMiniCycleData: deps.loadMiniCycleData || _deps.loadMiniCycleData,
             querySelector: deps.querySelector || _deps.querySelector || ((sel) => document.querySelector(sel)),
             showConfirmationModal: deps.showConfirmationModal || _deps.showConfirmationModal || fallbackConfirmModal,
             checkMiniCycle: deps.checkMiniCycle || _deps.checkMiniCycle,

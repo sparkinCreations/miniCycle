@@ -1,3 +1,12 @@
+## [2.574] - 2026-09-19
+- docs(mcyc): date-stamp format 2.6 on the reference, the spec page and the product timeline
+- refactor(state): retire the loadMiniCycleData wrapper (batch 3, boot layer)
+- refactor(state): routine readers off the loadMiniCycleData wrapper (batch 2)
+- refactor(state): settings readers off the loadMiniCycleData wrapper (batch 1)
+- fix(search): no import-time self-init — the loader inits taskSearch after wiring
+- docs(schema): tick the real-data and all-green boxes for the 2.6 release
+
+
 ## [2.573] - 2026-09-19
 - feat(schema): Schema 2.6 — routines by id, priority as a level, one autoClear map
 - wip(schema-2.6): helpers' internals on the 2.6 shape; SCHEMA.CURRENT = 2.6

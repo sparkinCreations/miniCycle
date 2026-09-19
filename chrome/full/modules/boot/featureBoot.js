@@ -142,7 +142,6 @@ export async function bootEarlyDeps(deps, coreResult) {
     notificationsMod.setNotificationsDependencies({
       AppState: null, // Set later after AppState is created
       appInit: appInit,
-      loadMiniCycleData: () => deps.core.loadMiniCycleData?.(),
       generateHashId: (...args) => deps.utils.generateHashId?.(...args),
       GlobalUtils: GlobalUtils,
       escapeHtml: (...args) => deps.utils.escapeHtml?.(...args),
