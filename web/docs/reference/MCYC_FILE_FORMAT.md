@@ -1,6 +1,6 @@
 # .mcyc File Format Documentation
 
-**Last Updated:** August 2026
+**Last Updated:** September 19, 2026 — format 2.6 shipped with app v2.573 (priority as a level, one `autoClear` map; every 2.5 spelling still imports). Previous revision: August 2026.
 **Normative spec:** <https://minicycle.app/pages/mcyc-format> (source: `web/pages/mcyc-format.html`)
 
 > **This page is the long-form companion, not the specification.** The published page above
@@ -1177,11 +1177,12 @@ everywhere else in the docs, and it is *not* stamped on a `.mcyc` file.
 
 | Version | Date | Changes |
 |---------|------|---------|
-| **2.5** | Jan 2025 | Current stable version |
+| **2.6** | Sep 19, 2026 (v2.573) | Routines keyed by a generated id under `data.routine`, `task.priority` as a level, one `task.autoClear` map; a 2.5 document is migrated once at boot and a pre-migration copy is kept |
+| **2.5** | Jan 2025 | Priority flag + colour, `deleteWhenCompleteSettings` + derived mirror; superseded by 2.6 |
 | **2.0** | Oct 2024 | Added recurring tasks, settings |
 | **1.0** | 2023 | Initial schema |
 
-Older stored data is migrated forward automatically on load (`migrationManager.js`).
+A 2.5 document is migrated forward once at boot (`routine/schemaMigration26.js`, called from `AppState._migrateIfOlder`); pre-2.5 data predates the public launch and is not migrated.
 
 ### `.mcyc` file format
 
@@ -1252,18 +1253,20 @@ capability by key presence, not by a version stamp.
 
 ## Version
 
-**Document Version:** 1.4
-**Schema Version:** 2.5
+**Document Version:** 1.5
+**Schema Version:** 2.6 (format 2.6 published September 19, 2026; 2.5 schema kept immutable at `/schema/mcyc-2.5.schema.json`)
 
-**Last Updated:** July 2026
+**Last Updated:** September 19, 2026
 
 ---
 
-> **Planned change:** [SCHEMA_2_6_PLAN.md](../future-work/SCHEMA_2_6_PLAN.md) renames the
-> per-task `deleteWhenCompleteSettings` to `autoClear` and drops the derived
-> `deleteWhenComplete` mirror. That change **does** alter this format, so it adds a
-> `schema/mcyc-2.6.schema.json` and leaves the pinned 2.5 schema untouched. The
-> `cycles` → `routine` rename in that same plan does **not** affect this format.
+> **Shipped September 19, 2026 (v2.573):** [SCHEMA_2_6_PLAN.md](../future-work/SCHEMA_2_6_PLAN.md)
+> renamed the per-task `deleteWhenCompleteSettings` to `autoClear`, dropped the derived
+> `deleteWhenComplete` mirror and replaced `highPriority` + `priorityColor` with the `priority`
+> level. That change altered this format, so it added `schema/mcyc-2.6.schema.json` and left the
+> pinned 2.5 schema untouched. The exporter writes both spellings while older platform builds
+> are still in use; the importer reads both permanently. The `cycles` → `routine` rename in that
+> same plan does **not** affect this format.
 
 ---
 
