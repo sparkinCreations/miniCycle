@@ -74,19 +74,20 @@ export class EducationalTipManager {
       // Returns null -- NOT {} -- when the source is unavailable. The caller
       // caches the result forever, so an empty object here is indistinguishable
       // from "the user has dismissed nothing" and permanently poisons the cache.
-      if (typeof this.deps.loadMiniCycleData !== 'function') {
-        console.warn('⚠️ loadMiniCycleData not yet available, will retry on next read');
+      const AppState = this.deps.AppState;
+      if (!AppState?.isReady?.()) {
+        // Not an error: a tip can fire before state is ready. The caller retries
+        // on the next read.
         return null;
       }
 
-      const schemaData = this.deps.loadMiniCycleData();
-      if (!schemaData || !schemaData.settings) {
+      const settings = AppState.get()?.settings;
+      if (!settings) {
         console.error('❌ State data required for loadDismissedTips');
         return null;
       }
 
-      // ✅ DI-pure: Use schemaData directly, no localStorage access
-      return schemaData.settings.dismissedEducationalTips || {};
+      return settings.dismissedEducationalTips || {};
     } catch (e) {
       console.warn('⚠️ Error loading dismissed tips from state:', e);
       return null;

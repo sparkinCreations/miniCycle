@@ -66,12 +66,12 @@ export async function runEducationalTipsTests(resultsDiv) {
     function makeManager({ stored = {}, sourceReady = true, appStateReady = true, hasAppState = true } = {}) {
         const state = { settings: { dismissedEducationalTips: { ...stored } } };
         const updates = [];
+        // One source since STATE_TRUTH #25: reads and writes both go through AppState,
+        // so "source ready" and "AppState ready" are the same switch.
         const deps = {
-            loadMiniCycleData: sourceReady
-                ? () => ({ settings: { dismissedEducationalTips: { ...state.settings.dismissedEducationalTips } } })
-                : undefined,
             AppState: hasAppState ? {
-                isReady: () => appStateReady,
+                isReady: () => sourceReady && appStateReady,
+                get: () => ({ settings: { dismissedEducationalTips: { ...state.settings.dismissedEducationalTips } } }),
                 update: async (producer, immediate) => { producer(state); updates.push({ immediate }); }
             } : undefined
         };
@@ -84,26 +84,26 @@ export async function runEducationalTipsTests(resultsDiv) {
     // =========================================================
     resultsDiv.innerHTML += '<h4 class="test-section">📥 Loading</h4>';
 
-    await test('returns null when loadMiniCycleData is not wired yet', () => {
+    await test('returns null while AppState is not ready', () => {
         const { mgr } = makeManager({ sourceReady: false });
         const result = mgr.loadDismissedTips();
         if (result !== null) throw new Error(`Got ${JSON.stringify(result)} — {} here poisons the cache forever`);
     });
 
     await test('returns null when the schema has no settings', () => {
-        const mgr = new EducationalTipManager(() => ({ loadMiniCycleData: () => ({}) }));
+        const mgr = new EducationalTipManager(() => ({ AppState: { isReady: () => true, get: () => ({}) } }));
         if (mgr.loadDismissedTips() !== null) throw new Error('missing settings must be null, not {}');
     });
 
     await test('returns null when the data source throws', () => {
         const mgr = new EducationalTipManager(() => ({
-            loadMiniCycleData: () => { throw new Error('boom'); }
+            AppState: { isReady: () => true, get: () => { throw new Error('boom'); } }
         }));
         if (mgr.loadDismissedTips() !== null) throw new Error('a throwing source must be null, not {}');
     });
 
     await test('returns {} — not null — when the user has genuinely dismissed nothing', () => {
-        const mgr = new EducationalTipManager(() => ({ loadMiniCycleData: () => ({ settings: {} }) }));
+        const mgr = new EducationalTipManager(() => ({ AppState: { isReady: () => true, get: () => ({ settings: {} }) } }));
         const result = mgr.loadDismissedTips();
         if (result === null) throw new Error('an empty-but-available source must be distinguishable from unavailable');
         if (Object.keys(result).length !== 0) throw new Error('expected an empty map');
@@ -117,9 +117,9 @@ export async function runEducationalTipsTests(resultsDiv) {
     await test('an unavailable source is retried on the next read, not cached', () => {
         let ready = false;
         const deps = {
-            loadMiniCycleData: () => (ready ? { settings: { dismissedEducationalTips: { seen: true } } } : undefined)
+            AppState: { isReady: () => ready, get: () => ({ settings: { dismissedEducationalTips: { seen: true } } }) }
         };
-        // loadMiniCycleData exists but returns undefined while not ready.
+        // AppState exists but is not ready yet.
         const mgr = new EducationalTipManager(() => deps);
         const first = mgr.getDismissedTips();
         if (Object.keys(first).length !== 0) throw new Error('expected an empty scratch map while unavailable');
@@ -131,8 +131,7 @@ export async function runEducationalTipsTests(resultsDiv) {
     await test('a dismissal made while unavailable SURVIVES the later merge', () => {
         let ready = false;
         const deps = {
-            loadMiniCycleData: () => (ready ? { settings: { dismissedEducationalTips: { fromStore: true } } } : undefined),
-            AppState: { isReady: () => false, update: async () => {} }
+            AppState: { isReady: () => ready, get: () => ({ settings: { dismissedEducationalTips: { fromStore: true } } }), update: async () => {} }
         };
         const mgr = new EducationalTipManager(() => deps);
         mgr.getDismissedTips().early = true;   // recorded into the scratch map
@@ -145,8 +144,7 @@ export async function runEducationalTipsTests(resultsDiv) {
     await test('local scratch wins over stored on key collision', () => {
         let ready = false;
         const deps = {
-            loadMiniCycleData: () => (ready ? { settings: { dismissedEducationalTips: { tip: true } } } : undefined),
-            AppState: { isReady: () => false, update: async () => {} }
+            AppState: { isReady: () => ready, get: () => ({ settings: { dismissedEducationalTips: { tip: true } } }), update: async () => {} }
         };
         const mgr = new EducationalTipManager(() => deps);
         mgr.getDismissedTips().tip = false;    // un-dismissed locally while waiting
@@ -159,7 +157,7 @@ export async function runEducationalTipsTests(resultsDiv) {
     await test('once loaded, the source is not re-read on every call', () => {
         let reads = 0;
         const mgr = new EducationalTipManager(() => ({
-            loadMiniCycleData: () => { reads++; return { settings: { dismissedEducationalTips: {} } }; }
+            AppState: { isReady: () => true, get: () => { reads++; return { settings: { dismissedEducationalTips: {} } }; } }
         }));
         mgr.getDismissedTips();
         mgr.getDismissedTips();
@@ -237,7 +235,7 @@ export async function runEducationalTipsTests(resultsDiv) {
     // that a plain object is accepted as well as a getter. It would still pass if
     // deps were captured by value, so do not read it as proof of live resolution.
     await test('constructor accepts a plain deps object, not just a getter', () => {
-        const mgr = new EducationalTipManager({ loadMiniCycleData: () => ({ settings: { dismissedEducationalTips: { a: true } } }) });
+        const mgr = new EducationalTipManager({ AppState: { isReady: () => true, get: () => ({ settings: { dismissedEducationalTips: { a: true } } }) } });
         if (mgr.isTipDismissed('a') !== true) throw new Error('back-compat object form must work');
     });
 

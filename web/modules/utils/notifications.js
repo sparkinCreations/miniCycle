@@ -51,7 +51,6 @@ import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
 const di = createDIModule('Notifications', {
   appInit: optional(null),  // AppInit for initialization coordination
   AppState: optional(null),
-  loadMiniCycleData: optional(null),
   generateHashId: optional(null),
   GlobalUtils: optional(null),
   escapeHtml: optional(null),
@@ -605,24 +604,21 @@ export class MiniCycleNotifications {
   }
 
   /**
-   * 🎯 Restore notification position from Schema 2.5
+   * 🎯 Restore notification position from state
    */
 restoreNotificationPosition(notificationContainer) {
     try {
-        // ✅ Check if loadMiniCycleData is available (DI-pure)
-        if (typeof this.deps.loadMiniCycleData !== 'function') {
+        // Straight from AppState; before state is ready there is nothing saved to
+        // restore (the legacy loadMiniCycleData wrapper is gone — STATE_TRUTH #25).
+        const AppState = this.deps.AppState;
+        const settings = AppState?.isReady?.() ? AppState.get()?.settings : null;
+        if (!settings) {
             this.setDefaultPosition(notificationContainer);
             return;
         }
 
-        const schemaData = this.deps.loadMiniCycleData();
-        if (!schemaData) {
-            this.setDefaultPosition(notificationContainer);
-            return;
-        }
-
-        const savedPosition = schemaData.settings?.notificationPosition;
-        const positionModified = schemaData.settings?.notificationPositionModified;
+        const savedPosition = settings.notificationPosition;
+        const positionModified = settings.notificationPositionModified;
 
         // ✅ Only use saved position if user has actually modified it
         // Initial state has {x:0, y:0} with modified=false, which should use calculated default

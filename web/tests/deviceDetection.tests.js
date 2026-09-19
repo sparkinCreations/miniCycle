@@ -131,8 +131,8 @@ export async function runDeviceDetectionTests(resultsDiv, isPartOfSuite = false)
         const manager = new DeviceDetectionManager();
         const deps = manager.deps;
 
-        if (typeof deps !== 'object' || !deps.loadMiniCycleData || !deps.showNotification) {
-            throw new Error('deps getter should return object with loadMiniCycleData and showNotification');
+        if (typeof deps !== 'object' || !('AppState' in deps) || !deps.showNotification) {
+            throw new Error('deps getter should return object with AppState and showNotification');
         }
     });
 
@@ -166,9 +166,8 @@ export async function runDeviceDetectionTests(resultsDiv, isPartOfSuite = false)
     });
 
     await test('checkManualOverride is async and returns boolean', async () => {
-        const manager = new DeviceDetectionManager({
-            loadMiniCycleData: () => ({ metadata: { version: '2.5' }, settings: {} })
-        });
+        module.setDeviceDetectionDependencies({ AppState: { isReady: () => true, get: () => JSON.parse(localStorage.getItem('miniCycleData') || '{"settings":{}}'), update: async (fn, immediate) => { const d = JSON.parse(localStorage.getItem('miniCycleData') || '{"settings":{}}'); fn(d); localStorage.setItem('miniCycleData', JSON.stringify(d)); } }, appInit: { waitForCore: async () => {} } });
+        const manager = new DeviceDetectionManager();
 
         const result = await manager.checkManualOverride('test-agent');
 
@@ -184,12 +183,11 @@ export async function runDeviceDetectionTests(resultsDiv, isPartOfSuite = false)
         // checkManualOverride is async — the old test never awaited it, so `hasOverride` was a
         // Promise (always truthy) and `if (!hasOverride)` could never fire (green even if override
         // detection were broken). Also: deps resolve from the MODULE-level DI (di.resolve),
-        // NOT constructor args, and loadMiniCycleData DEFAULTS to null — so the override path
-        // (which needs a real schema) requires injecting one.
+        // NOT constructor args — so the override path (which needs ready state) requires
+        // injecting a ready AppState.
         localStorage.setItem('miniCycleForceFullVersion', 'true');
         module.setDeviceDetectionDependencies({
-            loadMiniCycleData: () => ({ metadata: { version: '2.5' }, settings: {} }),
-            AppState: { isReady: () => false },        // saveCompatibilityData no-ops when not ready
+            AppState: { isReady: () => true, get: () => JSON.parse(localStorage.getItem('miniCycleData') || '{"settings":{}}'), update: async (fn, immediate) => { const d = JSON.parse(localStorage.getItem('miniCycleData') || '{"settings":{}}'); fn(d); localStorage.setItem('miniCycleData', JSON.stringify(d)); } },
             appInit: { waitForCore: async () => {} }
         });
         try {
@@ -200,7 +198,7 @@ export async function runDeviceDetectionTests(resultsDiv, isPartOfSuite = false)
             }
         } finally {
             localStorage.removeItem('miniCycleForceFullVersion');
-            module.setDeviceDetectionDependencies({ loadMiniCycleData: () => null }); // restore default
+            module.setDeviceDetectionDependencies({ AppState: { isReady: () => false } }); // restore default
         }
     });
     
@@ -214,8 +212,7 @@ export async function runDeviceDetectionTests(resultsDiv, isPartOfSuite = false)
         // `detectionRan` spy and only checked the method still exists.
         // Deps resolve from module-level DI; only AppMeta.version drives this.currentVersion.
         module.setDeviceDetectionDependencies({
-            loadMiniCycleData: () => ({ metadata: { version: '2.5' }, settings: {} }),
-            AppState: { isReady: () => false },
+            AppState: { isReady: () => true, get: () => JSON.parse(localStorage.getItem('miniCycleData') || '{"settings":{}}'), update: async (fn, immediate) => { const d = JSON.parse(localStorage.getItem('miniCycleData') || '{"settings":{}}'); fn(d); localStorage.setItem('miniCycleData', JSON.stringify(d)); } },
             appInit: { waitForCore: async () => {} }
         });
         const makeManager = (version) => {
@@ -248,7 +245,7 @@ export async function runDeviceDetectionTests(resultsDiv, isPartOfSuite = false)
             }
         } finally {
             localStorage.removeItem('miniCycleData');
-            module.setDeviceDetectionDependencies({ loadMiniCycleData: () => null }); // restore default
+            module.setDeviceDetectionDependencies({ AppState: { isReady: () => false } }); // restore default
         }
     });
 
@@ -258,10 +255,8 @@ export async function runDeviceDetectionTests(resultsDiv, isPartOfSuite = false)
     await test('handles missing Schema 2.5 data gracefully', async () => {
         localStorage.clear();
 
-        const manager = new DeviceDetectionManager({
-            loadMiniCycleData: () => null,
-            showNotification: () => {}
-        });
+        module.setDeviceDetectionDependencies({ AppState: { isReady: () => false }, showNotification: () => {}, appInit: { waitForCore: async () => {} } });
+        const manager = new DeviceDetectionManager();
 
         const report = await manager.reportDeviceCompatibility();
 
@@ -299,9 +294,8 @@ export async function runDeviceDetectionTests(resultsDiv, isPartOfSuite = false)
     await test('handles corrupted localStorage gracefully', async () => {
         localStorage.setItem('miniCycleData', 'invalid-json');
 
-        const manager = new DeviceDetectionManager({
-            loadMiniCycleData: () => null
-        });
+        module.setDeviceDetectionDependencies({ AppState: { isReady: () => false } });
+        const manager = new DeviceDetectionManager();
 
         // Should not throw - if it does, test will fail
         try {
@@ -313,9 +307,8 @@ export async function runDeviceDetectionTests(resultsDiv, isPartOfSuite = false)
 
     // ⚠️ ENVIRONMENT-SPECIFIC: Dependency injection behavior varies by environment
     await test('handles missing dependencies gracefully', async () => {
-        const manager = new DeviceDetectionManager({
-            loadMiniCycleData: () => ({ metadata: { version: '2.5' }, settings: {} })
-        });
+        module.setDeviceDetectionDependencies({ AppState: { isReady: () => true, get: () => JSON.parse(localStorage.getItem('miniCycleData') || '{"settings":{}}'), update: async (fn, immediate) => { const d = JSON.parse(localStorage.getItem('miniCycleData') || '{"settings":{}}'); fn(d); localStorage.setItem('miniCycleData', JSON.stringify(d)); } } });
+        const manager = new DeviceDetectionManager();
 
         // Should not throw even with missing dependencies
         try {

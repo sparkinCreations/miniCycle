@@ -33,15 +33,18 @@ export async function runSettingsUIManagerTests(resultsDiv) {
     });
 
     // ============================================
-    // 🎚️ Toggle setup behavior (loadMiniCycleData-driven initial state)
+    // 🎚️ Toggle setup behavior (AppState-driven initial state)
     // These read saved settings and reflect them onto the DOM. Each clears the
     // module idempotency guards via _resetForTesting() and cleans up the classes/
     // CSS vars it applied so tests stay isolated.
     // ============================================
     resultsDiv.innerHTML += '<h4 class="test-section">🎚️ Toggle Setup Behavior</h4>';
 
-    const wire = (loadMiniCycleData) => mod.setSettingsUIManagerDependencies({
-        loadMiniCycleData,
+    // AppState reaches the module as a callable (a Proxy in production), so the
+    // mock is a factory.
+    const appStateWith = (state) => () => ({ isReady: () => true, get: () => state, update: async (fn) => fn(state) });
+    const wire = (settings) => mod.setSettingsUIManagerDependencies({
+        AppState: appStateWith({ settings }),
         safeAddEventListener: (el, ev, fn) => el.addEventListener(ev, fn),
         showNotification: () => {}
     });
@@ -53,7 +56,7 @@ export async function runSettingsUIManagerTests(resultsDiv) {
         toggle.id = 'toggle-reduced-motion';
         document.body.appendChild(toggle);
         try {
-            wire(() => ({ settings: { reducedMotion: true } }));
+            wire({ reducedMotion: true });
             mod.setupReducedMotionToggle();
             if (toggle.checked !== true) throw new Error('toggle should be checked when reducedMotion is saved true');
             if (!document.body.classList.contains('reduced-motion')) throw new Error('body should get reduced-motion class');
@@ -72,7 +75,7 @@ export async function runSettingsUIManagerTests(resultsDiv) {
         toggle.id = 'toggle-high-contrast';
         document.body.appendChild(toggle);
         try {
-            wire(() => ({ settings: { highContrast: true } }));
+            wire({ highContrast: true });
             mod.setupHighContrastToggle();
             if (toggle.checked !== true) throw new Error('toggle should be checked when highContrast is saved true');
             if (!document.body.classList.contains('high-contrast')) throw new Error('body should get high-contrast class');
@@ -89,7 +92,7 @@ export async function runSettingsUIManagerTests(resultsDiv) {
         [16, 20].forEach(v => { const o = document.createElement('option'); o.value = String(v); select.appendChild(o); });
         document.body.appendChild(select);
         try {
-            wire(() => ({ settings: { fontSize: '20' } }));
+            wire({ fontSize: '20' });
             mod.setupFontSizeSelect();
             if (select.value !== '20') throw new Error(`select should show saved size, got "${select.value}"`);
             // Source: non-default sizes set the root CSS var to `${size}px`.
@@ -103,15 +106,15 @@ export async function runSettingsUIManagerTests(resultsDiv) {
     });
 
     await test('applyPriorityColor sets the global var and leaves per-task colours to the renderers', () => {
-        // No idempotency guard / no listener — purely loadMiniCycleData-driven.
+        // No idempotency guard / no listener — purely AppState-driven.
         // Per-task colours are the task's LEVEL under the active theme, painted by
         // taskDOM / taskDOMPatch. This pass used to write the raw stored hex over
         // them on startup, undoing the theme mapping for the whole list.
         mod.setSettingsUIManagerDependencies({
-            loadMiniCycleData: () => ({
+            AppState: appStateWith({
                 settings: { defaultPriority: 'high' },
-                activeCycle: 'c1',
-                cycles: { c1: { tasks: [{ id: 't1', priority: 'low' }] } }
+                appState: { activeRoutineId: 'c1' },
+                data: { routine: { c1: { tasks: [{ id: 't1', priority: 'low' }] } } }
             })
         });
         const el = document.createElement('div');
@@ -144,10 +147,9 @@ export async function runSettingsUIManagerTests(resultsDiv) {
 
         // AppState is resolved as a FACTORY here (_deps.AppState?.()), and update() mutates
         // state.data.routine[activeCycle]. Capture that state so we can assert the writes.
-        const captured = { data: { routine: { c1: {} } } };
+        const captured = { data: { routine: { c1: {} } }, appState: { activeRoutineId: 'c1' } };
         mod.setSettingsUIManagerDependencies({
-            loadMiniCycleData: () => ({ cycles: { c1: {} }, activeCycle: 'c1' }),
-            AppState: () => ({ isReady: () => true, update: async (fn) => fn(captured) })
+            AppState: () => ({ isReady: () => true, get: () => captured, update: async (fn) => fn(captured) })
         });
 
         try {
@@ -164,21 +166,21 @@ export async function runSettingsUIManagerTests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">⚙️ DI Setup</h4>';
 
     await test('injected dependencies actually take effect (not just no-throw)', () => {
-        // Prove the injected loadMiniCycleData is the one applyPriorityColor reads.
-        let loaderCalled = false;
+        // Prove the injected AppState is the one applyPriorityColor reads.
+        let read = false;
         mod.setSettingsUIManagerDependencies({
-            loadMiniCycleData: () => { loaderCalled = true; return { settings: {} }; }
+            AppState: () => ({ isReady: () => true, get: () => { read = true; return { settings: {} }; } })
         });
         mod.applyPriorityColor();
-        if (!loaderCalled) throw new Error('applyPriorityColor should call the injected loadMiniCycleData');
+        if (!read) throw new Error('applyPriorityColor should read the injected AppState');
     });
 
     await test('setSettingsUIManagerDependencies(null) preserves previously injected deps', () => {
-        let loaderCalled = false;
-        mod.setSettingsUIManagerDependencies({ loadMiniCycleData: () => { loaderCalled = true; return { settings: {} }; } });
+        let read = false;
+        mod.setSettingsUIManagerDependencies({ AppState: () => ({ isReady: () => true, get: () => { read = true; return { settings: {} }; } }) });
         mod.setSettingsUIManagerDependencies(null); // no-op in diBase — must not wipe deps
         mod.applyPriorityColor();
-        if (!loaderCalled) throw new Error('a null DI call should not clear the previously injected loadMiniCycleData');
+        if (!read) throw new Error('a null DI call should not clear the previously injected AppState');
     });
 
     // ============================================
@@ -204,7 +206,7 @@ export async function runSettingsUIManagerTests(resultsDiv) {
         let captured = null;
         try {
             mod.setSettingsUIManagerDependencies({
-                loadMiniCycleData: () => ({ settings: {} }),
+                AppState: appStateWith({ settings: {} }),
                 safeAddEventListener: (el, ev, fn) => el.addEventListener(ev, fn),
                 showNotification: () => {},
                 // Capture and never invoke the callback — we are asserting on how

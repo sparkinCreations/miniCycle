@@ -25,7 +25,6 @@ import { createDIModule, required, optional } from '../core/diBase.js';
 // ✅ appInit now injected via DI (no static import - enables versioning)
 
 const di = createDIModule('DeviceDetection', {
-    loadMiniCycleData: optional(() => { console.warn('loadMiniCycleData not available'); return null; }),
     showNotification: optional((msg) => console.warn('showNotification not available:', msg)),
     AppState: required(),
     appInit: required(),
@@ -83,8 +82,7 @@ export class DeviceDetectionManager {
       const appInitModule = this.deps.appInit;
       await appInitModule.waitForCore();
 
-      const schemaData = this.deps.loadMiniCycleData();
-      if (!schemaData) {
+      if (!this.deps.AppState.isReady()) {
         console.error('❌ State data required for device detection');
         return false;
       }
@@ -197,19 +195,13 @@ export class DeviceDetectionManager {
     const appInitModule = this.deps.appInit;
     await appInitModule.waitForCore();
 
-    const schemaData = this.deps.loadMiniCycleData();
-    if (!schemaData) {
+    if (!this.deps.AppState.isReady()) {
       console.error('❌ State data required for version detection');
       return;
     }
-    
-    let lastDetectionVersion = null;
-    try {
-      const fullSchemaData = JSON.parse(localStorage.getItem(STORAGE_KEYS.DATA));
-      lastDetectionVersion = fullSchemaData.settings?.deviceCompatibility?.lastDetectionVersion;
-    } catch (error) {
-      console.warn('⚠️ Error reading detection version from state:', error);
-    }
+
+    // From state, not storage: the stored copy can be a debounce window stale.
+    const lastDetectionVersion = this.deps.AppState.get()?.settings?.deviceCompatibility?.lastDetectionVersion ?? null;
     
     // If version changed or first time, re-run detection
     if (lastDetectionVersion !== this.currentVersion) {
@@ -226,8 +218,7 @@ export class DeviceDetectionManager {
     const appInitModule = this.deps.appInit;
     await appInitModule.waitForCore();
 
-    const schemaData = this.deps.loadMiniCycleData();
-    if (!schemaData) {
+    if (!this.deps.AppState.isReady()) {
       console.error('❌ State data required for compatibility report');
       this.deps.showNotification('❌ ' + getLabel('notify.reportRequiresSchema'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
       return null;
@@ -237,16 +228,11 @@ export class DeviceDetectionManager {
     let lastDetectionVersion = null;
     let detectionData = null;
     
-    try {
-      const fullSchemaData = JSON.parse(localStorage.getItem(STORAGE_KEYS.DATA));
-      const compatibility = fullSchemaData.settings?.deviceCompatibility;
-      if (compatibility) {
-        storedDecision = compatibility.shouldUseLite;
-        lastDetectionVersion = compatibility.lastDetectionVersion;
-        detectionData = compatibility;
-      }
-    } catch (error) {
-      console.error('❌ Error reading device compatibility from state:', error);
+    const compatibility = this.deps.AppState.get()?.settings?.deviceCompatibility;
+    if (compatibility) {
+      storedDecision = compatibility.shouldUseLite;
+      lastDetectionVersion = compatibility.lastDetectionVersion;
+      detectionData = compatibility;
     }
     
     const deviceInfo = {
@@ -298,8 +284,7 @@ export class DeviceDetectionManager {
     const appInitModule = this.deps.appInit;
     await appInitModule.waitForCore();
 
-    const schemaData = this.deps.loadMiniCycleData();
-    if (!schemaData) {
+    if (!this.deps.AppState.isReady()) {
       console.error('❌ State data required for device detection test');
       this.deps.showNotification('❌ ' + getLabel('notify.detectionTestFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
       return;

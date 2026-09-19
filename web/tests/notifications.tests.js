@@ -456,10 +456,10 @@ export async function runNotificationsTests(resultsDiv) {
     });
 
     await test('an unavailable data source is not cached as "nothing dismissed"', async () => {
-        // A tip-bearing notification can fire before loadMiniCycleData is wired.
+        // A tip-bearing notification can fire before AppState is ready.
         // Caching {} at that moment made every already-dismissed tip reappear.
         const { EducationalTipManager } = await import(`../modules/utils/educationalTips.js?v=${cacheBuster}`);
-        let deps = {};                       // loadMiniCycleData not available yet
+        let deps = {};                       // AppState not available yet
         const tipManager = new EducationalTipManager(() => deps);
 
         if (tipManager.isTipDismissed('already-dismissed') !== false) {
@@ -467,7 +467,7 @@ export async function runNotificationsTests(resultsDiv) {
         }
 
         // Source arrives late, reporting a real dismissal.
-        deps = { loadMiniCycleData: () => ({ settings: { dismissedEducationalTips: { 'already-dismissed': true } } }) };
+        deps = { AppState: { isReady: () => true, get: () => ({ settings: { dismissedEducationalTips: { 'already-dismissed': true } } }) } };
         if (tipManager.isTipDismissed('already-dismissed') !== true) {
             throw new Error('Fallback was cached — the real dismissed map is now unreachable');
         }
@@ -480,9 +480,9 @@ export async function runNotificationsTests(resultsDiv) {
         const stored = { settings: { dismissedEducationalTips: { old: true, older: true } } };
         let updated = null;
         const deps = {
-            loadMiniCycleData: () => stored,
             AppState: {
                 isReady: () => true,
+                get: () => stored,
                 update: async (producer) => { producer(stored); updated = stored.settings.dismissedEducationalTips; }
             }
         };
@@ -504,9 +504,9 @@ export async function runNotificationsTests(resultsDiv) {
         const stored = { settings: { dismissedEducationalTips: { keep: true, drop: true } } };
         let updated = null;
         const deps = {
-            loadMiniCycleData: () => stored,
             AppState: {
                 isReady: () => true,
+                get: () => stored,
                 update: async (producer) => { producer(stored); updated = stored.settings.dismissedEducationalTips; }
             }
         };
@@ -957,7 +957,7 @@ export async function runNotificationsTests(resultsDiv) {
         }
     });
 
-    await test('loadDismissedTips() handles missing loadMiniCycleData', () => {
+    await test('loadDismissedTips() handles a missing AppState', () => {
         delete window.loadMiniCycleData;
 
         const tipManager = new window.EducationalTipManager();
@@ -972,7 +972,7 @@ export async function runNotificationsTests(resultsDiv) {
         }
     });
 
-    await test('saveDismissedTips() handles missing loadMiniCycleData', () => {
+    await test('saveDismissedTips() handles a missing AppState', () => {
         delete window.loadMiniCycleData;
 
         const tipManager = new window.EducationalTipManager();

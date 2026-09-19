@@ -27,7 +27,7 @@ import { loadPanelVisibility } from './panelVisibilityHelpers.js';
 import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
 import { toggleSectionExpanded, setSectionExpanded, isSectionExpanded, collapseAllSections, usesExclusiveSections, isCollapseAllClick } from '../utils/collapsibleSections.js';
 import { isClickOnNotification } from './modalUtils.js';
-import { getRoutine } from '../utils/cycleMode.js';
+import { getRoutine, getActiveRoutineId, getActiveRoutine } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -35,7 +35,6 @@ import { getRoutine } from '../utils/cycleMode.js';
 
 const di = createDIModule('SettingsUIManager', {
     AppState: required(),
-    loadMiniCycleData: required(),
     showNotification: required(),
     safeAddEventListener: required(),
     showConfirmationModal: optional(null),
@@ -62,7 +61,7 @@ const di = createDIModule('SettingsUIManager', {
     hasActiveNotifications: optional(null)
 });
 
-/** @type {{AppState: Object, loadMiniCycleData: Function, showNotification: Function, safeAddEventListener: Function, hideMainMenu: Function|null, setupDarkModeToggle: Function|null, setupQuickDarkToggle: Function|null, updateMoveArrowsVisibility: Function|null, toggleHoverTaskOptions: Function|null, refreshTaskListUI: Function|null, organizeCompletedTasks: Function|null, resetDefaultRecurringSettings: Function|null, trackAction: Function|null}} */
+/** @type {{AppState: Object, showNotification: Function, safeAddEventListener: Function, hideMainMenu: Function|null, setupDarkModeToggle: Function|null, setupQuickDarkToggle: Function|null, updateMoveArrowsVisibility: Function|null, toggleHoverTaskOptions: Function|null, refreshTaskListUI: Function|null, organizeCompletedTasks: Function|null, resetDefaultRecurringSettings: Function|null, trackAction: Function|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];
@@ -83,6 +82,18 @@ const _deps = new Proxy({}, {
  */
 export function setSettingsUIManagerDependencies(dependencies) {
     di.setDependencies(dependencies);
+}
+
+/**
+ * The persisted settings, or null before state is ready. Reads AppState
+ * directly — the legacy loadMiniCycleData wrapper is gone from this module
+ * (STATE_TRUTH_MIGRATION #25); it read AROUND the state manager and could be a
+ * debounce window stale.
+ * @returns {Object|null}
+ */
+function currentSettings() {
+    const AppState = _deps.AppState();
+    return AppState.isReady() ? (AppState.get()?.settings || {}) : null;
 }
 
 /**
@@ -440,9 +451,6 @@ export function setupMoveArrowsToggle() {
     if (AppState?.isReady?.()) {
         const currentState = AppState.get();
         moveArrowsEnabled = currentState?.ui?.moveArrowsVisible || false;
-    } else {
-        const schemaData = _deps.loadMiniCycleData();
-        moveArrowsEnabled = schemaData?.settings?.showMoveArrows || false;
     }
 
     moveArrowsToggle.checked = moveArrowsEnabled;
@@ -497,13 +505,13 @@ export function setupThreeDotsToggle() {
     const threeDotsToggle = document.getElementById(DOM_IDS.TOGGLE_THREE_DOTS);
     if (!threeDotsToggle) return;
 
-    const schemaData = _deps.loadMiniCycleData();
-    if (!schemaData) {
+    const settings = currentSettings();
+    if (!settings) {
         console.error('State data required for three dots toggle');
         return;
     }
 
-    const threeDotsEnabled = schemaData.settings?.showThreeDots || false;
+    const threeDotsEnabled = settings.showThreeDots || false;
     threeDotsToggle.checked = threeDotsEnabled;
     document.body.classList.toggle(DOM_CLASSES.SHOW_THREE_DOTS_ENABLED, threeDotsEnabled);
 
@@ -1120,18 +1128,17 @@ export function setupRetakeGuidedTourButton() {
  */
 export async function syncCurrentSettingsToStorage() {
 
-    const schemaData = _deps.loadMiniCycleData();
-
-    if (!schemaData) {
+    const AppState = _deps.AppState();
+    if (!AppState?.isReady?.()) {
         console.error('State data required for syncCurrentSettingsToStorage');
         return;
     }
 
-    const { cycles, activeCycle } = schemaData;
+    const activeCycle = getActiveRoutineId(AppState.get());
     const toggleAutoReset = document.getElementById(DOM_IDS.TOGGLE_AUTO_RESET);
     const deleteCheckedTasks = document.getElementById(DOM_IDS.DELETE_CHECKED_TASKS);
 
-    if (!activeCycle || !cycles[activeCycle]) {
+    if (!activeCycle || !getActiveRoutine(AppState.get())) {
         console.warn('No active cycle found for settings sync');
         return;
     }
@@ -1141,18 +1148,13 @@ export async function syncCurrentSettingsToStorage() {
         return;
     }
 
-    const AppState = _deps.AppState();
-    if (AppState?.isReady?.()) {
-        await AppState.update(state => {
-            const cycle = getRoutine(state, activeCycle);
-            if (cycle) {
-                cycle.autoReset = toggleAutoReset.checked;
-                cycle.deleteCheckedTasks = deleteCheckedTasks.checked;
-            }
-        }, true);
-    } else {
-        console.error('AppState not ready - settings not synced');
-    }
+    await AppState.update(state => {
+        const cycle = getRoutine(state, activeCycle);
+        if (cycle) {
+            cycle.autoReset = toggleAutoReset.checked;
+            cycle.deleteCheckedTasks = deleteCheckedTasks.checked;
+        }
+    }, true);
 }
 
 /**
@@ -1186,8 +1188,8 @@ export function setupReducedMotionToggle() {
     const toggle = document.getElementById(DOM_IDS.TOGGLE_REDUCED_MOTION);
     if (!toggle) return;
 
-    const schemaData = _deps.loadMiniCycleData();
-    const enabled = schemaData?.settings?.reducedMotion || false;
+    const settings = currentSettings() || {};
+    const enabled = settings.reducedMotion || false;
     toggle.checked = enabled;
     document.body.classList.toggle(DOM_CLASSES.REDUCED_MOTION, enabled);
     document.documentElement.classList.toggle(DOM_CLASSES.REDUCED_MOTION, enabled);
@@ -1241,8 +1243,8 @@ export function setupHighContrastToggle() {
     const toggle = document.getElementById(DOM_IDS.TOGGLE_HIGH_CONTRAST);
     if (!toggle) return;
 
-    const schemaData = _deps.loadMiniCycleData();
-    const enabled = schemaData?.settings?.highContrast || false;
+    const settings = currentSettings() || {};
+    const enabled = settings.highContrast || false;
     toggle.checked = enabled;
     document.body.classList.toggle(DOM_CLASSES.HIGH_CONTRAST, enabled);
 
@@ -1294,8 +1296,8 @@ export function setupFontSizeSelect() {
     const select = document.getElementById(DOM_IDS.FONT_SIZE_SELECT);
     if (!select) return;
 
-    const schemaData = _deps.loadMiniCycleData();
-    const savedSize = schemaData?.settings?.fontSize || String(FONT_SIZE.DEFAULT_PX);
+    const settings = currentSettings() || {};
+    const savedSize = settings.fontSize || String(FONT_SIZE.DEFAULT_PX);
     select.value = savedSize;
     // Validate before it reaches setProperty — settings.fontSize is a plain
     // string in state, and this reads it back rather than reading the <select>.
@@ -1355,9 +1357,9 @@ export function setupNotificationsToggle() {
     const toggle = document.getElementById(DOM_IDS.TOGGLE_NOTIFICATIONS);
     if (!toggle) return;
 
-    const schemaData = _deps.loadMiniCycleData();
+    const settings = currentSettings() || {};
     // Default true — notifications on unless user has explicitly disabled
-    const enabled = schemaData?.settings?.notificationsEnabled ?? true;
+    const enabled = settings.notificationsEnabled ?? true;
     toggle.checked = enabled;
 
     toggle._changeHandler = async () => {
@@ -1396,13 +1398,13 @@ export function setupNotificationsToggle() {
  * the raw stored hex over that would undo the theme mapping for the whole list.
  */
 export function applyPriorityColor() {
-    const schemaData = _deps.loadMiniCycleData();
-    if (!schemaData) return;
+    const settings = currentSettings();
+    if (!settings) return;
 
     // The default is a LEVEL (settings.defaultPriority); paint it as the active
     // theme's swatch, or the shared default before the theme manager is wired.
     const swatches = _deps.vocabThemeManager?.getPrioritySwatches?.() || DEFAULT_PRIORITY_SWATCHES;
-    const globalColor = getLevelColor(getDefaultPriorityLevel(schemaData.settings), swatches);
+    const globalColor = getLevelColor(getDefaultPriorityLevel(settings), swatches);
     if (isValidHex(globalColor)) {
         document.documentElement.style.setProperty('--priority-color', globalColor);
     }

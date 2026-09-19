@@ -184,7 +184,6 @@ function wireSubModuleDependencies(dependencies) {
 
     _subModules.setSettingsUIManagerDependencies({
         AppState: dependencies.AppState,
-        loadMiniCycleData: dependencies.loadMiniCycleData,
         showNotification: dependencies.showNotification,
         safeAddEventListener: dependencies.safeAddEventListener,
         showConfirmationModal: dependencies.showConfirmationModal,
